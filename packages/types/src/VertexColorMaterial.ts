@@ -7,4 +7,4 @@ export interface VertexColorMaterial extends SurfaceMaterial {
   tint: number;
 }
 
-export const VertexColorMaterialKind: unique symbol = Symbol('VertexColorMaterial');
+export const VertexColorMaterialKind = 'VertexColorMaterial';

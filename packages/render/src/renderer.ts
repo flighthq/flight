@@ -1,4 +1,4 @@
-import type { Renderable, Renderer, RendererData, RenderState } from '@flighthq/types';
+import type { Kind, Renderable, Renderer, RendererData, RenderState } from '@flighthq/types';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -19,7 +19,7 @@ export function noopRendererData(_state: RenderState, _source: Renderable): Rend
   return null;
 }
 
-export function registerRenderer(state: RenderState, kind: symbol, renderer: Renderer): void {
+export function registerRenderer(state: RenderState, kind: Kind, renderer: Renderer): void {
   const runtime = getRenderStateRuntime(state);
   if (runtime.rendererMap.get(kind) === renderer) return;
   runtime.rendererMapId = (runtime.rendererMapId + 1) >>> 0;

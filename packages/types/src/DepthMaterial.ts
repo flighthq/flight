@@ -8,4 +8,4 @@ export interface DepthMaterial extends SurfaceMaterial {
   near: number;
 }
 
-export const DepthMaterialKind: unique symbol = Symbol('DepthMaterial');
+export const DepthMaterialKind = 'DepthMaterial';

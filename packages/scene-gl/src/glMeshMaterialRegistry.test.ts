@@ -8,10 +8,10 @@ import {
 } from './glMeshMaterialRegistry';
 import { makeGlSceneState } from './glSceneTestHelper';
 
-const TestKind: unique symbol = Symbol('TestMeshMaterial');
+const TestKind = 'TestMeshMaterial';
 const renderer: GlMeshMaterialRenderer = { bind() {}, draw() {} };
 
-function makeMaterial(kind: symbol): Material {
+function makeMaterial(kind: string): Material {
   return { kind } as Material;
 }
 
@@ -46,7 +46,7 @@ describe('resolveGlMeshMaterialRenderer', () => {
   it('falls back to the DefaultMaterialKind renderer', () => {
     const { state } = makeGlSceneState();
     registerGlMeshMaterialRenderer(state, DefaultMaterialKind, renderer);
-    expect(resolveGlMeshMaterialRenderer(state, makeMaterial(Symbol('Other')))).toBe(renderer);
+    expect(resolveGlMeshMaterialRenderer(state, makeMaterial('Other'))).toBe(renderer);
     expect(resolveGlMeshMaterialRenderer(state, null)).toBe(renderer);
   });
 });

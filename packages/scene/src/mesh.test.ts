@@ -18,7 +18,7 @@ describe('createMesh', () => {
   });
 
   it('accepts a custom kind', () => {
-    const MyKind: unique symbol = Symbol('MyKind');
+    const MyKind = 'MyKind';
     const mesh = createMesh(createBoxMeshGeometry(), [], MyKind);
     expect(mesh.kind).toBe(MyKind);
   });

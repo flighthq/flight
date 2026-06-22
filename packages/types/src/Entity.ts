@@ -1,3 +1,7 @@
+// A kind is a plain string identifier: simultaneously the registry key, the serialized form, and
+// the user-facing intent vocabulary. See tools/agents/docs/conventions/types-layout.md.
+export type Kind = string;
+
 export interface Entity {
   [EntityRuntimeKey]: EntityRuntime | undefined;
 }

@@ -1,7 +1,7 @@
 import type { CanvasRenderState } from './CanvasRenderState';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
+import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
 import type { RenderEffect } from './RenderEffect';
-import type { RenderEffectPipelineOptions } from './WebGLRenderEffectPipeline';
 
 // What a Canvas 2D effect runner is handed: the state, the offscreen scene canvas it reads, the
 // offscreen canvas it writes, and a scratch pool it borrows intermediate canvases from. `source` and

@@ -36,7 +36,7 @@ describe('applyRenderProxyAdapter', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     const data = createRenderProxy2D(state, source);
-    const kind = Symbol('Adapted');
+    const kind = 'Adapted';
     const renderer = { createData: () => null, submit: vi.fn() };
     registerRenderer(state, kind, renderer);
     const adapter: RenderProxyAdapter = {

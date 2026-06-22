@@ -6,7 +6,7 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldTransformMatrix,
 } from '@flighthq/node';
-import type { DisplayObject, HitTestFunction, Node, NodeAny } from '@flighthq/types';
+import type { DisplayObject, HitTestFunction, Kind, Node, NodeAny } from '@flighthq/types';
 
 /**
  * Walks the scene graph depth-first in reverse child order (front-to-back) and
@@ -98,9 +98,9 @@ export function hitTestGraphPoint<Traits extends object>(
  * Registers an interaction handler for nodes of the given kind.
  * Call this once at startup to opt a node kind into interaction handling.
  **/
-export function registerHitTestPoint(kind: symbol, fn: HitTestFunction): void {
+export function registerHitTestPoint(kind: Kind, fn: HitTestFunction): void {
   hitTestPointRegistry.set(kind, fn);
 }
 
 const hitTestLocalBoundsRectanglePoint = { x: 0, y: 0 };
-const hitTestPointRegistry = new Map<symbol, HitTestFunction>();
+const hitTestPointRegistry = new Map<Kind, HitTestFunction>();

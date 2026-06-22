@@ -14,4 +14,4 @@ export interface Sprite extends DisplayObject {
   data: SpriteData;
 }
 
-export const SpriteKind: unique symbol = Symbol('Sprite');
+export const SpriteKind = 'Sprite';

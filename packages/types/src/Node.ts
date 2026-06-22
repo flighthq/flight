@@ -1,4 +1,4 @@
-import type { Entity, EntityRuntime, EntityRuntimeKey } from './Entity';
+import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from './Entity';
 import type { InteractionSignals } from './InteractionSignals';
 import type { NodeSignals } from './NodeSignals';
 
@@ -15,7 +15,7 @@ export type NodeRuntimeFactory<R extends EntityRuntime> = (obj?: Readonly<Partia
 export interface NodeTraits {
   data: NodeData | null;
   enabled: boolean;
-  kind: symbol;
+  kind: Kind;
   name: string | null;
 }
 
@@ -45,7 +45,7 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   worldTransformUsingParentTransformId: number;
 }
 
-export const NodeKind: unique symbol = Symbol('Node');
+export const NodeKind = 'Node';
 export type NodeOf<Traits extends object> = Node<Traits> & Traits;
 export const NullScene: unique symbol = Symbol('NullScene');
 

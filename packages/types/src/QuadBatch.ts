@@ -31,4 +31,4 @@ export interface QuadBatch extends DisplayObject {
   data: QuadBatchData;
 }
 
-export const QuadBatchKind: unique symbol = Symbol('QuadBatch');
+export const QuadBatchKind = 'QuadBatch';

@@ -13,4 +13,4 @@ export interface UniformColorTransformMaterial extends Material {
   colorTransform: ColorTransform;
 }
 
-export const UniformColorTransformMaterialKind: unique symbol = Symbol('UniformColorTransformMaterial');
+export const UniformColorTransformMaterialKind = 'UniformColorTransformMaterial';

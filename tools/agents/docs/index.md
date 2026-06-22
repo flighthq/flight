@@ -111,6 +111,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [packaging & publishing](packaging.md) — the published package shape. Policy is enforced by `npm run packages:check`, not memory.
 - [bundle size](bundle-size.md) — the `npm run size` command surface and the import-size rules.
 - [Rust port](rust/index.md) — the Rust port of the SDK (the `rust` worktree): how TS maps to Rust, the port-specific decisions, and the parity / conformance / mixing vocabulary. Start here for any Rust task. Sub-docs: [parity](rust/parity.md) (the matrix differ) and [conformance](rust/conformance.md) (Rust↔TS fidelity + the divergence map).
+- [types layout & kind identity](conventions/types-layout.md) — how `@flighthq/types` is organized (one concept per file, entity quartets, open contracts not closed unions, filename = type name) and the string-kind identity model (no `Symbol()` kinds; string registries; versioned scene migration). Read before adding types or touching kind registration.
 
 **Skills** (`.claude/skills/`) — procedures, _invoked to do_. Claude Code surfaces these by intent; each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
 
@@ -119,11 +120,11 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 ## Core Patterns
 
-### Kind Symbols
+### Kind Identifiers
 
-A `*Kind` symbol is the unique runtime identifier for a scene graph primitive type. Kinds serve two roles: they are the keys against which renderers are registered (`registerRenderer(state, FooKind, renderer)`), and they enforce scene graph hierarchy — a hierarchy node only accepts children whose kind belongs to the same hierarchy family.
+A `*Kind` is the identifier for a scene graph primitive or descriptor type. Kinds serve two roles: they are the keys against which renderers are registered (`registerRenderer(state, FooKind, renderer)`), and they enforce scene graph hierarchy — a hierarchy node only accepts children whose kind belongs to the same hierarchy family.
 
-Each kind must be defined exactly once, in the package that owns the type, at the point of entity construction. Do not define the same kind in multiple locations. Kinds are created with `Symbol()`, which guarantees uniqueness — no collision prevention or registry is needed. Users of the SDK can define their own kinds to introduce custom node types that integrate with renderer registration and the hierarchy system.
+A kind is a plain **string** (`export const BitmapKind = 'Bitmap'`), not a `Symbol()`. One model spans the whole SDK — entity kinds, descriptor kinds, and render registration are all strings keyed in string registries (`Map<Kind, …>`). The string is simultaneously the registry key, the serialized form, and the user-facing intent vocabulary, so a scene round-trips with no symbol↔string seam. Define each kind once, in the package that owns the type, with a canonical PascalCase value; users introducing custom kinds namespace them with a vendor prefix (`'acme.Foo'`). Registration is last-write-wins so a user can override a built-in binding with their own — collisions are avoided by the vendor-prefix convention (bare names reserved for built-ins), not by a registration guard. Internal `Symbol()` uses that are never serialized — runtime-slot keys, property-key brands, sentinels — stay symbols. Full rules in [types layout & kind identity](conventions/types-layout.md).
 
 ### Entity and Runtime
 
@@ -141,7 +142,7 @@ Use graph-feature aliases for reusable graph APIs: `HierarchyNode`, `GraphAppear
 
 ### Renderer Registration
 
-Rendering is opt-in and kind-based. Each renderable node type is identified by a unique `*Kind` symbol, such as `DisplayObjectKind` or `SpriteKind`. Concrete renderers are registered with `registerRenderer(state, FooKind, renderer)`.
+Rendering is opt-in and kind-based. Each renderable node type is identified by a `*Kind` string identifier, such as `DisplayObjectKind` or `SpriteKind`. Concrete renderers are registered with `registerRenderer(state, FooKind, renderer)`.
 
 A renderer object provides:
 

@@ -1,4 +1,4 @@
-import type { GlMeshMaterialRenderer, GlRenderState, Material } from '@flighthq/types';
+import type { GlMeshMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types';
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -6,7 +6,7 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
 // analog of getGlMaterialRenderer; reads scene-gl's own per-state registry (sceneMeshMaterialRegistry),
 // distinct from the 2D materialRendererMap.
-export function getGlMeshMaterialRenderer(state: GlRenderState, kind: symbol): GlMeshMaterialRenderer | null {
+export function getGlMeshMaterialRenderer(state: GlRenderState, kind: Kind): GlMeshMaterialRenderer | null {
   return getGlSceneRuntime(state).materialRegistry.get(kind) ?? null;
 }
 
@@ -16,7 +16,7 @@ export function getGlMeshMaterialRenderer(state: GlRenderState, kind: symbol): G
 // but writes scene-gl's separate 3D registry.
 export function registerGlMeshMaterialRenderer(
   state: GlRenderState,
-  kind: symbol,
+  kind: Kind,
   renderer: GlMeshMaterialRenderer,
 ): void {
   getGlSceneRuntime(state).materialRegistry.set(kind, renderer);

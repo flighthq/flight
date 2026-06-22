@@ -14,4 +14,4 @@ export interface MovieClip extends DisplayObject {
   data: MovieClipData;
 }
 
-export const MovieClipKind: unique symbol = Symbol('MovieClip');
+export const MovieClipKind = 'MovieClip';

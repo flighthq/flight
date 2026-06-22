@@ -17,6 +17,7 @@ import type {
   DisplayObjectDataFactory,
   DisplayObjectRuntime,
   DisplayObjectRuntimeFactory,
+  Kind,
   MethodsOf,
   NodeAny,
   NodeRuntimeFactory,
@@ -29,7 +30,7 @@ export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>):
 }
 
 export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
-  kind: symbol,
+  kind: Kind,
   obj?: Readonly<PartialNode<DisplayObject>>,
   createData?: DisplayObjectDataFactory,
   createDisplayObjectRuntimeFactory?: DisplayObjectRuntimeFactory<R>,

@@ -75,14 +75,14 @@ function resolveColliders(colliders: ReadonlyArray<ParticleCollider>, p: [number
   let hit = false;
   for (let c = 0; c < colliders.length; c++) {
     const collider = colliders[c];
-    switch (collider.type) {
-      case 'plane':
+    switch (collider.kind) {
+      case 'PlaneCollider':
         hit = resolvePlane(collider, p) || hit;
         break;
-      case 'circle':
+      case 'CircleCollider':
         hit = resolveCircle(collider, p) || hit;
         break;
-      case 'rect':
+      case 'RectangleCollider':
         hit = resolveRect(collider, p) || hit;
         break;
     }

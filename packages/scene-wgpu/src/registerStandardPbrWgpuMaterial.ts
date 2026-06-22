@@ -2,7 +2,7 @@ import type { WgpuRenderState } from '@flighthq/types';
 import { StandardPbrMaterialKind } from '@flighthq/types';
 
 import { standardPbrWgpuMeshMaterialRenderer } from './standardPbrWgpuMeshMaterialRenderer';
-import { registerWgpuMeshMaterialRenderer } from './webgpuMeshMaterialRegistry';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 
 // Registers the built-in StandardPbr forward-lit renderer for StandardPbrMaterialKind on this state.
 // Convenience over registerWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind, …); call it once

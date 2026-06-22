@@ -56,4 +56,4 @@ export interface RichText extends TextLabel {
   data: RichTextData;
 }
 
-export const RichTextKind: unique symbol = Symbol('RichText');
+export const RichTextKind = 'RichText';

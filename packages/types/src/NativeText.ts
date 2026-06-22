@@ -44,4 +44,4 @@ export interface NativeText extends DisplayObject {
   data: NativeTextData;
 }
 
-export const NativeTextKind: unique symbol = Symbol('NativeText');
+export const NativeTextKind = 'NativeText';

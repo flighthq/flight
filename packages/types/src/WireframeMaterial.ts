@@ -7,4 +7,4 @@ export interface WireframeMaterial extends SurfaceMaterial {
   thickness: number;
 }
 
-export const WireframeMaterialKind: unique symbol = Symbol('WireframeMaterial');
+export const WireframeMaterialKind = 'WireframeMaterial';

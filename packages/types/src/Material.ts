@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime, Kind } from './Entity';
 
 // Serializable per-node rendering intent. Plain data only — named fields, no GPU
 // handles and no function references — so a material round-trips through scene
@@ -15,7 +15,7 @@ import type { Entity, EntityWithoutRuntime } from './Entity';
 // in place updates every node that uses it, and the existing appearance invalidation drives
 // re-resolution.
 export interface Material extends Entity {
-  readonly kind: symbol;
+  readonly kind: Kind;
 }
 
 export type MaterialLike = EntityWithoutRuntime<Material>;
@@ -27,4 +27,4 @@ export type MaterialData = object;
 
 // Resolved when a node carries no material, or its material kind has no renderer on the
 // render state. The built-in default renderer draws the node with the standard pipeline.
-export const DefaultMaterialKind: unique symbol = Symbol('DefaultMaterial');
+export const DefaultMaterialKind = 'DefaultMaterial';

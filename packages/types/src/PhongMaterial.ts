@@ -14,4 +14,4 @@ export interface PhongMaterial extends SurfaceMaterial {
   specularMap: Texture | null;
 }
 
-export const PhongMaterialKind: unique symbol = Symbol('PhongMaterial');
+export const PhongMaterialKind = 'PhongMaterial';

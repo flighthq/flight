@@ -10,4 +10,4 @@ export interface LambertMaterial extends SurfaceMaterial {
   emissiveMap: Texture | null;
 }
 
-export const LambertMaterialKind: unique symbol = Symbol('LambertMaterial');
+export const LambertMaterialKind = 'LambertMaterial';

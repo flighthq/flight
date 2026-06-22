@@ -11,4 +11,4 @@ export interface ToonMaterial extends SurfaceMaterial {
   steps: number;
 }
 
-export const ToonMaterialKind: unique symbol = Symbol('ToonMaterial');
+export const ToonMaterialKind = 'ToonMaterial';

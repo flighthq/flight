@@ -1,6 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { DisplayObjectClipHooks } from './DisplayObjectRenderer';
-import type { Entity, EntityRuntime } from './Entity';
+import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
@@ -42,7 +42,7 @@ export interface RenderStateRuntime extends EntityRuntime {
   currentFrameId: number;
   renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
   renderProxyMap: WeakMap<Renderable, RenderProxy>;
-  rendererMap: Map<symbol, Renderer>;
+  rendererMap: Map<Kind, Renderer>;
   rendererMapId: number;
   tempStack: Renderable[];
 }

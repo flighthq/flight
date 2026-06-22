@@ -4,7 +4,7 @@ import { createColorTransform } from './colorTransform';
 import { createColorTransformMaterial, createUniformColorTransformMaterial } from './colorTransformMaterial';
 import { createMaterial, equalsMaterial } from './material';
 
-const TestMaterialKind: unique symbol = Symbol('TestMaterial');
+const TestMaterialKind = 'TestMaterial';
 
 describe('createMaterial', () => {
   it('creates a material carrying the given kind', () => {

@@ -10,4 +10,4 @@ export interface Shape extends DisplayObject {
   data: ShapeData;
 }
 
-export const ShapeKind: unique symbol = Symbol('Shape');
+export const ShapeKind = 'Shape';

@@ -9,4 +9,4 @@ export interface NormalMaterial extends SurfaceMaterial {
   normalScale: number;
 }
 
-export const NormalMaterialKind: unique symbol = Symbol('NormalMaterial');
+export const NormalMaterialKind = 'NormalMaterial';

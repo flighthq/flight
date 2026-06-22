@@ -20,7 +20,7 @@ import type {
 } from '@flighthq/types';
 import { TextLabelKind } from '@flighthq/types';
 
-import { ensureTextLayout, getTextLayout } from './textLayout';
+import { ensureTextLayout, getTextLayout } from './textLabelLayout';
 
 // Per-kind layout-params hook for ensureTextLayout: a TextLabel is a single run, so it lays out its
 // whole string with one format range and no wrap — the lean path that skips RichText's range/html

@@ -492,4 +492,4 @@ function invalidateRect(rect: Rectangle | null): void {
 
 type TestNode = Node<HasTransform2D & HasBoundsRectangle> & HasTransform2D & HasBoundsRectangle;
 
-const TestKind: unique symbol = Symbol('Test');
+const TestKind = 'Test';

@@ -3,7 +3,7 @@ import type { ClipRegion, HasClip } from '@flighthq/types';
 import { initClipTrait } from './hasClip';
 import { createNode } from './node';
 
-const TestKind: unique symbol = Symbol('Test');
+const TestKind = 'Test';
 
 function makeTarget(): HasClip {
   return createNode(TestKind) as unknown as HasClip;

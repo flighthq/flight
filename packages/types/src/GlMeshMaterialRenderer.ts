@@ -1,9 +1,9 @@
 import type { Camera } from './Camera';
+import type { GlRenderState } from './GlRenderState';
 import type { Material } from './Material';
 import type { MeshGeometry } from './MeshGeometry';
 import type { SceneLightBlock } from './SceneLightBlock';
 import type { SceneRenderProxy } from './SceneRenderProxy';
-import type { GlRenderState } from './WebGLRenderState';
 
 // Per-backend 3D draw behavior for a material kind on Gl, registered against the kind via
 // registerGlMeshMaterialRenderer. This is the scene (3D) analog of GlMaterialRenderer (the 2D

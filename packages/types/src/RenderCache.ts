@@ -17,5 +17,5 @@ export interface RenderCache extends Entity {
   transform: Matrix;
 }
 
-export const RenderCacheKind: unique symbol = Symbol('RenderCache');
+export const RenderCacheKind = 'RenderCache';
 export type RenderCacheKind = typeof RenderCacheKind;

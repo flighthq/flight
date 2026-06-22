@@ -1,4 +1,5 @@
-import type { AmbientLight, DirectionalLight } from './Light';
+import type { AmbientLight } from './AmbientLight';
+import type { DirectionalLight } from './DirectionalLight';
 
 // The set of light DATA descriptors passed to one drawScene call as a draw-argument (lights are
 // not scene members: `scene` = what exists, `camera`/`lights` = what we render now). This proving

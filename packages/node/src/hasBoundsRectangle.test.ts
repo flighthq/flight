@@ -54,4 +54,4 @@ describe('initBoundsRectangleTrait', () => {
   });
 });
 
-const NodeTestKind: unique symbol = Symbol('NodeTest');
+const NodeTestKind = 'NodeTest';

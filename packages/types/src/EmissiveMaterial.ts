@@ -10,4 +10,4 @@ export interface EmissiveMaterial extends SurfaceMaterial {
   emissiveStrength: number;
 }
 
-export const EmissiveMaterialKind: unique symbol = Symbol('EmissiveMaterial');
+export const EmissiveMaterialKind = 'EmissiveMaterial';

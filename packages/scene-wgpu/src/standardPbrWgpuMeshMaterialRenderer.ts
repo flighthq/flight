@@ -14,12 +14,12 @@ import type {
   WgpuRenderState,
 } from '@flighthq/types';
 
-import { ensureWgpuMeshUpload } from './webgpuMeshUpload';
-import type { WgpuPbrPipeline } from './webgpuPbrPipelineCache';
-import { ensureWgpuPbrPipeline } from './webgpuPbrPipelineCache';
-import type { WgpuPbrDefineKey } from './webgpuPbrPrelude';
-import type { WgpuMaterialBinding } from './webgpuSceneRuntime';
-import { getWgpuSceneRuntime } from './webgpuSceneRuntime';
+import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
+import type { WgpuPbrPipeline } from './wgpuPbrPipelineCache';
+import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
+import type { WgpuPbrDefineKey } from './wgpuPbrPrelude';
+import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
+import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // The built-in StandardPbr forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // StandardPbrMaterialKind) — the WGSL mirror of standardPbrGlMeshMaterialRenderer. bind selects the

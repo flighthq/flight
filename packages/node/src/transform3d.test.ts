@@ -13,7 +13,7 @@ import {
   getNodeWorldTransformMatrix4,
 } from './transform3d';
 
-const TestNodeKind: unique symbol = Symbol('TestNode');
+const TestNodeKind = 'TestNode';
 
 interface TestTraits extends HasTransform3D {}
 type TestNode = Transform3DNode<TestTraits>;
