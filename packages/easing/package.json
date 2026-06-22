@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/tween-easing",
+  "name": "@flighthq/easing",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
