@@ -1,57 +1,52 @@
-import type { WebGPUDualSourcePipeline } from '@flighthq/filters-webgpu';
-import { drawWebGPUDualSourcePass, drawWebGPUFilterPass } from '@flighthq/filters-webgpu';
-import { createWebGPUDualSourcePipeline } from '@flighthq/filters-webgpu';
+import type { WgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
+import { drawWgpuDualSourcePass, drawWgpuFilterPass } from '@flighthq/filters-wgpu';
+import { createWgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
 import type {
   CameraMotionBlurEffect,
   DirectionalBlurEffect,
   MotionBlurEffect,
   RadialBlurEffect,
-  WebGPURenderEffectRunner,
-  WebGPURenderState,
-  WebGPURenderTarget,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGPUEffectPipeline } from './effectProgramCache';
+import { getWgpuEffectPipeline } from './effectProgramCache';
 
 // Camera motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
-// toward the screen center. A legitimate 2D effect on its own, the WebGPU mirror of effects-webgl's
-// applyCameraMotionBlurEffectToWebGL. Two richer variants are 2D-native follow-ups, not 3D-gated:
+// toward the screen center. A legitimate 2D effect on its own, the Wgpu mirror of effects-gl's
+// applyCameraMotionBlurEffectToGl. Two richer variants are 2D-native follow-ups, not 3D-gated:
 // feeding the actual camera/root transform delta as the smear vector (global velocity), and per-object
 // motion blur reading ctx.sceneVelocityTexture (per-node prev-transform delta).
-export function applyCameraMotionBlurEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyCameraMotionBlurEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<CameraMotionBlurEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;
   const samples = effect.samples ?? 16;
-  const pipeline = getWebGPUEffectPipeline(
-    state,
-    'motion.cameraMotionBlur',
-    CAMERA_MOTION_BLUR_FRAGMENT_WGSL,
-    'replace',
-  );
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'motion.cameraMotionBlur', CAMERA_MOTION_BLUR_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = samples;
   });
 }
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
-// sample count. Single-pass reference recipe, the WebGPU mirror of effects-webgl's
-// applyDirectionalBlurEffectToWebGL. u_resolution converts the texel length into UV space.
-export function applyDirectionalBlurEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+// sample count. Single-pass reference recipe, the Wgpu mirror of effects-gl's
+// applyDirectionalBlurEffectToGl. u_resolution converts the texel length into UV space.
+export function applyDirectionalBlurEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<DirectionalBlurEffect>,
 ): void {
   const angle = effect.angle ?? 0;
   const length = effect.length ?? 8;
   const samples = effect.samples ?? 16;
-  const pipeline = getWebGPUEffectPipeline(state, 'motion.directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'motion.directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = angle;
     f32[1] = length;
     f32[2] = samples;
@@ -60,19 +55,19 @@ export function applyDirectionalBlurEffectToWebGPU(
   });
 }
 
-// Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF), the WebGPU
-// mirror of effects-webgl's applyMotionBlurEffectToWebGL. When the scene produced a per-pixel velocity
+// Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF), the Wgpu
+// mirror of effects-gl's applyMotionBlurEffectToGl. When the scene produced a per-pixel velocity
 // buffer (`velocityTexture`, rgba16f screen-space velocity in pixels in the RG channels), this is the
 // real recipe — read each fragment's velocity, scale it by `intensity`, and accumulate `samples` taps
 // spread along that vector centered on the fragment, smearing every object by its own motion. The
-// velocity texture binds as the second source via drawWebGPUDualSourcePass (@group(2)). When velocity is
+// velocity texture binds as the second source via drawWgpuDualSourcePass (@group(2)). When velocity is
 // absent (the scene did not write the buffer), u_hasVelocity=0 and it is a passthrough copy (sentinel
 // path), preserving the pipeline stage without altering the image. Demonstrates the
 // ctx.sceneVelocityTexture seam: real velocity path when present, sentinel copy when null.
-export function applyMotionBlurEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyMotionBlurEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   velocityTexture: GPUTexture | null,
   effect: Readonly<MotionBlurEffect>,
 ): void {
@@ -82,11 +77,11 @@ export function applyMotionBlurEffectToWebGPU(
   if (velocityTexture === null) {
     // Sentinel path: no velocity buffer — bind source as both inputs so the dual-source layout is
     // satisfied, and u_hasVelocity=0 makes the fragment a passthrough copy.
-    drawWebGPUDualSourcePass(
+    drawWgpuDualSourcePass(
       state,
-      source as WebGPURenderTarget,
-      source as WebGPURenderTarget,
-      dest as WebGPURenderTarget,
+      source as WgpuRenderTarget,
+      source as WgpuRenderTarget,
+      dest as WgpuRenderTarget,
       pipeline,
       (f32) => {
         f32[0] = intensity;
@@ -98,14 +93,14 @@ export function applyMotionBlurEffectToWebGPU(
     );
     return;
   }
-  // Wrap the raw velocity GPUTexture as a minimal second source: drawWebGPUDualSourcePass reads only the
+  // Wrap the raw velocity GPUTexture as a minimal second source: drawWgpuDualSourcePass reads only the
   // `.view`, so a view over the velocity texture is all that is required for the @group(2) binding.
-  const velocitySource = { view: velocityTexture.createView() } as WebGPURenderTarget;
-  drawWebGPUDualSourcePass(
+  const velocitySource = { view: velocityTexture.createView() } as WgpuRenderTarget;
+  drawWgpuDualSourcePass(
     state,
-    source as WebGPURenderTarget,
+    source as WgpuRenderTarget,
     velocitySource,
-    dest as WebGPURenderTarget,
+    dest as WgpuRenderTarget,
     pipeline,
     (f32) => {
       f32[0] = intensity;
@@ -118,20 +113,20 @@ export function applyMotionBlurEffectToWebGPU(
 }
 
 // Radial blur: accumulate samples stepped from the current uv toward (centerX, centerY) scaled by
-// `strength`, normalized by the sample count. Single-pass reference recipe, the WebGPU mirror of
-// effects-webgl's applyRadialBlurEffectToWebGL.
-export function applyRadialBlurEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+// `strength`, normalized by the sample count. Single-pass reference recipe, the Wgpu mirror of
+// effects-gl's applyRadialBlurEffectToGl.
+export function applyRadialBlurEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<RadialBlurEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
   const centerY = effect.centerY ?? 0.5;
   const strength = effect.strength ?? 0.2;
   const samples = effect.samples ?? 16;
-  const pipeline = getWebGPUEffectPipeline(state, 'motion.radialBlur', RADIAL_BLUR_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'motion.radialBlur', RADIAL_BLUR_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = centerX;
     f32[1] = centerY;
     f32[2] = strength;
@@ -139,34 +134,34 @@ export function applyRadialBlurEffectToWebGPU(
   });
 }
 
-export const defaultWebGPUCameraMotionBlurEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyCameraMotionBlurEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
+export const defaultWgpuCameraMotionBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyCameraMotionBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
 };
 
-export const defaultWebGPUDirectionalBlurEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyDirectionalBlurEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
+export const defaultWgpuDirectionalBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyDirectionalBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
 };
 
-export const defaultWebGPUMotionBlurEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyMotionBlurEffectToWebGPU(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
+export const defaultWgpuMotionBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyMotionBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
 };
 
-export const defaultWebGPURadialBlurEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyRadialBlurEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
+export const defaultWgpuRadialBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyRadialBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
 };
 
 // Motion blur needs two source bindings (color = group 1, velocity = group 2), so it uses the
 // dual-source filter primitive; cached per state alongside the single-source effect pipelines.
-function getMotionBlurPipeline(state: WebGPURenderState): WebGPUDualSourcePipeline {
+function getMotionBlurPipeline(state: WgpuRenderState): WgpuDualSourcePipeline {
   let pipeline = _motionBlurPipelines.get(state);
   if (pipeline === undefined) {
-    pipeline = createWebGPUDualSourcePipeline(state, MOTION_BLUR_FRAGMENT_WGSL, 'replace');
+    pipeline = createWgpuDualSourcePipeline(state, MOTION_BLUR_FRAGMENT_WGSL, 'replace');
     _motionBlurPipelines.set(state, pipeline);
   }
   return pipeline;
 }
 
-const _motionBlurPipelines = new WeakMap<WebGPURenderState, WebGPUDualSourcePipeline>();
+const _motionBlurPipelines = new WeakMap<WgpuRenderState, WgpuDualSourcePipeline>();
 
 // Slot layout: [0]=intensity, [1]=samples. SAMPLES caps the loop; min(u_samples, 16.0) gates the taps.
 const CAMERA_MOTION_BLUR_FRAGMENT_WGSL = /* wgsl */ `
