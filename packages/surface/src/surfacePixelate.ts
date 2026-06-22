@@ -10,11 +10,7 @@ import type { SurfaceRegion } from '@flighthq/types';
  * `source.surface.data` as `out` for a full-surface region — each cell is fully
  * read before it is written, and cells do not overlap.
  */
-export function applySurfacePixelateFilter(
-  out: Uint8ClampedArray,
-  source: Readonly<SurfaceRegion>,
-  blockSize: number,
-): void {
+export function pixelateSurface(out: Uint8ClampedArray, source: Readonly<SurfaceRegion>, blockSize: number): void {
   const block = Math.max(1, Math.round(blockSize));
   const w = source.width;
   const h = source.height;

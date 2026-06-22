@@ -11,11 +11,7 @@ import type { SurfaceRegion } from '@flighthq/types';
  * alias `source.surface.data` — each output pixel reads a neighborhood of
  * source pixels.
  */
-export function applySurfaceMedianFilter(
-  out: Uint8ClampedArray,
-  source: Readonly<SurfaceRegion>,
-  radius: number,
-): void {
+export function medianSurface(out: Uint8ClampedArray, source: Readonly<SurfaceRegion>, radius: number): void {
   const r = Math.max(0, Math.round(radius));
   const w = source.width;
   const h = source.height;

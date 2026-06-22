@@ -1,6 +1,5 @@
-import { createSurface } from '@flighthq/surface';
-
-import { applySurfaceSharpenFilter } from './sharpen';
+import { createSurface } from './surface';
+import { sharpenSurface } from './surfaceSharpen';
 
 function region(
   surface: ReturnType<typeof createSurface>,
@@ -12,13 +11,13 @@ function region(
   return { surface, x, y, width, height };
 }
 
-describe('applySurfaceSharpenFilter', () => {
+describe('sharpenSurface', () => {
   it('amount 0 returns the source RGB and preserves alpha', () => {
     const source = createSurface(3, 1);
     source.data.set([10, 20, 30, 120], 4);
     const out = new Uint8ClampedArray(3 * 4);
     const scratch = new Uint8ClampedArray(3 * 4);
-    applySurfaceSharpenFilter(out, scratch, region(source), { amount: 0 });
+    sharpenSurface(out, scratch, region(source), { amount: 0 });
     expect(out[4]).toBe(10);
     expect(out[5]).toBe(20);
     expect(out[6]).toBe(30);
@@ -31,7 +30,7 @@ describe('applySurfaceSharpenFilter', () => {
     for (let i = 0; i < 5; i++) source.data[i * 4 + 3] = 255;
     const out = new Uint8ClampedArray(5 * 4);
     const scratch = new Uint8ClampedArray(5 * 4);
-    applySurfaceSharpenFilter(out, scratch, region(source), { amount: 1, radiusX: 4, radiusY: 0 });
+    sharpenSurface(out, scratch, region(source), { amount: 1, radiusX: 4, radiusY: 0 });
     expect(out[2 * 4]).toBeGreaterThan(100);
   });
 
@@ -43,7 +42,7 @@ describe('applySurfaceSharpenFilter', () => {
     }
     const out = new Uint8ClampedArray(3 * 4);
     const scratch = new Uint8ClampedArray(3 * 4);
-    applySurfaceSharpenFilter(out, scratch, region(source), { amount: 2 });
+    sharpenSurface(out, scratch, region(source), { amount: 2 });
     expect(out[3]).toBe(77);
     expect(out[7]).toBe(77);
     expect(out[11]).toBe(77);

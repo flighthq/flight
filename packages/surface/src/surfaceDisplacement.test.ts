@@ -1,6 +1,5 @@
-import { createSurface } from '@flighthq/surface';
-
-import { applySurfaceDisplacementMapFilter } from './displacement';
+import { createSurface } from './surface';
+import { displaceSurface } from './surfaceDisplacement';
 
 function region(
   surface: ReturnType<typeof createSurface>,
@@ -19,13 +18,13 @@ function rgbStrip() {
   return s;
 }
 
-describe('applySurfaceDisplacementMapFilter', () => {
+describe('displaceSurface', () => {
   it('is a no-op copy when scaleX and scaleY are 0', () => {
     const source = rgbStrip();
     const map = createSurface(3, 1);
     map.data.fill(128);
     const out = new Uint8ClampedArray(3 * 4);
-    applySurfaceDisplacementMapFilter(out, region(source), { map: region(map), scaleX: 0, scaleY: 0, mode: 'clamp' });
+    displaceSurface(out, region(source), { map: region(map), scaleX: 0, scaleY: 0, mode: 'clamp' });
     // With zero scale, every output pixel samples from its exact position.
     expect(out[0]).toBe(255); // px0 = red
     expect(out[4 + 1]).toBe(255); // px1 = green
@@ -40,7 +39,7 @@ describe('applySurfaceDisplacementMapFilter', () => {
     map.data[4] = 255;
     map.data[8] = 255;
     const out = new Uint8ClampedArray(3 * 4);
-    applySurfaceDisplacementMapFilter(out, region(source), {
+    displaceSurface(out, region(source), {
       map: region(map),
       componentX: 0,
       scaleX: 2,
@@ -59,7 +58,7 @@ describe('applySurfaceDisplacementMapFilter', () => {
     const map = createSurface(3, 1);
     map.data.fill(255);
     const out = new Uint8ClampedArray(3 * 4);
-    applySurfaceDisplacementMapFilter(out, region(source), {
+    displaceSurface(out, region(source), {
       map: region(map),
       scaleX: 4,
       scaleY: 0,
@@ -79,7 +78,7 @@ describe('applySurfaceDisplacementMapFilter', () => {
     const map = createSurface(3, 1);
     map.data.fill(255);
     const out = new Uint8ClampedArray(3 * 4);
-    applySurfaceDisplacementMapFilter(out, region(source), {
+    displaceSurface(out, region(source), {
       map: region(map),
       scaleX: 4,
       scaleY: 0,
@@ -98,7 +97,7 @@ describe('applySurfaceDisplacementMapFilter', () => {
     const map = createSurface(2, 1);
     map.data.fill(128); // neutral — minimal displacement at scale=0
     const out = new Uint8ClampedArray(2 * 4);
-    applySurfaceDisplacementMapFilter(out, region(source, 1, 0, 2, 1), {
+    displaceSurface(out, region(source, 1, 0, 2, 1), {
       map: region(map),
       scaleX: 0,
       scaleY: 0,

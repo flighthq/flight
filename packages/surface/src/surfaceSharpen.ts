@@ -1,8 +1,8 @@
 import type { SurfaceRegion } from '@flighthq/types';
 
-import { applySurfaceBoxBlurFilter } from './blur';
+import { boxBlurSurface } from './surfaceBlur';
 
-export interface SurfaceSharpenFilterOptions {
+export interface SurfaceSharpenOptions {
   /** Sharpen strength. 0 is a no-op; 1 is a moderate sharpen; >1 is stronger. Default 1. */
   amount?: number;
   /** Blur radius of the unsharp mask, in pixels. Larger radii sharpen coarser detail. Default 2. */
@@ -16,7 +16,7 @@ export interface SurfaceSharpenFilterOptions {
  * Sharpens `source` into `out` using an unsharp mask: it blurs the source, then
  * adds back `amount × (source − blurred)` so edges are accentuated. This is the
  * radius-based sharpen photo tools use; a fixed 3×3 sharpen is also available
- * via `applySurfaceConvolutionFilter`.
+ * via `convolveSurface`.
  *
  * `scratch` is ping-pong scratch, at least `source.width * source.height * 4`
  * bytes; its contents are undefined after the call. Alpha is left as the source
@@ -25,14 +25,14 @@ export interface SurfaceSharpenFilterOptions {
  * `out` must NOT alias `source.surface.data`: `out` holds the blurred image
  * while the original source pixels are read again to form the mask.
  */
-export function applySurfaceSharpenFilter(
+export function sharpenSurface(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceSharpenFilterOptions> = {},
+  options: Readonly<SurfaceSharpenOptions> = {},
 ): void {
   const amount = options.amount ?? 1;
-  applySurfaceBoxBlurFilter(out, scratch, source, {
+  boxBlurSurface(out, scratch, source, {
     radiusX: options.radiusX ?? 2,
     radiusY: options.radiusY ?? 2,
     passes: options.passes ?? 1,

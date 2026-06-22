@@ -1,11 +1,6 @@
-import { compositeSurfacePixels, compositeSurfaceRegion, createSurface } from '@flighthq/surface';
-
-import {
-  applySurfaceDropShadowFilter,
-  applySurfaceGlowFilter,
-  applySurfaceInnerGlowFilter,
-  applySurfaceInnerShadowFilter,
-} from './shadow';
+import { createSurface } from './surface';
+import { compositeSurfacePixels, compositeSurfaceRegion } from './surfaceComposite';
+import { dropShadowSurface, glowSurface, innerGlowSurface, innerShadowSurface } from './surfaceShadow';
 
 function region(
   surface: ReturnType<typeof createSurface>,
@@ -17,12 +12,12 @@ function region(
   return { surface, x, y, width, height };
 }
 
-describe('applySurfaceDropShadowFilter', () => {
+describe('dropShadowSurface', () => {
   it('produces a tinted alpha mask in out', () => {
     const source = createSurface(1, 1, 0xffffffff);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceDropShadowFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
+    dropShadowSurface(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     expect(out[0]).toBe(0);
     expect(out[2]).toBe(0xff);
     expect(out[3]).toBe(0xff);
@@ -33,7 +28,7 @@ describe('applySurfaceDropShadowFilter', () => {
     const dest = createSurface(4, 4);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceDropShadowFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
+    dropShadowSurface(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     const angle = (0 * Math.PI) / 180;
     const offsetX = Math.round(Math.cos(angle) * 1);
     const offsetY = Math.round(Math.sin(angle) * 1);
@@ -48,7 +43,7 @@ describe('applySurfaceDropShadowFilter', () => {
     const dest = createSurface(2, 1);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceDropShadowFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
+    dropShadowSurface(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     compositeSurfacePixels(region(dest, 1, 0, 1, 1), out);
     compositeSurfaceRegion(region(dest, 0, 0, 1, 1), region(source));
     expect(dest.data[0]).toBe(0xff);
@@ -58,18 +53,18 @@ describe('applySurfaceDropShadowFilter', () => {
   it('source.surface.data can be used as out for a full-surface region', () => {
     const surface = createSurface(1, 1, 0xffffffff);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceDropShadowFilter(surface.data, scratch, region(surface), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
+    dropShadowSurface(surface.data, scratch, region(surface), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     expect(surface.data[2]).toBe(0xff); // tinted blue
     expect(surface.data[3]).toBe(0xff); // alpha carried from source
   });
 });
 
-describe('applySurfaceGlowFilter', () => {
+describe('glowSurface', () => {
   it('produces a tinted alpha mask in out', () => {
     const source = createSurface(1, 1, 0xffffffff);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceGlowFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
+    glowSurface(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     expect(out[1]).toBe(0xff);
     expect(out[3]).toBe(0xff);
   });
@@ -79,7 +74,7 @@ describe('applySurfaceGlowFilter', () => {
     const dest = createSurface(1, 1);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceGlowFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
+    glowSurface(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     compositeSurfacePixels(region(dest), out);
     expect(dest.data[1]).toBe(0xff);
     expect(dest.data[3]).toBe(0xff);
@@ -90,7 +85,7 @@ describe('applySurfaceGlowFilter', () => {
     const dest = createSurface(1, 1);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceGlowFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
+    glowSurface(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     compositeSurfacePixels(region(dest), out);
     compositeSurfaceRegion(region(dest), region(source));
     expect(dest.data[0]).toBe(0xff);
@@ -100,13 +95,13 @@ describe('applySurfaceGlowFilter', () => {
   it('source.surface.data can be used as out for a full-surface region', () => {
     const surface = createSurface(1, 1, 0xffffffff);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceGlowFilter(surface.data, scratch, region(surface), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
+    glowSurface(surface.data, scratch, region(surface), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     expect(surface.data[1]).toBe(0xff);
     expect(surface.data[3]).toBe(0xff);
   });
 });
 
-describe('applySurfaceInnerGlowFilter', () => {
+describe('innerGlowSurface', () => {
   it('clips the glow to inside the shape and tints it', () => {
     // 3x1: transparent | opaque | transparent. The inner glow appears only on
     // the opaque pixel; transparent pixels (outside the shape) stay at 0 alpha.
@@ -114,7 +109,7 @@ describe('applySurfaceInnerGlowFilter', () => {
     source.data[1 * 4 + 3] = 255;
     const out = new Uint8ClampedArray(3 * 4);
     const scratch = new Uint8ClampedArray(3 * 4);
-    applySurfaceInnerGlowFilter(out, scratch, region(source), { radiusX: 2, radiusY: 0, color: 0x00ff00ff });
+    innerGlowSurface(out, scratch, region(source), { radiusX: 2, radiusY: 0, color: 0x00ff00ff });
     expect(out[0 * 4 + 3]).toBe(0);
     expect(out[2 * 4 + 3]).toBe(0);
     expect(out[1 * 4 + 3]).toBe(170);
@@ -127,18 +122,18 @@ describe('applySurfaceInnerGlowFilter', () => {
     const source = createSurface(1, 1, 0x0000ffff);
     const out = new Uint8ClampedArray(4);
     const scratch = new Uint8ClampedArray(4);
-    applySurfaceInnerGlowFilter(out, scratch, region(source), { radiusX: 0, radiusY: 0 });
+    innerGlowSurface(out, scratch, region(source), { radiusX: 0, radiusY: 0 });
     expect(out[3]).toBe(0);
   });
 });
 
-describe('applySurfaceInnerShadowFilter', () => {
+describe('innerShadowSurface', () => {
   it('defaults to a black tint', () => {
     const source = createSurface(3, 1);
     source.data[1 * 4 + 3] = 255;
     const out = new Uint8ClampedArray(3 * 4);
     const scratch = new Uint8ClampedArray(3 * 4);
-    applySurfaceInnerShadowFilter(out, scratch, region(source), { radiusX: 2, radiusY: 0 });
+    innerShadowSurface(out, scratch, region(source), { radiusX: 2, radiusY: 0 });
     expect(out[1 * 4 + 0]).toBe(0);
     expect(out[1 * 4 + 1]).toBe(0);
     expect(out[1 * 4 + 2]).toBe(0);

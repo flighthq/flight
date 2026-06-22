@@ -1,9 +1,9 @@
 import type { SurfaceRegion } from '@flighthq/types';
 
-import type { SurfaceBevelType } from './bevel';
-import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './blur';
+import type { SurfaceBevelType } from './surfaceBevel';
+import { blurSurfacePixelsHorizontal, blurSurfacePixelsVertical } from './surfaceBlur';
 
-export interface SurfaceGradientBevelFilterOptions {
+export interface SurfaceGradientBevelOptions {
   /** Light direction in radians, pointing toward the light source. Default π/4. */
   angle?: number;
   /** Sampling offset along the light axis, in pixels. Default 4. */
@@ -17,119 +17,12 @@ export interface SurfaceGradientBevelFilterOptions {
   type?: SurfaceBevelType;
 }
 
-export interface SurfaceGradientGlowFilterOptions {
+export interface SurfaceGradientGlowOptions {
   radiusX?: number;
   radiusY?: number;
   passes?: number;
   /** Overall opacity multiplier. Default 1. */
   intensity?: number;
-}
-
-/**
- * Produces a gradient bevel mask in `out`. Like `applySurfaceBevelFilter`, but
- * the signed edge gradient (-1..1) indexes the 256-entry `ramp` instead of
- * selecting one of two flat colors: -1 maps to ramp index 0 (shadow side), 0 to
- * 128 (flat, typically transparent), +1 to 255 (highlight side).
- *
- * `ramp` must be 256 RGBA entries (1024 bytes); build it with
- * `buildSurfaceGradientRamp`. `scratch` must be a distinct buffer from `out`,
- * at least `source.width * source.height * 4` bytes; its contents are undefined
- * after the call.
- *
- * `out` must NOT alias `source.surface.data`: `out` is used as the blur scratch,
- * and the source alpha is read again afterward for `inner`/`outer` clipping.
- */
-export function applySurfaceGradientBevelFilter(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
-  source: Readonly<SurfaceRegion>,
-  ramp: Readonly<Uint8ClampedArray>,
-  options: Readonly<SurfaceGradientBevelFilterOptions> = {},
-): void {
-  const w = source.width;
-  const h = source.height;
-  const angle = options.angle ?? Math.PI / 4;
-  const distance = options.distance ?? 4;
-  const offsetX = Math.round(Math.cos(angle) * distance);
-  const offsetY = Math.round(Math.sin(angle) * distance);
-  const type = options.type ?? 'inner';
-  const intensity = options.intensity ?? 1;
-
-  for (let py = 0; py < h; py++) {
-    for (let px = 0; px < w; px++) {
-      const di = (py * w + px) * 4;
-      scratch[di] = 0;
-      scratch[di + 1] = 0;
-      scratch[di + 2] = 0;
-      scratch[di + 3] = readSourceAlpha(source, px, py);
-    }
-  }
-  blurAlphaField(scratch, out, w, h, options.radiusX, options.radiusY, options.passes);
-
-  for (let py = 0; py < h; py++) {
-    for (let px = 0; px < w; px++) {
-      const di = (py * w + px) * 4;
-      const lit = sampleField(scratch, w, h, px - offsetX, py - offsetY);
-      const shade = sampleField(scratch, w, h, px + offsetX, py + offsetY);
-      const gradient = lit - shade;
-      const idx = Math.max(0, Math.min(255, Math.round((gradient * 0.5 + 0.5) * 255)));
-      const ri = idx * 4;
-      const clip =
-        type === 'inner'
-          ? readSourceAlpha(source, px, py) / 255
-          : type === 'outer'
-            ? 1 - readSourceAlpha(source, px, py) / 255
-            : 1;
-      out[di] = ramp[ri];
-      out[di + 1] = ramp[ri + 1];
-      out[di + 2] = ramp[ri + 2];
-      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * intensity * clip));
-    }
-  }
-}
-
-/**
- * Produces a gradient glow mask in `out`. Like `applySurfaceGlowFilter`, but the
- * blurred source alpha (0..255) indexes the 256-entry `ramp` for both color and
- * opacity, so the glow color varies with distance from the shape.
- *
- * `ramp` must be 256 RGBA entries (1024 bytes); build it with
- * `buildSurfaceGradientRamp`. `scratch` must be at least
- * `source.width * source.height * 4` bytes; its contents are undefined after the
- * call. Safe to pass `source.surface.data` as `out` for a full-surface region.
- */
-export function applySurfaceGradientGlowFilter(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
-  source: Readonly<SurfaceRegion>,
-  ramp: Readonly<Uint8ClampedArray>,
-  options: Readonly<SurfaceGradientGlowFilterOptions> = {},
-): void {
-  const w = source.width;
-  const h = source.height;
-  const intensity = options.intensity ?? 1;
-
-  for (let py = 0; py < h; py++) {
-    for (let px = 0; px < w; px++) {
-      const di = (py * w + px) * 4;
-      out[di] = 0;
-      out[di + 1] = 0;
-      out[di + 2] = 0;
-      out[di + 3] = readSourceAlpha(source, px, py);
-    }
-  }
-  blurAlphaField(out, scratch, w, h, options.radiusX, options.radiusY, options.passes);
-
-  for (let py = 0; py < h; py++) {
-    for (let px = 0; px < w; px++) {
-      const di = (py * w + px) * 4;
-      const ri = out[di + 3] * 4;
-      out[di] = ramp[ri];
-      out[di + 1] = ramp[ri + 1];
-      out[di + 2] = ramp[ri + 2];
-      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * intensity));
-    }
-  }
 }
 
 /**
@@ -180,6 +73,113 @@ export function buildSurfaceGradientRamp(
     out[oi + 1] = Math.round(g);
     out[oi + 2] = Math.round(b);
     out[oi + 3] = Math.round(a * 255);
+  }
+}
+
+/**
+ * Produces a gradient bevel mask in `out`. Like `bevelSurface`, but the signed
+ * edge gradient (-1..1) indexes the 256-entry `ramp` instead of selecting one of
+ * two flat colors: -1 maps to ramp index 0 (shadow side), 0 to 128 (flat,
+ * typically transparent), +1 to 255 (highlight side).
+ *
+ * `ramp` must be 256 RGBA entries (1024 bytes); build it with
+ * `buildSurfaceGradientRamp`. `scratch` must be a distinct buffer from `out`,
+ * at least `source.width * source.height * 4` bytes; its contents are undefined
+ * after the call.
+ *
+ * `out` must NOT alias `source.surface.data`: `out` is used as the blur scratch,
+ * and the source alpha is read again afterward for `inner`/`outer` clipping.
+ */
+export function gradientBevelSurface(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<SurfaceRegion>,
+  ramp: Readonly<Uint8ClampedArray>,
+  options: Readonly<SurfaceGradientBevelOptions> = {},
+): void {
+  const w = source.width;
+  const h = source.height;
+  const angle = options.angle ?? Math.PI / 4;
+  const distance = options.distance ?? 4;
+  const offsetX = Math.round(Math.cos(angle) * distance);
+  const offsetY = Math.round(Math.sin(angle) * distance);
+  const type = options.type ?? 'inner';
+  const intensity = options.intensity ?? 1;
+
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const di = (py * w + px) * 4;
+      scratch[di] = 0;
+      scratch[di + 1] = 0;
+      scratch[di + 2] = 0;
+      scratch[di + 3] = readSourceAlpha(source, px, py);
+    }
+  }
+  blurAlphaField(scratch, out, w, h, options.radiusX, options.radiusY, options.passes);
+
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const di = (py * w + px) * 4;
+      const lit = sampleField(scratch, w, h, px - offsetX, py - offsetY);
+      const shade = sampleField(scratch, w, h, px + offsetX, py + offsetY);
+      const gradient = lit - shade;
+      const idx = Math.max(0, Math.min(255, Math.round((gradient * 0.5 + 0.5) * 255)));
+      const ri = idx * 4;
+      const clip =
+        type === 'inner'
+          ? readSourceAlpha(source, px, py) / 255
+          : type === 'outer'
+            ? 1 - readSourceAlpha(source, px, py) / 255
+            : 1;
+      out[di] = ramp[ri];
+      out[di + 1] = ramp[ri + 1];
+      out[di + 2] = ramp[ri + 2];
+      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * intensity * clip));
+    }
+  }
+}
+
+/**
+ * Produces a gradient glow mask in `out`. Like `glowSurface`, but the blurred
+ * source alpha (0..255) indexes the 256-entry `ramp` for both color and opacity,
+ * so the glow color varies with distance from the shape.
+ *
+ * `ramp` must be 256 RGBA entries (1024 bytes); build it with
+ * `buildSurfaceGradientRamp`. `scratch` must be at least
+ * `source.width * source.height * 4` bytes; its contents are undefined after the
+ * call. Safe to pass `source.surface.data` as `out` for a full-surface region.
+ */
+export function gradientGlowSurface(
+  out: Uint8ClampedArray,
+  scratch: Uint8ClampedArray,
+  source: Readonly<SurfaceRegion>,
+  ramp: Readonly<Uint8ClampedArray>,
+  options: Readonly<SurfaceGradientGlowOptions> = {},
+): void {
+  const w = source.width;
+  const h = source.height;
+  const intensity = options.intensity ?? 1;
+
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const di = (py * w + px) * 4;
+      out[di] = 0;
+      out[di + 1] = 0;
+      out[di + 2] = 0;
+      out[di + 3] = readSourceAlpha(source, px, py);
+    }
+  }
+  blurAlphaField(out, scratch, w, h, options.radiusX, options.radiusY, options.passes);
+
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      const di = (py * w + px) * 4;
+      const ri = out[di + 3] * 4;
+      out[di] = ramp[ri];
+      out[di + 1] = ramp[ri + 1];
+      out[di + 2] = ramp[ri + 2];
+      out[di + 3] = Math.min(255, Math.round(ramp[ri + 3] * intensity));
+    }
   }
 }
 

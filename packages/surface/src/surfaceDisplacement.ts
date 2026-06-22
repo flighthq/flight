@@ -2,7 +2,7 @@ import type { SurfaceRegion } from '@flighthq/types';
 
 export type SurfaceDisplacementMapMode = 'clamp' | 'color' | 'ignore' | 'wrap';
 
-export interface SurfaceDisplacementMapFilterOptions {
+export interface SurfaceDisplacementMapOptions {
   /** Map surface whose channels drive the per-pixel displacement. */
   map: Readonly<SurfaceRegion>;
   /** Channel index (0=R, 1=G, 2=B, 3=A) of `map` that drives X displacement. Default 0. */
@@ -38,10 +38,10 @@ export interface SurfaceDisplacementMapFilterOptions {
  * `out` must be at least `source.width * source.height * 4` bytes and must NOT
  * alias `source.surface.data` — output pixels read arbitrary source positions.
  */
-export function applySurfaceDisplacementMapFilter(
+export function displaceSurface(
   out: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
-  options: Readonly<SurfaceDisplacementMapFilterOptions>,
+  options: Readonly<SurfaceDisplacementMapOptions>,
 ): void {
   const w = source.width;
   const h = source.height;
