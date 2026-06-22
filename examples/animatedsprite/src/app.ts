@@ -13,7 +13,7 @@ import {
   getSpritesheetPlayerFrame,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   playSpritesheetAnimation,
   startApplicationLoop,
   updateSpritesheetPlayer,
@@ -27,7 +27,7 @@ const FRAME_DURATION = 150;
 const STAGE_WIDTH = 800;
 const STAGE_HEIGHT = 400;
 
-const source = await loadImageResourceFromURL('assets/tileset.png');
+const source = await loadImageResourceFromUrl('assets/tileset.png');
 const atlas = createTextureAtlas({ image: source });
 const sheet = createSpritesheet({ atlas });
 

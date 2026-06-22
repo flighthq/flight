@@ -3,7 +3,7 @@
 // DisplacementMapFilter has no native CSS form, so there is no native filter path on Canvas. The NATIVE
 // tile (drawn by app.ts as the CPU/surface result) and the REFERENCE tile are identical bitmaps — parity
 // holds by construction here, and drawNativeDisplacement is unused. The normal render draws both tiles;
-// WebGL carries the meaningful shader-vs-CPU comparison.
+// Gl carries the meaningful shader-vs-CPU comparison.
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,

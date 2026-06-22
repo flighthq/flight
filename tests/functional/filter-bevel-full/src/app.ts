@@ -22,7 +22,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -106,7 +106,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // Square center: untouched mid-gray (the bevel only paints near the edges).
   const cx = Math.round((RESULT_X + TILE / 2) * s);
   const cy = Math.round((TOP + TILE / 2) * s);
-  const center = getSurfacePixelRGB(frame, cx, cy);
+  const center = getSurfacePixelRgb(frame, cx, cy);
   if (!channelsClose(center, 0x808080, 32)) {
     throw new Error(`[filter-bevel-full] square center expected mid-gray, got #${hex(center)}`);
   }
@@ -146,7 +146,7 @@ function brightestAlongRow(frame: Readonly<Surface>, s: number, fromX: number, t
   let best = 0x000000;
   let bestLuma = -1;
   for (let x = fromX; x <= toX; x++) {
-    const px = getSurfacePixelRGB(frame, Math.round(x * s), y);
+    const px = getSurfacePixelRgb(frame, Math.round(x * s), y);
     const l = luma(px);
     if (l > bestLuma) {
       bestLuma = l;
@@ -161,7 +161,7 @@ function darkestAlongRow(frame: Readonly<Surface>, s: number, fromX: number, toX
   let best = 0xffffff;
   let bestLuma = 256;
   for (let x = fromX; x <= toX; x++) {
-    const px = getSurfacePixelRGB(frame, Math.round(x * s), y);
+    const px = getSurfacePixelRgb(frame, Math.round(x * s), y);
     const l = luma(px);
     if (l < bestLuma) {
       bestLuma = l;

@@ -11,7 +11,7 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -53,8 +53,8 @@ appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
 const [squareImg, circleImg] = await Promise.all([
-  loadImageResourceFromURL('assets/BlendSquare.png'),
-  loadImageResourceFromURL('assets/BlendCircle.png'),
+  loadImageResourceFromUrl('assets/BlendSquare.png'),
+  loadImageResourceFromUrl('assets/BlendCircle.png'),
 ]);
 
 // Grid layout — 16:9 aspect ratio

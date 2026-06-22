@@ -2,7 +2,7 @@
 //
 // Color-matrix has no CSS-filter form, so there is NO native canvas filter path: app.ts draws the CPU
 // result bytes as the native tile, and parity holds by construction. This backend therefore just renders
-// the scene tree (two plain bitmaps). The meaningful native-vs-CPU comparison happens on WebGL.
+// the scene tree (two plain bitmaps). The meaningful native-vs-CPU comparison happens on Gl.
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,

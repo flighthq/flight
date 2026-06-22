@@ -1,42 +1,42 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  beginWebGPURenderEffectPipeline,
+  beginWgpuRenderEffectPipeline,
   createChromaticAberrationEffect,
-  createWebGPUCanvasElement,
-  createWebGPURenderEffectPipeline,
-  createWebGPURenderState,
-  defaultWebGPUChromaticAberrationEffectRunner,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
-  endWebGPURenderEffectPipeline,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  defaultWgpuChromaticAberrationEffectRunner,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPURenderEffect,
-  registerWebGPUShapeCommands,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
+  registerWgpuRenderEffect,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWebGPUFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '../../_harness/verify';
 
-// WebGPU parity column for the same chromatic-aberration intent as render.webgl.ts. Unlike Canvas
-// (passthrough), chromatic aberration is a real effect on WebGPU: the R/G/B channels are sampled
-// with a growing radial offset. WebGPU render-state init is async; the effect pipeline runs between
-// renderWebGPUBackground and submitWebGPURenderPass.
+// Wgpu parity column for the same chromatic-aberration intent as render.webgl.ts. Unlike Canvas
+// (passthrough), chromatic aberration is a real effect on Wgpu: the R/G/B channels are sampled
+// with a growing radial offset. Wgpu render-state init is async; the effect pipeline runs between
+// renderWgpuBackground and submitWgpuRenderPass.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGPUCanvasElement(800, 600, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
-registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
-registerDefaultWebGPUMaterial(state);
-registerWebGPURenderEffect(state, 'chromaticAberration', defaultWebGPUChromaticAberrationEffectRunner);
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
+registerWgpuRenderEffect(state, 'chromaticAberration', defaultWgpuChromaticAberrationEffectRunner);
 
-const pipeline = createWebGPURenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -44,11 +44,11 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  beginWebGPURenderEffectPipeline(state, pipeline);
-  renderWebGPUDisplayObject(state, root);
-  endWebGPURenderEffectPipeline(state, pipeline, [createChromaticAberrationEffect({ intensity: 4, radial: true })]);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  renderWgpuDisplayObject(state, root);
+  endWgpuRenderEffectPipeline(state, pipeline, [createChromaticAberrationEffect({ intensity: 4, radial: true })]);
+  submitWgpuRenderPass(state);
 }
 
-registerWebGPUFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, scale);

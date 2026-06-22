@@ -1,53 +1,53 @@
-// WebGL backend of the outer-glow-parity test.
+// Gl backend of the outer-glow-parity test.
 //
-// Native path: the real WebGL outer glow is a tint+box-blur shader chain run over offscreen render
-// targets (applyOuterGlowFilterToWebGL), which ALSO composites the source on top into `dest` (unless
+// Native path: the real Gl outer glow is a tint+box-blur shader chain run over offscreen render
+// targets (applyOuterGlowFilterToGl), which ALSO composites the source on top into `dest` (unless
 // knockout) — so a single dest target carries the finished glow+source. The result is then composited
 // onto the screen as a positioned quad. This mirrors the engine's own render-cache flow
-// (packages/render-webgl/src/webglCache.ts): render content into a target, run the GPU passes,
-// composite the result via drawWebGLRenderTargetResult.
+// (packages/displayobject-gl/src/webglCache.ts): render content into a target, run the GPU passes,
+// composite the result via drawGlRenderTargetResult.
 //
-// applyOuterGlowFilterToWebGL's signature differs from the blur's: it takes (state, source, dest,
+// applyOuterGlowFilterToGl's signature differs from the blur's: it takes (state, source, dest,
 // scratch[], filter) where `scratch` is THREE same-sized targets it uses internally as the tint mask,
 // the blurred glow, and the box-blur ping-pong temp. It allocates nothing itself and writes the finished
 // effect into `dest`. There is no separate source re-blit and no gradient-ramp / displacement-map
 // texture (those belong to other filters, not outer glow).
 //
 // Flow per drawNativeGlow():
-//   1. Render the source bitmap into a TILE-sized `source` target (beginWebGLRenderTarget with an
+//   1. Render the source bitmap into a TILE-sized `source` target (beginGlRenderTarget with an
 //      identity render transform → the origin-placed bitmap fills the target's 0..TILE viewport).
-//   2. applyOuterGlowFilterToWebGL(state, source, dest, [mask, blurred, blurTemp], filter) — the glow
+//   2. applyOuterGlowFilterToGl(state, source, dest, [mask, blurred, blurTemp], filter) — the glow
 //      chain, leaving glow+source composited in `dest`.
 //   3. Rebind the screen framebuffer/viewport (the passes leave a target bound), prepare a placement
 //      bitmap node at the native tile position to harvest its world×device transform, then
-//      drawWebGLRenderTargetResult(state, proxy, dest, identity) to composite the TILE×TILE result at
+//      drawGlRenderTargetResult(state, proxy, dest, identity) to composite the TILE×TILE result at
 //      that position (the composite V-flips, matching how step 1 wrote the target — same convention the
 //      render cache relies on, so the result lands upright).
 //
 // Targets are sized in LOGICAL pixels (TILE), not device pixels, so the GPU glow runs at the same
 // resolution the CPU/surface reference glows at; the composite upscales by the device transform exactly
 // as the reference bitmap tile does. This keeps the two tiles at matching effective resolution.
-import type { Bitmap, DisplayObject, WebGLRenderState, WebGLRenderTarget } from '@flighthq/sdk';
+import type { Bitmap, DisplayObject, GlRenderState, GlRenderTarget } from '@flighthq/sdk';
 import {
-  applyOuterGlowFilterToWebGL,
-  beginWebGLRenderTarget,
+  applyOuterGlowFilterToGl,
+  beginGlRenderTarget,
   BitmapKind,
   createBitmap,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
   createMatrix,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  createWebGLRenderTarget,
-  defaultWebGLBitmapRenderer,
-  destroyWebGLRenderTarget,
-  drawWebGLRenderTargetResult,
-  endWebGLRenderTarget,
+  defaultGlBitmapRenderer,
+  destroyGlRenderTarget,
+  drawGlRenderTargetResult,
+  endGlRenderTarget,
+  getGlRenderStateRuntime,
   getOrCreateRenderProxy2D,
-  getWebGLRenderStateRuntime,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
   registerRenderer,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -55,10 +55,10 @@ import type { NativeGlowSpec, ParityTarget } from './parity';
 
 export function createParityTarget(width: number, height: number, background: number): ParityTarget {
   const pixelRatio = window.devicePixelRatio || 1;
-  const canvas = createWebGLCanvasElement(width, height, pixelRatio);
+  const canvas = createGlCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = createWebGLRenderState(canvas, {
+  const state = createGlRenderState(canvas, {
     pixelRatio,
     backgroundColor: background,
     // preserveDrawingBuffer so the verifier can read the frame back after rendering.
@@ -67,8 +67,8 @@ export function createParityTarget(width: number, height: number, background: nu
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing store.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  registerDefaultWebGLMaterial(state);
-  registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
+  registerDefaultGlMaterial(state);
+  registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 
   registerFunctionalTarget({
     kind: 'webgl',
@@ -87,7 +87,7 @@ export function createParityTarget(width: number, height: number, background: nu
     width,
     height,
     scale: pixelRatio,
-    // No CSS-filter path on WebGL — the glow is the GPU shader chain below.
+    // No CSS-filter path on Gl — the glow is the GPU shader chain below.
     applyNativeGlow(): void {},
     drawNativeGlow(spec: Readonly<NativeGlowSpec>): void {
       pending.push({ ...spec });
@@ -102,16 +102,16 @@ export function createParityTarget(width: number, height: number, background: nu
 }
 
 // Renders `source` into `target` filling its 0..size viewport, via an identity render transform.
-function renderSourceIntoTarget(state: WebGLRenderState, source: Bitmap, target: WebGLRenderTarget): void {
-  beginWebGLRenderTarget(state, target, _identity);
+function renderSourceIntoTarget(state: GlRenderState, source: Bitmap, target: GlRenderTarget): void {
+  beginGlRenderTarget(state, target, _identity);
   state.gl.clearColor(0, 0, 0, 0);
   state.gl.clear(state.gl.COLOR_BUFFER_BIT);
   prepareDisplayObjectRender(state, source);
-  renderWebGLDisplayObject(state, source);
-  endWebGLRenderTarget(state);
+  renderGlDisplayObject(state, source);
+  endGlRenderTarget(state);
 }
 
-function compositeNativeGlow(state: WebGLRenderState, spec: Readonly<NativeGlowSpec>): void {
+function compositeNativeGlow(state: GlRenderState, spec: Readonly<NativeGlowSpec>): void {
   const size = spec.tile;
 
   // The source bitmap drawn at origin, sized to one logical tile.
@@ -121,18 +121,18 @@ function compositeNativeGlow(state: WebGLRenderState, spec: Readonly<NativeGlowS
   sourceBitmap.x = 0;
   sourceBitmap.y = 0;
 
-  const sourceTarget = createWebGLRenderTarget(state, { width: size, height: size });
-  const destTarget = createWebGLRenderTarget(state, { width: size, height: size });
-  // applyOuterGlowFilterToWebGL needs three scratch targets: tint mask, blurred glow, blur ping-pong temp.
-  const maskTarget = createWebGLRenderTarget(state, { width: size, height: size });
-  const blurredTarget = createWebGLRenderTarget(state, { width: size, height: size });
-  const blurTempTarget = createWebGLRenderTarget(state, { width: size, height: size });
+  const sourceTarget = createGlRenderTarget(state, { width: size, height: size });
+  const destTarget = createGlRenderTarget(state, { width: size, height: size });
+  // applyOuterGlowFilterToGl needs three scratch targets: tint mask, blurred glow, blur ping-pong temp.
+  const maskTarget = createGlRenderTarget(state, { width: size, height: size });
+  const blurredTarget = createGlRenderTarget(state, { width: size, height: size });
+  const blurTempTarget = createGlRenderTarget(state, { width: size, height: size });
 
   renderSourceIntoTarget(state, sourceBitmap, sourceTarget);
 
-  // The real WebGL outer glow: tint the silhouette, box-blur it, blit the glow into dest, then composite
+  // The real Gl outer glow: tint the silhouette, box-blur it, blit the glow into dest, then composite
   // the source on top — all into destTarget. Matches the CPU/surface reference (glow under, source over).
-  applyOuterGlowFilterToWebGL(state, sourceTarget, destTarget, [maskTarget, blurredTarget, blurTempTarget], {
+  applyOuterGlowFilterToGl(state, sourceTarget, destTarget, [maskTarget, blurredTarget, blurTempTarget], {
     color: spec.filter.color,
     alpha: spec.filter.alpha,
     blurX: spec.filter.blurX,
@@ -158,22 +158,22 @@ function compositeNativeGlow(state: WebGLRenderState, spec: Readonly<NativeGlowS
   const proxy = getOrCreateRenderProxy2D(state, placement);
 
   // dest is composited as a (0,0,size,size) quad through proxy.transform2D; identity inner transform,
-  // exactly like the render-cache composite (drawWebGLRenderCache passes _identity).
-  drawWebGLRenderTargetResult(state, proxy, destTarget, _identity);
+  // exactly like the render-cache composite (drawGlRenderCache passes _identity).
+  drawGlRenderTargetResult(state, proxy, destTarget, _identity);
 
   // The render targets own framebuffers/textures the GC will not free.
-  destroyWebGLRenderTarget(state, sourceTarget);
-  destroyWebGLRenderTarget(state, destTarget);
-  destroyWebGLRenderTarget(state, maskTarget);
-  destroyWebGLRenderTarget(state, blurredTarget);
-  destroyWebGLRenderTarget(state, blurTempTarget);
+  destroyGlRenderTarget(state, sourceTarget);
+  destroyGlRenderTarget(state, destTarget);
+  destroyGlRenderTarget(state, maskTarget);
+  destroyGlRenderTarget(state, blurredTarget);
+  destroyGlRenderTarget(state, blurTempTarget);
 }
 
 // Rebinds the default (screen) framebuffer and the full-canvas viewport, and resets the runtime's cached
 // framebuffer/viewport so subsequent draws target the screen. Mirrors the state the screen walk runs
 // under (framebuffer null, renderTargetViewport null → viewport = canvas).
-function bindScreenFramebuffer(state: WebGLRenderState): void {
-  const runtime = getWebGLRenderStateRuntime(state);
+function bindScreenFramebuffer(state: GlRenderState): void {
+  const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, state.canvas.width, state.canvas.height);
@@ -184,10 +184,10 @@ function bindScreenFramebuffer(state: WebGLRenderState): void {
   runtime.currentProgram = null;
 }
 
-function renderParity(state: WebGLRenderState, root: DisplayObject): void {
+function renderParity(state: GlRenderState, root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
 }
 
 const _identity = createMatrix();

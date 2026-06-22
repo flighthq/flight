@@ -3,14 +3,14 @@
 //
 // Parity-suite sibling of filter-blur-parity. A filter has a CPU reference impl
 // (applyPixelateFilterToSurface) and native per-backend impls. Pixelate has NO CSS equivalent, so the
-// only native path is WebGL's single-pass shader (applyPixelateFilterToWebGL); on Canvas/DOM the
+// only native path is Gl's single-pass shader (applyPixelateFilterToGl); on Canvas/DOM the
 // "native" tile is the surface result itself (parity holds by construction). This test draws two tiles:
 //   REFERENCE tile — the source pixelated on the CPU via applyPixelateFilterToSurface, blitted as a
 //     plain bitmap. Identical bytes on every backend; it is the oracle's ground truth.
-//   NATIVE tile    — on WebGL, the same source pushed through the real GPU pixelate shader, composited
+//   NATIVE tile    — on Gl, the same source pushed through the real GPU pixelate shader, composited
 //     over the scene; on Canvas/DOM, the reference bytes again (no native pixelate path there).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader
 // pixelate ≈ the CPU pixelate. It also asserts the native tile is not blank and is actually pixelated
 // (adjacent blocks step to different flat colors), so a silently no-op native path fails the test.
 //
@@ -29,7 +29,7 @@ import {
   createSurfaceFromCanvas,
   createSurfaceRegion,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
   setSurfacePixel,
 } from '@flighthq/sdk';
 
@@ -38,7 +38,7 @@ import { createParityTarget } from './render';
 const TILE = 256;
 const REFERENCE_X = 120;
 const NATIVE_X = 424;
-// Block edge in logical pixels. Must match the surface reference's blockSize AND the WebGL pass's
+// Block edge in logical pixels. Must match the surface reference's blockSize AND the Gl pass's
 // blockSize, or the two tiles cannot align block-for-block.
 const BLOCK = 16;
 
@@ -74,7 +74,7 @@ const root = createDisplayContainer();
 addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 
 // NATIVE tile — the CPU-pixelated bytes again as the base bitmap. On Canvas/DOM that IS the native tile
-// (no native pixelate path); on WebGL the GPU pixelate composite overdraws it with the real shader
+// (no native pixelate path); on Gl the GPU pixelate composite overdraws it with the real shader
 // result at the same position, so the oracle reads the shader output there.
 addNodeChild(root, makeBitmap(referenceData, NATIVE_X, TOP));
 
@@ -87,7 +87,7 @@ target.render(root);
 // TILE×TILE, and compares it to the CPU reference.
 //
 // MISMATCH_FRACTION/CHANNEL_TOLERANCE calibrated for block pixelation. The CPU reference AVERAGES each
-// block; the WebGL shader samples each block's CENTER texel. On a linear gradient those agree closely,
+// block; the Gl shader samples each block's CENTER texel. On a linear gradient those agree closely,
 // but they disagree by a few grey levels along the block boundaries, and the V-flip/texel-grid
 // composite adds a sub-pixel column of misalignment at each of the 16 block seams. That seam band is a
 // minority of the tile, so a moderate fraction with a moderate channel tolerance is the right calibration
@@ -109,7 +109,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the bright right half of the gradient must carry colour, not just the background.
-  const bright = green(getSurfacePixelRGB(nativeTile, TILE - 8, TILE / 2));
+  const bright = green(getSurfacePixelRgb(nativeTile, TILE - 8, TILE / 2));
   if (bright <= 120) {
     throw new Error(`[filter-pixelate-parity:${render()}] native tile blank/dark at right — got green ${bright}`);
   }
@@ -117,9 +117,9 @@ export function assertRender(frame: Readonly<Surface>): void {
   // 2) Actually pixelated: block A and block B flatten to DIFFERENT flat colours. A no-op native path
   // would leave the smooth gradient, where two columns 16px apart differ only slightly anyway, so we
   // also require block A to be internally uniform (its interior samples agree) — the defining behavior.
-  const aLeft = green(getSurfacePixelRGB(nativeTile, BLOCK_A * BLOCK + 2, TILE / 2));
-  const aRight = green(getSurfacePixelRGB(nativeTile, BLOCK_A * BLOCK + 13, TILE / 2));
-  const b = green(getSurfacePixelRGB(nativeTile, BLOCK_B * BLOCK + 7, TILE / 2));
+  const aLeft = green(getSurfacePixelRgb(nativeTile, BLOCK_A * BLOCK + 2, TILE / 2));
+  const aRight = green(getSurfacePixelRgb(nativeTile, BLOCK_A * BLOCK + 13, TILE / 2));
+  const b = green(getSurfacePixelRgb(nativeTile, BLOCK_B * BLOCK + 7, TILE / 2));
   if (Math.abs(aLeft - aRight) > 12) {
     throw new Error(
       `[filter-pixelate-parity:${render()}] native block ${BLOCK_A} not flat — green ${aLeft} vs ${aRight}`,

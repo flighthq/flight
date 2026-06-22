@@ -15,7 +15,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -76,7 +76,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   for (const { qx, qy, rgb } of EXPECT) {
     const px = Math.round((RESULT_X + qx * HALF + HALF / 2) * s);
     const py = Math.round((TOP + qy * HALF + HALF / 2) * s);
-    const got = getSurfacePixelRGB(frame, px, py);
+    const got = getSurfacePixelRgb(frame, px, py);
     if (!channelsClose(got, rgb)) {
       throw new Error(`[filter-color-matrix] quadrant (${qx},${qy}) expected #${hex(rgb)}, got #${hex(got)}`);
     }

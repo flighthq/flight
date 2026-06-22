@@ -20,7 +20,7 @@ import {
 
 // Canvas parity column for the same dither intent as render.webgl.ts.
 // Dither (PASSTHROUGH on Canvas): ordered-Bayer quantization is per-pixel threshold math with no
-// CSS/draw-op equivalent, so the Canvas runner copies the scene through unchanged. The WebGL/WebGPU
+// CSS/draw-op equivalent, so the Canvas runner copies the scene through unchanged. The Gl/Wgpu
 // columns realize the full effect.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);

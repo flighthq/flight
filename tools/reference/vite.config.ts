@@ -118,20 +118,20 @@ function ftRenderModule(renderer: string): string | null {
   }
   if (renderer === 'webgl') {
     return [
-      `import { createWebGLTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};`,
-      `export async function createFunctionalTarget(opts) { return createWebGLTarget(opts); }`,
+      `import { createGlTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};`,
+      `export async function createFunctionalTarget(opts) { return createGlTarget(opts); }`,
     ].join('\n');
   }
   if (renderer === 'dom') {
     return [
-      `import { createDOMTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};`,
-      `export async function createFunctionalTarget(opts) { return createDOMTarget(opts); }`,
+      `import { createDomTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};`,
+      `export async function createFunctionalTarget(opts) { return createDomTarget(opts); }`,
     ].join('\n');
   }
   if (renderer === 'webgpu') {
     return [
-      `import { createWebGPUTarget } from ${JSON.stringify(join(harnessDir, 'webgpu.ts'))};`,
-      `export const createFunctionalTarget = createWebGPUTarget;`,
+      `import { createWgpuTarget } from ${JSON.stringify(join(harnessDir, 'webgpu.ts'))};`,
+      `export const createFunctionalTarget = createWgpuTarget;`,
     ].join('\n');
   }
   return null;
@@ -257,7 +257,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
           // not dev-view behavior, so run it ONLY under capture mode (window.__flightCapture, set by the
           // capture harness). Plain `dev:reference` browsing then never throws a blank-render error. Keyed
           // on the BARE renderer so verify.ts's dom/webgpu branches fire (the prefixed column id would
-          // wrongly run not-blank on DOM and skip the WebGPU read-back the capture harness needs).
+          // wrongly run not-blank on DOM and skip the Wgpu read-back the capture harness needs).
           if (lib === 'flight') {
             return [
               ...head,

@@ -2,31 +2,31 @@
 // Port of DropShadowTest. Shows drop shadow and inner shadow variants.
 // Abstract filter descriptors are created here; each render layer applies them with
 // the strategy that suits its substrate:
-//   - DOM:    element CSS filter (computeDropShadowFilterCSS → setDOMCSSFilter)
+//   - DOM:    element CSS filter (computeDropShadowFilterCss → setDomCssFilter)
 //   - Canvas: baked once into an offscreen render cache via CSS drop-shadow
-//   - WebGL:  offscreen render target + applyDropShadowFilterToWebGL /
-//             applyInnerShadowFilterToWebGL shader passes
-// CSS only covers non-knockout outer variants; inner shadow is WebGL-only.
+//   - Gl:  offscreen render target + applyDropShadowFilterToGl /
+//             applyInnerShadowFilterToGl shader passes
+// CSS only covers non-knockout outer variants; inner shadow is Gl-only.
 import type { DropShadowFilter, InnerShadowFilter } from '@flighthq/filters';
-import { computeDropShadowFilterCSS, createDropShadowFilter, createInnerShadowFilter } from '@flighthq/filters';
-import { applyDropShadowFilterToWebGL, applyInnerShadowFilterToWebGL } from '@flighthq/filters-webgl';
+import { computeDropShadowFilterCss, createDropShadowFilter, createInnerShadowFilter } from '@flighthq/filters';
+import { applyDropShadowFilterToGl, applyInnerShadowFilterToGl } from '@flighthq/filters-gl';
 import type {
   Bitmap,
   CanvasRenderState,
   DisplayObject,
-  DOMRenderState,
+  DomRenderState,
   Matrix,
-  WebGLRenderState,
-  WebGLRenderTarget,
+  GlRenderState,
+  GlRenderTarget,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWebGLRenderTarget,
+  beginGlRenderTarget,
   BitmapKind,
-  clearWebGLRenderTarget,
+  clearGlRenderTarget,
   computeNodeBoundsRectangle,
   computeRenderCacheTransform,
   computeRenderTargetSize,
@@ -38,18 +38,18 @@ import {
   createRenderCache,
   createRichText,
   createShape,
-  createWebGLRenderTarget,
-  drawWebGLRenderTargetResult,
-  enableDOMCSSFilterSupport,
-  endWebGLRenderTarget,
+  createGlRenderTarget,
+  drawGlRenderTargetResult,
+  enableDomCssFilterSupport,
+  endGlRenderTarget,
   ensureCanvasRenderCacheTarget,
   getRenderProxy2D,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   RichTextKind,
-  setDOMCSSFilter,
+  setDomCssFilter,
   ShapeKind,
   useRenderCache,
 } from '@flighthq/sdk';
@@ -77,7 +77,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
 
 const IMAGE_SCALE = 3;
 const iw = image.width * IMAGE_SCALE;
@@ -133,9 +133,9 @@ if (target.kind === 'canvas') {
   applyCanvasDropShadow(target.state, filtered);
   target.render(root);
 } else if (target.kind === 'webgl') {
-  renderWebGLDropShadow(target.state, filtered, root);
+  renderGlDropShadow(target.state, filtered, root);
 } else if (target.kind === 'dom') {
-  applyDOMDropShadow(target.state, filtered);
+  applyDomDropShadow(target.state, filtered);
   target.render(root);
 } else {
   target.render(root);
@@ -144,7 +144,7 @@ if (target.kind === 'canvas') {
 function applyCanvasDropShadow(state: CanvasRenderState, list: FilterEntry[]): void {
   for (const { node, filter } of list) {
     if (filter.type === 'innerShadow') continue;
-    const css = computeDropShadowFilterCSS(filter);
+    const css = computeDropShadowFilterCss(filter);
     if (css === null) continue;
     const img = (node as Bitmap).data.image;
     if (img === null || img.source === null) continue;
@@ -167,14 +167,14 @@ function applyCanvasDropShadow(state: CanvasRenderState, list: FilterEntry[]): v
 type ShadowEntry = {
   node: DisplayObject;
   filter: DropShadowFilter | InnerShadowFilter;
-  source: WebGLRenderTarget;
-  dest: WebGLRenderTarget;
-  scratch: [WebGLRenderTarget, WebGLRenderTarget, WebGLRenderTarget];
+  source: GlRenderTarget;
+  dest: GlRenderTarget;
+  scratch: [GlRenderTarget, GlRenderTarget, GlRenderTarget];
   cacheTransform: Matrix;
   sceneTransform: Matrix;
 };
 
-function renderWebGLDropShadow(state: WebGLRenderState, list: FilterEntry[], root: DisplayObject): void {
+function renderGlDropShadow(state: GlRenderState, list: FilterEntry[], root: DisplayObject): void {
   const entries: ShadowEntry[] = [];
   for (const { node, filter } of list) {
     computeNodeBoundsRectangle(_bounds, node, node);
@@ -183,12 +183,12 @@ function renderWebGLDropShadow(state: WebGLRenderState, list: FilterEntry[], roo
     entries.push({
       node,
       filter,
-      source: createWebGLRenderTarget(state, { width: w, height: h }),
-      dest: createWebGLRenderTarget(state, { width: w, height: h }),
+      source: createGlRenderTarget(state, { width: w, height: h }),
+      dest: createGlRenderTarget(state, { width: w, height: h }),
       scratch: [
-        createWebGLRenderTarget(state, { width: w, height: h }),
-        createWebGLRenderTarget(state, { width: w, height: h }),
-        createWebGLRenderTarget(state, { width: w, height: h }),
+        createGlRenderTarget(state, { width: w, height: h }),
+        createGlRenderTarget(state, { width: w, height: h }),
+        createGlRenderTarget(state, { width: w, height: h }),
       ],
       cacheTransform: createMatrix(),
       sceneTransform: createMatrix(),
@@ -210,15 +210,15 @@ function renderWebGLDropShadow(state: WebGLRenderState, list: FilterEntry[], roo
     const renderProxy = getRenderProxy2D(state, node);
     if (renderProxy === undefined) continue;
     setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
-    beginWebGLRenderTarget(state, source, _identity);
-    clearWebGLRenderTarget(state, source);
-    renderWebGLDisplayObject(state, node);
+    beginGlRenderTarget(state, source, _identity);
+    clearGlRenderTarget(state, source);
+    renderGlDisplayObject(state, node);
     if (filter.type === 'innerShadow') {
-      applyInnerShadowFilterToWebGL(state, source, dest, scratch, filter);
+      applyInnerShadowFilterToGl(state, source, dest, scratch, filter);
     } else {
-      applyDropShadowFilterToWebGL(state, source, dest, scratch, filter);
+      applyDropShadowFilterToGl(state, source, dest, scratch, filter);
     }
-    endWebGLRenderTarget(state);
+    endGlRenderTarget(state);
   }
 
   for (const entry of entries) {
@@ -226,21 +226,21 @@ function renderWebGLDropShadow(state: WebGLRenderState, list: FilterEntry[], roo
     if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
   }
 
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
 
   for (const entry of entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
-    drawWebGLRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
+    drawGlRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
   }
 }
 
-function applyDOMDropShadow(state: DOMRenderState, list: FilterEntry[]): void {
-  enableDOMCSSFilterSupport(state);
+function applyDomDropShadow(state: DomRenderState, list: FilterEntry[]): void {
+  enableDomCssFilterSupport(state);
   for (const { node, filter } of list) {
     if (filter.type === 'innerShadow') continue;
-    setDOMCSSFilter(state, node, computeDropShadowFilterCSS(filter));
+    setDomCssFilter(state, node, computeDropShadowFilterCss(filter));
   }
 }
 

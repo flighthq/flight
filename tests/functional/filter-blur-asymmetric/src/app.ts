@@ -16,7 +16,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -102,7 +102,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 }
 
 function sample(frame: Readonly<Surface>, x: number, y: number, s: number): number {
-  return getSurfacePixelRGB(frame, Math.round(x * s), Math.round(y * s));
+  return getSurfacePixelRgb(frame, Math.round(x * s), Math.round(y * s));
 }
 
 function luma(rgb: number): number {

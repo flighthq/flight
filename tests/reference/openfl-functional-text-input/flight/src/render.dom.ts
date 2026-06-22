@@ -1,12 +1,12 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createDOMRenderState,
-  defaultDOMRichTextRenderer,
-  enableDOMTextInput,
+  createDomRenderState,
+  defaultDomRichTextRenderer,
+  enableDomTextInput,
   prepareDisplayObjectRender,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
+  renderDomBackground,
+  renderDomDisplayObject,
   RichTextKind,
 } from '@flighthq/sdk';
 
@@ -16,16 +16,16 @@ container.style.width = '800px';
 container.style.height = '300px';
 document.body.appendChild(container);
 
-export const state = createDOMRenderState(container, { backgroundColor: 0xffffffff });
-registerRenderer(state, RichTextKind, defaultDOMRichTextRenderer);
+export const state = createDomRenderState(container, { backgroundColor: 0xffffffff });
+registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
 // Opt the RichText renderer into appending the editable-input caret/selection overlay.
-enableDOMTextInput();
+enableDomTextInput();
 export const scale = 1;
 export const width = 800;
 export const height = 300;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }

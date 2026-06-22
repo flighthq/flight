@@ -45,7 +45,7 @@ import {
 const WIDTH = 300;
 const HEIGHT = 190;
 
-interface Scene {
+interface Viewport {
   // Renderable root — a display object tree, or a sprite-graph node (quad batch / emitter) when
   // `sprite` is set.
   root: DisplayObject;
@@ -61,10 +61,10 @@ interface Example {
   // Highlighted HTML of the snippet shown on the page — the same calls build() makes, so the code a
   // reader sees is the code that produced the pixels beside it.
   code: string;
-  build: (pixelRatio: number) => Scene;
+  build: (pixelRatio: number) => Viewport;
 }
 
-// Mount the tabbed "live code" panel: one Canvas render state (no extra WebGL context), and tabs that
+// Mount the tabbed "live code" panel: one Canvas render state (no extra Gl context), and tabs that
 // swap both the rendered scene and the snippet shown beside it. Each tab is a small, honest dogfood of
 // a different corner of the API — shapes, tweens, the scene graph, quad batching, and particles.
 export function startHeroDemo(): void {
@@ -88,7 +88,7 @@ export function startHeroDemo(): void {
   registerRenderer(state, ParticleEmitterKind, defaultCanvasParticleEmitterRenderer);
 
   const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.demo-tab'));
-  let scene: Scene = EXAMPLES[0].build(pixelRatio);
+  let scene: Viewport = EXAMPLES[0].build(pixelRatio);
   sourceEl.innerHTML = EXAMPLES[0].code;
 
   function select(example: Example): void {

@@ -1,18 +1,18 @@
-import type { DisplayObject, WebGLRenderEffectPipeline } from '@flighthq/sdk';
+import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
-  beginWebGLRenderEffectPipeline,
-  createWebGLCanvasElement,
-  createWebGLRenderEffectPipeline,
-  createWebGLRenderState,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  endWebGLRenderEffectPipeline,
+  beginGlRenderEffectPipeline,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
   registerRenderer,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -20,19 +20,19 @@ import {
 // offscreen multisampled target that resolves to the canvas. With no effect stages, this isolates
 // MSAA alone, so the rotated shape's edges should be smooth (the jaggies that started this work).
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   pixelRatio,
   backgroundColor: 0x101014ff,
 });
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerDefaultWebGLMaterial(state);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerDefaultGlMaterial(state);
 
-const pipeline: WebGLRenderEffectPipeline = createWebGLRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -40,8 +40,8 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  beginWebGLRenderEffectPipeline(state, pipeline);
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-  endWebGLRenderEffectPipeline(state, pipeline, []);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  endGlRenderEffectPipeline(state, pipeline, []);
 }

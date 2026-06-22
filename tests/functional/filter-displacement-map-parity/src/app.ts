@@ -1,16 +1,16 @@
-// filter-displacement-map-parity — proves the WebGL NATIVE displacement-map shader matches the canonical
+// filter-displacement-map-parity — proves the Gl NATIVE displacement-map shader matches the canonical
 // surface (CPU) displacement reference.
 //
 // DisplacementMapFilter has a CPU reference impl (applyDisplacementMapFilterToSurface) and a single-pass
-// WebGL shader impl (applyDisplacementMapFilterToWebGL) — but NO CSS form, so unlike the blur suite there
+// Gl shader impl (applyDisplacementMapFilterToGl) — but NO CSS form, so unlike the blur suite there
 // is no DOM/Canvas native filter. This test draws two tiles side by side:
 //   REFERENCE tile — the source warped on the CPU via applyDisplacementMapFilterToSurface, blitted as a
 //     plain bitmap. Identical bytes on every backend; it is the oracle's ground truth.
-//   NATIVE tile    — on WebGL, the same source pushed through the real displacement shader path. On
+//   NATIVE tile    — on Gl, the same source pushed through the real displacement shader path. On
 //     Canvas/DOM there is no native filter, so the NATIVE tile is the surface result drawn as a plain
-//     bitmap (parity holds by construction; WebGL is the meaningful comparison).
+//     bitmap (parity holds by construction; Gl is the meaningful comparison).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and asserts
-// the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader warp ≈ the CPU
+// the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader warp ≈ the CPU
 // warp. It also asserts the native tile is not blank and was actually displaced (the line moved off its
 // original column), so a silently no-op native path fails the test.
 //
@@ -30,7 +30,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -81,7 +81,7 @@ const root = createDisplayContainer();
 addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 
 // NATIVE tile — on Canvas/DOM there is no native displacement filter, so the native tile is the same
-// CPU-warped bytes drawn as a plain bitmap (parity by construction). On WebGL, drawNativeDisplacement runs
+// CPU-warped bytes drawn as a plain bitmap (parity by construction). On Gl, drawNativeDisplacement runs
 // the real GPU shader and composites its result over this tile region instead.
 addNodeChild(root, makeBitmap(referenceData, NATIVE_X, TOP));
 
@@ -120,14 +120,14 @@ export function assertRender(frame: Readonly<Surface>): void {
   // 1) Actually displaced: the white line moved off its original column (now black) and onto x=116 (left
   // RED-255 region, +SHIFT read) and x=140 (right RED-0 region, −SHIFT read). A no-op native path would
   // leave the line on column 128.
-  const original = green(getSurfacePixelRGB(nativeTile, LINE_X, ROW));
+  const original = green(getSurfacePixelRgb(nativeTile, LINE_X, ROW));
   if (original > 120) {
     throw new Error(
       `[filter-displacement-map-parity:${render()}] native line not displaced — original column ${LINE_X} still bright (green ${original})`,
     );
   }
-  const leftShifted = green(getSurfacePixelRGB(nativeTile, LINE_X - SHIFT, ROW));
-  const rightShifted = green(getSurfacePixelRGB(nativeTile, LINE_X + SHIFT, ROW));
+  const leftShifted = green(getSurfacePixelRgb(nativeTile, LINE_X - SHIFT, ROW));
+  const rightShifted = green(getSurfacePixelRgb(nativeTile, LINE_X + SHIFT, ROW));
   if (leftShifted <= 120 || rightShifted <= 120) {
     throw new Error(
       `[filter-displacement-map-parity:${render()}] native displaced line missing — ` +

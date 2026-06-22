@@ -121,7 +121,7 @@ function referenceColumns(testDir: string): string[] {
 }
 
 export function discoverEntries(tool: Tool, root: string): Entry[] {
-  // The landing page is a single document rendered with Flight (one WebGL canvas), with no
+  // The landing page is a single document rendered with Flight (one Gl canvas), with no
   // per-name or per-renderer routing, so it presents as one fixed entry.
   if (tool === 'site') return [{ name: 'landing', renderers: ['webgl'] }];
 
@@ -151,7 +151,7 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
       if (tool === 'functional' && existsSync(join(testDir, 'src', 'app.ts'))) {
         const pkg = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf8')) as Record<string, unknown>;
         // Matches the vite harness default (tools/functional/vite.config.ts): app.ts tests run on every
-        // backend, webgpu included (the harness routes createFunctionalTarget → createWebGPUTarget).
+        // backend, webgpu included (the harness routes createFunctionalTarget → createWgpuTarget).
         return { name, renderers: (pkg.renderers as string[] | undefined) ?? ['canvas', 'dom', 'webgl', 'webgpu'] };
       }
       return { name, renderers: [] };
@@ -234,7 +234,7 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
 // ---------------------------------------------------------------------------
 
 export async function launchBrowser(options: { captureFrames?: number } = {}) {
-  // Headless Chromium exposes navigator.gpu but withholds a WebGPU adapter on a software-only,
+  // Headless Chromium exposes navigator.gpu but withholds a Wgpu adapter on a software-only,
   // "untrusted" config unless --enable-unsafe-webgpu is set; with it, Dawn falls back to the
   // SwiftShader Vulkan ICD bundled inside Playwright's Chromium (no host GPU / driver needed).
   // --use-webgpu-adapter=swiftshader pins that software adapter so output is identical on a dev
@@ -281,7 +281,7 @@ export async function launchBrowser(options: { captureFrames?: number } = {}) {
     if (frames < 1) return;
     flags.__captureFramesReached = false;
 
-    // Force preserveDrawingBuffer so the halted WebGL frame survives in the buffer for the screenshot
+    // Force preserveDrawingBuffer so the halted Gl frame survives in the buffer for the screenshot
     // (the default clears it once composited, which would shoot blank once the loop stops).
     const realGetContext = HTMLCanvasElement.prototype.getContext as (
       this: HTMLCanvasElement,
@@ -423,7 +423,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
       if (extraWait > 0) await page.waitForTimeout(extraWait);
 
-      // WebGPU is not presentable on the headless/software adapter, so the browser screenshots a blank
+      // Wgpu is not presentable on the headless/software adapter, so the browser screenshots a blank
       // canvas. The functional verifier reads the frame back from the GPU and exposes it as a PNG data
       // URL (window.__ftRenderImage); use that as the screenshot when present. All other renderers (and
       // the examples/landing tools, which do not run the verifier) screenshot the page normally.
@@ -485,7 +485,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         });
         if (errorLog) {
           const detail = (errorLog as { data?: { msg?: string } }).data?.msg ?? 'error logged';
-          // A backend the environment cannot provide (notably WebGPU in headless Chromium, which has
+          // A backend the environment cannot provide (notably Wgpu in headless Chromium, which has
           // no adapter/device) is skipped, not failed — the gate verifies backends where they exist
           // and stays green on machines without them. A real render error (after the device is
           // acquired) does not match this and still fails.

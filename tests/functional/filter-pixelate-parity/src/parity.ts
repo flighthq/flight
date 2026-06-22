@@ -8,8 +8,8 @@
 // Pixelate has NO CSS-filter equivalent, so unlike blur-parity there is no CSS native path:
 //   - DOM / Canvas: there is no native pixelate path. The "native" tile is the surface pixelate result
 //     itself, drawn as the same reference bitmap — parity holds by construction. drawNativePixelate is
-//     a no-op there; the meaningful GPU comparison is WebGL.
-//   - WebGL: the native pixelate is a single-pass shader (applyPixelateFilterToWebGL) into an offscreen
+//     a no-op there; the meaningful GPU comparison is Gl.
+//   - Gl: the native pixelate is a single-pass shader (applyPixelateFilterToGl) into an offscreen
 //     render target, composited onto the screen after the scene. `drawNativePixelate(spec)` runs that
 //     GPU pass; it is a no-op on DOM/Canvas.
 // A backend implements whichever path is real for it and leaves the other a no-op, so app.ts can call
@@ -34,7 +34,7 @@ export interface ParityTarget {
   height: number;
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
-  // Shader backends (WebGL): run the offscreen pixelate pass and composite it at the native tile.
+  // Shader backends (Gl): run the offscreen pixelate pass and composite it at the native tile.
   // No-op on DOM/Canvas (which draw the reference surface as the native tile instead).
   drawNativePixelate?(spec: Readonly<NativePixelateSpec>): void;
   render(root: DisplayObject): void;

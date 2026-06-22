@@ -20,7 +20,7 @@ import {
 
 // Canvas parity column for the same sharpen intent as render.webgl.ts.
 // Sharpen (PASSTHROUGH on Canvas): the unsharp neighbor-tap convolution has no CSS/draw-op
-// equivalent, so the Canvas runner copies the scene through unchanged. The WebGL/WebGPU columns
+// equivalent, so the Canvas runner copies the scene through unchanged. The Gl/Wgpu columns
 // realize the full effect.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);

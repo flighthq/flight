@@ -4,8 +4,8 @@
   "type": "module",
   "dependencies": {
     "@flighthq/filters": "*",
-    "@flighthq/filters-webgl": "*",
-    "@flighthq/filters-webgpu": "*",
+    "@flighthq/filters-gl": "*",
+    "@flighthq/filters-wgpu": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

@@ -1,11 +1,11 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createDOMRenderState,
-  defaultDOMVideoRenderer,
+  createDomRenderState,
+  defaultDomVideoRenderer,
   prepareDisplayObjectRender,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
+  renderDomBackground,
+  renderDomDisplayObject,
   VideoKind,
 } from '@flighthq/sdk';
 
@@ -18,17 +18,17 @@ document.body.style.background = '#000';
 document.body.appendChild(element);
 
 export const container = element;
-export const state = createDOMRenderState(element, {
+export const state = createDomRenderState(element, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x000000ff,
 });
-registerRenderer(state, VideoKind, defaultDOMVideoRenderer);
+registerRenderer(state, VideoKind, defaultDomVideoRenderer);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }
 
 export function setSize(w: number, h: number): void {

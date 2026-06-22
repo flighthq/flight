@@ -2,7 +2,7 @@
 //
 // Sharpen has no CSS-filter form, so there is no native sharpen path on Canvas — drawNativeSharpen is
 // left undefined and app.ts blits the CPU reference bytes as the native tile. Parity holds by
-// construction here; the WebGL backend carries the meaningful shader-vs-CPU comparison. This file just
+// construction here; the Gl backend carries the meaningful shader-vs-CPU comparison. This file just
 // stands up a plain bitmap-drawing canvas state (no CSS filter resolver needed).
 import type { DisplayObject } from '@flighthq/sdk';
 import {

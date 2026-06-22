@@ -2,24 +2,24 @@
 //
 // Native path: the DOM renderer applies a CSS filter via the element's style.filter, so the "native
 // drop shadow" is the source bitmap with a `drop-shadow(...)` CSS filter bound to it.
-// computeDropShadowFilterCSS produces the string (in app.ts); setDOMCSSFilter binds it; the normal
+// computeDropShadowFilterCss produces the string (in app.ts); setDomCssFilter binds it; the normal
 // render emits it. The browser rasterizes the shadow.
 //
 // The DOM backend renders to elements, not a canvas, so the verifier's canvas-readback oracle does NOT
 // run for DOM (snapshotFunctionalRender returns null for a DOM target → assertRender is skipped). DOM
 // parity is therefore best-effort: the not-blank check confirms the element tree was emitted, and the
-// canvas/WebGL oracles carry the precise pixel parity assertion.
+// canvas/Gl oracles carry the precise pixel parity assertion.
 import type { Bitmap, DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  createDOMRenderState,
-  defaultDOMBitmapRenderer,
-  enableDOMCSSFilterSupport,
+  createDomRenderState,
+  defaultDomBitmapRenderer,
+  enableDomCssFilterSupport,
   prepareDisplayObjectRender,
   registerRenderer,
-  renderDOMBackground,
-  renderDOMDisplayObject,
-  setDOMCSSFilter,
+  renderDomBackground,
+  renderDomDisplayObject,
+  setDomCssFilter,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -34,10 +34,10 @@ export function createParityTarget(width: number, height: number, background: nu
   container.style.height = `${height}px`;
   document.body.appendChild(container);
 
-  const state = createDOMRenderState(container, { backgroundColor: background });
+  const state = createDomRenderState(container, { backgroundColor: background });
 
-  registerRenderer(state, BitmapKind, defaultDOMBitmapRenderer);
-  enableDOMCSSFilterSupport(state);
+  registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
+  enableDomCssFilterSupport(state);
 
   registerFunctionalTarget({
     kind: 'dom',
@@ -54,7 +54,7 @@ export function createParityTarget(width: number, height: number, background: nu
     height,
     scale: 1,
     applyNativeDropShadow(node: Bitmap, css: string): void {
-      setDOMCSSFilter(state, node, css);
+      setDomCssFilter(state, node, css);
     },
     render(root: DisplayObject): void {
       renderParity(state, root);
@@ -62,8 +62,8 @@ export function createParityTarget(width: number, height: number, background: nu
   };
 }
 
-function renderParity(state: ReturnType<typeof createDOMRenderState>, root: DisplayObject): void {
+function renderParity(state: ReturnType<typeof createDomRenderState>, root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderDOMBackground(state);
-  renderDOMDisplayObject(state, root);
+  renderDomBackground(state);
+  renderDomDisplayObject(state, root);
 }

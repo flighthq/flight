@@ -199,20 +199,20 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           }
           if (renderer === 'webgl') {
             return [
-              `import { createWebGLTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};`,
-              `export async function createFunctionalTarget(opts) { return createWebGLTarget(opts); }`,
+              `import { createGlTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};`,
+              `export async function createFunctionalTarget(opts) { return createGlTarget(opts); }`,
             ].join('\n');
           }
           if (renderer === 'dom') {
             return [
-              `import { createDOMTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};`,
-              `export async function createFunctionalTarget(opts) { return createDOMTarget(opts); }`,
+              `import { createDomTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};`,
+              `export async function createFunctionalTarget(opts) { return createDomTarget(opts); }`,
             ].join('\n');
           }
           if (renderer === 'webgpu') {
             return [
-              `import { createWebGPUTarget } from ${JSON.stringify(join(harnessDir, 'webgpu.ts'))};`,
-              `export const createFunctionalTarget = createWebGPUTarget;`,
+              `import { createWgpuTarget } from ${JSON.stringify(join(harnessDir, 'webgpu.ts'))};`,
+              `export const createFunctionalTarget = createWgpuTarget;`,
             ].join('\n');
           }
           return null;

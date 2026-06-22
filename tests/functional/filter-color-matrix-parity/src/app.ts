@@ -7,7 +7,7 @@
 //     plain bitmap. Identical bytes on every backend; it is the oracle's ground truth.
 //   NATIVE tile    — the same source pushed through THIS backend's real filter path.
 // Color-matrix has NO CSS form, so on Canvas/DOM the "native" tile is the CPU result itself (parity by
-// construction); WebGL is the meaningful comparison — its single-pass color-matrix shader vs the CPU.
+// construction); Gl is the meaningful comparison — its single-pass color-matrix shader vs the CPU.
 //
 // Color-matrix is a direct per-pixel transform (no compositing, no soft edges), so the shader and the
 // CPU matrix maths agree closely — this is the TIGHTEST parity in the suite, hence a low tolerance. The
@@ -17,7 +17,7 @@
 //
 // app.ts is backend-agnostic: each render.<backend>.ts implements the ParityTarget contract (see
 // ./parity.ts). app.ts calls drawNativeColorMatrix unconditionally — it is a no-op on Canvas/DOM and the
-// real GPU pass on WebGL. It imports createParityTarget from ./render (the local barrel); the functional
+// real GPU pass on Gl. It imports createParityTarget from ./render (the local barrel); the functional
 // vite harness routes ./render to the active backend's render.<renderer>.ts at runtime.
 import { applyColorMatrixFilterToSurface, createColorMatrixFilter } from '@flighthq/filters';
 import type { Surface } from '@flighthq/sdk';
@@ -31,7 +31,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -56,7 +56,7 @@ fillSurfaceRectangle(createSurfaceRegion(source, HALF, HALF, HALF, HALF), 0xffff
 const sourceImage = createImageResourceFromCanvas(surfaceToCanvas(source.data));
 
 // Invert: channel' = 255 − channel; alpha unchanged. 4×5 row-major matrix (OpenFL/Flash order). The
-// same matrix runs on the CPU reference and the WebGL shader, so parity is a direct equality check.
+// same matrix runs on the CPU reference and the Gl shader, so parity is a direct equality check.
 const INVERT = [-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0];
 const filter = createColorMatrixFilter(INVERT);
 
@@ -77,7 +77,7 @@ addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 // NATIVE tile.
 //   Canvas/DOM: no CSS color-matrix exists, so the native tile IS the CPU result bitmap — parity by
 //     construction. We draw the reference bytes again here so the tile is present for the not-blank guard.
-//   WebGL: the source bitmap is drawn here only as a placeholder; drawNativeColorMatrix runs the GPU
+//   Gl: the source bitmap is drawn here only as a placeholder; drawNativeColorMatrix runs the GPU
 //     shader pass and composites the real native result over this position after the scene draws.
 const nativeBitmap = createBitmap();
 nativeBitmap.data.image =
@@ -112,7 +112,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // 1) Not blank: the tile must carry the inverted pattern, not just the background. The top-left
   // quadrant was red (0xff0000) → cyan (0x00ffff), so its green channel must be high.
-  const tl = getSurfacePixelRGB(nativeTile, HALF / 2, HALF / 2);
+  const tl = getSurfacePixelRgb(nativeTile, HALF / 2, HALF / 2);
   if (green(tl) <= 120) {
     throw new Error(
       `[filter-color-matrix-parity:${render()}] native tile blank — top-left green ${green(tl)} (expected cyan)`,
@@ -121,7 +121,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // 2) Actually transformed (not the un-inverted source): the bottom-right quadrant was white
   // (0xffffff) → black (0x000000). A no-op native path would leave it white.
-  const br = getSurfacePixelRGB(nativeTile, HALF + HALF / 2, HALF + HALF / 2);
+  const br = getSurfacePixelRgb(nativeTile, HALF + HALF / 2, HALF + HALF / 2);
   if (green(br) > 80) {
     throw new Error(
       `[filter-color-matrix-parity:${render()}] native filter not applied — bottom-right green ${green(br)} (expected ~0)`,

@@ -1,6 +1,6 @@
 // A bright square masked by a TRIANGULAR (non-rectangular) contour clip, rendered through an HDR
 // (rgba16float) effect pipeline. The contour clip is realized by a stencil pass, whose pipeline must
-// match the effect target's color format — this is the regression test for the WebGPU clip-contour
+// match the effect target's color format — this is the regression test for the Wgpu clip-contour
 // pipeline being keyed on the current color format (otherwise the stencil pipeline, built for the canvas
 // rgba8 format, mismatches the rgba16float scene target and the frame is blank/invalid).
 import {

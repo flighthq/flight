@@ -14,7 +14,7 @@ import {
   createShape,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -41,7 +41,7 @@ appendShapeBeginFill(stageBg, 0x000000);
 appendShapeRectangle(stageBg, 0, 0, W, H);
 addNodeChild(root, stageBg);
 
-const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
 
 const posters = createDisplayContainer();
 

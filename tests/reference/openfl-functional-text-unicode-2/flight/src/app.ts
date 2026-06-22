@@ -6,7 +6,7 @@ import {
   createDisplayContainer,
   createRichText,
   createShape,
-  loadFontFromURL,
+  loadFontFromUrl,
   RichTextKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -18,7 +18,7 @@ const { height, render, width } = await createFunctionalTarget({
   kinds: [RichTextKind],
 });
 
-const unifont = await loadFontFromURL('assets/unifont-8.0.01.ttf', 'Unifont');
+const unifont = await loadFontFromUrl('assets/unifont-8.0.01.ttf', 'Unifont');
 
 const root = createDisplayContainer();
 

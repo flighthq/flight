@@ -2,22 +2,22 @@
 // median.
 //
 // Sibling of filter-blur-parity, for a filter with NO native CSS form. The median has a CPU reference
-// impl (applyMedianFilterToSurface) and one real native impl: the WebGL single-pass shader
-// (applyMedianFilterToWebGL). There is no CSS median, so on Canvas/DOM the "native" tile is the CPU
-// result itself (parity by construction) and WebGL is the meaningful comparison. The test draws two
+// impl (applyMedianFilterToSurface) and one real native impl: the Gl single-pass shader
+// (applyMedianFilterToGl). There is no CSS median, so on Canvas/DOM the "native" tile is the CPU
+// result itself (parity by construction) and Gl is the meaningful comparison. The test draws two
 // tiles side by side:
 //   REFERENCE tile — the source median-filtered on the CPU via applyMedianFilterToSurface, blitted as a
 //     plain bitmap. Identical bytes on every backend; it is the oracle's ground truth.
-//   NATIVE tile    — on WebGL, the same source pushed through the median shader and composited; on
+//   NATIVE tile    — on Gl, the same source pushed through the median shader and composited; on
 //     Canvas/DOM, the same CPU-filtered bytes (no native CSS median exists).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader
 // median ≈ the CPU median. It also asserts the native tile is not blank and that a former salt speck is
 // removed (now blue), so a silently no-op native path fails the test.
 //
 // app.ts is backend-agnostic: each render.<backend>.ts implements the ParityTarget contract
 // (see ./parity.ts) and app.ts calls applyNativeMedian (no-op everywhere) and drawNativeMedian (the GPU
-// pass on WebGL, a no-op on Canvas/DOM) unconditionally. It imports createParityTarget from ./render
+// pass on Gl, a no-op on Canvas/DOM) unconditionally. It imports createParityTarget from ./render
 // (the local barrel); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
 import { applyMedianFilterToSurface, createMedianFilter } from '@flighthq/filters';
@@ -31,7 +31,7 @@ import {
   createSurfaceFromCanvas,
   createSurfaceRegion,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
   setSurfacePixel,
 } from '@flighthq/sdk';
 
@@ -40,7 +40,7 @@ import { createParityTarget } from './render';
 const TILE = 256;
 const REFERENCE_X = 120;
 const NATIVE_X = 424;
-// Median radius 2 (a 5×5 neighborhood) — the WebGL shader's maximum and the surface reference's value.
+// Median radius 2 (a 5×5 neighborhood) — the Gl shader's maximum and the surface reference's value.
 // A 5×5 median is dominated by the surrounding blue field, so each isolated red speck is replaced by blue.
 const RADIUS = 2;
 
@@ -80,8 +80,8 @@ addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 
 // NATIVE tile — the median the native way for this backend.
 //   Canvas/DOM: no native CSS median exists, so draw the CPU result bitmap as the native tile too
-//     (parity holds by construction; WebGL is the meaningful comparison).
-//   WebGL: applyNativeMedian is a no-op; drawNativeMedian runs the GPU pass and composites it over the
+//     (parity holds by construction; Gl is the meaningful comparison).
+//   Gl: applyNativeMedian is a no-op; drawNativeMedian runs the GPU pass and composites it over the
 //     placeholder tile below.
 const nativeBitmap = createBitmap();
 nativeBitmap.data.image =
@@ -116,7 +116,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the tile must carry the blue field, not just the background.
-  const centre = getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2);
+  const centre = getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2);
   if (blue(centre) <= 120) {
     throw new Error(`[filter-median-parity:${render()}] native tile blank/dark at centre — got blue ${blue(centre)}`);
   }
@@ -124,7 +124,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // 2) Actually filtered: a former salt speck is now blue (the median removed the red), not the source's
   //    isolated red pixel. A no-op native path would leave it red (high red, low blue).
   const speck = SPECKS[2]; // (128, 128)
-  const speckRgb = getSurfacePixelRGB(nativeTile, speck.x, speck.y);
+  const speckRgb = getSurfacePixelRgb(nativeTile, speck.x, speck.y);
   if (!isBlue(speckRgb)) {
     throw new Error(
       `[filter-median-parity:${render()}] former speck (${speck.x},${speck.y}) not filtered — ` +

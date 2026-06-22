@@ -17,7 +17,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -111,7 +111,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   const shadowPx = Math.round((RESULT_X + SHADOW_X) * s);
   const shadowPy = Math.round((TOP + SHADOW_Y) * s);
-  const shadow = getSurfacePixelRGB(frame, shadowPx, shadowPy);
+  const shadow = getSurfacePixelRgb(frame, shadowPx, shadowPy);
   if (!channelsClose(shadow, SHADOW_RGB, 40)) {
     throw new Error(
       `[filter-drop-shadow-knockout] expected red shadow #${hex(SHADOW_RGB)} down-right of the square, got #${hex(shadow)}`,
@@ -121,7 +121,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // The square's own footprint must NOT be the white source: knockout omits the source object.
   const squarePx = Math.round((RESULT_X + SQUARE_CENTER_X) * s);
   const squarePy = Math.round((TOP + SQUARE_CENTER_Y) * s);
-  const square = getSurfacePixelRGB(frame, squarePx, squarePy);
+  const square = getSurfacePixelRgb(frame, squarePx, squarePy);
   if (channelsClose(square, 0xffffff, 32)) {
     throw new Error(`[filter-drop-shadow-knockout] square area should be knocked out, but read white #${hex(square)}`);
   }

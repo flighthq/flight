@@ -9,8 +9,8 @@
 //   - DOM / Canvas: the native glow is a CSS drop-shadow filter string bound to a scene node; the
 //     normal render draws it. `applyNativeGlow(node, filter)` binds the filter; the node must already
 //     be in `root`.
-//   - WebGL: the native glow is a tint+box-blur shader chain into offscreen render targets, with the
-//     source composited on top — applyOuterGlowFilterToWebGL already produces the finished glow+source
+//   - Gl: the native glow is a tint+box-blur shader chain into offscreen render targets, with the
+//     source composited on top — applyOuterGlowFilterToGl already produces the finished glow+source
 //     in `dest`. `drawNativeGlow(spec)` runs that GPU pass and composites it; it is a no-op on DOM/Canvas.
 // A backend implements whichever path is real for it and leaves the other a no-op, so app.ts can call
 // both unconditionally.
@@ -35,9 +35,9 @@ export interface ParityTarget {
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
   // CSS-filter backends (DOM/Canvas): bind the native glow to a scene node drawn by the normal render.
-  // No-op on WebGL. `node` must already be attached under the root passed to render().
+  // No-op on Gl. `node` must already be attached under the root passed to render().
   applyNativeGlow(node: Bitmap, filter: Readonly<OuterGlowFilter>): void;
-  // Shader backends (WebGL): run the offscreen glow chain and composite it at the native tile.
+  // Shader backends (Gl): run the offscreen glow chain and composite it at the native tile.
   // No-op on DOM/Canvas. Called after applyNativeGlow, immediately before/around render().
   drawNativeGlow?(spec: Readonly<NativeGlowSpec>): void;
   render(root: DisplayObject): void;

@@ -1,4 +1,4 @@
-// Pure WebGL2 context mock — no DOM dependency. Safe to import in both
+// Pure Gl2 context mock — no DOM dependency. Safe to import in both
 // node and jsdom test environments. The webgl2Mock.ts module imports this
 // and additionally patches HTMLCanvasElement for jsdom environments.
 
@@ -260,7 +260,7 @@ const GL_METHODS = [
 ];
 
 /** Creates a fresh WebGL2RenderingContext mock with vi.fn() stubs for all methods. */
-export function makeWebGL2Context(): WebGL2RenderingContext {
+export function makeGl2Context(): WebGL2RenderingContext {
   const ctx: Record<string, unknown> = { ...GL_CONSTANTS };
   for (const name of GL_METHODS) {
     ctx[name] = vi.fn();

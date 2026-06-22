@@ -1,36 +1,36 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
+  createGlCanvasElement,
+  createGlRenderState,
   createMatrix,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  defaultWebGLBitmapRenderer,
-  defaultWebGLRichTextRenderer,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  enableWebGLClipSupport,
-  enableWebGLRenderCache,
+  defaultGlBitmapRenderer,
+  defaultGlRichTextRenderer,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  enableGlClipSupport,
+  enableGlRenderCache,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
   registerRenderer,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   RichTextKind,
   ShapeKind,
 } from '@flighthq/sdk';
 
-import type { FunctionalTargetOptions, FunctionalWebGLTarget } from './target';
+import type { FunctionalGlTarget, FunctionalTargetOptions } from './target';
 import { registerFunctionalTarget } from './verify';
 
-export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): FunctionalWebGLTarget {
+export function createGlTarget(options: Readonly<FunctionalTargetOptions>): FunctionalGlTarget {
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createWebGLCanvasElement(width, height, pixelRatio);
+  const canvas = createGlCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = createWebGLRenderState(canvas, {
+  const state = createGlRenderState(canvas, {
     pixelRatio,
     backgroundColor: options.background,
     // preserveDrawingBuffer so the verifier (and the differential/fingerprint runner) can read the
@@ -43,20 +43,20 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  registerDefaultWebGLMaterial(state);
+  registerDefaultGlMaterial(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-      registerWebGLShapeCommands(defaultWebGLShapeCommands);
+      registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+      registerGlShapeCommands(defaultGlShapeCommands);
     } else if (kind === BitmapKind) {
-      registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
+      registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, defaultWebGLRichTextRenderer);
+      registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
     }
   }
 
-  if (options.clip) enableWebGLClipSupport(state);
-  if (options.cache) enableWebGLRenderCache(state);
+  if (options.clip) enableGlClipSupport(state);
+  if (options.cache) enableGlRenderCache(state);
 
   return registerFunctionalTarget({
     kind: 'webgl',
@@ -66,8 +66,8 @@ export function createWebGLTarget(options: Readonly<FunctionalTargetOptions>): F
     scale: pixelRatio,
     render(root: DisplayObject): void {
       if (!prepareDisplayObjectRender(state, root)) return;
-      renderWebGLBackground(state);
-      renderWebGLDisplayObject(state, root);
+      renderGlBackground(state);
+      renderGlDisplayObject(state, root);
     },
   });
 }

@@ -2,17 +2,17 @@
 // canonical surface (CPU) gradient bevel.
 //
 // A filter has a CPU reference impl (applyGradientBevelFilterToSurface) and native per-backend impls.
-// Unlike blur there is NO CSS gradient-bevel, so only WebGL has a meaningful native shader path; on
+// Unlike blur there is NO CSS gradient-bevel, so only Gl has a meaningful native shader path; on
 // Canvas/DOM the "native" tile is the same composited surface bitmap as the reference tile and parity
 // holds by construction. This test draws two tiles side by side:
 //   REFERENCE tile — the source bevelled on the CPU via applyGradientBevelFilterToSurface, the mask
 //     composited over the source, blitted as a plain bitmap. Identical bytes on every backend; it is
 //     the oracle's ground truth.
-//   NATIVE tile    — the same source pushed through THIS backend's real filter path. On WebGL: the
+//   NATIVE tile    — the same source pushed through THIS backend's real filter path. On Gl: the
 //     source bitmap drawn at the tile, with the gradient-bevel SHADER mask composited over it. On
 //     Canvas/DOM: the composited reference bitmap (no native CSS bevel exists).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader
 // bevel ≈ the CPU bevel. It also asserts the native tile is not blank and carries the tinted bevel
 // edges, so a silently no-op native path fails the test.
 //
@@ -32,7 +32,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -100,7 +100,7 @@ addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 // NATIVE tile — the source bitmap at the native position.
 //   Canvas/DOM: this IS the composited reference (no native CSS bevel); we blit the reference bytes so
 //     the native tile equals the reference by construction.
-//   WebGL: we blit the raw SOURCE bytes here; drawNativeGradientBevel composites the shader bevel mask
+//   Gl: we blit the raw SOURCE bytes here; drawNativeGradientBevel composites the shader bevel mask
 //     over it, reproducing the same source + mask composite the reference does.
 const nativeIsShader = target.kind === 'webgl';
 addNodeChild(root, makeBitmap(nativeIsShader ? source.data : referenceData, NATIVE_X, TOP));
@@ -135,7 +135,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the centre of the square must carry the opaque gray fill, not just the background.
-  const centreGreen = green(getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2));
+  const centreGreen = green(getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2));
   if (centreGreen <= 40) {
     throw new Error(
       `[filter-gradient-bevel-parity:${render()}] native tile blank/dark at centre — got green ${centreGreen}`,
@@ -223,7 +223,7 @@ function scanReddest(tile: Readonly<Surface>, cx: number, cy: number): number {
   let best = 0;
   let bestScore = -Infinity;
   for (let d = -6; d <= 6; d++) {
-    const rgb = getSurfacePixelRGB(tile, cx + d, cy + d);
+    const rgb = getSurfacePixelRgb(tile, cx + d, cy + d);
     const score = ((rgb >> 16) & 255) - (rgb & 255);
     if (score > bestScore) {
       bestScore = score;
@@ -237,7 +237,7 @@ function scanBluest(tile: Readonly<Surface>, cx: number, cy: number): number {
   let best = 0;
   let bestScore = -Infinity;
   for (let d = -6; d <= 6; d++) {
-    const rgb = getSurfacePixelRGB(tile, cx + d, cy + d);
+    const rgb = getSurfacePixelRgb(tile, cx + d, cy + d);
     const score = (rgb & 255) - ((rgb >> 16) & 255);
     if (score > bestScore) {
       bestScore = score;

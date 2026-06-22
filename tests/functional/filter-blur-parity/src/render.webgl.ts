@@ -1,43 +1,43 @@
-// WebGL backend of the blur-parity test.
+// Gl backend of the blur-parity test.
 //
-// Native path: the real WebGL blur is a separable multi-pass Gaussian shader run over offscreen render
-// targets (applyGaussianBlurFilterToWebGL), then composited onto the screen as a positioned quad. This
-// mirrors the engine's own render-cache flow (packages/render-webgl/src/webglCache.ts): render content
-// into a target, run the GPU passes, composite the result via drawWebGLRenderTargetResult.
+// Native path: the real Gl blur is a separable multi-pass Gaussian shader run over offscreen render
+// targets (applyGaussianBlurFilterToGl), then composited onto the screen as a positioned quad. This
+// mirrors the engine's own render-cache flow (packages/displayobject-gl/src/webglCache.ts): render content
+// into a target, run the GPU passes, composite the result via drawGlRenderTargetResult.
 //
 // Flow per drawNativeBlur():
-//   1. Render the source bitmap into a TILE-sized `source` target (beginWebGLRenderTarget with an
+//   1. Render the source bitmap into a TILE-sized `source` target (beginGlRenderTarget with an
 //      identity render transform → the origin-placed bitmap fills the target's 0..TILE viewport).
-//   2. applyGaussianBlurFilterToWebGL(state, source, dest, temp, {blurX, blurY}) — the shader blur.
+//   2. applyGaussianBlurFilterToGl(state, source, dest, temp, {blurX, blurY}) — the shader blur.
 //   3. Prepare a placement bitmap node at the native tile position to harvest its world×device
-//      transform, then drawWebGLRenderTargetResult(state, proxy, dest, identity) to composite the
+//      transform, then drawGlRenderTargetResult(state, proxy, dest, identity) to composite the
 //      TILE×TILE result at that position (the composite V-flips, matching how step 1 wrote the target —
 //      same convention the render cache relies on, so the result lands upright).
 //
 // Targets are sized in LOGICAL pixels (TILE), not device pixels, so the GPU blur runs at the same
 // resolution the CPU/surface reference blurs at; the composite upscales by the device transform exactly
 // as the reference bitmap tile does. This keeps the two tiles at matching effective resolution.
-import type { Bitmap, BlurFilter, DisplayObject, WebGLRenderState, WebGLRenderTarget } from '@flighthq/sdk';
+import type { Bitmap, BlurFilter, DisplayObject, GlRenderState, GlRenderTarget } from '@flighthq/sdk';
 import {
-  applyGaussianBlurFilterToWebGL,
-  beginWebGLRenderTarget,
+  applyGaussianBlurFilterToGl,
+  beginGlRenderTarget,
   BitmapKind,
   createBitmap,
+  createGlCanvasElement,
+  createGlRenderState,
+  createGlRenderTarget,
   createMatrix,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  createWebGLRenderTarget,
-  defaultWebGLBitmapRenderer,
-  destroyWebGLRenderTarget,
-  drawWebGLRenderTargetResult,
-  endWebGLRenderTarget,
+  defaultGlBitmapRenderer,
+  destroyGlRenderTarget,
+  drawGlRenderTargetResult,
+  endGlRenderTarget,
+  getGlRenderStateRuntime,
   getOrCreateRenderProxy2D,
-  getWebGLRenderStateRuntime,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
   registerRenderer,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -45,10 +45,10 @@ import type { NativeBlurSpec, ParityTarget } from './parity';
 
 export function createParityTarget(width: number, height: number, background: number): ParityTarget {
   const pixelRatio = window.devicePixelRatio || 1;
-  const canvas = createWebGLCanvasElement(width, height, pixelRatio);
+  const canvas = createGlCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = createWebGLRenderState(canvas, {
+  const state = createGlRenderState(canvas, {
     pixelRatio,
     backgroundColor: background,
     // preserveDrawingBuffer so the verifier can read the frame back after rendering.
@@ -57,8 +57,8 @@ export function createParityTarget(width: number, height: number, background: nu
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing store.
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  registerDefaultWebGLMaterial(state);
-  registerRenderer(state, BitmapKind, defaultWebGLBitmapRenderer);
+  registerDefaultGlMaterial(state);
+  registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 
   registerFunctionalTarget({
     kind: 'webgl',
@@ -77,7 +77,7 @@ export function createParityTarget(width: number, height: number, background: nu
     width,
     height,
     scale: pixelRatio,
-    // No CSS-filter path on WebGL — the blur is the GPU shader pass below.
+    // No CSS-filter path on Gl — the blur is the GPU shader pass below.
     applyNativeBlur(_node: Bitmap, _filter: Readonly<BlurFilter>): void {},
     drawNativeBlur(spec: Readonly<NativeBlurSpec>): void {
       pending.push({ ...spec });
@@ -91,16 +91,16 @@ export function createParityTarget(width: number, height: number, background: nu
 }
 
 // Renders `source` into `target` filling its 0..size viewport, via an identity render transform.
-function renderSourceIntoTarget(state: WebGLRenderState, source: Bitmap, target: WebGLRenderTarget): void {
-  beginWebGLRenderTarget(state, target, _identity);
+function renderSourceIntoTarget(state: GlRenderState, source: Bitmap, target: GlRenderTarget): void {
+  beginGlRenderTarget(state, target, _identity);
   state.gl.clearColor(0, 0, 0, 0);
   state.gl.clear(state.gl.COLOR_BUFFER_BIT);
   prepareDisplayObjectRender(state, source);
-  renderWebGLDisplayObject(state, source);
-  endWebGLRenderTarget(state);
+  renderGlDisplayObject(state, source);
+  endGlRenderTarget(state);
 }
 
-function compositeNativeBlur(state: WebGLRenderState, spec: Readonly<NativeBlurSpec>): void {
+function compositeNativeBlur(state: GlRenderState, spec: Readonly<NativeBlurSpec>): void {
   const size = spec.tile;
 
   // The source bitmap drawn at origin, sized to one logical tile.
@@ -110,20 +110,20 @@ function compositeNativeBlur(state: WebGLRenderState, spec: Readonly<NativeBlurS
   sourceBitmap.x = 0;
   sourceBitmap.y = 0;
 
-  const sourceTarget = createWebGLRenderTarget(state, { width: size, height: size });
-  const destTarget = createWebGLRenderTarget(state, { width: size, height: size });
-  const tempTarget = createWebGLRenderTarget(state, { width: size, height: size });
+  const sourceTarget = createGlRenderTarget(state, { width: size, height: size });
+  const destTarget = createGlRenderTarget(state, { width: size, height: size });
+  const tempTarget = createGlRenderTarget(state, { width: size, height: size });
 
   renderSourceIntoTarget(state, sourceBitmap, sourceTarget);
 
-  // The real WebGL blur: separable Gaussian, sigma === blurX/blurY (matches CSS blur(Npx) and the
+  // The real Gl blur: separable Gaussian, sigma === blurX/blurY (matches CSS blur(Npx) and the
   // surface Gaussian). temp is a ping-pong scratch distinct from source and dest.
-  applyGaussianBlurFilterToWebGL(state, sourceTarget, destTarget, tempTarget, {
+  applyGaussianBlurFilterToGl(state, sourceTarget, destTarget, tempTarget, {
     blurX: spec.blurX,
     blurY: spec.blurY,
   });
 
-  // The blur passes (drawWebGLFullscreenPass) leave the dest/temp framebuffer bound and a tile-sized
+  // The blur passes (drawGlFullscreenPass) leave the dest/temp framebuffer bound and a tile-sized
   // viewport — they do not restore the screen. The render cache avoids this because its composite runs
   // during the on-screen walk; this inline flow must rebind the default framebuffer and full-canvas
   // viewport itself before compositing, or the result would draw into the blur target, not the screen.
@@ -139,20 +139,20 @@ function compositeNativeBlur(state: WebGLRenderState, spec: Readonly<NativeBlurS
   const proxy = getOrCreateRenderProxy2D(state, placement);
 
   // dest is composited as a (0,0,size,size) quad through proxy.transform2D; identity inner transform,
-  // exactly like the render-cache composite (drawWebGLRenderCache passes _identity).
-  drawWebGLRenderTargetResult(state, proxy, destTarget, _identity);
+  // exactly like the render-cache composite (drawGlRenderCache passes _identity).
+  drawGlRenderTargetResult(state, proxy, destTarget, _identity);
 
   // The render targets own framebuffers/textures the GC will not free.
-  destroyWebGLRenderTarget(state, sourceTarget);
-  destroyWebGLRenderTarget(state, destTarget);
-  destroyWebGLRenderTarget(state, tempTarget);
+  destroyGlRenderTarget(state, sourceTarget);
+  destroyGlRenderTarget(state, destTarget);
+  destroyGlRenderTarget(state, tempTarget);
 }
 
 // Rebinds the default (screen) framebuffer and the full-canvas viewport, and resets the runtime's
 // cached framebuffer/viewport so subsequent draws target the screen. Mirrors the state the screen walk
 // runs under (framebuffer null, renderTargetViewport null → viewport = canvas).
-function bindScreenFramebuffer(state: WebGLRenderState): void {
-  const runtime = getWebGLRenderStateRuntime(state);
+function bindScreenFramebuffer(state: GlRenderState): void {
+  const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, state.canvas.width, state.canvas.height);
@@ -163,10 +163,10 @@ function bindScreenFramebuffer(state: WebGLRenderState): void {
   runtime.currentProgram = null;
 }
 
-function renderParity(state: WebGLRenderState, root: DisplayObject): void {
+function renderParity(state: GlRenderState, root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
 }
 
 const _identity = createMatrix();

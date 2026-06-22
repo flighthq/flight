@@ -14,7 +14,7 @@ import {
   createImageResourceFromCanvas,
   createSurface,
   createSurfaceRegion,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -65,7 +65,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const s = frame.width / width; // device-pixel scale (canvas may be width × devicePixelRatio)
   const px = Math.round((RESULT_X + HALF) * s);
   const py = Math.round((TOP + HALF) * s);
-  const got = getSurfacePixelRGB(frame, px, py);
+  const got = getSurfacePixelRgb(frame, px, py);
   if (!channelsClose(got, EXPECT, 8)) {
     throw new Error(`[filter-color-matrix-brightness] expected #${hex(EXPECT)}, got #${hex(got)}`);
   }

@@ -21,7 +21,7 @@ import {
 // Canvas parity column for the same outline intent as render.webgl.ts.
 // Outline (PASSTHROUGH on Canvas): the edge-detect + colored-stroke pass is per-pixel neighbor
 // sampling with no 2D draw-op path, so the Canvas runner copies the scene through unchanged. The
-// WebGL/WebGPU columns realize the full effect.
+// Gl/Wgpu columns realize the full effect.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

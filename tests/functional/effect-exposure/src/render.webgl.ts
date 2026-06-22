@@ -1,41 +1,41 @@
-import type { DisplayObject, WebGLRenderEffectPipeline } from '@flighthq/sdk';
+import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
-  beginWebGLRenderEffectPipeline,
+  beginGlRenderEffectPipeline,
   createExposureEffect,
-  createWebGLCanvasElement,
-  createWebGLRenderEffectPipeline,
-  createWebGLRenderState,
-  defaultWebGLExposureEffectRunner,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  endWebGLRenderEffectPipeline,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  defaultGlExposureEffectRunner,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlRenderEffect,
+  registerGlShapeCommands,
   registerRenderer,
-  registerWebGLRenderEffect,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
 // exposure scales linear light by 2^exposure through an HDR (rgba16f) pipeline, brightening the
 // whole frame uniformly before display.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   pixelRatio,
   backgroundColor: 0x05060aff,
 });
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerDefaultWebGLMaterial(state);
-registerWebGLRenderEffect(state, 'exposure', defaultWebGLExposureEffectRunner);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerDefaultGlMaterial(state);
+registerGlRenderEffect(state, 'exposure', defaultGlExposureEffectRunner);
 
-const pipeline: WebGLRenderEffectPipeline = createWebGLRenderEffectPipeline(state, {
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
 });
@@ -46,8 +46,8 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  beginWebGLRenderEffectPipeline(state, pipeline);
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-  endWebGLRenderEffectPipeline(state, pipeline, [createExposureEffect({ exposure: 1 })]);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  endGlRenderEffectPipeline(state, pipeline, [createExposureEffect({ exposure: 1 })]);
 }

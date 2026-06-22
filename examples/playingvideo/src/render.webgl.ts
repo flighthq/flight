@@ -1,14 +1,14 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGLRenderState,
-  defaultWebGLShapeCommands,
-  defaultWebGLVideoRenderer,
+  createGlRenderState,
+  defaultGlShapeCommands,
+  defaultGlVideoRenderer,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlShapeCommands,
   registerRenderer,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   VideoKind,
 } from '@flighthq/sdk';
 
@@ -24,19 +24,19 @@ document.body.style.background = '#000';
 document.body.appendChild(canvas);
 
 export const container = canvas;
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0x000000ff,
 });
-registerRenderer(state, VideoKind, defaultWebGLVideoRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerDefaultWebGLMaterial(state);
+registerRenderer(state, VideoKind, defaultGlVideoRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
 }
 
 export function setSize(w: number, h: number): void {

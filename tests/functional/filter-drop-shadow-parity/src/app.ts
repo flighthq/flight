@@ -2,15 +2,15 @@
 // surface (CPU) drop shadow.
 //
 // A filter has a CPU reference impl (apply*FilterToSurface) and native per-backend impls (a CSS
-// `drop-shadow(...)` string for DOM/Canvas, a tint/blur/offset shader sequence for WebGL). This test
+// `drop-shadow(...)` string for DOM/Canvas, a tint/blur/offset shader sequence for Gl). This test
 // draws two tiles side by side:
 //   REFERENCE tile — the source drop-shadowed on the CPU via applyDropShadowFilterToSurface, composited
 //     (tinted blurred mask under the original source) and flattened over the black background, blitted as
 //     a plain bitmap. Identical bytes on every backend; it is the oracle's ground truth.
 //   NATIVE tile    — the same source pushed through THIS backend's real filter path (CSS drop-shadow on
-//     DOM/Canvas, the GPU drop-shadow passes on WebGL).
+//     DOM/Canvas, the GPU drop-shadow passes on Gl).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and asserts
-// the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader shadow ≈ the
+// the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader shadow ≈ the
 // CPU shadow, and on Canvas it proves the CSS shadow ≈ the CPU shadow. It also asserts the native tile is
 // not blank and carries the red shadow band, so a silently no-op native path fails the test.
 //
@@ -21,7 +21,7 @@
 // render.<renderer>.ts at runtime.
 import {
   applyDropShadowFilterToSurface,
-  computeDropShadowFilterCSS,
+  computeDropShadowFilterCss,
   createDropShadowFilter,
   getShadowFilterOffset,
 } from '@flighthq/filters';
@@ -36,7 +36,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -54,7 +54,7 @@ const BACKGROUND = 0xff000000; // opaque black; the tiles' transparent regions r
 
 // Red shadow, offset 14px at 45° (down-right), symmetric blur 4. distance/angle map to a pixel offset
 // via getShadowFilterOffset; the surface filter itself produces the blurred tinted mask in place.
-// blurX === blurY is required for the CSS path (computeDropShadowFilterCSS returns null otherwise).
+// blurX === blurY is required for the CSS path (computeDropShadowFilterCss returns null otherwise).
 const filter = createDropShadowFilter({
   distance: 14,
   angle: 45,
@@ -99,7 +99,7 @@ nativeBitmap.x = NATIVE_X;
 nativeBitmap.y = TOP;
 addNodeChild(root, nativeBitmap);
 
-const css = computeDropShadowFilterCSS(filter);
+const css = computeDropShadowFilterCss(filter);
 if (css !== null) target.applyNativeDropShadow(nativeBitmap, css);
 target.drawNativeDropShadow?.({ source: sourceImage, filter, x: NATIVE_X, y: TOP, tile: TILE });
 
@@ -107,12 +107,12 @@ target.render(root);
 
 // Oracle (runs for canvas/webgl; DOM returns before the canvas oracle, so DOM parity is best-effort via
 // the harness not-blank check only). Crops the NATIVE tile out of the device-scaled frame, scales it back
-// to TILE×TILE, and compares it to the CPU reference. Drop shadow is a blurry effect (box blur on WebGL,
+// to TILE×TILE, and compares it to the CPU reference. Drop shadow is a blurry effect (box blur on Gl,
 // Gaussian drop-shadow on CSS, box blur on CPU), so the kernels disagree most in the soft shadow band; the
 // tolerance is generous and calibrated, not exact — looser than a color-matrix (~0.10) parity test.
 //
 // CALIBRATED for a 4px symmetric blur + 14px offset red shadow: CSS uses a Gaussian drop-shadow while the
-// CPU/WebGL paths use a box blur, so the shadow band's soft edge differs across a minority of the tile.
+// CPU/Gl paths use a box blur, so the shadow band's soft edge differs across a minority of the tile.
 // 0.30 fraction with a 28-channel tolerance covers that divergence; tighten once real captures pin the
 // actual delta, loosen only with a noted reason.
 const MISMATCH_FRACTION = 0.3;
@@ -127,7 +127,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // 1) Not blank / actually filtered: just past the square's down-right corner the shadow band must be
   //    red. A no-op native path (no shadow drawn) leaves this region black background.
-  const shadow = getSurfacePixelRGB(nativeTile, SQUARE_MAX + 6, SQUARE_MAX + 6);
+  const shadow = getSurfacePixelRgb(nativeTile, SQUARE_MAX + 6, SQUARE_MAX + 6);
   const sr = (shadow >> 16) & 255;
   const sg = (shadow >> 8) & 255;
   const sb = shadow & 255;
@@ -139,7 +139,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // 2) Square preserved: the source white square's centre is still bright (the source is drawn on top of
   //    its own shadow). A path that drew only the shadow (or nothing) fails here.
-  const centre = getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2);
+  const centre = getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2);
   if (((centre >> 8) & 255) <= 150) {
     throw new Error(`[filter-drop-shadow-parity:${render()}] native square centre not bright — got #${hex(centre)}`);
   }

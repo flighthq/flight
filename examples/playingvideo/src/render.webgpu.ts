@@ -1,13 +1,13 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  createWebGPURenderState,
-  defaultWebGPUVideoRenderer,
+  createWgpuRenderState,
+  defaultWgpuVideoRenderer,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
-  submitWebGPURenderPass,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
+  submitWgpuRenderPass,
   VideoKind,
 } from '@flighthq/sdk';
 
@@ -23,19 +23,19 @@ document.body.style.background = '#000';
 document.body.appendChild(canvas);
 
 export const container = canvas;
-export const state = await createWebGPURenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   backgroundColor: 0x000000ff,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
-registerRenderer(state, VideoKind, defaultWebGPUVideoRenderer);
-registerDefaultWebGPUMaterial(state);
+registerRenderer(state, VideoKind, defaultWgpuVideoRenderer);
+registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUDisplayObject(state, root);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  renderWgpuDisplayObject(state, root);
+  submitWgpuRenderPass(state);
 }
 
 export function setSize(w: number, h: number): void {

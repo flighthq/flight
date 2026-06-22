@@ -4,10 +4,10 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createSSAOEffect,
+  createSsaoEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasSSAOEffectRunner,
+  defaultCanvasSsaoEffectRunner,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerCanvasRenderEffect,
@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'ssao', defaultCanvasSSAOEffectRunner);
+registerCanvasRenderEffect(state, 'ssao', defaultCanvasSsaoEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -41,6 +41,6 @@ export function render(root: DisplayObject): void {
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [
-    createSSAOEffect({ radius: 0.5, intensity: 1, bias: 0.025, samples: 16 }),
+    createSsaoEffect({ radius: 0.5, intensity: 1, bias: 0.025, samples: 16 }),
   ]);
 }

@@ -2,7 +2,7 @@
 //
 // The median filter has no native CSS form, so there is no Canvas-native filter path. On Canvas the
 // "native" tile is the surface/CPU median result itself, blitted as a plain bitmap by app.ts — parity
-// holds by construction here, and WebGL is the meaningful comparison. This backend therefore just
+// holds by construction here, and Gl is the meaningful comparison. This backend therefore just
 // registers the bitmap renderer; applyNativeMedian is a no-op.
 import type { Bitmap, DisplayObject, MedianFilter } from '@flighthq/sdk';
 import {

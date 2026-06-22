@@ -3,7 +3,7 @@
 // There is no native CSS gradient-bevel filter, so the canvas "native" tile is the SAME composited
 // surface bitmap as the reference tile (app.ts draws both). drawNativeGradientBevel is a no-op here;
 // the normal canvas render rasterizes both bitmaps. Parity holds by construction — the meaningful
-// shader-vs-CPU comparison is the WebGL backend.
+// shader-vs-CPU comparison is the Gl backend.
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,

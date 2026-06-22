@@ -2,22 +2,22 @@
 //
 // Native path: the canvas renderer applies a CSS filter string around a node's own draw (via
 // state.filter), so the "native blur" is just the source bitmap with a `blur(Npx)` CSS filter bound
-// to it. computeBlurFilterCSS produces the string; setCanvasCSSFilter binds it; the normal render
+// to it. computeBlurFilterCss produces the string; setCanvasCssFilter binds it; the normal render
 // draws it. No extra render pass — the backend rasterizes the blur itself.
 import type { Bitmap, BlurFilter, DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
-  computeBlurFilterCSS,
+  computeBlurFilterCss,
   createCanvasElement,
   createCanvasRenderState,
   createMatrix,
   defaultCanvasBitmapRenderer,
-  enableCanvasCSSFilterSupport,
+  enableCanvasCssFilterSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
-  setCanvasCSSFilter,
+  setCanvasCssFilter,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -38,7 +38,7 @@ export function createParityTarget(width: number, height: number, background: nu
 
   registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
   // The native blur is a CSS filter bound per node; the resolver must be installed to honor it.
-  enableCanvasCSSFilterSupport(state);
+  enableCanvasCssFilterSupport(state);
 
   registerFunctionalTarget({
     kind: 'canvas',
@@ -55,8 +55,8 @@ export function createParityTarget(width: number, height: number, background: nu
     height,
     scale: pixelRatio,
     applyNativeBlur(node: Bitmap, filter: Readonly<BlurFilter>): void {
-      const css = computeBlurFilterCSS(filter);
-      if (css !== null) setCanvasCSSFilter(state, node, css);
+      const css = computeBlurFilterCss(filter);
+      if (css !== null) setCanvasCssFilter(state, node, css);
     },
     render(root: DisplayObject): void {
       renderParity(state, root);

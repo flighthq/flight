@@ -1,4 +1,4 @@
-﻿import { computeBlurFilterCSS, createBlurFilter } from '@flighthq/filters';
+﻿import { computeBlurFilterCss, createBlurFilter } from '@flighthq/filters';
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
@@ -7,13 +7,13 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
-  enableCanvasCSSFilterSupport,
+  enableCanvasCssFilterSupport,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
-  setCanvasCSSFilter,
+  setCanvasCssFilter,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -35,7 +35,7 @@ registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-enableCanvasCSSFilterSupport(state);
+enableCanvasCssFilterSupport(state);
 export const scale = pixelRatio;
 
 export function setSize(w: number, h: number): void {
@@ -54,6 +54,6 @@ export function render(root: DisplayObject): void {
 // OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw. The
 // returned callback is a no-op: the filter re-applies on every draw, so resizes need no re-bake.
 export function applyBackgroundBlur(node: DisplayObject): () => void {
-  setCanvasCSSFilter(state, node, computeBlurFilterCSS(createBlurFilter({ blurX: 10, blurY: 10 })));
+  setCanvasCssFilter(state, node, computeBlurFilterCss(createBlurFilter({ blurX: 10, blurY: 10 })));
   return () => {};
 }

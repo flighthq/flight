@@ -1,33 +1,33 @@
 import type { Sprite } from '@flighthq/sdk';
 import {
-  createWebGPUCanvasElement,
-  createWebGPURenderState,
-  defaultWebGPUSpriteRenderer,
+  createWgpuCanvasElement,
+  createWgpuRenderState,
+  defaultWgpuSpriteRenderer,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  renderWebGPUBackground,
-  renderWebGPUSprite,
+  renderWgpuBackground,
+  renderWgpuSprite,
   SpriteKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGPUCanvasElement(256, 256, pixelRatio);
+const canvas = createWgpuCanvasElement(256, 256, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, {
+export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
   backgroundColor: 0xeeddccff,
   imageSmoothingEnabled: false,
 });
-registerRenderer(state, SpriteKind, defaultWebGPUSpriteRenderer);
-registerDefaultWebGPUMaterial(state);
+registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
+registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 
 export function render(root: Sprite): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  renderWebGPUSprite(state, root);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  renderWgpuSprite(state, root);
+  submitWgpuRenderPass(state);
 }

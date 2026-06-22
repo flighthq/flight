@@ -1,39 +1,39 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  beginWebGPURenderEffectPipeline,
+  beginWgpuRenderEffectPipeline,
   createLensDistortionEffect,
-  createWebGPUCanvasElement,
-  createWebGPURenderEffectPipeline,
-  createWebGPURenderState,
-  defaultWebGPULensDistortionEffectRunner,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
-  endWebGPURenderEffectPipeline,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  defaultWgpuLensDistortionEffectRunner,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPURenderEffect,
-  registerWebGPUShapeCommands,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
+  registerWgpuRenderEffect,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWebGPUFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '../../_harness/verify';
 
-// WebGPU parity column for the same barrel-distortion intent as render.webgl.ts.
+// Wgpu parity column for the same barrel-distortion intent as render.webgl.ts.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGPUCanvasElement(800, 600, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
-registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
-registerDefaultWebGPUMaterial(state);
-registerWebGPURenderEffect(state, 'lensDistortion', defaultWebGPULensDistortionEffectRunner);
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
+registerWgpuRenderEffect(state, 'lensDistortion', defaultWgpuLensDistortionEffectRunner);
 
-const pipeline = createWebGPURenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -41,11 +41,11 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  beginWebGPURenderEffectPipeline(state, pipeline);
-  renderWebGPUDisplayObject(state, root);
-  endWebGPURenderEffectPipeline(state, pipeline, [createLensDistortionEffect({ amount: 0.35, scale: 1 })]);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  renderWgpuDisplayObject(state, root);
+  endWgpuRenderEffectPipeline(state, pipeline, [createLensDistortionEffect({ amount: 0.35, scale: 1 })]);
+  submitWgpuRenderPass(state);
 }
 
-registerWebGPUFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, scale);

@@ -18,7 +18,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -95,7 +95,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   }
   const s = frame.width / width; // device-pixel scale (canvas may be width × devicePixelRatio)
 
-  const shadow = getSurfacePixelRGB(frame, Math.round((RESULT_X + SHADOW_CX) * s), Math.round((TOP + SHADOW_CY) * s));
+  const shadow = getSurfacePixelRgb(frame, Math.round((RESULT_X + SHADOW_CX) * s), Math.round((TOP + SHADOW_CY) * s));
   if (!channelsClose(shadow, 0xff0000, 40)) {
     throw new Error(`[filter-drop-shadow-hide-object] shadow centre expected red, got #${hex(shadow)}`);
   }
@@ -103,7 +103,7 @@ export function assertRender(frame: Readonly<Surface>): void {
     throw new Error(`[filter-drop-shadow-hide-object] square footprint is white — object not hidden`);
   }
 
-  const corner = getSurfacePixelRGB(frame, Math.round((RESULT_X + CORNER) * s), Math.round((TOP + CORNER) * s));
+  const corner = getSurfacePixelRgb(frame, Math.round((RESULT_X + CORNER) * s), Math.round((TOP + CORNER) * s));
   if (!channelsClose(corner, 0x000000, 40)) {
     throw new Error(`[filter-drop-shadow-hide-object] corner expected black background, got #${hex(corner)}`);
   }

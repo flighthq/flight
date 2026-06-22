@@ -19,7 +19,7 @@ import {
   createSurface,
   createSurfaceRegion,
   fillSurfaceRectangle,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -89,7 +89,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   }
 
   const sampleY = Math.round((TOP + ROW) * s);
-  const at = (col: number): number => getSurfacePixelRGB(frame, Math.round((RESULT_X + col) * s), sampleY);
+  const at = (col: number): number => getSurfacePixelRgb(frame, Math.round((RESULT_X + col) * s), sampleY);
 
   const leftShifted = at(LINE_X - SHIFT); // 116 — line moved here in the left (RED 255) region
   if (!channelsClose(leftShifted, 0xffffff)) {

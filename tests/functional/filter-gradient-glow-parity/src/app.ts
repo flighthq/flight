@@ -1,17 +1,17 @@
-// filter-gradient-glow-parity — proves the WebGL NATIVE gradient-glow shader matches the canonical
+// filter-gradient-glow-parity — proves the Gl NATIVE gradient-glow shader matches the canonical
 // surface (CPU) gradient glow.
 //
 // Companion to filter-blur-parity, for a filter with no CSS form. A gradient glow blurs the source
 // silhouette's alpha, looks the blurred alpha up in a color/alpha gradient ramp, then composites the
-// glow under the source. The CPU reference is applyGradientGlowFilterToSurface; the WebGL native path
-// is applyGradientGlowFilterToWebGL (a tint pass, a box blur, and a ramp-lookup pass into offscreen
+// glow under the source. The CPU reference is applyGradientGlowFilterToSurface; the Gl native path
+// is applyGradientGlowFilterToGl (a tint pass, a box blur, and a ramp-lookup pass into offscreen
 // render targets). Canvas/DOM have no native gradient-glow filter, so their native tile is the CPU
-// reference itself — parity is trivially exact there and the WebGL comparison is the real test.
+// reference itself — parity is trivially exact there and the Gl comparison is the real test.
 //
 // Two tiles side by side:
 //   REFERENCE tile — the source glowed on the CPU via applyGradientGlowFilterToSurface (mask then
 //     source-over), blitted as a plain bitmap. Identical bytes on every backend; the oracle's ground truth.
-//   NATIVE tile    — WebGL: the same source pushed through the real GPU glow shader and composited.
+//   NATIVE tile    — Gl: the same source pushed through the real GPU glow shader and composited.
 //                    Canvas/DOM: the same CPU-reference bytes (drawNativeGradientGlow is a no-op).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
 // asserts the mismatch fraction is below a calibrated tolerance, plus a not-blank / actually-glowing
@@ -32,7 +32,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -101,11 +101,11 @@ const root = createDisplayContainer();
 // REFERENCE tile — the CPU-glowed bytes blitted as a plain bitmap (identical on every backend).
 addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 
-// NATIVE tile. WebGL composites the GPU glow over this position; Canvas/DOM have no native glow filter,
-// so the native tile IS the CPU-reference bitmap (drawn here, drawNativeGradientGlow a no-op). On WebGL
+// NATIVE tile. Gl composites the GPU glow over this position; Canvas/DOM have no native glow filter,
+// so the native tile IS the CPU-reference bitmap (drawn here, drawNativeGradientGlow a no-op). On Gl
 // the GPU composite lands at the same position over whatever this draws — but the background is opaque
-// black there, so we leave the native slot empty on WebGL by drawing the reference only when there is no
-// shader path. The composite spec drives the real WebGL tile.
+// black there, so we leave the native slot empty on Gl by drawing the reference only when there is no
+// shader path. The composite spec drives the real Gl tile.
 if (target.kind !== 'webgl') {
   addNodeChild(root, makeBitmap(referenceData, NATIVE_X, TOP));
 }
@@ -140,14 +140,14 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the square center must still be white (the source composited on top of the glow).
-  const center = getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2);
+  const center = getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2);
   if (green(center) <= 120) {
     throw new Error(`[filter-gradient-glow-parity:${render()}] native tile blank/dark at center — got #${hex(center)}`);
   }
 
   // 2) Actually glowing: just outside the square edge the magenta glow ring must be present — magenta
   // means R and B both clearly above G. A no-op native path would leave this background-black.
-  const ring = getSurfacePixelRGB(nativeTile, TILE / 2, SQUARE_MAX + 2);
+  const ring = getSurfacePixelRgb(nativeTile, TILE / 2, SQUARE_MAX + 2);
   const r = (ring >> 16) & 255;
   const g = (ring >> 8) & 255;
   const b = ring & 255;

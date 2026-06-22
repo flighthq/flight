@@ -3,7 +3,7 @@
 // There is NO CSS native bevel — Canvas cannot express a directional inner-bevel edge mask with a CSS
 // filter string. So the "native" tile is the CPU/surface reference itself: app.ts draws the same
 // reference bytes as the native tile bitmap, and applyNativeBevel is a no-op. Parity holds by
-// construction on Canvas; WebGL carries the meaningful shader-vs-CPU comparison.
+// construction on Canvas; Gl carries the meaningful shader-vs-CPU comparison.
 import type { Bitmap, DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,

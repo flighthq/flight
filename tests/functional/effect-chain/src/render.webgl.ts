@@ -1,25 +1,25 @@
-import type { DisplayObject, WebGLRenderEffectPipeline } from '@flighthq/sdk';
+import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
-  beginWebGLRenderEffectPipeline,
+  beginGlRenderEffectPipeline,
   createBloomEffect,
   createColorGradeEffect,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
   createVignetteEffect,
-  createWebGLCanvasElement,
-  createWebGLRenderEffectPipeline,
-  createWebGLRenderState,
-  defaultWebGLBloomEffectRunner,
-  defaultWebGLColorGradeEffectRunner,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  defaultWebGLVignetteEffectRunner,
-  endWebGLRenderEffectPipeline,
+  defaultGlBloomEffectRunner,
+  defaultGlColorGradeEffectRunner,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  defaultGlVignetteEffectRunner,
+  endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlRenderEffect,
+  registerGlShapeCommands,
   registerRenderer,
-  registerWebGLRenderEffect,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -27,22 +27,22 @@ import {
 // vignette. The pipeline ping-pongs between offscreen targets so each stage reads the previous
 // stage's output, proving multi-stage ordering. HDR (rgba16f) keeps the bright pass for bloom.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   pixelRatio,
   backgroundColor: 0x05060aff,
 });
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerDefaultWebGLMaterial(state);
-registerWebGLRenderEffect(state, 'bloom', defaultWebGLBloomEffectRunner);
-registerWebGLRenderEffect(state, 'colorGrade', defaultWebGLColorGradeEffectRunner);
-registerWebGLRenderEffect(state, 'vignette', defaultWebGLVignetteEffectRunner);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerDefaultGlMaterial(state);
+registerGlRenderEffect(state, 'bloom', defaultGlBloomEffectRunner);
+registerGlRenderEffect(state, 'colorGrade', defaultGlColorGradeEffectRunner);
+registerGlRenderEffect(state, 'vignette', defaultGlVignetteEffectRunner);
 
-const pipeline: WebGLRenderEffectPipeline = createWebGLRenderEffectPipeline(state, {
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
 });
@@ -53,10 +53,10 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  beginWebGLRenderEffectPipeline(state, pipeline);
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-  endWebGLRenderEffectPipeline(state, pipeline, [
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  endGlRenderEffectPipeline(state, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
     createColorGradeEffect({ saturation: 1.4, contrast: 1.1 }),
     createVignetteEffect({ intensity: 0.7, radius: 0.7, softness: 0.5 }),

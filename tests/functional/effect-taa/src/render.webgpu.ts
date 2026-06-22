@@ -1,39 +1,39 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  beginWebGPURenderEffectPipeline,
-  createTAAEffect,
-  createWebGPUCanvasElement,
-  createWebGPURenderEffectPipeline,
-  createWebGPURenderState,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
-  defaultWebGPUTAAEffectRunner,
-  endWebGPURenderEffectPipeline,
+  beginWgpuRenderEffectPipeline,
+  createTaaEffect,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  defaultWgpuTaaEffectRunner,
+  endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPURenderEffect,
-  registerWebGPUShapeCommands,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
+  registerWgpuRenderEffect,
+  registerWgpuShapeCommands,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWebGPUFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '../../_harness/verify';
 
-// WebGPU taa: temporal, needs history + motion vectors; with neither here it is a PASSTHROUGH.
+// Wgpu taa: temporal, needs history + motion vectors; with neither here it is a PASSTHROUGH.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGPUCanvasElement(800, 600, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
-registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
-registerDefaultWebGPUMaterial(state);
-registerWebGPURenderEffect(state, 'taa', defaultWebGPUTAAEffectRunner);
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
+registerWgpuRenderEffect(state, 'taa', defaultWgpuTaaEffectRunner);
 
-const pipeline = createWebGPURenderEffectPipeline(state, { sampleCount: 4, format: 'rgba8' });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba8' });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -41,11 +41,11 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  renderWebGPUBackground(state);
-  beginWebGPURenderEffectPipeline(state, pipeline);
-  renderWebGPUDisplayObject(state, root);
-  endWebGPURenderEffectPipeline(state, pipeline, [createTAAEffect({ feedback: 0.9 })]);
-  submitWebGPURenderPass(state);
+  renderWgpuBackground(state);
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  renderWgpuDisplayObject(state, root);
+  endWgpuRenderEffectPipeline(state, pipeline, [createTaaEffect({ feedback: 0.9 })]);
+  submitWgpuRenderPass(state);
 }
 
-registerWebGPUFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, scale);

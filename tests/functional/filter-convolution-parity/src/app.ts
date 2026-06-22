@@ -2,15 +2,15 @@
 // surface (CPU) convolution.
 //
 // A filter has a CPU reference impl (applyConvolutionFilterToSurface) and a native per-backend impl. For
-// convolution there is NO CSS form: Canvas/DOM have no native convolution path, only WebGL does (a
-// single-pass shader, applyConvolutionFilterToWebGL). This test draws two tiles side by side:
+// convolution there is NO CSS form: Canvas/DOM have no native convolution path, only Gl does (a
+// single-pass shader, applyConvolutionFilterToGl). This test draws two tiles side by side:
 //   REFERENCE tile — the source convolved on the CPU via applyConvolutionFilterToSurface, blitted as a
 //     plain bitmap. Identical bytes on every backend; it is the oracle's ground truth.
-//   NATIVE tile    — the same source pushed through THIS backend's real filter path. On WebGL that is the
+//   NATIVE tile    — the same source pushed through THIS backend's real filter path. On Gl that is the
 //     convolution shader over an offscreen target; on Canvas/DOM it is the surface reference bytes again
 //     (no native convolution exists there, so parity holds by construction).
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and asserts
-// the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader convolution ≈
+// the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader convolution ≈
 // the CPU convolution. It also asserts the native tile is not blank and is actually filtered (the square's
 // interior collapsed to near-black, its edge stays bright), so a silently no-op native path fails.
 //
@@ -31,7 +31,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -49,8 +49,8 @@ const BACKGROUND = 0xff000000;
 
 // 3×3 edge-detect (Laplacian) kernel, divisor 1. Kernel sums to zero, so flat regions collapse to black
 // while edges (white↔black transitions) light up bright. Reused verbatim from the validated
-// filter-convolution-edge test. matrixX*matrixY = 9 ≤ the WebGL 7×7 (49) maximum, so the shader path
-// accepts it directly. The surface and WebGL appliers both default to edge:'clamp' and preserveAlpha:true,
+// filter-convolution-edge test. matrixX*matrixY = 9 ≤ the Gl 7×7 (49) maximum, so the shader path
+// accepts it directly. The surface and Gl appliers both default to edge:'clamp' and preserveAlpha:true,
 // so the same descriptor produces matching math on both — that shared default is load-bearing for parity.
 const KERNEL = {
   matrix: [-1, -1, -1, -1, 8, -1, -1, -1, -1],
@@ -80,8 +80,8 @@ const root = createDisplayContainer();
 addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 
 // NATIVE tile.
-//   WebGL: drawNativeConvolution runs the GPU shader pass and composites it at NATIVE_X (the placeholder
-//     bitmap below is overwritten by the composite, so its initial image does not matter for WebGL).
+//   Gl: drawNativeConvolution runs the GPU shader pass and composites it at NATIVE_X (the placeholder
+//     bitmap below is overwritten by the composite, so its initial image does not matter for Gl).
 //   Canvas/DOM: no native convolution exists, so the native tile is the surface reference bytes drawn as a
 //     plain bitmap — parity holds by construction and the oracle still confirms it is the filtered image.
 const nativeBitmap = createBitmap();
@@ -124,7 +124,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // 1) Actually filtered, not the raw source: the square's interior is a flat region, which the edge-detect
   // kernel collapses to near-black. The source had a solid white square there, so a no-op native path would
   // leave this bright. Sampling the interior catches "drew the source instead of the filtered image".
-  const interior = maxChannel(getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2));
+  const interior = maxChannel(getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2));
   if (interior >= 70) {
     throw new Error(
       `[filter-convolution-parity:${render()}] native interior should collapse to near-black (<70), got ${interior}`,
@@ -133,7 +133,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // 2) Not blank: the square's edge is a high-contrast transition the kernel lights up bright. A blank tile
   // (background only) or a fully-zeroed result would fail this.
-  const edge = maxChannel(getSurfacePixelRGB(nativeTile, SQUARE_MAX, TILE / 2));
+  const edge = maxChannel(getSurfacePixelRgb(nativeTile, SQUARE_MAX, TILE / 2));
   if (edge <= 120) {
     throw new Error(`[filter-convolution-parity:${render()}] native edge should detect bright (>120), got ${edge}`);
   }

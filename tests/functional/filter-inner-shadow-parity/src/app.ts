@@ -2,23 +2,23 @@
 // surface (CPU) inner shadow.
 //
 // Sibling of filter-blur-parity, for a filter with NO CSS form. A filter has a CPU reference impl
-// (apply*FilterToSurface) and, on WebGL, a native multi-pass shader (apply*FilterToWebGL). This test
+// (apply*FilterToSurface) and, on Gl, a native multi-pass shader (apply*FilterToGl). This test
 // draws two tiles side by side:
 //   REFERENCE tile — the source with the inner shadow composited on the CPU (applyInnerShadowFilterToSurface
 //     → composite source-over the mask), blitted as a plain bitmap. Identical bytes on every backend; it is
 //     the oracle's ground truth.
 //   NATIVE tile    — the same source pushed through THIS backend's real filter path. Inner shadow has no
 //     CSS form, so on Canvas/DOM the "native" tile is the SAME reference bitmap (parity by construction);
-//     on WebGL it is the real inner-shadow shader composited from offscreen render targets. WebGL is the
+//     on Gl it is the real inner-shadow shader composited from offscreen render targets. Gl is the
 //     meaningful comparison.
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and asserts
-// the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader inner shadow ≈
+// the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader inner shadow ≈
 // the CPU inner shadow. It also asserts the native tile is not blank (bright center) and actually carries
 // the shadow band (a dark ring just inside the edge), so a silently no-op native path fails the test.
 //
 // app.ts is backend-agnostic: each render.<backend>.ts implements the ParityTarget contract (see
 // ./parity.ts) and app.ts calls applyNativeInnerShadow (no-op everywhere — inner shadow has no CSS form)
-// and drawNativeInnerShadow (the WebGL shader path) unconditionally. It imports createParityTarget from
+// and drawNativeInnerShadow (the Gl shader path) unconditionally. It imports createParityTarget from
 // ./render (the local barrel); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
 import { applyInnerShadowFilterToSurface, createInnerShadowFilter } from '@flighthq/filters';
@@ -33,7 +33,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -48,7 +48,7 @@ const WIDTH = 800;
 const HEIGHT = 600;
 const BACKGROUND = 0xff000000;
 
-// The inner-shadow descriptor — shared by the surface reference and the WebGL native path so both run the
+// The inner-shadow descriptor — shared by the surface reference and the Gl native path so both run the
 // same effect. Matches the validated filter-inner-shadow test's config.
 const FILTER = createInnerShadowFilter({ distance: 8, angle: 45, color: 0x000000, blurX: 4, blurY: 4, strength: 1 });
 
@@ -82,10 +82,10 @@ addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 // NATIVE tile.
 //   Canvas/DOM: inner shadow has no CSS form, so the native tile is the same reference bitmap (parity by
 //     construction). applyNativeInnerShadow is a no-op; the bitmap below carries the result.
-//   WebGL: the source bitmap is drawn here only as a placeholder; drawNativeInnerShadow runs the GPU pass
+//   Gl: the source bitmap is drawn here only as a placeholder; drawNativeInnerShadow runs the GPU pass
 //     and composites the real shader result on top at the same position.
 const nativeBitmap = createBitmap();
-nativeBitmap.data.image = isWebGL(target) ? sourceImage : createImageResourceFromCanvas(surfaceToCanvas(referenceData));
+nativeBitmap.data.image = isGl(target) ? sourceImage : createImageResourceFromCanvas(surfaceToCanvas(referenceData));
 nativeBitmap.data.smoothing = false;
 nativeBitmap.x = NATIVE_X;
 nativeBitmap.y = TOP;
@@ -116,7 +116,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the shape center stays bright (near white), so the tile carries the square.
-  const center = green(getSurfacePixelRGB(nativeTile, TILE / 2, TILE / 2));
+  const center = green(getSurfacePixelRgb(nativeTile, TILE / 2, TILE / 2));
   if (center <= 120) {
     throw new Error(`[filter-inner-shadow-parity:${render()}] native tile blank/dark at center — got green ${center}`);
   }
@@ -124,7 +124,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   // 2) Actually filtered: the inner shadow rings the inside of the edge, so a point just inside the shape
   // boundary is notably darker than the bright center. A no-op native path would leave it ~255 (white) or
   // background. Sample just inside the top-left corner, within the narrow shadow band.
-  const edge = green(getSurfacePixelRGB(nativeTile, SQUARE_MIN + 3, SQUARE_MIN + 3));
+  const edge = green(getSurfacePixelRgb(nativeTile, SQUARE_MIN + 3, SQUARE_MIN + 3));
   if (edge >= center - 48) {
     throw new Error(
       `[filter-inner-shadow-parity:${render()}] native inner edge not shadowed — green ${edge} ` +
@@ -182,8 +182,8 @@ function green(rgb: number): number {
   return (rgb >> 8) & 255;
 }
 
-// True when the active backend runs the real WebGL shader path (it provides drawNativeInnerShadow).
-function isWebGL(t: ReturnType<typeof createParityTarget>): boolean {
+// True when the active backend runs the real Gl shader path (it provides drawNativeInnerShadow).
+function isGl(t: ReturnType<typeof createParityTarget>): boolean {
   return t.kind === 'webgl';
 }
 

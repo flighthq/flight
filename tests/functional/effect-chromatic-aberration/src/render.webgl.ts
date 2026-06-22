@@ -1,41 +1,41 @@
-import type { DisplayObject, WebGLRenderEffectPipeline } from '@flighthq/sdk';
+import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
-  beginWebGLRenderEffectPipeline,
+  beginGlRenderEffectPipeline,
   createChromaticAberrationEffect,
-  createWebGLCanvasElement,
-  createWebGLRenderEffectPipeline,
-  createWebGLRenderState,
-  defaultWebGLChromaticAberrationEffectRunner,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  endWebGLRenderEffectPipeline,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
+  defaultGlChromaticAberrationEffectRunner,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlRenderEffect,
+  registerGlShapeCommands,
   registerRenderer,
-  registerWebGLRenderEffect,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
 // Chromatic aberration: the R/G/B channels are sampled with a growing radial offset toward the edges,
 // fringing high-contrast borders. Sharp edges away from center show the red/blue split clearly.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   pixelRatio,
   backgroundColor: 0x101014ff,
 });
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerDefaultWebGLMaterial(state);
-registerWebGLRenderEffect(state, 'chromaticAberration', defaultWebGLChromaticAberrationEffectRunner);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerDefaultGlMaterial(state);
+registerGlRenderEffect(state, 'chromaticAberration', defaultGlChromaticAberrationEffectRunner);
 
-const pipeline: WebGLRenderEffectPipeline = createWebGLRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
 export const scale = pixelRatio;
 export const width = 800;
@@ -43,8 +43,8 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  beginWebGLRenderEffectPipeline(state, pipeline);
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-  endWebGLRenderEffectPipeline(state, pipeline, [createChromaticAberrationEffect({ intensity: 4, radial: true })]);
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  endGlRenderEffectPipeline(state, pipeline, [createChromaticAberrationEffect({ intensity: 4, radial: true })]);
 }

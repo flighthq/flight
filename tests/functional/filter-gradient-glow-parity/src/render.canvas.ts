@@ -2,7 +2,7 @@
 //
 // Gradient glow has no CSS-filter form, so there is no native canvas filter pass: app.ts draws the CPU
 // reference bitmap as the native tile and drawNativeGradientGlow is absent (a no-op). Parity is exact by
-// construction on canvas; the WebGL backend carries the real shader-vs-CPU comparison.
+// construction on canvas; the Gl backend carries the real shader-vs-CPU comparison.
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,

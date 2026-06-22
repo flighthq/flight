@@ -9,7 +9,7 @@
 //   - DOM / Canvas: there is no native CSS displacement filter. The "native" tile is the CPU/surface
 //     result drawn as a plain bitmap — parity holds by construction there, and `drawNativeDisplacement`
 //     is a no-op on those backends. The CSS path of the blur suite has no analogue here.
-//   - WebGL: the native displacement is a single-pass shader (applyDisplacementMapFilterToWebGL) that
+//   - Gl: the native displacement is a single-pass shader (applyDisplacementMapFilterToGl) that
 //     samples the source (unit 0) at a UV offset driven by the displacement map (unit 1), into an
 //     offscreen render target composited onto the screen after the scene. `drawNativeDisplacement(spec)`
 //     runs that GPU pass.
@@ -37,7 +37,7 @@ export interface ParityTarget {
   height: number;
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
-  // Shader backends (WebGL): run the offscreen single-pass displacement and composite it at the native
+  // Shader backends (Gl): run the offscreen single-pass displacement and composite it at the native
   // tile. No-op on DOM/Canvas (which draw the surface result directly as the native tile). Called before
   // render().
   drawNativeDisplacement?(spec: Readonly<NativeDisplacementSpec>): void;

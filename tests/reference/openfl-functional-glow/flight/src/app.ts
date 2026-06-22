@@ -2,31 +2,31 @@
 // Port of GlowTest. Shows outer glow and inner glow filter variants.
 // Abstract filter descriptors are created here; each render layer applies them with
 // the strategy that suits its substrate:
-//   - DOM:    element CSS filter (computeOuterGlowFilterCSS → setDOMCSSFilter)
+//   - DOM:    element CSS filter (computeOuterGlowFilterCss → setDomCssFilter)
 //   - Canvas: baked once into an offscreen render cache via CSS drop-shadow(0,0,σ,color)
-//   - WebGL:  offscreen render target + applyOuterGlowFilterToWebGL /
-//             applyInnerGlowFilterToWebGL shader passes
-// CSS only covers non-knockout outer glow; inner glow and knockout are WebGL-only.
+//   - Gl:  offscreen render target + applyOuterGlowFilterToGl /
+//             applyInnerGlowFilterToGl shader passes
+// CSS only covers non-knockout outer glow; inner glow and knockout are Gl-only.
 import type { InnerGlowFilter, OuterGlowFilter } from '@flighthq/filters';
-import { computeOuterGlowFilterCSS, createInnerGlowFilter, createOuterGlowFilter } from '@flighthq/filters';
-import { applyInnerGlowFilterToWebGL, applyOuterGlowFilterToWebGL } from '@flighthq/filters-webgl';
+import { computeOuterGlowFilterCss, createInnerGlowFilter, createOuterGlowFilter } from '@flighthq/filters';
+import { applyInnerGlowFilterToGl, applyOuterGlowFilterToGl } from '@flighthq/filters-gl';
 import type {
   Bitmap,
   CanvasRenderState,
   DisplayObject,
-  DOMRenderState,
+  DomRenderState,
   Matrix,
-  WebGLRenderState,
-  WebGLRenderTarget,
+  GlRenderState,
+  GlRenderTarget,
 } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWebGLRenderTarget,
+  beginGlRenderTarget,
   BitmapKind,
-  clearWebGLRenderTarget,
+  clearGlRenderTarget,
   computeNodeBoundsRectangle,
   computeRenderCacheTransform,
   computeRenderTargetSize,
@@ -38,18 +38,18 @@ import {
   createRenderCache,
   createRichText,
   createShape,
-  createWebGLRenderTarget,
-  drawWebGLRenderTargetResult,
-  enableDOMCSSFilterSupport,
-  endWebGLRenderTarget,
+  createGlRenderTarget,
+  drawGlRenderTargetResult,
+  enableDomCssFilterSupport,
+  endGlRenderTarget,
   ensureCanvasRenderCacheTarget,
   getRenderProxy2D,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
   prepareDisplayObjectRender,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   RichTextKind,
-  setDOMCSSFilter,
+  setDomCssFilter,
   ShapeKind,
   useRenderCache,
 } from '@flighthq/sdk';
@@ -77,7 +77,7 @@ appendShapeRectangle(bg, 0, 0, W, H);
 appendShapeEndFill(bg);
 addNodeChild(root, bg);
 
-const image = await loadImageResourceFromURL('assets/wabbit_alpha.png');
+const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
 
 const IMAGE_SCALE = 4;
 const iw = image.width * IMAGE_SCALE;
@@ -127,9 +127,9 @@ if (target.kind === 'canvas') {
   applyCanvasGlow(target.state, filtered);
   target.render(root);
 } else if (target.kind === 'webgl') {
-  renderWebGLGlow(target.state, filtered, root);
+  renderGlGlow(target.state, filtered, root);
 } else if (target.kind === 'dom') {
-  applyDOMGlow(target.state, filtered);
+  applyDomGlow(target.state, filtered);
   target.render(root);
 } else {
   target.render(root);
@@ -138,7 +138,7 @@ if (target.kind === 'canvas') {
 function applyCanvasGlow(state: CanvasRenderState, list: FilterEntry[]): void {
   for (const { node, filter } of list) {
     if (filter.type === 'innerGlow') continue;
-    const css = computeOuterGlowFilterCSS(filter);
+    const css = computeOuterGlowFilterCss(filter);
     if (css === null) continue;
     const img = (node as Bitmap).data.image;
     if (img === null || img.source === null) continue;
@@ -161,14 +161,14 @@ function applyCanvasGlow(state: CanvasRenderState, list: FilterEntry[]): void {
 type GlowEntry = {
   node: DisplayObject;
   filter: OuterGlowFilter | InnerGlowFilter;
-  source: WebGLRenderTarget;
-  dest: WebGLRenderTarget;
-  scratch: [WebGLRenderTarget, WebGLRenderTarget, WebGLRenderTarget];
+  source: GlRenderTarget;
+  dest: GlRenderTarget;
+  scratch: [GlRenderTarget, GlRenderTarget, GlRenderTarget];
   cacheTransform: Matrix;
   sceneTransform: Matrix;
 };
 
-function renderWebGLGlow(state: WebGLRenderState, list: FilterEntry[], root: DisplayObject): void {
+function renderGlGlow(state: GlRenderState, list: FilterEntry[], root: DisplayObject): void {
   const entries: GlowEntry[] = [];
   for (const { node, filter } of list) {
     computeNodeBoundsRectangle(_bounds, node, node);
@@ -177,12 +177,12 @@ function renderWebGLGlow(state: WebGLRenderState, list: FilterEntry[], root: Dis
     entries.push({
       node,
       filter,
-      source: createWebGLRenderTarget(state, { width: w, height: h }),
-      dest: createWebGLRenderTarget(state, { width: w, height: h }),
+      source: createGlRenderTarget(state, { width: w, height: h }),
+      dest: createGlRenderTarget(state, { width: w, height: h }),
       scratch: [
-        createWebGLRenderTarget(state, { width: w, height: h }),
-        createWebGLRenderTarget(state, { width: w, height: h }),
-        createWebGLRenderTarget(state, { width: w, height: h }),
+        createGlRenderTarget(state, { width: w, height: h }),
+        createGlRenderTarget(state, { width: w, height: h }),
+        createGlRenderTarget(state, { width: w, height: h }),
       ],
       cacheTransform: createMatrix(),
       sceneTransform: createMatrix(),
@@ -204,15 +204,15 @@ function renderWebGLGlow(state: WebGLRenderState, list: FilterEntry[], root: Dis
     const renderProxy = getRenderProxy2D(state, node);
     if (renderProxy === undefined) continue;
     setTranslation(renderProxy.transform2D, padding - _bounds.x, padding - _bounds.y);
-    beginWebGLRenderTarget(state, source, _identity);
-    clearWebGLRenderTarget(state, source);
-    renderWebGLDisplayObject(state, node);
+    beginGlRenderTarget(state, source, _identity);
+    clearGlRenderTarget(state, source);
+    renderGlDisplayObject(state, node);
     if (filter.type === 'innerGlow') {
-      applyInnerGlowFilterToWebGL(state, source, dest, scratch, filter);
+      applyInnerGlowFilterToGl(state, source, dest, scratch, filter);
     } else {
-      applyOuterGlowFilterToWebGL(state, source, dest, scratch, filter);
+      applyOuterGlowFilterToGl(state, source, dest, scratch, filter);
     }
-    endWebGLRenderTarget(state);
+    endGlRenderTarget(state);
   }
 
   for (const entry of entries) {
@@ -220,21 +220,21 @@ function renderWebGLGlow(state: WebGLRenderState, list: FilterEntry[], root: Dis
     if (renderProxy !== undefined) copyMatrix(renderProxy.transform2D, entry.sceneTransform);
   }
 
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
 
   for (const entry of entries) {
     const renderProxy = getRenderProxy2D(state, entry.node);
     if (renderProxy === undefined) continue;
-    drawWebGLRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
+    drawGlRenderTargetResult(state, renderProxy, entry.dest, entry.cacheTransform);
   }
 }
 
-function applyDOMGlow(state: DOMRenderState, list: FilterEntry[]): void {
-  enableDOMCSSFilterSupport(state);
+function applyDomGlow(state: DomRenderState, list: FilterEntry[]): void {
+  enableDomCssFilterSupport(state);
   for (const { node, filter } of list) {
     if (filter.type === 'innerGlow') continue;
-    setDOMCSSFilter(state, node, computeOuterGlowFilterCSS(filter));
+    setDomCssFilter(state, node, computeOuterGlowFilterCss(filter));
   }
 }
 

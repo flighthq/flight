@@ -7,12 +7,12 @@
 //
 // Sharpen (unsharp mask) has NO CSS-filter form: `filter: blur()` exists, but there is no CSS sharpen
 // primitive. So unlike blur-parity, the DOM/Canvas "native" tile is the surface reference itself —
-// parity holds there by construction, and the WebGL shader path is the meaningful comparison:
+// parity holds there by construction, and the Gl shader path is the meaningful comparison:
 //   - DOM / Canvas: drawNativeSharpen is undefined; app.ts blits the CPU reference as the native tile.
-//   - WebGL: the native sharpen is a single-pass unsharp-mask shader (applySharpenFilterToWebGL) over
+//   - Gl: the native sharpen is a single-pass unsharp-mask shader (applySharpenFilterToGl) over
 //     offscreen render targets, composited onto the screen after the scene. `drawNativeSharpen(spec)`
 //     runs that GPU pass.
-// A backend implements the shader path only if it is real for it (WebGL); the others leave it undefined
+// A backend implements the shader path only if it is real for it (Gl); the others leave it undefined
 // and app.ts falls back to drawing the reference bytes as the native tile.
 import type { DisplayObject, ImageResource } from '@flighthq/sdk';
 
@@ -35,7 +35,7 @@ export interface ParityTarget {
   height: number;
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
-  // Shader backends (WebGL): run the offscreen unsharp-mask pass and composite it at the native tile.
+  // Shader backends (Gl): run the offscreen unsharp-mask pass and composite it at the native tile.
   // Undefined on DOM/Canvas, where app.ts draws the CPU reference bytes as the native tile instead.
   drawNativeSharpen?(spec: Readonly<NativeSharpenSpec>): void;
   render(root: DisplayObject): void;

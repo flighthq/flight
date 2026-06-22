@@ -4,10 +4,10 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createSSREffect,
+  createSsrEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasSSREffectRunner,
+  defaultCanvasSsrEffectRunner,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerCanvasRenderEffect,
@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'ssr', defaultCanvasSSREffectRunner);
+registerCanvasRenderEffect(state, 'ssr', defaultCanvasSsrEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -40,5 +40,5 @@ export function render(root: DisplayObject): void {
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, [createSSREffect({ maxDistance: 0.8, resolution: 0.5, steps: 24 })]);
+  endCanvasRenderEffectPipeline(state, pipeline, [createSsrEffect({ maxDistance: 0.8, resolution: 0.5, steps: 24 })]);
 }

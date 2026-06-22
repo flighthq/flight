@@ -9,7 +9,7 @@
 //   - DOM / Canvas: the native drop shadow is a CSS `drop-shadow(...)` filter string bound to a scene
 //     node; the normal render draws it. `applyNativeDropShadow(node, css)` binds the filter; the node
 //     must already be in `root`.
-//   - WebGL: the native drop shadow is a tint + box-blur + offset-composite shader sequence into
+//   - Gl: the native drop shadow is a tint + box-blur + offset-composite shader sequence into
 //     offscreen render targets, composited onto the screen after the scene. `drawNativeDropShadow(spec)`
 //     runs that GPU pass; it is a no-op on DOM/Canvas.
 // A backend implements whichever path is real for it and leaves the other a no-op, so app.ts can call
@@ -19,7 +19,7 @@ import type { Bitmap, DisplayObject, DropShadowFilter, ImageResource } from '@fl
 export interface NativeDropShadowSpec {
   // The source image to shadow natively (the same pixels the reference tile shadowed on the CPU).
   source: ImageResource;
-  // The exact filter the reference tile used; the WebGL path passes it straight to the GPU filter.
+  // The exact filter the reference tile used; the Gl path passes it straight to the GPU filter.
   filter: Readonly<DropShadowFilter>;
   // Top-left of the native tile in logical (CSS-pixel) scene coordinates.
   x: number;
@@ -35,9 +35,9 @@ export interface ParityTarget {
   // Device-pixel scale: the backing store is width × scale (1 for DOM, devicePixelRatio otherwise).
   scale: number;
   // CSS-filter backends (DOM/Canvas): bind the native drop-shadow CSS to a scene node drawn by the
-  // normal render. No-op on WebGL. `node` must already be attached under the root passed to render().
+  // normal render. No-op on Gl. `node` must already be attached under the root passed to render().
   applyNativeDropShadow(node: Bitmap, css: string): void;
-  // Shader backends (WebGL): run the offscreen tint/blur/offset passes and composite at the native tile.
+  // Shader backends (Gl): run the offscreen tint/blur/offset passes and composite at the native tile.
   // No-op on DOM/Canvas. Called after applyNativeDropShadow, immediately before/around render().
   drawNativeDropShadow?(spec: Readonly<NativeDropShadowSpec>): void;
   render(root: DisplayObject): void;

@@ -15,7 +15,7 @@ import {
   createTextLabel,
   createVideo,
   invalidateNodeRender,
-  loadVideoResourceFromURL,
+  loadVideoResourceFromUrl,
   playVideoResource,
   startApplicationLoop,
   stopVideoChannel,
@@ -27,7 +27,7 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const videoSource = await loadVideoResourceFromURL('assets/example.mp4');
+const videoSource = await loadVideoResourceFromUrl('assets/example.mp4');
 
 const videoNode = createVideo();
 videoNode.data.source = videoSource;

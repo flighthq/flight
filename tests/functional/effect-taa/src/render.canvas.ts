@@ -4,10 +4,10 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createTAAEffect,
+  createTaaEffect,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
-  defaultCanvasTAAEffectRunner,
+  defaultCanvasTaaEffectRunner,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerCanvasRenderEffect,
@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'taa', defaultCanvasTAAEffectRunner);
+registerCanvasRenderEffect(state, 'taa', defaultCanvasTaaEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -40,5 +40,5 @@ export function render(root: DisplayObject): void {
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, [createTAAEffect({ feedback: 0.9 })]);
+  endCanvasRenderEffectPipeline(state, pipeline, [createTaaEffect({ feedback: 0.9 })]);
 }

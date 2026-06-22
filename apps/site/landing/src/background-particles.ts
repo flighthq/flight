@@ -2,25 +2,25 @@ import {
   addTextureAtlasRegion,
   BlendMode,
   buildParticleCurve,
+  createGlCanvasElement,
+  createGlRenderState,
   createImageResource,
   createParticleEmitter,
   createParticleEmitterConfig,
   createParticleEmitterState,
   createRandomSource,
   createTextureAtlas,
-  createWebGLCanvasElement,
-  createWebGLRenderState,
-  defaultWebGLParticleEmitterRenderer,
-  enableWebGLBlendModeSupport,
+  defaultGlParticleEmitterRenderer,
+  enableGlBlendModeSupport,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ParticleEmitterKind,
   prepareDisplayObjectRender,
   prewarmParticleEmitter,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
   registerRenderer,
-  renderWebGLBackground,
-  renderWebGLSprite,
+  renderGlBackground,
+  renderGlSprite,
   updateParticleEmitter,
 } from '@flighthq/sdk';
 
@@ -37,7 +37,7 @@ import {
 // when it is large. Both are continuous curves the sim interpolates per frame, so each disc drifts
 // smoothly in and out of focus over its life — round discs at varying depth, clearer or hazier as they
 // move, with no stepping. A wide per-particle base size layers static near/far depth on top. One
-// emitter (one WebGL context) now does the whole job.
+// emitter (one Gl context) now does the whole job.
 //
 // The emitter draws from its own fixed-seed random source, so the field is identical on every load.
 // That makes the visual-regression capture reproducible without depending on the global Math.random —
@@ -53,7 +53,7 @@ export function startParticleBackground(): void {
   const height = window.innerHeight;
   const scale = pixelRatio;
 
-  const canvas = createWebGLCanvasElement(width, height, pixelRatio);
+  const canvas = createGlCanvasElement(width, height, pixelRatio);
   canvas.style.position = 'fixed';
   canvas.style.inset = '0';
   canvas.style.width = '100%';
@@ -62,16 +62,16 @@ export function startParticleBackground(): void {
   canvas.style.pointerEvents = 'none';
   document.body.prepend(canvas);
 
-  const state = createWebGLRenderState(canvas, {
+  const state = createGlRenderState(canvas, {
     backgroundColor: BACKGROUND,
     sceneGraphSyncPolicy: 'requiresInvalidation',
   });
-  registerRenderer(state, ParticleEmitterKind, defaultWebGLParticleEmitterRenderer);
-  registerDefaultWebGLMaterial(state);
+  registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);
+  registerDefaultGlMaterial(state);
   // Opt into per-node blend modes so the emitter's additive (glow) blend takes effect.
-  enableWebGLBlendModeSupport(state);
+  enableGlBlendModeSupport(state);
 
-  // A single white disc — white so each particle's palette colour tints it (the WebGL particle shader
+  // A single white disc — white so each particle's palette colour tints it (the Gl particle shader
   // multiplies texture RGB by the per-particle colour). Focus is not baked into the texture; it comes
   // from scale and opacity (see the curves below), so this one disc serves both the crisp in-focus
   // points and the soft out-of-focus discs: a solid core with a soft outer edge reads as a sub-pixel
@@ -190,8 +190,8 @@ export function startParticleBackground(): void {
     }
 
     if (prepareDisplayObjectRender(state, emitter)) {
-      renderWebGLBackground(state);
-      renderWebGLSprite(state, emitter);
+      renderGlBackground(state);
+      renderGlSprite(state, emitter);
     }
     requestAnimationFrame(frame);
   }

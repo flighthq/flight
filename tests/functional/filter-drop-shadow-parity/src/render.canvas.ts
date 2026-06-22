@@ -2,7 +2,7 @@
 //
 // Native path: the canvas renderer applies a CSS filter string around a node's own draw (via
 // state.filter), so the "native drop shadow" is just the source bitmap with a `drop-shadow(...)` CSS
-// filter bound to it. computeDropShadowFilterCSS produces the string (in app.ts); setCanvasCSSFilter
+// filter bound to it. computeDropShadowFilterCss produces the string (in app.ts); setCanvasCssFilter
 // binds it; the normal render draws it. No extra render pass — the backend rasterizes the shadow itself.
 import type { Bitmap, DisplayObject } from '@flighthq/sdk';
 import {
@@ -11,12 +11,12 @@ import {
   createCanvasRenderState,
   createMatrix,
   defaultCanvasBitmapRenderer,
-  enableCanvasCSSFilterSupport,
+  enableCanvasCssFilterSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
-  setCanvasCSSFilter,
+  setCanvasCssFilter,
 } from '@flighthq/sdk';
 
 import { registerFunctionalTarget } from '../../_harness/verify';
@@ -37,7 +37,7 @@ export function createParityTarget(width: number, height: number, background: nu
 
   registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
   // The native drop shadow is a CSS filter bound per node; the resolver must be installed to honor it.
-  enableCanvasCSSFilterSupport(state);
+  enableCanvasCssFilterSupport(state);
 
   registerFunctionalTarget({
     kind: 'canvas',
@@ -54,7 +54,7 @@ export function createParityTarget(width: number, height: number, background: nu
     height,
     scale: pixelRatio,
     applyNativeDropShadow(node: Bitmap, css: string): void {
-      setCanvasCSSFilter(state, node, css);
+      setCanvasCssFilter(state, node, css);
     },
     render(root: DisplayObject): void {
       renderParity(state, root);

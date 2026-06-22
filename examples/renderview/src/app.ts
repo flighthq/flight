@@ -3,7 +3,7 @@ import {
   createSprite,
   createTextureAtlas,
   invalidateNodeLocalTransform,
-  loadImageResourceFromURL,
+  loadImageResourceFromUrl,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -13,7 +13,7 @@ const TILE_SIZE = 32;
 const WIDTH = 256;
 const HEIGHT = 256;
 
-const source = await loadImageResourceFromURL('assets/tileset.png');
+const source = await loadImageResourceFromUrl('assets/tileset.png');
 
 const atlas = createTextureAtlas({ image: source });
 addTextureAtlasRegion(atlas, 0, 0, TILE_SIZE, TILE_SIZE);

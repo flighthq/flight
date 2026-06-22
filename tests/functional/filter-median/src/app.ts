@@ -16,7 +16,7 @@ import {
   createImageResourceFromCanvas,
   createSurface,
   createSurfaceRegion,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
   setSurfacePixel,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -77,14 +77,14 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   const speckPx = Math.round((RESULT_X + SPECK.x) * s);
   const speckPy = Math.round((TOP + SPECK.y) * s);
-  const speckRgb = getSurfacePixelRGB(frame, speckPx, speckPy);
+  const speckRgb = getSurfacePixelRgb(frame, speckPx, speckPy);
   if (!isBlue(speckRgb)) {
     throw new Error(`[filter-median] former speck (${SPECK.x},${SPECK.y}) expected blue, got #${hex(speckRgb)}`);
   }
 
   const cleanPx = Math.round((RESULT_X + CLEAN.x) * s);
   const cleanPy = Math.round((TOP + CLEAN.y) * s);
-  const cleanRgb = getSurfacePixelRGB(frame, cleanPx, cleanPy);
+  const cleanRgb = getSurfacePixelRgb(frame, cleanPx, cleanPy);
   if (!channelsClose(cleanRgb, 0x0000ff)) {
     throw new Error(`[filter-median] clean region (${CLEAN.x},${CLEAN.y}) expected #0000ff, got #${hex(cleanRgb)}`);
   }

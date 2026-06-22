@@ -6,7 +6,7 @@ import type BitmapData from 'openfl/display/BitmapData';
 import Loader from 'openfl/display/Loader';
 import Shape from 'openfl/display/Shape';
 import Event from 'openfl/events/Event';
-import URLRequest from 'openfl/net/URLRequest';
+import UrlRequest from 'openfl/net/URLRequest';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -25,7 +25,7 @@ function loadBitmapData(url: string): Promise<BitmapData> {
     loader.contentLoaderInfo.addEventListener(Event.COMPLETE, () => {
       resolve((loader.content as Bitmap).bitmapData!);
     });
-    loader.load(new URLRequest(url));
+    loader.load(new UrlRequest(url));
   });
 }
 

@@ -1,8 +1,8 @@
-import { addNodeChild, createDisplayObject, createTextLabel, loadFontFromURL } from '@flighthq/sdk';
+import { addNodeChild, createDisplayObject, createTextLabel, loadFontFromUrl } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
-const font = await loadFontFromURL('assets/KatamotzIkasi.woff', 'Katamotz Ikasi');
+const font = await loadFontFromUrl('assets/KatamotzIkasi.woff', 'Katamotz Ikasi');
 
 const root = createDisplayObject();
 root.scaleX = scale;

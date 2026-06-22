@@ -1,25 +1,25 @@
-// filter-bevel-parity — proves the WebGL NATIVE inner-bevel filter matches the canonical surface (CPU)
+// filter-bevel-parity — proves the Gl NATIVE inner-bevel filter matches the canonical surface (CPU)
 // inner bevel.
 //
 // Sibling of filter-blur-parity, swapped to the bevel filter. A bevel has a CPU reference impl
-// (applyBevelFilterToSurface, writing a tinted edge MASK) and a native WebGL impl
-// (applyBevelFilterToWebGL, a tint + box-blur + offset-blit shader chain). Unlike blur there is NO CSS
+// (applyBevelFilterToSurface, writing a tinted edge MASK) and a native Gl impl
+// (applyBevelFilterToGl, a tint + box-blur + offset-blit shader chain). Unlike blur there is NO CSS
 // bevel, so Canvas/DOM cannot express a native bevel — their NATIVE tile is the surface reference
-// itself (parity holds by construction), and WebGL is the only meaningful comparison. This test draws
+// itself (parity holds by construction), and Gl is the only meaningful comparison. This test draws
 // two tiles side by side:
 //   REFERENCE tile — the source beveled on the CPU: applyBevelFilterToSurface produces the inner-bevel
 //     edge mask, composited (source-over) over the source, blitted as a plain bitmap. Identical bytes
 //     on every backend; it is the oracle's ground truth. (Matches filter-bevel-inner's reference.)
 //   NATIVE tile    — the same source pushed through THIS backend's real path. Canvas/DOM: the reference
-//     bytes again (no native bevel). WebGL: the source pushed through the bevel shader chain, whose
+//     bytes again (no native bevel). Gl: the source pushed through the bevel shader chain, whose
 //     no-knockout output already composites the source under the bevel, matching the reference.
 // The oracle compares the NATIVE tile region against the CPU reference with getSurfaceMismatch and
-// asserts the mismatch fraction is below a calibrated tolerance — so on WebGL it proves the shader
+// asserts the mismatch fraction is below a calibrated tolerance — so on Gl it proves the shader
 // bevel ≈ the CPU bevel. It also asserts the native tile is not blank and is actually beveled (the
 // directional highlight/shadow edges are present), so a silently no-op native path fails the test.
 //
 // app.ts is backend-agnostic: each render.<backend>.ts implements the ParityTarget contract
-// (see ./parity.ts) and app.ts calls applyNativeBevel (a no-op everywhere) and drawNativeBevel (WebGL
+// (see ./parity.ts) and app.ts calls applyNativeBevel (a no-op everywhere) and drawNativeBevel (Gl
 // only) unconditionally. It imports createParityTarget from ./render (the local barrel); the functional
 // vite harness routes ./render to the active backend's render.<renderer>.ts at runtime.
 import { applyBevelFilterToSurface, createBevelFilter } from '@flighthq/filters';
@@ -34,7 +34,7 @@ import {
   createSurfaceRegion,
   fillSurfaceRectangle,
   getSurfaceMismatch,
-  getSurfacePixelRGB,
+  getSurfacePixelRgb,
 } from '@flighthq/sdk';
 
 import { createParityTarget } from './render';
@@ -98,7 +98,7 @@ addNodeChild(root, makeBitmap(referenceData, REFERENCE_X, TOP));
 // NATIVE tile.
 //   Canvas/DOM: no native bevel — draw the SAME CPU-beveled bytes as the native tile (parity by
 //     construction). drawNativeBevel is a no-op there.
-//   WebGL: applyNativeBevel is a no-op; drawNativeBevel runs the GPU bevel chain over the SOURCE image
+//   Gl: applyNativeBevel is a no-op; drawNativeBevel runs the GPU bevel chain over the SOURCE image
 //     and composites it at the native tile position.
 const nativeBitmap = createBitmap();
 nativeBitmap.data.image = createImageResourceFromCanvas(surfaceToCanvas(referenceData));
@@ -123,7 +123,7 @@ const BOTTOM_RIGHT = INSET + SQUARE - EDGE; // highlighted edge (gradient faces 
 // back to TILE×TILE, and compares it to the CPU reference.
 //
 // MISMATCH_FRACTION/CHANNEL_TOLERANCE are CALIBRATED for an inner bevel (offset 6, blur 4) on a hard
-// edge. The CPU surface bevel and the WebGL shader bevel (box-blur basis + offset blits vs. the surface
+// edge. The CPU surface bevel and the Gl shader bevel (box-blur basis + offset blits vs. the surface
 // Gaussian-derived gradient) disagree mainly in the narrow edge band around the square's border, a
 // minority of the tile, and the box-vs-Gaussian blur basis widens that band's divergence. A glow/edge
 // effect like this needs a looser tolerance than a tight color-matrix (~0.10) — 0.30 covers the edge
@@ -140,7 +140,7 @@ export function assertRender(frame: Readonly<Surface>): void {
   const nativeTile = cropFrameTile(frame, NATIVE_X * s, TOP * s, TILE * s, TILE * s, TILE);
 
   // 1) Not blank: the square interior must carry mid-gray, not just the background.
-  const center = getSurfacePixelRGB(nativeTile, CENTER, CENTER);
+  const center = getSurfacePixelRgb(nativeTile, CENTER, CENTER);
   if (luma(center) <= 40) {
     throw new Error(
       `[filter-bevel-parity:${render()}] native tile blank/dark at centre — #${hex(center)} (luma ${luma(center).toFixed(0)})`,
@@ -150,8 +150,8 @@ export function assertRender(frame: Readonly<Surface>): void {
   // 2) Actually beveled: light down-right means the bottom-right inner edge is HIGHLIGHTED (lighter
   // than center) and the top-left inner edge is SHADOWED (darker than center). A no-op native path
   // (flat gray square) would leave both ~= center and fail here.
-  const topLeft = getSurfacePixelRGB(nativeTile, TOP_LEFT, TOP_LEFT);
-  const bottomRight = getSurfacePixelRGB(nativeTile, BOTTOM_RIGHT, BOTTOM_RIGHT);
+  const topLeft = getSurfacePixelRgb(nativeTile, TOP_LEFT, TOP_LEFT);
+  const bottomRight = getSurfacePixelRgb(nativeTile, BOTTOM_RIGHT, BOTTOM_RIGHT);
   if (!(luma(bottomRight) > luma(center) + 10)) {
     throw new Error(
       `[filter-bevel-parity:${render()}] native bottom-right edge not highlighted — ` +

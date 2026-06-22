@@ -1,41 +1,41 @@
-import type { DisplayObject, WebGLRenderEffectPipeline } from '@flighthq/sdk';
+import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
-  beginWebGLRenderEffectPipeline,
+  beginGlRenderEffectPipeline,
+  createGlCanvasElement,
+  createGlRenderEffectPipeline,
+  createGlRenderState,
   createGodRaysEffect,
-  createWebGLCanvasElement,
-  createWebGLRenderEffectPipeline,
-  createWebGLRenderState,
-  defaultWebGLGodRaysEffectRunner,
-  defaultWebGLShapeCommands,
-  defaultWebGLShapeRenderer,
-  endWebGLRenderEffectPipeline,
+  defaultGlGodRaysEffectRunner,
+  defaultGlShapeCommands,
+  defaultGlShapeRenderer,
+  endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerDefaultWebGLMaterial,
+  registerDefaultGlMaterial,
+  registerGlRenderEffect,
+  registerGlShapeCommands,
   registerRenderer,
-  registerWebGLRenderEffect,
-  registerWebGLShapeCommands,
-  renderWebGLBackground,
-  renderWebGLDisplayObject,
+  renderGlBackground,
+  renderGlDisplayObject,
   ShapeKind,
 } from '@flighthq/sdk';
 
 // God rays stream light outward from the centerX/centerY light point through an HDR (rgba16f) pipeline.
 // The bright core and surrounding shapes give the radial sampling occluders to streak around.
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGLCanvasElement(800, 600, pixelRatio);
+const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createWebGLRenderState(canvas, {
+export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   pixelRatio,
   backgroundColor: 0x05060aff,
 });
-registerRenderer(state, ShapeKind, defaultWebGLShapeRenderer);
-registerWebGLShapeCommands(defaultWebGLShapeCommands);
-registerDefaultWebGLMaterial(state);
-registerWebGLRenderEffect(state, 'godRays', defaultWebGLGodRaysEffectRunner);
+registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerGlShapeCommands(defaultGlShapeCommands);
+registerDefaultGlMaterial(state);
+registerGlRenderEffect(state, 'godRays', defaultGlGodRaysEffectRunner);
 
-const pipeline: WebGLRenderEffectPipeline = createWebGLRenderEffectPipeline(state, {
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
   format: 'rgba16f',
 });
@@ -46,10 +46,10 @@ export const height = 600;
 
 export function render(root: DisplayObject): void {
   if (!prepareDisplayObjectRender(state, root)) return;
-  beginWebGLRenderEffectPipeline(state, pipeline);
-  renderWebGLBackground(state);
-  renderWebGLDisplayObject(state, root);
-  endWebGLRenderEffectPipeline(state, pipeline, [
+  beginGlRenderEffectPipeline(state, pipeline);
+  renderGlBackground(state);
+  renderGlDisplayObject(state, root);
+  endGlRenderEffectPipeline(state, pipeline, [
     createGodRaysEffect({
       centerX: 0.5,
       centerY: 0.4,

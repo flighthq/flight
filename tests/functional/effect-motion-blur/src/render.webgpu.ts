@@ -1,58 +1,58 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   beginVelocityFrame,
-  beginWebGPURenderEffectPipeline,
+  beginWgpuRenderEffectPipeline,
   contributeVelocity,
   createMotionBlurEffect,
   createVelocityField,
-  createWebGPUCanvasElement,
-  createWebGPURenderEffectPipeline,
-  createWebGPURenderState,
-  createWebGPUVelocityTarget,
-  defaultWebGPUDisplayObjectVelocityWriter,
-  defaultWebGPUMotionBlurEffectRunner,
-  defaultWebGPUShapeCommands,
-  defaultWebGPUShapeRenderer,
-  endWebGPURenderEffectPipeline,
+  createWgpuCanvasElement,
+  createWgpuRenderEffectPipeline,
+  createWgpuRenderState,
+  createWgpuVelocityTarget,
+  defaultWgpuDisplayObjectVelocityWriter,
+  defaultWgpuMotionBlurEffectRunner,
+  defaultWgpuShapeCommands,
+  defaultWgpuShapeRenderer,
+  endWgpuRenderEffectPipeline,
   getNodeChildAt,
   getNodeChildCount,
   prepareDisplayObjectRender,
-  registerDefaultWebGPUMaterial,
+  registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWebGPURenderEffect,
-  registerWebGPUShapeCommands,
-  registerWebGPUVelocityWriter,
-  renderWebGPUBackground,
-  renderWebGPUDisplayObject,
-  renderWebGPUVelocity,
-  setWebGPURenderEffectVelocityTexture,
+  registerWgpuRenderEffect,
+  registerWgpuShapeCommands,
+  registerWgpuVelocityWriter,
+  renderWgpuBackground,
+  renderWgpuDisplayObject,
+  renderWgpuVelocity,
+  setWgpuRenderEffectVelocityTexture,
   ShapeKind,
-  submitWebGPURenderPass,
+  submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWebGPUFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '../../_harness/verify';
 
-// WebGPU parity column for per-object motion blur, the mirror of render.webgl.ts. A static screenshot has
+// Wgpu parity column for per-object motion blur, the mirror of render.webgl.ts. A static screenshot has
 // no transform delta to derive motion from, so each shape is given an explicit screen-space velocity
-// before the velocity pass (renderWebGPUVelocity) rasterizes it into the velocity G-buffer; the motion
-// blur runner then smears each shape along its own vector. Exercises the WebGPU velocity producer end to
-// end (createWebGPUVelocityTarget → registerWebGPUVelocityWriter → renderWebGPUVelocity).
+// before the velocity pass (renderWgpuVelocity) rasterizes it into the velocity G-buffer; the motion
+// blur runner then smears each shape along its own vector. Exercises the Wgpu velocity producer end to
+// end (createWgpuVelocityTarget → registerWgpuVelocityWriter → renderWgpuVelocity).
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createWebGPUCanvasElement(800, 600, pixelRatio);
+const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWebGPURenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
-registerRenderer(state, ShapeKind, defaultWebGPUShapeRenderer);
-registerWebGPUShapeCommands(defaultWebGPUShapeCommands);
-registerDefaultWebGPUMaterial(state);
-registerWebGPURenderEffect(state, 'motionBlur', defaultWebGPUMotionBlurEffectRunner);
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
+registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerDefaultWgpuMaterial(state);
+registerWgpuRenderEffect(state, 'motionBlur', defaultWgpuMotionBlurEffectRunner);
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
-registerWebGPUVelocityWriter(state, ShapeKind, defaultWebGPUDisplayObjectVelocityWriter);
+registerWgpuVelocityWriter(state, ShapeKind, defaultWgpuDisplayObjectVelocityWriter);
 
-const pipeline = createWebGPURenderEffectPipeline(state, { sampleCount: 1 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 // Velocity target is sized to the canvas backing store (logical size * pixelRatio).
-const velocityTarget = createWebGPUVelocityTarget(state, canvas.width, canvas.height);
+const velocityTarget = createWgpuVelocityTarget(state, canvas.width, canvas.height);
 const velocityField = createVelocityField();
 
 export const scale = pixelRatio;
@@ -71,14 +71,14 @@ export function render(root: DisplayObject): void {
     if (child !== null) contributeVelocity(velocityField, child, 40 * pixelRatio, 0);
   }
 
-  renderWebGPUBackground(state);
-  renderWebGPUVelocity(state, root, velocityField, velocityTarget);
-  setWebGPURenderEffectVelocityTexture(pipeline, velocityTarget.texture);
+  renderWgpuBackground(state);
+  renderWgpuVelocity(state, root, velocityField, velocityTarget);
+  setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  beginWebGPURenderEffectPipeline(state, pipeline);
-  renderWebGPUDisplayObject(state, root);
-  endWebGPURenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
-  submitWebGPURenderPass(state);
+  beginWgpuRenderEffectPipeline(state, pipeline);
+  renderWgpuDisplayObject(state, root);
+  endWgpuRenderEffectPipeline(state, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  submitWgpuRenderPass(state);
 }
 
-registerWebGPUFunctionalTarget(state, scale);
+registerWgpuFunctionalTarget(state, scale);
