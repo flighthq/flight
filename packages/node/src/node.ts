@@ -40,24 +40,24 @@ export function createNodeRuntime<Traits extends object = NodeTraits>(
   methods?: Readonly<Partial<MethodsOf<NodeRuntime<Traits>>>>,
 ): NodeRuntime<Traits> {
   const out = createEntityRuntime() as NodeRuntime<Traits>;
-  out.appearanceID = 0;
-  out.boundsUsingLocalBoundsID = -1;
-  out.boundsUsingLocalTransformID = -1;
+  out.appearanceId = 0;
+  out.boundsUsingLocalBoundsId = -1;
+  out.boundsUsingLocalTransformId = -1;
   out.canAddChild = methods?.canAddChild ?? defaultNodeRuntimeCanAddChild;
   out.children = null;
   out.nodeSignals = null;
   out.interactionSignals = null;
-  out.localBoundsID = 0;
-  out.localBoundsUsingLocalBoundsID = -1;
-  out.localContentID = 0;
-  out.localTransformID = 0;
-  out.localTransformUsingLocalTransformID = -1;
+  out.localBoundsId = 0;
+  out.localBoundsUsingLocalBoundsId = -1;
+  out.localContentId = 0;
+  out.localTransformId = 0;
+  out.localTransformUsingLocalTransformId = -1;
   out.parent = null;
-  out.worldBoundsUsingLocalBoundsID = -1;
-  out.worldBoundsUsingWorldTransformID = -1;
-  out.worldTransformID = 0;
-  out.worldTransformUsingLocalTransformID = -1;
-  out.worldTransformUsingParentTransformID = -1;
+  out.worldBoundsUsingLocalBoundsId = -1;
+  out.worldBoundsUsingWorldTransformId = -1;
+  out.worldTransformId = 0;
+  out.worldTransformUsingLocalTransformId = -1;
+  out.worldTransformUsingParentTransformId = -1;
   return out;
 }
 

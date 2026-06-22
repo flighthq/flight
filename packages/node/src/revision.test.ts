@@ -32,177 +32,177 @@ function getEntityRuntime(source: TestNode) {
 }
 
 describe('computeNodeWorldTransformRevision', () => {
-  it('updates worldTransformID based on local and parent transform IDs', () => {
+  it('updates worldTransformId based on local and parent transform IDs', () => {
     const runtime = getEntityRuntime(node);
-    runtime.localTransformID = 3;
+    runtime.localTransformId = 3;
     computeNodeWorldTransformRevision(runtime);
-    expect(runtime.worldTransformUsingLocalTransformID).toBe(3);
-    expect(runtime.worldTransformUsingParentTransformID).toBe(0);
+    expect(runtime.worldTransformUsingLocalTransformId).toBe(3);
+    expect(runtime.worldTransformUsingParentTransformId).toBe(0);
   });
 
-  it('incorporates parent worldTransformID when provided', () => {
+  it('incorporates parent worldTransformId when provided', () => {
     const parentNode = createTestNode();
     const parentRuntime = getEntityRuntime(parentNode);
-    parentRuntime.worldTransformID = 7;
+    parentRuntime.worldTransformId = 7;
     const runtime = getEntityRuntime(node);
     computeNodeWorldTransformRevision(runtime, parentRuntime);
-    expect(runtime.worldTransformUsingParentTransformID).toBe(7);
+    expect(runtime.worldTransformUsingParentTransformId).toBe(7);
   });
 });
 
 describe('getNodeAppearanceRevision', () => {
-  it('returns appearanceID', () => {
+  it('returns appearanceId', () => {
     const runtime = getEntityRuntime(node);
-    runtime.appearanceID = 100;
-    expect(getNodeAppearanceRevision(node)).toStrictEqual(runtime.appearanceID);
+    runtime.appearanceId = 100;
+    expect(getNodeAppearanceRevision(node)).toStrictEqual(runtime.appearanceId);
   });
 });
 
 describe('getNodeLocalBoundsRevision', () => {
-  it('returns localBoundsID', () => {
+  it('returns localBoundsId', () => {
     const runtime = getEntityRuntime(node);
-    runtime.localBoundsID = 100;
-    expect(getNodeLocalBoundsRevision(node)).toStrictEqual(runtime.localBoundsID);
+    runtime.localBoundsId = 100;
+    expect(getNodeLocalBoundsRevision(node)).toStrictEqual(runtime.localBoundsId);
   });
 });
 
 describe('getNodeLocalContentRevision', () => {
-  it('returns localContentID', () => {
+  it('returns localContentId', () => {
     const runtime = getEntityRuntime(node);
-    runtime.localContentID = 100;
-    expect(getNodeLocalContentRevision(node)).toStrictEqual(runtime.localContentID);
+    runtime.localContentId = 100;
+    expect(getNodeLocalContentRevision(node)).toStrictEqual(runtime.localContentId);
   });
 });
 
 describe('getNodeLocalTransformRevision', () => {
-  it('returns localTransformID', () => {
+  it('returns localTransformId', () => {
     const runtime = getEntityRuntime(node);
-    runtime.localTransformID = 100;
-    expect(getNodeLocalTransformRevision(node)).toStrictEqual(runtime.localTransformID);
+    runtime.localTransformId = 100;
+    expect(getNodeLocalTransformRevision(node)).toStrictEqual(runtime.localTransformId);
   });
 });
 
 describe('getNodeWorldTransformRevision', () => {
-  it('returns worldTransformID', () => {
+  it('returns worldTransformId', () => {
     const runtime = getEntityRuntime(node);
-    runtime.worldTransformID = 100;
-    expect(getNodeWorldTransformRevision(node)).toStrictEqual(runtime.worldTransformID);
+    runtime.worldTransformId = 100;
+    expect(getNodeWorldTransformRevision(node)).toStrictEqual(runtime.worldTransformId);
   });
 });
 
 describe('invalidateNode', () => {
-  it('increments appearanceID, localBoundsID, localContentID, localTransformID', () => {
-    const appearanceID = getEntityRuntime(node).appearanceID;
-    const localBoundsID = getEntityRuntime(node).localBoundsID;
-    const localContentID = getEntityRuntime(node).localContentID;
-    const localTransformID = getEntityRuntime(node).localTransformID;
+  it('increments appearanceId, localBoundsId, localContentId, localTransformId', () => {
+    const appearanceId = getEntityRuntime(node).appearanceId;
+    const localBoundsId = getEntityRuntime(node).localBoundsId;
+    const localContentId = getEntityRuntime(node).localContentId;
+    const localTransformId = getEntityRuntime(node).localTransformId;
     invalidateNode(node);
-    expect(getEntityRuntime(node).appearanceID).toBe(appearanceID + 1);
-    expect(getEntityRuntime(node).localBoundsID).toBe(localBoundsID + 1);
-    expect(getEntityRuntime(node).localContentID).toBe(localContentID + 1);
-    expect(getEntityRuntime(node).localTransformID).toBe(localTransformID + 1);
+    expect(getEntityRuntime(node).appearanceId).toBe(appearanceId + 1);
+    expect(getEntityRuntime(node).localBoundsId).toBe(localBoundsId + 1);
+    expect(getEntityRuntime(node).localContentId).toBe(localContentId + 1);
+    expect(getEntityRuntime(node).localTransformId).toBe(localTransformId + 1);
   });
 
   it('invalidates parent reference', () => {
     invalidateNode(node);
-    expect(getEntityRuntime(node).worldTransformUsingParentTransformID).toBe(-1);
+    expect(getEntityRuntime(node).worldTransformUsingParentTransformId).toBe(-1);
   });
 
   it('invalidates world bounds', () => {
     invalidateNode(node);
-    expect(getEntityRuntime(node).worldBoundsUsingWorldTransformID).toBe(-1);
-    expect(getEntityRuntime(node).worldBoundsUsingLocalBoundsID).toBe(-1);
+    expect(getEntityRuntime(node).worldBoundsUsingWorldTransformId).toBe(-1);
+    expect(getEntityRuntime(node).worldBoundsUsingLocalBoundsId).toBe(-1);
   });
 });
 
 describe('invalidateNodeAppearance', () => {
-  it('increments appearanceID', () => {
-    const appearanceID = getEntityRuntime(node).appearanceID;
+  it('increments appearanceId', () => {
+    const appearanceId = getEntityRuntime(node).appearanceId;
     invalidateNodeAppearance(node);
-    expect(getEntityRuntime(node).appearanceID).toBe(appearanceID + 1);
+    expect(getEntityRuntime(node).appearanceId).toBe(appearanceId + 1);
   });
 
-  it('should wrap around appearanceID correctly using >>> 0', () => {
+  it('should wrap around appearanceId correctly using >>> 0', () => {
     const runtime = getEntityRuntime(node);
-    runtime.appearanceID = 0xffffffff; // max 32-bit uint
+    runtime.appearanceId = 0xffffffff; // max 32-bit uint
     invalidateNodeAppearance(node);
-    expect(getEntityRuntime(node).appearanceID).toBe(0);
+    expect(getEntityRuntime(node).appearanceId).toBe(0);
   });
 });
 
 describe('invalidateNodeLocalBounds', () => {
-  it('increments localBoundsID', () => {
-    const localBoundsID = getEntityRuntime(node).localBoundsID;
+  it('increments localBoundsId', () => {
+    const localBoundsId = getEntityRuntime(node).localBoundsId;
     invalidateNodeLocalBounds(node);
-    expect(getEntityRuntime(node).localBoundsID).toBe(localBoundsID + 1);
+    expect(getEntityRuntime(node).localBoundsId).toBe(localBoundsId + 1);
   });
 
-  it('should wrap around localBoundsID correctly using >>> 0', () => {
+  it('should wrap around localBoundsId correctly using >>> 0', () => {
     const runtime = getEntityRuntime(node);
-    runtime.localBoundsID = 0xffffffff; // max 32-bit uint
+    runtime.localBoundsId = 0xffffffff; // max 32-bit uint
     invalidateNodeLocalBounds(node);
-    expect(getEntityRuntime(node).localBoundsID).toBe(0);
+    expect(getEntityRuntime(node).localBoundsId).toBe(0);
   });
 });
 
 describe('invalidateNodeLocalContent', () => {
-  it('increments localContentID', () => {
-    const localContentID = getEntityRuntime(node).localContentID;
+  it('increments localContentId', () => {
+    const localContentId = getEntityRuntime(node).localContentId;
     invalidateNodeLocalContent(node);
-    expect(getEntityRuntime(node).localContentID).toBe(localContentID + 1);
+    expect(getEntityRuntime(node).localContentId).toBe(localContentId + 1);
   });
 
-  it('should wrap around localContentID correctly using >>> 0', () => {
+  it('should wrap around localContentId correctly using >>> 0', () => {
     const runtime = getEntityRuntime(node);
-    runtime.localContentID = 0xffffffff; // max 32-bit uint
+    runtime.localContentId = 0xffffffff; // max 32-bit uint
     invalidateNodeLocalContent(node);
-    expect(getEntityRuntime(node).localContentID).toBe(0);
+    expect(getEntityRuntime(node).localContentId).toBe(0);
   });
 });
 
 describe('invalidateNodeLocalTransform', () => {
-  it('increments localTransformID', () => {
-    const localTransformID = getEntityRuntime(node).localTransformID;
+  it('increments localTransformId', () => {
+    const localTransformId = getEntityRuntime(node).localTransformId;
     invalidateNodeLocalTransform(node);
-    expect(getEntityRuntime(node).localTransformID).toBe(localTransformID + 1);
+    expect(getEntityRuntime(node).localTransformId).toBe(localTransformId + 1);
   });
 
-  it('should wrap around localTransformID correctly using >>> 0', () => {
+  it('should wrap around localTransformId correctly using >>> 0', () => {
     const runtime = getEntityRuntime(node);
-    runtime.localTransformID = 0xffffffff; // max 32-bit uint
+    runtime.localTransformId = 0xffffffff; // max 32-bit uint
     invalidateNodeLocalTransform(node);
-    expect(getEntityRuntime(node).localTransformID).toBe(0);
+    expect(getEntityRuntime(node).localTransformId).toBe(0);
   });
 });
 
 describe('invalidateNodeParentReference', () => {
   it('invalidates the world transform parent transform cached ID', () => {
     const runtime = getEntityRuntime(node);
-    runtime.worldTransformUsingParentTransformID = 1;
+    runtime.worldTransformUsingParentTransformId = 1;
     invalidateNodeParentReference(node);
-    expect(runtime.worldTransformUsingParentTransformID).toBe(-1);
+    expect(runtime.worldTransformUsingParentTransformId).toBe(-1);
   });
 });
 
 describe('invalidateNodeRender', () => {
-  it('increments both appearanceID and localTransformID', () => {
+  it('increments both appearanceId and localTransformId', () => {
     const runtime = getEntityRuntime(node);
-    const prevAppearance = runtime.appearanceID;
-    const prevLocalTransform = runtime.localTransformID;
+    const prevAppearance = runtime.appearanceId;
+    const prevLocalTransform = runtime.localTransformId;
     invalidateNodeRender(node);
-    expect(runtime.appearanceID).toBe(prevAppearance + 1);
-    expect(runtime.localTransformID).toBe(prevLocalTransform + 1);
+    expect(runtime.appearanceId).toBe(prevAppearance + 1);
+    expect(runtime.localTransformId).toBe(prevLocalTransform + 1);
   });
 });
 
 describe('invalidateNodeWorldBounds', () => {
   it('invalidates supporting values for world bounds calculations', () => {
     const runtime = getEntityRuntime(node);
-    runtime.worldBoundsUsingWorldTransformID = 1;
-    runtime.worldBoundsUsingLocalBoundsID = 1;
+    runtime.worldBoundsUsingWorldTransformId = 1;
+    runtime.worldBoundsUsingLocalBoundsId = 1;
     invalidateNodeWorldBounds(node);
-    expect(runtime.worldBoundsUsingWorldTransformID).toBe(-1);
-    expect(runtime.worldBoundsUsingLocalBoundsID).toBe(-1);
+    expect(runtime.worldBoundsUsingWorldTransformId).toBe(-1);
+    expect(runtime.worldBoundsUsingLocalBoundsId).toBe(-1);
   });
 });
 

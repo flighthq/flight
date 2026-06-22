@@ -82,21 +82,21 @@ describe('createNodeRuntime', () => {
   });
 
   it('initializes default values', () => {
-    expect(runtime.appearanceID).toStrictEqual(0);
-    expect(runtime.boundsUsingLocalBoundsID).toStrictEqual(-1);
-    expect(runtime.boundsUsingLocalTransformID).toStrictEqual(-1);
+    expect(runtime.appearanceId).toStrictEqual(0);
+    expect(runtime.boundsUsingLocalBoundsId).toStrictEqual(-1);
+    expect(runtime.boundsUsingLocalTransformId).toStrictEqual(-1);
     expect(runtime.children).toBeNull();
     expect(runtime.nodeSignals).toBeNull();
-    expect(runtime.localBoundsID).toStrictEqual(0);
-    expect(runtime.localBoundsUsingLocalBoundsID).toStrictEqual(-1);
-    expect(runtime.localTransformID).toStrictEqual(0);
-    expect(runtime.localTransformUsingLocalTransformID).toStrictEqual(-1);
+    expect(runtime.localBoundsId).toStrictEqual(0);
+    expect(runtime.localBoundsUsingLocalBoundsId).toStrictEqual(-1);
+    expect(runtime.localTransformId).toStrictEqual(0);
+    expect(runtime.localTransformUsingLocalTransformId).toStrictEqual(-1);
     expect(runtime.parent).toBeNull();
-    expect(runtime.worldBoundsUsingLocalBoundsID).toStrictEqual(-1);
-    expect(runtime.worldBoundsUsingWorldTransformID).toStrictEqual(-1);
-    expect(runtime.worldTransformID).toStrictEqual(0);
-    expect(runtime.worldTransformUsingLocalTransformID).toStrictEqual(-1);
-    expect(runtime.worldTransformUsingParentTransformID).toStrictEqual(-1);
+    expect(runtime.worldBoundsUsingLocalBoundsId).toStrictEqual(-1);
+    expect(runtime.worldBoundsUsingWorldTransformId).toStrictEqual(-1);
+    expect(runtime.worldTransformId).toStrictEqual(0);
+    expect(runtime.worldTransformUsingLocalTransformId).toStrictEqual(-1);
+    expect(runtime.worldTransformUsingParentTransformId).toStrictEqual(-1);
     expect(runtime.canAddChild).toStrictEqual(defaultNodeRuntimeCanAddChild);
   });
 

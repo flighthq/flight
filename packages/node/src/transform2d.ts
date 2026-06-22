@@ -35,7 +35,7 @@ export function convertNodeVector2LocalToGlobal<Traits extends object>(
 
 export function ensureNodeLocalTransformMatrix<Traits extends object>(target: Transform2DNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime;
-  if (runtime.localTransformUsingLocalTransformID !== runtime.localTransformID) {
+  if (runtime.localTransformUsingLocalTransformId !== runtime.localTransformId) {
     recomputeLocalTransform2D(target, runtime);
   }
 }
@@ -45,17 +45,17 @@ export function ensureNodeWorldTransformMatrix<Traits extends object>(target: Tr
   const parent = runtime.parent as Transform2DNode<Traits>;
 
   let parentRuntime: (NodeRuntime<Traits> & HasTransform2DRuntime) | undefined;
-  let parentWorldTransformID = 0;
+  let parentWorldTransformId = 0;
 
   if (parent !== null) {
     ensureNodeWorldTransformMatrix(parent);
     parentRuntime = getEntityRuntime(parent) as NodeRuntime<Traits> & HasTransform2DRuntime;
-    parentWorldTransformID = parentRuntime.worldTransformID;
+    parentWorldTransformId = parentRuntime.worldTransformId;
   }
 
   if (
-    runtime.worldTransformUsingLocalTransformID !== runtime.localTransformID ||
-    runtime.worldTransformUsingParentTransformID !== parentWorldTransformID
+    runtime.worldTransformUsingLocalTransformId !== runtime.localTransformId ||
+    runtime.worldTransformUsingParentTransformId !== parentWorldTransformId
   ) {
     recomputeWorldTransform2D(target, runtime, parentRuntime);
   }
@@ -99,7 +99,7 @@ function recomputeLocalTransform2D<Traits extends object>(
   // Pivot: the local point (pivotX, pivotY) maps to (x, y). With pivot 0,0 this reduces to tx=x, ty=y.
   matrix.tx = target.x - (matrix.a * target.pivotX + matrix.c * target.pivotY);
   matrix.ty = target.y - (matrix.b * target.pivotX + matrix.d * target.pivotY);
-  runtime.localTransformUsingLocalTransformID = runtime.localTransformID;
+  runtime.localTransformUsingLocalTransformId = runtime.localTransformId;
 }
 
 function recomputeWorldTransform2D<Traits extends object>(
