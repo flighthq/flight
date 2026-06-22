@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/render-canvas",
+  "name": "@flighthq/displayobject-canvas",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
