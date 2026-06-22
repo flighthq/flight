@@ -73,6 +73,7 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     enableVertexAttribArray: record('enableVertexAttribArray'),
     vertexAttribPointer: record('vertexAttribPointer'),
     vertexAttribIPointer: record('vertexAttribIPointer'),
+    vertexAttrib4f: record('vertexAttrib4f'),
     enable: record('enable'),
     disable: record('disable'),
     depthFunc: record('depthFunc'),

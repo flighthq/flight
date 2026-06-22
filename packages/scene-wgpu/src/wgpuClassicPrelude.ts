@@ -215,6 +215,16 @@ struct ClassicMaterial {
     normal = normalize(tbn * tangentNormal);
   }
 
+  // Specular color is resolved here in UNIFORM control flow. WGSL forbids textureSample inside the
+  // per-pixel lighting branch below (it depends on nDotL, a non-uniform value), so the map sample is
+  // hoisted out. Maps are deferred on wgpu (placeholder bound), so this stays the material specular
+  // until texture upload lands.
+  var specularColor = material.specular.rgb;
+  if (HAS_SPECULAR_MAP) {
+    let sampledSpecular = textureSample(specularTexture, materialSampler, in.uv);
+    specularColor = specularColor * srgbToLinear(sampledSpecular.rgb);
+  }
+
   var radiance = vec3f(0.0);
 
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
@@ -225,11 +235,6 @@ struct ClassicMaterial {
 
     if ((LIGHTING_PHONG || LIGHTING_BLINNPHONG) && nDotL > 0.0) {
       let viewDir = normalize(frame.cameraPosition.xyz - in.worldPosition);
-      var specularColor = material.specular.rgb;
-      if (HAS_SPECULAR_MAP) {
-        let sampledSpecular = textureSample(specularTexture, materialSampler, in.uv);
-        specularColor = specularColor * srgbToLinear(sampledSpecular.rgb);
-      }
       var specAngle = 0.0;
       if (LIGHTING_PHONG) {
         // Phong: reflection-vector specular.

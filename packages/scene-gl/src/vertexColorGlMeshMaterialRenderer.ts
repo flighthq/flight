@@ -36,6 +36,11 @@ export const vertexColorGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     beginGlMeshDraw(state, program, vertexColor !== null && vertexColor.doubleSided);
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
 
+    // Default the color0 generic vertex attribute to opaque white so a mesh WITHOUT a color0 attribute
+    // renders the tint alone (matching the wgpu path) instead of multiplying by the (0,0,0,1) default,
+    // which would render black. A mesh that DOES carry color0 enables the array and overrides this.
+    gl.vertexAttrib4f(4, 1, 1, 1, 1);
+
     if (vertexColor === null) {
       bindGlUnlitSurface(state, program, WHITE, 1, null, 0.5);
       return;
