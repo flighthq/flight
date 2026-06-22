@@ -7,11 +7,11 @@ import {
   createBitmap,
   createDisplayObject,
   createTween,
+  easeOutQuadratic,
   enableInteractionSignals,
   getNodeLocalBoundsRectangle,
   getNodeParent,
   invalidateNodeRender,
-  Quad,
   releaseInteractionPointer,
   removeNodeChild,
   setRectangle,
@@ -101,7 +101,7 @@ export function initTile(tile: Tile): void {
 
 export function moveTile(manager: TweenManager, tile: Tile, duration: number, targetX: number, targetY: number): void {
   tile.moving = true;
-  const tween = createTween(manager, tile.obj, duration, { x: targetX, y: targetY }, { ease: Quad.easeOut });
+  const tween = createTween(manager, tile.obj, duration, { x: targetX, y: targetY }, { ease: easeOutQuadratic });
   connectSignal(tween.onUpdate, () => invalidateNodeRender(tile.obj));
   connectSignal(tween.onComplete, () => {
     tile.moving = false;
@@ -121,7 +121,7 @@ export function removeTileAnimated(manager: TweenManager, tile: Tile, tileContai
     tile.obj,
     600,
     { alpha: 0, scaleX: 2, scaleY: 2, x: tile.obj.x - half, y: tile.obj.y - half },
-    { ease: Quad.easeOut },
+    { ease: easeOutQuadratic },
   );
   connectSignal(tween.onUpdate, () => invalidateNodeRender(tile.obj));
   connectSignal(tween.onComplete, () => {

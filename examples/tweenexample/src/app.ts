@@ -10,8 +10,8 @@ import {
   createTween,
   createTweenManager,
   createTweenTimer,
+  easeOutQuadratic,
   invalidateNodeRender,
-  Quad,
   startApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
@@ -36,7 +36,7 @@ function animateCircle(circle: ReturnType<typeof createShape>): void {
   const duration = MIN_DURATION + Math.random() * (MAX_DURATION - MIN_DURATION);
   const targetX = Math.random() * STAGE_WIDTH;
   const targetY = Math.random() * STAGE_HEIGHT;
-  const tween = createTween(manager, circle, duration, { x: targetX, y: targetY }, { ease: Quad.easeOut });
+  const tween = createTween(manager, circle, duration, { x: targetX, y: targetY }, { ease: easeOutQuadratic });
   connectSignal(tween.onComplete, () => animateCircle(circle));
   connectSignal(tween.onUpdate, () => invalidateNodeRender(circle));
 }

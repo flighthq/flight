@@ -14,10 +14,10 @@ import {
   createShape,
   createTween,
   createTweenManager,
+  easeOutQuadratic,
   invalidateNodeRender,
   loadAudioResourceFromURLs,
   playAudioResource,
-  Quad,
   setAudioChannelGain,
   startApplicationLoop,
   stopAudioChannel,
@@ -26,7 +26,7 @@ import {
 
 import { container, render, scale, setSize } from './render';
 
-const manager = createTweenManager({ defaultEase: Quad.easeOut });
+const manager = createTweenManager({ defaultEase: easeOutQuadratic });
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;

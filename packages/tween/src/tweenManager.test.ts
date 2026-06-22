@@ -18,7 +18,7 @@ describe('createTweenManager', () => {
 });
 
 describe('defaultEase', () => {
-  it('defaults to Expo.easeOut when no option provided', () => {
+  it('defaults to easeOutExponential when no option provided', () => {
     const manager = createTweenManager();
     expect(typeof manager.defaultEase).toBe('function');
     expect(manager.defaultEase(0)).toBe(0);
