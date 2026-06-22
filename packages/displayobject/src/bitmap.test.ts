@@ -115,16 +115,16 @@ describe('setBitmapImage', () => {
   it('invalidates local bounds', () => {
     const bitmap = createBitmap();
     const runtime = getEntityRuntime(bitmap) as BitmapRuntime;
-    const idBefore = runtime.localBoundsID;
+    const idBefore = runtime.localBoundsId;
     setBitmapImage(bitmap, { width: 64, height: 64 } as ImageResource);
-    expect(runtime.localBoundsID).not.toBe(idBefore);
+    expect(runtime.localBoundsId).not.toBe(idBefore);
   });
 
   it('invalidates local content', () => {
     const bitmap = createBitmap();
     const runtime = getEntityRuntime(bitmap) as BitmapRuntime;
-    const idBefore = runtime.localContentID;
+    const idBefore = runtime.localContentId;
     setBitmapImage(bitmap, { width: 64, height: 64 } as ImageResource);
-    expect(runtime.localContentID).not.toBe(idBefore);
+    expect(runtime.localContentId).not.toBe(idBefore);
   });
 });
