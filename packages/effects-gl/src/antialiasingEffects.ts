@@ -1,14 +1,14 @@
-import { drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl';
 import type {
-  FXAAEffect,
-  SMAAEffect,
-  TAAEffect,
-  WebGLRenderEffectRunner,
-  WebGLRenderState,
-  WebGLRenderTarget,
+  FxaaEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
+  SmaaEffect,
+  TaaEffect,
 } from '@flighthq/types';
 
-import { getWebGLEffectProgram } from './effectProgramCache';
+import { getGlEffectProgram } from './effectProgramCache';
 
 // Anti-aliasing recipes. FXAA is a full luminance-based single-pass implementation; SMAA is a
 // single-pass edge-aware approximation; TAA is a passthrough placeholder. Each samples u_texture0 and,
@@ -16,15 +16,15 @@ import { getWebGLEffectProgram } from './effectProgramCache';
 
 // FXAA: luminance edge detection + directional blend along the detected edge. Single-pass reference
 // recipe. Reads u_texture0; u_resolution gives the texel size; u_edgeThreshold gates edge detection.
-export function applyFXAAEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
-  effect: Readonly<FXAAEffect>,
+export function applyFxaaEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
+  effect: Readonly<FxaaEffect>,
 ): void {
   const edgeThreshold = effect.edgeThreshold ?? 0.0312;
-  const program = getWebGLEffectProgram(state, 'antialiasing.fxaa', FXAA_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'antialiasing.fxaa', FXAA_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_edgeThreshold'), edgeThreshold);
   });
@@ -33,15 +33,15 @@ export function applyFXAAEffectToWebGL(
 // SMAA: a single-pass edge-aware blur approximation. Full SMAA needs separate edge-detection and
 // blend-weight passes against precomputed area/search lookup textures; this single-pass approximation
 // softens detected edges only and is acceptable until the multi-pass recipe lands.
-export function applySMAAEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
-  effect: Readonly<SMAAEffect>,
+export function applySmaaEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
+  effect: Readonly<SmaaEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.1;
-  const program = getWebGLEffectProgram(state, 'antialiasing.smaa', SMAA_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'antialiasing.smaa', SMAA_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_threshold'), threshold);
   });
@@ -50,26 +50,26 @@ export function applySMAAEffectToWebGL(
 // TAA: passthrough copy of source → dest. Real temporal AA needs a history buffer + motion vectors to
 // reproject and accumulate prior frames; neither is available in the single-frame effect context, so
 // this is a placeholder that preserves the pipeline stage without altering the image.
-export function applyTAAEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
-  _effect: Readonly<TAAEffect>,
+export function applyTaaEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
+  _effect: Readonly<TaaEffect>,
 ): void {
-  const program = getWebGLEffectProgram(state, 'antialiasing.taa', TAA_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, _noopSetUniforms);
+  const program = getGlEffectProgram(state, 'antialiasing.taa', TAA_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, _noopSetUniforms);
 }
 
-export const defaultWebGLFXAAEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyFXAAEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as FXAAEffect);
+export const defaultGlFxaaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyFxaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as FxaaEffect);
 };
 
-export const defaultWebGLSMAAEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applySMAAEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as SMAAEffect);
+export const defaultGlSmaaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applySmaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SmaaEffect);
 };
 
-export const defaultWebGLTAAEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyTAAEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as TAAEffect);
+export const defaultGlTaaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyTaaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as TaaEffect);
 };
 
 function _noopSetUniforms(): void {}

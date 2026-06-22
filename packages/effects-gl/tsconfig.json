@@ -11,9 +11,9 @@
   "references": [
     { "path": "../effects" },
     { "path": "../filters" },
-    { "path": "../filters-webgl" },
+    { "path": "../filters-gl" },
     { "path": "../geometry" },
-    { "path": "../render-webgl" },
+    { "path": "../render-gl" },
     { "path": "../types" }
   ],
   "include": ["src"]

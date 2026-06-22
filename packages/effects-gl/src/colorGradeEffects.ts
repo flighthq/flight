@@ -1,8 +1,11 @@
-import { drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl';
 import type {
   BrightnessContrastEffect,
   ChannelMixerEffect,
   ColorGradeEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
   GrayscaleEffect,
   HueSaturationEffect,
   InvertEffect,
@@ -10,54 +13,51 @@ import type {
   LookupTableGradeEffect,
   PosterizeEffect,
   SepiaEffect,
-  WebGLRenderEffectRunner,
-  WebGLRenderState,
-  WebGLRenderTarget,
   WhiteBalanceEffect,
 } from '@flighthq/types';
 
-import { getWebGLEffectProgram } from './effectProgramCache';
+import { getGlEffectProgram } from './effectProgramCache';
 
 // Single-pass color-grading recipes. Each reads `source`, writes `dest`, and compiles its fragment once
-// per state via getWebGLEffectProgram. Packed-RGBA intent fields (lift/gamma/gain) are unpacked to
+// per state via getGlEffectProgram. Packed-RGBA intent fields (lift/gamma/gain) are unpacked to
 // normalized floats here in JS before being uploaded as uniforms.
 
 // Brightness/contrast: shift then scale about mid-grey.
-export function applyBrightnessContrastEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyBrightnessContrastEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<BrightnessContrastEffect>,
 ): void {
   const brightness = effect.brightness ?? 0;
   const contrast = effect.contrast ?? 1;
-  const program = getWebGLEffectProgram(state, 'colorGrade.brightnessContrast', BRIGHTNESS_CONTRAST_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.brightnessContrast', BRIGHTNESS_CONTRAST_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_brightness'), brightness);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_contrast'), contrast);
   });
 }
 
 // Channel mixer: apply a 3x4 row-major RGB->RGB matrix plus per-row offset, uploaded as 12 floats.
-export function applyChannelMixerEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyChannelMixerEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<ChannelMixerEffect>,
 ): void {
   const matrix = new Float32Array(12);
   for (let i = 0; i < 12; i++) matrix[i] = effect.matrix[i] ?? IDENTITY_CHANNEL_MIXER[i];
-  const program = getWebGLEffectProgram(state, 'colorGrade.channelMixer', CHANNEL_MIXER_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.channelMixer', CHANNEL_MIXER_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1fv(gl.getUniformLocation(p.program, 'u_matrix'), matrix);
   });
 }
 
 // Color grade: combined exposure, brightness, contrast, saturation, and temperature/tint shift.
-export function applyColorGradeEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyColorGradeEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<ColorGradeEffect>,
 ): void {
   const exposure = effect.exposure ?? 0;
@@ -66,8 +66,8 @@ export function applyColorGradeEffectToWebGL(
   const temperature = effect.temperature ?? 0;
   const tint = effect.tint ?? 0;
   const brightness = effect.brightness ?? 0;
-  const program = getWebGLEffectProgram(state, 'colorGrade.colorGrade', COLOR_GRADE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.colorGrade', COLOR_GRADE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_exposure'), Math.pow(2, exposure));
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_contrast'), contrast);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_saturation'), saturation);
@@ -78,31 +78,31 @@ export function applyColorGradeEffectToWebGL(
 }
 
 // Grayscale: mix toward luminance by intensity.
-export function applyGrayscaleEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyGrayscaleEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<GrayscaleEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
-  const program = getWebGLEffectProgram(state, 'colorGrade.grayscale', GRAYSCALE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.grayscale', GRAYSCALE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
   });
 }
 
 // Hue/saturation/lightness: convert to HSL, adjust, convert back.
-export function applyHueSaturationEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyHueSaturationEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<HueSaturationEffect>,
 ): void {
   const hue = effect.hue ?? 0;
   const saturation = effect.saturation ?? 1;
   const lightness = effect.lightness ?? 0;
-  const program = getWebGLEffectProgram(state, 'colorGrade.hueSaturation', HUE_SATURATION_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.hueSaturation', HUE_SATURATION_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_hue'), hue / 360);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_saturation'), saturation);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_lightness'), lightness);
@@ -110,25 +110,25 @@ export function applyHueSaturationEffectToWebGL(
 }
 
 // Invert: mix toward 1 - rgb by intensity.
-export function applyInvertEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyInvertEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<InvertEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
-  const program = getWebGLEffectProgram(state, 'colorGrade.invert', INVERT_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.invert', INVERT_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
   });
 }
 
 // Lift/gamma/gain: unpack packed-RGBA neutrals to per-channel offsets/exponents/multipliers in JS.
 // Neutral packed values: lift 0x000000ff, gamma 0x808080ff, gain 0xffffffff.
-export function applyLiftGammaGainEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyLiftGammaGainEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<LiftGammaGainEffect>,
 ): void {
   const lift = unpackColor(effect.lift ?? 0x000000ff);
@@ -140,8 +140,8 @@ export function applyLiftGammaGainEffectToWebGL(
     1 / Math.max(gammaRaw[1] * 2, 1e-3),
     1 / Math.max(gammaRaw[2] * 2, 1e-3),
   ];
-  const program = getWebGLEffectProgram(state, 'colorGrade.liftGammaGain', LIFT_GAMMA_GAIN_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.liftGammaGain', LIFT_GAMMA_GAIN_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform3f(gl.getUniformLocation(p.program, 'u_lift'), lift[0], lift[1], lift[2]);
     gl.uniform3f(gl.getUniformLocation(p.program, 'u_gamma'), gamma[0], gamma[1], gamma[2]);
     gl.uniform3f(gl.getUniformLocation(p.program, 'u_gain'), gain[0], gain[1], gain[2]);
@@ -151,105 +151,105 @@ export function applyLiftGammaGainEffectToWebGL(
 // LUT grade: passthrough with a strength mix. A real 3D LUT grade needs an uploaded LUT cube texture
 // (size from effect.size) sampled per pixel; that texture path is not yet wired, so this keeps the
 // pass compiling and color-neutral until the LUT upload is added.
-export function applyLookupTableGradeEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyLookupTableGradeEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<LookupTableGradeEffect>,
 ): void {
   const strength = effect.strength ?? 1;
-  const program = getWebGLEffectProgram(state, 'colorGrade.lutGrade', LUT_GRADE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.lutGrade', LUT_GRADE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_strength'), strength);
   });
 }
 
 // Posterize: floor each channel to `levels` discrete steps.
-export function applyPosterizeEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyPosterizeEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<PosterizeEffect>,
 ): void {
   const levels = Math.max(2, effect.levels ?? 8);
-  const program = getWebGLEffectProgram(state, 'colorGrade.posterize', POSTERIZE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.posterize', POSTERIZE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_levels'), levels);
   });
 }
 
 // Sepia: mix toward a sepia matrix transform by intensity.
-export function applySepiaEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applySepiaEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<SepiaEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
-  const program = getWebGLEffectProgram(state, 'colorGrade.sepia', SEPIA_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.sepia', SEPIA_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
   });
 }
 
 // White balance: warm/cool temperature and magenta/green tint channel shift.
-export function applyWhiteBalanceEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyWhiteBalanceEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<WhiteBalanceEffect>,
 ): void {
   const temperature = effect.temperature ?? 0;
   const tint = effect.tint ?? 0;
-  const program = getWebGLEffectProgram(state, 'colorGrade.whiteBalance', WHITE_BALANCE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'colorGrade.whiteBalance', WHITE_BALANCE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_temperature'), temperature);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_tint'), tint);
   });
 }
 
-export const defaultWebGLBrightnessContrastEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyBrightnessContrastEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as BrightnessContrastEffect);
+export const defaultGlBrightnessContrastEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyBrightnessContrastEffectToGl(ctx.state, ctx.source, ctx.dest, effect as BrightnessContrastEffect);
 };
 
-export const defaultWebGLChannelMixerEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyChannelMixerEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as ChannelMixerEffect);
+export const defaultGlChannelMixerEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyChannelMixerEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ChannelMixerEffect);
 };
 
-export const defaultWebGLColorGradeEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyColorGradeEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as ColorGradeEffect);
+export const defaultGlColorGradeEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyColorGradeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ColorGradeEffect);
 };
 
-export const defaultWebGLGrayscaleEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyGrayscaleEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as GrayscaleEffect);
+export const defaultGlGrayscaleEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyGrayscaleEffectToGl(ctx.state, ctx.source, ctx.dest, effect as GrayscaleEffect);
 };
 
-export const defaultWebGLHueSaturationEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyHueSaturationEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as HueSaturationEffect);
+export const defaultGlHueSaturationEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyHueSaturationEffectToGl(ctx.state, ctx.source, ctx.dest, effect as HueSaturationEffect);
 };
 
-export const defaultWebGLInvertEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyInvertEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as InvertEffect);
+export const defaultGlInvertEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyInvertEffectToGl(ctx.state, ctx.source, ctx.dest, effect as InvertEffect);
 };
 
-export const defaultWebGLLiftGammaGainEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyLiftGammaGainEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as LiftGammaGainEffect);
+export const defaultGlLiftGammaGainEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyLiftGammaGainEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LiftGammaGainEffect);
 };
 
-export const defaultWebGLLookupTableGradeEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyLookupTableGradeEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as LookupTableGradeEffect);
+export const defaultGlLookupTableGradeEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyLookupTableGradeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LookupTableGradeEffect);
 };
 
-export const defaultWebGLPosterizeEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyPosterizeEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
+export const defaultGlPosterizeEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyPosterizeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
 };
 
-export const defaultWebGLSepiaEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applySepiaEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as SepiaEffect);
+export const defaultGlSepiaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applySepiaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SepiaEffect);
 };
 
-export const defaultWebGLWhiteBalanceEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyWhiteBalanceEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
+export const defaultGlWhiteBalanceEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyWhiteBalanceEffectToGl(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
 };
 
 // Unpack a packed RGBA integer (0xRRGGBBAA) into normalized [r, g, b] floats. Alpha is dropped — these

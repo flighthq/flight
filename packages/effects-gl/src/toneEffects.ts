@@ -1,26 +1,26 @@
 import { computeBloomBlurRadius } from '@flighthq/effects';
-import { applyGaussianBlurFilterToWebGL } from '@flighthq/filters-webgl';
-import { acquireWebGLRenderTarget, drawWebGLFullscreenPass, releaseWebGLRenderTarget } from '@flighthq/render-webgl';
+import { applyGaussianBlurFilterToGl } from '@flighthq/filters-gl';
+import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl';
 import type {
   BloomEffect,
   ExposureEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
+  GlRenderTargetPool,
   ToneMapEffect,
-  WebGLRenderEffectRunner,
-  WebGLRenderState,
-  WebGLRenderTarget,
-  WebGLRenderTargetPool,
 } from '@flighthq/types';
 
-import { getWebGLEffectProgram } from './effectProgramCache';
+import { getGlEffectProgram } from './effectProgramCache';
 
 // Bloom: bright-pass → blur the bright branch (reusing the Tier-1 gaussian blur filter) → additively
 // composite back. The multi-pass reference recipe — it acquires intermediate targets from the pool
 // and releases them, branches, and reuses a filter, which is what makes it an effect and not a filter.
-export function applyBloomEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
-  pool: WebGLRenderTargetPool,
+export function applyBloomEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
+  pool: GlRenderTargetPool,
   effect: Readonly<BloomEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.8;
@@ -28,67 +28,67 @@ export function applyBloomEffectToWebGL(
   const radius = computeBloomBlurRadius(effect);
   const descriptor = { width: source.width, height: source.height, format: source.format };
 
-  const bright = acquireWebGLRenderTarget(state, pool, descriptor);
-  const blurred = acquireWebGLRenderTarget(state, pool, descriptor);
-  const temp = acquireWebGLRenderTarget(state, pool, descriptor);
+  const bright = acquireGlRenderTarget(state, pool, descriptor);
+  const blurred = acquireGlRenderTarget(state, pool, descriptor);
+  const temp = acquireGlRenderTarget(state, pool, descriptor);
 
-  const brightProgram = getWebGLEffectProgram(state, 'bloom.bright', BLOOM_BRIGHT_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, brightProgram, [source.texture], bright, (gl, program) => {
+  const brightProgram = getGlEffectProgram(state, 'bloom.bright', BLOOM_BRIGHT_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, brightProgram, [source.texture], bright, (gl, program) => {
     gl.uniform1f(gl.getUniformLocation(program.program, 'u_threshold'), threshold);
   });
 
-  applyGaussianBlurFilterToWebGL(state, bright, blurred, temp, { blurX: radius, blurY: radius });
+  applyGaussianBlurFilterToGl(state, bright, blurred, temp, { blurX: radius, blurY: radius });
 
-  const compositeProgram = getWebGLEffectProgram(state, 'bloom.composite', BLOOM_COMPOSITE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, compositeProgram, [source.texture, blurred.texture], dest, (gl, program) => {
+  const compositeProgram = getGlEffectProgram(state, 'bloom.composite', BLOOM_COMPOSITE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, compositeProgram, [source.texture, blurred.texture], dest, (gl, program) => {
     gl.uniform1f(gl.getUniformLocation(program.program, 'u_intensity'), intensity);
   });
 
-  releaseWebGLRenderTarget(pool, bright);
-  releaseWebGLRenderTarget(pool, blurred);
-  releaseWebGLRenderTarget(pool, temp);
+  releaseGlRenderTarget(pool, bright);
+  releaseGlRenderTarget(pool, blurred);
+  releaseGlRenderTarget(pool, temp);
 }
 
 // Exposure: scale linear color by 2^stops. Single-pass reference recipe.
-export function applyExposureEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyExposureEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<ExposureEffect>,
 ): void {
   const exposure = effect.exposure ?? 0;
-  const program = getWebGLEffectProgram(state, 'exposure', EXPOSURE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'exposure', EXPOSURE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_exposure'), Math.pow(2, exposure));
   });
 }
 
 // Tone map: compress HDR to displayable range via the selected operator. Single-pass reference recipe.
-export function applyToneMapEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyToneMapEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<ToneMapEffect>,
 ): void {
   const operator = effect.operator ?? 'aces';
   const exposure = effect.exposure ?? 1;
-  const program = getWebGLEffectProgram(state, `toneMap.${operator}`, buildToneMapFragment(operator));
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, `toneMap.${operator}`, buildToneMapFragment(operator));
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_exposure'), exposure);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_white'), effect.white ?? 1);
   });
 }
 
-export const defaultWebGLBloomEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyBloomEffectToWebGL(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
+export const defaultGlBloomEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyBloomEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
 
-export const defaultWebGLExposureEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyExposureEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as ExposureEffect);
+export const defaultGlExposureEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyExposureEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ExposureEffect);
 };
 
-export const defaultWebGLToneMapEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyToneMapEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
+export const defaultGlToneMapEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyToneMapEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
 };
 
 function buildToneMapFragment(operator: string): string {

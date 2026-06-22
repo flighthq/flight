@@ -1,9 +1,12 @@
-import { drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl';
 import type {
   CRTEffect,
   DitherEffect,
   FilmGrainEffect,
   GlitchEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
   HalftoneEffect,
   KuwaharaEffect,
   OutlineEffect,
@@ -11,31 +14,28 @@ import type {
   ScanlinesEffect,
   SharpenEffect,
   SketchEffect,
-  WebGLRenderEffectRunner,
-  WebGLRenderState,
-  WebGLRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGLEffectProgram } from './effectProgramCache';
+import { getGlEffectProgram } from './effectProgramCache';
 
-// Stylization effect recipes: single-pass WebGL shaders for non-photoreal looks. Each apply* compiles
+// Stylization effect recipes: single-pass Gl shaders for non-photoreal looks. Each apply* compiles
 // (once per state) and draws a fullscreen pass; neighbor-sampling shaders receive u_resolution as the
 // source pixel size so texel steps are exact. Outline's packed-RGBA color is unpacked to 0..1 in JS.
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
 // the channels outward (chromatic aberration) for a tube-monitor look.
-export function applyCRTEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyCRTEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<CRTEffect>,
 ): void {
   const curvature = effect.curvature ?? 0.1;
   const scanlineIntensity = effect.scanlineIntensity ?? 0.3;
   const vignette = effect.vignette ?? 0.3;
   const aberration = effect.aberration ?? 0.005;
-  const program = getWebGLEffectProgram(state, 'stylization.crt', CRT_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.crt', CRT_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_curvature'), curvature);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_scanlineIntensity'), scanlineIntensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_vignette'), vignette);
@@ -46,15 +46,15 @@ export function applyCRTEffectToWebGL(
 
 // Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
 // banded-but-textured look.
-export function applyDitherEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyDitherEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<DitherEffect>,
 ): void {
   const levels = effect.levels ?? 4;
-  const program = getWebGLEffectProgram(state, 'stylization.dither', DITHER_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.dither', DITHER_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_levels'), Math.max(2, levels));
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
   });
@@ -62,17 +62,17 @@ export function applyDitherEffectToWebGL(
 
 // Film grain: add per-pixel hash noise scaled by intensity, with grain cell size and a seed so the
 // noise can be animated frame to frame.
-export function applyFilmGrainEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyFilmGrainEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<FilmGrainEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.1;
   const size = effect.size ?? 1;
   const seed = effect.seed ?? 0;
-  const program = getWebGLEffectProgram(state, 'stylization.filmGrain', FILM_GRAIN_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.filmGrain', FILM_GRAIN_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_size'), Math.max(0.0001, size));
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_seed'), seed);
@@ -81,18 +81,18 @@ export function applyFilmGrainEffectToWebGL(
 
 // Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh tear),
 // separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.
-export function applyGlitchEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyGlitchEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<GlitchEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;
   const blockSize = effect.blockSize ?? 24;
   const colorShift = effect.colorShift ?? 8;
   const seed = effect.seed ?? 0;
-  const program = getWebGLEffectProgram(state, 'stylization.glitch', GLITCH_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.glitch', GLITCH_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_blockSize'), blockSize);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_colorShift'), colorShift);
@@ -103,16 +103,16 @@ export function applyGlitchEffectToWebGL(
 
 // Halftone: sample luminance, then carve a rotated dot grid whose dot radius tracks darkness — the
 // classic print/comic screen. `scale` sets the cell size, `angle` rotates the grid.
-export function applyHalftoneEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyHalftoneEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<HalftoneEffect>,
 ): void {
   const scale = effect.scale ?? 6;
   const angle = effect.angle ?? 0.4;
-  const program = getWebGLEffectProgram(state, 'stylization.halftone', HALFTONE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.halftone', HALFTONE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_scale'), Math.max(1, scale));
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_angle'), angle);
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
@@ -122,15 +122,15 @@ export function applyHalftoneEffectToWebGL(
 // Kuwahara: edge-preserving smoothing. Over a fixed small radius split the neighborhood into four
 // overlapping quadrants, compute each mean and variance, and emit the lowest-variance mean — flattens
 // regions while keeping edges crisp. `radius` gates the sampled extent.
-export function applyKuwaharaEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyKuwaharaEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<KuwaharaEffect>,
 ): void {
   const radius = effect.radius ?? 3;
-  const program = getWebGLEffectProgram(state, 'stylization.kuwahara', KUWAHARA_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.kuwahara', KUWAHARA_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_radius'), Math.max(1, radius));
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
   });
@@ -138,17 +138,17 @@ export function applyKuwaharaEffectToWebGL(
 
 // Outline: Sobel edge detection on luminance; where the gradient magnitude exceeds `threshold`, mix
 // the pixel toward the outline color by `thickness`. Color arrives packed RGBA, unpacked to 0..1 here.
-export function applyOutlineEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyOutlineEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<OutlineEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.2;
   const thickness = effect.thickness ?? 1;
   const color = effect.color ?? 0x000000ff;
-  const program = getWebGLEffectProgram(state, 'stylization.outline', OUTLINE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.outline', OUTLINE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_threshold'), threshold);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_thickness'), thickness);
     gl.uniform4f(
@@ -163,46 +163,46 @@ export function applyOutlineEffectToWebGL(
 }
 
 // Pixelate: snap uv to the center of `size`-pixel blocks before sampling, producing hard mosaic blocks.
-export function applyPixelateEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyPixelateEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<PixelateEffect>,
 ): void {
   const size = effect.size ?? 8;
-  const program = getWebGLEffectProgram(state, 'stylization.pixelate', PIXELATE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.pixelate', PIXELATE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_size'), Math.max(1, size));
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
   });
 }
 
 // Scanlines: darken by a vertical sine band; `count` sets the line density, `intensity` the darkening.
-export function applyScanlinesEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyScanlinesEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<ScanlinesEffect>,
 ): void {
   const count = effect.count ?? 240;
   const intensity = effect.intensity ?? 0.3;
-  const program = getWebGLEffectProgram(state, 'stylization.scanlines', SCANLINES_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.scanlines', SCANLINES_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_count'), count);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
   });
 }
 
 // Sharpen: unsharp mask via a 3x3 Laplacian kernel; `amount` scales the high-frequency boost.
-export function applySharpenEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applySharpenEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<SharpenEffect>,
 ): void {
   const amount = effect.amount ?? 0.5;
-  const program = getWebGLEffectProgram(state, 'stylization.sharpen', SHARPEN_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.sharpen', SHARPEN_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_amount'), amount);
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
   });
@@ -210,62 +210,62 @@ export function applySharpenEffectToWebGL(
 
 // Sketch: detect luminance edges and invert them into dark pencil strokes over a light page; `strength`
 // scales how dark the strokes get.
-export function applySketchEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applySketchEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<SketchEffect>,
 ): void {
   const strength = effect.strength ?? 1;
-  const program = getWebGLEffectProgram(state, 'stylization.sketch', SKETCH_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'stylization.sketch', SKETCH_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_strength'), strength);
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
   });
 }
 
-export const defaultWebGLCRTEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyCRTEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as CRTEffect);
+export const defaultGlCRTEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyCRTEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CRTEffect);
 };
 
-export const defaultWebGLDitherEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyDitherEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
+export const defaultGlDitherEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyDitherEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
 };
 
-export const defaultWebGLFilmGrainEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyFilmGrainEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as FilmGrainEffect);
+export const defaultGlFilmGrainEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyFilmGrainEffectToGl(ctx.state, ctx.source, ctx.dest, effect as FilmGrainEffect);
 };
 
-export const defaultWebGLGlitchEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyGlitchEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
+export const defaultGlGlitchEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyGlitchEffectToGl(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
 };
 
-export const defaultWebGLHalftoneEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyHalftoneEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
+export const defaultGlHalftoneEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyHalftoneEffectToGl(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
 };
 
-export const defaultWebGLKuwaharaEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyKuwaharaEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
+export const defaultGlKuwaharaEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyKuwaharaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
 };
 
-export const defaultWebGLOutlineEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyOutlineEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
+export const defaultGlOutlineEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyOutlineEffectToGl(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
 };
 
-export const defaultWebGLPixelateEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyPixelateEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
+export const defaultGlPixelateEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyPixelateEffectToGl(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
 };
 
-export const defaultWebGLScanlinesEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyScanlinesEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
+export const defaultGlScanlinesEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyScanlinesEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
 
-export const defaultWebGLSharpenEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applySharpenEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as SharpenEffect);
+export const defaultGlSharpenEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applySharpenEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SharpenEffect);
 };
 
-export const defaultWebGLSketchEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applySketchEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
+export const defaultGlSketchEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applySketchEffectToGl(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
 };
 
 const CRT_FRAGMENT_SRC = `#version 300 es

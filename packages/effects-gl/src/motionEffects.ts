@@ -1,30 +1,30 @@
-import { drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl';
 import type {
   CameraMotionBlurEffect,
   DirectionalBlurEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
   MotionBlurEffect,
   RadialBlurEffect,
-  WebGLRenderEffectRunner,
-  WebGLRenderState,
-  WebGLRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGLEffectProgram } from './effectProgramCache';
+import { getGlEffectProgram } from './effectProgramCache';
 
 // Camera motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
 // toward the screen center. A legitimate 2D effect on its own. Two richer variants are 2D-native
 // follow-ups, not 3D-gated: feeding the actual camera/root transform delta as the smear vector (global
 // velocity), and per-object motion blur reading ctx.sceneVelocityTexture (per-node prev-transform delta).
-export function applyCameraMotionBlurEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyCameraMotionBlurEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<CameraMotionBlurEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;
   const samples = effect.samples ?? 16;
-  const program = getWebGLEffectProgram(state, 'cameraMotionBlur', CAMERA_MOTION_BLUR_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'cameraMotionBlur', CAMERA_MOTION_BLUR_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_samples'), samples);
   });
@@ -32,17 +32,17 @@ export function applyCameraMotionBlurEffectToWebGL(
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 // sample count. Single-pass reference recipe. u_resolution converts the texel length into UV space.
-export function applyDirectionalBlurEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyDirectionalBlurEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<DirectionalBlurEffect>,
 ): void {
   const angle = effect.angle ?? 0;
   const length = effect.length ?? 8;
   const samples = effect.samples ?? 16;
-  const program = getWebGLEffectProgram(state, 'directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_angle'), angle);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_length'), length);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_samples'), samples);
@@ -57,18 +57,18 @@ export function applyDirectionalBlurEffectToWebGL(
 // its own motion. When velocity is absent (the scene did not write the buffer), u_hasVelocity=0 and it is
 // a passthrough copy (sentinel path), preserving the pipeline stage without altering the image. Demonstrates
 // the ctx.sceneVelocityTexture seam: real velocity path when present, sentinel copy when null.
-export function applyMotionBlurEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyMotionBlurEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   velocityTexture: WebGLTexture | null,
   effect: Readonly<MotionBlurEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
   const samples = effect.samples ?? 16;
-  const program = getWebGLEffectProgram(state, 'motionBlur', MOTION_BLUR_FRAGMENT_SRC);
+  const program = getGlEffectProgram(state, 'motionBlur', MOTION_BLUR_FRAGMENT_SRC);
   const inputs = velocityTexture ? [source.texture, velocityTexture] : [source.texture];
-  drawWebGLFullscreenPass(state, program, inputs, dest, (gl, p) => {
+  drawGlFullscreenPass(state, program, inputs, dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_samples'), samples);
     // u_resolution converts the pixel-space velocity vector into UV-space tap offsets.
@@ -79,38 +79,38 @@ export function applyMotionBlurEffectToWebGL(
 
 // Radial blur: accumulate samples stepped from the current uv toward (centerX, centerY) scaled by
 // `strength`, normalized by the sample count. Single-pass reference recipe.
-export function applyRadialBlurEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyRadialBlurEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<RadialBlurEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
   const centerY = effect.centerY ?? 0.5;
   const strength = effect.strength ?? 0.2;
   const samples = effect.samples ?? 16;
-  const program = getWebGLEffectProgram(state, 'radialBlur', RADIAL_BLUR_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'radialBlur', RADIAL_BLUR_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_center'), centerX, centerY);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_strength'), strength);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_samples'), samples);
   });
 }
 
-export const defaultWebGLCameraMotionBlurEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyCameraMotionBlurEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
+export const defaultGlCameraMotionBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyCameraMotionBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
 };
 
-export const defaultWebGLDirectionalBlurEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyDirectionalBlurEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
+export const defaultGlDirectionalBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyDirectionalBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
 };
 
-export const defaultWebGLMotionBlurEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyMotionBlurEffectToWebGL(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
+export const defaultGlMotionBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyMotionBlurEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
 };
 
-export const defaultWebGLRadialBlurEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyRadialBlurEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
+export const defaultGlRadialBlurEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyRadialBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
 };
 
 const CAMERA_MOTION_BLUR_FRAGMENT_SRC = `#version 300 es

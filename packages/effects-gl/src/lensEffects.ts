@@ -1,22 +1,22 @@
-import { drawWebGLFullscreenPass } from '@flighthq/render-webgl';
+import { drawGlFullscreenPass } from '@flighthq/render-gl';
 import type {
   BokehDepthOfFieldEffect,
   ChromaticAberrationEffect,
   DisplacementEffect,
+  GlRenderEffectRunner,
+  GlRenderState,
+  GlRenderTarget,
   LensDirtEffect,
   LensDistortionEffect,
   LensFlareEffect,
   TiltShiftEffect,
   VignetteEffect,
-  WebGLRenderEffectRunner,
-  WebGLRenderState,
-  WebGLRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGLEffectProgram } from './effectProgramCache';
+import { getGlEffectProgram } from './effectProgramCache';
 
 // Lens-camera effect recipes. Each is a single-pass fragment shader keyed and compiled once per state
-// via getWebGLEffectProgram, then drawn with drawWebGLFullscreenPass. Shaders work in centered
+// via getGlEffectProgram, then drawn with drawGlFullscreenPass. Shaders work in centered
 // coordinates (v_texCoord - 0.5) so radial math measures distance from the optical center. Packed RGBA
 // color ints are unpacked to normalized vec4 uniforms in JS before upload.
 
@@ -24,19 +24,19 @@ import { getWebGLEffectProgram } from './effectProgramCache';
 // (ctx.sceneDepthTexture), it computes a per-pixel circle of confusion from focusDistance/focusRange and
 // scales the disc radius by it (the real DoF). When depth is absent it falls back to a uniform disc blur
 // of radius maxBlur. The second real consumer of the depth seam, alongside screen-space fog.
-export function applyBokehDepthOfFieldEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyBokehDepthOfFieldEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   depthTexture: WebGLTexture | null,
   effect: Readonly<BokehDepthOfFieldEffect>,
 ): void {
   const maxBlur = effect.maxBlur ?? 4;
   const focusDistance = effect.focusDistance ?? 0.5;
   const focusRange = effect.focusRange ?? 0.2;
-  const program = getWebGLEffectProgram(state, 'lens.bokehDoF', BOKEH_DOF_FRAGMENT_SRC);
+  const program = getGlEffectProgram(state, 'lens.bokehDoF', BOKEH_DOF_FRAGMENT_SRC);
   const inputs = depthTexture ? [source.texture, depthTexture] : [source.texture];
-  drawWebGLFullscreenPass(state, program, inputs, dest, (gl, p) => {
+  drawGlFullscreenPass(state, program, inputs, dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_maxBlur'), maxBlur);
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_focusDistance'), focusDistance);
@@ -48,33 +48,33 @@ export function applyBokehDepthOfFieldEffectToWebGL(
 // Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
 // apart. When radial, the offset scales with distance from the optical center (true lens behavior);
 // otherwise it is a uniform horizontal split.
-export function applyChromaticAberrationEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyChromaticAberrationEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<ChromaticAberrationEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.005;
   const radial = effect.radial ?? true;
-  const program = getWebGLEffectProgram(state, 'lens.chromaticAberration', CHROMATIC_ABERRATION_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'lens.chromaticAberration', CHROMATIC_ABERRATION_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_radial'), radial ? 1 : 0);
   });
 }
 
 // Displacement / heat-haze: warp the sample uv by an animated sine field for a refractive wobble.
-export function applyDisplacementEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyDisplacementEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<DisplacementEffect>,
 ): void {
   const intensity = effect.intensity ?? 8;
   const frequency = effect.frequency ?? 12;
   const seed = effect.seed ?? 0;
-  const program = getWebGLEffectProgram(state, 'lens.displacement', DISPLACEMENT_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'lens.displacement', DISPLACEMENT_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_frequency'), frequency);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_seed'), seed);
@@ -83,17 +83,17 @@ export function applyDisplacementEffectToWebGL(
 }
 
 // Lens dirt: procedural soft smudges that brighten where the scene is bright — a cheap bloom-dirt overlay.
-export function applyLensDirtEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyLensDirtEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<LensDirtEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
   const threshold = effect.threshold ?? 0.55;
   const seed = effect.seed ?? 0;
-  const program = getWebGLEffectProgram(state, 'lens.lensDirt', LENS_DIRT_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'lens.lensDirt', LENS_DIRT_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_threshold'), threshold);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_seed'), seed);
@@ -102,16 +102,16 @@ export function applyLensDirtEffectToWebGL(
 
 // Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.
-export function applyLensDistortionEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyLensDistortionEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<LensDistortionEffect>,
 ): void {
   const amount = effect.amount ?? 0.2;
   const scale = effect.scale ?? 1;
-  const program = getWebGLEffectProgram(state, 'lens.lensDistortion', LENS_DISTORTION_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'lens.lensDistortion', LENS_DISTORTION_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_amount'), amount);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_scale'), scale);
   });
@@ -122,18 +122,18 @@ export function applyLensDistortionEffectToWebGL(
 // bright spots along the vector from the pixel toward the center, adding `ghosts` evenly spaced ghost
 // samples plus a halo ring, scaled by threshold/intensity. It previews the look without the bright-pass
 // buffer.
-export function applyLensFlareEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyLensFlareEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<LensFlareEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.8;
   const intensity = effect.intensity ?? 1;
   const ghosts = effect.ghosts ?? 4;
   const halo = effect.halo ?? 0.5;
-  const program = getWebGLEffectProgram(state, 'lens.lensFlare', LENS_FLARE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'lens.lensFlare', LENS_FLARE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_threshold'), threshold);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_ghosts'), ghosts);
@@ -144,17 +144,17 @@ export function applyLensFlareEffectToWebGL(
 // Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered at
 // `center` on Y with height `width`; blur strength ramps with distance outside the band. Blur is
 // approximated by averaging a few neighbor taps using the pixel size from u_resolution.
-export function applyTiltShiftEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyTiltShiftEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<TiltShiftEffect>,
 ): void {
   const center = effect.center ?? 0.5;
   const width = effect.width ?? 0.3;
   const blur = effect.blur ?? 4;
-  const program = getWebGLEffectProgram(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_center'), center);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_width'), width);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_blur'), blur);
@@ -164,10 +164,10 @@ export function applyTiltShiftEffectToWebGL(
 
 // Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
 // falls off over `softness` and the color is blended toward the (unpacked) vignette color by intensity.
-export function applyVignetteEffectToWebGL(
-  state: WebGLRenderState,
-  source: Readonly<WebGLRenderTarget>,
-  dest: Readonly<WebGLRenderTarget>,
+export function applyVignetteEffectToGl(
+  state: GlRenderState,
+  source: Readonly<GlRenderTarget>,
+  dest: Readonly<GlRenderTarget>,
   effect: Readonly<VignetteEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
@@ -178,8 +178,8 @@ export function applyVignetteEffectToWebGL(
   const g = ((color >>> 16) & 0xff) / 255;
   const b = ((color >>> 8) & 0xff) / 255;
   const a = (color & 0xff) / 255;
-  const program = getWebGLEffectProgram(state, 'lens.vignette', VIGNETTE_FRAGMENT_SRC);
-  drawWebGLFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
+  const program = getGlEffectProgram(state, 'lens.vignette', VIGNETTE_FRAGMENT_SRC);
+  drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_intensity'), intensity);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_radius'), radius);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_softness'), softness);
@@ -187,8 +187,8 @@ export function applyVignetteEffectToWebGL(
   });
 }
 
-export const defaultWebGLBokehDepthOfFieldEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyBokehDepthOfFieldEffectToWebGL(
+export const defaultGlBokehDepthOfFieldEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyBokehDepthOfFieldEffectToGl(
     ctx.state,
     ctx.source,
     ctx.dest,
@@ -197,32 +197,32 @@ export const defaultWebGLBokehDepthOfFieldEffectRunner: WebGLRenderEffectRunner 
   );
 };
 
-export const defaultWebGLChromaticAberrationEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyChromaticAberrationEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
+export const defaultGlChromaticAberrationEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyChromaticAberrationEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ChromaticAberrationEffect);
 };
 
-export const defaultWebGLDisplacementEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyDisplacementEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as DisplacementEffect);
+export const defaultGlDisplacementEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyDisplacementEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DisplacementEffect);
 };
 
-export const defaultWebGLLensDirtEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyLensDirtEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as LensDirtEffect);
+export const defaultGlLensDirtEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyLensDirtEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensDirtEffect);
 };
 
-export const defaultWebGLLensDistortionEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyLensDistortionEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
+export const defaultGlLensDistortionEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyLensDistortionEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
 
-export const defaultWebGLLensFlareEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyLensFlareEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
+export const defaultGlLensFlareEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyLensFlareEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
 };
 
-export const defaultWebGLTiltShiftEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyTiltShiftEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
+export const defaultGlTiltShiftEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyTiltShiftEffectToGl(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
 
-export const defaultWebGLVignetteEffectRunner: WebGLRenderEffectRunner = (ctx, effect) => {
-  applyVignetteEffectToWebGL(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
+export const defaultGlVignetteEffectRunner: GlRenderEffectRunner = (ctx, effect) => {
+  applyVignetteEffectToGl(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
 };
 
 const BOKEH_DOF_FRAGMENT_SRC = `#version 300 es
