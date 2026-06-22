@@ -1,4 +1,4 @@
-import { drawWebGPUFilterPass } from '@flighthq/filters-webgpu';
+import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   BrightnessContrastEffect,
   ChannelMixerEffect,
@@ -10,37 +10,37 @@ import type {
   LookupTableGradeEffect,
   PosterizeEffect,
   SepiaEffect,
-  WebGPURenderEffectRunner,
-  WebGPURenderState,
-  WebGPURenderTarget,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
   WhiteBalanceEffect,
 } from '@flighthq/types';
 
-import { getWebGPUEffectPipeline } from './effectProgramCache';
+import { getWgpuEffectPipeline } from './effectProgramCache';
 
-// Single-pass color-grading recipes, the WebGPU mirror of effects-webgl's colorGradeEffects, ported to
+// Single-pass color-grading recipes, the Wgpu mirror of effects-gl's colorGradeEffects, ported to
 // WGSL. Each reads `source`, writes `dest`, and compiles its fragment once per state via
-// getWebGPUEffectPipeline with a 'replace' blend. Packed-RGBA intent fields (lift/gamma/gain) are
+// getWgpuEffectPipeline with a 'replace' blend. Packed-RGBA intent fields (lift/gamma/gain) are
 // unpacked to normalized floats here in JS before upload. Uniforms are written into the f32/i32 slot in
 // struct field order, std140-aligned: scalars pack into the leading vec4 and vec4f members start on a
 // 16-byte (slot-of-4) boundary.
 
 // Brightness/contrast: shift then scale about mid-grey.
-export function applyBrightnessContrastEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyBrightnessContrastEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<BrightnessContrastEffect>,
 ): void {
   const brightness = effect.brightness ?? 0;
   const contrast = effect.contrast ?? 1;
-  const pipeline = getWebGPUEffectPipeline(
+  const pipeline = getWgpuEffectPipeline(
     state,
     'colorGrade.brightnessContrast',
     BRIGHTNESS_CONTRAST_FRAGMENT_WGSL,
     'replace',
   );
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = brightness;
     f32[1] = contrast;
   });
@@ -48,25 +48,25 @@ export function applyBrightnessContrastEffectToWebGPU(
 
 // Channel mixer: apply a 3x4 row-major RGB->RGB matrix plus per-row offset. The matrix is uploaded as
 // three vec4f rows (r/g/b), each 16-byte aligned, so the std140 layout maps a row directly onto a slot.
-export function applyChannelMixerEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyChannelMixerEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ChannelMixerEffect>,
 ): void {
   const matrix = new Float32Array(12);
   for (let i = 0; i < 12; i++) matrix[i] = effect.matrix[i] ?? IDENTITY_CHANNEL_MIXER[i];
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.channelMixer', CHANNEL_MIXER_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.channelMixer', CHANNEL_MIXER_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     for (let i = 0; i < 12; i++) f32[i] = matrix[i];
   });
 }
 
 // Color grade: combined exposure, brightness, contrast, saturation, and temperature/tint shift.
-export function applyColorGradeEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyColorGradeEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ColorGradeEffect>,
 ): void {
   const exposure = Math.pow(2, effect.exposure ?? 0);
@@ -75,8 +75,8 @@ export function applyColorGradeEffectToWebGPU(
   const temperature = effect.temperature ?? 0;
   const tint = effect.tint ?? 0;
   const brightness = effect.brightness ?? 0;
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.colorGrade', COLOR_GRADE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.colorGrade', COLOR_GRADE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = exposure;
     f32[1] = contrast;
     f32[2] = saturation;
@@ -87,31 +87,31 @@ export function applyColorGradeEffectToWebGPU(
 }
 
 // Grayscale: mix toward luminance by intensity.
-export function applyGrayscaleEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyGrayscaleEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<GrayscaleEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.grayscale', GRAYSCALE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.grayscale', GRAYSCALE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
   });
 }
 
 // Hue/saturation/lightness: convert to HSL, adjust, convert back.
-export function applyHueSaturationEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyHueSaturationEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<HueSaturationEffect>,
 ): void {
   const hue = (effect.hue ?? 0) / 360;
   const saturation = effect.saturation ?? 1;
   const lightness = effect.lightness ?? 0;
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.hueSaturation', HUE_SATURATION_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.hueSaturation', HUE_SATURATION_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = hue;
     f32[1] = saturation;
     f32[2] = lightness;
@@ -119,15 +119,15 @@ export function applyHueSaturationEffectToWebGPU(
 }
 
 // Invert: mix toward 1 - rgb by intensity.
-export function applyInvertEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyInvertEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<InvertEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.invert', INVERT_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.invert', INVERT_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
   });
 }
@@ -135,10 +135,10 @@ export function applyInvertEffectToWebGPU(
 // Lift/gamma/gain: unpack packed-RGBA neutrals to per-channel offsets/exponents/multipliers in JS.
 // Neutral packed values: lift 0x000000ff, gamma 0x808080ff, gain 0xffffffff. Each vec3 is uploaded
 // into its own 16-byte-aligned slot so the std140 vec3 alignment is satisfied.
-export function applyLiftGammaGainEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyLiftGammaGainEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<LiftGammaGainEffect>,
 ): void {
   const lift = unpackColor(effect.lift ?? 0x000000ff);
@@ -150,8 +150,8 @@ export function applyLiftGammaGainEffectToWebGPU(
     1 / Math.max(gammaRaw[1] * 2, 1e-3),
     1 / Math.max(gammaRaw[2] * 2, 1e-3),
   ];
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.liftGammaGain', LIFT_GAMMA_GAIN_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.liftGammaGain', LIFT_GAMMA_GAIN_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = lift[0];
     f32[1] = lift[1];
     f32[2] = lift[2];
@@ -167,105 +167,105 @@ export function applyLiftGammaGainEffectToWebGPU(
 // LUT grade: passthrough with a strength mix. A real 3D LUT grade needs an uploaded LUT cube texture
 // (size from effect.size) sampled per pixel as an extra bound texture; that texture path is not yet
 // wired, so this keeps the pass compiling and color-neutral until the LUT upload is added.
-export function applyLookupTableGradeEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyLookupTableGradeEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<LookupTableGradeEffect>,
 ): void {
   const strength = effect.strength ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.lutGrade', LUT_GRADE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.lutGrade', LUT_GRADE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = strength;
   });
 }
 
 // Posterize: floor each channel to `levels` discrete steps.
-export function applyPosterizeEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyPosterizeEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<PosterizeEffect>,
 ): void {
   const levels = Math.max(2, effect.levels ?? 8);
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.posterize', POSTERIZE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.posterize', POSTERIZE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = levels;
   });
 }
 
 // Sepia: mix toward a sepia matrix transform by intensity.
-export function applySepiaEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applySepiaEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<SepiaEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.sepia', SEPIA_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.sepia', SEPIA_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
   });
 }
 
 // White balance: warm/cool temperature and magenta/green tint channel shift.
-export function applyWhiteBalanceEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyWhiteBalanceEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<WhiteBalanceEffect>,
 ): void {
   const temperature = effect.temperature ?? 0;
   const tint = effect.tint ?? 0;
-  const pipeline = getWebGPUEffectPipeline(state, 'colorGrade.whiteBalance', WHITE_BALANCE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'colorGrade.whiteBalance', WHITE_BALANCE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = temperature;
     f32[1] = tint;
   });
 }
 
-export const defaultWebGPUBrightnessContrastEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyBrightnessContrastEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as BrightnessContrastEffect);
+export const defaultWgpuBrightnessContrastEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyBrightnessContrastEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BrightnessContrastEffect);
 };
 
-export const defaultWebGPUChannelMixerEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyChannelMixerEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as ChannelMixerEffect);
+export const defaultWgpuChannelMixerEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyChannelMixerEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ChannelMixerEffect);
 };
 
-export const defaultWebGPUColorGradeEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyColorGradeEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as ColorGradeEffect);
+export const defaultWgpuColorGradeEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyColorGradeEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ColorGradeEffect);
 };
 
-export const defaultWebGPUGrayscaleEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyGrayscaleEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as GrayscaleEffect);
+export const defaultWgpuGrayscaleEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyGrayscaleEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as GrayscaleEffect);
 };
 
-export const defaultWebGPUHueSaturationEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyHueSaturationEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as HueSaturationEffect);
+export const defaultWgpuHueSaturationEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyHueSaturationEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as HueSaturationEffect);
 };
 
-export const defaultWebGPUInvertEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyInvertEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as InvertEffect);
+export const defaultWgpuInvertEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyInvertEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as InvertEffect);
 };
 
-export const defaultWebGPULiftGammaGainEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyLiftGammaGainEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as LiftGammaGainEffect);
+export const defaultWgpuLiftGammaGainEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyLiftGammaGainEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LiftGammaGainEffect);
 };
 
-export const defaultWebGPULookupTableGradeEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyLookupTableGradeEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as LookupTableGradeEffect);
+export const defaultWgpuLookupTableGradeEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyLookupTableGradeEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LookupTableGradeEffect);
 };
 
-export const defaultWebGPUPosterizeEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyPosterizeEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
+export const defaultWgpuPosterizeEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyPosterizeEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
 };
 
-export const defaultWebGPUSepiaEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applySepiaEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as SepiaEffect);
+export const defaultWgpuSepiaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applySepiaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SepiaEffect);
 };
 
-export const defaultWebGPUWhiteBalanceEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyWhiteBalanceEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
+export const defaultWgpuWhiteBalanceEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyWhiteBalanceEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
 };
 
 // Unpack a packed RGBA integer (0xRRGGBBAA) into normalized [r, g, b] floats. Alpha is dropped — these

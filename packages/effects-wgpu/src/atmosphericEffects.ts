@@ -1,19 +1,19 @@
-import { drawWebGPUFilterPass } from '@flighthq/filters-webgpu';
+import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   GodRaysEffect,
   ScreenSpaceFogEffect,
-  SSAOEffect,
-  SSREffect,
-  WebGPURenderEffectRunner,
-  WebGPURenderState,
-  WebGPURenderTarget,
+  SsaoEffect,
+  SsrEffect,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGPUEffectPipeline } from './effectProgramCache';
+import { getWgpuEffectPipeline } from './effectProgramCache';
 
-// Atmospheric / depth recipes, the WGSL mirror of effects-webgl's atmosphericEffects. WebGPU does not
+// Atmospheric / depth recipes, the WGSL mirror of effects-gl's atmosphericEffects. Wgpu does not
 // produce a depth G-buffer yet (ctx.sceneDepthTexture is always null), so screenSpaceFog, ssao, and ssr
-// ship the color-only approximations exactly like the effects-webgl versions — each documents the real
+// ship the color-only approximations exactly like the effects-gl versions — each documents the real
 // depth-driven recipe at its definition. God rays is genuinely color-only by nature (radial light
 // scattering), not a stand-in. Where neighbors are sampled (ssao) a u_resolution uniform is uploaded so
 // texel steps are computed in a consistent space.
@@ -23,10 +23,10 @@ import { getWebGPUEffectPipeline } from './effectProgramCache';
 // decay and weight, then scales by exposure. A true single-pass recipe — no depth needed. The sample
 // count is baked into the WGSL (loop bound must be const) and keyed into the pipeline cache, so each
 // distinct sample count compiles once.
-export function applyGodRaysEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyGodRaysEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<GodRaysEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
@@ -36,13 +36,13 @@ export function applyGodRaysEffectToWebGPU(
   const weight = effect.weight ?? 0.4;
   const exposure = effect.exposure ?? 0.6;
   const samples = Math.max(1, Math.round(effect.samples ?? 64));
-  const pipeline = getWebGPUEffectPipeline(
+  const pipeline = getWgpuEffectPipeline(
     state,
     `atmospheric.godRays.${samples}`,
     buildGodRaysFragment(samples),
     'replace',
   );
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = centerX;
     f32[1] = centerY;
     f32[2] = density;
@@ -54,13 +54,13 @@ export function applyGodRaysEffectToWebGPU(
 
 // Screen-space fog: blends the scene toward an unpacked fog color by a depth proxy. The real recipe
 // reads a sampleable DEPTH texture per fragment — fog = 1 - exp(-density * remap(depth, near, far)) — but
-// WebGPU has no depth G-buffer yet, so this color-only fallback uses the screen-Y gradient as the proxy
+// Wgpu has no depth G-buffer yet, so this color-only fallback uses the screen-Y gradient as the proxy
 // (bottom of frame reads as "far"). near/far are reserved for the depth-driven recipe; density scales
 // the proxy. color is a packed RGBA int unpacked to 0..1 floats on the JS side.
-export function applyScreenSpaceFogEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyScreenSpaceFogEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ScreenSpaceFogEffect>,
 ): void {
   const packed = effect.color ?? 0xc8d2dcff;
@@ -68,13 +68,13 @@ export function applyScreenSpaceFogEffectToWebGPU(
   const g = ((packed >>> 16) & 0xff) / 255;
   const b = ((packed >>> 8) & 0xff) / 255;
   const density = effect.density ?? 1;
-  const pipeline = getWebGPUEffectPipeline(
+  const pipeline = getWgpuEffectPipeline(
     state,
     'atmospheric.screenSpaceFog',
     SCREEN_SPACE_FOG_FRAGMENT_WGSL,
     'replace',
   );
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = density;
     f32[4] = r;
     f32[5] = g;
@@ -84,19 +84,19 @@ export function applyScreenSpaceFogEffectToWebGPU(
 
 // SSAO: ambient-occlusion approximation. Real SSAO reconstructs view-space position/normals from a
 // sampleable DEPTH texture and accumulates occlusion over `samples` kernel offsets within `radius`,
-// gated by `bias`; WebGPU has no depth G-buffer yet, so none of that data exists. This stand-in darkens
+// gated by `bias`; Wgpu has no depth G-buffer yet, so none of that data exists. This stand-in darkens
 // fragments by local luminance variation (high-contrast neighborhoods read as creases/contact) scaled
 // by intensity, sampling neighbors via u_resolution-derived texel steps.
-export function applySSAOEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
-  effect: Readonly<SSAOEffect>,
+export function applySsaoEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
+  effect: Readonly<SsaoEffect>,
 ): void {
   const radius = effect.radius ?? 1;
   const intensity = effect.intensity ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, 'atmospheric.ssao', SSAO_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'atmospheric.ssao', SSAO_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = radius;
     f32[1] = intensity;
     f32[2] = source.width;
@@ -106,33 +106,33 @@ export function applySSAOEffectToWebGPU(
 
 // SSR: screen-space reflections. The real recipe ray-marches reflected rays against a sampleable DEPTH
 // buffer using view-space normals, walking `steps` increments up to `maxDistance` at the given
-// `resolution`; WebGPU has neither depth nor a normals attachment yet, so this is a passthrough copy
+// `resolution`; Wgpu has neither depth nor a normals attachment yet, so this is a passthrough copy
 // that preserves the pipeline stage. maxDistance/resolution/steps are reserved for the depth-driven recipe.
-export function applySSREffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applySsrEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  effect: Readonly<SSREffect>,
+  effect: Readonly<SsrEffect>,
 ): void {
-  const pipeline = getWebGPUEffectPipeline(state, 'atmospheric.ssr', SSR_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, () => {});
+  const pipeline = getWgpuEffectPipeline(state, 'atmospheric.ssr', SSR_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, () => {});
 }
 
-export const defaultWebGPUGodRaysEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyGodRaysEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
+export const defaultWgpuGodRaysEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyGodRaysEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
 };
 
-export const defaultWebGPUScreenSpaceFogEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyScreenSpaceFogEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as ScreenSpaceFogEffect);
+export const defaultWgpuScreenSpaceFogEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyScreenSpaceFogEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ScreenSpaceFogEffect);
 };
 
-export const defaultWebGPUSSAOEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applySSAOEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as SSAOEffect);
+export const defaultWgpuSsaoEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applySsaoEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SsaoEffect);
 };
 
-export const defaultWebGPUSSREffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applySSREffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as SSREffect);
+export const defaultWgpuSsrEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applySsrEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SsrEffect);
 };
 
 function buildGodRaysFragment(samples: number): string {
@@ -236,7 +236,7 @@ struct Uniforms {
 @fragment
 fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   let c = textureSampleLevel(tex, smp, uv, 0.0);
-  // Color-only fallback: no depth G-buffer in WebGPU yet — screen-Y gradient as a depth proxy.
+  // Color-only fallback: no depth G-buffer in Wgpu yet — screen-Y gradient as a depth proxy.
   // The real version reads depth and computes fog = 1 - exp(-density * remap(depth, near, far)).
   let fog = clamp((1.0 - uv.y) * uni.u_density, 0.0, 1.0);
   return vec4f(mix(c.rgb, uni.u_fogColor, fog), c.a);

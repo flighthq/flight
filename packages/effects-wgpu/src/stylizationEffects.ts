@@ -1,4 +1,4 @@
-import { drawWebGPUFilterPass } from '@flighthq/filters-webgpu';
+import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   CRTEffect,
   DitherEffect,
@@ -11,15 +11,15 @@ import type {
   ScanlinesEffect,
   SharpenEffect,
   SketchEffect,
-  WebGPURenderEffectRunner,
-  WebGPURenderState,
-  WebGPURenderTarget,
+  WgpuRenderEffectRunner,
+  WgpuRenderState,
+  WgpuRenderTarget,
 } from '@flighthq/types';
 
-import { getWebGPUEffectPipeline } from './effectProgramCache';
+import { getWgpuEffectPipeline } from './effectProgramCache';
 
-// Stylization effect recipes: single-pass WGSL shaders for non-photoreal looks, the WebGPU mirror of
-// effects-webgl's stylizationEffects.ts. Each apply* compiles (once per state) and draws a fullscreen
+// Stylization effect recipes: single-pass WGSL shaders for non-photoreal looks, the Wgpu mirror of
+// effects-gl's stylizationEffects.ts. Each apply* compiles (once per state) and draws a fullscreen
 // pass; neighbor-sampling shaders receive u_resolution as the source pixel size so texel steps are
 // exact. Outline's packed-RGBA color is unpacked to 0..1 in JS. Uniforms are written into the
 // ring-buffer slot in struct field order; std140 alignment means a vec2f/vec4f field starts on its
@@ -27,18 +27,18 @@ import { getWebGPUEffectPipeline } from './effectProgramCache';
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
 // the channels outward (chromatic aberration) for a tube-monitor look.
-export function applyCRTEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyCRTEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<CRTEffect>,
 ): void {
   const curvature = effect.curvature ?? 0.1;
   const scanlineIntensity = effect.scanlineIntensity ?? 0.3;
   const vignette = effect.vignette ?? 0.3;
   const aberration = effect.aberration ?? 0.005;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.crt', CRT_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.crt', CRT_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = curvature;
     f32[1] = scanlineIntensity;
     f32[2] = vignette;
@@ -50,15 +50,15 @@ export function applyCRTEffectToWebGPU(
 
 // Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
 // banded-but-textured look.
-export function applyDitherEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyDitherEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<DitherEffect>,
 ): void {
   const levels = effect.levels ?? 4;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.dither', DITHER_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.dither', DITHER_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(2, levels);
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;
@@ -68,17 +68,17 @@ export function applyDitherEffectToWebGPU(
 
 // Film grain: add per-pixel hash noise scaled by intensity, with grain cell size and a seed so the
 // noise can be animated frame to frame.
-export function applyFilmGrainEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyFilmGrainEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<FilmGrainEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.1;
   const size = effect.size ?? 1;
   const seed = effect.seed ?? 0;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.filmGrain', FILM_GRAIN_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.filmGrain', FILM_GRAIN_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = Math.max(0.0001, size);
     f32[2] = seed;
@@ -87,18 +87,18 @@ export function applyFilmGrainEffectToWebGPU(
 
 // Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh tear),
 // separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.
-export function applyGlitchEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyGlitchEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<GlitchEffect>,
 ): void {
   const intensity = effect.intensity ?? 0.5;
   const blockSize = effect.blockSize ?? 24;
   const colorShift = effect.colorShift ?? 8;
   const seed = effect.seed ?? 0;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.glitch', GLITCH_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.glitch', GLITCH_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = blockSize;
     f32[2] = colorShift;
@@ -111,16 +111,16 @@ export function applyGlitchEffectToWebGPU(
 
 // Halftone: sample luminance, then carve a rotated dot grid whose dot radius tracks darkness — the
 // classic print/comic screen. `scale` sets the cell size, `angle` rotates the grid.
-export function applyHalftoneEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyHalftoneEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<HalftoneEffect>,
 ): void {
   const scale = effect.scale ?? 6;
   const angle = effect.angle ?? 0.4;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.halftone', HALFTONE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.halftone', HALFTONE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(1, scale);
     f32[1] = angle;
     // u_resolution (vec2f) aligns to slot [2].
@@ -132,15 +132,15 @@ export function applyHalftoneEffectToWebGPU(
 // Kuwahara: edge-preserving smoothing. Over a fixed small radius split the neighborhood into four
 // overlapping quadrants, compute each mean and variance, and emit the lowest-variance mean — flattens
 // regions while keeping edges crisp. `radius` gates the sampled extent.
-export function applyKuwaharaEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyKuwaharaEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<KuwaharaEffect>,
 ): void {
   const radius = effect.radius ?? 3;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.kuwahara', KUWAHARA_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.kuwahara', KUWAHARA_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(1, radius);
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;
@@ -150,10 +150,10 @@ export function applyKuwaharaEffectToWebGPU(
 
 // Outline: Sobel edge detection on luminance; where the gradient magnitude exceeds `threshold`, mix
 // the pixel toward the outline color by `thickness`. Color arrives packed RGBA, unpacked to 0..1 here.
-export function applyOutlineEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyOutlineEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<OutlineEffect>,
 ): void {
   const threshold = effect.threshold ?? 0.2;
@@ -163,8 +163,8 @@ export function applyOutlineEffectToWebGPU(
   const g = ((color >>> 16) & 0xff) / 255;
   const b = ((color >>> 8) & 0xff) / 255;
   const a = (color & 0xff) / 255;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.outline', OUTLINE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.outline', OUTLINE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = threshold;
     f32[1] = thickness;
     // u_resolution (vec2f) aligns to slot [2].
@@ -179,15 +179,15 @@ export function applyOutlineEffectToWebGPU(
 }
 
 // Pixelate: snap uv to the center of `size`-pixel blocks before sampling, producing hard mosaic blocks.
-export function applyPixelateEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyPixelateEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<PixelateEffect>,
 ): void {
   const size = effect.size ?? 8;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.pixelate', PIXELATE_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.pixelate', PIXELATE_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(1, size);
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;
@@ -196,31 +196,31 @@ export function applyPixelateEffectToWebGPU(
 }
 
 // Scanlines: darken by a vertical sine band; `count` sets the line density, `intensity` the darkening.
-export function applyScanlinesEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applyScanlinesEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<ScanlinesEffect>,
 ): void {
   const count = effect.count ?? 240;
   const intensity = effect.intensity ?? 0.3;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.scanlines', SCANLINES_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.scanlines', SCANLINES_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = count;
     f32[1] = intensity;
   });
 }
 
 // Sharpen: unsharp mask via a 3x3 Laplacian kernel; `amount` scales the high-frequency boost.
-export function applySharpenEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applySharpenEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<SharpenEffect>,
 ): void {
   const amount = effect.amount ?? 0.5;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.sharpen', SHARPEN_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.sharpen', SHARPEN_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = amount;
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;
@@ -230,15 +230,15 @@ export function applySharpenEffectToWebGPU(
 
 // Sketch: detect luminance edges and invert them into dark pencil strokes over a light page; `strength`
 // scales how dark the strokes get.
-export function applySketchEffectToWebGPU(
-  state: WebGPURenderState,
-  source: Readonly<WebGPURenderTarget>,
-  dest: Readonly<WebGPURenderTarget>,
+export function applySketchEffectToWgpu(
+  state: WgpuRenderState,
+  source: Readonly<WgpuRenderTarget>,
+  dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<SketchEffect>,
 ): void {
   const strength = effect.strength ?? 1;
-  const pipeline = getWebGPUEffectPipeline(state, 'stylization.sketch', SKETCH_FRAGMENT_WGSL, 'replace');
-  drawWebGPUFilterPass(state, source as WebGPURenderTarget, dest as WebGPURenderTarget, pipeline, (f32) => {
+  const pipeline = getWgpuEffectPipeline(state, 'stylization.sketch', SKETCH_FRAGMENT_WGSL, 'replace');
+  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = strength;
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;
@@ -246,48 +246,48 @@ export function applySketchEffectToWebGPU(
   });
 }
 
-export const defaultWebGPUCRTEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyCRTEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as CRTEffect);
+export const defaultWgpuCRTEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyCRTEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as CRTEffect);
 };
 
-export const defaultWebGPUDitherEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyDitherEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
+export const defaultWgpuDitherEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyDitherEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
 };
 
-export const defaultWebGPUFilmGrainEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyFilmGrainEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as FilmGrainEffect);
+export const defaultWgpuFilmGrainEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyFilmGrainEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as FilmGrainEffect);
 };
 
-export const defaultWebGPUGlitchEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyGlitchEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
+export const defaultWgpuGlitchEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyGlitchEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
 };
 
-export const defaultWebGPUHalftoneEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyHalftoneEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
+export const defaultWgpuHalftoneEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyHalftoneEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
 };
 
-export const defaultWebGPUKuwaharaEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyKuwaharaEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
+export const defaultWgpuKuwaharaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyKuwaharaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
 };
 
-export const defaultWebGPUOutlineEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyOutlineEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
+export const defaultWgpuOutlineEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyOutlineEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
 };
 
-export const defaultWebGPUPixelateEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyPixelateEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
+export const defaultWgpuPixelateEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyPixelateEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
 };
 
-export const defaultWebGPUScanlinesEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applyScanlinesEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
+export const defaultWgpuScanlinesEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applyScanlinesEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
 
-export const defaultWebGPUSharpenEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applySharpenEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as SharpenEffect);
+export const defaultWgpuSharpenEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applySharpenEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SharpenEffect);
 };
 
-export const defaultWebGPUSketchEffectRunner: WebGPURenderEffectRunner = (ctx, effect) => {
-  applySketchEffectToWebGPU(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
+export const defaultWgpuSketchEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+  applySketchEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
 };
 
 // Slot layout: [0]=curvature, [1]=scanlineIntensity, [2]=vignette, [3]=aberration, [4..5]=resolution.
