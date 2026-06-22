@@ -1,5 +1,13 @@
 import { createEntity } from '@flighthq/entity';
-import type { Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Vector3Like, Vector4Like } from '@flighthq/types';
+import type {
+  Matrix3Like,
+  Matrix4,
+  Matrix4Like,
+  MatrixLike,
+  QuaternionLike,
+  Vector3Like,
+  Vector4Like,
+} from '@flighthq/types';
 
 import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool';
 
@@ -96,6 +104,62 @@ export function cloneMatrix4(source: Readonly<Matrix4Like>): Matrix4 {
   const m = createMatrix4();
   copyMatrix4(m, source);
   return m;
+}
+
+/**
+ * Composes a transform matrix from a translation, a rotation quaternion and a per-axis
+ * scale: out = T · R · S. This is the inverse operation of decomposeMatrix4.
+ *
+ * `rotation` is assumed to be a unit quaternion. Safe when `out` does not alias any input
+ * (the inputs are plain vector/quaternion entities, not the matrix itself).
+ */
+export function composeMatrix4(
+  out: Matrix4Like,
+  position: Readonly<Vector3Like>,
+  rotation: Readonly<QuaternionLike>,
+  scale: Readonly<Vector3Like>,
+): void {
+  const x = rotation.x,
+    y = rotation.y,
+    z = rotation.z,
+    w = rotation.w;
+  const x2 = x + x,
+    y2 = y + y,
+    z2 = z + z;
+  const xx = x * x2,
+    xy = x * y2,
+    xz = x * z2;
+  const yy = y * y2,
+    yz = y * z2,
+    zz = z * z2;
+  const wx = w * x2,
+    wy = w * y2,
+    wz = w * z2;
+
+  const sx = scale.x,
+    sy = scale.y,
+    sz = scale.z;
+
+  const _out = out.m;
+  _out[0] = (1 - (yy + zz)) * sx;
+  _out[1] = (xy + wz) * sx;
+  _out[2] = (xz - wy) * sx;
+  _out[3] = 0;
+
+  _out[4] = (xy - wz) * sy;
+  _out[5] = (1 - (xx + zz)) * sy;
+  _out[6] = (yz + wx) * sy;
+  _out[7] = 0;
+
+  _out[8] = (xz + wy) * sz;
+  _out[9] = (yz - wx) * sz;
+  _out[10] = (1 - (xx + yy)) * sz;
+  _out[11] = 0;
+
+  _out[12] = position.x;
+  _out[13] = position.y;
+  _out[14] = position.z;
+  _out[15] = 1;
 }
 
 export function copyMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
@@ -342,6 +406,96 @@ export function createPerspectiveMatrix4(fov: number, aspect: number, zNear: num
   const out = createMatrix4();
   setPerspectiveMatrix4(out, fov, aspect, zNear, zFar);
   return out;
+}
+
+/**
+ * Decomposes a transform matrix into its translation, rotation quaternion and per-axis
+ * scale, the inverse of composeMatrix4. Assumes the matrix is a TRS composition (no shear);
+ * a negative determinant flips the X scale sign so the extracted rotation stays a proper
+ * rotation.
+ *
+ * Reads the matrix into locals before writing, so it is safe for the outputs to alias
+ * fields of unrelated entities; the matrix `m` is read-only.
+ */
+export function decomposeMatrix4(
+  outPosition: Vector3Like,
+  outRotation: QuaternionLike,
+  outScale: Vector3Like,
+  m: Readonly<Matrix4Like>,
+): void {
+  const _m = m.m;
+
+  const m00 = _m[0],
+    m01 = _m[1],
+    m02 = _m[2];
+  const m10 = _m[4],
+    m11 = _m[5],
+    m12 = _m[6];
+  const m20 = _m[8],
+    m21 = _m[9],
+    m22 = _m[10];
+  const tx = _m[12],
+    ty = _m[13],
+    tz = _m[14];
+
+  let sx = Math.sqrt(m00 * m00 + m01 * m01 + m02 * m02);
+  const sy = Math.sqrt(m10 * m10 + m11 * m11 + m12 * m12);
+  const sz = Math.sqrt(m20 * m20 + m21 * m21 + m22 * m22);
+
+  // A negative determinant means an odd number of mirror flips; fold it into X.
+  const det = m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 * m21) + m20 * (m01 * m12 - m02 * m11);
+  if (det < 0) sx = -sx;
+
+  outPosition.x = tx;
+  outPosition.y = ty;
+  outPosition.z = tz;
+
+  outScale.x = sx;
+  outScale.y = sy;
+  outScale.z = sz;
+
+  const invSx = sx !== 0 ? 1 / sx : 0;
+  const invSy = sy !== 0 ? 1 / sy : 0;
+  const invSz = sz !== 0 ? 1 / sz : 0;
+
+  // Normalized rotation basis (column-major upper 3×3).
+  const r00 = m00 * invSx,
+    r01 = m01 * invSx,
+    r02 = m02 * invSx;
+  const r10 = m10 * invSy,
+    r11 = m11 * invSy,
+    r12 = m12 * invSy;
+  const r20 = m20 * invSz,
+    r21 = m21 * invSz,
+    r22 = m22 * invSz;
+
+  const trace = r00 + r11 + r22;
+
+  if (trace > 0) {
+    const s = 0.5 / Math.sqrt(trace + 1.0);
+    outRotation.w = 0.25 / s;
+    outRotation.x = (r12 - r21) * s;
+    outRotation.y = (r20 - r02) * s;
+    outRotation.z = (r01 - r10) * s;
+  } else if (r00 > r11 && r00 > r22) {
+    const s = 2.0 * Math.sqrt(1.0 + r00 - r11 - r22);
+    outRotation.w = (r12 - r21) / s;
+    outRotation.x = 0.25 * s;
+    outRotation.y = (r10 + r01) / s;
+    outRotation.z = (r20 + r02) / s;
+  } else if (r11 > r22) {
+    const s = 2.0 * Math.sqrt(1.0 + r11 - r00 - r22);
+    outRotation.w = (r20 - r02) / s;
+    outRotation.x = (r10 + r01) / s;
+    outRotation.y = 0.25 * s;
+    outRotation.z = (r21 + r12) / s;
+  } else {
+    const s = 2.0 * Math.sqrt(1.0 + r22 - r00 - r11);
+    outRotation.w = (r01 - r10) / s;
+    outRotation.x = (r20 + r02) / s;
+    outRotation.y = (r21 + r12) / s;
+    outRotation.z = 0.25 * s;
+  }
 }
 
 export function equalsMatrix4(
@@ -822,10 +976,127 @@ export function setMatrix4FromMatrix3(out: Matrix4Like, source: Readonly<Matrix3
 }
 
 /**
+ * Writes the rotation described by a unit quaternion into the upper-left 3×3 of an
+ * identity matrix (translation cleared, bottom row 0,0,0,1). glTF handedness.
+ */
+export function setMatrix4FromQuaternion(out: Matrix4Like, source: Readonly<QuaternionLike>): void {
+  const x = source.x,
+    y = source.y,
+    z = source.z,
+    w = source.w;
+  const x2 = x + x,
+    y2 = y + y,
+    z2 = z + z;
+  const xx = x * x2,
+    xy = x * y2,
+    xz = x * z2;
+  const yy = y * y2,
+    yz = y * z2,
+    zz = z * z2;
+  const wx = w * x2,
+    wy = w * y2,
+    wz = w * z2;
+
+  const _out = out.m;
+  _out[0] = 1 - (yy + zz);
+  _out[1] = xy + wz;
+  _out[2] = xz - wy;
+  _out[3] = 0;
+
+  _out[4] = xy - wz;
+  _out[5] = 1 - (xx + zz);
+  _out[6] = yz + wx;
+  _out[7] = 0;
+
+  _out[8] = xz + wy;
+  _out[9] = yz - wx;
+  _out[10] = 1 - (xx + yy);
+  _out[11] = 0;
+
+  _out[12] = 0;
+  _out[13] = 0;
+  _out[14] = 0;
+  _out[15] = 1;
+}
+
+/**
  * Resets the current matrix using default identity values
  **/
 export function setMatrix4Identity(out: Matrix4Like): void {
   setMatrix4(out, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+}
+
+/**
+ * Builds a right-handed look-at view matrix that positions a camera at `eye` looking toward
+ * `target`, with `up` defining the camera roll. The forward axis points from eye to target;
+ * the resulting matrix transforms world-space points into view space.
+ *
+ * Reads all inputs into locals before writing, so it is safe when `out` is unrelated to the
+ * vector inputs.
+ */
+export function setMatrix4LookAt(
+  out: Matrix4Like,
+  eye: Readonly<Vector3Like>,
+  target: Readonly<Vector3Like>,
+  up: Readonly<Vector3Like>,
+): void {
+  const eyeX = eye.x,
+    eyeY = eye.y,
+    eyeZ = eye.z;
+
+  // z axis = normalize(eye - target) (points from target back toward the eye, RH).
+  let zx = eyeX - target.x;
+  let zy = eyeY - target.y;
+  let zz = eyeZ - target.z;
+  let zl = Math.sqrt(zx * zx + zy * zy + zz * zz);
+  if (zl === 0) {
+    zz = 1;
+    zl = 1;
+  }
+  zx /= zl;
+  zy /= zl;
+  zz /= zl;
+
+  // x axis = normalize(cross(up, z)).
+  let xx = up.y * zz - up.z * zy;
+  let xy = up.z * zx - up.x * zz;
+  let xz = up.x * zy - up.y * zx;
+  let xl = Math.sqrt(xx * xx + xy * xy + xz * xz);
+  if (xl === 0) {
+    xx = 0;
+    xy = 0;
+    xz = 0;
+  } else {
+    xx /= xl;
+    xy /= xl;
+    xz /= xl;
+  }
+
+  // y axis = cross(z, x) (already orthonormal).
+  const yx = zy * xz - zz * xy;
+  const yy = zz * xx - zx * xz;
+  const yz = zx * xy - zy * xx;
+
+  const _out = out.m;
+  _out[0] = xx;
+  _out[1] = yx;
+  _out[2] = zx;
+  _out[3] = 0;
+
+  _out[4] = xy;
+  _out[5] = yy;
+  _out[6] = zy;
+  _out[7] = 0;
+
+  _out[8] = xz;
+  _out[9] = yz;
+  _out[10] = zz;
+  _out[11] = 0;
+
+  _out[12] = -(xx * eyeX + xy * eyeY + xz * eyeZ);
+  _out[13] = -(yx * eyeX + yy * eyeY + yz * eyeZ);
+  _out[14] = -(zx * eyeX + zy * eyeY + zz * eyeZ);
+  _out[15] = 1;
 }
 
 export function setMatrix4Position(out: Matrix4Like, source: Readonly<Vector3Like>): void {

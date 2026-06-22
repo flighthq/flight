@@ -1,6 +1,8 @@
 import { createEntity } from '@flighthq/entity';
 import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike, Vector3Like } from '@flighthq/types';
 
+import { acquireMatrix3, releaseMatrix3 } from './matrix3Pool';
+
 export function cloneMatrix3(source: Readonly<Matrix3Like>): Matrix3 {
   const m = createMatrix3();
   copyMatrix3(m, source);
@@ -378,6 +380,22 @@ export function setMatrix3Identity(out: Matrix3Like): void {
   out.m.set(__identity);
 }
 
+/**
+ * Writes the normal matrix for a Matrix4 model transform: the inverse-transpose of its
+ * upper-left 3×3. Transforming normals by this (instead of the model matrix) keeps them
+ * perpendicular to surfaces under non-uniform scale and shear.
+ *
+ * Reads the source through a scratch matrix before writing, so it is safe regardless of how
+ * `out` relates to `source`.
+ */
+export function setMatrix3NormalFromMatrix4(out: Matrix3Like, source: Readonly<Matrix4Like>): void {
+  const scratch = acquireMatrix3();
+  setMatrix3FromMatrix4(scratch, source);
+  inverseMatrix3(scratch, scratch);
+  transposeMatrix3(out, scratch);
+  releaseMatrix3(scratch);
+}
+
 export function translateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, tx: number, ty: number): void {
   const a = source.m;
   const o = out.m;
@@ -393,6 +411,31 @@ export function translateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>
   o[6] = a[6];
   o[7] = a[7];
   o[8] = a[6] * tx + a[7] * ty + a[8];
+}
+
+/**
+ * Transposes a 3×3 matrix (swaps rows and columns). Reads each off-diagonal pair into a
+ * temporary before writing, so it is safe when `out` aliases `source`.
+ */
+export function transposeMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>): void {
+  const s = source.m;
+  const m1 = s[1],
+    m2 = s[2],
+    m3 = s[3],
+    m5 = s[5],
+    m6 = s[6],
+    m7 = s[7];
+
+  const o = out.m;
+  o[0] = s[0];
+  o[1] = m3;
+  o[2] = m6;
+  o[3] = m1;
+  o[4] = s[4];
+  o[5] = m7;
+  o[6] = m2;
+  o[7] = m5;
+  o[8] = s[8];
 }
 
 const __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
