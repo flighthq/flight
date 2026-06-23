@@ -296,7 +296,15 @@ for (const pkgDir of packageDirs) {
   check(errors, `${name}/* in tsconfig.base.json paths`, `${name}/*` in tsconfigPaths);
 
   const dirName = pkgDir.split(/[\\/]/).at(-1)!;
-  check(errors, `${dirName} in tsconfig.build.json references`, buildRefs.has(dirName));
+  // Wasm-backed (`-rs`) packages depend on generated wasm (baked by `build:wasm`)
+  // and are intentionally kept out of the standard tsc build graph so it needs no
+  // Rust toolchain. They must NOT be in tsconfig.build.json references; `build:wasm`
+  // builds and type-checks them via their own tsconfig.
+  if (pkg.scripts?.wasm) {
+    check(errors, `${dirName} excluded from tsconfig.build.json references`, !buildRefs.has(dirName));
+  } else {
+    check(errors, `${dirName} in tsconfig.build.json references`, buildRefs.has(dirName));
+  }
 
   const allDeps: Record<string, string> = {
     ...pkg.dependencies,
