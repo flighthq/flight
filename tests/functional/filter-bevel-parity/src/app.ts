@@ -27,6 +27,8 @@ import { applyBevelFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
+  compositeSurfacePixels,
+  compositeSurfaceRegion,
   createBitmap,
   createDisplayContainer,
   createImageResourceFromCanvas,
@@ -48,7 +50,7 @@ const NATIVE_X = 424;
 
 const WIDTH = 800;
 const HEIGHT = 600;
-const BACKGROUND = 0xff000000;
+const BACKGROUND = 0x000000ff;
 
 // Source: centered opaque mid-gray square on a TRANSPARENT field (reused verbatim from
 // filter-bevel-inner). The bevel derives from the directional gradient of the source's blurred ALPHA,
@@ -69,25 +71,22 @@ const filter = createBevelFilter({
   strength: 2,
 });
 
-// CPU reference: the canonical surface inner bevel. applyBevelFilterToSurface writes a tinted edge
-// MASK; composite it (source-over) over a copy of the source to complete the inner bevel. These bytes
-// are the oracle's ground truth and the REFERENCE tile drawn on every backend.
+// CPU reference: the canonical surface inner bevel, composited over the opaque BACKGROUND.
+// applyBevelFilterToSurface writes a tinted edge MASK; the inner bevel is completed by source-over of
+// the source then the mask. Building that chain on a BACKGROUND-filled base both composites and flattens
+// in one step (source-over is associative, so layering over the opaque base == compositing then
+// flattening): the result is fully opaque, matching what the rendered frame shows. This matters because
+// the native tile is cropped from a frame drawn over the opaque background and getSurfaceMismatch
+// compares alpha — a transparent reference would mismatch every background pixel (~86% of the tile).
 const mask = new Uint8ClampedArray(TILE * TILE * 4);
 const blurBuffer = new Uint8ClampedArray(TILE * TILE * 4);
 applyBevelFilterToSurface(mask, blurBuffer, createSurfaceRegion(source), filter);
 
-const referenceData = new Uint8ClampedArray(source.data);
-for (let i = 0; i < referenceData.length; i += 4) {
-  const ma = mask[i + 3] / 255;
-  if (ma === 0) continue;
-  const inv = 1 - ma;
-  referenceData[i] = mask[i] * ma + referenceData[i] * inv;
-  referenceData[i + 1] = mask[i + 1] * ma + referenceData[i + 1] * inv;
-  referenceData[i + 2] = mask[i + 2] * ma + referenceData[i + 2] * inv;
-  referenceData[i + 3] = mask[i + 3] + referenceData[i + 3] * inv;
-}
-const referenceSurface = createSurface(TILE, TILE);
-referenceSurface.data.set(referenceData);
+const referenceSurface = createSurface(TILE, TILE, BACKGROUND);
+const referenceData = referenceSurface.data;
+const referenceRegion = createSurfaceRegion(referenceSurface);
+compositeSurfaceRegion(referenceRegion, createSurfaceRegion(source));
+compositeSurfacePixels(referenceRegion, mask);
 
 const target = await createParityTarget(WIDTH, HEIGHT, BACKGROUND);
 const TOP = (HEIGHT - TILE) / 2;
