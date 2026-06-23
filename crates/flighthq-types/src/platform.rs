@@ -578,20 +578,23 @@ pub trait UpdaterBackend: Send + Sync {
 // Ipc
 // ---------------------------------------------------------------------------
 
+/// An opaque, type-erased value carried across the IPC seam. The host channel
+/// moves these between processes without inspecting them; each side downcasts.
+pub type IpcValue = Box<dyn std::any::Any + Send + Sync>;
+
+/// The pending reply of an [`IpcBackend::invoke`] round-trip — `None` when the
+/// channel produced no value.
+pub type IpcInvokeFuture =
+    std::pin::Pin<Box<dyn std::future::Future<Output = Option<IpcValue>> + Send>>;
+
+/// Receives the argument list pushed on an [`IpcBackend::subscribe`] channel.
+pub type IpcMessageListener = Box<dyn Fn(Vec<IpcValue>) + Send + Sync>;
+
 pub trait IpcBackend: Send + Sync {
-    fn send(&self, channel: &str, args: &[Box<dyn std::any::Any + Send + Sync>]);
-    fn invoke(
-        &self,
-        channel: &str,
-        args: &[Box<dyn std::any::Any + Send + Sync>],
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Option<Box<dyn std::any::Any + Send + Sync>>> + Send>,
-    >;
-    fn subscribe(
-        &self,
-        channel: &str,
-        listener: Box<dyn Fn(Vec<Box<dyn std::any::Any + Send + Sync>>) + Send + Sync>,
-    ) -> Box<dyn Fn() + Send + Sync>;
+    fn send(&self, channel: &str, args: &[IpcValue]);
+    fn invoke(&self, channel: &str, args: &[IpcValue]) -> IpcInvokeFuture;
+    fn subscribe(&self, channel: &str, listener: IpcMessageListener)
+    -> Box<dyn Fn() + Send + Sync>;
 }
 
 // ---------------------------------------------------------------------------

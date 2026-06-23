@@ -53,9 +53,7 @@ pub fn play_video_resource(
     source: &VideoResource,
     options: Option<&VideoPlayOptions>,
 ) -> Option<VideoChannel> {
-    if source.path.is_none() {
-        return None;
-    }
+    source.path.as_ref()?;
 
     let backend = video_backend();
     let mut channel = VideoChannel {
