@@ -1,30 +1,20 @@
 name: Nightly quality
 
+# Per-PR CI (tests.yml) already gates the TypeScript build/test/quality/size and render
+# smoke/parity legs, plus a path-filtered Rust check+test, on every PR — so nightly does NOT
+# repeat them. Nightly holds only work that does not belong on the PR path: full coverage
+# thresholds, API-surface generation, and an UNCONDITIONAL Rust run. Because the per-PR Rust
+# gate is path-filtered to crates/, this run is the net that catches stable-toolchain drift
+# and breakage outside crates/. It mirrors the per-PR Rust steps (same SDL build deps, same
+# check:rust + test:rust) so a failure here reproduces with the same commands as a PR.
 on:
   schedule:
     - cron: '0 4 * * *'
   workflow_dispatch:
 
 jobs:
-  full-check:
-    name: Full build and quality
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build:check
-      - run: npm run build
-      - run: npm run check
-      - run: npm run test
-
   coverage:
     name: Coverage thresholds
-    needs: full-check
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +28,6 @@ jobs:
 
   api:
     name: API generation
-    needs: full-check
     runs-on: ubuntu-latest
 
     steps:
@@ -50,3 +39,25 @@ jobs:
       - run: npm ci
       - run: npm run api
       - run: npm run api:json
+
+  rust:
+    name: Rust full run
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      # Matches tests.yml's Rust job: bundled SDL3 (flighthq-host-sdl → sdl3-sys) needs the
+      # X11/Wayland dev headers at cmake-configure time or the workspace build fails.
+      - name: Install SDL build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake pkg-config \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev wayland-protocols
+      - run: npm run check:rust
+      - run: npm run test:rust
