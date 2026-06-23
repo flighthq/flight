@@ -10,14 +10,12 @@ use flighthq_types::SurfaceRegion;
 pub fn rotate_surface(
     dest: &mut SurfaceRegion,
     source: &SurfaceRegion,
-    angle: f32,
-    pivot_x: f32,
-    pivot_y: f32,
+    angle: f64,
+    pivot_x: f64,
+    pivot_y: f64,
 ) {
-    let cos_a = (-angle).cos() as f64;
-    let sin_a = (-angle).sin() as f64;
-    let pivot_x = pivot_x as f64;
-    let pivot_y = pivot_y as f64;
+    let cos_a = (-angle).cos();
+    let sin_a = (-angle).sin();
     let sw = source.width;
     let sh = source.height;
     let dw = dest.width;
