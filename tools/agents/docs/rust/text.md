@@ -82,4 +82,4 @@ Rasterize glyph outlines **through tiny-skia** (the same rasterizer as shapes) â
 - A **full-glyph shaper backend** â€” rustybuzz, as a registerable backend kept out of the base bundle. Either a `text-shaping` cargo feature or a focused sibling crate (e.g. `text-shaping-harfbuzz`), per the `-subpackage` neighbor-crate convention.
 - `flighthq-text-layout` migrates from the width provider to the shaper seam (consumes `ShapedRun`).
 
-See the [conformance map](conformance.md#crates-to-add) for the full crates-to-add list and the [renderer taxonomy](index.md#renderer-scope-gpu--portable-software) for where glyph rasterization plugs into each backend.
+See the [conformance map](conformance.md#crate-alignment-status) for the full crate alignment status and the [renderer taxonomy](index.md#renderer-scope-gpu--portable-software) for where glyph rasterization plugs into each backend.

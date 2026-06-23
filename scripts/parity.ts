@@ -42,37 +42,51 @@ const ROOT = join(import.meta.dirname, '..');
 const PKG_DIR = join(ROOT, 'packages');
 const CRATE_DIR = join(ROOT, 'crates');
 
-// TS package -> Rust crate. Identity unless renamed. Backends renamed in the port.
-const RENAMES: Record<string, string> = {
-  'render-webgl': 'render-gl',
-  'render-webgpu': 'render-wgpu',
-  'filters-webgl': 'filters-gl',
-  'filters-webgpu': 'filters-wgpu',
-  'effects-webgl': 'effects-gl',
-  'effects-webgpu': 'effects-wgpu',
-};
+// TS package -> Rust crate. Now identity for every mapped package: the render
+// reorg (landed 2026-06-22) adopted the `-gl`/`-wgpu` suffixes in TS natively,
+// so the former `-webgl`->`-gl` / `-webgpu`->`-wgpu` divergence is gone, and the
+// `world`->`scene` rename landed on both sides. The only non-identity cases are
+// the TS_ONLY / RUST_ONLY sets below. Kept as an (empty) escape hatch for any
+// future deliberate rename. See conformance.md "Renames".
+const RENAMES: Record<string, string> = {};
 
-// TS packages intentionally NOT ported to Rust (browser-only / mobile / JS-host).
+// TS packages intentionally NOT ported to Rust: their substrate (the Canvas2D
+// context, the DOM tree, the Electron main process) does not exist in the box,
+// so a crate would be an emulator. See conformance.md "Excluded — no substrate
+// in the box". This is the complete excluded set; everything else maps 1:1.
 const TS_ONLY = new Set([
-  'render-canvas',
-  'render-dom',
+  'displayobject-canvas',
+  'displayobject-dom',
   'filters-canvas',
   'effects-canvas',
   'host-electron',
-  'camera',
-  'geolocation',
-  'haptics',
-  'share',
-  'statusbar',
 ]);
 
-// Rust crates with no TS counterpart (native host layer + capture gate).
-const RUST_ONLY = new Set(['capture', 'functional', 'host-winit', 'host-sdl', 'host-web']);
+// Rust crates with no TS counterpart: the native host layer, the headless
+// capture gate, the conformance scene registry, and the in-box software
+// display-object backend. See conformance.md "Rust-only (no TS counterpart)".
+const RUST_ONLY = new Set(['capture', 'displayobject-skia', 'functional', 'host-winit', 'host-sdl', 'host-web']);
 
 // GPU-backend crates: their functions are validated FUNCTIONALLY (render +
 // fingerprint diff in flighthq-functional), not by headless unit tests. Keyed
-// by Rust crate name (post-rename), matching the `crate` field on a report.
-const GPU_CRATES = new Set(['render-gl', 'render-wgpu', 'filters-gl', 'filters-wgpu', 'effects-gl', 'effects-wgpu']);
+// by Rust crate name, matching the `crate` field on a report. Post-reorg this
+// is the two backend cores (render-gl/wgpu), the CPU-vs-GPU filter/effect
+// backends (filters-/effects-gl/wgpu), and the per-subject leaf renderers the
+// reorg split out (displayobject-/scene-gl/wgpu) — all produce shader output
+// not meaningfully unit-testable by function name. See conformance.md
+// "Validated functionally, not by unit name-match".
+const GPU_CRATES = new Set([
+  'render-gl',
+  'render-wgpu',
+  'filters-gl',
+  'filters-wgpu',
+  'effects-gl',
+  'effects-wgpu',
+  'displayobject-gl',
+  'displayobject-wgpu',
+  'scene-gl',
+  'scene-wgpu',
+]);
 
 type GapCategory = 'gpu-backend' | 'web-relocated' | 'real-core';
 
@@ -103,7 +117,7 @@ const WEB_PACKAGES = new Set([
   'share',
   'haptics',
   'geolocation',
-  'camera',
+  'webcam',
   'statusbar',
   'network',
   'power',

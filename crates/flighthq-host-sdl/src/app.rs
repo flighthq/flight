@@ -1,4 +1,4 @@
-//! `run_sdl_app` — the SDL2 host run entry.
+//! `run_sdl_app` — the SDL3 host run entry.
 //!
 //! Opens an SDL window, creates a wgpu surface + `WgpuRenderState` from it, runs
 //! the caller's one-time scene setup (renderer registration + scene build), then
@@ -31,7 +31,7 @@ pub struct SdlAppOptions {
 impl Default for SdlAppOptions {
     fn default() -> Self {
         Self {
-            title: "Flight (SDL2)".to_string(),
+            title: "Flight (SDL3)".to_string(),
             width: 960,
             height: 540,
             resizable: true,
@@ -50,7 +50,7 @@ pub struct SdlFrame<'a> {
     pub delta_seconds: f32,
 }
 
-/// Runs the SDL2 host to completion: creates the window and wgpu surface, calls
+/// Runs the SDL3 host to completion: creates the window and wgpu surface, calls
 /// `setup` once with the render state and the stage source id, then loops until
 /// the window is closed, rendering the stage each frame.
 ///
@@ -78,8 +78,8 @@ where
     S: FnOnce(&mut flighthq_render_wgpu::WgpuRenderState, u64),
     U: FnMut(SdlFrame<'_>),
 {
-    let sdl_context = sdl2::init()?;
-    let video = sdl_context.video()?;
+    let sdl_context = sdl3::init().map_err(|e| e.to_string())?;
+    let video = sdl_context.video().map_err(|e| e.to_string())?;
 
     let mut window_builder =
         video.window(&options.title, options.width.max(1), options.height.max(1));
@@ -89,7 +89,7 @@ where
     }
     let window = window_builder.build().map_err(|e| e.to_string())?;
 
-    let (drawable_width, drawable_height) = window.drawable_size();
+    let (drawable_width, drawable_height) = window.size_in_pixels();
     let mut render_context = create_sdl_render_context(
         window,
         drawable_width,
@@ -101,17 +101,22 @@ where
     setup(&mut render_context.render_state, stage_source_id);
 
     let mut input = create_input_manager();
-    let mut event_pump = sdl_context.event_pump()?;
-    let timer = sdl_context.timer()?;
-    let mut last_ticks = timer.ticks();
+    let mut event_pump = sdl_context.event_pump().map_err(|e| e.to_string())?;
+    // SDL3 exposes the millisecond tick counter as a free function returning
+    // `u64` (SDL2 read it off a `TimerSubsystem` as `u32`).
+    let mut last_ticks = sdl3::timer::ticks();
 
     'running: loop {
         for event in event_pump.poll_iter() {
-            use sdl2::event::{Event, WindowEvent};
+            use sdl3::event::{Event, WindowEvent};
             match &event {
                 Event::Quit { .. } => break 'running,
+                // SDL3 splits SDL2's `SizeChanged` into `Resized` (logical/window
+                // units) and `PixelSizeChanged` (drawable/backing-store pixels).
+                // The wgpu surface is sized in pixels, so the pixel-size event is
+                // the one that drives reconfiguration.
                 Event::Window {
-                    win_event: WindowEvent::SizeChanged(w, h),
+                    win_event: WindowEvent::PixelSizeChanged(w, h),
                     ..
                 } => {
                     resize_sdl_render_context(&mut render_context, *w as u32, *h as u32);
@@ -122,7 +127,7 @@ where
             }
         }
 
-        let now = timer.ticks();
+        let now = sdl3::timer::ticks();
         let delta_seconds = (now.wrapping_sub(last_ticks)) as f32 / 1000.0;
         last_ticks = now;
 
@@ -138,7 +143,7 @@ where
         let _ = stage_source_id;
         if !render_sdl_frame(&mut render_context, &mut |_state| {}) {
             // Surface lost or outdated; reconfigure at the current drawable size and retry next frame.
-            let (w, h) = render_context.window.drawable_size();
+            let (w, h) = render_context.window.size_in_pixels();
             resize_sdl_render_context(&mut render_context, w, h);
         }
     }

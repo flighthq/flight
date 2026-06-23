@@ -66,7 +66,7 @@ The display-object backends fall in three tiers:
 
 ### 3D pipeline
 
-The refactor added a 3D subject family alongside display objects: **`scene`** (3D scene graph, renamed from `world`), **`mesh`** (vertex layouts, primitive builders, normals/tangents/bounds), **`lighting`** (light descriptors), **`texture`** (textures/samplers/cubemaps), and **`camera`** (3D camera: projections/view-projection — _not_ photo capture, which is now `webcam`). These are value/math + GPU crates with a substrate in the box, rendered by `scene-gl` / `scene-wgpu`. All are crates to add; see the [crates-to-add list](conformance.md#crates-to-add).
+The refactor added a 3D subject family alongside display objects: **`scene`** (3D scene graph, renamed from `world`), **`mesh`** (vertex layouts, primitive builders, normals/tangents/bounds), **`lighting`** (light descriptors), **`texture`** (textures/samplers/cubemaps), and **`camera`** (3D camera: projections/view-projection — _not_ photo capture, which is now `webcam`). These are value/math + GPU crates with a substrate in the box, rendered by `scene-gl` / `scene-wgpu`. All now exist as crates; see the [crate alignment status](conformance.md#crate-alignment-status).
 
 ## Text
 
@@ -79,7 +79,7 @@ Same backend-seam pattern as TS: a `*Backend` trait in `flighthq-types` plus `se
 `host-*` crates are the runtime-coupled, non-tree-shakable adapters that own the event loop / window / GPU surface / OS-GUI and raw input:
 
 - **`flighthq-host-winit`** — winit + wgpu. Primary; the native production host.
-- **`flighthq-host-sdl`** — SDL2 + wgpu. The alternative host; validates the seam is not winit-shaped.
+- **`flighthq-host-sdl`** — **SDL3** + wgpu (the `sdl3` crate, bundled). The alternative host; validates the seam is not winit-shaped. SDL3, not SDL2: SDL2 is EOL/frozen (its bundled C source already fails to build on modern C23 toolchains), and Flight uses SDL only for window + events + `raw-window-handle` + raw input (wgpu owns the GPU), so the `sdl3` crate's smaller maturity is a non-issue for this tiny surface.
 - **`flighthq-host-web`** — wasm: canvas + wgpu surface, DOM input, and the web `*Backend` fills. Primarily the conformance instrument (see [Intent](#intent)).
 - **`flighthq-capture`** — headless offscreen wgpu → PNG / fingerprint. The native conformance gate; needs no window and no browser.
 

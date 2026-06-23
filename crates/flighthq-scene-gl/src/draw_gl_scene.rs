@@ -21,9 +21,10 @@
 //! work to restore once the contract is available.
 
 use flighthq_render_gl::GlRenderState;
+use flighthq_types::camera::Camera;
+use flighthq_types::scene_render::SceneLightBlock;
 
 use crate::gl_scene_runtime::GlSceneRuntime;
-use crate::scene_render_contract::{Camera, SceneLightBlock};
 
 /// Draws a prepared 3D scene on the Gl backend, drawing each visible mesh subset
 /// with its registered mesh-material renderer.

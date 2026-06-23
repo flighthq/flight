@@ -35,13 +35,13 @@ use flighthq_displayobject::{
     get_display_object_rotation, prepare_display_object_render as prepare_display_object_bounds,
     set_display_object_rotation, set_display_object_x, set_display_object_y, set_stage_color,
 };
+use flighthq_displayobject_wgpu::{
+    WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
+};
 use flighthq_host_winit::{InputManager, WgpuRenderState, WinitAppConfig, run_winit_app};
 use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
     prepare_display_object_render,
-};
-use flighthq_displayobject_wgpu::{
-    WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
 use flighthq_shape::{
     ShapeArena, append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle,

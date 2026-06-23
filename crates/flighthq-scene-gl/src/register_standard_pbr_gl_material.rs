@@ -6,11 +6,11 @@
 //! scene runtime off it. The Rust port registers into a caller-owned
 //! `GlSceneRuntime` (see `gl_scene_runtime` for why).
 
+use flighthq_types::pbr_material::standard_pbr_material_kind;
+
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
 use crate::gl_scene_runtime::GlSceneRuntime;
-use crate::standard_pbr_gl_mesh_material_renderer::{
-    StandardPbrGlMeshMaterialRenderer, standard_pbr_material_kind,
-};
+use crate::standard_pbr_gl_mesh_material_renderer::StandardPbrGlMeshMaterialRenderer;
 
 /// Registers the built-in StandardPbr forward-lit renderer for the StandardPbr
 /// material kind on this scene runtime. Convenience over

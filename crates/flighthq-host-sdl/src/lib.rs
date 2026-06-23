@@ -1,8 +1,8 @@
-//! `flighthq-host-sdl` — SDL2 host for the Flight scene graph.
+//! `flighthq-host-sdl` — SDL3 host for the Flight scene graph.
 //!
 //! A runtime-coupled, non-tree-shakable host adapter that owns the window, the
 //! event loop, the wgpu GPU surface, and the input seam, and drives the
-//! `flighthq-render-wgpu` per-frame render protocol. It is the SDL2 sibling of
+//! `flighthq-render-wgpu` per-frame render protocol. It is the SDL3 sibling of
 //! the winit host: the same scene `setup`/`update` closures run under either,
 //! which is what proves the backend seam.
 //!
@@ -13,7 +13,7 @@
 //! * [`render_frame`] — wgpu surface creation from the SDL window and the
 //!   background → display-object → submit → present frame sequence.
 //! * [`event`] — SDL event translation into `flighthq-input` dispatch. The pure
-//!   builder layer is unit-tested on CPU; the live `sdl2::event::Event` adapter
+//!   builder layer is unit-tested on CPU; the live `sdl3::event::Event` adapter
 //!   runs only inside a real event loop.
 //!
 //! # Side effects

@@ -12,6 +12,9 @@
 use std::collections::HashMap;
 
 use flighthq_capture::{capture_scene_with_teardown_to_rgba, request_wgpu_capture_device};
+use flighthq_displayobject_wgpu::{
+    WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
+};
 use flighthq_effects::RenderEffect;
 use flighthq_effects_wgpu::{
     WgpuRenderEffectPipelineOptions, begin_wgpu_render_effect_pipeline,
@@ -22,9 +25,6 @@ use flighthq_effects_wgpu::{
 use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
     prepare_display_object_render,
-};
-use flighthq_displayobject_wgpu::{
-    WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
 use flighthq_shape::{
     ShapeArena, append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle,

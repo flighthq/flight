@@ -30,7 +30,7 @@ pub mod skia_text;
 pub mod skia_transform;
 
 pub use skia_bitmap::{SkiaBitmapTexture, create_premultiplied_pixmap, draw_skia_bitmap};
-pub use skia_blend::resolve_skia_blend_mode;
+pub use skia_blend::{SkiaBlendStrategy, resolve_skia_blend_mode, resolve_skia_blend_strategy};
 pub use skia_clip::{SkiaClipRectangle, pop_skia_clip_rectangle, push_skia_clip_rectangle};
 pub use skia_color::{create_skia_color, unpack_skia_rgba};
 pub use skia_display_object::{

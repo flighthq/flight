@@ -3,7 +3,7 @@ name = "flighthq-host-sdl"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "SDL2 host: window, event loop, wgpu surface, and input seam for the Flight scene graph"
+description = "SDL3 host: window, event loop, wgpu surface, and input seam for the Flight scene graph"
 
 [dependencies]
 flighthq-types = { workspace = true }
@@ -13,12 +13,22 @@ flighthq-input = { workspace = true }
 # Host-specific external deps live here, not in the workspace dependency table.
 # `wgpu` is taken from the workspace but with native backend features enabled so
 # a real adapter/surface can be created at runtime (the workspace default has
-# backends off). `sdl2` uses the bundled feature so the crate compiles and links
-# without a preinstalled system SDL2.
+# backends off). `sdl3` builds SDL3 from vendored C source and links it
+# statically, so the crate compiles and links without a preinstalled system
+# SDL3. SDL2 is EOL/frozen and its bundled C source no longer builds under a
+# modern C23 toolchain (GCC 15), so the host uses the `sdl3` crate. SDL3's
+# `Window` implements `raw-window-handle` 0.6 directly (the version wgpu 22
+# expects), so the wgpu surface is created from it with no extra glue.
 # On Windows/Linux/Android the Vulkan and GLES backends are always enabled by
 # wgpu; dx12 (Windows) and metal (macOS/iOS) are opted into here so a native
 # surface can be created on every desktop target.
 wgpu = { workspace = true, features = ["metal", "dx12"] }
-sdl2 = { version = "0.37", features = ["raw-window-handle", "bundled", "static-link"] }
+sdl3 = { version = "0.18", features = ["raw-window-handle", "build-from-source-static"] }
 raw-window-handle = "0.6"
 pollster = "0.3"
+
+[dev-dependencies]
+# The demo example registers the display-object renderer, which the render
+# reorg split out of `render-wgpu` into `displayobject-wgpu`. The host lib
+# itself draws via a caller-supplied closure, so this is example-only.
+flighthq-displayobject-wgpu = { workspace = true }

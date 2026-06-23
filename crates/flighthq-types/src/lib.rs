@@ -26,9 +26,11 @@ pub mod misc;
 pub mod node;
 pub mod node_types;
 pub mod particle;
+pub mod pbr_material;
 pub mod platform;
 pub mod render;
 pub mod resource;
+pub mod scene_render;
 pub mod text;
 pub mod texture;
 
@@ -157,6 +159,12 @@ pub use particle::{
     TurbulenceForce, VortexForce, WindForce, WorldTransform2D,
 };
 
+// pbr_material
+pub use pbr_material::{
+    MaterialAlphaMode, STANDARD_PBR_MATERIAL_KIND_NAME, StandardPbrMaterial,
+    StandardPbrMaterialProperties, SurfaceMaterial, standard_pbr_material_kind,
+};
+
 // platform
 pub use platform::{
     App, AppBackend, AppLifecycle, AppLifecycleState, AppUpdater, ClipboardBackend,
@@ -190,6 +198,9 @@ pub use resource::{
     TextureAtlas, TextureAtlasRegion, TextureAtlasRegionLike, Tileset, VideoChannel,
     VideoChannelState, VideoPlayOptions, VideoResource, VideoResourceUrl,
 };
+
+// scene_render
+pub use scene_render::{SceneLightBlock, SceneLights, SceneRenderProxy};
 
 // signal — Signal is defined in flighthq-signals (its behavior lives there);
 // re-exported here so the header layer stays navigable for field declarations.
