@@ -70,7 +70,7 @@ export function drawWgpuShapeMeshes(
     const vertexBuffer = ensureShapeMeshVertexBuffer(state, buffers, mesh.vertices.byteLength);
     const indexBuffer = ensureShapeMeshIndexBuffer(state, buffers, mesh.indices.byteLength);
     queue.writeBuffer(vertexBuffer, 0, mesh.vertices.buffer, mesh.vertices.byteOffset, mesh.vertices.byteLength);
-    queue.writeBuffer(indexBuffer, 0, mesh.indices.buffer, mesh.indices.byteOffset, mesh.indices.byteLength);
+    writeShapeMeshIndices(queue, indexBuffer, mesh.indices);
 
     // Premultiplied color (r*a, g*a, b*a, a) for the one / one-minus-src-alpha target blend.
     const r = ((mesh.color >> 16) & 0xff) / 255;
@@ -236,6 +236,27 @@ function shapeMeshMatrix(state: WgpuRenderState, renderProxy: RenderProxy2D): Fl
   return m;
 }
 
+// Uploads uint16 indices to the index buffer. writeBuffer requires the byte count to be a multiple of 4,
+// but a mesh with an odd index count (e.g. a single triangle, 3 indices = 6 bytes) is not; pad the upload
+// up through the scratch in that case (the trailing index is never drawn — drawIndexed uses indices.length).
+// Even-length data, whose byte length is already a multiple of 4, uploads directly with no copy.
+function writeShapeMeshIndices(queue: GPUQueue, indexBuffer: GPUBuffer, indices: Readonly<Uint16Array>): void {
+  const byteLength = indices.byteLength;
+  if ((byteLength & 3) === 0) {
+    queue.writeBuffer(indexBuffer, 0, indices.buffer, indices.byteOffset, byteLength);
+    return;
+  }
+  const paddedBytes = (byteLength + 3) & ~3;
+  const wordCount = paddedBytes >> 1;
+  if (_shapeMeshIndexScratch.length < wordCount) _shapeMeshIndexScratch = new Uint16Array(wordCount);
+  _shapeMeshIndexScratch.set(indices);
+  queue.writeBuffer(indexBuffer, 0, _shapeMeshIndexScratch.buffer, 0, paddedBytes);
+}
+
 // Shared scratch for one uniform upload (matrix columns 0..11, color 12..15). Single-threaded render
 // loop, so one scratch is safe; the buffer is written before each draw via writeBuffer.
 const _shapeMeshUniformScratch = new Float32Array(SHAPE_MESH_UNIFORM_FLOATS);
+
+// Grown-on-demand scratch for odd-length index uploads (see writeShapeMeshIndices). Single-threaded render
+// loop, so one shared scratch is safe; it is written immediately before each writeBuffer.
+let _shapeMeshIndexScratch = new Uint16Array(0);
