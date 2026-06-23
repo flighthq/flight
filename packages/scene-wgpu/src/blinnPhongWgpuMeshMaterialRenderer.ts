@@ -16,7 +16,12 @@ import { BlinnPhongMaterialKind } from '@flighthq/types';
 import type { WgpuClassicDefineKey } from './wgpuClassicPrelude';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  hasWgpuMaterialTexture,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline';
 
 // The built-in classic BlinnPhong forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // BlinnPhongMaterialKind) — the WGSL mirror of blinnPhongGlMeshMaterialRenderer. Lambert diffuse plus
@@ -44,7 +49,7 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (blinnPhong === null) {
-      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5);
+      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null);
     } else {
       unpackColorToLinear(_diffuse, blinnPhong.diffuse);
       unpackColorToLinear(_specular, blinnPhong.specular);
@@ -56,6 +61,9 @@ export const blinnPhongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
         _specular,
         blinnPhong.shininess,
         blinnPhong.alphaCutoff,
+        blinnPhong.diffuseMap,
+        blinnPhong.specularMap,
+        blinnPhong.normalMap,
       );
     }
 
@@ -76,15 +84,15 @@ export function registerBlinnPhongWgpuMaterial(state: WgpuRenderState): void {
 }
 
 // The feature define key for a BlinnPhong material: the fixed `blinnphong` lighting model plus the
-// alpha-mask + double-sided flags. The proving slice defers map upload on wgpu, so the map flags stay
-// off (matches the GL classic's wgpu-deferred map state).
+// alpha-mask + double-sided flags and which optional maps are present (mirrors
+// blinnPhongGlMeshMaterialRenderer).
 function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): WgpuClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasDiffuseMap: false,
-    hasNormalMap: false,
-    hasSpecularMap: false,
+    hasDiffuseMap: material !== null && hasWgpuMaterialTexture(material.diffuseMap),
+    hasNormalMap: material !== null && hasWgpuMaterialTexture(material.normalMap),
+    hasSpecularMap: material !== null && hasWgpuMaterialTexture(material.specularMap),
     lightingModel: 'blinnphong',
   };
 }

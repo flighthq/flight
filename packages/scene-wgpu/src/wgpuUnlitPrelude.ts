@@ -1,12 +1,12 @@
 import type { LinearColor } from '@flighthq/materials';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuRenderState } from '@flighthq/types';
+import type { Texture, WgpuRenderState } from '@flighthq/types';
 
 import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
-  ensureWgpuPlaceholderTextureView,
   ensureWgpuScenePipeline,
+  resolveWgpuMaterialTextureView,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
 import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
@@ -19,11 +19,11 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // flag is a `const … : bool` the pipeline compiler folds. The CPU passes the surface color already
 // decoded to linear (unpackColorToLinear), so the shader only sRgb-decodes a sampled color map.
 //
-// NOTE ON MAPS / color0: like the StandardPbr wgpu path, real map textures are not yet sampled on wgpu
-// (hasColorMap stays false; the bind group binds the shared placeholder), and VertexColor renders its
-// tint without the mesh color0 attribute (the canonical 48-byte vertex layout has no color0 slot and no
-// builder emits it). Both mirror documented gaps on the GL side and land when texture upload / color0
-// vertex support arrives.
+// NOTE ON MAPS / color0: the color map IS sampled when bound (hasColorMap drives the textured variant
+// and the real uploaded view binds into the color slot; an unbound slot falls back to the placeholder).
+// VertexColor still renders its tint without a mesh color0 attribute — the canonical 48-byte vertex
+// layout has no color0 slot and no builder emits one, so color0 support is the one remaining gap (a
+// cross-package mesh-layout change), matching the GL path which also renders VertexColor as the tint.
 
 // The feature flags that select an unlit variant. `hasColorMap` enables the sampled color map (not yet
 // used on wgpu — see note); `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials;
@@ -48,6 +48,7 @@ export function bindWgpuUnlitSurface(
   color: Readonly<LinearColor>,
   intensity: number,
   alphaCutoff: number,
+  colorMap: Readonly<Texture> | null,
 ): GPUBindGroup {
   const scene = getWgpuSceneRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
@@ -62,7 +63,7 @@ export function bindWgpuUnlitSurface(
       entries: [
         { binding: 0, resource: { buffer } },
         { binding: 1, resource: stateRuntime.linearSampler },
-        { binding: 2, resource: ensureWgpuPlaceholderTextureView(state) },
+        { binding: 2, resource: resolveWgpuMaterialTextureView(state, colorMap) },
       ],
     });
     binding = { bindGroup, buffer };

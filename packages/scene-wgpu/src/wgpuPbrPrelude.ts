@@ -41,7 +41,10 @@ export interface WgpuPbrDefineKey {
   clearcoatEnabled: boolean;
   doubleSided: boolean;
   hasBaseColorMap: boolean;
+  hasEmissiveMap: boolean;
+  hasMetallicRoughnessMap: boolean;
   hasNormalMap: boolean;
+  hasOcclusionMap: boolean;
   iridescenceEnabled: boolean;
   sheenEnabled: boolean;
   specularEnabled: boolean;
@@ -52,14 +55,17 @@ export interface WgpuPbrDefineKey {
 // A short, stable, order-independent string identity for a define key, used as the pipeline-cache map
 // key (combined with the color-attachment format). Two keys with the same flags produce the same
 // string and so share a compiled pipeline. Standard map/alpha/double-sided flags first, then one slot
-// per extension lobe past the `:` (mirroring scene-gl's `mbnroe:CSAIPUT` layout, trimmed to the two
-// standard map flags wgpu samples today).
+// per extension lobe past the `:` (mirroring scene-gl's `mbnroe:CSAIPUT` layout — all five standard
+// maps now sampled on wgpu: base color, normal, metallic-roughness, occlusion, emissive).
 export function buildWgpuPbrDefineKey(key: Readonly<WgpuPbrDefineKey>): string {
   return (
     `${key.alphaMaskEnabled ? 'm' : '-'}` +
     `${key.doubleSided ? 'd' : '-'}` +
     `${key.hasBaseColorMap ? 'b' : '-'}` +
     `${key.hasNormalMap ? 'n' : '-'}` +
+    `${key.hasMetallicRoughnessMap ? 'r' : '-'}` +
+    `${key.hasOcclusionMap ? 'o' : '-'}` +
+    `${key.hasEmissiveMap ? 'e' : '-'}` +
     `:${key.clearcoatEnabled ? 'C' : '-'}` +
     `${key.sheenEnabled ? 'S' : '-'}` +
     `${key.anisotropyEnabled ? 'A' : '-'}` +
@@ -79,6 +85,9 @@ export function buildWgpuPbrDefineSource(key: Readonly<WgpuPbrDefineKey>): strin
     `const DOUBLE_SIDED : bool = ${key.doubleSided ? 'true' : 'false'};\n` +
     `const HAS_BASE_COLOR_MAP : bool = ${key.hasBaseColorMap ? 'true' : 'false'};\n` +
     `const HAS_NORMAL_MAP : bool = ${key.hasNormalMap ? 'true' : 'false'};\n` +
+    `const HAS_METALLIC_ROUGHNESS_MAP : bool = ${key.hasMetallicRoughnessMap ? 'true' : 'false'};\n` +
+    `const HAS_OCCLUSION_MAP : bool = ${key.hasOcclusionMap ? 'true' : 'false'};\n` +
+    `const HAS_EMISSIVE_MAP : bool = ${key.hasEmissiveMap ? 'true' : 'false'};\n` +
     `const CLEARCOAT : bool = ${key.clearcoatEnabled ? 'true' : 'false'};\n` +
     `const SHEEN : bool = ${key.sheenEnabled ? 'true' : 'false'};\n` +
     `const ANISOTROPY : bool = ${key.anisotropyEnabled ? 'true' : 'false'};\n` +
@@ -271,9 +280,22 @@ fn iridescentFresnel(cosTheta : f32, f0 : vec3f, thicknessNm : f32, filmIor : f3
   let viewDir = normalize(frame.cameraPosition.xyz - in.worldPosition);
   let nDotV = max(dot(normal, viewDir), 1e-4);
 
-  let roughness = clamp(material.factors.y, 0.04, 1.0);
-  let metallic = clamp(material.factors.x, 0.0, 1.0);
-  let occlusion = clamp(material.factors.w, 0.0, 1.0);
+  var roughness = clamp(material.factors.y, 0.04, 1.0);
+  var metallic = clamp(material.factors.x, 0.0, 1.0);
+  if (HAS_METALLIC_ROUGHNESS_MAP) {
+    // glTF packing: roughness in G, metallic in B (R is occlusion if combined, ignored here).
+    let mr = textureSample(metallicRoughnessTexture, materialSampler, in.uv);
+    roughness = clamp(roughness * mr.g, 0.04, 1.0);
+    metallic = clamp(metallic * mr.b, 0.0, 1.0);
+  }
+
+  // Occlusion defaults to full ambient; the map (R channel) attenuates it, lerped by occlusionStrength
+  // (factors.w). Without a map the ambient term is unattenuated, matching the GL path.
+  var occlusion = 1.0;
+  if (HAS_OCCLUSION_MAP) {
+    let ao = textureSample(occlusionTexture, materialSampler, in.uv).r;
+    occlusion = mix(1.0, ao, clamp(material.factors.w, 0.0, 1.0));
+  }
 
   let albedo = baseColor.rgb;
   var f0 = mix(vec3f(0.04), albedo, metallic);
@@ -359,7 +381,11 @@ fn iridescentFresnel(cosTheta : f32, f0 : vec3f, thicknessNm : f32, filmIor : f3
     radiance = radiance + diffuseColor * frame.ambientRadiance.rgb * occlusion;
   }
 
-  radiance = radiance + material.emissive.rgb;
+  var emissive = material.emissive.rgb;
+  if (HAS_EMISSIVE_MAP) {
+    emissive = emissive * srgbToLinear(textureSample(emissiveTexture, materialSampler, in.uv).rgb);
+  }
+  radiance = radiance + emissive;
 
   var alpha = baseColor.a;
   if (TRANSMISSION) {

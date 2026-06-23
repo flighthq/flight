@@ -1,7 +1,14 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { Camera, MeshGeometry, SceneLightBlock, SceneRenderProxy, WgpuRenderState } from '@flighthq/types';
+import { bindWgpuTexture, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import type {
+  Camera,
+  MeshGeometry,
+  SceneLightBlock,
+  SceneRenderProxy,
+  Texture,
+  WgpuRenderState,
+} from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
@@ -182,6 +189,29 @@ export function ensureWgpuScenePipeline<T extends WgpuMeshPipeline>(
   return pipeline as T;
 }
 
+// True when a material map texture is present AND carries a GPU-uploadable image source. Families call
+// this to decide the `has*Map` define flag — the textured pipeline variant compiles only when the map
+// can actually be sampled, so a null/data-only texture renders the untextured path (placeholder bound).
+// Mirrors the `map !== null && map.image !== null && map.image.source !== null` guard in the GL renderers.
+export function hasWgpuMaterialTexture(texture: Readonly<Texture> | null): boolean {
+  return texture !== null && texture.image !== null && texture.image.source !== null;
+}
+
+// Resolves the GPUTextureView a family binds into a material map slot: the real uploaded view when the
+// texture carries an image source (cached per state by render-wgpu's texture cache), otherwise the
+// shared 1x1 opaque-white placeholder so the bind-group layout's texture slot is always satisfied. The
+// single texture-resolution seam every scene-wgpu family routes its maps through — the WGSL mirror of
+// scene-gl's `bindGlTexture(state, map.image.source)` / unbound-attribute fallback.
+export function resolveWgpuMaterialTextureView(
+  state: WgpuRenderState,
+  texture: Readonly<Texture> | null,
+): GPUTextureView {
+  if (texture !== null && texture.image !== null && texture.image.source !== null) {
+    return bindWgpuTexture(state, texture.image.source).view;
+  }
+  return ensureWgpuPlaceholderTextureView(state);
+}
+
 // Allocates a draw slot from the render-state's uniform ring buffer, writes the Draw uniform (world
 // mat4x4f + normal mat3x3f padded to std140) into it, records the slot's byte offset on the scene
 // runtime (the draw path passes it as the bind group's dynamic offset), and returns the shared
@@ -266,6 +296,11 @@ export function writeWgpuFrameUniform(
   f[30] = data[10];
   f[31] = lights.ambientCount;
 
+  // Camera view matrix (floats 32..47): used by matcap to rotate the world-space normal into view
+  // space. Lighting-independent families ignore these lanes; the cost is one extra mat4 per frame.
+  const view = camera.view.m;
+  for (let i = 0; i < 16; i++) f[32 + i] = view[i];
+
   state.device.queue.writeBuffer(scene.frameBuffer!, 0, f.buffer, 0, FRAME_UNIFORM_BYTES);
 }
 
@@ -283,6 +318,7 @@ struct Frame {
   lightDirection : vec4f,       // xyz = directional light travel direction; w = directionalCount
   directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
   ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
+  view : mat4x4f,               // camera view matrix; rotates world normals into view space (matcap)
 };
 
 struct Draw {
@@ -326,8 +362,9 @@ fn srgbToLinear(c : vec3f) -> vec3f {
 `;
 
 // Frame uniform: mat4x4f viewProjection (64) + vec4f cameraPosition (16) + vec4f lightDirection (16)
-// + vec4f directionalRadiance (16) + vec4f ambientRadiance (16) = 128 bytes / 32 floats.
-const FRAME_UNIFORM_BYTES = 128;
+// + vec4f directionalRadiance (16) + vec4f ambientRadiance (16) + mat4x4f view (64) = 192 bytes / 48
+// floats.
+const FRAME_UNIFORM_BYTES = 192;
 
 // Draw uniform: mat4x4f world (64) + mat3x3f normalMatrix as 3 padded vec4 (48) = 112; the ring buffer
 // rounds the per-slot stride up to the device's minUniformBufferOffsetAlignment.

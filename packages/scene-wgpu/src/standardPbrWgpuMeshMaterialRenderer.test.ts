@@ -2,7 +2,7 @@ import { createCamera } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy, Texture } from '@flighthq/types';
 
 import {
   buildWgpuPbrStandardDefineKey,
@@ -49,7 +49,7 @@ describe('buildWgpuPbrStandardDefineKey', () => {
     const material = createStandardPbrMaterial();
     material.alphaMode = 'mask';
     material.doubleSided = true;
-    const key = buildWgpuPbrStandardDefineKey(material);
+    const key = buildWgpuPbrStandardDefineKey(material, material);
     expect(key.alphaMaskEnabled).toBe(true);
     expect(key.doubleSided).toBe(true);
     expect(key.clearcoatEnabled).toBe(false);
@@ -57,20 +57,35 @@ describe('buildWgpuPbrStandardDefineKey', () => {
   });
 
   it('returns all-false flags for a null surface', () => {
-    const key = buildWgpuPbrStandardDefineKey(null);
+    const key = buildWgpuPbrStandardDefineKey(null, null);
     expect(key.alphaMaskEnabled).toBe(false);
     expect(key.hasBaseColorMap).toBe(false);
+  });
+
+  it('derives the five standard map flags from the material maps that carry an image source', () => {
+    const material = createStandardPbrMaterial();
+    // A texture is "present" only when it carries a GPU-uploadable image source; a structural stub of
+    // exactly that shape is enough to exercise the flag derivation without a real GPU texture upload.
+    const sourced = { image: { source: {} } } as unknown as Texture;
+    material.baseColorMap = sourced;
+    material.metallicRoughnessMap = sourced;
+    const key = buildWgpuPbrStandardDefineKey(material, material);
+    expect(key.hasBaseColorMap).toBe(true);
+    expect(key.hasMetallicRoughnessMap).toBe(true);
+    expect(key.hasNormalMap).toBe(false);
+    expect(key.hasOcclusionMap).toBe(false);
+    expect(key.hasEmissiveMap).toBe(false);
   });
 });
 
 describe('ensureWgpuPbrMaterialBindGroup', () => {
   it('creates a material bind group once per key and reuses it', () => {
     const { fake, state } = makeWgpuSceneState();
-    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(null), 'bgra8unorm');
+    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(null, null), 'bgra8unorm');
     const cacheKey = {};
-    const a = ensureWgpuPbrMaterialBindGroup(state, pipeline, cacheKey);
+    const a = ensureWgpuPbrMaterialBindGroup(state, pipeline, cacheKey, null);
     const groups = fake.calls.filter((c) => c.name === 'createBindGroup').length;
-    const b = ensureWgpuPbrMaterialBindGroup(state, pipeline, cacheKey);
+    const b = ensureWgpuPbrMaterialBindGroup(state, pipeline, cacheKey, null);
     expect(b).toBe(a);
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(groups);
   });
@@ -128,8 +143,8 @@ describe('standardPbrWgpuMeshMaterialRenderer', () => {
 describe('uploadWgpuPbrMaterialUniform', () => {
   it('writes the scratch into the binding buffer', () => {
     const { fake, state } = makeWgpuSceneState();
-    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(null), 'bgra8unorm');
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, {});
+    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(null, null), 'bgra8unorm');
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, {}, null);
     const writes = fake.calls.filter((c) => c.name === 'writeBuffer').length;
     uploadWgpuPbrMaterialUniform(state, binding);
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(writes + 1);
