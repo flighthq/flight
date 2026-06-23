@@ -1,3 +1,7 @@
+use flighthq_node::{
+    BoundsNode, get_bounds_node_local_content_revision, invalidate_bounds_node_local_bounds,
+    invalidate_bounds_node_local_content,
+};
 use flighthq_textlayout::{
     TextBoundsSpec, compute_text_bounds_rectangle, create_text_format_range,
 };
@@ -21,14 +25,19 @@ pub fn text_label_kind() -> KindId {
 // ---------------------------------------------------------------------------
 
 /// Internal per-node runtime state for a `TextLabel`.
+///
+/// In TS the cache lives on the display-object runtime attached to the node and
+/// the content/bounds revisions live on the node's `BoundsNode`
+/// (`invalidateNodeLocalContent`/`getNodeLocalContentRevision`). The Rust port
+/// folds runtime state onto the entity, so the layout cache and a real
+/// [`BoundsNode`] (the same revision spine `flighthq-node` exposes) live here.
 pub struct TextLabelRuntime {
     /// Cached layout and the content revision it was computed at.
     pub(crate) layout: TextLayoutCache,
-    /// Monotonic content stamp, bumped on every content-affecting setter.
-    /// Mirrors the TS node local-content revision the layout cache compares to.
-    pub(crate) content_revision: i64,
-    /// Monotonic bounds stamp, bumped when a setter changes the field box.
-    pub(crate) bounds_revision: i64,
+    /// The node's bounds/content revision spine. Setters bump it via
+    /// `invalidate_bounds_node_local_content`/`_bounds`; the layout cache
+    /// compares against `get_bounds_node_local_content_revision`.
+    pub(crate) bounds: BoundsNode,
 }
 
 impl TextLabelRuntime {
@@ -88,7 +97,7 @@ pub fn compute_text_label_local_bounds_rectangle(out: &mut Rectangle, source: &m
         return;
     }
 
-    let revision = source.runtime.content_revision;
+    let revision = get_bounds_node_local_content_revision(&source.runtime.bounds) as i64;
     let params_data = TextLabelData {
         text_format: data.text_format.clone(),
         text: data.text.clone(),
@@ -140,12 +149,11 @@ pub fn create_text_label_data(data: Option<&TextLabelData>) -> TextLabelData {
 
 /// Allocates a `TextLabelRuntime` with default values, mirroring the TS
 /// `createTextLabelRuntime`: an empty layout cache (`textLayout = null`,
-/// `textLayoutUsingContentID = -1`) and zeroed revisions.
+/// `textLayoutUsingContentID = -1`) and a fresh `BoundsNode` revision spine.
 pub fn create_text_label_runtime() -> TextLabelRuntime {
     TextLabelRuntime {
         layout: TextLayoutCache::new(),
-        content_revision: 0,
-        bounds_revision: 0,
+        bounds: BoundsNode::default(),
     }
 }
 
@@ -160,15 +168,15 @@ pub fn set_text_label_auto_size(source: &mut TextLabel, value: TextAutoSize) {
         return;
     }
     source.data.auto_size = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 /// Replaces the `TextFormat` wholesale, invalidating local content. The content
 /// revision bumps unconditionally because field-level equality is not tracked.
 pub fn set_text_label_format(source: &mut TextLabel, value: TextFormat) {
     source.data.text_format = value;
-    source.runtime.content_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
 }
 
 /// Sets `data.height` on `source`, invalidating local content and bounds.
@@ -177,8 +185,8 @@ pub fn set_text_label_height(source: &mut TextLabel, value: f32) {
         return;
     }
     source.data.height = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 /// Sets `data.text` on `source`, invalidating local content.
@@ -187,7 +195,7 @@ pub fn set_text_label_string(source: &mut TextLabel, value: String) {
         return;
     }
     source.data.text = value;
-    source.runtime.content_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
 }
 
 /// Sets `data.width` on `source`, invalidating local content and bounds.
@@ -196,13 +204,14 @@ pub fn set_text_label_width(source: &mut TextLabel, value: f32) {
         return;
     }
     source.data.width = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use flighthq_node::get_bounds_node_local_bounds_revision;
     use flighthq_textlayout::set_text_layout_measure_provider;
     use flighthq_types::TextMeasureFunction;
     use serial_test::serial;
@@ -221,6 +230,14 @@ mod tests {
             height: h,
             ..TextLabelData::default()
         }))
+    }
+
+    fn content_revision(text: &TextLabel) -> u32 {
+        get_bounds_node_local_content_revision(&text.runtime.bounds)
+    }
+
+    fn bounds_revision(text: &TextLabel) -> u32 {
+        get_bounds_node_local_bounds_revision(&text.runtime.bounds)
     }
 
     #[test]
@@ -315,7 +332,7 @@ mod tests {
         let runtime = create_text_label_runtime();
         assert!(runtime.layout.result.is_none());
         assert_eq!(runtime.layout.content_id, -1);
-        assert_eq!(runtime.content_revision, 0);
+        assert_eq!(get_bounds_node_local_content_revision(&runtime.bounds), 0);
     }
 
     #[test]
@@ -329,27 +346,27 @@ mod tests {
     #[test]
     fn set_text_label_auto_size_no_op_when_same() {
         let mut text = create_text_label(None);
-        let content = text.runtime.content_revision;
+        let content = content_revision(&text);
         set_text_label_auto_size(&mut text, TextAutoSize::None);
-        assert_eq!(text.runtime.content_revision, content);
+        assert_eq!(content_revision(&text), content);
     }
 
     #[test]
     fn set_text_label_auto_size_invalidates_bounds() {
         let mut text = create_text_label(None);
-        let content = text.runtime.content_revision;
-        let bounds = text.runtime.bounds_revision;
+        let content = content_revision(&text);
+        let bounds = bounds_revision(&text);
         set_text_label_auto_size(&mut text, TextAutoSize::Left);
         assert_eq!(text.data.auto_size, TextAutoSize::Left);
-        assert_eq!(text.runtime.content_revision, content + 1);
-        assert_ne!(text.runtime.bounds_revision, bounds);
+        assert_ne!(content_revision(&text), content);
+        assert_ne!(bounds_revision(&text), bounds);
     }
 
     #[test]
     fn set_text_label_format_replaces() {
         let mut text = create_text_label(None);
-        let content = text.runtime.content_revision;
-        let bounds = text.runtime.bounds_revision;
+        let content = content_revision(&text);
+        let bounds = bounds_revision(&text);
         set_text_label_format(
             &mut text,
             TextFormat {
@@ -358,32 +375,32 @@ mod tests {
             },
         );
         assert_eq!(text.data.text_format.size, Some(24.0));
-        assert_eq!(text.runtime.content_revision, content + 1);
+        assert_ne!(content_revision(&text), content);
         // Format does not touch bounds.
-        assert_eq!(text.runtime.bounds_revision, bounds);
+        assert_eq!(bounds_revision(&text), bounds);
     }
 
     #[test]
     fn set_text_label_height_updates_data() {
         let mut text = create_text_label(None);
-        let content = text.runtime.content_revision;
-        let bounds = text.runtime.bounds_revision;
+        let content = content_revision(&text);
+        let bounds = bounds_revision(&text);
         set_text_label_height(&mut text, 250.0);
         assert_eq!(text.data.height, 250.0);
-        assert_eq!(text.runtime.content_revision, content + 1);
-        assert_ne!(text.runtime.bounds_revision, bounds);
+        assert_ne!(content_revision(&text), content);
+        assert_ne!(bounds_revision(&text), bounds);
     }
 
     #[test]
     fn set_text_label_string_updates_data() {
         let mut text = create_text_label(None);
-        let content = text.runtime.content_revision;
-        let bounds = text.runtime.bounds_revision;
+        let content = content_revision(&text);
+        let bounds = bounds_revision(&text);
         set_text_label_string(&mut text, "hello".to_string());
         assert_eq!(text.data.text, "hello");
-        assert_eq!(text.runtime.content_revision, content + 1);
+        assert_ne!(content_revision(&text), content);
         // Text does not touch bounds.
-        assert_eq!(text.runtime.bounds_revision, bounds);
+        assert_eq!(bounds_revision(&text), bounds);
     }
 
     #[test]
@@ -392,19 +409,19 @@ mod tests {
             text: "same".to_string(),
             ..TextLabelData::default()
         }));
-        let content = text.runtime.content_revision;
+        let content = content_revision(&text);
         set_text_label_string(&mut text, "same".to_string());
-        assert_eq!(text.runtime.content_revision, content);
+        assert_eq!(content_revision(&text), content);
     }
 
     #[test]
     fn set_text_label_width_updates_data() {
         let mut text = create_text_label(None);
-        let content = text.runtime.content_revision;
-        let bounds = text.runtime.bounds_revision;
+        let content = content_revision(&text);
+        let bounds = bounds_revision(&text);
         set_text_label_width(&mut text, 300.0);
         assert_eq!(text.data.width, 300.0);
-        assert_eq!(text.runtime.content_revision, content + 1);
-        assert_ne!(text.runtime.bounds_revision, bounds);
+        assert_ne!(content_revision(&text), content);
+        assert_ne!(bounds_revision(&text), bounds);
     }
 }

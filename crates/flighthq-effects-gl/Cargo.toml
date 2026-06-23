@@ -7,6 +7,7 @@ description = "WebGL shader recipes for render effects (MSAA-aware post-process 
 
 [dependencies]
 flighthq-effects = { workspace = true }
+flighthq-filters-gl = { workspace = true }
 flighthq-render-gl = { workspace = true }
 flighthq-types = { workspace = true }
 glow = { workspace = true }

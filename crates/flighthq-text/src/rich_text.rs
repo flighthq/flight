@@ -1,3 +1,7 @@
+use flighthq_node::revision::{
+    NodeRevisions, get_node_appearance_revision, get_node_local_content_revision,
+    invalidate_node_appearance, invalidate_node_local_bounds, invalidate_node_local_content,
+};
 use flighthq_textlayout::{
     TextBoundsSpec, compute_rich_text_content, compute_text_bounds_rectangle, get_rich_text_content,
 };
@@ -33,10 +37,13 @@ pub struct RichTextRuntime {
     /// Editable-field state. `None` on a static RichText; allocated by
     /// `enable_text_input`.
     pub input: Option<TextInputState>,
-    /// Monotonic content stamp, bumped on every content-affecting setter.
-    pub(crate) content_revision: i64,
-    /// Monotonic bounds stamp, bumped when a setter resizes the field box.
-    pub(crate) bounds_revision: i64,
+    /// The node's full revision spine (a `flighthq-node` `NodeRevisions`).
+    /// RichText is editable and has compositing appearance, so it needs the
+    /// full counter set: content/bounds setters bump it via
+    /// `invalidate_node_local_content`/`_local_bounds`, the editable-input
+    /// subsystem bumps `appearance_id` via `invalidate_node_appearance`, and the
+    /// layout cache compares against `get_node_local_content_revision`.
+    pub(crate) revisions: NodeRevisions,
 }
 
 impl RichTextRuntime {
@@ -47,8 +54,7 @@ impl RichTextRuntime {
             selection_begin_index: 0,
             selection_end_index: 0,
             input: None,
-            content_revision: 0,
-            bounds_revision: 0,
+            revisions: NodeRevisions::default(),
         }
     }
 }
@@ -187,6 +193,14 @@ pub fn dispatch_rich_text_wheel(
     set_rich_text_scroll_v(source, next, layout);
 }
 
+/// Returns the appearance revision of `source`, mirroring
+/// `getNodeAppearanceRevision(richText)` in TS. The public read seam the
+/// `flighthq-textinput` subsystem uses to observe recomposite invalidations,
+/// since the `RichText` runtime is package-private.
+pub fn get_rich_text_appearance_revision(source: &RichText) -> u32 {
+    get_node_appearance_revision(&source.runtime.revisions)
+}
+
 /// Returns a shared reference to the editable-field input state on `source`,
 /// or `None` when the field is not in editing mode.
 ///
@@ -227,6 +241,16 @@ pub fn get_rich_text_selection_end_index(source: &RichText) -> usize {
 /// pointer/selection managers use for hit-testing without recomputing layout.
 pub fn get_rich_text_text_layout(source: &RichText) -> Option<&TextLayoutResult> {
     get_text_layout(&source.runtime.layout)
+}
+
+/// Bumps the appearance revision of `source`, mirroring `invalidateNodeAppearance`
+/// applied to a `RichText` in TS.
+///
+/// The public seam through which the `flighthq-textinput` subsystem signals that
+/// selection/caret state changed and the field must recomposite, without
+/// reaching into the package-private runtime.
+pub fn invalidate_rich_text_appearance(source: &mut RichText) {
+    invalidate_node_appearance(&mut source.runtime.revisions);
 }
 
 /// Sets the viewing-selection begin/end indices on `source`.
@@ -294,7 +318,7 @@ pub fn set_rich_text_scroll_h(
         return;
     }
     source.data.scroll_h = clamped;
-    source.runtime.content_revision += 1;
+    invalidate_node_local_content(&mut source.runtime.revisions);
 }
 
 /// Sets the 1-based vertical scroll position, clamped to the valid range.
@@ -313,7 +337,7 @@ pub fn set_rich_text_scroll_v(
         return;
     }
     source.data.scroll_v = clamped;
-    source.runtime.content_revision += 1;
+    invalidate_node_local_content(&mut source.runtime.revisions);
 }
 
 /// Replaces the plain-text content, invalidating the content cache.
@@ -329,7 +353,7 @@ pub fn set_rich_text_string(source: &mut RichText, value: String) {
 // Ensures the layout cache is current for the current content revision,
 // rebuilding the RichText content + params under the active measure provider.
 fn ensure_rich_text_layout(source: &mut RichText) {
-    let revision = source.runtime.content_revision;
+    let revision = get_node_local_content_revision(&source.runtime.revisions) as i64;
     // The closure needs both `&mut runtime.layout` (via ensure) and the rest of
     // `source` to build params, so split the borrow: build params eagerly is not
     // possible without a provider check. Instead, snapshot the inputs ensure
@@ -364,9 +388,9 @@ fn ensure_rich_text_layout(source: &mut RichText) {
 // A content change always re-rasterizes the field. It only changes the field's
 // bounds when autoSize is active; a fixed field keeps its user-set size.
 fn invalidate_rich_text_content(source: &mut RichText) {
-    source.runtime.content_revision += 1;
+    invalidate_node_local_content(&mut source.runtime.revisions);
     if source.data.auto_size != TextAutoSize::None {
-        source.runtime.bounds_revision += 1;
+        invalidate_node_local_bounds(&mut source.runtime.revisions);
     }
 }
 
@@ -406,6 +430,7 @@ fn get_rich_text_max_scroll_v_from_layout(data: &RichTextData, layout: &TextLayo
 #[cfg(test)]
 mod tests {
     use super::*;
+    use flighthq_node::revision::{get_node_appearance_revision, get_node_local_bounds_revision};
     use flighthq_textlayout::set_text_layout_measure_provider;
     use flighthq_types::TextMeasureFunction;
     use serial_test::serial;
@@ -415,6 +440,18 @@ mod tests {
         Arc::new(Box::new(|text: &str, _f: &TextFormat| {
             text.chars().count() as f32 * 7.0
         }))
+    }
+
+    fn appearance_revision(rich: &RichText) -> u32 {
+        get_node_appearance_revision(&rich.runtime.revisions)
+    }
+
+    fn content_revision(rich: &RichText) -> u32 {
+        get_node_local_content_revision(&rich.runtime.revisions)
+    }
+
+    fn bounds_revision(rich: &RichText) -> u32 {
+        get_node_local_bounds_revision(&rich.runtime.revisions)
     }
 
     #[test]
@@ -566,6 +603,14 @@ mod tests {
     }
 
     #[test]
+    fn get_rich_text_appearance_revision_reflects_invalidation() {
+        let mut rich = create_rich_text(None);
+        let before = get_rich_text_appearance_revision(&rich);
+        invalidate_rich_text_appearance(&mut rich);
+        assert_ne!(get_rich_text_appearance_revision(&rich), before);
+    }
+
+    #[test]
     fn get_rich_text_password_character_none_when_no_input() {
         assert!(get_rich_text_password_character(&create_rich_text(None)).is_none());
     }
@@ -645,6 +690,14 @@ mod tests {
     }
 
     #[test]
+    fn invalidate_rich_text_appearance_bumps_revision() {
+        let mut rich = create_rich_text(None);
+        let before = appearance_revision(&rich);
+        invalidate_rich_text_appearance(&mut rich);
+        assert_ne!(appearance_revision(&rich), before);
+    }
+
+    #[test]
     fn set_rich_text_scroll_h_clamps() {
         let mut rich = create_rich_text(None);
         set_rich_text_scroll_h(&mut rich, 10.0, None);
@@ -672,9 +725,9 @@ mod tests {
     #[test]
     fn set_rich_text_string_invalidates_content() {
         let mut rich = create_rich_text(None);
-        let before = rich.runtime.content_revision;
+        let before = content_revision(&rich);
         set_rich_text_string(&mut rich, "hello".to_string());
-        assert_ne!(rich.runtime.content_revision, before);
+        assert_ne!(content_revision(&rich), before);
     }
 
     #[test]
@@ -683,9 +736,9 @@ mod tests {
             auto_size: TextAutoSize::None,
             ..create_rich_text_data(None)
         }));
-        let before = rich.runtime.bounds_revision;
+        let before = bounds_revision(&rich);
         set_rich_text_string(&mut rich, "hello".to_string());
-        assert_eq!(rich.runtime.bounds_revision, before);
+        assert_eq!(bounds_revision(&rich), before);
     }
 
     #[test]
@@ -694,8 +747,8 @@ mod tests {
             auto_size: TextAutoSize::Left,
             ..create_rich_text_data(None)
         }));
-        let before = rich.runtime.bounds_revision;
+        let before = bounds_revision(&rich);
         set_rich_text_string(&mut rich, "hello".to_string());
-        assert_ne!(rich.runtime.bounds_revision, before);
+        assert_ne!(bounds_revision(&rich), before);
     }
 }

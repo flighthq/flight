@@ -12,6 +12,11 @@
 
 pub use flighthq_types::{ClipRegion, Path, PathWinding, Rectangle, path_command};
 
+// The path flattener is shared with the rest of the SDK — reuse
+// `flighthq-path`'s `flatten_path` rather than carrying a duplicate (matches TS
+// `clip`, which imports `flattenPath` from `@flighthq/path`).
+use flighthq_path::flatten_path;
+
 // ---------------------------------------------------------------------------
 // Public functions (alphabetical)
 // ---------------------------------------------------------------------------
@@ -139,88 +144,6 @@ fn rectangle_intersection(a: &Rectangle, b: &Rectangle) -> Rectangle {
     }
 }
 
-/// Flattens a `Path`'s curves to straight-line contours.
-///
-/// Each contour is a `Vec<f32>` of interleaved x, y pairs. Quadratic and
-/// cubic Bézier segments are adaptively subdivided until deviation from the
-/// chord is within `tolerance` (squared comparison avoids `sqrt`).
-fn flatten_path(path: &Path, tolerance: f32) -> Vec<Vec<f32>> {
-    let tolerance_sq = tolerance * tolerance;
-    let mut contours: Vec<Vec<f32>> = Vec::new();
-    let mut current: Option<usize> = None; // index of active contour in `contours`
-    let mut x = 0.0_f32;
-    let mut y = 0.0_f32;
-    let mut di = 0usize;
-
-    for &cmd in &path.commands {
-        match cmd {
-            path_command::MOVE_TO => {
-                x = path.data[di];
-                y = path.data[di + 1];
-                di += 2;
-                contours.push(vec![x, y]);
-                current = Some(contours.len() - 1);
-            }
-            path_command::WIDE_MOVE_TO => {
-                // Consumes 4 data values; the first pair is a dummy.
-                x = path.data[di + 2];
-                y = path.data[di + 3];
-                di += 4;
-                contours.push(vec![x, y]);
-                current = Some(contours.len() - 1);
-            }
-            path_command::LINE_TO => {
-                let contour = ensure_contour(&mut contours, &mut current);
-                x = path.data[di];
-                y = path.data[di + 1];
-                di += 2;
-                contour.push(x);
-                contour.push(y);
-            }
-            path_command::WIDE_LINE_TO => {
-                let contour = ensure_contour(&mut contours, &mut current);
-                x = path.data[di + 2];
-                y = path.data[di + 3];
-                di += 4;
-                contour.push(x);
-                contour.push(y);
-            }
-            path_command::CURVE_TO => {
-                let cx = path.data[di];
-                let cy = path.data[di + 1];
-                let x1 = path.data[di + 2];
-                let y1 = path.data[di + 3];
-                di += 4;
-                let x0 = x;
-                let y0 = y;
-                let contour = ensure_contour(&mut contours, &mut current);
-                flatten_quadratic(contour, x0, y0, cx, cy, x1, y1, tolerance_sq, 0);
-                x = x1;
-                y = y1;
-            }
-            path_command::CUBIC_CURVE_TO => {
-                let c1x = path.data[di];
-                let c1y = path.data[di + 1];
-                let c2x = path.data[di + 2];
-                let c2y = path.data[di + 3];
-                let x1 = path.data[di + 4];
-                let y1 = path.data[di + 5];
-                di += 6;
-                let x0 = x;
-                let y0 = y;
-                let contour = ensure_contour(&mut contours, &mut current);
-                flatten_cubic(contour, x0, y0, c1x, c1y, c2x, c2y, x1, y1, tolerance_sq, 0);
-                x = x1;
-                y = y1;
-            }
-            // NO_OP and unrecognized verbs consume no data and are skipped.
-            _ => {}
-        }
-    }
-
-    contours
-}
-
 /// Returns the bounding rectangle of all contour points.
 ///
 /// Returns a zero rectangle when the contour list is empty.
@@ -266,130 +189,6 @@ fn compute_contours_bounds(contours: &[Vec<f32>]) -> Rectangle {
         width: max_x - min_x,
         height: max_y - min_y,
     }
-}
-
-/// Starts an implicit contour at the origin when a draw verb precedes any
-/// MOVE_TO, mirroring the canvas reader's implicit `moveTo(0, 0)` fallback.
-/// Returns a mutable reference to the active contour.
-fn ensure_contour<'a>(
-    contours: &'a mut Vec<Vec<f32>>,
-    current: &mut Option<usize>,
-) -> &'a mut Vec<f32> {
-    if current.is_none() {
-        contours.push(vec![0.0, 0.0]);
-        *current = Some(contours.len() - 1);
-    }
-    let idx = current.unwrap();
-    &mut contours[idx]
-}
-
-/// Squared perpendicular distance from `(px, py)` to the segment
-/// `(x0, y0)-(x1, y1)`. Used as the flatness test to avoid `sqrt`.
-fn distance_to_chord_sq(px: f32, py: f32, x0: f32, y0: f32, x1: f32, y1: f32) -> f32 {
-    let dx = x1 - x0;
-    let dy = y1 - y0;
-    let length_sq = dx * dx + dy * dy;
-    if length_sq == 0.0 {
-        let ax = px - x0;
-        let ay = py - y0;
-        return ax * ax + ay * ay;
-    }
-    let cross = dx * (y0 - py) - dy * (x0 - px);
-    (cross * cross) / length_sq
-}
-
-const MAX_SUBDIVISION_DEPTH: u32 = 16;
-
-/// Appends the flattened points of a quadratic Bézier (excluding start,
-/// including end) via recursive de Casteljau subdivision.
-fn flatten_quadratic(
-    out: &mut Vec<f32>,
-    x0: f32,
-    y0: f32,
-    cx: f32,
-    cy: f32,
-    x1: f32,
-    y1: f32,
-    tolerance_sq: f32,
-    depth: u32,
-) {
-    if depth >= MAX_SUBDIVISION_DEPTH
-        || distance_to_chord_sq(cx, cy, x0, y0, x1, y1) <= tolerance_sq
-    {
-        out.push(x1);
-        out.push(y1);
-        return;
-    }
-    let x01 = (x0 + cx) / 2.0;
-    let y01 = (y0 + cy) / 2.0;
-    let x12 = (cx + x1) / 2.0;
-    let y12 = (cy + y1) / 2.0;
-    let xm = (x01 + x12) / 2.0;
-    let ym = (y01 + y12) / 2.0;
-    flatten_quadratic(out, x0, y0, x01, y01, xm, ym, tolerance_sq, depth + 1);
-    flatten_quadratic(out, xm, ym, x12, y12, x1, y1, tolerance_sq, depth + 1);
-}
-
-/// Appends the flattened points of a cubic Bézier (excluding start, including
-/// end) via recursive de Casteljau subdivision at the midpoint.
-fn flatten_cubic(
-    out: &mut Vec<f32>,
-    x0: f32,
-    y0: f32,
-    c1x: f32,
-    c1y: f32,
-    c2x: f32,
-    c2y: f32,
-    x1: f32,
-    y1: f32,
-    tolerance_sq: f32,
-    depth: u32,
-) {
-    let d1 = distance_to_chord_sq(c1x, c1y, x0, y0, x1, y1);
-    let d2 = distance_to_chord_sq(c2x, c2y, x0, y0, x1, y1);
-    if depth >= MAX_SUBDIVISION_DEPTH || (d1 <= tolerance_sq && d2 <= tolerance_sq) {
-        out.push(x1);
-        out.push(y1);
-        return;
-    }
-    let x01 = (x0 + c1x) / 2.0;
-    let y01 = (y0 + c1y) / 2.0;
-    let x12 = (c1x + c2x) / 2.0;
-    let y12 = (c1y + c2y) / 2.0;
-    let x23 = (c2x + x1) / 2.0;
-    let y23 = (c2y + y1) / 2.0;
-    let x012 = (x01 + x12) / 2.0;
-    let y012 = (y01 + y12) / 2.0;
-    let x123 = (x12 + x23) / 2.0;
-    let y123 = (y12 + y23) / 2.0;
-    let xm = (x012 + x123) / 2.0;
-    let ym = (y012 + y123) / 2.0;
-    flatten_cubic(
-        out,
-        x0,
-        y0,
-        x01,
-        y01,
-        x012,
-        y012,
-        xm,
-        ym,
-        tolerance_sq,
-        depth + 1,
-    );
-    flatten_cubic(
-        out,
-        xm,
-        ym,
-        x123,
-        y123,
-        x23,
-        y23,
-        x1,
-        y1,
-        tolerance_sq,
-        depth + 1,
-    );
 }
 
 // ---------------------------------------------------------------------------

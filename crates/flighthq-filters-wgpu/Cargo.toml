@@ -9,3 +9,6 @@ description = "WebGPU shader implementations for bitmap filter effects"
 flighthq-filters = { workspace = true }
 flighthq-render-wgpu = { workspace = true }
 wgpu = { workspace = true }
+
+[dev-dependencies]
+pollster = "0.3"

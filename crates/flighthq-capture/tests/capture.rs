@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 
 use flighthq_capture::{capture_scene_to_rgba, request_wgpu_capture_device};
+use flighthq_displayobject::{DisplayObjectArena, get_display_object_local_content_revision};
 use flighthq_displayobject_wgpu::{
     WgpuBitmapTexture, WgpuClipRectangle, WgpuShapeGeometry, register_wgpu_display_object_renderer,
     render_wgpu_display_object,
@@ -16,8 +17,8 @@ use flighthq_render::{
     prepare_display_object_render,
 };
 use flighthq_shape::{
-    ShapeArena, append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle,
-    create_shape_node, get_shape_fill_regions,
+    append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle, create_shape,
+    get_shape_fill_regions,
 };
 use flighthq_types::KindId;
 use flighthq_types::display::{bitmap_kind, display_object_kind, shape_kind};
@@ -71,12 +72,12 @@ fn capture_red_shape_on_background() {
 
     // Build the shape geometry in a real ShapeArena: a centered red rectangle
     // covering the middle half of the frame (16,16 .. 48,48).
-    let mut shape_arena = ShapeArena::default();
-    let shape_node = create_shape_node(&mut shape_arena);
+    let mut shape_arena = DisplayObjectArena::default();
+    let shape_node = create_shape(&mut shape_arena);
     append_shape_begin_fill(&mut shape_arena, shape_node, RED, 1.0);
     append_shape_rectangle(&mut shape_arena, shape_node, 16.0, 16.0, 32.0, 32.0);
     append_shape_end_fill(&mut shape_arena, shape_node);
-    let content_revision = shape_arena[shape_node].content_revision;
+    let content_revision = get_display_object_local_content_revision(&shape_arena, shape_node);
     let regions =
         get_shape_fill_regions(&shape_arena, shape_node).expect("solid fill resolves to regions");
 
@@ -388,8 +389,8 @@ fn capture_clip_rectangle_bounds_shape() {
     const RED: u32 = 0xff_00_00_ff; // opaque red
 
     // A full-frame red rectangle; the clip restricts it to the centered quadrant.
-    let mut shape_arena = ShapeArena::default();
-    let shape_node = create_shape_node(&mut shape_arena);
+    let mut shape_arena = DisplayObjectArena::default();
+    let shape_node = create_shape(&mut shape_arena);
     append_shape_begin_fill(&mut shape_arena, shape_node, RED, 1.0);
     append_shape_rectangle(
         &mut shape_arena,
@@ -400,7 +401,7 @@ fn capture_clip_rectangle_bounds_shape() {
         SIZE as f32,
     );
     append_shape_end_fill(&mut shape_arena, shape_node);
-    let content_revision = shape_arena[shape_node].content_revision;
+    let content_revision = get_display_object_local_content_revision(&shape_arena, shape_node);
     let regions =
         get_shape_fill_regions(&shape_arena, shape_node).expect("solid fill resolves to regions");
 

@@ -1,60 +1,50 @@
-//! Core ShapeNode: drawing-command buffer, bounds computation, and geometry
-//! invalidation.
+//! Core shape display object: drawing-command buffer, bounds computation, and
+//! geometry invalidation.
 //!
-//! A `ShapeNode` stores its drawing commands as an opaque, flat heterogeneous
-//! buffer (`Vec<Box<dyn Any>>`) mirroring the TypeScript command stream: each
-//! command is encoded as a `&'static str` key, an `i32` argument count, then the
-//! command's arguments boxed in their natural Rust types. Renderers and the
-//! bounds/fill iterators read the buffer back by key and argument count.
+//! A shape is a [`DisplayObjectArena`] node whose kind is [`shape_kind`] and
+//! whose boxed payload is a [`ShapeData`]. The payload stores the drawing
+//! commands as an opaque, flat heterogeneous buffer (`Vec<Box<dyn Any>>`)
+//! mirroring the TypeScript command stream: each command is encoded as a
+//! `&'static str` key, an `i32` argument count, then the command's arguments
+//! boxed in their natural Rust types. Renderers and the bounds/fill iterators
+//! read the buffer back by key and argument count.
 //!
-//! Both `bounds_revision` and `content_revision` are bumped together whenever the
-//! command buffer changes, because the command stream defines both the shape's
-//! geometry and its drawn surface.
+//! [`invalidate_shape_geometry`] bumps both the node's local-content revision
+//! (re-rasterize) and its local-bounds revision (re-measure), because the
+//! command stream defines both the shape's drawn surface and its extent. This
+//! mirrors TS `invalidateShapeGeometry`, which calls `invalidateNodeLocalContent`
+//! and `invalidateNodeLocalBounds`.
 
-use flighthq_node::{NodeArena, NodeId};
-use flighthq_types::{Rectangle, ShapeData};
+use flighthq_displayobject::{
+    DisplayObjectArena, DisplayObjectRuntime, create_display_object_generic,
+    create_display_object_runtime, invalidate_display_object_local_bounds,
+    invalidate_display_object_local_content,
+};
+use flighthq_node::NodeId;
+use flighthq_types::{Rectangle, ShapeData, shape_kind};
 
 use crate::command_buffer::{read_f32, read_key, read_u8_vec};
 
 // ---------------------------------------------------------------------------
-// ShapeNode
+// Runtime
 // ---------------------------------------------------------------------------
-
-/// A scene graph node that renders vector shape commands.
-///
-/// Drawing commands are appended via the helpers in [`crate::shape_commands`];
-/// the node stores them as raw boxed values that each renderer backend
-/// interprets.
-///
-/// The `bounds_revision` and `content_revision` counters let renderers detect
-/// geometry changes without re-diffing the command buffer.
-#[derive(Debug, Default)]
-pub struct ShapeNode {
-    /// The shape's drawing command buffer and fill data.
-    pub data: ShapeData,
-    /// Bumped by [`invalidate_shape_geometry`] to signal bounds re-measurement.
-    pub bounds_revision: u32,
-    /// Bumped by [`invalidate_shape_geometry`] to signal raster re-paint.
-    pub content_revision: u32,
-}
-
-/// Arena of `ShapeNode` values, keyed by [`NodeId`].
-pub type ShapeArena = NodeArena<ShapeNode>;
 
 /// Runtime behavior for a shape.
 ///
 /// Mirrors TS `ShapeRuntime`, whose distinguishing behavior is its
 /// `computeLocalBoundsRectangle` method. In the Rust arena model the runtime is
-/// captured as the shape's bounds-compute function.
-pub type ShapeRuntime = fn(&ShapeArena, NodeId, &mut Rectangle);
+/// the shape's bounds-compute function, carried as a [`DisplayObjectRuntime`].
+pub type ShapeRuntime = DisplayObjectRuntime;
 
 // ---------------------------------------------------------------------------
 // Public functions (alphabetical)
 // ---------------------------------------------------------------------------
 
 /// Removes all drawing commands from `source` and invalidates its geometry.
-pub fn clear_shape_commands(arena: &mut ShapeArena, source: NodeId) {
-    arena[source].data.commands.clear();
+pub fn clear_shape_commands(arena: &mut DisplayObjectArena, source: NodeId) {
+    if let Some(data) = get_shape_data_mut(arena, source) {
+        data.commands.clear();
+    }
     invalidate_shape_geometry(arena, source);
 }
 
@@ -66,14 +56,21 @@ pub fn clear_shape_commands(arena: &mut ShapeArena, source: NodeId) {
 /// width if a `lineStyle` command is present. Writes a zero rectangle when the
 /// buffer is empty.
 ///
-/// Safe for any `out`: inputs are read from `arena`, which is a distinct
-/// borrow from the mutable `out`.
+/// The signature matches [`DisplayObjectRuntime`]: inputs are read from `arena`,
+/// which is a distinct borrow from the mutable `out`.
 pub fn compute_shape_local_bounds_rectangle(
-    arena: &ShapeArena,
-    source: NodeId,
     out: &mut Rectangle,
+    arena: &DisplayObjectArena,
+    source: NodeId,
 ) {
-    let commands = &arena[source].data.commands;
+    let Some(data) = get_shape_data(arena, source) else {
+        out.x = 0.0;
+        out.y = 0.0;
+        out.width = 0.0;
+        out.height = 0.0;
+        return;
+    };
+    let commands = &data.commands;
 
     let mut min_x = f32::INFINITY;
     let mut min_y = f32::INFINITY;
@@ -273,13 +270,27 @@ pub fn compute_shape_local_bounds_rectangle(
 /// `target`'s geometry.
 ///
 /// The command buffer holds boxed trait objects that are not cloneable, so this
-/// re-encodes by draining and rebuilding. Because `source` and `target` are
-/// distinct arena slots, the copy is performed by cloning each boxed entry
-/// through the buffer's typed re-box helper.
-pub fn copy_shape_commands(arena: &mut ShapeArena, source: NodeId, target: NodeId) {
-    let copied = crate::command_buffer::clone_command_buffer(&arena[source].data.commands);
-    arena[target].data.commands = copied;
+/// re-encodes by cloning each boxed entry through the buffer's typed re-box
+/// helper. Because `source` and `target` are distinct arena slots, the clone is
+/// read out before the write.
+pub fn copy_shape_commands(arena: &mut DisplayObjectArena, source: NodeId, target: NodeId) {
+    let copied = match get_shape_data(arena, source) {
+        Some(data) => crate::command_buffer::clone_command_buffer(&data.commands),
+        None => return,
+    };
+    if let Some(target_data) = get_shape_data_mut(arena, target) {
+        target_data.commands = copied;
+    }
     invalidate_shape_geometry(arena, target);
+}
+
+/// Inserts a new shape node into `arena` and returns its id.
+///
+/// Mirrors TS `createShape`: builds a display object of kind [`shape_kind`] with
+/// a [`ShapeData`] payload via `createDisplayObjectGeneric`.
+pub fn create_shape(arena: &mut DisplayObjectArena) -> NodeId {
+    let data: Box<dyn std::any::Any + Send + Sync> = Box::new(create_shape_data());
+    create_display_object_generic(arena, shape_kind(), Some(data))
 }
 
 /// Builds a default `ShapeData` payload with an empty command buffer.
@@ -291,44 +302,64 @@ pub fn create_shape_data() -> ShapeData {
     }
 }
 
-/// Creates a new `ShapeNode` entry in `arena` and returns its `NodeId`.
-pub fn create_shape_node(arena: &mut ShapeArena) -> NodeId {
-    arena.insert(ShapeNode::default())
-}
-
 /// Builds the runtime behavior for a shape.
 ///
 /// Mirrors TS `createShapeRuntime()`, which installs
 /// `computeShapeLocalBoundsRectangle` as the runtime's bounds-compute method.
 pub fn create_shape_runtime() -> ShapeRuntime {
-    compute_shape_local_bounds_rectangle
+    create_display_object_runtime(Some(compute_shape_local_bounds_rectangle))
 }
 
 /// Returns the runtime behavior for the shape at `source`.
 ///
-/// Mirrors TS `getShapeRuntime(source)`. The returned function is the shape's
-/// bounds-compute method (the same one its factory installs via
-/// [`create_shape_runtime`]).
-pub fn get_shape_runtime(_arena: &ShapeArena, _source: NodeId) -> ShapeRuntime {
-    compute_shape_local_bounds_rectangle
+/// Mirrors TS `getShapeRuntime(source)`. TS reads the runtime object the shape
+/// factory installed; in the arena port a shape's runtime is always its
+/// bounds-compute function (the same one [`create_shape_runtime`] installs), so
+/// this returns it directly. Display-object kind dispatch (`runtime_for_kind`)
+/// lives in `flighthq-displayobject` and intentionally does not know shape kinds,
+/// since that crate must not depend on `flighthq-shape`.
+pub fn get_shape_runtime(_arena: &DisplayObjectArena, _source: NodeId) -> ShapeRuntime {
+    create_shape_runtime()
 }
 
-/// Bumps both the `bounds_revision` and `content_revision` counters on
-/// `source` to signal that its geometry and render surface have changed.
+/// Bumps both the node's local-content and local-bounds revisions on `source`
+/// to signal that its render surface and extent have changed.
 ///
-/// Called automatically by every append/clear/copy helper; call directly only
-/// when mutating `shape.data.commands` in place.
-pub fn invalidate_shape_geometry(arena: &mut ShapeArena, source: NodeId) {
-    let node = &mut arena[source];
-    node.bounds_revision = node.bounds_revision.wrapping_add(1);
-    node.content_revision = node.content_revision.wrapping_add(1);
+/// Mirrors TS `invalidateShapeGeometry`, which calls `invalidateNodeLocalContent`
+/// then `invalidateNodeLocalBounds`. Called automatically by every
+/// append/clear/copy helper; call directly only when mutating a shape's commands
+/// in place.
+pub fn invalidate_shape_geometry(arena: &mut DisplayObjectArena, source: NodeId) {
+    invalidate_display_object_local_content(arena, source);
+    invalidate_display_object_local_bounds(arena, source);
 }
 
 // ---------------------------------------------------------------------------
-// Local helpers
+// Internal helpers (loose, kept after the public API)
 // ---------------------------------------------------------------------------
 
 type AnyBox = Box<dyn std::any::Any + Send + Sync>;
+
+/// Returns the [`ShapeData`] payload of `source`, or `None` if the node carries
+/// no shape payload.
+pub(crate) fn get_shape_data(arena: &DisplayObjectArena, source: NodeId) -> Option<&ShapeData> {
+    arena[source]
+        .data
+        .as_ref()
+        .and_then(|d| d.downcast_ref::<ShapeData>())
+}
+
+/// Returns the mutable [`ShapeData`] payload of `source`, or `None` if the node
+/// carries no shape payload.
+pub(crate) fn get_shape_data_mut(
+    arena: &mut DisplayObjectArena,
+    source: NodeId,
+) -> Option<&mut ShapeData> {
+    arena[source]
+        .data
+        .as_mut()
+        .and_then(|d| d.downcast_mut::<ShapeData>())
+}
 
 fn quad_point(t: f32, p0: f32, p1: f32, p2: f32) -> f32 {
     let u = 1.0 - t;
@@ -353,29 +384,38 @@ mod tests {
     use crate::shape_commands::{
         append_shape_end_fill, append_shape_line_to, append_shape_move_to, append_shape_rectangle,
     };
+    use flighthq_displayobject::get_display_object_local_content_revision;
     use flighthq_geometry::create_rectangle;
+    use flighthq_types::shape_kind;
+
+    fn new_arena() -> DisplayObjectArena {
+        DisplayObjectArena::default()
+    }
 
     // clear_shape_commands
 
     #[test]
     fn clear_shape_commands_empties_buffer() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_end_fill(&mut arena, shape);
-        let content = arena[shape].content_revision;
+        let content = get_display_object_local_content_revision(&arena, shape);
         clear_shape_commands(&mut arena, shape);
-        assert_eq!(arena[shape].data.commands.len(), 0);
-        assert_eq!(arena[shape].content_revision, content + 1);
+        assert_eq!(get_shape_data(&arena, shape).unwrap().commands.len(), 0);
+        assert_ne!(
+            get_display_object_local_content_revision(&arena, shape),
+            content
+        );
     }
 
     // compute_shape_local_bounds_rectangle
 
     #[test]
     fn compute_shape_local_bounds_rectangle_empty_is_zero() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         let mut out = create_rectangle(1.0, 2.0, 3.0, 4.0);
-        compute_shape_local_bounds_rectangle(&arena, shape, &mut out);
+        compute_shape_local_bounds_rectangle(&mut out, &arena, shape);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
         assert_eq!(out.width, 0.0);
@@ -384,11 +424,11 @@ mod tests {
 
     #[test]
     fn compute_shape_local_bounds_rectangle_rectangle_command() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_rectangle(&mut arena, shape, 10.0, 20.0, 100.0, 50.0);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_shape_local_bounds_rectangle(&arena, shape, &mut out);
+        compute_shape_local_bounds_rectangle(&mut out, &arena, shape);
         assert_eq!(out.x, 10.0);
         assert_eq!(out.y, 20.0);
         assert_eq!(out.width, 100.0);
@@ -397,12 +437,12 @@ mod tests {
 
     #[test]
     fn compute_shape_local_bounds_rectangle_move_and_line() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_move_to(&mut arena, shape, 0.0, 0.0);
         append_shape_line_to(&mut arena, shape, 80.0, 60.0);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_shape_local_bounds_rectangle(&arena, shape, &mut out);
+        compute_shape_local_bounds_rectangle(&mut out, &arena, shape);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
         assert_eq!(out.width, 80.0);
@@ -413,14 +453,28 @@ mod tests {
 
     #[test]
     fn copy_shape_commands_duplicates_buffer() {
-        let mut arena = ShapeArena::default();
-        let source = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let source = create_shape(&mut arena);
         append_shape_end_fill(&mut arena, source);
-        let target = create_shape_node(&mut arena);
-        let content = arena[target].content_revision;
+        let target = create_shape(&mut arena);
+        let content = get_display_object_local_content_revision(&arena, target);
         copy_shape_commands(&mut arena, source, target);
-        assert_eq!(arena[target].data.commands.len(), 2);
-        assert_eq!(arena[target].content_revision, content + 1);
+        assert_eq!(get_shape_data(&arena, target).unwrap().commands.len(), 2);
+        assert_ne!(
+            get_display_object_local_content_revision(&arena, target),
+            content
+        );
+    }
+
+    // create_shape
+
+    #[test]
+    fn create_shape_uses_shape_kind() {
+        use flighthq_displayobject::get_display_object_kind;
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
+        assert_eq!(get_display_object_kind(&arena, shape), shape_kind());
+        assert_eq!(get_shape_data(&arena, shape).unwrap().commands.len(), 0);
     }
 
     // create_shape_data
@@ -431,26 +485,16 @@ mod tests {
         assert_eq!(data.commands.len(), 0);
     }
 
-    // create_shape_node
-
-    #[test]
-    fn create_shape_node_returns_valid_id() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
-        assert!(arena.get(shape).is_some());
-        assert_eq!(arena[shape].data.commands.len(), 0);
-    }
-
     // create_shape_runtime
 
     #[test]
     fn create_shape_runtime_uses_compute_local_bounds() {
         let runtime = create_shape_runtime();
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_rectangle(&mut arena, shape, 10.0, 20.0, 100.0, 50.0);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        runtime(&arena, shape, &mut out);
+        runtime.expect("shape runtime")(&mut out, &arena, shape);
         assert_eq!(out.x, 10.0);
         assert_eq!(out.width, 100.0);
     }
@@ -459,12 +503,12 @@ mod tests {
 
     #[test]
     fn get_shape_runtime_returns_compute_for_shape() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         let runtime = get_shape_runtime(&arena, shape);
         append_shape_rectangle(&mut arena, shape, 0.0, 0.0, 8.0, 4.0);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        runtime(&arena, shape, &mut out);
+        runtime.expect("shape runtime")(&mut out, &arena, shape);
         assert_eq!(out.width, 8.0);
         assert_eq!(out.height, 4.0);
     }
@@ -473,12 +517,19 @@ mod tests {
 
     #[test]
     fn invalidate_shape_geometry_bumps_both_revisions() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
-        let content = arena[shape].content_revision;
-        let bounds = arena[shape].bounds_revision;
+        use flighthq_displayobject::get_display_object_local_bounds_revision;
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
+        let content = get_display_object_local_content_revision(&arena, shape);
+        let bounds = get_display_object_local_bounds_revision(&arena, shape);
         invalidate_shape_geometry(&mut arena, shape);
-        assert_eq!(arena[shape].content_revision, content + 1);
-        assert_eq!(arena[shape].bounds_revision, bounds + 1);
+        assert_ne!(
+            get_display_object_local_content_revision(&arena, shape),
+            content
+        );
+        assert_ne!(
+            get_display_object_local_bounds_revision(&arena, shape),
+            bounds
+        );
     }
 }

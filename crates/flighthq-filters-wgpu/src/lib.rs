@@ -51,8 +51,8 @@ pub use filter_pass::{
     FILTER_VERTEX_WGSL, WgpuBlendMode, WgpuDualSourcePipeline, WgpuFilterPipeline, WgpuFilterState,
     WgpuUniformSlot, clear_wgpu_filter_target, create_wgpu_dual_source_pipeline,
     create_wgpu_filter_pipeline, create_wgpu_filter_state, create_wgpu_triple_source_pipeline,
-    destroy_wgpu_filter_state, draw_wgpu_dual_source_pass, draw_wgpu_filter_pass,
-    draw_wgpu_triple_source_pass,
+    destroy_wgpu_filter_state, draw_wgpu_dual_source_pass, draw_wgpu_dual_source_views_pass,
+    draw_wgpu_filter_pass, draw_wgpu_triple_source_pass,
 };
 pub use gradient_bevel_filter::apply_gradient_bevel_filter_to_wgpu;
 pub use gradient_glow_filter::apply_gradient_glow_filter_to_wgpu;

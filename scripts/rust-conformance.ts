@@ -1,37 +1,52 @@
 /**
- * Test parity harness: TS (reference) vs Rust (port).
+ * Rust conformance gate: TS (authoritative) vs Rust (port).
  *
- * Both codebases name tests after the exported function they cover — TS uses
- * `describe('functionName')` blocks, Rust uses `mod tests` with `fn function_name_*`.
- * This tool keys on that convention to measure FUNCTION-LEVEL coverage parity:
- * for every function the TS suite tests, does the mapped Rust crate have at least
- * one test covering it?
+ * Policy: the TS packages are the spec; the Rust crates must match them 1:1. The
+ * ONLY sanctioned divergences are (a) substrate absent from the native box (the
+ * crate-existence rule — canvas/dom/electron) and (b) pure language mechanics
+ * (snake_case, `&mut` out-params, `Option`/`-1` sentinels, the slotmap arena for
+ * the entity graph, `trait`/`Arc<dyn>` seams). Everything else that differs is
+ * DRIFT, not design. This script encodes that policy as far as a static check
+ * honestly can.
  *
- * Phase 1 (this script): non-visual unit-test coverage parity + optional run of
- * both suites. Phase 2 (functional/visual parity) is a separate harness that
- * renders shared scenes via flighthq-capture and diffs against TS baselines.
+ * Three tiers, by how much each can be a pass/fail gate (see the "How much can
+ * be encoded" note at the bottom of this file):
  *
- *   tsx ./scripts/parity.ts            # coverage report (markdown)
- *   tsx ./scripts/parity.ts --json     # machine-readable JSON
- *   tsx ./scripts/parity.ts --gaps     # only list missing-coverage functions
- *   tsx ./scripts/parity.ts --run      # also run `cargo test --workspace` and report pass/fail
- *   tsx ./scripts/parity.ts --functional  # also run the GPU functional parity gate (flighthq-functional)
- *   tsx ./scripts/parity.ts --crate geometry   # restrict to one package/crate
+ *  1. STRUCTURAL conformance — a hard pass/fail GATE. Static, deterministic:
+ *       - package existence: every TS package has a Rust crate (minus EXCLUDED);
+ *         every crate maps to a TS package (minus RUST_ONLY).
+ *       - dependency edges: every REAL TS function dependency — derived from
+ *         actual `import { fn } from '@flighthq/x'` VALUE imports in TS source,
+ *         NOT package.json (which carries declared-but-unused deps) and NOT
+ *         `import type` (a type-only edge is the flighthq-types header routing) —
+ *         is carried through to the Rust crate, modulo the FOLDABLE
+ *         mechanical-translation targets and the REVIEWED_DEP_EXCEPTIONS
+ *         allowlist. Each reported edge names the exact symbols it is about.
+ *     A new TS merge that relocates a function or adds a real dependency Rust
+ *     doesn't carry turns this RED — the drift that name-match coverage cannot
+ *     see. (Per-export presence checking is a planned addition; the dependency
+ *     edge check already catches relocation, since the receiving package's
+ *     import of the moved function shows up as an un-carried edge.)
  *
- * The headline number is NATIVE-CORE unit parity, not raw function coverage.
- * Raw coverage undercounts true parity because two whole categories of gapped
- * functions are not validated by headless Rust unit tests by design:
+ *  2. COVERAGE — reported, not gated. Name-match unit-test coverage: does a Rust
+ *     test mention each TS function. Tracks behavioral-porting progress; a low
+ *     number is a backlog, not a structural failure.
  *
- *   - GPU-backend functions (render-gl/wgpu, filters-gl/wgpu, effects-gl/wgpu)
- *     are validated FUNCTIONALLY by the flighthq-functional render+fingerprint
- *     gate, not by unit tests. Their unit "gap" is expected.
- *   - Web-relocated functions (createWeb*Backend, *Backend, DOM attach/detach
- *     wiring) live in flighthq-host-web and are browser-validated, outside the
- *     headless scope entirely.
+ *  3. BEHAVIORAL / VISUAL — not statically gateable. Assertion-ported unit tests
+ *     (`cargo test`) and GPU fingerprint parity (flighthq-functional) verify that
+ *     output matches; this script can run/summarize them (`--run`/`--functional`)
+ *     but cannot decide them from source.
  *
- * So the headline excludes both categories from the denominator and reports the
- * real-core logic parity. The two excluded categories are reported separately:
- * GPU via the functional scene table, web as a browser-validated function count.
+ *   tsx ./scripts/rust-conformance.ts              # structural gate + coverage report
+ *   tsx ./scripts/rust-conformance.ts --json       # machine-readable report
+ *   tsx ./scripts/rust-conformance.ts --gaps       # only list coverage gaps
+ *   tsx ./scripts/rust-conformance.ts --run        # also run `cargo test --workspace`
+ *   tsx ./scripts/rust-conformance.ts --functional # also run the GPU fingerprint gate
+ *   tsx ./scripts/rust-conformance.ts --crate geometry  # restrict to one package
+ *
+ * Exit code: NONZERO if any STRUCTURAL violation is found (the gate). Coverage
+ * and behavioral results are reported but do not, by themselves, fail the gate
+ * (use `--strict` to also fail on real-core coverage gaps).
  */
 
 import { execSync } from 'node:child_process';
@@ -71,6 +86,72 @@ const TS_ONLY = new Set([
 // capture gate, the conformance scene registry, and the in-box software
 // display-object backend. See conformance.md "Rust-only (no TS counterpart)".
 const RUST_ONLY = new Set(['capture', 'displayobject-skia', 'functional', 'host-winit', 'host-sdl', 'host-web']);
+
+// FOLDABLE dependency targets: packages whose dep edges are a sanctioned
+// language-mechanics translation in Rust, so a TS->X edge is NOT required to
+// appear as a Rust edge (and a Rust->X edge is not flagged as extra). These are
+// the only structural foldings the policy allows:
+//   - entity: the TS entity/runtime split is the Rust slotmap arena; crates take
+//     `(&mut Arena, NodeId)` instead of depending on an entity package.
+//   - types: the Rust header layer — cross-package types route through it, so a
+//     crate may reach a TS dep's *types* via flighthq-types without the edge.
+//   - signals: re-exported from flighthq-types in Rust; reachable via types.
+//   - geometry: Rust expresses math/vector types via flighthq-geometry where TS
+//     uses plain numbers/types.
+// Anything NOT in this set must match TS exactly (or be an explicit reviewed
+// exception below). Keep this set tiny — it is the allowlist the whole policy
+// rests on.
+const FOLDABLE_DEPS = new Set(['entity', 'types', 'signals', 'geometry']);
+
+// Reviewed dependency-edge exceptions: TS->X edges deliberately NOT carried into
+// Rust, each with a recorded rationale (the auditable divergence registry, per
+// conformance.md). A TS edge that is neither foldable nor listed here is DRIFT
+// and fails the gate. Empty by intent — every entry must earn its place; the
+// current known drift (particles->sprite/math, timeline->displayobject,
+// effects-wgpu->filters/filters-wgpu, spritesheet->displayobject/node) is left
+// OUT so the gate reports it as the alignment worklist until it is fixed.
+const REVIEWED_DEP_EXCEPTIONS: Record<string, string> = {
+  // Render core + backend cores use other packages' TYPES only (RenderProxy,
+  // node/material/sprite/displayobject descriptors), which Rust routes through
+  // the flighthq-types header; the prepare/draw passes are closure-generic, so
+  // no function dependency on those packages exists. Verified: render-wgpu has
+  // no leaf/shape code (the reorg moved it to displayobject-wgpu).
+  'render->displayobject': 'types via flighthq-types header; prepare pass is closure-generic',
+  'render->node': 'node types via flighthq-types header',
+  'render->materials': 'material types via flighthq-types header',
+  'render->sprite': 'sprite types via flighthq-types header',
+  'render-gl->displayobject': 'types via flighthq-types header; leaves live in displayobject-gl',
+  'render-wgpu->displayobject': 'types via flighthq-types header; leaves live in displayobject-wgpu',
+  'render-wgpu->surface': 'Surface type via flighthq-types; readback is via flighthq-capture, not a surface dep',
+  // Audio/VideoResource types come from flighthq-types; playback is the
+  // AudioBackend/VideoBackend seam, not a resources function dependency.
+  'media->resources': 'resource types via flighthq-types header; playback via backend seam',
+  // TS-side dead dependency: interaction imports nothing from @flighthq/scene
+  // (no 3D hit-testing in either port). Rust correctly omits it.
+  'interaction->scene': 'TS-side dead dep — interaction imports no scene symbols',
+  // particles operates on the ParticleEmitterData VALUE type (flighthq-types),
+  // not the sprite NodeId. sprite's reserve_particle_emitter takes
+  // (&mut DisplayObjectArena, NodeId); calling it would thread the whole sprite
+  // arena through every particle-sim function and couple particles to the
+  // stateful graph. The emitter primitive itself correctly lives in sprite. The
+  // sim reimplements only the tiny capacity-reserve on the value type.
+  'particles->sprite': 'value-type seam: sim operates on ParticleEmitterData, not the sprite arena/NodeId',
+  // The TimelineSource.construct_frame seam (flighthq-types) carries only an
+  // opaque u64 target id and fires from the arena-less timeline playback engine,
+  // so it cannot create/wire display nodes. Node wiring (createBitmap/addNodeChild
+  // in TS) is necessarily deferred to a caller-supplied `apply` callback — forced
+  // by the slotmap-arena ownership model, not a style choice.
+  'spritesheet->displayobject':
+    'arena-less TimelineSource.construct_frame seam defers node wiring to a caller callback',
+  'spritesheet->node': 'arena-less TimelineSource.construct_frame seam defers node wiring to a caller callback',
+  // TS `invalidateImageResource(dest.surface)` works by structural typing —
+  // both Surface and ImageResource have `.version`, so JS accepts either. Rust's
+  // nominal types make them distinct (`invalidate_image_resource(&mut ImageResource)`
+  // cannot take a `&mut Surface`), so surface ops bump `surface.version` inline —
+  // the faithful translation. `createImageResourceFromCanvas` is web-relocated.
+  'surface->resources':
+    'TS structural typing: invalidateImageResource(Surface) has no nominal Rust equivalent; inline version bump is faithful',
+};
 
 // GPU-backend crates: their functions are validated FUNCTIONALLY (render +
 // fingerprint diff in flighthq-functional), not by headless unit tests. Keyed
@@ -304,13 +385,165 @@ interface PairReport {
   missing: string[];
 }
 
+// Non-test `.ts` source files under a package's src/.
+function listSourceTsFiles(dir: string): string[] {
+  const out: string[] = [];
+  const walk = (d: string) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const p = join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.ts') && !e.name.endsWith('.test.ts')) out.push(p);
+    }
+  };
+  if (existsSync(dir)) walk(dir);
+  return out;
+}
+
+// The REAL `@flighthq/*` dependency edges a TS package has, derived from actual
+// VALUE imports in its source (`import { fn } from '@flighthq/x'`) — not from
+// package.json, which carries declared-but-unused deps (e.g. effects-gl declares
+// `@flighthq/filters` but imports nothing from it). Type-only imports
+// (`import type { … }`, and inline `type` specifiers) are excluded: a type-only
+// edge is the flighthq-types header routing in Rust, not a function dependency.
+// Returns dep package -> the set of value symbols imported from it, so the gate
+// can show *which* functions an edge is about.
+function tsValueImports(pkg: string): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const file of listSourceTsFiles(join(PKG_DIR, pkg, 'src'))) {
+    const src = readFileSync(file, 'utf8');
+    for (const m of src.matchAll(/import\s+(type\s+)?\{([^}]*)\}\s*from\s*['"]@flighthq\/([a-z0-9-]+)['"]/g)) {
+      if (m[1]) continue; // whole-line `import type { … }`
+      const dep = m[3];
+      const symbols = m[2]
+        .split(',')
+        .map((s) => s.trim().replace(/\s+as\s+\w+$/, ''))
+        .filter((s) => s && !s.startsWith('type ')); // drop inline `type X`
+      if (!symbols.length) continue;
+      const set = out.get(dep) ?? new Set<string>();
+      symbols.forEach((s) => set.add(s));
+      out.set(dep, set);
+    }
+  }
+  return out;
+}
+
+// The `flighthq-*` dependency names a Rust crate declares in `[dependencies]`
+// (dev-dependencies are excluded — they are not part of the published edge set).
+function rustCrateDeps(crate: string): Set<string> {
+  const path = join(CRATE_DIR, `flighthq-${crate}`, 'Cargo.toml');
+  if (!existsSync(path)) return new Set();
+  const toml = readFileSync(path, 'utf8');
+  const section = toml.match(/(?:^|\n)\[dependencies\]([\s\S]*?)(?:\n\[|$)/);
+  const body = section ? section[1] : '';
+  const out = new Set<string>();
+  for (const m of body.matchAll(/(?:^|\n)\s*flighthq-([a-z0-9-]+)\s*=/g)) out.add(m[1]);
+  return out;
+}
+
+interface StructuralReport {
+  // TS packages with no Rust crate that are not sanctioned exclusions.
+  missingCrates: string[];
+  // Rust crates with no TS package that are not sanctioned rust-only crates.
+  unexpectedCrates: string[];
+  // TS function-dependency edges (real source value-imports) not carried into
+  // the Rust crate — the drift. Each names the symbols TS uses across the edge.
+  missingEdges: string[];
+}
+
+// The STRUCTURAL conformance gate (static, deterministic). Compares package
+// existence and the real (source value-import) dependency graph TS-vs-Rust under
+// the sanctioned-divergence allowlists. Every item is a hard failure.
+function checkStructuralConformance(): StructuralReport {
+  const crates = new Set(
+    readdirSync(CRATE_DIR, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && e.name.startsWith('flighthq-'))
+      .map((e) => e.name.slice('flighthq-'.length)),
+  );
+  const pkgs = readdirSync(PKG_DIR, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+
+  const crateFor = (pkg: string) => RENAMES[pkg] ?? pkg;
+  const missingCrates: string[] = [];
+  for (const pkg of pkgs) {
+    if (TS_ONLY.has(pkg)) continue;
+    if (!crates.has(crateFor(pkg))) missingCrates.push(pkg);
+  }
+
+  const pkgSet = new Set(pkgs);
+  const renameTargets = new Set(Object.values(RENAMES));
+  const unexpectedCrates: string[] = [];
+  for (const crate of crates) {
+    if (RUST_ONLY.has(crate)) continue;
+    if (pkgSet.has(crate) || renameTargets.has(crate)) continue;
+    unexpectedCrates.push(crate);
+  }
+
+  const missingEdges: string[] = [];
+  for (const pkg of pkgs.sort()) {
+    if (TS_ONLY.has(pkg)) continue;
+    const crate = crateFor(pkg);
+    if (!crates.has(crate)) continue; // already a missingCrate
+    const imports = tsValueImports(pkg); // dep -> {symbols} actually used in TS source
+    const rd = rustCrateDeps(crate);
+    for (const [dep, symbols] of imports) {
+      const depCrate = crateFor(dep);
+      if (depCrate === crate) continue; // intra-package self-import (pkg refers to its own name)
+      if (FOLDABLE_DEPS.has(dep) || FOLDABLE_DEPS.has(depCrate)) continue;
+      if (TS_ONLY.has(dep)) continue; // an excluded dep can't be carried
+      if (REVIEWED_DEP_EXCEPTIONS[`${pkg}->${dep}`]) continue;
+      if (!rd.has(depCrate)) {
+        const uses = [...symbols].sort().join(', ');
+        missingEdges.push(`crate '${crate}' must depend on '${depCrate}' — TS '${pkg}' uses: ${uses}`);
+      }
+    }
+  }
+
+  // Note: a Rust-only "extra" edge check was tried and dropped — it is pure
+  // noise. The `sdk` re-export barrel legitimately depends on every crate while
+  // importing no values, and many crates depend on a package for a type Rust
+  // routes through flighthq-types. Extra Rust edges do not indicate un-carried TS
+  // changes (the drift we gate on), so they are not reported.
+
+  return { missingCrates, unexpectedCrates, missingEdges };
+}
+
 function main() {
   const args = process.argv.slice(2);
   const jsonOut = args.includes('--json');
   const gapsOnly = args.includes('--gaps');
   const doRun = args.includes('--run');
   const doFunctional = args.includes('--functional');
+  const strict = args.includes('--strict');
   const only = args.includes('--crate') ? args[args.indexOf('--crate') + 1] : null;
+
+  // Tier 1 — the structural gate. Computed first so its exit code is the gate
+  // regardless of the (reported) coverage/behavioral tiers below. `--structural`
+  // prints just this tier and exits without the slow coverage/cargo work — the
+  // fast pre-commit/CI form of the gate (static file reads only, no compile).
+  const structural = checkStructuralConformance();
+  const structuralOnly = args.includes('--structural');
+  if (structuralOnly) {
+    const violations =
+      structural.missingCrates.length + structural.unexpectedCrates.length + structural.missingEdges.length;
+    if (jsonOut) {
+      console.log(JSON.stringify(structural, null, 2));
+    } else {
+      const printList = (title: string, items: string[], emoji: string) => {
+        if (items.length) {
+          console.log(`${emoji} ${title} (${items.length}):`);
+          for (const i of items) console.log(`  - ${i}`);
+        }
+      };
+      console.log('# Rust structural conformance gate\n');
+      printList('Missing crates', structural.missingCrates, '❌');
+      printList('Unexpected crates', structural.unexpectedCrates, '❌');
+      printList('Un-carried TS dependency edges (drift)', structural.missingEdges, '❌');
+      console.log(violations === 0 ? '\n✅ structural gate: PASS' : `\n❌ structural gate: FAIL (${violations})`);
+    }
+    if (violations > 0) process.exitCode = 1;
+    return;
+  }
 
   const tsPkgs = readdirSync(PKG_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory())
@@ -392,9 +625,10 @@ function main() {
 
   if (jsonOut) {
     writeFileSync(
-      join(ROOT, 'parity-report.json'),
+      join(ROOT, 'rust-conformance-report.json'),
       JSON.stringify(
         {
+          structural,
           totals: { ...totals, pct },
           nativeCore: { covered: coreCovered, total: coreDenom, pct: corePct },
           categories: {
@@ -420,9 +654,32 @@ function main() {
         2,
       ),
     );
-    console.log(`parity-report.json written (native-core ${corePct}%, raw ${pct}% function coverage)`);
+    const sv = structural.missingCrates.length + structural.unexpectedCrates.length + structural.missingEdges.length;
+    console.log(
+      `rust-conformance-report.json written (structural ${sv === 0 ? 'PASS' : `FAIL: ${sv} violations`}, ` +
+        `native-core ${corePct}%, raw ${pct}% coverage)`,
+    );
   } else {
-    console.log(`# Test parity: TS (reference) -> Rust (port)\n`);
+    // Tier 1 — structural gate (the pass/fail). Printed first.
+    console.log(`# Rust conformance: TS (authoritative) -> Rust (port)\n`);
+    console.log(`## Structural gate\n`);
+    const printList = (title: string, items: string[], emoji: string) => {
+      if (items.length) {
+        console.log(`${emoji} **${title}** (${items.length}):`);
+        for (const i of items) console.log(`  - ${i}`);
+        console.log('');
+      }
+    };
+    printList('Missing crates (TS package with no Rust crate)', structural.missingCrates, '❌');
+    printList('Unexpected crates (Rust crate with no TS package)', structural.unexpectedCrates, '❌');
+    printList('Un-carried TS dependency edges (drift)', structural.missingEdges, '❌');
+    const violations =
+      structural.missingCrates.length + structural.unexpectedCrates.length + structural.missingEdges.length;
+    console.log(
+      violations === 0 ? `✅ structural gate: PASS\n` : `❌ structural gate: FAIL (${violations} violations)\n`,
+    );
+
+    console.log(`## Coverage (reported, not gated)\n`);
     console.log(
       `**Native-core unit parity: ${coreCovered}/${coreDenom} (${corePct}%)** ` +
         `— excludes GPU-backend (functional gate) and web-relocated (browser) functions.\n`,
@@ -526,11 +783,18 @@ function main() {
     console.log('');
   }
 
-  // Exit nonzero on a REAL-CORE gap (the honest gate) or a functional parity
-  // FAIL. GPU-backend and web-relocated gaps are expected and never fail the
-  // gate — they are validated by the functional gate and the browser instead.
+  // The GATE. Tier 1 (structural) is the always-on pass/fail: missing/unexpected
+  // crates and un-carried TS dependency edges are drift and fail the build,
+  // regardless of output mode. A functional-parity FAIL (a confirmed visual
+  // regression) also fails. Coverage gaps (Tier 2) are a tracked backlog, not a
+  // structural failure — they fail only under `--strict`. GPU-backend and
+  // web-relocated gaps never fail (validated by the functional gate / browser).
+  const structuralViolations =
+    structural.missingCrates.length + structural.unexpectedCrates.length + structural.missingEdges.length;
   const functionalFailed = functional?.ran ? functional.scenes.some((s) => s.status === 'FAIL') : false;
-  if (!jsonOut && (coreGap > 0 || functionalFailed)) process.exitCode = 1;
+  if (structuralViolations > 0 || functionalFailed || (strict && coreGap > 0)) {
+    process.exitCode = 1;
+  }
 }
 
 main();

@@ -44,6 +44,7 @@ flighthq-materials = { workspace = true }
 flighthq-text = { workspace = true }
 flighthq-textlayout = { workspace = true }
 flighthq-textinput = { workspace = true }
+flighthq-textshaper = { workspace = true }
 flighthq-resources = { workspace = true }
 flighthq-loader = { workspace = true }
 flighthq-tween = { workspace = true }

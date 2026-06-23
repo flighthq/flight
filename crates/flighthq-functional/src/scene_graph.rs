@@ -10,13 +10,14 @@
 
 use std::collections::HashMap;
 
+use flighthq_displayobject::{DisplayObjectArena, get_display_object_local_content_revision};
 use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
     prepare_display_object_render,
 };
 use flighthq_shape::{
-    ShapeArena, append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle,
-    create_shape_node, get_shape_fill_regions,
+    append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle, create_shape,
+    get_shape_fill_regions,
 };
 use flighthq_types::KindId;
 use flighthq_types::ShapeFillRegion;
@@ -50,7 +51,7 @@ pub struct SceneGraph {
 /// `RenderProxy2D`. Pure CPU — no GPU device or render target — so it is shared
 /// by every backend and is safe to call from any thread.
 pub fn build_scene_graph(scene: &Scene) -> SceneGraph {
-    let mut shape_arena = ShapeArena::default();
+    let mut shape_arena = DisplayObjectArena::default();
     let mut kinds: HashMap<u64, KindId> = HashMap::new();
     let mut children: HashMap<u64, Vec<u64>> = HashMap::new();
     let mut parents: HashMap<u64, Option<u64>> = HashMap::new();
@@ -63,11 +64,11 @@ pub fn build_scene_graph(scene: &Scene) -> SceneGraph {
 
     for (index, rect) in scene.rects.iter().enumerate() {
         let id = STAGE_ID + 1 + index as u64;
-        let node = create_shape_node(&mut shape_arena);
+        let node = create_shape(&mut shape_arena);
         append_shape_begin_fill(&mut shape_arena, node, rect.color, 1.0);
         append_shape_rectangle(&mut shape_arena, node, rect.x, rect.y, rect.w, rect.h);
         append_shape_end_fill(&mut shape_arena, node);
-        let content_revision = shape_arena[node].content_revision;
+        let content_revision = get_display_object_local_content_revision(&shape_arena, node);
         let fill = get_shape_fill_regions(&shape_arena, node).expect("solid fill resolves");
         regions.insert(id, (fill, content_revision));
         transforms.insert(id, local_transform_for_rect(rect));

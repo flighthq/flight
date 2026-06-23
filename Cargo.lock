@@ -509,6 +509,7 @@ dependencies = [
 name = "flighthq-clip"
 version = "0.1.0"
 dependencies = [
+ "flighthq-path",
  "flighthq-types",
 ]
 
@@ -631,6 +632,7 @@ name = "flighthq-effects-gl"
 version = "0.1.0"
 dependencies = [
  "flighthq-effects",
+ "flighthq-filters-gl",
  "flighthq-render-gl",
  "flighthq-types",
  "glow 0.14.2",
@@ -641,6 +643,7 @@ name = "flighthq-effects-wgpu"
 version = "0.1.0"
 dependencies = [
  "flighthq-effects",
+ "flighthq-filters-wgpu",
  "flighthq-render-wgpu",
  "flighthq-types",
  "pollster",
@@ -693,6 +696,7 @@ version = "0.1.0"
 dependencies = [
  "flighthq-filters",
  "flighthq-render-wgpu",
+ "pollster",
  "wgpu",
 ]
 
@@ -701,6 +705,7 @@ name = "flighthq-functional"
 version = "0.1.0"
 dependencies = [
  "flighthq-capture",
+ "flighthq-displayobject",
  "flighthq-displayobject-gl",
  "flighthq-displayobject-skia",
  "flighthq-displayobject-wgpu",
@@ -1029,8 +1034,6 @@ dependencies = [
 name = "flighthq-render-wgpu"
 version = "0.1.0"
 dependencies = [
- "flighthq-node",
- "flighthq-path",
  "flighthq-render",
  "flighthq-types",
  "wgpu",
@@ -1168,6 +1171,7 @@ dependencies = [
  "flighthq-text",
  "flighthq-textinput",
  "flighthq-textlayout",
+ "flighthq-textshaper",
  "flighthq-texture",
  "flighthq-timeline",
  "flighthq-tray",
@@ -1192,6 +1196,7 @@ name = "flighthq-shape"
 version = "0.1.0"
 dependencies = [
  "flighthq-clip",
+ "flighthq-displayobject",
  "flighthq-geometry",
  "flighthq-node",
  "flighthq-path",
@@ -1243,7 +1248,6 @@ version = "0.1.0"
 dependencies = [
  "flighthq-resources",
  "flighthq-signals",
- "flighthq-sprite",
  "flighthq-types",
 ]
 
@@ -1291,6 +1295,7 @@ name = "flighthq-text"
 version = "0.1.0"
 dependencies = [
  "flighthq-displayobject",
+ "flighthq-node",
  "flighthq-textlayout",
  "flighthq-types",
  "serial_test",
@@ -1300,6 +1305,7 @@ dependencies = [
 name = "flighthq-textinput"
 version = "0.1.0"
 dependencies = [
+ "flighthq-node",
  "flighthq-text",
  "flighthq-textlayout",
  "flighthq-types",
@@ -1335,6 +1341,8 @@ dependencies = [
 name = "flighthq-timeline"
 version = "0.1.0"
 dependencies = [
+ "flighthq-displayobject",
+ "flighthq-node",
  "flighthq-signals",
  "flighthq-types",
 ]

@@ -16,6 +16,7 @@
 use flighthq_effects::RenderEffect;
 use flighthq_effects::compute_bloom_blur_radius;
 use flighthq_effects::types::{BloomEffect, ExposureEffect, ToneMapEffect, ToneMapOperator};
+use flighthq_filters_gl::apply_gaussian_blur_filter_to_gl;
 use flighthq_render_gl::render_state::{GlRenderState, GlRenderTarget};
 use flighthq_render_gl::render_target_pool::{
     GlRenderTargetPool, acquire_gl_render_target, get_gl_render_target, release_gl_render_target,
@@ -76,7 +77,9 @@ pub fn apply_bloom_effect_to_gl(
         },
     );
 
-    apply_separable_gaussian_blur_to_gl(state, bright, blurred, temp, radius);
+    // Reuse the filter-tier Gaussian (true sigma-based `⌈3σ⌉` exp-weighted blur)
+    // so bloom matches the TS path, which calls `applyGaussianBlurFilterToGl`.
+    apply_gaussian_blur_filter_to_gl(state, bright, blurred, temp, radius, radius);
 
     let scene_texture = source.texture;
     let blurred_texture = blurred.texture;
@@ -191,59 +194,6 @@ fn build_tone_map_fragment(operator: ToneMapOperator) -> String {
     src
 }
 
-// Separable gaussian blur of the bloom branch: a horizontal pass (source →
-// temp) then a vertical pass (temp → dest). `radius` scales the nine fixed taps
-// in texel space. Inlined here — the effect substrate is self-contained and does
-// not route through `flighthq-filters-gl` — mirroring the wgpu sibling.
-fn apply_separable_gaussian_blur_to_gl(
-    state: &mut GlRenderState,
-    source: &GlRenderTarget,
-    dest: &GlRenderTarget,
-    temp: &GlRenderTarget,
-    radius: f32,
-) {
-    let width = source.width as f32;
-    let height = source.height as f32;
-    let source_texture = source.texture;
-    let temp_texture = temp.texture;
-
-    let program = get_gl_effect_program(state, "bloom.blur", GAUSSIAN_BLUR_FRAGMENT_SRC);
-    // SAFETY: the cached program box is not moved or freed during this borrow.
-    let program = unsafe { &*(program as *const _) };
-    // Horizontal pass: direction (1, 0), source → temp.
-    draw_gl_effect_fullscreen_pass(
-        state,
-        program,
-        &[source_texture],
-        Some(temp),
-        |gl, p| unsafe {
-            gl.uniform_1_f32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
-            gl.uniform_2_f32(gl.get_uniform_location(p, "u_direction").as_ref(), 1.0, 0.0);
-            gl.uniform_2_f32(
-                gl.get_uniform_location(p, "u_resolution").as_ref(),
-                width,
-                height,
-            );
-        },
-    );
-    // Vertical pass: direction (0, 1), temp → dest.
-    draw_gl_effect_fullscreen_pass(
-        state,
-        program,
-        &[temp_texture],
-        Some(dest),
-        |gl, p| unsafe {
-            gl.uniform_1_f32(gl.get_uniform_location(p, "u_radius").as_ref(), radius);
-            gl.uniform_2_f32(gl.get_uniform_location(p, "u_direction").as_ref(), 0.0, 1.0);
-            gl.uniform_2_f32(
-                gl.get_uniform_location(p, "u_resolution").as_ref(),
-                width,
-                height,
-            );
-        },
-    );
-}
-
 // Reborrows the context's pool as a fresh mutable reference. See `reborrow_state`.
 fn reborrow_pool<'a>(ctx: &'a GlRenderEffectContext) -> &'a mut GlRenderTargetPool {
     let ptr = ctx.pool as *const GlRenderTargetPool as *mut GlRenderTargetPool;
@@ -345,29 +295,6 @@ void main() {
   o_color = vec4(c.rgb * u_exposure, c.a);
 }";
 
-// Nine-tap gaussian along `u_direction`, weights normalized to sum 1, scaled by
-// `u_radius` in texel space. Shared by the bloom branch's horizontal/vertical
-// passes.
-const GAUSSIAN_BLUR_FRAGMENT_SRC: &str = "#version 300 es
-precision highp float;
-in vec2 v_texCoord;
-uniform sampler2D u_texture0;
-uniform float u_radius;
-uniform vec2 u_direction;
-uniform vec2 u_resolution;
-out vec4 o_color;
-void main() {
-  vec2 texel = u_direction * (u_radius / u_resolution);
-  float weights[5] = float[5](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-  vec4 sum = texture(u_texture0, v_texCoord) * weights[0];
-  for (int i = 1; i < 5; i++) {
-    vec2 off = texel * float(i);
-    sum += texture(u_texture0, v_texCoord + off) * weights[i];
-    sum += texture(u_texture0, v_texCoord - off) * weights[i];
-  }
-  o_color = sum;
-}";
-
 const TONEMAP_FRAGMENT_HEAD: &str = "#version 300 es
 precision highp float;
 in vec2 v_texCoord;
@@ -414,14 +341,6 @@ mod tests {
         assert!(reinhard.contains("u_white * u_white"));
         let agx = build_tone_map_fragment(ToneMapOperator::Agx);
         assert!(agx.contains("pow(v, vec3(0.8))"));
-    }
-
-    #[test]
-    fn gaussian_blur_fragment_declares_direction_and_resolution() {
-        assert!(GAUSSIAN_BLUR_FRAGMENT_SRC.contains("uniform float u_radius"));
-        assert!(GAUSSIAN_BLUR_FRAGMENT_SRC.contains("uniform vec2 u_direction"));
-        assert!(GAUSSIAN_BLUR_FRAGMENT_SRC.contains("uniform vec2 u_resolution"));
-        assert!(GAUSSIAN_BLUR_FRAGMENT_SRC.contains("float[5](0.227027"));
     }
 
     #[test]

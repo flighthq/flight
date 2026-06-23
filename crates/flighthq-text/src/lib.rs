@@ -24,9 +24,10 @@ pub use native_text::{
 pub use rich_text::{
     RichText, RichTextRuntime, build_rich_text_layout_params, clear_rich_text_format_ranges,
     compute_rich_text_local_bounds_rectangle, create_rich_text, create_rich_text_data,
-    dispatch_rich_text_wheel, get_rich_text_input, get_rich_text_input_mut,
-    get_rich_text_password_character, get_rich_text_runtime, get_rich_text_selection_begin_index,
-    get_rich_text_selection_end_index, get_rich_text_text_layout, rich_text_kind,
+    dispatch_rich_text_wheel, get_rich_text_appearance_revision, get_rich_text_input,
+    get_rich_text_input_mut, get_rich_text_password_character, get_rich_text_runtime,
+    get_rich_text_selection_begin_index, get_rich_text_selection_end_index,
+    get_rich_text_text_layout, invalidate_rich_text_appearance, rich_text_kind,
     set_rich_text_format_range, set_rich_text_input, set_rich_text_scroll_h,
     set_rich_text_scroll_v, set_rich_text_selection_indices, set_rich_text_string,
 };

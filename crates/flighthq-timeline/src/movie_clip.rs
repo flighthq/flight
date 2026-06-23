@@ -1,20 +1,33 @@
 //! `MovieClip` — a display node driven by a `Timeline`.
 //!
-//! In the Rust SDK, a MovieClip is not a standalone object with an identity
-//! separate from the scene graph. Instead, `MovieClipData` lives in the
-//! display node arena alongside `MovieClipSignals`. The functions here operate
-//! on `MovieClipData` (the data payload) and `MovieClipSignals` (the optional
-//! signals slot), both of which the caller stores in their arena entry.
+//! A MovieClip is a display object: [`create_movie_clip`] builds a node under
+//! `movie_clip_kind()` in the shared `DisplayObjectArena` (mirroring TS
+//! `createMovieClip`, which uses `createDisplayObjectGeneric`), so a MovieClip
+//! can be a child of any display container. Its `MovieClipData` payload lives in
+//! that arena entry alongside the optional `MovieClipSignals` slot; the other
+//! functions here operate on those.
 //!
 //! `target_id` passed to source-binding functions is the `NodeId`-as-u64 key
 //! used by the display graph so `construct_frame` receives it.
 
-use flighthq_types::{MovieClipData, MovieClipSignals, Timeline, TimelineSource};
+use flighthq_displayobject::{DisplayObjectArena, create_display_object_generic};
+use flighthq_node::NodeId;
+use flighthq_types::{MovieClipData, MovieClipSignals, Timeline, TimelineSource, movie_clip_kind};
 
 use crate::timeline::{
     TimelineFrame, create_timeline, goto_and_play_timeline, goto_and_stop_timeline,
     next_frame_timeline, play_timeline, prev_frame_timeline, stop_timeline, update_timeline,
 };
+
+/// Creates a MovieClip display node in `arena` under `movie_clip_kind()`, with a
+/// default `MovieClipData` payload. Mirrors TS `createMovieClip`, which builds the
+/// node via `createDisplayObjectGeneric(MovieClipKind, …)` — a MovieClip is a
+/// display object placeable under a container, exactly like `create_bitmap`. The
+/// `MovieClipSignals` slot is lazily ensured later, not at construction.
+pub fn create_movie_clip(arena: &mut DisplayObjectArena) -> NodeId {
+    let data: Box<dyn std::any::Any + Send + Sync> = Box::new(create_movie_clip_data(None));
+    create_display_object_generic(arena, movie_clip_kind(), Some(data))
+}
 
 /// Create a `MovieClipData` payload, optionally seeded with an existing
 /// `Timeline`. Mirrors `createMovieClipData` in the TS SDK: a pure data

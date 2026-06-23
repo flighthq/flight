@@ -1,13 +1,18 @@
 //! `flighthq-shape` — vector shape display node.
 //!
-//! Provides the [`ShapeNode`] arena node type, drawing-command helpers, fill
-//! region extraction, and a hit-test command registry — the Rust counterpart
-//! of the TypeScript `@flighthq/shape` package.
+//! Provides shape display objects over the shared `DisplayObjectArena`,
+//! drawing-command helpers, fill region extraction, and a hit-test command
+//! registry — the Rust counterpart of the TypeScript `@flighthq/shape` package.
+//!
+//! A shape is a display object of kind `shape_kind` whose boxed payload is a
+//! `ShapeData` (its drawing-command buffer); scale-9 shapes use
+//! `scale9_shape_kind` with a `Scale9ShapeData` payload. There is no
+//! shape-specific arena — shapes share the display-object scene graph.
 //!
 //! # Structure
 //!
-//! - [`shape`]: core `ShapeNode` struct, bounds computation, and geometry
-//!   invalidation.
+//! - [`shape`]: shape factories ([`shape::create_shape`]), bounds computation,
+//!   and geometry invalidation.
 //! - [`shape_commands`]: append helpers for every drawing command verb
 //!   (moveTo, lineTo, curveTo, drawCircle, …).
 //! - [`shape_fill`]: solid-fill region extraction ([`get_shape_fill_regions`])
@@ -24,15 +29,15 @@ pub mod shape_hit_test_registry;
 
 // shape
 pub use shape::{
-    ShapeArena, ShapeNode, ShapeRuntime, clear_shape_commands,
-    compute_shape_local_bounds_rectangle, copy_shape_commands, create_shape_data,
-    create_shape_node, create_shape_runtime, get_shape_runtime, invalidate_shape_geometry,
+    ShapeRuntime, clear_shape_commands, compute_shape_local_bounds_rectangle, copy_shape_commands,
+    create_shape, create_shape_data, create_shape_runtime, get_shape_runtime,
+    invalidate_shape_geometry,
 };
 
 // scale9_shape
 pub use scale9_shape::{
-    Scale9ShapeArena, Scale9ShapeNode, Scale9ShapeRuntime, create_scale9_shape_data,
-    create_scale9_shape_node, create_scale9_shape_runtime, get_scale9_shape_runtime,
+    Scale9ShapeRuntime, create_scale9_shape, create_scale9_shape_data, create_scale9_shape_runtime,
+    get_scale9_shape_runtime,
 };
 
 // shape_commands

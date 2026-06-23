@@ -6,4 +6,5 @@ license.workspace = true
 description = "ClipRegion: hard geometric clip product built from rectangles or paths"
 
 [dependencies]
+flighthq-path = { workspace = true }
 flighthq-types = { workspace = true }
