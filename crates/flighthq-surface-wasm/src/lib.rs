@@ -21,8 +21,13 @@
 //!   never collides with the hand-written shim that wraps it.
 
 use flighthq_surface::{
-    apply_surface_color_transform, apply_surface_palette_map, apply_surface_threshold,
-    bevel_surface, blur_surface_pixels_horizontal, blur_surface_pixels_horizontal_weighted,
+    Surface, SurfaceBevelOptions, SurfaceBevelType, SurfaceBoxBlurOptions, SurfaceConvolutionEdge,
+    SurfaceConvolutionOptions, SurfaceDisplacementMapMode, SurfaceDisplacementMapOptions,
+    SurfaceDropShadowOptions, SurfaceGlowOptions, SurfaceGradientBevelOptions,
+    SurfaceGradientGlowOptions, SurfaceInnerGlowOptions, SurfaceInnerShadowOptions, SurfaceRegion,
+    SurfaceResizeOptions, SurfaceSharpenOptions, apply_surface_color_transform,
+    apply_surface_palette_map, apply_surface_threshold, bevel_surface,
+    blur_surface_pixels_horizontal, blur_surface_pixels_horizontal_weighted,
     blur_surface_pixels_vertical, blur_surface_pixels_vertical_weighted, box_blur_surface,
     color_matrix_surface, composite_surface_pixels, composite_surface_region,
     convert_surface_pixel_order, convolve_surface, copy_surface_channel, copy_surface_pixels,
@@ -30,17 +35,13 @@ use flighthq_surface::{
     dissolve_surface_pixels, drop_shadow_surface, equalize_surface_histogram, erode_surface,
     extract_surface_pixels, extract_surface_pixels_32, fill_surface_noise,
     fill_surface_perlin_noise, fill_surface_rectangle, flip_surface_horizontal,
-    flip_surface_vertical, flood_fill_surface, gaussian_blur_surface, glow_surface,
-    gradient_bevel_surface, gradient_glow_surface, get_surface_color_bounds_rectangle,
-    get_surface_coverage, get_surface_histogram, inner_glow_surface, inner_shadow_surface,
+    flip_surface_vertical, flood_fill_surface, gaussian_blur_surface,
+    get_surface_color_bounds_rectangle, get_surface_coverage, get_surface_histogram, glow_surface,
+    gradient_bevel_surface, gradient_glow_surface, inner_glow_surface, inner_shadow_surface,
     median_surface, merge_surface, pixelate_surface, premultiply_surface_pixels, resize_surface,
-    rotate_surface_180, rotate_surface_clockwise, rotate_surface_counter_clockwise, scroll_surface,
-    sharpen_surface, unpremultiply_surface_pixels, write_surface_pixels, write_surface_pixels_32,
-    Surface, SurfaceBevelOptions, SurfaceBevelType, SurfaceBoxBlurOptions, SurfaceConvolutionEdge,
-    SurfaceConvolutionOptions, SurfaceDisplacementMapMode, SurfaceDisplacementMapOptions,
-    SurfaceDropShadowOptions, SurfaceGlowOptions, SurfaceGradientBevelOptions,
-    SurfaceGradientGlowOptions, SurfaceInnerGlowOptions, SurfaceInnerShadowOptions, SurfaceRegion,
-    SurfaceResizeOptions, SurfaceSharpenOptions,
+    rotate_surface, rotate_surface_180, rotate_surface_clockwise, rotate_surface_counter_clockwise,
+    scroll_surface, sharpen_surface, unpremultiply_surface_pixels, write_surface_pixels,
+    write_surface_pixels_32,
 };
 use flighthq_types::{BlendMode, ColorTransformLike, ImageChannel, PixelOrder, ThresholdOperation};
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -164,7 +165,13 @@ pub fn convert_surface_pixel_order_wasm(
     from: u8,
     to: u8,
 ) {
-    convert_surface_pixel_order(out, source, length, pixel_order_from_u8(from), pixel_order_from_u8(to));
+    convert_surface_pixel_order(
+        out,
+        source,
+        length,
+        pixel_order_from_u8(from),
+        pixel_order_from_u8(to),
+    );
 }
 
 #[wasm_bindgen]
@@ -321,7 +328,14 @@ pub fn flip_surface_vertical_wasm(
 }
 
 #[wasm_bindgen]
-pub fn flood_fill_surface_wasm(data: &mut [u8], width: u32, height: u32, x: u32, y: u32, color: u32) {
+pub fn flood_fill_surface_wasm(
+    data: &mut [u8],
+    width: u32,
+    height: u32,
+    x: u32,
+    y: u32,
+    color: u32,
+) {
     let mut surface = surface_from_parts(data, width, height);
     flood_fill_surface(&mut surface, x, y, color);
     data.copy_from_slice(&surface.data);
@@ -414,8 +428,28 @@ pub fn resize_surface_wasm(
 ) {
     let mut dest = region_from_desc(dest_data, dest_desc);
     let source = region_from_desc(source_data, source_desc);
-    let options = SurfaceResizeOptions { mode: resize_mode_from_u8(mode), premultiplied };
+    let options = SurfaceResizeOptions {
+        mode: resize_mode_from_u8(mode),
+        premultiplied,
+    };
     resize_surface(&mut dest, &source, &options);
+    dest_data.copy_from_slice(&dest.surface.data);
+}
+
+#[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
+pub fn rotate_surface_wasm(
+    dest_data: &mut [u8],
+    dest_desc: &[u32],
+    source_data: &[u8],
+    source_desc: &[u32],
+    angle: f64,
+    pivot_x: f64,
+    pivot_y: f64,
+) {
+    let mut dest = region_from_desc(dest_data, dest_desc);
+    let source = region_from_desc(source_data, source_desc);
+    rotate_surface(&mut dest, &source, angle, pivot_x, pivot_y);
     dest_data.copy_from_slice(&dest.surface.data);
 }
 
@@ -571,14 +605,25 @@ pub fn box_blur_surface_wasm(
     passes: u32,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let options = SurfaceBoxBlurOptions { radius_x, radius_y, passes };
+    let options = SurfaceBoxBlurOptions {
+        radius_x,
+        radius_y,
+        passes,
+    };
     box_blur_surface(out, scratch, &source, &options);
 }
 
 #[wasm_bindgen]
-pub fn color_matrix_surface_wasm(out: &mut [u8], source_data: &[u8], source_desc: &[u32], matrix: &[f32]) {
+pub fn color_matrix_surface_wasm(
+    out: &mut [u8],
+    source_data: &[u8],
+    source_desc: &[u32],
+    matrix: &[f32],
+) {
     let source = region_from_desc(source_data, source_desc);
-    let matrix: &[f32; 20] = matrix.try_into().expect("color matrix must have 20 entries");
+    let matrix: &[f32; 20] = matrix
+        .try_into()
+        .expect("color matrix must have 20 entries");
     color_matrix_surface(out, &source, matrix);
 }
 
@@ -654,7 +699,13 @@ pub fn drop_shadow_surface_wasm(
     intensity: f32,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let options = SurfaceDropShadowOptions { radius_x, radius_y, passes, color, intensity };
+    let options = SurfaceDropShadowOptions {
+        radius_x,
+        radius_y,
+        passes,
+        color,
+        intensity,
+    };
     drop_shadow_surface(out, scratch, &source, &options);
 }
 
@@ -680,7 +731,12 @@ pub fn median_surface_wasm(out: &mut [u8], source_data: &[u8], source_desc: &[u3
 }
 
 #[wasm_bindgen]
-pub fn pixelate_surface_wasm(out: &mut [u8], source_data: &[u8], source_desc: &[u32], block_size: u32) {
+pub fn pixelate_surface_wasm(
+    out: &mut [u8],
+    source_data: &[u8],
+    source_desc: &[u32],
+    block_size: u32,
+) {
     let source = region_from_desc(source_data, source_desc);
     pixelate_surface(out, &source, block_size);
 }
@@ -699,7 +755,13 @@ pub fn glow_surface_wasm(
     intensity: f32,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let options = SurfaceGlowOptions { radius_x, radius_y, passes, color, intensity };
+    let options = SurfaceGlowOptions {
+        radius_x,
+        radius_y,
+        passes,
+        color,
+        intensity,
+    };
     glow_surface(out, scratch, &source, &options);
 }
 
@@ -720,7 +782,9 @@ pub fn gradient_bevel_surface_wasm(
     bevel_type: u8,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let ramp: &[u8; 1024] = ramp.try_into().expect("gradient ramp must have 1024 entries");
+    let ramp: &[u8; 1024] = ramp
+        .try_into()
+        .expect("gradient ramp must have 1024 entries");
     let options = SurfaceGradientBevelOptions {
         angle,
         distance,
@@ -747,8 +811,15 @@ pub fn gradient_glow_surface_wasm(
     intensity: f32,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let ramp: &[u8; 1024] = ramp.try_into().expect("gradient ramp must have 1024 entries");
-    let options = SurfaceGradientGlowOptions { radius_x, radius_y, passes, intensity };
+    let ramp: &[u8; 1024] = ramp
+        .try_into()
+        .expect("gradient ramp must have 1024 entries");
+    let options = SurfaceGradientGlowOptions {
+        radius_x,
+        radius_y,
+        passes,
+        intensity,
+    };
     gradient_glow_surface(out, scratch, &source, ramp, &options);
 }
 
@@ -766,7 +837,13 @@ pub fn inner_glow_surface_wasm(
     intensity: f32,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let options = SurfaceInnerGlowOptions { radius_x, radius_y, passes, color, intensity };
+    let options = SurfaceInnerGlowOptions {
+        radius_x,
+        radius_y,
+        passes,
+        color,
+        intensity,
+    };
     inner_glow_surface(out, scratch, &source, &options);
 }
 
@@ -784,11 +861,18 @@ pub fn inner_shadow_surface_wasm(
     intensity: f32,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let options = SurfaceInnerShadowOptions { radius_x, radius_y, passes, color, intensity };
+    let options = SurfaceInnerShadowOptions {
+        radius_x,
+        radius_y,
+        passes,
+        color,
+        intensity,
+    };
     inner_shadow_surface(out, scratch, &source, &options);
 }
 
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
 pub fn sharpen_surface_wasm(
     out: &mut [u8],
     scratch: &mut [u8],
@@ -800,7 +884,12 @@ pub fn sharpen_surface_wasm(
     passes: u32,
 ) {
     let source = region_from_desc(source_data, source_desc);
-    let options = SurfaceSharpenOptions { amount, radius_x, radius_y, passes };
+    let options = SurfaceSharpenOptions {
+        amount,
+        radius_x,
+        radius_y,
+        passes,
+    };
     sharpen_surface(out, scratch, &source, &options);
 }
 
