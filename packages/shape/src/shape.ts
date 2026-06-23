@@ -195,10 +195,10 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
   }
 }
 
-export function copyShapeCommands(source: Readonly<Shape>, target: Shape): void {
-  target.data.commands.length = 0;
-  target.data.commands.push(...source.data.commands);
-  invalidateShapeGeometry(target);
+export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
+  out.data.commands.length = 0;
+  out.data.commands.push(...source.data.commands);
+  invalidateShapeGeometry(out);
 }
 
 export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
