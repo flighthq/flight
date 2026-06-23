@@ -158,7 +158,10 @@ tools/site/
 *.d.ts
 *.js
 
-.claude
+# Claude Code: track shared config (skills, workflows); ignore only machine-local files.
+.claude/settings.local.json
+# Workflows are .js — re-include them past the global *.js ignore above.
+!.claude/workflows/*.js
 
 # Rust
 /target/

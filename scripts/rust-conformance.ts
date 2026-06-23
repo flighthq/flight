@@ -80,12 +80,24 @@ const TS_ONLY = new Set([
   'effects-canvas',
   'textshaper-canvas',
   'host-electron',
+  // The wasm "mixing" wrapper: a TS drop-in for @flighthq/surface whose Rust side
+  // is the surface-wasm crate (below), not a flighthq-surface-rs crate.
+  'surface-rs',
 ]);
 
 // Rust crates with no TS counterpart: the native host layer, the headless
-// capture gate, the conformance scene registry, and the in-box software
-// display-object backend. See conformance.md "Rust-only (no TS counterpart)".
-const RUST_ONLY = new Set(['capture', 'displayobject-skia', 'functional', 'host-winit', 'host-sdl', 'host-web']);
+// capture gate, the conformance scene registry, the in-box software
+// display-object backend, and surface-wasm (the Rust side of the surface-rs
+// wasm mixing wrapper). See conformance.md "Rust-only (no TS counterpart)".
+const RUST_ONLY = new Set([
+  'capture',
+  'displayobject-skia',
+  'functional',
+  'host-winit',
+  'host-sdl',
+  'host-web',
+  'surface-wasm',
+]);
 
 // FOLDABLE dependency targets: packages whose dep edges are a sanctioned
 // language-mechanics translation in Rust, so a TS->X edge is NOT required to
