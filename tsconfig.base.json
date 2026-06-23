@@ -167,6 +167,8 @@
       "@flighthq/spritesheet-formats/*": ["./packages/spritesheet-formats/src/*"],
       "@flighthq/surface": ["./packages/surface/src/index.ts"],
       "@flighthq/surface/*": ["./packages/surface/src/*"],
+      "@flighthq/surface-rs": ["./packages/surface-rs/src/index.ts"],
+      "@flighthq/surface-rs/*": ["./packages/surface-rs/src/*"],
       "@flighthq/timeline": ["./packages/timeline/src/index.ts"],
       "@flighthq/timeline/*": ["./packages/timeline/src/*"],
       "@flighthq/timeline-spritesheet": ["./packages/timeline-spritesheet/src/index.ts"],
