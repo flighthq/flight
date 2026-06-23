@@ -91,7 +91,7 @@ pub fn attach_network(net: &Network) {
     let unsubscribe = backend.subscribe(Box::new(move || {
         // Read current status using a thread-local scratch.
         // The backend owns its state; we construct a fresh status here.
-        let mut status = NetworkStatus {
+        let status = NetworkStatus {
             online: false,
             connection_type: NetworkConnectionType::Unknown,
             downlink: -1.0,
@@ -143,7 +143,7 @@ pub fn dispose_network(net: &Network) {
 }
 
 /// Fills `out` with the current connectivity snapshot and returns it.
-pub fn get_network_status<'a>(out: &'a mut NetworkStatus) -> &'a mut NetworkStatus {
+pub fn get_network_status(out: &mut NetworkStatus) -> &mut NetworkStatus {
     get_network_backend().get_status(out)
 }
 
@@ -160,8 +160,11 @@ pub fn is_network_online() -> bool {
 
 static BACKEND: Mutex<Option<Arc<dyn NetworkBackend>>> = Mutex::new(None);
 
-// Subscription list: (Network address, unsubscribe fn).
-static SUBSCRIPTIONS: Mutex<Vec<(usize, Box<dyn Fn() + Send + Sync>)>> = Mutex::new(Vec::new());
+// One active subscription: the Network address it belongs to, and the unsubscribe fn.
+type NetworkSubscription = (usize, Box<dyn Fn() + Send + Sync>);
+
+// Subscription list, keyed by Network address.
+static SUBSCRIPTIONS: Mutex<Vec<NetworkSubscription>> = Mutex::new(Vec::new());
 
 // ---------------------------------------------------------------------------
 // Tests

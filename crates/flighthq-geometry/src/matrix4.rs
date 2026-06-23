@@ -234,12 +234,12 @@ pub fn equals_matrix4(a: &Matrix4Like, b: &Matrix4Like) -> bool {
 /// Returns the determinant of `source`.
 pub fn get_matrix4_determinant(source: &Matrix4Like) -> f32 {
     let s = &source.m;
-    ((s[0] * s[5] - s[4] * s[1]) * (s[10] * s[15] - s[14] * s[11])
+    (s[0] * s[5] - s[4] * s[1]) * (s[10] * s[15] - s[14] * s[11])
         - (s[0] * s[9] - s[8] * s[1]) * (s[6] * s[15] - s[14] * s[7])
         + (s[0] * s[13] - s[12] * s[1]) * (s[6] * s[11] - s[10] * s[7])
         + (s[4] * s[9] - s[8] * s[5]) * (s[2] * s[15] - s[14] * s[3])
         - (s[4] * s[13] - s[12] * s[5]) * (s[2] * s[11] - s[10] * s[3])
-        + (s[8] * s[13] - s[12] * s[9]) * (s[2] * s[7] - s[6] * s[3]))
+        + (s[8] * s[13] - s[12] * s[9]) * (s[2] * s[7] - s[6] * s[3])
 }
 
 /// Returns the element at `(row, column)` (column-major: index = `column*4 + row`).
