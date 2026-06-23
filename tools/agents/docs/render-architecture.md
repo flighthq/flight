@@ -75,5 +75,6 @@ The scene graph is observer-agnostic. Because the camera is a parameter of the r
 
 ## Related docs
 
+- `render-backend-support.md` — the **current** per-backend feature-support matrix and the known deltas from this target (blend-mode/stroke-join/bitmap-smoothing/strikethrough gaps, wgpu orthographic, unwired punctual lights). Read it before assuming a feature renders on a backend; this doc is the intended end state, that one is what ships today.
 - `3d-materials-architecture.md` — the original judge-panel build spec + §0 settled decisions + the full material taxonomy table. (Its body predates this session's naming; this doc supersedes the render-layer and naming sections.)
 - `index.md` — the project map. Its package map + reference-doc list want a refresh once the structural split lands and the package names are final.
