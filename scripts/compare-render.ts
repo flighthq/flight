@@ -128,15 +128,24 @@ async function loadFingerprint(
       timeout: 15_000,
     });
     await page.waitForSelector('canvas', { timeout: 8_000 }).catch(() => {});
+    // Wait for a TERMINAL state, not merely for __ftVerification to exist. runRenderVerification sets
+    // that object up front with fingerprint:null, then fills the fingerprint only AFTER an async step —
+    // for WebGPU, an `await mapAsync()` GPU readback. Resolving on the object's mere existence would read
+    // null mid-readback and misreport every webgpu test as "verifier did not run" (canvas/WebGL win the
+    // race because their readback is synchronous). So wait until the fingerprint is populated OR an error
+    // overlay appears, then read the result. Poll on a timer (the capture harness halts rAF).
+    await page
+      .waitForFunction(
+        () => {
+          const v = (window as unknown as { __ftVerification?: Verification }).__ftVerification;
+          return (v != null && v.fingerprint !== null) || document.getElementById('ft-error') !== null;
+        },
+        null,
+        { timeout: 15_000, polling: 100 },
+      )
+      .catch(() => {});
     const verification = await page
-      // Poll on a timer, not the default requestAnimationFrame: the capture harness halts rAF after the
-      // target frame, and the verifier sets __ftVerification just after that, so an rAF poll would stop
-      // before ever seeing it.
-      .waitForFunction(() => (window as unknown as { __ftVerification?: Verification }).__ftVerification, null, {
-        timeout: 15_000,
-        polling: 100,
-      })
-      .then((handle) => handle.jsonValue() as Promise<Verification>)
+      .evaluate(() => (window as unknown as { __ftVerification?: Verification }).__ftVerification ?? null)
       .catch(() => null);
     if (verification?.fingerprint) return { fingerprint: verification.fingerprint, reason: '', unavailable: false };
     // The functional entry paints any error into #ft-error (covering window.error AND unhandledrejection);
