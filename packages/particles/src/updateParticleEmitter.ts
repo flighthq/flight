@@ -161,7 +161,7 @@ export function updateParticleEmitter(
     if (hasColorWork) {
       const ct = i * 3;
       if (hasColorCurve) {
-        sampleParticleColorCurve(colorCurve, lifeFraction, data.colors, ct);
+        sampleParticleColorCurve(data.colors, ct, colorCurve, lifeFraction);
       } else if (hasColorVariance) {
         data.colors[ct] = state.colorBirth[ct] + (state.colorDeath[ct] - state.colorBirth[ct]) * lifeFraction;
         data.colors[ct + 1] =
@@ -303,7 +303,7 @@ export function updateParticleEmitter(
       // Color — curve takes precedence, then per-particle variance, then constants
       const ct = idx * 3;
       if (hasColorCurve) {
-        sampleParticleColorCurve(colorCurve, 0, data.colors, ct);
+        sampleParticleColorCurve(data.colors, ct, colorCurve, 0);
       } else if (hasColorVariance) {
         const r0 = clamp01(colorStartR + (state.random() - 0.5) * 2 * config.colorStartVarianceR);
         const g0 = clamp01(colorStartG + (state.random() - 0.5) * 2 * config.colorStartVarianceG);

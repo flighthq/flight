@@ -98,7 +98,7 @@ export function emitParticleBurst(
 
     const ct = idx * 3;
     if (hasColorCurve) {
-      sampleParticleColorCurve(colorCurve, 0, data.colors, ct);
+      sampleParticleColorCurve(data.colors, ct, colorCurve, 0);
     } else if (hasColorVariance) {
       const r0 = clamp01(colorStartR + (random() - 0.5) * 2 * config.colorStartVarianceR);
       const g0 = clamp01(colorStartG + (random() - 0.5) * 2 * config.colorStartVarianceG);
