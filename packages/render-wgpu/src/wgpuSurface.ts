@@ -59,6 +59,11 @@ export async function createSurfaceFromWgpuRenderState(state: Readonly<WgpuRende
   const out = surface.data;
   // The preferred canvas format is BGRA on most platforms and RGBA on software adapters; normalize to
   // the Surface's RGBA byte order so coverage/fingerprint and saved pixels read correctly either way.
+  // Pixels are left premultiplied (the texture's stored form): functional content renders over an opaque
+  // background, so alpha is 255 and premultiplied == straight; do NOT un-premultiply here — dividing RGB
+  // by an 8-bit alpha amplifies quantization and clamps, blowing out exactly the semi-transparent pixels
+  // a colour comparison cares about. If straight-alpha output is ever needed, convert at the consumer in
+  // higher precision, or compare in premultiplied space on both sides.
   const swizzleBGRA = state.format === 'bgra8unorm' || state.format === 'bgra8unorm-srgb';
   for (let y = 0; y < height; y++) {
     const srcRow = y * bytesPerRow;
