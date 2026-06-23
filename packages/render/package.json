@@ -31,15 +31,15 @@
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
     "@flighthq/node": "*",
-    "@flighthq/displayobject": "*",
-    "@flighthq/sprite": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/camera": "*",
+    "@flighthq/displayobject": "*",
     "@flighthq/lighting": "*",
     "@flighthq/mesh": "*",
     "@flighthq/scene": "*",
+    "@flighthq/sprite": "*",
     "typescript": "^5.3.0"
   },
   "description": "Renderer registration, render state, render queue, and backend draw contracts",

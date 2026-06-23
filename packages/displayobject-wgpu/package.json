@@ -36,7 +36,6 @@
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/shape": "*",
-    "@flighthq/sprite": "*",
     "@flighthq/text": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
@@ -44,6 +43,7 @@
     "@flighthq/velocity": "*"
   },
   "devDependencies": {
+    "@flighthq/sprite": "*",
     "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },
