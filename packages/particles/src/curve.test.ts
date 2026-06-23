@@ -99,14 +99,14 @@ describe('particleColorCurveFromKeyframes', () => {
       { time: 1, r: 0, g: 0, b: 1 },
     ]);
     const out = [0, 0, 0];
-    sampleParticleColorCurve(lut, 0.5, out, 0);
+    sampleParticleColorCurve(out, 0, lut, 0.5);
     expect(out[1]).toBeGreaterThan(0.8); // green at mid
   });
 
   it('an empty keyframe list yields a flat transparent curve', () => {
     const lut = particleColorCurveFromKeyframes([]);
     const out = [9, 9, 9];
-    sampleParticleColorCurve(lut, 0.5, out, 0);
+    sampleParticleColorCurve(out, 0, lut, 0.5);
     expect(out).toEqual([0, 0, 0]);
   });
 });
@@ -215,7 +215,7 @@ describe('sampleParticleColorCurve', () => {
   it('interpolates interleaved RGB channels', () => {
     const lut = [1, 0, 0, 0, 0, 1]; // red → blue
     const out = [0, 0, 0];
-    sampleParticleColorCurve(lut, 0.5, out, 0);
+    sampleParticleColorCurve(out, 0, lut, 0.5);
     expect(out[0]).toBeCloseTo(0.5); // R
     expect(out[1]).toBeCloseTo(0); // G
     expect(out[2]).toBeCloseTo(0.5); // B
@@ -224,7 +224,7 @@ describe('sampleParticleColorCurve', () => {
   it('writes at the given offset', () => {
     const lut = [0.2, 0.4, 0.6];
     const out = [9, 9, 9, 9, 9];
-    sampleParticleColorCurve(lut, 0, out, 2);
+    sampleParticleColorCurve(out, 2, lut, 0);
     expect(out[2]).toBeCloseTo(0.2);
     expect(out[3]).toBeCloseTo(0.4);
     expect(out[4]).toBeCloseTo(0.6);
