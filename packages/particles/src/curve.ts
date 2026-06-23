@@ -97,10 +97,10 @@ function locateKeyframe(sorted: ReadonlyArray<{ time: number }>, t: number): { f
 /** Sample an interleaved RGB curve (length N×3) at t∈[0,1], writing the three
  *  channels into `out` starting at `offset`. */
 export function sampleParticleColorCurve(
-  lut: ParticleCurve,
-  t: number,
   out: { [index: number]: number },
   offset: number,
+  lut: ParticleCurve,
+  t: number,
 ): void {
   const n = lut.length / 3;
   if (n <= 0) {
