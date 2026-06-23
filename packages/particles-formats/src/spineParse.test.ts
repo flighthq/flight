@@ -177,7 +177,7 @@ describe('parseSpineParticle — multi-stop timelines bake into curves', () => {
     const c = parseSpineParticle(json);
     expect(c.colorCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleParticleColorCurve(c.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(out, 0, c.colorCurve!, 0.5);
     expect(out[1]).toBeGreaterThan(0.8); // green dominant at mid-life
     expect(out[0]).toBeLessThan(0.2);
   });
@@ -277,7 +277,7 @@ describe('serializeSpineParticle — curve round-trip', () => {
     expect(c2.colorCurve).not.toBeNull();
     expect(c2.alphaCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleParticleColorCurve(c2.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(out, 0, c2.colorCurve!, 0.5);
     expect(out[1]).toBeGreaterThan(0.8); // green still peaks mid-life
     expect(sampleParticleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
     expect(sampleParticleCurve(c2.alphaCurve!, 0)).toBeLessThan(0.1);
