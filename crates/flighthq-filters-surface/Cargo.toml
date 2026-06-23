@@ -3,8 +3,9 @@ name = "flighthq-filters-surface"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Filter-effect operations on surfaces: blur, glow, drop shadow, color matrix, convolution"
+description = "Surface (CPU pixel) implementations for bitmap filter effects"
 
 [dependencies]
+flighthq-filters = { workspace = true }
 flighthq-surface = { workspace = true }
 flighthq-types = { workspace = true }

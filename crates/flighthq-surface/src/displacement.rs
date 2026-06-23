@@ -13,9 +13,9 @@ pub enum SurfaceDisplacementMapMode {
     Wrap,
 }
 
-/// Options for `apply_surface_displacement_map_filter`.
+/// Options for `displace_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceDisplacementMapFilterOptions {
+pub struct SurfaceDisplacementMapOptions {
     /// Map surface whose channels drive the per-pixel displacement.
     pub map: SurfaceRegion,
     /// Channel index (0=R, 1=G, 2=B, 3=A) of `map` that drives X displacement.
@@ -43,10 +43,10 @@ pub struct SurfaceDisplacementMapFilterOptions {
 /// Sampling uses bilinear interpolation. `out` must be at least
 /// `source.width * source.height * 4` bytes and must NOT alias
 /// `source.surface.data`.
-pub fn apply_surface_displacement_map_filter(
+pub fn displace_surface(
     out: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceDisplacementMapFilterOptions,
+    options: &SurfaceDisplacementMapOptions,
 ) {
     let w = source.width as i64;
     let h = source.height as i64;
@@ -139,7 +139,7 @@ fn sample_map_channel(map: &SurfaceRegion, px: i64, py: i64, component: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -169,11 +169,11 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_displacement_map_filter_zero_scale_is_copy() {
+    fn displace_surface_zero_scale_is_copy() {
         let source = rgb_strip();
         let map = neutral_map(3, 128);
         let mut out = vec![0_u8; 12];
-        let options = SurfaceDisplacementMapFilterOptions {
+        let options = SurfaceDisplacementMapOptions {
             map,
             component_x: 0,
             component_y: 1,
@@ -182,20 +182,20 @@ mod tests {
             mode: SurfaceDisplacementMapMode::Clamp,
             fill_color: 0,
         };
-        apply_surface_displacement_map_filter(&mut out, &region(source), &options);
+        displace_surface(&mut out, &region(source), &options);
         assert_eq!(out[0], 255); // px0 = red
         assert_eq!(out[4 + 1], 255); // px1 = green
         assert_eq!(out[8 + 2], 255); // px2 = blue
     }
 
     #[test]
-    fn apply_surface_displacement_map_filter_clamp_mode() {
+    fn displace_surface_clamp_mode() {
         let source = rgb_strip();
         let mut map_s = create_surface(3, 1, 0);
         map_s.data[0] = 255;
         map_s.data[4] = 255;
         map_s.data[8] = 255;
-        let options = SurfaceDisplacementMapFilterOptions {
+        let options = SurfaceDisplacementMapOptions {
             map: region(map_s),
             component_x: 0,
             component_y: 1,
@@ -205,7 +205,7 @@ mod tests {
             fill_color: 0,
         };
         let mut out = vec![0_u8; 12];
-        apply_surface_displacement_map_filter(&mut out, &region(source), &options);
+        displace_surface(&mut out, &region(source), &options);
         // px0←src1 (green), px1←src2 (blue), px2←src3 oob clamped to src2 (blue).
         assert_eq!(out[1], 255); // green channel of px0
         assert_eq!(out[4 + 2], 255); // blue channel of px1
@@ -213,9 +213,9 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_displacement_map_filter_color_mode() {
+    fn displace_surface_color_mode() {
         let source = rgb_strip();
-        let options = SurfaceDisplacementMapFilterOptions {
+        let options = SurfaceDisplacementMapOptions {
             map: neutral_map(3, 255),
             component_x: 0,
             component_y: 1,
@@ -225,7 +225,7 @@ mod tests {
             fill_color: 0xff00ffff,
         };
         let mut out = vec![0_u8; 12];
-        apply_surface_displacement_map_filter(&mut out, &region(source), &options);
+        displace_surface(&mut out, &region(source), &options);
         // px2 displaces to x=4 (out of range) → magenta fill.
         assert_eq!(out[2 * 4], 0xff);
         assert_eq!(out[2 * 4 + 1], 0);
@@ -234,9 +234,9 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_displacement_map_filter_ignore_mode() {
+    fn displace_surface_ignore_mode() {
         let source = rgb_strip();
-        let options = SurfaceDisplacementMapFilterOptions {
+        let options = SurfaceDisplacementMapOptions {
             map: neutral_map(3, 255),
             component_x: 0,
             component_y: 1,
@@ -246,14 +246,14 @@ mod tests {
             fill_color: 0,
         };
         let mut out = vec![0_u8; 12];
-        apply_surface_displacement_map_filter(&mut out, &region(source), &options);
+        displace_surface(&mut out, &region(source), &options);
         // px2 displaces out of range → keeps src2 (blue) unchanged.
         assert_eq!(out[2 * 4 + 2], 255);
         assert_eq!(out[2 * 4 + 3], 255);
     }
 
     #[test]
-    fn apply_surface_displacement_map_filter_honors_region_offset() {
+    fn displace_surface_honors_region_offset() {
         let mut source = create_surface(4, 1, 0);
         source.data.copy_from_slice(&[
             255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
@@ -265,7 +265,7 @@ mod tests {
             width: 2,
             height: 1,
         };
-        let options = SurfaceDisplacementMapFilterOptions {
+        let options = SurfaceDisplacementMapOptions {
             map: neutral_map(2, 128),
             component_x: 0,
             component_y: 1,
@@ -275,7 +275,7 @@ mod tests {
             fill_color: 0,
         };
         let mut out = vec![0_u8; 8];
-        apply_surface_displacement_map_filter(&mut out, &region_src, &options);
+        displace_surface(&mut out, &region_src, &options);
         assert_eq!(out[1], 255); // green from source[1]
         assert_eq!(out[4 + 2], 255); // blue from source[2]
     }

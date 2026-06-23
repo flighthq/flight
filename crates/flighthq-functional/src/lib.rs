@@ -18,7 +18,11 @@
 //! All paths return sentinels (`None`) rather than panicking when no wgpu
 //! adapter is present, so a GPU-less CI box degrades gracefully.
 
+mod render_gl;
+mod render_skia;
 mod scene;
+mod scene_graph;
+mod target;
 
 use std::path::{Path, PathBuf};
 
@@ -29,7 +33,23 @@ use flighthq_surface::{
 use flighthq_types::AlphaType;
 use flighthq_types::{ColorSpace, PixelFormat, Surface};
 
+pub use render_gl::render_scene_to_rgba_gl;
+pub use render_skia::render_scene_to_rgba_skia;
 pub use scene::{RectFill, Scene, render_scene_to_rgba, scenes};
+pub use scene_graph::{SceneGraph, build_scene_graph};
+pub use target::RenderTarget;
+
+/// Renders a scene through a specific [`RenderTarget`] to tightly packed RGBA
+/// bytes, or `None` when that target is unavailable (no adapter/context) or does
+/// not support the scene (e.g. effects on the software/gl cells today). This is
+/// the dispatch the parallel matrix runner fans out over.
+pub fn render_scene_to_rgba_with(target: RenderTarget, scene: &Scene) -> Option<Vec<u8>> {
+    match target {
+        RenderTarget::Skia => render_scene_to_rgba_skia(scene),
+        RenderTarget::Gl => render_scene_to_rgba_gl(scene),
+        RenderTarget::Wgpu => render_scene_to_rgba(scene),
+    }
+}
 
 /// Grid resolution of the visual fingerprint. 16×16×3 cells, matching the TS
 /// functional baselines' `"16:<hex>"` form.
@@ -58,10 +78,17 @@ pub struct CheckResult {
     pub pass: bool,
 }
 
-/// Renders a scene and reduces it to a `"16:<hex>"` fingerprint. Returns `None`
-/// when no wgpu adapter is available.
+/// Renders a scene through the wgpu target and reduces it to a `"16:<hex>"`
+/// fingerprint. Returns `None` when no wgpu adapter is available. Equivalent to
+/// [`render_scene_fingerprint_with`] for [`RenderTarget::Wgpu`].
 pub fn render_scene_fingerprint(scene: &Scene) -> Option<String> {
-    let pixels = render_scene_to_rgba(scene)?;
+    render_scene_fingerprint_with(RenderTarget::Wgpu, scene)
+}
+
+/// Renders a scene through `target` and reduces it to a `"16:<hex>"` fingerprint,
+/// or `None` when the target is unavailable or does not support the scene.
+pub fn render_scene_fingerprint_with(target: RenderTarget, scene: &Scene) -> Option<String> {
+    let pixels = render_scene_to_rgba_with(target, scene)?;
     let surface = Surface {
         alpha_type: AlphaType::Straight,
         data: pixels,
@@ -75,39 +102,68 @@ pub fn render_scene_fingerprint(scene: &Scene) -> Option<String> {
     Some(format_surface_fingerprint(&fingerprint))
 }
 
-/// Compares a scene's fresh fingerprint to its committed regression baseline.
-///
-/// Returns `None` when no adapter is available (nothing rendered) or when the
-/// committed baseline file is missing or malformed. A missing baseline is the
-/// signal to run the bless path (`write_regression_baseline`).
+/// Compares a scene's fresh wgpu fingerprint to its committed regression
+/// baseline. Equivalent to [`check_regression_with`] for [`RenderTarget::Wgpu`].
 pub fn check_regression(scene: &Scene, tolerance: f32) -> Option<CheckResult> {
-    let fingerprint = render_scene_fingerprint(scene)?;
-    let baseline = read_regression_baseline(scene)?;
+    check_regression_with(RenderTarget::Wgpu, scene, tolerance)
+}
+
+/// Compares a scene's fresh fingerprint on `target` to that target's committed
+/// regression baseline.
+///
+/// Returns `None` when the target is unavailable or does not support the scene
+/// (nothing rendered) or when the committed baseline file is missing or
+/// malformed. A missing baseline is the signal to run the bless path
+/// ([`write_regression_baseline_with`]).
+pub fn check_regression_with(
+    target: RenderTarget,
+    scene: &Scene,
+    tolerance: f32,
+) -> Option<CheckResult> {
+    let fingerprint = render_scene_fingerprint_with(target, scene)?;
+    let baseline = read_regression_baseline_with(target, scene)?;
     compare_fingerprint_strings(&fingerprint, &baseline, tolerance)
 }
 
-/// Compares a scene's fresh fingerprint to the TS functional baseline it maps to.
-///
-/// Returns `None` when the scene has no `ts_baseline` mapping (the common case
-/// today), when no adapter is available, or when the TS `webgpu` baseline carries
-/// no `fingerprint` string. A `None` from a scene that *does* map a baseline and
-/// *does* render is the "deferred — no wgpu baseline" signal: the runner reports
-/// it as deferred rather than grading the wgpu output against a different
-/// backend's algorithm. Compares only against the TS `webgpu` fingerprint (see
-/// [`read_ts_baseline_fingerprint`]).
+/// Compares a scene's fresh wgpu fingerprint to the TS functional baseline it
+/// maps to. Equivalent to [`check_parity_with`] for [`RenderTarget::Wgpu`].
 pub fn check_parity(scene: &Scene, tolerance: f32) -> Option<CheckResult> {
+    check_parity_with(RenderTarget::Wgpu, scene, tolerance)
+}
+
+/// Compares a scene's fresh fingerprint on `target` to the TS `webgpu` baseline
+/// it maps to.
+///
+/// Returns `None` when the scene has no `ts_baseline` mapping, when the target is
+/// unavailable or does not support the scene, or when the TS `webgpu` baseline
+/// carries no `fingerprint` string ("deferred — no wgpu baseline"). The TS
+/// reference is always the `webgpu` fingerprint regardless of `target`: the Rust
+/// gl/skia cells are checked against the same TS GPU reference (and cross-checked
+/// against each other by the runner), never against a different TS backend's
+/// algorithm (see [`read_ts_baseline_fingerprint`]).
+pub fn check_parity_with(
+    target: RenderTarget,
+    scene: &Scene,
+    tolerance: f32,
+) -> Option<CheckResult> {
     let stem = scene.ts_baseline?;
-    let fingerprint = render_scene_fingerprint(scene)?;
+    let fingerprint = render_scene_fingerprint_with(target, scene)?;
     let baseline = read_ts_baseline_fingerprint(stem)?;
     compare_fingerprint_strings(&fingerprint, &baseline, tolerance)
 }
 
-/// Writes a scene's fresh fingerprint to its committed regression baseline file,
-/// creating the `baselines/` directory if needed. Returns the written
-/// fingerprint, or `None` when no adapter is available (nothing to write).
+/// Writes a scene's fresh wgpu fingerprint to its committed regression baseline.
+/// Equivalent to [`write_regression_baseline_with`] for [`RenderTarget::Wgpu`].
 pub fn write_regression_baseline(scene: &Scene) -> Option<String> {
-    let fingerprint = render_scene_fingerprint(scene)?;
-    let path = regression_baseline_path(scene.name);
+    write_regression_baseline_with(RenderTarget::Wgpu, scene)
+}
+
+/// Writes a scene's fresh fingerprint on `target` to that target's committed
+/// regression baseline file, creating the baseline directory if needed. Returns
+/// the written fingerprint, or `None` when the target rendered nothing.
+pub fn write_regression_baseline_with(target: RenderTarget, scene: &Scene) -> Option<String> {
+    let fingerprint = render_scene_fingerprint_with(target, scene)?;
+    let path = regression_baseline_path_with(target, scene.name);
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).ok()?;
     }
@@ -115,18 +171,34 @@ pub fn write_regression_baseline(scene: &Scene) -> Option<String> {
     Some(fingerprint)
 }
 
-/// The committed regression baseline path for a scene name:
+/// The committed wgpu regression baseline path for a scene name:
 /// `crates/flighthq-functional/baselines/<name>.fp`.
 pub fn regression_baseline_path(name: &str) -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("baselines")
-        .join(format!("{name}.fp"))
+    regression_baseline_path_with(RenderTarget::Wgpu, name)
 }
 
-/// Reads and trims a scene's committed regression baseline line, or `None` if
-/// the file is missing or empty.
+/// The committed regression baseline path for a `target` + scene name. The wgpu
+/// cell keeps the flat legacy layout (`baselines/<name>.fp`) so existing
+/// committed baselines stay valid; the other cells live under a per-target
+/// directory (`baselines/<target>/<name>.fp`).
+pub fn regression_baseline_path_with(target: RenderTarget, name: &str) -> PathBuf {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("baselines");
+    match target {
+        RenderTarget::Wgpu => dir.join(format!("{name}.fp")),
+        other => dir.join(other.label()).join(format!("{name}.fp")),
+    }
+}
+
+/// Reads and trims a scene's committed wgpu regression baseline line, or `None`
+/// if the file is missing or empty.
 pub fn read_regression_baseline(scene: &Scene) -> Option<String> {
-    let text = std::fs::read_to_string(regression_baseline_path(scene.name)).ok()?;
+    read_regression_baseline_with(RenderTarget::Wgpu, scene)
+}
+
+/// Reads and trims a scene's committed regression baseline line for `target`, or
+/// `None` if the file is missing or empty.
+pub fn read_regression_baseline_with(target: RenderTarget, scene: &Scene) -> Option<String> {
+    let text = std::fs::read_to_string(regression_baseline_path_with(target, scene.name)).ok()?;
     let line = text.trim();
     if line.is_empty() {
         None

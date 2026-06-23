@@ -14,9 +14,9 @@ pub enum SurfaceBevelType {
     Outer,
 }
 
-/// Options for `apply_surface_bevel_filter`.
+/// Options for `bevel_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceBevelFilterOptions {
+pub struct SurfaceBevelOptions {
     /// Light direction in radians, pointing toward the light source. Default π/4.
     pub angle: f32,
     /// Sampling offset along the light axis, in pixels. Default 4.
@@ -34,7 +34,7 @@ pub struct SurfaceBevelFilterOptions {
     pub bevel_type: SurfaceBevelType,
 }
 
-impl Default for SurfaceBevelFilterOptions {
+impl Default for SurfaceBevelOptions {
     fn default() -> Self {
         Self {
             angle: std::f32::consts::FRAC_PI_4,
@@ -58,11 +58,11 @@ impl Default for SurfaceBevelFilterOptions {
 /// bytes, and `out` must NOT alias `source.surface.data`.
 /// `scratch` must be distinct from `out`.
 /// To complete the effect, composite `out` over the original source.
-pub fn apply_surface_bevel_filter(
+pub fn bevel_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceBevelFilterOptions,
+    options: &SurfaceBevelOptions,
 ) {
     let w = source.width;
     let h = source.height;
@@ -183,7 +183,7 @@ fn sample_field(field: &[u8], w: u32, h: u32, x: i64, y: i64) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -208,15 +208,15 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_bevel_filter_both_type() {
+    fn bevel_surface_both_type() {
         let source = edge_strip();
         let mut out = vec![0_u8; 20];
         let mut scratch = vec![0_u8; 20];
-        apply_surface_bevel_filter(
+        bevel_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceBevelFilterOptions {
+            &SurfaceBevelOptions {
                 angle: std::f32::consts::PI,
                 distance: 1.0,
                 radius_x: 1,
@@ -241,15 +241,15 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_bevel_filter_inner_type() {
+    fn bevel_surface_inner_type() {
         let source = edge_strip();
         let mut out = vec![0_u8; 20];
         let mut scratch = vec![0_u8; 20];
-        apply_surface_bevel_filter(
+        bevel_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceBevelFilterOptions {
+            &SurfaceBevelOptions {
                 angle: std::f32::consts::PI,
                 distance: 1.0,
                 radius_x: 1,

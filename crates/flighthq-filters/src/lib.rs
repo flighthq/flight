@@ -1,13 +1,13 @@
-//! `flighthq-filters` — bitmap filter descriptors, CSS serialization, and
-//! bitmap-surface (CPU pixel) implementations.
+//! `flighthq-filters` — bitmap filter descriptors, CSS serialization, and shared
+//! cross-substrate blur math.
 //!
-//! Filter types live in `flighthq-types`; this crate re-exports them and
-//! adds construction helpers, CSS serialization, box-blur math, and the
-//! CPU-side (surface) apply functions.
+//! Filter types live in `flighthq-types`; this crate re-exports them and adds
+//! construction helpers, CSS serialization, and box-blur math. The CPU-side
+//! (surface) apply functions live in `flighthq-filters-surface`, which bridges
+//! these descriptors onto the pixel operations in `flighthq-surface`.
 
 pub mod css;
 pub mod math;
-pub mod surface;
 
 // Re-export filter types from the types crate so users only need one import.
 pub use flighthq_types::{

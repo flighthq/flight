@@ -2,11 +2,11 @@
 
 use flighthq_types::SurfaceRegion;
 
-use crate::blur::{SurfaceBoxBlurFilterOptions, apply_surface_box_blur_filter};
+use crate::blur::{SurfaceBoxBlurOptions, box_blur_surface};
 
-/// Options for `apply_surface_sharpen_filter`.
+/// Options for `sharpen_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceSharpenFilterOptions {
+pub struct SurfaceSharpenOptions {
     /// Sharpen strength. 0.0 is a no-op; 1.0 is a moderate sharpen; >1.0 is
     /// stronger. Default 1.0.
     pub amount: f32,
@@ -17,7 +17,7 @@ pub struct SurfaceSharpenFilterOptions {
     pub passes: u32,
 }
 
-impl Default for SurfaceSharpenFilterOptions {
+impl Default for SurfaceSharpenOptions {
     fn default() -> Self {
         Self {
             amount: 1.0,
@@ -36,18 +36,18 @@ impl Default for SurfaceSharpenFilterOptions {
 /// bytes; its contents are undefined after the call.
 ///
 /// `out` must NOT alias `source.surface.data`.
-pub fn apply_surface_sharpen_filter(
+pub fn sharpen_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceSharpenFilterOptions,
+    options: &SurfaceSharpenOptions,
 ) {
     let amount = options.amount;
-    apply_surface_box_blur_filter(
+    box_blur_surface(
         out,
         scratch,
         source,
-        &SurfaceBoxBlurFilterOptions {
+        &SurfaceBoxBlurOptions {
             radius_x: options.radius_x,
             radius_y: options.radius_y,
             passes: options.passes,
@@ -89,7 +89,7 @@ fn clamp_byte(value: f32) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -105,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_sharpen_filter_amount_zero_is_unchanged() {
+    fn sharpen_surface_amount_zero_is_unchanged() {
         let mut source = create_surface(3, 1, 0);
         source.data[4] = 10;
         source.data[5] = 20;
@@ -113,11 +113,11 @@ mod tests {
         source.data[7] = 120;
         let mut out = vec![0_u8; 12];
         let mut scratch = vec![0_u8; 12];
-        apply_surface_sharpen_filter(
+        sharpen_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceSharpenFilterOptions {
+            &SurfaceSharpenOptions {
                 amount: 0.0,
                 radius_x: 2,
                 radius_y: 2,
@@ -131,7 +131,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_sharpen_filter_accentuates_center() {
+    fn sharpen_surface_accentuates_center() {
         let mut source = create_surface(5, 1, 0);
         source.data[2 * 4] = 100;
         for i in 0..5 {
@@ -139,11 +139,11 @@ mod tests {
         }
         let mut out = vec![0_u8; 20];
         let mut scratch = vec![0_u8; 20];
-        apply_surface_sharpen_filter(
+        sharpen_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceSharpenFilterOptions {
+            &SurfaceSharpenOptions {
                 amount: 1.0,
                 radius_x: 4,
                 radius_y: 0,
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_sharpen_filter_preserves_alpha() {
+    fn sharpen_surface_preserves_alpha() {
         let mut source = create_surface(3, 1, 0);
         for i in 0..3 {
             source.data[i * 4] = (i * 40) as u8;
@@ -162,11 +162,11 @@ mod tests {
         }
         let mut out = vec![0_u8; 12];
         let mut scratch = vec![0_u8; 12];
-        apply_surface_sharpen_filter(
+        sharpen_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceSharpenFilterOptions {
+            &SurfaceSharpenOptions {
                 amount: 2.0,
                 radius_x: 2,
                 radius_y: 2,

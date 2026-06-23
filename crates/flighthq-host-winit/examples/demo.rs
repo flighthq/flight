@@ -38,6 +38,7 @@ use flighthq_displayobject::{
 use flighthq_displayobject_wgpu::{
     WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
+use flighthq_easing::ease_in_out_sine;
 use flighthq_host_winit::{InputManager, WgpuRenderState, WinitAppConfig, run_winit_app};
 use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
@@ -49,7 +50,6 @@ use flighthq_shape::{
 };
 use flighthq_signals::{SignalConnectOptions, connect_signal};
 use flighthq_tween::{create_tween, create_tween_manager, update_tweens};
-use flighthq_easing::ease_in_out_sine;
 use flighthq_types::display::{display_object_kind, shape_kind};
 use flighthq_types::geometry::Matrix;
 use flighthq_types::input::{InputKeyboardData, InputPointerData};

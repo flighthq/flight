@@ -4,10 +4,15 @@
 //! Not used internally by renderers; this is a user-facing API for CPU-side
 //! image processing.
 
+pub mod bevel;
+pub mod blur;
+pub mod color_matrix;
 pub mod compare;
 pub mod composite;
+pub mod convolution;
 pub mod copy;
 pub mod coverage;
+pub mod displacement;
 pub mod dissolve;
 pub mod draw;
 pub mod encode;
@@ -15,14 +20,19 @@ pub mod fill;
 pub mod fingerprint;
 pub mod flip;
 pub mod format;
+pub mod gradient;
 pub mod histogram;
+pub mod median;
 pub mod morphological;
 pub mod palette_map;
 pub mod pixel;
+pub mod pixelate;
 pub mod query;
 pub mod region;
 pub mod resize;
 pub mod rotate;
+pub mod shadow;
+pub mod sharpen;
 pub mod surface;
 pub mod surface_from;
 pub mod transform;
@@ -121,3 +131,57 @@ pub use flighthq_types::{
     SurfaceFingerprint, SurfaceHistogram, SurfaceMismatch, SurfaceRegion, SurfaceResizeMode,
     ThresholdOperation,
 };
+
+// Bitmap-filter pixel operations (the CPU algorithms `flighthq-filters-surface`
+// bridges its descriptors onto). Relocated here from the former
+// `flighthq-surface-filters` so the heavy per-pixel work lives in the surface
+// engine and the filter layer stays a thin bridge.
+
+// bevel
+pub use bevel::{SurfaceBevelOptions, SurfaceBevelType, bevel_surface};
+
+// blur
+pub use blur::{
+    SurfaceBoxBlurOptions, blur_surface_pixels_horizontal, blur_surface_pixels_horizontal_weighted,
+    blur_surface_pixels_vertical, blur_surface_pixels_vertical_weighted, box_blur_surface,
+    compute_gaussian_kernel, gaussian_blur_surface,
+};
+
+// color_matrix
+pub use color_matrix::{
+    build_surface_brightness_color_matrix, build_surface_contrast_color_matrix,
+    build_surface_grayscale_color_matrix, build_surface_hue_rotation_color_matrix,
+    build_surface_invert_color_matrix, build_surface_saturation_color_matrix,
+    build_surface_sepia_color_matrix, color_matrix_surface, concat_surface_color_matrix,
+    set_surface_color_matrix_identity,
+};
+
+// convolution
+pub use convolution::{SurfaceConvolutionEdge, SurfaceConvolutionOptions, convolve_surface};
+
+// displacement
+pub use displacement::{
+    SurfaceDisplacementMapMode, SurfaceDisplacementMapOptions, displace_surface,
+};
+
+// gradient
+pub use gradient::{
+    SurfaceGradientBevelOptions, SurfaceGradientGlowOptions, build_surface_gradient_ramp,
+    gradient_bevel_surface, gradient_glow_surface,
+};
+
+// median
+pub use median::median_surface;
+
+// pixelate
+pub use pixelate::pixelate_surface;
+
+// shadow
+pub use shadow::{
+    SurfaceBlurOptions, SurfaceDropShadowOptions, SurfaceGlowOptions, SurfaceInnerGlowOptions,
+    SurfaceInnerShadowOptions, drop_shadow_surface, glow_surface, inner_glow_surface,
+    inner_shadow_surface,
+};
+
+// sharpen
+pub use sharpen::{SurfaceSharpenOptions, sharpen_surface};

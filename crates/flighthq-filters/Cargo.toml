@@ -3,12 +3,8 @@ name = "flighthq-filters"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Bitmap filter descriptors, CSS serialization, and bitmap-surface implementations"
+description = "Bitmap filter descriptors and shared cross-substrate blur math"
 
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
-flighthq-filters-surface = { workspace = true }
-
-[dev-dependencies]
-flighthq-surface = { workspace = true }
