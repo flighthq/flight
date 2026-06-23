@@ -47,12 +47,13 @@ Two subjects × three checks; `regression` additionally has a write mode. Smoke 
 
 Collapses over these leaves:
 
-| alias                                            | expands to                                                     |
-| ------------------------------------------------ | -------------------------------------------------------------- |
-| `test:functional` / `test:examples`              | that subject's smoke + parity + regression (umbrella)          |
-| `test:smoke` / `test:parity` / `test:regression` | that check across both subjects                                |
-| `test:regression:baseline`                       | both subjects' regression baseline writes                      |
-| `test:baseline`                                  | every render-test baseline (today: `test:regression:baseline`) |
-| `functional` / `examples` / `landing`            | the matching `dev:*` server                                    |
+| alias | expands to |
+| --- | --- |
+| `test:functional` / `test:examples` | that subject's smoke + parity + regression (umbrella) |
+| `test:smoke` / `test:parity` / `test:regression` | that check across both subjects |
+| `test:functional:baseline` / `test:examples:baseline` | that subject's baseline write (its `:regression:baseline`) |
+| `test:regression:baseline` | both subjects' regression baseline writes |
+| `test:baseline` | every render-test baseline (today: `test:regression:baseline`) |
+| `functional` / `examples` / `landing` | the matching `dev:*` server |
 
 The mechanics behind these scripts live in `scripts/capture.ts` (smoke, via `--fail-on-error`) and `scripts/compare-render.ts` (parity = `--no-regression`, regression = `--no-parity`, write = `--update-fingerprints`).
