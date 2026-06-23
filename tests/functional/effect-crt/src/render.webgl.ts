@@ -1,7 +1,7 @@
 import type { DisplayObject, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
-  createCRTEffect,
+  createCrtEffect,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -46,6 +46,6 @@ export function render(root: DisplayObject): void {
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
-    createCRTEffect({ curvature: 0.3, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0.4 }),
+    createCrtEffect({ curvature: 0.3, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0.4 }),
   ]);
 }

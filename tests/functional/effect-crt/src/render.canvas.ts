@@ -4,7 +4,7 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createCRTEffect,
+  createCrtEffect,
   defaultCanvasCRTEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
@@ -43,6 +43,6 @@ export function render(root: DisplayObject): void {
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [
-    createCRTEffect({ curvature: 0.3, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0.4 }),
+    createCrtEffect({ curvature: 0.3, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0.4 }),
   ]);
 }
