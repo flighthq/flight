@@ -8,11 +8,7 @@ use flighthq_types::SurfaceRegion;
 /// Safe to pass `source.surface.data` as `out` when the region covers the
 /// full surface — each pixel's input channels are read before any channel of
 /// that pixel is written.
-pub fn apply_surface_color_matrix_filter(
-    out: &mut [u8],
-    source: &SurfaceRegion,
-    matrix: &[f32; 20],
-) {
+pub fn color_matrix_surface(out: &mut [u8], source: &SurfaceRegion, matrix: &[f32; 20]) {
     let surface_width = source.surface.width;
     let surface_height = source.surface.height;
     let region_width = source.width;
@@ -201,7 +197,7 @@ fn set_color_matrix(out: &mut [f32; 20], values: [f32; 20]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -220,12 +216,12 @@ mod tests {
     fn apply_to(rgba: u32, matrix: &[f32; 20]) -> [u8; 4] {
         let surface = create_surface(1, 1, rgba);
         let mut out = vec![0_u8; 4];
-        apply_surface_color_matrix_filter(&mut out, &region(surface), matrix);
+        color_matrix_surface(&mut out, &region(surface), matrix);
         [out[0], out[1], out[2], out[3]]
     }
 
     #[test]
-    fn apply_surface_color_matrix_filter_applies_matrix() {
+    fn color_matrix_surface_applies_matrix() {
         let source = create_surface(1, 1, 0x204060ff);
         let mut out = vec![0_u8; 4];
         #[rustfmt::skip]
@@ -235,7 +231,7 @@ mod tests {
             0.0, 0.0, 0.0, 0.0, 30.0,
             0.0, 0.0, 0.0, 1.0, 0.0,
         ];
-        apply_surface_color_matrix_filter(&mut out, &region(source), &m);
+        color_matrix_surface(&mut out, &region(source), &m);
         assert_eq!(out[0], 10);
         assert_eq!(out[1], 20);
         assert_eq!(out[2], 30);
@@ -243,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_color_matrix_filter_identity() {
+    fn color_matrix_surface_identity() {
         let mut m = [0.0_f32; 20];
         set_surface_color_matrix_identity(&mut m);
         let out = apply_to(0xc86432ff, &m);
@@ -251,7 +247,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_color_matrix_filter_clamps() {
+    fn color_matrix_surface_clamps() {
         let source = create_surface(1, 1, 0xff0000ff);
         let mut out = vec![0_u8; 4];
         #[rustfmt::skip]
@@ -261,13 +257,13 @@ mod tests {
             0.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 1.0, 0.0,
         ];
-        apply_surface_color_matrix_filter(&mut out, &region(source), &m);
+        color_matrix_surface(&mut out, &region(source), &m);
         assert_eq!(out[0], 255);
         assert_eq!(out[1], 0);
     }
 
     #[test]
-    fn apply_surface_color_matrix_filter_translate_offsets() {
+    fn color_matrix_surface_translate_offsets() {
         let source = create_surface(1, 1, 0x010203ff);
         let mut out = vec![0_u8; 4];
         #[rustfmt::skip]
@@ -277,7 +273,7 @@ mod tests {
             0.0, 0.0, 1.0, 0.0, 30.0,
             0.0, 0.0, 0.0, 1.0, 0.0,
         ];
-        apply_surface_color_matrix_filter(&mut out, &region(source), &m);
+        color_matrix_surface(&mut out, &region(source), &m);
         assert_eq!(out[0], 11);
         assert_eq!(out[1], 22);
         assert_eq!(out[2], 33);
@@ -285,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_color_matrix_filter_skips_out_of_bounds() {
+    fn color_matrix_surface_skips_out_of_bounds() {
         let source = create_surface(1, 1, 0xff0000ff);
         let mut out = vec![0_u8; 4 * 4];
         let mut identity = [0.0_f32; 20];
@@ -297,7 +293,7 @@ mod tests {
             width: 2,
             height: 2,
         };
-        apply_surface_color_matrix_filter(&mut out, &r, &identity);
+        color_matrix_surface(&mut out, &r, &identity);
         // Only the top-left pixel of the 2x2 region is in-bounds.
         assert_eq!(out[0], 0xff);
         let i = (1 * 2 + 1) * 4;

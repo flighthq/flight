@@ -15,9 +15,9 @@ pub enum SurfaceConvolutionEdge {
     Wrap,
 }
 
-/// Options for `apply_surface_convolution_filter`.
+/// Options for `convolve_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceConvolutionFilterOptions {
+pub struct SurfaceConvolutionOptions {
     pub bias: f32,
     pub edge: SurfaceConvolutionEdge,
     /// Packed `0xRRGGBBAA` fill color used when `edge` is `Fill`. Default 0.
@@ -41,10 +41,10 @@ pub struct SurfaceConvolutionFilterOptions {
 ///
 /// Panics if `matrix_x` or `matrix_y` is zero, or if `matrix` is shorter
 /// than `matrix_x * matrix_y`.
-pub fn apply_surface_convolution_filter(
+pub fn convolve_surface(
     out: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceConvolutionFilterOptions,
+    options: &SurfaceConvolutionOptions,
 ) {
     let matrix_x = options.matrix_x;
     let matrix_y = options.matrix_y;
@@ -153,7 +153,7 @@ fn get_convolution_divisor(matrix: &[f32], length: usize) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -168,8 +168,8 @@ mod tests {
         }
     }
 
-    fn opts(matrix: Vec<f32>, matrix_x: u32, matrix_y: u32) -> SurfaceConvolutionFilterOptions {
-        SurfaceConvolutionFilterOptions {
+    fn opts(matrix: Vec<f32>, matrix_x: u32, matrix_y: u32) -> SurfaceConvolutionOptions {
+        SurfaceConvolutionOptions {
             bias: 0.0,
             edge: SurfaceConvolutionEdge::Clamp,
             fill_color: 0,
@@ -182,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_convolution_filter_applies_matrix() {
+    fn convolve_surface_applies_matrix() {
         let mut source = create_surface(3, 1, 0);
         source.data[0] = 10;
         source.data[4] = 20;
@@ -197,24 +197,24 @@ mod tests {
         };
         let mut o = opts(vec![1.0, 1.0, 1.0], 3, 1);
         o.preserve_alpha = false;
-        apply_surface_convolution_filter(&mut out, &r, &o);
+        convolve_surface(&mut out, &r, &o);
         assert_eq!(out[0], 20);
     }
 
     #[test]
-    fn apply_surface_convolution_filter_identity_kernel() {
+    fn convolve_surface_identity_kernel() {
         let source = create_surface(2, 2, 0x336699ff);
         let mut out = vec![0_u8; 16];
         let mut o = opts(vec![1.0], 1, 1);
         o.divisor = 1.0;
         o.preserve_alpha = false;
-        apply_surface_convolution_filter(&mut out, &region(source), &o);
+        convolve_surface(&mut out, &region(source), &o);
         assert_eq!(out[0], 0x33);
         assert_eq!(out[3], 0xff);
     }
 
     #[test]
-    fn apply_surface_convolution_filter_edge_fill() {
+    fn convolve_surface_edge_fill() {
         let source = create_surface(1, 1, 0x000000ff);
         let mut out = vec![0_u8; 4];
         let mut o = opts(vec![1.0, 0.0, 0.0], 3, 1);
@@ -222,24 +222,24 @@ mod tests {
         o.fill_color = 0xff0000ff;
         o.divisor = 1.0;
         o.preserve_alpha = false;
-        apply_surface_convolution_filter(&mut out, &region(source), &o);
+        convolve_surface(&mut out, &region(source), &o);
         assert_eq!(out[0], 0xff);
         assert_eq!(out[3], 0xff);
     }
 
     #[test]
-    fn apply_surface_convolution_filter_edge_clamp() {
+    fn convolve_surface_edge_clamp() {
         let source = create_surface(1, 1, 0x606060ff);
         let mut out = vec![0_u8; 4];
         let mut o = opts(vec![1.0, 1.0, 1.0], 3, 1);
         o.divisor = 3.0;
         o.preserve_alpha = false;
-        apply_surface_convolution_filter(&mut out, &region(source), &o);
+        convolve_surface(&mut out, &region(source), &o);
         assert_eq!(out[0], 0x60);
     }
 
     #[test]
-    fn apply_surface_convolution_filter_edge_wrap() {
+    fn convolve_surface_edge_wrap() {
         let mut source = create_surface(3, 1, 0);
         source.data[0] = 10;
         source.data[4] = 20;
@@ -249,45 +249,45 @@ mod tests {
         o.edge = SurfaceConvolutionEdge::Wrap;
         o.divisor = 1.0;
         o.preserve_alpha = false;
-        apply_surface_convolution_filter(&mut out, &region(source), &o);
+        convolve_surface(&mut out, &region(source), &o);
         // px=0 left neighbor wraps to px=2 → value 30.
         assert_eq!(out[0], 30);
     }
 
     #[test]
-    fn apply_surface_convolution_filter_preserves_alpha_by_default() {
+    fn convolve_surface_preserves_alpha_by_default() {
         let source = create_surface(1, 1, 0x00000044);
         let mut out = vec![0_u8; 4];
         let mut o = opts(vec![1.0], 1, 1);
         o.bias = 255.0;
-        apply_surface_convolution_filter(&mut out, &region(source), &o);
+        convolve_surface(&mut out, &region(source), &o);
         assert_eq!(out[3], 0x44);
     }
 
     #[test]
     #[should_panic]
-    fn apply_surface_convolution_filter_panics_on_zero_dimension() {
+    fn convolve_surface_panics_on_zero_dimension() {
         let source = create_surface(1, 1, 0);
         let mut out = vec![0_u8; 4];
-        apply_surface_convolution_filter(&mut out, &region(source), &opts(vec![], 0, 1));
+        convolve_surface(&mut out, &region(source), &opts(vec![], 0, 1));
     }
 
     #[test]
     #[should_panic]
-    fn apply_surface_convolution_filter_panics_on_short_matrix() {
+    fn convolve_surface_panics_on_short_matrix() {
         let source = create_surface(1, 1, 0);
         let mut out = vec![0_u8; 4];
-        apply_surface_convolution_filter(&mut out, &region(source), &opts(vec![1.0], 3, 3));
+        convolve_surface(&mut out, &region(source), &opts(vec![1.0], 3, 3));
     }
 
     #[test]
-    fn apply_surface_convolution_filter_auto_divisor_passthrough() {
+    fn convolve_surface_auto_divisor_passthrough() {
         // divisor 0.0 → auto from a single-weight kernel summing to 1.
         let source = create_surface(1, 1, 0x804020ff);
         let mut out = vec![0_u8; 4];
         let mut o = opts(vec![1.0], 1, 1);
         o.preserve_alpha = false;
-        apply_surface_convolution_filter(&mut out, &region(source), &o);
+        convolve_surface(&mut out, &region(source), &o);
         assert_eq!(out[0], 0x80);
     }
 }

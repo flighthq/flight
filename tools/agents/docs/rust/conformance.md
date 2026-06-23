@@ -35,7 +35,15 @@ A second upstream merge **landed 2026-06-23** with a package-naming pass (droppe
 | `resources-loader` | `loader` | TS renamed to `@flighthq/loader` (2026-06-23). |
 | `text-input` | `textinput` | TS dropped the hyphen → `@flighthq/textinput` (2026-06-23). |
 | `text-layout` | `textlayout` | TS dropped the hyphen → `@flighthq/textlayout` (2026-06-23). |
-| `surface-filters` | `filters-surface` | TS regrouped under the `filters-*` family → `@flighthq/filters-surface` (CPU pixel filter impls) (2026-06-23). |
+| `surface-filters` | `filters-surface` | TS regrouped under the `filters-*` family → `@flighthq/filters-surface` (2026-06-23). **Not a pure rename — see below.** |
+
+**`surface` / `filters-surface` / `filters` re-layering (corrected 2026-06-23).** The `surface-filters` change was first applied as a mechanical rename, which was wrong: upstream _restructured_ the three packages, and the Rust port had the layering inverted. The corrected, TS-matching layering:
+
+- **`surface`** owns the CPU pixel **operations** (`surfaceBlur`/`surfaceColorMatrix`/… → Rust `blur`/`color_matrix`/… modules). Deps: types (+geometry).
+- **`filters-surface`** is a **thin bridge**: each `apply_*_filter_to_surface(out, …, filter)` maps a descriptor onto a `surface` op. Deps: `filters` + `surface` + types.
+- **`filters`** is descriptors + blur math only. Deps: types (+geometry). It must **not** depend on `filters-surface`.
+
+The Rust port previously put the pixel ops in `filters-surface` and the thin wrappers in `filters` (with `filters → filters-surface`, the reverse edge). Fixed by relocating the op modules into `flighthq-surface`, moving the `apply_*_filter_to_surface` wrappers into `flighthq-filters-surface`, and dropping the `filters → filters-surface` dependency. The relocated `surface` ops were then **renamed to the TS surface-op API** (2026-06-23): `bevel_surface`, `box_blur_surface`, `gaussian_blur_surface`, `color_matrix_surface`, `convolve_surface`, `displace_surface`, `median_surface`, `pixelate_surface`, `drop_shadow_surface`, `glow_surface`, `inner_glow_surface`, `inner_shadow_surface`, `sharpen_surface`, `gradient_bevel_surface`, `gradient_glow_surface` (from the prior `apply_surface_*_filter` names), and the op option structs dropped the `Filter` infix (`SurfaceBevelFilterOptions` → `SurfaceBevelOptions`, etc.) — so the surface op API is surface-native (`bevel_surface(out, scratch, source, &SurfaceBevelOptions)`), distinct from the descriptor-shaped `filters-surface` API (`apply_bevel_filter_to_surface(out, …, &BevelFilter)`). The op signatures already matched TS structurally (out/scratch/source/options, or primitives like `radius`/`block_size`), so this was a rename, not a rewrite.
 
 Semantic trap (not a Rust rename — Rust had neither): TS's old `camera` (photo capture) is now **`webcam`**; the new **`camera`** package is the **3D camera** (projections / view-projection). Both now exist as crates — `webcam` as a platform seam, `camera` as a 3D-pipeline crate. Do not conflate.
 

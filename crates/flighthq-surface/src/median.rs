@@ -9,7 +9,7 @@ use flighthq_types::SurfaceRegion;
 ///
 /// `out` must be at least `source.width * source.height * 4` bytes and must
 /// NOT alias `source.surface.data`.
-pub fn apply_surface_median_filter(out: &mut [u8], source: &SurfaceRegion, radius: u32) {
+pub fn median_surface(out: &mut [u8], source: &SurfaceRegion, radius: u32) {
     let r = radius as i64;
     let w = source.width as i64;
     let h = source.height as i64;
@@ -65,7 +65,7 @@ fn median_of(values: &mut [u8], n: usize, mid: usize) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -81,16 +81,16 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_median_filter_radius_zero_is_copy() {
+    fn median_surface_radius_zero_is_copy() {
         let source = create_surface(1, 1, 0x123456ff);
         let mut out = vec![0_u8; 4];
-        apply_surface_median_filter(&mut out, &region(source), 0);
+        median_surface(&mut out, &region(source), 0);
         assert_eq!(out[0], 0x12);
         assert_eq!(out[3], 0xff);
     }
 
     #[test]
-    fn apply_surface_median_filter_removes_impulse_noise() {
+    fn median_surface_removes_impulse_noise() {
         // 3x3 of black (opaque) with a single white (R=255) center; median black.
         let mut source = create_surface(3, 3, 0);
         for i in 0..9 {
@@ -98,19 +98,19 @@ mod tests {
         }
         source.data[4 * 4] = 255;
         let mut out = vec![0_u8; 36];
-        apply_surface_median_filter(&mut out, &region(source), 1);
+        median_surface(&mut out, &region(source), 1);
         assert_eq!(out[4 * 4], 0);
     }
 
     #[test]
-    fn apply_surface_median_filter_preserves_hard_edge() {
+    fn median_surface_preserves_hard_edge() {
         let mut source = create_surface(4, 1, 0);
         source.data[0] = 0;
         source.data[4] = 0;
         source.data[8] = 255;
         source.data[12] = 255;
         let mut out = vec![0_u8; 16];
-        apply_surface_median_filter(&mut out, &region(source), 1);
+        median_surface(&mut out, &region(source), 1);
         assert_eq!(out[4], 0);
         assert_eq!(out[8], 255);
     }

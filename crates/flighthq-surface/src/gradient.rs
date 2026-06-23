@@ -5,9 +5,9 @@ use flighthq_types::SurfaceRegion;
 use crate::bevel::SurfaceBevelType;
 use crate::blur::{blur_surface_pixels_horizontal, blur_surface_pixels_vertical};
 
-/// Options for `apply_surface_gradient_bevel_filter`.
+/// Options for `gradient_bevel_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceGradientBevelFilterOptions {
+pub struct SurfaceGradientBevelOptions {
     /// Light direction in radians. Default π/4.
     pub angle: f32,
     /// Sampling offset along the light axis, in pixels. Default 4.
@@ -21,7 +21,7 @@ pub struct SurfaceGradientBevelFilterOptions {
     pub bevel_type: SurfaceBevelType,
 }
 
-impl Default for SurfaceGradientBevelFilterOptions {
+impl Default for SurfaceGradientBevelOptions {
     fn default() -> Self {
         Self {
             angle: std::f32::consts::FRAC_PI_4,
@@ -35,9 +35,9 @@ impl Default for SurfaceGradientBevelFilterOptions {
     }
 }
 
-/// Options for `apply_surface_gradient_glow_filter`.
+/// Options for `gradient_glow_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceGradientGlowFilterOptions {
+pub struct SurfaceGradientGlowOptions {
     pub radius_x: u32,
     pub radius_y: u32,
     pub passes: u32,
@@ -45,7 +45,7 @@ pub struct SurfaceGradientGlowFilterOptions {
     pub intensity: f32,
 }
 
-impl Default for SurfaceGradientGlowFilterOptions {
+impl Default for SurfaceGradientGlowOptions {
     fn default() -> Self {
         Self {
             radius_x: 2,
@@ -56,7 +56,7 @@ impl Default for SurfaceGradientGlowFilterOptions {
     }
 }
 
-/// Produces a gradient bevel mask in `out`. Like `apply_surface_bevel_filter`,
+/// Produces a gradient bevel mask in `out`. Like `bevel_surface`,
 /// but the signed edge gradient (−1..1) indexes the 256-entry `ramp` instead
 /// of selecting one of two flat colors: −1 maps to ramp index 0 (shadow side),
 /// 0 to 128 (flat), +1 to 255 (highlight side).
@@ -66,12 +66,12 @@ impl Default for SurfaceGradientGlowFilterOptions {
 /// least `source.width * source.height * 4` bytes.
 ///
 /// `out` must NOT alias `source.surface.data`.
-pub fn apply_surface_gradient_bevel_filter(
+pub fn gradient_bevel_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
     ramp: &[u8; 1024],
-    options: &SurfaceGradientBevelFilterOptions,
+    options: &SurfaceGradientBevelOptions,
 ) {
     let w = source.width;
     let h = source.height;
@@ -128,12 +128,12 @@ pub fn apply_surface_gradient_bevel_filter(
 /// `ramp` must be 256 RGBA entries (1024 bytes); build it with
 /// `build_surface_gradient_ramp`. `scratch` must be at least
 /// `source.width * source.height * 4` bytes.
-pub fn apply_surface_gradient_glow_filter(
+pub fn gradient_glow_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
     ramp: &[u8; 1024],
-    options: &SurfaceGradientGlowFilterOptions,
+    options: &SurfaceGradientGlowOptions,
 ) {
     let w = source.width;
     let h = source.height;
@@ -293,7 +293,7 @@ fn sample_field(field: &[u8], w: u32, h: u32, x: i64, y: i64) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -309,7 +309,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_gradient_bevel_filter_maps_through_ramp() {
+    fn gradient_bevel_surface_maps_through_ramp() {
         let mut source = create_surface(5, 1, 0);
         for x in 2..5 {
             source.data[x * 4 + 3] = 255;
@@ -323,12 +323,12 @@ mod tests {
         );
         let mut out = vec![0_u8; 20];
         let mut scratch = vec![0_u8; 20];
-        apply_surface_gradient_bevel_filter(
+        gradient_bevel_surface(
             &mut out,
             &mut scratch,
             &region(source),
             &ramp,
-            &SurfaceGradientBevelFilterOptions {
+            &SurfaceGradientBevelOptions {
                 angle: std::f32::consts::PI,
                 distance: 1.0,
                 radius_x: 1,
@@ -347,18 +347,18 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_gradient_glow_filter_runs() {
+    fn gradient_glow_surface_runs() {
         let mut ramp = [0_u8; 1024];
         build_surface_gradient_ramp(&mut ramp, &[0x00ff00, 0x00ff00], &[0.0, 1.0], &[0, 255]);
         let source = create_surface(1, 1, 0xffffffff);
         let mut out = vec![0_u8; 4];
         let mut scratch = vec![0_u8; 4];
-        apply_surface_gradient_glow_filter(
+        gradient_glow_surface(
             &mut out,
             &mut scratch,
             &region(source),
             &ramp,
-            &SurfaceGradientGlowFilterOptions {
+            &SurfaceGradientGlowOptions {
                 radius_x: 0,
                 radius_y: 0,
                 passes: 1,
@@ -373,18 +373,18 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_gradient_glow_filter_scales_intensity() {
+    fn gradient_glow_surface_scales_intensity() {
         let mut ramp = [0_u8; 1024];
         build_surface_gradient_ramp(&mut ramp, &[0x00ff00, 0x00ff00], &[1.0, 1.0], &[0, 255]);
         let source = create_surface(1, 1, 0xffffffff);
         let mut out = vec![0_u8; 4];
         let mut scratch = vec![0_u8; 4];
-        apply_surface_gradient_glow_filter(
+        gradient_glow_surface(
             &mut out,
             &mut scratch,
             &region(source),
             &ramp,
-            &SurfaceGradientGlowFilterOptions {
+            &SurfaceGradientGlowOptions {
                 radius_x: 0,
                 radius_y: 0,
                 passes: 1,

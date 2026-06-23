@@ -22,17 +22,9 @@ use flighthq_effects_wgpu::{
     create_wgpu_render_effect_pipeline, destroy_wgpu_render_effect_pipeline,
     end_wgpu_render_effect_pipeline, register_wgpu_render_effect, wgpu_render_effect_type,
 };
-use flighthq_render::{
-    RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
-    prepare_display_object_render,
-};
-use flighthq_shape::{
-    ShapeArena, append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle,
-    create_shape_node, get_shape_fill_regions,
-};
-use flighthq_types::KindId;
-use flighthq_types::display::{display_object_kind, shape_kind};
 use flighthq_types::geometry::Matrix;
+
+use crate::scene_graph::{SceneGraph, build_scene_graph};
 
 /// One solid-color rectangle in a scene. `color` is a packed `0xRRGGBBAA` value,
 /// the codebase-wide color convention.
@@ -213,8 +205,7 @@ pub fn render_scene_to_rgba(scene: &Scene) -> Option<Vec<u8>> {
         return None;
     }
 
-    const STAGE_ID: u64 = 1;
-    let rects: Vec<RectFill> = scene.rects.to_vec();
+    let graph = build_scene_graph(scene);
     let background = scene.background;
     let effects: Vec<RenderEffect> = (scene.effects)();
     let hdr = scene.hdr;
@@ -223,90 +214,31 @@ pub fn render_scene_to_rgba(scene: &Scene) -> Option<Vec<u8>> {
         scene.width,
         scene.height,
         background,
-        STAGE_ID,
+        graph.stage_id,
         Box::new(move |state, stage_id| {
             register_wgpu_display_object_renderer(state);
 
-            let mut shape_arena = ShapeArena::default();
-            let mut kinds: HashMap<u64, KindId> = HashMap::new();
-            let mut children: HashMap<u64, Vec<u64>> = HashMap::new();
-            let mut parents: HashMap<u64, Option<u64>> = HashMap::new();
-            let mut geometry: HashMap<u64, WgpuShapeGeometry> = HashMap::new();
-            // Per-shape local transform fed to `prepare_display_object_render`.
-            // The identity for an axis-aligned rect; a rotate-about-origin +
-            // translate for a rotated shape (see `local_transform_for_rect`).
-            let mut transforms: HashMap<u64, Matrix> = HashMap::new();
-
-            kinds.insert(stage_id, display_object_kind());
-            parents.insert(stage_id, None);
-            let mut stage_children = Vec::new();
-
-            // Shape ids start above the stage id; one per rectangle.
-            for (index, rect) in rects.iter().enumerate() {
-                let id = stage_id + 1 + index as u64;
-                let node = create_shape_node(&mut shape_arena);
-                append_shape_begin_fill(&mut shape_arena, node, rect.color, 1.0);
-                append_shape_rectangle(&mut shape_arena, node, rect.x, rect.y, rect.w, rect.h);
-                append_shape_end_fill(&mut shape_arena, node);
-                let content_revision = shape_arena[node].content_revision;
-                let regions =
-                    get_shape_fill_regions(&shape_arena, node).expect("solid fill resolves");
-                geometry.insert(
-                    id,
-                    WgpuShapeGeometry {
-                        regions,
-                        content_revision,
-                    },
-                );
-                transforms.insert(id, local_transform_for_rect(rect));
-                kinds.insert(id, shape_kind());
-                children.insert(id, vec![]);
-                parents.insert(id, Some(stage_id));
-                stage_children.push(id);
-            }
-            let all_ids: Vec<u64> = std::iter::once(stage_id)
-                .chain(stage_children.iter().copied())
+            // Wrap the backend-agnostic fill regions in the wgpu geometry type
+            // the walk expects; the geometry cache keys on `content_revision`.
+            let SceneGraph {
+                children,
+                kinds,
+                proxies,
+                regions,
+                ..
+            } = graph;
+            let geometry: HashMap<u64, WgpuShapeGeometry> = regions
+                .into_iter()
+                .map(|(id, (regions, content_revision))| {
+                    (
+                        id,
+                        WgpuShapeGeometry {
+                            regions,
+                            content_revision,
+                        },
+                    )
+                })
                 .collect();
-            children.insert(stage_id, stage_children);
-
-            let mut store = RenderStateStore::new();
-            let render_id = create_render_state(&mut store, None);
-            let render_state = get_render_state(&store, render_id).clone();
-
-            let get_children = |id: u64| children.get(&id).cloned().unwrap_or_default();
-            let is_enabled = |_id: u64| true;
-            let get_parent = |id: u64| parents.get(&id).copied().flatten();
-            let get_revisions = |_id: u64| (1u32, 1u32, 1u32);
-            let get_kind = |id: u64| kinds.get(&id).copied().unwrap_or_default();
-            let get_local_transform = |id: u64| transforms.get(&id).copied().unwrap_or_default();
-            let get_alpha = |_id: u64| 1.0f32;
-            let get_visible = |_id: u64| true;
-            let get_blend = |_id: u64| None;
-            let get_clip = |_id: u64| false;
-
-            prepare_display_object_render(
-                &mut store,
-                render_id,
-                &render_state,
-                stage_id,
-                &get_children,
-                &is_enabled,
-                &get_parent,
-                &get_revisions,
-                &get_kind,
-                &get_local_transform,
-                &get_alpha,
-                &get_visible,
-                &get_blend,
-                &get_clip,
-            );
-
-            let mut proxies: HashMap<u64, flighthq_types::RenderProxy2D> = HashMap::new();
-            for id in all_ids {
-                if let Some(proxy) = get_render_proxy_2d(&store, render_id, id) {
-                    proxies.insert(id, proxy.clone());
-                }
-            }
 
             Box::new(move |state: &mut flighthq_render_wgpu::WgpuRenderState| {
                 let get_children = move |id: u64| children.get(&id).cloned().unwrap_or_default();

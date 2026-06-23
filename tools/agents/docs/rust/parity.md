@@ -50,3 +50,13 @@ Non-existent cells (e.g. `rust:canvas`) are skipped, not errors.
 ## Implementation status
 
 This document describes the target design of the parity instrument. The current scripts implement parts of it: `scripts/parity.ts` does coverage-style conformance accounting (name-match), `scripts/compare-render.ts` does cross-backend consistency, and `flighthq-functional` does native fingerprint conformance against TS baselines. Unifying these behind one cell-selection flag surface — and the `parity` / `conformance` naming split — is tracked work, not yet fully realized in the scripts.
+
+### `flighthq-functional` native runner
+
+The native runner renders the whole `rnat:*` column — `skia`, `gl`, `wgpu` — and runs the scene × target matrix **in parallel** (a thread pool over every cell; each cell builds its own wgpu device / EGL context, skia is pure CPU, so the cells are independent). It reports all three comparison strategies in one pass:
+
+- **regression** — each cell vs its committed baseline (`baselines/<name>.fp` for wgpu, `baselines/<target>/<name>.fp` for skia/gl).
+- **conformance pairing** (`--parity`) — each cell vs the TS `webgpu` baseline the scene maps to.
+- **consistency** — the rendered targets for a scene must agree with each other (no authority); disagreement fails the run.
+
+Flags: `--target skia,gl,wgpu` selects cells, `--jobs N` sets worker threads, `--bless` writes baselines, `--parity` adds the TS comparison. The gl cell renders through a headless GLES 3.0 EGL context (surfaceless on Mesa; the runner sets `EGL_PLATFORM=surfaceless` before the pool starts) and skips cleanly where no context is available. The non-wgpu cells do not yet apply GPU effect chains, so effect scenes report `unsupported` there until `effects-gl` / a CPU effect path is wired — the sparse-matrix behavior this doc describes. As of 2026-06-23 skia and gl render shape scenes bit-identically to wgpu (consistency `OK`).
