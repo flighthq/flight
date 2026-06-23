@@ -107,6 +107,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 **Reference docs** (`tools/agents/docs/`) — declarative knowledge, read to _know_:
 
+- [commit messages](conventions/commits.md) — before writing a commit. The `type(scope):` split (type = what kind of change, from a closed set; scope = which package/crate or area), why `rust`/`wasm`/`script`/`tool` are scopes not types, and the `rust/`·`ts/` scope namespace for the shared-name TS↔Rust crates.
 - [npm script naming](conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, why no word may crowd the subject slot, collapse aliases (omit subject → fan over subjects; bare name → `dev:`), `:baseline` as write-mode, and the `smoke` / `parity` / `regression` render-test vocabulary.
 - [packaging & publishing](packaging.md) — the published package shape. Policy is enforced by `npm run packages:check`, not memory.
 - [bundle size](bundle-size.md) — the `npm run size` command surface and the import-size rules.
