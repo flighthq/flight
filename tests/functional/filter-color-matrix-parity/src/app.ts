@@ -44,7 +44,7 @@ const NATIVE_X = 424;
 
 const WIDTH = 800;
 const HEIGHT = 600;
-const BACKGROUND = 0xff000000;
+const BACKGROUND = 0x000000ff;
 
 // Source: 4-quadrant red / green / blue / white (packed RGBA, opaque) — the same known pattern the
 // validated filter-color-matrix test uses. A hard 4-colour split makes the per-channel transform

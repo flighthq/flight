@@ -26,6 +26,8 @@ import { applyInnerShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
+  compositeSurfacePixels,
+  compositeSurfaceRegion,
   createBitmap,
   createDisplayContainer,
   createImageResourceFromCanvas,
@@ -47,7 +49,7 @@ const NATIVE_X = 424;
 
 const WIDTH = 800;
 const HEIGHT = 600;
-const BACKGROUND = 0xff000000;
+const BACKGROUND = 0x000000ff; // opaque black (packed RGBA); the tiles' transparent regions reveal it.
 
 // The inner-shadow descriptor — shared by the surface reference and the Gl native path so both run the
 // same effect. Matches the validated filter-inner-shadow test's config.
@@ -60,18 +62,22 @@ fillSurfaceRectangle(createSurfaceRegion(source, SQUARE_MIN, SQUARE_MIN, SQUARE,
 const sourceCanvas = surfaceToCanvas(source.data);
 const sourceImage = createImageResourceFromCanvas(sourceCanvas);
 
-// CPU reference: the canonical surface inner shadow. Produce the inner-shadow mask, then composite
-// source-over: source first, mask on top (the shadow hugs the inside of the shape boundary). This is the
-// oracle's ground truth and the bytes drawn into the REFERENCE tile on every backend.
+// CPU reference: the canonical surface inner shadow, composited over the opaque BACKGROUND. Produce the
+// inner-shadow mask, then source-over the source and the mask (source first, mask on top — the shadow
+// hugs the inside of the shape boundary) onto a BACKGROUND-filled base. Layering over the opaque base
+// both composites and flattens in one step (source-over is associative), so the result is fully opaque,
+// matching what the rendered frame shows. This matters because the native tile is cropped from a frame
+// drawn over the opaque background and getSurfaceMismatch compares alpha — a transparent reference would
+// mismatch every background pixel (the majority of the tile).
 const mask = new Uint8ClampedArray(TILE * TILE * 4);
 const blurScratch = new Uint8ClampedArray(TILE * TILE * 4);
 applyInnerShadowFilterToSurface(mask, blurScratch, createSurfaceRegion(source), FILTER);
 
-const referenceData = new Uint8ClampedArray(TILE * TILE * 4);
-referenceData.set(source.data.subarray(0, TILE * TILE * 4));
-compositeOver(referenceData, mask);
-const referenceSurface = createSurface(TILE, TILE);
-referenceSurface.data.set(referenceData);
+const referenceSurface = createSurface(TILE, TILE, BACKGROUND);
+const referenceData = referenceSurface.data;
+const referenceRegion = createSurfaceRegion(referenceSurface);
+compositeSurfaceRegion(referenceRegion, createSurfaceRegion(source));
+compositeSurfacePixels(referenceRegion, mask);
 
 const target = await createParityTarget(WIDTH, HEIGHT, BACKGROUND);
 const TOP = (HEIGHT - TILE) / 2;
@@ -141,19 +147,6 @@ export function assertRender(frame: Readonly<Surface>): void {
         `${(mismatch.fraction * 100).toFixed(1)}% of pixels mismatched (max ${MISMATCH_FRACTION * 100}%), ` +
         `maxChannelDelta ${mismatch.maxChannelDelta}`,
     );
-  }
-}
-
-// Source-over composite of `src` onto `dest` (both straight-alpha RGBA).
-function compositeOver(dest: Uint8ClampedArray, src: Readonly<Uint8ClampedArray>): void {
-  for (let i = 0; i < dest.length; i += 4) {
-    const sa = src[i + 3] / 255;
-    if (sa === 0) continue;
-    const ia = 1 - sa;
-    dest[i] = Math.round(src[i] * sa + dest[i] * ia);
-    dest[i + 1] = Math.round(src[i + 1] * sa + dest[i + 1] * ia);
-    dest[i + 2] = Math.round(src[i + 2] * sa + dest[i + 2] * ia);
-    dest[i + 3] = Math.min(255, src[i + 3] + Math.round(dest[i + 3] * ia));
   }
 }
 

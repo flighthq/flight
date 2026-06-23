@@ -25,6 +25,8 @@ import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
+  compositeSurfacePixels,
+  compositeSurfaceRegion,
   createBitmap,
   createDisplayContainer,
   createImageResourceFromCanvas,
@@ -47,7 +49,7 @@ const NATIVE_X = 424;
 
 const WIDTH = 800;
 const HEIGHT = 600;
-const BACKGROUND = 0xff000000; // opaque black; the tiles' transparent regions reveal it.
+const BACKGROUND = 0x000000ff; // opaque black; the tiles' transparent regions reveal it.
 
 // Red shadow, offset 14px at 45° (down-right), symmetric blur 4. distance/angle map to a pixel offset
 // via getShadowFilterOffset; the surface filter itself produces the blurred tinted mask in place.
@@ -68,16 +70,21 @@ const source = createSurface(TILE, TILE, 0x00000000);
 fillSurfaceRectangle(createSurfaceRegion(source, SQUARE_MIN, SQUARE_MIN, SQUARE, SQUARE), 0xffffffff);
 const sourceImage = createImageResourceFromCanvas(surfaceToCanvas(source.data));
 
-// CPU reference: the canonical surface drop shadow. The filter writes only the blurred tinted mask in
-// place; the effect is completed by compositing that mask under the original source at the shadow offset,
-// then flattening over the opaque black background so the bytes match what the frame shows.
+// CPU reference: the canonical surface drop shadow, composited over the opaque BACKGROUND. The filter
+// writes only the blurred tinted mask in place; the effect is completed by compositing that mask under
+// the original source at the shadow offset. Building that chain on a BACKGROUND-filled base flattens in
+// the same step (source-over is associative), so the result is fully opaque and matches what the frame
+// shows (getSurfaceMismatch compares alpha). The shadow's (dx, dy) offset is expressed by compositing
+// the mask into a region whose origin is (dx, dy); the source is then composited on top.
 const mask = new Uint8ClampedArray(TILE * TILE * 4);
 const blurBuffer = new Uint8ClampedArray(TILE * TILE * 4);
 applyDropShadowFilterToSurface(mask, blurBuffer, createSurfaceRegion(source), filter);
 
-const referenceData = composeReferenceTile();
-const referenceSurface = createSurface(TILE, TILE);
-referenceSurface.data.set(referenceData);
+const referenceSurface = createSurface(TILE, TILE, BACKGROUND);
+const referenceData = referenceSurface.data;
+const referenceRegion = createSurfaceRegion(referenceSurface);
+compositeSurfacePixels(createSurfaceRegion(referenceSurface, dx, dy, TILE, TILE), mask);
+compositeSurfaceRegion(referenceRegion, createSurfaceRegion(source));
 
 const target = await createParityTarget(WIDTH, HEIGHT, BACKGROUND);
 const TOP = (HEIGHT - TILE) / 2;
@@ -150,51 +157,6 @@ export function assertRender(frame: Readonly<Surface>): void {
         `maxChannelDelta ${mismatch.maxChannelDelta}`,
     );
   }
-}
-
-// Builds the reference tile: shadow mask shifted by (dx, dy) underneath, original source on top
-// (source-over), then flattened over opaque black so the result has no transparency and matches what the
-// rendered frame (over the black background) shows.
-function composeReferenceTile(): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(TILE * TILE * 4);
-  for (let y = 0; y < TILE; y++) {
-    for (let x = 0; x < TILE; x++) {
-      const di = (y * TILE + x) * 4;
-      // Shadow layer, sampled at the offset so it lands down-right of the square.
-      const sx = x - dx;
-      const sy = y - dy;
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      let a = 0;
-      if (sx >= 0 && sx < TILE && sy >= 0 && sy < TILE) {
-        const mi = (sy * TILE + sx) * 4;
-        r = mask[mi];
-        g = mask[mi + 1];
-        b = mask[mi + 2];
-        a = mask[mi + 3] / 255;
-      }
-      // Original source on top (source-over).
-      const srcA = source.data[di + 3] / 255;
-      if (srcA > 0) {
-        const ia = 1 - srcA;
-        r = source.data[di] * srcA + r * a * ia;
-        g = source.data[di + 1] * srcA + g * a * ia;
-        b = source.data[di + 2] * srcA + b * a * ia;
-        a = srcA + a * ia;
-      } else {
-        r *= a;
-        g *= a;
-        b *= a;
-      }
-      // Flatten over opaque black background (premultiplied colour already computed above).
-      out[di] = r;
-      out[di + 1] = g;
-      out[di + 2] = b;
-      out[di + 3] = 255;
-    }
-  }
-  return out;
 }
 
 // Writes a flat RGBA frame into a canvas, then crops the [sx,sy,sw,sh] region and scales it to size×size.
