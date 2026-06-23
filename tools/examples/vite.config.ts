@@ -33,11 +33,30 @@ function entryWithLogCapture(name: string, render: string): string {
   // imported and run ONLY under capture mode (window.__flightCapture, set by the verify harness), so
   // it never executes — and its chunk never loads — in the deployed gallery a visitor browses.
   const verifyPath = join(projectRoot, 'tests', 'functional', '_harness', 'verify.ts');
+  // Path-singleton of the example's render module: app.ts imports './render', which resolveId rewrites
+  // to this same absolute file, so importing it here yields the identical exported render state.
+  const renderPath = join(examplesDir, name, 'src', `render.${render}.ts`);
   const lines = [
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
     `setLogSink(createConsoleCaptureSink());`,
-    `const __example = await import('___app___${name}:${render}');`,
   ];
+  if (!VERIFY_SKIP.has(name) && render === 'webgpu') {
+    // WebGPU's swapchain is never presented on the headless/software adapter, so the browser screenshots
+    // a blank canvas and the verifier must read the frame back from the GPU instead. That path needs the
+    // render state registered as a functional target with frame capture enabled, and capture must be on
+    // before the first submit — a static (requiresInvalidation) scene submits only once. The render
+    // module just creates the state on import (the app.ts imported next does the rendering), so enabling
+    // capture here — between importing the render module and running the app — captures every frame. The
+    // gallery example itself carries no capture concern; this runs in capture mode only.
+    lines.push(
+      `if (window['__flightCapture']) {`,
+      `  const { registerWgpuFunctionalTarget } = await import(${JSON.stringify(verifyPath)});`,
+      `  const __render = await import(${JSON.stringify(renderPath)});`,
+      `  registerWgpuFunctionalTarget(__render.state, __render.scale);`,
+      `}`,
+    );
+  }
+  lines.push(`const __example = await import('___app___${name}:${render}');`);
   if (!VERIFY_SKIP.has(name)) {
     lines.push(
       `if (window['__flightCapture']) {`,
