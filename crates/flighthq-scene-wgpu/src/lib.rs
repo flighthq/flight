@@ -8,21 +8,31 @@
 //!
 //! ## Port status
 //!
-//! The fully self-contained CPU logic is ported faithfully with its assertions:
-//! [`wgpu_pbr_prelude`] (the WGSL uber-shader source assembly + define keys), the
-//! pipeline-cache key builder ([`build_wgpu_pbr_pipeline_cache_key`]), the uniform
-//! layout constants, and the 4-byte buffer alignment helper.
+//! The Header phase promoted the 3D render-contract + PBR material header types,
+//! so the GPU- and material-coupled paths are now ported against them, mirroring
+//! the sibling `flighthq-scene-gl`:
 //!
-//! The GPU- and graph-coupled paths are **compiling `// TODO(align)` stubs**: the
-//! per-state runtime, the 3D mesh-material registry, mesh upload, pipeline
-//! compilation, the StandardPbr renderer body, registration, and the draw walk.
-//! They are blocked on cross-package 3D header types the upstream Rust port has not
-//! landed yet — `WgpuMeshMaterialRenderer`, `StandardPbrMaterial` /
-//! `StandardPbrMaterialKind`, `SceneLightBlock` / `SceneLights`, `SceneRenderProxy`,
-//! the scene render list + `prepare_scene_render`, the `Mesh` / `createScene` /
-//! `createMesh` scene graph, and the scene-wgpu runtime slots on
-//! `WgpuRenderStateRuntime` — none of which a parallel agent may add here without
-//! conflicting on `flighthq-types`. Each stub documents its blocker.
+//! - the per-state scene runtime ([`create_wgpu_scene_runtime`] — a caller-owned
+//!   struct, since `WgpuRenderStateRuntime` carries no scene slots),
+//! - the 3D mesh-material registry (get / register / resolve over the runtime,
+//!   keyed by `flighthq_types::material::Material::kind`),
+//! - lazy GPU mesh upload ([`ensure_wgpu_mesh_upload`]),
+//! - StandardPbr pipeline compilation + caching ([`compile_wgpu_pbr_pipeline`] /
+//!   [`ensure_wgpu_pbr_pipeline`]),
+//! - the StandardPbr renderer `bind`/`draw` (reads `StandardPbrMaterial`, packs
+//!   the MaterialBlock with sRGB→linear, writes the Frame uniform + draw ring
+//!   slot, issues the indexed draw), and its registration.
+//!
+//! The GPU bind/draw/upload/compile paths need a live `wgpu::Device`, so they are
+//! validated functionally (the parity matrix at the `wgpu` cell), not by unit name
+//! match — the same posture as `flighthq-render-wgpu`. The pure CPU logic (define
+//! keys, pipeline-cache key, MaterialBlock packing, color decode, alignment, the
+//! registry over the runtime) is assertion-tested.
+//!
+//! Still a documented stub: [`draw_wgpu_scene`] — blocked on `prepare_scene_render`
+//! and the `Mesh` / `create_scene` scene graph (`flighthq-scene` exposes only
+//! `world_node`), which live in other crates a parallel agent may not add. The
+//! per-mesh machinery the walk would call is fully ported here.
 //!
 //! Registration is opt-in (no module-load side effects).
 
@@ -39,8 +49,8 @@ pub use draw_wgpu_scene::draw_wgpu_scene;
 pub use register_standard_pbr_wgpu_material::register_standard_pbr_wgpu_material;
 pub use standard_pbr_wgpu_mesh_material_renderer::{
     DRAW_UNIFORM_BYTES, FRAME_UNIFORM_BYTES, MATERIAL_UNIFORM_BYTES,
-    StandardPbrWgpuMeshMaterialRenderer, WHITE_PIXEL, draw_standard_pbr_wgpu_mesh,
-    standard_pbr_wgpu_mesh_material_renderer,
+    StandardPbrWgpuMeshMaterialRenderer, WHITE_PIXEL, build_wgpu_pbr_standard_define_key,
+    draw_standard_pbr_wgpu_mesh, standard_pbr_wgpu_mesh_material_renderer,
 };
 pub use wgpu_mesh_material_registry::{
     WgpuMeshMaterialRenderer, get_wgpu_mesh_material_renderer,
@@ -55,4 +65,6 @@ pub use wgpu_pbr_prelude::{
     WgpuPbrDefineKey, build_wgpu_pbr_define_key, build_wgpu_pbr_define_source,
     get_wgpu_pbr_module_body, get_wgpu_pbr_module_source_for_key,
 };
-pub use wgpu_scene_runtime::{WgpuMeshUpload, WgpuSceneRuntime, get_wgpu_scene_runtime};
+pub use wgpu_scene_runtime::{
+    WgpuMaterialBinding, WgpuMeshUpload, WgpuSceneRuntime, create_wgpu_scene_runtime,
+};

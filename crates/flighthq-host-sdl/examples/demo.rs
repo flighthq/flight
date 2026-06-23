@@ -1,4 +1,4 @@
-//! Minimal SDL2 host demo.
+//! Minimal SDL3 host demo.
 //!
 //! Opens a window and runs the Flight wgpu frame protocol, registering the
 //! standard display-object renderer and clearing to a background color each
@@ -7,18 +7,19 @@
 //! for `run_winit_app` and this same scene runs unchanged.
 //!
 //! Run with:
-//!   CMAKE_POLICY_VERSION_MINIMUM=3.5 CFLAGS="-std=gnu17" \
-//!     cargo run -p flighthq-host-sdl --example demo
+//!   cargo run -p flighthq-host-sdl --example demo
 //!
-//! (the CMake/CFLAGS env vars are only needed where the bundled SDL2 source must
-//! be compiled by a very new toolchain; on a normal machine `cargo run` suffices.)
+//! The `sdl3` crate compiles SDL3 from vendored C source on first build, so the
+//! usual SDL3 Linux build dependencies (X11 / Wayland dev libraries) must be
+//! installed; see https://wiki.libsdl.org/SDL3/README-linux#build-dependencies.
 
+use flighthq_displayobject_wgpu::register_wgpu_display_object_renderer;
 use flighthq_host_sdl::{SdlAppOptions, SdlFrame, run_sdl_app};
-use flighthq_render_wgpu::{WgpuRenderOptions, register_wgpu_display_object_renderer};
+use flighthq_render_wgpu::WgpuRenderOptions;
 
 fn main() {
     let options = SdlAppOptions {
-        title: "Flight SDL2 demo".to_string(),
+        title: "Flight SDL3 demo".to_string(),
         width: 960,
         height: 540,
         resizable: true,

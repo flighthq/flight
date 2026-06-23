@@ -17,9 +17,12 @@
 //!     format/location/cache-key logic is assertion-tested, the live-GL paths are
 //!     validated functionally (no GL device in unit tests, matching
 //!     `flighthq-render-gl`).
-//!   - `standard_pbr_gl_mesh_material_renderer` — program/depth/cull/camera/light
-//!     uploads + indexed draw ported; the concrete-material uniform/texture reads
-//!     are stubbed (`StandardPbrMaterial` / `unpackColorToLinear` unported).
+//!   - `standard_pbr_gl_mesh_material_renderer` — full faithful port:
+//!     program/depth/cull/camera/light uploads, the concrete-material scalar/
+//!     color/alpha-cutoff uniform reads from `flighthq_types::StandardPbrMaterial`,
+//!     the base-color/normal texture binds, and the indexed draw. (`unpack_color_to_linear`
+//!     is ported locally — see the gap note below — until `flighthq-materials`
+//!     promotes it.)
 //!   - `draw_gl_scene` — COMPILING STUB; needs the unported `prepare_scene_render`
 //!     / `SceneRenderList` / scene-graph `Mesh` / `SceneLights` contract.
 //!
@@ -32,7 +35,6 @@ pub mod gl_pbr_prelude;
 pub mod gl_pbr_program_cache;
 pub mod gl_scene_runtime;
 pub mod register_standard_pbr_gl_material;
-pub mod scene_render_contract;
 pub mod standard_pbr_gl_mesh_material_renderer;
 
 pub use draw_gl_scene::draw_gl_scene;
@@ -51,7 +53,13 @@ pub use gl_pbr_prelude::{
 pub use gl_pbr_program_cache::{GlPbrProgram, compile_gl_pbr_program, ensure_gl_pbr_program};
 pub use gl_scene_runtime::{GlMeshUpload, GlSceneRuntime, create_gl_scene_runtime};
 pub use register_standard_pbr_gl_material::register_standard_pbr_gl_material;
-pub use scene_render_contract::{Camera, SceneLightBlock, SceneRenderProxy, SceneRenderSubset};
-pub use standard_pbr_gl_mesh_material_renderer::{
-    StandardPbrGlMeshMaterialRenderer, standard_pbr_material_kind,
+pub use standard_pbr_gl_mesh_material_renderer::StandardPbrGlMeshMaterialRenderer;
+// The 3D scene-render contract and PBR material types are now promoted to the
+// `flighthq-types` header; scene-gl re-exports them so downstream code can reach
+// them through the renderer crate (matching how the TS package re-exports the
+// header types it draws from).
+pub use flighthq_types::camera::Camera;
+pub use flighthq_types::pbr_material::{
+    StandardPbrMaterial, StandardPbrMaterialProperties, standard_pbr_material_kind,
 };
+pub use flighthq_types::scene_render::{SceneLightBlock, SceneLights, SceneRenderProxy};
