@@ -7,6 +7,7 @@ import { spawn, spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
+import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baseline-store.js';
 
@@ -27,9 +28,104 @@ const DEV_SCRIPT: Record<Tool, string> = {
 
 // A column id may carry a `<library>:<renderer>` colon (the reference tool); map it to a URL/dir-safe
 // segment. Colon-free ids (canvas, webgl, …) pass through unchanged.
-function routeSegment(renderer: string): string {
+export function routeSegment(renderer: string): string {
   return renderer.replace(':', '-');
 }
+
+// A backend the environment cannot provide or sustain: WebGPU with no adapter/device, or a software
+// adapter that loses its device mid-run under sustained per-frame GPU load. These are the only
+// null-fingerprint / page-error outcomes that may be skipped rather than failed — the gate verifies
+// backends where they exist and stays green on machines without them. A real render bug still fails:
+// a validation error (bad writeBuffer/copy) is logged before the device dies, and is matched first.
+// Shared with compare-render.ts so the smoke gate and the parity/regression gate agree on what counts
+// as "unavailable".
+export const BACKEND_UNAVAILABLE =
+  /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter|WebGPU is not supported|external Instance reference no longer exists|device (was )?lost|device is lost/i;
+
+// Output formatting shared by the capture.ts / compare-render.ts CLIs so their progress and summary
+// lines stay aligned.
+
+export type DetailTone = 'pass' | 'fail' | 'skip' | 'muted';
+
+const TONE_GLYPH: Record<DetailTone, string> = { pass: '✓', fail: '✗', skip: '⊘', muted: '·' };
+const TONE_PAINT: Record<DetailTone, (s: string) => string> = {
+  pass: pc.green,
+  fail: pc.red,
+  skip: pc.yellow,
+  muted: pc.dim,
+};
+
+// An indented detail line under an entry's [N/M] header: a status glyph, the renderer/check label
+// padded to a shared column width, then an optional message. Low-level layout — the caller has already
+// colored `glyph` and `message`; `paint` colors the padded label (padding happens before color so the
+// invisible ANSI codes do not throw off the column width). Most callers want formatStatusLine instead.
+export function formatDetailLine(
+  glyph: string,
+  label: string,
+  labelWidth: number,
+  message: string,
+  paint: (s: string) => string = (s) => s,
+): string {
+  // Pad only when a message follows; an unpadded label avoids a trailing space (and trimEnd cannot
+  // strip it once color codes wrap the padding).
+  const paintedLabel = paint(message ? label.padEnd(labelWidth) : label);
+  return message ? `  ${glyph} ${paintedLabel}  ${message}` : `  ${glyph} ${paintedLabel}`;
+}
+
+// The common detail line: the glyph AND the renderer/check label carry the verdict color, so the eye
+// lands on *what* passed or failed rather than on a tiny glyph in a field of white. A routine
+// confirmation (pass / muted) dims its message so it recedes; a fail/skip keeps the tone color on the
+// message because the reason is the point.
+export function formatStatusLine(tone: DetailTone, label: string, labelWidth: number, message: string): string {
+  const paint = TONE_PAINT[tone];
+  const body = message ? (tone === 'pass' || tone === 'muted' ? pc.dim(message) : paint(message)) : '';
+  return formatDetailLine(paint(TONE_GLYPH[tone]), label, labelWidth, body, paint);
+}
+
+// Color a "<value> <label>" summary count: dim at zero (a zero is never alarming, whatever its tone),
+// else green (pass) / red (fail) / yellow (warn).
+export function formatSummaryCount(value: number, label: string, tone: 'pass' | 'fail' | 'warn'): string {
+  const text = `${value} ${label}`;
+  if (value === 0) return pc.dim(text);
+  if (tone === 'fail') return pc.red(text);
+  if (tone === 'warn') return pc.yellow(text);
+  return pc.green(text);
+}
+
+// A run's final summary: a ✓/✗ verdict followed by count segments. `failed` drives the verdict, so a
+// run that exits non-zero always leads with ✗ even if its failing count sits later in the line.
+export function formatSummaryLine(failed: boolean, counts: readonly string[]): string {
+  const verdict = failed ? pc.red('✗ FAILED') : pc.green('✓ ok');
+  return `${verdict}   ${counts.join('   ')}`;
+}
+
+// Graceful interrupt. Playwright installs its own SIGINT/SIGTERM handlers that close the browser, after
+// which any in-flight page operation rejects with "Target page, context or browser has been closed". A
+// long render run is routinely Ctrl+C'd, so rather than let that reject crash with a raw stack trace —
+// and rather than let the loop keep going and report the torn-down page as a spurious failure — callers
+// poll this flag: break the entry/renderer loop once it is set, then print a partial summary and exit.
+// Returns a getter so the flag stays private. Idempotent across calls.
+let runAborted = false;
+export function installAbortHandler(): () => boolean {
+  if (!abortHandlerInstalled) {
+    abortHandlerInstalled = true;
+    const onSignal = (): void => {
+      runAborted = true;
+    };
+    process.on('SIGINT', onSignal);
+    process.on('SIGTERM', onSignal);
+  }
+  return () => runAborted;
+}
+
+// True for the "browser/context/page was closed" rejection Playwright raises once it has torn the
+// browser down on signal — expected during a graceful interrupt, not a real test failure.
+export function isBrowserClosedError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /Target (page|closed)|has been closed|Browser has been closed|Target crashed/i.test(message);
+}
+
+let abortHandlerInstalled = false;
 
 export interface Entry {
   name: string;
@@ -78,6 +174,11 @@ export interface CaptureEntryOptions {
    * error on every backend.
    */
   failOnError?: boolean;
+  /**
+   * Polled before each renderer: when it returns true the run is being interrupted (Ctrl+C), so the
+   * renderer loop stops and a torn-down page is not reported as a failure. See installAbortHandler.
+   */
+  isAborted?: () => boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -330,11 +431,21 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     extraWait = 0,
     captureFrames = 0,
     failOnError = false,
+    isAborted = () => false,
   } = opts;
   let anyFailed = false;
   let anyChanged = false;
 
+  // Detail lines below the caller's [N/M] header drop the entry name (the header carries it) and
+  // column-align on the renderer label, matching compare-render.ts. The renderer name carries the
+  // verdict color; routine confirmations dim (see formatStatusLine).
+  const labelWidth = Math.max(6, ...renderers.map((r) => r.length));
+  const statusLine = (tone: DetailTone, label: string, message: string): string =>
+    formatStatusLine(tone, label, labelWidth, message);
+
   for (const renderer of renderers) {
+    // Stop launching pages once an interrupt has begun; the partial result is reported by the caller.
+    if (isAborted()) break;
     const urlPath =
       tool === 'examples'
         ? `examples/${entry.name}/${routeSegment(renderer)}/`
@@ -462,8 +573,21 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
 
       if (changed === true) anyChanged = true;
-      const changeNote = changed === true ? '  ⚠  changed (hash differs from baseline)' : '';
-      console.log(`  ✓  ${entry.name}/${renderer}${changeNote}`);
+      // A successful capture whose hash drifted is still a pass (it rendered), but the drift is the one
+      // thing worth seeing — green renderer, yellow note — so it does not use the dimmed pass message.
+      if (changed === true) {
+        console.log(
+          formatDetailLine(
+            pc.green('✓'),
+            renderer,
+            labelWidth,
+            pc.yellow('changed (hash differs from baseline)'),
+            pc.green,
+          ),
+        );
+      } else {
+        console.log(statusLine('pass', renderer, ''));
+      }
 
       const status: CaptureStatus = {
         state: 'ready',
@@ -484,31 +608,27 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           return level === 'pageerror' || level === 'error';
         });
         if (errorLog) {
-          const detail = (errorLog as { data?: { msg?: string } }).data?.msg ?? 'error logged';
-          // A backend the environment cannot provide (notably Wgpu in headless Chromium, which has
-          // no adapter/device) is skipped, not failed — the gate verifies backends where they exist
-          // and stays green on machines without them. The software adapter (swiftshader) can also lose
-          // its device mid-run under sustained per-frame GPU load (e.g. a video example uploading a
-          // frame every tick) — the same "environment cannot sustain Wgpu" class, so it is skipped too.
-          // This does not mask a real render bug: a validation error (bad writeBuffer/copy) is logged
-          // before the device dies, and logs.find returns that first error, which still fails below.
-          if (
-            /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter/i.test(detail) ||
-            /external Instance reference no longer exists|device (was )?lost|device is lost/i.test(detail)
-          ) {
-            console.log(`  ⊘  ${entry.name}/${renderer}: skipped — backend unavailable (${detail})`);
+          const detailMsg = (errorLog as { data?: { msg?: string } }).data?.msg ?? 'error logged';
+          // A backend the environment cannot provide or sustain (Wgpu with no adapter/device, or a
+          // swiftshader device lost mid-run) is skipped, not failed — see BACKEND_UNAVAILABLE.
+          if (BACKEND_UNAVAILABLE.test(detailMsg)) {
+            console.log(statusLine('skip', renderer, `skipped — backend unavailable (${detailMsg})`));
           } else {
-            console.error(`  ✗  ${entry.name}/${renderer}: ${detail}`);
+            console.error(statusLine('fail', renderer, detailMsg));
             anyFailed = true;
           }
         }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      // An interrupt tears the browser down mid-capture; the resulting "page closed" reject is the
+      // shutdown, not a render failure, so swallow it and let the caller report the partial run. The
+      // finally below still closes the page.
+      if (isAborted() || isBrowserClosedError(err)) break;
       logs.push({ __flight: true, t: -1, level: 'capture-error', data: { msg: message } });
       writeFileSync(finalLogs, logs.map((l) => JSON.stringify(l)).join('\n'));
 
-      const status: CaptureStatus = {
+      const errorStatus: CaptureStatus = {
         state: 'error',
         capturedAt: Date.now(),
         error: message,
@@ -516,12 +636,12 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         baselineHash: null,
         changed: null,
       };
-      writeFileSync(statusPath, JSON.stringify(status, null, 2));
+      writeFileSync(statusPath, JSON.stringify(errorStatus, null, 2));
 
-      console.error(`  ✗  ${entry.name}/${renderer}: ${message}`);
+      console.error(statusLine('fail', renderer, message));
       anyFailed = true;
     } finally {
-      await page.close();
+      await page.close().catch(() => {});
     }
   }
 
