@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createWgpuGradientRampTexture } from './wgpuGradientRamp';
+import { createWgpuGradientRampTexture, getWgpuGradientRampTexture } from './wgpuGradientRamp';
 import { installWgpuMock, makeFilterState } from './wgpuTestHelper';
 
 installWgpuMock();
@@ -30,5 +30,25 @@ describe('createWgpuGradientRampTexture', () => {
     const state = await makeFilterState();
     const tex = createWgpuGradientRampTexture(state, [0xff0000, 0x00ff00, 0x0000ff], [1, 1, 1], [0, 128, 255]);
     expect(tex).toBeDefined();
+  });
+});
+
+describe('getWgpuGradientRampTexture', () => {
+  it('reuses the same texture for identical stops and does not rebuild it', async () => {
+    const state = await makeFilterState();
+    const internalState = state as never as { device: { createTexture: ReturnType<typeof vi.fn> } };
+    const createTextureSpy = vi.spyOn(internalState.device, 'createTexture');
+
+    const first = getWgpuGradientRampTexture(state, [0x000000, 0xffffff], [1, 1], [0, 255]);
+    const second = getWgpuGradientRampTexture(state, [0x000000, 0xffffff], [1, 1], [0, 255]);
+    expect(second).toBe(first);
+    expect(createTextureSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds a distinct texture for different stops', async () => {
+    const state = await makeFilterState();
+    const a = getWgpuGradientRampTexture(state, [0x000000, 0xffffff], [1, 1], [0, 255]);
+    const b = getWgpuGradientRampTexture(state, [0xff0000, 0x0000ff], [1, 1], [0, 255]);
+    expect(b).not.toBe(a);
   });
 });
