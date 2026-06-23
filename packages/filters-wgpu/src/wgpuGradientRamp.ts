@@ -2,7 +2,9 @@ import type { WgpuRenderState } from '@flighthq/types';
 
 /**
  * Builds a 256-entry RGBA gradient ramp texture on the GPU. The caller owns the
- * returned texture and must destroy it with `texture.destroy()` when done.
+ * returned texture and must destroy it with `texture.destroy()` when done —
+ * prefer `getWgpuGradientRampTexture` from inside a filter, which caches and
+ * owns the texture so no mid-encoder `destroy()` is needed.
  *
  * `ratios` are in byte scale [0,255]. Colors are packed RGB integers.
  * `alphas` are in [0,1].
@@ -29,6 +31,37 @@ export function createWgpuGradientRampTexture(
     [256, 1, 1],
   );
 
+  return texture;
+}
+
+/**
+ * Returns a cached 256-entry RGBA gradient ramp texture for the given stops,
+ * building it on first use and reusing it on later calls with the same stops.
+ * The texture is owned by the render state and lives for its lifetime — callers
+ * must NOT destroy it. This is the form filters should use: a filter runs inside
+ * the frame's command encoder and does not control submit timing, so it cannot
+ * safely `destroy()` a per-call texture (the encoder still references it at
+ * submit, which discards the whole frame). Caching also avoids a per-frame
+ * allocation. Distinct stop sets get distinct textures, so multiple gradient
+ * filters in one frame never alias each other's ramp.
+ */
+export function getWgpuGradientRampTexture(
+  state: WgpuRenderState,
+  colors: ReadonlyArray<number>,
+  alphas: ReadonlyArray<number>,
+  ratios: ReadonlyArray<number>,
+): GPUTexture {
+  let cache = rampCaches.get(state);
+  if (cache === undefined) {
+    cache = new Map();
+    rampCaches.set(state, cache);
+  }
+  const key = `${colors.join(',')}|${alphas.join(',')}|${ratios.join(',')}`;
+  let texture = cache.get(key);
+  if (texture === undefined) {
+    texture = createWgpuGradientRampTexture(state, colors, alphas, ratios);
+    cache.set(key, texture);
+  }
   return texture;
 }
 
@@ -84,3 +117,7 @@ function buildRampData(
 
   return out;
 }
+
+// Per-render-state cache of ramp textures keyed by their stops. Textures live for the render state's
+// lifetime; they are tiny (256×1) and the distinct-gradient set is bounded in practice.
+const rampCaches = new WeakMap<WgpuRenderState, Map<string, GPUTexture>>();

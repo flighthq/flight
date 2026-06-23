@@ -5,7 +5,7 @@ import { applyWgpuBlitPass } from './wgpuBlitShader';
 import { applyBoxBlurFilterToWgpu } from './wgpuBlurFilter';
 import type { WgpuFilterPipeline } from './wgpuFilterPass';
 import { clearWgpuFilterTarget, FILTER_VERTEX_WGSL, getWgpuFilterState } from './wgpuFilterPass';
-import { createWgpuGradientRampTexture } from './wgpuGradientRamp';
+import { getWgpuGradientRampTexture } from './wgpuGradientRamp';
 import { applyWgpuTintPass } from './wgpuTintShader';
 
 // Uses the blurred alpha (group 1) to index into a gradient ramp texture (group 2).
@@ -75,7 +75,7 @@ export function applyGradientGlowFilterToWgpu(
     passes: quality,
   });
 
-  const rampTexture = createWgpuGradientRampTexture(state, filter.colors, filter.alphas, filter.ratios);
+  const rampTexture = getWgpuGradientRampTexture(state, filter.colors, filter.alphas, filter.ratios);
   const rampBG = device.createBindGroup({
     layout: fs.textureBGLayout,
     entries: [
@@ -102,8 +102,6 @@ export function applyGradientGlowFilterToWgpu(
   pass.setBindGroup(2, rampBG);
   pass.draw(6);
   pass.end();
-
-  rampTexture.destroy();
 
   clearWgpuFilterTarget(state, dest);
   applyWgpuBlitPass(state, s0, dest);
