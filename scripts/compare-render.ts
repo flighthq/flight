@@ -94,14 +94,22 @@ function distance(a: string, b: string): number | null {
   return compareSurfaceFingerprints(fa, fb);
 }
 
-// Loads a single test/renderer page and returns its render fingerprint, or null with a reason
-// (a page error, an absent backend, or a verifier that did not run in time).
+// A backend the environment cannot provide or sustain: WebGPU with no adapter/device, or a software
+// adapter that loses its device mid-run. These are the ONLY null-fingerprint outcomes that may be
+// skipped. Any other null result — a module that fails to load (a stale/renamed export), a render that
+// throws, or a verifier that never ran — is a real failure that must fail the gate, never be skipped.
+// Silently skipping those is how a broken test reads as green while nothing actually rendered.
+const BACKEND_UNAVAILABLE =
+  /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter|WebGPU is not supported|external Instance reference no longer exists|device (was )?lost|device is lost/i;
+
+// Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
+// flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
 async function loadFingerprint(
   context: BrowserContext,
   baseUrl: string,
   name: string,
   renderer: string,
-): Promise<{ fingerprint: string | null; reason: string }> {
+): Promise<{ fingerprint: string | null; reason: string; unavailable: boolean }> {
   const page = await context.newPage();
   let pageError = '';
   page.on('pageerror', (e) => (pageError ||= e.message));
@@ -121,10 +129,10 @@ async function loadFingerprint(
       })
       .then((handle) => handle.jsonValue() as Promise<Verification>)
       .catch(() => null);
-    if (verification?.fingerprint) return { fingerprint: verification.fingerprint, reason: '' };
-    if (/WebGPU adapter|WebGPU device|requestAdapter/i.test(pageError))
-      return { fingerprint: null, reason: 'backend unavailable' };
-    return { fingerprint: null, reason: pageError || 'verifier did not run' };
+    if (verification?.fingerprint) return { fingerprint: verification.fingerprint, reason: '', unavailable: false };
+    if (BACKEND_UNAVAILABLE.test(pageError))
+      return { fingerprint: null, reason: `backend unavailable (${pageError})`, unavailable: true };
+    return { fingerprint: null, reason: pageError || 'verifier did not run', unavailable: false };
   } finally {
     await page.close();
   }
@@ -145,6 +153,7 @@ async function main(): Promise<void> {
 
   let regressionFailures = 0;
   let parityFailures = 0;
+  let loadFailures = 0;
   let updated = 0;
   let skipped = 0;
 
@@ -168,8 +177,15 @@ async function main(): Promise<void> {
       for (const renderer of renderers) {
         const first = await loadFingerprint(context, server.url, entry.name, renderer);
         if (first.fingerprint === null) {
-          console.log(`  ⊘  ${entry.name}/${renderer}: skipped — ${first.reason}`);
-          skipped++;
+          if (first.unavailable) {
+            console.log(`  ⊘  ${entry.name}/${renderer}: skipped — ${first.reason}`);
+            skipped++;
+          } else {
+            // A real failure — the module failed to load, the render threw, or the verifier never ran.
+            // Fail loudly; skipping here is what let broken tests pass as green.
+            console.error(`  ✗  ${entry.name}/${renderer}: ${first.reason}`);
+            loadFailures++;
+          }
           continue;
         }
         const fingerprint = first.fingerprint;
@@ -236,16 +252,26 @@ async function main(): Promise<void> {
     server.kill();
   }
 
+  // A load failure (a module that failed to load, a render that threw, a verifier that never ran) is a
+  // hard breakage in every mode — it means a test was not actually exercised. It fails the process even
+  // when baselining or reporting, so a broken test can never be mistaken for a clean/green run.
   if (updateFingerprints) {
     console.log(`\nWrote ${updated} fingerprint baselines  (${skipped} skipped as nondeterministic/unavailable).`);
+    if (loadFailures > 0) {
+      console.error(`${loadFailures} test(s) failed to load/verify — not a clean baseline run.`);
+      process.exit(1);
+    }
     return;
   }
   if (report) {
-    console.log(`\nReport only — nothing gated  (${skipped} skipped).`);
+    console.log(`\nReport only — nothing gated  (${skipped} skipped, ${loadFailures} load failures).`);
+    if (loadFailures > 0) process.exit(1);
     return;
   }
-  console.log(`\nRegression failures: ${regressionFailures}  Parity failures: ${parityFailures}  Skipped: ${skipped}`);
-  if (regressionFailures > 0 || parityFailures > 0) process.exit(1);
+  console.log(
+    `\nRegression failures: ${regressionFailures}  Parity failures: ${parityFailures}  Load failures: ${loadFailures}  Skipped: ${skipped}`,
+  );
+  if (regressionFailures > 0 || parityFailures > 0 || loadFailures > 0) process.exit(1);
 }
 
 main().catch((err: unknown) => {

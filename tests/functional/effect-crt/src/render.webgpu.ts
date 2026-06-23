@@ -1,7 +1,7 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
   beginWgpuRenderEffectPipeline,
-  createCRTEffect,
+  createCrtEffect,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -46,7 +46,7 @@ export function render(root: DisplayObject): void {
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuDisplayObject(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [
-    createCRTEffect({ curvature: 0.3, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0.4 }),
+    createCrtEffect({ curvature: 0.3, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0.4 }),
   ]);
   submitWgpuRenderPass(state);
 }
