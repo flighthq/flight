@@ -26,6 +26,12 @@ pub struct BoundsNode {
 
     /// Revision counter for the local bounds; bumped via [`invalidate_node_bounds`].
     pub(crate) local_bounds_id: u32,
+    /// Revision counter for the node's rasterizable content; bumped via
+    /// [`invalidate_bounds_node_local_content`]. Distinct from `local_bounds_id`:
+    /// content changes (a re-paint) and extent changes (a re-measure) are tracked
+    /// separately, mirroring TS `invalidateNodeLocalContent` /
+    /// `invalidateNodeLocalBounds`.
+    pub(crate) local_content_id: u32,
     /// Snapshot of `local_bounds_id` used to compute the current `local`.
     pub(crate) local_using_local_id: u32,
     /// Snapshot of the world-transform ID used to compute the current `world`.
@@ -41,6 +47,7 @@ impl Default for BoundsNode {
             world: Rectangle::default(),
             dirty: true,
             local_bounds_id: 0,
+            local_content_id: 0,
             local_using_local_id: DIRTY_SENTINEL,
             world_using_transform_id: DIRTY_SENTINEL,
             world_bounds_id: 0,
@@ -51,6 +58,41 @@ impl Default for BoundsNode {
 // ---------------------------------------------------------------------------
 // Free functions (alphabetical)
 // ---------------------------------------------------------------------------
+
+/// Returns the local-bounds revision of `bounds`.
+///
+/// Operates directly on a borrowed [`BoundsNode`], for crates whose node embeds
+/// a `BoundsNode` (e.g. a display object's `Spatial2DNode`) rather than holding
+/// a `NodeArena<BoundsNode>`.
+pub fn get_bounds_node_local_bounds_revision(bounds: &BoundsNode) -> u32 {
+    bounds.local_bounds_id
+}
+
+/// Returns the local-content revision of `bounds`.
+///
+/// Operates directly on a borrowed [`BoundsNode`]. The content revision tracks
+/// rasterizable-payload changes independently of the extent (bounds) revision.
+pub fn get_bounds_node_local_content_revision(bounds: &BoundsNode) -> u32 {
+    bounds.local_content_id
+}
+
+/// Bumps the local-bounds revision of `bounds` and marks it dirty.
+///
+/// The `&mut BoundsNode` counterpart of [`invalidate_node_bounds`], for crates
+/// whose node embeds a `BoundsNode` directly.
+pub fn invalidate_bounds_node_local_bounds(bounds: &mut BoundsNode) {
+    bounds.dirty = true;
+    bounds.local_bounds_id = next_revision(bounds.local_bounds_id);
+    bounds.world_using_transform_id = DIRTY_SENTINEL;
+}
+
+/// Bumps the local-content revision of `bounds` (rasterizable payload changed).
+///
+/// The `&mut BoundsNode` content-revision counterpart, mirroring TS
+/// `invalidateNodeLocalContent`.
+pub fn invalidate_bounds_node_local_content(bounds: &mut BoundsNode) {
+    bounds.local_content_id = next_revision(bounds.local_content_id);
+}
 
 /// Returns a reference to `source`'s local bounding rectangle.
 ///
@@ -162,6 +204,52 @@ mod tests {
 
     fn insert(arena: &mut NodeArena<BoundsNode>) -> NodeId {
         arena.insert(BoundsNode::default())
+    }
+
+    // get_bounds_node_local_bounds_revision
+
+    #[test]
+    fn get_bounds_node_local_bounds_revision_starts_at_zero() {
+        let bounds = BoundsNode::default();
+        assert_eq!(get_bounds_node_local_bounds_revision(&bounds), 0);
+    }
+
+    // get_bounds_node_local_content_revision
+
+    #[test]
+    fn get_bounds_node_local_content_revision_starts_at_zero() {
+        let bounds = BoundsNode::default();
+        assert_eq!(get_bounds_node_local_content_revision(&bounds), 0);
+    }
+
+    // invalidate_bounds_node_local_bounds
+
+    #[test]
+    fn invalidate_bounds_node_local_bounds_bumps_and_marks_dirty() {
+        let mut bounds = BoundsNode::default();
+        bounds.dirty = false;
+        let before = get_bounds_node_local_bounds_revision(&bounds);
+        invalidate_bounds_node_local_bounds(&mut bounds);
+        assert!(bounds.dirty);
+        assert_ne!(get_bounds_node_local_bounds_revision(&bounds), before);
+    }
+
+    // invalidate_bounds_node_local_content
+
+    #[test]
+    fn invalidate_bounds_node_local_content_bumps_only_content() {
+        let mut bounds = BoundsNode::default();
+        let before_bounds = get_bounds_node_local_bounds_revision(&bounds);
+        let before_content = get_bounds_node_local_content_revision(&bounds);
+        invalidate_bounds_node_local_content(&mut bounds);
+        assert_ne!(
+            get_bounds_node_local_content_revision(&bounds),
+            before_content
+        );
+        assert_eq!(
+            get_bounds_node_local_bounds_revision(&bounds),
+            before_bounds
+        );
     }
 
     // get_node_bounds

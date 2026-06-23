@@ -32,8 +32,9 @@ use std::sync::Arc;
 
 use flighthq_displayobject::{
     DisplayObjectArena, add_display_object_child, create_display_object, create_stage,
-    get_display_object_rotation, prepare_display_object_render as prepare_display_object_bounds,
-    set_display_object_rotation, set_display_object_x, set_display_object_y, set_stage_color,
+    get_display_object_local_content_revision, get_display_object_rotation,
+    prepare_display_object_render as prepare_display_object_bounds, set_display_object_rotation,
+    set_display_object_x, set_display_object_y, set_stage_color,
 };
 use flighthq_displayobject_wgpu::{
     WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
@@ -45,8 +46,8 @@ use flighthq_render::{
     prepare_display_object_render,
 };
 use flighthq_shape::{
-    ShapeArena, append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle,
-    create_shape_node, get_shape_fill_regions,
+    append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle, create_shape,
+    get_shape_fill_regions,
 };
 use flighthq_signals::{SignalConnectOptions, connect_signal};
 use flighthq_tween::{create_tween, create_tween_manager, update_tweens};
@@ -83,14 +84,15 @@ fn main() {
     set_display_object_y(&mut arena, spinner, 270.0);
     add_display_object_child(&mut arena, stage, spinner);
 
-    // A real ShapeArena with a centered solid-red rectangle — the geometry the
-    // wgpu walk tessellates, uploads, and draws.
-    let mut shape_arena = ShapeArena::default();
-    let shape_node = create_shape_node(&mut shape_arena);
+    // A real shape display object with a centered solid-red rectangle — the
+    // geometry the wgpu walk tessellates, uploads, and draws.
+    let mut shape_arena = DisplayObjectArena::default();
+    let shape_node = create_shape(&mut shape_arena);
     append_shape_begin_fill(&mut shape_arena, shape_node, 0xff_00_00_ff, 1.0);
     append_shape_rectangle(&mut shape_arena, shape_node, 360.0, 195.0, 240.0, 150.0);
     append_shape_end_fill(&mut shape_arena, shape_node);
-    let shape_content_revision = shape_arena[shape_node].content_revision;
+    let shape_content_revision =
+        get_display_object_local_content_revision(&shape_arena, shape_node);
     let shape_regions =
         get_shape_fill_regions(&shape_arena, shape_node).expect("solid fill resolves to regions");
 

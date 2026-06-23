@@ -6,18 +6,22 @@ Conformance is a **property**, not a tool: the Rust crates faithfully implement 
 
 Because Rust is a production target (see [intent](index.md#intent)), conformance means **the behavior and the rendered output match**, not merely that a Rust test exists.
 
-- **Floor — coverage.** Every TS exported function has a Rust test that exercises the corresponding function. This is what `scripts/parity.ts` tracks today by name-match (a Rust test whose name contains the snake*case function token). It proves a test \_mentions* the symbol, not that it agrees with TS. Useful as a tracker; insufficient as a gate.
+- **Floor — coverage.** Every TS exported function has a Rust test that exercises the corresponding function. This is what `scripts/rust-conformance.ts` tracks today by name-match (a Rust test whose name contains the snake*case function token). It proves a test \_mentions* the symbol, not that it agrees with TS. Useful as a tracker; insufficient as a gate.
 - **Definition of done — assertion + visual.** The Rust unit test ports the TS test's _assertions_ (same inputs, same expected outputs), and the rendered output matches TS within the declared [parity](parity.md) tolerance for the relevant `gl` / `wgpu` cells. Name-match parity reaching 100% is not conformance; it is the point at which the real conformance work (porting assertions, closing visual diffs) is fully scoped.
 
 ## How conformance is measured
 
-- **Unit conformance** — assertion-ported colocated tests, run with `cargo test -p <crate>`. One test file per source file, `describe`-equivalent order mirroring exports, same as the TS convention.
-- **Visual conformance** — the [parity](parity.md) matrix's conformance-pairing strategy at the `gl` and `wgpu` cells: `flighthq-functional` (native, fingerprint vs stored TS baselines) and, where a web-only surface requires it, the browser parity runner (`ts:X ~ rwasm:X` in one page).
-- **Coverage tracking** — `scripts/parity.ts` name-match accounting, reported per package with the gap list.
+`scripts/rust-conformance.ts` (`npm run rust:conformance`) is the gate. It separates what a static check can decide from what it cannot, in three tiers:
+
+- **Structural conformance — the hard pass/fail GATE.** Static and deterministic: (1) **package existence** — every TS package has a Rust crate (minus the [excluded](#excluded--no-substrate-in-the-box) set) and every crate maps to a TS package (minus [rust-only](#rust-only-no-ts-counterpart)); (2) **dependency edges** — every _real_ TS function dependency, derived from actual `import { fn } from '@flighthq/x'` **value** imports in TS source (not `package.json`, which carries declared-but-unused deps like the old `effects-gl → filters`; and not `import type`, which is the flighthq-types header routing), is carried through to the Rust crate, modulo the `FOLDABLE_DEPS` mechanical-translation targets (`entity`/`types`/`signals`/`geometry`) and the explicit `REVIEWED_DEP_EXCEPTIONS` allowlist. Each reported edge names the exact symbols it is about (e.g. `particles must depend on sprite — uses: reserveParticleEmitter`). This catches _relocation_ and _un-carried dependency_ drift — the class name-match coverage is blind to (the `surface`/`filters` miss). A new TS merge that moves a function or adds a real dependency Rust doesn't follow turns this RED; the exit code is nonzero on any structural violation. (A per-export-presence check is a planned addition; the edge check already surfaces relocation because the receiving package's import of a moved function appears as an un-carried edge.)
+- **Unit conformance (coverage) — reported, not gated.** Assertion-ported colocated tests, run with `cargo test -p <crate>`; the script tracks name-match coverage per package. A low number is a behavioral-porting backlog, not a structural failure (it fails the gate only under `--strict`).
+- **Visual conformance — not statically decidable.** The [parity](parity.md) matrix's conformance-pairing at the `gl`/`wgpu` cells: `flighthq-functional` (native, fingerprint vs stored TS baselines) and, where a web-only surface requires it, the browser parity runner. `rust-conformance.ts --functional` runs and summarizes it; a confirmed FAIL fails the gate.
+
+**What can and cannot be encoded.** The structural skeleton — _which packages exist, what depends on what, and whether each TS export is present in the right crate_ — is fully gateable, and that is exactly the layer where the recent drift lived. **API shape** (value-vs-node, descriptor-vs-options) is only partially checkable statically — Rust's mechanical signature differences (`&mut`, `Option`, the arena) make a hard signature diff too noisy — so it is surfaced for review, not hard-gated. **Behavior** (same inputs → same outputs, same rendered pixels) is not statically decidable at all and remains the assertion-ported tests + the functional fingerprint gate.
 
 ## Conformance map
 
-The intentional TS↔Rust divergences. This is the auditable registry of what "1:1" deliberately is _not_ — every entry is a reviewed decision with a rationale, not drift. It currently lives as hardcoded sets in `scripts/parity.ts`; it should be promoted to a committed machine-readable manifest that both this doc and the tooling read. Until then, this table and `parity.ts` must be kept in sync.
+The intentional TS↔Rust divergences. This is the auditable registry of what "1:1" deliberately is _not_ — every entry is a reviewed decision with a rationale, not drift. It currently lives as hardcoded sets in `scripts/rust-conformance.ts`; it should be promoted to a committed machine-readable manifest that both this doc and the tooling read. Until then, this table and `rust-conformance.ts` must be kept in sync.
 
 ### Renames (Rust catching up to the landed refactor)
 
@@ -47,7 +51,21 @@ The Rust port previously put the pixel ops in `filters-surface` and the thin wra
 
 Semantic trap (not a Rust rename — Rust had neither): TS's old `camera` (photo capture) is now **`webcam`**; the new **`camera`** package is the **3D camera** (projections / view-projection). Both now exist as crates — `webcam` as a platform seam, `camera` as a 3D-pipeline crate. Do not conflate.
 
-Every other crate now maps by identical name (modulo the [excluded](#excluded--no-substrate-in-the-box) and [Rust-only](#rust-only-no-ts-counterpart) sets). Keep this section the single source of truth; `scripts/parity.ts` should read it, not hardcode it.
+Every other crate now maps by identical name (modulo the [excluded](#excluded--no-substrate-in-the-box) and [Rust-only](#rust-only-no-ts-counterpart) sets). Keep this section the single source of truth; `scripts/rust-conformance.ts` should read it, not hardcode it.
+
+### Cross-package layering audit (2026-06-23)
+
+A dependency-graph diff (TS `package.json` `@flighthq/*` deps vs Rust `Cargo.toml` `flighthq-*` deps) was run across all shared packages to catch _re-layerings_ (functions relocated between packages) that name-match parity cannot see — the class of miss that the `surface`/`filters-surface` case was. Findings:
+
+- **`sdk` was missing `textshaper`** — fixed (added the crate to the barrel; `flighthq-textshaper` had been created but not re-exported).
+- **`effects-gl` / `effects-wgpu` bloom did not reuse the filter Gaussian.** TS `applyBloomEffectTo{Gl,Wgpu}` call `applyGaussianBlurFilterTo{Gl,Wgpu}` from `filters-{gl,wgpu}` (a true sigma-based `⌈3σ⌉` exp-weighted blur); the Rust crates inlined a different fixed nine-tap kernel, so bloom output could not match TS. **`effects-gl` fixed** (now depends on `filters-gl` and calls `apply_gaussian_blur_filter_to_gl`). **`effects-wgpu` still pending**: the Rust `apply_gaussian_blur_filter_to_wgpu` requires a separate `WgpuFilterState` (a Rust-only API split; TS threads it through the render state), which does not cache cleanly into the effects pipeline without lifecycle plumbing, and there is no bloom functional scene to fingerprint-verify the result. Tracked follow-up.
+- **Dead manifest deps removed** (no behavior change): `spritesheet → sprite`, `render-wgpu → node`/`path` were unused.
+
+**Intentional value-type seam divergences (recorded, not bugs):**
+
+- **`particles`** operates on the `ParticleEmitterData` value type (from `flighthq-types`) rather than the sprite `NodeId`, so it needs no `flighthq-sprite` dep even though TS `particles` imports `createParticleEmitter` from `@flighthq/sprite`. The emitter primitive itself does live in `flighthq-sprite` (matching TS). Minor: particles inlines its RNG instead of using `flighthq-math`'s `create_random_source`.
+- **`spritesheet`** pushes bitmap/child node wiring to a caller `apply` callback (opaque `u64` target id) instead of depending on `displayobject`/`node`.
+- **`timeline`** is decoupled from `displayobject`: `MovieClipData` lives in the caller's display-node arena entry. Consequence: there is **no `create_movie_clip` node constructor** (only `create_movie_clip_data`), unlike `displayobject`'s `create_bitmap`. TS `createMovieClip` (in `@flighthq/timeline`) _does_ create the node via `createDisplayObjectGeneric`. **Open decision:** align to TS (add `create_movie_clip(arena)` + a `timeline → displayobject` edge, no cycle) or keep the decoupling and document it as the canonical Rust seam.
 
 ### The render layering
 
@@ -135,4 +153,4 @@ The remaining conformance work is otherwise **behavioral, not structural**: port
 
 **Excluded** (no substrate in the box): `displayobject-canvas`, `displayobject-dom`, `filters-canvas`, `filters-css`, `effects-canvas`, `textshaper-canvas`, `host-electron`.
 
-`scripts/parity.ts`'s `RENAMES`/`TS_ONLY`/`RUST_ONLY`/`GPU_CRATES`/`WEB_PACKAGES` sets are aligned with this map: `RENAMES` is empty (every mapped package is identity post-reorg), `TS_ONLY` is the [excluded](#excluded--no-substrate-in-the-box) set, `RUST_ONLY` adds `displayobject-skia`, `GPU_CRATES` includes the `displayobject-`/`scene-` leaf renderers, and `WEB_PACKAGES` lists `webcam` (not the 3D `camera`). Keep them in sync when this map changes.
+`scripts/rust-conformance.ts`'s `RENAMES`/`TS_ONLY`/`RUST_ONLY`/`GPU_CRATES`/`WEB_PACKAGES` sets are aligned with this map: `RENAMES` is empty (every mapped package is identity post-reorg), `TS_ONLY` is the [excluded](#excluded--no-substrate-in-the-box) set, `RUST_ONLY` adds `displayobject-skia`, `GPU_CRATES` includes the `displayobject-`/`scene-` leaf renderers, and `WEB_PACKAGES` lists `webcam` (not the 3D `camera`). Keep them in sync when this map changes.

@@ -22,7 +22,7 @@ use flighthq_render_wgpu::render_target_pool::{
 
 use crate::effect_program_cache::{
     WgpuEffectBlend, draw_wgpu_dual_source_effect_pass, draw_wgpu_effect_filter_pass,
-    get_wgpu_dual_source_effect_pipeline, get_wgpu_effect_pipeline,
+    draw_wgpu_effect_gaussian_blur, get_wgpu_dual_source_effect_pipeline, get_wgpu_effect_pipeline,
 };
 use crate::render_effect_registry::{WgpuRenderEffectContext, WgpuRenderEffectRunner};
 
@@ -54,7 +54,10 @@ pub fn apply_bloom_effect_to_wgpu(
         f32s[0] = threshold;
     });
 
-    apply_separable_gaussian_blur_to_wgpu(state, &bright, &blurred, &temp, radius);
+    // Blur the bright branch by reusing filters-wgpu's separable Gaussian blur
+    // (the Tier-1 filter), exactly as the TS bloom recipe calls
+    // applyGaussianBlurFilterToWgpu — the effect does not reimplement the blur.
+    draw_wgpu_effect_gaussian_blur(state, &bright, &blurred, &temp, radius, radius);
 
     get_wgpu_dual_source_effect_pipeline(
         state,
@@ -150,42 +153,6 @@ pub const DEFAULT_WGPU_TONE_MAP_EFFECT_RUNNER: WgpuRenderEffectRunner =
         }
     };
 
-// Separable gaussian blur: a horizontal pass (source → temp) then a vertical
-// pass (temp → dest). `radius` sets the standard deviation; the kernel taps a
-// fixed nine samples weighted by a gaussian, scaled by radius in texel space.
-fn apply_separable_gaussian_blur_to_wgpu(
-    state: &mut WgpuRenderState,
-    source: &WgpuRenderTarget,
-    dest: &WgpuRenderTarget,
-    temp: &WgpuRenderTarget,
-    radius: f32,
-) {
-    let width = source.width as f32;
-    let height = source.height as f32;
-    get_wgpu_effect_pipeline(
-        state,
-        "bloom.blur",
-        GAUSSIAN_BLUR_FRAGMENT_WGSL,
-        WgpuEffectBlend::Replace,
-    );
-    // Horizontal pass: direction (1, 0).
-    draw_wgpu_effect_filter_pass(state, "bloom.blur", source, Some(temp), |f32s, _| {
-        f32s[0] = radius;
-        f32s[1] = 1.0;
-        f32s[2] = 0.0;
-        f32s[4] = width;
-        f32s[5] = height;
-    });
-    // Vertical pass: direction (0, 1).
-    draw_wgpu_effect_filter_pass(state, "bloom.blur", temp, Some(dest), |f32s, _| {
-        f32s[0] = radius;
-        f32s[1] = 0.0;
-        f32s[2] = 1.0;
-        f32s[4] = width;
-        f32s[5] = height;
-    });
-}
-
 fn build_tone_map_fragment(operator: ToneMapOperator) -> String {
     let mut wgsl = String::with_capacity(256);
     wgsl.push_str(TONEMAP_FRAGMENT_HEAD);
@@ -264,34 +231,6 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   let scene = textureSampleLevel(tex0, smp0, uv, 0.0);
   let bloom = textureSampleLevel(tex1, smp1, uv, 0.0);
   return vec4f(scene.rgb + bloom.rgb * uni.u_intensity, scene.a);
-}"#;
-
-// Slots [0]=radius, [1..2]=direction (vec2), [4..5]=resolution. A nine-tap
-// gaussian along the direction vector, weights normalized to sum 1.
-const GAUSSIAN_BLUR_FRAGMENT_WGSL: &str = /* wgsl */
-    r#"
-struct Uniforms {
-  u_radius : f32,
-  u_dir_x : f32,
-  u_dir_y : f32,
-  _pad0 : f32,
-  u_resolution : vec2f,
-}
-@group(0) @binding(0) var<uniform> uni : Uniforms;
-@group(1) @binding(0) var tex : texture_2d<f32>;
-@group(1) @binding(1) var smp : sampler;
-
-@fragment
-fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
-  let texel = vec2f(uni.u_dir_x, uni.u_dir_y) * (uni.u_radius / uni.u_resolution);
-  var weights = array<f32, 5>(0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-  var sum = textureSampleLevel(tex, smp, uv, 0.0) * weights[0];
-  for (var i = 1; i < 5; i = i + 1) {
-    let off = texel * f32(i);
-    sum = sum + textureSampleLevel(tex, smp, uv + off, 0.0) * weights[i];
-    sum = sum + textureSampleLevel(tex, smp, uv - off, 0.0) * weights[i];
-  }
-  return sum;
 }"#;
 
 // Slot [0]=multiplier (2^stops, precomputed); the scalar struct pads to a 16-byte boundary.

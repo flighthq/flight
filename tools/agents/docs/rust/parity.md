@@ -49,7 +49,7 @@ Non-existent cells (e.g. `rust:canvas`) are skipped, not errors.
 
 ## Implementation status
 
-This document describes the target design of the parity instrument. The current scripts implement parts of it: `scripts/parity.ts` does coverage-style conformance accounting (name-match), `scripts/compare-render.ts` does cross-backend consistency, and `flighthq-functional` does native fingerprint conformance against TS baselines. Unifying these behind one cell-selection flag surface — and the `parity` / `conformance` naming split — is tracked work, not yet fully realized in the scripts.
+This document describes the target design of the parity instrument. The current scripts implement parts of it: `scripts/rust-conformance.ts` does coverage-style conformance accounting (name-match), `scripts/compare-render.ts` does cross-backend consistency, and `flighthq-functional` does native fingerprint conformance against TS baselines. Unifying these behind one cell-selection flag surface — and the `parity` / `conformance` naming split — is tracked work, not yet fully realized in the scripts.
 
 ### `flighthq-functional` native runner
 

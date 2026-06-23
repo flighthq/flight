@@ -17,11 +17,11 @@ pub mod timeline;
 
 // movie_clip
 pub use movie_clip::{
-    create_movie_clip_data, create_movie_clip_runtime, create_movie_clip_signals,
-    get_movie_clip_current_frame, get_movie_clip_runtime, get_movie_clip_signals,
-    get_movie_clip_total_frames, goto_and_play_movie_clip, goto_and_stop_movie_clip,
-    is_movie_clip_playing, next_frame_movie_clip, play_movie_clip, prev_frame_movie_clip,
-    set_movie_clip_source, stop_movie_clip, update_movie_clip,
+    create_movie_clip, create_movie_clip_data, create_movie_clip_runtime,
+    create_movie_clip_signals, get_movie_clip_current_frame, get_movie_clip_runtime,
+    get_movie_clip_signals, get_movie_clip_total_frames, goto_and_play_movie_clip,
+    goto_and_stop_movie_clip, is_movie_clip_playing, next_frame_movie_clip, play_movie_clip,
+    prev_frame_movie_clip, set_movie_clip_source, stop_movie_clip, update_movie_clip,
 };
 
 // timeline

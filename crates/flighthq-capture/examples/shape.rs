@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 
 use flighthq_capture::{capture_scene_to_png, request_wgpu_capture_device};
+use flighthq_displayobject::{DisplayObjectArena, get_display_object_local_content_revision};
 use flighthq_displayobject_wgpu::{
     WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
@@ -15,8 +16,8 @@ use flighthq_render::{
     prepare_display_object_render,
 };
 use flighthq_shape::{
-    ShapeArena, append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle,
-    create_shape_node, get_shape_fill_regions,
+    append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle, create_shape,
+    get_shape_fill_regions,
 };
 use flighthq_types::KindId;
 use flighthq_types::display::{display_object_kind, shape_kind};
@@ -40,7 +41,7 @@ fn main() {
 
     const STAGE_ID: u64 = 1;
 
-    let mut shape_arena = ShapeArena::default();
+    let mut shape_arena = DisplayObjectArena::default();
     let mut kinds: HashMap<u64, KindId> = HashMap::new();
     let mut children: HashMap<u64, Vec<u64>> = HashMap::new();
     let mut parents: HashMap<u64, Option<u64>> = HashMap::new();
@@ -51,11 +52,11 @@ fn main() {
     let mut stage_children = Vec::new();
 
     for &(id, color, x, y, w, h) in SHAPES {
-        let node = create_shape_node(&mut shape_arena);
+        let node = create_shape(&mut shape_arena);
         append_shape_begin_fill(&mut shape_arena, node, color, 1.0);
         append_shape_rectangle(&mut shape_arena, node, x, y, w, h);
         append_shape_end_fill(&mut shape_arena, node);
-        let content_revision = shape_arena[node].content_revision;
+        let content_revision = get_display_object_local_content_revision(&shape_arena, node);
         let regions = get_shape_fill_regions(&shape_arena, node).expect("solid fill resolves");
         geometry.insert(
             id,
