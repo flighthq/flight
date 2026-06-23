@@ -45,6 +45,7 @@
     "clean": "tsc -b tsconfig.build.json --clean",
     "clean:examples": "npm run clean --workspace=examples/** --if-present",
     "clean:rust": "cargo clean",
+    "clean:wasm": "tsx ./scripts/clean-wasm.ts",
     "dev:electron-harness": "npm run dev --workspace=tools/electron-harness",
     "dev:examples": "npm run dev --workspace=tools/examples",
     "dev:functional": "npm run dev --workspace=tools/functional",
