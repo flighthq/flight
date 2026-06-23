@@ -101,7 +101,7 @@ function compositeNative(
 
   beginWgpuRenderTarget(state, sourceTarget, _identity);
   renderWgpuDisplayObject(state, sourceBitmap);
-  applyColorMatrixFilterToWgpu(state, sourceTarget, destTarget, { matrix: filter.matrix });
+  applyColorMatrixFilterToWgpu(state, sourceTarget, destTarget, { matrix: spec.filter.matrix });
   endWgpuRenderTarget(state);
 
   const placement = createBitmap();
