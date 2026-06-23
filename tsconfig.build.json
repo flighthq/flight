@@ -70,6 +70,7 @@
     { "path": "./packages/statusbar" },
     { "path": "./packages/storage" },
     { "path": "./packages/surface" },
+    { "path": "./packages/surface-rs" },
     { "path": "./packages/text" },
     { "path": "./packages/textinput" },
     { "path": "./packages/textlayout" },

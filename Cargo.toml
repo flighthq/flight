@@ -43,6 +43,7 @@ flighthq-effects = { path = "crates/flighthq-effects" }
 flighthq-effects-gl = { path = "crates/flighthq-effects-gl" }
 flighthq-effects-wgpu = { path = "crates/flighthq-effects-wgpu" }
 flighthq-surface = { path = "crates/flighthq-surface" }
+flighthq-surface-wasm = { path = "crates/flighthq-surface-wasm" }
 flighthq-filters-surface = { path = "crates/flighthq-filters-surface" }
 flighthq-materials = { path = "crates/flighthq-materials" }
 flighthq-text = { path = "crates/flighthq-text" }

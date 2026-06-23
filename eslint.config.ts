@@ -18,6 +18,8 @@ export default [
       '**/.claude/**',
       '**/worktrees/**',
       'tests/reference/**',
+      // Generated wasm-bindgen glue for the -rs packages (e.g. surface-rs).
+      '**/src/wasm/surface_wasm*',
     ],
   },
   {

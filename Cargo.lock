@@ -1278,6 +1278,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-surface-wasm"
+version = "0.1.0"
+dependencies = [
+ "flighthq-surface",
+ "flighthq-types",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "flighthq-text"
 version = "0.1.0"
 dependencies = [
