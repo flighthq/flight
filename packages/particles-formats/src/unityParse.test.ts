@@ -78,7 +78,7 @@ describe('parseUnityParticle — gradient / size curves bake into curves', () =>
     expect(c.colorCurve).not.toBeNull();
     expect(c.alphaCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleParticleColorCurve(c.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(out, 0, c.colorCurve!, 0.5);
     expect(out[1]).toBeGreaterThan(0.8); // green mid-life
     expect(sampleParticleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9); // alpha peaks mid-life
   });
@@ -316,7 +316,7 @@ describe('serializeUnityParticle — curve round-trip', () => {
     expect(c2.alphaCurve).not.toBeNull();
     expect(c2.scaleCurve).not.toBeNull();
     const out = [0, 0, 0];
-    sampleParticleColorCurve(c2.colorCurve!, 0.5, out, 0);
+    sampleParticleColorCurve(out, 0, c2.colorCurve!, 0.5);
     expect(out[1]).toBeGreaterThan(0.8);
     expect(sampleParticleCurve(c2.alphaCurve!, 0.5)).toBeGreaterThan(0.9);
     expect(sampleParticleCurve(c2.scaleCurve!, 0.5)).toBeGreaterThan(sampleParticleCurve(c2.scaleCurve!, 0));
