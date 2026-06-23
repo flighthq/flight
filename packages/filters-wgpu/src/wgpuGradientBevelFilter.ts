@@ -5,7 +5,7 @@ import { applyWgpuBlitPass } from './wgpuBlitShader';
 import { applyBoxBlurFilterToWgpu } from './wgpuBlurFilter';
 import type { WgpuFilterPipeline } from './wgpuFilterPass';
 import { clearWgpuFilterTarget, FILTER_VERTEX_WGSL, getWgpuFilterState } from './wgpuFilterPass';
-import { createWgpuGradientRampTexture } from './wgpuGradientRamp';
+import { getWgpuGradientRampTexture } from './wgpuGradientRamp';
 import { applyWgpuTintPass } from './wgpuTintShader';
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
@@ -162,7 +162,7 @@ export function applyGradientBevelFilterToWgpu(
   encodePass.end();
 
   // Apply: look up gradient ramp from encoded bevel, clip to source alpha → s1
-  const rampTexture = createWgpuGradientRampTexture(state, filter.colors, filter.alphas, filter.ratios);
+  const rampTexture = getWgpuGradientRampTexture(state, filter.colors, filter.alphas, filter.ratios);
   const rampBG = device.createBindGroup({
     layout: fs.textureBGLayout,
     entries: [
@@ -197,8 +197,6 @@ export function applyGradientBevelFilterToWgpu(
   applyPass.setBindGroup(3, sourceBG);
   applyPass.draw(6);
   applyPass.end();
-
-  rampTexture.destroy();
 
   clearWgpuFilterTarget(state, dest);
   if (!(filter.bevelType && filter.bevelType !== 'full')) {

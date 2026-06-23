@@ -41,9 +41,11 @@ const blitPipelines = new WeakMap<WgpuRenderState, WgpuFilterPipeline>();
  * Blits source into dest at a pixel offset (dx, dy in screen-space Y-down).
  * Pixels sampling outside the source bounds produce transparent output.
  *
- * Note: the Y component of the offset is negated versus the Gl implementation
- * because Wgpu texture UV y=0 is top (matching screen y-down), whereas Gl
- * UV y=0 is bottom (opposite screen y-down).
+ * The offset matches the Gl path exactly — (-dx/w, +dy/h). The shader samples `uv + offset`, so a
+ * screen-space shift of (+dx,+dy) needs offset (-dx, +dy): the +dy is NOT negated for Wgpu. Wgpu's UV
+ * y=0 is top (opposite Gl's bottom-origin) but Wgpu render-target textures are also stored top-down, so
+ * the two inversions cancel. A previous extra Y negation put the shadow on the wrong side of the source
+ * (it landed up-left instead of down-right) — caught by filter-drop-shadow-parity.
  */
 export function applyWgpuBlitOffsetPass(
   state: WgpuRenderState,
@@ -55,7 +57,7 @@ export function applyWgpuBlitOffsetPass(
   const pipeline = getWgpuBlitOffsetShader(state);
   drawWgpuFilterPass(state, source, dest, pipeline, (f32) => {
     f32[0] = -dx / source.width;
-    f32[1] = -dy / source.height;
+    f32[1] = dy / source.height;
   });
 }
 
