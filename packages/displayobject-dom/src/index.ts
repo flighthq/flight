@@ -11,6 +11,7 @@ export * from './domNativeText';
 export * from './domRenderState';
 export * from './domRenderView';
 export * from './domRichText';
+export * from './domScale9Shape';
 export * from './domShape';
 export * from './domStyle';
 export { escapeHtmlString } from './domTextHelpers';
