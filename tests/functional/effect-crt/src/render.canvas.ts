@@ -5,7 +5,7 @@ import {
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createCrtEffect,
-  defaultCanvasCRTEffectRunner,
+  defaultCanvasCrtEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
@@ -29,7 +29,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'crt', defaultCanvasCRTEffectRunner);
+registerCanvasRenderEffect(state, 'crt', defaultCanvasCrtEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

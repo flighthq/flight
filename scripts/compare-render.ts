@@ -111,8 +111,17 @@ async function loadFingerprint(
   renderer: string,
 ): Promise<{ fingerprint: string | null; reason: string; unavailable: boolean }> {
   const page = await context.newPage();
+  // The real failure reason can arrive three ways, and Playwright's pageerror only catches the first:
+  // a synchronous uncaught exception (pageerror), an unhandled promise rejection (the verifier is an
+  // awaited async call — rejections do NOT fire pageerror), or a module that fails to import. The
+  // functional entry funnels the latter two into a console.error and an on-page #ft-error overlay, so
+  // collect those too. Without this, a thrown verifier or a renamed/missing export reads as the
+  // uninformative "verifier did not run" instead of the actual message.
   let pageError = '';
   page.on('pageerror', (e) => (pageError ||= e.message));
+  page.on('console', (m) => {
+    if (m.type() === 'error') pageError ||= m.text();
+  });
   try {
     await page.goto(`${baseUrl}/${routePrefix}/${name}/${routeSegment(renderer)}/`, {
       waitUntil: 'domcontentloaded',
@@ -130,9 +139,13 @@ async function loadFingerprint(
       .then((handle) => handle.jsonValue() as Promise<Verification>)
       .catch(() => null);
     if (verification?.fingerprint) return { fingerprint: verification.fingerprint, reason: '', unavailable: false };
-    if (BACKEND_UNAVAILABLE.test(pageError))
-      return { fingerprint: null, reason: `backend unavailable (${pageError})`, unavailable: true };
-    return { fingerprint: null, reason: pageError || 'verifier did not run', unavailable: false };
+    // The functional entry paints any error into #ft-error (covering window.error AND unhandledrejection);
+    // read it as the most reliable real reason when neither a fingerprint nor a pageerror surfaced.
+    const overlay = await page.$eval('#ft-error', (el) => el.textContent ?? '').catch(() => '');
+    const detail = pageError || overlay;
+    if (BACKEND_UNAVAILABLE.test(detail))
+      return { fingerprint: null, reason: `backend unavailable (${detail})`, unavailable: true };
+    return { fingerprint: null, reason: detail || 'verifier did not run', unavailable: false };
   } finally {
     await page.close();
   }
