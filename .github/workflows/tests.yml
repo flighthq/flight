@@ -1,19 +1,62 @@
 name: CI
 
+# The per-commit gate for every PR and for pushes to main/develop. One workflow covers both
+# language toolchains: a `changes` job (dorny/paths-filter) decides which areas a change
+# actually touches, so a TypeScript-only PR skips the Rust build and a Rust-only PR skips the
+# TypeScript build/test/quality/size/render legs. Each area's jobs are gated with `if:` on
+# those outputs rather than a top-level `paths:` filter — so the workflow ALWAYS runs and
+# ALWAYS reports. A docs-only PR resolves to "every area skipped" (a fast success), and a
+# skipped `if:` job reports as success to branch protection, so these checks are safe to mark
+# required (unlike a whole-workflow path-skip, which never reports and leaves a required check
+# stuck "Expected — Waiting for status").
+#
+# Nightly (nightly.yml) runs what does NOT belong on the PR path — full coverage thresholds,
+# API-surface generation, and an UNCONDITIONAL Rust run that nets the drift this path-filtered
+# Rust gate cannot see (stable-toolchain changes, breakage outside crates/).
+
 on:
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'tools/agents/docs/**'
   push:
     branches: [main, develop]
-    paths-ignore:
-      - '**/*.md'
-      - 'tools/agents/docs/**'
 
 jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      typescript: ${{ steps.filter.outputs.typescript }}
+      rust: ${{ steps.filter.outputs.rust }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # `typescript` is an all-except filter (catch-all, then exclude docs and the Rust-only
+          # paths) so a newly added TS file type still triggers the TS legs by default. `rust` is
+          # an explicit allow-list; the nightly unconditional run is the net for anything it misses.
+          # The workflow file itself is in both so a CI change re-validates both areas.
+          filters: |
+            typescript:
+              - '**'
+              - '!**/*.md'
+              - '!tools/agents/docs/**'
+              - '!crates/**'
+              - '!Cargo.toml'
+              - '!Cargo.lock'
+              - '!rust-toolchain.toml'
+              - '!clippy.toml'
+            rust:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - 'clippy.toml'
+              - '.github/workflows/tests.yml'
+
   build-check:
     name: Build preflight
+    needs: changes
+    if: ${{ needs.changes.outputs.typescript == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +68,10 @@ jobs:
       - run: npm ci
       - run: npm run build:check
 
+  # build / test / quality / size / render all `needs: build-check`; when build-check is skipped
+  # (no TypeScript change) they skip with it, so the `typescript` gate only needs stating once.
   build:
-    name: Build and emit
+    name: Build & emit
     needs: build-check
     runs-on: ubuntu-latest
 
@@ -40,17 +85,21 @@ jobs:
       - run: npm run build
 
   test:
-    name: Test suites
+    name: TypeScript tests · ${{ matrix.label }}
     needs: build-check
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        suite:
-          - test:unit
-          - test:integration
-          - test:api:node
-          - test:api:browser
+        include:
+          - label: unit
+            suite: test:unit
+          - label: integration
+            suite: test:integration
+          - label: API (Node)
+            suite: test:api:node
+          - label: API (browser)
+            suite: test:api:browser
 
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +111,7 @@ jobs:
       - run: npm run ${{ matrix.suite }}
 
   quality:
-    name: Quality checks
+    name: TypeScript quality
     needs: build-check
     runs-on: ubuntu-latest
 
@@ -76,7 +125,7 @@ jobs:
       - run: npm run check
 
   size:
-    name: Size check
+    name: Bundle size
     needs: build-check
     runs-on: ubuntu-latest
 
@@ -95,19 +144,25 @@ jobs:
     # Environment-independent checks only: smoke (Tiers 1/2/4) and parity (cross-backend, Tier 3). The
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
-    name: Render test (${{ matrix.check }})
+    name: Render · ${{ matrix.label }}
     needs: build-check
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        check:
-          - test:functional:smoke
-          - test:functional:parity
-          - test:examples:smoke
-          - test:examples:parity
-          - test:reference:smoke
-          - test:reference:parity
+        include:
+          - label: functional · smoke
+            check: test:functional:smoke
+          - label: functional · parity
+            check: test:functional:parity
+          - label: examples · smoke
+            check: test:examples:smoke
+          - label: examples · parity
+            check: test:examples:parity
+          - label: reference · smoke
+            check: test:reference:smoke
+          - label: reference · parity
+            check: test:reference:parity
 
     steps:
       - uses: actions/checkout@v4
@@ -121,3 +176,32 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run ${{ matrix.check }}
+
+  rust:
+    # The per-PR Rust gate, path-filtered to crates/ (+ Cargo / toolchain / clippy config) by the
+    # `changes` job. `check:rust` = clippy (-D warnings) + rustfmt --check; `test:rust` = cargo test
+    # --workspace. nightly.yml runs the same two commands UNCONDITIONALLY as the drift net.
+    name: Rust check & test
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      # flighthq-host-sdl compiles bundled SDL3 from source via cmake, whose configure step fails
+      # without the X11/Wayland dev headers — so a workspace build/clippy/test dies on sdl3-sys
+      # without these. cmake/pkg-config are preinstalled on the runner but pinned here for clarity.
+      - name: Install SDL build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake pkg-config \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev wayland-protocols
+      # npm ships with the runner's Node and these scripts only shell cargo, so no `npm ci` is needed.
+      - run: npm run check:rust
+      - run: npm run test:rust
