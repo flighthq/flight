@@ -51,14 +51,19 @@ const CRATE_DIR = join(ROOT, 'crates');
 const RENAMES: Record<string, string> = {};
 
 // TS packages intentionally NOT ported to Rust: their substrate (the Canvas2D
-// context, the DOM tree, the Electron main process) does not exist in the box,
-// so a crate would be an emulator. See conformance.md "Excluded — no substrate
-// in the box". This is the complete excluded set; everything else maps 1:1.
+// context + its measureText, CSS filter strings, the DOM tree, the Electron
+// main process) does not exist in the box, so a crate would be an emulator. See
+// conformance.md "Excluded — no substrate in the box". This is the complete
+// excluded set; everything else maps 1:1. (The shaper SEAM `textshaper` IS
+// ported — only its Canvas measureText backend `textshaper-canvas` is excluded,
+// the native shaper backend being HarfBuzz/rustybuzz.)
 const TS_ONLY = new Set([
   'displayobject-canvas',
   'displayobject-dom',
   'filters-canvas',
+  'filters-css',
   'effects-canvas',
+  'textshaper-canvas',
   'host-electron',
 ]);
 

@@ -8,7 +8,7 @@ description = "Bitmap filter descriptors, CSS serialization, and bitmap-surface 
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
-flighthq-surface-filters = { workspace = true }
+flighthq-filters-surface = { workspace = true }
 
 [dev-dependencies]
 flighthq-surface = { workspace = true }

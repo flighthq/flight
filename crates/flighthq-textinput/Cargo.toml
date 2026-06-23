@@ -1,5 +1,5 @@
 [package]
-name = "flighthq-text-input"
+name = "flighthq-textinput"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -7,5 +7,5 @@ description = "Editable text helpers for InputText selection, replacement, restr
 
 [dependencies]
 flighthq-text = { workspace = true }
-flighthq-text-layout = { workspace = true }
+flighthq-textlayout = { workspace = true }
 flighthq-types = { workspace = true }

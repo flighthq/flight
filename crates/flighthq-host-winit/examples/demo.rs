@@ -49,7 +49,7 @@ use flighthq_shape::{
 };
 use flighthq_signals::{SignalConnectOptions, connect_signal};
 use flighthq_tween::{create_tween, create_tween_manager, update_tweens};
-use flighthq_tween_easing::ease_in_out_sine;
+use flighthq_easing::ease_in_out_sine;
 use flighthq_types::display::{display_object_kind, shape_kind};
 use flighthq_types::geometry::Matrix;
 use flighthq_types::input::{InputKeyboardData, InputPointerData};

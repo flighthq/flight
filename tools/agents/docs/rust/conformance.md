@@ -26,11 +26,16 @@ The upstream render reorg **landed 2026-06-22** and changed the baseline:
 - It adopted the `-gl` / `-wgpu` suffixes **natively**, so the former `-webgl`→`-gl` / `-webgpu`→`-wgpu` divergence is **gone** — TS and Rust now share backend suffixes. `render-gl`/`render-wgpu`, `filters-gl`/`filters-wgpu`, `effects-gl`/`effects-wgpu` map by identical name.
 - It **split** the monolithic renderers (see [The render layering](#the-render-layering)): `render-gl`/`render-wgpu` are now subject-agnostic backend **cores**, and the per-subject leaf renderers moved to `displayobject-<backend>` and `scene-<backend>`.
 
-Rust crates that must be renamed to match the new authoritative names:
+A second upstream merge **landed 2026-06-23** with a package-naming pass (dropped hyphens, regrouped filters/text) plus the text-shaping seam. All renames below have been **applied in Rust** — every mapped package is now identity; the table is the audit trail, not pending work:
 
-| Current Rust crate | New name (TS authoritative) | Reason |
+| Former Rust crate | New name (TS authoritative) | Reason |
 | --- | --- | --- |
-| `world` | `scene` | TS renamed `world` → `scene` — the 3D scene graph. Drags in the 3D pipeline (`mesh`, `lighting`, `texture`, `camera`, `scene-gl`, `scene-wgpu`). |
+| `world` | `scene` | TS renamed `world` → `scene` — the 3D scene graph (2026-06-22). Drags in the 3D pipeline (`mesh`, `lighting`, `texture`, `camera`, `scene-gl`, `scene-wgpu`). |
+| `tween-easing` | `easing` | TS split easing to its own top-level `@flighthq/easing` (2026-06-23). |
+| `resources-loader` | `loader` | TS renamed to `@flighthq/loader` (2026-06-23). |
+| `text-input` | `textinput` | TS dropped the hyphen → `@flighthq/textinput` (2026-06-23). |
+| `text-layout` | `textlayout` | TS dropped the hyphen → `@flighthq/textlayout` (2026-06-23). |
+| `surface-filters` | `filters-surface` | TS regrouped under the `filters-*` family → `@flighthq/filters-surface` (CPU pixel filter impls) (2026-06-23). |
 
 Semantic trap (not a Rust rename — Rust had neither): TS's old `camera` (photo capture) is now **`webcam`**; the new **`camera`** package is the **3D camera** (projections / view-projection). Both now exist as crates — `webcam` as a platform seam, `camera` as a 3D-pipeline crate. Do not conflate.
 
@@ -61,10 +66,12 @@ These are the _only_ TS packages without a Rust crate. Each is excluded by the e
 | --- | --- | --- |
 | `displayobject-canvas` | the Canvas2D context (a browser API) | None — software rendering is covered by `displayobject-skia`. |
 | `displayobject-dom` | the DOM tree | None — genuinely N/A; there is no DOM in the box to render to. |
-| `filters-canvas`, `effects-canvas` | Canvas2D / CSS-filter strings | None — CPU filters/effects are covered by `surface-filters` / `effects` / `filters`. |
+| `filters-canvas`, `effects-canvas` | Canvas2D context | None — CPU filters/effects are covered by `filters-surface` / `effects` / `filters`. |
+| `filters-css` | CSS filter strings (a browser-applied style) | None — CPU filter pixels are covered by `filters-surface`; there is no CSS engine in the box. |
+| `textshaper-canvas` | Canvas2D `measureText` | None — the shaper SEAM (`textshaper`) is ported; the native shaper backend is HarfBuzz/rustybuzz, not Canvas. |
 | `host-electron` | the Electron main process | None — every capability it backed exists as its own Rust crate seam; Rust hosts are `host-winit` / `host-sdl` / `host-web`. |
 
-Everything else in the TS package set has a Rust crate. In particular `webcam`, `geolocation`, `haptics`, `share`, and `statusbar` are **in scope** (real device capabilities with a substrate in the box) and must exist as seam-plus-sentinel crates like the rest of the platform suite — they were previously dropped on effort grounds, which the existence rule forbids. They are crates **to add**. (`camera` is now the 3D-camera package, not photo capture — also in scope, in the 3D pipeline.)
+Everything else in the TS package set has a Rust crate. In particular `webcam`, `geolocation`, `haptics`, `share`, and `statusbar` are **in scope** (real device capabilities with a substrate in the box) and exist as seam-plus-sentinel crates like the rest of the platform suite. (`camera` is now the 3D-camera package, not photo capture — also in scope, in the 3D pipeline.)
 
 ### Rust-only (no TS counterpart)
 
@@ -110,12 +117,14 @@ The landed refactor opened a large alignment delta; the structural side of it is
 
 **Platform seams (sentinel defaults; host fills later) — done:** `webcam` (old `camera` capability), `geolocation`, `haptics`, `share`, `statusbar`.
 
+**Text-shaping seam — done (2026-06-23):** `textshaper` ports the upstream `@flighthq/textshaper` seam — `get_text_shaper_backend` / `set_text_shaper_backend` / `shape_text` (sentinel `-1.0` when no backend) over the `TextShaperBackend` trait in `flighthq-types`. `textlayout`'s `get_text_layout_measure_provider` falls back to `shape_text` when a backend is registered, mirroring TS. The Canvas `measureText` backend (`textshaper-canvas`) is [excluded](#excluded--no-substrate-in-the-box) — browser substrate.
+
 **Still to add:**
 
-- `text-shaping` — the shaper seam (`set_text_shaper`), shaped-run header types (in `flighthq-types`), the lightweight default shaper, and a registerable full-glyph shaper backend (rustybuzz) kept out of the base bundle. **TS-authoritative** — must land in TS (`@flighthq/text-shaping`) first, then port; it is not yet in `packages/` either, so the Rust crate is correctly deferred. See [text](text.md). Pulls in (when it lands) `ttf-parser`, `rustybuzz`, `unicode-bidi`; `tiny-skia` (used by `displayobject-skia`) and `ab_glyph` already build in the workspace.
+- A **full-glyph shaper backend** (`textshaper-harfbuzz`, rustybuzz) — required for any GPU/software text and correct international shaping (GSUB/GPOS); kept out of the base bundle. Pulls in `rustybuzz`, `ttf-parser`, `unicode-bidi`; `tiny-skia` (used by `displayobject-skia`) and `ab_glyph` already build in the workspace. See [text](text.md).
 
-The remaining conformance work is now **behavioral, not structural**: porting TS test assertions into the colocated Rust tests and closing visual diffs at the `gl`/`wgpu` cells (see [the bar](#the-bar-behavior-not-name-match)), not adding crates.
+The remaining conformance work is otherwise **behavioral, not structural**: porting TS test assertions into the colocated Rust tests and closing visual diffs at the `gl`/`wgpu` cells (see [the bar](#the-bar-behavior-not-name-match)), not adding crates.
 
-**Excluded** (no substrate in the box): `displayobject-canvas`, `displayobject-dom`, `filters-canvas`, `effects-canvas`, `host-electron`.
+**Excluded** (no substrate in the box): `displayobject-canvas`, `displayobject-dom`, `filters-canvas`, `filters-css`, `effects-canvas`, `textshaper-canvas`, `host-electron`.
 
 `scripts/parity.ts`'s `RENAMES`/`TS_ONLY`/`RUST_ONLY`/`GPU_CRATES`/`WEB_PACKAGES` sets are aligned with this map: `RENAMES` is empty (every mapped package is identity post-reorg), `TS_ONLY` is the [excluded](#excluded--no-substrate-in-the-box) set, `RUST_ONLY` adds `displayobject-skia`, `GPU_CRATES` includes the `displayobject-`/`scene-` leaf renderers, and `WEB_PACKAGES` lists `webcam` (not the 3D `camera`). Keep them in sync when this map changes.

@@ -1,4 +1,4 @@
-//! `flighthq-text-input` — editable text input helpers.
+//! `flighthq-textinput` — editable text input helpers.
 //!
 //! Turns a static `RichText` into an editable field via `enable_text_input`,
 //! and provides free functions for selection, caret management, keyboard
