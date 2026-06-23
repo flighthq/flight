@@ -71,7 +71,7 @@
     "prepush": "npm run build && npm run packages:check && npm run typecheck && npm run test",
     "preview:site": "cross-env PAGES_BASE=/ npm run build:site && npx -y serve tools/site",
     "reference": "npm run dev:reference",
-    "sbx:whitelist": "sbx policy allow network cdn.playwright.dev,playwright.download.prss.microsoft.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com",
+    "sbx:whitelist": "sbx policy allow network cdn.playwright.dev,playwright.download.prss.microsoft.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com,static.crates.io,crates.io",
     "size": "tsx ./scripts/size.ts",
     "size:baseline": "cross-env UPDATE_BASELINE=1 tsx ./scripts/size.ts",
     "size:json": "tsx ./scripts/size.ts report=json",
