@@ -29,8 +29,18 @@
 // Requires Playwright browsers: npx playwright install chromium
 
 import { resolve } from 'path';
+import pc from 'picocolors';
 
-import { captureEntry, discoverEntries, launchBrowser, resolveServer } from './capture-core.js';
+import {
+  captureEntry,
+  discoverEntries,
+  formatSummaryCount,
+  formatSummaryLine,
+  installAbortHandler,
+  isBrowserClosedError,
+  launchBrowser,
+  resolveServer,
+} from './capture-core.js';
 
 // ---------------------------------------------------------------------------
 // Arg parsing
@@ -86,13 +96,19 @@ async function main(): Promise<void> {
   if (!externalUrl) console.log(`Ready at ${server.url}\n`);
 
   const { browser, context } = await launchBrowser({ captureFrames });
+  const isAborted = installAbortHandler();
 
   let captured = 0;
   let changed = 0;
   let failed = 0;
 
   try {
-    for (const entry of entries) {
+    for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
+      if (isAborted()) break;
+      const entry = entries[entryIndex];
+      // A progress header: a dimmed [N/M] counter then the entry name in bold. captureEntry prints the
+      // per-renderer ✓/⊘/✗ detail lines below it.
+      console.log(`${pc.dim(`[${entryIndex + 1}/${entries.length}]`)} ${pc.bold(entry.name)}`);
       const renderers =
         rendererFilter.length > 0 ? entry.renderers.filter((r) => rendererFilter.includes(r)) : entry.renderers;
 
@@ -108,6 +124,7 @@ async function main(): Promise<void> {
         extraWait,
         captureFrames,
         failOnError,
+        isAborted,
       });
 
       if (result === 'ok') captured += renderers.length;
@@ -115,18 +132,32 @@ async function main(): Promise<void> {
       else failed += renderers.length;
     }
   } finally {
-    await browser.close();
+    // The browser may already be closed by Playwright's own signal handler during an interrupt.
+    await browser.close().catch(() => {});
     server.kill();
   }
 
-  const changedNote = changed > 0 ? `  Changed: ${changed}` : '';
-  console.log(`\nCaptured: ${captured}${changedNote}  Failed: ${failed}`);
+  const interrupted = isAborted();
+  const note = interrupted ? pc.yellow('   — interrupted (partial run)') : '';
+  const runFailed = failed > 0 || (failOnChanged && changed > 0);
+  console.log(
+    '\n' +
+      formatSummaryLine(runFailed, [
+        formatSummaryCount(captured, 'captured', 'pass'),
+        formatSummaryCount(changed, 'changed', 'warn'),
+        formatSummaryCount(failed, 'failed', 'fail'),
+      ]) +
+      note,
+  );
   console.log(`Output:   ${outBase}/${tool}/`);
 
-  if (failed > 0 || (failOnChanged && changed > 0)) process.exit(1);
+  if (runFailed) process.exit(1);
+  if (interrupted) process.exit(130);
 }
 
 main().catch((err: unknown) => {
+  // A closed browser/page reject is the interrupt racing teardown — exit quietly, not with a raw stack.
+  if (isBrowserClosedError(err)) process.exit(130);
   console.error(err);
   process.exit(1);
 });
