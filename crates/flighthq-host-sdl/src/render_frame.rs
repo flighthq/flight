@@ -13,7 +13,7 @@ use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 /// Owns the wgpu `Surface` and its configuration alongside the Flight render
 /// state, and keeps the SDL window alive for as long as the surface exists.
 ///
-/// `sdl2::video::Window` is `!Send + !Sync` (it holds an `Rc`), so the surface
+/// `sdl3::video::Window` is `!Send + !Sync` (it holds an `Rc`), so the surface
 /// is created with `create_surface_unsafe` from the window's raw handles; the
 /// owned `window` field is what makes that sound — the surface never outlives
 /// the window because they are dropped together with this struct. The window is
@@ -22,7 +22,7 @@ pub struct SdlRenderContext {
     pub surface: wgpu::Surface<'static>,
     pub config: wgpu::SurfaceConfiguration,
     pub render_state: WgpuRenderState,
-    pub window: sdl2::video::Window,
+    pub window: sdl3::video::Window,
 }
 
 /// Creates a wgpu surface from an SDL window, requests an adapter and device,
@@ -32,7 +32,7 @@ pub struct SdlRenderContext {
 /// Returns `None` if the window's raw handles cannot be read or no compatible
 /// GPU adapter is available.
 pub fn create_sdl_render_context(
-    window: sdl2::video::Window,
+    window: sdl3::video::Window,
     width: u32,
     height: u32,
     options: &WgpuRenderOptions,

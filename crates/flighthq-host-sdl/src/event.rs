@@ -7,7 +7,7 @@
 //!   normalized `flighthq-types` input structs. They have no SDL dependency and
 //!   are unit-tested on CPU with no window or driver.
 //! * Thin adapters (`dispatch_sdl_event`) that read fields off a live
-//!   `sdl2::event::Event` and forward them through the builders into an
+//!   `sdl3::event::Event` and forward them through the builders into an
 //!   `InputManager`. These run only inside a real SDL event loop.
 
 use flighthq_input::{
@@ -103,49 +103,47 @@ pub fn sdl_button_to_dom_button(sdl_button: u8) -> i32 {
 // Live SDL adapter
 // ---------------------------------------------------------------------------
 
-/// Translates a single live `sdl2::event::Event` into the matching
+/// Translates a single live `sdl3::event::Event` into the matching
 /// `flighthq-input` dispatch call against `manager`.
 ///
 /// Returns `true` if the event was a recognized input event and was
 /// dispatched, `false` otherwise (the caller may handle window/quit events).
+///
+/// SDL3 reports mouse positions and wheel deltas as `f32` (SDL2 used `i32`),
+/// and `mouse_btn` is the `MouseButton` enum rather than a raw integer. The
+/// enum is `#[repr(u8)]` with `Left = 1`, `Middle = 2`, `Right = 3`, `X1 = 4`,
+/// `X2 = 5`, so `as u8` yields the same 1-based index `build_sdl_pointer_data`
+/// expects.
 pub fn dispatch_sdl_event(
     manager: &mut flighthq_input::InputManager,
-    event: &sdl2::event::Event,
+    event: &sdl3::event::Event,
 ) -> bool {
-    use sdl2::event::Event;
-    use sdl2::keyboard::Keycode;
+    use sdl3::event::Event;
+    use sdl3::keyboard::Keycode;
 
     match event {
         Event::MouseButtonDown {
             x, y, mouse_btn, ..
         } => {
-            let data = build_sdl_pointer_data(*x as f32, *y as f32, *mouse_btn as u8);
+            let data = build_sdl_pointer_data(*x, *y, *mouse_btn as u8);
             dispatch_pointer_down_event(manager, data);
             true
         }
         Event::MouseButtonUp {
             x, y, mouse_btn, ..
         } => {
-            let data = build_sdl_pointer_data(*x as f32, *y as f32, *mouse_btn as u8);
+            let data = build_sdl_pointer_data(*x, *y, *mouse_btn as u8);
             dispatch_pointer_up_event(manager, data);
             true
         }
         Event::MouseMotion { x, y, .. } => {
-            let data = build_sdl_pointer_data(*x as f32, *y as f32, 0);
+            let data = build_sdl_pointer_data(*x, *y, 0);
             dispatch_pointer_move_event(manager, data);
             true
         }
         Event::MouseWheel { x, y, .. } => {
-            let data = build_sdl_wheel_data(0.0, 0.0, *x as f32, *y as f32);
-            dispatch_wheel_event(
-                manager,
-                0.0,
-                0.0,
-                *x as f32,
-                *y as f32,
-                MouseWheelMode::Lines,
-                data,
-            );
+            let data = build_sdl_wheel_data(0.0, 0.0, *x, *y);
+            dispatch_wheel_event(manager, 0.0, 0.0, *x, *y, MouseWheelMode::Lines, data);
             true
         }
         Event::KeyDown {
