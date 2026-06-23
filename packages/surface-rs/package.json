@@ -19,8 +19,7 @@
     "!dist/**/*.test.d.ts.map"
   ],
   "scripts": {
-    "wasm": "wasm-pack build ../../crates/flighthq-surface-wasm --release --target web --out-dir ../../packages/surface-rs/src/wasm --out-name surface_wasm && tsx ./scripts/embed-wasm.ts",
-    "prepare": "npm run wasm",
+    "wasm": "tsx ../../scripts/run-wasm-pack.ts build ../../crates/flighthq-surface-wasm --release --target web --out-dir ../../packages/surface-rs/src/wasm --out-name surface_wasm && tsx ./scripts/embed-wasm.ts",
     "build": "npm run wasm && tsc -b && tsx ./scripts/copy-wasm-glue.ts",
     "clean": "tsc -b --clean",
     "test": "vitest run --config vitest.config.ts",
