@@ -46,13 +46,13 @@ export const iridescencePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = 
 
     const iridescence = material as Readonly<IridescencePbrMaterial> | null;
     const standard = iridescence !== null ? iridescence.standard : null;
-    const key = buildWgpuPbrStandardDefineKey(iridescence);
+    const key = buildWgpuPbrStandardDefineKey(standard, iridescence);
     key.iridescenceEnabled = true;
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, iridescence ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, iridescence ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, iridescence !== null ? iridescence.alphaCutoff : 0.5);
     out.fill(0, 16);

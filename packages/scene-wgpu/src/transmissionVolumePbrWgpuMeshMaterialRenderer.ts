@@ -59,13 +59,13 @@ export const transmissionVolumePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
 
     const transmission = material as Readonly<TransmissionVolumePbrMaterial> | null;
     const standard = transmission !== null ? transmission.standard : null;
-    const key = buildWgpuPbrStandardDefineKey(transmission);
+    const key = buildWgpuPbrStandardDefineKey(standard, transmission);
     key.transmissionEnabled = true;
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, transmission ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, transmission ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, transmission !== null ? transmission.alphaCutoff : 0.5);
     out.fill(0, 16);

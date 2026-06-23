@@ -41,10 +41,12 @@ export const vertexColorWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (vertexColor === null) {
-      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5);
+      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5, null);
     } else {
       unpackColorToLinear(_scratch, vertexColor.tint);
-      group = bindWgpuUnlitSurface(state, pipeline, vertexColor, _scratch, 1, vertexColor.alphaCutoff);
+      // VertexColor carries no map texture; color0 (the per-vertex tint) is the absent vertex attribute,
+      // not a material map. Pass null so the placeholder satisfies the color slot.
+      group = bindWgpuUnlitSurface(state, pipeline, vertexColor, _scratch, 1, vertexColor.alphaCutoff, null);
     }
 
     beginWgpuMeshDraw(state, pipeline);

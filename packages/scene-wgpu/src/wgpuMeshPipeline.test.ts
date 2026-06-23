@@ -2,7 +2,7 @@ import { createCamera } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera, SceneLightBlock, SceneRenderProxy, Texture } from '@flighthq/types';
 
 import {
   beginWgpuMeshDraw,
@@ -12,6 +12,8 @@ import {
   ensureWgpuPlaceholderTextureView,
   ensureWgpuSceneLayouts,
   ensureWgpuScenePipeline,
+  hasWgpuMaterialTexture,
+  resolveWgpuMaterialTextureView,
   WGPU_MESH_PRELUDE_WGSL,
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
@@ -135,6 +137,24 @@ describe('ensureWgpuScenePipeline', () => {
     const b = ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
     expect(a).toBe(b);
     expect(compiles).toBe(1);
+  });
+});
+
+describe('hasWgpuMaterialTexture', () => {
+  it('is true only when the texture carries an uploadable image source', () => {
+    expect(hasWgpuMaterialTexture(null)).toBe(false);
+    expect(hasWgpuMaterialTexture({ image: null } as unknown as Texture)).toBe(false);
+    expect(hasWgpuMaterialTexture({ image: { source: null } } as unknown as Texture)).toBe(false);
+    expect(hasWgpuMaterialTexture({ image: { source: {} } } as unknown as Texture)).toBe(true);
+  });
+});
+
+describe('resolveWgpuMaterialTextureView', () => {
+  it('returns the shared placeholder view for a map without an image source', () => {
+    const { state } = makeWgpuSceneState();
+    const placeholder = ensureWgpuPlaceholderTextureView(state);
+    expect(resolveWgpuMaterialTextureView(state, null)).toBe(placeholder);
+    expect(resolveWgpuMaterialTextureView(state, { image: null } as unknown as Texture)).toBe(placeholder);
   });
 });
 

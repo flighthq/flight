@@ -14,7 +14,12 @@ import type {
 import { EmissiveMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  hasWgpuMaterialTexture,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline';
 import type { WgpuUnlitDefineKey } from './wgpuUnlitPrelude';
 import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
@@ -40,7 +45,7 @@ export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (emissive === null) {
-      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5);
+      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5, null);
     } else {
       unpackColorToLinear(_scratch, emissive.emissive);
       group = bindWgpuUnlitSurface(
@@ -50,6 +55,7 @@ export const emissiveWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
         _scratch,
         emissive.emissiveStrength,
         emissive.alphaCutoff,
+        emissive.emissiveMap,
       );
     }
 
@@ -72,7 +78,7 @@ function defineKeyForMaterial(material: Readonly<EmissiveMaterial> | null): Wgpu
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasColorMap: false,
+    hasColorMap: material !== null && hasWgpuMaterialTexture(material.emissiveMap),
   };
 }
 

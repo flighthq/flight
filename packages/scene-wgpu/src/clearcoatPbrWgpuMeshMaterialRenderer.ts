@@ -46,13 +46,13 @@ export const clearcoatPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const clearcoat = material as Readonly<ClearcoatPbrMaterial> | null;
     const standard = clearcoat !== null ? clearcoat.standard : null;
-    const key = buildWgpuPbrStandardDefineKey(clearcoat);
+    const key = buildWgpuPbrStandardDefineKey(standard, clearcoat);
     key.clearcoatEnabled = true;
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, clearcoat ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, clearcoat ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, clearcoat !== null ? clearcoat.alphaCutoff : 0.5);
     out.fill(0, 16);

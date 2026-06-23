@@ -49,13 +49,13 @@ export const subsurfacePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const subsurface = material as Readonly<SubsurfacePbrMaterial> | null;
     const standard = subsurface !== null ? subsurface.standard : null;
-    const key = buildWgpuPbrStandardDefineKey(subsurface);
+    const key = buildWgpuPbrStandardDefineKey(standard, subsurface);
     key.subsurfaceEnabled = true;
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, subsurface ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, subsurface ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, subsurface !== null ? subsurface.alphaCutoff : 0.5);
     out.fill(0, 16);

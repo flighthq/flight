@@ -46,13 +46,13 @@ export const anisotropyPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const anisotropy = material as Readonly<AnisotropyPbrMaterial> | null;
     const standard = anisotropy !== null ? anisotropy.standard : null;
-    const key = buildWgpuPbrStandardDefineKey(anisotropy);
+    const key = buildWgpuPbrStandardDefineKey(standard, anisotropy);
     key.anisotropyEnabled = true;
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, anisotropy ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, anisotropy ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, anisotropy !== null ? anisotropy.alphaCutoff : 0.5);
     out.fill(0, 16);

@@ -1,12 +1,12 @@
 import type { LinearColor } from '@flighthq/materials';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { WgpuRenderState } from '@flighthq/types';
+import type { Texture, WgpuRenderState } from '@flighthq/types';
 
 import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
-  ensureWgpuPlaceholderTextureView,
   ensureWgpuScenePipeline,
+  resolveWgpuMaterialTextureView,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
 import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
@@ -27,13 +27,10 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // (frame.cameraPosition) is read for Phong/BlinnPhong. Lambert has no view-dependent term and ignores
 // it; its specular branch is compiled out.
 //
-// NOTE ON MAPS: like the StandardPbr / Unlit wgpu paths, real map textures (diffuse/specular/normal)
-// are not yet sampled on wgpu — the `has*Map` flags stay false, the material bind group binds the
-// shared 1x1 placeholder texture for each map slot, and only the scalar uniforms (diffuse, specular,
-// shininess) drive shading. This mirrors a documented gap (the GL classic path works textured; wgpu
-// defers texture upload until the shared map-upload path arrives). The Lambert `emissive` field also
-// follows the GL classic, which currently does not add an emissive term — kept for parity, no emissive
-// lobe here.
+// NOTE ON MAPS: the diffuse / specular / normal maps ARE sampled when bound — the `has*Map` flags drive
+// the textured shader variant and the real uploaded views bind into the map slots (an unbound slot falls
+// back to the shared placeholder). The Lambert `emissive` field follows the GL classic, which currently
+// does not add an emissive term — kept for parity, no emissive lobe here.
 
 // One classic shading model. Lambert is diffuse-only; Phong and BlinnPhong add a specular lobe that
 // differs only in the reflection geometry (reflection vector vs. half vector). The model is encoded
@@ -70,6 +67,9 @@ export function bindWgpuClassicSurface(
   specular: Readonly<LinearColor>,
   shininess: number,
   alphaCutoff: number,
+  diffuseMap: Readonly<Texture> | null,
+  specularMap: Readonly<Texture> | null,
+  normalMap: Readonly<Texture> | null,
 ): GPUBindGroup {
   const scene = getWgpuSceneRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
@@ -79,15 +79,14 @@ export function bindWgpuClassicSurface(
       size: CLASSIC_UNIFORM_BYTES,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    const placeholder = ensureWgpuPlaceholderTextureView(state);
     const bindGroup = state.device.createBindGroup({
       layout: pipeline.materialBindGroupLayout,
       entries: [
         { binding: 0, resource: { buffer } },
         { binding: 1, resource: stateRuntime.linearSampler },
-        { binding: 2, resource: placeholder },
-        { binding: 3, resource: placeholder },
-        { binding: 4, resource: placeholder },
+        { binding: 2, resource: resolveWgpuMaterialTextureView(state, diffuseMap) },
+        { binding: 3, resource: resolveWgpuMaterialTextureView(state, specularMap) },
+        { binding: 4, resource: resolveWgpuMaterialTextureView(state, normalMap) },
       ],
     });
     binding = { bindGroup, buffer };

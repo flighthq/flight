@@ -14,7 +14,12 @@ import type {
 import { UnlitMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  hasWgpuMaterialTexture,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline';
 import type { WgpuUnlitDefineKey } from './wgpuUnlitPrelude';
 import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
@@ -40,10 +45,10 @@ export const unlitWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (unlit === null) {
-      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5);
+      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5, null);
     } else {
       unpackColorToLinear(_scratch, unlit.baseColor);
-      group = bindWgpuUnlitSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff);
+      group = bindWgpuUnlitSurface(state, pipeline, unlit, _scratch, 1, unlit.alphaCutoff, unlit.baseColorMap);
     }
 
     beginWgpuMeshDraw(state, pipeline);
@@ -65,7 +70,7 @@ function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): WgpuUnl
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasColorMap: false,
+    hasColorMap: material !== null && hasWgpuMaterialTexture(material.baseColorMap),
   };
 }
 

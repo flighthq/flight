@@ -16,7 +16,12 @@ import { LambertMaterialKind } from '@flighthq/types';
 import type { WgpuClassicDefineKey } from './wgpuClassicPrelude';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  hasWgpuMaterialTexture,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline';
 
 // The built-in classic Lambert forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // LambertMaterialKind) — the WGSL mirror of lambertGlMeshMaterialRenderer. Diffuse-only Lambertian
@@ -43,10 +48,21 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (lambert === null) {
-      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5);
+      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null);
     } else {
       unpackColorToLinear(_diffuse, lambert.diffuse);
-      group = bindWgpuClassicSurface(state, pipeline, lambert, _diffuse, WHITE, 32, lambert.alphaCutoff);
+      group = bindWgpuClassicSurface(
+        state,
+        pipeline,
+        lambert,
+        _diffuse,
+        WHITE,
+        32,
+        lambert.alphaCutoff,
+        lambert.diffuseMap,
+        null,
+        null,
+      );
     }
 
     beginWgpuMeshDraw(state, pipeline);
@@ -65,13 +81,13 @@ export function registerLambertWgpuMaterial(state: WgpuRenderState): void {
 }
 
 // The feature define key for a Lambert material: the fixed `lambert` lighting model plus the alpha-mask
-// + double-sided flags. Lambert has no specular or normal map; the proving slice defers map upload, so
-// hasDiffuseMap stays off (matches the GL classic's wgpu-deferred map state).
+// + double-sided flags and whether a diffuse map is present. Lambert has no specular or normal map
+// (mirrors lambertGlMeshMaterialRenderer's diffuse-only map handling).
 function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): WgpuClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasDiffuseMap: false,
+    hasDiffuseMap: material !== null && hasWgpuMaterialTexture(material.diffuseMap),
     hasNormalMap: false,
     hasSpecularMap: false,
     lightingModel: 'lambert',

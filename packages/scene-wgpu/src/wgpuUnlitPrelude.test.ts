@@ -19,9 +19,9 @@ describe('bindWgpuUnlitSurface', () => {
     const { fake, state } = makeWgpuSceneState();
     const pipeline = compileWgpuUnlitPipeline(state, FLAT, 'bgra8unorm');
     const key = {};
-    bindWgpuUnlitSurface(state, pipeline, key, COLOR, 2, 0.5);
+    bindWgpuUnlitSurface(state, pipeline, key, COLOR, 2, 0.5, null);
     const groups = fake.calls.filter((c) => c.name === 'createBindGroup').length;
-    bindWgpuUnlitSurface(state, pipeline, key, COLOR, 2, 0.5);
+    bindWgpuUnlitSurface(state, pipeline, key, COLOR, 2, 0.5, null);
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(groups);
     expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
   });

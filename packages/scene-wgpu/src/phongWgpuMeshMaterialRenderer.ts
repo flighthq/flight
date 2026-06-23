@@ -16,7 +16,12 @@ import { PhongMaterialKind } from '@flighthq/types';
 import type { WgpuClassicDefineKey } from './wgpuClassicPrelude';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  hasWgpuMaterialTexture,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline';
 
 // The built-in classic Phong forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // PhongMaterialKind) — the WGSL mirror of phongGlMeshMaterialRenderer. Lambert diffuse plus a
@@ -44,11 +49,22 @@ export const phongWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (phong === null) {
-      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5);
+      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null);
     } else {
       unpackColorToLinear(_diffuse, phong.diffuse);
       unpackColorToLinear(_specular, phong.specular);
-      group = bindWgpuClassicSurface(state, pipeline, phong, _diffuse, _specular, phong.shininess, phong.alphaCutoff);
+      group = bindWgpuClassicSurface(
+        state,
+        pipeline,
+        phong,
+        _diffuse,
+        _specular,
+        phong.shininess,
+        phong.alphaCutoff,
+        phong.diffuseMap,
+        phong.specularMap,
+        phong.normalMap,
+      );
     }
 
     beginWgpuMeshDraw(state, pipeline);
@@ -67,15 +83,14 @@ export function registerPhongWgpuMaterial(state: WgpuRenderState): void {
 }
 
 // The feature define key for a Phong material: the fixed `phong` lighting model plus the alpha-mask +
-// double-sided flags. The proving slice defers map upload on wgpu, so the map flags stay off (matches
-// the GL classic's wgpu-deferred map state).
+// double-sided flags and which optional maps are present (mirrors phongGlMeshMaterialRenderer).
 function defineKeyForMaterial(material: Readonly<PhongMaterial> | null): WgpuClassicDefineKey {
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasDiffuseMap: false,
-    hasNormalMap: false,
-    hasSpecularMap: false,
+    hasDiffuseMap: material !== null && hasWgpuMaterialTexture(material.diffuseMap),
+    hasNormalMap: material !== null && hasWgpuMaterialTexture(material.normalMap),
+    hasSpecularMap: material !== null && hasWgpuMaterialTexture(material.specularMap),
     lightingModel: 'phong',
   };
 }
