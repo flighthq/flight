@@ -90,7 +90,11 @@ function compositeNative(state: WgpuRenderState, spec: Readonly<NativeBevelSpec>
 
   const sourceTarget = createWgpuRenderTarget(state, size, size);
   const destTarget = createWgpuRenderTarget(state, size, size);
+  // Bevel needs THREE scratch targets (tinted mask, blurred, blur ping-pong temp) — applyBevelFilterToWgpu
+  // destructures `const [tinted, blurred, blurTemp] = scratch`, so a single target is not iterable.
   const scratch0 = createWgpuRenderTarget(state, size, size);
+  const scratch1 = createWgpuRenderTarget(state, size, size);
+  const scratch2 = createWgpuRenderTarget(state, size, size);
 
   prepareDisplayObjectRender(state, sourceBitmap);
   const sourceProxy = getRenderProxy2D(state, sourceBitmap);
@@ -98,7 +102,7 @@ function compositeNative(state: WgpuRenderState, spec: Readonly<NativeBevelSpec>
 
   beginWgpuRenderTarget(state, sourceTarget, _identity);
   renderWgpuDisplayObject(state, sourceBitmap);
-  applyBevelFilterToWgpu(state, sourceTarget, destTarget, scratch0, spec.filter);
+  applyBevelFilterToWgpu(state, sourceTarget, destTarget, [scratch0, scratch1, scratch2], spec.filter);
   endWgpuRenderTarget(state);
 
   const placement = createBitmap();
@@ -108,7 +112,7 @@ function compositeNative(state: WgpuRenderState, spec: Readonly<NativeBevelSpec>
   const placementProxy = getRenderProxy2D(state, placement);
   if (placementProxy !== undefined) drawWgpuRenderTargetResult(state, placementProxy, destTarget, _identity);
 
-  toDestroy.push(sourceTarget, destTarget, scratch0);
+  toDestroy.push(sourceTarget, destTarget, scratch0, scratch1, scratch2);
 }
 
 function setFlippedTransform(out: Matrix, size: number): void {
