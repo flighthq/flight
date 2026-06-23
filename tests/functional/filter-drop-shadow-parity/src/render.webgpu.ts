@@ -104,7 +104,7 @@ function compositeNative(
 
   beginWgpuRenderTarget(state, sourceTarget, _identity);
   renderWgpuDisplayObject(state, sourceBitmap);
-  applyDropShadowFilterToWgpu(state, sourceTarget, destTarget, [scratch0, scratch1, scratch2], filterParams);
+  applyDropShadowFilterToWgpu(state, sourceTarget, destTarget, [scratch0, scratch1, scratch2], spec.filter);
   endWgpuRenderTarget(state);
 
   const placement = createBitmap();
