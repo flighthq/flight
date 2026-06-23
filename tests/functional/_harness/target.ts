@@ -10,6 +10,7 @@ export interface FunctionalTargetOptions {
   syncPolicy?: SceneGraphSyncPolicy;
   clip?: boolean;
   cache?: boolean;
+  blend?: boolean;
 }
 
 export interface FunctionalCanvasTarget {

@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-text-background-box",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

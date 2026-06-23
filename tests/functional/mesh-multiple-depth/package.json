@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-mesh-multiple-depth",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-mesh-transform-position",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

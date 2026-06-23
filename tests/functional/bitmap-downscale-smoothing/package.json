@@ -1,0 +1,12 @@
+{
+  "name": "functional-test-bitmap-downscale-smoothing",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "canvas",
+    "dom"
+  ],
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

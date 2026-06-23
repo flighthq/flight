@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-displayobject-clip-contour",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

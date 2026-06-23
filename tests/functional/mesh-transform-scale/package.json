@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-mesh-transform-scale",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

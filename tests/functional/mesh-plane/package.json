@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-mesh-plane",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

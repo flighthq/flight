@@ -5,21 +5,34 @@ import {
   createWgpuCanvasElement,
   createWgpuRenderState,
   defaultWgpuBitmapRenderer,
+  defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
+  defaultWgpuScale9ShapeRenderer,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
+  defaultWgpuSpriteRenderer,
+  defaultWgpuTextLabelRenderer,
+  defaultWgpuTilemapRenderer,
+  defaultWgpuVideoRenderer,
+  enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
   prepareDisplayObjectRender,
+  QuadBatchKind,
   registerDefaultWgpuMaterial,
   registerRenderer,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuDisplayObject,
   RichTextKind,
+  Scale9ShapeKind,
   ShapeKind,
+  SpriteKind,
   submitWgpuRenderPass,
+  TextLabelKind,
+  TilemapKind,
+  VideoKind,
 } from '@flighthq/sdk';
 
 import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target';
@@ -52,11 +65,25 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
       registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
+    } else if (kind === TextLabelKind) {
+      registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
+    } else if (kind === SpriteKind) {
+      registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
+    } else if (kind === QuadBatchKind) {
+      registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
+    } else if (kind === TilemapKind) {
+      registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);
+    } else if (kind === Scale9ShapeKind) {
+      registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
+      registerWgpuShapeCommands(defaultWgpuShapeCommands);
+    } else if (kind === VideoKind) {
+      registerRenderer(state, VideoKind, defaultWgpuVideoRenderer);
     }
   }
 
   if (options.clip) enableWgpuClipSupport(state);
   if (options.cache) enableWgpuRenderCache(state);
+  if (options.blend) enableWgpuBlendModeSupport(state);
 
   return registerFunctionalTarget({
     kind: 'webgpu',

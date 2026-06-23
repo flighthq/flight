@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-text-bold",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-mesh-hierarchy-parent-transform",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

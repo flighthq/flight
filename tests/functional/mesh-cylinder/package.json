@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-mesh-cylinder",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}
