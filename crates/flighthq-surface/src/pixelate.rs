@@ -10,7 +10,7 @@ use flighthq_types::SurfaceRegion;
 /// `out` must be at least `source.width * source.height * 4` bytes. Safe to
 /// pass `source.surface.data` as `out` for a full-surface region — each cell
 /// is fully read before it is written.
-pub fn apply_surface_pixelate_filter(out: &mut [u8], source: &SurfaceRegion, block_size: u32) {
+pub fn pixelate_surface(out: &mut [u8], source: &SurfaceRegion, block_size: u32) {
     let block = block_size.max(1);
     let w = source.width;
     let h = source.height;
@@ -75,7 +75,7 @@ fn div_round(numerator: u64, denominator: u64) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -91,25 +91,25 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_pixelate_filter_block_one_is_copy() {
+    fn pixelate_surface_block_one_is_copy() {
         let mut source = create_surface(2, 1, 0);
         source.data[0] = 10;
         source.data[4] = 200;
         let mut out = vec![0_u8; 8];
-        apply_surface_pixelate_filter(&mut out, &region(source), 1);
+        pixelate_surface(&mut out, &region(source), 1);
         assert_eq!(out[0], 10);
         assert_eq!(out[4], 200);
     }
 
     #[test]
-    fn apply_surface_pixelate_filter_averages_block() {
+    fn pixelate_surface_averages_block() {
         let mut source = create_surface(2, 1, 0);
         source.data[0] = 0;
         source.data[4] = 100;
         source.data[3] = 255;
         source.data[7] = 255;
         let mut out = vec![0_u8; 8];
-        apply_surface_pixelate_filter(&mut out, &region(source), 2);
+        pixelate_surface(&mut out, &region(source), 2);
         assert_eq!(out[0], 50);
         assert_eq!(out[4], 50);
     }

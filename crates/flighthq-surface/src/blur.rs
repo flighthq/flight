@@ -1,18 +1,18 @@
 //! Box blur, Gaussian blur, and separable pass primitives.
 
-use flighthq_surface::extract_surface_pixels;
+use crate::extract_surface_pixels;
 use flighthq_types::SurfaceRegion;
 
-/// Options for `apply_surface_box_blur_filter`.
+/// Options for `box_blur_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceBoxBlurFilterOptions {
+pub struct SurfaceBoxBlurOptions {
     pub radius_x: u32,
     pub radius_y: u32,
     /// Number of H+V pass pairs. Multiple passes approximate a Gaussian.
     pub passes: u32,
 }
 
-impl Default for SurfaceBoxBlurFilterOptions {
+impl Default for SurfaceBoxBlurOptions {
     fn default() -> Self {
         Self {
             radius_x: 2,
@@ -28,11 +28,11 @@ impl Default for SurfaceBoxBlurFilterOptions {
 ///
 /// Safe to pass `source.surface.data` as `out` when the region covers the full
 /// surface.
-pub fn apply_surface_box_blur_filter(
+pub fn box_blur_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceBoxBlurFilterOptions,
+    options: &SurfaceBoxBlurOptions,
 ) {
     let radius_x = options.radius_x;
     let radius_y = options.radius_y;
@@ -74,7 +74,7 @@ pub fn apply_surface_box_blur_filter(
 ///
 /// `sigma_x` and `sigma_y` are the standard deviation of the Gaussian (CSS
 /// `blur(Xpx)` uses sigma = X). `passes` repeats the H+V pass pair.
-pub fn apply_surface_gaussian_blur_filter(
+pub fn gaussian_blur_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
@@ -361,7 +361,7 @@ fn div_round(numerator: i64, denominator: i64) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -477,16 +477,16 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_box_blur_filter_spreads_alpha() {
+    fn box_blur_surface_spreads_alpha() {
         let mut source = create_surface(3, 1, 0);
         source.data[7] = 255; // center pixel opaque
         let mut out = vec![0_u8; 12];
         let mut scratch = vec![0_u8; 12];
-        apply_surface_box_blur_filter(
+        box_blur_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceBoxBlurFilterOptions {
+            &SurfaceBoxBlurOptions {
                 radius_x: 2,
                 radius_y: 0,
                 passes: 1,
@@ -497,15 +497,15 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_box_blur_filter_zero_radius_is_copy() {
+    fn box_blur_surface_zero_radius_is_copy() {
         let source = create_surface(1, 1, 0x336699ff);
         let mut out = vec![0_u8; 4];
         let mut scratch = vec![0_u8; 4];
-        apply_surface_box_blur_filter(
+        box_blur_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceBoxBlurFilterOptions {
+            &SurfaceBoxBlurOptions {
                 radius_x: 0,
                 radius_y: 0,
                 passes: 1,
@@ -516,7 +516,7 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_box_blur_filter_offset_region() {
+    fn box_blur_surface_offset_region() {
         // 4 px alpha: [_, 255, 100, _]. Blurring region (1,0,2,1) extracts
         // [255, 100] and averages them.
         let mut source = create_surface(4, 1, 0);
@@ -531,11 +531,11 @@ mod tests {
         };
         let mut out = vec![0_u8; 8];
         let mut scratch = vec![0_u8; 8];
-        apply_surface_box_blur_filter(
+        box_blur_surface(
             &mut out,
             &mut scratch,
             &region,
-            &SurfaceBoxBlurFilterOptions {
+            &SurfaceBoxBlurOptions {
                 radius_x: 2,
                 radius_y: 0,
                 passes: 1,
@@ -546,16 +546,16 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_box_blur_filter_passes() {
+    fn box_blur_surface_passes() {
         // Result must land in `out` regardless of pass parity.
         let source = create_surface(3, 3, 0xffffff88);
         let mut out = vec![0_u8; 36];
         let mut scratch = vec![0_u8; 36];
-        apply_surface_box_blur_filter(
+        box_blur_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceBoxBlurFilterOptions {
+            &SurfaceBoxBlurOptions {
                 radius_x: 2,
                 radius_y: 0,
                 passes: 1,
@@ -565,32 +565,32 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_gaussian_blur_filter_spreads_alpha() {
+    fn gaussian_blur_surface_spreads_alpha() {
         let mut source = create_surface(5, 1, 0);
         source.data[2 * 4 + 3] = 255;
         let mut out = vec![0_u8; 20];
         let mut scratch = vec![0_u8; 20];
-        apply_surface_gaussian_blur_filter(&mut out, &mut scratch, &region(source), 1.0, 1.0, 1);
+        gaussian_blur_surface(&mut out, &mut scratch, &region(source), 1.0, 1.0, 1);
         assert!(out[3] > 0);
         assert!(out[4 * 4 + 3] > 0);
     }
 
     #[test]
-    fn apply_surface_gaussian_blur_filter_center_heaviest() {
+    fn gaussian_blur_surface_center_heaviest() {
         let mut source = create_surface(5, 1, 0);
         source.data[2 * 4 + 3] = 255;
         let mut out = vec![0_u8; 20];
         let mut scratch = vec![0_u8; 20];
-        apply_surface_gaussian_blur_filter(&mut out, &mut scratch, &region(source), 0.8, 0.8, 1);
+        gaussian_blur_surface(&mut out, &mut scratch, &region(source), 0.8, 0.8, 1);
         assert!(out[2 * 4 + 3] > out[3]);
     }
 
     #[test]
-    fn apply_surface_gaussian_blur_filter_sigma_zero_identity() {
+    fn gaussian_blur_surface_sigma_zero_identity() {
         let source = create_surface(1, 1, 0x336699ff);
         let mut out = vec![0_u8; 4];
         let mut scratch = vec![0_u8; 4];
-        apply_surface_gaussian_blur_filter(&mut out, &mut scratch, &region(source), 0.0, 0.0, 1);
+        gaussian_blur_surface(&mut out, &mut scratch, &region(source), 0.0, 0.0, 1);
         assert_eq!(out[0], 0x33);
         assert_eq!(out[3], 0xff);
     }

@@ -665,9 +665,7 @@ dependencies = [
 name = "flighthq-filters"
 version = "0.1.0"
 dependencies = [
- "flighthq-filters-surface",
  "flighthq-geometry",
- "flighthq-surface",
  "flighthq-types",
 ]
 
@@ -684,6 +682,7 @@ dependencies = [
 name = "flighthq-filters-surface"
 version = "0.1.0"
 dependencies = [
+ "flighthq-filters",
  "flighthq-surface",
  "flighthq-types",
 ]
@@ -702,15 +701,20 @@ name = "flighthq-functional"
 version = "0.1.0"
 dependencies = [
  "flighthq-capture",
+ "flighthq-displayobject-gl",
+ "flighthq-displayobject-skia",
  "flighthq-displayobject-wgpu",
  "flighthq-effects",
  "flighthq-effects-wgpu",
  "flighthq-path",
  "flighthq-render",
+ "flighthq-render-gl",
  "flighthq-render-wgpu",
  "flighthq-shape",
  "flighthq-surface",
  "flighthq-types",
+ "glow 0.14.2",
+ "khronos-egl",
  "serde_json",
  "wgpu",
 ]

@@ -7,19 +7,15 @@
 //! `source.width * source.height * 4` bytes; they may not alias `out` unless a
 //! function documents otherwise.
 
-use flighthq_filters_surface::{
-    SurfaceBevelFilterOptions, SurfaceBevelType, SurfaceConvolutionEdge,
-    SurfaceConvolutionFilterOptions, SurfaceDisplacementMapFilterOptions,
-    SurfaceDisplacementMapMode, SurfaceDropShadowFilterOptions, SurfaceGlowFilterOptions,
-    SurfaceGradientBevelFilterOptions, SurfaceGradientGlowFilterOptions,
-    SurfaceInnerGlowFilterOptions, SurfaceInnerShadowFilterOptions, SurfaceSharpenFilterOptions,
-    apply_surface_bevel_filter, apply_surface_color_matrix_filter,
-    apply_surface_convolution_filter, apply_surface_displacement_map_filter,
-    apply_surface_drop_shadow_filter, apply_surface_gaussian_blur_filter,
-    apply_surface_glow_filter, apply_surface_gradient_bevel_filter,
-    apply_surface_gradient_glow_filter, apply_surface_inner_glow_filter,
-    apply_surface_inner_shadow_filter, apply_surface_median_filter, apply_surface_pixelate_filter,
-    apply_surface_sharpen_filter, build_surface_gradient_ramp,
+use flighthq_surface::{
+    SurfaceBevelOptions, SurfaceBevelType, SurfaceConvolutionEdge, SurfaceConvolutionOptions,
+    SurfaceDisplacementMapMode, SurfaceDisplacementMapOptions, SurfaceDropShadowOptions,
+    SurfaceGlowOptions, SurfaceGradientBevelOptions, SurfaceGradientGlowOptions,
+    SurfaceInnerGlowOptions, SurfaceInnerShadowOptions, SurfaceSharpenOptions, bevel_surface,
+    build_surface_gradient_ramp, color_matrix_surface, convolve_surface, displace_surface,
+    drop_shadow_surface, gaussian_blur_surface, glow_surface, gradient_bevel_surface,
+    gradient_glow_surface, inner_glow_surface, inner_shadow_surface, median_surface,
+    pixelate_surface, sharpen_surface,
 };
 use flighthq_types::{
     BevelFilter, BevelType, BlurFilter, ColorMatrixFilter, ConvolutionFilter,
@@ -29,7 +25,7 @@ use flighthq_types::{
     SurfaceRegion,
 };
 
-use crate::math::compute_box_blur_radius;
+use flighthq_filters::math::compute_box_blur_radius;
 
 // ---------------------------------------------------------------------------
 // Public apply functions
@@ -57,7 +53,7 @@ pub fn apply_bevel_filter_to_surface(
         filter.shadow_color.unwrap_or(0x000000),
         filter.shadow_alpha.unwrap_or(1.0),
     );
-    let options = SurfaceBevelFilterOptions {
+    let options = SurfaceBevelOptions {
         angle: filter.angle.unwrap_or(45.0),
         distance: filter.distance.unwrap_or(4.0),
         highlight_color,
@@ -68,7 +64,7 @@ pub fn apply_bevel_filter_to_surface(
         shadow_color,
         bevel_type: bevel_type_to_surface(filter.bevel_type),
     };
-    apply_surface_bevel_filter(out, blur_buffer, source, &options);
+    bevel_surface(out, blur_buffer, source, &options);
 }
 
 /// Applies a true Gaussian blur to `source`, writing the blurred result into
@@ -83,7 +79,7 @@ pub fn apply_blur_filter_to_surface(
     source: &SurfaceRegion,
     filter: &BlurFilter,
 ) {
-    apply_surface_gaussian_blur_filter(
+    gaussian_blur_surface(
         out,
         blur_buffer,
         source,
@@ -105,7 +101,7 @@ pub fn apply_color_matrix_filter_to_surface(
     let mut matrix = [0.0_f32; 20];
     let count = filter.matrix.len().min(20);
     matrix[..count].copy_from_slice(&filter.matrix[..count]);
-    apply_surface_color_matrix_filter(out, source, &matrix);
+    color_matrix_surface(out, source, &matrix);
 }
 
 /// Applies a kernel convolution to `source`, writing the result into `out`.
@@ -121,7 +117,7 @@ pub fn apply_convolution_filter_to_surface(
         Some(false) => SurfaceConvolutionEdge::Fill,
         _ => SurfaceConvolutionEdge::Clamp,
     };
-    let options = SurfaceConvolutionFilterOptions {
+    let options = SurfaceConvolutionOptions {
         bias: filter.bias.unwrap_or(0.0),
         edge,
         fill_color: filter.color.unwrap_or(0),
@@ -131,7 +127,7 @@ pub fn apply_convolution_filter_to_surface(
         matrix_y: filter.matrix_y,
         preserve_alpha: filter.preserve_alpha.unwrap_or(true),
     };
-    apply_surface_convolution_filter(out, source, &options);
+    convolve_surface(out, source, &options);
 }
 
 /// Applies a displacement map warp to `source`, writing the result into `out`.
@@ -145,7 +141,7 @@ pub fn apply_displacement_map_filter_to_surface(
     map: &SurfaceRegion,
     filter: &DisplacementMapFilter,
 ) {
-    let options = SurfaceDisplacementMapFilterOptions {
+    let options = SurfaceDisplacementMapOptions {
         map: map.clone(),
         component_x: filter.component_x.unwrap_or(0),
         component_y: filter.component_y.unwrap_or(1),
@@ -154,7 +150,7 @@ pub fn apply_displacement_map_filter_to_surface(
         scale_x: filter.scale_x.unwrap_or(0.0),
         scale_y: filter.scale_y.unwrap_or(0.0),
     };
-    apply_surface_displacement_map_filter(out, source, &options);
+    displace_surface(out, source, &options);
 }
 
 /// Produces the drop shadow mask for `source`, writing the tinted blurred alpha
@@ -171,7 +167,7 @@ pub fn apply_drop_shadow_filter_to_surface(
     let quality = filter.quality.unwrap_or(1);
     let radius_x = compute_box_blur_radius(filter.blur_x.unwrap_or(4.0), quality);
     let radius_y = compute_box_blur_radius(filter.blur_y.unwrap_or(4.0), quality);
-    let options = SurfaceDropShadowFilterOptions {
+    let options = SurfaceDropShadowOptions {
         color: pack_rgb_alpha(
             filter.color.unwrap_or(0x000000),
             filter.alpha.unwrap_or(1.0),
@@ -181,7 +177,7 @@ pub fn apply_drop_shadow_filter_to_surface(
         radius_x,
         radius_y,
     };
-    apply_surface_drop_shadow_filter(out, blur_buffer, source, &options);
+    drop_shadow_surface(out, blur_buffer, source, &options);
 }
 
 /// Produces the gradient bevel mask for `source`, writing the result into `out`.
@@ -204,7 +200,7 @@ pub fn apply_gradient_bevel_filter_to_surface(
     let quality = filter.quality.unwrap_or(1);
     let radius_x = compute_box_blur_radius(filter.blur_x.unwrap_or(4.0), quality);
     let radius_y = compute_box_blur_radius(filter.blur_y.unwrap_or(4.0), quality);
-    let options = SurfaceGradientBevelFilterOptions {
+    let options = SurfaceGradientBevelOptions {
         angle: filter.angle.unwrap_or(45.0),
         distance: filter.distance.unwrap_or(4.0),
         intensity: filter.strength.unwrap_or(1.0),
@@ -213,7 +209,7 @@ pub fn apply_gradient_bevel_filter_to_surface(
         radius_y,
         bevel_type: bevel_type_to_surface(filter.bevel_type),
     };
-    apply_surface_gradient_bevel_filter(out, blur_buffer, source, &ramp, &options);
+    gradient_bevel_surface(out, blur_buffer, source, &ramp, &options);
 }
 
 /// Produces the gradient glow mask for `source`, writing the result into `out`.
@@ -236,13 +232,13 @@ pub fn apply_gradient_glow_filter_to_surface(
     let quality = filter.quality.unwrap_or(1);
     let radius_x = compute_box_blur_radius(filter.blur_x.unwrap_or(4.0), quality);
     let radius_y = compute_box_blur_radius(filter.blur_y.unwrap_or(4.0), quality);
-    let options = SurfaceGradientGlowFilterOptions {
+    let options = SurfaceGradientGlowOptions {
         intensity: filter.strength.unwrap_or(1.0),
         passes: quality,
         radius_x,
         radius_y,
     };
-    apply_surface_gradient_glow_filter(out, blur_buffer, source, &ramp, &options);
+    gradient_glow_surface(out, blur_buffer, source, &ramp, &options);
 }
 
 /// Produces the inner glow mask for `source`, writing the result into `out`.
@@ -258,7 +254,7 @@ pub fn apply_inner_glow_filter_to_surface(
     let quality = filter.quality.unwrap_or(1);
     let radius_x = compute_box_blur_radius(filter.blur_x.unwrap_or(6.0), quality);
     let radius_y = compute_box_blur_radius(filter.blur_y.unwrap_or(6.0), quality);
-    let options = SurfaceInnerGlowFilterOptions {
+    let options = SurfaceInnerGlowOptions {
         color: pack_rgb_alpha(
             filter.color.unwrap_or(0xff0000),
             filter.alpha.unwrap_or(1.0),
@@ -268,7 +264,7 @@ pub fn apply_inner_glow_filter_to_surface(
         radius_x,
         radius_y,
     };
-    apply_surface_inner_glow_filter(out, blur_buffer, source, &options);
+    inner_glow_surface(out, blur_buffer, source, &options);
 }
 
 /// Produces the inner shadow mask for `source`, writing the result into `out`.
@@ -284,7 +280,7 @@ pub fn apply_inner_shadow_filter_to_surface(
     let quality = filter.quality.unwrap_or(1);
     let radius_x = compute_box_blur_radius(filter.blur_x.unwrap_or(4.0), quality);
     let radius_y = compute_box_blur_radius(filter.blur_y.unwrap_or(4.0), quality);
-    let options = SurfaceInnerShadowFilterOptions {
+    let options = SurfaceInnerShadowOptions {
         color: pack_rgb_alpha(
             filter.color.unwrap_or(0x000000),
             filter.alpha.unwrap_or(1.0),
@@ -294,7 +290,7 @@ pub fn apply_inner_shadow_filter_to_surface(
         radius_x,
         radius_y,
     };
-    apply_surface_inner_shadow_filter(out, blur_buffer, source, &options);
+    inner_shadow_surface(out, blur_buffer, source, &options);
 }
 
 /// Applies a median filter to `source`, writing the result into `out`.
@@ -304,7 +300,7 @@ pub fn apply_median_filter_to_surface(
     source: &SurfaceRegion,
     filter: &MedianFilter,
 ) {
-    apply_surface_median_filter(out, source, filter.radius.unwrap_or(1.0).round() as u32);
+    median_surface(out, source, filter.radius.unwrap_or(1.0).round() as u32);
 }
 
 /// Produces the outer glow mask for `source`, writing the tinted blurred alpha
@@ -321,7 +317,7 @@ pub fn apply_outer_glow_filter_to_surface(
     let quality = filter.quality.unwrap_or(1);
     let radius_x = compute_box_blur_radius(filter.blur_x.unwrap_or(6.0), quality);
     let radius_y = compute_box_blur_radius(filter.blur_y.unwrap_or(6.0), quality);
-    let options = SurfaceGlowFilterOptions {
+    let options = SurfaceGlowOptions {
         color: pack_rgb_alpha(
             filter.color.unwrap_or(0xff0000),
             filter.alpha.unwrap_or(1.0),
@@ -331,7 +327,7 @@ pub fn apply_outer_glow_filter_to_surface(
         radius_x,
         radius_y,
     };
-    apply_surface_glow_filter(out, blur_buffer, source, &options);
+    glow_surface(out, blur_buffer, source, &options);
 }
 
 /// Pixelates `source` into `out`, averaging each block of `filter.block_size`
@@ -343,7 +339,7 @@ pub fn apply_pixelate_filter_to_surface(
     source: &SurfaceRegion,
     filter: &PixelateFilter,
 ) {
-    apply_surface_pixelate_filter(out, source, filter.block_size.unwrap_or(8.0).round() as u32);
+    pixelate_surface(out, source, filter.block_size.unwrap_or(8.0).round() as u32);
 }
 
 /// Sharpens `source` into `out` using an unsharp mask. `blur_x` and `blur_y`
@@ -360,13 +356,13 @@ pub fn apply_sharpen_filter_to_surface(
     let quality = filter.quality.unwrap_or(1);
     let radius_x = compute_box_blur_radius(filter.blur_x.unwrap_or(2.0), quality);
     let radius_y = compute_box_blur_radius(filter.blur_y.unwrap_or(2.0), quality);
-    let options = SurfaceSharpenFilterOptions {
+    let options = SurfaceSharpenOptions {
         amount: filter.amount.unwrap_or(1.0),
         passes: quality,
         radius_x,
         radius_y,
     };
-    apply_surface_sharpen_filter(out, blur_buffer, source, &options);
+    sharpen_surface(out, blur_buffer, source, &options);
 }
 
 // ---------------------------------------------------------------------------

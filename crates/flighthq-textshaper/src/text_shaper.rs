@@ -8,7 +8,10 @@ use flighthq_types::{TextFormat, TextShaperBackend};
 /// is HarfBuzz/rustybuzz — both are installed via [`set_text_shaper_backend`]. Callers fall back to
 /// leaving text unmeasured until a backend exists.
 pub fn get_text_shaper_backend() -> Option<Arc<dyn TextShaperBackend>> {
-    BACKEND.lock().expect("text shaper backend poisoned").clone()
+    BACKEND
+        .lock()
+        .expect("text shaper backend poisoned")
+        .clone()
 }
 
 /// Installs a text-shaper backend; pass `None` to clear it. Last write wins — registering over an

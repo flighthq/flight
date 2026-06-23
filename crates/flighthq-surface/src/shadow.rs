@@ -22,9 +22,9 @@ impl Default for SurfaceBlurOptions {
     }
 }
 
-/// Options for `apply_surface_drop_shadow_filter`.
+/// Options for `drop_shadow_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceDropShadowFilterOptions {
+pub struct SurfaceDropShadowOptions {
     pub radius_x: u32,
     pub radius_y: u32,
     pub passes: u32,
@@ -34,7 +34,7 @@ pub struct SurfaceDropShadowFilterOptions {
     pub intensity: f32,
 }
 
-impl Default for SurfaceDropShadowFilterOptions {
+impl Default for SurfaceDropShadowOptions {
     fn default() -> Self {
         Self {
             radius_x: 2,
@@ -46,9 +46,9 @@ impl Default for SurfaceDropShadowFilterOptions {
     }
 }
 
-/// Options for `apply_surface_glow_filter`.
+/// Options for `glow_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceGlowFilterOptions {
+pub struct SurfaceGlowOptions {
     pub radius_x: u32,
     pub radius_y: u32,
     pub passes: u32,
@@ -58,7 +58,7 @@ pub struct SurfaceGlowFilterOptions {
     pub intensity: f32,
 }
 
-impl Default for SurfaceGlowFilterOptions {
+impl Default for SurfaceGlowOptions {
     fn default() -> Self {
         Self {
             radius_x: 2,
@@ -70,9 +70,9 @@ impl Default for SurfaceGlowFilterOptions {
     }
 }
 
-/// Options for `apply_surface_inner_glow_filter`.
+/// Options for `inner_glow_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceInnerGlowFilterOptions {
+pub struct SurfaceInnerGlowOptions {
     pub radius_x: u32,
     pub radius_y: u32,
     pub passes: u32,
@@ -82,7 +82,7 @@ pub struct SurfaceInnerGlowFilterOptions {
     pub intensity: f32,
 }
 
-impl Default for SurfaceInnerGlowFilterOptions {
+impl Default for SurfaceInnerGlowOptions {
     fn default() -> Self {
         Self {
             radius_x: 2,
@@ -94,9 +94,9 @@ impl Default for SurfaceInnerGlowFilterOptions {
     }
 }
 
-/// Options for `apply_surface_inner_shadow_filter`.
+/// Options for `inner_shadow_surface`.
 #[derive(Clone, Debug)]
-pub struct SurfaceInnerShadowFilterOptions {
+pub struct SurfaceInnerShadowOptions {
     pub radius_x: u32,
     pub radius_y: u32,
     pub passes: u32,
@@ -106,7 +106,7 @@ pub struct SurfaceInnerShadowFilterOptions {
     pub intensity: f32,
 }
 
-impl Default for SurfaceInnerShadowFilterOptions {
+impl Default for SurfaceInnerShadowOptions {
     fn default() -> Self {
         Self {
             radius_x: 2,
@@ -124,11 +124,11 @@ impl Default for SurfaceInnerShadowFilterOptions {
 /// `scratch` must be at least `source.width * source.height * 4` bytes.
 /// Safe to pass `source.surface.data` as `out` when the region covers the full
 /// surface.
-pub fn apply_surface_drop_shadow_filter(
+pub fn drop_shadow_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceDropShadowFilterOptions,
+    options: &SurfaceDropShadowOptions,
 ) {
     tint_surface_alpha_mask(out, source, options.color, options.intensity);
     apply_blur_passes(
@@ -148,11 +148,11 @@ pub fn apply_surface_drop_shadow_filter(
 /// `scratch` must be at least `source.width * source.height * 4` bytes.
 /// Safe to pass `source.surface.data` as `out` when the region covers the full
 /// surface.
-pub fn apply_surface_glow_filter(
+pub fn glow_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceGlowFilterOptions,
+    options: &SurfaceGlowOptions,
 ) {
     tint_surface_alpha_mask(out, source, options.color, options.intensity);
     apply_blur_passes(
@@ -171,11 +171,11 @@ pub fn apply_surface_glow_filter(
 ///
 /// `scratch` must be at least `source.width * source.height * 4` bytes.
 /// `out` must NOT alias `source.surface.data`.
-pub fn apply_surface_inner_glow_filter(
+pub fn inner_glow_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceInnerGlowFilterOptions,
+    options: &SurfaceInnerGlowOptions,
 ) {
     apply_inner_effect(
         out,
@@ -189,16 +189,16 @@ pub fn apply_surface_inner_glow_filter(
     );
 }
 
-/// Produces the inner shadow mask — identical to `apply_surface_inner_glow_filter`
+/// Produces the inner shadow mask — identical to `inner_glow_surface`
 /// except for the default color (opaque black).
 ///
 /// `scratch` must be at least `source.width * source.height * 4` bytes.
 /// `out` must NOT alias `source.surface.data`.
-pub fn apply_surface_inner_shadow_filter(
+pub fn inner_shadow_surface(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &SurfaceRegion,
-    options: &SurfaceInnerShadowFilterOptions,
+    options: &SurfaceInnerShadowOptions,
 ) {
     apply_inner_effect(
         out,
@@ -339,7 +339,7 @@ fn tint_surface_alpha_mask(out: &mut [u8], source: &SurfaceRegion, color: u32, i
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_surface::create_surface;
+    use crate::create_surface;
     use flighthq_types::SurfaceRegion;
 
     fn region(surface: flighthq_types::Surface) -> SurfaceRegion {
@@ -355,15 +355,15 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_drop_shadow_filter_runs() {
+    fn drop_shadow_surface_runs() {
         let source = create_surface(1, 1, 0xffffffff);
         let mut out = vec![0_u8; 4];
         let mut scratch = vec![0_u8; 4];
-        apply_surface_drop_shadow_filter(
+        drop_shadow_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceDropShadowFilterOptions {
+            &SurfaceDropShadowOptions {
                 radius_x: 0,
                 radius_y: 0,
                 passes: 1,
@@ -377,15 +377,15 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_glow_filter_runs() {
+    fn glow_surface_runs() {
         let source = create_surface(1, 1, 0xffffffff);
         let mut out = vec![0_u8; 4];
         let mut scratch = vec![0_u8; 4];
-        apply_surface_glow_filter(
+        glow_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceGlowFilterOptions {
+            &SurfaceGlowOptions {
                 radius_x: 0,
                 radius_y: 0,
                 passes: 1,
@@ -398,18 +398,18 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_inner_glow_filter_runs() {
+    fn inner_glow_surface_runs() {
         // 3x1: transparent | opaque | transparent. Inner glow appears only on
         // the opaque pixel.
         let mut source = create_surface(3, 1, 0);
         source.data[1 * 4 + 3] = 255;
         let mut out = vec![0_u8; 12];
         let mut scratch = vec![0_u8; 12];
-        apply_surface_inner_glow_filter(
+        inner_glow_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceInnerGlowFilterOptions {
+            &SurfaceInnerGlowOptions {
                 radius_x: 2,
                 radius_y: 0,
                 passes: 1,
@@ -426,15 +426,15 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_inner_glow_filter_zero_blur_is_empty() {
+    fn inner_glow_surface_zero_blur_is_empty() {
         let source = create_surface(1, 1, 0x0000ffff);
         let mut out = vec![0_u8; 4];
         let mut scratch = vec![0_u8; 4];
-        apply_surface_inner_glow_filter(
+        inner_glow_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceInnerGlowFilterOptions {
+            &SurfaceInnerGlowOptions {
                 radius_x: 0,
                 radius_y: 0,
                 passes: 1,
@@ -446,16 +446,16 @@ mod tests {
     }
 
     #[test]
-    fn apply_surface_inner_shadow_filter_runs() {
+    fn inner_shadow_surface_runs() {
         let mut source = create_surface(3, 1, 0);
         source.data[1 * 4 + 3] = 255;
         let mut out = vec![0_u8; 12];
         let mut scratch = vec![0_u8; 12];
-        apply_surface_inner_shadow_filter(
+        inner_shadow_surface(
             &mut out,
             &mut scratch,
             &region(source),
-            &SurfaceInnerShadowFilterOptions {
+            &SurfaceInnerShadowOptions {
                 radius_x: 2,
                 radius_y: 0,
                 passes: 1,
