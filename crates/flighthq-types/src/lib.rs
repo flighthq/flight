@@ -213,4 +213,5 @@ pub use text::{
     TextFormat, TextFormatAlign, TextFormatRange, TextInputManager, TextInputOptions,
     TextInputState, TextLabelData, TextLayoutGroup, TextLayoutParams, TextLayoutResult,
     TextLineMetrics, TextMeasureFunction, TextMetrics, TextSelectionRange, TextSelectionRectangle,
+    TextShaperBackend,
 };

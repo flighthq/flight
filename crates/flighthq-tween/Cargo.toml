@@ -7,5 +7,5 @@ description = "Tween animation system with easing functions"
 
 [dependencies]
 flighthq-signals = { workspace = true }
-flighthq-tween-easing = { workspace = true }
+flighthq-easing = { workspace = true }
 flighthq-types = { workspace = true }

@@ -3,7 +3,7 @@
 //! TODO(align): glyph rasterisation is gated on the future `text-shaping` seam
 //! (`set_text_shaper`), not yet in the authoritative TS package (see
 //! `tools/agents/docs/rust/text.md`). Multi-format rich-text layout flows
-//! through `flighthq-text-layout`, but the shaped-glyph rasterisation that fills
+//! through `flighthq-textlayout`, but the shaped-glyph rasterisation that fills
 //! the texture is deferred to the shaper seam; this composites the resource
 //! layer's cached texture for the node until then.
 

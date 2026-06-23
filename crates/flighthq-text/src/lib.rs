@@ -1,7 +1,7 @@
 //! `flighthq-text` — text display objects.
 //!
 //! Provides `TextLabel` (single-format) and `RichText` (multi-format / HTML)
-//! display objects built on the `flighthq-text-layout` spine, plus `NativeText`
+//! display objects built on the `flighthq-textlayout` spine, plus `NativeText`
 //! (platform-rendered, no layout spine). All three are analogous in shape to
 //! display-object siblings such as `Bitmap` and `Shape`.
 
