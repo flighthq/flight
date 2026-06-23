@@ -29,9 +29,10 @@
 import type { Browser, BrowserContext } from '@playwright/test';
 import chokidar from 'chokidar';
 import { resolve, sep } from 'path';
+import pc from 'picocolors';
 
 import type { Entry, Tool } from './capture-core.js';
-import { captureEntry, discoverEntries, launchBrowser, resolveServer } from './capture-core.js';
+import { captureEntry, discoverEntries, installAbortHandler, launchBrowser, resolveServer } from './capture-core.js';
 
 // ---------------------------------------------------------------------------
 // Arg parsing
@@ -112,6 +113,7 @@ async function main(): Promise<void> {
   if (!externalUrl) console.log(`Ready at ${server.url}\n`);
 
   const { browser, context }: { browser: Browser; context: BrowserContext } = await launchBrowser();
+  const isAborted = installAbortHandler();
 
   const filteredRenderers = (entry: Entry): string[] =>
     rendererFilter.length > 0 ? entry.renderers.filter((r) => rendererFilter.includes(r)) : entry.renderers;
@@ -126,12 +128,23 @@ async function main(): Promise<void> {
       outBase,
       root,
       extraWait,
+      isAborted,
     }).then(() => {});
 
-  // Initial capture of all matched entries so the agent has a baseline immediately.
+  // Initial capture of all matched entries so the agent has a baseline immediately. A dimmed [N/M]
+  // counter + bold name per entry matches capture.ts so a long initial pass shows progress.
   console.log(`Initial capture…`);
-  for (const entry of entries) {
+  for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
+    if (isAborted()) break;
+    const entry = entries[entryIndex];
+    console.log(`${pc.dim(`[${entryIndex + 1}/${entries.length}]`)} ${pc.bold(entry.name)}`);
     await runCapture(entry);
+  }
+  // A Ctrl+C during the initial pass exits cleanly rather than dropping into watch mode.
+  if (isAborted()) {
+    await browser.close().catch(() => {});
+    server.kill();
+    return;
   }
   console.log(`\nWatching ${tool} for changes. Ctrl+C to stop.\n`);
 
