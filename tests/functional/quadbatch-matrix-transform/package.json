@@ -1,0 +1,13 @@
+{
+  "name": "functional-test-quadbatch-matrix-transform",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "canvas",
+    "webgl",
+    "webgpu"
+  ],
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -5,19 +5,32 @@ import {
   createGlRenderState,
   createMatrix,
   defaultGlBitmapRenderer,
+  defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
+  defaultGlScale9ShapeRenderer,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
+  defaultGlSpriteRenderer,
+  defaultGlTextLabelRenderer,
+  defaultGlTilemapRenderer,
+  defaultGlVideoRenderer,
+  enableGlBlendModeSupport,
   enableGlClipSupport,
   enableGlRenderCache,
   prepareDisplayObjectRender,
+  QuadBatchKind,
   registerDefaultGlMaterial,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlDisplayObject,
   RichTextKind,
+  Scale9ShapeKind,
   ShapeKind,
+  SpriteKind,
+  TextLabelKind,
+  TilemapKind,
+  VideoKind,
 } from '@flighthq/sdk';
 
 import type { FunctionalGlTarget, FunctionalTargetOptions } from './target';
@@ -52,11 +65,25 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
       registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
+    } else if (kind === TextLabelKind) {
+      registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+    } else if (kind === SpriteKind) {
+      registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
+    } else if (kind === QuadBatchKind) {
+      registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
+    } else if (kind === TilemapKind) {
+      registerRenderer(state, TilemapKind, defaultGlTilemapRenderer);
+    } else if (kind === Scale9ShapeKind) {
+      registerRenderer(state, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
+      registerGlShapeCommands(defaultGlShapeCommands);
+    } else if (kind === VideoKind) {
+      registerRenderer(state, VideoKind, defaultGlVideoRenderer);
     }
   }
 
   if (options.clip) enableGlClipSupport(state);
   if (options.cache) enableGlRenderCache(state);
+  if (options.blend) enableGlBlendModeSupport(state);
 
   return registerFunctionalTarget({
     kind: 'webgl',

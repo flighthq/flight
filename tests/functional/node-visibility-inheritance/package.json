@@ -1,0 +1,8 @@
+{
+  "name": "functional-test-node-visibility-inheritance",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

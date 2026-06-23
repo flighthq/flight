@@ -5,7 +5,11 @@ import {
   defaultCanvasShapeCommands,
   defaultDomBitmapRenderer,
   defaultDomRichTextRenderer,
+  defaultDomScale9ShapeRenderer,
   defaultDomShapeRenderer,
+  defaultDomTextLabelRenderer,
+  defaultDomVideoRenderer,
+  enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
   prepareDisplayObjectRender,
@@ -14,7 +18,10 @@ import {
   renderDomBackground,
   renderDomDisplayObject,
   RichTextKind,
+  Scale9ShapeKind,
   ShapeKind,
+  TextLabelKind,
+  VideoKind,
 } from '@flighthq/sdk';
 
 import type { FunctionalDomTarget, FunctionalTargetOptions } from './target';
@@ -45,11 +52,19 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
       registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
+    } else if (kind === TextLabelKind) {
+      registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+    } else if (kind === Scale9ShapeKind) {
+      registerRenderer(state, Scale9ShapeKind, defaultDomScale9ShapeRenderer);
+      registerCanvasShapeCommands(defaultCanvasShapeCommands);
+    } else if (kind === VideoKind) {
+      registerRenderer(state, VideoKind, defaultDomVideoRenderer);
     }
   }
 
   if (options.clip) enableDomClipSupport(state);
   if (options.cache) enableDomRenderCache(state);
+  if (options.blend) enableDomBlendModeSupport(state);
 
   return registerFunctionalTarget({
     kind: 'dom',
