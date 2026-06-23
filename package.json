@@ -77,7 +77,8 @@
     "rust:conformance": "tsx ./scripts/rust-conformance.ts",
     "rust:conformance:json": "tsx ./scripts/rust-conformance.ts --json",
     "precommit": "lint-staged",
-    "prepush": "npm run build && npm run packages:check && npm run typecheck && npm run test",
+    "prepare": "husky",
+    "prepush": "tsx ./scripts/prepush.ts",
     "preview:site": "cross-env PAGES_BASE=/ npm run build:site && npx -y serve tools/site",
     "reference": "npm run dev:reference",
     "sbx:whitelist": "sbx policy allow network cdn.playwright.dev,playwright.download.prss.microsoft.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com,static.crates.io,crates.io",
@@ -117,8 +118,9 @@
     "typecheck": "tsc -b --noEmit"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@playwright/test": "^1.50.0",
-    "chokidar": "^3.6.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@types/stats.js": "^0.17.4",
@@ -126,6 +128,7 @@
     "@typescript-eslint/parser": "^8.53.0",
     "@vitest/coverage-v8": "^4.0.17",
     "@webgpu/types": "^0.1.70",
+    "chokidar": "^3.6.0",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -135,12 +138,12 @@
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unicorn": "^62.0.0",
+    "husky": "^9.1.7",
     "jiti": "^2.6.1",
     "jsdom": "^27.4.0",
     "lint-staged": "^16.4.0",
     "picocolors": "^1.1.1",
     "prettier": "3.8.1",
-    "simple-git-hooks": "^2.13.1",
     "stats.js": "^0.17.0",
     "terser": "^5.46.0",
     "ts-morph": "^28.0.0",
@@ -152,16 +155,13 @@
     "vitest": "^4.0.17",
     "vitest-webgl-canvas-mock": "^1.1.0"
   },
-  "simple-git-hooks": {
-    "pre-commit": "npm run precommit",
-    "pre-push": "npm run prepush"
-  },
   "lint-staged": {
     "packages/*/src/**/*.ts": "tsx ./scripts/order.ts --fix",
     "**/*.ts": [
       "eslint -c eslint.config.ts --fix --max-warnings=0 --no-warn-ignored",
       "prettier --write"
     ],
+    "**/*.rs": "rustfmt --edition 2024",
     "**/*.{json,md}": "prettier --write"
   },
   "dependencies": {
