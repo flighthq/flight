@@ -1,0 +1,102 @@
+---
+id: displayobject-wgpu
+title: '@flighthq/displayobject-wgpu'
+type: depth
+target: displayobject-wgpu
+status: proposed
+tier: bronze
+source:
+  - tools/agents/docs/reviews/maturation/depth/displayobject-wgpu.md
+  - tools/agents/docs/reviews/depth/displayobject-wgpu.md
+depends_on: []
+updated: 2026-06-23
+---
+
+## Summary
+
+Solid — 84/100; a near-feature-complete WebGPU 2D backend cell that renders the full display-object family with real GPU pipelines (instanced sprite/particle batching, solid-fill tessellation, stencil clipping, render-cache, velocity), with the depth ceiling set by inherited canvas-raster fallbacks for text, strokes, and gradients.
+
+## Scope (this build)
+
+Targeting the **Bronze** tier (see `tier:` above). Advance the marker as tiers complete.
+
+- [ ] Bronze
+- [ ] Silver
+- [ ] Gold
+
+## Design
+
+### Bronze
+
+The minimum to retire the most glaring "ships building blocks, not a usable setup" and consistency gaps. Mostly within this package; small, high-value.
+
+- **`registerWgpuDisplayObjectRenderers(state)`** — one-call convenience that registers every built-in kind renderer (bitmap, shape, scale9, sprite/spritebatch/quadbatch, tilemap, particle, text-label, rich-text, video) plus the default material. A sibling **`registerWgpuSpriteRenderers(state)`** for the sprite graph. Tree-shakable: a thin function that calls the existing per-kind `registerRenderer` calls, so apps that want one kind still import only that kind. Mirror the identical helper into `displayobject-gl` so both backends gain it together (a shared `*Kind` list of built-ins can live in `@flighthq/types`).
+- **Typed per-renderer data helper** — replace the repeated `as unknown as RendererData` double-casts (shape, text, scale9, video) with a single `createWgpuRendererData<T>(data): RendererData` / `getWgpuRendererData<T>(data): T` pair (or a branded `WgpuRendererData<T>` type defined in `@flighthq/types`). Pure cleanup, no behavior change, removes the most-cited API-shape smell.
+- **Resolve the color-transform material asymmetry** — GL exposes both `glColorTransformMaterial` and `glUniformColorTransformMaterial`; wgpu collapses to one. Either add the missing uniform-path variant `wgpuUniformColorTransformMaterial` for symmetry, or record in the conformance/divergence map that the single wgpu material is intentional and rename for parity. Decide and make it explicit rather than silently divergent.
+- **Draw-call / instance counters** — a `WgpuRenderStats` struct (`drawCallCount`, `instanceCount`, `batchFlushCount`, `textureUploadCount`) on the render state, populated by the batch flush and per-kind submit paths, with `getWgpuRenderStats(state)` / `resetWgpuRenderStats(state)`. Define `WgpuRenderStats` (or a backend-agnostic `RenderStats`) in `@flighthq/types`. Cheap, off by default, the first rung of the "no diagnostics" gap.
+- **Honest sentinels for unsupported paths** — audit text/shape fallback paths so a missing GPU device, zero-size text field, or empty shape returns a sentinel / no-ops rather than throwing; reserve throws for misuse (drawing with no registered material). Matches the depth-review note that fallbacks are by-design and should degrade quietly.
+
+### Silver
+
+Competitive with a well-regarded GPU 2D backend: retire the biggest depth ceilings (canvas-raster shapes, aliasing) on-GPU, and reach cross-backend visual consistency with `displayobject-gl`.
+
+- **GPU stroke tessellation** — `tessellateStroke` path that converts line styles (width, caps: butt/round/square; joins: miter/round/bevel; miter limit; dashes) into a colored mesh consumed by the existing `drawWgpuShapeMeshes`, retiring the canvas-raster fallback for solid-color strokes. Stroke geometry belongs in `@flighthq/path` (shared by GL/skia), exposed here only as the wgpu draw. This is the single highest-value Silver item.
+- **GPU gradient shading** — a gradient material + WGSL (`registerWgpuGradientMaterial`, `wgpuLinearGradientShader` / `wgpuRadialGradientShader`) shading linear/radial gradients with the gradient stops/matrix packed into a uniform or a small 1D gradient-ramp texture, replacing the canvas-raster gradient fallback. Gradient-stop descriptor types in `@flighthq/types`.
+- **GPU bitmap fills** — tile/clamp/matrix bitmap-fill material so `beginBitmapFill` shapes shade on-GPU instead of rastering, including the `repeat`/`smooth` flags.
+- **MSAA / antialiasing control surfaced here** — `WgpuAntialiasOptions` (`sampleCount: 1 | 4`) threaded from `render-wgpu` (whose target pool currently pins `sampleCount 1` by design) into the tessellation and stencil-clip pipelines, with multisample pipeline variants and a resolve step. This is a **`render-wgpu` core change first** (multisample-capable pipelines + resolve targets); this package then opts its tessellated-fill and clip pipelines into the chosen sample count. Without it, every tessellated edge and stencil clip is aliased.
+- **Separable / advanced blend modes** — wire and enumerate the OpenFL blend-mode set (multiply, screen, overlay, darken, lighten, hardlight, difference, etc.) through the pipeline cache. The simple blends are GPU-native blend state; the non-separable ones (overlay/hardlight) need a destination-read shader pass. The `BlendMode` enumeration and which are separable belongs in `@flighthq/types`/`render`; this package supplies the wgpu pipeline + shader for each. Cross-backend: GL must match.
+- **Cross-backend parity coverage** — functional-test scenes that render shape strokes, gradients, bitmap fills, blend modes, and clipping through wgpu and assert parity against canvas/GL (the `test:parity` gate). Today the GPU shape path is solid-fill-only; once strokes/gradients move on-GPU these must be in the regression baselines.
+- **Custom-shader ergonomics** — formalize the per-node custom-shader escape hatch (`resolveWgpuShader`) into a documented `WgpuShaderMaterial` contract (uniform layout, sampler bindings, the `getWgpuQuadBatchPreludeWGSL` prelude) with at least one worked example, so material authoring is a supported surface, not an internal hook.
+
+### Gold
+
+Authoritative / AAA: nothing a GPU-2D-backend expert finds missing, full diagnostics, and 1:1 Rust-port parity.
+
+- **GPU glyph-atlas text** — the headline Gold item, gated on the `text-shaping` seam landing. A shared glyph-atlas cache (`WgpuGlyphAtlas`, `acquireWgpuGlyph`/`releaseWgpuGlyph`) that rasterizes shaped glyphs once into a packed atlas texture and draws `TextLabel`/`RichText` as instanced glyph quads, replacing the per-node canvas-raster + one-texture-per-field cost. SDF/MSDF variant (`wgpuMsdfGlyphShader`) for crisp text at arbitrary scale. The atlas, glyph-key, and shaped-run types belong in `@flighthq/types` and should be shared with `displayobject-gl` (only the upload/draw is backend-specific). Sub-pixel positioning, hinting-free placement from the shaper's advances/offsets/clusters, and CJK/emoji-color-font atlas pages.
+- **GPU timestamp profiling** — opt-in `enableWgpuTimestampQueries(state)` with per-pass GPU timings (`getWgpuPassTimings(state)`) over `timestamp-query`, returning sentinels when the feature is unsupported. Completes the diagnostics story beyond the Bronze CPU counters.
+- **Full vector-fill robustness** — confl-aware tessellation (self-intersecting paths, even-odd vs nonzero winding fills, holes), anti-aliased fill edges (analytic AA or MSAA), and curve flattening tolerance tied to world scale so zoomed shapes stay crisp without re-tessellation thrash. Shared tessellator in `@flighthq/path`; wgpu consumes it.
+- **Render-cache depth** — partial/dirty-region cache invalidation, cache-target pooling/reuse via `acquireWgpuRenderTarget`/`releaseWgpuRenderTarget` brackets, automatic cache-size budgeting, and mipmapped cache textures for minified subtrees.
+- **Velocity-field completeness** — velocity writers for every kind that the screen path can draw (shape meshes, tilemap, text, video — today display-object/quad-batch/particle), so motion-blur input is exhaustive rather than batch-only.
+- **Exhaustive error/edge handling** — device-lost recovery hook, oversize-texture / atlas-overflow handling, zero/NaN transforms, degenerate geometry, and the full unsupported-feature sentinel matrix, all under test.
+- **1:1 Rust-port parity (`flighthq-displayobject-wgpu`)** — the wgpu crate over `render-wgpu`/wgpu mirroring this package function-for-function (snake_case, `&mut`/out-params, `KindId`), checked by the parity matrix differ (`rust:wgpu` cell) and the conformance suite against `rust:skia` as the bit-deterministic reference. Any intentional TS↔Rust divergence recorded in the conformance map. This is the crate's reason to exist as a production GPU backend.
+- **Docs & examples** — a package-level rendering guide (registration, the update pass prerequisite `prepareDisplayObjectRender`, custom materials, render-cache, velocity) and worked examples per feature, all size-checked via `npm run size`.
+
+## Sequencing & effort
+
+Recommended order, with dependencies and items to surface:
+
+1. **Bronze first, all in-package and cheap** (days): `registerWgpuDisplayObjectRenderers` + sprite sibling, the typed-data helper to kill the `as unknown as RendererData` casts, the color-transform-material symmetry decision, and `WgpuRenderStats` counters. The register-all helper and the stats struct should be designed once in `@flighthq/types` and added to `displayobject-gl` in the same change so the two backends do not drift — flag this as a deliberate two-package edit.
+2. **Silver, gated on shared geometry and the core** (weeks): stroke tessellation and gradient/bitmap-fill shading depend on stroke/gradient geometry living in **`@flighthq/path`** (and gradient-stop types in `@flighthq/types`) so GL/wgpu/skia share one tessellator — **surface as a cross-package design decision before implementing**, otherwise three backends will each grow a private stroker. **MSAA must land in `render-wgpu` first** (multisample pipelines + resolve targets; the target pool currently pins `sampleCount 1` by explicit design note) before this package can expose `WgpuAntialiasOptions`. Advanced blend modes need the `BlendMode` separable/non-separable taxonomy decided in `render`/`@flighthq/types` first, since the non-separable modes need a destination-read pass that both GPU backends must implement identically. Parity functional-test scenes are the acceptance gate for all of these.
+3. **Gold, frontier work** (months, partly externally gated):
+   - **Glyph-atlas text is blocked on the `text-shaping` seam** (designed, not yet built per the package map). Do not start the atlas before the shaper lands; the atlas, glyph-key, and shaped-run types are shared with `displayobject-gl` and must be defined in `@flighthq/types` — surface this as a coordinated text-stack effort spanning `text-shaping`, `textlayout`, `displayobject-gl`, and this package.
+   - Timestamp profiling, advanced render-cache, full velocity coverage, and robust tessellation are mostly in-package but build on the Silver tessellator and the core MSAA work.
+   - **Rust-port parity** is its own track and should follow the TS Gold shape, not lead it — the TS package is authoritative.
+
+**Cross-package / design-decision items to surface explicitly:**
+
+- Stroke + gradient + bitmap-fill geometry: one shared tessellator/shader-descriptor home (`@flighthq/path` + `@flighthq/types`), not three private copies across canvas/GL/wgpu (and later skia). Decide before Silver.
+- MSAA ownership: `render-wgpu` must grow multisample pipelines and resolve targets first; this package and `displayobject-gl` consume it. Sample-count config likely belongs at the core/render-state level, not per-renderer.
+- Blend-mode taxonomy (which modes are GPU-native vs need a dest-read pass) belongs in `render`/`@flighthq/types`; both GPU backends implement the same set.
+- Glyph-atlas types are shared SDK header (`@flighthq/types`) and shared between GL and wgpu — coordinate with the text stack rather than building a wgpu-private atlas.
+- The convenience `register*Renderers` entries deliberately reintroduce a one-call setup; confirm this stays a thin re-export (no eager top-level registration) so tree-shaking and the single-`.`-export rule hold.
+
+## Acceptance
+
+- [ ] Shared types defined in `@flighthq/types` first
+- [ ] `npm run check` passes
+- [ ] `npm run packages:check` passes
+- [ ] Colocated test per export (`npm run exports:check`)
+- [ ] `npm run order` / `npm run api` clean
+- [ ] (Rust-relevant) `npm run rust:conformance` / `npm run mixing:conformance` considered
+
+## Open questions
+
+- _(none captured yet)_
+
+## Agent brief
+
+> Build `@flighthq/displayobject-wgpu` up to the **Bronze** tier per the Scope + Design above (the package exists — extend it). Define any new shared types in `@flighthq/types` first. Follow the CLAUDE.md conventions. Satisfy every Acceptance checkbox. Surface cross-package or design decisions rather than guessing.
+
+## Decision log
+
+- 2026-06-23 — seeded from maturation analysis (status: proposed).

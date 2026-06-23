@@ -86,7 +86,7 @@ The reconciling distinction: **a seam-with-sentinel is not an emulator.** A capa
 
 ### Excluded — no substrate in the box
 
-These are the _only_ TS packages without a Rust crate. Each is excluded by the existence rule, and each leaves no capability gap.
+These are the TS packages excluded by the existence rule (substrate absent from the box), and each leaves no capability gap. One further TS package without a crate — `surface-rs` — is not a substrate exclusion but the wasm **mixing** wrapper; see [the surface-rs / surface-wasm pair](#the-surface-rs--surface-wasm-mixing-pair) below.
 
 | TS package | Substrate absent from the box | Capability gap? |
 | --- | --- | --- |
@@ -109,6 +109,11 @@ Everything else in the TS package set has a Rust crate. In particular `webcam`, 
 | `capture` | Headless offscreen render → PNG / fingerprint; the native conformance gate. |
 | `functional` | Conformance scene registry; the Rust analogue of `tests/functional/`. |
 | `displayobject-skia` | Portable software display-object renderer (tiny-skia). The in-box software backend that replaces the role of `displayobject-canvas`; the deterministic conformance reference and the web no-GPU fallback. (Optional sibling `displayobject-cairo` if literal Cairo output is ever wanted.) |
+| `surface-wasm` | The Rust side of the `surface-rs` wasm mixing wrapper (see below). Compiled to wasm and wrapped by the TS `surface-rs` package; has no TS package of its own. |
+
+### The surface-rs / surface-wasm mixing pair
+
+`surface-rs` is a TS-only package — the wasm drop-in for `@flighthq/surface` described in the [Mixing](index.md#mixing) section of the Rust map — and `surface-wasm` is its Rust crate. They are a matched pair **across** the JS↔wasm boundary, not drift: `surface-rs` deliberately has no `flighthq-surface-rs` crate, and `surface-wasm` deliberately has no TS package. Both are recorded in `scripts/rust-conformance.ts` (`surface-rs` in `TS_ONLY`, `surface-wasm` in `RUST_ONLY`) so the structural gate does not flag either as an unmatched counterpart.
 
 ### Validated functionally, not by unit name-match
 
@@ -151,6 +156,6 @@ The landed refactor opened a large alignment delta; the structural side of it is
 
 The remaining conformance work is otherwise **behavioral, not structural**: porting TS test assertions into the colocated Rust tests and closing visual diffs at the `gl`/`wgpu` cells (see [the bar](#the-bar-behavior-not-name-match)), not adding crates.
 
-**Excluded** (no substrate in the box): `displayobject-canvas`, `displayobject-dom`, `filters-canvas`, `filters-css`, `effects-canvas`, `textshaper-canvas`, `host-electron`.
+**Excluded** (no substrate in the box): `displayobject-canvas`, `displayobject-dom`, `filters-canvas`, `filters-css`, `effects-canvas`, `textshaper-canvas`, `host-electron`. Plus `surface-rs` (the wasm mixing wrapper, paired with the `surface-wasm` crate — not a substrate exclusion).
 
-`scripts/rust-conformance.ts`'s `RENAMES`/`TS_ONLY`/`RUST_ONLY`/`GPU_CRATES`/`WEB_PACKAGES` sets are aligned with this map: `RENAMES` is empty (every mapped package is identity post-reorg), `TS_ONLY` is the [excluded](#excluded--no-substrate-in-the-box) set, `RUST_ONLY` adds `displayobject-skia`, `GPU_CRATES` includes the `displayobject-`/`scene-` leaf renderers, and `WEB_PACKAGES` lists `webcam` (not the 3D `camera`). Keep them in sync when this map changes.
+`scripts/rust-conformance.ts`'s `RENAMES`/`TS_ONLY`/`RUST_ONLY`/`GPU_CRATES`/`WEB_PACKAGES` sets are aligned with this map: `RENAMES` is empty (every mapped package is identity post-reorg), `TS_ONLY` is the [excluded](#excluded--no-substrate-in-the-box) set plus `surface-rs`, `RUST_ONLY` adds `displayobject-skia` and `surface-wasm`, `GPU_CRATES` includes the `displayobject-`/`scene-` leaf renderers, and `WEB_PACKAGES` lists `webcam` (not the 3D `camera`). Keep them in sync when this map changes.
