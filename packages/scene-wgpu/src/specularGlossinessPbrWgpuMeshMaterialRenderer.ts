@@ -62,12 +62,12 @@ export const specularGlossinessPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
 
     const specGloss = material as Readonly<SpecularGlossinessPbrMaterial> | null;
     const standard = specGloss !== null ? convertSpecularGlossinessToStandard(specGloss) : null;
-    const key = buildWgpuPbrStandardDefineKey(specGloss);
+    const key = buildWgpuPbrStandardDefineKey(standard, specGloss);
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, specGloss ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, specGloss ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, specGloss !== null ? specGloss.alphaCutoff : 0.5);
     out.fill(0, 16);

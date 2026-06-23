@@ -48,13 +48,13 @@ export const specularPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const specular = material as Readonly<SpecularPbrMaterial> | null;
     const standard = specular !== null ? specular.standard : null;
-    const key = buildWgpuPbrStandardDefineKey(specular);
+    const key = buildWgpuPbrStandardDefineKey(standard, specular);
     key.specularEnabled = true;
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, specular ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, specular ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, specular !== null ? specular.alphaCutoff : 0.5);
     out.fill(0, 16);

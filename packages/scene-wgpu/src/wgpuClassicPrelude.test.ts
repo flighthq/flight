@@ -25,8 +25,8 @@ describe('bindWgpuClassicSurface', () => {
     const { fake, state } = makeWgpuSceneState();
     const pipeline = ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
     const key = {};
-    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5);
-    bindWgpuClassicSurface(state, pipeline, key, [0, 1, 0, 1], [1, 1, 1, 1], 64, 0.5);
+    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, [0, 1, 0, 1], [1, 1, 1, 1], 64, 0.5, null, null, null);
 
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(1);
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(2);

@@ -47,13 +47,13 @@ export const sheenPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const sheen = material as Readonly<SheenPbrMaterial> | null;
     const standard = sheen !== null ? sheen.standard : null;
-    const key = buildWgpuPbrStandardDefineKey(sheen);
+    const key = buildWgpuPbrStandardDefineKey(standard, sheen);
     key.sheenEnabled = true;
     const format = stateRuntime.currentColorFormat ?? state.format;
     const pipeline = ensureWgpuPbrPipeline(state, key, format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, sheen ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, sheen ?? FALLBACK_MATERIAL, standard);
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, sheen !== null ? sheen.alphaCutoff : 0.5);
     out.fill(0, 16);

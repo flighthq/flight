@@ -17,7 +17,8 @@ import type {
 import {
   beginWgpuMeshDraw,
   drawWgpuMeshSubset,
-  ensureWgpuPlaceholderTextureView,
+  hasWgpuMaterialTexture,
+  resolveWgpuMaterialTextureView,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
 import type { WgpuPbrPipeline } from './wgpuPbrPipelineCache';
@@ -32,18 +33,25 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 export const WGPU_PBR_MATERIAL_UNIFORM_FLOATS = 48;
 
 // The shared define key for a PBR material: the alpha-mask cutoff + double-sidedness from the surface
-// trailer, with every map flag false (maps deferred on wgpu) and every extension flag false. StandardPbr
-// uses it as-is; each extension renderer calls this with its `material.standard` + surface trailer and
-// then sets exactly one extension flag. Keeps the one place that decides the standard flags so the
-// compiled variant and the bound resources never disagree. Mirrors scene-gl's buildGlPbrStandardDefineKey.
-export function buildWgpuPbrStandardDefineKey(surface: Readonly<SurfaceMaterial> | null): WgpuPbrDefineKey {
+// trailer, the five standard `has*Map` flags derived from the material's bound maps, and every extension
+// flag false. StandardPbr passes its own properties (it is a StandardPbrMaterialProperties) as `standard`;
+// each extension renderer passes its `material.standard` + surface trailer and then sets exactly one
+// extension flag. Keeps the one place that decides the standard flags so the compiled variant and the
+// bound resources never disagree. Mirrors scene-gl's buildGlPbrStandardDefineKey.
+export function buildWgpuPbrStandardDefineKey(
+  standard: Readonly<StandardPbrMaterialProperties> | null,
+  surface: Readonly<SurfaceMaterial> | null,
+): WgpuPbrDefineKey {
   return {
     alphaMaskEnabled: surface !== null && surface.alphaMode === 'mask',
     anisotropyEnabled: false,
     clearcoatEnabled: false,
     doubleSided: surface !== null && surface.doubleSided,
-    hasBaseColorMap: false,
-    hasNormalMap: false,
+    hasBaseColorMap: standard !== null && hasWgpuMaterialTexture(standard.baseColorMap),
+    hasEmissiveMap: standard !== null && hasWgpuMaterialTexture(standard.emissiveMap),
+    hasMetallicRoughnessMap: standard !== null && hasWgpuMaterialTexture(standard.metallicRoughnessMap),
+    hasNormalMap: standard !== null && hasWgpuMaterialTexture(standard.normalMap),
+    hasOcclusionMap: standard !== null && hasWgpuMaterialTexture(standard.occlusionMap),
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
@@ -53,16 +61,19 @@ export function buildWgpuPbrStandardDefineKey(surface: Readonly<SurfaceMaterial>
 }
 
 // Allocates (once per material reference) the Material uniform buffer + bind group for a PBR material
-// and binds the shared 1x1 placeholder texture in every map slot, so the bind-group layout matches the
-// textured variant even though maps are not sampled on wgpu yet. The same path serves StandardPbr and
+// and binds the material's five standard maps (base color, metallic-roughness, normal, occlusion,
+// emissive) into the map slots — each resolved to its real uploaded view, or the shared 1x1 placeholder
+// when the slot is unbound, so the layout is satisfied either way. The same path serves StandardPbr and
 // every extension — the extension factors ride in the one MaterialBlock uniform, so no extra bindings
 // are needed. The caller writes `material` (a fresh per-call key for the WeakMap, or the FALLBACK key
-// for a null material) into the scratch and uploads it before this returns. Returns the bind group to
-// set at group(2).
+// for a null material) into the scratch and uploads it before this returns. The bind group is cached by
+// `key`; the resolved views are captured at creation, so a static textured material binds its maps once.
+// Returns the bind group to set at group(2).
 export function ensureWgpuPbrMaterialBindGroup(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuPbrPipeline>,
   key: object,
+  standard: Readonly<StandardPbrMaterialProperties> | null,
 ): WgpuMaterialBinding {
   const scene = getWgpuSceneRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(key);
@@ -72,17 +83,28 @@ export function ensureWgpuPbrMaterialBindGroup(
       size: WGPU_PBR_MATERIAL_UNIFORM_FLOATS * 4,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    const placeholder = ensureWgpuPlaceholderTextureView(state);
     const bindGroup = state.device.createBindGroup({
       layout: pipeline.materialBindGroupLayout,
       entries: [
         { binding: 0, resource: { buffer } },
         { binding: 1, resource: stateRuntime.linearSampler },
-        { binding: 2, resource: placeholder },
-        { binding: 3, resource: placeholder },
-        { binding: 4, resource: placeholder },
-        { binding: 5, resource: placeholder },
-        { binding: 6, resource: placeholder },
+        {
+          binding: 2,
+          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.baseColorMap : null),
+        },
+        {
+          binding: 3,
+          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.metallicRoughnessMap : null),
+        },
+        { binding: 4, resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.normalMap : null) },
+        {
+          binding: 5,
+          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.occlusionMap : null),
+        },
+        {
+          binding: 6,
+          resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.emissiveMap : null),
+        },
       ],
     });
     binding = { bindGroup, buffer };
@@ -169,8 +191,10 @@ export function writeWgpuPbrStandardBlock(
 // (cached by geometry.version), writes the per-draw model + normal matrices into the render-state's
 // uniform ring buffer (group(1), dynamic offset), and issues the indexed draw over the proxy's subset.
 // Depth-test LESS + depth-write on and back-face culling (unless double-sided) are baked on the
-// pipeline. Maps are NOT sampled on wgpu yet — the placeholder maps satisfy the layout and the scalar
-// factors drive the lobes. See registerStandardPbrWgpuMaterial to install it.
+// pipeline. The five standard maps (base color, metallic-roughness, normal, occlusion, emissive) are
+// sampled when bound — the textured pipeline variant compiles per the `has*Map` flags and the real
+// uploaded views bind into the map slots; an unbound slot falls back to the placeholder. See
+// registerStandardPbrWgpuMaterial to install it.
 //
 // Cannot be visually captured in JSDOM (no GPU adapter); the unit test asserts the pipeline/bind/draw
 // call shape against the mock device, mirrored against the verified GL result.
@@ -187,10 +211,10 @@ export const standardPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     const pbr = material as Readonly<StandardPbrMaterial> | null;
     const format = stateRuntime.currentColorFormat ?? state.format;
-    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(pbr), format);
+    const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(pbr, pbr), format);
 
     writeWgpuFrameUniform(state, camera, lights);
-    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, pbr ?? FALLBACK_MATERIAL);
+    const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, pbr ?? FALLBACK_MATERIAL, pbr);
     writeWgpuPbrStandardBlock(_materialScratch, pbr, pbr !== null ? pbr.alphaCutoff : 0.5);
     _materialScratch.fill(0, 16);
     uploadWgpuPbrMaterialUniform(state, binding);
