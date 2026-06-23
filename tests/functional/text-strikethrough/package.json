@@ -1,0 +1,12 @@
+{
+  "name": "functional-test-text-strikethrough",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "canvas",
+    "dom"
+  ],
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

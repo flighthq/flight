@@ -1,0 +1,13 @@
+{
+  "name": "functional-test-sprite-atlas",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "canvas",
+    "webgl",
+    "webgpu"
+  ],
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

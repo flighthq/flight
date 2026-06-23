@@ -1,0 +1,13 @@
+{
+  "name": "functional-test-node-blend-modes",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "canvas",
+    "dom",
+    "webgl"
+  ],
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

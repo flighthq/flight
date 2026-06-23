@@ -5,18 +5,31 @@ import {
   createCanvasRenderState,
   createMatrix,
   defaultCanvasBitmapRenderer,
+  defaultCanvasQuadBatchRenderer,
   defaultCanvasRichTextRenderer,
+  defaultCanvasScale9ShapeRenderer,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
+  defaultCanvasSpriteRenderer,
+  defaultCanvasTextLabelRenderer,
+  defaultCanvasTilemapRenderer,
+  defaultCanvasVideoRenderer,
+  enableCanvasBlendModeSupport,
   enableCanvasClipSupport,
   enableCanvasRenderCache,
   prepareDisplayObjectRender,
+  QuadBatchKind,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
   renderCanvasDisplayObject,
   RichTextKind,
+  Scale9ShapeKind,
   ShapeKind,
+  SpriteKind,
+  TextLabelKind,
+  TilemapKind,
+  VideoKind,
 } from '@flighthq/sdk';
 
 import type { FunctionalCanvasTarget, FunctionalTargetOptions } from './target';
@@ -48,11 +61,26 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
       registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
+    } else if (kind === TextLabelKind) {
+      registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+    } else if (kind === SpriteKind) {
+      registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+    } else if (kind === QuadBatchKind) {
+      registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+    } else if (kind === TilemapKind) {
+      registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
+    } else if (kind === Scale9ShapeKind) {
+      registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
+      // Scale9 rasterizes its nine patches through the same canvas shape commands as Shape.
+      registerCanvasShapeCommands(defaultCanvasShapeCommands);
+    } else if (kind === VideoKind) {
+      registerRenderer(state, VideoKind, defaultCanvasVideoRenderer);
     }
   }
 
   if (options.clip) enableCanvasClipSupport(state);
   if (options.cache) enableCanvasRenderCache(state);
+  if (options.blend) enableCanvasBlendModeSupport(state);
 
   return registerFunctionalTarget({
     kind: 'canvas',
