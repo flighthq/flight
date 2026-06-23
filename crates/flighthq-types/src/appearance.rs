@@ -29,7 +29,7 @@ impl AppearanceFlags {
 
     /// Returns `self` with `add` flags set.
     #[inline]
-    pub fn add(self, add: AppearanceFlags) -> AppearanceFlags {
+    pub fn add_flags(self, add: AppearanceFlags) -> AppearanceFlags {
         self | add
     }
 

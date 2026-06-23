@@ -55,9 +55,7 @@ pub fn play_audio_resource(
     source: &AudioResource,
     options: Option<&AudioPlayOptions>,
 ) -> Option<AudioChannel> {
-    if source.buffer.is_none() {
-        return None;
-    }
+    source.buffer.as_ref()?;
 
     let backend = audio_backend();
     let length = backend.duration_ms(source);

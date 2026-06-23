@@ -29,6 +29,7 @@ pub struct TweenPropertyDetail {
 // ---------------------------------------------------------------------------
 
 /// Configuration for creating a tween.
+#[derive(Default)]
 pub struct TweenOptions {
     pub delay: Option<f32>,
     /// Optional easing function; falls back to the manager's default.
@@ -42,21 +43,6 @@ pub struct TweenOptions {
     /// Normalize angular change to the shortest rotational path (within ±180°).
     pub smart_rotation: bool,
     pub snapping: bool,
-}
-
-impl Default for TweenOptions {
-    fn default() -> Self {
-        Self {
-            delay: None,
-            ease: None,
-            overwrite: false,
-            reflect: false,
-            repeat: 0,
-            reverse: false,
-            smart_rotation: false,
-            snapping: false,
-        }
-    }
 }
 
 impl std::fmt::Debug for TweenOptions {

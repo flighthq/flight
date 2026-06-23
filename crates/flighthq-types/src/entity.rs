@@ -16,6 +16,7 @@ pub trait EntityRuntime {
 }
 
 /// Blanket entity runtime with a single optional binding slot.
+#[derive(Default)]
 pub struct BaseRuntime {
     /// Arbitrary binding, e.g. a DOM element reference on web.
     pub binding: Option<Box<dyn std::any::Any>>,
@@ -26,12 +27,6 @@ impl std::fmt::Debug for BaseRuntime {
         f.debug_struct("BaseRuntime")
             .field("has_binding", &self.binding.is_some())
             .finish()
-    }
-}
-
-impl Default for BaseRuntime {
-    fn default() -> Self {
-        Self { binding: None }
     }
 }
 

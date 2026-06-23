@@ -37,10 +37,11 @@ pub struct SceneLights {
 /// buffer.
 ///
 /// `data` is a tightly-packed float layout matching the shader's std140/std430
-/// light block (radiance is linear, premultiplied: `unpack_color_to_linear(color)
-/// * intensity`, packed at pack time so the shader never sees sRGB). This proving
-/// slice carries exactly one directional + one ambient term; `directional_count`
-/// is 0 or 1 and `ambient_count` is 0 or 1 so a shader can branch on presence.
+/// light block (radiance is linear, premultiplied:
+/// `unpack_color_to_linear(color) * intensity`, packed at pack time so the shader
+/// never sees sRGB). This proving slice carries exactly one directional + one
+/// ambient term; `directional_count` is 0 or 1 and `ambient_count` is 0 or 1 so a
+/// shader can branch on presence.
 /// The layout grows to `MAX_FORWARD_LIGHTS` punctual lights behind feature
 /// defines in later passes without changing this type's shape — only `data`'s
 /// length and the counts.

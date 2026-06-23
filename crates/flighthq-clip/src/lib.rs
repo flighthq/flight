@@ -68,8 +68,8 @@ pub fn create_clip_region_from_rectangle(rectangle: &Rectangle) -> ClipRegion {
 /// Safe when `out` aliases `a` or `b`.
 pub fn intersect_clip_regions(a: &ClipRegion, b: &ClipRegion, out: &mut ClipRegion) {
     // Read all inputs into locals before writing out (alias safety).
-    let a_rect = a.rect.clone();
-    let b_rect = b.rect.clone();
+    let a_rect = a.rect;
+    let b_rect = b.rect;
     let a_contours = a.contours.clone();
     let b_contours = b.contours.clone();
     let a_winding = a.winding;
