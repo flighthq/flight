@@ -1,0 +1,24 @@
+# API Alignment: @flighthq/platform
+
+**Verdict:** Strong alignment — the package is a clean, canonical instance of the platform-suite backend seam; only minor `Readonly<>` and shared-scratch nits remain, both shared with sibling capability packages rather than unique to this one.
+
+## Findings
+
+| Severity | Symbol | Issue | Suggested fix |
+| --- | --- | --- | --- |
+| Low | `setPlatformBackend(backend: PlatformBackend \| null)` | The backend is stored and only ever read (its `getInfo` is called, never mutated), but the parameter/stored reference is not `Readonly<>`. The map's "default to `Readonly<>` and opt out only when mutation is deliberate" rule applies to stored references. | Type as `setPlatformBackend(backend: Readonly<PlatformBackend> \| null)` and store as `Readonly<PlatformBackend> \| null`. Note this is suite-wide: `setClipboardBackend`, `setDeviceBackend`, `setStorageBackend`, `setScreenBackend` all share the same non-`Readonly` form, so fix it as a coordinated convention change across the seam, not in `platform` alone. |
+| Low | `_scratch` (module-level shared `PlatformInfo`) | `getPlatformKind`, `getPlatformName`, and `isPlatformTouch` all funnel through a single shared module-mutable `_scratch` buffer. Each call reads exactly one field immediately after fill, so it is safe single-threaded, but it is hidden shared mutable state — at odds with the map's "explicit allocation / nothing magic internally" emphasis and a snag for the C/C++ portability goal (not re-entrant). | Acceptable as an internal hot-path optimization; if kept, leave a comment marking it non-re-entrant. Otherwise have these three convenience getters read the field from a local `createPlatformInfo()` or expose the field directly via `getPlatformInfo(out)` at the callsite. Low priority — the aliasing window is one field wide. |
+| Info | `PlatformBackend.getInfo(out)` / `getPlatformInfo(out)` | The seam method and its public wrapper both take a mutable `out` and return it. This is the deliberate out-param convention and is alias-safe (`getWebPlatformInfo` reads only the local `ua`/`nav` before writing, and the one self-read of `out.name` on line 69 reads a value it just wrote on line 68, not an input). No action — recorded so the alias-safety check is on the record as passing. | — |
+
+## Clean
+
+- **Full, unabbreviated type word in every export.** Every function carries the complete `Platform` type word: `createPlatformInfo`, `getPlatformInfo`, `getPlatformKind`, `getPlatformName`, `isPlatformDesktop/Mobile/Touch/Web`, `get/setPlatformBackend`, `createWebPlatformBackend`. No abbreviation anywhere.
+- **Globally unique root exports.** The `Platform` infix keeps every name distinct from sibling capability packages; no collision risk from the barrel.
+- **Allocation discipline by verb.** `createPlatformInfo` and `createWebPlatformBackend` allocate (correct `create*`); `getPlatformInfo` does not allocate and writes into `out`; the boolean/getter convenience functions reuse the shared scratch instead of allocating per call. Verbs match the allocation behavior.
+- **Boolean vs getter naming.** Booleans use `is*` (`isPlatformDesktop`, `isPlatformMobile`, `isPlatformTouch`, `isPlatformWeb`); non-boolean accessors use `get*` (`getPlatformKind`, `getPlatformName`, `getPlatformInfo`, `getPlatformBackend`). No `get*` returns a boolean.
+- **Backend-seam verb consistency.** `createWeb*Backend` / `get*Backend` / `set*Backend(backend: … | null)` exactly matches `clipboard`, `device`, `storage`, and `screen`, and the host adapter follows the suite's `createElectronPlatformBackend(electron: ElectronApi)` shape. This package is a textbook instance of the documented command-capability pattern.
+- **No teardown-verb misuse.** No `dispose*`/`destroy*`/`acquire*`/`release*` are present; none are needed (the seam holds no non-GC resource), so there is no synonym drift to flag.
+- **Sentinels over throws.** `getWebPlatformInfo` returns `'unknown'`/`'web'`/`''` for unknown environments and guards `navigator` rather than throwing; no expected-missing case throws, and there is no validation of unreachable internal invariants.
+- **Type hygiene.** `import type { … } from '@flighthq/types'` is on its own line; all cross-package types (`PlatformInfo`, `PlatformBackend`, `PlatformKind`, `PlatformName`) live in `@flighthq/types/Platform.ts`, none redefined inline.
+- **Import side-effect-free / opt-in registration.** No top-level registration; the web backend is created lazily inside `getPlatformBackend`, and `setPlatformBackend` is the explicit opt-in. `"sideEffects": false` holds.
+- **Alphabetized exports.** Source order is already alphabetized (`order:check` clean); the trailing module state (`_backend`, `_scratch`) and private helpers sit below the exported surface per source-style rules.

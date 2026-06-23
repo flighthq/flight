@@ -1,0 +1,24 @@
+# API Alignment: @flighthq/materials
+
+**Verdict:** Strong, disciplined surface — out-param/Readonly/sentinel rules are followed throughout; the only real defects are a cross-package type (`LinearColor`) defined inline instead of in `@flighthq/types`, and the `createColorTransform` constructor breaking the package's own `opts?: Readonly<Partial<…>>` constructor convention.
+
+## Findings
+
+| Severity | Symbol | Issue | Suggested fix |
+| --- | --- | --- | --- |
+| High | `LinearColor` (type, `color.ts:4`) | Cross-package type defined inline and re-exported from the package barrel. The doc comment states it is "the single float representation downstream lighting and shading math consumes" and it is the return/out type of the SDK-wide sRGB decode seam (`unpackColorToLinear`) — i.e. it crosses package boundaries. The map requires such types to live in `@flighthq/types` (the header layer), not be defined in an implementation package. | Move `type LinearColor = [number, number, number, number]` to `@flighthq/types` and import it here. Keeps the seam navigable from the header alone. |
+| Medium | `createColorTransform(obj?: Partial<ColorTransformLike>)` | Diverges from the package's own constructor convention in two ways: the options param is named `obj` (every `create*Material` uses `opts`), and it is not wrapped in `Readonly<>` (every other constructor takes `opts?: Readonly<Partial<…>>`). The function only reads the param, so it should be `Readonly`. | Rename `obj` → `opts` and type it `Readonly<Partial<ColorTransformLike>>` for consistency and const-correctness. |
+| Low | `computeRgbHexString(color)` vs `getColorTransformOffsetRgb` / `getColorTransformOffsetRgba` | Verb inconsistency for "derive a packed/encoded color value": one uses `compute*`, the siblings use `get*`. All three are pure, allocation-free derivations of a value from input. The map's accessor convention is `get*`. | Prefer `get*` for the derived-value reads, or document why `compute*` is the chosen verb for color-encoding derivations and apply it consistently. The current split sends mixed signals. |
+| Low | `createUniformColorTransformMaterial(colorTransform?: ColorTransform)` | The stored-by-reference param is not `Readonly<>`. It is retained on the material (`colorTransform ?? createColorTransform()`), so a mutable handle is defensible — but the function itself never mutates it. | If callers are expected to keep mutating the transform after construction, leave as-is; otherwise mark `Readonly<ColorTransform>` to match the read-only intent. Minor. |
+
+## Clean
+
+- **Full, unabbreviated type words everywhere.** `getColorTransformOffsetRgba`, `setColorTransformIdentity`, `createStandardPbrMaterialProperties`, `concatColorTransform` — no abbreviations of `ColorTransform`, `Material`, or any PBR variant. Names are globally self-identifying.
+- **Allocation discipline by verb is exemplary.** `create*` / `clone*` allocate (via `createEntity`); the hot-path math/transform helpers (`concatColorTransform`, `copyColorTransform`, `invertColorTransform`, `setColorTransform`, `setColorTransformOffsetRgb/Rgba`, `unpackColorToLinear`, `copyColorTransformToArrays`) all write into an `out` parameter and allocate nothing.
+- **Out-param functions are alias-safe.** `concatColorTransform`, `copyColorTransform`, `invertColorTransform`, and `setColorTransform` each read a channel's inputs into the expression before writing that channel's output, and never read a field after a sibling write clobbers it — `out === source` (and `out === other`) is safe.
+- **`Readonly<T>` on read-only object params throughout.** Every `source` / `a` / `b` / `opts` (except the two flagged above) is `Readonly<…>`; mutable params are exactly the `out` / `target` outputs, as intended.
+- **Sentinels, not throws.** No expected-failure path throws; `equalsMaterial` returns `false`/`true`, lookups return values, no validation of unreachable invariants.
+- **Booleans use `is*` / `equals*`.** `isIdentityColorTransform`, `equalsColorTransform`, `equalsMaterial` — no `get*` returning a boolean.
+- **Consistent constructor pattern across the material family.** `classicMaterials`, `pbrMaterials`, `pbrExtensionMaterials`, `unlitMaterials` all follow `createSurfaceMaterial(Kind) as T` then `material.field = opts?.field ?? default`, and the shared property block is factored as a private `assignStandardPbrMaterialProperties(target, opts)`. `create*` is the one constructor verb (no `make`/`new` drift).
+- **`import type {}` hygiene.** Type and value imports are on separate lines in every file (e.g. `material.ts` separates `import type { … }` from `import { UniformColorTransformMaterialKind }`); no inline `import { type Foo, bar }`. All material/kind types come from `@flighthq/types`.
+- **Tests colocated 1:1** with each source file (`*.test.ts`), and exports are alphabetized within files.

@@ -1,0 +1,105 @@
+---
+id: displayobject-gl
+title: '@flighthq/displayobject-gl'
+type: depth
+target: displayobject-gl
+status: proposed
+tier: bronze
+source:
+  - tools/agents/docs/reviews/maturation/depth/displayobject-gl.md
+  - tools/agents/docs/reviews/depth/displayobject-gl.md
+depends_on: []
+updated: 2026-06-23
+---
+
+## Summary
+
+solid — 78/100; a genuinely deep, broad WebGL2 leaf-renderer suite whose ceiling is set by how many visual paths (gradient/bitmap shape fills, strokes, all text) still route through a hidden offscreen-Canvas2D raster instead of rendering natively on the GPU.
+
+## Scope (this build)
+
+Targeting the **Bronze** tier (see `tier:` above). Advance the marker as tiers complete.
+
+- [ ] Bronze
+- [ ] Silver
+- [ ] Gold
+
+## Design
+
+### Bronze
+
+The minimum to make this a real "WebGL renderer" rather than a "GPU-accelerated Canvas blitter" for the common cases, plus the cheap correctness/API-shape fixes flagged in the depth review.
+
+- **Native GPU gradient fills for `drawGlShape`.** Add `glGradientFill.ts` with a gradient fragment shader (linear + radial) consuming a packed gradient descriptor (`GradientStop[]`, gradient matrix) so solid+gradient fills both tessellate to meshes and never fall through to the canvas raster. Requires a `GlGradientFill` / `GradientStopLike` type in `@flighthq/types` first (shape gradient fill data already exists; mirror it as renderer-facing GPU data). This is the single highest-value gap and removes the most common raster fallback.
+- **Native GPU stroke tessellation.** Add `glStroke.ts` (`tessellateStroke` consumed from `@flighthq/path`, or add it there) producing a triangle mesh for line styles (width, joins=miter/round/bevel, caps=butt/round/square). `getShapeFillRegions` should be paired with a `getShapeStrokeRegions` so `glShape` covers stroked shapes on the GPU. Strokes are the second-most-common raster fallback.
+- **Own the shape command vocabulary.** Stop re-exporting `defaultGl*` shape commands as aliases of `defaultCanvas*` (index.ts lines 27-44). Provide a real `glShapeCommands.ts` (even if it initially shares geometry helpers) so the GL package owns `defaultGlBeginGradientFill`, `defaultGlLineStyle`, etc., and is not coupled to `displayobject-canvas` at the API level. Remove the `@flighthq/displayobject-canvas` runtime dependency from the gradient/stroke paths once native fills land.
+- **Tighten the loose public signatures.** Replace `remapGlScale9Commands(out: unknown[], source: readonly unknown[], …)` with a typed `ShapeCommand[]` signature, and replace the `as unknown as GlShapeData` / `as unknown as RendererData` casts in `createGlShapeData`/`createGlTextLabelData` with a typed runtime-slot accessor. Public surface should not expose `unknown[]`.
+- **Bundle registrar with an explicit decision.** Add `registerGlDisplayObjectRenderers(state)` that registers every `defaultGl*Renderer` against its `*Kind`, documented as the convenience path alongside per-descriptor registration (which stays the tree-shakable golden path). Resolves the "no turnkey registration" gap by decision, not omission.
+- **Texture-filtering / premultiply policy surfaced.** Add a small `GlBitmapSamplingLike` option (nearest vs linear, mip on/off) plumbed through `prepareGlSpriteBatchWrite` so bitmap/sprite draws can opt into crisp pixel-art sampling instead of inheriting whatever `render-gl` configures. Pixel-art is a first-class WebGL use case and is currently unreachable from this package.
+
+### Silver
+
+Competitive with a well-regarded WebGL 2D renderer (PixiJS-class). Native GPU text, full fill coverage, and the cross-backend consistency a professional user expects.
+
+- **GPU text via an SDF/MSDF glyph atlas.** The marquee missing feature. Add `glGlyphAtlas.ts` (`createGlGlyphAtlas`, `ensureGlGlyphAtlasEntry`, `destroyGlGlyphAtlas`) and an SDF/MSDF text fragment shader, then rewrite `drawGlTextLabel` / `drawGlRichText` to assemble glyph quads from the atlas instead of `ctx.fillText` into a per-node canvas. This depends on the **`@flighthq/text-shaping` seam** (currently designed, not built — 2026-06-22): consume `registerTextShaper`'s shaped-glyph output (ids, advances, offsets, clusters) so the GL path uses real shaping, not `ctx.measureText`. Until the full-glyph shaper exists, the measure-only tier still feeds a Canvas-rasterized glyph atlas (better than per-node re-raster). Surface this through a `GlTextRenderingLike` choice (atlas vs legacy raster) so the cutover is opt-in and testable.
+- **Native GPU bitmap fills.** Add `glBitmapFill.ts` — a fill that samples a bound texture with a fill matrix (repeat/clamp), removing the last `getShapeFillRegions === null` raster fallback. After this, `glShape` has no canvas-raster path at all and `createGlShapeData` no longer allocates an `HTMLCanvasElement`.
+- **MSAA / edge-antialiasing policy for tessellated meshes.** Surface an antialiasing seam (`GlShapeAntialiasLike`: MSAA target vs analytic edge AA in the fragment shader) so tessellated fills/strokes have controlled edge quality rather than relying entirely on the `render-gl` core's framebuffer config. Add `glShapeAntialias.ts`.
+- **Cross-backend consistency gate.** Add functional-test scenes (via the `functional-test` skill) covering gradient fills, strokes, bitmap fills, and text that run `rust:skia`/`ts:canvas`/`ts:webgl` through the parity differ, so the new GPU paths are proven to match the Canvas reference, not just "not blank." Gradient color interpolation space and glyph baseline rounding are the likely divergence points to pin.
+- **Signals opt-in for renderer lifecycle.** If consumers need to observe atlas growth, texture eviction, or batch flushes, add an `enableGlRendererSignals(state)` group (per the `enable*` rule) emitting `glGlyphAtlasGrewSignal` / `glTextureEvictedSignal`. Defer if no consumer demand; list as a deliberate decision.
+- **Mipmap + texture eviction policy for the shared texture cache.** Today `runtime.textureCache` is keyed on `canvas`/image with manual `deleteTexture` on destroy. Add an LRU/size-budget eviction (`setGlTextureCacheBudget`, `evictGlTextureCache`) so long-running apps with many transient shapes/text don't grow GPU memory unbounded. This is table stakes for "production-grade."
+- **`-formats` neighbor for any importer needs.** If GPU paths need to ingest compressed/packed gradient or atlas formats, spawn `@flighthq/displayobject-gl-formats` rather than widening this package — keeps the core renderer tree-shakable. Likely a Gold concern; surface as a watch item.
+
+### Gold
+
+Authoritative / AAA: nothing a WebGL-renderer domain expert would find missing, full performance and error handling, and 1:1 Rust-port parity.
+
+- **Batched, instanced shape meshes.** Today `drawGlShapeMeshes` does one `bufferData` + `drawElements` per mesh per draw (STREAM_DRAW per frame). Add a persistent vertex/index buffer with a content-version-keyed upload and merge same-program meshes into batched draws, so many small shapes don't each cost a buffer upload + draw call. Add `glShapeBatch.ts` mirroring `glSpriteBatch`'s instancing.
+- **MSDF text with full international shaping.** Promote the full-glyph shaper tier (HarfBuzz wasm via `text-shaping`) to the default for non-Latin text: correct Arabic/Indic/kerning/ligatures, RTL runs, and color-emoji fallback. Glyph atlas supports multi-channel SDF and a CPU eviction policy keyed on glyph+size+format. This is the difference between "renders Latin" and "renders text."
+- **Sub-pixel / hinted text quality controls and gamma-correct glyph blending.** SDF text sharpness, screen-space derivative AA (`fwidth`), and correct alpha coverage so small text matches the Canvas reference within tolerance across DPRs.
+- **Exhaustive blend-mode and color-transform coverage on every GPU path.** Verify all OpenFL blend modes (multiply, screen, overlay, hard/soft-light, difference, etc.) render correctly through the mesh, gradient, stroke, and text programs — not just the sprite batch. Some advanced blend modes need a destination-read (framebuffer fetch / copy-back) path; add `glAdvancedBlend.ts` for the modes the standard fixed-function pipeline cannot express.
+- **Render cache and velocity parity for the new GPU paths.** Ensure `glCache` (cacheAsBitmap analogue) and `glVelocity` writers correctly capture/produce motion vectors for tessellated shapes, GPU gradients, and atlas text — not only the sprite/quad paths they cover today. Add a `defaultGlShapeVelocityWriter` and a `defaultGlTextLabelVelocityWriter`.
+- **Context-loss handling.** Add `handleGlContextLost` / `restoreGlRendererResources(state)` so all programs, buffers, atlases, and cached textures rebuild after a `webglcontextlost` event. A production WebGL renderer must survive context loss; this is currently unaddressed.
+- **Error-path discipline and diagnostics.** Sentinels for expected GPU failures (atlas full → `null`, program link failure → `false`, no material → already handled), with an opt-in `enableGlRendererDebug(state)` that surfaces shader compile/link logs and over-budget warnings. Throw only on misuse (e.g., registering a writer for an unknown kind).
+- **Performance budget tests.** Add `npm run size` baselines and a draw-call/upload micro-benchmark for the batched shape and atlas-text paths so regressions are caught.
+- **1:1 Rust-port parity (`flighthq-displayobject-gl` over `render-gl`/glow).** Mirror every GPU path — gradient/stroke/bitmap fill tessellation, the SDF atlas, batched shape meshes, blend modes, velocity writers — in the Rust crate, checked against `displayobject-skia` (the bit-deterministic conformance reference) via the parity matrix. Record any intentional TS↔Rust divergence (e.g., shader precision, gradient interpolation) in the conformance map. The atlas/shaping stack pairs with the Rust `flighthq-text-shaping` (rustybuzz) seam.
+
+## Sequencing & effort
+
+Recommended order, with dependencies and cross-package / design-decision items called out.
+
+1. **Bronze API-shape fixes first (low effort, no deps):** tighten `remapGlScale9Commands`, replace `unknown`/`as unknown as` casts with typed slots, add `registerGlDisplayObjectRenderers`, surface bitmap sampling policy. These are local, unblock nothing, and de-risk the bigger work by cleaning the surface. Half a day to a day.
+2. **GPU gradient fills (Bronze, medium effort):** **cross-package dependency** — add `GlGradientFill` / gradient stop renderer types to `@flighthq/types` first (header layer), and confirm `getShapeFillRegions` in `@flighthq/shape` exposes gradient data (likely needs a `getShapeGradientFillRegions` companion). Then the shader + mesh path here. Highest value-per-effort; do before strokes.
+3. **GPU stroke tessellation (Bronze, medium-high effort):** **cross-package** — stroke tessellation belongs in `@flighthq/path` (`tessellateStroke` with joins/caps), consumed here. Coordinate the join/cap vocabulary with the Canvas backend so cross-backend results match.
+4. **Own the shape command vocabulary + drop the canvas dep (Bronze):** can only fully land _after_ gradient + stroke + bitmap fills are native, since those are the paths currently borrowed from `displayobject-canvas`. Sequence this as the closer of the Bronze raster-elimination arc.
+5. **GPU text atlas (Silver, high effort, gated):** **blocked on `@flighthq/text-shaping`**, which is designed but not yet built (2026-06-22). Surface to the user as a **design-decision item**: the GL text path's quality ceiling is the shaping seam — building MSDF text here without the shaper only gets a better-cached raster, not correct international text. Decide whether to (a) build the measure-only atlas now and upgrade later, or (b) wait for `text-shaping`. Recommend (a): ship an atlas behind `GlTextRenderingLike` opt-in, upgrade the shaper backend under it.
+6. **Native bitmap fills + AA policy + texture eviction (Silver):** independent of text; can proceed in parallel with the text work. Texture eviction (`setGlTextureCacheBudget`) should land before any large-scale app testing.
+7. **Cross-backend parity scenes (Silver):** add as each GPU path lands, not at the end — they are how you prove the path matches the Canvas/Skia reference. Use the `functional-test` skill; gradient interpolation space and glyph baseline are the divergence watch points.
+8. **Gold work last:** shape batching/instancing, advanced blend modes (framebuffer-fetch path), context-loss recovery, full international MSDF text, velocity/cache parity for new paths, perf budgets, and the Rust mirror. The Rust port (`flighthq-displayobject-gl`) should track the TS GPU paths once they stabilize through Silver — porting before the raster fallbacks are gone would port the wrong architecture.
+
+**Cross-package / design-decision items to surface to the user:**
+
+- `@flighthq/types` additions for gradient/stroke/atlas GPU data must land first (header-layer rule).
+- Stroke and gradient-region helpers likely need new exports in `@flighthq/path` and `@flighthq/shape` — these cross package boundaries and should be raised, not done autonomously.
+- The `@flighthq/text-shaping` seam is the gating dependency for authoritative GPU text; its build status is a project-level decision.
+- Whether to keep `@flighthq/displayobject-canvas` as a dependency at all once native fills land (the goal is to drop it).
+
+## Acceptance
+
+- [ ] Shared types defined in `@flighthq/types` first
+- [ ] `npm run check` passes
+- [ ] `npm run packages:check` passes
+- [ ] Colocated test per export (`npm run exports:check`)
+- [ ] `npm run order` / `npm run api` clean
+- [ ] (Rust-relevant) `npm run rust:conformance` / `npm run mixing:conformance` considered
+
+## Open questions
+
+- _(none captured yet)_
+
+## Agent brief
+
+> Build `@flighthq/displayobject-gl` up to the **Bronze** tier per the Scope + Design above (the package exists — extend it). Define any new shared types in `@flighthq/types` first. Follow the CLAUDE.md conventions. Satisfy every Acceptance checkbox. Surface cross-package or design decisions rather than guessing.
+
+## Decision log
+
+- 2026-06-23 — seeded from maturation analysis (status: proposed).

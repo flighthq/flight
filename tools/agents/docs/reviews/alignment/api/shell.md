@@ -1,0 +1,22 @@
+# API Alignment: @flighthq/shell
+
+**Verdict:** Mostly compliant — sentinel/teardown/Readonly/import conventions are clean; the one real gap is inconsistent inclusion of the `Shell` domain word across the command functions (`openExternalUrl`, `moveItemToTrash`, `showItemInFolder` omit it while `openShellPath`, `shellBeep`, `*ShellBackend` include it), which also weakens global uniqueness.
+
+## Findings
+
+| Severity | Symbol | Issue | Suggested fix |
+| --- | --- | --- | --- |
+| Medium | `openExternalUrl`, `moveItemToTrash`, `showItemInFolder` | Inconsistent domain naming. Within the same package, `openShellPath`, `shellBeep`, `setShellBackend`, `getShellBackend`, `createWebShellBackend` carry the `Shell` word but these three do not. Sibling capability packages name every command with the domain word (`writeClipboardText`, `readClipboardHtml`, `showMessageDialog`, `showNotification`). The map's rule is that an exported function should be globally self-identifying without context; "show item in folder" and "move item to trash" do not say _shell_. | Make the domain word consistent across all command functions: `openExternalUrl` → `openShellExternalUrl` (or keep `openExternalUrl` but then rename `openShellPath` → `openExternalPath` for symmetry); `moveItemToTrash` → `moveShellItemToTrash`; `showItemInFolder` → `showShellItemInFolder`. Pick one convention package-wide and apply it to all five command functions plus `shellBeep`. |
+| Low | `showItemInFolder`, `moveItemToTrash` | Global-uniqueness risk. Both names are generic enough that a future package (e.g. a file-manager or finder integration) would naturally want the same name; they are unique today only by absence of a competitor. The map calls for globally unique names "especially from package roots." | Folding in the `Shell` domain word (above) resolves this as a side effect. |
+| Low | `createWebShellBackend` (and the package generally) | Verb/parameter symmetry across the capability suite is otherwise good, but the package mixes the action-verb-first form (`openShellPath`, `moveItemToTrash`) with the noun-after-verb form inconsistently relative to siblings. Not a defect on its own; noted only so the rename in the Medium finding settles on the sibling-consistent `<verb><Domain><Object>` shape (`showNotification`, `writeClipboardText`). | When renaming, prefer `<verb>Shell<Object>` to match the suite's `<verb><Domain><Object>` pattern. |
+
+## Clean
+
+- **Sentinels for expected failure.** Every web-unsupported operation resolves to `false` (`openPath`, `showItemInFolder`, `moveToTrash`) or no-ops (`beep`); nothing throws for expected-missing capability. The `ShellBackend` doc comment in `@flighthq/types` explicitly frames these as expected-failure surfaces, not programmer errors. Correct per the sentinel rule.
+- **Backend seam shape.** `getShellBackend` / `setShellBackend` / `createWebShellBackend` follow the platform-suite command-capability seam exactly, matching `clipboard` and `dialog` (`get*Backend` / `set*Backend` / `createWeb*Backend`). `set*Backend(null)` to fall back to the web default is consistent with siblings.
+- **No teardown-verb misuse.** No `dispose*`/`destroy*`/`acquire*`/`release*` are present, and none are needed — there is no GC-reachability state or non-GC resource owned here. No synonym drift.
+- **No allocation-discipline violations.** No `out`/`target` hot-path helpers exist; the only allocator is `createWebShellBackend`, correctly verbed `create*`. No alias-safety concerns (no out-params).
+- **Accessor naming.** `getShellBackend` correctly returns the backend object (a real getter), not a boolean. No `get*` returning boolean, no boolean getter missing `is*`/`has*`.
+- **Readonly / types.** `ShellBackend` is imported from `@flighthq/types` (not defined inline) via a dedicated `import type { ShellBackend }` line on its own — compliant with the type-import and cross-package-type rules. Parameters are primitive (`string`) or the backend object/`null`, so no missing `Readonly<>` wrapping is required.
+- **Lazy, side-effect-free default.** `getShellBackend` lazily creates the web backend; module top level only declares `let _backend = null`, with the scratch variable correctly placed at the bottom of the file after the exported functions. No top-level registration or side effects, consistent with `"sideEffects": false`.
+- **Alphabetized exports** (`createWebShellBackend`, `getShellBackend`, `moveItemToTrash`, `openExternalUrl`, `openShellPath`, `setShellBackend`, `shellBeep`, `showItemInFolder`) — order is clean.

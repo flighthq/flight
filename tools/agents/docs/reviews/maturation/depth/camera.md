@@ -1,0 +1,50 @@
+# Maturation Roadmap: @flighthq/camera
+
+**Current verdict:** partial — completeness 42/100; a clean, correct matrix-core (perspective/orthographic projection, look-at view, view-projection compose + inverse) that feeds the post-process effects, but missing picking, projection, frustum culling, and eye-position extraction that any usable camera library ships.
+
+The matrix core is done and good — do not rework it. Every tier below is additive. A key enabler: `@flighthq/geometry` already provides `Frustum` (`createFrustum`, `setFrustumFromMatrix4`, `isFrustumContainingPoint`, `isFrustumIntersectingAabb`), `Plane`, `BoundingSphere`, and `Aabb`. So camera-level frustum/culling work is a thin compose over geometry, not new math. There is **no `Ray` type anywhere** — that is the one genuinely new primitive the picking work introduces, and per Flight rules it must be defined in `@flighthq/types` first (a `Ray3D` with `origin: Vector3` + `direction: Vector3`), likely best owned by `@flighthq/geometry` and re-exported, not invented inline in camera.
+
+Every named function below must land in the `flighthq-camera` Rust crate in the same session that lands it in TS — the crate is currently a 1:1 mirror (`create_camera`, `get_camera_view_projection_matrix4`, `set_camera_view_matrix4_from_look_at`, etc.) and conformance requires it stays one. Types go in `@flighthq/types` first; all new functions are free functions with explicit `out`/`&mut` params, alias-safe, `Readonly`-by-default inputs, sentinel returns (`false`/`null`/`-1`) for expected failure, and tree-shakable from the root barrel.
+
+## Bronze
+
+Minimum viable — the 20% that turns "feeds effects" into "an app can actually use it." These are the operations a developer reaches for the day they pick up a camera package.
+
+- **`Ray3D` type (in `@flighthq/types`, owned by `@flighthq/geometry`)** — `{ origin: Vector3; direction: Vector3 }` plus `Ray3DLike`, `createRay3D()`, `setRay3D(out, ...)`. The shared primitive picking returns; nothing in the codebase has it yet.
+- **`getCameraScreenToWorldRay(out, camera, ndcX, ndcY, aspect)`** — unprojection: NDC point → world-space `Ray3D`. The single most-requested camera op (mouse picking, drag, raycast). Builds on the existing inverse-view-projection path; returns `false` on a non-invertible view-projection.
+- **`getCameraWorldToScreen(out, camera, worldPoint, aspect)`** — projection: world `Vector3` → NDC `Vector3` (z = depth); returns `false` when the point is behind the camera / `w <= 0`. The HUD/label/gizmo-anchoring counterpart to unprojection.
+- **`getCameraPosition(out, camera)`** — extract the eye position from the inverse view (the translation column). `scene-gl`'s `setGlMeshCameraPosition` currently recomputes this by hand; this becomes the canonical source and `scene-gl` migrates onto it.
+- **Resolve the dead `inverseViewProjection` cache** — the entity field is documented as "recomputed whenever view or projection changes" but **no function writes it**. Add **`updateCameraInverseViewProjection(camera, aspect)`** (returns `false` if non-invertible) and have the effects read `camera.inverseViewProjection`; OR drop the field and route effects through `getCameraInverseViewProjectionMatrix4`. Decide and finish — do not leave declared-but-unmaintained state.
+
+## Silver
+
+Competitive/solid — matches a good 3D-camera library: culling, the rest of the basis, viewport ergonomics, and the standard depth-precision projection variants.
+
+- **`getCameraFrustum(out, camera, aspect)`** — write the six clip planes into a geometry `Frustum` (compose `getCameraViewProjectionMatrix4` + `setFrustumFromMatrix4`). Table-stakes for any renderer that culls.
+- **Culling predicates** — `isSphereInCameraFrustum(camera, sphere, aspect)`, `isBoxInCameraFrustum(camera, aabb, aspect)`, `isPointInCameraFrustum(camera, point, aspect)`. Thin wrappers over geometry's `isFrustumIntersectingAabb` / `isFrustumContainingPoint` plus a sphere test (add `isFrustumIntersectingSphere` to geometry if not present). These let the camera drive scene visibility.
+- **`getCameraForward(out, camera)` / `getCameraRight(out, camera)` / `getCameraUp(out, camera)`** — the basis vectors from the view matrix rows, completing the position extractor for lighting, sorting, and LOD.
+- **Stored viewport** — `setCameraViewport(camera, width, height)` storing `viewportWidth`/`viewportHeight` on the entity (type change in `@flighthq/types`), with `getCameraAspect(camera)`. Add overloads `getCameraViewProjectionMatrix4(out, camera)` etc. that read the stored aspect, retiring the threaded `aspect` argument and the dual-source-of-truth smell. Plus pixel-space convenience: `getCameraWorldToPixel(out, camera, worldPoint)` and `getCameraPixelToWorldRay(out, camera, pixelX, pixelY)` using the stored viewport.
+- **`getCameraFrustumCorners(out, camera, aspect)`** — the 8 world-space corners (out as a length-8 `Vector3` array or flat buffer). Needed for cascaded shadow maps, debug draw, and bounds fitting.
+- **Reversed-Z and infinite-far perspective** — `createReversedZPerspectiveProjection(...)` and `createInfinitePerspectiveProjection(...)` (or a `reversedZ?` / `infiniteFar?` flag on `PerspectiveProjection` in types + `setProjectionMatrix4` honoring it). Standard in modern depth-precision-conscious renderers; the GPU backends will want them.
+
+## Gold
+
+Authoritative/AAA — exhaustive coverage, asymmetric projection for stereo/VR/portals, controllers, full edge-case + error handling, perf, tests, docs, and 1:1 Rust parity.
+
+- **Off-axis / asymmetric projection** — `createOffAxisPerspectiveProjection({ left, right, bottom, top })` and `createOffAxisOrthographicProjection({ left, right, bottom, top })` (asymmetric `Projection` kinds, `'offAxisPerspective'` / `'offAxisOrthographic'` `kind` strings in types). Enables stereo/VR per-eye frustums, tiled/sheared rendering, and portal cameras. Add `offsetX`/`offsetY` lens-shift support on the symmetric variants for the simple case.
+- **`getCameraRayThroughBoundingSphere` / `intersectCameraRayWithPlane`** — ergonomic picking helpers (ground-plane drag, sphere hit-test) built on the Bronze `Ray3D`, so apps need not pull a separate intersection library for the common cases.
+- **Linear depth helpers** — `getCameraLinearDepth(camera, ndcZ, aspect)` / `getCameraViewSpaceZ(...)` for fog/SSAO/decals; documents the reversed-Z path's depth math.
+- **Camera controllers (own package: `@flighthq/camera-controller`)** — `createOrbitCameraController`, `createFlyCameraController`, `createFirstPersonCameraController`, each a plain-data controller state + a free `updateOrbitCameraController(controller, camera, input, deltaSeconds)` that writes the camera's view in place. Kept out of `@flighthq/camera` so the matrix core stays dependency-free and tree-shakable; an authoritative offering ships at least the orbit controller.
+- **Backend/host seam where relevant** — confirm camera stays a pure value/math leaf (no backend needed); the only host coupling is input for controllers, which belongs to `@flighthq/input`, not here. Document this explicitly so no `*Backend` is added to camera.
+- **Full edge-case + error handling** — degenerate look-at (eye == target, zero up), zero/negative near/far, `near >= far`, zero aspect/viewport, behind-camera projection, non-invertible matrices — each with a defined sentinel return and a test. Programmer-error precondition violations (e.g. NaN inputs) documented as the throw boundary per Flight rules.
+- **Performance** — pooled scratch (`Matrix4Pool`/`Vector3Pool` from geometry) in any hot path, alias-safety tests for every new `out` function (distinct + aliased cases), and a no-allocation guarantee on all `get*`/`set*` math functions.
+- **Tests + docs** — one colocated `*.test.ts` per source file with alphabetized `describe` blocks mirroring exports; round-trip tests (project↔unproject, world↔screen↔world); a functional/visual scene exercising picking and culling; full doc comments carrying ownership/alias/coordinate-space semantics.
+- **1:1 Rust parity** — every Bronze/Silver/Gold function mirrored in `flighthq-camera` (`get_camera_screen_to_world_ray`, `get_camera_world_to_screen`, `get_camera_position`, `get_camera_frustum`, `is_sphere_in_camera_frustum`, `update_camera_inverse_view_projection`, the off-axis constructors, etc.), the controller crate mirrored as `flighthq-camera-controller`, and conformance assertions ported alongside.
+
+## Sequencing & effort
+
+1. **Bronze first, in one pass (~1 short session).** `Ray3D` in types/geometry → `getCameraScreenToWorldRay` + `getCameraWorldToScreen` + `getCameraPosition` → resolve the `inverseViewProjection` cache. These reuse the existing inverse path and unblock picking/HUD immediately. Land the Rust mirror in the same session. This is the largest jump in real-world usability per unit effort.
+2. **Silver next (~1–2 sessions).** Frustum + culling predicates are nearly free given geometry's `Frustum`/`Plane`/`BoundingSphere` (mostly compose + wrap + test). The stored viewport is a small type change but touches every `get*` call site and `scene-gl` — do it as one focused change. Frustum corners and reversed-Z/infinite perspective are independent and can be parallelized; reversed-Z should coordinate with whoever owns the GPU depth setup.
+3. **Gold is multi-session and partly out-of-crate.** Off-axis projection and linear-depth helpers stay in `@flighthq/camera`. Controllers are a separate package (`@flighthq/camera-controller`) and depend on `@flighthq/input`, so schedule them after input is stable. Exhaustive edge-case/error tests, perf passes, and the visual functional scene are a sustained polish phase. Keep Rust parity lockstep throughout — never let the crate fall behind a tier.
+
+Throughout: types in `@flighthq/types` first, `npm run fix` + `npm run check` per change, `npm run api camera` to verify naming symmetry, `npm run exports:check` to confirm every export has a colocated test, and `npm run order` after adding exports.
