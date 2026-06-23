@@ -62,9 +62,9 @@ pub use color_grade_effects::{
 
 // effect_program_cache
 pub use effect_program_cache::{
-    WgpuEffectBlend, WgpuFilterPipeline, build_wgpu_effect_module_wgsl,
+    WgpuEffectBlend, WgpuEffectPipeline, build_wgpu_effect_module_wgsl,
     clear_wgpu_effect_pipeline_cache, draw_wgpu_dual_source_effect_pass,
-    draw_wgpu_effect_filter_pass, ensure_wgpu_effect_pipeline,
+    draw_wgpu_effect_filter_pass, draw_wgpu_effect_gaussian_blur, ensure_wgpu_effect_pipeline,
     get_wgpu_dual_source_effect_pipeline, get_wgpu_effect_pipeline,
 };
 

@@ -1,3 +1,6 @@
+use flighthq_node::{
+    BoundsNode, invalidate_bounds_node_local_bounds, invalidate_bounds_node_local_content,
+};
 use flighthq_types::{KindId, NativeTextData, NativeTextStyle, Rectangle, TextAutoSize};
 
 // ---------------------------------------------------------------------------
@@ -17,14 +20,14 @@ pub fn native_text_kind() -> KindId {
 ///
 /// `measured_width`/`measured_height` are written back by the platform renderer
 /// after layout so that `compute_native_text_local_bounds_rectangle` can remain
-/// DOM-free. `content_revision`/`bounds_revision` are bumped by the setters,
-/// mirroring the TS `invalidateNodeLocalContent`/`invalidateNodeLocalBounds`
-/// calls so cache-validity checks have a monotonic stamp to compare against.
+/// DOM-free. `bounds` is the node's revision spine (a `flighthq-node`
+/// `BoundsNode`); setters bump it via `invalidate_bounds_node_local_content`/
+/// `_bounds`, mirroring the TS `invalidateNodeLocalContent`/
+/// `invalidateNodeLocalBounds` calls.
 pub struct NativeTextRuntime {
     pub measured_height: f32,
     pub measured_width: f32,
-    pub(crate) bounds_revision: i64,
-    pub(crate) content_revision: i64,
+    pub(crate) bounds: BoundsNode,
 }
 
 impl NativeTextRuntime {
@@ -107,8 +110,7 @@ pub fn create_native_text_runtime() -> NativeTextRuntime {
     NativeTextRuntime {
         measured_height: 0.0,
         measured_width: 0.0,
-        bounds_revision: 0,
-        content_revision: 0,
+        bounds: BoundsNode::default(),
     }
 }
 
@@ -123,8 +125,8 @@ pub fn set_native_text_auto_size(source: &mut NativeText, value: TextAutoSize) {
         return;
     }
     source.data.auto_size = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 /// Sets `data.height` on `source`, invalidating local content and bounds.
@@ -133,8 +135,8 @@ pub fn set_native_text_height(source: &mut NativeText, value: f32) {
         return;
     }
     source.data.height = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 /// Sets `data.text` on `source`, invalidating local content and bounds.
@@ -143,8 +145,8 @@ pub fn set_native_text_string(source: &mut NativeText, value: String) {
         return;
     }
     source.data.text = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 /// Replaces the style descriptor wholesale, invalidating local content and
@@ -152,8 +154,8 @@ pub fn set_native_text_string(source: &mut NativeText, value: String) {
 /// equality is not tracked, mirroring `set_text_label_format`.
 pub fn set_native_text_style(source: &mut NativeText, value: NativeTextStyle) {
     source.data.style = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 /// Sets `data.width` on `source`, invalidating local content and bounds.
@@ -162,13 +164,24 @@ pub fn set_native_text_width(source: &mut NativeText, value: f32) {
         return;
     }
     source.data.width = value;
-    source.runtime.content_revision += 1;
-    source.runtime.bounds_revision += 1;
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use flighthq_node::{
+        get_bounds_node_local_bounds_revision, get_bounds_node_local_content_revision,
+    };
+
+    fn content_revision(native: &NativeText) -> u32 {
+        get_bounds_node_local_content_revision(&native.runtime.bounds)
+    }
+
+    fn bounds_revision(native: &NativeText) -> u32 {
+        get_bounds_node_local_bounds_revision(&native.runtime.bounds)
+    }
 
     fn data(auto: TextAutoSize, w: f32, h: f32) -> NativeTextData {
         NativeTextData {
@@ -263,40 +276,40 @@ mod tests {
     #[test]
     fn set_native_text_auto_size_no_op_when_same() {
         let mut native = create_native_text(None);
-        let content = native.runtime.content_revision;
+        let content = content_revision(&native);
         set_native_text_auto_size(&mut native, TextAutoSize::None);
-        assert_eq!(native.runtime.content_revision, content);
+        assert_eq!(content_revision(&native), content);
     }
 
     #[test]
     fn set_native_text_auto_size_updates_and_invalidates() {
         let mut native = create_native_text(None);
-        let content = native.runtime.content_revision;
-        let bounds = native.runtime.bounds_revision;
+        let content = content_revision(&native);
+        let bounds = bounds_revision(&native);
         set_native_text_auto_size(&mut native, TextAutoSize::Left);
         assert_eq!(native.data.auto_size, TextAutoSize::Left);
-        assert_eq!(native.runtime.content_revision, content + 1);
-        assert_ne!(native.runtime.bounds_revision, bounds);
+        assert_ne!(content_revision(&native), content);
+        assert_ne!(bounds_revision(&native), bounds);
     }
 
     #[test]
     fn set_native_text_height_updates_data() {
         let mut native = create_native_text(None);
-        let content = native.runtime.content_revision;
-        let bounds = native.runtime.bounds_revision;
+        let content = content_revision(&native);
+        let bounds = bounds_revision(&native);
         set_native_text_height(&mut native, 250.0);
         assert_eq!(native.data.height, 250.0);
-        assert_eq!(native.runtime.content_revision, content + 1);
-        assert_ne!(native.runtime.bounds_revision, bounds);
+        assert_ne!(content_revision(&native), content);
+        assert_ne!(bounds_revision(&native), bounds);
     }
 
     #[test]
     fn set_native_text_string_updates_data() {
         let mut native = create_native_text(None);
-        let content = native.runtime.content_revision;
+        let content = content_revision(&native);
         set_native_text_string(&mut native, "hello".to_string());
         assert_eq!(native.data.text, "hello");
-        assert_eq!(native.runtime.content_revision, content + 1);
+        assert_ne!(content_revision(&native), content);
     }
 
     #[test]
@@ -305,32 +318,32 @@ mod tests {
             text: "same".to_string(),
             ..NativeTextData::default()
         }));
-        let content = native.runtime.content_revision;
+        let content = content_revision(&native);
         set_native_text_string(&mut native, "same".to_string());
-        assert_eq!(native.runtime.content_revision, content);
+        assert_eq!(content_revision(&native), content);
     }
 
     #[test]
     fn set_native_text_style_replaces() {
         let mut native = create_native_text(None);
-        let content = native.runtime.content_revision;
+        let content = content_revision(&native);
         let style = NativeTextStyle {
             size: Some(24.0),
             ..NativeTextStyle::default()
         };
         set_native_text_style(&mut native, style);
         assert_eq!(native.data.style.size, Some(24.0));
-        assert_eq!(native.runtime.content_revision, content + 1);
+        assert_ne!(content_revision(&native), content);
     }
 
     #[test]
     fn set_native_text_width_updates_data() {
         let mut native = create_native_text(None);
-        let content = native.runtime.content_revision;
-        let bounds = native.runtime.bounds_revision;
+        let content = content_revision(&native);
+        let bounds = bounds_revision(&native);
         set_native_text_width(&mut native, 300.0);
         assert_eq!(native.data.width, 300.0);
-        assert_eq!(native.runtime.content_revision, content + 1);
-        assert_ne!(native.runtime.bounds_revision, bounds);
+        assert_ne!(content_revision(&native), content);
+        assert_ne!(bounds_revision(&native), bounds);
     }
 }

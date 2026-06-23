@@ -90,7 +90,17 @@ pub struct WgpuUniformSlot<'a> {
     bytes: &'a mut [u8],
 }
 
-impl WgpuUniformSlot<'_> {
+impl<'a> WgpuUniformSlot<'a> {
+    /// Wraps a mutable byte slice (one uniform slot) as a writable uniform slot.
+    ///
+    /// The slice is the slot's backing bytes; `set_f32` / `set_i32` write little-
+    /// endian values into it by 4-byte element index. Exposed so callers that
+    /// adapt their own slot convention (the effect crate's `[f32; 32]` arrays)
+    /// can drive a slot directly in tests.
+    pub fn from_bytes(bytes: &'a mut [u8]) -> Self {
+        WgpuUniformSlot { bytes }
+    }
+
     /// Writes `value` as a little-endian `f32` at element index `i`.
     pub fn set_f32(&mut self, i: usize, value: f32) {
         let off = i * 4;
@@ -325,6 +335,33 @@ pub fn draw_wgpu_dual_source_pass(
         state,
         filter_state,
         &[&source0.view, &source1.view],
+        dest,
+        pipeline,
+        set_uniforms,
+    );
+}
+
+/// Draws a full-screen pass reading from two source texture *views*.
+/// source0 = group 1, source1 = group 2.
+///
+/// Like [`draw_wgpu_dual_source_pass`] but each source is a [`wgpu::TextureView`]
+/// rather than a full [`WgpuRenderTarget`], so a caller can bind a raw G-buffer
+/// view (a velocity texture) that is not a pooled render target as the second
+/// source. The pass reads only the views, matching the TS recipe that wraps a
+/// raw `GPUTexture` view as a minimal second source.
+pub fn draw_wgpu_dual_source_views_pass(
+    state: &mut WgpuRenderState,
+    filter_state: &mut WgpuFilterState,
+    source0: &wgpu::TextureView,
+    source1: &wgpu::TextureView,
+    dest: Option<&WgpuRenderTarget>,
+    pipeline: &mut WgpuFilterPipeline,
+    set_uniforms: impl FnOnce(&mut WgpuUniformSlot),
+) {
+    draw_wgpu_views_pass(
+        state,
+        filter_state,
+        &[source0, source1],
         dest,
         pipeline,
         set_uniforms,
@@ -713,7 +750,15 @@ pub(crate) fn begin_filter_pass(
     });
     pass.set_viewport(0.0, 0.0, width as f32, height as f32, 0.0, 1.0);
     runtime.render_pass = Some(pass.forget_lifetime());
-    runtime.canvas_texture_view = canvas_view;
+    // Restore the canvas view only when it was taken (dest is None). For a
+    // dest-targeted pass `canvas_view` is None and the slot was never touched, so
+    // writing it here would clobber a live canvas view set by render_wgpu_background
+    // — breaking a later present pass (dest = None) that depends on it. This matters
+    // for the effects pipeline, which runs dest-targeted intermediate passes and
+    // then a dest=None present in the same frame.
+    if dest.is_none() {
+        runtime.canvas_texture_view = canvas_view;
+    }
 }
 
 // Ends the active filter render pass, if any.
@@ -727,6 +772,121 @@ pub(crate) fn end_filter_pass(state: &mut WgpuRenderState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // WgpuUniformSlot::from_bytes
+
+    #[test]
+    fn uniform_slot_from_bytes_writes_floats_and_ints_by_element_index() {
+        let mut bytes = [0u8; 32];
+        {
+            let mut slot = WgpuUniformSlot::from_bytes(&mut bytes);
+            slot.set_f32(0, 1.5);
+            slot.set_i32(1, 7);
+        }
+        let f0 = f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+        let i1 = i32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
+        assert_eq!(f0, 1.5);
+        assert_eq!(i1, 7);
+    }
+
+    // draw_wgpu_dual_source_views_pass
+
+    #[test]
+    fn draw_wgpu_dual_source_views_pass_binds_two_views_without_panicking() {
+        // GPU-guarded: a real device is needed to compile a pipeline and encode a
+        // pass. Without a command encoder open the pass begin would panic, so this
+        // asserts the symbol composes; the rendered output is covered by the
+        // effect-level functional/bloom checks.
+        let Some(state) = try_create_filter_test_state() else {
+            return;
+        };
+        let mut state = state;
+        let mut filter_state = create_wgpu_filter_state(&state);
+        // Source and dest must be distinct textures: a texture cannot be sampled
+        // (RESOURCE) and a color target (COLOR_TARGET) in the same pass. Two views
+        // from the source target satisfy the dual-source layout; a separate target
+        // receives the write.
+        let source =
+            flighthq_render_wgpu::render_target::create_wgpu_render_target(&state, 8, 8, None);
+        let dest =
+            flighthq_render_wgpu::render_target::create_wgpu_render_target(&state, 8, 8, None);
+        let v0 = source
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let v1 = source
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let mut pipeline = create_wgpu_dual_source_pipeline(
+            &state,
+            &filter_state,
+            DUAL_TEST_WGSL,
+            WgpuBlendMode::Replace,
+        );
+        // Open a command encoder so begin_filter_pass has one (mirrors a frame).
+        flighthq_render_wgpu::background::render_wgpu_background(&mut state);
+        draw_wgpu_dual_source_views_pass(
+            &mut state,
+            &mut filter_state,
+            &v0,
+            &v1,
+            Some(&dest),
+            &mut pipeline,
+            |u| u.set_f32(0, 1.0),
+        );
+        flighthq_render_wgpu::background::submit_wgpu_render_pass(&mut state);
+        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&mut state, source);
+        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&mut state, dest);
+        destroy_wgpu_filter_state(&mut filter_state);
+    }
+
+    fn try_create_filter_test_state() -> Option<WgpuRenderState> {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::all(),
+            ..Default::default()
+        });
+        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::None,
+            force_fallback_adapter: false,
+            compatible_surface: None,
+        }))
+        .or_else(|| {
+            pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::None,
+                force_fallback_adapter: true,
+                compatible_surface: None,
+            }))
+        })?;
+        let (device, queue) = pollster::block_on(adapter.request_device(
+            &wgpu::DeviceDescriptor {
+                label: Some("flight-filters-wgpu-test-device"),
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::downlevel_defaults(),
+                memory_hints: wgpu::MemoryHints::default(),
+            },
+            None,
+        ))
+        .ok()?;
+        let format = wgpu::TextureFormat::Rgba8Unorm;
+        let options = flighthq_render_wgpu::render_state::WgpuRenderOptions {
+            format: Some(format),
+            ..Default::default()
+        };
+        Some(
+            flighthq_render_wgpu::render_state::create_wgpu_render_state(
+                device, queue, format, 16, 16, &options,
+            ),
+        )
+    }
+
+    const DUAL_TEST_WGSL: &str = r#"
+@group(1) @binding(0) var t0 : texture_2d<f32>;
+@group(1) @binding(1) var s0 : sampler;
+@group(2) @binding(0) var t1 : texture_2d<f32>;
+@group(2) @binding(1) var s1 : sampler;
+@fragment
+fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
+  return textureSampleLevel(t0, s0, uv, 0.0) + textureSampleLevel(t1, s1, uv, 0.0);
+}"#;
 
     // FILTER_VERTEX_WGSL
 

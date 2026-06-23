@@ -69,6 +69,7 @@ pub use flighthq_surface::*;
 pub use flighthq_text::*;
 pub use flighthq_textinput::*;
 pub use flighthq_textlayout::*;
+pub use flighthq_textshaper::*;
 
 // Resources and loading.
 pub use flighthq_loader::*;

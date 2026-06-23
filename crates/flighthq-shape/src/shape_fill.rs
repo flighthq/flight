@@ -10,12 +10,13 @@
 //! fill, or stroke (`lineStyle`/`lineGradientStyle`/`lineBitmapStyle`), since
 //! those require the raster path.
 
+use flighthq_displayobject::DisplayObjectArena;
 use flighthq_node::NodeId;
 use flighthq_types::path_command;
 use flighthq_types::{Path, PathWinding, ShapeFillRegion};
 
 use crate::command_buffer::{AnyBox, read_f32, read_key, read_u32};
-use crate::shape::ShapeArena;
+use crate::shape::get_shape_data;
 
 // ---------------------------------------------------------------------------
 // Public functions (alphabetical)
@@ -28,8 +29,11 @@ use crate::shape::ShapeArena;
 /// (any construct [`has_non_solid_shape_fill`] detects), since the GPU path
 /// handles only plain solid fills. The returned list may be empty even when
 /// `Some` is returned, for a shape whose commands produce no closed fill spans.
-pub fn get_shape_fill_regions(arena: &ShapeArena, source: NodeId) -> Option<Vec<ShapeFillRegion>> {
-    let commands = &arena[source].data.commands;
+pub fn get_shape_fill_regions(
+    arena: &DisplayObjectArena,
+    source: NodeId,
+) -> Option<Vec<ShapeFillRegion>> {
+    let commands = &get_shape_data(arena, source)?.commands;
     if has_non_solid_shape_fill_buffer(commands) {
         return None;
     }
@@ -175,8 +179,11 @@ pub fn get_shape_fill_regions(arena: &ShapeArena, source: NodeId) -> Option<Vec<
 ///
 /// When `true`, callers should skip [`get_shape_fill_regions`] and use the
 /// raster fallback path instead.
-pub fn has_non_solid_shape_fill(arena: &ShapeArena, source: NodeId) -> bool {
-    has_non_solid_shape_fill_buffer(&arena[source].data.commands)
+pub fn has_non_solid_shape_fill(arena: &DisplayObjectArena, source: NodeId) -> bool {
+    match get_shape_data(arena, source) {
+        Some(data) => has_non_solid_shape_fill_buffer(&data.commands),
+        None => false,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -310,7 +317,7 @@ fn read_u8_vec(buf: &[AnyBox], i: usize) -> &Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shape::{ShapeArena, create_shape_node};
+    use crate::shape::create_shape;
     use crate::shape_commands::{
         append_shape_begin_fill, append_shape_begin_gradient_fill, append_shape_circle,
         append_shape_end_fill, append_shape_line_style, append_shape_line_to, append_shape_move_to,
@@ -320,7 +327,11 @@ mod tests {
         CapsStyle, GradientType, InterpolationMethod, JointStyle, LineScaleMode, SpreadMethod,
     };
 
-    fn linear_gradient(arena: &mut ShapeArena, shape: NodeId) {
+    fn new_arena() -> DisplayObjectArena {
+        DisplayObjectArena::default()
+    }
+
+    fn linear_gradient(arena: &mut DisplayObjectArena, shape: NodeId) {
         append_shape_begin_gradient_fill(
             arena,
             shape,
@@ -335,7 +346,7 @@ mod tests {
         );
     }
 
-    fn solid_stroke(arena: &mut ShapeArena, shape: NodeId) {
+    fn solid_stroke(arena: &mut DisplayObjectArena, shape: NodeId) {
         append_shape_line_style(
             arena,
             shape,
@@ -354,16 +365,16 @@ mod tests {
 
     #[test]
     fn get_shape_fill_regions_empty_shape_returns_empty_list() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         let regions = get_shape_fill_regions(&arena, shape).unwrap();
         assert_eq!(regions.len(), 0);
     }
 
     #[test]
     fn get_shape_fill_regions_solid_rectangle_returns_region() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_begin_fill(&mut arena, shape, 0xff0000, 1.0);
         append_shape_rectangle(&mut arena, shape, 10.0, 20.0, 100.0, 50.0);
         append_shape_end_fill(&mut arena, shape);
@@ -387,8 +398,8 @@ mod tests {
 
     #[test]
     fn get_shape_fill_regions_circle_expands_to_four_cubics() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_begin_fill(&mut arena, shape, 0x00ff00, 1.0);
         append_shape_circle(&mut arena, shape, 50.0, 50.0, 20.0);
         append_shape_end_fill(&mut arena, shape);
@@ -409,8 +420,8 @@ mod tests {
 
     #[test]
     fn get_shape_fill_regions_polygon_via_move_line() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_begin_fill(&mut arena, shape, 0x0000ff, 1.0);
         append_shape_move_to(&mut arena, shape, 0.0, 0.0);
         append_shape_line_to(&mut arena, shape, 100.0, 0.0);
@@ -431,8 +442,8 @@ mod tests {
 
     #[test]
     fn get_shape_fill_regions_region_per_fill_span() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_begin_fill(&mut arena, shape, 0x111111, 1.0);
         append_shape_rectangle(&mut arena, shape, 0.0, 0.0, 10.0, 10.0);
         append_shape_begin_fill(&mut arena, shape, 0x222222, 1.0);
@@ -446,8 +457,8 @@ mod tests {
 
     #[test]
     fn get_shape_fill_regions_returns_none_for_gradient_fill() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         linear_gradient(&mut arena, shape);
         append_shape_rectangle(&mut arena, shape, 0.0, 0.0, 10.0, 10.0);
         append_shape_end_fill(&mut arena, shape);
@@ -456,8 +467,8 @@ mod tests {
 
     #[test]
     fn get_shape_fill_regions_returns_none_for_line_style() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         solid_stroke(&mut arena, shape);
         append_shape_begin_fill(&mut arena, shape, 0xff0000, 1.0);
         append_shape_rectangle(&mut arena, shape, 0.0, 0.0, 10.0, 10.0);
@@ -469,8 +480,8 @@ mod tests {
 
     #[test]
     fn has_non_solid_shape_fill_false_for_solid_only() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         append_shape_begin_fill(&mut arena, shape, 0xff0000, 1.0);
         append_shape_rectangle(&mut arena, shape, 0.0, 0.0, 10.0, 10.0);
         append_shape_end_fill(&mut arena, shape);
@@ -479,16 +490,16 @@ mod tests {
 
     #[test]
     fn has_non_solid_shape_fill_true_for_gradient() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         linear_gradient(&mut arena, shape);
         assert!(has_non_solid_shape_fill(&arena, shape));
     }
 
     #[test]
     fn has_non_solid_shape_fill_true_for_line_style() {
-        let mut arena = ShapeArena::default();
-        let shape = create_shape_node(&mut arena);
+        let mut arena = new_arena();
+        let shape = create_shape(&mut arena);
         solid_stroke(&mut arena, shape);
         assert!(has_non_solid_shape_fill(&arena, shape));
     }

@@ -55,8 +55,10 @@ pub use appearance::{
 
 // bounds
 pub use bounds::{
-    BoundsNode, get_node_bounds, get_node_local_bounds_revision, get_node_world_bounds,
-    get_node_world_bounds_revision, invalidate_node_bounds, is_node_bounds_dirty,
+    BoundsNode, get_bounds_node_local_bounds_revision, get_bounds_node_local_content_revision,
+    get_node_bounds, get_node_local_bounds_revision, get_node_world_bounds,
+    get_node_world_bounds_revision, invalidate_bounds_node_local_bounds,
+    invalidate_bounds_node_local_content, invalidate_node_bounds, is_node_bounds_dirty,
     is_node_world_bounds_dirty, set_node_bounds, set_node_world_bounds,
 };
 

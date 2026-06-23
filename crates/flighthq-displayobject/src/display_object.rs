@@ -4,7 +4,11 @@
 //! display object type (bitmap, container, stage, video, …). Kind-specific data
 //! is stored in the `data` field as an `Option<Box<dyn Any>>`.
 
-use flighthq_node::{NodeId, Spatial2DNode};
+use flighthq_node::{
+    NodeId, Spatial2DNode, get_bounds_node_local_bounds_revision,
+    get_bounds_node_local_content_revision, invalidate_bounds_node_local_bounds,
+    invalidate_bounds_node_local_content,
+};
 use flighthq_types::{
     BlendMode, ClipRegion, KindId, Rectangle, bitmap_kind, display_object_kind, html_view_kind,
     render_view_kind, stage_kind, video_kind,
@@ -147,6 +151,35 @@ pub fn get_display_object_kind(arena: &DisplayObjectArena, source: NodeId) -> Ki
 }
 
 // ---------------------------------------------------------------------------
+// get_display_object_local_bounds_revision
+// ---------------------------------------------------------------------------
+
+/// Returns the local-bounds revision of `source`.
+///
+/// Bumped by [`invalidate_display_object_local_bounds`] whenever the node's
+/// extent changes. Renderers compare this against a cached value to detect when
+/// a re-measure is needed.
+pub fn get_display_object_local_bounds_revision(arena: &DisplayObjectArena, source: NodeId) -> u32 {
+    get_bounds_node_local_bounds_revision(&arena[source].spatial.bounds)
+}
+
+// ---------------------------------------------------------------------------
+// get_display_object_local_content_revision
+// ---------------------------------------------------------------------------
+
+/// Returns the local-content revision of `source`.
+///
+/// Bumped by [`invalidate_display_object_local_content`] whenever the node's
+/// rasterizable payload changes. Renderers compare this against a cached value
+/// to detect when a re-paint (e.g. a shape mesh rebuild) is needed.
+pub fn get_display_object_local_content_revision(
+    arena: &DisplayObjectArena,
+    source: NodeId,
+) -> u32 {
+    get_bounds_node_local_content_revision(&arena[source].spatial.bounds)
+}
+
+// ---------------------------------------------------------------------------
 // get_display_object_pivot_x / get_display_object_pivot_y
 // ---------------------------------------------------------------------------
 
@@ -221,6 +254,29 @@ pub fn get_display_object_x(arena: &DisplayObjectArena, source: NodeId) -> f32 {
 /// Returns the y position of the display object.
 pub fn get_display_object_y(arena: &DisplayObjectArena, source: NodeId) -> f32 {
     arena[source].spatial.transform.y
+}
+
+// ---------------------------------------------------------------------------
+// invalidate_display_object_local_bounds
+// ---------------------------------------------------------------------------
+
+/// Bumps the local-bounds revision of `target` and marks its bounds dirty.
+///
+/// Mirrors TS `invalidateNodeLocalBounds`: call when the node's extent changes.
+pub fn invalidate_display_object_local_bounds(arena: &mut DisplayObjectArena, target: NodeId) {
+    invalidate_bounds_node_local_bounds(&mut arena[target].spatial.bounds);
+}
+
+// ---------------------------------------------------------------------------
+// invalidate_display_object_local_content
+// ---------------------------------------------------------------------------
+
+/// Bumps the local-content revision of `target`.
+///
+/// Mirrors TS `invalidateNodeLocalContent`: call when the node's rasterizable
+/// payload changes.
+pub fn invalidate_display_object_local_content(arena: &mut DisplayObjectArena, target: NodeId) {
+    invalidate_bounds_node_local_content(&mut arena[target].spatial.bounds);
 }
 
 // ---------------------------------------------------------------------------
@@ -395,6 +451,45 @@ mod tests {
 
     fn new_arena() -> DisplayObjectArena {
         slotmap::SlotMap::with_key()
+    }
+
+    // get_display_object_local_bounds_revision / invalidate_display_object_local_bounds
+
+    #[test]
+    fn get_display_object_local_bounds_revision_starts_at_zero() {
+        let mut arena = new_arena();
+        let id = create_display_object(&mut arena);
+        assert_eq!(get_display_object_local_bounds_revision(&arena, id), 0);
+    }
+
+    #[test]
+    fn invalidate_display_object_local_bounds_bumps_revision() {
+        let mut arena = new_arena();
+        let id = create_display_object(&mut arena);
+        let before = get_display_object_local_bounds_revision(&arena, id);
+        invalidate_display_object_local_bounds(&mut arena, id);
+        assert_ne!(get_display_object_local_bounds_revision(&arena, id), before);
+    }
+
+    // get_display_object_local_content_revision / invalidate_display_object_local_content
+
+    #[test]
+    fn get_display_object_local_content_revision_starts_at_zero() {
+        let mut arena = new_arena();
+        let id = create_display_object(&mut arena);
+        assert_eq!(get_display_object_local_content_revision(&arena, id), 0);
+    }
+
+    #[test]
+    fn invalidate_display_object_local_content_bumps_revision() {
+        let mut arena = new_arena();
+        let id = create_display_object(&mut arena);
+        let before = get_display_object_local_content_revision(&arena, id);
+        invalidate_display_object_local_content(&mut arena, id);
+        assert_ne!(
+            get_display_object_local_content_revision(&arena, id),
+            before
+        );
     }
 
     // create_display_object

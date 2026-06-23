@@ -8,5 +8,4 @@ description = "Spritesheet frame animation playback"
 [dependencies]
 flighthq-resources = { workspace = true }
 flighthq-signals = { workspace = true }
-flighthq-sprite = { workspace = true }
 flighthq-types = { workspace = true }

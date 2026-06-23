@@ -567,6 +567,33 @@ fn effect_scenes() -> Vec<Scene> {
                 )]
             },
         },
+        // Bright saturated rotated shapes on a near-black field rendered into an
+        // HDR `rgba16f` scene target, then bloomed: a bright-pass crosses the
+        // threshold, the bright branch is Gaussian-blurred (through
+        // filters-wgpu's `apply_gaussian_blur_filter_to_wgpu`), and added back so
+        // each shape grows a soft halo. The multi-pass reference effect — and the
+        // GPU check that the effects-wgpu→filters-wgpu routing (bright-pass via
+        // `draw_wgpu_filter_pass`, blur via the shared Gaussian, composite via the
+        // dual-source pass) renders end-to-end. Base reuses `effect-exposure`'s
+        // rotated rects (the bloom scene shares the same geometry); params from
+        // `effect-bloom/src/render.webgpu.ts` (`threshold: 0.6, intensity: 1.4`).
+        Scene {
+            name: "effect-bloom",
+            width: 800,
+            height: 600,
+            background: 0x05_06_0a_ff,
+            ts_baseline: Some("effect-bloom"),
+            hdr: true,
+            rects: EXPOSURE_RECTS,
+            effects: || {
+                vec![RenderEffect::Bloom(flighthq_effects::types::BloomEffect {
+                    threshold: Some(0.6),
+                    intensity: Some(1.4),
+                    radius: None,
+                    passes: None,
+                })]
+            },
+        },
     ]
 }
 
@@ -724,16 +751,18 @@ fn register_scene_effects(
     effects: &[RenderEffect],
 ) {
     use flighthq_effects_wgpu::{
-        DEFAULT_WGPU_BRIGHTNESS_CONTRAST_EFFECT_RUNNER, DEFAULT_WGPU_CHANNEL_MIXER_EFFECT_RUNNER,
-        DEFAULT_WGPU_COLOR_GRADE_EFFECT_RUNNER, DEFAULT_WGPU_EXPOSURE_EFFECT_RUNNER,
-        DEFAULT_WGPU_FILM_GRAIN_EFFECT_RUNNER, DEFAULT_WGPU_GRAYSCALE_EFFECT_RUNNER,
-        DEFAULT_WGPU_HUE_SATURATION_EFFECT_RUNNER, DEFAULT_WGPU_INVERT_EFFECT_RUNNER,
-        DEFAULT_WGPU_POSTERIZE_EFFECT_RUNNER, DEFAULT_WGPU_SEPIA_EFFECT_RUNNER,
-        DEFAULT_WGPU_TONE_MAP_EFFECT_RUNNER, DEFAULT_WGPU_WHITE_BALANCE_EFFECT_RUNNER,
+        DEFAULT_WGPU_BLOOM_EFFECT_RUNNER, DEFAULT_WGPU_BRIGHTNESS_CONTRAST_EFFECT_RUNNER,
+        DEFAULT_WGPU_CHANNEL_MIXER_EFFECT_RUNNER, DEFAULT_WGPU_COLOR_GRADE_EFFECT_RUNNER,
+        DEFAULT_WGPU_EXPOSURE_EFFECT_RUNNER, DEFAULT_WGPU_FILM_GRAIN_EFFECT_RUNNER,
+        DEFAULT_WGPU_GRAYSCALE_EFFECT_RUNNER, DEFAULT_WGPU_HUE_SATURATION_EFFECT_RUNNER,
+        DEFAULT_WGPU_INVERT_EFFECT_RUNNER, DEFAULT_WGPU_POSTERIZE_EFFECT_RUNNER,
+        DEFAULT_WGPU_SEPIA_EFFECT_RUNNER, DEFAULT_WGPU_TONE_MAP_EFFECT_RUNNER,
+        DEFAULT_WGPU_WHITE_BALANCE_EFFECT_RUNNER,
     };
     for effect in effects {
         let type_key = wgpu_render_effect_type(effect);
         let runner = match effect {
+            RenderEffect::Bloom(_) => DEFAULT_WGPU_BLOOM_EFFECT_RUNNER,
             RenderEffect::BrightnessContrast(_) => DEFAULT_WGPU_BRIGHTNESS_CONTRAST_EFFECT_RUNNER,
             RenderEffect::ChannelMixer(_) => DEFAULT_WGPU_CHANNEL_MIXER_EFFECT_RUNNER,
             RenderEffect::ColorGrade(_) => DEFAULT_WGPU_COLOR_GRADE_EFFECT_RUNNER,

@@ -596,12 +596,12 @@ fn get_text_layout_group_character_index_at_x(group: &TextLayoutGroup, x: f32) -
     group.end_index
 }
 
-// Appearance invalidation requires the scene-graph node arena, which `RichText`
-// is not yet wired into in the Rust port.
-// TODO(wave-N): call invalidate_node_appearance once RichText participates in
-// the NodeArena<GraphAppearanceNode> graph (it lives in flighthq-node, not a
-// current dependency of this crate).
-fn invalidate_appearance(_source: &mut RichText) {}
+// A selection/caret change recomposites the field without changing its content
+// or bounds. Mirrors TS `invalidateNodeAppearance(source)`, routed through the
+// text crate's public appearance seam since the `RichText` runtime is private.
+fn invalidate_appearance(source: &mut RichText) {
+    flighthq_text::invalidate_rich_text_appearance(source);
+}
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
@@ -699,7 +699,10 @@ const TEXT_BOUNDS_GUTTER: f32 = 2.0;
 mod tests {
     use super::*;
     use crate::text_input::enable_text_input;
-    use flighthq_text::{create_rich_text, create_rich_text_data, set_rich_text_format_range};
+    use flighthq_text::{
+        create_rich_text, create_rich_text_data, get_rich_text_appearance_revision,
+        set_rich_text_format_range,
+    };
     use flighthq_types::{RichTextData, TextInputOptions};
 
     // Mirrors the TS `createRichText({ data })` partial-override: unset fields
@@ -1128,10 +1131,12 @@ mod tests {
     #[test]
     fn replace_text_input_basic_and_caret() {
         let mut text = with_text("hello world");
+        let before = get_rich_text_appearance_revision(&text);
         replace_text_input(&mut text, 6, 11, "Flight", None);
         assert_eq!(text.data.text, "hello Flight");
         assert_eq!(get_text_input_selection_begin_index(&text), 12);
         assert_eq!(get_text_input_selection_end_index(&text), 12);
+        assert_ne!(get_rich_text_appearance_revision(&text), before);
     }
 
     #[test]
