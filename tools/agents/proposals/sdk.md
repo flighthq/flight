@@ -1,0 +1,95 @@
+---
+id: sdk
+title: '@flighthq/sdk'
+type: depth
+target: sdk
+status: proposed
+tier: bronze
+source:
+  - tools/agents/docs/reviews/maturation/depth/sdk.md
+  - tools/agents/docs/reviews/depth/sdk.md
+depends_on: []
+updated: 2026-06-23
+---
+
+## Summary
+
+Authoritative — 95/100. A complete, collision-free, side-effect-free single `.` entry that mirrors every app-facing `@flighthq/*` package, with a dependency manifest kept in exact sync, correctly excluding the host adapter (`host-electron`) and the Rust wasm drop-in (`surface-rs`) by design.
+
+## Scope (this build)
+
+Targeting the **Bronze** tier (see `tier:` above). Advance the marker as tiers complete.
+
+- [ ] Bronze
+- [ ] Silver
+- [ ] Gold
+
+## Design
+
+### Bronze
+
+The minimum that closes the two concrete gaps the depth review named, turning "perfectly in sync today, but nothing local catches a future omission" into "a forgotten package fails this package's own test."
+
+- **Reachability spot-check test.** Replace the bare `loads successfully` assertion in `src/index.test.ts` with a `describe('package exports')` that asserts representative named exports resolve through the barrel — one canonical name per major domain, e.g. `expect(sdk.createDisplayObject).toBeTypeOf('function')`, plus `createMatrix` (geometry), `registerRenderer` (render), `createParticleEmitter` (particles), `createTween` (tween), `createApplicationWindow` (application), `getPlatformName` (platform), `createTextLabel` (text). This makes a broken sub-package export surface here instead of only at consumer build time. Keep the list short and stable — it is a smoke gate, not an inventory.
+- **`*Kind` reachability assertion.** Add one assertion that a few canonical `*Kind` string identifiers re-export with their expected values (`expect(sdk.BitmapKind).toBe('Bitmap')`, `SpriteKind`, `DisplayObjectKind`), since kinds are simultaneously registry keys and serialized form and a silent kind regression in a sub-package would otherwise be invisible at the barrel.
+- **Local completeness guard.** Add a colocated test (`src/completeness.test.ts`) that reads the monorepo's `packages/*/package.json` set, filters to the app-facing set (every package except `sdk` itself, `host-*` adapters, and `*-rs` Rust drop-ins), and asserts each one appears both as an `export *` line in `src/index.ts` and as a `"*"` dependency in this package's `package.json`. This is the single highest-value addition: it converts the manual two-place edit into a self-failing invariant local to the package.
+- **Exclusion-policy assertion.** In the same test, assert the _inverse_: that `host-electron` and any `*-rs` package are **absent** from both the barrel and the deps. This pins the deliberate exclusion so a future careless `export *` cannot quietly leak a host adapter into the app-facing surface.
+
+### Silver
+
+Makes the barrel competitive with a well-maintained aggregation package: drift is not merely caught by a test but _explained_, and the barrel's invariants are wired into the same checks the rest of the repo already runs.
+
+- **Generated-and-diffed `index.ts`.** Add a small generator (script under `scripts/`, invoked by `npm run packages:check`) that derives the expected `export *` list and dependency block from the app-facing workspace set, then _diffs_ against the committed files and fails with an actionable message ("package `@flighthq/foo` is app-facing but missing from sdk barrel — add line N and a `\"*\"` dependency"). Generate-and-check, not generate-and-overwrite, so the committed barrel stays the reviewable source of truth and the alphabetized order convention is enforced by the same pass.
+- **Centralize the inclusion policy.** Extract the "app-facing" predicate (exclude `sdk`, `host-*`, `*-rs`) into one named, documented place the generator, the completeness test, and `packages:check` all consume, so the exclusion rule lives once instead of being re-encoded in three test/scripts. Surface it as a named export from the repo tooling, not duplicated string lists.
+- **Collision regression gate.** The clean `tsc -b` already proves no duplicate `export *` ambiguities, but add an explicit test that enumerates the barrel namespace keys and asserts no name is silently shadowed across packages (TypeScript errors on ambiguous re-export, but a same-name _value_ re-exported from two packages where one wins is worth an explicit assertion). This makes the barrel the documented enforcement point for the project's "globally unique exported function names" rule.
+- **Documented inclusion contract.** Add a short header comment block (or a `tools/agents/docs` cross-link) stating the inclusion/exclusion policy and pointing at the generator, so a contributor adding a package knows the barrel updates automatically-checked and where. No new exported names — comment only.
+- **Per-domain reachability coverage.** Expand the Bronze spot-check into a structured table keyed by domain (display, geometry, render, render backends, filters, effects, text stack, particles, timeline/tween, resources/loader, platform suite, app/process layer) with one representative export each, so adding a new domain package naturally prompts a new reachability row. Keep it data-driven off a small list to stay maintainable.
+
+### Gold
+
+Authoritative for what a barrel can be: complete, self-verifying, byte-stable, and symmetric with the Rust port — nothing a maintainer could forget and nothing a consumer could find missing or surprising.
+
+- **Full export-surface snapshot.** Add a committed snapshot test of the _entire_ flattened barrel namespace key set (sorted names only, not signatures), reviewed on change. This turns any added/removed/renamed export in any of the 80+ sub-packages into a visible, reviewable diff at the SDK boundary — the single place that sees the whole public surface — making the barrel the canonical inventory of the app-facing API.
+- **Tree-shake conformance test.** Add a size/bundling assertion (wired to `npm run size`) proving that importing a single name from `@flighthq/sdk` tree-shakes to the same bytes as importing it from the owning package directly — the load-bearing `sideEffects: false` guarantee. Catches a future sub-package accidentally introducing a top-level side effect that would poison barrel-based imports.
+- **Side-effect-free enforcement at the boundary.** Assert (via the existing side-effect-free invariant check, extended to the barrel) that importing the full `@flighthq/sdk` namespace registers no renderers, patches no globals, and starts no timers/listeners — the barrel must remain inert, with all registration opt-in through the re-exported `register*`/`enable*`/`init*` functions.
+- **Rust-port symmetry guard.** The Rust port deliberately does **not** ship an all-in-one barrel crate (it is native-first with crate-local source), so the conformance posture is "no `flighthq-sdk` crate by design." Record this in the conformance divergence map and add a check that the _app-facing TS set the barrel covers_ matches the _crate set expected to exist_ (modulo the documented TS-only renderers `displayobject-canvas`/`displayobject-dom` and any Rust-only crates), so a new feature package can never be added to TS without surfacing whether a mirroring Rust crate is expected.
+- **Stale-dependency and version-drift gate.** Assert every barrel dependency is `"*"` (workspace-internal) and that none drifts to a pinned/external version, and that no `@flighthq/*` dependency exists without a matching re-export and vice versa (already true today — Gold makes it permanently enforced rather than incidentally true).
+- **Consumer import-path integration test.** A root-level integration test that imports a complete end-to-end user flow purely through `@flighthq/sdk` (create display object → register renderer → prepare → draw via a mocked render state), proving the barrel is a sufficient single entry point for a real app and not just a name aggregator.
+
+## Sequencing & effort
+
+Recommended order, smallest-effort-highest-value first:
+
+1. **Bronze, all four items** (small, ~half a day, no cross-package work). The completeness + exclusion guard and the reachability spot-check are the only items that address a _real_ hazard (drift) and are self-contained to `packages/sdk/src`. Do these first; they pay for themselves the next time a package is added.
+2. **Silver generator + centralized policy** (medium). This depends on a **repo-tooling decision**, not a code change inside the package: where the "app-facing predicate" and the generate-and-diff step live. Surface to the user — the natural home is the existing `npm run packages:check` harness, and overlapping with item 23/40 of the depth review's "likely covered by repo tooling" note means this should be coordinated with whoever owns `scripts/` and `packages:check` to avoid duplicating an existing drift check. Confirm before building whether `packages:check` already asserts barrel completeness; if it does, Bronze's local test plus a cross-link is sufficient and Silver's generator collapses to documentation.
+3. **Silver collision/coverage tests + Gold export snapshot** (medium). The snapshot test subsumes much of the per-domain reachability work, so build the data-driven domain list first, then promote it to a full snapshot. Order these together.
+4. **Gold tree-shake + side-effect-free boundary tests** (medium). Depends on `npm run size` and the repo's side-effect-free invariant checker being callable against the barrel — a tooling-integration item, not new package code. Surface as a dependency on those scripts.
+5. **Gold Rust-port symmetry guard** (cross-package / design decision). Depends on the conformance divergence map (`tools/agents/docs/rust/conformance.md`) and the decision that there is no `flighthq-sdk` crate. This is a **cross-worktree design item** — raise it with the user / Rust-port owner rather than acting autonomously, since it touches the conformance checker and the crate-existence rule, both outside this package's boundary.
+
+**Cross-package / design-decision items to surface:**
+
+- The drift guard (Bronze completeness test and Silver generator) overlaps with what `npm run packages:check` / `exports:check` may already enforce repo-wide. Before adding a local generator, confirm with the repo-tooling owner whether barrel completeness is already checked centrally — if so, prefer extending that check over duplicating it inside the package.
+- The "app-facing package" predicate (exclude `sdk`, `host-*`, `*-rs`) is a repo-level policy that more than one tool needs; it should be defined once in shared tooling, which is a cross-cutting decision, not a package-local one.
+- The Rust-port symmetry guard requires a recorded decision in the conformance map that `flighthq-sdk` intentionally does not exist; coordinate with the Rust worktree.
+- **No domain feature work is warranted or appropriate.** Any request to add convenience helpers, re-export shaping, or aggregated APIs to this package should be rejected on design grounds — the barrel must stay a thin, name-additive-zero pass-through.
+
+## Acceptance
+
+- [ ] Shared types defined in `@flighthq/types` first
+- [ ] `npm run check` passes
+- [ ] `npm run packages:check` passes
+- [ ] Colocated test per export (`npm run exports:check`)
+- [ ] `npm run order` / `npm run api` clean
+- [ ] (Rust-relevant) `npm run rust:conformance` / `npm run mixing:conformance` considered
+
+## Open questions
+
+- _(none captured yet)_
+
+## Agent brief
+
+> Build `@flighthq/sdk` up to the **Bronze** tier per the Scope + Design above (the package exists — extend it). Define any new shared types in `@flighthq/types` first. Follow the CLAUDE.md conventions. Satisfy every Acceptance checkbox. Surface cross-package or design decisions rather than guessing.
+
+## Decision log
+
+- 2026-06-23 — seeded from maturation analysis (status: proposed).

@@ -1,0 +1,123 @@
+---
+id: textsegment
+title: '@flighthq/textsegment'
+type: new-package
+target: textsegment
+status: proposed
+tier: bronze
+source:
+  - tools/agents/docs/reviews/maturation/breadth/textsegment.md
+  - tools/agents/docs/reviews/breadth/text-typography.md
+depends_on: []
+updated: 2026-06-23
+---
+
+## Summary
+
+Unicode text segmentation (UAX #29) — grapheme-cluster, word, and sentence boundary detection with emoji-cluster (ZWJ / skin-tone / flag) awareness, the boundary layer line breaking and caret/selection both stand on.
+
+## Scope (this build)
+
+Targeting the **Bronze** tier (see `tier:` above). Advance the marker as tiers complete.
+
+- [ ] Bronze
+- [ ] Silver
+- [ ] Gold
+
+## Design
+
+### Bronze
+
+The minimum viable segmenter: correct **grapheme-cluster** boundaries (the single thing that makes caret/Backspace/delete stop splitting emoji and combining marks), plus basic **word** boundaries good enough for double-click word-select. This closes the most visible correctness hole the review names.
+
+- **Types in `@flighthq/types`:**
+  - `TextSegmentKind` — string `*Kind`s: `'Grapheme' | 'Word' | 'Sentence' | 'Line'`. The kind a segmentation query operates on; `'Line'` reserved for the UAX #14 work that lands in Silver.
+  - `TextSegment` — plain data: `{ start: number; end: number; kind: TextSegmentKind }` (UTF-16 code-unit offsets into the source string, matching JS string indexing and `textinput`'s existing index space).
+  - `TextSegmentBoundaryDirection` — `'Forward' | 'Backward'`, for caret-style "next/previous boundary from here" queries.
+- **`@flighthq/textsegment`:**
+  - `getGraphemeClusterBoundaries(out: number[], text: string): number[]` — fills `out` with the code-unit index of every grapheme-cluster boundary (extended grapheme clusters per UAX #29, including emoji ZWJ sequences, regional-indicator flag pairs, and combining-mark attachment). The `out`-param form keeps it allocation-free in hot loops; returns `out`.
+  - `getNextGraphemeClusterBoundary(text: string, index: number): number` — the next grapheme boundary at or after `index`; returns `text.length` when already at the end, `-1` for an out-of-range `index` (sentinel, not throw). This is the function `deleteTextInputForward` / right-arrow caret movement should call.
+  - `getPreviousGraphemeClusterBoundary(text: string, index: number): number` — the boundary at or before `index`; `0` at the start, `-1` out of range. The Backspace / left-arrow function.
+  - `countGraphemeClusters(text: string): number` — perceived-character count (`'👩🏽‍🚀'.length === 5` but `countGraphemeClusters === 1`), the correct length for caret-position math and column counting.
+  - `getWordBoundaries(out: number[], text: string): number[]` — UAX #29 default word boundaries (the substrate for double-click select). Bronze ships the algorithm against the **default built-in table** (Latin, digits, common punctuation, emoji-as-word); full script coverage is the Silver table swap.
+  - `getNextWordBoundary(text: string, index: number, direction: TextSegmentBoundaryDirection): number` — word-granularity caret jump (Ctrl/Option+arrow), the engine behind `textinput`'s word-select.
+  - `isGraphemeClusterBoundary(text: string, index: number): boolean` — predicate for "is this a safe caret stop," used to snap an arbitrary index (e.g. a hit-test result) onto a grapheme boundary before placing the caret.
+- **Effort:** small–moderate. Extended grapheme clustering is a well-specified state machine over a handful of property classes (Extend, SpacingMark, Prepend, ZWJ, Regional_Indicator, the emoji extended-pictographic rule); the default-table version is bounded. The headline payoff — caret and delete stop splitting emoji and combining marks — lands entirely here, and `textinput` can adopt `getNext/PreviousGraphemeClusterBoundary` immediately.
+
+### Silver
+
+Competitive with a well-regarded Unicode segmentation library (ICU `BreakIterator`, the `unicode-segmentation` Rust crate, `Intl.Segmenter`): full UCD-backed tables across all scripts, **sentence** segmentation, the **`Intl.Segmenter` backend seam**, locale awareness, and a clean iterator/find API so consumers do not hand-roll loops over boundary arrays.
+
+- **Types in `@flighthq/types`:**
+  - `TextSegmentIterator` — an opaque cursor entity (`{ text; kind; index }` plus an opaque `TextSegmentIteratorRuntime`) for streaming boundaries without materializing the whole array — the right shape for a long document where you only need the segment under the caret.
+  - `TextSegmentLocale` — `string | null` (BCP-47 tag, e.g. `'th'`, `'ja'`); locale tailors word/line boundaries (Thai/Lao/Khmer/CJK have no spaces, so word breaking is dictionary/locale-driven). `null` = locale-independent UAX #29 default rules.
+  - `TextSegmentOptions` — `{ locale: TextSegmentLocale; wordKind: TextWordKind }` carried into the locale-sensitive queries.
+  - `TextWordKind` — `'None' | 'Number' | 'Letter' | 'Kana' | 'Ideo'` (mirrors `Intl.Segmenter`'s `isWordLike`/word-kind so a consumer can filter to "real words" for word-count and select-word, skipping whitespace/punctuation segments).
+  - `TextSegmenterBackend` — the seam: `{ segment(text, kind, locale): readonly TextSegment[] }` (or an iterator factory), so a platform segmenter can satisfy the whole package.
+- **`@flighthq/textsegment`:**
+  - **Sentence segmentation:** `getSentenceBoundaries(out: number[], text: string, options?: Readonly<TextSegmentOptions>): number[]`, `getNextSentenceBoundary(text, index, direction)` — UAX #29 sentence breaks (for sentence-granularity select / triple-click, and screen-reader/TTS chunking).
+  - **Iterator API:** `createTextSegmentIterator(text: string, kind: TextSegmentKind, options?): TextSegmentIterator`, `advanceTextSegment(iterator: TextSegmentIterator, out: TextSegment): boolean` (returns `false` at end — sentinel), `getTextSegmentAt(text, kind, index, out: TextSegment, options?): boolean` (the segment containing `index`, for "select the word/sentence under the cursor"), `resetTextSegmentIterator(iterator, index): void`, `disposeTextSegmentIterator(iterator): void` (detach-and-release → `dispose*`).
+  - **Locale-aware word/grapheme:** the Bronze `get*Boundaries` functions gain an `options?: Readonly<TextSegmentOptions>` overload so they tailor by locale; word boundaries route through the full table for non-Latin scripts.
+  - **Word classification:** `getTextWordKind(text: string, segment: Readonly<TextSegment>): TextWordKind` and `isTextWordLike(text, segment): boolean` — filter boundary runs to real words for word-count and double-click select (skip whitespace/punctuation runs).
+  - **Backend seam:** `getTextSegmenterBackend()`, `setTextSegmenterBackend(backend: TextSegmenterBackend | null)`, `createWebTextSegmenterBackend(): TextSegmenterBackend` (wraps `Intl.Segmenter`; returns a guarded backend that falls back to the table path when `Intl.Segmenter` is unavailable). When a backend is set, the locale-sensitive queries delegate to it; the table path remains the default and the deterministic reference.
+  - **Full tables via the neighbor:** the algorithms in `textsegment` read property classes through a small interface; importing `@flighthq/textsegment-tables` and calling `registerTextSegmentTables(tables)` swaps the built-in default table for the full UCD-derived one (grapheme/word/sentence break property + emoji property + extended-pictographic ranges), packed as binary-searchable typed-array range tables. Bare `textsegment` with no table import keeps the tiny default — the size-discipline payoff.
+- **Signals:** none. Segmentation is a pure query with no events; no `enable*` group is warranted.
+- **Cross-backend consistency:** segmentation is renderer-agnostic — identical results on Canvas/DOM/GL/WGPU. The only variance is table path vs `Intl.Segmenter` backend; both target UAX #29, and the table path is the canonical reference both Rust and the `Intl.Segmenter` backend are checked against (locale-tailored word boundaries are the one place `Intl.Segmenter` may legitimately diverge — documented, not forced to match).
+- **Effort:** moderate. Sentence breaking + the iterator are bounded; the substantive work is generating and packing the full UCD tables in the neighbor (a build-time codegen step from the Unicode Character Database) and wiring the locale tailoring. The `Intl.Segmenter` backend is small and high-leverage on web.
+
+### Gold
+
+Authoritative UAX #29 implementation — exhaustive, versioned to a specific Unicode release, performant on large strings, fully tested against the Unicode conformance data, and 1:1 with the Rust port. Nothing an i18n engineer auditing grapheme/word/sentence handling would find missing.
+
+- **Types in `@flighthq/types`:**
+  - `TextSegmentTableVersion` — `{ unicodeVersion: string; emojiVersion: string }`, so a consumer can assert which Unicode/emoji release the loaded tables encode (caret behavior must be reproducible across SDK upgrades).
+  - `EmojiSequenceKind` — `'Single' | 'ZeroWidthJoiner' | 'Flag' | 'SkinTone' | 'Keycap' | 'Tag'` — classifies _why_ a grapheme is a multi-code-point emoji, for editor tooling (skin-tone pickers, flag rendering, "this cluster is a ZWJ sequence of N base emoji").
+  - `TextSegmentRule` — exposes the matched UAX #29 break rule id (`GB9`, `WB6`, `SB8a`, …) on a boundary for debugging/conformance reporting; opt-in detail, not on the hot path.
+- **`@flighthq/textsegment`:**
+  - **Emoji introspection:** `getEmojiSequenceKind(text, segment): EmojiSequenceKind`, `isEmojiGraphemeCluster(text, segment): boolean`, `getEmojiSkinTone(text, segment): number` (`-1` if none), `countEmojiZeroWidthJoinerComponents(text, segment): number` — the full emoji-cluster surface (the review's "ZWJ sequences, skin-tone modifiers" gap), letting an editor treat a family/profession ZWJ emoji as one caret stop yet still inspect its parts.
+  - **Performance:** `createTextSegmentScanner(out reusable state)` / batch boundary scanning that walks the string once and writes all four granularities, plus an incremental `resegmentTextSegmentRange(text, editStart, editOldEnd, editNewEnd, …)` that re-segments only the dirtied span after an edit (essential for a live text field — never re-segment a whole document per keystroke). Property lookups are O(log n) binary search over range tables; the default-table fast path is branch-light.
+  - **Line-break substrate (UAX #14 seam, the shared half with `textlayout`):** `getLineBreakOpportunities(out: number[], text: string, options?): number[]` and `getLineBreakClass(codePoint: number): TextLineBreakClass` — the boundary half of line breaking, so `textlayout` consumes break _opportunities_ from here and keeps only the _line-fitting_ algorithm (width accumulation, wrapping, justify) itself. (Whether UAX #14 lives here or in `textlayout` is an open question below; if here, this is where it lands.)
+  - **Tailoring / customization:** `setTextSegmentWordTailoring(rules)` / `setTextSegmentLineBreakTailoring(rules)` for locale or app-specific overrides (e.g. treat `/` as a word boundary in a path editor, CSS `line-break: strict` for CJK), matching ICU's tailoring model.
+  - **Conformance reporting:** `getTextSegmentRule(text, index, kind): TextSegmentRule | null` returns which UAX #29 rule produced (or suppressed) a boundary at `index` — drives the conformance harness and the divergence map.
+  - **Version introspection:** `getTextSegmentTableVersion(out: TextSegmentTableVersion): TextSegmentTableVersion`.
+  - **Edge cases:** lone surrogates and unpaired surrogate halves (never split a surrogate pair), `\r\n` as a single grapheme (GB3), regional-indicator pairing odd/even counting (GB12/GB13 — two flags vs one), variation selectors and keycap sequences, default-ignorable code points, empty string (returns `[0]`/`0`/no-op consistently), and an explicitly documented contract for out-of-range indices (sentinel `-1`, never throw — throw only on a non-string argument, a programmer error).
+- **Tests:** colocated `*.test.ts` per source file, including a harness that runs the official Unicode `GraphemeBreakTest.txt`, `WordBreakTest.txt`, `SentenceBreakTest.txt`, and `LineBreakTest.txt` conformance suites (pinned to the table's Unicode version) to 100% pass, plus emoji-test.txt coverage; every `out`-param function tested in both distinct and aliased (`out` reused) forms; the `Intl.Segmenter` backend tested for agreement with the table path on the locale-independent suites.
+- **Rust parity:** `flighthq-textsegment` mirrors the full surface; the table path is byte-for-byte conformance-tested against TS via the headless harness, and against the same Unicode `*BreakTest.txt` files, so TS and Rust segment identically. The `unicode-segmentation` crate (or generated tables) backs the Rust default behind the table neighbor / a cargo feature; `Intl.Segmenter` has no Rust analogue (native uses tables; `host-web` may bridge to `Intl.Segmenter`), recorded in the conformance/divergence map.
+- **Docs:** the four-granularity model (grapheme vs word vs sentence vs line), why caret/delete must use grapheme boundaries, the `Intl.Segmenter`-backend-vs-table tradeoff, the emoji-cluster taxonomy, the table-neighbor opt-in and its bundle-size cost, and the incremental-resegmentation recipe for live editing.
+- **Effort:** the largest tier — the conformance harness, incremental resegmentation, the UAX #14 line-break substrate, tailoring, and emoji introspection are each bounded but additive, and full Unicode-version-pinned table generation (TS + Rust) plus the conformance suites are what earn "authoritative."
+
+## Boundaries
+
+- **Layout stays in `@flighthq/textlayout`.** `textsegment` returns _boundary indices and classes_; it never measures width, fits lines, aligns, or wraps. Line _breaking_ is two parts — break _opportunities_ (UAX #14, candidate boundary, belongs in or near `textsegment`) and line _fitting_ (which opportunity to break at given a width, layout's job). `textsegment` owns the first at most; `textlayout` keeps the second.
+- **Shaping stays in `@flighthq/textshaper`.** Glyph ids, advances, clusters come from the shaper. Segmentation works on the _source string_ and is upstream of shaping. Note both have a notion of "cluster": shaping clusters are _glyph_-to-_code-point_ groupings; segmentation grapheme clusters are _perceived characters_. They are distinct and both needed; `textsegment` does not produce shaping clusters.
+- **Bidi/itemization stays elsewhere.** UAX #9 (bidirectional reordering, bracket mirroring, script itemization) is a separate concern the review assigns to a future `@flighthq/textbidi` (or `textlayout`). `textsegment` does grapheme/word/sentence/line _boundaries_, not directional resolution — though both consume Unicode properties and could share the table neighbor.
+- **Caret/selection _state_ stays in `@flighthq/textinput`.** `textsegment` supplies the boundary math (`getNext/PreviousGraphemeClusterBoundary`, word/sentence boundaries); `textinput` keeps owning caret index, selection anchor/focus, click-count, and the `RichText` editing mutations. The integration is `textinput` _calling_ `textsegment`, not moving its state here.
+- **Generated tables stay in the `-tables` neighbor.** The bulk Unicode property data and its build-time codegen live in `@flighthq/textsegment-tables`, imported only when full coverage is needed, so bare `textsegment` tree-shakes to the small default table.
+- **No host capability beyond the segmenter seam.** The only swappable platform concern is `Intl.Segmenter` via `TextSegmenterBackend`; everything else is pure CPU table-driven math.
+
+## Acceptance
+
+- [ ] Shared types defined in `@flighthq/types` first
+- [ ] `npm run check` passes
+- [ ] `npm run packages:check` passes (valid manifest, tree-shakable, `sideEffects:false`)
+- [ ] Colocated test per export (`npm run exports:check`)
+- [ ] `npm run order` / `npm run api` clean
+- [ ] Added to the Package Map in `tools/agents/docs/index.md`
+- [ ] (Rust-relevant) `npm run rust:conformance` / `npm run mixing:conformance` considered
+
+## Open questions
+
+- **Index space: UTF-16 code units vs code points.** `textinput` and JS strings are UTF-16 code-unit indexed; the Rust port is byte-indexed (UTF-8). The spec uses UTF-16 code units in TS to match the existing `charIndex` space, but this makes the conformance map non-trivial (TS indices ≠ Rust indices for the same string). Confirm: code-unit indices in TS with a documented byte↔code-unit mapping in the conformance layer, or a code-point index space that both ports share at the cost of a `textinput` adaptation shim. Leaning code-unit in TS / byte in Rust, both validated against the same `*BreakTest.txt` expressed per-port.
+- **Does UAX #14 line breaking live here or in `textlayout`?** The review says `textsegment` serves line breaking; the question is whether the _break-opportunity_ algorithm + line-break property table belongs in `textsegment` (Gold) or in `textlayout` consuming `textsegment`'s tables. Argument for here: it is pure boundary math sharing the table neighbor. Argument for `textlayout`: line breaking is tightly coupled to fitting. Leaning: opportunities + class in `textsegment` (shared substrate), fitting in `textlayout`.
+- **Default-table scope.** How much Unicode the built-in (no-neighbor) table should cover before it stops being "tiny." Latin + digits + common punctuation + emoji-base is the obvious floor for the 80% case; confirm whether common CJK/Cyrillic/Greek belong in the default or only in the neighbor.
+- **`Intl.Segmenter` as default-on-web vs opt-in.** `Intl.Segmenter` is free (no bytes) and correct on every modern browser, so a web app arguably _should_ default to it. But auto-registering at import violates import-side-effect-freedom, and its locale-tailored word boundaries can diverge from the deterministic table reference. Leaning: never auto-register; `createWebTextSegmenterBackend` is a one-line opt-in, and the SDK barrel may wire it for convenience.
+- **Iterator vs array as the primary API.** Boundary arrays are simplest and match the `out: number[]` house style; iterators avoid materializing a whole document's boundaries. Both are specced (arrays in Bronze, iterator in Silver). Confirm the iterator is genuinely needed by a consumer (large-document editing) before building it, per the "build toward real use" rule.
+- **Emoji-version skew.** Emoji sequences version faster than the core Unicode break tables (a new ZWJ profession emoji is a data update, not an algorithm change). Confirm `EmojiSequenceKind` detection reads emoji ranges from the same `-tables` neighbor and that `TextSegmentTableVersion` tracks emoji and core versions separately.
+
+## Agent brief
+
+> Create `@flighthq/textsegment` by copying a nearby package's shape, then build it to the **Bronze** tier per the Scope + Design above. Define all shared types in `@flighthq/types` first. Follow the CLAUDE.md conventions (free functions, `Readonly` by default, sentinels over throws, tree-shakable, `-formats`/backend-seam patterns where relevant). Satisfy every Acceptance checkbox. Surface cross-package or design decisions rather than guessing.
+
+## Decision log
+
+- 2026-06-23 — seeded from maturation analysis (status: proposed).
