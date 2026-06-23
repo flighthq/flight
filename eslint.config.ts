@@ -18,8 +18,10 @@ export default [
       '**/.claude/**',
       '**/worktrees/**',
       'tests/reference/**',
-      // Generated wasm-bindgen glue for the -rs packages (e.g. surface-rs).
-      '**/src/wasm/surface_wasm*',
+      // Generated, git-ignored wasm-bindgen output for the -rs packages (e.g.
+      // surface-rs): the wasm-bindgen glue plus the base64-embedded module.
+      // Baked by `npm run wasm`; never linted.
+      '**/src/wasm/**',
     ],
   },
   {
@@ -57,7 +59,11 @@ export default [
       // Imports
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      'import/no-unresolved': ['error', { ignore: ['virtual:.*'] }],
+      // `/wasm/surface` covers the generated, git-ignored wasm-bindgen output
+      // (glue + embedded bytes) imported by the -rs shims. It is baked by
+      // `npm run wasm` (Rust), so it may be absent when linting; keep lint a
+      // pure-JS concern that does not require the native bake to have run.
+      'import/no-unresolved': ['error', { ignore: ['virtual:.*', '/wasm/surface'] }],
       'import/no-relative-parent-imports': 'error',
       'no-restricted-imports': [
         'error',

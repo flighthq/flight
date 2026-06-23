@@ -50,6 +50,7 @@ export {
   pixelateSurface,
   premultiplySurfacePixels,
   resizeSurface,
+  rotateSurface,
   rotateSurface180,
   rotateSurfaceClockwise,
   rotateSurfaceCounterClockwise,
