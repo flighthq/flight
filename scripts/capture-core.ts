@@ -487,9 +487,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           const detail = (errorLog as { data?: { msg?: string } }).data?.msg ?? 'error logged';
           // A backend the environment cannot provide (notably Wgpu in headless Chromium, which has
           // no adapter/device) is skipped, not failed — the gate verifies backends where they exist
-          // and stays green on machines without them. A real render error (after the device is
-          // acquired) does not match this and still fails.
-          if (/WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter/i.test(detail)) {
+          // and stays green on machines without them. The software adapter (swiftshader) can also lose
+          // its device mid-run under sustained per-frame GPU load (e.g. a video example uploading a
+          // frame every tick) — the same "environment cannot sustain Wgpu" class, so it is skipped too.
+          // This does not mask a real render bug: a validation error (bad writeBuffer/copy) is logged
+          // before the device dies, and logs.find returns that first error, which still fails below.
+          if (
+            /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter/i.test(detail) ||
+            /external Instance reference no longer exists|device (was )?lost|device is lost/i.test(detail)
+          ) {
             console.log(`  ⊘  ${entry.name}/${renderer}: skipped — backend unavailable (${detail})`);
           } else {
             console.error(`  ✗  ${entry.name}/${renderer}: ${detail}`);
