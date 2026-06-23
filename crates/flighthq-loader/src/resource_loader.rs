@@ -17,7 +17,7 @@
 //! # Usage
 //!
 //! ```rust
-//! use flighthq_resources_loader::{
+//! use flighthq_loader::{
 //!     create_resource_loader, get_resource_loader_result, queue_resource_load,
 //!     start_resource_load,
 //! };

@@ -1,7 +1,7 @@
 //! Font entity creation and loading.
 //!
 //! A `Font` is a lightweight entity that names a registered typeface. Use
-//! `flighthq-text-layout` to measure and lay out text with a `Font` value.
+//! `flighthq-textlayout` to measure and lay out text with a `Font` value.
 //! To load the underlying font bytes use `flighthq-resources` `FontResource`
 //! functions instead.
 

@@ -75,6 +75,23 @@ pub enum TextAutoSize {
 /// Measure a text run: returns the advance width in pixels.
 pub type TextMeasureFunction = Box<dyn Fn(&str, &TextFormat) -> f32 + Send + Sync>;
 
+/// Text-shaping seam backend. Free functions in `flighthq-textshaper` delegate to the active
+/// `TextShaperBackend` (a canvas/advances-only backend on the web, a future HarfBuzz/rustybuzz
+/// backend on native). Shaping turns a string + format into the horizontal advance the layout
+/// engine needs to place text.
+///
+/// This formalizes the `TextMeasureFunction` contract as a swappable backend: `measure_text` has
+/// the exact signature of a `TextMeasureFunction`. Today shaping is advances-only (no clusters,
+/// bidi, or font features) — what canvas `measureText` provides and what text-layout consumes. A
+/// richer backend implements the same `measure_text` and may add cluster/glyph methods later
+/// without breaking advances-only callers.
+pub trait TextShaperBackend: Send + Sync {
+    /// Returns the horizontal advance width, in pixels, of `text` rendered in `format`. Identical
+    /// in shape to `TextMeasureFunction`; text-layout calls this once per character (and per
+    /// adjacent pair, to recover kerning) to build per-character advance positions.
+    fn measure_text(&self, text: &str, format: &TextFormat) -> f32;
+}
+
 /// A single glyph/word group within a laid-out line.
 #[derive(Clone, Debug)]
 pub struct TextLayoutGroup {

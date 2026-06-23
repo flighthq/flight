@@ -1,6 +1,6 @@
 //! `TweenManager` construction.
 
-use flighthq_tween_easing::ease_out_expo;
+use flighthq_easing::ease_out_expo;
 use flighthq_types::{TweenManager, TweenManagerOptions};
 
 /// Creates a new `TweenManager`.

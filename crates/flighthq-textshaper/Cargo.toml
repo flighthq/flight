@@ -1,0 +1,12 @@
+[package]
+name = "flighthq-textshaper"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Text-shaping seam: measure/shape text into advances over a swappable backend (canvas default, HarfBuzz future)"
+
+[dependencies]
+flighthq-types = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }

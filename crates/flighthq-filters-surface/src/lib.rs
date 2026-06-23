@@ -1,4 +1,4 @@
-//! `flighthq-surface-filters` — filter-effect operations on CPU pixel data.
+//! `flighthq-filters-surface` — filter-effect operations on CPU pixel data.
 //!
 //! All filters operate on raw `&[u8]` pixel buffers or `SurfaceRegion`s and
 //! write their output into caller-supplied `out` slices. No GPU resources are

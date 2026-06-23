@@ -63,16 +63,16 @@ pub use flighthq_filters_wgpu::*;
 // Materials and offscreen pixel surfaces.
 pub use flighthq_materials::*;
 pub use flighthq_surface::*;
-pub use flighthq_surface_filters::*;
+pub use flighthq_filters_surface::*;
 
 // Text.
 pub use flighthq_text::*;
-pub use flighthq_text_input::*;
-pub use flighthq_text_layout::*;
+pub use flighthq_textinput::*;
+pub use flighthq_textlayout::*;
 
 // Resources and loading.
 pub use flighthq_resources::*;
-pub use flighthq_resources_loader::*;
+pub use flighthq_loader::*;
 
 // Animation: tweens, timelines, spritesheets, particles.
 pub use flighthq_particles::*;
@@ -81,7 +81,7 @@ pub use flighthq_spritesheet::*;
 pub use flighthq_spritesheet_formats::*;
 pub use flighthq_timeline::*;
 pub use flighthq_tween::*;
-pub use flighthq_tween_easing::*;
+pub use flighthq_easing::*;
 
 // Input and interaction.
 pub use flighthq_input::*;

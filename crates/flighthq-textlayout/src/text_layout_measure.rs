@@ -8,13 +8,28 @@ use flighthq_types::TextMeasureFunction;
 // that keeps text-layout DOM/GPU-free.
 static MEASURE_PROVIDER: Mutex<Option<Arc<TextMeasureFunction>>> = Mutex::new(None);
 
-/// Returns the currently registered measure provider, or `None` when none has
-/// been set yet.
+/// Resolves the measure provider text-layout uses to turn characters into
+/// advances. Shaping is owned by the `flighthq-textshaper` seam: when a shaper
+/// backend is registered, this returns a provider that delegates to
+/// `shape_text` (itself a `TextMeasureFunction`). An explicitly set provider
+/// (`set_text_layout_measure_provider`) still takes precedence — the
+/// direct-injection escape hatch for tests and bespoke hosts. `None` when
+/// neither exists, exactly as before, so callers leave the layout stale until
+/// shaping is available.
 pub fn get_text_layout_measure_provider() -> Option<Arc<TextMeasureFunction>> {
-    MEASURE_PROVIDER
+    if let Some(provider) = MEASURE_PROVIDER
         .lock()
         .expect("measure provider poisoned")
         .clone()
+    {
+        return Some(provider);
+    }
+    if flighthq_textshaper::get_text_shaper_backend().is_some() {
+        let shape: TextMeasureFunction =
+            Box::new(|text, format| flighthq_textshaper::shape_text(text, format));
+        return Some(Arc::new(shape));
+    }
+    None
 }
 
 /// Registers `measure` as the global glyph-advance provider. Pass `None` to

@@ -1,4 +1,4 @@
-use flighthq_text_layout::{
+use flighthq_textlayout::{
     compute_text_layout, create_text_layout_result, get_text_layout_measure_provider,
     get_text_metrics,
 };
@@ -102,7 +102,7 @@ pub fn get_text_layout_metrics<F>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_text_layout::set_text_layout_measure_provider;
+    use flighthq_textlayout::set_text_layout_measure_provider;
     use flighthq_types::{TextFormat, TextFormatRange, TextMeasureFunction};
     use serial_test::serial;
     use std::sync::Arc;

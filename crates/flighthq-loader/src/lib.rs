@@ -1,4 +1,4 @@
-//! `flighthq-resources-loader` — batch queue for loading multiple resources.
+//! `flighthq-loader` — batch queue for loading multiple resources.
 //!
 //! A `ResourceLoader` accumulates async load tasks before they start. Call
 //! `queue_resource_load` for each resource, then `start_resource_load` to

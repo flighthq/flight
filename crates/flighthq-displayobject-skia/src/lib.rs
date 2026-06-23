@@ -13,7 +13,7 @@
 //! mode software draw), but over tiny-skia rather than the absent Canvas2D
 //! substrate, and structured like `flighthq-displayobject-wgpu`'s id-based draw
 //! walk (closures supply graph topology and per-node data). CPU filters/effects
-//! reuse `flighthq-surface-filters` / `flighthq-effects` / `flighthq-filters` and
+//! reuse `flighthq-filters-surface` / `flighthq-effects` / `flighthq-filters` and
 //! are not reimplemented here; only shape/path/bitmap rasterization goes through
 //! tiny-skia. Registration is opt-in (no module-load side effects).
 

@@ -4,7 +4,7 @@ use flighthq_text::{
     RichText, get_rich_text_selection_begin_index, get_rich_text_selection_end_index,
     set_rich_text_scroll_v, set_rich_text_selection_indices,
 };
-use flighthq_text_layout::get_rich_text_char_index_at_point;
+use flighthq_textlayout::get_rich_text_char_index_at_point;
 
 // Like `TextInputManager`, this manager records focus as a presence flag in
 // `focused_id` and operates on the caller-supplied `source`; the scene graph

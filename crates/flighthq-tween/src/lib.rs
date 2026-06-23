@@ -1,7 +1,7 @@
 //! `flighthq-tween` — tween animation system.
 //!
 //! Provides `TweenManager`, `Tween`, timer utilities, and color tweening.
-//! Easing functions are in the separate `flighthq-tween-easing` crate.
+//! Easing functions are in the separate `flighthq-easing` crate.
 //!
 //! # Quick start
 //!

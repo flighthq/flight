@@ -1,4 +1,4 @@
-//! `flighthq-text-layout` — renderer-agnostic text layout engine.
+//! `flighthq-textlayout` — renderer-agnostic text layout engine.
 //!
 //! Provides free functions for measuring and positioning glyphs into
 //! `TextLayoutGroup`s, computing line metrics, resolving rich-text HTML

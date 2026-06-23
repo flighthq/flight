@@ -1,7 +1,7 @@
 //! Font resource creation and loading.
 //!
 //! A `FontResource` pairs a family name with an optional platform-native font
-//! face handle (raw bytes from the font file). Use `flighthq-text-layout` to
+//! face handle (raw bytes from the font file). Use `flighthq-textlayout` to
 //! measure and lay out text with a loaded font resource.
 
 use flighthq_types::{FontResource, FontUrl};

@@ -1,5 +1,5 @@
 [package]
-name = "flighthq-text-layout"
+name = "flighthq-textlayout"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,3 +8,4 @@ description = "Renderer-agnostic text layout engine: measures and positions glyp
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
+flighthq-textshaper = { workspace = true }

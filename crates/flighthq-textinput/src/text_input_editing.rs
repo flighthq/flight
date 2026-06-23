@@ -4,12 +4,12 @@ use flighthq_types::{
 };
 
 use flighthq_text::RichText;
-use flighthq_text_layout::get_rich_text_selection_rectangles;
+use flighthq_textlayout::get_rich_text_selection_rectangles;
 
 use crate::text_input::get_text_input_state;
 
 // All indices in this module are character (`char`) indices, matching the
-// layout engine in `flighthq-text-layout`. Slicing/length use `char` counts,
+// layout engine in `flighthq-textlayout`. Slicing/length use `char` counts,
 // not bytes, so multi-byte text behaves consistently with the layout groups.
 
 /// Appends `text` at the end of the field's content, respecting restrictions.

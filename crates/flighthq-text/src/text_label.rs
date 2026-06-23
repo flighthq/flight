@@ -1,4 +1,4 @@
-use flighthq_text_layout::{
+use flighthq_textlayout::{
     TextBoundsSpec, compute_text_bounds_rectangle, create_text_format_range,
 };
 use flighthq_types::{
@@ -203,7 +203,7 @@ pub fn set_text_label_width(source: &mut TextLabel, value: f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_text_layout::set_text_layout_measure_provider;
+    use flighthq_textlayout::set_text_layout_measure_provider;
     use flighthq_types::TextMeasureFunction;
     use serial_test::serial;
     use std::sync::Arc;

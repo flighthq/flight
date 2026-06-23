@@ -1,4 +1,4 @@
-use flighthq_text_layout::{
+use flighthq_textlayout::{
     TextBoundsSpec, compute_rich_text_content, compute_text_bounds_rectangle, get_rich_text_content,
 };
 use flighthq_types::{
@@ -190,7 +190,7 @@ pub fn dispatch_rich_text_wheel(
 /// Returns a shared reference to the editable-field input state on `source`,
 /// or `None` when the field is not in editing mode.
 ///
-/// The `input` slot is runtime state owned by the `flighthq-text-input`
+/// The `input` slot is runtime state owned by the `flighthq-textinput`
 /// subsystem; these accessors are the public seam it reaches it through, since
 /// the `RichText` runtime itself is package-private.
 pub fn get_rich_text_input(source: &RichText) -> Option<&TextInputState> {
@@ -211,7 +211,7 @@ pub fn get_rich_text_runtime(source: &RichText) -> &RichTextRuntime {
 
 /// Returns the viewing-selection begin index on `source`. This is the
 /// non-editable selection state used by selectable (read-only) rich text; the
-/// `flighthq-text-input` subsystem reaches it through this public seam since the
+/// `flighthq-textinput` subsystem reaches it through this public seam since the
 /// runtime is package-private.
 pub fn get_rich_text_selection_begin_index(source: &RichText) -> usize {
     source.runtime.selection_begin_index
@@ -272,7 +272,7 @@ pub fn set_rich_text_format_range(
 
 /// Sets (or clears, with `None`) the editable-field input state on `source`.
 ///
-/// The public seam through which `flighthq-text-input` attaches and detaches
+/// The public seam through which `flighthq-textinput` attaches and detaches
 /// its runtime state.
 pub fn set_rich_text_input(source: &mut RichText, input: Option<TextInputState>) {
     source.runtime.input = input;
@@ -406,7 +406,7 @@ fn get_rich_text_max_scroll_v_from_layout(data: &RichTextData, layout: &TextLayo
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_text_layout::set_text_layout_measure_provider;
+    use flighthq_textlayout::set_text_layout_measure_provider;
     use flighthq_types::TextMeasureFunction;
     use serial_test::serial;
     use std::sync::Arc;

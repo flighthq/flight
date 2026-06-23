@@ -16,8 +16,8 @@ flighthq-render-wgpu = { workspace = true }
 flighthq-shape = { workspace = true }
 flighthq-sprite = { workspace = true }
 flighthq-text = { workspace = true }
-flighthq-text-input = { workspace = true }
-flighthq-text-layout = { workspace = true }
+flighthq-textinput = { workspace = true }
+flighthq-textlayout = { workspace = true }
 flighthq-types = { workspace = true }
 flighthq-velocity = { workspace = true }
 wgpu = { workspace = true }

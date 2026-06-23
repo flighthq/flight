@@ -1,5 +1,5 @@
 [package]
-name = "flighthq-tween-easing"
+name = "flighthq-easing"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

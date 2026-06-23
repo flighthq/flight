@@ -562,8 +562,8 @@ dependencies = [
  "flighthq-shape",
  "flighthq-sprite",
  "flighthq-text",
- "flighthq-text-input",
- "flighthq-text-layout",
+ "flighthq-textinput",
+ "flighthq-textlayout",
  "flighthq-types",
  "flighthq-velocity",
  "glow 0.14.2",
@@ -583,8 +583,8 @@ dependencies = [
  "flighthq-sprite",
  "flighthq-surface",
  "flighthq-text",
- "flighthq-text-input",
- "flighthq-text-layout",
+ "flighthq-textinput",
+ "flighthq-textlayout",
  "flighthq-types",
  "tiny-skia",
  "ttf-parser 0.20.0",
@@ -604,11 +604,18 @@ dependencies = [
  "flighthq-shape",
  "flighthq-sprite",
  "flighthq-text",
- "flighthq-text-input",
- "flighthq-text-layout",
+ "flighthq-textinput",
+ "flighthq-textlayout",
  "flighthq-types",
  "flighthq-velocity",
  "wgpu",
+]
+
+[[package]]
+name = "flighthq-easing"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
 ]
 
 [[package]]
@@ -658,9 +665,9 @@ dependencies = [
 name = "flighthq-filters"
 version = "0.1.0"
 dependencies = [
+ "flighthq-filters-surface",
  "flighthq-geometry",
  "flighthq-surface",
- "flighthq-surface-filters",
  "flighthq-types",
 ]
 
@@ -671,6 +678,14 @@ dependencies = [
  "flighthq-filters",
  "flighthq-render-gl",
  "glow 0.14.2",
+]
+
+[[package]]
+name = "flighthq-filters-surface"
+version = "0.1.0"
+dependencies = [
+ "flighthq-surface",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -786,6 +801,7 @@ dependencies = [
  "flighthq-application",
  "flighthq-displayobject",
  "flighthq-displayobject-wgpu",
+ "flighthq-easing",
  "flighthq-geometry",
  "flighthq-input",
  "flighthq-node",
@@ -795,7 +811,6 @@ dependencies = [
  "flighthq-shape",
  "flighthq-signals",
  "flighthq-tween",
- "flighthq-tween-easing",
  "flighthq-types",
  "pollster",
  "raw-window-handle",
@@ -857,6 +872,15 @@ version = "0.1.0"
 dependencies = [
  "flighthq-entity",
  "flighthq-geometry",
+ "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-loader"
+version = "0.1.0"
+dependencies = [
+ "flighthq-resources",
+ "flighthq-signals",
  "flighthq-types",
 ]
 
@@ -1016,15 +1040,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "flighthq-resources-loader"
-version = "0.1.0"
-dependencies = [
- "flighthq-resources",
- "flighthq-signals",
- "flighthq-types",
-]
-
-[[package]]
 name = "flighthq-scene"
 version = "0.1.0"
 dependencies = [
@@ -1091,6 +1106,7 @@ dependencies = [
  "flighthq-displayobject-gl",
  "flighthq-displayobject-skia",
  "flighthq-displayobject-wgpu",
+ "flighthq-easing",
  "flighthq-effects",
  "flighthq-effects-gl",
  "flighthq-effects-wgpu",
@@ -1098,6 +1114,7 @@ dependencies = [
  "flighthq-filesystem",
  "flighthq-filters",
  "flighthq-filters-gl",
+ "flighthq-filters-surface",
  "flighthq-filters-wgpu",
  "flighthq-geolocation",
  "flighthq-geometry",
@@ -1108,6 +1125,7 @@ dependencies = [
  "flighthq-keyboard",
  "flighthq-lifecycle",
  "flighthq-lighting",
+ "flighthq-loader",
  "flighthq-log",
  "flighthq-materials",
  "flighthq-math",
@@ -1127,7 +1145,6 @@ dependencies = [
  "flighthq-render-gl",
  "flighthq-render-wgpu",
  "flighthq-resources",
- "flighthq-resources-loader",
  "flighthq-scene",
  "flighthq-scene-gl",
  "flighthq-scene-wgpu",
@@ -1144,15 +1161,13 @@ dependencies = [
  "flighthq-statusbar",
  "flighthq-storage",
  "flighthq-surface",
- "flighthq-surface-filters",
  "flighthq-text",
- "flighthq-text-input",
- "flighthq-text-layout",
+ "flighthq-textinput",
+ "flighthq-textlayout",
  "flighthq-texture",
  "flighthq-timeline",
  "flighthq-tray",
  "flighthq-tween",
- "flighthq-tween-easing",
  "flighthq-types",
  "flighthq-updater",
  "flighthq-velocity",
@@ -1259,38 +1274,39 @@ dependencies = [
 ]
 
 [[package]]
-name = "flighthq-surface-filters"
-version = "0.1.0"
-dependencies = [
- "flighthq-surface",
- "flighthq-types",
-]
-
-[[package]]
 name = "flighthq-text"
 version = "0.1.0"
 dependencies = [
  "flighthq-displayobject",
- "flighthq-text-layout",
+ "flighthq-textlayout",
  "flighthq-types",
  "serial_test",
 ]
 
 [[package]]
-name = "flighthq-text-input"
+name = "flighthq-textinput"
 version = "0.1.0"
 dependencies = [
  "flighthq-text",
- "flighthq-text-layout",
+ "flighthq-textlayout",
  "flighthq-types",
 ]
 
 [[package]]
-name = "flighthq-text-layout"
+name = "flighthq-textlayout"
 version = "0.1.0"
 dependencies = [
  "flighthq-geometry",
+ "flighthq-textshaper",
  "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-textshaper"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+ "serial_test",
 ]
 
 [[package]]
@@ -1324,15 +1340,8 @@ dependencies = [
 name = "flighthq-tween"
 version = "0.1.0"
 dependencies = [
+ "flighthq-easing",
  "flighthq-signals",
- "flighthq-tween-easing",
- "flighthq-types",
-]
-
-[[package]]
-name = "flighthq-tween-easing"
-version = "0.1.0"
-dependencies = [
  "flighthq-types",
 ]
 

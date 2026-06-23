@@ -1,13 +1,13 @@
 //! CPU (bitmap surface) apply functions for each filter type.
 //!
 //! Each function maps a high-level filter descriptor (from `flighthq-types`)
-//! onto the lower-level CPU pixel operations in `flighthq-surface-filters` and
+//! onto the lower-level CPU pixel operations in `flighthq-filters-surface` and
 //! invokes them. `out` is RGBA, 4 bytes per pixel, `source.width * source.height`
 //! pixels total. `blur_buffer` scratch buffers must be at least
 //! `source.width * source.height * 4` bytes; they may not alias `out` unless a
 //! function documents otherwise.
 
-use flighthq_surface_filters::{
+use flighthq_filters_surface::{
     SurfaceBevelFilterOptions, SurfaceBevelType, SurfaceConvolutionEdge,
     SurfaceConvolutionFilterOptions, SurfaceDisplacementMapFilterOptions,
     SurfaceDisplacementMapMode, SurfaceDropShadowFilterOptions, SurfaceGlowFilterOptions,
@@ -431,7 +431,7 @@ mod tests {
         vec![0_u8; (w * h * 4) as usize]
     }
 
-    // These behavioral surface tests exercise the `flighthq-surface-filters`
+    // These behavioral surface tests exercise the `flighthq-filters-surface`
     // CPU kernels through the descriptor-mapping layer in this file, ported
     // from packages/filters/src/surface.test.ts.
 
