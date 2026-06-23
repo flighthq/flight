@@ -63,7 +63,7 @@ describe('copyShapeCommands', () => {
     const source = createShape();
     source.data.commands.push({ key: 'endFill', args: [] });
     const target = createShape();
-    copyShapeCommands(source, target);
+    copyShapeCommands(target, source);
     expect(target.data.commands).toHaveLength(1);
     expect(target.data.commands[0]).toEqual({ key: 'endFill', args: [] });
   });
@@ -75,7 +75,7 @@ describe('copyShapeCommands', () => {
     target.data.commands.push({ key: 'endFill', args: [] });
     target.data.commands.push({ key: 'endFill', args: [] });
     const content = getNodeLocalContentRevision(target);
-    copyShapeCommands(source, target);
+    copyShapeCommands(target, source);
     expect(target.data.commands).toHaveLength(1);
     expect(getNodeLocalContentRevision(target)).toBe(content + 1);
   });
@@ -83,7 +83,7 @@ describe('copyShapeCommands', () => {
   it('does not share the same array reference', () => {
     const source = createShape();
     const target = createShape();
-    copyShapeCommands(source, target);
+    copyShapeCommands(target, source);
     expect(target.data.commands).not.toBe(source.data.commands);
   });
 });
