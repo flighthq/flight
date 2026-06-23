@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "wasm": "wasm-pack build ../../crates/flighthq-surface-wasm --release --target web --out-dir ../../packages/surface-rs/src/wasm --out-name surface_wasm && tsx ./scripts/embed-wasm.ts",
-    "build": "tsc -b && tsx ./scripts/copy-wasm-glue.ts",
+    "prepare": "npm run wasm",
+    "build": "npm run wasm && tsc -b && tsx ./scripts/copy-wasm-glue.ts",
     "clean": "tsc -b --clean",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
