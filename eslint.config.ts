@@ -123,8 +123,8 @@ export default [
   {
     // Build/verification scripts may log, and legitimately import workspace packages (e.g. the SDK
     // surface primitives) — the resolver maps those to package source, which the parent-import rule
-    // would otherwise flag.
-    files: ['scripts/**'],
+    // would otherwise flag. Covers the root scripts/ dir and per-package script dirs alike.
+    files: ['**/scripts/**'],
     rules: {
       'no-console': 'off',
       'import/no-relative-parent-imports': 'off',
