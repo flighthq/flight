@@ -116,6 +116,28 @@ describe('addNodeChild', () => {
     addNodeChildAt(container, childA, 1);
     expect(called).toBe(false);
   });
+
+  // Compile-time law: Node<Traits> is invariant in Traits, so nodes from different trait
+  // families cannot be mixed in one graph. The @ts-expect-error is the assertion — if the
+  // wall ever collapses (e.g. Traits leaks to `any`), this line stops erroring and the test
+  // fails to compile under `npm run typecheck`.
+  it('rejects mixing nodes from different trait families', () => {
+    interface FooTraits {
+      foo: number;
+    }
+    interface BarTraits {
+      bar: number;
+    }
+
+    const foo = createNode<FooTraits>('FooNode');
+    const foo2 = createNode<FooTraits>('FooNode');
+    const added = addNodeChild(foo, foo2);
+    expect(added).toBe(foo2);
+
+    const bar = createNode<BarTraits>('BarNode');
+    // @ts-expect-error a node from a different trait family does not unify with foo's family
+    addNodeChild(foo, bar);
+  });
 });
 
 describe('addNodeChildAt', () => {

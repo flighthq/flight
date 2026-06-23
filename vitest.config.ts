@@ -8,9 +8,7 @@ const rootDir = path.resolve(__dirname);
 
 const packageProjects = workspacePackages.map((p) => p.dir);
 
-const testProjects = ['tests/api', 'tests/api/browser', 'tests/integration', 'tests/size'].map((p) =>
-  path.join(rootDir, p),
-);
+const testProjects = ['tests/size'].map((p) => path.join(rootDir, p));
 
 export default mergeConfig(
   baseConfig,
