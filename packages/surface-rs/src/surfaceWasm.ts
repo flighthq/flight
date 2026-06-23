@@ -78,6 +78,7 @@ import {
   rotate_surface_180_wasm,
   rotate_surface_clockwise_wasm,
   rotate_surface_counter_clockwise_wasm,
+  rotate_surface_wasm,
   scroll_surface_wasm,
   sharpen_surface_wasm,
   unpremultiply_surface_pixels_wasm,
@@ -730,6 +731,26 @@ export function resizeSurface(
     descOf(source),
     RESIZE_MODE[mode],
     premultiplied,
+  );
+  invalidateImageResource(dest.surface);
+}
+
+export function rotateSurface(
+  dest: Readonly<SurfaceRegion>,
+  source: Readonly<SurfaceRegion>,
+  angle: number,
+  pivotX: number = (source.width - 1) / 2,
+  pivotY: number = (source.height - 1) / 2,
+): void {
+  ensureSurfaceRs();
+  rotate_surface_wasm(
+    asUint8(dest.surface.data),
+    descOf(dest),
+    asUint8(source.surface.data),
+    descOf(source),
+    angle,
+    pivotX,
+    pivotY,
   );
   invalidateImageResource(dest.surface);
 }

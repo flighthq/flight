@@ -3,7 +3,7 @@
 // wasm`, after wasm-pack. Embedding keeps init synchronous and free of any file
 // read or network fetch, so the shim is a true drop-in across environments.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +12,15 @@ const wasmDir = join(here, '..', 'src', 'wasm');
 
 const bytes = readFileSync(join(wasmDir, 'surface_wasm_bg.wasm'));
 const base64 = bytes.toString('base64');
+
+// wasm-pack scaffolds the out-dir as if it were its own publishable package,
+// dropping a `package.json` and a `.gitignore` (`*`). This dir is generated
+// output inside @flighthq/surface-rs, not a package: the stray manifest would
+// register as a phantom workspace, and the whole dir is git-ignored anyway.
+// Strip both so every bake leaves src/wasm holding only the artifacts.
+for (const scaffold of ['package.json', '.gitignore']) {
+  rmSync(join(wasmDir, scaffold), { force: true });
+}
 
 const module = `// GENERATED — do not edit by hand. Produced by scripts/embed-wasm.ts from
 // crates/flighthq-surface-wasm. Holds the wasm module as base64 so init is

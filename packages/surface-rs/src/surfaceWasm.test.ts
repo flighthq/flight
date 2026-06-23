@@ -49,6 +49,7 @@ import {
   pixelateSurface,
   premultiplySurfacePixels,
   resizeSurface,
+  rotateSurface,
   rotateSurface180,
   rotateSurfaceClockwise,
   rotateSurfaceCounterClockwise,
@@ -684,6 +685,29 @@ describe('resizeSurface', () => {
     const rsSource = paintSurface(6, 4);
     reference.resizeSurface(fullRegion(refDest), fullRegion(refSource), 'nearest');
     resizeSurface(fullRegion(rsDest), fullRegion(rsSource), 'nearest');
+    expect(rsDest.data).toEqual(refDest.data);
+  });
+});
+
+describe('rotateSurface', () => {
+  it('matches @flighthq/surface at an arbitrary angle into a larger dest', () => {
+    const refDest = createSurface(7, 6, 0);
+    const rsDest = createSurface(7, 6, 0);
+    const refSource = paintSurface(5, 4);
+    const rsSource = paintSurface(5, 4);
+    reference.rotateSurface(fullRegion(refDest), fullRegion(refSource), 0.6);
+    rotateSurface(fullRegion(rsDest), fullRegion(rsSource), 0.6);
+    expect(rsDest.data).toEqual(refDest.data);
+    expect(rsDest.version).toBe(refDest.version);
+  });
+
+  it('matches with an explicit pivot', () => {
+    const refDest = createSurface(5, 4, 0);
+    const rsDest = createSurface(5, 4, 0);
+    const refSource = paintSurface(5, 4);
+    const rsSource = paintSurface(5, 4);
+    reference.rotateSurface(fullRegion(refDest), fullRegion(refSource), -1.2, 1, 1.5);
+    rotateSurface(fullRegion(rsDest), fullRegion(rsSource), -1.2, 1, 1.5);
     expect(rsDest.data).toEqual(refDest.data);
   });
 });
