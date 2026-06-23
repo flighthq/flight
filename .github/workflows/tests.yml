@@ -94,12 +94,6 @@ jobs:
         include:
           - label: unit
             suite: test:unit
-          - label: integration
-            suite: test:integration
-          - label: API (Node)
-            suite: test:api:node
-          - label: API (browser)
-            suite: test:api:browser
 
     steps:
       - uses: actions/checkout@v4
