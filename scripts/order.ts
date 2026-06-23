@@ -329,6 +329,10 @@ function getSourceFiles(dir: string): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
+      // Skip generated, git-ignored wasm-bindgen output (the `src/wasm` dir of
+      // the -rs packages); it is not hand-authored source, mirroring the eslint
+      // ignore `**/src/wasm/**`.
+      if (entry.name === 'wasm' && dir.replaceAll('\\', '/').endsWith('/src')) continue;
       files.push(...getSourceFiles(path));
     } else if (entry.isFile() && entry.name.endsWith('.ts')) {
       files.push(path);

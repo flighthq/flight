@@ -1,2 +1,6 @@
 [toolchain]
 channel = "stable"
+# Auto-installed by rustup when working in this repo. The wasm target backs the
+# `-rs` npm packages' `build:wasm` bake (wasm-pack, installed separately). Native
+# crates build on the host's default target and need nothing extra here.
+targets = ["wasm32-unknown-unknown"]
