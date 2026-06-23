@@ -26,6 +26,7 @@ jobs:
     outputs:
       typescript: ${{ steps.filter.outputs.typescript }}
       rust: ${{ steps.filter.outputs.rust }}
+      rust_extras: ${{ steps.filter.outputs.rust_extras }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -47,6 +48,17 @@ jobs:
               - '!clippy.toml'
             rust:
               - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - 'clippy.toml'
+              - '.github/workflows/tests.yml'
+            # The `extras` tier (native-dep crates — see scripts/cargo-tier.ts) only needs its slow
+            # apt + SDL build when its own sources or the shared Cargo/toolchain inputs change. A
+            # core-crate change that transitively breaks an extra slips past this filter on the PR;
+            # nightly.yml runs the whole workspace (`:all`) unconditionally as the net for that.
+            rust_extras:
+              - 'crates/flighthq-host-sdl/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'rust-toolchain.toml'
@@ -171,11 +183,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run ${{ matrix.check }}
 
-  rust:
-    # The per-PR Rust gate, path-filtered to crates/ (+ Cargo / toolchain / clippy config) by the
-    # `changes` job. `check:rust` = clippy (-D warnings) + rustfmt --check; `test:rust` = cargo test
-    # --workspace. nightly.yml runs the same two commands UNCONDITIONALLY as the drift net.
-    name: Rust check & test
+  rust-core:
+    # The fast per-PR Rust gate: the CORE tier (rustup toolchain only — no apt, no SDL/C build),
+    # path-filtered to crates/ (+ Cargo / toolchain / clippy config) by the `changes` job.
+    # `check:rust:core` = clippy (-D warnings) + rustfmt --check; `test:rust:core` = cargo test over
+    # the workspace minus the native-dep extras. The extras run in `rust-extras`; nightly.yml runs
+    # the whole workspace (`:all`) UNCONDITIONALLY as the drift net.
+    name: Rust core (rustup-only)
     needs: changes
     if: ${{ needs.changes.outputs.rust == 'true' }}
     runs-on: ubuntu-latest
@@ -186,9 +200,27 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      # flighthq-host-sdl compiles bundled SDL3 from source via cmake, whose configure step fails
-      # without the X11/Wayland dev headers — so a workspace build/clippy/test dies on sdl3-sys
-      # without these. cmake/pkg-config are preinstalled on the runner but pinned here for clarity.
+      # npm ships with the runner's Node and these scripts only shell cargo, so no `npm ci` is needed.
+      - run: npm run check:rust:core
+      - run: npm run test:rust:core
+
+  rust-extras:
+    # The EXTRAS tier — native-dep crates (flighthq-host-sdl) — gated tighter than rust-core via the
+    # `rust_extras` filter: it runs only when the extra's own sources or the shared Cargo/toolchain
+    # inputs change, so the common PR pays neither the apt install nor the SDL build. flighthq-host-sdl
+    # compiles bundled SDL3 from source via cmake, whose configure step fails without the X11/Wayland
+    # dev headers installed below. cmake/pkg-config are preinstalled on the runner but pinned for clarity.
+    name: Rust extras (native deps)
+    needs: changes
+    if: ${{ needs.changes.outputs.rust_extras == 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
       - name: Install SDL build dependencies
         run: |
           sudo apt-get update
@@ -196,6 +228,5 @@ jobs:
             cmake pkg-config \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev \
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev wayland-protocols
-      # npm ships with the runner's Node and these scripts only shell cargo, so no `npm ci` is needed.
-      - run: npm run check:rust
-      - run: npm run test:rust
+      - run: npm run check:rust:extras
+      - run: npm run test:rust:extras

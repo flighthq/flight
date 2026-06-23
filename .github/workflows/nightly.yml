@@ -6,7 +6,8 @@ name: Nightly quality
 # thresholds, API-surface generation, and an UNCONDITIONAL Rust run. Because the per-PR Rust
 # gate is path-filtered to crates/, this run is the net that catches stable-toolchain drift
 # and breakage outside crates/. It mirrors the per-PR Rust steps (same SDL build deps, same
-# check:rust + test:rust) so a failure here reproduces with the same commands as a PR.
+# check:rust:all + test:rust:all — the whole-workspace variants that include the native-dep
+# extras) so a failure here reproduces with the same commands as a PR.
 on:
   schedule:
     - cron: '0 4 * * *'
@@ -59,5 +60,5 @@ jobs:
             cmake pkg-config \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev \
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev wayland-protocols
-      - run: npm run check:rust
-      - run: npm run test:rust
+      - run: npm run check:rust:all
+      - run: npm run test:rust:all
