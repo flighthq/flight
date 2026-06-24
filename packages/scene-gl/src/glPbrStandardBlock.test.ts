@@ -42,18 +42,26 @@ describe('bindGlPbrStandardTexture', () => {
 });
 
 describe('buildGlPbrStandardDefineKey', () => {
-  it('returns all-false map and extension flags for a null block', () => {
-    const key = buildGlPbrStandardDefineKey(null, false);
-    expect(key.hasBaseColorMap).toBe(false);
-    expect(key.hasMetallicRoughnessMap).toBe(false);
-    expect(key.hasOcclusionMap).toBe(false);
-    expect(key.hasEmissiveMap).toBe(false);
-    expect(key.clearcoatEnabled).toBe(false);
-    expect(key.transmissionEnabled).toBe(false);
+  it('defaults hasUv1 to false when the argument is omitted', () => {
+    expect(buildGlPbrStandardDefineKey(null, false).hasUv1).toBe(false);
   });
 
   it('propagates the alpha-mask flag', () => {
     expect(buildGlPbrStandardDefineKey(null, true).alphaMaskEnabled).toBe(true);
+  });
+
+  it('propagates the hasUv1 flag when provided', () => {
+    expect(buildGlPbrStandardDefineKey(null, false, true).hasUv1).toBe(true);
+  });
+
+  it('returns all-false map and extension flags for a null block', () => {
+    const key = buildGlPbrStandardDefineKey(null, false);
+    expect(key.clearcoatEnabled).toBe(false);
+    expect(key.hasBaseColorMap).toBe(false);
+    expect(key.hasEmissiveMap).toBe(false);
+    expect(key.hasMetallicRoughnessMap).toBe(false);
+    expect(key.hasOcclusionMap).toBe(false);
+    expect(key.transmissionEnabled).toBe(false);
   });
 });
 

@@ -9,28 +9,54 @@ export function createVideoResourceFromUrl(url: string): VideoResource {
   return createVideoResource(element);
 }
 
-export function createVideoResourceFromURLs(sources: VideoResourceUrl[]): VideoResource {
+export function createVideoResourceFromUrls(sources: VideoResourceUrl[]): VideoResource {
   const probe = document.createElement('video');
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferVideoType(url) ?? '') !== '');
   if (selected === undefined) return createVideoResource();
   return createVideoResourceFromUrl(selected.url);
 }
 
-export function loadVideoResourceFromUrl(url: string): Promise<VideoResource> {
+export function loadVideoResourceFromUrl(url: string, signal?: AbortSignal): Promise<VideoResource> {
+  if (signal?.aborted) return Promise.reject(signal.reason);
   return new Promise((resolve, reject) => {
     const element = document.createElement('video');
     element.preload = 'auto';
-    element.addEventListener('canplay', () => resolve(createVideoResource(element)), { once: true });
-    element.addEventListener('error', () => reject(new Error(`Failed to load video: ${url}`)), { once: true });
+
+    const onCanPlay = (): void => {
+      cleanup();
+      resolve(createVideoResource(element));
+    };
+
+    const onError = (): void => {
+      cleanup();
+      reject(new Error(`Failed to load video: ${url}`));
+    };
+
+    const onAbort = (): void => {
+      cleanup();
+      element.src = '';
+      reject(signal!.reason);
+    };
+
+    const cleanup = (): void => {
+      element.removeEventListener('canplay', onCanPlay);
+      element.removeEventListener('error', onError);
+      if (signal !== undefined) signal.removeEventListener('abort', onAbort);
+    };
+
+    element.addEventListener('canplay', onCanPlay, { once: true });
+    element.addEventListener('error', onError, { once: true });
+    if (signal !== undefined) signal.addEventListener('abort', onAbort, { once: true });
+
     element.src = url;
   });
 }
 
-export function loadVideoResourceFromURLs(sources: VideoResourceUrl[]): Promise<VideoResource> {
+export function loadVideoResourceFromUrls(sources: VideoResourceUrl[], signal?: AbortSignal): Promise<VideoResource> {
   const probe = document.createElement('video');
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferVideoType(url) ?? '') !== '');
   if (selected === undefined) return Promise.resolve(createVideoResource());
-  return loadVideoResourceFromUrl(selected.url);
+  return loadVideoResourceFromUrl(selected.url, signal);
 }
 
 function inferVideoType(url: string): string | null {

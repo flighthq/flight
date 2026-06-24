@@ -27,18 +27,30 @@ export function createTextureAtlasFromImageResource(resource: ImageResource): Te
   return createTextureAtlas({ image: resource });
 }
 
-export async function loadTextureAtlasFromArrayBuffer(buffer: ArrayBuffer, mimeType?: string): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromArrayBuffer(buffer, mimeType));
+export async function loadTextureAtlasFromArrayBuffer(
+  buffer: ArrayBuffer,
+  mimeType?: string,
+  signal?: AbortSignal,
+): Promise<TextureAtlas> {
+  return createTextureAtlasFromImageResource(await loadImageResourceFromArrayBuffer(buffer, mimeType, signal));
 }
 
-export async function loadTextureAtlasFromBase64(base64: string, mimeType: string): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromBase64(base64, mimeType));
+export async function loadTextureAtlasFromBase64(
+  base64: string,
+  mimeType: string,
+  signal?: AbortSignal,
+): Promise<TextureAtlas> {
+  return createTextureAtlasFromImageResource(await loadImageResourceFromBase64(base64, mimeType, signal));
 }
 
-export async function loadTextureAtlasFromBlob(blob: Blob): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromBlob(blob));
+export async function loadTextureAtlasFromBlob(blob: Blob, signal?: AbortSignal): Promise<TextureAtlas> {
+  return createTextureAtlasFromImageResource(await loadImageResourceFromBlob(blob, signal));
 }
 
-export async function loadTextureAtlasFromUrl(url: string, crossOrigin?: string): Promise<TextureAtlas> {
-  return createTextureAtlasFromImageResource(await loadImageResourceFromUrl(url, crossOrigin));
+export async function loadTextureAtlasFromUrl(
+  url: string,
+  crossOrigin?: string,
+  signal?: AbortSignal,
+): Promise<TextureAtlas> {
+  return createTextureAtlasFromImageResource(await loadImageResourceFromUrl(url, crossOrigin, signal));
 }

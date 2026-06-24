@@ -79,31 +79,52 @@ export function isImageResourceSameOrigin(url: string): boolean {
   }
 }
 
-export async function loadImageResourceFromArrayBuffer(buffer: ArrayBuffer, mimeType?: string): Promise<ImageResource> {
+export async function loadImageResourceFromArrayBuffer(
+  buffer: ArrayBuffer,
+  mimeType?: string,
+  signal?: AbortSignal,
+): Promise<ImageResource> {
   const type = mimeType ?? detectImageMimeType(buffer);
   if (type === null) {
     throw new Error('Unable to determine image type from ArrayBuffer');
   }
-  return loadImageResourceFromBlob(new Blob([buffer], { type }));
+  return loadImageResourceFromBlob(new Blob([buffer], { type }), signal);
 }
 
-export async function loadImageResourceFromBase64(base64: string, mimeType: string): Promise<ImageResource> {
-  return loadImageResourceFromUrl(`data:${mimeType};base64,${base64}`);
+export async function loadImageResourceFromBase64(
+  base64: string,
+  mimeType: string,
+  signal?: AbortSignal,
+): Promise<ImageResource> {
+  return loadImageResourceFromUrl(`data:${mimeType};base64,${base64}`, undefined, signal);
 }
 
-export async function loadImageResourceFromBlob(blob: Blob): Promise<ImageResource> {
+export async function loadImageResourceFromBlob(blob: Blob, signal?: AbortSignal): Promise<ImageResource> {
   const url = URL.createObjectURL(blob);
   try {
-    return await loadImageResourceFromUrl(url);
+    return await loadImageResourceFromUrl(url, undefined, signal);
   } finally {
     URL.revokeObjectURL(url);
   }
 }
 
-export async function loadImageResourceFromUrl(url: string, crossOrigin?: string): Promise<ImageResource> {
+export async function loadImageResourceFromUrl(
+  url: string,
+  crossOrigin?: string,
+  signal?: AbortSignal,
+): Promise<ImageResource> {
+  signal?.throwIfAborted();
   const img = new Image();
   if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
   img.src = url;
-  await img.decode();
+  // Wire abort to cancel the pending decode by rejecting the promise.
+  if (signal !== undefined) {
+    await Promise.race([
+      img.decode(),
+      new Promise<never>((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true })),
+    ]);
+  } else {
+    await img.decode();
+  }
   return createImageResourceFromImageElement(img);
 }

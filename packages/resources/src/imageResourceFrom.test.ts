@@ -227,6 +227,31 @@ describe('loadImageResourceFromBlob', () => {
 });
 
 describe('loadImageResourceFromUrl', () => {
+  it('does not set crossOrigin when no crossOrigin parameter is given', async () => {
+    let capturedImg: HTMLImageElement | undefined;
+    const origImage = globalThis.Image;
+    globalThis.Image = new Proxy(origImage, {
+      construct(Target, args) {
+        const img = new Target(...(args as []));
+        capturedImg = img;
+        return img;
+      },
+    }) as typeof Image;
+
+    await loadImageResourceFromUrl('/images/logo.png');
+    expect(capturedImg?.crossOrigin).toBeNull();
+
+    globalThis.Image = origImage;
+  });
+
+  it('rejects with an abort reason when the signal is already aborted before the call', async () => {
+    const controller = new AbortController();
+    controller.abort(new Error('cancelled'));
+    await expect(loadImageResourceFromUrl('data:image/png;base64,abc', undefined, controller.signal)).rejects.toThrow(
+      'cancelled',
+    );
+  });
+
   it('resolves to an ImageResource whose source is an HTMLImageElement', async () => {
     const resource = await loadImageResourceFromUrl('data:image/png;base64,abc');
     expect(resource.source).toBeInstanceOf(HTMLImageElement);
@@ -245,23 +270,6 @@ describe('loadImageResourceFromUrl', () => {
 
     await loadImageResourceFromUrl('https://cdn.other-domain.com/image.png', 'anonymous');
     expect(capturedImg?.crossOrigin).toBe('anonymous');
-
-    globalThis.Image = origImage;
-  });
-
-  it('does not set crossOrigin when no crossOrigin parameter is given', async () => {
-    let capturedImg: HTMLImageElement | undefined;
-    const origImage = globalThis.Image;
-    globalThis.Image = new Proxy(origImage, {
-      construct(Target, args) {
-        const img = new Target(...(args as []));
-        capturedImg = img;
-        return img;
-      },
-    }) as typeof Image;
-
-    await loadImageResourceFromUrl('/images/logo.png');
-    expect(capturedImg?.crossOrigin).toBeNull();
 
     globalThis.Image = origImage;
   });

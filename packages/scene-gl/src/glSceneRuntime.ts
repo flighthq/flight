@@ -3,6 +3,19 @@ import { EntityRuntimeKey } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 
+// A per-subset draw record held in the two-pass draw lists. Pooled on GlSceneRuntime to avoid
+// per-frame allocation. Fields are set at partition time and consumed during the opaque/blended
+// passes; the pool is never exposed outside drawGlScene.
+export interface GlSceneDrawEntry {
+  clipW: number;
+  material: object;
+  mesh: object;
+  normalMatrix: object;
+  renderer: object;
+  subset: object;
+  worldMatrix: object;
+}
+
 // scene-gl's per-GlRenderState private state: the 3D mesh-material registry, the shared mesh-material
 // program cache (keyed by family + define key), and the per-state geometry GPU-upload cache. These
 // are scene-gl-owned, distinct from the 2D renderer's materialRendererMap/textureCache — a material
@@ -10,10 +23,16 @@ import type { GlMeshProgram } from './glMeshProgram';
 // header's GlRenderStateRuntime.sceneMeshMaterialRegistry / sceneMeshUploadCache slots (kept opaque
 // there), and the program cache lives only here (scene-gl never needs to name it in the header).
 // `activeMeshProgram` is the bind()→draw() handoff: bind selects a family's program and stores it
-// here; draw reads it back. One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
+// here; draw reads it back. The draw-entry pools (`blendedPool`/`opaquePool`) and the per-frame
+// draw lists (`blendedDrawList`/`opaqueDrawList`) live here so two independent render states never
+// share allocation. One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
 export interface GlSceneRuntime {
   activeMeshProgram: GlMeshProgram | null;
+  blendedDrawList: GlSceneDrawEntry[];
+  blendedPool: GlSceneDrawEntry[];
   materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
+  opaqueDrawList: GlSceneDrawEntry[];
+  opaquePool: GlSceneDrawEntry[];
   programCache: Map<string, GlMeshProgram>;
   uploadCache: WeakMap<MeshGeometry, GlMeshUpload>;
 }
@@ -40,7 +59,11 @@ export function getGlSceneRuntime(state: GlRenderState): GlSceneRuntime {
   if (scene === undefined) {
     scene = {
       activeMeshProgram: null,
+      blendedDrawList: [],
+      blendedPool: [],
       materialRegistry: new Map(),
+      opaqueDrawList: [],
+      opaquePool: [],
       programCache: new Map(),
       uploadCache: new WeakMap(),
     };

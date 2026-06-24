@@ -41,6 +41,14 @@ export function disposeImageResource(resource: ImageResource): void {
   invalidateImageResource(resource);
 }
 
+// Returns the byte footprint of the CPU-side pixel data (`data` array). Returns 0 when `data` is
+// null (element-only resource — the GPU texture footprint is tracked by the render state, not here).
+// For `rgba8unorm` (the default) the result equals width × height × 4; other formats are not yet
+// exercised but the formula still applies (byteLength of the actual buffer is authoritative).
+export function getImageResourceByteSize(resource: Readonly<ImageResource>): number {
+  return resource.data !== null ? resource.data.byteLength : 0;
+}
+
 export function hasImageResourceData(resource: Readonly<ImageResource>): boolean {
   return resource.data !== null;
 }

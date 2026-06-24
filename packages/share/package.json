@@ -27,11 +27,12 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Native share sheet (title, text, url) over a swappable web/native backend",
+  "description": "Native share sheet (title, text, url, files) over a swappable web/native backend",
   "sideEffects": false
 }

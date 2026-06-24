@@ -31,6 +31,8 @@
 // (`clearcoatEnabled` … `transmissionEnabled`) each enable one extension lobe; an extension
 // renderer sets exactly one. Map flags inside an extension's own textures are not part of the key
 // today — extension maps are bound when present and the lobe reads a uniform fallback otherwise.
+// `hasUv1` enables the second UV set (glTF TEXCOORD_1), used for the occlusion map when the
+// geometry carries it — a flat glTF-coverage gap without it.
 export interface GlPbrDefineKey {
   alphaMaskEnabled: boolean;
   anisotropyEnabled: boolean;
@@ -40,6 +42,7 @@ export interface GlPbrDefineKey {
   hasMetallicRoughnessMap: boolean;
   hasNormalMap: boolean;
   hasOcclusionMap: boolean;
+  hasUv1: boolean;
   iridescenceEnabled: boolean;
   sheenEnabled: boolean;
   specularEnabled: boolean;
@@ -49,7 +52,8 @@ export interface GlPbrDefineKey {
 
 // A short, stable, order-independent string identity for a define key, used as the program-cache
 // map key. Two keys with the same flags produce the same string and so share a compiled program.
-// Standard map/alpha flags first, then one slot per extension lobe.
+// Standard map/alpha flags first (including hasUv1 for the second UV set), then one slot per
+// extension lobe.
 export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
   return (
     `${key.alphaMaskEnabled ? 'm' : '-'}` +
@@ -58,6 +62,7 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
     `${key.hasMetallicRoughnessMap ? 'r' : '-'}` +
     `${key.hasOcclusionMap ? 'o' : '-'}` +
     `${key.hasEmissiveMap ? 'e' : '-'}` +
+    `${key.hasUv1 ? '2' : '-'}` +
     `:${key.clearcoatEnabled ? 'C' : '-'}` +
     `${key.sheenEnabled ? 'S' : '-'}` +
     `${key.anisotropyEnabled ? 'A' : '-'}` +
@@ -79,6 +84,7 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   if (key.hasMetallicRoughnessMap) defines += '#define HAS_METALLIC_ROUGHNESS_MAP\n';
   if (key.hasOcclusionMap) defines += '#define HAS_OCCLUSION_MAP\n';
   if (key.hasEmissiveMap) defines += '#define HAS_EMISSIVE_MAP\n';
+  if (key.hasUv1) defines += '#define HAS_UV1\n';
   if (key.clearcoatEnabled) defines += '#define CLEARCOAT\n';
   if (key.sheenEnabled) defines += '#define SHEEN\n';
   if (key.anisotropyEnabled) defines += '#define ANISOTROPY\n';
@@ -119,6 +125,9 @@ layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
 layout(location = 2) in vec4 a_tangent;
 layout(location = 3) in vec2 a_uv0;
+#ifdef HAS_UV1
+layout(location = 5) in vec2 a_uv1;
+#endif
 
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
@@ -128,6 +137,9 @@ out vec3 v_worldPosition;
 out vec3 v_normal;
 out vec4 v_tangent;
 out vec2 v_uv0;
+#ifdef HAS_UV1
+out vec2 v_uv1;
+#endif
 
 void main() {
   vec4 worldPosition = u_model * vec4(a_position, 1.0);
@@ -135,6 +147,9 @@ void main() {
   v_normal = u_normalMatrix * a_normal;
   v_tangent = vec4(u_normalMatrix * a_tangent.xyz, a_tangent.w);
   v_uv0 = a_uv0;
+#ifdef HAS_UV1
+  v_uv1 = a_uv1;
+#endif
   gl_Position = u_viewProjection * worldPosition;
 }
 `;
@@ -146,6 +161,9 @@ in vec3 v_worldPosition;
 in vec3 v_normal;
 in vec4 v_tangent;
 in vec2 v_uv0;
+#ifdef HAS_UV1
+in vec2 v_uv1;
+#endif
 
 uniform vec4 u_baseColor;
 uniform float u_metallic;
@@ -319,8 +337,14 @@ void main() {
 
   float occlusion = 1.0;
 #ifdef HAS_OCCLUSION_MAP
-  // Occlusion in R; strength lerps between full ambient (1.0) and the sampled value.
+  // Occlusion in R; strength lerps between full ambient (1.0) and the sampled value. When the
+  // geometry carries a second UV set (HAS_UV1 = glTF TEXCOORD_1), the occlusion map uses it —
+  // the canonical glTF placement for baked lightmaps and occlusion textures.
+  #ifdef HAS_UV1
+  float ao = texture(u_occlusionMap, v_uv1).r;
+  #else
   float ao = texture(u_occlusionMap, v_uv0).r;
+  #endif
   occlusion = mix(1.0, ao, clamp(u_occlusionStrength, 0.0, 1.0));
 #endif
 

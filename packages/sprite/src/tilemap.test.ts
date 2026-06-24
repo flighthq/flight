@@ -1,18 +1,63 @@
-import { createRectangle } from '@flighthq/geometry';
+import { createRectangle, createVector2 } from '@flighthq/geometry';
+import { connectSignal } from '@flighthq/signals';
 import type { Node, Tileset } from '@flighthq/types';
 import { TilemapKind } from '@flighthq/types';
 
 import {
+  clearTilemap,
+  cloneTilemap,
   computeTilemapLocalBoundsRectangle,
   createTilemap,
   createTilemapData,
   createTilemapRuntime,
+  createTilemapSignals,
+  enableTilemapSignals,
   fillTilemapTiles,
+  getTilemapColumnAtX,
+  getTilemapColumnRowAtPoint,
+  getTilemapRowAtY,
   getTilemapRuntime,
+  getTilemapSignals,
   getTilemapTile,
+  getTilemapTileAtPoint,
+  getTilemapTileAtPointXY,
+  getTilemapTileRect,
   resizeTilemap,
   setTilemapTile,
+  setTilemapTiles,
 } from './tilemap';
+
+describe('clearTilemap', () => {
+  it('fills all cells with -1', () => {
+    const tilemap = createTilemap({ data: { columns: 3, rows: 2 } });
+    fillTilemapTiles(tilemap, 5);
+    clearTilemap(tilemap);
+    expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1, -1, -1]);
+  });
+});
+
+describe('cloneTilemap', () => {
+  it('copies grid, tileset, and tiles into a new tilemap', () => {
+    const tileset = { tileWidth: 32, tileHeight: 16 } as Tileset;
+    const source = createTilemap({ data: { columns: 3, rows: 2, tileset } });
+    setTilemapTile(source, 1, 1, 9);
+    const clone = cloneTilemap(source);
+    expect(clone).not.toBe(source);
+    expect(clone.data.columns).toBe(3);
+    expect(clone.data.rows).toBe(2);
+    expect(clone.data.tileset).toBe(tileset);
+    expect(getTilemapTile(clone, 1, 1)).toBe(9);
+    expect(clone.kind).toBe(TilemapKind);
+  });
+
+  it('clones the tiles buffer so mutations do not leak back', () => {
+    const source = createTilemap({ data: { columns: 2, rows: 2 } });
+    const clone = cloneTilemap(source);
+    expect(clone.data.tiles).not.toBe(source.data.tiles);
+    setTilemapTile(clone, 0, 0, 5);
+    expect(getTilemapTile(source, 0, 0)).toBe(-1);
+  });
+});
 
 describe('computeTilemapLocalBoundsRectangle', () => {
   it('sets out dimensions from tileset and grid size', () => {
@@ -91,6 +136,61 @@ describe('createTilemapRuntime', () => {
   });
 });
 
+describe('createTilemapSignals', () => {
+  it('creates a signals group with the three tilemap signals', () => {
+    const signals = createTilemapSignals();
+    let cleared = false;
+    let tileArgs: readonly number[] = [];
+    connectSignal(signals.onCleared, () => {
+      cleared = true;
+    });
+    connectSignal(signals.onTileChanged, (c, r, id) => {
+      tileArgs = [c, r, id];
+    });
+    signals.onCleared.emit();
+    signals.onTileChanged.emit(1, 2, 3);
+    expect(cleared).toBe(true);
+    expect(tileArgs).toEqual([1, 2, 3]);
+  });
+});
+
+describe('enableTilemapSignals', () => {
+  it('creates and attaches signals on first call', () => {
+    const tilemap = createTilemap();
+    expect(getTilemapSignals(tilemap)).toBeNull();
+    const signals = enableTilemapSignals(tilemap);
+    expect(signals).not.toBeNull();
+    expect(getTilemapSignals(tilemap)).toBe(signals);
+  });
+
+  it('returns the same group on repeated calls', () => {
+    const tilemap = createTilemap();
+    expect(enableTilemapSignals(tilemap)).toBe(enableTilemapSignals(tilemap));
+  });
+
+  it('makes setTilemapTile fire onTileChanged', () => {
+    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const signals = enableTilemapSignals(tilemap);
+    let received: readonly number[] = [];
+    connectSignal(signals.onTileChanged, (c, r, id) => {
+      received = [c, r, id];
+    });
+    setTilemapTile(tilemap, 1, 2, 4);
+    expect(received).toEqual([1, 2, 4]);
+  });
+
+  it('makes clearTilemap fire onCleared', () => {
+    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const signals = enableTilemapSignals(tilemap);
+    let cleared = false;
+    connectSignal(signals.onCleared, () => {
+      cleared = true;
+    });
+    clearTilemap(tilemap);
+    expect(cleared).toBe(true);
+  });
+});
+
 describe('fillTilemapTiles', () => {
   it('fills all cells with the given id', () => {
     const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
@@ -106,11 +206,87 @@ describe('fillTilemapTiles', () => {
   });
 });
 
+describe('getTilemapColumnAtX', () => {
+  it('returns -1 when tileset is null', () => {
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    expect(getTilemapColumnAtX(tilemap, 10)).toBe(-1);
+  });
+
+  it('returns the floored column for an in-bounds x', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    expect(getTilemapColumnAtX(tilemap, 0)).toBe(0);
+    expect(getTilemapColumnAtX(tilemap, 31)).toBe(1);
+    expect(getTilemapColumnAtX(tilemap, 48)).toBe(3);
+  });
+
+  it('returns -1 for x outside the grid', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    expect(getTilemapColumnAtX(tilemap, -1)).toBe(-1);
+    expect(getTilemapColumnAtX(tilemap, 64)).toBe(-1);
+  });
+});
+
+describe('getTilemapColumnRowAtPoint', () => {
+  it('writes column and row for an in-bounds point', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const out = createVector2(99, 99);
+    expect(getTilemapColumnRowAtPoint(out, tilemap, 33, 17)).toBe(true);
+    expect(out.x).toBe(2);
+    expect(out.y).toBe(1);
+  });
+
+  it('returns false and does not modify out for an out-of-bounds point', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const out = createVector2(7, 8);
+    expect(getTilemapColumnRowAtPoint(out, tilemap, -1, 0)).toBe(false);
+    expect(out.x).toBe(7);
+    expect(out.y).toBe(8);
+  });
+});
+
+describe('getTilemapRowAtY', () => {
+  it('returns -1 when tileset is null', () => {
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    expect(getTilemapRowAtY(tilemap, 10)).toBe(-1);
+  });
+
+  it('returns the floored row for an in-bounds y', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    expect(getTilemapRowAtY(tilemap, 0)).toBe(0);
+    expect(getTilemapRowAtY(tilemap, 31)).toBe(1);
+  });
+
+  it('returns -1 for y outside the grid', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    expect(getTilemapRowAtY(tilemap, -1)).toBe(-1);
+    expect(getTilemapRowAtY(tilemap, 64)).toBe(-1);
+  });
+});
+
 describe('getTilemapRuntime', () => {
   it('returns the runtime for a Tilemap', () => {
     const tilemap = createTilemap();
     const runtime = getTilemapRuntime(tilemap);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getTilemapSignals', () => {
+  it('returns null before signals are enabled', () => {
+    const tilemap = createTilemap();
+    expect(getTilemapSignals(tilemap)).toBeNull();
+  });
+
+  it('returns the group after enabling', () => {
+    const tilemap = createTilemap();
+    const signals = enableTilemapSignals(tilemap);
+    expect(getTilemapSignals(tilemap)).toBe(signals);
   });
 });
 
@@ -132,6 +308,65 @@ describe('getTilemapTile', () => {
     const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
     setTilemapTile(tilemap, 2, 1, 7);
     expect(getTilemapTile(tilemap, 2, 1)).toBe(7);
+  });
+});
+
+describe('getTilemapTileAtPoint', () => {
+  it('returns the cell value at a local-space point', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    setTilemapTile(tilemap, 2, 1, 8);
+    expect(getTilemapTileAtPoint(tilemap, createVector2(33, 17))).toBe(8);
+  });
+
+  it('returns -1 for an out-of-bounds point', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    expect(getTilemapTileAtPoint(tilemap, createVector2(-5, 0))).toBe(-1);
+  });
+});
+
+describe('getTilemapTileAtPointXY', () => {
+  it('returns the cell value at (x, y)', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    setTilemapTile(tilemap, 0, 0, 3);
+    expect(getTilemapTileAtPointXY(tilemap, 5, 5)).toBe(3);
+  });
+
+  it('returns -1 when tileset is null', () => {
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    expect(getTilemapTileAtPointXY(tilemap, 5, 5)).toBe(-1);
+  });
+});
+
+describe('getTilemapTileRect', () => {
+  it('writes the cell rectangle for an in-bounds cell', () => {
+    const tileset = { tileWidth: 16, tileHeight: 24 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const out = createRectangle();
+    expect(getTilemapTileRect(out, tilemap, 2, 1)).toBe(true);
+    expect(out.x).toBe(32);
+    expect(out.y).toBe(24);
+    expect(out.width).toBe(16);
+    expect(out.height).toBe(24);
+  });
+
+  it('returns false and does not modify out for an out-of-bounds cell', () => {
+    const tileset = { tileWidth: 16, tileHeight: 16 } as Tileset;
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4, tileset } });
+    const out = createRectangle(1, 2, 3, 4);
+    expect(getTilemapTileRect(out, tilemap, 5, 0)).toBe(false);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.width).toBe(3);
+    expect(out.height).toBe(4);
+  });
+
+  it('returns false when tileset is null', () => {
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const out = createRectangle();
+    expect(getTilemapTileRect(out, tilemap, 0, 0)).toBe(false);
   });
 });
 
@@ -191,5 +426,56 @@ describe('setTilemapTile', () => {
     setTilemapTile(tilemap, 0, 0, 3);
     setTilemapTile(tilemap, 0, 0, -1);
     expect(getTilemapTile(tilemap, 0, 0)).toBe(-1);
+  });
+});
+
+describe('setTilemapTiles', () => {
+  it('blits a sub-grid at offset (0, 0)', () => {
+    const tilemap = createTilemap({ data: { columns: 4, rows: 3 } });
+    const ids = new Int16Array([1, 2, 3, 4, 5, 6]);
+    setTilemapTiles(tilemap, ids, 0, 0, 3, 2);
+    expect(getTilemapTile(tilemap, 0, 0)).toBe(1);
+    expect(getTilemapTile(tilemap, 1, 0)).toBe(2);
+    expect(getTilemapTile(tilemap, 2, 0)).toBe(3);
+    expect(getTilemapTile(tilemap, 0, 1)).toBe(4);
+    expect(getTilemapTile(tilemap, 1, 1)).toBe(5);
+    expect(getTilemapTile(tilemap, 2, 1)).toBe(6);
+    // untouched cells remain -1
+    expect(getTilemapTile(tilemap, 3, 0)).toBe(-1);
+  });
+
+  it('blits at a non-zero offset', () => {
+    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const ids = [10, 11, 12, 13];
+    setTilemapTiles(tilemap, ids, 1, 2, 2, 2);
+    expect(getTilemapTile(tilemap, 1, 2)).toBe(10);
+    expect(getTilemapTile(tilemap, 2, 2)).toBe(11);
+    expect(getTilemapTile(tilemap, 1, 3)).toBe(12);
+    expect(getTilemapTile(tilemap, 2, 3)).toBe(13);
+    // untouched
+    expect(getTilemapTile(tilemap, 0, 0)).toBe(-1);
+  });
+
+  it('clips writes that extend outside the tilemap', () => {
+    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const ids = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    // 3x3 blit at offset (1, 1): only (1,1) is in-bounds
+    setTilemapTiles(tilemap, ids, 1, 1, 3, 3);
+    expect(getTilemapTile(tilemap, 1, 1)).toBe(1);
+    // All other cells remain -1
+    expect(getTilemapTile(tilemap, 0, 0)).toBe(-1);
+    expect(getTilemapTile(tilemap, 1, 0)).toBe(-1);
+  });
+
+  it('handles negative offsets by clipping', () => {
+    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const ids = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+    // 3x3 blit at offset (-1, -1): only the bottom-right 2x2 of the source lands in bounds
+    setTilemapTiles(tilemap, ids, -1, -1, 3, 3);
+    // ids[1*3+1]=50 -> (0,0), ids[1*3+2]=60 -> (1,0), ids[2*3+1]=80 -> (0,1), ids[2*3+2]=90 -> (1,1)
+    expect(getTilemapTile(tilemap, 0, 0)).toBe(50);
+    expect(getTilemapTile(tilemap, 1, 0)).toBe(60);
+    expect(getTilemapTile(tilemap, 0, 1)).toBe(80);
+    expect(getTilemapTile(tilemap, 1, 1)).toBe(90);
   });
 });

@@ -12,6 +12,7 @@ const kClose = Symbol();
 const kDropFile = Symbol();
 const kFocus = Symbol();
 const kFullscreen = Symbol();
+const kMove = Symbol();
 const kOrientation = Symbol();
 const kRenderContext = Symbol();
 const kRenderState = Symbol();
@@ -78,6 +79,31 @@ export function attachWindowFullscreen(win: ApplicationWindow): void {
   const handler = () => emitSignal(win.onFullscreenChanged);
   document.addEventListener('fullscreenchange', handler);
   observers.set(kFullscreen, () => document.removeEventListener('fullscreenchange', handler));
+}
+
+// Wires OS/screen-originated window-move events to win.onMove. On web this is best-effort via
+// the window 'resize' event (which fires on page-move too in some browsers) — browsers do not
+// expose a reliable 'move' event on the page window. No-op in non-browser environments.
+export function attachWindowMove(win: ApplicationWindow): void {
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kMove)?.();
+  if (typeof window === 'undefined') return;
+  const handler = (): void => {
+    // Read back the real screen position from the browser and update the entity if it changed.
+    if (typeof window.screenX === 'number' && typeof window.screenY === 'number') {
+      const x = window.screenX;
+      const y = window.screenY;
+      if (win.x !== x || win.y !== y) {
+        win.x = x;
+        win.y = y;
+        emitSignal(win.onMove);
+      }
+    }
+  };
+  // Both 'resize' and a polling listener on 'pointermove' are imperfect; 'resize' fires more
+  // reliably across browsers as a proxy for page layout change that includes moves.
+  window.addEventListener('resize', handler);
+  observers.set(kMove, () => window.removeEventListener('resize', handler));
 }
 
 export function attachWindowOrientation(win: ApplicationWindow): void {
@@ -325,6 +351,9 @@ export function createWebWindowBackend(): WindowBackend {
     setParent() {},
     setProgress() {},
     requestAttention() {},
+    setContentProtection() {},
+    flashWindowFrame() {},
+    setHasShadow() {},
   };
 }
 
@@ -350,6 +379,12 @@ export function detachWindowFullscreen(win: ApplicationWindow): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kFullscreen)?.();
   observers.delete(kFullscreen);
+}
+
+export function detachWindowMove(win: ApplicationWindow): void {
+  const observers = getApplicationWindowObservers(win);
+  observers.get(kMove)?.();
+  observers.delete(kMove);
 }
 
 export function detachWindowOrientation(win: ApplicationWindow): void {
@@ -392,6 +427,21 @@ export function exitApplicationFullscreen(): Promise<void> {
   return document.exitFullscreen();
 }
 
+// Releases the Pointer Lock on the document, restoring cursor movement.
+export function exitApplicationPointerLock(): Promise<void> {
+  if (typeof document === 'undefined' || typeof document.exitPointerLock !== 'function') {
+    return Promise.resolve();
+  }
+  document.exitPointerLock();
+  return Promise.resolve();
+}
+
+// Briefly flashes the window frame to attract attention. No-op on web; native hosts implement via
+// the WindowBackend (e.g. Electron window.flashFrame(true)).
+export function flashWindowFrame(win: ApplicationWindow): void {
+  getWindowBackend().flashWindowFrame(win);
+}
+
 // Brings the window to the foreground and marks it focused.
 export function focusWindow(win: ApplicationWindow): void {
   win.focused = true;
@@ -409,6 +459,13 @@ export function getWindowBounds(win: Readonly<ApplicationWindow>, out: WindowBou
   return getWindowBackend().getBounds(win as ApplicationWindow, out);
 }
 
+// Returns the index of the display (screen) the window is currently on, or -1 if unknown.
+// This is a seam: on web it always returns -1 (no multi-monitor API); native backends
+// (host-electron, host-winit) resolve the display via @flighthq/screen and return the index.
+export function getWindowDisplay(_win: Readonly<ApplicationWindow>): number {
+  return -1;
+}
+
 // Hides the window without closing it.
 export function hideWindow(win: ApplicationWindow): void {
   if (!win.visible) return;
@@ -416,14 +473,14 @@ export function hideWindow(win: ApplicationWindow): void {
   getWindowBackend().hide(win);
 }
 
-export function lockApplicationPointer(element: HTMLElement): void {
-  element.style.touchAction = 'none';
-  element.style.userSelect = 'none';
-  element.style.webkitUserSelect = 'none';
-  (element.style as CSSStyleDeclaration & { webkitTapHighlightColor: string }).webkitTapHighlightColor = 'transparent';
-  if (element instanceof HTMLCanvasElement) {
-    element.style.transform = 'translateZ(0)';
-  }
+// Requests Pointer Lock on an element, hiding and confining the cursor so raw mouse deltas are
+// delivered via pointermove events. Returns a promise that resolves on success or rejects if the
+// browser denies (requires a prior user gesture). Use exitApplicationPointerLock to release.
+export function lockApplicationPointer(element: HTMLElement): Promise<void> {
+  if (typeof element.requestPointerLock !== 'function') return Promise.resolve();
+  const result = element.requestPointerLock();
+  // requestPointerLock returns a Promise in newer browsers and undefined in older ones.
+  return (result instanceof Promise ? result : Promise.resolve()) as Promise<void>;
 }
 
 // Maximizes the window. Updates state and emits onMaximize when the state changes.
@@ -461,7 +518,24 @@ export function openWindow(win: ApplicationWindow, options: Readonly<WindowOptio
   if (options.minHeight !== undefined) win.minHeight = options.minHeight;
   if (options.maxWidth !== undefined) win.maxWidth = options.maxWidth;
   if (options.maxHeight !== undefined) win.maxHeight = options.maxHeight;
-  return getWindowBackend().open(win, options);
+  const result = getWindowBackend().open(win, options);
+  // Apply center after open so the backend has registered the OS window before moving it.
+  if (options.center === true) centerWindow(win);
+  return result;
+}
+
+// Prepares an element for direct input by setting CSS properties that suppress default browser
+// touch/selection/tap-highlight behavior: touch-action:none, user-select:none,
+// webkit-tap-highlight-color:transparent. For canvas elements, adds translateZ(0) to promote to
+// a GPU compositing layer, reducing canvas flicker on touch. Call once; no teardown needed.
+export function prepareElementForInput(element: HTMLElement): void {
+  element.style.touchAction = 'none';
+  element.style.userSelect = 'none';
+  element.style.webkitUserSelect = 'none';
+  (element.style as CSSStyleDeclaration & { webkitTapHighlightColor: string }).webkitTapHighlightColor = 'transparent';
+  if (element instanceof HTMLCanvasElement) {
+    element.style.transform = 'translateZ(0)';
+  }
 }
 
 export function requestApplicationFullscreen(element: HTMLElement): Promise<void> {
@@ -500,12 +574,23 @@ export function setWindowBackend(backend: WindowBackend | null): void {
   _windowBackend = backend;
 }
 
+// Prevents (or allows) the window contents from being captured in screenshots or screen sharing.
+// Web no-op; native hosts implement via the WindowBackend (e.g. Electron window.setContentProtection).
+export function setWindowContentProtection(win: ApplicationWindow, enabled: boolean): void {
+  getWindowBackend().setContentProtection(win, enabled);
+}
+
 // Sets fullscreen state. Updates state and emits onFullscreenChanged when the state changes.
 export function setWindowFullscreen(win: ApplicationWindow, fullscreen: boolean): void {
   if (win.fullscreen === fullscreen) return;
   win.fullscreen = fullscreen;
   getWindowBackend().setFullscreen(win, fullscreen);
   emitSignal(win.onFullscreenChanged);
+}
+
+// Shows or hides the native drop shadow around the window. macOS / native only; web no-op.
+export function setWindowHasShadow(win: ApplicationWindow, hasShadow: boolean): void {
+  getWindowBackend().setHasShadow(win, hasShadow);
 }
 
 // Sets the window icon (path/URL). On web this updates the page favicon.

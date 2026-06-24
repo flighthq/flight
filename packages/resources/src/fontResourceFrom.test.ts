@@ -3,7 +3,7 @@ import {
   loadFontResourceFromArrayBuffer,
   loadFontResourceFromName,
   loadFontResourceFromUrl,
-  loadFontResourceFromURLs,
+  loadFontResourceFromUrls,
 } from './fontResourceFrom';
 
 let mockFace: { load: ReturnType<typeof vi.fn> };
@@ -67,10 +67,10 @@ describe('loadFontResourceFromUrl', () => {
   });
 });
 
-describe('loadFontResourceFromURLs', () => {
+describe('loadFontResourceFromUrls', () => {
   it('builds a multi-source src string and loads the face', async () => {
     const resource = createFontResource('TestFont');
-    const result = await loadFontResourceFromURLs(resource, [
+    const result = await loadFontResourceFromUrls(resource, [
       { url: 'font.woff2', format: 'woff2' },
       { url: 'font.ttf' },
     ]);
@@ -85,7 +85,7 @@ describe('loadFontResourceFromURLs', () => {
     });
     vi.stubGlobal('FontFace', MockFontFace);
     const resource = createFontResource('TestFont');
-    await loadFontResourceFromURLs(resource, [{ url: 'font.otf' }]);
+    await loadFontResourceFromUrls(resource, [{ url: 'font.otf' }]);
     expect(MockFontFace).toHaveBeenCalledWith('TestFont', expect.stringContaining("format('opentype')"));
   });
 });

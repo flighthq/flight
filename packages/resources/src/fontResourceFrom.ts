@@ -44,7 +44,7 @@ export async function loadFontResourceFromUrl(out: FontResource, url: string): P
 }
 
 // Loads from multiple URL sources with format hints; the browser picks the best format.
-export async function loadFontResourceFromURLs(out: FontResource, sources: FontUrl[]): Promise<FontResource> {
+export async function loadFontResourceFromUrls(out: FontResource, sources: FontUrl[]): Promise<FontResource> {
   const src = sources
     .map(({ url, format }) => {
       const fmt = format ?? inferFontFormat(url);

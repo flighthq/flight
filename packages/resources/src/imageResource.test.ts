@@ -2,6 +2,7 @@ import {
   cloneImageResource,
   createImageResource,
   disposeImageResource,
+  getImageResourceByteSize,
   hasImageResourceData,
   hasImageResourceSource,
   invalidateImageResource,
@@ -78,6 +79,27 @@ describe('disposeImageResource', () => {
     expect(resource.source).toBeNull();
     expect(resource.data).toBeNull();
     expect(resource.version).toStrictEqual(before + 1);
+  });
+});
+
+describe('getImageResourceByteSize', () => {
+  it('returns 0 when data is null (element-only resource)', () => {
+    const resource = createImageResource();
+    expect(getImageResourceByteSize(resource)).toBe(0);
+  });
+
+  it('returns the byteLength of the data array when present', () => {
+    const resource = createImageResource();
+    resource.data = new Uint8ClampedArray(100);
+    expect(getImageResourceByteSize(resource)).toBe(100);
+  });
+
+  it('reflects width × height × 4 for a typical rgba8unorm resource', () => {
+    const resource = createImageResource();
+    resource.width = 4;
+    resource.height = 4;
+    resource.data = new Uint8ClampedArray(4 * 4 * 4);
+    expect(getImageResourceByteSize(resource)).toBe(64);
   });
 });
 

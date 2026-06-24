@@ -1,13 +1,23 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type { Network, NetworkBackend, NetworkConnectionType, NetworkStatus } from '@flighthq/types';
+import type {
+  Network,
+  NetworkBackend,
+  NetworkConnectionType,
+  NetworkReachability,
+  NetworkReachabilityOptions,
+  NetworkStatus,
+} from '@flighthq/types';
 
 // Begins delivering connectivity changes to `net`'s signals by subscribing to the active backend. On
-// each change it reads a fresh status and emits onChange plus onOnline/onOffline. Idempotent: a prior
-// subscription is torn down first. Pair with detachNetwork/disposeNetwork.
+// each change it reads a fresh status and emits onChange plus edge-triggered signals. Idempotent: a
+// prior subscription is torn down first. Pair with detachNetwork/disposeNetwork.
 export function attachNetwork(net: Network): void {
   detachNetwork(net);
   const backend = getNetworkBackend();
-  let wasOnline = backend.getStatus(_scratch).online;
+  const initial = backend.getStatus(_scratch);
+  let wasOnline = initial.online;
+  let wasType = initial.type;
+  let wasMetered = initial.metered;
   const unsubscribe = backend.subscribe(() => {
     const status = backend.getStatus(_scratch);
     emitSignal(net.onChange, status);
@@ -15,18 +25,41 @@ export function attachNetwork(net: Network): void {
       wasOnline = status.online;
       emitSignal(status.online ? net.onOnline : net.onOffline);
     }
+    if (status.type !== wasType) {
+      wasType = status.type;
+      emitSignal(net.onConnectionTypeChange, status.type);
+    }
+    if (status.metered !== wasMetered) {
+      wasMetered = status.metered;
+      emitSignal(net.onMeteredChange, status.metered);
+    }
   });
   _subscriptions.set(net, unsubscribe);
 }
 
 // Allocates a Network event entity with inert signals; call attachNetwork to start delivery.
 export function createNetwork(): Network {
-  return { onChange: createSignal(), onOffline: createSignal(), onOnline: createSignal() };
+  return {
+    onChange: createSignal(),
+    onConnectionTypeChange: createSignal(),
+    onMeteredChange: createSignal(),
+    onOffline: createSignal(),
+    onOnline: createSignal(),
+  };
 }
 
 // Allocates a zeroed NetworkStatus, suitable as the `out` for getNetworkStatus.
 export function createNetworkStatus(): NetworkStatus {
-  return { downlink: -1, effectiveType: '', online: false, type: 'unknown' };
+  return {
+    downlink: -1,
+    downlinkMax: -1,
+    effectiveType: '',
+    metered: false,
+    online: false,
+    rtt: -1,
+    saveData: false,
+    type: 'unknown',
+  };
 }
 
 // Builds the default web backend over navigator.onLine, the Network Information API, and the window
@@ -39,7 +72,38 @@ export function createWebNetworkBackend(): NetworkBackend {
       const conn = getWebConnection();
       out.type = mapWebConnectionType(conn?.type);
       out.downlink = typeof conn?.downlink === 'number' ? conn.downlink : -1;
+      out.downlinkMax = typeof conn?.downlinkMax === 'number' ? conn.downlinkMax : -1;
       out.effectiveType = typeof conn?.effectiveType === 'string' ? conn.effectiveType : '';
+      out.rtt = typeof conn?.rtt === 'number' ? conn.rtt : -1;
+      out.saveData = conn?.saveData === true;
+      out.metered = out.saveData || out.type === 'cellular';
+      return out;
+    },
+    async probeReachability(options, out) {
+      if (typeof fetch === 'undefined') {
+        out.reachable = false;
+        out.latency = -1;
+        return out;
+      }
+      const timeout = options.timeout ?? 5000;
+      const controller = new AbortController();
+      const timerId = setTimeout(() => controller.abort(), timeout);
+      const combinedSignal = options.signal ? anyAbortSignal(options.signal, controller.signal) : controller.signal;
+      const start = Date.now();
+      try {
+        const response = await fetch(options.url, {
+          method: 'HEAD',
+          cache: 'no-store',
+          signal: combinedSignal,
+        });
+        clearTimeout(timerId);
+        out.reachable = response.ok;
+        out.latency = Date.now() - start;
+      } catch {
+        clearTimeout(timerId);
+        out.reachable = false;
+        out.latency = -1;
+      }
       return out;
     },
     subscribe(listener) {
@@ -83,9 +147,56 @@ export function getNetworkStatus(out: NetworkStatus): NetworkStatus {
   return getNetworkBackend().getStatus(out);
 }
 
+// Returns a diff of two status snapshots. Returns true if any field differs.
+export function hasNetworkStatusChanged(a: Readonly<NetworkStatus>, b: Readonly<NetworkStatus>): boolean {
+  return (
+    a.online !== b.online ||
+    a.type !== b.type ||
+    a.downlink !== b.downlink ||
+    a.downlinkMax !== b.downlinkMax ||
+    a.effectiveType !== b.effectiveType ||
+    a.rtt !== b.rtt ||
+    a.saveData !== b.saveData ||
+    a.metered !== b.metered
+  );
+}
+
+// True when the connection is metered (cellular or save-data is set). Convenience over getNetworkStatus.
+export function isNetworkMetered(): boolean {
+  return getNetworkBackend().getStatus(_scratch).metered;
+}
+
 // True when the host currently reports connectivity. Convenience over getNetworkStatus.
 export function isNetworkOnline(): boolean {
   return getNetworkBackend().getStatus(_scratch).online;
+}
+
+// True when the user or OS has requested reduced data usage. Convenience over getNetworkStatus.
+export function isNetworkSaveDataEnabled(): boolean {
+  return getNetworkBackend().getStatus(_scratch).saveData;
+}
+
+// Performs a one-shot reachability probe against the given URL using the active backend's
+// probeReachability, falling back to a fetch-based implementation when the backend does not provide
+// one. Writes the result into `out` and returns it. Returns a sentinel on failure rather than throwing.
+// NOTE: navigator.onLine reports an interface, not internet reachability. Use this function when you
+// need to distinguish "a network interface is up" from "the internet is actually reachable."
+export async function probeNetworkReachability(
+  options: Readonly<NetworkReachabilityOptions>,
+  out: NetworkReachability,
+): Promise<NetworkReachability> {
+  const backend = getNetworkBackend();
+  if (backend.probeReachability !== undefined) {
+    return backend.probeReachability(options, out);
+  }
+  // Fallback: use the web backend's implementation directly
+  const webBackend = createWebNetworkBackend();
+  if (webBackend.probeReachability !== undefined) {
+    return webBackend.probeReachability(options, out);
+  }
+  out.reachable = false;
+  out.latency = -1;
+  return out;
 }
 
 // Installs a native host network backend; pass null to fall back to the web default.
@@ -100,9 +211,24 @@ const _subscriptions = new WeakMap<Network, () => void>();
 interface WebNetworkConnection {
   type?: string;
   downlink?: number;
+  downlinkMax?: number;
   effectiveType?: string;
+  rtt?: number;
+  saveData?: boolean;
   addEventListener?: (type: 'change', listener: () => void) => void;
   removeEventListener?: (type: 'change', listener: () => void) => void;
+}
+
+// Combines two AbortSignals: aborts when either fires.
+function anyAbortSignal(a: AbortSignal, b: AbortSignal): AbortSignal {
+  if (typeof AbortSignal !== 'undefined' && 'any' in AbortSignal) {
+    return (AbortSignal as unknown as { any: (signals: AbortSignal[]) => AbortSignal }).any([a, b]);
+  }
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  a.addEventListener('abort', abort, { once: true });
+  b.addEventListener('abort', abort, { once: true });
+  return controller.signal;
 }
 
 function getWebConnection(): WebNetworkConnection | null {
@@ -113,16 +239,22 @@ function getWebConnection(): WebNetworkConnection | null {
 
 function mapWebConnectionType(type: string | undefined): NetworkConnectionType {
   switch (type) {
-    case 'wifi':
-      return 'wifi';
+    case 'bluetooth':
+      return 'bluetooth';
     case 'cellular':
       return 'cellular';
     case 'ethernet':
       return 'ethernet';
-    case 'bluetooth':
-      return 'bluetooth';
     case 'none':
       return 'none';
+    case 'other':
+      return 'other';
+    case 'vpn':
+      return 'vpn';
+    case 'wifi':
+      return 'wifi';
+    case 'wimax':
+      return 'wimax';
     default:
       return 'unknown';
   }

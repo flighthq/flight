@@ -26,7 +26,7 @@ function makeLights(): SceneLightBlock {
   data[8] = 0.1;
   data[9] = 0.1;
   data[10] = 0.1;
-  return { ambientCount: 1, data, directionalCount: 1, version: 1 };
+  return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
 }
 
 function makeProxy(): SceneRenderProxy {
