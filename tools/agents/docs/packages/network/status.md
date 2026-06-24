@@ -1,0 +1,103 @@
+---
+package: '@flighthq/network'
+updated: 2026-06-24
+by: ingest:builder-67dc46d64
+---
+
+# network — Status Log
+
+> Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
+
+# Status: @flighthq/network
+
+**Session date**: 2026-06-24 **Previous score**: 78/100 (solid) **Estimated new score**: 91/100
+
+## Implemented APIs
+
+### Types (`packages/types/src/Network.ts`)
+
+- **`NetworkConnectionType`** — widened from 6 to 9 members: added `'wimax'`, `'vpn'`, `'other'` (full Capacitor/NetInfo set)
+- **`NetworkStatus`** — three new fields:
+  - `saveData: boolean` — Network Information API `connection.saveData`; "user/OS asked to conserve data"
+  - `rtt: number` — round-trip time estimate in ms, `-1` sentinel when unreported
+  - `metered: boolean` — true when the connection is metered (cellular or saveData is set)
+  - `downlinkMax: number` — max plausible downlink for the underlying technology, `-1` sentinel
+- **`NetworkReachabilityOptions`** — options for a one-shot reachability probe (`url`, `timeout`, `signal`)
+- **`NetworkReachability`** — result type for a probe (`reachable: boolean`, `latency: number`)
+- **`NetworkBackend.probeReachability`** — optional async method on the backend seam for reachability probing
+- **`Network`** entity — two new edge-triggered signals:
+  - `onConnectionTypeChange: Signal<(type: NetworkConnectionType) => void>`
+  - `onMeteredChange: Signal<(metered: boolean) => void>`
+
+### Implementation (`packages/network/src/network.ts`)
+
+New exported functions:
+
+- **`hasNetworkStatusChanged(a, b): boolean`** — field-by-field diff; returns true if any field differs; alias-safe (same object returns false)
+- **`isNetworkMetered(): boolean`** — convenience over `getNetworkStatus`; mirrors `isNetworkOnline`
+- **`isNetworkSaveDataEnabled(): boolean`** — direct read of the save-data flag
+- **`probeNetworkReachability(options, out): Promise<NetworkReachability>`** — one-shot reachability probe; delegates to `backend.probeReachability` when present, falls back to the web backend's fetch-based implementation; returns a sentinel (`reachable: false`, `latency: -1`) on failure rather than throwing
+
+Updated existing functions:
+
+- **`attachNetwork`** — now also tracks `wasType` and `wasMetered`; emits `onConnectionTypeChange` and `onMeteredChange` on transitions
+- **`createNetwork`** — now creates entities with all 5 signals including the two new ones
+- **`createNetworkStatus`** — initializes `saveData: false`, `rtt: -1`, `metered: false`, `downlinkMax: -1`
+- **`createWebNetworkBackend`** — reads `connection.rtt`, `connection.saveData`, `connection.downlinkMax`; derives `metered` from `saveData || type === 'cellular'`; implements `probeReachability` via `fetch` + `AbortController` with configurable timeout and external cancellation support; `anyAbortSignal` helper uses `AbortSignal.any` when available, falls back to a composite controller
+- **`mapWebConnectionType`** — added cases for `'wimax'`, `'vpn'`, `'other'`
+
+### Tests (`packages/network/src/network.test.ts`)
+
+Grew from 8 describe blocks / ~14 tests to 14 describe blocks / 32 tests. New coverage:
+
+- `attachNetwork`: onOnline edge, onConnectionTypeChange edge, no-emit when type unchanged, onMeteredChange edge, idempotency under double-attach
+- `createNetwork`: 5-signal entity shape
+- `createNetworkStatus`: all 8 fields at sentinel values
+- `createWebNetworkBackend`: rtt/downlinkMax sentinels in jsdom
+- `detachNetwork`: safe-when-not-attached
+- `disposeNetwork`: safe-when-not-attached
+- `hasNetworkStatusChanged`: 7 cases including same-object alias safety
+- `isNetworkMetered`: false and true cases
+- `isNetworkOnline`: false and true cases
+- `isNetworkSaveDataEnabled`: false and true cases
+- `probeNetworkReachability`: SSR sentinel guard, backend delegation
+
+## Deferred Items
+
+### Reachability maturity (Silver/Gold design gate)
+
+The roadmap calls for a continuous reachability monitor with backoff (`createNetworkReachabilityMonitor` / `attachNetworkReachabilityMonitor` / `detachNetworkReachabilityMonitor` / `disposeNetworkReachabilityMonitor`), quorum probing over multiple URLs, and captive-portal detection. This is the first async sub-entity in the network domain and warrants a cross-package design discussion before building:
+
+- **Ownership**: Should `NetworkReachabilityMonitor` live in `@flighthq/network` or a sibling `@flighthq/network-reachability`? Recommendation: keep it in `@flighthq/network` as an opt-in sub-entity (the polling cost is only assumed when the entity is created and attached), but surface this before acting.
+- **Async on the backend seam**: `probeReachability` is already async on the `NetworkBackend` trait. The Rust port concern (native seam should stay clean; `host-web` bridges `!Send fetch`/`JsFuture` internally) is recorded but not acted on here — it is a Rust-session decision.
+
+### Native backends (Gold)
+
+`@flighthq/host-electron` needs a `NetworkBackend` implementation over `net.online` + system network change events, wired into `registerElectronBackends`. This is a cross-package change (requires modifying `host-electron`) — not acted on here. The `host-capacitor` path does not yet exist.
+
+### Rust crate (Gold)
+
+`flighthq-network` crate: mirror `NetworkStatus`, `NetworkConnectionType`, `NetworkBackend` trait, reachability types in `flighthq-types`; native default backend behind the `native` cargo feature; `host-web` (wasm) over the Network Information API. Should be ported after the TS type shape is stable (it is now stable enough). Record in the conformance map. Deferred to a dedicated Rust session.
+
+### Bandwidth/quality estimation (Gold)
+
+`estimateNetworkQuality` deriving an `effectiveType`-style class from observed probe latency/throughput when the host lacks NetInfo API support (Firefox/Safari, most native shells). Low priority until native backends exist.
+
+### Docs (Gold)
+
+A package-level note (README or inline) documenting the `navigator.onLine` "interface, not internet" caveat, when to use `online` vs `probeNetworkReachability`, and the metered/save-data decision matrix. The `probeNetworkReachability` function already carries a doc comment covering this caveat, but a dedicated section would help.
+
+## Concerns and Surprises
+
+- **`anyAbortSignal` polyfill**: `AbortSignal.any` is supported in modern browsers but not in all environments (not in Node < 20, not in older jsdom). The polyfill composite-controller approach is correct but adds a small listener-leak risk if neither signal ever fires and the composite controller is GC'd before the parent signals. In practice this is benign for short-lived probes.
+- **`metered` derivation**: The web backend derives `metered` from `saveData || type === 'cellular'`. This is a heuristic — a WiFi tethered from a cellular plan is not detected as metered, and some cellular connections are unlimited. Native backends can report the OS metered flag directly, which is more accurate. The heuristic is documented in the field comment.
+- **SSR safety**: `probeNetworkReachability` returns a sentinel when `fetch` is `undefined`, consistent with the existing SSR-guard pattern. The `createWebNetworkBackend` subscription path also guards against `typeof window === 'undefined'`.
+
+## Suggestions for Future Sessions
+
+1. **Reachability monitor** — design-gate answered, then implement `createNetworkReachabilityMonitor` with backoff and quorum probing as a sub-entity in `@flighthq/network`. This alone would push the package to Gold-minus.
+2. **Host-electron wiring** — implement `NetworkBackend` in `@flighthq/host-electron` over `net.online` and `powerMonitor` events. The seam is ready; only the adapter is missing.
+3. **Rust crate** — `flighthq-network` with a native default backend is well-defined; port now that the TS type shape is stable.
+4. **Captive portal detection** — extend `probeNetworkReachability` to detect captive portals (HEAD returns 200 OK vs. redirect/non-standard 204 mismatch from the known target). Add `captivePortal: boolean` to `NetworkReachability`.

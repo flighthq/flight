@@ -182,5 +182,13 @@ packages/*/src/wasm/package.json
 !packages/*/src/wasm/*.d.ts
 packages/*/src/wasm/*_bg.wasm.d.ts
 
+<<<<<<< Updated upstream
 # review:snapshot output bundles
 /review/
+=======
+# import:worktree incoming review bundles
+/incoming/
+
+# generated review/audit reports (ephemeral; ingested into packages/, then discarded)
+/reports/
+>>>>>>> Stashed changes
