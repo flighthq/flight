@@ -36,6 +36,12 @@ function buildTextLabelLayoutParams(source: Readonly<TextLabel>, measure: TextMe
   };
 }
 
+export function appendTextLabelString(source: TextLabel, value: string): void {
+  if (value.length === 0) return;
+  source.data.text += value;
+  invalidateNodeLocalContent(source);
+}
+
 // The field-box bounds in local space, mirroring computeRichTextLocalBoundsRectangle. A fixed field
 // (autoSize 'none') is the user width/height at the origin. Under autoSize, the box is the measured
 // content (textWidth/textHeight + gutter) positioned by the left/right/center anchor. The layout is
@@ -89,8 +95,16 @@ export function createTextLabelRuntime(): TextLabelRuntime {
   return out;
 }
 
+export function getTextLabelFormat(source: Readonly<TextLabel>): Readonly<TextFormat> {
+  return source.data.textFormat;
+}
+
 export function getTextLabelRuntime(source: Readonly<TextLabel>): Readonly<TextLabelRuntime> {
   return getDisplayObjectRuntime(source) as TextLabelRuntime;
+}
+
+export function getTextLabelString(source: Readonly<TextLabel>): string {
+  return source.data.text;
 }
 
 export function setTextLabelAutoSize(source: TextLabel, value: TextAutoSize): void {
