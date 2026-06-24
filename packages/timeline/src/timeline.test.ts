@@ -1,14 +1,19 @@
 import type { DisplayObject, Timeline } from '@flighthq/types';
 
 import {
+  addTimelineFrameScript,
   createTimeline,
   createTimelineSource,
+  enableTimelineSignals,
   findTimelineLabel,
+  getTimelineCurrentLabel,
+  getTimelineFrameScript,
   gotoAndPlayTimeline,
   gotoAndStopTimeline,
   nextFrameTimeline,
   playTimeline,
   prevFrameTimeline,
+  removeTimelineFrameScript,
   stopTimeline,
   updateTimeline,
 } from './timeline';
@@ -38,12 +43,60 @@ function make(o: MakeOptions = {}): Timeline {
   });
 }
 
+describe('addTimelineFrameScript', () => {
+  it('attaches a script that fires once on frame entry', () => {
+    const fired: number[] = [];
+    const t = make({ frameRate: null });
+    addTimelineFrameScript(t, 2, (_target, f) => fired.push(f));
+    playTimeline(t);
+    updateTimeline(t, 0); // frame 1 — no script
+    updateTimeline(t, 0); // frame 2 — script fires
+    expect(fired).toEqual([2]);
+  });
+
+  it('does not re-fire the script on repeated updates to the same stopped frame', () => {
+    const fired: number[] = [];
+    const t = make({ frameRate: null });
+    addTimelineFrameScript(t, 2, (_target, f) => fired.push(f));
+    playTimeline(t);
+    updateTimeline(t, 0); // frame 1
+    updateTimeline(t, 0); // frame 2 — fires once
+    stopTimeline(t);
+    updateTimeline(t, 0); // still frame 2, stopped — no re-fire
+    updateTimeline(t, 0); // still frame 2, stopped — no re-fire
+    expect(fired).toEqual([2]);
+  });
+
+  it('accepts a label string as the frame argument', () => {
+    const fired: number[] = [];
+    const t = make({ frameRate: null, labels: [{ name: 'run', frame: 3 }] });
+    addTimelineFrameScript(t, 'run', (_target, f) => fired.push(f));
+    gotoAndStopTimeline(t, 3);
+    expect(fired).toEqual([3]);
+  });
+});
+
 describe('createTimeline', () => {
   it('starts at frame 1, stopped, lastFrameUpdate -1', () => {
     const t = make();
     expect(t.currentFrame).toBe(1);
     expect(t.isPlaying).toBe(false);
     expect(t.lastFrameUpdate).toBe(-1);
+  });
+
+  it('defaults playMode to loop', () => {
+    const t = make();
+    expect(t.playMode).toBe('loop');
+  });
+
+  it('defaults frameScripts to null', () => {
+    const t = make();
+    expect(t.frameScripts).toBeNull();
+  });
+
+  it('defaults signals to null', () => {
+    const t = make();
+    expect(t.signals).toBeNull();
   });
 
   it('applies overrides', () => {
@@ -77,6 +130,84 @@ describe('createTimelineSource', () => {
   });
 });
 
+describe('enableTimelineSignals', () => {
+  it('returns a TimelineSignals group with all lifecycle signals defined', () => {
+    const t = make();
+    const signals = enableTimelineSignals(t);
+    expect(signals.onEnterFrame).toBeDefined();
+    expect(signals.onExitFrame).toBeDefined();
+    expect(signals.onFrameConstructed).toBeDefined();
+    expect(signals.onComplete).toBeDefined();
+    expect(signals.onLoop).toBeDefined();
+  });
+
+  it('is idempotent — returns the same group on subsequent calls', () => {
+    const t = make();
+    expect(enableTimelineSignals(t)).toBe(enableTimelineSignals(t));
+  });
+
+  it('stores the signals on timeline.signals', () => {
+    const t = make();
+    const signals = enableTimelineSignals(t);
+    expect(t.signals).toBe(signals);
+  });
+
+  it('emits onEnterFrame with correct frame and previousFrame when frame changes', () => {
+    const events: { frame: number; previousFrame: number }[] = [];
+    const t = make({ frameRate: null });
+    const signals = enableTimelineSignals(t);
+    signals.onEnterFrame.emit = (event) => events.push({ frame: event.frame, previousFrame: event.previousFrame });
+    playTimeline(t);
+    updateTimeline(t, 0); // frame 1 (was -1 sentinel)
+    updateTimeline(t, 0); // frame 2
+    expect(events[0].frame).toBe(1);
+    expect(events[1].frame).toBe(2);
+    expect(events[1].previousFrame).toBe(1);
+  });
+
+  it('emits onExitFrame before frame changes', () => {
+    const order: string[] = [];
+    const t = make({ frameRate: null });
+    const signals = enableTimelineSignals(t);
+    signals.onExitFrame.emit = () => order.push('exit');
+    signals.onEnterFrame.emit = () => order.push('enter');
+    signals.onFrameConstructed.emit = () => order.push('constructed');
+    playTimeline(t);
+    updateTimeline(t, 0); // first frame entry
+    expect(order).toEqual(['exit', 'enter', 'constructed']);
+  });
+
+  it('emits onLoop when the timeline wraps in loop mode', () => {
+    let looped = false;
+    const t = make({ totalFrames: 2, frameRate: null });
+    const signals = enableTimelineSignals(t);
+    signals.onLoop.emit = () => {
+      looped = true;
+    };
+    playTimeline(t);
+    updateTimeline(t, 0); // frame 1
+    updateTimeline(t, 0); // frame 2
+    updateTimeline(t, 0); // wraps to frame 1 → onLoop
+    expect(looped).toBe(true);
+  });
+
+  it('emits onComplete and stops when playMode is once and last frame is reached', () => {
+    let completed = false;
+    const t = make({ totalFrames: 2, frameRate: null });
+    t.playMode = 'once';
+    const signals = enableTimelineSignals(t);
+    signals.onComplete.emit = () => {
+      completed = true;
+    };
+    playTimeline(t);
+    updateTimeline(t, 0); // frame 1
+    updateTimeline(t, 0); // frame 2
+    updateTimeline(t, 0); // would loop — stops, fires onComplete
+    expect(completed).toBe(true);
+    expect(t.isPlaying).toBe(false);
+  });
+});
+
 describe('findTimelineLabel', () => {
   it('returns the matching label', () => {
     const t = make({
@@ -91,6 +222,55 @@ describe('findTimelineLabel', () => {
   it('returns null for an unknown name', () => {
     const t = make();
     expect(findTimelineLabel(t, 'missing')).toBeNull();
+  });
+});
+
+describe('getTimelineCurrentLabel', () => {
+  it('returns null when there are no labels', () => {
+    const t = make();
+    expect(getTimelineCurrentLabel(t)).toBeNull();
+  });
+
+  it('returns null when no label precedes the current frame', () => {
+    const t = make({ labels: [{ name: 'run', frame: 3 }], currentFrame: 1 });
+    expect(getTimelineCurrentLabel(t)).toBeNull();
+  });
+
+  it('returns the label exactly at the current frame', () => {
+    const t = make({ labels: [{ name: 'run', frame: 3 }], currentFrame: 3 });
+    expect(getTimelineCurrentLabel(t)?.name).toBe('run');
+  });
+
+  it('returns the last label at or before the current frame', () => {
+    const t = make({
+      totalFrames: 6,
+      labels: [
+        { name: 'idle', frame: 1 },
+        { name: 'run', frame: 3 },
+      ],
+      currentFrame: 4,
+    });
+    expect(getTimelineCurrentLabel(t)?.name).toBe('run');
+  });
+});
+
+describe('getTimelineFrameScript', () => {
+  it('returns null when no scripts are attached', () => {
+    const t = make();
+    expect(getTimelineFrameScript(t, 1)).toBeNull();
+  });
+
+  it('returns null for a frame with no script when others exist', () => {
+    const t = make();
+    addTimelineFrameScript(t, 2, () => {});
+    expect(getTimelineFrameScript(t, 1)).toBeNull();
+  });
+
+  it('returns the script attached to a frame', () => {
+    const t = make();
+    const fn = () => {};
+    addTimelineFrameScript(t, 3, fn);
+    expect(getTimelineFrameScript(t, 3)).toBe(fn);
   });
 });
 
@@ -194,6 +374,31 @@ describe('prevFrameTimeline', () => {
   });
 });
 
+describe('removeTimelineFrameScript', () => {
+  it('is a no-op when no scripts are attached', () => {
+    const t = make();
+    expect(() => removeTimelineFrameScript(t, 2)).not.toThrow();
+  });
+
+  it('removes the script so it no longer fires', () => {
+    const fired: number[] = [];
+    const t = make({ frameRate: null });
+    addTimelineFrameScript(t, 2, (_target, f) => fired.push(f));
+    removeTimelineFrameScript(t, 2);
+    playTimeline(t);
+    updateTimeline(t, 0); // frame 1
+    updateTimeline(t, 0); // frame 2 — script should not fire
+    expect(fired).toEqual([]);
+  });
+
+  it('clears frameScripts to null when the last script is removed', () => {
+    const t = make();
+    addTimelineFrameScript(t, 2, () => {});
+    removeTimelineFrameScript(t, 2);
+    expect(t.frameScripts).toBeNull();
+  });
+});
+
 describe('stopTimeline', () => {
   it('sets isPlaying to false', () => {
     const t = make();
@@ -239,7 +444,7 @@ describe('updateTimeline', () => {
     expect(frames).toEqual([1, 2]);
   });
 
-  it('wraps around to frame 1 after the last frame', () => {
+  it('wraps around to frame 1 after the last frame in loop mode', () => {
     const frames: number[] = [];
     const t = make({ totalFrames: 3, frameRate: null, constructFrame: (f) => frames.push(f) });
     playTimeline(t);
@@ -248,6 +453,20 @@ describe('updateTimeline', () => {
     updateTimeline(t, 0); // frame 3
     updateTimeline(t, 0); // wraps to frame 1
     expect(frames).toEqual([1, 2, 3, 1]);
+  });
+
+  it('stops at the last frame in once mode and does not wrap', () => {
+    const frames: number[] = [];
+    const t = make({ totalFrames: 3, frameRate: null, constructFrame: (f) => frames.push(f) });
+    t.playMode = 'once';
+    playTimeline(t);
+    updateTimeline(t, 0); // frame 1
+    updateTimeline(t, 0); // frame 2
+    updateTimeline(t, 0); // frame 3
+    updateTimeline(t, 0); // stopped — no new frame
+    expect(frames).toEqual([1, 2, 3]);
+    expect(t.isPlaying).toBe(false);
+    expect(t.currentFrame).toBe(3);
   });
 
   it('can skip multiple frames in one large deltaTime', () => {

@@ -2,11 +2,14 @@ import type { MovieClip, Timeline } from '@flighthq/types';
 import { MovieClipKind } from '@flighthq/types';
 
 import {
+  addMovieClipFrameScript,
   createMovieClip,
   createMovieClipData,
   createMovieClipRuntime,
-  createMovieClipSignals,
+  enableMovieClipSignals,
   getMovieClipCurrentFrame,
+  getMovieClipCurrentLabel,
+  getMovieClipFrameScript,
   getMovieClipRuntime,
   getMovieClipSignals,
   getMovieClipTotalFrames,
@@ -16,11 +19,33 @@ import {
   nextFrameMovieClip,
   playMovieClip,
   prevFrameMovieClip,
+  removeMovieClipFrameScript,
   setMovieClipSource,
   stopMovieClip,
   updateMovieClip,
 } from './movieClip';
 import { createTimeline, createTimelineSource, playTimeline } from './timeline';
+
+describe('addMovieClipFrameScript', () => {
+  it('does nothing when timeline is null', () => {
+    const clip = createMovieClip();
+    expect(() => addMovieClipFrameScript(clip, 1, () => {})).not.toThrow();
+  });
+
+  it('attaches a script that fires on frame entry', () => {
+    const fired: number[] = [];
+    const clip = createMovieClip();
+    clip.data.timeline = createTimeline({
+      source: createTimelineSource({ totalFrames: 3, frameRate: null }),
+      target: clip,
+    });
+    addMovieClipFrameScript(clip, 2, (_t, f) => fired.push(f));
+    playMovieClip(clip);
+    updateMovieClip(clip, 0); // frame 1
+    updateMovieClip(clip, 0); // frame 2 — script fires
+    expect(fired).toEqual([2]);
+  });
+});
 
 describe('createMovieClip', () => {
   let movieClip: MovieClip;
@@ -66,16 +91,40 @@ describe('createMovieClipRuntime', () => {
   });
 });
 
-describe('createMovieClipSignals', () => {
-  it('returns all movie clip signals', () => {
-    const signals = createMovieClipSignals();
+describe('enableMovieClipSignals', () => {
+  it('returns a signals group with all lifecycle signals defined', () => {
+    const clip = createMovieClip();
+    setMovieClipSource(clip, createTimelineSource({ totalFrames: 3 }));
+    const signals = enableMovieClipSignals(clip);
     expect(signals.onEnterFrame).toBeDefined();
     expect(signals.onExitFrame).toBeDefined();
     expect(signals.onFrameConstructed).toBeDefined();
+    expect(signals.onComplete).toBeDefined();
+    expect(signals.onLoop).toBeDefined();
   });
 
-  it('returns a new object each call', () => {
-    expect(createMovieClipSignals()).not.toBe(createMovieClipSignals());
+  it('is idempotent — returns the same object on subsequent calls', () => {
+    const clip = createMovieClip();
+    setMovieClipSource(clip, createTimelineSource({ totalFrames: 3 }));
+    expect(enableMovieClipSignals(clip)).toBe(enableMovieClipSignals(clip));
+  });
+
+  it('works before setMovieClipSource is called', () => {
+    const clip = createMovieClip();
+    expect(() => enableMovieClipSignals(clip)).not.toThrow();
+    expect(enableMovieClipSignals(clip)).not.toBeNull();
+  });
+
+  it('emits onEnterFrame when the frame changes', () => {
+    const frames: number[] = [];
+    const clip = createMovieClip();
+    setMovieClipSource(clip, createTimelineSource({ totalFrames: 3, frameRate: null }));
+    const signals = enableMovieClipSignals(clip);
+    signals.onEnterFrame.emit = (event) => frames.push(event.frame);
+    playMovieClip(clip);
+    updateMovieClip(clip, 0); // frame 1
+    updateMovieClip(clip, 0); // frame 2
+    expect(frames).toContain(2);
   });
 });
 
@@ -92,6 +141,50 @@ describe('getMovieClipCurrentFrame', () => {
   });
 });
 
+describe('getMovieClipCurrentLabel', () => {
+  it('returns null when timeline is null', () => {
+    const clip = createMovieClip();
+    expect(getMovieClipCurrentLabel(clip)).toBeNull();
+  });
+
+  it('returns the label at the current frame', () => {
+    const clip = createMovieClip();
+    setMovieClipSource(
+      clip,
+      createTimelineSource({
+        totalFrames: 5,
+        labels: [
+          { name: 'idle', frame: 1 },
+          { name: 'run', frame: 3 },
+        ],
+      }),
+    );
+    gotoAndStopMovieClip(clip, 3);
+    expect(getMovieClipCurrentLabel(clip)?.name).toBe('run');
+  });
+});
+
+describe('getMovieClipFrameScript', () => {
+  it('returns null when timeline is null', () => {
+    const clip = createMovieClip();
+    expect(getMovieClipFrameScript(clip, 1)).toBeNull();
+  });
+
+  it('returns null when no script is attached', () => {
+    const clip = createMovieClip();
+    clip.data.timeline = createTimeline({ source: createTimelineSource({ totalFrames: 3 }) });
+    expect(getMovieClipFrameScript(clip, 1)).toBeNull();
+  });
+
+  it('returns the script after addMovieClipFrameScript', () => {
+    const clip = createMovieClip();
+    clip.data.timeline = createTimeline({ source: createTimelineSource({ totalFrames: 3 }) });
+    const fn = () => {};
+    addMovieClipFrameScript(clip, 2, fn);
+    expect(getMovieClipFrameScript(clip, 2)).toBe(fn);
+  });
+});
+
 describe('getMovieClipRuntime', () => {
   it('returns the runtime for a MovieClip', () => {
     expect(getMovieClipRuntime(createMovieClip())).not.toBeNull();
@@ -99,15 +192,16 @@ describe('getMovieClipRuntime', () => {
 });
 
 describe('getMovieClipSignals', () => {
-  it('lazily creates movie clip signals on the clip', () => {
+  it('returns null before enableMovieClipSignals is called', () => {
     const clip = createMovieClip();
-    const signals = getMovieClipSignals(clip);
-    expect(signals.onEnterFrame).toBeDefined();
+    expect(getMovieClipSignals(clip)).toBeNull();
   });
 
-  it('returns the same object on subsequent calls', () => {
+  it('returns the signals group after enableMovieClipSignals', () => {
     const clip = createMovieClip();
-    expect(getMovieClipSignals(clip)).toBe(getMovieClipSignals(clip));
+    setMovieClipSource(clip, createTimelineSource({ totalFrames: 3 }));
+    const signals = enableMovieClipSignals(clip);
+    expect(getMovieClipSignals(clip)).toBe(signals);
   });
 });
 
@@ -208,6 +302,28 @@ describe('prevFrameMovieClip', () => {
     clip.data.timeline = createTimeline({ source: createTimelineSource({ totalFrames: 5 }), currentFrame: 3 });
     prevFrameMovieClip(clip);
     expect(clip.data.timeline.currentFrame).toBe(2);
+  });
+});
+
+describe('removeMovieClipFrameScript', () => {
+  it('does nothing when timeline is null', () => {
+    const clip = createMovieClip();
+    expect(() => removeMovieClipFrameScript(clip, 1)).not.toThrow();
+  });
+
+  it('removes the script so it no longer fires', () => {
+    const fired: number[] = [];
+    const clip = createMovieClip();
+    clip.data.timeline = createTimeline({
+      source: createTimelineSource({ totalFrames: 3, frameRate: null }),
+      target: clip,
+    });
+    addMovieClipFrameScript(clip, 2, (_t, f) => fired.push(f));
+    removeMovieClipFrameScript(clip, 2);
+    playMovieClip(clip);
+    updateMovieClip(clip, 0); // frame 1
+    updateMovieClip(clip, 0); // frame 2 — script should not fire
+    expect(fired).toEqual([]);
   });
 });
 
