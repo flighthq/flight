@@ -1,13 +1,31 @@
-import type { DisplayObject, Timeline, TimelineLabel, TimelineSource } from '@flighthq/types';
+import { createSignal, emitSignal } from '@flighthq/signals';
+import type {
+  DisplayObject,
+  FrameScript,
+  PlayMode,
+  Timeline,
+  TimelineFrameEvent,
+  TimelineLabel,
+  TimelineSignals,
+  TimelineSource,
+} from '@flighthq/types';
+
+export function addTimelineFrameScript(timeline: Timeline, frame: number | string, script: FrameScript): void {
+  const resolved = resolveFrame(timeline, frame);
+  (timeline.frameScripts ??= new Map()).set(resolved, script);
+}
 
 export function createTimeline(obj?: Partial<Timeline>): Timeline {
   return {
     source: obj?.source ?? null,
     target: obj?.target ?? null,
     currentFrame: obj?.currentFrame ?? 1,
+    frameScripts: obj?.frameScripts ?? null,
     isPlaying: obj?.isPlaying ?? false,
-    timeElapsed: 0,
     lastFrameUpdate: -1,
+    playMode: obj?.playMode ?? 'loop',
+    signals: obj?.signals ?? null,
+    timeElapsed: 0,
   };
 }
 
@@ -29,8 +47,34 @@ export function createTimelineSource(obj: {
   };
 }
 
+// Allocates a TimelineSignals group on the timeline and arms per-frame signal emission in
+// updateTimeline and seekTimeline. Idempotent — returns the same group on subsequent calls.
+export function enableTimelineSignals(timeline: Timeline): TimelineSignals {
+  return (timeline.signals ??= createTimelineSignals());
+}
+
 export function findTimelineLabel(timeline: Readonly<Timeline>, name: string): TimelineLabel | null {
   return getTimelineLabels(timeline).find((l) => l.name === name) ?? null;
+}
+
+// Returns the label whose frame range the playhead currently sits in (the last label at or before
+// currentFrame), or null if no labels are defined or none precede the current frame.
+export function getTimelineCurrentLabel(timeline: Readonly<Timeline>): TimelineLabel | null {
+  const labels = getTimelineLabels(timeline);
+  const frame = timeline.currentFrame;
+  let result: TimelineLabel | null = null;
+  for (const label of labels) {
+    if (label.frame <= frame) {
+      if (result === null || label.frame >= result.frame) result = label;
+    }
+  }
+  return result;
+}
+
+export function getTimelineFrameScript(timeline: Readonly<Timeline>, frame: number | string): FrameScript | null {
+  if (timeline.frameScripts === null) return null;
+  const resolved = resolveFrame(timeline, frame);
+  return timeline.frameScripts.get(resolved) ?? null;
 }
 
 export function gotoAndPlayTimeline(timeline: Timeline, frame: number | string): void {
@@ -57,6 +101,13 @@ export function playTimeline(timeline: Timeline): void {
 export function prevFrameTimeline(timeline: Timeline): void {
   stopTimeline(timeline);
   seekTimeline(timeline, timeline.currentFrame - 1);
+}
+
+export function removeTimelineFrameScript(timeline: Timeline, frame: number | string): void {
+  if (timeline.frameScripts === null) return;
+  const resolved = resolveFrame(timeline, frame);
+  timeline.frameScripts.delete(resolved);
+  if (timeline.frameScripts.size === 0) timeline.frameScripts = null;
 }
 
 export function stopTimeline(timeline: Timeline): void {
@@ -86,18 +137,63 @@ function advanceFrame(timeline: Timeline, deltaTime: number): number {
     timeline.timeElapsed += deltaTime;
     let next = timeline.currentFrame + Math.floor(timeline.timeElapsed / frameTime);
     timeline.timeElapsed %= frameTime;
-    if (next > totalFrames) next = ((next - 1) % totalFrames) + 1;
+    if (next > totalFrames) {
+      if (timeline.playMode === 'once') {
+        timeline.isPlaying = false;
+        const completed = totalFrames;
+        const signals = timeline.signals;
+        if (signals !== null) emitSignal(signals.onComplete);
+        return completed;
+      }
+      next = ((next - 1) % totalFrames) + 1;
+      const signals = timeline.signals;
+      if (signals !== null) emitSignal(signals.onLoop);
+    }
     return next;
   }
   const next = timeline.currentFrame + 1;
-  return next > totalFrames ? 1 : next;
+  if (next > totalFrames) {
+    if (timeline.playMode === 'once') {
+      timeline.isPlaying = false;
+      const signals = timeline.signals;
+      if (signals !== null) emitSignal(signals.onComplete);
+      return totalFrames;
+    }
+    const signals = timeline.signals;
+    if (signals !== null) emitSignal(signals.onLoop);
+    return 1;
+  }
+  return next;
+}
+
+function createTimelineSignals(): TimelineSignals {
+  return {
+    onComplete: createSignal(),
+    onEnterFrame: createSignal(),
+    onExitFrame: createSignal(),
+    onFrameConstructed: createSignal(),
+    onLoop: createSignal(),
+  };
 }
 
 function fireConstructFrame(timeline: Timeline): void {
-  if (timeline.currentFrame !== timeline.lastFrameUpdate) {
-    timeline.lastFrameUpdate = timeline.currentFrame;
-    if (timeline.target !== null) timeline.source?.constructFrame(timeline.target, timeline.currentFrame);
+  const previous = timeline.lastFrameUpdate;
+  const current = timeline.currentFrame;
+  if (current === previous) return;
+
+  const signals = timeline.signals;
+  const target = timeline.target;
+  const frameEvent: TimelineFrameEvent = { frame: current, previousFrame: previous };
+
+  if (signals !== null) emitSignal(signals.onExitFrame, frameEvent);
+  timeline.lastFrameUpdate = current;
+  if (signals !== null) emitSignal(signals.onEnterFrame, frameEvent);
+  if (target !== null) timeline.source?.constructFrame(target, current);
+  if (timeline.frameScripts !== null) {
+    const script = timeline.frameScripts.get(current);
+    if (script !== undefined && target !== null) script(target, current);
   }
+  if (signals !== null) emitSignal(signals.onFrameConstructed, frameEvent);
 }
 
 function getTimelineFrameRate(timeline: Readonly<Timeline>): number | null {
