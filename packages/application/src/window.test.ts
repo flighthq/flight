@@ -6,6 +6,7 @@ import {
   attachWindowDropFile,
   attachWindowFocus,
   attachWindowFullscreen,
+  attachWindowMove,
   attachWindowOrientation,
   attachWindowRenderContext,
   attachWindowRenderState,
@@ -20,6 +21,7 @@ import {
   detachWindowDropFile,
   detachWindowFocus,
   detachWindowFullscreen,
+  detachWindowMove,
   detachWindowOrientation,
   detachWindowRenderContext,
   detachWindowRenderState,
@@ -27,21 +29,27 @@ import {
   detachWindowVisibility,
   disposeApplicationWindow,
   exitApplicationFullscreen,
+  exitApplicationPointerLock,
+  flashWindowFrame,
   focusWindow,
   getWindowBackend,
   getWindowBounds,
+  getWindowDisplay,
   hideWindow,
   lockApplicationPointer,
   maximizeWindow,
   minimizeWindow,
   openWindow,
+  prepareElementForInput,
   requestApplicationFullscreen,
   requestWindowAttention,
   requestWindowClose,
   restoreWindow,
   setWindowAlwaysOnTop,
   setWindowBackend,
+  setWindowContentProtection,
   setWindowFullscreen,
+  setWindowHasShadow,
   setWindowIcon,
   setWindowMaximumSize,
   setWindowMenuBarVisible,
@@ -145,6 +153,15 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
     requestAttention(_win, attention) {
       calls.push(`requestAttention:${attention}`);
     },
+    setContentProtection(_win, enabled) {
+      calls.push(`setContentProtection:${enabled}`);
+    },
+    flashWindowFrame() {
+      calls.push('flashWindowFrame');
+    },
+    setHasShadow(_win, hasShadow) {
+      calls.push(`setHasShadow:${hasShadow}`);
+    },
   };
 }
 
@@ -230,6 +247,46 @@ describe('attachWindowFullscreen', () => {
     attachWindowFullscreen(win);
     document.dispatchEvent(new Event('fullscreenchange'));
     expect(called).toBe(true);
+  });
+});
+
+describe('attachWindowMove', () => {
+  it('emits onMove and updates position when screenX/screenY changes', () => {
+    const win = createApplicationWindow();
+    win.x = 0;
+    win.y = 0;
+    let moved = false;
+    connectSignal(win.onMove, () => {
+      moved = true;
+    });
+
+    vi.stubGlobal('screenX', 100);
+    vi.stubGlobal('screenY', 200);
+    attachWindowMove(win);
+    window.dispatchEvent(new Event('resize'));
+
+    expect(moved).toBe(true);
+    expect(win.x).toBe(100);
+    expect(win.y).toBe(200);
+    vi.unstubAllGlobals();
+  });
+
+  it('does not emit onMove when position has not changed', () => {
+    const win = createApplicationWindow();
+    win.x = 50;
+    win.y = 50;
+    let moved = false;
+    connectSignal(win.onMove, () => {
+      moved = true;
+    });
+
+    vi.stubGlobal('screenX', 50);
+    vi.stubGlobal('screenY', 50);
+    attachWindowMove(win);
+    window.dispatchEvent(new Event('resize'));
+
+    expect(moved).toBe(false);
+    vi.unstubAllGlobals();
   });
 });
 
@@ -550,6 +607,26 @@ describe('detachWindowFullscreen', () => {
   });
 });
 
+describe('detachWindowMove', () => {
+  it('removes the listener so onMove no longer fires', () => {
+    const win = createApplicationWindow();
+    win.x = 0;
+    let moved = false;
+    connectSignal(win.onMove, () => {
+      moved = true;
+    });
+
+    vi.stubGlobal('screenX', 100);
+    vi.stubGlobal('screenY', 100);
+    attachWindowMove(win);
+    detachWindowMove(win);
+    window.dispatchEvent(new Event('resize'));
+
+    expect(moved).toBe(false);
+    vi.unstubAllGlobals();
+  });
+});
+
 describe('detachWindowOrientation', () => {
   it('removes the listener', () => {
     const removeListener = vi.fn();
@@ -674,6 +751,25 @@ describe('exitApplicationFullscreen', () => {
   });
 });
 
+describe('exitApplicationPointerLock', () => {
+  it('calls document.exitPointerLock when available', async () => {
+    const mock = vi.fn();
+    Object.defineProperty(document, 'exitPointerLock', { value: mock, configurable: true });
+    await exitApplicationPointerLock();
+    expect(mock).toHaveBeenCalled();
+  });
+});
+
+describe('flashWindowFrame', () => {
+  it('delegates to the backend', () => {
+    const backend = recordingWindowBackend();
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    flashWindowFrame(win);
+    expect(backend.calls).toContain('flashWindowFrame');
+  });
+});
+
 describe('focusWindow', () => {
   it('marks focused and delegates to the backend', () => {
     const backend = recordingWindowBackend();
@@ -706,6 +802,13 @@ describe('getWindowBounds', () => {
   });
 });
 
+describe('getWindowDisplay', () => {
+  it('returns -1 on web (no multi-monitor API)', () => {
+    const win = createApplicationWindow();
+    expect(getWindowDisplay(win)).toBe(-1);
+  });
+});
+
 describe('hideWindow', () => {
   it('marks not visible and delegates to the backend', () => {
     const backend = recordingWindowBackend();
@@ -718,23 +821,19 @@ describe('hideWindow', () => {
 });
 
 describe('lockApplicationPointer', () => {
-  it('sets touch-action and user-select', () => {
+  it('calls requestPointerLock on the element', async () => {
     const element = document.createElement('div');
-    lockApplicationPointer(element);
-    expect(element.style.touchAction).toBe('none');
-    expect(element.style.userSelect).toBe('none');
+    const mock = vi.fn().mockResolvedValue(undefined);
+    element.requestPointerLock = mock;
+    await lockApplicationPointer(element);
+    expect(mock).toHaveBeenCalled();
   });
 
-  it('sets transform on canvas elements', () => {
-    const canvas = document.createElement('canvas');
-    lockApplicationPointer(canvas);
-    expect(canvas.style.transform).toBe('translateZ(0)');
-  });
-
-  it('does not set transform on non-canvas elements', () => {
-    const div = document.createElement('div');
-    lockApplicationPointer(div);
-    expect(div.style.transform).toBe('');
+  it('resolves without throwing when requestPointerLock is unavailable', async () => {
+    const element = document.createElement('div');
+    // Remove requestPointerLock to simulate an older browser.
+    Object.defineProperty(element, 'requestPointerLock', { value: undefined, configurable: true });
+    await expect(lockApplicationPointer(element)).resolves.toBeUndefined();
   });
 });
 
@@ -778,6 +877,43 @@ describe('openWindow', () => {
     expect(win.width).toBe(640);
     expect(win.alwaysOnTop).toBe(true);
     expect(backend.calls).toContain('open:Game');
+  });
+
+  it('centers the window after open when center option is true', () => {
+    const backend = recordingWindowBackend();
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    openWindow(win, { title: 'Centered', center: true });
+    expect(backend.calls).toContain('center');
+  });
+
+  it('does not center when center option is not set', () => {
+    const backend = recordingWindowBackend();
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    openWindow(win, { title: 'Normal' });
+    expect(backend.calls).not.toContain('center');
+  });
+});
+
+describe('prepareElementForInput', () => {
+  it('sets touch-action and user-select', () => {
+    const element = document.createElement('div');
+    prepareElementForInput(element);
+    expect(element.style.touchAction).toBe('none');
+    expect(element.style.userSelect).toBe('none');
+  });
+
+  it('sets transform on canvas elements', () => {
+    const canvas = document.createElement('canvas');
+    prepareElementForInput(canvas);
+    expect(canvas.style.transform).toBe('translateZ(0)');
+  });
+
+  it('does not set transform on non-canvas elements', () => {
+    const div = document.createElement('div');
+    prepareElementForInput(div);
+    expect(div.style.transform).toBe('');
   });
 });
 
@@ -849,6 +985,16 @@ describe('setWindowBackend', () => {
   });
 });
 
+describe('setWindowContentProtection', () => {
+  it('delegates to the backend', () => {
+    const backend = recordingWindowBackend();
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    setWindowContentProtection(win, true);
+    expect(backend.calls).toContain('setContentProtection:true');
+  });
+});
+
 describe('setWindowFullscreen', () => {
   it('sets state and emits onFullscreenChanged once', () => {
     const backend = recordingWindowBackend();
@@ -860,6 +1006,16 @@ describe('setWindowFullscreen', () => {
     setWindowFullscreen(win, true);
     expect(win.fullscreen).toBe(true);
     expect(count).toBe(1);
+  });
+});
+
+describe('setWindowHasShadow', () => {
+  it('delegates to the backend', () => {
+    const backend = recordingWindowBackend();
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    setWindowHasShadow(win, false);
+    expect(backend.calls).toContain('setHasShadow:false');
   });
 });
 

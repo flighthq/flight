@@ -1,8 +1,8 @@
 import {
   createAudioResourceFromUrl,
-  createAudioResourceFromURLs,
+  createAudioResourceFromUrls,
   loadAudioResourceFromUrl,
-  loadAudioResourceFromURLs,
+  loadAudioResourceFromUrls,
 } from './audioResourceFrom';
 
 describe('createAudioResourceFromUrl', () => {
@@ -12,9 +12,9 @@ describe('createAudioResourceFromUrl', () => {
   });
 });
 
-describe('createAudioResourceFromURLs', () => {
+describe('createAudioResourceFromUrls', () => {
   it('returns an AudioResource with null buffer when sources is empty', () => {
-    const resource = createAudioResourceFromURLs([]);
+    const resource = createAudioResourceFromUrls([]);
     expect(resource).not.toBeNull();
   });
 });
@@ -27,9 +27,9 @@ describe('loadAudioResourceFromUrl', () => {
   });
 });
 
-describe('loadAudioResourceFromURLs', () => {
+describe('loadAudioResourceFromUrls', () => {
   it('resolves immediately with a null-buffer resource when sources is empty', async () => {
-    const resource = await loadAudioResourceFromURLs([]);
+    const resource = await loadAudioResourceFromUrls([]);
     expect(resource.buffer).toBeNull();
   });
 });

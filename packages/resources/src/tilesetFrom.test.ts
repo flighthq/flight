@@ -25,6 +25,16 @@ afterEach(() => {
 });
 
 describe('createTilesetFromAtlas', () => {
+  it('accounts for margin and spacing when computing rows and columns', () => {
+    // 2px margin on each side, 2px spacing between tiles: (70 - 4 + 2) / (32 + 2) = 68/34 = 2
+    const atlas = makeAtlas(70, 70);
+    const tileset = createTilesetFromAtlas(atlas, 32, 32, 2, 2);
+    expect(tileset.columns).toBe(2);
+    expect(tileset.rows).toBe(2);
+    expect(tileset.margin).toBe(2);
+    expect(tileset.spacing).toBe(2);
+  });
+
   it('derives rows and columns from atlas image dimensions', () => {
     const atlas = makeAtlas(64, 32);
     const tileset = createTilesetFromAtlas(atlas, 32, 32);

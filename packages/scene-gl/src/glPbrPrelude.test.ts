@@ -18,6 +18,7 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     hasMetallicRoughnessMap: false,
     hasNormalMap: false,
     hasOcclusionMap: false,
+    hasUv1: false,
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
@@ -35,6 +36,7 @@ const STANDARD_ALL = makeKey({
   hasMetallicRoughnessMap: true,
   hasNormalMap: true,
   hasOcclusionMap: true,
+  hasUv1: true,
 });
 const ALL = makeKey({
   ...STANDARD_ALL,
@@ -49,11 +51,12 @@ const ALL = makeKey({
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('------:-------');
-    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe:-------');
-    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe:CSAIPUT');
-    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b----:-------');
-    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('------:C------');
+    expect(buildGlPbrDefineKey(NONE)).toBe('-------:-------');
+    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe2:-------');
+    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe2:CSAIPUT');
+    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b-----:-------');
+    expect(buildGlPbrDefineKey(makeKey({ hasUv1: true }))).toBe('------2:-------');
+    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('-------:C------');
   });
 
   it('is identical for equal flag sets', () => {
@@ -62,8 +65,9 @@ describe('buildGlPbrDefineKey', () => {
 });
 
 describe('buildGlPbrDefineSource', () => {
-  it('opens with the GLSL 300 es version directive', () => {
-    expect(buildGlPbrDefineSource(NONE).startsWith('#version 300 es')).toBe(true);
+  it('emits HAS_UV1 when hasUv1 is set and omits it when unset', () => {
+    expect(buildGlPbrDefineSource(makeKey({ hasUv1: true }))).toContain('#define HAS_UV1');
+    expect(buildGlPbrDefineSource(NONE)).not.toContain('#define HAS_UV1');
   });
 
   it('emits a define for each enabled flag and none for disabled flags', () => {
@@ -74,6 +78,7 @@ describe('buildGlPbrDefineSource', () => {
     expect(all).toContain('#define HAS_METALLIC_ROUGHNESS_MAP');
     expect(all).toContain('#define HAS_OCCLUSION_MAP');
     expect(all).toContain('#define HAS_EMISSIVE_MAP');
+    expect(all).toContain('#define HAS_UV1');
     expect(all).toContain('#define CLEARCOAT');
     expect(all).toContain('#define SHEEN');
     expect(all).toContain('#define ANISOTROPY');
@@ -85,7 +90,12 @@ describe('buildGlPbrDefineSource', () => {
     const none = buildGlPbrDefineSource(NONE);
     expect(none).not.toContain('#define ALPHA_MASK');
     expect(none).not.toContain('#define HAS_BASE_COLOR_MAP');
+    expect(none).not.toContain('#define HAS_UV1');
     expect(none).not.toContain('#define CLEARCOAT');
+  });
+
+  it('opens with the GLSL 300 es version directive', () => {
+    expect(buildGlPbrDefineSource(NONE).startsWith('#version 300 es')).toBe(true);
   });
 });
 
@@ -110,6 +120,11 @@ describe('getGlPbrFragmentSourceForKey', () => {
     expect(src).toContain('#define HAS_NORMAL_MAP');
     expect(src).toContain('out vec4 fragColor');
   });
+
+  it('includes v_uv1 varying when hasUv1 is set', () => {
+    const src = getGlPbrFragmentSourceForKey(makeKey({ hasUv1: true }));
+    expect(src).toContain('v_uv1');
+  });
 });
 
 describe('getGlPbrVertexSource', () => {
@@ -126,6 +141,12 @@ describe('getGlPbrVertexSource', () => {
 });
 
 describe('getGlPbrVertexSourceForKey', () => {
+  it('includes a_uv1 attribute at location 5 when hasUv1 is set', () => {
+    const src = getGlPbrVertexSourceForKey(makeKey({ hasUv1: true }));
+    expect(src).toContain('layout(location = 5) in vec2 a_uv1');
+    expect(src).toContain('v_uv1');
+  });
+
   it('prepends the define block to the vertex body', () => {
     const src = getGlPbrVertexSourceForKey(NONE);
     expect(src.startsWith('#version 300 es')).toBe(true);

@@ -27,6 +27,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/platform-formats": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
