@@ -181,3 +181,6 @@ packages/*/src/wasm/*.ts
 packages/*/src/wasm/package.json
 !packages/*/src/wasm/*.d.ts
 packages/*/src/wasm/*_bg.wasm.d.ts
+
+# review:snapshot output bundles
+/review/
