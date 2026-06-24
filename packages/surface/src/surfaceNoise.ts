@@ -55,11 +55,6 @@ export function fillSurfaceNoise(
  * produce smoother, lower-frequency noise. Each successive octave doubles the
  * frequency and halves the amplitude. Output is normalized to 0..255.
  *
-<<<<<<< Updated upstream
- * When `grayScale` is true the same noise drives R, G, and B; otherwise each
- * channel uses an independent noise field. Alpha is set fully opaque (255).
- * Deterministic in `seed`.
-=======
  * - `baseX`, `baseY`: wavelengths in pixels of the first octave (larger = smoother).
  * - `octaves`: number of frequency doublings (1 = smooth; higher = more detail).
  * - `seed`: deterministic integer seed.
@@ -74,7 +69,6 @@ export function fillSurfaceNoise(
  *
  * Output range is normalized to 0..255. Alpha defaults to 255 unless the A
  * bit is explicitly included in `channelOptions`.
->>>>>>> Stashed changes
  */
 export function fillSurfacePerlinNoise(
   dest: Readonly<SurfaceRegion>,
@@ -83,18 +77,16 @@ export function fillSurfacePerlinNoise(
   octaves: number,
   seed: number,
   grayScale: boolean = false,
-<<<<<<< Updated upstream
-=======
   stitch: boolean = false,
   channelOptions: number = 0x7,
->>>>>>> Stashed changes
 ): void {
   const fx0 = baseX > 0 ? 1 / baseX : 0;
   const fy0 = baseY > 0 ? 1 / baseY : 0;
   const passes = Math.max(1, Math.round(octaves));
-  const channels = grayScale ? 1 : 3;
   const data = dest.surface.data;
   const surfaceWidth = dest.surface.width;
+  const w = dest.width;
+  const h = dest.height;
   for (let py = 0; py < dest.height; py++) {
     const y = dest.y + py;
     if (y < 0 || y >= dest.surface.height) continue;
@@ -102,20 +94,6 @@ export function fillSurfacePerlinNoise(
       const x = dest.x + px;
       if (x < 0 || x >= surfaceWidth) continue;
       const di = (y * surfaceWidth + x) * 4;
-<<<<<<< Updated upstream
-      for (let c = 0; c < channels; c++) {
-        const value = fractalValueNoise(px * fx0, py * fy0, passes, (seed | 0) + c * 0x9e3779b1);
-        const byte = Math.round(value * 255);
-        if (grayScale) {
-          data[di] = byte;
-          data[di + 1] = byte;
-          data[di + 2] = byte;
-        } else {
-          data[di + c] = byte;
-        }
-      }
-      data[di + 3] = 255;
-=======
 
       const nx = stitch ? stitchedCoord(px * fx0, w * fx0) : px * fx0;
       const ny = stitch ? stitchedCoord(py * fy0, h * fy0) : py * fy0;
@@ -207,11 +185,15 @@ export function fillSurfaceTurbulence(
       } else {
         data[di + 3] = 255;
       }
->>>>>>> Stashed changes
     }
   }
   invalidateImageResource(dest.surface);
 }
+
+export const SURFACE_NOISE_CHANNEL_A = 0x8;
+export const SURFACE_NOISE_CHANNEL_B = 0x4;
+export const SURFACE_NOISE_CHANNEL_G = 0x2;
+export const SURFACE_NOISE_CHANNEL_R = 0x1;
 
 // Fractal sum of value noise: doubling frequency, halving amplitude per octave,
 // normalized back to 0..1 by the total amplitude.
@@ -247,6 +229,28 @@ function nextRandomState(state: number): number {
 // Smoothstep, so lattice cells blend without visible seams.
 function smoothStep(t: number): number {
   return t * t * (3 - 2 * t);
+}
+
+// Wraps t into [0, period) so that integer lattice indices repeat, producing seamless tiling.
+function stitchedCoord(t: number, period: number): number {
+  if (period <= 0) return t;
+  return ((t % period) + period) % period;
+}
+
+// Fractal turbulence: abs(2*v - 1) fBm, producing a more vigorous ridge-like texture than
+// the smooth fractal sum (matches OpenFL perlinNoise with fractalNoise=false).
+function turbulenceNoise(x: number, y: number, octaves: number, seed: number): number {
+  let sum = 0;
+  let amplitude = 1;
+  let amplitudeSum = 0;
+  let frequency = 1;
+  for (let o = 0; o < octaves; o++) {
+    sum += Math.abs(valueNoise(x * frequency, y * frequency, seed + o * 0x85ebca6b) * 2 - 1) * amplitude;
+    amplitudeSum += amplitude;
+    amplitude *= 0.5;
+    frequency *= 2;
+  }
+  return amplitudeSum > 0 ? sum / amplitudeSum : 0;
 }
 
 // Bilinearly-interpolated lattice hash — one octave of value noise in 0..1.

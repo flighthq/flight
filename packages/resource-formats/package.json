@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/spritesheet-formats",
+  "name": "@flighthq/resource-formats",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -26,14 +26,10 @@
     "prepack": "npm run clean && npm run clean:dist && npm run build",
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
-  "dependencies": {
-    "@flighthq/resource-formats": "*",
-    "@flighthq/spritesheet": "*",
-    "@flighthq/types": "*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Import/export spritesheet atlas configs from industry-standard formats (Texture Packer, Aseprite, Starling)",
+  "description": "Resource format utilities — XML parser suitable for atlas, plist, and similar structured formats",
   "sideEffects": false
 }

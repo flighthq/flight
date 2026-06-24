@@ -23,4 +23,5 @@ export interface NotificationBackend {
   isSupported(): boolean;
   subscribeClick(listener: (tag: string) => void): () => void;
   subscribeAction(listener: (tag: string, actionId: string) => void): () => void;
+  updateNotification(id: string, update: Readonly<Partial<NotificationRequest>>): Promise<boolean>;
 }
