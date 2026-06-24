@@ -1,8 +1,8 @@
 import { createEntity } from '@flighthq/entity';
 import { cloneVector2, copyVector2, createVector2 } from '@flighthq/geometry';
-import type { ImageResource, Texture, TextureLike } from '@flighthq/types';
+import type { ImageResource, Matrix3Like, Texture, TextureLike } from '@flighthq/types';
 
-import { cloneSampler, copySampler, createSampler } from './sampler';
+import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 
 // Allocates an independent Texture over the SAME image pixels: the ImageResource reference is
 // shared (clone the resource separately to upload into a second render state), while the Sampler
@@ -47,6 +47,62 @@ export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
   });
 }
 
+// True when both textures describe identical state: same color space, same sampler state, the same
+// image reference, and the same uv-transform values. Returns false for null/undefined operands.
+export function equalsTexture(
+  a: Readonly<TextureLike> | null | undefined,
+  b: Readonly<TextureLike> | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return (
+    a.colorSpace === b.colorSpace &&
+    a.image === b.image &&
+    a.uvRotation === b.uvRotation &&
+    a.uvOffset.x === b.uvOffset.x &&
+    a.uvOffset.y === b.uvOffset.y &&
+    a.uvScale.x === b.uvScale.x &&
+    a.uvScale.y === b.uvScale.y &&
+    equalsSampler(a.sampler, b.sampler)
+  );
+}
+
+// Returns the pixel height of the texture's bound image, or -1 when no image is bound.
+export function getTextureHeight(texture: Readonly<TextureLike>): number {
+  return texture.image !== null ? texture.image.height : -1;
+}
+
+// Composes the KHR_texture_transform fields (uvOffset, uvRotation, uvScale) into the 3×3 matrix
+// a shader consumes at sample time. Row-major layout matching @flighthq/geometry Matrix3.
+// The resulting transform applies: scale → rotate → translate, per the KHR_texture_transform spec:
+// row 0 = [sx*cos(r), -sy*sin(r), tx]; row 1 = [sx*sin(r), sy*cos(r), ty]; row 2 = [0, 0, 1].
+// Out-param form — write result into a pre-allocated Matrix3 to avoid per-call allocation.
+// Safe when out is an unrelated scratch; not intended for aliased input (no in-param here).
+export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureLike>): void {
+  const r = texture.uvRotation;
+  const sx = texture.uvScale.x;
+  const sy = texture.uvScale.y;
+  const tx = texture.uvOffset.x;
+  const ty = texture.uvOffset.y;
+  const cosR = Math.cos(r);
+  const sinR = Math.sin(r);
+  const m = out.m;
+  m[0] = sx * cosR;
+  m[1] = -sy * sinR;
+  m[2] = tx;
+  m[3] = sx * sinR;
+  m[4] = sy * cosR;
+  m[5] = ty;
+  m[6] = 0;
+  m[7] = 0;
+  m[8] = 1;
+}
+
+// Returns the pixel width of the texture's bound image, or -1 when no image is bound.
+export function getTextureWidth(texture: Readonly<TextureLike>): number {
+  return texture.image !== null ? texture.image.width : -1;
+}
+
 // True once the texture references a pixel source. A texture with a null image is treated as an
 // absent slot by materials, so this is the gate a material samples behind.
 export function isTextureReady(texture: Readonly<TextureLike>): boolean {
@@ -57,4 +113,22 @@ export function isTextureReady(texture: Readonly<TextureLike>): boolean {
 // or the uv-transform.
 export function setTextureImage(texture: TextureLike, image: ImageResource | null): void {
   texture.image = image;
+}
+
+// Sets the uv offset (scroll/translation) in place. Equivalent to assigning texture.uvOffset
+// directly but provides a named mutator for the KHR_texture_transform model.
+export function setTextureUvOffset(texture: TextureLike, x: number, y: number): void {
+  texture.uvOffset.x = x;
+  texture.uvOffset.y = y;
+}
+
+// Sets the uv rotation in radians in place.
+export function setTextureUvRotation(texture: TextureLike, radians: number): void {
+  texture.uvRotation = radians;
+}
+
+// Sets the uv scale (tiling) in place.
+export function setTextureUvScale(texture: TextureLike, x: number, y: number): void {
+  texture.uvScale.x = x;
+  texture.uvScale.y = y;
 }
