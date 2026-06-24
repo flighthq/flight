@@ -62,8 +62,32 @@ export function createNativeTextRuntime(): NativeTextRuntime {
   return out;
 }
 
+export function getNativeTextMeasuredHeight(source: Readonly<NativeText>): number {
+  return (getDisplayObjectRuntime(source) as NativeTextRuntime).measuredHeight;
+}
+
+export function getNativeTextMeasuredWidth(source: Readonly<NativeText>): number {
+  return (getDisplayObjectRuntime(source) as NativeTextRuntime).measuredWidth;
+}
+
 export function getNativeTextRuntime(source: Readonly<NativeText>): Readonly<NativeTextRuntime> {
   return getDisplayObjectRuntime(source) as NativeTextRuntime;
+}
+
+export function getNativeTextString(source: Readonly<NativeText>): string {
+  return source.data.text;
+}
+
+export function getNativeTextStyle(source: Readonly<NativeText>): Readonly<NativeTextStyle> {
+  return source.data.style;
+}
+
+// Merges individual style properties into the existing style without replacing the whole object.
+// Useful for single-property style changes that would otherwise force rebuilding the full NativeTextStyle.
+export function patchNativeTextStyle(source: NativeText, patch: Readonly<Partial<NativeTextStyle>>): void {
+  source.data.style = { ...source.data.style, ...patch };
+  invalidateNodeLocalContent(source);
+  invalidateNodeLocalBounds(source);
 }
 
 export function setNativeTextAutoSize(source: NativeText, value: TextAutoSize): void {
