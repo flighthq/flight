@@ -28,7 +28,15 @@ describe('bindGlMeshLightBlock', () => {
     data[5] = 1;
     data[6] = 1;
     data[8] = 0.2;
-    bindGlMeshLightBlock(gl, makeLitProgram(), { ambientCount: 1, data, directionalCount: 1, version: 1 });
+    bindGlMeshLightBlock(gl, makeLitProgram(), {
+      ambientCount: 1,
+      data,
+      directionalCount: 1,
+      hemisphereCount: 0,
+      pointCount: 0,
+      spotCount: 0,
+      version: 1,
+    });
     expect(gl.calls.filter((c) => c.name === 'uniform4f').length).toBe(2);
     expect(gl.calls.filter((c) => c.name === 'uniform3f').length).toBe(1);
     expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBe(2);

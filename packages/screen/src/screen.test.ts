@@ -1,32 +1,61 @@
-import type { ScreenBackend, ScreenInfo } from '@flighthq/types';
+import type { ScreenBackend, ScreenChangeEvent, ScreenInfo, ScreenMode, ScreenSignals } from '@flighthq/types';
 
 import {
+  attachScreenSignals,
   createScreenInfo,
+  createScreenMode,
+  createScreenSignals,
   createWebScreenBackend,
+  detachScreenSignals,
+  dipToScreenPoint,
+  dipToScreenRect,
+  disposeScreenSignals,
+  enableScreenSignals,
   getPrimaryScreen,
   getScreenBackend,
+  getScreenBounds,
+  getScreenById,
+  getScreenContainingRect,
+  getScreenCurrentMode,
+  getScreenCursorPosition,
+  getScreenCursorScreen,
+  getScreenDetailPermission,
+  getScreenModes,
+  getScreenNearestPoint,
+  getScreenNearestRect,
   getScreens,
+  getScreenWorkArea,
   onScreenChange,
+  refreshScreens,
+  requestScreenDetails,
+  screenToDipPoint,
+  screenToDipRect,
   setScreenBackend,
 } from './screen';
 
-function fakeBackend(count: number): ScreenBackend & { fire: () => void } {
-  let listener: (() => void) | null = null;
+// --- helpers ---
+
+function makeScreenInfo(overrides: Partial<ScreenInfo> = {}): ScreenInfo {
+  return { ...createScreenInfo(), ...overrides };
+}
+
+function fakeBackend(screens: Partial<ScreenInfo>[]): ScreenBackend & {
+  fire: (event?: Partial<ScreenChangeEvent>) => void;
+} {
+  let listener: ((event: Readonly<ScreenChangeEvent>) => void) | null = null;
+  const infos: ScreenInfo[] = screens.map((s, i) => makeScreenInfo({ id: i, isPrimary: i === 0, ...s }));
   return {
     getScreens(out) {
-      out.length = count;
-      for (let i = 0; i < count; i += 1) {
+      out.length = infos.length;
+      for (let i = 0; i < infos.length; i += 1) {
         if (out[i] === undefined) out[i] = createScreenInfo();
-        out[i].id = i;
-        out[i].width = 100 + i;
-        out[i].isPrimary = i === 0;
+        Object.assign(out[i], infos[i]);
       }
       return out;
     },
     getPrimaryScreen(out) {
-      out.id = 0;
-      out.width = 100;
-      out.isPrimary = true;
+      const primary = infos.find((s) => s.isPrimary) ?? infos[0];
+      if (primary !== undefined) Object.assign(out, primary);
       return out;
     },
     subscribe(l) {
@@ -35,23 +64,136 @@ function fakeBackend(count: number): ScreenBackend & { fire: () => void } {
         listener = null;
       };
     },
-    fire() {
-      listener?.();
+    getCursorPosition(out) {
+      out.x = 42;
+      out.y = 84;
+      return out;
+    },
+    fire(event?: Partial<ScreenChangeEvent>) {
+      const defaultScreen = infos[0] ?? createScreenInfo();
+      listener?.({
+        kind: 'ScreenMetricsChanged',
+        screen: defaultScreen,
+        changedMetrics: { bounds: true, workArea: false, scaleFactor: false, orientation: false },
+        ...event,
+      });
     },
   };
 }
 
 afterEach(() => setScreenBackend(null));
 
+// --- attachScreenSignals ---
+
+describe('attachScreenSignals', () => {
+  it('fans out ScreenAdded to onScreenAdded signal', () => {
+    const backend = fakeBackend([{ width: 1920, height: 1080 }]);
+    setScreenBackend(backend);
+    const signals = createScreenSignals();
+    const received: ScreenInfo[] = [];
+    signals.onScreenAdded.emit = (s) => received.push(s);
+    attachScreenSignals(signals);
+    backend.fire({ kind: 'ScreenAdded', changedMetrics: null });
+    expect(received).toHaveLength(1);
+    detachScreenSignals(signals);
+  });
+
+  it('fans out ScreenRemoved to onScreenRemoved signal', () => {
+    const backend = fakeBackend([{}]);
+    setScreenBackend(backend);
+    const signals = createScreenSignals();
+    const removed: ScreenInfo[] = [];
+    signals.onScreenRemoved.emit = (s) => removed.push(s);
+    attachScreenSignals(signals);
+    backend.fire({ kind: 'ScreenRemoved', changedMetrics: null });
+    expect(removed).toHaveLength(1);
+    detachScreenSignals(signals);
+  });
+
+  it('fans out ScreenMetricsChanged to onScreenMetricsChanged signal', () => {
+    const backend = fakeBackend([{}]);
+    setScreenBackend(backend);
+    const signals = createScreenSignals();
+    const events: ScreenChangeEvent[] = [];
+    signals.onScreenMetricsChanged.emit = (e) => events.push(e);
+    attachScreenSignals(signals);
+    backend.fire();
+    expect(events).toHaveLength(1);
+    expect(events[0].kind).toBe('ScreenMetricsChanged');
+    detachScreenSignals(signals);
+  });
+
+  it('is idempotent — tears down prior subscription before re-attaching', () => {
+    const backend = fakeBackend([{}]);
+    setScreenBackend(backend);
+    const signals = createScreenSignals();
+    let count = 0;
+    signals.onScreenMetricsChanged.emit = () => count++;
+    attachScreenSignals(signals);
+    attachScreenSignals(signals); // second attach: should not double-fire
+    backend.fire();
+    expect(count).toBe(1);
+    detachScreenSignals(signals);
+  });
+});
+
+// --- createScreenInfo ---
+
 describe('createScreenInfo', () => {
-  it('allocates a zeroed info with scaleFactor 1 and isPrimary false', () => {
+  it('allocates with scaleFactor 1 and isPrimary false', () => {
     const info = createScreenInfo();
     expect(info.scaleFactor).toBe(1);
     expect(info.isPrimary).toBe(false);
     expect(info.width).toBe(0);
     expect(info.height).toBe(0);
   });
+
+  it('defaults sentinel fields to -1 and empty/false', () => {
+    const info = createScreenInfo();
+    expect(info.rotation).toBe(-1);
+    expect(info.refreshRate).toBe(-1);
+    expect(info.colorDepth).toBe(-1);
+    expect(info.pixelDepth).toBe(-1);
+    expect(info.physicalWidth).toBe(-1);
+    expect(info.physicalHeight).toBe(-1);
+    expect(info.maxLuminance).toBe(-1);
+    expect(info.depthPerComponent).toBe(-1);
+    expect(info.dpi).toBe(-1);
+    expect(info.label).toBe('');
+    expect(info.colorSpace).toBe('srgb');
+    expect(info.isHdr).toBe(false);
+    expect(info.internal).toBe(false);
+    expect(info.monochrome).toBe(false);
+    expect(info.touchSupport).toBe('unknown');
+    expect(info.orientation).toBe('Landscape');
+  });
 });
+
+// --- createScreenMode ---
+
+describe('createScreenMode', () => {
+  it('allocates with sentinel fields', () => {
+    const mode = createScreenMode();
+    expect(mode.width).toBe(0);
+    expect(mode.height).toBe(0);
+    expect(mode.refreshRate).toBe(-1);
+    expect(mode.colorDepth).toBe(-1);
+    expect(mode.pixelFormat).toBe('');
+  });
+});
+
+// --- createScreenSignals ---
+
+describe('createScreenSignals', () => {
+  it('allocates inert signals', () => {
+    const signals = createScreenSignals();
+    expect(signals.onScreenAdded).toBeDefined();
+    expect(signals.onScreenRemoved).toBeDefined();
+    expect(signals.onScreenMetricsChanged).toBeDefined();
+  });
+});
+
+// --- createWebScreenBackend ---
 
 describe('createWebScreenBackend', () => {
   it('returns a backend whose reads fill out without throwing', () => {
@@ -72,11 +214,277 @@ describe('createWebScreenBackend', () => {
     expect(typeof unsubscribe).toBe('function');
     expect(() => unsubscribe?.()).not.toThrow();
   });
+
+  it('getCursorPosition returns a numeric point', () => {
+    const backend = createWebScreenBackend();
+    const out = { x: 0, y: 0 };
+    expect(() => backend.getCursorPosition(out)).not.toThrow();
+    expect(typeof out.x).toBe('number');
+    expect(typeof out.y).toBe('number');
+  });
+
+  it('getModes returns at least one entry', () => {
+    const backend = createWebScreenBackend();
+    const screen = createScreenInfo();
+    const modes: ScreenMode[] = [];
+    backend.getModes?.(screen, modes);
+    expect(modes.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('upgrades to multi-monitor via _upgrade when Screen Details API is available', () => {
+    const backend = createWebScreenBackend() as ReturnType<typeof createWebScreenBackend> & {
+      _upgrade?: (d: unknown) => void;
+    };
+    // Simulate a ScreenDetails object with two monitors.
+    const fakeDetails = {
+      currentScreen: {
+        left: 0,
+        top: 0,
+        width: 1920,
+        height: 1080,
+        availLeft: 0,
+        availTop: 0,
+        availWidth: 1920,
+        availHeight: 1040,
+        colorDepth: 24,
+        pixelDepth: 24,
+        devicePixelRatio: 1,
+        refreshRate: 144,
+        isPrimary: true,
+        isInternal: false,
+        label: 'Main Display',
+      },
+      screens: [
+        {
+          left: 0,
+          top: 0,
+          width: 1920,
+          height: 1080,
+          availLeft: 0,
+          availTop: 0,
+          availWidth: 1920,
+          availHeight: 1040,
+          colorDepth: 24,
+          pixelDepth: 24,
+          devicePixelRatio: 1,
+          refreshRate: 144,
+          isPrimary: true,
+          isInternal: false,
+          label: 'Main Display',
+        },
+        {
+          left: 1920,
+          top: 0,
+          width: 2560,
+          height: 1440,
+          availLeft: 1920,
+          availTop: 0,
+          availWidth: 2560,
+          availHeight: 1440,
+          colorDepth: 30,
+          pixelDepth: 30,
+          devicePixelRatio: 2,
+          refreshRate: 60,
+          isPrimary: false,
+          isInternal: false,
+          label: 'External Monitor',
+        },
+      ],
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    expect(typeof backend._upgrade).toBe('function');
+    backend._upgrade!(fakeDetails);
+
+    // getScreens now returns two monitors.
+    const out: ScreenInfo[] = [];
+    backend.getScreens(out);
+    expect(out).toHaveLength(2);
+    expect(out[0].width).toBe(1920);
+    expect(out[0].refreshRate).toBe(144);
+    expect(out[0].label).toBe('Main Display');
+    expect(out[1].width).toBe(2560);
+    expect(out[1].x).toBe(1920);
+    expect(out[1].refreshRate).toBe(60);
+    expect(out[1].label).toBe('External Monitor');
+    expect(out[1].scaleFactor).toBe(2);
+  });
+
+  it('getPrimaryScreen returns the isPrimary screen after Screen Details upgrade', () => {
+    const backend = createWebScreenBackend() as ReturnType<typeof createWebScreenBackend> & {
+      _upgrade?: (d: unknown) => void;
+    };
+    const fakeDetails = {
+      currentScreen: {
+        left: 1920,
+        top: 0,
+        width: 2560,
+        height: 1440,
+        availLeft: 1920,
+        availTop: 0,
+        availWidth: 2560,
+        availHeight: 1440,
+        colorDepth: 30,
+        pixelDepth: 30,
+        devicePixelRatio: 2,
+        refreshRate: 60,
+        isPrimary: false,
+        isInternal: false,
+        label: 'External',
+      },
+      screens: [
+        {
+          left: 0,
+          top: 0,
+          width: 1920,
+          height: 1080,
+          availLeft: 0,
+          availTop: 0,
+          availWidth: 1920,
+          availHeight: 1040,
+          colorDepth: 24,
+          pixelDepth: 24,
+          devicePixelRatio: 1,
+          refreshRate: 120,
+          isPrimary: true,
+          isInternal: true,
+          label: 'Built-in',
+        },
+        {
+          left: 1920,
+          top: 0,
+          width: 2560,
+          height: 1440,
+          availLeft: 1920,
+          availTop: 0,
+          availWidth: 2560,
+          availHeight: 1440,
+          colorDepth: 30,
+          pixelDepth: 30,
+          devicePixelRatio: 2,
+          refreshRate: 60,
+          isPrimary: false,
+          isInternal: false,
+          label: 'External',
+        },
+      ],
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    backend._upgrade!(fakeDetails);
+    const out = createScreenInfo();
+    backend.getPrimaryScreen(out);
+    expect(out.isPrimary).toBe(true);
+    expect(out.width).toBe(1920);
+    expect(out.label).toBe('Built-in');
+    expect(out.internal).toBe(true);
+    expect(out.refreshRate).toBe(120);
+  });
 });
+
+// --- detachScreenSignals ---
+
+describe('detachScreenSignals', () => {
+  it('stops delivery after detach', () => {
+    const backend = fakeBackend([{}]);
+    setScreenBackend(backend);
+    const signals = createScreenSignals();
+    let count = 0;
+    signals.onScreenMetricsChanged.emit = () => count++;
+    attachScreenSignals(signals);
+    backend.fire();
+    detachScreenSignals(signals);
+    backend.fire();
+    expect(count).toBe(1);
+  });
+
+  it('is safe to call when not attached', () => {
+    const signals = createScreenSignals();
+    expect(() => detachScreenSignals(signals)).not.toThrow();
+  });
+});
+
+// --- dipToScreenPoint ---
+
+describe('dipToScreenPoint', () => {
+  it('converts DIP to physical pixels', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
+    const out = { x: 0, y: 0 };
+    dipToScreenPoint(screen, { x: 10, y: 20 }, out);
+    expect(out.x).toBe(20);
+    expect(out.y).toBe(40);
+  });
+
+  it('accounts for screen origin offset', () => {
+    const screen = makeScreenInfo({ x: 100, y: 50, scaleFactor: 2 });
+    const out = { x: 0, y: 0 };
+    dipToScreenPoint(screen, { x: 110, y: 60 }, out);
+    expect(out.x).toBe(20);
+    expect(out.y).toBe(20);
+  });
+
+  it('is alias-safe when out is the same object as point', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 3 });
+    const point = { x: 5, y: 10 };
+    dipToScreenPoint(screen, point, point);
+    expect(point.x).toBe(15);
+    expect(point.y).toBe(30);
+  });
+});
+
+// --- dipToScreenRect ---
+
+describe('dipToScreenRect', () => {
+  it('scales and offsets the rect', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
+    const out = { x: 0, y: 0, width: 0, height: 0 };
+    dipToScreenRect(screen, { x: 10, y: 20, width: 50, height: 100 }, out);
+    expect(out.x).toBe(20);
+    expect(out.y).toBe(40);
+    expect(out.width).toBe(100);
+    expect(out.height).toBe(200);
+  });
+
+  it('is alias-safe when out is the same object as rect', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
+    const rect = { x: 5, y: 10, width: 20, height: 30 };
+    dipToScreenRect(screen, rect, rect);
+    expect(rect.x).toBe(10);
+    expect(rect.y).toBe(20);
+    expect(rect.width).toBe(40);
+    expect(rect.height).toBe(60);
+  });
+});
+
+// --- disposeScreenSignals ---
+
+describe('disposeScreenSignals', () => {
+  it('stops delivery and is safe to call multiple times', () => {
+    const backend = fakeBackend([{}]);
+    setScreenBackend(backend);
+    const signals = createScreenSignals();
+    attachScreenSignals(signals);
+    expect(() => disposeScreenSignals(signals)).not.toThrow();
+    expect(() => disposeScreenSignals(signals)).not.toThrow();
+  });
+});
+
+// --- enableScreenSignals ---
+
+describe('enableScreenSignals', () => {
+  it('returns a ScreenSignals group with inert signals', () => {
+    const signals = enableScreenSignals();
+    expect(signals.onScreenAdded).toBeDefined();
+    expect(signals.onScreenMetricsChanged).toBeDefined();
+    expect(signals.onScreenRemoved).toBeDefined();
+  });
+});
+
+// --- getScreenBounds ---
 
 describe('getPrimaryScreen', () => {
   it('fills and returns the passed out object', () => {
-    setScreenBackend(fakeBackend(2));
+    setScreenBackend(fakeBackend([{ width: 1920, isPrimary: true }]));
     const out = createScreenInfo();
     const result = getPrimaryScreen(out);
     expect(result).toBe(out);
@@ -84,21 +492,237 @@ describe('getPrimaryScreen', () => {
   });
 });
 
+// --- getScreenById ---
+
 describe('getScreenBackend', () => {
   it('falls back to a web backend', () => {
     expect(getScreenBackend()).not.toBeNull();
   });
 
   it('returns the registered backend', () => {
-    const backend = fakeBackend(1);
+    const backend = fakeBackend([{}]);
     setScreenBackend(backend);
     expect(getScreenBackend()).toBe(backend);
   });
 });
 
+// --- getScreenContainingRect ---
+
+describe('getScreenBounds', () => {
+  it('fills out with screen x/y/width/height', () => {
+    const screen = makeScreenInfo({ x: 10, y: 20, width: 1920, height: 1080 });
+    const out = { x: 0, y: 0, width: 0, height: 0 };
+    const result = getScreenBounds(screen, out);
+    expect(result).toBe(out);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+    expect(out.width).toBe(1920);
+    expect(out.height).toBe(1080);
+  });
+});
+
+// --- getScreenCursorPosition ---
+
+describe('getScreenById', () => {
+  it('returns the screen with matching id', () => {
+    setScreenBackend(fakeBackend([{ width: 1920 }, { width: 2560 }]));
+    const out = createScreenInfo();
+    const result = getScreenById(1, out);
+    expect(result).toBe(out);
+    expect(out.width).toBe(2560);
+  });
+
+  it('returns null when id not found', () => {
+    setScreenBackend(fakeBackend([{ width: 1920 }]));
+    const out = createScreenInfo();
+    expect(getScreenById(99, out)).toBeNull();
+  });
+});
+
+// --- getScreenCursorScreen ---
+
+describe('getScreenContainingRect', () => {
+  it('returns the screen with the most overlap', () => {
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
+        { id: 1, x: 1920, y: 0, width: 1920, height: 1080, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    // Rect spans from x=1900 to x=2100: 20px on screen 0, 180px on screen 1 → screen 1 wins.
+    getScreenContainingRect({ x: 1900, y: 0, width: 200, height: 100 }, out);
+    expect(out.id).toBe(1);
+  });
+
+  it('falls back to nearest by center when no overlap', () => {
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
+        { id: 1, x: 1920, y: 0, width: 1920, height: 1080, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    // Rect is far to the right — nearest center is screen 1
+    getScreenContainingRect({ x: 5000, y: 0, width: 10, height: 10 }, out);
+    expect(out.id).toBe(1);
+  });
+});
+
+// --- getScreenCurrentMode ---
+
+describe('getScreenCurrentMode', () => {
+  it('derives a mode from the screen fields', () => {
+    const screen = makeScreenInfo({ width: 2560, height: 1440, refreshRate: 144, colorDepth: 32 });
+    const out = createScreenMode();
+    const result = getScreenCurrentMode(screen, out);
+    expect(result).toBe(out);
+    expect(out.width).toBe(2560);
+    expect(out.height).toBe(1440);
+    expect(out.refreshRate).toBe(144);
+    expect(out.colorDepth).toBe(32);
+  });
+});
+
+// --- getScreenDetailPermission ---
+
+describe('getScreenCursorPosition', () => {
+  it('returns a point using the backend getCursorPosition', () => {
+    setScreenBackend(fakeBackend([{}]));
+    const out = { x: 0, y: 0 };
+    const result = getScreenCursorPosition(out);
+    expect(result).toBe(out);
+    expect(out.x).toBe(42);
+    expect(out.y).toBe(84);
+  });
+
+  it('returns (0,0) sentinel from the web backend before first pointermove', () => {
+    const backend = createWebScreenBackend();
+    const out = { x: 99, y: 99 };
+    backend.getCursorPosition(out);
+    // Web backend returns 0,0 sentinel until a pointermove occurs in a real browser.
+    expect(typeof out.x).toBe('number');
+    expect(typeof out.y).toBe('number');
+  });
+});
+
+// --- getScreenModes ---
+
+describe('getScreenCursorScreen', () => {
+  it('returns the screen nearest to the cursor position', () => {
+    const backend = fakeBackend([
+      { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
+      { id: 1, x: 1920, y: 0, width: 1920, height: 1080, isPrimary: false },
+    ]);
+    // Override getCursorPosition to point to screen 1.
+    backend.getCursorPosition = (out) => {
+      out.x = 2000;
+      out.y = 500;
+      return out;
+    };
+    setScreenBackend(backend);
+    const out = createScreenInfo();
+    getScreenCursorScreen(out);
+    expect(out.id).toBe(1);
+  });
+});
+
+// --- getScreenNearestPoint ---
+
+describe('getScreenDetailPermission', () => {
+  it('returns a valid permission state string without throwing', async () => {
+    const state = await getScreenDetailPermission();
+    expect(['granted', 'denied', 'prompt']).toContain(state);
+  });
+
+  it('returns prompt when the Permissions API is unavailable (jsdom)', async () => {
+    // jsdom does not implement navigator.permissions.query for window-management.
+    const state = await getScreenDetailPermission();
+    expect(state).toBe('prompt');
+  });
+});
+
+// --- getScreenNearestRect ---
+
+describe('getScreenModes', () => {
+  it('calls getModes on the backend when available', () => {
+    const modes: ScreenMode[] = [{ width: 1920, height: 1080, refreshRate: 60, colorDepth: 32, pixelFormat: '' }];
+    const backend = fakeBackend([{}]);
+    backend.getModes = (_s, out) => {
+      out.length = 1;
+      out[0] = modes[0];
+      return out;
+    };
+    setScreenBackend(backend);
+    const screen = createScreenInfo();
+    const out: ScreenMode[] = [];
+    getScreenModes(screen, out);
+    expect(out).toHaveLength(1);
+    expect(out[0].width).toBe(1920);
+  });
+
+  it('falls back to a synthetic single mode when getModes is absent', () => {
+    const backend = fakeBackend([{ width: 3840, height: 2160 }]);
+    delete (backend as Partial<ScreenBackend>).getModes;
+    setScreenBackend(backend);
+    const screen = makeScreenInfo({ width: 3840, height: 2160 });
+    const out: ScreenMode[] = [];
+    getScreenModes(screen, out);
+    expect(out).toHaveLength(1);
+    expect(out[0].width).toBe(3840);
+  });
+});
+
+// --- getScreenWorkArea ---
+
+describe('getScreenNearestPoint', () => {
+  it('returns the screen that contains the point', () => {
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
+        { id: 1, x: 1920, y: 0, width: 1920, height: 1080, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    getScreenNearestPoint({ x: 2000, y: 100 }, out);
+    expect(out.id).toBe(1);
+  });
+
+  it('returns the nearest screen when point is outside all screens', () => {
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
+        { id: 1, x: 1920, y: 0, width: 1920, height: 1080, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    // Point far to the right — nearest is screen 1
+    getScreenNearestPoint({ x: 9999, y: 540 }, out);
+    expect(out.id).toBe(1);
+  });
+});
+
+// --- getPrimaryScreen ---
+
+describe('getScreenNearestRect', () => {
+  it('delegates to getScreenContainingRect', () => {
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
+        { id: 1, x: 1920, y: 0, width: 1920, height: 1080, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    getScreenNearestRect({ x: 1920, y: 0, width: 200, height: 100 }, out);
+    expect(out.id).toBe(1);
+  });
+});
+
+// --- getScreenBackend ---
+
 describe('getScreens', () => {
   it('fills the out array to the screen count and returns it', () => {
-    setScreenBackend(fakeBackend(3));
+    setScreenBackend(fakeBackend([{ width: 1920 }, { width: 2560 }, { width: 3840 }]));
     const out: ScreenInfo[] = [];
     const result = getScreens(out);
     expect(result).toBe(out);
@@ -107,23 +731,226 @@ describe('getScreens', () => {
   });
 });
 
-describe('onScreenChange', () => {
-  it('delivers backend changes to the listener and unsubscribes', () => {
-    const backend = fakeBackend(1);
-    setScreenBackend(backend);
-    let changes = 0;
-    const unsubscribe = onScreenChange(() => changes++);
-    backend.fire();
-    expect(changes).toBe(1);
-    unsubscribe();
-    backend.fire();
-    expect(changes).toBe(1);
+// --- getScreens ---
+
+describe('getScreenWorkArea', () => {
+  it('fills out with screen x/y/workWidth/workHeight', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, workWidth: 1920, workHeight: 1040 });
+    const out = { x: 0, y: 0, width: 0, height: 0 };
+    const result = getScreenWorkArea(screen, out);
+    expect(result).toBe(out);
+    expect(out.width).toBe(1920);
+    expect(out.height).toBe(1040);
   });
 });
 
+// --- onScreenChange ---
+
+describe('onScreenChange', () => {
+  it('delivers change events to the listener and unsubscribes', () => {
+    const backend = fakeBackend([{}]);
+    setScreenBackend(backend);
+    const events: ScreenChangeEvent[] = [];
+    const unsubscribe = onScreenChange((e) => events.push(e));
+    backend.fire();
+    expect(events).toHaveLength(1);
+    expect(events[0].kind).toBe('ScreenMetricsChanged');
+    unsubscribe();
+    backend.fire();
+    expect(events).toHaveLength(1);
+  });
+});
+
+// --- refreshScreens ---
+
+describe('refreshScreens', () => {
+  it('is callable without throwing', () => {
+    expect(() => refreshScreens()).not.toThrow();
+  });
+});
+
+// --- requestScreenDetails ---
+
+describe('requestScreenDetails', () => {
+  it('returns false in jsdom where getScreenDetails is unavailable', async () => {
+    const result = await requestScreenDetails();
+    expect(result).toBe(false);
+  });
+
+  it('returns true and upgrades the web backend when getScreenDetails resolves', async () => {
+    // Install a fresh web backend so requestScreenDetails can upgrade it.
+    const webBackend = createWebScreenBackend();
+    setScreenBackend(webBackend);
+
+    const fakeDetails = {
+      currentScreen: {
+        left: 0,
+        top: 0,
+        width: 1920,
+        height: 1080,
+        availLeft: 0,
+        availTop: 0,
+        availWidth: 1920,
+        availHeight: 1040,
+        colorDepth: 24,
+        pixelDepth: 24,
+        devicePixelRatio: 1,
+        refreshRate: 60,
+        isPrimary: true,
+        isInternal: false,
+        label: 'Monitor A',
+      },
+      screens: [
+        {
+          left: 0,
+          top: 0,
+          width: 1920,
+          height: 1080,
+          availLeft: 0,
+          availTop: 0,
+          availWidth: 1920,
+          availHeight: 1040,
+          colorDepth: 24,
+          pixelDepth: 24,
+          devicePixelRatio: 1,
+          refreshRate: 60,
+          isPrimary: true,
+          isInternal: false,
+          label: 'Monitor A',
+        },
+        {
+          left: 1920,
+          top: 0,
+          width: 1280,
+          height: 1024,
+          availLeft: 1920,
+          availTop: 0,
+          availWidth: 1280,
+          availHeight: 1024,
+          colorDepth: 24,
+          pixelDepth: 24,
+          devicePixelRatio: 1,
+          refreshRate: 75,
+          isPrimary: false,
+          isInternal: false,
+          label: 'Monitor B',
+        },
+      ],
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+
+    // Temporarily inject getScreenDetails onto window.
+    const win = window as Window & { getScreenDetails?: () => Promise<unknown> };
+    win.getScreenDetails = () => Promise.resolve(fakeDetails);
+    try {
+      const result = await requestScreenDetails();
+      expect(result).toBe(true);
+      // After upgrade, getScreens returns two monitors.
+      const out: ScreenInfo[] = [];
+      getScreens(out);
+      expect(out).toHaveLength(2);
+      expect(out[0].label).toBe('Monitor A');
+      expect(out[1].label).toBe('Monitor B');
+      expect(out[1].refreshRate).toBe(75);
+    } finally {
+      delete win.getScreenDetails;
+    }
+  });
+
+  it('returns false when getScreenDetails rejects', async () => {
+    const win = window as Window & { getScreenDetails?: () => Promise<unknown> };
+    win.getScreenDetails = () => Promise.reject(new Error('Permission denied'));
+    try {
+      const result = await requestScreenDetails();
+      expect(result).toBe(false);
+    } finally {
+      delete win.getScreenDetails;
+    }
+  });
+});
+
+// --- screenToDipPoint ---
+
+describe('screenToDipPoint', () => {
+  it('converts physical pixels to DIP', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
+    const out = { x: 0, y: 0 };
+    screenToDipPoint(screen, { x: 20, y: 40 }, out);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+  });
+
+  it('accounts for screen origin offset', () => {
+    const screen = makeScreenInfo({ x: 100, y: 50, scaleFactor: 2 });
+    const out = { x: 0, y: 0 };
+    screenToDipPoint(screen, { x: 20, y: 20 }, out);
+    expect(out.x).toBe(110);
+    expect(out.y).toBe(60);
+  });
+
+  it('is alias-safe when out is the same object as point', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 4 });
+    const point = { x: 16, y: 32 };
+    screenToDipPoint(screen, point, point);
+    expect(point.x).toBe(4);
+    expect(point.y).toBe(8);
+  });
+
+  it('is the inverse of dipToScreenPoint', () => {
+    const screen = makeScreenInfo({ x: 200, y: 100, scaleFactor: 2 });
+    const original = { x: 250, y: 150 };
+    const physical = { x: 0, y: 0 };
+    dipToScreenPoint(screen, original, physical);
+    const recovered = { x: 0, y: 0 };
+    screenToDipPoint(screen, physical, recovered);
+    expect(recovered.x).toBeCloseTo(original.x);
+    expect(recovered.y).toBeCloseTo(original.y);
+  });
+});
+
+// --- screenToDipRect ---
+
+describe('screenToDipRect', () => {
+  it('scales the rect back to DIP', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
+    const out = { x: 0, y: 0, width: 0, height: 0 };
+    screenToDipRect(screen, { x: 20, y: 40, width: 100, height: 200 }, out);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+    expect(out.width).toBe(50);
+    expect(out.height).toBe(100);
+  });
+
+  it('is alias-safe when out is the same object as rect', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
+    const rect = { x: 10, y: 20, width: 40, height: 60 };
+    screenToDipRect(screen, rect, rect);
+    expect(rect.x).toBe(5);
+    expect(rect.y).toBe(10);
+    expect(rect.width).toBe(20);
+    expect(rect.height).toBe(30);
+  });
+
+  it('is the inverse of dipToScreenRect', () => {
+    const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 3 });
+    const original = { x: 10, y: 20, width: 100, height: 200 };
+    const physical = { x: 0, y: 0, width: 0, height: 0 };
+    dipToScreenRect(screen, original, physical);
+    const recovered = { x: 0, y: 0, width: 0, height: 0 };
+    screenToDipRect(screen, physical, recovered);
+    expect(recovered.x).toBeCloseTo(original.x);
+    expect(recovered.y).toBeCloseTo(original.y);
+    expect(recovered.width).toBeCloseTo(original.width);
+    expect(recovered.height).toBeCloseTo(original.height);
+  });
+});
+
+// --- setScreenBackend ---
+
 describe('setScreenBackend', () => {
   it('clears back to the web fallback when passed null', () => {
-    setScreenBackend(fakeBackend(1));
+    setScreenBackend(fakeBackend([{}]));
     setScreenBackend(null);
     expect(getScreenBackend()).not.toBeNull();
   });

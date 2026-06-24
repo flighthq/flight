@@ -1,5 +1,5 @@
 import { createCamera, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createVector3 } from '@flighthq/geometry';
+import { createVector3, setMatrix4Identity } from '@flighthq/geometry';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
@@ -27,31 +27,6 @@ const LIGHTS: SceneLights = {
 };
 
 describe('drawGlScene', () => {
-  it('draws each visible mesh subset with its registered material renderer', () => {
-    const { state, gl } = makeGlSceneState();
-    registerStandardPbrGlMaterial(state);
-
-    const scene = createScene();
-    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
-    addNodeChild(scene, mesh);
-
-    drawGlScene(state, scene, makeCamera(), LIGHTS);
-
-    expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
-    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
-  });
-
-  it('skips a subset whose material has no registered renderer (no fallback)', () => {
-    const { state, gl } = makeGlSceneState();
-    // No registerStandardPbrGlMaterial: nothing resolves.
-    const scene = createScene();
-    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
-    addNodeChild(scene, mesh);
-
-    drawGlScene(state, scene, makeCamera(), LIGHTS);
-    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
-  });
-
   it('binds once for a run of subsets sharing a material', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
@@ -81,5 +56,114 @@ describe('drawGlScene', () => {
 
     drawGlScene(state, scene, makeCamera(), LIGHTS);
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
+  });
+
+  it('draws each visible mesh subset with its registered material renderer', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    addNodeChild(scene, mesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
+  });
+
+  it('enables GL blend for subsets with alphaMode blend and disables it after', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    const blendedMaterial = createStandardPbrMaterial();
+    blendedMaterial.alphaMode = 'blend';
+    const mesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    addNodeChild(scene, mesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    const enableCalls = gl.calls.filter((c) => c.name === 'enable');
+    const disableCalls = gl.calls.filter((c) => c.name === 'disable');
+    // BLEND = 0x0be2
+    expect(enableCalls.some((c) => c.args[0] === 0x0be2)).toBe(true);
+    expect(disableCalls.some((c) => c.args[0] === 0x0be2)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'blendFunc')).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
+  });
+
+  it('draws opaque subsets before blended subsets regardless of scene order', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    // Add blended first, then opaque — opaque should still draw before blended.
+    const blendedMaterial = createStandardPbrMaterial();
+    blendedMaterial.alphaMode = 'blend';
+    const opaqueMaterial = createStandardPbrMaterial();
+
+    const blendedMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    const opaqueMesh = createMesh(createBoxMeshGeometry(), [opaqueMaterial]);
+    addNodeChild(scene, blendedMesh);
+    addNodeChild(scene, opaqueMesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    // Both meshes drawn.
+    expect(gl.calls.filter((c) => c.name === 'drawElements').length).toBe(2);
+    // GL blending was enabled and then disabled (blended pass ran).
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(true);
+  });
+
+  it('does not enable GL blend when all subsets are opaque', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    addNodeChild(scene, mesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    // No blended subsets: GL_BLEND should not be enabled.
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(false);
+  });
+
+  it('skips a subset whose material has no registered renderer (no fallback)', () => {
+    const { state, gl } = makeGlSceneState();
+    // No registerStandardPbrGlMaterial: nothing resolves.
+    const scene = createScene();
+    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    addNodeChild(scene, mesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
+  });
+
+  it('sorts blended subsets back-to-front by camera depth', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    const blendedMaterial = createStandardPbrMaterial();
+    blendedMaterial.alphaMode = 'blend';
+
+    // Place two meshes at different Z depths: far (z=-3) and near (z=-1). The far mesh should be
+    // drawn first (larger clip-W, farthest from camera) in the blended pass. Set localMatrix
+    // directly — the 3D transform is a raw Matrix4 (column 3 carries the world translation).
+    const farMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    const nearMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    setMatrix4Identity(farMesh.localMatrix);
+    farMesh.localMatrix.m[14] = -3;
+    setMatrix4Identity(nearMesh.localMatrix);
+    nearMesh.localMatrix.m[14] = -1;
+    addNodeChild(scene, nearMesh);
+    addNodeChild(scene, farMesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    // Both blended meshes are drawn.
+    expect(gl.calls.filter((c) => c.name === 'drawElements').length).toBe(2);
   });
 });

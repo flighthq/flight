@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../types" }],
+  "references": [{ "path": "../device-formats" }, { "path": "../platform-formats" }, { "path": "../types" }],
   "include": ["src"]
 }

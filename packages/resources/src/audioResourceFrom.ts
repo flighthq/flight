@@ -14,25 +14,28 @@ export function createAudioResourceFromUrl(url: string): AudioResource {
   return resource;
 }
 
-export function createAudioResourceFromURLs(sources: AudioResourceUrl[]): AudioResource {
+export function createAudioResourceFromUrls(sources: AudioResourceUrl[]): AudioResource {
   const probe = new Audio();
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferAudioType(url) ?? '') !== '');
   if (selected === undefined) return createAudioResource();
   return createAudioResourceFromUrl(selected.url);
 }
 
-export async function loadAudioResourceFromUrl(url: string): Promise<AudioResource> {
-  const response = await fetch(url);
+export async function loadAudioResourceFromUrl(url: string, signal?: AbortSignal): Promise<AudioResource> {
+  const response = await fetch(url, { signal });
   const arrayBuffer = await response.arrayBuffer();
   const audioBuffer = await getAudioContext().decodeAudioData(arrayBuffer);
   return createAudioResource(audioBuffer);
 }
 
-export async function loadAudioResourceFromURLs(sources: AudioResourceUrl[]): Promise<AudioResource> {
+export async function loadAudioResourceFromUrls(
+  sources: AudioResourceUrl[],
+  signal?: AbortSignal,
+): Promise<AudioResource> {
   const probe = new Audio();
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferAudioType(url) ?? '') !== '');
   if (selected === undefined) return createAudioResource();
-  return loadAudioResourceFromUrl(selected.url);
+  return loadAudioResourceFromUrl(selected.url, signal);
 }
 
 function inferAudioType(url: string): string | null {

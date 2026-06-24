@@ -3,18 +3,6 @@ import type { GlRenderState, MeshGeometry, VertexAttribute } from '@flighthq/typ
 import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
-// Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's
-// VAO wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
-// (position/normal/tangent/uv0); `color0` (location 4) is bound only when a geometry's layout carries
-// it (the VertexColor path), and is otherwise simply absent from the layout and left unbound.
-const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
-  color0: 4,
-  normal: 1,
-  position: 0,
-  tangent: 2,
-  uv0: 3,
-};
-
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into a VAO for this
 // GlRenderState, caching the result keyed by the geometry entity (the per-state parallel of
 // MeshGeometryRuntime.webglData). Re-uploads when geometry.version moves past the cached version,
@@ -66,6 +54,37 @@ export function ensureGlMeshUpload(state: GlRenderState, geometry: Readonly<Mesh
 
   upload.version = geometry.version;
   return upload;
+}
+
+// Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's
+// VAO wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
+// (position/normal/tangent/uv0); `color0` (location 4) is bound only when a geometry's layout carries
+// it (the VertexColor path); `uv1` (location 5) is the second UV set (occlusion/lightmap channel per
+// glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the skinning channels (reserved for a
+// future GPU-skinning pass). Semantics absent from a geometry's layout are simply left unbound.
+const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
+  color0: 4,
+  joints0: 6,
+  normal: 1,
+  position: 0,
+  tangent: 2,
+  uv0: 3,
+  uv1: 5,
+  weights0: 7,
+};
+
+// Returns true when a MeshGeometry's vertex layout contains a `uv1` semantic (glTF TEXCOORD_1).
+// Used by material renderers to drive the `hasUv1` flag in GlPbrDefineKey at bind time, so the
+// compiled shader variant matches the actual geometry layout without the caller needing to know.
+// A geometry without `uv1` in its layout will have location 5 unbound; the shader path is
+// disabled (#ifndef HAS_UV1) and the attribute reads zero — safe but wasted sampler. Pass the
+// result to buildGlPbrStandardDefineKey as the `hasUv1` argument.
+export function hasGlMeshGeometryUv1(geometry: Readonly<MeshGeometry>): boolean {
+  const attributes = geometry.layout.attributes;
+  for (let i = 0; i < attributes.length; i++) {
+    if (attributes[i].semantic === 'uv1') return true;
+  }
+  return false;
 }
 
 function bindGlVertexAttribute(gl: WebGL2RenderingContext, attribute: Readonly<VertexAttribute>, stride: number): void {
