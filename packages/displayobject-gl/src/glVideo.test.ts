@@ -1,7 +1,7 @@
 ﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import type { RendererData, RenderProxy2D } from '@flighthq/types';
 
+import { makeGlState } from './glTestHelper';
 import { createGlVideoData, defaultGlVideoRenderer, destroyGlVideoData, drawGlVideo } from './glVideo';
 
 function makeVideoNode(element: HTMLVideoElement | null = null): RenderProxy2D {

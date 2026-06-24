@@ -1,7 +1,7 @@
-import { makeGlState } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { defaultGlParticleEmitterRenderer, drawGlParticleEmitter } from './glParticleEmitter';
+import { makeGlState } from './glTestHelper';
 
 function makeAtlas() {
   const img = document.createElement('img');

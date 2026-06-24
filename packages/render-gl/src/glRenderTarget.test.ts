@@ -10,6 +10,7 @@ import {
   drawGlRenderTargetResult,
   endGlRenderTarget,
   resizeGlRenderTarget,
+  resolveGlRenderTarget,
 } from './glRenderTarget';
 import { makeGlState } from './glTestHelper';
 
@@ -255,5 +256,62 @@ describe('resizeGlRenderTarget', () => {
       target.texture,
     );
     expect(vi.mocked(gl.texImage2D)).toHaveBeenCalled();
+  });
+});
+
+describe('resolveGlRenderTarget', () => {
+  it('is a no-op for a single-sample target', () => {
+    const { state, gl } = makeState();
+    const target = createGlRenderTarget(state, { width: 64, height: 48 });
+    expect(target.sampleCount).toBe(1);
+    vi.clearAllMocks();
+
+    resolveGlRenderTarget(state, target);
+
+    expect(vi.mocked(gl.bindFramebuffer)).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op when the target has no resolve framebuffer', () => {
+    const { state, gl } = makeState();
+    const target = createGlRenderTarget(state, { width: 64, height: 48 });
+    // Force the MSAA sample-count gate open but leave resolveFramebuffer null.
+    target.sampleCount = 4;
+    target.resolveFramebuffer = null;
+    vi.clearAllMocks();
+
+    resolveGlRenderTarget(state, target);
+
+    expect(vi.mocked(gl.bindFramebuffer)).not.toHaveBeenCalled();
+  });
+
+  it('blits each color attachment and flushes for an MSAA target', () => {
+    const { state, gl } = makeState();
+    const target = createGlRenderTarget(state, { width: 64, height: 48 });
+    target.sampleCount = 4;
+    target.resolveFramebuffer = {} as WebGLFramebuffer;
+    // Two color attachments resolve as two separate blits.
+    target.textures = [{} as WebGLTexture, {} as WebGLTexture];
+
+    const blit = vi.fn();
+    const readBuffer = vi.fn();
+    const drawBuffers = vi.fn();
+    const flush = vi.fn();
+    Object.assign(gl as unknown as Record<string, unknown>, {
+      READ_FRAMEBUFFER: 36008,
+      DRAW_FRAMEBUFFER: 36009,
+      COLOR_BUFFER_BIT: 16384,
+      NEAREST: 9728,
+      NONE: 0,
+      blitFramebuffer: blit,
+      readBuffer,
+      drawBuffers,
+      flush,
+    });
+
+    resolveGlRenderTarget(state, target);
+
+    expect(blit).toHaveBeenCalledTimes(2);
+    expect(readBuffer).toHaveBeenCalledTimes(2);
+    expect(flush).toHaveBeenCalledTimes(1);
   });
 });

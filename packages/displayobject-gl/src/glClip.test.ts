@@ -1,10 +1,10 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import type { ClipRegion, DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import { enableGlClipSupport } from './glClip';
+import { makeGlState } from './glTestHelper';
 
 function makeRectClip(): ClipRegion {
   return { rect: createRectangle(0, 0, 50, 50), contours: null, winding: 'nonZero', version: 0 };

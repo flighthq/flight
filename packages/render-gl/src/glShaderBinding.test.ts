@@ -1,13 +1,39 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { DisplayObject } from '@flighthq/types';
+import type { DisplayObject, Kind } from '@flighthq/types';
 
 import { getGlRenderStateRuntime } from './glRenderState';
-import { getGlShader, resolveGlShader, setGlShader } from './glShaderBinding';
+import {
+  getGlMaterialShader,
+  getGlShader,
+  registerGlMaterialShader,
+  resolveGlShader,
+  setGlShader,
+} from './glShaderBinding';
 import { makeGlState } from './glTestHelper';
 
 function makeShader() {
   return { locations: {} as never, program: {} as never, bind: vi.fn() };
 }
+
+describe('getGlMaterialShader', () => {
+  it('returns null when no material shader is registered for the kind', () => {
+    const { state } = makeGlState();
+    expect(getGlMaterialShader(state, 'Tint' as Kind)).toBeNull();
+  });
+
+  it('returns the shader registered for the kind', () => {
+    const { state } = makeGlState();
+    const shader = makeShader();
+    registerGlMaterialShader(state, 'Tint' as Kind, shader);
+    expect(getGlMaterialShader(state, 'Tint' as Kind)).toBe(shader);
+  });
+
+  it('returns null for a kind other than the one registered', () => {
+    const { state } = makeGlState();
+    registerGlMaterialShader(state, 'Tint' as Kind, makeShader());
+    expect(getGlMaterialShader(state, 'ColorMatrix' as Kind)).toBeNull();
+  });
+});
 
 describe('getGlShader', () => {
   it('returns the shader bound to a render node', () => {
@@ -23,6 +49,40 @@ describe('getGlShader', () => {
     const { state } = makeGlState();
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
     expect(getGlShader(renderProxy)).toBeUndefined();
+  });
+});
+
+describe('registerGlMaterialShader', () => {
+  it('makes the shader retrievable by its material kind', () => {
+    const { state } = makeGlState();
+    const shader = makeShader();
+    registerGlMaterialShader(state, 'Tint' as Kind, shader);
+    expect(getGlMaterialShader(state, 'Tint' as Kind)).toBe(shader);
+  });
+
+  it('overwrites a previous registration for the same kind', () => {
+    const { state } = makeGlState();
+    const first = makeShader();
+    const second = makeShader();
+    registerGlMaterialShader(state, 'Tint' as Kind, first);
+    registerGlMaterialShader(state, 'Tint' as Kind, second);
+    expect(getGlMaterialShader(state, 'Tint' as Kind)).toBe(second);
+  });
+
+  it('makes resolveGlShader return the material shader for a matching node', () => {
+    const { state } = makeGlState();
+    const shader = makeShader();
+    registerGlMaterialShader(state, 'Tint' as Kind, shader);
+    const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
+    renderProxy.material = { kind: 'Tint' as Kind } as never;
+    expect(resolveGlShader(state, renderProxy)).toBe(shader);
+  });
+
+  it('keeps registrations isolated per render state', () => {
+    const { state: a } = makeGlState();
+    const { state: b } = makeGlState();
+    registerGlMaterialShader(a, 'Tint' as Kind, makeShader());
+    expect(getGlMaterialShader(b, 'Tint' as Kind)).toBeNull();
   });
 });
 

@@ -1,11 +1,11 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { defaultGlBitmapRenderer, drawGlBitmap } from './glBitmap';
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { makeGlState } from './glTestHelper';
 
 function makeBitmapData() {
   return { lastSrc: null, lastVersion: -1 };

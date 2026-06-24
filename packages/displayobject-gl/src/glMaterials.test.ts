@@ -1,8 +1,8 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
 
 import { getGlRenderProxyColorTransform, registerGlColorTransformShader } from './glMaterials';
+import { makeGlState } from './glTestHelper';
 
 describe('getGlRenderProxyColorTransform', () => {
   it('returns null when the node has no material', () => {

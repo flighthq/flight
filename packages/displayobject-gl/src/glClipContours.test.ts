@@ -1,8 +1,8 @@
 import { createMatrix } from '@flighthq/geometry';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 
 import { popGlClipContours, pushGlClipContours } from './glClipContours';
+import { makeGlState } from './glTestHelper';
 
 const SQUARE = [[0, 0, 50, 0, 50, 50, 0, 50]];
 
