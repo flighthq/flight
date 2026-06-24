@@ -1,0 +1,221 @@
+
+> fix
+> npm run order:fix && npm run lint:fix && npm run format
+
+
+> order:fix
+> tsx ./scripts/order.ts --fix
+
+OK Source and test order valid
+
+> lint:fix
+> eslint -c eslint.config.ts . --fix --no-warn-ignored
+
+
+/home/joshua/Development/flight/worktrees/integration/packages/device-formats/src/userAgentParse.test.ts
+  9:8  error  Relative imports from parent directories are not allowed. Please either pass what you're importing through at runtime (dependency injection), move `userAgentParse.test.ts` to same directory as `@flighthq/types` or consider making `@flighthq/types` a package  import/no-relative-parent-imports
+
+/home/joshua/Development/flight/worktrees/integration/packages/device-formats/src/userAgentParse.ts
+   1:39  error  Relative imports from parent directories are not allowed. Please either pass what you're importing through at runtime (dependency injection), move `userAgentParse.ts` to same directory as `@flighthq/types` or consider making `@flighthq/types` a package  import/no-relative-parent-imports
+  10:8   error  Relative imports from parent directories are not allowed. Please either pass what you're importing through at runtime (dependency injection), move `userAgentParse.ts` to same directory as `@flighthq/types` or consider making `@flighthq/types` a package  import/no-relative-parent-imports
+
+/home/joshua/Development/flight/worktrees/integration/packages/device/src/device.ts
+  1:89  error  Unable to resolve path to module '@flighthq/device-formats'    import/no-unresolved
+  2:36  error  Unable to resolve path to module '@flighthq/platform-formats'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/filters-canvas/src/canvasFilterDispatch.test.ts
+  13:61  error  Unable to resolve path to module './canvasFilterDispatch'  import/no-unresolved
+  14:54  error  Unable to resolve path to module './testHelper'            import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/filters-css/src/index.ts
+  4:0  error  Parsing error: Merge conflict marker encountered
+
+/home/joshua/Development/flight/worktrees/integration/packages/filters/src/bitmapFilterMargin.ts
+  10:8   error  Unable to resolve path to module './bitmapFilterGuards'  import/no-unresolved
+  18:44  error  Unable to resolve path to module './blurQuality'         import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/filters/src/bitmapFilterValidation.ts
+  3:32  error  Unable to resolve path to module './bitmapFilterGuards'  import/no-unresolved
+  4:37  error  Unable to resolve path to module './colorMatrixMath'     import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/host-electron/src/electronNotification.test.ts
+  85:0  error  Parsing error: Merge conflict marker encountered
+
+/home/joshua/Development/flight/worktrees/integration/packages/host-electron/src/electronNotification.ts
+  34:0  error  Parsing error: Merge conflict marker encountered
+
+/home/joshua/Development/flight/worktrees/integration/packages/platform-formats/src/userAgent.ts
+  1:102  error  Relative imports from parent directories are not allowed. Please either pass what you're importing through at runtime (dependency injection), move `userAgent.ts` to same directory as `@flighthq/types` or consider making `@flighthq/types` a package  import/no-relative-parent-imports
+
+/home/joshua/Development/flight/worktrees/integration/packages/platform/src/platform.ts
+  11:8  error  Unable to resolve path to module '@flighthq/platform-formats'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/render/src/renderViewport.test.ts
+  13:8  error  Unable to resolve path to module './renderViewport'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/sdk/src/index.ts
+   7:15  error  Unable to resolve path to module '@flighthq/device-formats'    import/no-unresolved
+  50:15  error  Unable to resolve path to module '@flighthq/platform-formats'  import/no-unresolved
+  56:15  error  Unable to resolve path to module '@flighthq/resource-formats'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/spritesheet-formats/src/cocosPlistParse.ts
+  2:34  error  Unable to resolve path to module '@flighthq/resource-formats'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/spritesheet-formats/src/spritesheetDetect.ts
+  13:45  error  Unable to resolve path to module './libgdxAtlasParse'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/spritesheet-formats/src/starlingParse.ts
+  1:10  warning  'parseXmlDocument' is defined but never used                   @typescript-eslint/no-unused-vars
+  1:34  error    Unable to resolve path to module '@flighthq/resource-formats'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/spritesheet-formats/src/xmlParse.ts
+  6:54  error  Unable to resolve path to module '@flighthq/resource-formats'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/surface/src/surfaceFill.ts
+  35:0  error  Parsing error: Merge conflict marker encountered
+
+/home/joshua/Development/flight/worktrees/integration/packages/surface/src/surfaceNoise.ts
+  86:0  error  Parsing error: Merge conflict marker encountered
+
+/home/joshua/Development/flight/worktrees/integration/packages/textshaper/src/_textShaperHooks.test.ts
+  3:67  error  Unable to resolve path to module './_textShaperHooks'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/textshaper/src/textShaperRun.test.ts
+  18:8  error  Unable to resolve path to module './textShaperRun'  import/no-unresolved
+
+/home/joshua/Development/flight/worktrees/integration/packages/timeline/src/movieClip.ts
+  14:3  warning  'TimelineSignals' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/packages/timeline/src/timeline.ts
+  5:3  warning  'PlayMode' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/bitmap-color-transform/src/app.ts
+  60:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/bitmap-downscale-smoothing/src/app.ts
+  67:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/bitmap-smoothing/src/app.ts
+  28:7  warning  'SIZE' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  50:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/bitmap-source-rect/src/app.ts
+  55:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/bitmap-transparent-compositing/src/app.ts
+  59:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/displayobject-cache/src/app.ts
+  56:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/displayobject-clip-contour/src/app.ts
+  46:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/displayobject-clip-rect/src/app.ts
+  41:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/mesh-cone/src/app.ts
+  92:9  warning  'tx' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/mesh-multiple-depth/src/app.ts
+  27:3  warning  'createMatrix4' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/node-alpha/src/app.ts
+  33:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/node-blend-modes-advanced/src/app.ts
+  42:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/node-blend-modes/src/app.ts
+  47:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/node-hierarchy/src/app.ts
+  40:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/node-transform/src/app.ts
+  35:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/node-visibility-inheritance/src/app.ts
+  44:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/node-visibility/src/app.ts
+  42:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/quadbatch-grid/src/app.ts
+  44:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/scale9-stretch/src/app.ts
+  49:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-curves/src/app.ts
+  36:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-fill-bitmap/src/app.ts
+  50:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-fill-gradient/src/app.ts
+  33:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-fill-radial/src/app.ts
+  34:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-fill-solid/src/app.ts
+  43:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-stroke-caps/src/app.ts
+  30:7  warning  'HALF' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  39:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-stroke-joints/src/app.ts
+  49:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/shape-stroke/src/app.ts
+  38:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/sprite-atlas/src/app.ts
+  36:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-align-center/src/app.ts
+  33:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-align-right/src/app.ts
+  33:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-background-box/src/app.ts
+  42:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-basic/src/app.ts
+  25:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-bold/src/app.ts
+  52:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-border-box/src/app.ts
+  35:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-italic/src/app.ts
+  49:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-multiformat/src/app.ts
+  43:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-strikethrough/src/app.ts
+  41:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-underline/src/app.ts
+  43:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/text-wrap/src/app.ts
+  31:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/textlabel-basic/src/app.ts
+  29:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/tilemap-grid/src/app.ts
+  39:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/joshua/Development/flight/worktrees/integration/tests/functional/video-frame/src/app.ts
+  30:9  warning  'height' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 75 problems (28 errors, 47 warnings)
+

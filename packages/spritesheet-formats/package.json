@@ -27,13 +27,9 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-<<<<<<< Updated upstream
-    "@flighthq/spritesheet": "*"
-=======
     "@flighthq/resource-formats": "*",
     "@flighthq/spritesheet": "*",
     "@flighthq/types": "*"
->>>>>>> Stashed changes
   },
   "devDependencies": {
     "typescript": "^5.3.0"

@@ -2,7 +2,6 @@ import { createSignal, emitSignal } from '@flighthq/signals';
 import type {
   DisplayObject,
   FrameScript,
-  PlayMode,
   Timeline,
   TimelineFrameEvent,
   TimelineLabel,

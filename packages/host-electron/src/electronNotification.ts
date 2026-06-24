@@ -31,12 +31,8 @@ export function createElectronNotificationBackend(electron: ElectronApi): Notifi
       n.show();
       return true;
     },
-<<<<<<< Updated upstream
-    async requestPermission() {
-=======
 
     async requestPermission(): Promise<NotificationPermission> {
->>>>>>> Stashed changes
       // Electron requires no permission grant; support is the only gate.
       return electron.Notification.isSupported() ? 'granted' : 'denied';
     },
