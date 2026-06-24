@@ -36,20 +36,31 @@ export function hasTextInput(node: Readonly<RichText>): boolean {
 
 function applyTextInputOptions(state: TextInputState, options: Readonly<TextInputOptions>): void {
   if (options.alwaysShowSelection !== undefined) state.alwaysShowSelection = options.alwaysShowSelection;
+  if (options.caretColor !== undefined) state.caretColor = options.caretColor;
+  if (options.caretWidth !== undefined) state.caretWidth = options.caretWidth;
   if (options.displayAsPassword !== undefined) state.displayAsPassword = options.displayAsPassword;
+  if (options.historyLimit !== undefined) state.historyLimit = Math.max(0, options.historyLimit);
   if (options.passwordCharacter !== undefined) state.passwordCharacter = options.passwordCharacter;
   if (options.restrict !== undefined) state.restrict = options.restrict;
   if (options.selectionAlpha !== undefined) state.selectionAlpha = options.selectionAlpha;
   if (options.selectionColor !== undefined) state.selectionColor = options.selectionColor;
 }
 
-// Defaults match OpenFL's TextField input conventions (bullet password char, light selection tint).
+// Defaults match OpenFL's TextField input conventions (bullet password char, light selection tint,
+// opaque black caret 1px wide). desiredCaretX starts unset (-1) so vertical navigation anchors to
+// the actual caret position on the first up/down keystroke. historyLimit defaults to 100 entries.
 function createTextInputState(options?: Readonly<TextInputOptions>): TextInputState {
   return {
     alwaysShowSelection: options?.alwaysShowSelection ?? false,
+    caretColor: options?.caretColor ?? 0x000000,
     caretIndex: 0,
+    caretWidth: options?.caretWidth ?? 1,
+    desiredCaretX: -1,
     displayAsPassword: options?.displayAsPassword ?? false,
     focused: false,
+    history: [],
+    historyIndex: -1,
+    historyLimit: options?.historyLimit !== undefined ? Math.max(0, options.historyLimit) : 100,
     passwordCharacter: options?.passwordCharacter ?? '•',
     restrict: options?.restrict ?? '',
     selectionAlpha: options?.selectionAlpha ?? 0.35,

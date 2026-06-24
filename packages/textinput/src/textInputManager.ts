@@ -1,12 +1,6 @@
 import { connectSignal, disconnectSignal } from '@flighthq/signals';
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text';
-import type {
-  InputKeyboardData,
-  RichText,
-  TextInputManager,
-  TextInputSource,
-  TextSelectionRange,
-} from '@flighthq/types';
+import type { InputKeyboardData, InputTextData, RichText, TextInputManager, TextInputSource } from '@flighthq/types';
 
 import { getTextInputState } from './textInput';
 import {
@@ -26,7 +20,7 @@ export function blurTextInput(manager: TextInputManager): void {
 
 export function connectInputToTextInput(input: TextInputSource, manager: TextInputManager): () => void {
   const onKeyDown = (data: Readonly<InputKeyboardData>) => dispatchTextInputKeyDown(manager, data);
-  const onTextInput = (data: Readonly<TextSelectionRange>) => dispatchTextInput(manager, data.text);
+  const onTextInput = (data: Readonly<InputTextData>) => dispatchTextInput(manager, data.text);
 
   connectSignal(input.onKeyDown, onKeyDown);
   connectSignal(input.onTextInput, onTextInput);
@@ -55,15 +49,11 @@ export function dispatchTextInputKeyDown(
   manager: TextInputManager,
   data: Readonly<InputKeyboardData>,
   clipboardText?: string,
+  onCopy?: (text: string) => void,
 ): boolean {
   const target = getTextInputFocusTarget(manager);
   if (target === null) return false;
-  return handleTextInputKeyboard(target, data, {
-    clipboardText,
-    onCopy: (text: string) => {
-      navigator.clipboard?.writeText(text);
-    },
-  });
+  return handleTextInputKeyboard(target, data, { clipboardText, onCopy });
 }
 
 export function dispatchTextInputPointerDown(
