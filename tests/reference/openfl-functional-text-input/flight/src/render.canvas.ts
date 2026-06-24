@@ -3,7 +3,7 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   defaultCanvasRichTextRenderer,
-  enableCanvasTextInput,
+  enableCanvasTextInputSupport,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
@@ -18,7 +18,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { backgroundColor: 0xffffffff, pixelRatio });
 registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
 // Opt the RichText renderer into drawing the editable-input caret/selection overlay.
-enableCanvasTextInput();
+enableCanvasTextInputSupport();
 export const scale = pixelRatio;
 export const width = 800;
 export const height = 300;

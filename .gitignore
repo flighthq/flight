@@ -182,5 +182,5 @@ packages/*/src/wasm/package.json
 !packages/*/src/wasm/*.d.ts
 packages/*/src/wasm/*_bg.wasm.d.ts
 
-# import:worktree incoming review bundles
-/incoming/
+# review:snapshot output bundles
+/review/

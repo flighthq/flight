@@ -7,7 +7,7 @@ import {
   connectSignal,
   createApplication,
   createApplicationWindow,
-  createAudioResourceFromURLs,
+  createAudioResourceFromUrls,
   createBitmap,
   createDisplayObject,
   createInputManager,
@@ -16,7 +16,7 @@ import {
   DisplayObjectKind,
   hitTestGraphLocalBounds,
   invalidateNodeRender,
-  loadAudioResourceFromURLs,
+  loadAudioResourceFromUrls,
   loadFontFromUrl,
   loadImageResourceFromUrl,
   registerHitTestPoint,
@@ -35,7 +35,7 @@ const [bgImage, footerImage, logoImage, font, theme, ...tileImages] = await Prom
   loadImageResourceFromUrl('assets/images/center_bottom.png'),
   loadImageResourceFromUrl('assets/images/logo.png'),
   loadFontFromUrl('assets/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
-  loadAudioResourceFromURLs([{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
+  loadAudioResourceFromUrls([{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
   loadImageResourceFromUrl('assets/images/game_bear.png'),
   loadImageResourceFromUrl('assets/images/game_bunny_02.png'),
   loadImageResourceFromUrl('assets/images/game_carrot.png'),
@@ -46,9 +46,9 @@ const [bgImage, footerImage, logoImage, font, theme, ...tileImages] = await Prom
 
 const sounds = [
   theme,
-  createAudioResourceFromURLs([{ url: 'assets/sounds/sound3.ogg' }, { url: 'assets/sounds/sound3.mp3' }]),
-  createAudioResourceFromURLs([{ url: 'assets/sounds/sound4.ogg' }, { url: 'assets/sounds/sound4.mp3' }]),
-  createAudioResourceFromURLs([{ url: 'assets/sounds/sound5.ogg' }, { url: 'assets/sounds/sound5.mp3' }]),
+  createAudioResourceFromUrls([{ url: 'assets/sounds/sound3.ogg' }, { url: 'assets/sounds/sound3.mp3' }]),
+  createAudioResourceFromUrls([{ url: 'assets/sounds/sound4.ogg' }, { url: 'assets/sounds/sound4.mp3' }]),
+  createAudioResourceFromUrls([{ url: 'assets/sounds/sound5.ogg' }, { url: 'assets/sounds/sound5.mp3' }]),
 ];
 
 // ── Scene ──────────────────────────────────────────────────────────────────

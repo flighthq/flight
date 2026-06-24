@@ -22,6 +22,9 @@ export default [
       // surface-rs): the wasm-bindgen glue plus the base64-embedded module.
       // Baked by `npm run wasm`; never linted.
       '**/src/wasm/**',
+      // Agent orchestration scripts in tools/agents/docs/ — workflow JS files,
+      // not TypeScript source, not subject to project lint rules.
+      'tools/agents/docs/**/*.js',
     ],
   },
   {
