@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import * as ts from 'typescript';
 
+import { isSdkBarrelExcludedPackage } from './sdk-policy';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const packagesDir = join(root, 'packages');
@@ -327,6 +329,98 @@ for (const pkgDir of packageDirs) {
   results.push({ name, errors });
 }
 
+// --- check @flighthq/sdk barrel sync ---
+//
+// Every app-facing @flighthq/* package must appear as:
+//   1. an `export *` line in packages/sdk/src/index.ts
+//   2. a "*" dependency entry in packages/sdk/package.json
+// Packages excluded by isSdkBarrelExcludedPackage must NOT appear in either place.
+// This check runs as part of `npm run packages:check` so barrel drift is caught
+// without needing a separate script invocation.
+
+interface BarrelSyncError {
+  label: string;
+  detail?: string;
+}
+
+function checkSdkBarrelSync(): BarrelSyncError[] {
+  const errors: BarrelSyncError[] = [];
+  const sdkDir = join(packagesDir, 'sdk');
+  const barrelPath = join(sdkDir, 'src', 'index.ts');
+  const sdkManifestPath = join(sdkDir, 'package.json');
+
+  if (!existsSync(barrelPath) || !existsSync(sdkManifestPath)) return errors;
+
+  // Collect app-facing package names from the already-discovered packageDirs
+  const appFacingNames = new Set<string>();
+  for (const pkgDir of packageDirs) {
+    const pkg = readJson<PackageJson>(join(pkgDir, 'package.json'));
+    if (pkg?.name?.startsWith('@flighthq/') && !isSdkBarrelExcludedPackage(pkg.name)) {
+      appFacingNames.add(pkg.name);
+    }
+  }
+
+  // Parse barrel export lines
+  const barrelSource = readFileSync(barrelPath, 'utf-8');
+  const barrelExports = new Set<string>();
+  for (const line of barrelSource.split('\n')) {
+    const match = /^export \* from '(@flighthq\/[^']+)';/.exec(line.trim());
+    if (match) barrelExports.add(match[1]);
+  }
+
+  // Parse barrel dependency entries
+  const sdkManifest = readJson<PackageJson>(sdkManifestPath);
+  const barrelDeps = new Set(Object.keys(sdkManifest?.dependencies ?? {}).filter((k) => k.startsWith('@flighthq/')));
+
+  // App-facing packages missing from the barrel
+  for (const name of [...appFacingNames].sort()) {
+    if (!barrelExports.has(name)) {
+      errors.push({
+        label: `@flighthq/sdk barrel missing export for ${name}`,
+        detail: `add "export * from '${name}';" to packages/sdk/src/index.ts`,
+      });
+    }
+    if (!barrelDeps.has(name)) {
+      errors.push({
+        label: `@flighthq/sdk barrel missing dependency for ${name}`,
+        detail: `add "${name}": "*" to packages/sdk/package.json dependencies`,
+      });
+    }
+  }
+
+  // Barrel entries pointing to non-existent or excluded packages
+  for (const name of [...barrelExports].sort()) {
+    if (isSdkBarrelExcludedPackage(name)) {
+      errors.push({
+        label: `@flighthq/sdk barrel must not export excluded package ${name}`,
+        detail: `remove "export * from '${name}';" from packages/sdk/src/index.ts`,
+      });
+    } else if (!appFacingNames.has(name)) {
+      errors.push({
+        label: `@flighthq/sdk barrel exports unknown package ${name}`,
+        detail: `no workspace package with this name — remove the export or add the package`,
+      });
+    }
+  }
+  for (const name of [...barrelDeps].sort()) {
+    if (isSdkBarrelExcludedPackage(name)) {
+      errors.push({
+        label: `@flighthq/sdk barrel must not depend on excluded package ${name}`,
+        detail: `remove "${name}": "*" from packages/sdk/package.json dependencies`,
+      });
+    } else if (!appFacingNames.has(name)) {
+      errors.push({
+        label: `@flighthq/sdk barrel depends on unknown package ${name}`,
+        detail: `no workspace package with this name — remove the dependency or add the package`,
+      });
+    }
+  }
+
+  return errors;
+}
+
+const barrelSyncErrors = checkSdkBarrelSync();
+
 // --- check each example ---
 
 const examplesDir = join(root, 'examples');
@@ -395,7 +489,7 @@ const packageErrors = failedPackages.reduce((n, r) => n + r.errors.length, 0);
 const failedExamples = exampleResults.filter((r) => r.errors.length > 0);
 const exampleErrors = failedExamples.reduce((n, r) => n + r.errors.length, 0);
 
-const totalErrors = packageErrors + exampleErrors;
+const totalErrors = packageErrors + exampleErrors + barrelSyncErrors.length;
 
 if (jsonMode) {
   console.log(
@@ -404,6 +498,7 @@ if (jsonMode) {
         passed: totalErrors === 0,
         packages: results.map((r) => ({ name: r.name, errors: r.errors })),
         examples: exampleResults.map((r) => ({ name: r.name, errors: r.errors })),
+        barrelSync: { errors: barrelSyncErrors },
       },
       null,
       2,
@@ -426,6 +521,13 @@ for (const { name, errors } of failedExamples) {
   }
 }
 
+if (barrelSyncErrors.length > 0) {
+  console.log(`\n${pc.bold('@flighthq/sdk barrel sync')}`);
+  for (const { label, detail } of barrelSyncErrors) {
+    console.log(`  ${pc.red('✗')} ${label}${detail ? pc.dim(` — ${detail}`) : ''}`);
+  }
+}
+
 if (totalErrors === 0) {
   console.log(pc.green(`✓ ${results.length} packages and ${exampleResults.length} examples valid`));
   process.exit(0);
@@ -440,6 +542,8 @@ if (totalErrors === 0) {
     parts.push(
       `${exampleErrors} error${exampleErrors === 1 ? '' : 's'} across ${failedExamples.length} example${failedExamples.length === 1 ? '' : 's'}`,
     );
+  if (barrelSyncErrors.length > 0)
+    parts.push(`${barrelSyncErrors.length} barrel sync error${barrelSyncErrors.length === 1 ? '' : 's'}`);
   console.log(pc.red(`✗ ${parts.join(', ')}`));
   process.exit(1);
 }

@@ -16,7 +16,7 @@ import {
   createTweenManager,
   easeOutQuadratic,
   invalidateNodeRender,
-  loadAudioResourceFromURLs,
+  loadAudioResourceFromUrls,
   playAudioResource,
   setAudioChannelGain,
   startApplicationLoop,
@@ -35,7 +35,7 @@ const background = createShape();
 background.alpha = 0.1;
 addNodeChild(root, background);
 
-const sound = await loadAudioResourceFromURLs([{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
+const sound = await loadAudioResourceFromUrls([{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
 
 let channel: AudioChannel | null = null;
 let playing = false;
