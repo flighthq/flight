@@ -3,30 +3,42 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
 } from '@flighthq/displayobject';
-import { createSignal } from '@flighthq/signals';
 import type {
+  FrameScript,
   MovieClip,
   MovieClipData,
   MovieClipRuntime,
   MovieClipSignals,
   PartialNode,
+  TimelineLabel,
+  TimelineSignals,
   TimelineSource,
 } from '@flighthq/types';
 import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types';
 
 import {
+  addTimelineFrameScript,
   createTimeline,
+  enableTimelineSignals,
+  getTimelineCurrentLabel,
+  getTimelineFrameScript,
   gotoAndPlayTimeline,
   gotoAndStopTimeline,
   nextFrameTimeline,
   playTimeline,
   prevFrameTimeline,
+  removeTimelineFrameScript,
   stopTimeline,
   updateTimeline,
 } from './timeline';
 
 // The MovieClip display node lives here, with its playback engine — a MovieClip is a DisplayObject whose
 // content is driven by a timeline, so the node and the engine that constructs its frames are one feature.
+export function addMovieClipFrameScript(clip: MovieClip, frame: number | string, script: FrameScript): void {
+  if (clip.data.timeline === null) return;
+  addTimelineFrameScript(clip.data.timeline, frame, script);
+}
+
 export function createMovieClip(obj?: Readonly<PartialNode<MovieClip>>): MovieClip {
   return createDisplayObjectGeneric(MovieClipKind, obj, createMovieClipData, createMovieClipRuntime) as MovieClip;
 }
@@ -43,25 +55,40 @@ export function createMovieClipRuntime(): MovieClipRuntime {
   return out;
 }
 
-export function createMovieClipSignals(): MovieClipSignals {
-  return {
-    onEnterFrame: createSignal(),
-    onExitFrame: createSignal(),
-    onFrameConstructed: createSignal(),
-  };
+// Allocates a MovieClipSignals group on the clip and arms per-frame signal emission. Idempotent —
+// returns the same group on subsequent calls. Also enables the underlying timeline signals so the
+// clip's signals fire when the timeline advances.
+export function enableMovieClipSignals(clip: MovieClip): MovieClipSignals {
+  const runtime = clip[EntityRuntimeKey] as MovieClipRuntime;
+  if (runtime.movieClipSignals !== null) return runtime.movieClipSignals;
+  // Ensure the timeline exists so signals can be armed even before setMovieClipSource is called.
+  if (clip.data.timeline === null) clip.data.timeline = createTimeline();
+  const signals = enableTimelineSignals(clip.data.timeline);
+  runtime.movieClipSignals = signals;
+  return signals;
 }
 
 export function getMovieClipCurrentFrame(clip: MovieClip): number {
   return clip.data.timeline?.currentFrame ?? 1;
 }
 
+export function getMovieClipCurrentLabel(clip: MovieClip): TimelineLabel | null {
+  if (clip.data.timeline === null) return null;
+  return getTimelineCurrentLabel(clip.data.timeline);
+}
+
+export function getMovieClipFrameScript(clip: MovieClip, frame: number | string): FrameScript | null {
+  if (clip.data.timeline === null) return null;
+  return getTimelineFrameScript(clip.data.timeline, frame);
+}
+
 export function getMovieClipRuntime(source: Readonly<MovieClip>): Readonly<MovieClipRuntime> {
   return getDisplayObjectRuntime(source) as MovieClipRuntime;
 }
 
-export function getMovieClipSignals(clip: MovieClip): MovieClipSignals {
+export function getMovieClipSignals(clip: MovieClip): MovieClipSignals | null {
   const runtime = clip[EntityRuntimeKey] as MovieClipRuntime;
-  return (runtime.movieClipSignals ??= createMovieClipSignals());
+  return runtime.movieClipSignals;
 }
 
 export function getMovieClipTotalFrames(clip: MovieClip): number {
@@ -97,6 +124,11 @@ export function prevFrameMovieClip(clip: MovieClip): void {
   prevFrameTimeline(clip.data.timeline);
 }
 
+export function removeMovieClipFrameScript(clip: MovieClip, frame: number | string): void {
+  if (clip.data.timeline === null) return;
+  removeTimelineFrameScript(clip.data.timeline, frame);
+}
+
 // Binds a TimelineSource to `clip`: gives it a timeline (reusing an existing one) pointed at the clip as
 // its construct target, and realizes the initial frame so the clip isn't blank before play. The source
 // comes from a format — createTimelineSource (hand-authored), createSpritesheetTimelineSource, etc.
@@ -105,6 +137,12 @@ export function setMovieClipSource(clip: MovieClip, source: TimelineSource): voi
   timeline.source = source;
   timeline.target = clip;
   clip.data.timeline = timeline;
+  // Re-wire the signals slot if signals have already been enabled on this clip's runtime.
+  const runtime = clip[EntityRuntimeKey] as MovieClipRuntime;
+  if (runtime.movieClipSignals !== null) {
+    const signals = enableTimelineSignals(timeline);
+    runtime.movieClipSignals = signals;
+  }
   gotoAndStopTimeline(timeline, timeline.currentFrame);
 }
 
