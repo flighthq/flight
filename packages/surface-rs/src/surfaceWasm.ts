@@ -486,7 +486,11 @@ export function flipSurfaceVertical(dest: Readonly<SurfaceRegion>, source: Reado
   runRegionPair(flip_surface_vertical_wasm, dest, source);
 }
 
-export function floodFillSurface(out: Surface, x: number, y: number, color: number): void {
+// `visited` matches the `@flighthq/surface` signature (a caller-provided scratch
+// buffer the JS implementation uses to track filled pixels). The wasm backend
+// manages its own visited set internally, so the argument is accepted for
+// drop-in signature parity but not forwarded across the boundary.
+export function floodFillSurface(out: Surface, x: number, y: number, color: number, _visited: Uint8Array): void {
   ensureSurfaceRs();
   flood_fill_surface_wasm(asUint8(out.data), out.width, out.height, x, y, color >>> 0);
   invalidateImageResource(out);
@@ -876,8 +880,24 @@ const SCRATCH_HISTOGRAM = new Uint32Array(1024);
 const SCRATCH_RECT = new Float64Array(4);
 
 // TS filter enums (string unions) mapped to their Rust repr(u8) discriminants.
+// Each map must stay in lockstep with the Rust enum in `flighthq-surface-wasm/src/lib.rs`
+// (the `*_from_u8` decode functions). Cardinality is tested in `surfaceWasm.test.ts`.
+//
+// BlendMode note: `compositeSurfacePixels` and `compositeSurfaceRegion` pass the
+// `BlendMode` enum value *directly* as its TS numeric discriminant — no string-union
+// lookup table is needed here because `BlendMode` is already a numeric enum.
+// The Rust `blend_mode_from_u8` in lib.rs covers all 15 TS variants (0=Add … 14=Subtract);
+// variant 10 (Normal) is handled by the `_` wildcard arm, not an explicit branch.
+// Explicit mapping: Add=0, Alpha=1, Darken=2, Difference=3, Erase=4, Hardlight=5,
+// Invert=6, Layer=7, Lighten=8, Multiply=9, Normal=10 (via `_`), Overlay=11,
+// Screen=12, Shader=13, Subtract=14. Cardinality test in `wasm discriminant map
+// cardinality` verifies all 15 variants round-trip correctly.
+
+// Mirrors `surface_bevel_type_from_u8`: Both=0, Inner=1, Outer=2.
 const SURFACE_BEVEL_TYPE: Readonly<Record<SurfaceBevelType, number>> = { both: 0, inner: 1, outer: 2 };
+// Mirrors `surface_convolution_edge_from_u8`: Clamp=0, Fill=1, Wrap=2.
 const SURFACE_CONVOLUTION_EDGE: Readonly<Record<SurfaceConvolutionEdge, number>> = { clamp: 0, fill: 1, wrap: 2 };
+// Mirrors `surface_displacement_mode_from_u8`: Clamp=0, Color=1, Ignore=2, Wrap=3.
 const SURFACE_DISPLACEMENT_MODE: Readonly<Record<SurfaceDisplacementMapMode, number>> = {
   clamp: 0,
   color: 1,
@@ -885,8 +905,11 @@ const SURFACE_DISPLACEMENT_MODE: Readonly<Record<SurfaceDisplacementMapMode, num
   wrap: 3,
 };
 
+// Mirrors `pixel_order_from_u8`: Abgr=0, Argb=1, Bgra=2, Rgba=3.
 const PIXEL_ORDER: Readonly<Record<PixelOrder, number>> = { ABGR: 0, ARGB: 1, BGRA: 2, RGBA: 3 };
+// Mirrors `resize_mode_from_u8`: Bicubic=0, Bilinear=1, Nearest=2.
 const RESIZE_MODE: Readonly<Record<SurfaceResizeMode, number>> = { bicubic: 0, bilinear: 1, nearest: 2 };
+// Mirrors `threshold_op_from_u8`: NotEqual=0, LessThan=1, LessEqual=2, Equal=3, GreaterThan=4, GreaterEqual=5.
 const THRESHOLD_OPERATION: Readonly<Record<ThresholdOperation, number>> = {
   '!=': 0,
   '<': 1,
