@@ -6,7 +6,9 @@ import {
   computeTextBoundsOffsetX,
   computeTextBoundsRectangle,
   computeTextBoundsWidth,
+  TEXT_BOUNDS_GUTTER,
 } from './textBounds';
+import { TEXT_LAYOUT_GUTTER } from './textLayout';
 
 function createSpec(spec: Partial<TextBoundsSpec> = {}): TextBoundsSpec {
   return {
@@ -94,5 +96,15 @@ describe('computeTextBoundsWidth', () => {
 
   it('uses text width plus gutters when autoSize is enabled', () => {
     expect(computeTextBoundsWidth(createSpec({ autoSize: 'left' }), createLayout({ textWidth: 30 }))).toBe(34);
+  });
+});
+
+describe('TEXT_BOUNDS_GUTTER', () => {
+  it('equals TEXT_LAYOUT_GUTTER (de-duplicated constant)', () => {
+    expect(TEXT_BOUNDS_GUTTER).toBe(TEXT_LAYOUT_GUTTER);
+  });
+
+  it('is a positive number', () => {
+    expect(TEXT_BOUNDS_GUTTER).toBeGreaterThan(0);
   });
 });

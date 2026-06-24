@@ -6,9 +6,13 @@ import type {
   TextSelectionRectangle,
 } from '@flighthq/types';
 
+/**
+ * @param _text Unused — character indices are already encoded in the layout groups. Kept for
+ *   backward compatibility; will be removed in a future breaking release.
+ */
 export function getRichTextCharBoundaries(
   out: Rectangle,
-  text: string,
+  _text: string,
   layout: Readonly<TextLayoutResult>,
   charIndex: number,
 ): boolean {
@@ -27,8 +31,12 @@ export function getRichTextCharBoundaries(
   return true;
 }
 
+/**
+ * @param _text Unused — hit-testing is performed against layout group geometry. Kept for
+ *   backward compatibility; will be removed in a future breaking release.
+ */
 export function getRichTextCharIndexAtPoint(
-  text: string,
+  _text: string,
   layout: Readonly<TextLayoutResult>,
   x: number,
   y: number,
@@ -57,7 +65,7 @@ export function getRichTextCharIndexAtPoint(
     return lineEnd;
   }
 
-  let lineStart = text.length;
+  let lineStart = layout.groups.length > 0 ? (layout.groups[layout.groups.length - 1]?.endIndex ?? 0) : 0;
   let lineEnd = 0;
   for (const group of layout.groups) {
     if (group.lineIndex !== closestLineIndex) continue;

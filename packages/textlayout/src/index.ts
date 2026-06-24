@@ -32,6 +32,7 @@ export {
   computeTextBoundsOffsetX,
   computeTextBoundsRectangle,
   computeTextBoundsWidth,
+  TEXT_BOUNDS_GUTTER,
 } from './textBounds';
 export {
   getTextFormatAscent,
@@ -41,7 +42,7 @@ export {
   mergeTextFormat,
 } from './textFormat';
 export { createTextFormatRange } from './textFormatRange';
-export { computeTextLayout, createTextLayoutResult } from './textLayout';
+export { computeTextLayout, createTextLayoutResult, getTextLayoutIsTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
 export { createTextLayoutGroup } from './textLayoutGroup';
 export { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure';
 export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime';

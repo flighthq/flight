@@ -1,8 +1,23 @@
+/**
+ * Binary search for the first break index at or after `startIndex`.
+ * Returns -1 when no such break exists. The `lineBreaks` array must be sorted
+ * in ascending order (as produced by `getTextLineBreaks`).
+ */
 export function getTextLineBreakIndex(lineBreaks: readonly number[], startIndex = 0): number {
-  for (const lb of lineBreaks) {
-    if (lb >= startIndex) return lb;
+  if (lineBreaks.length === 0) return -1;
+  let lo = 0;
+  let hi = lineBreaks.length - 1;
+  let result = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    if (lineBreaks[mid] >= startIndex) {
+      result = lineBreaks[mid];
+      hi = mid - 1;
+    } else {
+      lo = mid + 1;
+    }
   }
-  return -1;
+  return result;
 }
 
 export function getTextLineBreaks(out: number[], text: string): void {

@@ -1,6 +1,8 @@
 import type {
+  TextDirection,
   TextFormat,
   TextFormatRange,
+  TextJustification,
   TextLayoutGroup,
   TextLayoutParams,
   TextLayoutResult,
@@ -12,9 +14,14 @@ import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeT
 import { createTextLayoutGroup } from './textLayoutGroup';
 import { getTextLineBreaks } from './textLineBreaks';
 
-const GUTTER = 2;
+/** Inner padding (px) between a text box edge and its content, applied on every side. */
+export const TEXT_LAYOUT_GUTTER = 2;
+
 const _lineBreaks: number[] = [];
 const _charAdvances: number[] = [];
+// Paragraph-final line indices collected by buildGroups, consumed by justifyLines.
+// Lines at these indices must not be justified (CSS standard: last line of a paragraph is left).
+const _paragraphLastLines: Set<number> = new Set();
 
 export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParams): void {
   const {
@@ -26,6 +33,10 @@ export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParam
     multiline = false,
     autoSize = 'none',
     border = false,
+    direction = 'ltr',
+    justification = 'interWord',
+    maxLines = -1,
+    truncationCharacter = '…',
   } = params;
 
   if (!text || formatRanges.length === 0) {
@@ -42,11 +53,24 @@ export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParam
   }
 
   getTextLineBreaks(_lineBreaks, text);
-  buildGroups(out.groups, text, formatRanges, _lineBreaks, width, measure, wordWrap, multiline);
+  _paragraphLastLines.clear();
+  buildGroups(
+    out.groups,
+    _paragraphLastLines,
+    text,
+    formatRanges,
+    _lineBreaks,
+    width,
+    measure,
+    wordWrap,
+    multiline,
+    maxLines,
+    truncationCharacter,
+  );
   writeLineMetrics(out, out.groups);
 
   // Alignment shifts require knowing per-line widths first.
-  applyAlignment(out.groups, width, out.lineWidths);
+  applyAlignment(out.groups, width, out.lineWidths, direction, justification, _paragraphLastLines);
 
   // autoSize is intentionally not applied here — callers (scene graph /
   // renderer) own the node's width/height and apply the result themselves.
@@ -70,29 +94,40 @@ function charAdvances(
   out.length = 0;
   const letterSpacing = format.letterSpacing ?? 0;
   const tabStops = format.tabStops;
+  const kerningEnabled = format.kerning !== false;
   let currentX = startX;
 
-  for (let i = start; i < end; i++) {
-    const char = text.charAt(i);
+  // Iterate codepoints so surrogate pairs (emoji, astral scripts) are not split.
+  let i = start;
+  while (i < end) {
+    const cp = text.codePointAt(i) ?? 0;
+    const charLen = cp > 0xffff ? 2 : 1;
+    const char = text.slice(i, i + charLen);
     let advance: number;
 
     if (char === '\t') {
       advance = getTabAdvance(currentX, tabStops, measure, format);
       out.push(advance);
       currentX += advance;
+      i += charLen;
       continue;
     }
 
-    if (i < text.length - 1 && text.charAt(i + 1) !== '\t') {
-      // Pair-wise measurement accounts for kerning between adjacent characters.
-      const nextW = measure(text.charAt(i + 1), format);
-      const pairW = measure(text.substr(i, 2), format);
+    // Look ahead for the next codepoint to compute a kerned pair advance.
+    const nextStart = i + charLen;
+    if (kerningEnabled && nextStart < end && text.charCodeAt(nextStart) !== 9 /* \t */) {
+      const nextCp = text.codePointAt(nextStart) ?? 0;
+      const nextLen = nextCp > 0xffff ? 2 : 1;
+      const nextChar = text.slice(nextStart, nextStart + nextLen);
+      const nextW = measure(nextChar, format);
+      const pairW = measure(char + nextChar, format);
       advance = pairW - nextW;
     } else {
       advance = measure(char, format);
     }
     out.push(advance + letterSpacing);
     currentX += advance + letterSpacing;
+    i += charLen;
   }
 }
 
@@ -125,6 +160,7 @@ function getTabAdvance(
 
 function buildGroups(
   out: TextLayoutGroup[],
+  paragraphLastLines: Set<number>,
   text: string,
   formatRanges: readonly TextFormatRange[],
   lineBreaks: number[],
@@ -132,6 +168,8 @@ function buildGroups(
   measure: TextMeasureFunction,
   wordWrap: boolean,
   multiline: boolean,
+  maxLines: number,
+  truncationCharacter: string,
 ): void {
   out.length = 0;
   const groups = out;
@@ -146,6 +184,9 @@ function buildGroups(
   let blockIndent = currentFormat.blockIndent ?? 0;
   let indent = currentFormat.indent ?? 0;
   let firstLineOfParagraph = true;
+  // Bullet: hanging-indent prefix for list items. Set when bullet format starts a paragraph.
+  let bulletPending = false;
+  const bulletChar = '•'; // •
 
   // Line-level metrics.
   let ascent = getTextFormatAscent(currentFormat);
@@ -160,6 +201,9 @@ function buildGroups(
   let offsetX = 0;
   let offsetY = 0;
 
+  // Track whether truncation has been applied to stop further placement.
+  let truncated = false;
+
   let breakCount = 0;
   let breakIndex = lineBreaks.length > 0 ? lineBreaks[0] : -1;
   let spaceIndex = text.indexOf(' ');
@@ -170,11 +214,11 @@ function buildGroups(
   // --- Local helpers that close over the mutable state above ---
 
   function baseX(): number {
-    return GUTTER + leftMargin + blockIndent + (firstLineOfParagraph ? indent : 0);
+    return TEXT_LAYOUT_GUTTER + leftMargin + blockIndent + (firstLineOfParagraph ? indent : 0);
   }
 
   function wrapWidth(): number {
-    return containerWidth - GUTTER - rightMargin - baseX();
+    return containerWidth - TEXT_LAYOUT_GUTTER - rightMargin - baseX();
   }
 
   function updateLineMetrics(): void {
@@ -192,6 +236,8 @@ function buildGroups(
     rightMargin = currentFormat.rightMargin ?? 0;
     blockIndent = currentFormat.blockIndent ?? 0;
     indent = currentFormat.indent ?? 0;
+    // Detect bullet format at paragraph start.
+    bulletPending = currentFormat.bullet === true;
   }
 
   function advanceFormatRange(): boolean {
@@ -223,6 +269,83 @@ function buildGroups(
     updateLineMetrics();
   }
 
+  // Check whether maxLines has been reached. If so, append the truncation
+  // character to the last visible line and mark truncated.
+  // Must be called after commitLine(), so lineIndex points one past the last committed line.
+  function checkTruncation(): boolean {
+    if (maxLines < 0 || lineIndex < maxLines) return false;
+    // The last committed line index is lineIndex - 1.
+    const lastLineIndex = lineIndex - 1;
+    // Append truncation character to last visible group on that line if it fits.
+    if (truncationCharacter.length > 0 && groups.length > 0) {
+      // Find the last group on the last committed line.
+      let lastGroup: TextLayoutGroup | null = null;
+      for (let i = groups.length - 1; i >= 0; i--) {
+        if (groups[i].lineIndex === lastLineIndex) {
+          lastGroup = groups[i];
+          break;
+        }
+      }
+      if (lastGroup !== null) {
+        const ellipsisW = measure(truncationCharacter, lastGroup.format);
+        const available = containerWidth - TEXT_LAYOUT_GUTTER - rightMargin - lastGroup.offsetX;
+        // Trim characters from the end of the last group until the ellipsis fits.
+        while (lastGroup.positions.length > 0) {
+          const usedW = sumAdvances(lastGroup.positions);
+          if (usedW + ellipsisW <= available) break;
+          const trimmed = lastGroup.positions.pop() ?? 0;
+          lastGroup.width -= trimmed;
+          lastGroup.endIndex--;
+          if (lastGroup.endIndex <= lastGroup.startIndex) break;
+        }
+        // Build a synthetic group for the ellipsis using the last group's format.
+        const ellipsisGroup = createTextLayoutGroup(lastGroup.format, lastGroup.endIndex, lastGroup.endIndex);
+        const ellipsisOffsetX = lastGroup.offsetX + lastGroup.width;
+        ellipsisGroup.positions = [ellipsisW];
+        ellipsisGroup.width = ellipsisW;
+        ellipsisGroup.offsetX = ellipsisOffsetX;
+        ellipsisGroup.ascent = lastGroup.ascent;
+        ellipsisGroup.descent = lastGroup.descent;
+        ellipsisGroup.leading = lastGroup.leading;
+        ellipsisGroup.lineIndex = lastLineIndex;
+        ellipsisGroup.offsetY = lastGroup.offsetY;
+        ellipsisGroup.height = lastGroup.height;
+        groups.push(ellipsisGroup);
+      }
+    }
+    truncated = true;
+    return true;
+  }
+
+  // Emit a bullet glyph at the start of a list-item paragraph.
+  function emitBullet(): void {
+    if (!bulletPending) return;
+    bulletPending = false;
+    // Respect listMarker: 'none' suppresses the glyph while keeping paragraph indent.
+    if (currentFormat.listMarker === 'none') {
+      if (indent <= 0) indent = Math.ceil(measure(bulletChar, currentFormat)) + 2;
+      return;
+    }
+    const bulletW = measure(bulletChar, currentFormat);
+    // Hanging-indent: the bullet occupies the indent area before the text margin.
+    const bulletGroup = createTextLayoutGroup(currentFormat, textIndex, textIndex);
+    bulletGroup.positions = [bulletW];
+    bulletGroup.width = bulletW;
+    // Position bullet in the indent area to the left of baseX.
+    bulletGroup.offsetX = TEXT_LAYOUT_GUTTER + leftMargin + blockIndent;
+    bulletGroup.ascent = ascent;
+    bulletGroup.descent = descent;
+    bulletGroup.leading = leading;
+    bulletGroup.lineIndex = lineIndex;
+    bulletGroup.offsetY = offsetY + TEXT_LAYOUT_GUTTER;
+    bulletGroup.height = lineHeight;
+    groups.push(bulletGroup);
+    // Ensure a positive indent so text doesn't overlap with the bullet.
+    if (indent <= 0) {
+      indent = Math.ceil(bulletW) + 2;
+    }
+  }
+
   // Place a contiguous span [start, end) of text, respecting format range
   // boundaries (may emit multiple groups if the span crosses a format change).
   function placeSpan(start: number, end: number): void {
@@ -248,7 +371,7 @@ function buildGroups(
         activeGroup.descent = descent;
         activeGroup.leading = leading;
         activeGroup.lineIndex = lineIndex;
-        activeGroup.offsetY = offsetY + GUTTER;
+        activeGroup.offsetY = offsetY + TEXT_LAYOUT_GUTTER;
         activeGroup.width = spanWidth;
         activeGroup.height = lineHeight;
 
@@ -276,9 +399,9 @@ function buildGroups(
   function measureSpan(start: number, end: number): { positions: number[]; width: number } {
     if (start >= end) return { positions: [], width: 0 };
 
-    let savedRangeIndex = rangeIndex;
-    let savedFormat = { ...currentFormat };
-    let savedFormatRange = formatRange;
+    const savedRangeIndex = rangeIndex;
+    const savedFormat = { ...currentFormat };
+    const savedFormatRange = formatRange;
 
     let idx = start;
     const allPositions: number[] = [];
@@ -316,6 +439,7 @@ function buildGroups(
     let remaining = textIndex;
 
     while (remaining < end) {
+      if (truncated) return;
       charAdvances(_charAdvances, text, currentFormat, remaining, end, measure, offsetX + baseX());
       const totalW = sumAdvances(_charAdvances);
 
@@ -324,17 +448,30 @@ function buildGroups(
         return;
       }
 
-      // Find the largest prefix that fits.
+      // Find the largest prefix that fits, stepping by codepoint.
       let count = 0;
+      let charCount = 0;
       let w = 0;
-      while (count < _charAdvances.length && offsetX + w + _charAdvances[count] <= wrapWidth()) {
-        w += _charAdvances[count++];
+      let i = remaining;
+      while (i < end && count < _charAdvances.length) {
+        const cp = text.codePointAt(i) ?? 0;
+        const cpLen = cp > 0xffff ? 2 : 1;
+        if (offsetX + w + (_charAdvances[count] ?? 0) > wrapWidth()) break;
+        w += _charAdvances[count] ?? 0;
+        count++;
+        charCount += cpLen;
+        i += cpLen;
       }
-      if (count === 0) count = 1; // always place at least one character
+      if (charCount === 0) {
+        // Always place at least one codepoint.
+        const cp = text.codePointAt(remaining) ?? 0;
+        charCount = cp > 0xffff ? 2 : 1;
+      }
 
-      placeSpan(remaining, remaining + count);
+      placeSpan(remaining, remaining + charCount);
       commitLine();
-      remaining += count;
+      if (checkTruncation()) return;
+      remaining += charCount;
     }
   }
 
@@ -346,6 +483,11 @@ function buildGroups(
   updateParagraphMetrics();
 
   while (textIndex <= text.length) {
+    if (truncated) break;
+
+    // Emit pending bullet at the start of each list-item paragraph.
+    emitBullet();
+
     const hasBreak = breakIndex !== -1;
     const breakBeforeSpace = hasBreak && (spaceIndex === -1 || breakIndex <= spaceIndex);
 
@@ -357,6 +499,9 @@ function buildGroups(
       }
 
       commitLine();
+      // The just-committed line (lineIndex - 1) ends a paragraph — do not justify it.
+      paragraphLastLines.add(lineIndex - 1);
+      if (checkTruncation()) break;
 
       if (!multiline) break;
 
@@ -376,7 +521,7 @@ function buildGroups(
 
       const { positions: segPos, width: segWidth } = measureSpan(textIndex, segEnd);
 
-      let shouldWrap = wordWrap && containerWidth >= GUTTER * 2 && offsetX + segWidth > wrapWidth();
+      let shouldWrap = wordWrap && containerWidth >= TEXT_LAYOUT_GUTTER * 2 && offsetX + segWidth > wrapWidth();
 
       // If the overrun is only due to the trailing space, don't wrap.
       if (shouldWrap && segEnd === wordEnd && segPos.length > 0) {
@@ -394,6 +539,7 @@ function buildGroups(
         }
 
         commitLine();
+        if (checkTruncation()) break;
 
         // Skip leading space of the newly wrapped line.
         if (textIndex === prevSpaceIndex + 1) textIndex++;
@@ -406,7 +552,7 @@ function buildGroups(
       // No more spaces or breaks — place the remainder of the text.
       if (textIndex >= text.length) break;
 
-      if (wordWrap && containerWidth >= GUTTER * 2) {
+      if (wordWrap && containerWidth >= TEXT_LAYOUT_GUTTER * 2) {
         breakLongWord(text.length);
       } else {
         placeSpan(textIndex, text.length);
@@ -422,25 +568,96 @@ function buildGroups(
     g.ascent = maxAscent || g.ascent;
     g.height = maxLineHeight || g.height;
   }
+  // The current lineIndex is always the last paragraph's final line (never justified).
+  paragraphLastLines.add(lineIndex);
 }
 
 // ---------------------------------------------------------------------------
 // Alignment pass
 // ---------------------------------------------------------------------------
 
-function applyAlignment(groups: TextLayoutGroup[], containerWidth: number, lineWidths: number[]): void {
+function applyAlignment(
+  groups: TextLayoutGroup[],
+  containerWidth: number,
+  lineWidths: number[],
+  direction: TextDirection,
+  justification: TextJustification,
+  paragraphLastLines: ReadonlySet<number>,
+): void {
   for (const g of groups) {
     const lineW = lineWidths[g.lineIndex];
     const align = g.format.align ?? 'left';
     let shift = 0;
 
-    if (align === 'right') {
-      shift = containerWidth - lineW - GUTTER * 2;
-    } else if (align === 'center') {
-      shift = (containerWidth - lineW - GUTTER * 2) / 2;
+    // Resolve direction-relative aliases.
+    const resolved =
+      align === 'start'
+        ? direction === 'rtl'
+          ? 'right'
+          : 'left'
+        : align === 'end'
+          ? direction === 'rtl'
+            ? 'left'
+            : 'right'
+          : align;
+
+    if (resolved === 'right') {
+      shift = containerWidth - lineW - TEXT_LAYOUT_GUTTER * 2;
+    } else if (resolved === 'center') {
+      shift = (containerWidth - lineW - TEXT_LAYOUT_GUTTER * 2) / 2;
+    } else if (resolved === 'justify' && justification !== 'none') {
+      // Justify is applied per-line across groups on the same line; handled below.
     }
 
     if (shift !== 0) g.offsetX += shift;
+  }
+
+  // Inter-word justification pass: for each line where align === 'justify',
+  // distribute residual width across inter-word spaces. The last line of each
+  // paragraph (tracked in paragraphLastLines) is left-aligned per CSS standard.
+  justifyLines(groups, containerWidth, lineWidths, justification, paragraphLastLines);
+}
+
+function justifyLines(
+  groups: TextLayoutGroup[],
+  containerWidth: number,
+  lineWidths: number[],
+  justification: TextJustification,
+  paragraphLastLines: ReadonlySet<number>,
+): void {
+  if (justification === 'none') return;
+
+  const lineCount = lineWidths.length;
+
+  for (let li = 0; li < lineCount; li++) {
+    // Skip the final line of each paragraph — it is left-aligned per CSS standard.
+    if (paragraphLastLines.has(li)) continue;
+
+    // Gather all groups on this line that have align==='justify'.
+    const lineGroups: TextLayoutGroup[] = [];
+    for (const g of groups) {
+      if (g.lineIndex === li && g.format.align === 'justify') lineGroups.push(g);
+    }
+    if (lineGroups.length === 0) continue;
+
+    const lineW = lineWidths[li];
+    const available = containerWidth - TEXT_LAYOUT_GUTTER * 2;
+    const residual = available - lineW;
+    if (residual <= 0) continue;
+
+    // Count inter-word gaps: each group boundary on the same line represents
+    // at least one space between words (trailing spaces are already trimmed on wrap).
+    const spaceCount = Math.max(0, lineGroups.length - 1);
+    if (spaceCount === 0) continue;
+
+    const extraPerSpace = residual / spaceCount;
+
+    // Shift each group rightward by the cumulative extra space.
+    let accumulated = 0;
+    for (let i = 0; i < lineGroups.length; i++) {
+      lineGroups[i].offsetX += accumulated;
+      if (i < lineGroups.length - 1) accumulated += extraPerSpace;
+    }
   }
 }
 
@@ -474,11 +691,11 @@ function writeLineMetrics(out: TextLayoutResult, groups: readonly TextLayoutGrou
     out.lineHeights[li] = Math.max(out.lineHeights[li], g.height);
     if (g.leading > out.lineLeadings[li]) out.lineLeadings[li] = g.leading;
 
-    const rightEdge = g.offsetX - GUTTER + g.width;
+    const rightEdge = g.offsetX - TEXT_LAYOUT_GUTTER + g.width;
     if (rightEdge > out.lineWidths[li]) out.lineWidths[li] = rightEdge;
     if (rightEdge > out.textWidth) out.textWidth = rightEdge;
 
-    const bottom = Math.ceil(g.offsetY - GUTTER + g.ascent + g.descent);
+    const bottom = Math.ceil(g.offsetY - TEXT_LAYOUT_GUTTER + g.ascent + g.descent);
     if (bottom > out.textHeight) out.textHeight = bottom;
   }
 
@@ -486,7 +703,7 @@ function writeLineMetrics(out: TextLayoutResult, groups: readonly TextLayoutGrou
 }
 
 // ---------------------------------------------------------------------------
-// Public entry point
+// Public helpers
 // ---------------------------------------------------------------------------
 
 export function createTextLayoutResult(): TextLayoutResult {
@@ -501,4 +718,12 @@ export function createTextLayoutResult(): TextLayoutResult {
     textHeight: 0,
     textWidth: 0,
   };
+}
+
+export function getTextLayoutIsTruncated(
+  layout: Readonly<TextLayoutResult>,
+  params: Readonly<TextLayoutParams>,
+): boolean {
+  if (params.maxLines === undefined || params.maxLines < 0) return false;
+  return layout.numLines >= params.maxLines && layout.groups.length > 0;
 }
