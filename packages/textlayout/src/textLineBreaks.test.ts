@@ -9,12 +9,30 @@ describe('getTextLineBreakIndex', () => {
     expect(getTextLineBreakIndex([3, 7], 0)).toBe(3);
   });
 
+  it('returns an exact match when startIndex equals a break', () => {
+    expect(getTextLineBreakIndex([3, 7, 12], 7)).toBe(7);
+  });
+
   it('returns -1 when no break is at or after startIndex', () => {
     expect(getTextLineBreakIndex([3, 7], 10)).toBe(-1);
   });
 
   it('returns -1 for empty break list', () => {
     expect(getTextLineBreakIndex([], 0)).toBe(-1);
+  });
+
+  it('works correctly with a single-element array', () => {
+    expect(getTextLineBreakIndex([5], 3)).toBe(5);
+    expect(getTextLineBreakIndex([5], 5)).toBe(5);
+    expect(getTextLineBreakIndex([5], 6)).toBe(-1);
+  });
+
+  it('correctly finds the first break in a large sorted array (binary search)', () => {
+    const breaks = Array.from({ length: 100 }, (_, i) => i * 10);
+    expect(getTextLineBreakIndex(breaks, 55)).toBe(60);
+    expect(getTextLineBreakIndex(breaks, 60)).toBe(60);
+    expect(getTextLineBreakIndex(breaks, 0)).toBe(0);
+    expect(getTextLineBreakIndex(breaks, 999)).toBe(-1);
   });
 });
 

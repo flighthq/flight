@@ -1,16 +1,23 @@
 import type { RectangleLike, TextAutoSize, TextLayoutResult } from '@flighthq/types';
 
+import { TEXT_LAYOUT_GUTTER } from './textLayout';
+
 // The sizing policy that turns a computed layout into a text object's bounds box — the subset of
 // TextLabelData/RichTextData that affects box size. Decoupled from the entity data types so both
 // TextLabel and RichText satisfy it structurally; wordWrap is optional because a single-run TextLabel
 // never wraps.
 export type TextBoundsSpec = Readonly<{ autoSize: TextAutoSize; height: number; width: number; wordWrap?: boolean }>;
 
+// Inner padding (px) between the box edge and its text, applied on every side. Exported for the scroll
+// metrics in richTextMetrics, which subtract it to derive the visible content area.
+// Alias of TEXT_LAYOUT_GUTTER so both names refer to the same shared value without duplication risk.
+export const TEXT_BOUNDS_GUTTER = TEXT_LAYOUT_GUTTER;
+
 // The box height: the declared height when autoSize is off, else the measured content height plus a
 // gutter on the top and bottom.
 export function computeTextBoundsHeight(spec: TextBoundsSpec, layout: Readonly<TextLayoutResult>): number {
   if (spec.autoSize === 'none') return spec.height;
-  return Math.ceil(layout.textHeight + TEXT_BOUNDS_GUTTER * 2);
+  return Math.ceil(layout.textHeight + TEXT_LAYOUT_GUTTER * 2);
 }
 
 // The horizontal anchor offset of the box within the declared width: 0 for left/none, the full slack
@@ -43,9 +50,5 @@ export function computeTextBoundsRectangle(
 // content width plus a gutter on the left and right.
 export function computeTextBoundsWidth(spec: TextBoundsSpec, layout: Readonly<TextLayoutResult>): number {
   if (spec.autoSize === 'none' || spec.wordWrap) return spec.width;
-  return Math.ceil(layout.textWidth + TEXT_BOUNDS_GUTTER * 2);
+  return Math.ceil(layout.textWidth + TEXT_LAYOUT_GUTTER * 2);
 }
-
-// Inner padding (px) between the box edge and its text, applied on every side. Exported for the scroll
-// metrics in richTextMetrics, which subtract it to derive the visible content area.
-export const TEXT_BOUNDS_GUTTER = 2;
