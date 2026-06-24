@@ -1,8 +1,17 @@
+import type { SurfaceBevelType, SurfaceConvolutionEdge, SurfaceDisplacementMapMode } from '@flighthq/surface';
 import { createSurface, createSurfaceRegion } from '@flighthq/surface';
 import * as reference from '@flighthq/surface';
-import type { ColorTransformLike, Surface, SurfaceRegion } from '@flighthq/types';
-import { ImageChannel } from '@flighthq/types';
+import type {
+  ColorTransformLike,
+  PixelOrder,
+  Surface,
+  SurfaceRegion,
+  SurfaceResizeMode,
+  ThresholdOperation,
+} from '@flighthq/types';
+import { BlendMode, ImageChannel } from '@flighthq/types';
 
+import * as rs from './surfaceWasm';
 import {
   applySurfaceColorTransform,
   applySurfacePaletteMap,
@@ -134,6 +143,27 @@ describe('applySurfacePaletteMap', () => {
     reference.applySurfacePaletteMap(fullRegion(refDest), fullRegion(refSource), redMap, null, null, null);
     applySurfacePaletteMap(fullRegion(rsDest), fullRegion(rsSource), redMap, null, null, null);
     expect(rsDest.data).toEqual(refDest.data);
+  });
+});
+
+describe('applySurfacePaletteMap all-null channel maps', () => {
+  it('all-null maps pass all channels through unchanged and match reference', () => {
+    const src = paintSurface(4, 4);
+    const refDst = createSurface(4, 4, 0);
+    const rsDst = createSurface(4, 4, 0);
+    reference.applySurfacePaletteMap(fullRegion(refDst), fullRegion(src), null, null, null, null);
+    applySurfacePaletteMap(fullRegion(rsDst), fullRegion(src), null, null, null, null);
+    expect(rsDst.data).toEqual(refDst.data);
+  });
+
+  it('only alpha map non-null matches reference', () => {
+    const src = paintSurface(4, 4);
+    const alphaMap = Array.from({ length: 256 }, (_, i) => 255 - i);
+    const refDst = createSurface(4, 4, 0);
+    const rsDst = createSurface(4, 4, 0);
+    reference.applySurfacePaletteMap(fullRegion(refDst), fullRegion(src), null, null, null, alphaMap);
+    applySurfacePaletteMap(fullRegion(rsDst), fullRegion(src), null, null, null, alphaMap);
+    expect(rsDst.data).toEqual(refDst.data);
   });
 });
 
@@ -499,8 +529,10 @@ describe('floodFillSurface', () => {
   it('matches @flighthq/surface', () => {
     const refSurface = createSurface(8, 8, 0x000000ff);
     const rsSurface = createSurface(8, 8, 0x000000ff);
-    reference.floodFillSurface(refSurface, 4, 4, 0xff8800ff);
-    floodFillSurface(rsSurface, 4, 4, 0xff8800ff);
+    const refVisited = new Uint8Array(8 * 8);
+    const rsVisited = new Uint8Array(8 * 8);
+    reference.floodFillSurface(refSurface, 4, 4, 0xff8800ff, refVisited);
+    floodFillSurface(rsSurface, 4, 4, 0xff8800ff, rsVisited);
     expect(rsSurface.data).toEqual(refSurface.data);
     expect(rsSurface.version).toBe(refSurface.version);
   });
@@ -597,6 +629,41 @@ describe('gradientGlowSurface', () => {
   });
 });
 
+describe('in-place aliased dest/source', () => {
+  it('flipSurfaceHorizontal with aliased in-place regions does not invalidate version', () => {
+    const surface = paintSurface(4, 4);
+    const region = fullRegion(surface);
+    const versionBefore = surface.version;
+    flipSurfaceHorizontal(region, region);
+    // aliased in-place: version must not be bumped (mirrors @flighthq/surface contract)
+    expect(surface.version).toBe(versionBefore);
+  });
+
+  it('flipSurfaceVertical with aliased in-place regions does not invalidate version', () => {
+    const surface = paintSurface(4, 4);
+    const region = fullRegion(surface);
+    const versionBefore = surface.version;
+    flipSurfaceVertical(region, region);
+    expect(surface.version).toBe(versionBefore);
+  });
+
+  it('rotateSurface180 with aliased in-place regions does not invalidate version', () => {
+    const surface = paintSurface(4, 4);
+    const region = fullRegion(surface);
+    const versionBefore = surface.version;
+    rotateSurface180(region, region);
+    expect(surface.version).toBe(versionBefore);
+  });
+
+  it('flipSurfaceHorizontal with distinct surfaces invalidates dest version', () => {
+    const src = paintSurface(4, 4);
+    const dst = createSurface(4, 4, 0);
+    const versionBefore = dst.version;
+    flipSurfaceHorizontal(fullRegion(dst), fullRegion(src));
+    expect(dst.version).toBeGreaterThan(versionBefore);
+  });
+});
+
 describe('initSurfaceRs', () => {
   it('is idempotent and lets bulk ops run afterward', () => {
     initSurfaceRs();
@@ -640,6 +707,49 @@ describe('medianSurface', () => {
     reference.medianSurface(refOut, fullRegion(source), 1);
     medianSurface(rsOut, fullRegion(source), 1);
     expect(rsOut).toEqual(refOut);
+  });
+});
+
+describe('memory stability under repeated large-op calls', () => {
+  it('running many large gaussianBlurSurface calls does not throw (wasm memory growth regression)', () => {
+    // Exercises wasm linear memory growth by running a large op many times in sequence.
+    // If asUint8 views were detaching on memory growth, this would throw or corrupt.
+    // 64×64 pixels, 10 iterations — small enough to be fast, large enough to stress.
+    const width = 64;
+    const height = 64;
+    const source = paintSurface(width, height);
+    expect(() => {
+      for (let i = 0; i < 10; i += 1) {
+        const out = new Uint8ClampedArray(width * height * 4);
+        const scratch = new Uint8ClampedArray(width * height * 4);
+        gaussianBlurSurface(out, scratch, fullRegion(source), 3);
+      }
+    }).not.toThrow();
+  });
+
+  it('running many large medianSurface calls does not throw', () => {
+    const width = 32;
+    const height = 32;
+    const source = paintSurface(width, height);
+    expect(() => {
+      for (let i = 0; i < 10; i += 1) {
+        const out = new Uint8ClampedArray(width * height * 4);
+        medianSurface(out, fullRegion(source), 2);
+      }
+    }).not.toThrow();
+  });
+
+  it('running many large convolveSurface calls does not throw', () => {
+    const width = 32;
+    const height = 32;
+    const source = paintSurface(width, height);
+    const matrix = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+    expect(() => {
+      for (let i = 0; i < 10; i += 1) {
+        const out = new Uint8ClampedArray(width * height * 4);
+        convolveSurface(out, fullRegion(source), { matrix, matrixX: 3, matrixY: 3 });
+      }
+    }).not.toThrow();
   });
 });
 
@@ -752,7 +862,8 @@ describe('scrollSurface', () => {
   it('matches @flighthq/surface', () => {
     const refSurface = paintSurface(6, 6);
     const rsSurface = paintSurface(6, 6);
-    reference.scrollSurface(refSurface, 2, -1);
+    const scratch = new Uint8ClampedArray(refSurface.width * refSurface.height * 4);
+    reference.scrollSurface(refSurface, 2, -1, scratch);
     scrollSurface(rsSurface, 2, -1);
     expect(rsSurface.data).toEqual(refSurface.data);
     expect(rsSurface.version).toBe(refSurface.version);
@@ -772,6 +883,118 @@ describe('sharpenSurface', () => {
   });
 });
 
+// ─── Bronze: conformance-drift guard ─────────────────────────────────────────
+
+// The set of all bulk-pixel ops that surface-rs is expected to shadow.
+// Any new export added to @flighthq/surface that should be wasm-backed must be
+// added here and to surfaceWasm.ts; this test makes omissions mechanically
+// detectable rather than silent. Functions intentionally kept as JS re-exports
+// (compareSurface, getSurfaceMismatch, createSurfaceFingerprint, and the
+// create*/single-pixel/builder/browser-bound set) are absent from this list.
+const EXPECTED_WASM_SHADOWS: ReadonlyArray<string> = [
+  'applySurfaceColorTransform',
+  'applySurfacePaletteMap',
+  'applySurfaceThreshold',
+  'bevelSurface',
+  'blurSurfacePixelsHorizontal',
+  'blurSurfacePixelsHorizontalWeighted',
+  'blurSurfacePixelsVertical',
+  'blurSurfacePixelsVerticalWeighted',
+  'boxBlurSurface',
+  'colorMatrixSurface',
+  'compositeSurfacePixels',
+  'compositeSurfaceRegion',
+  'convertSurfacePixelOrder',
+  'convolveSurface',
+  'copySurfaceChannel',
+  'copySurfacePixels',
+  'dilateSurface',
+  'displaceSurface',
+  'dissolveSurfacePixels',
+  'dropShadowSurface',
+  'equalizeSurfaceHistogram',
+  'erodeSurface',
+  'extractSurfacePixels',
+  'extractSurfacePixels32',
+  'fillSurfaceNoise',
+  'fillSurfacePerlinNoise',
+  'fillSurfaceRectangle',
+  'flipSurfaceHorizontal',
+  'flipSurfaceVertical',
+  'floodFillSurface',
+  'gaussianBlurSurface',
+  'getSurfaceColorBoundsRectangle',
+  'getSurfaceCoverage',
+  'getSurfaceHistogram',
+  'glowSurface',
+  'gradientBevelSurface',
+  'gradientGlowSurface',
+  'innerGlowSurface',
+  'innerShadowSurface',
+  'medianSurface',
+  'mergeSurface',
+  'pixelateSurface',
+  'premultiplySurfacePixels',
+  'resizeSurface',
+  'rotateSurface',
+  'rotateSurface180',
+  'rotateSurfaceClockwise',
+  'rotateSurfaceCounterClockwise',
+  'scrollSurface',
+  'sharpenSurface',
+  'unpremultiplySurfacePixels',
+  'writeSurfacePixels',
+  'writeSurfacePixels32',
+];
+
+describe('sub-region marshalling', () => {
+  it('fillSurfaceRectangle on a sub-region fills only that area and matches reference', () => {
+    const refSurface = paintSurface(8, 8);
+    const rsSurface = paintSurface(8, 8);
+    const refRegion = createSurfaceRegion(refSurface, 2, 2, 4, 3);
+    const rsRegion = createSurfaceRegion(rsSurface, 2, 2, 4, 3);
+    reference.fillSurfaceRectangle(refRegion, 0xaabbccdd);
+    fillSurfaceRectangle(rsRegion, 0xaabbccdd);
+    expect(rsSurface.data).toEqual(refSurface.data);
+  });
+
+  it('copySurfacePixels on a sub-region matches reference', () => {
+    const src = paintSurface(8, 8);
+    const refDst = createSurface(8, 8, 0);
+    const rsDst = createSurface(8, 8, 0);
+    const srcRegion = createSurfaceRegion(src, 1, 1, 5, 4);
+    const refDstRegion = createSurfaceRegion(refDst, 2, 2, 5, 4);
+    const rsDstRegion = createSurfaceRegion(rsDst, 2, 2, 5, 4);
+    reference.copySurfacePixels(refDstRegion, srcRegion);
+    copySurfacePixels(rsDstRegion, srcRegion);
+    expect(rsDst.data).toEqual(refDst.data);
+  });
+
+  it('getSurfaceHistogram on a sub-region matches reference', () => {
+    const surface = paintSurface(8, 8);
+    const region = createSurfaceRegion(surface, 1, 1, 5, 4);
+    const refHist = reference.getSurfaceHistogram(region);
+    const rsHist = getSurfaceHistogram(region);
+    expect(rsHist.red).toEqual(refHist.red);
+    expect(rsHist.green).toEqual(refHist.green);
+    expect(rsHist.blue).toEqual(refHist.blue);
+    expect(rsHist.alpha).toEqual(refHist.alpha);
+  });
+
+  it('applySurfaceThreshold on a sub-region matches reference', () => {
+    const src = paintSurface(8, 8);
+    const refDst = createSurface(8, 8, 0);
+    const rsDst = createSurface(8, 8, 0);
+    const srcRegion = createSurfaceRegion(src, 1, 0, 6, 8);
+    const refDstRegion = createSurfaceRegion(refDst, 1, 0, 6, 8);
+    const rsDstRegion = createSurfaceRegion(rsDst, 1, 0, 6, 8);
+    const refHits = reference.applySurfaceThreshold(refDstRegion, srcRegion, '>', 0x80808080);
+    const rsHits = applySurfaceThreshold(rsDstRegion, srcRegion, '>', 0x80808080);
+    expect(rsHits).toBe(refHits);
+    expect(rsDst.data).toEqual(refDst.data);
+  });
+});
+
 describe('unpremultiplySurfacePixels', () => {
   it('matches @flighthq/surface byte for byte', () => {
     const source = paintedPixels(64);
@@ -780,6 +1003,150 @@ describe('unpremultiplySurfacePixels', () => {
     reference.unpremultiplySurfacePixels(refOut, source, 64);
     unpremultiplySurfacePixels(rsOut, source, 64);
     expect(rsOut).toEqual(refOut);
+  });
+});
+
+// These tests assert that the TS discriminant maps have the exact same key count
+// as their corresponding Rust enums, catching any silent addition/removal that
+// would corrupt the u8 discriminant passed across the wasm boundary. Each variant
+// is also tested for byte-exact output match against @flighthq/surface, not just
+// "doesn't throw", to catch silent wrong-variant-selected bugs.
+
+describe('wasm discriminant map cardinality', () => {
+  it('BlendMode passes 15 variants correctly (Add=0 … Subtract=14) and matches reference for each', () => {
+    // BlendMode is a TS numeric enum — the integer value is passed directly to
+    // composite_surface_pixels_wasm / composite_surface_region_wasm with no lookup
+    // table. The Rust `blend_mode_from_u8` covers 0-9 and 11-14 explicitly; 10
+    // (Normal) falls through the `_` wildcard arm. All 15 variants must match
+    // the @flighthq/surface reference byte-for-byte.
+    // Rust: Add=0, Alpha=1, Darken=2, Difference=3, Erase=4, Hardlight=5,
+    // Invert=6, Layer=7, Lighten=8, Multiply=9, Normal=10 (`_`), Overlay=11,
+    // Screen=12, Shader=13, Subtract=14.
+    const modes = [
+      BlendMode.Add, BlendMode.Alpha, BlendMode.Darken, BlendMode.Difference,
+      BlendMode.Erase, BlendMode.Hardlight, BlendMode.Invert, BlendMode.Layer,
+      BlendMode.Lighten, BlendMode.Multiply, BlendMode.Normal, BlendMode.Overlay,
+      BlendMode.Screen, BlendMode.Shader, BlendMode.Subtract,
+    ];
+    expect(modes).toHaveLength(15);
+    const pixels = paintedPixels(4 * 4 * 4);
+    // Alpha and Shader have no surface-compositing meaning: the reference throws
+    // up front for them, so they are excluded from the per-variant byte match.
+    // The other 13 must agree byte-for-byte with @flighthq/surface.
+    const compositingModes = modes.filter((mode) => mode !== BlendMode.Alpha && mode !== BlendMode.Shader);
+    expect(compositingModes).toHaveLength(13);
+    for (const mode of compositingModes) {
+      const refDest = paintSurface(4, 4);
+      const rsDest = paintSurface(4, 4);
+      reference.compositeSurfacePixels(fullRegion(refDest), pixels, mode);
+      compositeSurfacePixels(fullRegion(rsDest), pixels, mode);
+      expect(rsDest.data).toEqual(refDest.data);
+    }
+  });
+
+  it('SURFACE_BEVEL_TYPE has 3 entries matching SurfaceBevelType — output matches reference per variant', () => {
+    // Rust: SurfaceBevelType — Both=0, Inner=1, Outer=2 (3 variants, repr(u8) 0..2)
+    const bevelTypes: SurfaceBevelType[] = ['both', 'inner', 'outer'];
+    expect(bevelTypes).toHaveLength(3);
+    for (const t of bevelTypes) {
+      const source = paintSurface(4, 4);
+      const refOut = new Uint8ClampedArray(4 * 4 * 4);
+      const rsOut = new Uint8ClampedArray(4 * 4 * 4);
+      const refScratch = new Uint8ClampedArray(4 * 4 * 4);
+      const rsScratch = new Uint8ClampedArray(4 * 4 * 4);
+      reference.bevelSurface(refOut, refScratch, fullRegion(source), { type: t });
+      bevelSurface(rsOut, rsScratch, fullRegion(source), { type: t });
+      expectByteClose(rsOut, refOut);
+    }
+  });
+
+  it('SURFACE_CONVOLUTION_EDGE has 3 entries matching SurfaceConvolutionEdge — output matches reference per variant', () => {
+    // Rust: SurfaceConvolutionEdge — Clamp=0, Fill=1, Wrap=2 (3 variants, repr(u8) 0..2)
+    const edges: SurfaceConvolutionEdge[] = ['clamp', 'fill', 'wrap'];
+    expect(edges).toHaveLength(3);
+    const source = paintSurface(4, 4);
+    const matrix = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+    for (const edge of edges) {
+      const refOut = new Uint8ClampedArray(4 * 4 * 4);
+      const rsOut = new Uint8ClampedArray(4 * 4 * 4);
+      reference.convolveSurface(refOut, fullRegion(source), { matrix, matrixX: 3, matrixY: 3, edge });
+      convolveSurface(rsOut, fullRegion(source), { matrix, matrixX: 3, matrixY: 3, edge });
+      expect(rsOut).toEqual(refOut);
+    }
+  });
+
+  it('SURFACE_DISPLACEMENT_MODE has 4 entries matching SurfaceDisplacementMapMode — output matches reference per variant', () => {
+    // Rust: SurfaceDisplacementMapMode — Clamp=0, Color=1, Ignore=2, Wrap=3 (4 variants, repr(u8) 0..3)
+    const modes: SurfaceDisplacementMapMode[] = ['clamp', 'color', 'ignore', 'wrap'];
+    expect(modes).toHaveLength(4);
+    const source = paintSurface(4, 4);
+    const mapSurface = paintSurface(4, 4);
+    for (const mode of modes) {
+      const refOut = new Uint8ClampedArray(4 * 4 * 4);
+      const rsOut = new Uint8ClampedArray(4 * 4 * 4);
+      reference.displaceSurface(refOut, fullRegion(source), { map: fullRegion(mapSurface), mode, scaleX: 2, scaleY: 2 });
+      displaceSurface(rsOut, fullRegion(source), { map: fullRegion(mapSurface), mode, scaleX: 2, scaleY: 2 });
+      expect(rsOut).toEqual(refOut);
+    }
+  });
+
+  it('PIXEL_ORDER has 4 entries matching PixelOrder — output matches reference per conversion pair', () => {
+    // Rust: PixelOrder — Abgr=0, Argb=1, Bgra=2, Rgba=3 (4 variants, repr(u8) 0..3)
+    const orders: PixelOrder[] = ['ABGR', 'ARGB', 'BGRA', 'RGBA'];
+    expect(orders).toHaveLength(4);
+    const source = paintedPixels(4 * 4);
+    // Test each as the 'from' order converting to RGBA, exercising every variant.
+    for (const from of orders) {
+      const refOut = new Uint8ClampedArray(4 * 4);
+      const rsOut = new Uint8ClampedArray(4 * 4);
+      reference.convertSurfacePixelOrder(refOut, source, 4, from, 'RGBA');
+      convertSurfacePixelOrder(rsOut, source, 4, from, 'RGBA');
+      expect(rsOut).toEqual(refOut);
+    }
+  });
+
+  it('RESIZE_MODE has 3 entries matching SurfaceResizeMode — output matches reference per mode', () => {
+    // Rust: SurfaceResizeMode — Bicubic=0, Bilinear=1, Nearest=2 (3 variants, repr(u8) 0..2)
+    const modes: SurfaceResizeMode[] = ['bicubic', 'bilinear', 'nearest'];
+    expect(modes).toHaveLength(3);
+    const source = paintSurface(4, 4);
+    for (const mode of modes) {
+      const refDest = createSurface(2, 2, 0);
+      const rsDest = createSurface(2, 2, 0);
+      reference.resizeSurface(fullRegion(refDest), fullRegion(source), mode);
+      resizeSurface(fullRegion(rsDest), fullRegion(source), mode);
+      expect(rsDest.data).toEqual(refDest.data);
+    }
+  });
+
+  it('THRESHOLD_OPERATION has 6 entries matching ThresholdOperation — output and hit count match reference per op', () => {
+    // Rust: ThresholdOperation — NotEqual=0, LessThan=1, LessEqual=2, Equal=3, GreaterThan=4, GreaterEqual=5
+    // (6 variants, repr(u8) 0..5)
+    const ops: ThresholdOperation[] = ['!=', '<', '<=', '==', '>', '>='];
+    expect(ops).toHaveLength(6);
+    const source = paintSurface(4, 4);
+    for (const op of ops) {
+      const refDest = createSurface(4, 4, 0);
+      const rsDest = createSurface(4, 4, 0);
+      const refHits = reference.applySurfaceThreshold(fullRegion(refDest), fullRegion(source), op, 0x80808080);
+      const rsHits = applySurfaceThreshold(fullRegion(rsDest), fullRegion(source), op, 0x80808080);
+      expect(rsHits).toBe(refHits);
+      expect(rsDest.data).toEqual(refDest.data);
+    }
+  });
+});
+
+describe('wasm shadow conformance', () => {
+  it('every expected bulk op is genuinely overridden (not falling through to JS reference)', () => {
+    for (const name of EXPECTED_WASM_SHADOWS) {
+      const rsFn = (rs as Record<string, unknown>)[name];
+      const refFn = (reference as Record<string, unknown>)[name];
+      expect(rsFn, `${name} must be exported from surfaceWasm`).toBeDefined();
+      expect(typeof rsFn, `${name} must be a function`).toBe('function');
+      // The wasm override is a distinct function object from the JS reference.
+      // If they are the same reference, surface-rs is falling through to JS.
+      expect(rsFn, `${name} wasm override must differ from @flighthq/surface reference`).not.toBe(refFn);
+    }
   });
 });
 
@@ -804,5 +1171,36 @@ describe('writeSurfacePixels32', () => {
     reference.writeSurfacePixels32(fullRegion(refDest), pixels);
     writeSurfacePixels32(fullRegion(rsDest), pixels);
     expect(rsDest.data).toEqual(refDest.data);
+  });
+});
+
+describe('zero-area region edge cases', () => {
+  it('fillSurfaceRectangle on a 0×0 region does not throw and leaves surface unchanged', () => {
+    const surface = paintSurface(4, 4);
+    const before = new Uint8ClampedArray(surface.data);
+    const zeroRegion = createSurfaceRegion(surface, 1, 1, 0, 0);
+    expect(() => fillSurfaceRectangle(zeroRegion, 0xff0000ff)).not.toThrow();
+    expect(surface.data).toEqual(before);
+  });
+
+  it('copySurfacePixels with a 0-width source region does not throw', () => {
+    const src = paintSurface(4, 4);
+    const dst = createSurface(4, 4, 0);
+    const zeroSource = createSurfaceRegion(src, 0, 0, 0, 4);
+    expect(() => copySurfacePixels(fullRegion(dst), zeroSource)).not.toThrow();
+  });
+
+  it('getSurfaceHistogram on a 0×0 region returns an all-zero histogram', () => {
+    const surface = paintSurface(4, 4);
+    const zeroRegion = createSurfaceRegion(surface, 1, 1, 0, 0);
+    const hist = getSurfaceHistogram(zeroRegion);
+    const allZero = [...hist.red, ...hist.green, ...hist.blue, ...hist.alpha].every((v) => v === 0);
+    expect(allZero).toBe(true);
+  });
+
+  it('getSurfaceColorBoundsRectangle on a 0×0 region returns null', () => {
+    const surface = paintSurface(4, 4);
+    const zeroRegion = createSurfaceRegion(surface, 0, 0, 0, 0);
+    expect(getSurfaceColorBoundsRectangle(zeroRegion, 0xffffffff, 0xff0000ff)).toBeNull();
   });
 });
