@@ -8,7 +8,12 @@ import {
   createNativeText,
   createNativeTextData,
   createNativeTextRuntime,
+  getNativeTextMeasuredHeight,
+  getNativeTextMeasuredWidth,
   getNativeTextRuntime,
+  getNativeTextString,
+  getNativeTextStyle,
+  patchNativeTextStyle,
   setNativeTextAutoSize,
   setNativeTextHeight,
   setNativeTextString,
@@ -113,11 +118,69 @@ describe('createNativeTextRuntime', () => {
   });
 });
 
+describe('getNativeTextMeasuredHeight', () => {
+  it('returns 0 before the platform renderer writes a measurement', () => {
+    const native = createNativeText();
+    expect(getNativeTextMeasuredHeight(native)).toBe(0);
+  });
+
+  it('returns the value the renderer wrote back', () => {
+    const native = createNativeText();
+    (getNativeTextRuntime(native) as NativeTextRuntime).measuredHeight = 24;
+    expect(getNativeTextMeasuredHeight(native)).toBe(24);
+  });
+});
+
+describe('getNativeTextMeasuredWidth', () => {
+  it('returns 0 before the platform renderer writes a measurement', () => {
+    const native = createNativeText();
+    expect(getNativeTextMeasuredWidth(native)).toBe(0);
+  });
+
+  it('returns the value the renderer wrote back', () => {
+    const native = createNativeText();
+    (getNativeTextRuntime(native) as NativeTextRuntime).measuredWidth = 80;
+    expect(getNativeTextMeasuredWidth(native)).toBe(80);
+  });
+});
+
 describe('getNativeTextRuntime', () => {
   it('returns the runtime for a NativeText', () => {
     const native = createNativeText();
     const runtime = getNativeTextRuntime(native);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getNativeTextString', () => {
+  it('returns the text field', () => {
+    const native = createNativeText({ data: { text: 'hello' } });
+    expect(getNativeTextString(native)).toBe('hello');
+  });
+});
+
+describe('getNativeTextStyle', () => {
+  it('returns the style field', () => {
+    const style = { size: 16, bold: true };
+    const native = createNativeText({ data: { style } });
+    expect(getNativeTextStyle(native)).toBe(native.data.style);
+  });
+});
+
+describe('patchNativeTextStyle', () => {
+  it('merges the patch into the existing style', () => {
+    const native = createNativeText({ data: { style: { size: 14, bold: false } } });
+    patchNativeTextStyle(native, { bold: true, color: 0xff0000 });
+    expect(native.data.style.size).toBe(14);
+    expect(native.data.style.bold).toBe(true);
+    expect(native.data.style.color).toBe(0xff0000);
+  });
+
+  it('bumps content after patching', () => {
+    const native = createNativeText();
+    const content = getNodeLocalContentRevision(native);
+    patchNativeTextStyle(native, { size: 20 });
+    expect(getNodeLocalContentRevision(native)).toBe(content + 1);
   });
 });
 

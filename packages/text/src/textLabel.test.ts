@@ -5,17 +5,42 @@ import type { Node, PartialNode, TextLabel } from '@flighthq/types';
 import { TextLabelKind } from '@flighthq/types';
 
 import {
+  appendTextLabelString,
   computeTextLabelLocalBoundsRectangle,
   createTextLabel,
   createTextLabelData,
   createTextLabelRuntime,
+  getTextLabelFormat,
   getTextLabelRuntime,
+  getTextLabelString,
   setTextLabelAutoSize,
   setTextLabelFormat,
   setTextLabelHeight,
   setTextLabelString,
   setTextLabelWidth,
 } from './textLabel';
+
+describe('appendTextLabelString', () => {
+  it('appends the value to the existing text', () => {
+    const text = createTextLabel({ data: { text: 'hello' } });
+    appendTextLabelString(text, ' world');
+    expect(text.data.text).toBe('hello world');
+  });
+
+  it('invalidates local content after append', () => {
+    const text = createTextLabel({ data: { text: 'hi' } });
+    const content = getNodeLocalContentRevision(text);
+    appendTextLabelString(text, '!');
+    expect(getNodeLocalContentRevision(text)).toBe(content + 1);
+  });
+
+  it('does not invalidate when value is empty', () => {
+    const text = createTextLabel({ data: { text: 'hi' } });
+    const content = getNodeLocalContentRevision(text);
+    appendTextLabelString(text, '');
+    expect(getNodeLocalContentRevision(text)).toBe(content);
+  });
+});
 
 describe('computeTextLabelLocalBoundsRectangle', () => {
   afterEach(() => {
@@ -127,11 +152,26 @@ describe('createTextLabelRuntime', () => {
   });
 });
 
+describe('getTextLabelFormat', () => {
+  it('returns the textFormat field', () => {
+    const format = { size: 24, bold: true };
+    const text = createTextLabel({ data: { textFormat: format } });
+    expect(getTextLabelFormat(text)).toBe(text.data.textFormat);
+  });
+});
+
 describe('getTextLabelRuntime', () => {
   it('returns the runtime for a TextLabel', () => {
     const text = createTextLabel();
     const runtime = getTextLabelRuntime(text);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('getTextLabelString', () => {
+  it('returns the text field', () => {
+    const text = createTextLabel({ data: { text: 'hello' } });
+    expect(getTextLabelString(text)).toBe('hello');
   });
 });
 
