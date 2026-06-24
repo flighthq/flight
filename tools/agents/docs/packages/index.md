@@ -101,13 +101,34 @@ So future worker passes know exactly where to read and write — settling the ea
 
 This mirrors the `import:worktree` philosophy: the worker produces raw output; the host transforms it into the durable shape. It also keeps a misbehaving worker from ever clobbering a charter.
 
+### Dispatching guidance outward — the `assignments/` inbox (being built)
+
+`import:worktree` only moves work _inward_ (worker → reviewer). The outbound half is **dispatch**: a review session shapes a blessed workplan and deposits each worker's slice into its worktree. It is a _deposit of guidance_, not the reverse of import — one review session fans out to **many** workers, each receiving only its own slice.
+
+The split obeys the same sandbox rule as import: the reviewer agent never crosses a worktree boundary. It **stages** briefs in its own worktree under `/outgoing/<target-worktree>/<pkg>.md` (repo root, gitignored — the outbound twin of `/incoming/`); the **host** runs `dispatch:worktree <target>`, which copies that target's staged slice into the target worktree's **`tools/agents/docs/assignments/<pkg>.md`** inbox. The per-target staging directory _is_ the routing — a worker can only see its own `assignments/`, never another's. `assignments/` is the inbound twin of the flat `status/` outbound tray.
+
+Each brief carries two layers: the **derived** frozen `assessment.md › Approved` items for that package (the single source of truth), plus any **session-authored** directives that are not yet in `Approved`, stamped with the originating review session for round-trip auditability. The full loop:
+
+```
+bless (Approved) + plan ─► stage /outgoing/ ─► dispatch:worktree (host) ─► worker reads assignments/,
+  works ─► worker writes status/ ─► import:worktree ─► distribute-status ─► re-review
+```
+
+A worker reads `charter.md` (rubric) + its `assignments/<pkg>.md` (the task) before doing anything, and still writes only the flat `status/<pkg>.md` drop — it never writes a durable cell in either direction.
+
 ## File layout
 
 ```
 <repo root>/
   incoming/                     ← host-generated incoming bundles (gitignored); see Ingesting
     <worktree>-<sha>/           ← base/ head/ *.patch status.txt MANIFEST.json README.md
-  scripts/import-worktree.ts    ← the `import:worktree` command that produces the above
+  outgoing/                     ← reviewer-staged dispatch briefs (gitignored); see Dispatching
+    <target-worktree>/<pkg>.md  ← one slice per target worktree; deposited into its assignments/ inbox
+  scripts/import-worktree.ts    ← the `import:worktree` command that pulls a worktree's work in
+  scripts/dispatch.ts           ← the `dispatch:worktree` command that pushes briefs to a worktree
+  tools/agents/docs/
+    status/<pkg>.md             ← worker → reviewer: flat outbound tray (distributed on ingest)
+    assignments/<pkg>.md        ← reviewer → worker: flat inbound tray (deposited by dispatch; gitignored)
   tools/agents/docs/packages/
     index.md                    ← this file
     CONTRACT.md                 ← front-matter + ledger contract (what mechanism enforces)
@@ -129,5 +150,5 @@ This mirrors the `import:worktree` philosophy: the worker produces raw output; t
 Per the staged plan (mechanize what is load-bearing, defer the rest):
 
 - **Built now:** the folder structure + `charter.md`/`status.md` stubs (`scaffold.mjs`), the artifact contract ([`CONTRACT.md`](CONTRACT.md)), the **`import:worktree`** host command that pulls another worktree's work into an `incoming/` bundle, and the **`package-review`** skill that ingests (from the live tree or a bundle) and reasons.
-- **Next:** the `package-assess` and `package-approve` skills (the stage transitions are _skills_ — markdown procedures an agent follows with judgment — not rigid scripts).
+- **Next:** the `package-assess` and `package-approve` skills (the stage transitions are _skills_ — markdown procedures an agent follows with judgment — not rigid scripts), and the **`dispatch:worktree`** host command + the worker-side `assignments/` ingest skill (the outbound twin of `import:worktree`).
 - **Then, when the format settles:** a `docs:packages:check` that validates front matter, folder presence, the append-only ledgers, and the provenance stamp; plus an index generator over the front matter. These touch only the envelope — never the prose.
