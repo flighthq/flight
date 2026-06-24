@@ -44,6 +44,7 @@ const keyData = {
   numLock: false,
   repeat: false,
   shiftKey: false,
+  timeStamp: 0,
 };
 
 describe('blurTextInput', () => {
@@ -105,6 +106,18 @@ describe('dispatchTextInputKeyDown', () => {
     focusTextInput(manager, target);
     expect(dispatchTextInputKeyDown(manager, keyData)).toBe(true);
     expect(target.data.text).toBe('ac');
+  });
+
+  it('invokes onCopy callback for copy command', () => {
+    const manager = createTextInputManager();
+    const target = createInput({ text: 'hello' });
+    setTextInputSelection(target, 0, 5);
+    focusTextInput(manager, target);
+    const copied: string[] = [];
+    dispatchTextInputKeyDown(manager, { ...keyData, ctrlKey: true, key: 'c', keyCode: KeyCode.C }, undefined, (text) =>
+      copied.push(text),
+    );
+    expect(copied).toEqual(['hello']);
   });
 });
 
