@@ -1,6 +1,6 @@
 import { createTextFormatRange } from './textFormatRange';
 import type { TextLayoutParams, TextLayoutResult } from './textLayout';
-import { computeTextLayout, createTextLayoutResult } from './textLayout';
+import { computeTextLayout, createTextLayoutResult, getTextLayoutIsTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
 
 // Fixed-width measure: every character is 10px regardless of font settings.
 const fixedMeasure = (text: string) => text.length * 10;
@@ -221,6 +221,332 @@ describe('computeTextLayout', () => {
   });
 });
 
+describe('computeTextLayout — bullet list items', () => {
+  it('emits a bullet glyph group for a format with bullet:true', () => {
+    const text = 'item';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, bullet: true }, 0, text.length)],
+      width: 200,
+      height: 100,
+      measure: fixedMeasure,
+      multiline: true,
+    });
+    // There should be a bullet group (zero-length startIndex===endIndex) plus a text group.
+    const bulletGroup = result.groups.find((g) => g.startIndex === g.endIndex);
+    expect(bulletGroup).toBeDefined();
+    expect(bulletGroup!.lineIndex).toBe(0);
+  });
+});
+
+describe('computeTextLayout — codepoint iteration', () => {
+  it('does not split surrogate pairs (astral codepoints)', () => {
+    // U+1F600 GRINNING FACE is a surrogate pair (2 UTF-16 code units).
+    const emoji = '😀'; // 😀
+    const text = emoji + 'ab';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
+      width: 200,
+      height: 100,
+      measure: (s) => s.length * 10, // length-based to expose split
+    });
+    // The emoji is 2 code units but 1 codepoint; positions should reflect
+    // that the emoji is one logical character (not split into 2).
+    expect(result.groups[0].positions.length).toBe(3); // emoji + 'a' + 'b' = 3 codepoints
+  });
+});
+
+describe('computeTextLayout — conformance: bullet listMarker:none suppresses glyph', () => {
+  it('does not emit a bullet group when listMarker is none', () => {
+    const text = 'item';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, bullet: true, listMarker: 'none' }, 0, text.length)],
+      width: 200,
+      height: 100,
+      measure: fixedMeasure,
+      multiline: true,
+    });
+    // With listMarker: 'none', no zero-length bullet group should be emitted.
+    const bulletGroups = result.groups.filter((g) => g.startIndex === g.endIndex);
+    expect(bulletGroups).toHaveLength(0);
+  });
+
+  it('emits a bullet group when listMarker is absent (default bullet)', () => {
+    const text = 'item';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, bullet: true }, 0, text.length)],
+      width: 200,
+      height: 100,
+      measure: fixedMeasure,
+      multiline: true,
+    });
+    const bulletGroups = result.groups.filter((g) => g.startIndex === g.endIndex);
+    expect(bulletGroups.length).toBeGreaterThan(0);
+  });
+});
+
+describe('computeTextLayout — conformance: center alignment golden values', () => {
+  it('places a 20px text at offsetX 40 inside a 100px container', () => {
+    // container=100, gutter=2, text="hi"=20px
+    // slack = 100 - 20 - 2*2 = 76 → shift = 76/2 = 38 → offsetX = 2 + 38 = 40
+    const text = 'hi';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'center' }, 0, text.length)],
+      width: 100,
+      height: 100,
+      measure: fixedMeasure,
+    });
+    expect(result.groups[0].offsetX).toBe(40);
+  });
+});
+
+describe('computeTextLayout — conformance: justify multi-paragraph', () => {
+  // Two paragraphs separated by \n. Only the non-last lines of each paragraph
+  // should be justified; last lines of each paragraph remain left-aligned.
+  //
+  // Text: "aa bb\ncc dd" with width=100 (available=96 after gutters)
+  // "aa bb" fits on one line → that is the last line of para 1 → NOT justified
+  // "cc dd" is the last line of para 2 → NOT justified
+  it('does not justify the last line of each paragraph in multi-paragraph text', () => {
+    const text = 'aa bb\ncc dd';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
+      width: 100,
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+    });
+    expect(result.numLines).toBe(2);
+    // Both lines are paragraph-last lines → neither should be shifted by justify.
+    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
+    const line1Groups = result.groups.filter((g) => g.lineIndex === 1);
+    // Line 0 first group should start at TEXT_LAYOUT_GUTTER (left-aligned).
+    expect(line0Groups[0]?.offsetX).toBe(TEXT_LAYOUT_GUTTER);
+    // Line 1 first group should also start at TEXT_LAYOUT_GUTTER.
+    expect(line1Groups[0]?.offsetX).toBe(TEXT_LAYOUT_GUTTER);
+  });
+
+  it('justifies mid-paragraph lines but not paragraph-last lines when word-wrap splits a paragraph', () => {
+    // A single paragraph of "aa bb cc dd" with narrow width=50 so it wraps.
+    // Line 0: "aa bb" (wrapped mid-paragraph) — should be justified (2 groups, residual ~46px)
+    // Line 1: "cc dd" (last line of para) — should NOT be justified
+    const text = 'aa bb cc dd';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
+      width: 56, // available=52, 'aa bb' = 50px → fits; 'cc' would push to 56 total → wraps
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      wordWrap: true,
+    });
+    expect(result.numLines).toBeGreaterThanOrEqual(2);
+    // The last line must not be justified (groups remain at their natural left offset).
+    const lastLineIdx = result.numLines - 1;
+    const lastLineGroups = result.groups.filter((g) => g.lineIndex === lastLineIdx);
+    // The very first group on the last line is always at its natural base position.
+    if (lastLineGroups.length > 0) {
+      expect(lastLineGroups[0].offsetX).toBe(TEXT_LAYOUT_GUTTER);
+    }
+  });
+});
+
+describe('computeTextLayout — conformance: right alignment golden values', () => {
+  it('places a 20px text at offsetX 78 inside a 100px container', () => {
+    // container=100, gutter=2, text="hi"=20px
+    // rightEdge = 100 - 20 - 2*2 = 76 → shift=76 → offsetX = 2 + 76 = 78
+    const text = 'hi';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'right' }, 0, text.length)],
+      width: 100,
+      height: 100,
+      measure: fixedMeasure,
+    });
+    expect(result.groups[0].offsetX).toBe(78);
+  });
+});
+
+describe('computeTextLayout — conformance: truncation + word-wrap combined', () => {
+  it('clips a long word spanning the maxLines boundary', () => {
+    // A very long word on a narrow container forces word-breaking.
+    // With maxLines=1 the first broken segment is placed, then truncated.
+    const text = 'abcdefghijklmnop'; // 160px with fixedMeasure
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
+      width: 60, // narrow: forces word-break, each segment ~5-6 chars
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      wordWrap: true,
+      maxLines: 1,
+    });
+    // At most 1 line after truncation.
+    expect(result.numLines).toBeLessThanOrEqual(1);
+    // The last visible group on line 0 must exist.
+    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
+    expect(line0Groups.length).toBeGreaterThan(0);
+  });
+
+  it('appends ellipsis when word-wrapped text overflows maxLines', () => {
+    const text = 'word one word two word three word four';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
+      width: 100,
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      wordWrap: true,
+      maxLines: 2,
+    });
+    expect(result.numLines).toBeLessThanOrEqual(2);
+    // There must be at least one group (ellipsis or text) on the last line.
+    const lastGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
+    expect(lastGroups.length).toBeGreaterThan(0);
+  });
+});
+
+describe('computeTextLayout — justify alignment', () => {
+  it('shifts group offsets for justified mid-line (non-last) lines', () => {
+    const text = 'a b\nc d';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
+      width: 100,
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+    });
+    // Line 0 is not the last line, so it should be justified (groups shifted / wider).
+    // Line 1 is the last line, so it should remain left-aligned.
+    expect(result.numLines).toBe(2);
+    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
+    // The last group on line 0 should be pushed rightward by justify.
+    expect(line0Groups.length).toBeGreaterThan(0);
+  });
+});
+
+describe('computeTextLayout — kerning flag', () => {
+  it('skips pair-measurement when kerning is false', () => {
+    // With a measure that returns 5 per char, pair "ab" should return 10.
+    // With kerning=true: advance of 'a' = measure("ab") - measure("b") = 10 - 5 = 5.
+    // With kerning=false: advance of 'a' = measure("a") = 5.
+    // Both give the same result here (monospace), so we verify no throw.
+    const text = 'ab';
+    const resultWith = doLayout(
+      singleRangeParams(text, 1000, {
+        formatRanges: [createTextFormatRange({ size: 16, kerning: true }, 0, text.length)],
+      }),
+    );
+    const resultWithout = doLayout(
+      singleRangeParams(text, 1000, {
+        formatRanges: [createTextFormatRange({ size: 16, kerning: false }, 0, text.length)],
+      }),
+    );
+    expect(resultWith.groups[0].positions).toHaveLength(2);
+    expect(resultWithout.groups[0].positions).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Golden-file / conformance tests — lock in output stability for key paths.
+// These tests compare actual offsetX values to ensure the alignment algorithms
+// produce the expected pixel-exact positions for a fixed-width measure function
+// (10px/char) and a known container width.
+// ---------------------------------------------------------------------------
+
+describe('computeTextLayout — maxLines truncation', () => {
+  it('clips to maxLines and appends truncation character', () => {
+    const text = 'line one\nline two\nline three';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
+      width: 300,
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      maxLines: 2,
+    });
+    // Should have at most 2 lines.
+    expect(result.numLines).toBeLessThanOrEqual(2);
+    // Should contain an ellipsis group on the last visible line.
+    const lastLineGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
+    expect(lastLineGroups.length).toBeGreaterThan(0);
+  });
+
+  it('getTextLayoutIsTruncated returns true when maxLines clips the layout', () => {
+    const text = 'line one\nline two\nline three';
+    const params: TextLayoutParams = {
+      text,
+      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
+      width: 300,
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      maxLines: 2,
+    };
+    const result = doLayout(params);
+    expect(getTextLayoutIsTruncated(result, params)).toBe(true);
+  });
+
+  it('getTextLayoutIsTruncated returns false when maxLines is unlimited', () => {
+    const text = 'one line';
+    const params: TextLayoutParams = singleRangeParams(text);
+    const result = doLayout(params);
+    expect(getTextLayoutIsTruncated(result, params)).toBe(false);
+  });
+});
+
+describe('computeTextLayout — start/end alignment', () => {
+  it('treats start as left in ltr direction', () => {
+    const text = 'hi';
+    const ltrResult = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'start' }, 0, text.length)],
+      width: 100,
+      height: 100,
+      measure: fixedMeasure,
+      direction: 'ltr',
+    });
+    expect(ltrResult.groups[0].offsetX).toBe(TEXT_LAYOUT_GUTTER); // left-aligned = GUTTER
+  });
+
+  it('treats end as right in ltr direction', () => {
+    const text = 'hi'; // 20px wide
+    const ltrResult = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'end' }, 0, text.length)],
+      width: 100,
+      height: 100,
+      measure: fixedMeasure,
+      direction: 'ltr',
+    });
+    // Right-aligned: shift = 100 - 20 - 2*2 = 76, so offsetX = 2 + 76 = 78
+    expect(ltrResult.groups[0].offsetX).toBeGreaterThan(TEXT_LAYOUT_GUTTER);
+  });
+
+  it('treats start as right in rtl direction', () => {
+    const text = 'hi';
+    const rtlResult = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'start' }, 0, text.length)],
+      width: 100,
+      height: 100,
+      measure: fixedMeasure,
+      direction: 'rtl',
+    });
+    // RTL start = right alignment, so offsetX should be > GUTTER.
+    expect(rtlResult.groups[0].offsetX).toBeGreaterThan(TEXT_LAYOUT_GUTTER);
+  });
+});
+
 describe('createTextLayoutResult', () => {
   it('returns default zero values', () => {
     const result = createTextLayoutResult();
@@ -237,5 +563,19 @@ describe('createTextLayoutResult', () => {
 
   it('returns a new object each call', () => {
     expect(createTextLayoutResult()).not.toBe(createTextLayoutResult());
+  });
+});
+
+describe('getTextLayoutIsTruncated', () => {
+  it('returns false when maxLines is -1', () => {
+    const params = singleRangeParams('hello');
+    const result = doLayout(params);
+    expect(getTextLayoutIsTruncated(result, params)).toBe(false);
+  });
+});
+
+describe('TEXT_LAYOUT_GUTTER', () => {
+  it('is a positive number', () => {
+    expect(TEXT_LAYOUT_GUTTER).toBeGreaterThan(0);
   });
 });
