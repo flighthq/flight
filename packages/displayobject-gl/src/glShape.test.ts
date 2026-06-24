@@ -1,11 +1,11 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { defaultGlShapeRenderer, drawGlShape } from './glShape';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { makeGlState } from './glTestHelper';
 
 vi.mock('@flighthq/node', () => ({
   getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),

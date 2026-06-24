@@ -1,11 +1,11 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import { createTextLabel, setTextLabelString } from '@flighthq/text';
 import type { RenderProxy2D, TextLabel } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { makeGlState } from './glTestHelper';
 import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
 
 vi.mock('@flighthq/textlayout', async (importOriginal) => {

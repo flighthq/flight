@@ -31,9 +31,14 @@ export function createElectronNotificationBackend(electron: ElectronApi): Notifi
       n.show();
       return true;
     },
+<<<<<<< Updated upstream
     async requestPermission() {
+=======
+
+    async requestPermission(): Promise<NotificationPermission> {
+>>>>>>> Stashed changes
       // Electron requires no permission grant; support is the only gate.
-      return electron.Notification.isSupported();
+      return electron.Notification.isSupported() ? 'granted' : 'denied';
     },
     isSupported() {
       return electron.Notification.isSupported();
@@ -49,6 +54,12 @@ export function createElectronNotificationBackend(electron: ElectronApi): Notifi
       return () => {
         if (actionListener === listener) actionListener = null;
       };
+    },
+
+    async updateNotification(_id, _partial) {
+      // Electron's Notification has no in-place update; a caller must close and re-notify. Report
+      // that the update was not applied rather than silently pretending success.
+      return false;
     },
   };
 }

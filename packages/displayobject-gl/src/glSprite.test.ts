@@ -1,10 +1,10 @@
 import { addNodeChild } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
-import { makeGlState } from '@flighthq/render-gl';
 import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
 import { renderGlSprite } from './glSprite';
+import { makeGlState } from './glTestHelper';
 
 function makeRenderer() {
   return { createData: () => null, submit: vi.fn() } as any;

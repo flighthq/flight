@@ -1,5 +1,4 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import { makeGlState } from '@flighthq/render-gl';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 
 import {
@@ -10,6 +9,7 @@ import {
   drawGlScale9ShapeMask,
   remapGlScale9Commands,
 } from './glScale9Shape';
+import { makeGlState } from './glTestHelper';
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 

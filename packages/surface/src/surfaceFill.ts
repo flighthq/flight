@@ -32,7 +32,11 @@ export function fillSurfaceRectangle(dest: Readonly<SurfaceRegion>, color: numbe
  * Flood-fills a connected region of `out` starting at `(x, y)`. Uses a
  * module-level visited buffer that grows as needed and is reused across calls.
  */
+<<<<<<< Updated upstream
 export function floodFillSurface(out: Surface, x: number, y: number, color: number): void {
+=======
+export function floodFillSurface(out: Surface, x: number, y: number, color: number, visited: Uint8Array): void {
+>>>>>>> Stashed changes
   if (x < 0 || x >= out.width || y < 0 || y >= out.height) return;
 
   const fillR = (color >>> 24) & 0xff;
