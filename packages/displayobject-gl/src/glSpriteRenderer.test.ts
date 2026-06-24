@@ -1,9 +1,9 @@
-import { makeGlState } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
 import { defaultGlSpriteRenderer } from './glSpriteRenderer';
+import { makeGlState } from './glTestHelper';
 
 function makeAtlas(regionWidth = 32, regionHeight = 32) {
   const img = document.createElement('img');

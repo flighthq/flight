@@ -55,9 +55,26 @@ export function fillSurfaceNoise(
  * produce smoother, lower-frequency noise. Each successive octave doubles the
  * frequency and halves the amplitude. Output is normalized to 0..255.
  *
+<<<<<<< Updated upstream
  * When `grayScale` is true the same noise drives R, G, and B; otherwise each
  * channel uses an independent noise field. Alpha is set fully opaque (255).
  * Deterministic in `seed`.
+=======
+ * - `baseX`, `baseY`: wavelengths in pixels of the first octave (larger = smoother).
+ * - `octaves`: number of frequency doublings (1 = smooth; higher = more detail).
+ * - `seed`: deterministic integer seed.
+ * - `stitch`: when `true`, the noise field tiles seamlessly at the region borders.
+ * - `grayScale`: when `true`, R=G=B share one noise channel. Overrides
+ *   `channelOptions` for the RGB channels.
+ * - `channelOptions`: bitmask of channels to fill (default `0x7` = RGB, matching
+ *   OpenFL's `perlinNoise` default). Channels not selected are left unchanged in
+ *   `dest`, except alpha: when the A bit is not selected, alpha is set opaque
+ *   (255) rather than left as-is. Use `SURFACE_NOISE_CHANNEL_*` constants. When
+ *   `grayScale` is true the same field drives all selected RGB channels.
+ *
+ * Output range is normalized to 0..255. Alpha defaults to 255 unless the A
+ * bit is explicitly included in `channelOptions`.
+>>>>>>> Stashed changes
  */
 export function fillSurfacePerlinNoise(
   dest: Readonly<SurfaceRegion>,
@@ -66,6 +83,11 @@ export function fillSurfacePerlinNoise(
   octaves: number,
   seed: number,
   grayScale: boolean = false,
+<<<<<<< Updated upstream
+=======
+  stitch: boolean = false,
+  channelOptions: number = 0x7,
+>>>>>>> Stashed changes
 ): void {
   const fx0 = baseX > 0 ? 1 / baseX : 0;
   const fy0 = baseY > 0 ? 1 / baseY : 0;
@@ -80,6 +102,7 @@ export function fillSurfacePerlinNoise(
       const x = dest.x + px;
       if (x < 0 || x >= surfaceWidth) continue;
       const di = (y * surfaceWidth + x) * 4;
+<<<<<<< Updated upstream
       for (let c = 0; c < channels; c++) {
         const value = fractalValueNoise(px * fx0, py * fy0, passes, (seed | 0) + c * 0x9e3779b1);
         const byte = Math.round(value * 255);
@@ -92,6 +115,99 @@ export function fillSurfacePerlinNoise(
         }
       }
       data[di + 3] = 255;
+=======
+
+      const nx = stitch ? stitchedCoord(px * fx0, w * fx0) : px * fx0;
+      const ny = stitch ? stitchedCoord(py * fy0, h * fy0) : py * fy0;
+
+      if (grayScale) {
+        const value = fractalValueNoise(nx, ny, passes, seed | 0);
+        const byte = Math.round(value * 255);
+        if (channelOptions & SURFACE_NOISE_CHANNEL_R) data[di] = byte;
+        if (channelOptions & SURFACE_NOISE_CHANNEL_G) data[di + 1] = byte;
+        if (channelOptions & SURFACE_NOISE_CHANNEL_B) data[di + 2] = byte;
+      } else {
+        if (channelOptions & SURFACE_NOISE_CHANNEL_R) {
+          data[di] = Math.round(fractalValueNoise(nx, ny, passes, seed | 0) * 255);
+        }
+        if (channelOptions & SURFACE_NOISE_CHANNEL_G) {
+          data[di + 1] = Math.round(fractalValueNoise(nx, ny, passes, (seed | 0) + 0x9e3779b1) * 255);
+        }
+        if (channelOptions & SURFACE_NOISE_CHANNEL_B) {
+          data[di + 2] = Math.round(fractalValueNoise(nx, ny, passes, (seed | 0) + 0x9e3779b2) * 255);
+        }
+      }
+      if (channelOptions & SURFACE_NOISE_CHANNEL_A) {
+        data[di + 3] = Math.round(fractalValueNoise(nx, ny, passes, (seed | 0) + 0x9e3779b3) * 255);
+      } else {
+        data[di + 3] = 255;
+      }
+    }
+  }
+  invalidateImageResource(dest.surface);
+}
+
+/**
+ * Fills `dest` with fractal **turbulence** (absolute-value fBm) value noise,
+ * matching OpenFL's `BitmapData.perlinNoise` with `fractalNoise: false`.
+ * Turbulence sums `abs(octave)` values, producing a more vigorous, ridge-like
+ * texture than the smooth fractal sum.
+ *
+ * Parameters are identical to `fillSurfacePerlinNoise` except there is no
+ * `fractalNoise` flag (this function _is_ the turbulence variant).
+ */
+export function fillSurfaceTurbulence(
+  dest: Readonly<SurfaceRegion>,
+  baseX: number,
+  baseY: number,
+  octaves: number,
+  seed: number,
+  grayScale: boolean = false,
+  stitch: boolean = false,
+  channelOptions: number = 0x7,
+): void {
+  const fx0 = baseX > 0 ? 1 / baseX : 0;
+  const fy0 = baseY > 0 ? 1 / baseY : 0;
+  const passes = Math.max(1, Math.round(octaves));
+  const data = dest.surface.data;
+  const surfaceWidth = dest.surface.width;
+  const w = dest.width;
+  const h = dest.height;
+
+  for (let py = 0; py < dest.height; py++) {
+    const y = dest.y + py;
+    if (y < 0 || y >= dest.surface.height) continue;
+    for (let px = 0; px < dest.width; px++) {
+      const x = dest.x + px;
+      if (x < 0 || x >= surfaceWidth) continue;
+      const di = (y * surfaceWidth + x) * 4;
+
+      const nx = stitch ? stitchedCoord(px * fx0, w * fx0) : px * fx0;
+      const ny = stitch ? stitchedCoord(py * fy0, h * fy0) : py * fy0;
+
+      if (grayScale) {
+        const value = turbulenceNoise(nx, ny, passes, seed | 0);
+        const byte = Math.round(value * 255);
+        if (channelOptions & SURFACE_NOISE_CHANNEL_R) data[di] = byte;
+        if (channelOptions & SURFACE_NOISE_CHANNEL_G) data[di + 1] = byte;
+        if (channelOptions & SURFACE_NOISE_CHANNEL_B) data[di + 2] = byte;
+      } else {
+        if (channelOptions & SURFACE_NOISE_CHANNEL_R) {
+          data[di] = Math.round(turbulenceNoise(nx, ny, passes, seed | 0) * 255);
+        }
+        if (channelOptions & SURFACE_NOISE_CHANNEL_G) {
+          data[di + 1] = Math.round(turbulenceNoise(nx, ny, passes, (seed | 0) + 0x9e3779b1) * 255);
+        }
+        if (channelOptions & SURFACE_NOISE_CHANNEL_B) {
+          data[di + 2] = Math.round(turbulenceNoise(nx, ny, passes, (seed | 0) + 0x9e3779b2) * 255);
+        }
+      }
+      if (channelOptions & SURFACE_NOISE_CHANNEL_A) {
+        data[di + 3] = Math.round(turbulenceNoise(nx, ny, passes, (seed | 0) + 0x9e3779b3) * 255);
+      } else {
+        data[di + 3] = 255;
+      }
+>>>>>>> Stashed changes
     }
   }
   invalidateImageResource(dest.surface);

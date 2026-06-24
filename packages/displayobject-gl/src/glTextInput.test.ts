@@ -1,9 +1,9 @@
-import { makeGlState } from '@flighthq/render-gl';
 import { createRichText } from '@flighthq/text';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput';
 import type { RenderProxy2D, RichText } from '@flighthq/types';
 
 import { drawGlRichText } from './glRichText';
+import { makeGlState } from './glTestHelper';
 import { drawGlTextInputOverlay, enableGlTextInput } from './glTextInput';
 
 function makeFocusedInputProxy(): RenderProxy2D {

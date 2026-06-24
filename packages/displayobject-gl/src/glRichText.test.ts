@@ -1,5 +1,4 @@
 ﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import { createRichText } from '@flighthq/text';
 import { enableTextInput } from '@flighthq/textinput';
 import type { RendererData, RenderProxy2D, RichText } from '@flighthq/types';
@@ -12,6 +11,7 @@ import {
   drawGlRichTextWithOverlay,
   registerGlTextInputOverlay,
 } from './glRichText';
+import { makeGlState } from './glTestHelper';
 
 function makeRichTextNode(): RenderProxy2D {
   const richText = createRichText();
@@ -65,9 +65,10 @@ describe('drawGlRichText', () => {
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
 
+    const bindSpy = vi.spyOn(getGlRenderStateRuntime(state).defaultBitmapShader, 'bind');
     drawGlRichText(state, renderProxy);
 
-    expect(getGlRenderStateRuntime(state).defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderProxy);
+    expect(bindSpy).toHaveBeenCalledWith(state.gl, state, renderProxy);
   });
 
   it('returns early without drawing when text and chrome are empty', () => {

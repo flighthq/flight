@@ -1,10 +1,10 @@
 import { createDisplayObject } from '@flighthq/displayobject';
-import { makeGlState } from '@flighthq/render-gl';
 import { createParticleEmitter, createQuadBatch, getQuadBatchRuntime, reserveParticleEmitter } from '@flighthq/sprite';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';
 
+import { makeGlState } from './glTestHelper';
 import {
   createGlVelocityTarget,
   defaultGlDisplayObjectVelocityWriter,

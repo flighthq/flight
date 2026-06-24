@@ -1,8 +1,8 @@
 import { getGlMaterialRenderer } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { defaultGlMaterialRenderer, registerDefaultGlMaterial } from './glDefaultMaterial';
+import { makeGlState } from './glTestHelper';
 
 describe('defaultGlMaterialRenderer', () => {
   it('declares no per-instance float data', () => {

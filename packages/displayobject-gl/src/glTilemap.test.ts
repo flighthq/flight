@@ -1,8 +1,8 @@
-import { makeGlState } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
+import { makeGlState } from './glTestHelper';
 import { defaultGlTilemapRenderer } from './glTilemap';
 
 function makeAtlas() {

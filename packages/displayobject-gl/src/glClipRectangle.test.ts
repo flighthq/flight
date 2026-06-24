@@ -1,8 +1,8 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 
 import { popGlClipRectangle, pushGlClipRectangle } from './glClipRectangle';
+import { makeGlState } from './glTestHelper';
 
 describe('popGlClipRectangle', () => {
   it('restores the previous scissor rectangle', () => {

@@ -1,5 +1,4 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import type { Material } from '@flighthq/types';
 
 import { defaultGlMaterialRenderer } from './glDefaultMaterial';
@@ -12,6 +11,7 @@ import {
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
 } from './glSpriteBatch';
+import { makeGlState } from './glTestHelper';
 
 function makeTexture(): HTMLImageElement {
   return document.createElement('img');

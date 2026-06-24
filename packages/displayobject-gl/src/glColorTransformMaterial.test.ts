@@ -1,8 +1,8 @@
 import { getGlMaterialRenderer } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import { ColorTransformMaterialKind } from '@flighthq/types';
 
 import { colorTransformGlMaterialRenderer, registerGlColorTransformMaterial } from './glColorTransformMaterial';
+import { makeGlState } from './glTestHelper';
 
 function makeColorTransform(redMultiplier: number) {
   return {

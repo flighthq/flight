@@ -1,8 +1,8 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { drawGlShapeMeshes } from './glShapeMesh';
+import { makeGlState } from './glTestHelper';
 
 function makeProxy(): RenderProxy2D {
   return {

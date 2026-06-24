@@ -1,7 +1,7 @@
 import { getGlMaterialRenderer } from '@flighthq/render-gl';
-import { makeGlState } from '@flighthq/render-gl';
 import { UniformColorTransformMaterialKind } from '@flighthq/types';
 
+import { makeGlState } from './glTestHelper';
 import {
   registerGlUniformColorTransformMaterial,
   uniformColorTransformGlMaterialRenderer,

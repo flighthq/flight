@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../spritesheet" }],
+  "references": [{ "path": "../resource-formats" }, { "path": "../spritesheet" }],
   "include": ["src"]
 }
