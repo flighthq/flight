@@ -27,6 +27,7 @@ function makeKeyData(data: Partial<InputKeyboardData> = {}): InputKeyboardData {
     numLock: false,
     repeat: false,
     shiftKey: false,
+    timeStamp: 0,
     ...data,
   };
 }
@@ -74,6 +75,34 @@ describe('dispatchSelectableRichTextKeyDown', () => {
     const runtime = getRichTextRuntime(richText) as RichTextRuntime;
     expect(runtime.selectionBeginIndex).toBe(0);
     expect(runtime.selectionEndIndex).toBe(5);
+  });
+
+  it('invokes onCopy callback for copy command', () => {
+    const manager = createSelectableRichTextManager();
+    const richText = createRichText({ data: { text: 'hello world' } });
+    focusSelectableRichText(manager, richText);
+    const runtime = getRichTextRuntime(richText) as RichTextRuntime;
+    runtime.selectionBeginIndex = 6;
+    runtime.selectionEndIndex = 11;
+    const copied: string[] = [];
+    const result = dispatchSelectableRichTextKeyDown(
+      manager,
+      makeKeyData({ ctrlKey: true, key: 'c', keyCode: KeyCode.C }),
+      (text) => copied.push(text),
+    );
+    expect(result).toBe(true);
+    expect(copied).toEqual(['world']);
+  });
+
+  it('does not invoke onCopy when selection is empty', () => {
+    const manager = createSelectableRichTextManager();
+    const richText = createRichText({ data: { text: 'hello' } });
+    focusSelectableRichText(manager, richText);
+    const copied: string[] = [];
+    dispatchSelectableRichTextKeyDown(manager, makeKeyData({ ctrlKey: true, key: 'c', keyCode: KeyCode.C }), (text) =>
+      copied.push(text),
+    );
+    expect(copied).toEqual([]);
   });
 
   it('returns false for unhandled keys', () => {

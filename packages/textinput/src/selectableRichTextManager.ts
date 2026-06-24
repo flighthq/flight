@@ -19,6 +19,7 @@ export function createSelectableRichTextManager(): SelectableRichTextManager {
 export function dispatchSelectableRichTextKeyDown(
   manager: SelectableRichTextManager,
   data: Readonly<InputKeyboardData>,
+  onCopy?: (text: string) => void,
 ): boolean {
   const target = manager.focused;
   if (target === null) return false;
@@ -33,7 +34,7 @@ export function dispatchSelectableRichTextKeyDown(
     const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
     const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
     const selected = target.data.text.slice(start, end);
-    if (selected.length > 0) navigator.clipboard?.writeText(selected);
+    if (selected.length > 0) onCopy?.(selected);
     return true;
   }
   return false;
