@@ -1,8 +1,6 @@
 export { computeBlurFilterCss } from './cssBlurFilter';
 export { computeDropShadowFilterCss, getShadowFilterOffset } from './cssDropShadowFilter';
 export { computeOuterGlowFilterCss } from './cssOuterGlowFilter';
-<<<<<<< Updated upstream
-=======
 export {
   createSvgFilterDataUri,
   svgFeColorMatrix,
@@ -13,4 +11,3 @@ export {
   svgFeMerge,
   svgFeOffset,
 } from './svgFilterUrl';
->>>>>>> Stashed changes

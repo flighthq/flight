@@ -11,7 +11,6 @@ import type {
   MovieClipSignals,
   PartialNode,
   TimelineLabel,
-  TimelineSignals,
   TimelineSource,
 } from '@flighthq/types';
 import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types';

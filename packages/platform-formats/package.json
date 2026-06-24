@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/spritesheet-formats",
+  "name": "@flighthq/platform-formats",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -27,13 +27,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/resource-formats": "*",
-    "@flighthq/spritesheet": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Import/export spritesheet atlas configs from industry-standard formats (Texture Packer, Aseprite, Starling)",
+  "description": "UA-string parsers for platform identity fields (arch, engine, engine version, kind, name, runtime)",
   "sideEffects": false
 }

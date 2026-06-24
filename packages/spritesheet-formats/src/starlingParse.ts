@@ -1,4 +1,3 @@
-import { parseXmlDocument } from '@flighthq/resource-formats';
 import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet';
 import {
   createSpritesheetAnimationData,
