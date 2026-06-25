@@ -3,3 +3,8 @@ OVERVIEW.md
 # Generated wasm-bindgen output for the -rs packages. The committed `.d.ts`
 # contracts carry wasm-pack's own formatting; the rest is git-ignored anyway.
 **/src/wasm/
+
+# Inbound dispatch tray (reviewer->worker): gitignored staging (_port/, _recovered/)
+# plus reviewer-authored dispatch/seed markdown. Not worker-owned source; never
+# format-checked. Outbound worker docs live under tools/agents/docs/status/.
+tools/agents/docs/assignments/
