@@ -50,7 +50,12 @@ flighthq-text = { path = "crates/flighthq-text" }
 flighthq-textlayout = { path = "crates/flighthq-textlayout" }
 flighthq-textinput = { path = "crates/flighthq-textinput" }
 flighthq-textshaper = { path = "crates/flighthq-textshaper" }
-flighthq-resources = { path = "crates/flighthq-resources" }
+flighthq-image = { path = "crates/flighthq-image" }
+flighthq-font = { path = "crates/flighthq-font" }
+flighthq-video = { path = "crates/flighthq-video" }
+flighthq-audio = { path = "crates/flighthq-audio" }
+flighthq-textureatlas = { path = "crates/flighthq-textureatlas" }
+flighthq-tileset = { path = "crates/flighthq-tileset" }
 flighthq-loader = { path = "crates/flighthq-loader" }
 flighthq-tween = { path = "crates/flighthq-tween" }
 flighthq-easing = { path = "crates/flighthq-easing" }

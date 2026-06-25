@@ -481,6 +481,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-audio"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+]
+
+[[package]]
 name = "flighthq-camera"
 version = "0.1.0"
 dependencies = [
@@ -701,6 +708,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-font"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+]
+
+[[package]]
 name = "flighthq-functional"
 version = "0.1.0"
 dependencies = [
@@ -774,6 +788,7 @@ dependencies = [
  "flighthq-dialog",
  "flighthq-displayobject",
  "flighthq-filesystem",
+ "flighthq-image",
  "flighthq-input",
  "flighthq-ipc",
  "flighthq-keyboard",
@@ -787,7 +802,6 @@ dependencies = [
  "flighthq-protocol",
  "flighthq-render",
  "flighthq-render-wgpu",
- "flighthq-resources",
  "flighthq-screen",
  "flighthq-sensors",
  "flighthq-shell",
@@ -825,6 +839,13 @@ dependencies = [
  "raw-window-handle",
  "wgpu",
  "winit",
+]
+
+[[package]]
+name = "flighthq-image"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
 ]
 
 [[package]]
@@ -888,7 +909,7 @@ dependencies = [
 name = "flighthq-loader"
 version = "0.1.0"
 dependencies = [
- "flighthq-resources",
+ "flighthq-image",
  "flighthq-signals",
  "flighthq-types",
 ]
@@ -1040,13 +1061,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "flighthq-resources"
-version = "0.1.0"
-dependencies = [
- "flighthq-types",
-]
-
-[[package]]
 name = "flighthq-scene"
 version = "0.1.0"
 dependencies = [
@@ -1104,6 +1118,7 @@ version = "0.1.0"
 dependencies = [
  "flighthq-app",
  "flighthq-application",
+ "flighthq-audio",
  "flighthq-camera",
  "flighthq-clip",
  "flighthq-clipboard",
@@ -1123,9 +1138,11 @@ dependencies = [
  "flighthq-filters-gl",
  "flighthq-filters-surface",
  "flighthq-filters-wgpu",
+ "flighthq-font",
  "flighthq-geolocation",
  "flighthq-geometry",
  "flighthq-haptics",
+ "flighthq-image",
  "flighthq-input",
  "flighthq-interaction",
  "flighthq-ipc",
@@ -1151,7 +1168,6 @@ dependencies = [
  "flighthq-render",
  "flighthq-render-gl",
  "flighthq-render-wgpu",
- "flighthq-resources",
  "flighthq-scene",
  "flighthq-scene-gl",
  "flighthq-scene-wgpu",
@@ -1173,12 +1189,15 @@ dependencies = [
  "flighthq-textlayout",
  "flighthq-textshaper",
  "flighthq-texture",
+ "flighthq-textureatlas",
+ "flighthq-tileset",
  "flighthq-timeline",
  "flighthq-tray",
  "flighthq-tween",
  "flighthq-types",
  "flighthq-updater",
  "flighthq-velocity",
+ "flighthq-video",
  "flighthq-webcam",
 ]
 
@@ -1246,8 +1265,9 @@ dependencies = [
 name = "flighthq-spritesheet"
 version = "0.1.0"
 dependencies = [
- "flighthq-resources",
  "flighthq-signals",
+ "flighthq-textureatlas",
+ "flighthq-tileset",
  "flighthq-types",
 ]
 
@@ -1333,7 +1353,24 @@ name = "flighthq-texture"
 version = "0.1.0"
 dependencies = [
  "flighthq-geometry",
- "flighthq-resources",
+ "flighthq-image",
+ "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-textureatlas"
+version = "0.1.0"
+dependencies = [
+ "flighthq-image",
+ "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-tileset"
+version = "0.1.0"
+dependencies = [
+ "flighthq-image",
+ "flighthq-textureatlas",
  "flighthq-types",
 ]
 
@@ -1391,6 +1428,13 @@ dependencies = [
  "flighthq-node",
  "flighthq-types",
  "slotmap",
+]
+
+[[package]]
+name = "flighthq-video"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
 ]
 
 [[package]]
