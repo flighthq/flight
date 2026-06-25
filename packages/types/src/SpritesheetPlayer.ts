@@ -5,6 +5,8 @@ export interface SpritesheetPlayer {
   animation: SpritesheetAnimation | null;
   complete: boolean;
   elapsed: number;
+  paused: boolean;
+  speed: number;
   frameIndex: number;
   onComplete: Signal<() => void>;
   onLoop: Signal<() => void>;

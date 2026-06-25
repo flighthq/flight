@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { DomStageRectangle } from './DOMStageRectangle';
+import type { DomStageRectangle } from './DomStageRectangle';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 import type { PathWinding } from './ShapeCommand';
