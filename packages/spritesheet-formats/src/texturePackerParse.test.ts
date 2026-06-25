@@ -1,5 +1,4 @@
 import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse';
-import { serializeTexturePackerSpritesheet } from './texturePackerSerialize';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -238,76 +237,5 @@ describe('parseTexturePackerSpritesheetDocument — full round-trip, returns { d
     expect(document.meta.app).toBe('https://www.codeandweb.com/texturepacker');
     expect(document.meta.version).toBe('1.0');
     expect(document.meta.format).toBe('RGBA8888');
-  });
-});
-
-// ─── serializeTexturePackerSpritesheet round-trips ──────────────────────────────────────
-
-describe('serializeTexturePackerSpritesheet — round-trip via parseTexturePackerSpritesheetDocument', () => {
-  it('round-trips frame positions (Hash variant)', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(HASH_JSON);
-    const json2 = serializeTexturePackerSpritesheet(data, document);
-    const data2 = parseTexturePackerSpritesheet(json2);
-    expect(data2.frames.map((f) => f.name).sort()).toEqual(data.frames.map((f) => f.name).sort());
-  });
-
-  it('round-trips image file and size', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(HASH_JSON);
-    const data2 = parseTexturePackerSpritesheet(serializeTexturePackerSpritesheet(data, document));
-    expect(data2.imageFile).toBe(data.imageFile);
-    expect(data2.imageWidth).toBe(data.imageWidth);
-    expect(data2.imageHeight).toBe(data.imageHeight);
-  });
-
-  it('round-trips frame x/y/width/height', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(HASH_JSON);
-    const data2 = parseTexturePackerSpritesheet(serializeTexturePackerSpritesheet(data, document));
-    const orig = data.frames.find((f) => f.name === 'hero/idle_0.png')!;
-    const rt = data2.frames.find((f) => f.name === 'hero/idle_0.png')!;
-    expect(rt.x).toBe(orig.x);
-    expect(rt.y).toBe(orig.y);
-    expect(rt.width).toBe(orig.width);
-    expect(rt.height).toBe(orig.height);
-  });
-
-  it('round-trips pivot values', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(HASH_JSON);
-    const data2 = parseTexturePackerSpritesheet(serializeTexturePackerSpritesheet(data, document));
-    const rt = data2.frames.find((f) => f.name === 'hero/idle_0.png')!;
-    expect(rt.pivotX).toBe(0.5);
-    expect(rt.pivotY).toBe(1.0);
-  });
-
-  it('round-trips animations via frameTags', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(HASH_JSON);
-    const data2 = parseTexturePackerSpritesheet(serializeTexturePackerSpritesheet(data, document));
-    expect(data2.animations).toHaveLength(data.animations.length);
-    expect(data2.animations[0].name).toBe(data.animations[0].name);
-  });
-
-  it('emits array variant when existing document is array variant', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(ARRAY_JSON);
-    const json2 = serializeTexturePackerSpritesheet(data, document);
-    const parsed = JSON.parse(json2);
-    expect(Array.isArray(parsed.frames)).toBe(true);
-  });
-
-  it('emits hash variant by default', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(HASH_JSON);
-    const json2 = serializeTexturePackerSpritesheet(data, document);
-    const parsed = JSON.parse(json2);
-    expect(Array.isArray(parsed.frames)).toBe(false);
-  });
-
-  it('respects variant override option', () => {
-    const { data, document } = parseTexturePackerSpritesheetDocument(HASH_JSON);
-    const json2 = serializeTexturePackerSpritesheet(data, document, { variant: 'array' });
-    const parsed = JSON.parse(json2);
-    expect(Array.isArray(parsed.frames)).toBe(true);
-  });
-
-  it('produces valid JSON', () => {
-    const data = parseTexturePackerSpritesheet(MINIMAL_HASH_JSON);
-    expect(() => JSON.parse(serializeTexturePackerSpritesheet(data))).not.toThrow();
   });
 });

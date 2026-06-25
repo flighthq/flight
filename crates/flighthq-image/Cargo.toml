@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-image"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Image resources: pixel sources, MIME detection, and constructors"
+
+[dependencies]
+flighthq-types = { workspace = true }

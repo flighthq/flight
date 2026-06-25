@@ -30,7 +30,9 @@
     "@flighthq/displayobject": "*",
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
-    "@flighthq/resources": "*",
+    "@flighthq/image": "*",
+    "@flighthq/textureatlas": "*",
+    "@flighthq/tileset": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

@@ -10,11 +10,6 @@ export interface CocosPlistParsed {
   document: CocosPlistDocument;
 }
 
-export interface CocosPlistParseOptions {
-  /** Default duration (ms) per frame when building inferred animations. Defaults to 100. */
-  frameDuration?: number;
-}
-
 // ─── plist structural helpers ─────────────────────────────────────────────────
 
 /** Parse a Cocos plist size/offset string of the form "{w,h}" or "{x,y}". */
@@ -183,13 +178,13 @@ function documentToData(doc: CocosPlistDocument): SpritesheetData {
  *
  *  Single-pass: no intermediate document object is allocated.
  *  Use `parseCocosPlistSpritesheetDocument` instead when you need round-trip serialisation. */
-export function parseCocosPlistSpritesheet(xml: string, _options?: CocosPlistParseOptions): SpritesheetData {
+export function parseCocosPlistSpritesheet(xml: string): SpritesheetData {
   return documentToData(parseCocosPlistXml(xml));
 }
 
 /** Parse a Cocos Creator / Cocos2d-x plist XML atlas string and preserve the full document
  *  for round-trip serialisation via `serializeCocosPlistSpritesheet`. */
-export function parseCocosPlistSpritesheetDocument(xml: string, _options?: CocosPlistParseOptions): CocosPlistParsed {
+export function parseCocosPlistSpritesheetDocument(xml: string): CocosPlistParsed {
   const document = parseCocosPlistXml(xml);
   return { data: documentToData(document), document };
 }

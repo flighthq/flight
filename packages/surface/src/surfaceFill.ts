@@ -1,4 +1,4 @@
-import { invalidateImageResource } from '@flighthq/resources';
+import { invalidateImageResource } from '@flighthq/image';
 import type { Surface, SurfaceRegion } from '@flighthq/types';
 
 let _floodFillVisited: Uint8Array | null = null;

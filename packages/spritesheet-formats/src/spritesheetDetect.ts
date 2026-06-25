@@ -68,7 +68,7 @@ function getRegistry(): FormatRegistry {
   });
   _registry.set(COCOS_PLIST, {
     detect: detectCocosPlist,
-    parse: (text, opts) => parseCocosPlistSpritesheet(text, { frameDuration: opts.frameDuration }),
+    parse: (text) => parseCocosPlistSpritesheet(text),
   });
   _registry.set(TEXTURE_PACKER, {
     detect: detectTexturePacker,

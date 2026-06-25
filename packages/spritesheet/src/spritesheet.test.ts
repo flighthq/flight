@@ -1,5 +1,26 @@
-import { createSpritesheet, getSpritesheetAnimation } from './spritesheet';
+import { cloneSpritesheet, createSpritesheet, getSpritesheetAnimation } from './spritesheet';
 import { createSpritesheetAnimation } from './spritesheetAnimation';
+import { createSpritesheetFrame } from './spritesheetFrame';
+
+describe('cloneSpritesheet', () => {
+  it('returns a distinct entity with copies of all frames', () => {
+    const sheet = createSpritesheet();
+    const frame = createSpritesheetFrame({ id: 1, offsetX: 5, offsetY: 10, pivotX: 2, pivotY: 3, rotated: true });
+    sheet.frames.push(frame);
+    sheet.animations['walk'] = createSpritesheetAnimation();
+
+    const clone = cloneSpritesheet(sheet);
+
+    expect(clone).not.toBe(sheet);
+    expect(clone.frames).not.toBe(sheet.frames);
+    expect(clone.frames[0]).not.toBe(sheet.frames[0]);
+    expect(clone.frames[0].id).toBe(1);
+    expect(clone.frames[0].pivotX).toBe(2);
+    expect(clone.frames[0].rotated).toBe(true);
+    expect(clone.animations['walk']).toBe(sheet.animations['walk']);
+    expect(clone.atlas).toBe(sheet.atlas);
+  });
+});
 
 describe('createSpritesheet', () => {
   it('initializes with null atlas, empty animations and frames', () => {
@@ -11,7 +32,7 @@ describe('createSpritesheet', () => {
 
   it('uses provided animations and frames directly', () => {
     const animations = { idle: createSpritesheetAnimation() };
-    const frames = [{ id: 0, offsetX: 0, offsetY: 0 }];
+    const frames = [createSpritesheetFrame({ id: 0 })];
     const sheet = createSpritesheet({ animations, frames });
     expect(sheet.animations).toBe(animations);
     expect(sheet.frames).toBe(frames);

@@ -1,0 +1,11 @@
+[package]
+name = "flighthq-tileset"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Tilesets: uniform-grid texture atlases and constructors from images"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-image = { workspace = true }
+flighthq-textureatlas = { workspace = true }

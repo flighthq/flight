@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-audio"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Audio resources, URL constructors, and the shared audio context"
+
+[dependencies]
+flighthq-types = { workspace = true }

@@ -1,4 +1,4 @@
-import { createMatrix3 } from '@flighthq/geometry';
+import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry';
 import type { ImageResource } from '@flighthq/types';
 
 import { createSampler, equalsSampler } from './sampler';
@@ -8,13 +8,16 @@ import {
   createTexture,
   equalsTexture,
   getTextureHeight,
+  getTextureInverseUvMatrix,
   getTextureUvMatrix,
   getTextureWidth,
   isTextureReady,
+  resetTextureUvTransform,
   setTextureImage,
   setTextureUvOffset,
   setTextureUvRotation,
   setTextureUvScale,
+  transformTextureUv,
 } from './texture';
 
 const fakeImage = { width: 32, height: 64 } as ImageResource;
@@ -177,6 +180,41 @@ describe('getTextureHeight', () => {
   });
 });
 
+describe('getTextureInverseUvMatrix', () => {
+  it('produces the identity matrix for the default uv transform', () => {
+    const texture = createTexture();
+    const out = createMatrix3();
+
+    getTextureInverseUvMatrix(out, texture);
+
+    expect(out.m[0]).toBeCloseTo(1);
+    expect(out.m[1]).toBeCloseTo(0);
+    expect(out.m[2]).toBeCloseTo(0);
+    expect(out.m[3]).toBeCloseTo(0);
+    expect(out.m[4]).toBeCloseTo(1);
+    expect(out.m[5]).toBeCloseTo(0);
+    expect(out.m[8]).toBeCloseTo(1);
+  });
+
+  it('equals inverting the composed forward uv matrix', () => {
+    const texture = createTexture({ uvRotation: Math.PI / 6 });
+    setTextureUvScale(texture, 2, 3);
+    setTextureUvOffset(texture, 0.1, 0.2);
+
+    // The documented contract: compose getTextureUvMatrix, then inverse it via geometry.
+    const expected = createMatrix3();
+    getTextureUvMatrix(expected, texture);
+    inverseMatrix3(expected, expected);
+
+    const out = createMatrix3();
+    getTextureInverseUvMatrix(out, texture);
+
+    for (let k = 0; k < 9; k++) {
+      expect(out.m[k]).toBeCloseTo(expected.m[k]);
+    }
+  });
+});
+
 describe('getTextureUvMatrix', () => {
   it('produces the identity matrix for the default uv transform', () => {
     const texture = createTexture();
@@ -263,6 +301,27 @@ describe('isTextureReady', () => {
   });
 });
 
+describe('resetTextureUvTransform', () => {
+  it('restores the identity transform while leaving image, color space, and sampler untouched', () => {
+    const texture = createTexture({ colorSpace: 'linear', image: fakeImage });
+    const sampler = texture.sampler;
+    setTextureUvOffset(texture, 0.4, 0.6);
+    setTextureUvRotation(texture, Math.PI);
+    setTextureUvScale(texture, 5, 7);
+
+    resetTextureUvTransform(texture);
+
+    expect(texture.uvOffset.x).toStrictEqual(0);
+    expect(texture.uvOffset.y).toStrictEqual(0);
+    expect(texture.uvRotation).toStrictEqual(0);
+    expect(texture.uvScale.x).toStrictEqual(1);
+    expect(texture.uvScale.y).toStrictEqual(1);
+    expect(texture.colorSpace).toStrictEqual('linear');
+    expect(texture.image).toBe(fakeImage);
+    expect(texture.sampler).toBe(sampler);
+  });
+});
+
 describe('setTextureImage', () => {
   it('binds and clears the image in place', () => {
     const texture = createTexture();
@@ -304,5 +363,48 @@ describe('setTextureUvScale', () => {
 
     expect(texture.uvScale.x).toBeCloseTo(4);
     expect(texture.uvScale.y).toBeCloseTo(8);
+  });
+});
+
+describe('transformTextureUv', () => {
+  it('leaves a coordinate unchanged under the identity transform', () => {
+    const texture = createTexture();
+    const out = createVector2(0, 0);
+
+    transformTextureUv(out, texture, 0.25, 0.75);
+
+    expect(out.x).toBeCloseTo(0.25);
+    expect(out.y).toBeCloseTo(0.75);
+  });
+
+  it('applies scale then offset', () => {
+    const texture = createTexture();
+    setTextureUvScale(texture, 2, 3);
+    setTextureUvOffset(texture, 0.1, 0.2);
+    const out = createVector2(0, 0);
+
+    transformTextureUv(out, texture, 0.5, 0.5);
+
+    expect(out.x).toBeCloseTo(2 * 0.5 + 0.1);
+    expect(out.y).toBeCloseTo(3 * 0.5 + 0.2);
+  });
+
+  it('matches multiplying the coordinate by getTextureUvMatrix', () => {
+    const texture = createTexture({ uvRotation: Math.PI / 3 });
+    setTextureUvScale(texture, 1.5, 2.5);
+    setTextureUvOffset(texture, 0.2, 0.4);
+    const matrix = createMatrix3();
+    getTextureUvMatrix(matrix, texture);
+    const u = 0.3;
+    const v = 0.8;
+    const m = matrix.m;
+    const expectedX = m[0] * u + m[1] * v + m[2];
+    const expectedY = m[3] * u + m[4] * v + m[5];
+    const out = createVector2(0, 0);
+
+    transformTextureUv(out, texture, u, v);
+
+    expect(out.x).toBeCloseTo(expectedX);
+    expect(out.y).toBeCloseTo(expectedY);
   });
 });

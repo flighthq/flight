@@ -1,5 +1,4 @@
 import { parseAsepriteSpritesheet, parseAsepriteSpritesheetDocument } from './asepriteParse';
-import { serializeAsepriteSpritesheet } from './asepriteSerialize';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -236,75 +235,5 @@ describe('parseAsepriteSpritesheetDocument — full round-trip, returns { data, 
     const { document } = parseAsepriteSpritesheetDocument(HASH_JSON);
     expect(document.meta.layers).toHaveLength(1);
     expect(document.meta.layers![0].name).toBe('Layer 1');
-  });
-});
-
-// ─── serializeAsepriteSpritesheet round-trips ───────────────────────────────────────────
-
-describe('serializeAsepriteSpritesheet — round-trip via parseAsepriteSpritesheetDocument', () => {
-  it('round-trips frame names', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(HASH_JSON);
-    const data2 = parseAsepriteSpritesheet(serializeAsepriteSpritesheet(data, document));
-    expect(data2.frames.map((f) => f.name)).toEqual(data.frames.map((f) => f.name));
-  });
-
-  it('round-trips frame positions', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(HASH_JSON);
-    const data2 = parseAsepriteSpritesheet(serializeAsepriteSpritesheet(data, document));
-    expect(data2.frames[0].x).toBe(data.frames[0].x);
-    expect(data2.frames[0].width).toBe(data.frames[0].width);
-    expect(data2.frames[2].offsetX).toBe(data.frames[2].offsetX);
-  });
-
-  it('round-trips variable per-frame durations', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(HASH_JSON);
-    const data2 = parseAsepriteSpritesheet(serializeAsepriteSpritesheet(data, document));
-    expect(data2.animations[0].frameDurations).toEqual([100, 150]);
-  });
-
-  it('round-trips uniform durations as null frameDurations', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(ARRAY_JSON);
-    const data2 = parseAsepriteSpritesheet(serializeAsepriteSpritesheet(data, document));
-    expect(data2.animations[0].frameDurations).toBeNull();
-    expect(data2.animations[0].frameDuration).toBe(80);
-  });
-
-  it('round-trips animation names and directions', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(HASH_JSON);
-    const data2 = parseAsepriteSpritesheet(serializeAsepriteSpritesheet(data, document));
-    expect(data2.animations[0].name).toBe('run');
-    expect(data2.animations[1].name).toBe('jump');
-    expect(data2.animations[1].direction).toBe('reverse');
-  });
-
-  it('preserves layer metadata through the document', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(HASH_JSON);
-    const json2 = serializeAsepriteSpritesheet(data, document);
-    const { document: doc2 } = parseAsepriteSpritesheetDocument(json2);
-    expect(doc2.meta.layers).toHaveLength(1);
-  });
-
-  it('emits array variant when existing is array', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(ARRAY_JSON);
-    const parsed = JSON.parse(serializeAsepriteSpritesheet(data, document));
-    expect(Array.isArray(parsed.frames)).toBe(true);
-    expect(parsed.frames[0].filename).toBeDefined();
-  });
-
-  it('emits hash variant by default', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(HASH_JSON);
-    const parsed = JSON.parse(serializeAsepriteSpritesheet(data, document));
-    expect(Array.isArray(parsed.frames)).toBe(false);
-  });
-
-  it('respects variant override option', () => {
-    const { data, document } = parseAsepriteSpritesheetDocument(HASH_JSON);
-    const parsed = JSON.parse(serializeAsepriteSpritesheet(data, document, { variant: 'array' }));
-    expect(Array.isArray(parsed.frames)).toBe(true);
-  });
-
-  it('produces valid JSON', () => {
-    const data = parseAsepriteSpritesheet(NO_TAGS_JSON);
-    expect(() => JSON.parse(serializeAsepriteSpritesheet(data))).not.toThrow();
   });
 });

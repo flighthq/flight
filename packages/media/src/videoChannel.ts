@@ -7,6 +7,24 @@ export function getVideoChannelCurrentTime(channel: VideoChannel): number {
   return element.currentTime * 1000;
 }
 
+export function getVideoChannelDuration(channel: VideoChannel): number {
+  return channel.length;
+}
+
+export function getVideoChannelHeight(channel: VideoChannel): number {
+  const element = channel.source.element;
+  return element !== null ? element.videoHeight : 0;
+}
+
+export function getVideoChannelWidth(channel: VideoChannel): number {
+  const element = channel.source.element;
+  return element !== null ? element.videoWidth : 0;
+}
+
+export function isVideoChannelPlaying(channel: VideoChannel): boolean {
+  return channel.state === 'playing';
+}
+
 export function pauseVideoChannel(channel: VideoChannel): void {
   if (channel.state !== 'playing') return;
   const element = channel.source.element;

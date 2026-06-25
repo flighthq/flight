@@ -1,4 +1,4 @@
-import { createImageResource } from '@flighthq/resources';
+import { createImageResource } from '@flighthq/image';
 
 import { createSurface } from './surface';
 import {

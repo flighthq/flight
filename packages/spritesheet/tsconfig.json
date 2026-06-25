@@ -11,7 +11,9 @@
   "references": [
     { "path": "../displayobject" },
     { "path": "../node" },
-    { "path": "../resources" },
+    { "path": "../image" },
+    { "path": "../textureatlas" },
+    { "path": "../tileset" },
     { "path": "../geometry" },
     { "path": "../signals" },
     { "path": "../types" }

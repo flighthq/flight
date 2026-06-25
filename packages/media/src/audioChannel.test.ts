@@ -1,7 +1,13 @@
-import { createAudioResource } from '@flighthq/resources';
+import { createAudioResource } from '@flighthq/audio';
 
 import {
+  connectAudioChannelToNode,
+  fadeAudioChannelGain,
   getAudioChannelCurrentTime,
+  getAudioChannelDuration,
+  getAudioChannelInputNode,
+  getAudioChannelOutputNode,
+  isAudioChannelPlaying,
   pauseAudioChannel,
   playAudioResource,
   resumeAudioChannel,
@@ -11,12 +17,84 @@ import {
   stopAudioChannel,
 } from './audioChannel';
 
+describe('connectAudioChannelToNode', () => {
+  it('reroutes the active gain node to the destination without error', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    const destination = {} as AudioNode;
+    expect(() => connectAudioChannelToNode(channel!, destination)).not.toThrow();
+  });
+});
+
+describe('fadeAudioChannelGain', () => {
+  it('updates the channel gain immediately when no gain node is active', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    stopAudioChannel(channel!);
+    fadeAudioChannelGain(channel!, 0.5, 500);
+    expect(channel!.gain).toBe(0.5);
+  });
+});
+
 describe('getAudioChannelCurrentTime', () => {
   it('returns the stored current time for an inactive channel', () => {
     const channel = playAudioResource(createAudioResource(createMockAudioBuffer()), { currentTime: 250 });
     expect(channel).not.toBeNull();
     pauseAudioChannel(channel!);
     expect(getAudioChannelCurrentTime(channel!)).toBe(250);
+  });
+});
+
+describe('getAudioChannelDuration', () => {
+  it('returns the channel length', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    expect(getAudioChannelDuration(channel!)).toBe(1000);
+  });
+});
+
+describe('getAudioChannelInputNode', () => {
+  it('returns the source node while playing', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    expect(getAudioChannelInputNode(channel!)).not.toBeNull();
+  });
+
+  it('returns null after stop', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    stopAudioChannel(channel!);
+    expect(getAudioChannelInputNode(channel!)).toBeNull();
+  });
+});
+
+describe('getAudioChannelOutputNode', () => {
+  it('returns the gain node while playing', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    expect(getAudioChannelOutputNode(channel!)).not.toBeNull();
+  });
+
+  it('returns null after stop', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    stopAudioChannel(channel!);
+    expect(getAudioChannelOutputNode(channel!)).toBeNull();
+  });
+});
+
+describe('isAudioChannelPlaying', () => {
+  it('returns true while playing', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    expect(isAudioChannelPlaying(channel!)).toBe(true);
+  });
+
+  it('returns false when paused', () => {
+    const channel = playAudioResource(createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    pauseAudioChannel(channel!);
+    expect(isAudioChannelPlaying(channel!)).toBe(false);
   });
 });
 
@@ -116,6 +194,7 @@ class MockAudioContext {
   createGain(): GainNode {
     return {
       connect() {},
+      disconnect() {},
       gain: { value: 1 },
     } as unknown as GainNode;
   }
