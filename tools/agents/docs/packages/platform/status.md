@@ -1,12 +1,31 @@
 ---
 package: '@flighthq/platform'
-updated: 2026-06-24
+updated: 2026-06-25
 by: ingest:builder-67dc46d64
 ---
 
 # platform — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sole sweep-safe item in `assessment.md`'s Recommended section.
+
+**Done:**
+
+- Added `packages/platform/README.md` — the canonical environment-identification reference. Documents all 14 `PlatformInfo` fields (type, value space, sentinel, web source, native source) in a table, enumerates every exported function, and adds the cross-package delegation table (`@flighthq/device`, `@flighthq/power`, `@flighthq/screen`, `@flighthq/app`) plus the `@flighthq/useragent` value-leaf note. The native-reserved stub fields (`osBuild`/`distro`/`distroVersion`) are explicitly documented as always-`''`-on-web rather than silently empty. Pure documentation of the already-shipped surface — no code change, no new export, no design decision.
+
+**Parked (all Backlog items — none sweep-safe):**
+
+- `platform-formats` → `useragent` collapse — cross-boundary: removes a dependency package and pairs with the identical `device-formats` decision; needs the user's bless.
+- Async high-entropy resolve seam (`getPlatformInfoAsync`/`refreshPlatformInfo`) — design decision: a suite-wide async-shape decision shared with `@flighthq/device`; would touch `@flighthq/types`.
+- Native fillers for `osBuild`/`distro`/`distroVersion` — cross-tree: needs a native host that does not exist in this codebase yet.
+- `PlatformGraphics` capability block — design decision: home (render-capabilities seam vs. here) is an Open direction.
+- Rust mirror catch-up — cross-boundary: lives in `crates/` / the conformance track.
+- Pin canonical `arch` token set shared with `@flighthq/device` — cross-boundary: spans `@flighthq/types` and two packages.
+
+**Verification:** `npm run test --workspace=packages/platform` — 73/73 pass.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

@@ -8,6 +8,17 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed both sweep-safe Recommended items from `assessment.md`; all 55 own-tests pass.
+
+**Done:**
+
+- **`createClipRegionFromContours` now deep-copies its input** (was capturing the caller's array by reference — the lone ownership inconsistency in the `create*` family). The parameter is now `Readonly<ReadonlyArray<ReadonlyArray<number>>>`; the region stores `contours.map((c) => c.slice())`, matching `cloneClipRegion`/`copyClipRegion`. Updated the colocated test: the old "stores the provided contours" (`toBe`) assertion is replaced by a deep-copy assertion (`not.toBe` on the array and its first contour, `toEqual` on values) plus a new "does not observe later edits to the caller array" case.
+- **Reworded the `package.json` `description`** from the pre-expansion product framing ("hard geometric clip product built from rectangles or paths") to the operations-library framing ("ClipRegion operations: hard geometric clip regions as plain data — constructors, composition, queries, transform, and a pool bracket"). Metadata only.
+
+**Parked:** all Backlog items untouched (each is cross-package, a breaking types-layer change, or an Open-direction design decision): exact boolean algebra kernel, `clipRegionContainsRectangle` contour false-positive ruling, `number[][]` → `Float32Array` storage, winding-helper ownership, the functional/visual parity test, and the Rust `flighthq-clip` crate.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/clip

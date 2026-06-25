@@ -8,6 +8,27 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the four sweep-safe Recommended items from `assessment.md`. All within `packages/textshaper-canvas/`; package own-tests pass (17 tests).
+
+Done:
+
+- **Cache-key includes `letterSpacing`.** `measureText`'s key was `${fontString}\x00${text}`; `computeTextFormatFontString` omits `letterSpacing`, so a later call with a different `letterSpacing` on the same `(font, text)` returned the first call's width. Key is now `${fontString}\x00${letterSpacing}\x00${text}`. `wordSpacing`/`direction` are constant today, so `letterSpacing` is the only extra discriminator needed (commented as such). Purely internal — no signature/seam change. (Gaps #1)
+- **Colocated regression test for the key fix.** Added `keys the advance cache on letterSpacing …`: spies the private 2D context's `measureText` via `HTMLCanvasElement.prototype.getContext`, asserts a repeated identical call hits the cache (1 measure) while a differing-`letterSpacing` call re-measures (2 measures). Works around jsdom returning width 0 by counting calls rather than comparing widths. (Gaps #1, #6)
+- **Descender glyph in `getFontMetrics` descent fallback.** When `fontBoundingBoxDescent` is undefined the fallback now probes `'g'` (`descenderMeasure.actualBoundingBoxDescent`) instead of `'H'` (descent ~0), so descent no longer collapses to near-zero on engines lacking `fontBoundingBox*`. (Gaps #4)
+- **`getFontMetrics` returns `unitsPerEm: size` (identity) instead of `0`.** Stops the latent divide-by-zero for a consumer following the `FontMetrics.unitsPerEm` doc (`size / unitsPerEm`); the inverse becomes a safe no-op. Added a test pinning `unitsPerEm === size` (16) and the 12px default. (Gaps #2, within-package half)
+
+Parked (unchanged from assessment Backlog; all cross-boundary or design-gated):
+
+- Explicit `shapeRun: () => null` advances-only marker — seam-wide convention decision.
+- `FontMetrics.unitsPerEm` "0 = unavailable" carve-out — `@flighthq/types` decision.
+- `TextFormat.wordSpacing` / `TextFormat.direction` fields — `@flighthq/types`, multi-package.
+- Measurement↔rasterization parity functional scene — cross-package, `tools/functional`.
+- Wire `getFontMetrics` into `@flighthq/textlayout` — cross-package consumer.
+- Per-cluster `Intl.Segmenter` advances — design-gated, larger than a sweep.
+- Package Map / lib-cast items — admin-doc / informational.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/textshaper-canvas

@@ -168,3 +168,29 @@ WOW64 (Windows-on-Windows 64) appears in UA strings for 32-bit processes running
 - 4 pts: `getDeviceIdAsync` and the async storage seam — deferred by design.
 - 3 pts: Rust parity (`flighthq-device`) — deferred until type surface stabilizes.
 - 2 pts: Package README with the full field/sentinel/web-vs-native/cross-package table.
+
+---
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sole sweep-safe item from `assessment.md`'s Recommended list.
+
+### Done
+
+- **Added `packages/device/README.md`** — a human-readable field/unit/sentinel/web-vs-native table covering every `DeviceInfo` (25 fields), `DeviceCapabilities` (3), `DeviceDisplayMetrics` (7), and `SafeAreaInsets` (4) field, plus a function index and the `getDeviceId` install-id semantics. Pure documentation of the already-shipped surface; no code change. Closes the "2 pts: Package README" gap noted under the score estimate above and the lone Recommended bullet. This is the first README in `packages/` (no neighbor precedent to match).
+
+### Parked
+
+All remaining assessment items are Backlog (cross-package or design-decision) and out of bounds for this sweep:
+
+- `getDeviceIdAsync` native-keystore seam — cross-boundary / needs a native host; premature.
+- `flighthq-device` Rust crate — cross-tree (crates/), conformance track.
+- `device-formats` → `useragent` collapse — cross-package structural fork; needs user bless.
+- `getId` storage seam (inject `@flighthq/storage`) — cross-package dependency-direction decision.
+- Predicate-convenience helpers (`isDeviceTablet`) — API-shape design decision.
+- `device` ↔ `screen` boundary ruling — cross-package, needs charter ruling.
+- `installSource` placement — cross-package placement decision (likely `@flighthq/app`).
+
+### Verification
+
+`npm run test --workspace=packages/device` → 26/26 passed. No source changed, so export/order checks are unaffected.

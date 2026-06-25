@@ -136,3 +136,19 @@ All new tests cover: happy paths, alias-safety (out===source), edge cases (zero-
 5. Unify `resizeSurface` / `rotateSurface` edge handling through `SurfaceEdgeMode` (currently uses implicit transparent/clamp behavior with no parameter).
 6. `@flighthq/surface-formats` as a new package — establish as a scoped session with scope confirmed by the user.
 7. Verify and build the Rust additions in an environment with `cargo`.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the docs-only Recommended item and verified the package state in this worktree against the assessment (which was authored against a more advanced tree).
+
+**Verified counts (this worktree):** `npm run test --workspace=packages/surface` → **34 test files, 271 tests pass**. This supersedes the as-claimed "40 test files, 322 tests" recorded in the 2026-06-24 ingest entry above, and also differs from the assessment's "actual 41/338" — the assessment was written against a tree ahead of this one.
+
+**Warp claim correction:** the assessment's Recommended item #1 assumed `src/surfaceWarp.ts` exists and needs barrel-wiring. In this worktree the file does **not** exist (no `surfaceWarp.ts`, no `surfaceWarp.test.ts`), and `src/index.ts` has no warp export. Perspective warp (`warpSurface`/`warpSurfaceQuad`) is genuinely **absent and deferred** — the 2026-06-24 "Deferred items" note above is correct on this point. There is nothing to wire and nothing to remove; the item is not applicable here. Parked.
+
+**`SpreadMethod` confirmation:** `SpreadMethod` is confirmed to live only in `packages/types/src/ShapeCommand.ts` (no other types definition). The surface-side `GradientSpread`-vs-`SpreadMethod` note (concern #4 above) is a forward-looking consolidation observation, not an error in the status log.
+
+**Median hidden-state fix — parked.** Recommended item #2 (move `surfaceMedian.ts`'s module-level `_windowRed/_windowGreen/_windowBlue/_windowAlpha` scratch to a caller-provided buffer) was justified as mirroring an already-established `scrollSurface(..., scratch)` pattern. In this worktree that pattern does **not** exist: `scrollSurface` (`surfaceTransform.ts:4,145`) and `floodFillSurface` (`surfaceFill.ts`) both still use module-level scratch (`_scrollScratch`, `_floodFillVisited`). With no blessed scratch-parameter shape to mirror, choosing the median scratch API (one combined buffer vs. four channel buffers vs. a scratch struct, and whether to convert all three same-category functions together) is a genuine design decision and an unblessed signature change. Parked per the no-guess rule rather than introduce a one-off inconsistent signature.
+
+## 2026-06-25 — builder Phase 0 (gate fixed-forward)
+
+- **Fixed `flighthq-surface` Rust↔TS Perlin conformance.** `fill_surface_perlin_noise` computed the per-channel seed as `seed + c * 0x9e3779b1`, which matches the authoritative `@flighthq/surface` scheme for R and G but diverges from the B channel onward (TS: `seed`, `+0x9e3779b1`, `+0x9e3779b2`, `+0x9e3779b3`). The `surface-rs` wasm conformance test `fillSurfacePerlinNoise > matches @flighthq/surface` caught it (B = 142 vs 161). Corrected the Rust seed, rebuilt the wasm (`npm run wasm`); all 82 surface-rs conformance tests and 175 `flighthq-surface` crate tests pass. Note: the f32 (Rust) vs f64 (TS) precision gap did **not** produce byte differences here — the seed was the whole defect.

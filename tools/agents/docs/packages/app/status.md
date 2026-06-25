@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the `assessment.md` Recommended list for sweep-safe, strictly-within-package items. Own tests pass (56/56).
+
+**Done:**
+
+- **Documented web sentinels + native semantics on the in-package web fill.** Added durable doc-comments to the previously-bare `createWebAppBackend` methods (`getAppDirectoryPath`, `getAppPath`, `getCommandLine`, `getExecutablePath`, `getLoginItem`, `getName`, `getVersion`, `subscribeActivate`, `subscribeAllWindowsClosed`, `subscribeOpenFile`, `subscribeSecondInstance`), each stating its web sentinel (`''` / `[]` / never-called / default item) and its native intent. No signature change; doc-only. This is the in-package half of the "document web sentinels + native semantics" item — the `AppBackend` interface half lives in `@flighthq/types` (parked, cross-boundary).
+
+**Parked:**
+
+- **Resolve the two orphaned types (retract).** _Stale premise + cross-boundary._ `AppLaunchKind` / `AppMemoryPressure` are **not** orphaned — they live in `packages/types/src/Lifecycle.ts` and are actively implemented by `@flighthq/lifecycle` (`getAppLaunchKind`, `subscribeMemoryWarning`, `onMemoryWarning`). Retracting them would touch `@flighthq/types` and break `@flighthq/lifecycle`. The assessment should be corrected to drop this item.
+- **Alias-safe `out`-param getter variants.** _Design decision; cited precedent does not exist._ The assessment claims `getAppLoginItem(out?)` "already follows the read-shape/`*Like`-write split", but the actual signature is `getAppLoginItem(): AppLoginItem` with no `out` param. Adding `out` variants is a public-API signature change and the `out`-write type (`AppLoginItem` vs `AppLoginItemLike`) is an unblessed shape — parked rather than guessed.
+- **Note the Map under-description.** _Cross-boundary._ The fix targets `tools/agents/docs/index.md` (the codebase map), which is outside the `packages/app/` + `tools/agents/docs/packages/app/` editable boundary.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Session Status: @flighthq/app

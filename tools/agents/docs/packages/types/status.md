@@ -107,3 +107,23 @@ Audited all display object entity files. Added `*DataFactory` and `*RuntimeFacto
 4. **Scene serialization contract** — requires a design session. The types-layout spec documents the intent; it just needs to be shaped into `SceneDocument`/`SceneVersion`/`SceneMigration` types with buy-in from the scene-owning packages.
 
 5. **Branded primitives** — `PackedRgba` as a branded `number` is a high-leverage change for catching color-convention bugs across the SDK. Worth a deliberate design go-ahead discussion.
+
+## 2026-06-25 — builder Phase 1 (header additions for pruned-core port)
+
+Added three header types required by the Phase-1 geometry/node port: `Ray3D`/`Ray3DLike` (entity quartet mirroring `Aabb`), `EulerOrder` (the six intrinsic-rotation orders, glTF convention), and `NodeDescendantVisitor<Traits>` (depth-first walk callback). Barrel updated; `npm run check` green.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the three sweep-safe items from `assessment.md` `## Recommended`. All within `packages/types/`; no cross-package edits.
+
+**Done:**
+
+- **`Signal.test.ts` (new).** Pins the _present_ function-typed `Signal<T extends (...args) => void>` contract: `emit` matches the parameterized slot signature, `data: SignalData<T> | null`, and `SignalData` carries the parallel `slots`/`priorities`/`repeat` arrays plus the `cancelled` flag. (Note: the assessment guessed the field names as slot/priority/enabled/connection; the actual `SignalData` fields are `slots`/`priorities`/`repeat`/`cancelled`, and the test pins the real shape.) Documents today's seam so the later payload-reshape has a before/after assertion. No signature change.
+
+- **`Bitmap.test.ts` (new) — invariant-bearing entity-quartet test.** Extends the blessed assertion pattern (Material/Node compile-check style) to the canonical entity quartet: `BitmapKind === 'Bitmap'` + literal-kind check, the bitmap-specific `BitmapData` keys, and three compile-time subtype laws (`Bitmap extends DisplayObject`, `BitmapData extends DisplayObjectData`, `BitmapRuntime extends DisplayObjectRuntime`). Note: the assessment's example named "DisplayObject / Sprite / Stage `*Like` strip" tests, but those entities are `Node<Traits>` entities with **no `*Like` type** (only entity-`*Like` types like `MaterialLike` exist; display-object entities have none), so the realized coverage is the Bitmap quartet's kind-identity + subtype-law invariants instead — same pattern, real target.
+
+- **`DeviceBackend` module doc (Device.ts).** The seam doc was attached to the sibling `DeviceInfo` interface; the `DeviceBackend` interface itself was bare. Added a one-line ownership/semantics comment (fills `out`, returns it; sentinels not throws). Pure in-source comment, no signature change. A full scan of all `*Backend` seams found every other capability seam already carries a file-level or interface-level doc — this was the only residual.
+
+**Parked:** none from the Recommended list — all three were executed. (The Backlog items remain parked by the assessment: `Signal<T>` payload reshape, `KindOf`/`KnownKinds`, header-closure enforcement, test-policy reconciliation, scene serialization, branded primitives, Rust conformance lock, opening `ParticleForce` — all cross-package or charter-level.)
+
+**Tests:** `npm run test --workspace=packages/types` → 10 files / 47 tests, all pass (was 8 files; +2 new). Did not run `npm run check`/`fix`/`order:fix` per task constraints.

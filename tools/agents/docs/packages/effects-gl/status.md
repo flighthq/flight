@@ -8,6 +8,18 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the assessment's `## Recommended` section. It contained a single item, and that item falls outside the in-package edit boundary, so nothing was changed in `packages/effects-gl/`.
+
+**Done:** none (no in-package Recommended items).
+
+**Parked:**
+
+- **Record GL effects + stand-ins in `render-backend-support.md`** — _cross-boundary: edits `tools/agents/docs/render-backend-support.md`_, the shared cross-package backend-support doc at the top level of `tools/agents/docs/` (not under `tools/agents/docs/packages/effects-gl/`). It documents every backend in one place, so the edit belongs to a docs/maintainer pass that owns that file, not to an in-package effects-gl sweep. The factual content to add when it is made: the 44 GL post-process runners exist, and `Ssr`/`Taa`/`Ssao`/`Smaa` are honest stand-ins (passthrough / luminance-variation / single-pass) so a scoping agent does not assume real depth-driven AO/reflections on GL.
+
+**Verification:** `npm run test --workspace=packages/effects-gl` → 47 files / 99 tests passing (no source touched).
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/effects-gl

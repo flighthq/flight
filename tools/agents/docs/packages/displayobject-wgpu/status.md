@@ -1,12 +1,26 @@
 ---
 package: '@flighthq/displayobject-wgpu'
-updated: 2026-06-24
+updated: 2026-06-25
 by: ingest:builder-67dc46d64
 ---
 
 # displayobject-wgpu — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended-list sweep for `@flighthq/displayobject-wgpu`. Outcome: **no source edits required** — all three items either reference surface absent from this worktree, are already satisfied by prior work, or are blocked behind a design decision / cross-backend asymmetry. Tests verified green (24 files, 113 tests pass).
+
+**Worktree-vs-assessment discrepancy found (important).** The assessment and the prior `builder-67dc46d64` status entry describe files that do **not exist** in this worktree's `src/`: `wgpuRegistration.ts`, `wgpuRendererData.ts`, and `wgpuRenderStats.ts`. They survive only as stale `dist/` artifacts (`dist/wgpuRenderStats.*`) and the `WgpuRenderStats` type only in `@flighthq/types` `dist/`. The current `src/index.ts` exports none of them. This worktree's source therefore predates the `builder-67dc46d64` ingest the assessment was written against. That mismatch is what made the Recommended items un-actionable here rather than any blocker in the items themselves.
+
+### Items
+
+- **Stats integration test — PARKED.** The functions it would exercise (`resetWgpuRenderStats`, `recordWgpuBatchFlush`, `getWgpuRenderStats`) are absent from `src/` (present only in stale `dist/`), and `WgpuRenderStats` lives in `@flighthq/types`. Cannot write a colocated test for functions this package does not export; `flushWgpuSpriteBatch` contains no stats wiring to assert against. Cross-boundary (`@flighthq/types`) + missing-source.
+- **Degenerate-input sentinel hardening — DONE (audit; no edit).** Audited every draw path. All already no-op on degenerate input: `drawWgpuShape` (empty commands, null rendererData, zero-size bounds, no material), `drawWgpuTextLabel` (empty text, empty layout groups, zero-size), `drawWgpuRichText` (zero field W/H, null rendererData), `drawWgpuVideo` (`readyState < 2`, zero dims), `drawWgpuTilemap` (null tileset/atlas, zero columns/rows), `drawWgpuBitmap` (null image source), `drawWgpuScale9Shape` (empty commands, null mapper, zero-size), `drawWgpuShapeMeshes` (empty/degenerate meshes, zero alpha). The single `throw` in the package — `renderWgpuVelocity`'s "call renderWgpuBackground first" — is correct misuse detection, not a degenerate-input case. The item's premise is already satisfied in source; no change warranted.
+- **Velocity-writer coverage for remaining drawable kinds — PARKED.** Shape, Tilemap, TextLabel/RichText, and Video are non-instanced kinds whose per-node velocity is already correctly produced by the existing `defaultWgpuDisplayObjectVelocityWriter` (covers a node's world bounds with one field velocity). Only the instanced kinds (`QuadBatch`, `ParticleEmitter`) need bespoke per-instance writers, and both already exist. Minting `defaultWgpuShapeVelocityWriter` / `…Text…` / `…Video…` would each be a byte-identical copy of the display-object writer — pure public-surface inflation (the "blood from a stone" anti-pattern), and the `displayobject-gl` sibling carries the same three-writer set, so adding them here unilaterally creates cross-backend asymmetry. Whether to mint per-kind writer aliases vs. keep one shared writer is a design / cross-backend-contract decision, not sweep-safe hygiene.
+
+Did not run: install, check, fix, order:fix, tsc, cargo, git, wasm rebuild (per task constraints).
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

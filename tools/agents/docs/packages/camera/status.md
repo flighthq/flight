@@ -8,6 +8,27 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the sweep-safe Recommended set against the **live** `packages/camera/src/`. Result: **nothing actionable** — every Recommended item targets source that does not exist in the current worktree's `src/`.
+
+The current `src/` contains only `camera.ts` (`createCamera`, `getCameraInverseViewProjectionMatrix4`, `getCameraViewProjectionMatrix4`, `setCameraJitter`, `setCameraViewMatrix4FromLookAt`, `setCameraViewMatrix4FromMatrix4`) and `projection.ts`. The picking/culling/depth/basis/frustum surface the assessment is written against (`depth.ts`, `basis.ts`, `frustumCorners.ts`, `picking.ts`, `intersection.ts`, `culling.ts`) is present only as stale compiled output under `dist/` — it was never reflected into the live `src/`. This matches the status log's own "as-claimed, not yet review-verified" caveat on the Pass 1/2 entry below: the claimed Gold surface is not in the source tree.
+
+Because each Recommended bullet names a function or file that is absent (`getCameraLinearDepth`/`depth.ts`, `getCameraPosition`/`basis.ts`, `getCameraFrustumCorners`/`frustumCorners.ts`, the `getCameraWorldToScreen`↔`getCameraScreenToWorldRay` round-trip), executing any of them would require authoring the missing modules from scratch — a design/API decision, not a sweep-safe edit. All four are parked. No source edits made.
+
+**Done:** none (no Recommended item had live source to act on).
+
+**Parked:**
+
+- Scope `getCameraLinearDepth` to perspective + fix its doc — `depth.ts` absent from `src/` (only in stale `dist/`); fixing it would mean authoring the module = design decision.
+- Clean the `getCameraPosition` comment — `basis.ts` absent from `src/`.
+- Remove per-call allocation in `getCameraFrustumCorners` — `frustumCorners.ts` absent from `src/`.
+- Add project↔unproject round-trip tests — `picking.ts` (`getCameraWorldToScreen`/`getCameraScreenToWorldRay`) absent from `src/`; no functions to test.
+
+**Verification:** `npm run test --workspace=packages/camera` — 2 files, 16 tests, all passing (the live minimal surface). No edits, so no drift to fix.
+
+**Flag for the user:** the assessment.md / dist / status-log Gold surface and the live `src/` have diverged. Re-running `package-review`/`package-assess` against the live `src/` (or restoring the claimed source) is needed before a Recommended sweep can do anything here.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/camera

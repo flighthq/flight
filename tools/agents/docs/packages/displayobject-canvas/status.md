@@ -8,6 +8,21 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the `assessment.md › Recommended` list. Only one item was strictly within-package and free of a design decision; the rest of the list's stated premises did not hold against the live source, so they parked.
+
+**Done**
+
+- **Degenerate-input sentinel tests** — added colocated no-throw cases proving the draw paths return/skip rather than throw on malformed input. In `canvasShape.test.ts › renderCanvasShapeCommands`: zero-size rectangle, NaN coordinates, Infinity coordinates, very-large (1e20) coordinates, a singular (det=0) bitmap-fill matrix, and an unknown command key (exercising the `getCanvasShapeCommand` undefined sentinel + walk advance). In `canvasParticleEmitter.test.ts`: NaN particle transforms. All attach to already-exported functions, so `exports:check` stays satisfied. Package tests: 208 passed (28 files).
+
+**Parked**
+
+- **`LineScaleMode 'horizontal'`/`'vertical'`** — _cross-boundary._ The assessment's premise is stale: `CanvasShapeDrawState` (in `@flighthq/types`) has **no** `strokeScaleMode` field and `'none'` is **not** implemented — `defaultCanvasLineStyle` reads `caps`/`joints`/`miterLimit` (buf indices 5/6/7) and ignores `scaleMode` (index 4) entirely. There is no in-package carrier to thread the scale mode from `lineStyle` to `flushCanvasShapePath`; adding one means a field on `CanvasShapeDrawState` in `@flighthq/types`. Park until that header field lands upstream.
+- **Image-smoothing parity audit** — _behavioral-contract decision._ The bitmap/tilemap/particle paths already toggle `imageSmoothingEnabled` consistently (all assume `true` is the resting state). The genuine inconsistency is `createBitmapPattern`/`createGradientPattern` (`canvasFillPattern.ts`) setting `imageSmoothingEnabled` for pattern creation with **no restore**, and the bitmap path restoring to a hard-coded `true` rather than the configured `runtime.imageSmoothingEnabled`/`imageSmoothingQuality` default. Picking the correct unified restore target (`true` vs the configured default) and the pattern-creation smoothing contract is a judgment call the assessment itself frames as "an audit," not a mechanical edit.
+- **Draw-walk state-minimization extension** — _design decision + correctness hazard._ The draw walk itself is in `@flighthq/render` (cross-package). Caching `globalAlpha`/transform/styles on the canvas runtime to skip redundant writes would have to invalidate on every external `save`/`restore` (cache compositing, `applyCanvasMaterial`), which silently mutate context state — a real correctness hazard, not a sweep.
+- **Particle-emitter additive fast path** — _already implemented._ `drawCanvasParticleEmitter` already honors the per-emitter blend mode via `state.applyBlendMode` and uses a state-minimized inner loop (`setTransform` + `globalAlpha` per particle, no per-particle `save`/`restore`). Per-particle tint requires per-particle color data not present in this path and is the cross-package particles↔sprite line (fork A). Added a NaN-transform no-throw test while here.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/displayobject-canvas

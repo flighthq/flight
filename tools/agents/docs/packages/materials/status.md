@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` › Recommended. The package source had been refactored since the review that seeded the assessment, so two of the four Recommended items no longer describe the live code and were parked.
+
+**Done**
+
+- Aligned `createColorTransform`'s constructor param with the `create*Material` shape (`colorTransform.ts`): renamed `obj` → `opts` and marked it `Readonly<Partial<ColorTransformLike>>`. Within-package, internal-only (parameter name is not part of the type-checked caller contract), no migration concern. All 98 package tests pass; no new exported function, so no new colocated test required.
+
+**Parked**
+
+- **Fix `equalsMaterial`'s shallow `standard` sub-block compare** — does not apply to the live code. The current `material.ts › equalsMaterial` has no generic `aFields[key] !== bFields[key]` loop; it special-cases only `UniformColorTransformMaterialKind` (deep-comparing its `colorTransform`) and returns `true` for every other same-kind material, including PBR extension materials. There is no `cloneMaterial` / `copyMaterial` at the material level. Deciding whether `equalsMaterial` should now deep-compare `standard` blocks for extension kinds (vs. its current deliberate "same-kind, no comparable fields → equal" contract, which has a passing test) is a behavioral-contract design decision, not a mechanical bug-fix — parked for a direction call.
+- **Repair the stale `hslToRgb` doc comment (`color.ts:57-60`)** — does not apply to the live code. `color.ts` was refactored to the linear-color seam (`LinearColor`, `computeRgbHexString`, `createLinearColor`, `unpackColorToLinear`, `srgbChannelToLinear`); there is no `hslToRgb` / `rgbToHsl` / `HslColor` / `HsvColor` in the package, and no stale comment at those lines.
+- **Settle the `compute*` vs `get*` verb split (`computeRgbHexString`)** — cross-boundary. `computeRgbHexString` is consumed by 13 files across `displayobject-dom`, `displayobject-canvas`, `displayobject-gl`, and `displayobject-wgpu`; renaming the export would require editing those packages, which is outside this package's boundary. (Verb choice — `get*` per the accessor convention — is also a public-API rename, not purely mechanical.)
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/materials

@@ -8,6 +8,16 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep against the live `packages/velocity/src/`. The assessment's single Recommended item — tighten `getVelocitySampleAt`'s `currentWorldTransform` parameter from an inline structural literal to `Readonly<Matrix>` in `affineVelocity.ts` — is **not actionable against the current source**: that file and symbol do not exist in the live worktree.
+
+The current source exports only 8 functions across `transformVelocity.ts` and `velocityField.ts` (`contributeTransformVelocity`, `beginVelocityFrame`, `contributeVelocity`, `createVelocityField`, `ensureVelocitySample`, `getVelocity`, `hasVelocity`, `suppressVelocity`). There is no `affineVelocity.ts`, no `getVelocitySampleAt`, no `contributeAffineVelocity`, and no inline structural `Matrix` literal parameter anywhere in `src/`. The assessment was built from the `builder-67dc46d64` head (23 exports, `affineVelocity.ts` present, see the entry below), which the live tree does not reflect — the package was reduced/restructured after the assessment was authored.
+
+- **Done:** nothing — no Recommended item maps to the current source.
+- **Parked:** the `getVelocitySampleAt` `Readonly<Matrix>` tightening — the target file/symbol does not exist in the live worktree; re-deriving it would require re-authoring `affineVelocity.ts`, a design decision out of sweep scope.
+- **Tests:** `npm run test --workspace=packages/velocity` — 2 files, 11 tests, all pass. No edits made.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/velocity

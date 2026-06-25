@@ -8,6 +8,18 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` § Recommended.
+
+Done:
+
+- **Fixed the stale `createWebLogTransportBackend` docstring** (`packages/log/src/log.ts`). The comment still described the deferred batched-POST HTTP sink (`batchSize`/`intervalMs`/remote endpoint). Rewrote it to describe what actually ships: the web default no-op transport backend (no filesystem, no SDK-owned network), with `createFileLogSink` entries dropping silently until a host registers a real backend via `setLogTransportBackend`, and a pointer to compose `createBufferedLogSink` over a backend for remote shipping. Docstring-only; no export/test changes. `npm run test --workspace=packages/log` green (114/114).
+
+Parked:
+
+- **Fix the `LogTransportBackend.ts` reference to `createHttpLogSink`.** cross-boundary: the type doc lives in `@flighthq/types` (`packages/types/src/Log.ts` / `LogTransportBackend.ts`), outside `packages/log/`. Despite the assessment calling it "the colocated type file `log` owns," it physically sits in `packages/types`, which is a hard boundary for this sweep. Left untouched.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/log

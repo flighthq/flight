@@ -8,6 +8,25 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the single sweep-safe item from `assessment.md` → Recommended.
+
+Done:
+
+- Added `onScreenDetailPermissionChange(listener): () => void` to `packages/screen/src/screen.ts`. A change-watch variant over the Window Management (`window-management`) permission, backed by the Permissions API `PermissionStatus` `change` event, so a consumer reacts to a later grant/revoke instead of one-shot `getScreenDetailPermission` polling. Returns a no-op unsubscribe when the Permissions API is absent or the query rejects (existing sentinel discipline); the unsubscribe also cancels a still-pending query before its listener registers. Placed alphabetically after `onScreenChange`.
+- Added a colocated `describe('onScreenDetailPermissionChange')` block to `packages/screen/src/screen.test.ts` (no-op-unsubscribe path + a mocked-Permissions change-delivery path) and the matching import. Kept describe blocks and the import list alphabetized.
+
+Verification: `npm run test --workspace=packages/screen` → 1 file, 59 tests passing.
+
+Parked (all Backlog items — none were in Recommended, but recorded for continuity):
+
+- Real display-mode enumeration / `getScreenNativeMode` — host-coupled; no payload until a native backend enumerates.
+- Stable-id contract test — depends on the undecided id seam (charter Open direction #5).
+- Rust compile verification (`cargo build -p flighthq-screen …`) — requires a Rust environment; outside a TS-only sweep, and this task forbids cargo.
+- `Signal<Fn>` vs `Signal<T>` divergence note — cross-boundary: edits the conformance/divergence map, not `@flighthq/screen` source.
+- Package Map line expansion — cross-boundary: edits the shared `tools/agents/docs/index.md`.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/screen

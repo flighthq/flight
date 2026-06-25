@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` that fall strictly within `@flighthq/application`. Test-only and within-package; no source-API changes. `npm run test --workspace=packages/application` passes (133 tests).
+
+Done:
+
+- **Out-param aliased-case test for `computeWindowDeviceTransform`** — added a colocated test asserting the read-before-write guarantee by handing the function a fully-populated `out` it must clobber. `out`'s only input is `win` (a different object type), so true object-level aliasing is impossible here; the new test covers the stale-`out` overwrite case the contract intends. (`window.test.ts`)
+- **Deterministic in-package loop test** — added a test that drives `stepApplicationLoop` to a fixed frame count (10) with a caller-supplied fixed delta and asserts reproducible `frameCount`/`elapsedTime`/`deltaTime`/update samples across two identical runs. Pins the headless-stepping contract. (`application.test.ts`)
+
+Parked:
+
+- **Frame-time jitter / dropped-frame metrics** — cross-boundary: the new read-only fields (min/max/avg frame time, dropped-frame count) must be added to the `Application` interface in `@flighthq/types` (`packages/types/src/Application.ts`), outside this package's edit boundary. The loop-side math is in-package, but it cannot land without the type fields.
+- **`ApplicationLoopOptions.ts` own-file split** — cross-boundary: the type lives in `@flighthq/types` (`packages/types/src/Application.ts`); splitting it into its own file is a `@flighthq/types` change. The assessment also flags it for the types-layout checker / a bless-or-wave decision.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/application
