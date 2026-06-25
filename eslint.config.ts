@@ -11,6 +11,9 @@ export default [
       '**/dist/**',
       '**/build/**',
       '**/coverage/**',
+      // Rust/cargo build output (gitignored). Not TS source; its ephemeral incremental
+      // files also make a recursive scan flaky once `cargo build` has run in-tree.
+      '**/target/**',
       '**/node_modules/**',
       '**/.git/**',
       '**/.idea/**',
@@ -22,13 +25,18 @@ export default [
       // surface-rs): the wasm-bindgen glue plus the base64-embedded module.
       // Baked by `npm run wasm`; never linted.
       '**/src/wasm/**',
-      // The entire agent-docs tree is documentation, orchestration scripts (workflow
+      // Any `docs/` directory anywhere is documentation, orchestration scripts (workflow
       // JS), and inbound dispatch/staging (`assignments/`, `_port/`, `_recovered/`) —
       // never package source. Staging copies carry relative imports that only resolve
       // once placed into their owning packages, so linting them breaks `npm run check`
-      // any round a staging dir is present. Exclude the whole tree, not just known
-      // subfolders, so future docs dirs don't reintroduce the failure.
-      'tools/agents/docs/**',
+      // any round a staging dir is present. Match every `docs/` so future docs folders
+      // never reintroduce the failure.
+      '**/docs/**',
+      // Inbound review bundles (`send:worktree`/`get:worktree`). Gitignored input that
+      // carries full `base/` + `head/` source trees — never this worktree's source to
+      // lint. Without this, every present bundle floods `npm run check` with thousands
+      // of errors from the captured trees.
+      'incoming/**',
     ],
   },
   {
