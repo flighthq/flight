@@ -1,35 +1,34 @@
 ---
 package: '@flighthq/keyboard'
-updated: 2026-06-24
+updated: 2026-06-25
 basedOn: ./review.md
 ---
 
-# keyboard — Assessment
+# keyboard — Assessment (merge gate: integration-b2824e3d8)
 
-`keyboard` is `solid` (90/100): a faithful, idiomatic event-capability cell whose Bronze and Silver roadmap tiers have both landed (will/did phases, transition payload, frame rect, the native control surface, and a real Chromium VirtualKeyboard web path). The remaining distance to `authoritative` is almost entirely **Gold-tier** work that is either cross-package (easing, textinput, device, the Rust port) or a real design decision — so it is parked, not swept. What is left strictly _within_ `@flighthq/keyboard` and free of any open decision is the robustness/test sweep and a usage doc; that is the Recommended set.
-
-The charter is still a stub (North star / Boundaries / Decisions / Open directions are all `TODO`), so the four design forks below are routed to the charter's **Open directions** for an explicit conversation rather than into Recommended.
+The keyboard **source** delta is an idiomatic, well-tested event-capability upgrade (will/did phases, frame rect, native-control commands, Chromium VirtualKeyboard web path). But as carried in `integration-b2824e3d8` it **does not compile**: it imports `SoftKeyboardPhase` / `SoftKeyboardResizeMode` / `SoftKeyboardStyleKind` / `SoftKeyboardTransition` and the value consts `SoftKeyboardResizeNoneKind` (+ `…BodyKind`, `…StyleDarkKind`, `…StyleDefaultKind` in the test), uses `SoftKeyboardInfo.x/y/width` and a 9-signal `SoftKeyboard`, and calls optional `SoftKeyboardBackend` methods — none of which exist in the head `@flighthq/types`, which is byte-identical to base for keyboard. The single blocking item is therefore cross-package: **the `@flighthq/types` keyboard edits must travel with this source change.** Nothing within `@flighthq/keyboard` alone can fix it, so the Recommended (sweep-safe, within-package) set is empty for this gate, and the blocker is in Backlog with its grounded reason. The pre-existing Gold/decision items carry forward.
 
 ## Recommended
 
-Sweep-safe: each item is within `@flighthq/keyboard`, adds no dependency, breaks no API, and settles no open design question. A blanket "do all recommended" can safely bless this set.
+Sweep-safe within-package work that a blanket "do all recommended" could bless. **For this merge gate, none** — the only blocking action (carry the `@flighthq/types` edits) is cross-package and cannot be a `@flighthq/keyboard`-local sweep. Once the types land and the package compiles, the prior assessment's within-package test/doc sweep applies; it is restated here as the post-merge Recommended set, but it must not be swept while the package does not build:
 
-- **Multi-listener / event-edge stress tests.** Add coverage for signal priority and cancellation across the `onWill*`→`onDid*` ordering, rapid show/hide bursts, and re-entrancy during emit. The review flags this as the one thin spot: the single-listener happy paths are well covered, but the stress matrix the platform suite implies for an event entity is not. Pure test addition over the existing entity; no source change required. (review.md "Gaps" → robustness; roadmap Gold → Robustness & ergonomics.)
-- **Idempotency / teardown audit tests.** Lock down `attachSoftKeyboard` re-entrancy during emit, double-`detach`, and dispose-after-detach with explicit tests. The attach flow is already idempotent (tears down a prior subscription first) and the happy-path detach/dispose-safety cases exist; this hardens the edges into a regression net. Within-package, test-only. (roadmap Gold → Robustness & ergonomics.)
-- **Full backend-absence edge-case suite.** Exercise every degradation path of the web default: no `window`, no `visualViewport`, no `navigator.virtualKeyboard`, the `visualViewport`-shrink fallback vs. the VirtualKeyboard path, and every native-control sentinel/no-op return. These are the guards the web backend already implements; the tests pin them. Test-only, within-package. (roadmap Gold → Tests & docs.)
-- **Package usage doc: the keyboard-aware layout recipe + resize-mode matrix.** A package-level doc showing the "animate content in sync with the keyboard slide" recipe (will-phase timing + `SoftKeyboardTransition.durationSeconds` + the frame rect) and a resize-mode/style/accessory-bar matrix. Documents only what already ships — the _easing-curve_ extension of this recipe is deferred with its dependency (see Backlog). Doc-only, no code or API change. (roadmap Gold → Tests & docs.)
+- **(post-build) Multi-listener / event-edge stress tests** across the `onWill*`→`onDid*` ordering, rapid show/hide bursts, and re-entrancy during emit. Pure test addition over the existing entity. (review.md → minor observations; roadmap Gold → robustness.)
+- **(post-build) Idempotency / teardown audit tests** — re-entrancy during emit, double-`detach`, dispose-after-detach. The delta already adds happy-path coverage here (`b2824e3d8:packages/keyboard/src/keyboard.test.ts` `detachSoftKeyboard`/`disposeSoftKeyboard` blocks); harden the edges. Test-only.
+- **(post-build) Full backend-absence edge-case suite** — no `window`, no `visualViewport`, no `navigator.virtualKeyboard`, the shrink-fallback vs. VirtualKeyboard path, and every native-control sentinel/no-op. Test-only.
+- **(post-build) Package usage doc** — the keyboard-aware layout recipe (will-phase timing + `SoftKeyboardTransition.durationSeconds` + frame rect) and a resize-mode/style/accessory-bar matrix. Doc-only.
 
 ## Backlog
 
-Parked — each names _why_ it is not sweep-safe (a new dependency, a cross-package seam, another worktree, or an open design fork). None may be swept by a blanket approval.
+Parked — each names _why_ it is not a within-package sweep. None may be swept by a blanket approval.
 
-- **`SoftKeyboardEasingKind` wiring** — the five easing kinds ship in `types` but are unwired: `SoftKeyboardTransition` carries only `durationSeconds` + `height`, and there is no kind→`@flighthq/easing` lookup. _Parked:_ pulls a new `@flighthq/easing` dependency into a currently dep-light cell (`signals` + `types` only) and requires settling the kind-value namespacing (`'linear'`/`'ease'` would collide with easing's own vocabulary if shared). Both are Open directions, not in-package work. The most-visible "designed but unfinished" seam, but it is a decision before it is a task.
-- **Field-attribute controls** (`setSoftKeyboardType` / `setSoftKeyboardReturnKey` / `setSoftKeyboardAutoCapitalize` / `setSoftKeyboardAutoCorrect` / `setSoftKeyboardSpellCheck`). _Parked:_ these associate with a _focused field_ — `@flighthq/textinput`'s domain — so they wait on the keyboard↔textinput boundary ruling. Building them here before that ruling risks duplicating the seam. Surfaced as an Open direction.
-- **Safe-area coordination** (`setSoftKeyboardSafeAreaInsetsEnabled` / inset reconciliation with `@flighthq/device`). _Parked:_ cross-package — whether keyboard-aware safe-area adjustment is this package's job, `device`'s, or a consumer's is undecided. Surfaced as an Open direction.
-- **Open-vs-closed `*Kind` unions** — `SoftKeyboardResizeMode` / `SoftKeyboardStyleKind` are closed unions whose own comments promise vendor-prefixed host extensions (`'acme.custom'`), which the closed type forbids without a cast (structural-fork B at the type level). _Parked:_ a one-line charter Decision resolves the drift (widen to open kinds vs. drop the promise); it is a contract ruling, not a sweep. Low-stakes (no hot loop, no registry dispatch). Surfaced as an Open direction.
-- **Duplicate type re-export in `@flighthq/types`** — the four `SoftKeyboard*` sub-types are re-exported both from `types/src/Keyboard.ts` and directly from `types/src/index.ts`, doubling the four names in the `types` index surface. _Parked:_ the fix lives in `@flighthq/types`, not in `@flighthq/keyboard` — cross-package; best folded into a deliberate types-layout tightening that picks one re-export site.
-- **Package Map line understated** — `tools/agents/docs/index.md` still describes the package as "on-screen keyboard visibility/height," omitting the show/hide, will/did phases, resize-mode/style/accessory-bar/scroll-assist controls, and the frame rect now owned here. _Parked:_ the edit is to a shared admin doc outside the package, not within `@flighthq/keyboard`.
-- **Rust crate `flighthq-keyboard`** — the charter front matter declares the crate, but no conformance mirror exists yet (the builder worktree has no `crates/`). _Parked:_ this is a `rust`-worktree session, not a `@flighthq/keyboard` source change. The port is a clean 1:1 mirror (signals, `SoftKeyboardInfo`, backend trait, free functions, string-kind consts, will/did dispatch) awaiting scheduling.
+- **[MERGE BLOCKER] Carry the `@flighthq/types` keyboard edits into the integration branch.** _Parked from Recommended because it is cross-package:_ the fix is in `@flighthq/types`, not `@flighthq/keyboard`. The four `SoftKeyboard*.ts` type files, the `x`/`y`/`width` fields on `SoftKeyboardInfo`, `SoftKeyboardPhase`, the 9-signal `SoftKeyboard`, the `subscribe(phase, transition)` signature, the seven optional `SoftKeyboardBackend` methods, and the `index.ts` re-exports are all absent from head types but required by the head keyboard source. Until they land in the same branch, the keyboard package does not typecheck. This blocks merge. (review.md → "The blocker".)
+- **`SoftKeyboardEasingKind` wiring** — five easing kinds were intended to ship in `types` but are unwired (`SoftKeyboardTransition` carries only `durationSeconds` + `height`, no `easing`, no kind→`@flighthq/easing` lookup). _Parked:_ pulls a new `@flighthq/easing` dependency into a dep-light cell and needs kind-value namespacing settled (`'linear'`/`'ease'` would collide with easing's vocabulary). Decision before task. (Note: in this bundle the easing kinds are not even present in `types`.)
+- **Field-attribute controls** (`setSoftKeyboardType` / `setSoftKeyboardReturnKey` / `setSoftKeyboardAutoCapitalize` / `setSoftKeyboardAutoCorrect` / `setSoftKeyboardSpellCheck`). _Parked:_ they associate with a focused field — `@flighthq/textinput`'s domain — and wait on the keyboard↔textinput boundary ruling.
+- **Safe-area coordination** (`setSoftKeyboardSafeAreaInsetsEnabled` / inset reconciliation with `@flighthq/device`). _Parked:_ cross-package; whose job it is is undecided.
+- **Open-vs-closed `*Kind` unions** (`SoftKeyboardResizeMode` / `SoftKeyboardStyleKind`) — closed unions whose own comments promise vendor-prefixed host extensions, which a closed type forbids (structural-fork B at the type level). _Parked:_ a one-line charter Decision resolves it; it is a `types`-package contract ruling, not a keyboard sweep.
+- **Duplicate type re-export in `@flighthq/types`** — sub-types re-exported from both `Keyboard.ts` and `index.ts`. _Parked:_ lives in `@flighthq/types`; fold into a deliberate types-layout tightening. (Moot until the types edits land.)
+- **Package Map line understated** — `tools/agents/docs/index.md` still says "on-screen keyboard visibility/height," omitting show/hide, will/did phases, resize-mode/style/accessory-bar/scroll-assist, and the frame rect. _Parked:_ shared admin doc edit, outside the package.
+- **Rust crate `flighthq-keyboard`** — declared in the charter front matter; no crate exists yet. _Parked:_ a `rust`-worktree session, not a `@flighthq/keyboard` source change.
 
 ## Approved
 
@@ -37,14 +36,10 @@ _None. Approval is the user's verbal gate; nothing is frozen here yet._
 
 ## To route into the charter's Open directions
 
-The charter is a stub; these are the design forks the review and roadmap surfaced. Note them for the charter — do not act on them in a sweep. (This skill does not edit the charter.)
+The charter is a stub; these design forks (all pre-existing, none a merge blocker) belong in the charter's Open directions — note them, do not act on them in a sweep:
 
-1. **The keyboard↔textinput boundary** — the highest-value decision. Lean (from depth review + status): this package owns the _global_ keyboard (visibility/height/style/resize-mode/accessory-bar); per-field input traits live in `@flighthq/textinput` and merely _influence_ the keyboard. Settling it unblocks or relocates the Gold field-attribute setters.
-2. **`SoftKeyboardEasingKind` scope + wiring** — confirm the `@flighthq/easing` dependency and the kind-value namespacing before adding `easing` to `SoftKeyboardTransition` and a kind→function lookup.
-3. **Open vs. closed `*Kind` unions** (structural-fork B) — open/host-extensible (matching the kinds' own comments) vs. stay closed unions. A one-line Decision resolves the drift.
+1. **The keyboard↔textinput boundary** — the highest-value decision; settling it unblocks or relocates the field-attribute setters.
+2. **`SoftKeyboardEasingKind` scope + wiring + value namespacing** — confirm the `@flighthq/easing` dependency before adding `easing` to `SoftKeyboardTransition`.
+3. **Open vs. closed `*Kind` unions** (structural-fork B) — open/host-extensible vs. closed unions.
 4. **Safe-area / `@flighthq/device` coordination** — whose job keyboard-aware inset adjustment is.
-5. **Rust conformance timing** — when `flighthq-keyboard` gets ported (the crate is already declared).
-
-## Roadmap absorbed
-
-`reviews/maturation/depth/keyboard.md` (the Bronze/Silver/Gold roadmap) is absorbed here: Bronze and Silver have both landed (verified in review.md); the Gold tier is distributed above between Recommended (the robustness/test/doc sweep) and Backlog (easing, field-attributes, safe-area, the Rust port). The roadmap is one-time seed and can be removed once this assessment is in place.
+5. **Rust conformance timing** — when `flighthq-keyboard` gets ported.

@@ -1,41 +1,38 @@
 ---
 package: '@flighthq/lifecycle'
-updated: 2026-06-24
+updated: 2026-06-25
 basedOn: ./review.md
 ---
 
 # Assessment: @flighthq/lifecycle
 
-The review verdict is **solid — 86/100**. Nearly all of the prior maturation roadmap (Bronze + the full Silver surface) has already landed and is verified against the diff: the real `'inactive'` state, the boolean conveniences, `onMemoryWarning`, `getAppLaunchKind`, vetoable `requestAppBack`, and `onSaveState`/`onRestoreState`. What remains is mostly user-decision (the 4-edge set, idle ownership, memory-warning home, surface additions) and cross-package proof (native backends, the Rust crate) — neither of which is sweep-safe. The one squarely-within-cell, non-design hardening item is the property/fuzz test pass over transition storms.
+The merge review verdict is **revise — 58/100**. The integration delta is the right shape and tracks the drafted charter, but it does not compile: the implementation in `b2824e3d8:packages/lifecycle/src/lifecycle.ts` was written against `@flighthq/types` members (`AppLaunchKind`, `AppMemoryPressure`, `LifecycleBackend.getLaunchKind`/`.subscribeMemoryWarning`, and the `onMemoryWarning`/`onSaveState`/`onRestoreState` signals) that were **never added** to `packages/types/src/Lifecycle.ts`. That single types-first violation is the merge blocker; once the header is extended, the rest of the delta is mergeable. The blocker itself is a cross-package change (`@flighthq/types`), so it is **not** a within-`lifecycle` sweep item — it must go to the integration worker as a directive (see `outgoing/integration/lifecycle.md`).
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/lifecycle`, no cross-package coupling, no breaking change, no open design decision. Safe to bless as a set.
+_Sweep-safe, within-`lifecycle`, non-design. Safe to do in a within-package pass; none of these clear the merge blocker on their own (the blocker lives in `@flighthq/types`)._
 
-- **Debounce/coalescing property tests over transition storms.** `onStateChange` is already documented "raw, not deduped" and the `onResume`/`onPause` edge derivation is unit-tested, but there are no fuzz/property tests over rapid blur/focus/pagehide/pageshow storms collapsing to the minimal correct edge set (review.md#gaps, roadmap Gold). This validates already-built, already-documented behavior — it adds coverage, not surface, and decides nothing. Colocated in `lifecycle.test.ts`, `describe` blocks alphabetized to mirror exports.
+- **Refresh the `package.json` `description`** to name the surface the delta actually ships (memory-pressure, save/restore-state, cold/warm launch) instead of the stale "foreground/background lifecycle state and resume/pause/back signals". One-line edit inside the package; the surface grew in this delta but the description did not.
+- **Reconcile the `subscribeMemoryWarning` header comment with its body.** The function comment (`lifecycle.ts:86-88`) omits the unknown-pressure→`'moderate'` mapping that the body performs (`lifecycle.ts:149-151`). Make the durable comment complete. Cosmetic, within-cell.
 
 ## Backlog
 
-Parked: each waits on a user decision, a surface addition the charter has not asked for, a cross-file edit under the user's gate, or a cross-package dependency.
+_Parked: cross-package, design-decision, or larger than a within-cell sweep._
 
-- **`timeInBackground` on the `onResume` payload (ms, `-1` when unknown).** The entity already tracks the save edge so the last-background timestamp is cheap (review.md#gaps), but the review itself flags it as a _surface addition the charter has not asked for_ — "surface it rather than assume" (review.md candidate open directions). It is an Open direction, not Recommended, until the charter asks for it.
-- **First-class `onBackground`/`onForeground` (+ `onActivate`/`onResignActive`) — the 4-edge set.** Needs a user decision on whether the extra surface is worth it vs. deriving from `onStateChange` (review.md#gaps, the largest "is the surface complete" question). Correctly _not_ built; routed to Open directions.
-- **Idle / user-inactivity (`onUserIdle`/`onUserActive`).** Deferred pending an ownership decision against `@flighthq/input` — a cross-package boundary call, not sweep-safe (review.md candidate open directions, roadmap Gold).
-- **In-box native producer for back button / memory warning.** `onBackButton` has no web emitter and `subscribeMemoryWarning` rides experimental events that never fire in shipping browsers; a reliable producer requires a native host (`host-electron`/`host-capacitor`) filling the seam — cross-package (review.md#gaps, roadmap Gold).
-- **`flighthq-lifecycle` Rust crate + native-backend proof.** Out of this worktree's scope (the `rust` worktree / `host-*`); the Gold-tier conformance work (review.md#gaps, roadmap Gold).
-- **Package Map line widening.** `tools/agents/docs/index.md`'s `@flighthq/lifecycle` entry predates `onMemoryWarning`, save/restore-state, and launch-kind. A doc edit outside the package, under the user's gate (review.md contract & docs fit).
+- **[BLOCKER — cross-package] Add the missing lifecycle types to `@flighthq/types`.** Parked here because it touches `@flighthq/types`, not `lifecycle` — but it is the gating fix and is dispatched to the integration worker. Add `AppLaunchKind` and `AppMemoryPressure`, the three new `AppLifecycle` signals, and the two optional `LifecycleBackend` methods to `packages/types/src/Lifecycle.ts` so the package compiles. _Why parked from Recommended:_ a reviewer must not edit another package; this is an integration-worker directive.
+- **`getAppLaunchKind` fallback default ('warm' vs 'cold').** The minimal-backend fallback returns `'warm'` while the web path defaults to `'cold'`; pick one deliberately. _Why parked:_ a small design call for the user, not a mechanical sweep.
+- **Property/fuzz coverage for transition storms.** Rapid blur/focus/visibility coalescing deserves property tests. _Why parked:_ Gold-tier hardening, larger than a sweep, and was already flagged in the prior maturation roadmap.
 
 ## Approved
 
-_None. Approval is the user's verbal gate; this section is frozen only on their say-so._
+_None. Approval is the user's verbal gate; this section is filled only when the user blesses an item. Surfaced design forks (memory-warning home, the 4-edge set, idle ownership, native-producer posture) belong to the charter's Open directions, not here._
 
-## Routed to the charter's Open directions
+## Notes for the charter's Open directions
 
-Not edited into the charter here — surfaced for an explicit direction conversation:
+These are forks the delta surfaces or re-confirms; route them to `charter.md › Open directions`, not into Recommended:
 
-- **Is the 4-edge signal set in scope** (`onBackground`/`onForeground` + `onActivate`/`onResignActive`), or is deriving from `onStateChange` the blessed answer? (fork F: thin-by-design vs under-built.)
-- **Where does memory-warning live** — keep `onMemoryWarning` in `lifecycle`, or a `@flighthq/power` -adjacent home? Review's lean: keep it here, but the boundary is uncharted.
-- **Idle-detection ownership** — `lifecycle` vs `@flighthq/input` for `onUserIdle`/`onUserActive`. Resolve before anyone builds it.
-- **State-restoration payload shape** — confirm the mutable `Record<string, unknown>` bag (not an `out`-param struct) is blessed, and that the app (not `lifecycle`) owns the storage call so the cell stays dependency-light.
-- **Is `timeInBackground` wanted?** Cheap and canonical for cache-TTL/re-auth, but a surface addition the charter has not requested.
-- **`enableAppLifecycleSignals` / zero-cost-until-connected.** The signals are plain `createSignal()` with no per-listener cost, so no `enable*` opt-in is warranted — a one-line Decision candidate to record explicitly rather than leave implicit.
+- **Memory-warning home.** The delta keeps `onMemoryWarning` in `lifecycle`. Confirm vs a `@flighthq/power`-adjacent home (the charter already carries this as an open direction).
+- **Native-producer posture for seam-only signals.** `onBackButton` and `onMemoryWarning` have no reliable web producer; carrying their signatures ahead of a `host-*` producer is fork D — confirm.
+- **Save/restore payload shape.** The delta ships the mutable `Record<string, unknown>` bag (`lifecycle.ts:38-39,66-68`). Confirm this is the blessed shape vs the `out`-param struct the roadmap floated, and that the app — not `lifecycle` — owns the storage call.
+- **Is the 4-edge signal set in scope?** First-class `onBackground`/`onForeground` edges vs deriving from `onStateChange` — fork F, unresolved.
+- **Package Map line stale-by-omission.** `tools/agents/docs/index.md`'s lifecycle entry predates the delta's memory/save-restore/launch-kind surface — a doc revision for the user, not an in-cell change.

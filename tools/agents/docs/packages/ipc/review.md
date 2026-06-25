@@ -1,93 +1,120 @@
 ---
 package: '@flighthq/ipc'
-status: solid
-score: 84
-updated: 2026-06-24
+status: partial
+score: 35
+updated: 2026-06-25
 ingested:
   - status.md
   - reviews/depth/ipc.md
   - reviews/maturation/depth/ipc.md
   - source
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
 ---
 
 # ipc — Review
 
 ## Verdict
 
-`solid` — 84/100. The renderer-side host-IPC seam has gone from the bare three-verb primitive (72/100 in the prior depth review) to a well-rounded command capability: it now ships the listener-management verbs, a documented invoke/serialization contract, a named responder seam, a timeout wrapper, an event-shaped subscribe with reply, targeted send, typed channel descriptors, a capability descriptor, and an opt-in signal group. Bronze and Silver from the maturation roadmap are genuinely landed and tested. It is held back from `authoritative` by (a) the entire Gold tier being unbuilt (ports, transferables, serializer seam), (b) the only real backend (`host-electron`) not yet realizing any of the new seam arms, so the additions are contract-only against a live host, and (c) a handful of small coherence gaps where the new contract surface (capabilities, `IpcError`) has no in-package consumer. The status report's self-estimate of 90/authoritative is optimistic on the "authoritative" label — the seam is wide and clean, but a third of the designed surface is type-only.
+**`revise` as a merge candidate — 35/100 for THIS integration slice.** The design that landed is the same well-rounded command capability the prior 84/solid review documented (listener management, typed channel descriptors, responder seam, timeout wrapper, event-shaped subscribe with reply, targeted send, capability descriptor, opt-in signal group). The problem is not the design — it is that the integration branch `b2824e3d8` carries a **partial slice of it**: the `packages/ipc/` source change landed, but the companion `@flighthq/types` change it depends on did not. **The candidate does not compile.** That is a hard merge-gate fail independent of any quality axis: a non-building package cannot be merged into the approved floor. The score reflects the merge candidate as-is, not the underlying feature work, which is sound and should land once its types are restored.
 
-## Present capabilities
+This is an **integration assembly defect**, not a code-quality defect. The builder worktree (`status.md` › `builder-67dc46d64`) and the prior review both verified a state where nine `@flighthq/types` Ipc files existed; this integration branch dropped them while keeping the `ipc.ts` side that imports them.
 
-Source is `<sha>:packages/ipc/src/ipc.ts` (one file, 18 exports) plus nine `@flighthq/types` type files. Verified against the diff and the realized `dist/ipc.d.ts`:
+## What the delta is (head vs base)
 
-**Core seam** (pre-existing, intact): `getIpcBackend`, `setIpcBackend`, `createWebIpcBackend`, `sendIpcMessage`, `invokeIpc`, `onIpcMessage`. The web default no-ops `send`, resolves `invoke` to `undefined`, and returns inert unsubscribes — correct for a context with no main process.
+The base (`origin/main`, `eb73c3d74`) `packages/ipc/` is the bare three-verb seam: `getIpcBackend`, `setIpcBackend`, `createWebIpcBackend`, `sendIpcMessage`, `invokeIpc`, `onIpcMessage` over a 3-method `IpcBackend` (`send`/`invoke`/`subscribe`). It compiles.
 
-**Bronze (listener management + introspection):**
+The head adds twelve exports and a package dependency on `@flighthq/signals`:
 
-- `hasIpcBackend()` — distinguishes a real installed backend (`_backend !== null`) from the lazy web fallback, so callers branch instead of inferring from an `undefined` invoke result.
-- `getIpcListenerCount(channel)` — reads the package-local `Map<string, Set<() => void>>` registry; `0` for an unknown channel (sentinel, not throw).
-- `onceIpcMessage(channel, listener)` — auto-unsubscribes after the first message via a captured `unsubscribe` thunk; still returns an unsubscribe for the not-yet-fired case. Tested both paths.
-- `removeAllIpcListeners(channel?)` — drops every tracked listener for a channel or all channels. Iterates over a `[...set]` snapshot, so unsubscribe-during-iteration is safe.
+- `createIpcChannel`, `enableIpcSignals`, `getIpcSignals`, `getIpcListenerCount`, `hasIpcBackend`, `invokeIpcWithTimeout`, `onceIpcMessage`, `onIpcInvoke`, `onIpcMessageEvent`, `removeAllIpcListeners`, `sendIpcMessageTo`, and widens every channel-accepting signature to `string | Readonly<IpcChannel>` via a `resolveChannel` helper.
+- `b2824e3d8:packages/ipc/package.json` adds `"@flighthq/signals": "*"`; `b2824e3d8:packages/ipc/tsconfig.json` adds `{ "path": "../signals" }`. Both correct.
 
-**Silver:**
+## Merge blocker: the candidate does not compile
 
-- `createIpcChannel(name): IpcChannel` — typed channel descriptor `{ name }`. Every channel-accepting function takes `string | Readonly<IpcChannel>`, resolved through one `resolveChannel` helper; string overloads preserved. Descriptor acceptance is tested across send/subscribe/count/remove.
-- `onIpcInvoke(channel, handler)` — responder counterpart to `invokeIpc`, delegating to optional `backend.handle`; returns an inert no-op when the backend lacks `handle`. Closes the one naming asymmetry the depth review flagged.
-- `onIpcMessageEvent(channel, listener)` — event-shaped subscribe delivering `IpcMessageEvent` (`channel`, `senderId`, `args`, `reply`). The args-spread `onIpcMessage` path is left untouched alongside it.
-- `invokeIpcWithTimeout(channel, timeoutMs, ...args)` — `Promise.race` of the invoke against a `setTimeout` that rejects with `IpcTimeoutError`; the timer is cleared on either settle, and the invoke rejection is swallowed if the timeout wins (no unhandled rejection).
-- `sendIpcMessageTo(target, channel, ...args)` — targeted send over optional `backend.sendTo`; no-ops when absent.
-- `enableIpcSignals()` / `getIpcSignals()` — opt-in `IpcSignals` group (`onBackendChanged`, `onChannelMessage`), lazily created so it tree-shakes when unused; `setIpcBackend` and the subscribe paths emit into it when active.
+The single, decisive finding. The head `ipc.ts` imports six type symbols and an error class from `@flighthq/types`:
 
-**Contract (`@flighthq/types`):** `IpcBackend` now carries a full JSDoc contract (invoke rejection semantics, structured-clone serialization model, `ImageSource`-buffer note) and optional `handle`, `sendTo`, `getCapabilities`. New one-concept-per-file types: `IpcBackendCapabilities`, `IpcChannel`, `IpcError` (+ `IpcErrorCode` taxonomy), `IpcMessageEvent`, `IpcPort`, `IpcSignals`, `IpcTarget`, `IpcTimeoutError`. All are barrel-exported from `types/src/index.ts`.
+> `b2824e3d8:packages/ipc/src/ipc.ts`
+>
+> ```ts
+> import { createSignal, emitSignal } from '@flighthq/signals';
+> import type {
+>   IpcBackend,
+>   IpcBackendCapabilities,
+>   IpcChannel,
+>   IpcMessageEvent,
+>   IpcSignals,
+>   IpcTarget,
+> } from '@flighthq/types';
+> import { IpcTimeoutError } from '@flighthq/types';
+> ```
 
-**Tests:** the colocated `ipc.test.ts` covers every export with an `afterEach` that resets the backend and clears listeners. The fake backend is capability-parameterized and exercises the optional-method absent cases (`delete backend.handle`, `delete backend.sendTo`), the timeout-loses and timeout-wins races, listener count increment/decrement, descriptor acceptance, and the signal emissions. `exports:check` will bind every export to its test.
+None of `IpcBackendCapabilities`, `IpcChannel`, `IpcMessageEvent`, `IpcSignals`, `IpcTarget`, or `IpcTimeoutError` exists in the integration head's `@flighthq/types`. The head `Ipc.ts` is byte-identical to base and declares **only** the three-method `IpcBackend`:
 
-## Gaps
+> `b2824e3d8:packages/types/src/Ipc.ts` (entire file)
+>
+> ```ts
+> export interface IpcBackend {
+>   send(channel: string, args: readonly unknown[]): void;
+>   invoke(channel: string, args: readonly unknown[]): Promise<unknown>;
+>   subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void;
+> }
+> ```
 
-Measured against an authoritative host-IPC layer and the package's own maturation roadmap:
+A repository-wide search of `b2824e3d8:packages/types/` for any of those symbols returns nothing, and `changes.patch` never touches `packages/types/src/Ipc.ts`. So every one of those imports is a TS2305 "has no exported member" error, and the three methods the new code calls on the backend — none of which the interface declares — are TS errors too:
 
-- **Gold tier entirely unbuilt.** `IpcPort` (+ `openIpcPort`/`postIpcPortMessage`/`onIpcPortMessage`/ `destroyIpcPort`), `IpcTransferable` + `sendIpcMessageWithTransfer`, and the `IpcSerializer` seam are not implemented. `IpcPort` is typed (an opaque `_portId` handle) but has no functions; `IpcTransferable` is not even a type yet. The duplex/streaming and zero-copy-transfer primitives — the parts most relevant to passing `surface`/`ImageSource` buffers across a process boundary — are absent.
-- **The seam outruns its only backend.** `host-electron`'s `createElectronIpcBackend` (`<sha>:packages/host-electron/src/electronIpc.ts`) still implements only `send`/`invoke`/`subscribe` (and `send`/`invoke` are inert main-process no-ops). None of `handle`, `sendTo`, or `getCapabilities` is realized. So `onIpcInvoke`, `sendIpcMessageTo`, and capability introspection are exercised only against the in-test fake; against the one shipped host they silently no-op. The status report flags this as deferred (correctly), but it means the Silver responder/targeted-send work is contract-ready, not end-to-end.
-- **Capability descriptor has no in-package consumer.** `getCapabilities()` is on the contract and on the web default (all-false), but no function reads it — `sendIpcMessageTo` and `onIpcInvoke` probe for the method's _presence_ (`sendTo?`, `typeof handle === 'function'`) instead of the `canTarget`/`canHandle` flags. The descriptor is a surface waiting for a consumer; today method-presence and capability-flag are two parallel truth sources that could disagree.
-- **`IpcError` / `IpcErrorCode` defined but unused.** The structured-error taxonomy is fully typed in `@flighthq/types` but no in-package operation produces or returns an `IpcError`. `invokeIpc` rejections surface as plain `Error` (per the documented contract), and `invokeIpcWithTimeout` throws `IpcTimeoutError`. So the `no-handler` / `serialization-failure` / `backend-absent` codes are designed-but-unreachable — the reply-correlation/structured-error Gold item is type-only.
-- **`onIpcMessageEvent.reply` is a permanent no-op.** `senderId` is hard-coded to `-1` (no backend surfaces sender identity), so `reply()` always early-returns. Correct and forward-compatible, but the reply-to-caller flow is currently unrealizable end-to-end — another seam ahead of its backend.
-- **No Rust `flighthq-ipc` crate.** The charter carries `crate: flighthq-ipc` but no crate exists yet. The TS contract through Silver is now stable enough to mirror; this is the conformance debt.
+> `b2824e3d8:packages/ipc/src/ipc.ts`
+>
+> ```ts
+> if (typeof backend.handle !== 'function') return () => {};   // onIpcInvoke
+> ...
+> getIpcBackend().sendTo?.(target, resolveChannel(channel), args);   // sendIpcMessageTo
+> ...
+> getCapabilities(): Readonly<IpcBackendCapabilities> { ... }   // createWebIpcBackend
+> ```
 
-## Charter contradictions
+`backend.handle`, `backend.sendTo`, and `backend.getCapabilities` are not on the head `IpcBackend`. The colocated test imports the same missing symbols and will not typecheck either:
 
-The charter's `North star`, `Boundaries`, and `Decisions` are all `TODO` stubs — there is no stated principle to contradict, so this section is empty by construction. The one seeded line ("the renderer/app side of a host IPC channel … over a swappable backend with a web no-op default") is fully honored: every transport concern is delegated to the backend, the web default is inert-not-throwing, and the package never reaches across into a host.
+> `b2824e3d8:packages/ipc/src/ipc.test.ts`
+>
+> ```ts
+> import type { IpcBackend, IpcBackendCapabilities, IpcChannel, IpcSignals } from '@flighthq/types';
+> import { IpcTimeoutError } from '@flighthq/types';
+> ```
 
-The structural forks are clean here:
+`tsc -b` over `packages/ipc` (which references `../types` and `../signals`) cannot succeed. This fails axis 7 (compiles) outright, and because the contract surface the feature was designed against is absent, axis 6 (types-first in `@flighthq/types`) is also failed **for this slice** — not because the types were authored inline, but because they are missing entirely from the branch being merged.
 
-- **Fork B (closed union vs open registry):** N/A in the usual sense — there is no `kind` switch. The backend itself is the swappable seam (one active backend, `set*Backend`), which is fork D's runtime-backend dimension, correctly applied.
-- **Fork D (runtime backend vs wasm mixing):** `ipc` is squarely a runtime-backend-seam package, not a wasm-mixable leaf (it carries a stateful active-backend + listener registry). Consistent with the Rust map's "all-or-nothing" classification — no drift.
-- **No hot-loop inflation (fork C):** there is no per-frame path; the only mutable module state is the backend slot, the listener registry, and the lazy signals singleton. All side-effect-free at import.
+The fix is mechanical and lives outside this package's source: the integration branch must also carry the `@flighthq/types` Ipc additions that the builder produced (the nine one-concept-per-file types the prior review verified: `IpcBackendCapabilities`, `IpcChannel`, `IpcError` + `IpcErrorCode`, `IpcMessageEvent`, `IpcPort`, `IpcSignals`, `IpcTarget`, `IpcTimeoutError`, plus the `handle`/`sendTo`/`getCapabilities` widening of `IpcBackend`). This is a re-integration directive, not a request to edit `@flighthq/ipc`.
 
-## Contract & docs fit
+## Axis-by-axis (judging the design that lands, once the types are restored)
 
-**Lives up to the contract:**
+These pass on the merits and explain why the underlying feature is worth re-landing — they are **not** a reason to merge the slice as-is.
 
-- **Types-first.** Every cross-package type lives in `@flighthq/types`, one concept per file, filename = type name; the package imports them and defines nothing cross-package inline. Exemplary header-layer discipline — nine new type files, all barrel-exported.
-- **Naming.** Every export carries the full unabbreviated `Ipc` domain word and is globally self-identifying (`sendIpcMessageTo`, `onIpcMessageEvent`, `getIpcListenerCount`). The `create/get/set/has` prefixes, `enable*Signals` opt-in, and `createWeb*Backend` triad all match the platform-suite convention.
-- **Sentinels not throws.** `getIpcListenerCount` returns `0`, `getIpcSignals` returns `null`, the web default no-ops — expected-failure paths return sentinels. The one thrown type, `IpcTimeoutError`, is a caller-facing timeout signal (a deliberate, documented rejection), not an internal-invariant throw.
-- **Single root export, `sideEffects: false`, side-effect-free import.** `index.ts` is a thin `export * from './ipc'`; no top-level registration; lazy backend and lazy signals. Fully tree-shakable. `package.json` correctly adds `@flighthq/signals`; `tsconfig.json` adds the `../signals` reference.
-- **`Readonly<>` discipline.** Channel/target/event/capability parameters are `Readonly<…>`; the variadic `...args: readonly unknown[]` shape is consistent across send/invoke/subscribe.
+1. **Composition / bedrock — pass.** No feature is a config-gated branch in a shared hot loop; there is no per-frame path. The unit is a flat set of free verbs over one swappable backend plus a small package-local listener registry. Simple-by-composition; not over-split.
+2. **Naming — pass.** Every export carries the full unabbreviated `Ipc` word and is globally self-identifying (`sendIpcMessageTo`, `onIpcMessageEvent`, `getIpcListenerCount`, `invokeIpcWithTimeout`). `get*`/`has*`/`enable*`/`createWeb*Backend` all follow the platform-suite convention.
+3. **Tree-shaking / bundle invariant — pass.** `index.ts` is `export * from './ipc'`; no top-level registration; backend and signals are both lazy singletons (`_backend`/`_ipcSignals` initialized to `null`). `package.json` keeps `sideEffects: false`. No importer pays for an unused arm.
+4. **Registry vs closed union (fork B) — N/A.** No `kind` switch; the swappable backend is fork D's runtime-backend dimension, correctly applied (one active backend via `setIpcBackend`).
+5. **Subject triad + plurality guard — N/A / pass.** A runtime-backend-seam package, not a `-formats`/`-backend` subject; no premature split.
+6. **Contract hygiene — pass in design, FAILED in this slice.** In the intended state the types are all in `@flighthq/types`, one concept per file; `Readonly<>` is applied to channel/target/event/capability params; sentinels (`0` listeners, `null` signals, no-op web default) are used for expected failure; the one throw (`IpcTimeoutError`) is a deliberate caller-facing timeout signal; `destroyIpcPort` (specced) is the correct verb for a native handle. **But this slice ships none of those types**, so the axis fails as merged.
+7. **Tests — design pass, slice FAIL.** The test file mirrors exports, is alphabetized, capability-parameterizes the fake backend, and exercises optional-method-absent paths and the timeout race. It is honest about `senderId === -1`/inert-`reply`. But it imports symbols the branch does not provide, so it does not compile here.
 
-**Teardown-verb note (minor):** `IpcPort` is specced with `destroyIpcPort` (frees a native handle) — the correct verb per the dispose/destroy rule, even though unbuilt. Good forward choice.
+## Delta-introduced coherence gap (route to Open directions, not a blocker)
 
-**Candidate doc revisions:**
+`sendIpcMessageTo` and `onIpcInvoke` branch on **method presence** (`sendTo?.`, `typeof handle === 'function'`) while `getCapabilities()` (`canHandle`/`canTarget`/…) is a parallel, unconsulted truth source introduced in the same delta:
 
-- The **Package Map** line for `@flighthq/ipc` still reads "`sendIpcMessage`, `invokeIpc`, `onIpcMessage` over a host channel backend" — the original three-verb framing. The package has materially outgrown it (responder seam, targeted send, event handle, timeout, signals, capabilities). The line should be refreshed to reflect the command-capability shape, or at least not enumerate only the original three.
-- The **status doc** self-estimate (90/100, authoritative) overstates the tier: a third of the designed surface (all of Gold) is type-only and the one real backend doesn't realize the new arms. Recorded here as 84/solid; the gap is the "authoritative" bar, not the quality of what landed.
+> `b2824e3d8:packages/ipc/src/ipc.ts`
+>
+> ```ts
+> export function sendIpcMessageTo(target, channel, ...args): void {
+>   getIpcBackend().sendTo?.(target, resolveChannel(channel), args);
+> }
+> ```
 
-## Candidate open directions
+Two sources that can disagree (a backend could report `canTarget: false` yet define `sendTo`, or vice versa). This is charter Open direction #5 — a contract-canonicity decision, not a sweep — and it is genuinely a property of this delta, so it is recorded, but it is **not** a merge blocker.
 
-The charter's `North star` / `Boundaries` / `Decisions` are empty, so the following had to be assumed to review and should be settled into the charter:
+## Charter fit
 
-1. **Responder ownership boundary.** Does a Flight-side invoke responder (`onIpcInvoke`) belong in `@flighthq/ipc` at all, or is `handle` permanently host-owned? It is currently a thin delegation that no-ops without a backend `handle`. This is the central architectural question and determines whether `IpcBackend.handle` stays in the contract.
-2. **Renderer-side vs main-side Electron backend.** `sendIpcMessageTo` and `onIpcInvoke` interact with the fact that `createElectronIpcBackend` is main-process-only (`send`/`invoke` inert). Should the host grow a renderer-side arm (`ipcRenderer.send`/`invoke`/`ipcMain.handle`/`webContents.send`)? This is a `host-electron` shape decision that defines this package's realizable capability set.
-3. **Is the Gold tier in scope, and in what order?** Duplex `IpcPort`, zero-copy `IpcTransferable`/ `sendIpcMessageWithTransfer`, and the swappable `IpcSerializer` are designed but unbuilt. Ports and transferables are the streaming/zero-copy primitives a `surface`-buffer-across-processes flow needs; the serializer seam is a C/C++-shell portability bet. Each needs a backend method and a host realization.
-4. **`ImageSource`/surface-buffer transfer semantics.** The transfer path crosses into `@flighthq/surface` and the C/C++ memory model. Confirm the zero-copy guarantee is in scope before specifying it.
-5. **Should capability flags or method-presence be the single source of truth?** Today `sendIpcMessageTo`/ `onIpcInvoke` branch on method presence while `getCapabilities` is parallel and unconsulted. Decide which is canonical (and whether the in-package functions should gate on `canTarget`/`canHandle`).
-6. **`IpcError` realization.** The structured-error taxonomy is typed but unreachable. Decide whether in-package wrappers (timeout, no-handler, backend-absent) should return/carry `IpcError`, or whether it stays a host-backend-only descriptor.
-7. **Rust `flighthq-ipc` crate.** The TS seam through Silver is stable; what is the native default backend (in-process `std::sync::mpsc`/`crossbeam` channel behind the `native` feature), and what TS↔Rust divergences get recorded in the conformance map?
+The DRAFT charter (`charter.md`) already anticipates this entire delta — its `North star`, `Boundaries`, and `Open directions` describe the responder seam, targeted send, event/once/remove-all, timeout wrapper, capability descriptor, and signal group as the realized command-capability shape. Nothing in the delta contradicts a blessed line (there are none yet; `Decisions` is empty). The structural-fork posture is clean: fork D (runtime backend) correctly applied; no fork-B switch; no fork-C hot-loop inflation. The defect is purely that the integration branch shipped half the cells of a two-package change.
+
+## Candidate doc revision (unchanged from prior review, still valid once landed)
+
+The **Package Map** line for `@flighthq/ipc` in `tools/agents/docs/index.md` still reads "`sendIpcMessage`, `invokeIpc`, `onIpcMessage` over a host channel backend" — the original three-verb framing. Once the full slice lands it should reflect the command-capability shape. This is an edit to a shared doc, out of this package's sweep scope.

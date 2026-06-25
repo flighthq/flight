@@ -1,80 +1,91 @@
 ---
 package: '@flighthq/clip'
 status: solid
-score: 80
-updated: 2026-06-24
+score: 78
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/clip.md
-  - source
-  - incoming/builder-67dc46d64/changes.patch
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - incoming/integration-b2824e3d8/head/packages/clip/
+  - incoming/integration-b2824e3d8/changes.patch (packages/clip/ slice)
+  - charter.md
+  - tools/agents/docs/packages/CONTRACT.md
+  - tools/agents/docs/packages/structural-forks.md
+  - tools/agents/docs/index.md
 ---
 
-# clip — Review
+# clip — Merge Review (integration → origin/main)
 
-> Survey layer. Judged against `charter.md` (a stub — only "What it is" is filled; North star, Boundaries, Decisions, Open directions are all TODO) and, where the charter is silent, against the codebase-map AAA standard. Evidence is the incoming bundle `incoming/builder-67dc46d64/head/packages/clip/` and its `changes.patch`. Findings cited as `67dc46d64:packages/clip/...`.
+> Harsh merge gate. The **approved baseline** is `origin/main` (`eb73c3d74`) at `incoming/integration-b2824e3d8/base/packages/clip/` — a three-export construction stub (`createClipRegionFromPath`, `createClipRegionFromRectangle`, `invalidateClipRegion`). The **candidate** is the integration head at `incoming/integration-b2824e3d8/head/packages/clip/`. This review judges only the **delta** (head vs base), grounded in the `packages/clip/` hunks of `changes.patch`. Cited as `b2824e3d8:packages/clip/...`. Judged against `charter.md` (draft; `Decisions` empty) and, where the charter is silent, the codebase-map AAA standard + `CONTRACT.md` + structural forks.
 
 ## Verdict
 
-**solid — 80/100.** The prior depth review found a "construction half, no operational half" cell (partial, 45/100, 3 exports). This pass landed the operational half: the package went from 3 exports to **24** in `clipRegion.ts` — composition, queries, transform, clone/copy/set, a pool bracket, and five new shape constructors — all colocated-tested (54 tests, every export covered, alias cases included). It is now a genuine clip-region _library_, not a two-function product. It falls short of `authoritative` only because the one operation a region library exists for — **exact boolean algebra** — is still conservative-bounds-only (intersection/union keep one input's contours and a bounding rect; no subtract/xor), and because that gap is honestly a cross-package decision (a path boolean kernel) rather than missing work in this cell.
+**revise — 78/100. Mergeable after two in-cell fixes.** The delta is the operational half of the package: base had 3 exports, head's `clipRegion.ts` carries **24** — composition, queries, transform, clone/copy/set, a pool bracket, and five shape constructors — all colocated-tested (54 tests, every export covered, alias cases included). The architecture is clean and the house-style discipline is real. But two findings in the **new** surface are correctness defects, not cross-package gaps, and both should be fixed before this lands on the approved floor: `clipRegionContainsRectangle` returns a **false positive** on the contour form (an unsafe-direction `contains` predicate), and `createClipRegionFromContours` silently **borrows** the caller's array where every sibling constructor clones. Neither needs another package; both are local. The conservative boolean algebra (the package's defining gap) is correctly a cross-package fork and is _not_ a blocker for this merge.
 
-The status doc's claims (Bronze/Silver/Gold implemented, 54 tests, alias-safety, normalize strategy, Package Map entry) **verify against the diff** — it is accurate, not aspirational. The self-assessed "90/100 Gold" overstates against the AAA bar because conservative boolean ops are not Gold; 80 is the honest read.
+The delta touches only `clipRegion.ts` and `clipRegion.test.ts` — `package.json`, `index.ts`, and the `ClipRegion` type in `@flighthq/types` are unchanged from base (confirmed: `grep` finds no `packages/clip/package.json` or `packages/types/src/ClipRegion` hunk in `changes.patch`).
 
-## What changed in this bundle
+## Scorecard (7 axes, delta only)
 
-Base `clipRegion.ts` (`67dc46d64:base`) had exactly three exports: `createClipRegionFromPath`, `createClipRegionFromRectangle`, `invalidateClipRegion`. Head adds 21 more (full list in the realized `dist/clipRegion.d.ts`), keeping the file single-source, alphabetized, with pools/constants/helpers at the bottom per source style. One signature widened: `createClipRegionFromRectangle` now takes `Readonly<RectangleLike>` (was `Readonly<Rectangle>`) — consistent with the other `*Like` inputs. No change to the `ClipRegion` type in `@flighthq/types` (still `number[][] | null` contours).
+1. **Composition / bedrock — PASS.** The delta is a flat set of free functions over the `ClipRegion` value; no config-gated mega-function, no fused subjects. Path _flattening_ is borrowed from `@flighthq/path` (`b2824e3d8:packages/clip/src/clipRegion.ts:12` imports `flattenPath`; the shape constructors compose `createPath` + `append*` appenders, lines 482–522), so `clip` stays a thin region layer over a path primitive rather than absorbing tessellation. The one missing primitive underneath — a path-boolean kernel — is correctly _not_ bundled here (it would be the wrong home); its absence shows up as the conservative boolean behavior, which is a delegation question, not a decomposition smell in this cell.
 
-## Present capabilities
+2. **Naming clarity — PASS.** Every new export carries the full unabbreviated type word and is globally self-identifying: `createClipRegionFromRoundedRectangle`, `clipRegionIntersectsRectangle`, `normalizeClipRegion`, `acquireClipRegion`/`releaseClipRegion` (`b2824e3d8:packages/clip/src/clipRegion.ts:139,50,250,18,316`). `is*` for booleans (`isClipRegionEmpty`, `isClipRegionRectangular`, lines 232,239), `get*` for the accessor (`getClipRegionBounds`, line 151). No abbreviation, no vague verb. This is the word a reader reaches for.
 
-Grounded in `67dc46d64:packages/clip/src/clipRegion.ts`:
+3. **Tree-shaking / bundle invariant — PASS.** `index.ts` is still a single `export * from './clipRegion'` (unchanged by the delta); `package.json` keeps `"sideEffects": false`; the pool, `KAPPA`, and `NORMALIZE_EPSILON` are module-level at the file bottom (`b2824e3d8:packages/clip/src/clipRegion.ts:427–435`) with no top-level execution. No `register*`/global mutation at import. No shared hot-loop branch or growing `switch` that every importer pays — each function tree-shakes independently. An assembly never taxes a primitive here.
 
-- **Constructors.** `createClipRegionFromRectangle` (scissor-eligible, clones the rect), `createClipRegionFromPath` (flattens via `@flighthq/path` `flattenPath`, carries path winding), `createClipRegionFromContours` (raw flattened input), and three shape conveniences — `createClipRegionFromRoundedRectangle` (radius ≤ 0 falls back to plain rect), `createClipRegionFromEllipse`, `createClipRegionFromCircle` — all built on cubic-Bezier path appenders (`KAPPA` = 0.5522847498) then flattened. Honest house-style `From<Source>` family.
-- **Composition.** `intersectClipRegions(out,a,b)` and `unionClipRegions(out,a,b)`, both alias-safe (inputs read into locals first), both version-bumping. rect∩rect / rect∪rect are exact and stay scissor-eligible; disjoint intersection collapses to an empty region. Mixed/contour forms are **conservative**: bounding-rect intersection/union plus one input's contours kept verbatim (the "richer" input by sub-path count for contour∩contour).
-- **Queries.** `clipRegionContainsPoint` (rect bounds gate, then a winding-number ray-cast over contours honoring both `nonZero` and `evenOdd`), `clipRegionIntersectsRectangle`, `clipRegionContainsRectangle`, `getClipRegionBounds(out,clip)`, `isClipRegionEmpty`, `isClipRegionRectangular`, `clipRegionsEqual` (structural, point-by-point, not version-based).
-- **Transform.** `transformClipRegion(out,clip,matrix)`, alias-safe: axis-aligned matrices (`b===0 && c===0`) keep the rect form scissor-eligible; rotation/skew promotes the rect to a 4-point quad contour; contour form transforms every point and recomputes the bounding rect.
-- **Mutators / lifecycle.** `cloneClipRegion`, `copyClipRegion` (no-op on `out===source`), `setClipRegionToRectangle`, `invalidateClipRegion` (version bump mirroring `invalidateImageResource`), and a pool bracket `acquireClipRegion`/`releaseClipRegion` (reset-on-acquire, module-level pool at file bottom).
-- **Normalization.** `normalizeClipRegion(out,clip)` — lightweight, kernel-free canonicalization that promotes a single 4-point axis-aligned quad contour (within `NORMALIZE_EPSILON` = 1e-6) back to the scissor-eligible rect form; the prime case is a rect that a 90°/180°/270° `transformClipRegion` turned into a quad. Multi-contour or non-axis-aligned input copies through unchanged.
+4. **Registry vs closed union (fork B) — PASS / N/A.** No `kind`/handler family is introduced. The only discriminant is the `contours === null` rect-vs-contour fork, which is a two-state value shape (a closed binary, not a growing family) and is the right call. Winding is a closed `'nonZero' | 'evenOdd'` `PathWinding` from `@flighthq/types`, again a genuine closed set. Nothing in the delta wants a registry.
 
-Architecture fit is clean: still `sideEffects: false`, value-typed, single root `.` export via `index.ts`, the `ClipRegion`/`HasClip` types stay in `@flighthq/types`, deps are only `geometry`/`path`/`types`. This is exactly the wasm-mixable value-leaf shape (structural-fork D / Mixing) — a strong early Rust↔TS conformance target.
+5. **Subject triad + plurality guard — PASS.** No format codec or backend code is mis-homed here. Rasterization (scissor/stencil) is correctly _absent_ and delegated to `displayobject-<backend>` clip modules per the type doc (`head/packages/types/src/ClipRegion.ts`), and the delta introduces no premature `clip-formats`/`clip-<backend>` split. The cell stays a single value-leaf.
 
-## Gaps vs an authoritative clip/region library
+6. **Contract hygiene — PARTIAL (one new contract violation).** Strong on most counts: types stay in `@flighthq/types` (the delta adds no inline cross-package type; it widens its imports to `MatrixLike`/`PathWinding`/`RectangleLike`, `b2824e3d8:packages/clip/src/clipRegion.ts:13`); `Readonly<>` on every input param; `out`-params on all compute/mutate functions with alias-safe locals-first reads (`intersectClipRegions` lines 163–179, `transformClipRegion` lines 334–344, `unionClipRegions` lines 398–405) and aliased tests for each; sentinels not throws (empty/disjoint return empty data); allocation verbs honored (`create*`/`clone*`/`acquire*` allocate, `copy*`/`set*`/transform/intersect/union write to `out`). **The violation:** `createClipRegionFromContours` captures the caller's array by reference — `return { contours, ... }` with no clone (`b2824e3d8:packages/clip/src/clipRegion.ts:106-110`), asserted by its own test `expect(clip.contours).toBe(contours)` (`...clipRegion.test.ts:231`) — while every other constructor clones (`createClipRegionFromRectangle` clones the rect, line 134; `cloneClipRegion` deep-copies, line 82). This is an undocumented, asymmetric borrow: a later caller mutation leaks into the region. See objection below.
 
-- **Exact boolean algebra (the defining gap).** `intersectClipRegions`/`unionClipRegions` are bounds-plus-one-input conservative for any contour form; there is no `subtractClipRegions`, no `xorClipRegions`, and no true contour intersection/union. A region library's reason to exist is exact boolean composition. The status doc is right that the kernel (Vatti / Weiler-Atherton / Martinez) belongs in `@flighthq/path` or a `path-boolean` neighbor — `@flighthq/path` has only `flattenPath`/`tessellatePath` today — so this is a **cross-package design decision**, not in-cell work. It is the single largest thing between `solid` and `authoritative`.
-- **`clipRegionContainsRectangle` over-claims on contour form.** It uses only `clip.rect` (`enclosesRectangle`), so for a concave/holed contour it returns `true` when the rectangle is inside the bounding box but outside the actual region — a **false positive** on a containment query. For a `contains` predicate the safe conservative direction is to _under_-claim (return false when unsure); this does the opposite. The doc comment admits "bounding-box approximation (conservative)" but does not flag that _contains_ is the unsafe direction. A consumer (culling, interaction) that trusts a `true` could skip a needed clip. (`clipRegionIntersectsRectangle` has the symmetric but _safe_ over-claim — over-reporting intersection is the conservative direction for a may-intersect query.)
-- **Contour storage is `number[][]`, not typed-array.** The roadmap calls for `Float32Array` flat contours for cheap transform / GPU upload; current per-point `number[]` allocation in `transformClipRegion` and `.map(c => c.slice())` deep copies are GC-heavy on a per-frame animated clip. This is a breaking `@flighthq/types` change (`ClipRegion.contours: number[][] | null`), cross-cutting every backend clip module — a types-layer decision, not in-cell.
-- **`createClipRegionFromContours` captures the caller's array by reference** (`clip.contours === the passed array`, asserted by the test), whereas every other constructor clones. Ownership is inconsistent and undocumented: a later caller mutation leaks into the region. Either clone for symmetry or document the borrow explicitly. (In-cell, small.)
-- **No winding helpers / normalization.** `getClipRegionWinding`, explicit winding constructors, and even-odd↔non-zero conversion are absent; winding correctness lives entirely in backends. Several constructors hardcode `'nonZero'` on rect results, which is fine, but there is no canonical place to set/convert the rule.
-- **No functional/visual test.** No scene exercising nested `intersectClipRegions` across Canvas/DOM/WebGL to confirm the descriptor's bounds match what each backend actually clips. jsdom unit tests cannot reach this; the conservative-bounds behavior is exactly the kind of thing a visual parity test would catch.
-- **No Rust `flighthq-clip` crate.** Charter front matter declares `crate: flighthq-clip`; it does not exist yet. Naturally sequenced after the TS surface stabilizes.
+7. **Tests & honesty — PASS (with one honest-comment lapse).** `clipRegion.test.ts` is colocated, `describe` blocks alphabetized and mirroring every export, 54 cases, alias cases present for all `out`-param functions (`...clipRegion.test.ts:342-360,554-560`). No dead export, no unexported-but- implemented public surface (the helpers `pointInContours`/`append*ToPath`/`setRectangleToContoursBounds` are correctly file-private). The lapse is a _comment_ that overstates: `intersectClipRegions`'s "Contours ∩ rect: keep contours, clipped bounds computed above" (`b2824e3d8:packages/clip/src/clipRegion.ts:207-208`) implies the contours are clipped — they are not; only the bounds rect is intersected, the kept contours are copied verbatim (line 209) and can extend outside `out.rect`. The comment should say "bounds clipped, contours kept verbatim (conservative)".
 
-## Charter contradictions
+## Objections (grounded in the delta)
 
-None — but only because the charter is a stub. "What it is" (hard transform-exact clip: axis-aligned rectangle scissor or flattened-path stencil-then-cover) is fully honored by the code: the rect/contour discriminant, scissor-eligibility preservation through transform/intersect/normalize, and the "softness is the matte's job" delegation (no feathering here) all match. North star, Boundaries, and Decisions are empty, so there is nothing stronger to contradict. The conservative boolean behavior and the `contains`-over-claim are _gaps against the AAA fallback_, not violations of a stated rule — which is itself the signal that the charter needs to _state_ the rules (see Open directions).
+### MAJOR — `clipRegionContainsRectangle` false-positives on the contour form (unsafe-direction `contains`)
 
-## Contract & docs fit
+`b2824e3d8:packages/clip/src/clipRegion.ts:44-46`:
 
-**Package living up to the contract — strong.**
+```ts
+export function clipRegionContainsRectangle(clip: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>): boolean {
+  return enclosesRectangle(clip.rect, rectangle);
+}
+```
 
-- Types-first: `ClipRegion`/`HasClip`/`PathWinding` all in `@flighthq/types`; the package adds no cross-package types inline. ✓
-- Full unabbreviated names, globally self-identifying (`createClipRegionFromRoundedRectangle`, not `createRoundedClip`). ✓
-- `out`-params on every mutating/compute function, all documented alias-safe and tested for the aliased case. ✓
-- Sentinels-not-throws: empty/disjoint regions return empty data; no throws on expected inputs. ✓
-- Single root `.` export, `sideEffects: false`, pool bracket naming (`acquire`/`release`), `invalidate*` version idiom consistent with the SDK. ✓
-- Allocation discipline: `create*`/`clone*`/`acquire*` allocate; `copy*`/`set*`/`get*Bounds`/transform/ intersect/union write to `out`. ✓ One wrinkle: `createClipRegionFromContours`'s by-reference capture (above) is the only allocation-ownership ambiguity.
+It tests only the _bounding rect_, ignoring `clip.contours`. For a concave/holed/triangular contour region a rectangle inside the bounding box but outside the real fill returns `true` — a **false positive**. The doc comment admits "bounding-box approximation (conservative)" (line 43) but the direction is _not_ conservative for a `contains` query: a containment predicate must _under_-claim (return `false` when unsure), because a consumer that trusts `true` (culling, interaction skip) will skip a clip that is actually needed. Contrast the sibling `clipRegionIntersectsRectangle` (lines 50–52), whose bounding-box over-claim _is_ the safe direction for a may-intersect query. The two predicates have opposite safe directions and the delta got one backwards. This is new surface (the export did not exist in base) shipping an incorrect answer, so it is a merge objection, not a roadmap gap. **Fix:** for the contour form, fall back to `false` (honest under-claim) unless an exact polygon-contains is implemented — and update the comment to say the contour answer is a conservative _false_, not a conservative _true_. The test (`...clipRegion.test.ts:104-114`) only covers the rect form, so it would not catch a fix that corrects the contour direction; add a contour false-positive case.
 
-**Where the docs/contract are stale or need revising (candidate revisions — user's gate):**
+### MAJOR — `createClipRegionFromContours` borrows the caller's array; every sibling clones
 
-- **Package Map entry is already present and accurate.** The bundle's `tools/agents/docs/index.md` carries a full `@flighthq/clip` line (constructors / composition / queries / transform / utilities / pool bracket, "No rendering; rendering is provided by the `displayobject-<backend>` clip modules"). It is well-placed and matches the realized surface — **no revision needed**, contrary to a reading that the entry is still missing. The status doc's claim that it was "added in pass 2" verifies.
-- **The package `description` still advertises a product, not the library:** "ClipRegion: hard geometric clip product built from rectangles or paths" (`package.json`). Post-expansion the package is a clip _operations_ library; the description undersells composition/queries/transform. Candidate reword.
-- **`charter.md` front matter promises `crate: flighthq-clip`** that does not exist. Not wrong (it is intent), but the register/conformance map should track it as TS-ahead-of-Rust.
+`b2824e3d8:packages/clip/src/clipRegion.ts:106-110`:
 
-## Candidate open directions
+```ts
+export function createClipRegionFromContours(contours: number[][], winding: PathWinding): ClipRegion {
+  const rect = createRectangle();
+  setRectangleToContoursBounds(rect, contours);
+  return { contours, rect, version: 0, winding };
+}
+```
 
-The charter's North star / Boundaries / Decisions are TODO; every choice below was assumed against the AAA fallback and should be settled into the charter:
+`contours` is stored by reference (test asserts `expect(clip.contours).toBe(contours)`, `...clipRegion.test.ts:231`). Every other producer in the delta clones its source — `createClipRegionFromRectangle` (`cloneRectangle`, line 134), `cloneClipRegion`/`copyClipRegion` (`.map(c => c.slice())`, lines 82,91), even `intersectClipRegions`/`unionClipRegions` deep-copy kept contours (lines 209,218,413,420). This lone borrow is an undocumented, asymmetric ownership rule: a later caller mutation silently corrupts the region's geometry without an `invalidateClipRegion` bump. The signature also takes a mutable `number[][]`, not `Readonly<...>`, advertising a borrow the contract forbids by default. **Fix:** clone for symmetry (`contours.map((c) => c.slice())`) and accept `Readonly<readonly number[][]>`, OR, if the by-reference capture is a deliberate zero-copy fast path, document the borrow in a durable comment and keep the param mutable — but the silent inconsistency is not the final shape. The existing test must be updated to assert the chosen ownership.
 
-1. **Where does exact boolean algebra live?** This is the package's biggest question and a hard cross-package fork: a path boolean kernel (`intersectPaths`/`subtractPaths`/`xorPaths`) in `@flighthq/path` or a `@flighthq/path-boolean` neighbor, with `clip` composing exact `subtract`/`xor`/`intersect` over it — vs. accepting conservative-bounds as the permanent contract because the renderer's stencil-then-cover realizes the true geometry anyway. The charter should state whether exact algebra is **in scope for `clip`** or explicitly delegated. (Touches structural-fork A: source-data vs. participation, and the bedrock test for a `path-boolean` cell.)
-2. **Is conservative containment acceptable, or must `clipRegionContainsRectangle` be exact (or under-claim) for contour forms?** This is a correctness-contract decision, not just a gap — the current false-positive direction needs a blessed ruling.
-3. **Contour storage: `number[][]` vs `Float32Array`.** A types-layer/breaking decision that coordinates with every backend clip module; settle before the Rust port locks the seam.
-4. **Ownership of `createClipRegionFromContours` input** — clone (symmetry) or document the borrow.
-5. **Winding normalization ownership** — does `clip` own even-odd↔non-zero conversion and explicit winding constructors, or does that stay in backends?
-6. **Boundaries / non-goals** — confirm soft/feathered masking (MatteFilter), actual rasterization (`displayobject-<backend>` clip modules), and per-node trait wiring (`node`/`displayobject`) are stated non-goals, matching the current correct absences.
+### MINOR — `intersectClipRegions` contour∩rect leaves contours wider than the stated bounds rect
+
+`b2824e3d8:packages/clip/src/clipRegion.ts:198-220`. The result rect is the _intersection_ of the two bounds (lines 198–201), but the kept contours are the _unclipped_ input contours (line 209: `aContours.map(...)`). So `out.contours` can describe geometry outside `out.rect` — an internal inconsistency where the bounds rect no longer encloses the contours it is paired with. Downstream culling that trusts `rect` as the contour extent will be wrong. This is the conservative-bounds behavior the charter parks as a cross-package decision (a path-boolean kernel), so it is **not a merge blocker** — but the _comment_ claiming the contours are "clipped" (lines 207–208) is dishonest about it and should be corrected in this delta even though the algebra stays conservative. (`unionClipRegions` lines 412–421 has the analogous keep-verbatim behavior, which is correct for a union since the merged rect already encloses both.)
+
+### MINOR (carry-over, not introduced by the delta) — `package.json` description still says "product"
+
+`head/packages/clip/package.json` still reads `"ClipRegion: hard geometric clip product built from rectangles or paths"`. The delta does **not** touch `package.json` (no such hunk in `changes.patch`), so this is a baseline carry-over, not a delta regression — flagged only so the integration worker rewords it post- expansion (it is now an operations library, not a single product). Not weighed against the merge.
+
+## Cross-package gaps (NOT merge blockers — charter `Open directions`)
+
+These are correctly out of this cell and must not gate the merge; they are the charter's open forks:
+
+- **Exact boolean algebra** is conservative-bounds-only (no `subtractClipRegions`/`xorClipRegions`, no true contour intersection/union). The kernel (Vatti/Weiler-Atherton/Martinez) belongs in `@flighthq/path` or a `path-boolean` neighbor — a cross-package design decision. The renderer's stencil-then-cover realizes the true geometry of the _kept_ contours, which is why conservative bounds is a defensible interim contract.
+- **Contour storage `number[][]` vs `Float32Array`** — a breaking `@flighthq/types` change coordinating with every backend clip module; the per-point `.map(c => c.slice())` deep copies (lines 82,91,209,…) and the per-point `new Array` in `transformClipRegion` (lines 375–386) are the GC cost this would remove. Settle before the Rust `flighthq-clip` seam locks.
+- **Winding helpers** — no `getClipRegionWinding`, explicit-winding constructors, or even-odd↔non-zero conversion; winding correctness lives in backends.
+- **Rust `flighthq-clip` crate** — charter declares it; it does not exist yet. TS-ahead-of-Rust.
+- **Functional/visual parity test** — no scene exercises nested `intersectClipRegions` across Canvas/DOM/WebGL to confirm the descriptor's bounds match what each backend clips. jsdom cannot reach it.
+
+## Charter alignment
+
+The charter's "What it is" and proposed North star are fully honored by the delta: value-typed side-effect-free leaf, scissor-eligibility preserved through transform/intersect/normalize, hard clipping with softness delegated to MatteFilter. The two MAJOR objections above are _exactly_ the questions the charter's Open directions #2 (contour-`contains` correctness) and #4 (`createClipRegionFromContours` ownership) flag as needing a blessed ruling — which is the signal that they should be resolved _before_ this lands on the approved floor rather than after, since the floor is what subsequent work conforms to.

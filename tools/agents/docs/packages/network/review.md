@@ -1,73 +1,98 @@
 ---
 package: '@flighthq/network'
-status: solid
-score: 90
-updated: 2026-06-24
+status: partial
+score: 45
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/network.md
-  - reviews/maturation/depth/network.md
-  - source
-  - changes.patch
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - head/packages/network/src/network.ts
+  - head/packages/network/src/network.test.ts
+  - head/packages/types/src/Network.ts
+  - changes.patch (packages/network slice)
+  - status.md (as-claimed)
 ---
 
-# network — Review
+# network — Review (merge gate: integration-b2824e3d8 → origin/main eb73c3d74)
 
 ## Verdict
 
-solid — 90/100. The connectivity-status event cell now carries the full Network Information API field surface, two new edge signals, a status diff helper, and a one-shot reachability probe seam — closing every Bronze item and the field/signal half of Silver from the maturation roadmap, plus the Silver reachability probe. The foundation was already canonical; this delta makes it the most complete the domain can be without native backends and the continuous-monitor design gate. Status.md's claims all verify against `67dc46d6:packages/network/src/network.ts` and the realized `dist/network.d.ts`.
+**partial — 45/100. REVISE before merge.** The _design_ of the delta is good — full NetInfo field surface, two edge signals, a status diff, a one-shot reachability probe seam — and on its own the runtime code is canonical Flight. But the integration branch as bundled is **broken**: the runtime change in `network.ts` depends on type-level additions to `@flighthq/types/src/Network.ts` that the integration HEAD does **not** contain. `b2824e3d8:head/packages/types/src/Network.ts` is byte-identical to the approved base — it still declares the 6-member `NetworkConnectionType`, the 4-field `NetworkStatus`, the 3-signal `Network`, and a `NetworkBackend` with no `probeReachability`. The runtime references at least nine symbols/fields/methods that do not exist in that file. **This delta does not typecheck.** The score is not a judgement of the design (which would score in the high 80s if its types shipped) — it is a merge-gate judgement of the artifact actually presented, which fails to compile.
 
-## Present capabilities
+This is the dominant finding and the reason for the REVISE: the integration carries the `network.ts` + `network.test.ts` + docs hunks but **dropped the `packages/types/src/Network.ts` hunk** they were written against. The package's own approved `status.md`/`review.md`/`assessment.md` (all dated 2026-06-24) describe the type changes as shipped — they were written against a worktree where the types file _was_ edited (the prior review cites `dist/network.d.ts, 15 exports`). Those claims do not hold against this bundle's HEAD.
 
-Verified against the head source and the realized public surface (`dist/network.d.ts`, 15 exports).
+## The blocker — types-first violated; delta does not compile
 
-- **Entity quartet** — `createNetwork`, `attachNetwork`, `detachNetwork`, `disposeNetwork`. The event-capability shape the suite prescribes. `attachNetwork` is idempotent (calls `detachNetwork` first), `detach`/`dispose` are safe when not attached, subscriptions held in a `WeakMap<Network, …>` so detached entities are not leaked.
-- **Snapshot read + allocator** — `getNetworkStatus(out)` writes into an `out` param; `createNetworkStatus()` is its zero/sentinel allocator (all 8 fields). Convenience booleans `isNetworkOnline`, `isNetworkMetered`, `isNetworkSaveDataEnabled` over a shared `_scratch`.
-- **Full NetInfo `NetworkStatus`** (in `@flighthq/types`): `online`, `type`, `downlink`, `downlinkMax`, `effectiveType`, `saveData`, `rtt`, `metered`. Sentinel discipline consistent (`-1` for unreported `downlink`/`downlinkMax`/`rtt`, `''` for `effectiveType`, `'unknown'` for `type`). `NetworkConnectionType` widened 6 → 9 (`+wimax/vpn/other`).
-- **Edge + level signals** — `onChange` (level), `onOnline`/`onOffline` (edge, tracked via `wasOnline`), and two new edge signals `onConnectionTypeChange` (tracked `wasType`) and `onMeteredChange` (tracked `wasMetered`). The attach loop only fires the edge signals on an actual transition — verified by tests (`does not emit onConnectionTypeChange when type is unchanged`).
-- **Backend seam** — `getNetworkBackend`/`setNetworkBackend`/`createWebNetworkBackend`, lazy web default, `null` resets to web. The web backend reads `navigator.onLine` + `connection.{type, downlink, downlinkMax, effectiveType, rtt, saveData}`, derives `metered = saveData || type === 'cellular'`, and SSR/jsdom-guards every global access (`typeof navigator/window/fetch`).
-- **Reachability probe** — `probeNetworkReachability(options, out)` over an optional `NetworkBackend.probeReachability`, with a fetch-based web implementation (`HEAD`, `cache: 'no-store'`, `AbortController` + timeout, external-signal composition via `anyAbortSignal` with an `AbortSignal.any` fast-path and a composite-controller fallback). Returns a sentinel (`reachable: false`, `latency: -1`) on failure or absent `fetch` rather than throwing. Carries a doc comment on the `navigator.onLine` "interface, not internet" caveat.
-- **Status diff** — `hasNetworkStatusChanged(a, b)`, field-by-field, `Readonly` params, alias-safe (same object → `false`, tested).
-- **Tests** — 14 describe blocks / 32 tests, alphabetized and mirroring exports. Covers each edge signal, idempotency, sentinel allocation, web-backend sentinels in jsdom, alias-safe diff, the probe SSR sentinel and backend-delegation paths.
+`changes.patch` touches `packages/network/src/network.ts`, `packages/network/src/network.test.ts`, and the four `tools/agents/docs/packages/network/*.md` docs — and **no** `packages/types/src/Network.ts` hunk exists (verified: `grep '^diff --git.*packages/types/src/Network'` over the patch returns nothing). The runtime then imports and reads type-level surface that base `@flighthq/types` never defines:
 
-## Gaps
+- **Undefined type imports** — `b2824e3d8:head/packages/network/src/network.ts:6-7`:
 
-Against an authoritative connectivity-reporting library, the remaining gaps are all Gold-tier and correctly deferred (most are cross-package or a design gate):
+  ```ts
+  NetworkReachability,
+  NetworkReachabilityOptions,
+  ```
 
-- **No in-box native backend.** The seam is exercised only by web + fake backends; `host-electron` has no `NetworkBackend` over `net.online`/`powerMonitor` yet. Cross-package — not actionable here.
-- **No continuous reachability monitor.** Only a one-shot probe exists. The roadmap's `createNetworkReachabilityMonitor` (backoff, quorum probing over multiple URLs, captive-portal detection) is unbuilt — the first async sub-entity in the domain, gated on a design decision.
-- **`metered` is a web heuristic.** `saveData || type === 'cellular'` mis-classifies a cellular-tethered WiFi link and unlimited cellular plans. Documented in the field comment; only a native OS-metered flag fixes it. By-design for the web backend, not a defect.
-- **No bandwidth/quality estimation.** `estimateNetworkQuality` (derive an `effectiveType`-style class from observed probe latency on hosts lacking NetInfo — Firefox/Safari/native shells) is absent. Low priority until native backends exist.
-- **No Rust crate.** `flighthq-network` is unbuilt; `crate: flighthq-network` is declared in the charter but no `crates/` mirror exists. Correctly deferred until the TS type shape settles — which, with this delta, it now largely has.
+  Neither is exported from `@flighthq/types` (`grep -rln 'NetworkReachability' head/packages/types/` → empty). `probeNetworkReachability` (`:184-187`) annotates its params with both. → `TS2305` (no exported member).
 
-Genuinely out of domain and correctly absent: HTTP/fetch wrappers, retries, WebSocket/SSE, DNS, proxy config. None are gaps for this cell.
+- **Undefined `NetworkStatus` fields** — `:75/77/78/79`, `:156-160`, `:166`, `:176`, and `:20/32-34`:
+
+  ```ts
+  out.downlinkMax = typeof conn?.downlinkMax === 'number' ? conn.downlinkMax : -1;
+  out.rtt = typeof conn?.rtt === 'number' ? conn.rtt : -1;
+  out.saveData = conn?.saveData === true;
+  out.metered = out.saveData || out.type === 'cellular';
+  ```
+
+  `NetworkStatus` in `b2824e3d8:head/packages/types/src/Network.ts:5-12` has only `online`, `type`, `downlink`, `effectiveType`. `downlinkMax`/`rtt`/`saveData`/`metered` do not exist on the type. → `TS2339` on every read/write.
+
+- **Undefined `Network` signals** — `:30`, `:34`, `:44-45`:
+
+  ```ts
+  emitSignal(net.onConnectionTypeChange, status.type);
+  emitSignal(net.onMeteredChange, status.metered);
+  ```
+
+  `Network` (`:24-28` of head types) declares only `onChange`/`onOnline`/`onOffline`. → `TS2339`.
+
+- **Undefined `NetworkBackend.probeReachability`** — `:82`, `:189-195`:
+
+  ```ts
+  if (backend.probeReachability !== undefined) {
+    return backend.probeReachability(options, out);
+  ```
+
+  `NetworkBackend` (`:17-21` of head types) declares only `getStatus`/`subscribe`. → `TS2339`.
+
+- **Narrowed `NetworkConnectionType`** — `mapWebConnectionType` (`b2824e3d8:head/packages/network/src/network.ts:250-257`) returns `'other'`, `'vpn'`, `'wimax'`, but the head union (`:3` of head types) is `'wifi' | 'cellular' | 'ethernet' | 'bluetooth' | 'none' | 'unknown'`. → `TS2322` (string literal not assignable to the narrower return type).
+
+Even the new test file fails: `b2824e3d8:head/packages/network/src/network.test.ts:23-33` builds a `NetworkStatus` literal with `downlinkMax`/`rtt`/`saveData`/`metered`, and `:94`/`:118` connect `net.onConnectionTypeChange`/`net.onMeteredChange`. `tsc -b` typechecks `src/*.test.ts`, so this compounds the failure rather than masking it.
+
+This is a direct violation of the contract's types-first rule ("define its types in `@flighthq/types` first, then implement against them"). The fix is mechanical but mandatory: the `Network.ts` type additions the runtime was written against must be part of the same merge, or the runtime must be reverted to the base shape. The two halves cannot land separately.
+
+## Design assessment (assuming the types ship)
+
+Held to the harsh standard, the _runtime delta_ — if its types were present — is strong. Recorded so the must-fix brief separates "broken integration" from "bad design":
+
+- **Composition / bedrock (pass).** Each addition is a separate free function — `hasNetworkStatusChanged`, `isNetworkMetered`, `isNetworkSaveDataEnabled`, `probeNetworkReachability`. The probe is its own function, not a config branch inside `getNetworkStatus`, so a status-only importer never pulls `fetch`/`AbortController`. No subject-fusion.
+- **Naming (pass).** Every export carries the full `Network` word; booleans use `is*`/`has*`; `probeNetworkReachability` reads exactly. Backend-internal `getStatus`/`subscribe`/`probeReachability` are interface methods, correctly unprefixed.
+- **Tree-shaking (pass).** `sideEffects: false`, single root export (`index.ts` → `export * from './network'`), module state (`_backend`/`_scratch`/`_subscriptions`) at file bottom, no top-level registration. The probe path is separately importable.
+- **Registry vs union (pass).** `mapWebConnectionType` is a closed `switch` — correct: it is a web-backend-private string normalizer with a `default → 'unknown'`, not a user-extensible dispatch. Fork B does not apply.
+- **Subject triad (n/a).** No format codecs or backends introduced; the web backend is the in-cell default, consistent with the event-capability shape.
+- **Contract hygiene (pass on out-params / sentinels; FAIL on types-first).** `getNetworkStatus(out)`, `probeNetworkReachability(options, out)`, and `hasNetworkStatusChanged(a, b)` read inputs before writing (`hasNetworkStatusChanged` is alias-safe by construction — pure reads). Sentinels (`-1`/`''`/`false`) throughout; the probe returns a sentinel, never throws. `Readonly<>` on diff params and the probe options. The single contract failure is types-first (above).
+- **Tests & honesty (mixed).** Tests are colocated, alphabetized, mirror exports, and cover edge signals, idempotency, alias-safe diff, and the probe SSR/backend-delegation paths — good discipline. But they **do not compile** against the bundled types (same root cause), and the `status.md` claim block (`:19-32`) asserts `packages/types/src/Network.ts` was changed when the bundle shows it was not — the honesty axis fails on the claim/code mismatch.
+
+## Secondary observations (not blockers; surface for the charter)
+
+- **`probeNetworkReachability` fallback allocates a backend per call** — `b2824e3d8:head/packages/network/src/network.ts:193`: when the active backend lacks `probeReachability`, the fallback calls `createWebNetworkBackend()` fresh on every probe. Minor (probes are rare), but it also _silently routes a native app's probe through the web `fetch` path_ — the charter's Open direction 3 (fork D seam). A deliberate ruling is owed: web-fetch fallback always, vs. sentinel-when-backend-lacks-probe.
+- **`anyAbortSignal` composite fallback** — `:227-231`: when `AbortSignal.any` is absent, two `'abort'` listeners are added with `{ once: true }` but never removed from the non-firing signal. Benign for short-lived probes (already flagged in `status.md` concerns), but worth a comment noting the lifetime assumption.
+- **`metered` web heuristic** — `:79`: `saveData || type === 'cellular'` mis-classifies cellular-tethered WiFi and unlimited cellular plans. By-design for the web backend; only a native OS-metered flag fixes it. Not a defect — charter Open direction 6.
 
 ## Charter contradictions
 
-None. The charter's "What it is" (event-style connectivity cell, not a transport library) is honored exactly — every addition is connectivity status, reachability, or link-quality reporting; nothing drifts toward axios/undici territory. North star / Boundaries / Decisions are all still `TODO`, so there is little to contradict — see candidate open directions.
+None on intent. The charter (DRAFT) North star #3 explicitly requires the full shape "navigable from the header layer alone" in `@flighthq/types` — which is exactly what this bundle fails to deliver, so the delta _contradicts the charter's own stated direction_ by shipping runtime ahead of (without) its header. The charter line 65 ("the TS type shape settles … which, with this delta, it largely has") was written believing the type delta was included; it is not.
 
 ## Contract & docs fit
 
-**Lives up to the contract — strongly.**
-
-- **Types-first.** Every cross-package type (`NetworkStatus`, `NetworkConnectionType`, `NetworkBackend`, `NetworkReachability`, `NetworkReachabilityOptions`, `Network`) lives in `@flighthq/types/src/Network.ts`; nothing is defined inline. The only package-local interface (`WebNetworkConnection`) is a web-DOM shim, correctly private at file bottom.
-- **Full unabbreviated names.** Every export carries the `Network` type word (`getNetworkStatus`, not `getStatus`); backend-internal `getStatus`/`subscribe`/`probeReachability` are interface methods, correctly unprefixed. Booleans use `is*`/`has*`.
-- **`out`-params + alias safety.** `getNetworkStatus(out)`, `createNetworkStatus` allocator, `probeNetworkReachability(options, out)`, `hasNetworkStatusChanged` reads inputs before any write.
-- **Sentinels not throws.** `-1`/`''`/`false` sentinels throughout; the probe returns a sentinel on failure. No error-wrapping types.
-- **Single root export** (`index.ts` → `export * from './network'`), `sideEffects: false`, module state (`_backend`, `_scratch`, `_subscriptions`) at file bottom, no top-level side effects. The status reader and the probe are separate tree-shakable free functions, so a status-only consumer never pulls the `fetch`/`AbortController` probe code.
-- **`Readonly<>`** on `hasNetworkStatusChanged` params, `NetworkReachabilityOptions`, the `onChange`/`Network` signal payload. Good.
-
-**Candidate doc/contract revisions (user's gate, not mine):**
-
-- The Package Map line — "`@flighthq/network` (event): connectivity status and online/offline signals" — now undersells the package: it has a reachability probe and link-quality fields. A one-clause widening ("…signals, link-quality fields, and a reachability probe") would match reality.
-- The maturation roadmap (`reviews/maturation/depth/network.md`) is now stale at its current-verdict line (78/100) — Bronze and the field/signal half of Silver are done. This review supersedes the prior depth review (`reviews/depth/network.md`, 78/100); the maturation doc is a roadmap, left as-is.
-
-## Candidate open directions
-
-The charter's North star / Boundaries / Decisions are all `TODO`; these are the questions this review had to assume past, surfaced for the charter to settle:
-
-1. **Reachability ownership and shape.** Does the continuous monitor belong in `@flighthq/network` or a sibling `@flighthq/network-reachability`? Status.md leans "keep here as an opt-in sub-entity"; the depth review called reachability "arguably out of scope for a pure event cell." Worth a Decision — it determines whether the package stays a pure status reader or grows a polling sub-entity. (Note: the shipped one-shot probe already lives here; the open question is the _continuous monitor_, not the probe.)
-2. **Async on the `NetworkBackend` seam.** `probeReachability` is the first async surface in this package. Confirm the trait may carry async, and record the Rust-port posture (native seam stays clean/sync where native is sync; `host-web` bridges `!Send` `fetch`/`JsFuture` internally — never contort the authoritative trait for the wasm instrument). A charter Decision would freeze this.
-3. **Fallback routing in `probeNetworkReachability`** (structural-fork-adjacent, fork D seam): when a native backend without `probeReachability` is installed, the fallback constructs `createWebNetworkBackend()` and probes over `fetch` — silently routing a native app's probe through the web path. Acceptable as a universal default, but it means "I set a native backend" does not guarantee "my reachability uses native." Worth a deliberate ruling: web-fetch fallback always, or sentinel-when-backend-lacks-probe.
-4. **`mapWebConnectionType` closed switch (fork B).** This is a closed `switch(type)` over the 9 `NetworkConnectionType` strings. It is correct to keep closed here — it is a web-backend-private string normalizer, not a user-extensible dispatch table, and it `default`s to `'unknown'` so widening the union never breaks it. No registry needed; noted only to confirm fork B was considered and the closed form is the right call.
-5. **Where does scope end vs. `power`/`lifecycle`/`device`?** The suite has neighboring event cells (`power` battery/keep-awake, `lifecycle` foreground/background). The charter should state the boundary explicitly — e.g. "metered/save-data live here; battery-driven data-saver mode is a `power` concern" — so future fields land in the right cell.
+- **Types-first: FAIL** (the blocker above). This is the one hard contract miss and it gates the merge.
+- Everything else the prior approved review credited — unabbreviated names, out-params, sentinels, single root export, `Readonly<>` — holds for the runtime code and would pass once the types ship.
+- The `status.md` "as-claimed" block is now demonstrably _not_ review-verified against this bundle: its `Types (packages/types/src/Network.ts)` section describes changes absent from HEAD. A review pass must mark that block unverified rather than promote it.

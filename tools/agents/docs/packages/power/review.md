@@ -1,80 +1,101 @@
 ---
 package: '@flighthq/power'
-status: solid
-score: 90
-updated: 2026-06-24
+status: partial
+score: 35
+updated: 2026-06-25
 ingested:
   - status.md
   - reviews/depth/power.md
   - source
-  - incoming/builder-67dc46d64/changes.patch
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
 ---
 
 # Review: @flighthq/power
 
+Merge-gate review of the **delta** (`incoming/integration-b2824e3d8/head` vs the approved baseline `incoming/integration-b2824e3d8/base`, i.e. `origin/main` `eb73c3d74`). Findings cite `b2824e3d8:<path>`. This is a merge gate, not a survey: the question is whether this incoming change is fit to land on the blessed floor. The baseline is not under review.
+
 ## Verdict
 
-solid — 90/100. A well-formed event-style platform cell that, in this second pass, closed nearly every gap the prior depth review (70/100) flagged: it now carries the full canonical power surface — AC/on-battery source, idle/lock-screen events, OS low-power-mode notification, thermal state, battery time-remaining, and battery health — over a swappable backend with a degrade-to-sentinel web default and a real Electron backend proving the seam. It is held back from `authoritative` only by native-gated capabilities that no TS-only session can land (true thermal/health reads on Electron/web), the uncompiled Rust crate, and a couple of small internal asymmetries (idle state polled, thermal folded into the status snapshot). The architecture is correct and idiomatic; what remains is mostly host backends and conformance bookkeeping, not redesign.
+**partial — 35/100. DO NOT MERGE AS-IS.** The `packages/power/` source delta is, on its own terms, a competent and largely well-shaped expansion of the power cell — but it is **internally incomplete in this branch**: the entire `@flighthq/types` half of the change is absent. The power source imports and uses a `PowerStatus` / `PowerBackend` / `Power` surface and four new type modules that **do not exist** in the head bundle's `@flighthq/types`. The delta cannot typecheck and cannot build. That is a hard merge blocker regardless of the design merits.
 
-The status doc's self-estimate of 97/100 is optimistic on two counts a verified review must discount: the Rust crate is in the patch but admittedly **uncompiled** (so its conformance is unproven, not merely "structurally correct"), and the two TS↔Rust divergences it introduces are **not yet recorded** in the conformance map. Those are real open items, not rounding error.
+The score is not a judgement of the design (which would score far higher with its types present); it is the merge-gate verdict on _this branch as it stands_. A type-incomplete delta that references a non-existent header is unmergeable, and the head bundle's own `review.md`/`status.md` assert the opposite of what the bundle contains.
 
-## Status-doc verification (as-claimed → verified)
+## Merge blocker: the types-first header was never integrated
 
-Every substantive claim in `status.md` was checked against the diff and head source; all verified:
+The head `packages/power/src/power.ts` imports four types and uses a `PowerStatus`/`PowerBackend`/`Power` surface that the head `@flighthq/types` does not define.
 
-- **10 signals on `Power`** — confirmed in `packages/types/src/Power.ts` and `createPower()` (`onChange`, `onCharging`, `onDischarging`, `onIdleStateChange`, `onLockScreen`, `onLowPowerModeChange`, `onResume`, `onSuspend`, `onThermalStateChange`, `onUnlockScreen`).
-- **12 `PowerBackend` methods** — confirmed in `Power.ts` and both `createWebPowerBackend()` and the Electron backend.
-- **8 `PowerStatus` fields** — confirmed; `createPowerStatus()` seeds every one with its sentinel.
-- **`isKeepAwakeActive()` on the backend** — confirmed; `hasPowerKeepAwake()` now delegates to `getPowerBackend().isKeepAwakeActive()` (`power.ts:320-322`) rather than reading the module-level `_wakeLockSentinel`, so custom backends report their own state. The prior depth review's implicit "module-internal keep-awake state" limitation is resolved.
-- **Idle polling in `attachPower`** — confirmed (`power.ts:46-54`): a `setInterval` at `_idlePollingIntervalMs`, guarded by `hasSignalSlots(power.onIdleStateChange)`, emitting only on state transitions, cleared in the `_subscriptions` teardown closure. `getPowerIdlePollingIntervalMs` / `setPowerIdlePollingIntervalMs` and the `attachPower(power, idleThresholdSeconds = 60)` parameter are all present.
-- **Four new one-concept-per-file types** — `PowerBatteryHealth.ts` (carrying `PowerBatteryHealthState`), `PowerIdleState.ts`, `PowerKeepAwakeMode.ts`, `PowerThermalState.ts` — all new files in the patch, all re-exported from the types barrel (`index.ts:280-284`).
-- **Rust crate** — `crates/flighthq-power/src/{lib,power}.rs` and `crates/flighthq-types/src/platform.rs` are in the patch. Per the status doc, Cargo was unavailable; **uncompiled** is the honest state.
+`b2824e3d8:packages/power/src/power.ts:2-10`:
 
-## Present capabilities
+```ts
+import type {
+  Power,
+  PowerBackend,
+  PowerBatteryHealth,
+  PowerIdleState,
+  PowerKeepAwakeMode,
+  PowerStatus,
+  PowerThermalState,
+} from '@flighthq/types';
+```
 
-- **Status snapshot** — `getPowerStatus(out)` over `PowerStatus { batteryLevel, chargingTime, dischargingTime, isCharging, isOnBattery, isLowPower, isBatteryLow, thermalState }`. The split the prior review asked for is realized: `isOnBattery` (power source) is distinct from `isCharging`, and `isBatteryLow` (the 20%-and-discharging heuristic) is distinct from `isLowPower` (the real OS low-power flag, sentinel `false` on web). `chargingTime`/`dischargingTime` are now surfaced from the Battery Status manager instead of discarded, with `Infinity` normalized to `-1`.
-- **Battery health** — `getPowerBatteryHealth(out): PowerBatteryHealth | null` with `createPowerBatteryHealth()` allocating a fully-sentinel struct. Correctly `null` on web (the W3C API has no health detail).
-- **Idle / lock** — `getPowerSystemIdleTime()` (`-1` sentinel), `getPowerSystemIdleState(threshold)` (`PowerIdleState`), `onIdleStateChange` delivered by the polling loop, and `onLockScreen` / `onUnlockScreen` signals (native-only; web no-ops).
-- **Thermal** — `getPowerThermalState(): PowerThermalState` and `onThermalStateChange`.
-- **Keep-awake** — `setPowerKeepAwake(enabled, mode?)` with `PowerKeepAwakeMode` (`PreventDisplaySleep` default / `PreventAppSuspension`), closing the prior review's "only display-sleep modeled" gap. The web backend honors only `PreventDisplaySleep` (Screen Wake Lock) and returns `false` for `PreventAppSuspension`, and re-acquires the lock on visibility restore.
-- **Event-entity quartet** — `createPower` / `attachPower` / `detachPower` / `disposePower`, idempotent attach (tears down a prior subscription first), charging-edge latch (`wasCharging`), `disposePower` delegating to `detachPower` (correct: release-to-GC, nothing to `destroy`). Subscriptions tracked in a `WeakMap`.
-- **Backend seam** — `PowerBackend` + `getPowerBackend` (lazy web default), `setPowerBackend(null → web)`, `createWebPowerBackend`, with a real `createElectronPowerBackend` in `host-electron`. The web backend guards every API surface and degrades rather than throwing.
-- **Tests** — `power.test.ts` (567 lines) covers every exported function, every signal path, the idle poller (emits on transition, silent with no listener, stops after detach — all via fake timers), the alias-safe `getStatus(out)` case, and both `setKeepAwake` modes. A faithful, behavior-level suite, not a surface smoke test.
+But in the head bundle, `packages/types/src/Power.ts` is **byte-identical to base** — still the 3-field `PowerStatus`, the 5-signal `Power`, and the 5-method `PowerBackend`:
 
-## Gaps vs an authoritative power library
+`b2824e3d8:packages/types/src/Power.ts` (head, unchanged from base):
 
-These are now mostly native-host or conformance gaps rather than missing surface:
+```ts
+export interface PowerStatus {
+  batteryLevel: number;
+  isCharging: boolean;
+  isLowPower: boolean;
+}
+// ... PowerBackend with getStatus/subscribe/subscribeSuspend/subscribeResume/setKeepAwake only
+// ... Power with onChange/onCharging/onDischarging/onSuspend/onResume only
+```
 
-- **Native-gated reads are sentinel-only.** Thermal state, battery health, OS low-power-mode, and idle/lock events are all wired through the contract but return sentinels on both the web backend _and_ (per the status doc) the Electron backend, because Electron's `powerMonitor` exposes none of thermal/health/low-power and the rest need a native addon. The _seam_ is complete; the _coverage_ is not, and no current backend exercises thermal/health/low-power for real. Honest, but worth stating: these fields are presently sentinel-everywhere.
-- **Rust conformance is unproven.** The crate is uncompiled, and the two intentional divergences (`get_power_battery_health` returning `bool` vs TS `… | null`; `set_power_keep_awake` taking a required `mode` vs TS optional) are not yet in the conformance map. Idle polling is absent in Rust by design (no ambient timer), documented on `attach_power` — a legitimate divergence that also belongs in the map.
-- **No `enablePowerSignals` group gate.** Defensible (the 10 signals are cheap and cost is only assumed at `attachPower`), but it is a silent departure from the codebase-map signal-group convention; see candidate directions.
+Confirmed three ways: (1) `diff base/packages/types/src/Power.ts head/packages/types/src/Power.ts` reports **IDENTICAL**; (2) the head `packages/types/src/` directory contains **only** `Power.ts` — no `PowerBatteryHealth.ts`, `PowerIdleState.ts`, `PowerKeepAwakeMode.ts`, or `PowerThermalState.ts`; (3) `changes.patch` contains **no hunk** for `packages/types/src/Power.ts` (its only diff hunks under power are `packages/power/src/power.test.ts` and `packages/power/src/power.ts`).
 
-## Charter contradictions
+The concrete things the source uses that have no type definition in this branch:
 
-The charter is a stub — only **What it is** is filled; **North star**, **Boundaries**, **Decisions**, and **Open directions** are all `TODO`. With no stated principle, boundary, or decision to violate, there are **no charter contradictions** — but that is because the charter is silent, not because the package was measured against a real rubric. Every judgement above falls back to the codebase-map AAA standard; the silences are collected as candidate directions below.
+- The four imported types `PowerBatteryHealth`, `PowerIdleState`, `PowerKeepAwakeMode`, `PowerThermalState` (`b2824e3d8:packages/power/src/power.ts:5-9`) — no source file, not in the barrel (`head/packages/types/src/index.ts:185` has a single `export * from './Power'` and nothing else for power).
+- New `PowerStatus` fields written in `getStatus` and `createPowerStatus`: `out.chargingTime`, `out.dischargingTime`, `out.isBatteryLow`, `out.isOnBattery`, `out.thermalState` (`b2824e3d8:packages/power/src/power.ts:99-106, 130-140`) — none exist on the head `PowerStatus`.
+- New `Power` signals constructed in `createPower`: `onIdleStateChange`, `onLockScreen`, `onLowPowerModeChange`, `onThermalStateChange`, `onUnlockScreen` (`b2824e3d8:packages/power/src/power.ts:74-80`) — none exist on the head `Power`.
+- New `PowerBackend` methods called: `backend.getBatteryHealth`, `backend.isKeepAwakeActive`, `backend.getSystemIdleState`, `backend.getSystemIdleTime`, `backend.subscribeLockScreen`, `backend.subscribeLowPowerModeChange`, `backend.subscribeThermalStateChange`, `backend.subscribeUnlockScreen`, and the two-arg `setKeepAwake(enabled, mode)` (`b2824e3d8:packages/power/src/power.ts:31-40, 117-186, 290-322, 338-339`) — the head `PowerBackend` has none of these.
 
-## Contract & docs fit
+The head bundle's own `review.md` claims the opposite — "all new files in the patch, all re-exported from the types barrel (`index.ts:280-284`)" and "Added `isKeepAwakeActive()` to the `PowerBackend` interface in `packages/types/src/Power.ts`" (`status.md`). Neither is true of this bundle: the index has one power export line at 185, and `Power.ts` is unchanged. The status doc records the change came from `incoming/builder-67dc46d64/changes.patch`; the integration evidently carried the `packages/power/` worker hunks into this branch **without** the paired `packages/types/` hunks. The power source and its header are out of sync.
 
-Strong alignment with the artifact contract:
+This is the single decisive finding. Everything below assumes the types are restored; it judges the design that _would_ land, so the worker knows what else to check once the build is green.
 
-- **Types-first** — all shared types live in `@flighthq/types` as one-concept-per-file (`Power.ts`, `PowerBatteryHealth.ts`, `PowerIdleState.ts`, `PowerKeepAwakeMode.ts`, `PowerThermalState.ts`), filename = type name, string-literal unions (open contracts, no `Symbol()` kinds). `PowerBatteryHealthState` correctly cohabits `PowerBatteryHealth.ts` as its qualifier rather than getting a thin file of its own.
-- **Full unabbreviated names** — every export self-identifies (`getPowerSystemIdleState`, `createWebPowerBackend`, `setPowerIdlePollingIntervalMs`).
-- **Out-params & alias-safety** — `getPowerStatus(out)` / `getPowerBatteryHealth(out)` follow the convention; the web `getStatus` reads all inputs into locals before writing (commented as alias-safe) and a test asserts the aliased case.
-- **Sentinels not throws** — `-1` / `false` / `null` / `'Unknown'` / no-op unsubscribers throughout; no thrown errors for expected-absent platform APIs.
-- **Single root export** (`index.ts` re-exports `./power`), `"sideEffects": false`, no top-level side effects (the lazy `getPowerBackend` default, module state at file bottom). `package.json` description is accurate.
-- **Rust mirror** present (`flighthq-power`), pending compilation.
+## What the delta does well (assuming the header is restored)
 
-**Candidate doc revisions (user's gate, not mine to act on):**
+The power-source change is otherwise a careful, idiomatic expansion that follows the contract:
 
-- The Package Map line for `@flighthq/power` reads "battery/charging status, low-power and keep-awake" — it now materially understates the cell, which also owns idle/lock-screen, thermal, suspend/resume, and battery health. Worth widening to match the shipped surface.
-- The codebase map's "Inbound host events" paragraph lists power's inbound events as `onSuspend`/`onResume` only; the backend now has seven `subscribe*` channels (`subscribeLockScreen`, `subscribeLowPowerModeChange`, `subscribeThermalStateChange`, `subscribeUnlockScreen`, plus suspend/resume and the base `subscribe`). Stale.
+- **Out-params and explicit allocation.** `createPowerBatteryHealth()` allocates a fully-sentinel struct (`b2824e3d8:packages/power/src/power.ts:85-93`); `createPowerStatus()` seeds every new field with its sentinel (`-1`/`false`/`'Unknown'`, `:96-107`); `getPowerBatteryHealth(out)` and `getPowerStatus(out)` write into the caller's struct.
+- **Sentinels, not throws.** Every web-degraded path returns a typed sentinel — `getBatteryHealth` → `null`, `getSystemIdleState` → `'Unknown'`, `getSystemIdleTime` → `-1`, the four `subscribe*` no-ops return inert unsubscribers (`b2824e3d8:packages/power/src/power.ts:117-150, 238-263`). No thrown errors for absent platform APIs.
+- **Naming.** Every new export carries the full unabbreviated domain word: `getPowerSystemIdleState`, `getPowerSystemIdleTime`, `getPowerBatteryHealth`, `getPowerThermalState`, `setPowerIdlePollingIntervalMs`, `hasPowerKeepAwake` (correct `has*` for the boolean query). Self-identifying.
+- **Keep-awake state moved onto the backend.** `hasPowerKeepAwake()` now delegates to `getPowerBackend().isKeepAwakeActive()` (`b2824e3d8:packages/power/src/power.ts:320-322`) rather than reading the module-level `_wakeLockSentinel`, so a custom backend reports its own lock state. Correct fix.
+- **Wake-lock re-acquire.** The web `setKeepAwake` re-requests the lock on the sentinel's `release` event when the tab is visible again (`b2824e3d8:packages/power/src/power.ts:170-179`), matching real Screen Wake Lock behavior.
+- **`Infinity` normalization.** `chargingTime`/`dischargingTime` from the Battery Status manager are normalized `Infinity → -1` (`b2824e3d8:packages/power/src/power.ts:201-209, 220-221`), so the sentinel convention holds.
+- **Tests track the surface.** `power.test.ts` adds colocated, alphabetized `describe` blocks mirroring the new exports, with fake-timer idle-poller coverage, the alias case for `getStatus`, both `setKeepAwake` modes, idempotent `disposePower`, and safe `detachPower`-when-unattached (`b2824e3d8:packages/power/src/power.test.ts`). Behaviour-level, not surface smoke. (They will not compile until the types land, but the intent is right.)
 
-## Candidate open directions
+## Secondary findings (not merge-blocking; verify after the build is green)
 
-These are questions the stub charter does not answer that this review had to assume — they feed the charter's Open directions:
+- **Idle poll seeds at attach with no listener.** `attachPower` reads `backend.getSystemIdleState(idleThresholdSeconds)` to seed `lastIdleState` unconditionally at attach (`b2824e3d8:packages/power/src/power.ts:46`), and starts a `setInterval` that runs for the entity's whole attached life even if `onIdleStateChange` never gains a listener. The per-tick `hasSignalSlots` guard (`:48`) keeps the _backend call_ and _emit_ out of the no-listener case, so the cost is one timer + one cheap check per interval — defensible, but it is the poll-vs-push design fork the charter has not yet settled (Open direction 2). Not a blocker; flagged so it is decided, not defaulted. Note this is **not** a side-effect-free-import violation: the timer starts in the explicit `attachPower` opt-in, never at module top level.
+- **`getStatus` alias-safety comment is vacuous.** The comment "Read all input values first (alias-safe: out may be the same object as an input)" (`b2824e3d8:packages/power/src/power.ts:125`) guards an aliasing case that cannot occur: `getStatus(out)` has no object _input_ — it reads module-closure primitives (`cachedLevel`, etc.) into locals, and `out` cannot alias a closure variable. The locals dance is harmless but the comment overstates the invariant. Trim the comment to match reality (the convention genuinely bites for a backend that reads from another object, which the web backend does not).
+- **Signal count grew 5 → 10 with no `enablePowerSignals` gate.** `createPower` now allocates 10 signals (`b2824e3d8:packages/power/src/power.ts:70-81`) where base allocated 5, with cost assumed at `createPower`/`attachPower` rather than behind the documented `enable*` opt-in. Pre-release, defensible ("10 cheap signals"), but it is a silent departure from the signal-group convention and is charter Open direction 4 — decide rather than drift.
 
-1. **Suspend/resume ownership vs `@flighthq/lifecycle`.** Unresolved across two reviews. `power` wires `onSuspend`/`onResume` to web `freeze`/`resume` (a _tab-lifecycle_ event), while `lifecycle` is mapped as owning app active/inactive/background/resume/pause. Proposed line (from the status doc): OS machine-sleep → `power`; app/tab lifecycle → `lifecycle`. This is a cross-package boundary decision and the most important thing the charter should settle.
-2. **Idle delivery: poll vs push.** The poll is a deliberate, guarded design (the Signal API has no "listener-count changed" hook), but the interval still fires `getSystemIdleState` at attach to seed `lastIdleState` even when no listener is connected, and the timer runs unconditionally after attach. Is polling the blessed model, or should idle delivery be push-only from native backends (matching how every other power signal is delivered)? Rust already omits the poller — a push-only model would make TS and Rust converge.
-3. **Thermal/idle asymmetry.** `getPowerSystemIdleState` has a dedicated backend method, but `getPowerThermalState` reads through `getStatus(_scratch).thermalState`. Is thermal part of the hot status snapshot (a deliberate choice, since it changes slowly and games poll it per-frame) or should it get its own `getThermalState()` backend method for symmetry with idle? Decide and document.
-4. **`enablePowerSignals` group gate.** Should `power` follow the documented opt-in signal-group convention, or is "10 cheap signals, cost assumed at attach" the blessed exception? The status doc argues the latter; the charter should ratify it so the next agent does not re-litigate.
-5. **Sentinel-everywhere native fields.** Thermal/health/low-power currently return sentinels on every backend. Is shipping a contract ahead of any real implementation the intended posture (seam-first, fill later via native addons / `host-tauri` / `host-capacitor`), or should the charter scope these out until a backend can serve them? Naming the intent prevents a future reviewer from reading the sentinels as an incomplete implementation rather than a deliberate seam.
+## Contract / fork checks (the parts that pass)
+
+- **Composition / bedrock** — pass. The change adds fields and backend methods to one cohesive cell; it does not fuse subjects or bundle config-gated feature branches. No decomposition smell introduced by the delta.
+- **Tree-shaking** — pass. `index.ts` is still the single `export * from './power'` root; `package.json` keeps `"sideEffects": false`; no eager registration, no module-top-level side effect added (the lazy `getPowerBackend` default and module state at file bottom are unchanged in shape).
+- **Registry vs closed union** — n/a. No `kind` switch in this cell; the growing surface is a backend _trait_, which is the blessed seam-fill pattern, not a closed union.
+- **Subject triad / plurality** — n/a. No format codecs or backends mis-homed in this package; concrete native backends live in `host-electron`.
+- **Rust mirror** — `flighthq-power` is named consistently but, per the status doc, is **uncompiled** in the bundle and is out of scope for this TS merge gate; its intentional divergences are unrecorded in the conformance map (a separate, cross-package item).
+
+## Charter fit
+
+The charter is an unblessed DRAFT (only **What it is** and _proposed_ North star / Boundaries are filled; **Decisions** empty). With no blessed decision to violate, there are no charter contradictions — but the charter's own Open directions (suspend/resume vs `lifecycle`, poll-vs-push idle, thermal/idle asymmetry, `enablePowerSignals`, sentinel-everywhere posture, Rust bookkeeping) are exactly the design questions this delta touches and does not settle. They remain for the user, not for the merge.
+
+## Bottom line
+
+The design is mergeable; **this branch is not**. Restore the `@flighthq/types` power header (the four new type modules + the widened `PowerStatus`/`PowerBackend`/`Power` in `Power.ts` + barrel exports), confirm the package typechecks and tests pass, then the secondary findings are small cleanups and design-fork notes — none of which block a merge once the build is green.

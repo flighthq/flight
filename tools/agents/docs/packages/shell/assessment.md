@@ -1,41 +1,41 @@
 ---
 package: '@flighthq/shell'
-updated: 2026-06-24
+updated: 2026-06-25
 basedOn: ./review.md
 ---
 
 # Assessment: @flighthq/shell
 
-The `builder-67dc46d64` pass already landed all of Bronze and the bulk of Silver (options objects, `openShellPathResult`, the Windows `.lnk` family, batch trash, the URL-scheme allowlist, and the matching `host-electron` wiring + tests). What remains in the roadmap is either a design call the charter has not settled, a cross-package/cross-crate item, or a small within-package tidy. The package is `solid` (90/100); the distance to `authoritative` is mostly parked work, not sweep-safe work — so `Recommended` is short by design.
+This assessment reasons over the **merge-gate** review (`./review.md`, 2026-06-25), which judged the `integration-b2824e3d8` delta against the approved floor `origin/main (eb73c3d74)`. The headline finding governs everything below: the delta **does not compile in this head** — `shell.ts`/`shell.test.ts` reference four `@flighthq/types` shapes and four `ShellBackend` methods that the same head's `packages/types/src/Shell.ts` does not declare. The expanded-surface _design_ is sound; the _integration_ is incomplete.
+
+`Recommended` is strictly sweep-safe: within `@flighthq/shell` (plus its `@flighthq/types` header, where its types already belong), additive, non-breaking, no open design decision. The blocker itself is **not** a Recommended sweep — it is a must-fix-before-merge directive routed to the integration worker via `outgoing/integration/shell.md`, because the missing pieces live in `@flighthq/types` and `@flighthq/host-electron`, outside this package, and gate the build rather than improving it.
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/shell` (+ its `@flighthq/types` header, which is where its types already live), no cross-package coupling, no breaking change, no open design decision.
+- **Land the URL-safety security note already present in source as a durable comment, kept in sync.** `b2824e3d8:packages/shell/src/shell.ts` carries the footgun note on `setShellUrlSchemeAllowlist` (L117-120) and `writeShellShortcutLink` (L137-138). Once the package compiles, confirm the `openExternalUrl` callsite (L87-88) also points a reader at `setShellUrlSchemeAllowlist` / `isShellUrlAllowed` so the seam's purpose is discoverable from the highest-frequency entry point. Within-package, additive prose, no behavior change. — review.md › What is sound (URL-scheme safety seam)
 
-- **Alphabetize the new interface fields in `@flighthq/types/Shell.ts`.** `ShellOpenPathOptions` (`arguments` before `application`) and `ShellShortcutLink` (`target` last) are out of field order. A pure `types-layout` field-order tidy on types this package owns; no behavior change. (review.md › Contract & docs fit › Minor / candidate notes)
-- **Add the URL-safety security note to the `openExternalUrl` source.** Document the attacker-controlled-URL footgun and point at `setShellUrlSchemeAllowlist` / `isShellUrlAllowed`, so the seam's purpose is discoverable at the callsite. Within-package, additive prose. (Silver roadmap › "Docs note on the security posture of `openExternalUrl`")
-- **Refresh the stale `@flighthq/shell` Package Map line.** It still reads "open external URLs/paths, reveal in folder, move to trash, beep" and predates the shortcut-link family, batch trash, the `openPathResult` error channel, and the URL-scheme allowlist. Extend it to mention Windows shortcut links and the URL-safety seam. (Admin-doc tidy, no code; user's gate on the exact wording.) (review.md › Docs-fit)
+- **Refresh the stale `@flighthq/shell` Package Map line.** The codebase-map entry still reads "open external URLs/paths, reveal in folder, move to trash, beep" and predates the shortcut-link family, batch trash, the `openPathResult` error channel, and the URL-scheme allowlist. Extend it to mention Windows shortcut links and the URL-safety seam. Admin-doc tidy, no code; the user gates the exact wording. — review.md › Charter contradictions / docs-fit
 
 ## Backlog
 
-Parked: each waits on a charter Open direction, crosses a package/crate boundary, or is larger than a sweep.
+Parked: each waits on the build being fixed first, or on a charter Open direction, or crosses a package/crate boundary.
 
-- **`*Result` error-fidelity siblings (`moveItemsToTrashResult`, `writeShellShortcutLinkResult`).** Additive and low-risk in isolation, but whether bare-boolean is acceptable for batch trash and shortcut write — or the `*Result` sibling is part of "done" — is the **error-fidelity boundary** design call (Open direction 3). Parked until that is settled; building both siblings speculatively would pre-empt the decision. (Gold roadmap › full error-fidelity model)
-- **Wire the inert `openShellPath` open-with options (`application`, `arguments`).** The types are accepted but no backend consumes them; honoring them needs a host that implements `open -a` / Windows-verb behavior, which is cross-package (`host-electron` and/or a second host) and cannot be validated within `shell` alone. Parked as a Gold cross-package item. (Gold roadmap › complete the open-with surface)
-- **Path-prefix allowlist for `openShellPath`.** A path-side twin of the URL-scheme seam for hosts embedding untrusted content. Requires an OS-path-canonicalization design and a stated threat model — a real design pass, not a sweep — and depends on the **path-safety posture** Open direction (Open direction 4). (Gold roadmap › allowlist hardening)
-- **Second, non-Electron host adapter (Tauri / `host-opener` / a fake).** Proves the seam is not Electron-shaped and exercises the currently-inert `openPath` options. Lives in the host-package track, not in `shell`; and whether it is part of `authoritative` for this cell is itself the **second-host-validation** Open direction (Open direction 5). Cross-package — parked. (Gold roadmap › a second host)
-- **Rust port `flighthq-shell`.** The charter declares `crate: flighthq-shell` but no `crates/` tree exists in this worktree; the port is unstarted. Correctly deferred to follow the TS API freeze, and a separate-crate effort with its own native-backend crate choices (`opener`/`trash`/`mslnk`). A strong first-port candidate (value/side-effect leaf), but cross-crate and gated on the naming decision below — parked. (review.md › Gaps; Gold roadmap › Rust-port parity)
+- **`*Result` error-fidelity siblings (`moveItemsToTrashResult`, `writeShellShortcutLinkResult`).** Additive in isolation, but whether bare-boolean is acceptable for batch trash and shortcut write — or the `*Result` sibling is part of "done" — is the **error-fidelity boundary** design call (Open direction 3). Parked until settled and until the base surface compiles. — review.md › What is sound; charter Open direction 3
+- **Wire the inert `openShellPath` open-with options (`application`, `arguments`).** Accepted by the (unlanded) `ShellOpenPathOptions` type but no backend consumes them; honoring them needs a host implementing `open -a` / Windows-verb behavior — cross-package, cannot be validated within `shell`. Parked. — charter Open direction 5
+- **Path-prefix allowlist for `openShellPath`.** A path-side twin of the URL-scheme seam for untrusted-content hosts; needs OS-path-canonicalization design and a stated threat model — a design pass, not a sweep. Gated on the **path-safety posture** Open direction (4). — charter Open direction 4
+- **Second, non-Electron host adapter.** Proves the seam is not Electron-shaped and exercises the currently-inert `openPath` options. Lives in the host-package track; whether it is part of `authoritative` for this cell is itself Open direction 5. Cross-package — parked. — charter Open direction 5
+- **Rust port `flighthq-shell`.** Charter front matter declares `crate: flighthq-shell`; no `crates/` tree exists in this worktree. Correctly deferred to follow the TS API _freeze_ — and the freeze cannot happen while the head does not compile. A strong first-port candidate (value/side-effect leaf, `opener`/`trash`/`mslnk`), but cross-crate and gated on both the build fix and the export-naming decision. — review.md › Carry-over context; charter Open direction 1
 
 ## Approved
 
-_None yet — approval is the user's verbal gate._
+_None. Approval is the user's verbal gate; nothing is swept in here automatically._
 
-## Notes for the charter (Open directions)
+## Notes for the charter's Open directions
 
-These are design forks / cross-package calls the review surfaced; they belong in `charter.md › Open directions`, not in `Recommended`. Recorded here for the next direction session — this assessment does **not** edit the charter.
+Design forks / cross-package calls the review surfaced. They belong in `charter.md › Open directions`, not in `Recommended`. Recorded here for the next direction session; this assessment does not edit the charter.
 
-1. **Export-naming convention** — namespace every export with the `shell` word, or keep the Electron-canonical un-prefixed names (`openExternalUrl`, `showItemInFolder`, `moveItemToTrash`) for the high-frequency four? A public-API fork that should be settled and recorded as a Decision _before_ the Rust port mirrors a frozen surface.
+1. **Export-naming convention** — namespace every export with the `shell` word, or keep the Electron-canonical un-prefixed names (`openExternalUrl`, `showItemInFolder`, `moveItemToTrash`) for the high-frequency four? This asymmetry is a **base** property (those four names pre-date the delta), so it is a standing fork, not a delta regression — but it should be recorded as a Decision before any Rust port mirrors a frozen surface.
 2. **`getFileIcon` scope** — in-scope here (pulling an `ImageSource` / native-image dependency into a thin seam, against bundle-size discipline) or deferred to a dedicated `@flighthq/nativeimage` cell? Crosses a package boundary; the roadmap leans defer.
-3. **Error-fidelity boundary** — is bare-boolean acceptable for batch trash and shortcut write, or is the `*Result` (OS-error-string) sibling part of the package's definition of done? Gates the first Backlog item.
-4. **Path-safety posture** — does the security boundary stop at URL schemes, or does `openShellPath` need a path-prefix allowlist for untrusted-content hosts? Defines the package's threat model and gates the path-allowlist Backlog item.
-5. **Second-host validation as a boundary** — is a non-Electron host adapter part of `authoritative` for this cell, or owned by the host-package track and out of `shell`'s scope?
+3. **Error-fidelity boundary** — bare-boolean vs `*Result` (OS-error-string) siblings for batch trash and shortcut write. Gates the first Backlog item.
+4. **Path-safety posture** — does the security boundary stop at URL schemes, or does `openShellPath` need a path-prefix allowlist? Defines the threat model and gates the path-allowlist Backlog item.
+5. **Second-host validation as a boundary** — is a non-Electron host adapter part of `authoritative` for this cell, or owned by the host-package track?
