@@ -121,6 +121,8 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [npm script naming](conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, why no word may crowd the subject slot, collapse aliases (omit subject → fan over subjects; bare name → `dev:`), `:baseline` as write-mode, and the `smoke` / `parity` / `regression` render-test vocabulary.
 - [packaging & publishing](packaging.md) — the published package shape. Policy is enforced by `npm run packages:check`, not memory.
 - [bundle size](bundle-size.md) — the `npm run size` command surface and the import-size rules.
+- [testing conventions](conventions/testing.md) — full testing rules: file/structure conventions, WebGL mock specifics, out-parameter aliasing, and when root-level integration tests are appropriate.
+- [package map](packages/map.md) — full per-package descriptions and API surface detail. Consult when you need more than the compact summary in the Package Map section above.
 - [Rust port](rust/index.md) — the Rust port of the SDK (the `rust` worktree): how TS maps to Rust, the port-specific decisions, and the parity / conformance / mixing vocabulary. Start here for any Rust task. Sub-docs: [parity](rust/parity.md) (the matrix differ) and [conformance](rust/conformance.md) (Rust↔TS fidelity + the divergence map).
 - [types layout & kind identity](conventions/types-layout.md) — how `@flighthq/types` is organized (one concept per file, entity quartets, open contracts not closed unions, filename = type name) and the string-kind identity model (no `Symbol()` kinds; string registries; versioned scene migration). Read before adding types or touching kind registration.
 - [render backend support](render-backend-support.md) — what actually renders on each backend (canvas/dom/gl/wgpu) **today** and the known gaps from the [render architecture](render-architecture.md) target: blend modes (gl = Normal+Add only, wgpu = none), stroke joins + per-bitmap smoothing + strikethrough not on gl/wgpu, per-instance tint gl/wgpu-only, orthographic blank on wgpu, punctual lights unwired. Read before assuming a feature works on a backend or before scoping a functional test's `renderers`.
@@ -177,98 +179,38 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation and ow
 
 ## Testing
 
-- One test file per source file, colocated in `src/`, named `*.test.ts`.
-- `describe` blocks are alphabetized and mirror each file's exported function or object names.
-- Test fixtures should use constructors and public helpers instead of object literals for SDK entity types unless the test is intentionally about structural compatibility with a `*Like` input.
-- Vitest is configured with `globals: true`. `vi`, `describe`, `it`, and `expect` are available in test files without importing.
-- Browser-facing packages (`render-canvas`, `render-webgl`, `render-dom`, etc.) use the `jsdom` test environment.
-- `vitest-webgl-canvas-mock` mocks `'webgl'` and `'experimental-webgl'` contexts only, not `'webgl2'`. Tests in `render-webgl` that need a WebGL2 render state must mock `canvas.getContext` to return a fake `WebGL2RenderingContext`.
-- While iterating, prefer the narrowest meaningful Vitest run: a touched test file, a package workspace, or a Vitest project filter. Broaden only after the local change is understood. Broad runs are confidence gates; focused tests are the normal editing loop. Do not use broad test runs as a substitute for reading the nearby source and tests.
-- Run a package's tests with `npm run test --workspace=packages/<name>`.
+- One test file per source file, colocated in `src/`, named `*.test.ts`. `describe` blocks alphabetized, mirror exported names.
+- Use constructors over literals for SDK entity types; use literals only for `*Like` inputs.
+- Run `npm run test --workspace=packages/<name>` for a single package. Prefer the narrowest meaningful Vitest run while iterating.
 - When changing an `out`-parameter function, test both a distinct output object and the aliased case where `out` is also an input.
-- There are no standing "API" or "integration" test categories. Cross-package wiring, the SDK barrel, and public import paths are already exercised far more thoroughly by the functional/example/reference visual suites — every scene builds and renders through `@flighthq/sdk` — and by `npm run packages:check` / `npm run api`, which police export shape directly. A barrel smoke test is a strictly weaker version of work CI already does on every PR.
-- Put unit behavior in a colocated `*.test.ts` in the package that owns it, where `exports:check` binds it to an exported function and a developer changing that code will see it. A compiler-enforced property (e.g. the `Node<Traits>` invariance law) belongs in a colocated test too, asserted with `// @ts-expect-error` — `tsc -b` typechecks `src/*.test.ts`, so the failing-compile case is the assertion.
-- Reserve a root-level integration test only for a headless, logic-only flow that spans packages and produces no visual output (loader orchestration, resource lifecycle, serialization round-trips) — something the visual suites genuinely cannot reach. Do not recreate a generic api/integration bucket; if a test only proves "the surface compiles" or restates a single package's unit behavior, delete it.
+- No standing API/integration test categories — cross-package wiring is covered by the functional/example suites and `npm run packages:check` / `npm run api`.
+
+See [testing conventions](conventions/testing.md) for the full rules, WebGL specifics, and when to use root-level integration tests.
 
 ## Package Map
 
-- `@flighthq/types`: shared interfaces, kind symbols, and cross-package type contracts. This is the codebase's header layer — all public API shapes live here.
-- `@flighthq/entity`: entity/runtime primitives used by higher-level packages.
-- `@flighthq/geometry`: rectangles, vectors, matrices, typed-array capacity helpers, and pools.
-- `@flighthq/math`: scalar math utilities — constants (EPSILON, TAU, DEG_TO_RAD), clamping/saturation, interpolation (lerp, inverseLerp, remap, smoothStep, smootherStep, damp, moveTowards, pingPong, repeat, lerpAngle), angles (degToRad, radToDeg, normalizeAngle, deltaAngle), rounding/quantization (roundTo, floorTo, ceilTo, fract, euclideanMod), comparison (approxEqual, approxEqualRelative, approxZero), power-of-two family (nextPowerOfTwo, previousPowerOfTwo, isPowerOfTwo, ceilPowerOfTwo, floorPowerOfTwo, nextMultipleOf), number theory (gcd, lcm, factorial, isEven, isOdd, hypot2, sign, quantize), seeded random and convenience helpers (randomRange, randomInt, randomBool, randomSign), random distributions (randomGaussian, randomGaussianPair, randomOnUnitCircle, randomInsideUnitDisc, randomOnUnitSphere, pick, shuffle, shuffleInPlace, randomWeighted), deterministic hashing (hashUint32, hashCombine, hash2D, hash3D, createRandomSourceFromHash), and statistics (mean, median, variance, standardDeviation, weightedAverage). Pure free functions, no allocation, tree-shakable.
-- `@flighthq/node`: graph hierarchy, transforms, bounds, appearance, and invalidation.
-- `@flighthq/displayobject`: Flash/OpenFL-style display objects such as bitmaps, shapes, containers, masks, stages, and videos.
-- `@flighthq/text`: text display objects — single-format `TextLabel` and multi-format `RichText` (built on the text-layout spine, with a lazily-ensured layout cache), plus `NativeText`, the platform-rendered text field measured outside the spine by the host engine. ("native-rendered text" is a property of the display object, not a package boundary — the `native` namespace is reserved for the platform/OS-integration suite below.)
-- `@flighthq/sprite`: sprite/tilemap/quad-batch graph for atlas-based batch rendering.
-- `@flighthq/scene`: 3D world graph for spatial scene management. A doorway for future development; the road is mostly untaken and the package is not yet built out.
-- `@flighthq/render`: renderer registration, render state/queue, render node data, update pipeline, transform/color propagation. Image render caching lives in the renderer packages (`imageRenderCache`, `canvasRenderCache`, `webglRenderCache`, `domRenderCache`), not in a standalone package.
-- `@flighthq/render-canvas`, `@flighthq/render-dom`, `@flighthq/render-webgl`: concrete renderers.
-- `@flighthq/clip`: hard geometric clip regions as plain data — constructors (`createClipRegionFrom*` for rectangles, paths, rounded rectangles, ellipses, circles, and raw contours), composition (`intersectClipRegions`, `unionClipRegions`), queries (`clipRegionContainsPoint`, `clipRegionIntersectsRectangle`, `clipRegionContainsRectangle`), transform (`transformClipRegion`; axis-aligned matrices preserve scissor-eligibility, rotation/skew promotes to a quad contour), utilities (`cloneClipRegion`, `copyClipRegion`, `getClipRegionBounds`, `isClipRegionEmpty`, `isClipRegionRectangular`, `clipRegionsEqual`, `normalizeClipRegion`, `invalidateClipRegion`), and a pool bracket (`acquireClipRegion`/`releaseClipRegion`). No rendering; rendering is provided by the `displayobject-<backend>` clip modules.
-- `@flighthq/filters`: blur, glow, bevel, drop-shadow, color-matrix, and convolution filters as plain data descriptors with explicit Canvas/CSS and multi-pass WebGL backends. Not OpenFL-style filter objects.
-- `@flighthq/filters-gl`: GPU leaf-shader set for WebGL 2 — one `apply*FilterToGl` per filter descriptor, shared `applyGlBlitPass`/`applyGlTintPass` compositing primitives, and `clearGlFilterProgramCache` for deterministic GPU-resource release. This package is a collection of leaf shaders, not a chain applier; orchestration and scratch-target allocation belong to the caller (see `get*FilterGlScratchCount` helpers). Kernels are bounded: convolution ≤ `GL_CONVOLUTION_MAX_KERNEL_SIZE × GL_CONVOLUTION_MAX_KERNEL_SIZE` (7×7), median ≤ `GL_MEDIAN_MAX_RADIUS` (2). A chain dispatcher (`applyFiltersToGl`) is out of scope here by the tree-shaking rule; if needed, it belongs in `render-gl` or a `filters-gl-chain` neighbor.
-- `@flighthq/interaction`: hit testing, pointer dispatch, and object overlap detection.
-- `@flighthq/materials`: the 3D material system — a full PBR material taxonomy (unlit, Blinn-Phong, metallic-roughness PBR with clearcoat/anisotropy/emissive/transmission, depth) plus color-transform. Built (the 20-material taxonomy, 922 tests); canonical design in [3d-materials-architecture.md](3d-materials-architecture.md).
-- `@flighthq/signals`: strictly-typed signals and slots for event dispatching. Signals support multiple listeners, priority, and cancellation. The package is effectively always present in the SDK; specific signal groups are opt-in via `enable*` functions defined in the owning package. Signals is fundamental infrastructure and should have few dependencies.
-- `@flighthq/image`: image resources — pixel sources, MIME detection, and constructors (from canvas/ImageBitmap/element, load from URL/ArrayBuffer/Base64/Blob). (Split out of the former `@flighthq/resources`.)
-- `@flighthq/font`: font and font-resource types and constructors. (Split out of `resources`.)
-- `@flighthq/video`: video resources and URL constructors. (Split out of `resources`.)
-- `@flighthq/audio`: audio resources, URL constructors, and the shared audio context. (Split out of `resources`.)
-- `@flighthq/textureatlas`: texture atlases — regions, UVs, and constructors over image resources (depends on `@flighthq/image`). (Extracted from `resources`.)
-- `@flighthq/tileset`: tilesets — uniform-grid texture atlases and constructors from images (depends on `@flighthq/textureatlas`). The former `@flighthq/resources` package is eliminated; its contents now live in these six packages.
-- `@flighthq/loader`: batch queue for loading multiple resources in sequence or parallel.
-- `@flighthq/spritesheet`: animation layer built on raw resources — a logical package providing sprite-based animation, analogous in structure to `particles`.
-- `@flighthq/particles`: particle emitter simulation — `ParticleEmitter`, `ParticleEmitterConfig`, `createParticleEmitterConfig`, `updateParticleEmitter`, `emitParticleBurst`, `prewarmParticleEmitter`, force fields (`applyParticleForces`), colliders (`applyParticleCollisions`), and curve helpers (`particleColorCurveFromKeyframes`, `particleCurveFromKeyframes`, `sampleParticleCurve`).
-- `@flighthq/particles-formats`: import/export of particle emitter configs to and from industry-standard authoring-tool formats — Particle Designer plist, Spine 4.x particle JSON, Unity Shuriken JSON. Full round-trip via `*Document` models, honest `warnings[]` channel, curve baking, and unified auto-detection via `detectParticleFormat`/`parseParticleConfig`. Neighbor of `@flighthq/particles` (same relationship as `@flighthq/spritesheet-formats` to `@flighthq/spritesheet`).
-- `@flighthq/timeline`: MovieClip-style keyframe and timeline support.
-- `@flighthq/timeline-spritesheet`: timeline implementation backed by spritesheet animation internally.
-- `@flighthq/tween`: tween managers, tweens, and timers.
-- `@flighthq/easing`: easing functions for use with tween or any animation system.
-- `@flighthq/input`: maps raw system inputs to a normalized internal representation, feeding into interactions, signals, and other consumers.
-- `@flighthq/textinput`: supports user input editing within a text primitive.
-- `@flighthq/textlayout`: renderer-agnostic glyph layout for rich text composition.
-- `@flighthq/text-shaping` _(designed, not yet built — 2026-06-22)_: the text **shaper seam** — `registerTextShaper` over a swappable `TextShaper` backend that turns a text run into shaped glyphs (ids, advances, offsets, clusters). Generalizes (and replaces) the string→width measure provider `text-layout` consumes today: width is `Σ advances`. Two backend tiers — a measure-only default (`measureText`) that supports layout + Canvas-rendered text, and a full-glyph shaper (HarfBuzz, opt-in as a ~1MB wasm backend so it stays off the default bundle) required for any GPU/WebGPU text. Correct international text (Arabic/Indic/kerning/ligatures) needs the full-glyph tier. This seam is what lets every non-Canvas backend render text, in TS and in the Rust port alike; the Rust port mirrors it with `flighthq-text-shaping` (rustybuzz backend). See [rust/text](rust/text.md) for the full stack design.
-- `@flighthq/application`: optional package providing a main loop, application lifecycle events, and the **windowing API** — `ApplicationWindow` (size/position/state + signals), web event wiring (`attach*`/`detach*`), and window-control commands (title, position, size, minimize/maximize/restore, fullscreen, always-on-top, constraints, `openWindow`, close-with-veto via `onCloseRequest`) over a swappable `WindowBackend` (web default; native hosts register their own), matching the platform suite's backend-seam pattern.
-- `@flighthq/log`: leveled, structured, capture-aware logging. Emit side (`log`, `logError/Warn/Info/Debug/Verbose`, `logWith` context variants, `logAssert`, `logOnce`) plus a full listener side: multi-sink fan-out (`addLogSink`/`removeLogSink`/`clearLogSinks`), global and per-channel level gates, `LogContext`-bound contextual loggers, pluggable formatters (`createJsonLogFormatter`/`createTextLogFormatter`), a console-capture sink, an in-memory ring-buffer sink, and sink combinators (buffered/filter/fanout/rate-limited/sampled). Not Canvas/DOM-coupled. Tree-shakes: the emit-only import carries only the gate check and the `LogLevel` enum.
-- `@flighthq/media`: audio and video playback channels.
-- `@flighthq/surface`: pixel-level manipulation of `ImageSource` values — read from or generate image data. Not used internally by renderers; user-facing.
-- `@flighthq/sdk`: convenience barrel for applications and examples.
+Core: `@flighthq/types` (header layer — all shared types), `@flighthq/entity` (entity/runtime primitives), `@flighthq/geometry` (rectangles, vectors, matrices, pools), `@flighthq/math` (scalar utilities — interpolation, angles, random, hashing, statistics; pure free functions), `@flighthq/node` (graph hierarchy, transforms, bounds, appearance), `@flighthq/signals` (typed signals and slots with priority and cancellation).
 
-### Platform Integration Suite
+Scene graph: `@flighthq/displayobject` (bitmaps, shapes, containers, masks, stages, videos), `@flighthq/text` (`TextLabel`, `RichText`, `NativeText`), `@flighthq/sprite` (sprite/tilemap/quad-batch for atlas rendering), `@flighthq/scene` (3D world graph; early stage), `@flighthq/clip` (geometric clip regions as plain data — constructors, composition, queries, transform, pool bracket), `@flighthq/interaction` (hit testing, pointer dispatch, overlap detection).
 
-Host/OS integration so applications need no escape hatch out of the SDK. Each capability is a self-contained cell: flat free functions over a swappable `*Backend` (defined in `@flighthq/types`). A web/DOM backend is always lazily available, so every function works on the web; a native host (Electron, Tauri, Capacitor, a C/C++ shell) replaces it via the capability's `set*Backend`. "Electron support" is one backend, not a coupling. Two shapes: **command** capabilities expose flat functions + `get*Backend`/`set*Backend`/`createWeb*Backend`; **event** capabilities expose an entity of signals with `create*`/`attach*`/`detach*`/`dispose*` (mirroring `@flighthq/application`'s window wiring). Web backends guard every API and return sentinels (`null`/`false`/`-1`/`''`/`[]`/no-op) when unavailable rather than throwing.
+Rendering: `@flighthq/render` (registration, render state/queue, update pipeline, transform/color propagation), `@flighthq/render-canvas` / `@flighthq/render-dom` / `@flighthq/render-webgl` (concrete renderers), `@flighthq/filters` (blur/glow/bevel/drop-shadow/color-matrix/convolution as plain data descriptors), `@flighthq/filters-gl` (GPU leaf shaders for WebGL 2; one `apply*FilterToGl` per descriptor), `@flighthq/materials` (PBR material taxonomy — unlit, Blinn-Phong, metallic-roughness, depth, color-transform), `@flighthq/surface` (pixel-level `ImageSource` manipulation; user-facing).
 
-- `@flighthq/platform`: root identification seam — OS name, desktop/mobile/web kind, arch, locale, touch.
-- `@flighthq/clipboard`: system clipboard read/write (text, HTML).
-- `@flighthq/dialog`: file open/save and message/confirm/prompt dialogs.
-- `@flighthq/filesystem`: file read/write/list/stat and standard directory paths (web backend over OPFS).
-- `@flighthq/notification`: OS notifications and permission.
-- `@flighthq/shell`: open external URLs/paths, reveal in folder, move to trash, beep.
-- `@flighthq/menu`: native application-menu and context-menu descriptors (native host required to realize).
-- `@flighthq/tray`: system tray / menu-bar icon (icon, tooltip, title, context menu, click events). The application/dock badge lives in `@flighthq/app`, not here.
-- `@flighthq/shortcut`: global OS hotkeys (native host required).
-- `@flighthq/screen`: display enumeration, work area, scale factor.
-- `@flighthq/storage`: synchronous persistent key/value (web backend over localStorage).
-- `@flighthq/device`: static device/OS identity — model, manufacturer, OS, memory, safe-area insets. Battery is _not_ here; it is a live concern owned by `@flighthq/power`.
-- `@flighthq/share`: native share sheet.
-- `@flighthq/haptics`: vibration and impact/notification/selection feedback.
-- `@flighthq/geolocation`: current position and position watches.
-- `@flighthq/webcam`: take photo / pick image.
-- `@flighthq/statusbar`: mobile status-bar style, visibility, color.
-- `@flighthq/network` (event): connectivity status and online/offline signals.
-- `@flighthq/power` (event): battery/charging status, low-power and keep-awake.
-- `@flighthq/lifecycle` (event): app active/inactive/background, resume/pause, back button.
-- `@flighthq/keyboard` (event): on-screen keyboard visibility/height (type `SoftKeyboard`, avoiding the DOM `Keyboard`).
-- `@flighthq/sensors` (event): accelerometer, gyroscope, device orientation.
+Resources: `@flighthq/image`, `@flighthq/font`, `@flighthq/video`, `@flighthq/audio`, `@flighthq/textureatlas`, `@flighthq/tileset`, `@flighthq/loader` (batch queue).
 
-Application/process layer (host shell integration beyond a single window):
+Animation/simulation: `@flighthq/spritesheet` (sprite-based animation), `@flighthq/particles` (emitter simulation — spawn, lifetime, forces, colliders, curves), `@flighthq/particles-formats` (Particle Designer / Spine / Unity Shuriken import-export), `@flighthq/timeline` (MovieClip-style keyframes), `@flighthq/timeline-spritesheet`, `@flighthq/tween`, `@flighthq/easing`.
 
-- `@flighthq/app`: application identity (name/version/locale), control (quit/relaunch/focus), single-instance lock + `onSecondInstance`, the canonical app badge (`setAppBadgeCount`) + dock badge/menu/bounce, and app events (`onActivate`, `onOpenFile`).
-- `@flighthq/protocol`: custom URI-scheme / deep-link registration plus an `onOpenURL` handler entity.
-- `@flighthq/updater` (event): auto-update lifecycle — checking/available/progress/downloaded/error signals plus check/download/quit-and-install commands.
-- `@flighthq/ipc`: inter-process messaging — `sendIpcMessage`, `invokeIpc`, `onIpcMessage` over a host channel backend (for split-process hosts like Electron main↔renderer).
+Input/text: `@flighthq/input` (raw → normalized input), `@flighthq/textinput` (user editing), `@flighthq/textlayout` (renderer-agnostic glyph layout), `@flighthq/text-shaping` _(designed, not yet built)_ (shaper seam — `registerTextShaper` over a swappable `TextShaper` backend).
 
-Inbound host events are delivered through the same seam: command-style capabilities that also receive events expose a flat `on*(listener): () => void` over a backend `subscribe*` method — `onMenuSelect`, `onTrayEvent` (+ `setTrayContextMenu`), `onNotificationClick`/`onNotificationAction`, `onScreenChange`, power `onSuspend`/`onResume`. The window backend delivers OS-originated changes by mutating the `ApplicationWindow` and emitting its signals directly (it owns the `win`↔OS-window mapping from `openWindow`); native window backends additionally implement icon/opacity/progress/attention/skip-taskbar/menu-bar/parent controls.
+Application: `@flighthq/application` (main loop, lifecycle, windowing API over a swappable `WindowBackend`), `@flighthq/log` (leveled logging with sinks, formatters, and combinators), `@flighthq/media` (audio/video playback), `@flighthq/sdk` (convenience barrel).
 
-Host backends (the concrete adapters that fill the seams) are a distinct package class — they carry a host dependency, are not tree-shakable, and are named `host-<runtime>`:
+**Platform Integration Suite** — flat free functions over a swappable `*Backend`; web backend is always available, native hosts replace via `set*Backend`. Command capabilities: `get*Backend`/`set*Backend`/`createWeb*Backend`. Event capabilities: signal entity with `create*`/`attach*`/`detach*`/`dispose*`. Web backends return sentinels rather than throwing.
 
-- `@flighthq/host-electron`: Electron main-process implementation of the window/app/dialog/clipboard/menu/tray/shortcut/screen/power/notification/shell/protocol/updater/ipc seams. The consumer passes the `electron` module explicitly — `registerElectronBackends(electron)` — typed against a local `ElectronApi` interface (the exact Electron surface Flight depends on), so the package needs no `electron` dependency and is unit-testable with a fake. Each `createElectron*Backend(electron)` is also exported for granular use. **Not** re-exported from `@flighthq/sdk` (it is an adapter you install in the host process, not app-facing API). Mobile seams and `filesystem` (node `fs`) are out of scope here — a future `host-capacitor` / a node-fs injection covers those. Future siblings: `host-tauri`, `host-capacitor`.
+OS/device: `@flighthq/platform` (OS identity), `@flighthq/screen` (displays), `@flighthq/device` (device info), `@flighthq/storage` (persistent KV), `@flighthq/network`, `@flighthq/power`, `@flighthq/lifecycle`, `@flighthq/keyboard`, `@flighthq/sensors`.
+
+UI/shell: `@flighthq/clipboard`, `@flighthq/dialog`, `@flighthq/filesystem`, `@flighthq/notification`, `@flighthq/shell`, `@flighthq/menu`, `@flighthq/tray`, `@flighthq/shortcut`, `@flighthq/share`, `@flighthq/haptics`, `@flighthq/geolocation`, `@flighthq/webcam`, `@flighthq/statusbar`.
+
+App/process: `@flighthq/app` (identity, badge, dock), `@flighthq/protocol` (deep links), `@flighthq/updater`, `@flighthq/ipc`.
+
+Host backends (`host-<runtime>` — not tree-shakable, not re-exported from `@flighthq/sdk`): `@flighthq/host-electron` (passes `electron` explicitly via `registerElectronBackends(electron)`; typed against a local `ElectronApi` interface).
+
+See [package map](packages/map.md) for full per-package detail and API surface.

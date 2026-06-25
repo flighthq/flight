@@ -189,5 +189,9 @@ packages/*/src/wasm/*_bg.wasm.d.ts
 /outgoing/
 /tools/agents/docs/assignments/
 
+# flat worker status drop (distributed into packages/<name>/status.md on ingest; not committed)
+/tools/agents/docs/status/
+
 # generated review/audit reports (ephemeral; ingested into packages/, then discarded)
 /reports/
+/tools/agents/docs/reviews/
