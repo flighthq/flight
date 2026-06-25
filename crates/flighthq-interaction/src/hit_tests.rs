@@ -54,10 +54,10 @@ pub fn find_graph_hit_target(
         }
     }
 
-    if let Some(hit_test_self) = get_hit_test_point(get_display_object_kind(arena, source)) {
-        if hit_test_self(arena, source, x, y, shape_flag) {
-            return Some(source);
-        }
+    if let Some(hit_test_self) = get_hit_test_point(get_display_object_kind(arena, source))
+        && hit_test_self(arena, source, x, y, shape_flag)
+    {
+        return Some(source);
     }
 
     None
@@ -116,10 +116,10 @@ pub fn hit_test_graph_point(
         return false;
     }
 
-    if let Some(hit_test_self) = get_hit_test_point(get_display_object_kind(arena, source)) {
-        if hit_test_self(arena, source, x, y, shape_flag) {
-            return true;
-        }
+    if let Some(hit_test_self) = get_hit_test_point(get_display_object_kind(arena, source))
+        && hit_test_self(arena, source, x, y, shape_flag)
+    {
+        return true;
     }
 
     let count = arena[source].spatial.hierarchy.children.len();

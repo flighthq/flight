@@ -84,7 +84,7 @@ pub fn attach_sensors(sensors: &Sensors) {
         emit_signal(&on_magnetometer, &reading);
     }));
 
-    let unsubscribe: Box<dyn Fn() + Send + Sync> = Box::new(move || {
+    let unsubscribe: SensorsUnsubscribe = Box::new(move || {
         unsubscribe_motion();
         unsubscribe_orientation();
         unsubscribe_magnetometer();
@@ -165,8 +165,11 @@ pub fn set_sensors_backend(backend: Option<Arc<dyn SensorsBackend>>) {
 
 static BACKEND: Mutex<Option<Arc<dyn SensorsBackend>>> = Mutex::new(None);
 
+// Combined unsubscribe handle returned by a backend subscription (TS `() => void`).
+type SensorsUnsubscribe = Box<dyn Fn() + Send + Sync>;
+
 // Subscription list: (Sensors address, combined unsubscribe fn).
-static SUBSCRIPTIONS: Mutex<Vec<(usize, Box<dyn Fn() + Send + Sync>)>> = Mutex::new(Vec::new());
+static SUBSCRIPTIONS: Mutex<Vec<(usize, SensorsUnsubscribe)>> = Mutex::new(Vec::new());
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -181,11 +184,15 @@ mod tests {
 
     use flighthq_signals::connect_signal;
 
+    type MotionSlot = Arc<Mutex<Option<Box<dyn Fn(MotionReading, MotionReading) + Send + Sync>>>>;
+    type OrientationSlot = Arc<Mutex<Option<Box<dyn Fn(OrientationReading) + Send + Sync>>>>;
+    type MagnetometerSlot = Arc<Mutex<Option<Box<dyn Fn(MotionReading) + Send + Sync>>>>;
+
     // A fake backend that captures the listeners so a test can fire readings.
     struct FakeBackend {
-        motion: Arc<Mutex<Option<Box<dyn Fn(MotionReading, MotionReading) + Send + Sync>>>>,
-        orientation: Arc<Mutex<Option<Box<dyn Fn(OrientationReading) + Send + Sync>>>>,
-        magnetometer: Arc<Mutex<Option<Box<dyn Fn(MotionReading) + Send + Sync>>>>,
+        motion: MotionSlot,
+        orientation: OrientationSlot,
+        magnetometer: MagnetometerSlot,
     }
 
     impl FakeBackend {

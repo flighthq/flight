@@ -98,10 +98,10 @@ pub fn compile_gl_fullscreen_program(
                 textures.push(loc);
             }
         }
-        if textures.is_empty() {
-            if let Some(loc) = gl.get_uniform_location(program, "u_texture") {
-                textures.push(loc);
-            }
+        if textures.is_empty()
+            && let Some(loc) = gl.get_uniform_location(program, "u_texture")
+        {
+            textures.push(loc);
         }
 
         GlFullscreenProgram {

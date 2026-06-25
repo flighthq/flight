@@ -9,3 +9,6 @@ description = "Group resource loading with progress and completion signals"
 flighthq-image = { workspace = true }
 flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

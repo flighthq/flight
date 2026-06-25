@@ -7,7 +7,8 @@
 use flighthq_types::{ImageResource, TextureAtlas, TextureAtlasRegion};
 
 use flighthq_image::{
-    load_image_resource_from_bytes, load_image_resource_from_path, load_image_resource_from_url,
+    get_image_resource_byte_size, load_image_resource_from_bytes, load_image_resource_from_path,
+    load_image_resource_from_url,
 };
 
 // ---------------------------------------------------------------------------
@@ -30,6 +31,21 @@ pub fn create_texture_atlas(
 /// Regions are initially empty; use `add_texture_atlas_region*` to populate.
 pub fn create_texture_atlas_from_image_resource(image: ImageResource) -> TextureAtlas {
     create_texture_atlas(Some(image), Vec::new())
+}
+
+// ---------------------------------------------------------------------------
+// Data access
+// ---------------------------------------------------------------------------
+
+/// Returns the byte footprint of the atlas's CPU-side image data.
+///
+/// Equivalent to calling `get_image_resource_byte_size` on the atlas image;
+/// returns `0` when the image is `None` or element-only.
+pub fn get_texture_atlas_byte_size(atlas: &TextureAtlas) -> usize {
+    match atlas.image.as_ref() {
+        Some(image) => get_image_resource_byte_size(image),
+        None => 0,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +131,40 @@ mod tests {
         let atlas = create_texture_atlas_from_image_resource(img);
         assert!(atlas.image.is_some());
         assert!(atlas.regions.is_empty());
+    }
+
+    #[test]
+    fn get_texture_atlas_byte_size_zero_when_no_image() {
+        let a = create_texture_atlas(None, vec![]);
+        assert_eq!(get_texture_atlas_byte_size(&a), 0);
+    }
+
+    #[test]
+    fn get_texture_atlas_byte_size_zero_when_image_has_no_data() {
+        use flighthq_types::{AlphaType, PixelFormat};
+        let img = flighthq_image::create_image_resource(
+            4,
+            4,
+            None,
+            PixelFormat::Rgba8Unorm,
+            AlphaType::Straight,
+        );
+        let a = create_texture_atlas_from_image_resource(img);
+        assert_eq!(get_texture_atlas_byte_size(&a), 0);
+    }
+
+    #[test]
+    fn get_texture_atlas_byte_size_returns_image_data_len() {
+        use flighthq_types::{AlphaType, PixelFormat};
+        let img = flighthq_image::create_image_resource(
+            0,
+            0,
+            Some(vec![0u8; 256]),
+            PixelFormat::Rgba8Unorm,
+            AlphaType::Straight,
+        );
+        let a = create_texture_atlas_from_image_resource(img);
+        assert_eq!(get_texture_atlas_byte_size(&a), 256);
     }
 
     #[test]

@@ -9,3 +9,6 @@ description = "Surface (CPU pixel) implementations for bitmap filter effects"
 flighthq-filters = { workspace = true }
 flighthq-surface = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

@@ -262,8 +262,8 @@ mod tests {
             },
         );
         // x0/x1 are outside the shape (source alpha 0) → clipped to 0.
-        assert_eq!(out[0 * 4 + 3], 0);
-        assert_eq!(out[1 * 4 + 3], 0);
+        assert_eq!(out[3], 0);
+        assert_eq!(out[4 + 3], 0);
         // x2 is inside the shape → highlight survives.
         assert_eq!(out[2 * 4 + 3], 170);
     }

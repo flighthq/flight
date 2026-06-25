@@ -54,10 +54,10 @@ pub fn resolve_gl_material_renderer(
     state: &GlRenderState,
     material_kind: Option<KindId>,
 ) -> Option<&dyn GlMaterialRenderer> {
-    if let Some(kind) = material_kind {
-        if let Some(renderer) = state.runtime.material_renderers.get(&kind) {
-            return Some(renderer.as_ref());
-        }
+    if let Some(kind) = material_kind
+        && let Some(renderer) = state.runtime.material_renderers.get(&kind)
+    {
+        return Some(renderer.as_ref());
     }
     state
         .runtime

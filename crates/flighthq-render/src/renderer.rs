@@ -69,10 +69,10 @@ pub fn register_renderer(
     renderer: Arc<dyn Renderer>,
 ) {
     let runtime = get_render_state_runtime_mut(store, id);
-    if let Some(existing) = runtime.renderer_map.get(&kind) {
-        if Arc::ptr_eq(existing, &renderer) {
-            return;
-        }
+    if let Some(existing) = runtime.renderer_map.get(&kind)
+        && Arc::ptr_eq(existing, &renderer)
+    {
+        return;
     }
     runtime.renderer_map_id = runtime.renderer_map_id.wrapping_add(1);
     runtime.renderer_map.insert(kind, renderer);

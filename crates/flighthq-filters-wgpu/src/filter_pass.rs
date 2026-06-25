@@ -611,11 +611,11 @@ fn resolve_filter_variant(
 
 // Returns the pipeline handle matching `target_format`: the default pipeline when the target is
 // the canvas format, otherwise the cached variant. `resolve_filter_variant` must have run first.
-fn pipeline_for_format<'p>(
-    pipeline: &'p WgpuFilterPipeline,
+fn pipeline_for_format(
+    pipeline: &WgpuFilterPipeline,
     canvas_format: wgpu::TextureFormat,
     target_format: wgpu::TextureFormat,
-) -> &'p wgpu::RenderPipeline {
+) -> &wgpu::RenderPipeline {
     if target_format == canvas_format {
         &pipeline.pipeline
     } else {
@@ -834,8 +834,8 @@ mod tests {
             |u| u.set_f32(0, 1.0),
         );
         flighthq_render_wgpu::background::submit_wgpu_render_pass(&mut state);
-        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&mut state, source);
-        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&mut state, dest);
+        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&state, source);
+        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&state, dest);
         destroy_wgpu_filter_state(&mut filter_state);
     }
 

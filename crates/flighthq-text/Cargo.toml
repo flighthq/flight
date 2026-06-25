@@ -8,6 +8,7 @@ description = "Text display objects: single-format TextLabel and multi-format Ri
 [dependencies]
 flighthq-displayobject = { workspace = true }
 flighthq-node = { workspace = true }
+flighthq-signals = { workspace = true }
 flighthq-textlayout = { workspace = true }
 flighthq-types = { workspace = true }
 
@@ -15,3 +16,6 @@ flighthq-types = { workspace = true }
 # The text-layout measure provider is a process-global backend; tests that set
 # or clear it must not run concurrently, or they clobber each other's state.
 serial_test = { workspace = true }
+
+[lints]
+workspace = true

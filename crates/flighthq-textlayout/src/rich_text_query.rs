@@ -34,8 +34,11 @@ pub fn get_rich_text_char_boundaries(
 }
 
 /// Returns the character index closest to the pixel point `(x, y)`.
+///
+/// `_text` is unused — hit-testing is performed against layout group geometry.
+/// Kept for backward compatibility; will be removed in a future breaking release.
 pub fn get_rich_text_char_index_at_point(
-    text: &str,
+    _text: &str,
     layout: &TextLayoutResult,
     x: f32,
     y: f32,
@@ -43,8 +46,6 @@ pub fn get_rich_text_char_index_at_point(
     if layout.groups.is_empty() {
         return 0;
     }
-
-    let text_len = text.chars().count();
 
     let mut closest_line_index: usize = 0;
     let mut closest_dist = f32::INFINITY;
@@ -76,7 +77,7 @@ pub fn get_rich_text_char_index_at_point(
         return line_end;
     }
 
-    let mut line_start = text_len;
+    let mut line_start = layout.groups.last().map(|g| g.end_index).unwrap_or(0);
     let mut line_end = 0;
     for group in &layout.groups {
         if group.line_index != closest_line_index {

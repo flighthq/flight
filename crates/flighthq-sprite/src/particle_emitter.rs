@@ -5,12 +5,20 @@
 //! Alpha, color (RGB triplet), and velocity (vx, vy) are stored in parallel arrays.
 
 use flighthq_node::NodeId;
-use flighthq_types::{ParticleEmitterData, Rectangle, TextureAtlas, particle_emitter_kind};
+use flighthq_types::{
+    ParticleEmitterData, Rectangle, TextureAtlas, Vector2Like, particle_emitter_kind,
+};
 
 use flighthq_displayobject::{DisplayObjectArena, create_display_object_generic};
 
 /// Number of floats per particle in the `transforms` buffer.
 const PARTICLE_TRANSFORM_STRIDE: usize = 4; // [x, y, rotation, scale]
+/// Number of floats per particle in the `colors` buffer.
+const PARTICLE_COLOR_STRIDE: usize = 3; // [r, g, b]
+/// Number of floats per particle in the `velocities` buffer.
+const PARTICLE_VELOCITY_STRIDE: usize = 2; // [vx, vy]
+/// Sentinel id for a logically-deleted particle slot (`Uint16Array` max).
+const PARTICLE_DELETED_ID: u16 = 0xffff;
 
 // ---------------------------------------------------------------------------
 // ParticleEmitterMeta
@@ -31,6 +39,135 @@ pub struct ParticleEmitterMeta {
 /// [`ParticleEmitterMeta`], and the runtime is the bounds-compute function the
 /// emitter installs.
 pub type ParticleEmitterRuntime = fn(&mut Rectangle, &DisplayObjectArena, NodeId);
+
+// ---------------------------------------------------------------------------
+// append_particle_emitter_particle
+// ---------------------------------------------------------------------------
+
+/// Appends a new particle at the end of the emitter, auto-growing capacity.
+///
+/// Returns the new particle index. Color defaults to white `(1, 1, 1)`, alpha to
+/// `1.0`, and velocity to `(0, 0)` unless overridden afterwards. Returns `-1`
+/// when `target` is not a particle emitter.
+pub fn append_particle_emitter_particle(
+    arena: &mut DisplayObjectArena,
+    target: NodeId,
+    id: u16,
+    x: f32,
+    y: f32,
+    rotation: f32,
+    scale: f32,
+) -> i64 {
+    let count = get_particle_emitter_particle_count(arena, target);
+    let needed = count + 1;
+    if get_particle_emitter_capacity(arena, target) < needed {
+        let new_capacity = needed.max(count.checked_mul(2).filter(|&v| v != 0).unwrap_or(8));
+        reserve_particle_emitter(arena, target, new_capacity);
+    }
+    let Some(meta) = get_particle_emitter_meta_mut(arena, target) else {
+        return -1;
+    };
+    let index = count as usize;
+    meta.data.particle_count = needed;
+    meta.data.ids[index] = id;
+    let tt = index * PARTICLE_TRANSFORM_STRIDE;
+    meta.data.transforms[tt] = x;
+    meta.data.transforms[tt + 1] = y;
+    meta.data.transforms[tt + 2] = rotation;
+    meta.data.transforms[tt + 3] = scale;
+    meta.data.alphas[index] = 1.0;
+    let ct = index * PARTICLE_COLOR_STRIDE;
+    meta.data.colors[ct] = 1.0;
+    meta.data.colors[ct + 1] = 1.0;
+    meta.data.colors[ct + 2] = 1.0;
+    let vt = index * PARTICLE_VELOCITY_STRIDE;
+    meta.data.velocities[vt] = 0.0;
+    meta.data.velocities[vt + 1] = 0.0;
+    index as i64
+}
+
+// ---------------------------------------------------------------------------
+// clear_particle_emitter
+// ---------------------------------------------------------------------------
+
+/// Sets the active particle count to 0, keeping allocated capacity.
+pub fn clear_particle_emitter(arena: &mut DisplayObjectArena, target: NodeId) {
+    if let Some(meta) = get_particle_emitter_meta_mut(arena, target) {
+        meta.data.particle_count = 0;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// clone_particle_emitter
+// ---------------------------------------------------------------------------
+
+/// Deep-copies the emitter at `source` into a new emitter node in `arena` and
+/// returns its id.
+///
+/// Mirrors TS `cloneParticleEmitter`: all parallel arrays are cloned, and the new
+/// emitter shares the same `particle_count`, `atlas`, and `world_space` flag.
+pub fn clone_particle_emitter(arena: &mut DisplayObjectArena, source: NodeId) -> NodeId {
+    let cloned = get_particle_emitter_meta(arena, source).map(|meta| ParticleEmitterData {
+        alphas: meta.data.alphas.clone(),
+        atlas: meta.data.atlas.clone(),
+        colors: meta.data.colors.clone(),
+        ids: meta.data.ids.clone(),
+        particle_count: meta.data.particle_count,
+        transforms: meta.data.transforms.clone(),
+        velocities: meta.data.velocities.clone(),
+        world_space: meta.data.world_space,
+    });
+    let clone = create_particle_emitter(arena);
+    if let (Some(data), Some(meta)) = (cloned, get_particle_emitter_meta_mut(arena, clone)) {
+        meta.data = data;
+    }
+    clone
+}
+
+// ---------------------------------------------------------------------------
+// compact_particle_emitter
+// ---------------------------------------------------------------------------
+
+/// Compacts the particle buffer by removing entries whose id is the deleted
+/// sentinel (`0xffff`), preserving the relative order of remaining entries.
+///
+/// After compaction, `particle_count` equals the number of non-sentinel entries.
+pub fn compact_particle_emitter(arena: &mut DisplayObjectArena, target: NodeId) {
+    let Some(meta) = get_particle_emitter_meta_mut(arena, target) else {
+        return;
+    };
+    let data = &mut meta.data;
+    if data.particle_count == 0 {
+        return;
+    }
+    let mut write = 0usize;
+    for read in 0..data.particle_count as usize {
+        if data.ids[read] == PARTICLE_DELETED_ID {
+            continue;
+        }
+        if write != read {
+            data.ids[write] = data.ids[read];
+            let tt = write * PARTICLE_TRANSFORM_STRIDE;
+            let tts = read * PARTICLE_TRANSFORM_STRIDE;
+            data.transforms[tt] = data.transforms[tts];
+            data.transforms[tt + 1] = data.transforms[tts + 1];
+            data.transforms[tt + 2] = data.transforms[tts + 2];
+            data.transforms[tt + 3] = data.transforms[tts + 3];
+            data.alphas[write] = data.alphas[read];
+            let ct = write * PARTICLE_COLOR_STRIDE;
+            let cts = read * PARTICLE_COLOR_STRIDE;
+            data.colors[ct] = data.colors[cts];
+            data.colors[ct + 1] = data.colors[cts + 1];
+            data.colors[ct + 2] = data.colors[cts + 2];
+            let vt = write * PARTICLE_VELOCITY_STRIDE;
+            let vts = read * PARTICLE_VELOCITY_STRIDE;
+            data.velocities[vt] = data.velocities[vts];
+            data.velocities[vt + 1] = data.velocities[vts + 1];
+        }
+        write += 1;
+    }
+    data.particle_count = write as u32;
+}
 
 // ---------------------------------------------------------------------------
 // compute_particle_emitter_local_bounds_rectangle
@@ -193,6 +330,68 @@ pub fn get_particle_emitter_capacity(arena: &DisplayObjectArena, source: NodeId)
 }
 
 // ---------------------------------------------------------------------------
+// get_particle_emitter_particle_alpha
+// ---------------------------------------------------------------------------
+
+/// Returns the alpha of particle `index`, or `-1.0` when `index` is out of range.
+pub fn get_particle_emitter_particle_alpha(
+    arena: &DisplayObjectArena,
+    source: NodeId,
+    index: u32,
+) -> f32 {
+    let Some(meta) = get_particle_emitter_meta(arena, source) else {
+        return -1.0;
+    };
+    if index >= meta.data.particle_count {
+        return -1.0;
+    }
+    meta.data.alphas[index as usize]
+}
+
+// ---------------------------------------------------------------------------
+// get_particle_emitter_particle_id
+// ---------------------------------------------------------------------------
+
+/// Returns the region id of particle `index`, or `-1` when `index` is out of range.
+pub fn get_particle_emitter_particle_id(
+    arena: &DisplayObjectArena,
+    source: NodeId,
+    index: u32,
+) -> i32 {
+    let Some(meta) = get_particle_emitter_meta(arena, source) else {
+        return -1;
+    };
+    if index >= meta.data.particle_count {
+        return -1;
+    }
+    meta.data.ids[index as usize] as i32
+}
+
+// ---------------------------------------------------------------------------
+// get_particle_emitter_particle_velocity
+// ---------------------------------------------------------------------------
+
+/// Writes the velocity `(vx, vy)` of particle `index` into `out.x`/`out.y`.
+/// Returns false and writes nothing when `index` is out of range.
+pub fn get_particle_emitter_particle_velocity(
+    out: &mut Vector2Like,
+    arena: &DisplayObjectArena,
+    source: NodeId,
+    index: u32,
+) -> bool {
+    let Some(meta) = get_particle_emitter_meta(arena, source) else {
+        return false;
+    };
+    if index >= meta.data.particle_count {
+        return false;
+    }
+    let vt = index as usize * PARTICLE_VELOCITY_STRIDE;
+    out.x = meta.data.velocities[vt];
+    out.y = meta.data.velocities[vt + 1];
+    true
+}
+
+// ---------------------------------------------------------------------------
 // get_particle_emitter_particle_count
 // ---------------------------------------------------------------------------
 
@@ -228,6 +427,52 @@ pub fn get_particle_emitter_world_space(arena: &DisplayObjectArena, source: Node
     get_particle_emitter_meta(arena, source)
         .map(|m| m.data.world_space)
         .unwrap_or(false)
+}
+
+// ---------------------------------------------------------------------------
+// remove_particle_emitter_particle
+// ---------------------------------------------------------------------------
+
+/// Swap-removes particle `index` with the last particle (O(1)), decrementing
+/// `particle_count`. Does not preserve order. No-ops when `index` is out of range.
+pub fn remove_particle_emitter_particle(
+    arena: &mut DisplayObjectArena,
+    target: NodeId,
+    index: u32,
+) {
+    let Some(meta) = get_particle_emitter_meta_mut(arena, target) else {
+        return;
+    };
+    let data = &mut meta.data;
+    if data.particle_count == 0 {
+        return;
+    }
+    let last = data.particle_count - 1;
+    if index > last {
+        return;
+    }
+    if index < last {
+        let i = index as usize;
+        let l = last as usize;
+        data.ids[i] = data.ids[l];
+        let tt = i * PARTICLE_TRANSFORM_STRIDE;
+        let tts = l * PARTICLE_TRANSFORM_STRIDE;
+        data.transforms[tt] = data.transforms[tts];
+        data.transforms[tt + 1] = data.transforms[tts + 1];
+        data.transforms[tt + 2] = data.transforms[tts + 2];
+        data.transforms[tt + 3] = data.transforms[tts + 3];
+        data.alphas[i] = data.alphas[l];
+        let ct = i * PARTICLE_COLOR_STRIDE;
+        let cts = l * PARTICLE_COLOR_STRIDE;
+        data.colors[ct] = data.colors[cts];
+        data.colors[ct + 1] = data.colors[cts + 1];
+        data.colors[ct + 2] = data.colors[cts + 2];
+        let vt = i * PARTICLE_VELOCITY_STRIDE;
+        let vts = l * PARTICLE_VELOCITY_STRIDE;
+        data.velocities[vt] = data.velocities[vts];
+        data.velocities[vt + 1] = data.velocities[vts + 1];
+    }
+    data.particle_count = last;
 }
 
 // ---------------------------------------------------------------------------
@@ -286,6 +531,83 @@ pub fn set_particle_emitter_local_bounds_rectangle(
 }
 
 // ---------------------------------------------------------------------------
+// set_particle_emitter_particle
+// ---------------------------------------------------------------------------
+
+/// Sets the full transform and id for particle `index`. No-ops when `index` is
+/// out of range (`[0, particle_count)`).
+pub fn set_particle_emitter_particle(
+    arena: &mut DisplayObjectArena,
+    target: NodeId,
+    index: u32,
+    id: u16,
+    x: f32,
+    y: f32,
+    rotation: f32,
+    scale: f32,
+) {
+    let Some(meta) = get_particle_emitter_meta_mut(arena, target) else {
+        return;
+    };
+    if index >= meta.data.particle_count {
+        return;
+    }
+    let i = index as usize;
+    meta.data.ids[i] = id;
+    let tt = i * PARTICLE_TRANSFORM_STRIDE;
+    meta.data.transforms[tt] = x;
+    meta.data.transforms[tt + 1] = y;
+    meta.data.transforms[tt + 2] = rotation;
+    meta.data.transforms[tt + 3] = scale;
+}
+
+// ---------------------------------------------------------------------------
+// set_particle_emitter_particle_alpha
+// ---------------------------------------------------------------------------
+
+/// Sets the alpha of particle `index`. No-ops when `index` is out of range.
+pub fn set_particle_emitter_particle_alpha(
+    arena: &mut DisplayObjectArena,
+    target: NodeId,
+    index: u32,
+    alpha: f32,
+) {
+    let Some(meta) = get_particle_emitter_meta_mut(arena, target) else {
+        return;
+    };
+    if index >= meta.data.particle_count {
+        return;
+    }
+    meta.data.alphas[index as usize] = alpha;
+}
+
+// ---------------------------------------------------------------------------
+// set_particle_emitter_particle_color
+// ---------------------------------------------------------------------------
+
+/// Sets the color `(r, g, b)` (0–1 normalized) of particle `index`. No-ops when
+/// `index` is out of range.
+pub fn set_particle_emitter_particle_color(
+    arena: &mut DisplayObjectArena,
+    target: NodeId,
+    index: u32,
+    r: f32,
+    g: f32,
+    b: f32,
+) {
+    let Some(meta) = get_particle_emitter_meta_mut(arena, target) else {
+        return;
+    };
+    if index >= meta.data.particle_count {
+        return;
+    }
+    let ct = index as usize * PARTICLE_COLOR_STRIDE;
+    meta.data.colors[ct] = r;
+    meta.data.colors[ct + 1] = g;
+    meta.data.colors[ct + 2] = b;
+}
+
+// ---------------------------------------------------------------------------
 // set_particle_emitter_particle_count
 // ---------------------------------------------------------------------------
 
@@ -299,6 +621,30 @@ pub fn set_particle_emitter_particle_count(
     if let Some(meta) = get_particle_emitter_meta_mut(arena, target) {
         meta.data.particle_count = count;
     }
+}
+
+// ---------------------------------------------------------------------------
+// set_particle_emitter_particle_velocity
+// ---------------------------------------------------------------------------
+
+/// Sets the velocity `(vx, vy)` of particle `index`. No-ops when `index` is out
+/// of range.
+pub fn set_particle_emitter_particle_velocity(
+    arena: &mut DisplayObjectArena,
+    target: NodeId,
+    index: u32,
+    vx: f32,
+    vy: f32,
+) {
+    let Some(meta) = get_particle_emitter_meta_mut(arena, target) else {
+        return;
+    };
+    if index >= meta.data.particle_count {
+        return;
+    }
+    let vt = index as usize * PARTICLE_VELOCITY_STRIDE;
+    meta.data.velocities[vt] = vx;
+    meta.data.velocities[vt + 1] = vy;
 }
 
 // ---------------------------------------------------------------------------
@@ -537,5 +883,222 @@ mod tests {
             .and_then(|d| d.downcast_ref::<ParticleEmitterMeta>())
             .unwrap();
         assert_eq!(meta.local_bounds_rectangle.as_ref().unwrap().width, 200.0);
+    }
+
+    // append_particle_emitter_particle
+
+    #[test]
+    fn append_particle_emitter_particle_appends_and_returns_index() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        let idx = append_particle_emitter_particle(&mut arena, id, 2, 10.0, 20.0, 0.5, 1.5);
+        assert_eq!(idx, 0);
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 1);
+        assert_eq!(get_particle_emitter_particle_id(&arena, id, 0), 2);
+        let meta = get_particle_emitter_meta(&arena, id).unwrap();
+        assert_eq!(meta.data.transforms[0], 10.0);
+        assert_eq!(meta.data.transforms[1], 20.0);
+        assert_eq!(meta.data.transforms[2], 0.5);
+        assert_eq!(meta.data.transforms[3], 1.5);
+    }
+
+    #[test]
+    fn append_particle_emitter_particle_defaults_alpha_and_color() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        assert_eq!(get_particle_emitter_particle_alpha(&arena, id, 0), 1.0);
+        let meta = get_particle_emitter_meta(&arena, id).unwrap();
+        assert_eq!(meta.data.colors[0], 1.0);
+        assert_eq!(meta.data.colors[1], 1.0);
+        assert_eq!(meta.data.colors[2], 1.0);
+    }
+
+    #[test]
+    fn append_particle_emitter_particle_returns_sequential_indices() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        assert_eq!(
+            append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0),
+            0
+        );
+        assert_eq!(
+            append_particle_emitter_particle(&mut arena, id, 1, 5.0, 5.0, 0.0, 1.0),
+            1
+        );
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 2);
+    }
+
+    #[test]
+    fn append_particle_emitter_particle_auto_grows_capacity() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        for i in 0..10u16 {
+            append_particle_emitter_particle(&mut arena, id, i, 0.0, 0.0, 0.0, 1.0);
+        }
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 10);
+        assert!(get_particle_emitter_capacity(&arena, id) >= 10);
+    }
+
+    // clear_particle_emitter
+
+    #[test]
+    fn clear_particle_emitter_resets_count_keeps_capacity() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        let cap = get_particle_emitter_capacity(&arena, id);
+        clear_particle_emitter(&mut arena, id);
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 0);
+        assert_eq!(get_particle_emitter_capacity(&arena, id), cap);
+    }
+
+    // clone_particle_emitter
+
+    #[test]
+    fn clone_particle_emitter_deep_copies_arrays() {
+        let mut arena = new_arena();
+        let source = create_particle_emitter(&mut arena);
+        set_particle_emitter_atlas(&mut arena, source, Some(atlas_with_region(8.0, 8.0)));
+        append_particle_emitter_particle(&mut arena, source, 0, 1.0, 2.0, 0.0, 1.0);
+        set_particle_emitter_world_space(&mut arena, source, true);
+        let clone = clone_particle_emitter(&mut arena, source);
+        assert_ne!(clone, source);
+        assert_eq!(get_particle_emitter_particle_count(&arena, clone), 1);
+        assert_eq!(get_particle_emitter_particle_id(&arena, clone, 0), 0);
+        assert!(get_particle_emitter_world_space(&arena, clone));
+        assert!(get_particle_emitter_atlas(&arena, clone).is_some());
+        // Independent buffers: mutate clone, source unchanged.
+        set_particle_emitter_particle(&mut arena, clone, 0, 5, 9.0, 9.0, 0.0, 1.0);
+        assert_eq!(get_particle_emitter_particle_id(&arena, source, 0), 0);
+        assert_eq!(get_particle_emitter_particle_id(&arena, clone, 0), 5);
+    }
+
+    // compact_particle_emitter
+
+    #[test]
+    fn compact_particle_emitter_removes_sentinel_entries() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        append_particle_emitter_particle(&mut arena, id, 1, 1.0, 1.0, 0.0, 1.0);
+        append_particle_emitter_particle(&mut arena, id, 2, 2.0, 2.0, 0.0, 1.0);
+        // Mark the middle particle deleted.
+        set_particle_emitter_particle(&mut arena, id, 1, 0xffff, 1.0, 1.0, 0.0, 1.0);
+        compact_particle_emitter(&mut arena, id);
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 2);
+        assert_eq!(get_particle_emitter_particle_id(&arena, id, 0), 0);
+        assert_eq!(get_particle_emitter_particle_id(&arena, id, 1), 2);
+    }
+
+    #[test]
+    fn compact_particle_emitter_empty_is_noop() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        compact_particle_emitter(&mut arena, id);
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 0);
+    }
+
+    // get_particle_emitter_particle_alpha / set_particle_emitter_particle_alpha
+
+    #[test]
+    fn particle_alpha_roundtrip_and_out_of_range() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        set_particle_emitter_particle_alpha(&mut arena, id, 0, 0.25);
+        assert_eq!(get_particle_emitter_particle_alpha(&arena, id, 0), 0.25);
+        assert_eq!(get_particle_emitter_particle_alpha(&arena, id, 5), -1.0);
+    }
+
+    // get_particle_emitter_particle_id
+
+    #[test]
+    fn particle_id_out_of_range_returns_neg_one() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        assert_eq!(get_particle_emitter_particle_id(&arena, id, 0), -1);
+    }
+
+    // get_particle_emitter_particle_velocity / set_particle_emitter_particle_velocity
+
+    #[test]
+    fn particle_velocity_distinct_out() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        set_particle_emitter_particle_velocity(&mut arena, id, 0, 3.0, -4.0);
+        let mut out = Vector2Like::default();
+        assert!(get_particle_emitter_particle_velocity(
+            &mut out, &arena, id, 0
+        ));
+        assert_eq!(out.x, 3.0);
+        assert_eq!(out.y, -4.0);
+    }
+
+    #[test]
+    fn particle_velocity_out_of_range_returns_false() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        let mut out = Vector2Like { x: 7.0, y: 7.0 };
+        assert!(!get_particle_emitter_particle_velocity(
+            &mut out, &arena, id, 0
+        ));
+        assert_eq!(out.x, 7.0); // unchanged on false
+        assert_eq!(out.y, 7.0);
+    }
+
+    // remove_particle_emitter_particle
+
+    #[test]
+    fn remove_particle_emitter_particle_swap_removes() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 10, 0.0, 0.0, 0.0, 1.0);
+        append_particle_emitter_particle(&mut arena, id, 20, 1.0, 1.0, 0.0, 1.0);
+        append_particle_emitter_particle(&mut arena, id, 30, 2.0, 2.0, 0.0, 1.0);
+        remove_particle_emitter_particle(&mut arena, id, 0);
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 2);
+        // The last particle (id 30) was swapped into slot 0.
+        assert_eq!(get_particle_emitter_particle_id(&arena, id, 0), 30);
+    }
+
+    #[test]
+    fn remove_particle_emitter_particle_out_of_range_noop() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        remove_particle_emitter_particle(&mut arena, id, 5);
+        assert_eq!(get_particle_emitter_particle_count(&arena, id), 1);
+    }
+
+    // set_particle_emitter_particle
+
+    #[test]
+    fn set_particle_emitter_particle_writes_transform() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        set_particle_emitter_particle(&mut arena, id, 0, 7, 3.0, 4.0, 1.0, 2.0);
+        assert_eq!(get_particle_emitter_particle_id(&arena, id, 0), 7);
+        let meta = get_particle_emitter_meta(&arena, id).unwrap();
+        assert_eq!(meta.data.transforms[0], 3.0);
+        assert_eq!(meta.data.transforms[1], 4.0);
+        assert_eq!(meta.data.transforms[2], 1.0);
+        assert_eq!(meta.data.transforms[3], 2.0);
+    }
+
+    // set_particle_emitter_particle_color
+
+    #[test]
+    fn set_particle_emitter_particle_color_writes_rgb() {
+        let mut arena = new_arena();
+        let id = create_particle_emitter(&mut arena);
+        append_particle_emitter_particle(&mut arena, id, 0, 0.0, 0.0, 0.0, 1.0);
+        set_particle_emitter_particle_color(&mut arena, id, 0, 0.1, 0.2, 0.3);
+        let meta = get_particle_emitter_meta(&arena, id).unwrap();
+        assert_eq!(meta.data.colors[0], 0.1);
+        assert_eq!(meta.data.colors[1], 0.2);
+        assert_eq!(meta.data.colors[2], 0.3);
     }
 }

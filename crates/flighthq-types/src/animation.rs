@@ -219,7 +219,7 @@ impl std::fmt::Debug for TimelineSource {
 /// `source_id` and `target_id` are opaque node identifiers; the concrete arena
 /// is managed by the caller. `target_id` matches the `NodeId`-as-u64 key used
 /// by the display graph.
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Timeline {
     pub current_frame: u32,
     pub is_playing: bool,
@@ -229,6 +229,30 @@ pub struct Timeline {
     pub source: Option<Box<TimelineSource>>,
     /// Opaque node id (`NodeId` cast to u64) of the MovieClip this drives.
     pub target_id: Option<u64>,
+    /// Per-frame scripts keyed by 1-based frame, fired once on frame entry.
+    /// `None` when no scripts are attached.
+    pub frame_scripts: Option<std::collections::HashMap<u32, crate::frame_script::FrameScript>>,
+    /// Wrap behavior at the last frame (`Loop` by default, `Once` to stop).
+    pub play_mode: crate::play_mode::PlayMode,
+    /// Lazily-armed lifecycle signals, or `None` until `enable_timeline_signals`.
+    pub signals: Option<crate::timeline_signals::TimelineSignals>,
+}
+
+// `frame_scripts` holds `Arc<dyn Fn(..)>` callbacks that are not `Debug`; mirror
+// the manual-`Debug` pattern used by `TimelineSource` and skip that field.
+impl std::fmt::Debug for Timeline {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Timeline")
+            .field("current_frame", &self.current_frame)
+            .field("is_playing", &self.is_playing)
+            .field("last_frame_update", &self.last_frame_update)
+            .field("time_elapsed", &self.time_elapsed)
+            .field("source", &self.source)
+            .field("target_id", &self.target_id)
+            .field("play_mode", &self.play_mode)
+            .field("signals", &self.signals)
+            .finish_non_exhaustive()
+    }
 }
 
 // ---------------------------------------------------------------------------

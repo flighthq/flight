@@ -25,7 +25,7 @@ pub fn create_web_storage_backend() -> WebStorageBackend {
 /// Installs the web `localStorage` backend as the active storage backend for the
 /// `flighthq-storage` free functions. Call once at host startup.
 pub fn set_web_storage_backend() {
-    flighthq_storage::set_storage_backend(Box::new(create_web_storage_backend()));
+    flighthq_storage::set_storage_backend(Some(Box::new(create_web_storage_backend())));
 }
 
 #[cfg(target_arch = "wasm32")]

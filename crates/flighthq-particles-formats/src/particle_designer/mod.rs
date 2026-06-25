@@ -477,10 +477,9 @@ fn pd_blend_mode(src: i64, dst: i64) -> Option<ParticleBlendMode> {
     // GL_ONE=1, GL_SRC_ALPHA=770, GL_ONE_MINUS_SRC_ALPHA=771
     if (src == 770 || src == 1) && dst == 1 {
         Some(ParticleBlendMode::Add)
-    } else if src == 770 && dst == 771 {
+    } else if (src == 770 || src == 1) && dst == 771 {
+        // src==1 is premultiplied alpha; both map to Normal.
         Some(ParticleBlendMode::Normal)
-    } else if src == 1 && dst == 771 {
-        Some(ParticleBlendMode::Normal) // premultiplied alpha
     } else {
         None
     }

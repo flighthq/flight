@@ -8,3 +8,6 @@ description = "3D camera: projections and view-projection helpers"
 [dependencies]
 flighthq-geometry = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

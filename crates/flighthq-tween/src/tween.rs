@@ -186,10 +186,7 @@ pub fn stop_tweens(
     };
     for tween in list.iter_mut() {
         if let Some(filter) = property_filter {
-            let overlaps = tween
-                .properties
-                .iter()
-                .any(|d| filter.iter().any(|k| *k == d.key));
+            let overlaps = tween.properties.iter().any(|d| filter.contains(&d.key));
             if !overlaps {
                 continue;
             }

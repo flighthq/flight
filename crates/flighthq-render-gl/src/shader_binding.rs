@@ -38,18 +38,18 @@ pub fn register_gl_material_shader(
 /// # Panics
 /// Panics if `state` has no default bitmap shader — that only happens before
 /// `create_gl_render_state` has run, which is a programmer error.
-pub fn resolve_gl_shader<'a>(
-    state: &'a GlRenderState,
+pub fn resolve_gl_shader(
+    state: &GlRenderState,
     render_proxy_id: u64,
     material_kind: Option<KindId>,
-) -> &'a GlBitmapShader {
+) -> &GlBitmapShader {
     if let Some(shader) = state.runtime.shader_bindings.get(&render_proxy_id) {
         return shader;
     }
-    if let Some(kind) = material_kind {
-        if let Some(shader) = state.runtime.material_shaders.get(&kind) {
-            return shader;
-        }
+    if let Some(kind) = material_kind
+        && let Some(shader) = state.runtime.material_shaders.get(&kind)
+    {
+        return shader;
     }
     state
         .runtime

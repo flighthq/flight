@@ -78,6 +78,7 @@ pub fn web_keyboard_event_to_input_keyboard_data(event: &WebKeyboardEvent) -> In
         num_lock: event.num_lock,
         repeat: event.repeat,
         shift_key: event.shift_key,
+        time_stamp: 0.0,
     }
 }
 
@@ -98,6 +99,7 @@ pub fn web_pointer_event_to_input_pointer_data(event: &WebPointerEvent) -> Input
         wheel_mode: MouseWheelMode::Unknown,
         x: event.x,
         y: event.y,
+        ..Default::default()
     }
 }
 
@@ -119,6 +121,7 @@ pub fn web_wheel_event_to_input_pointer_data(event: &WebWheelEvent) -> InputPoin
         wheel_mode: web_wheel_mode_from_delta_mode(event.delta_mode),
         x: event.x,
         y: event.y,
+        ..Default::default()
     }
 }
 

@@ -8,3 +8,6 @@ description = "Texture atlases: regions, UVs, and constructors over image resour
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-image = { workspace = true }
+
+[lints]
+workspace = true

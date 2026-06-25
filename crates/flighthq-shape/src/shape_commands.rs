@@ -464,7 +464,7 @@ mod tests {
         DisplayObjectArena::default()
     }
 
-    fn cmds<'a>(arena: &'a DisplayObjectArena, shape: NodeId) -> &'a [AnyBox] {
+    fn cmds(arena: &DisplayObjectArena, shape: NodeId) -> &[AnyBox] {
         &get_shape_data(arena, shape).expect("shape data").commands
     }
 

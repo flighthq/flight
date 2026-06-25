@@ -159,7 +159,7 @@ pub fn validate_particle_emitter_config(
 fn is_finite_curve(curve: Option<&[f32]>) -> bool {
     match curve {
         None => false,
-        Some(c) if c.is_empty() => false,
+        Some([]) => false,
         Some(c) => c.iter().all(|v| v.is_finite()),
     }
 }
@@ -357,7 +357,7 @@ fn report_inverted_range(
 }
 
 fn report_unit_range(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
-    if value.is_finite() && (value < 0.0 || value > 1.0) {
+    if value.is_finite() && !(0.0..=1.0).contains(&value) {
         issues.push(warning(
             field,
             &format!("{field} ({value}) is outside the expected 0-1 range"),

@@ -35,22 +35,22 @@ pub fn create_box_mesh_geometry(width: f32, height: f32, depth: f32) -> MeshGeom
 
     // Each face: origin corner, then two edge vectors (u across, v up).
     #[allow(clippy::too_many_arguments)]
-    let mut add_face = |positions: &mut Vec<f32>,
-                        normals: &mut Vec<f32>,
-                        uvs: &mut Vec<f32>,
-                        indices: &mut Vec<u32>,
-                        ox: f32,
-                        oy: f32,
-                        oz: f32,
-                        ux: f32,
-                        uy: f32,
-                        uz: f32,
-                        vx: f32,
-                        vy: f32,
-                        vz: f32,
-                        nx: f32,
-                        ny: f32,
-                        nz: f32| {
+    let add_face = |positions: &mut Vec<f32>,
+                    normals: &mut Vec<f32>,
+                    uvs: &mut Vec<f32>,
+                    indices: &mut Vec<u32>,
+                    ox: f32,
+                    oy: f32,
+                    oz: f32,
+                    ux: f32,
+                    uy: f32,
+                    uz: f32,
+                    vx: f32,
+                    vy: f32,
+                    vz: f32,
+                    nx: f32,
+                    ny: f32,
+                    nz: f32| {
         let start = (positions.len() / 3) as u32;
         for iv in 0..2 {
             for iu in 0..2 {

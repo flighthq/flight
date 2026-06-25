@@ -38,8 +38,17 @@ fn apply_text_input_options(state: &mut TextInputState, options: &TextInputOptio
     if let Some(value) = options.always_show_selection {
         state.always_show_selection = value;
     }
+    if let Some(value) = options.caret_color {
+        state.caret_color = value;
+    }
+    if let Some(value) = options.caret_width {
+        state.caret_width = value;
+    }
     if let Some(value) = options.display_as_password {
         state.display_as_password = value;
+    }
+    if let Some(value) = options.history_limit {
+        state.history_limit = value;
     }
     if let Some(value) = options.password_character {
         state.password_character = value;
@@ -56,15 +65,23 @@ fn apply_text_input_options(state: &mut TextInputState, options: &TextInputOptio
 }
 
 // Defaults match OpenFL's TextField input conventions (bullet password char,
-// light selection tint).
+// light selection tint, opaque black caret 1px wide). `desired_caret_x` starts
+// unset (`-1`) so vertical navigation anchors to the actual caret position on
+// the first up/down keystroke. `history_limit` defaults to 100 entries.
 fn create_text_input_state(options: Option<&TextInputOptions>) -> TextInputState {
     TextInputState {
         always_show_selection: options
             .and_then(|o| o.always_show_selection)
             .unwrap_or(false),
+        caret_color: options.and_then(|o| o.caret_color).unwrap_or(0x000000),
         caret_index: 0,
+        caret_width: options.and_then(|o| o.caret_width).unwrap_or(1.0),
+        desired_caret_x: -1.0,
         display_as_password: options.and_then(|o| o.display_as_password).unwrap_or(false),
         focused: false,
+        history: Vec::new(),
+        history_index: -1,
+        history_limit: options.and_then(|o| o.history_limit).unwrap_or(100),
         password_character: options
             .and_then(|o| o.password_character)
             .unwrap_or('\u{2022}'),

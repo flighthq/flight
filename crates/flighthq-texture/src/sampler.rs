@@ -33,6 +33,36 @@ pub fn copy_sampler(out: &mut Sampler, source: &Sampler) {
     out.wrap_v = source.wrap_v;
 }
 
+/// Anisotropic sampler for high-quality surface textures rendered at oblique
+/// angles. Uses the given anisotropy `level` (typically 4 or 16 — capped to
+/// hardware maximum by the backend), with trilinear filtering and
+/// clamp-to-edge. Pass level 1 to disable anisotropy.
+pub fn create_anisotropic_sampler(level: f32) -> Sampler {
+    create_sampler(Some(&SamplerOptions {
+        anisotropy: Some(level),
+        ..Default::default()
+    }))
+}
+
+/// Clamp-to-edge linear sampler — the default preset, named for explicit use in
+/// builder code and materials that want to signal their intent clearly.
+/// Clamp/linear/trilinear/mipmaps on.
+pub fn create_clamp_linear_sampler() -> Sampler {
+    create_sampler(None)
+}
+
+/// Pixel-art sampler: nearest-neighbor filtering, clamp-to-edge, mipmaps
+/// disabled. Produces crisp, unsmoothed pixels for retro / pixel-art rendering
+/// styles.
+pub fn create_pixel_art_sampler() -> Sampler {
+    create_sampler(Some(&SamplerOptions {
+        mag_filter: Some(TextureFilter::Nearest),
+        min_filter: Some(TextureFilter::Nearest),
+        mipmaps: Some(false),
+        ..Default::default()
+    }))
+}
+
 /// Builds a [`Sampler`] with the AAA-default sampling state: clamp-to-edge on
 /// both axes, linear magnification, trilinear minification, a generated mip
 /// chain, and anisotropy disabled (1). Pass [`SamplerOptions`] to override any
@@ -54,6 +84,17 @@ pub fn create_sampler(opts: Option<&SamplerOptions>) -> Sampler {
             .and_then(|o| o.wrap_v)
             .unwrap_or(TextureWrap::ClampToEdge),
     }
+}
+
+/// Tiling sampler: repeat wrap on both axes, trilinear filtering, mipmaps on.
+/// Suitable for seamless tiling surface textures (terrain, ground planes,
+/// repeating patterns).
+pub fn create_tiling_sampler() -> Sampler {
+    create_sampler(Some(&SamplerOptions {
+        wrap_u: Some(TextureWrap::Repeat),
+        wrap_v: Some(TextureWrap::Repeat),
+        ..Default::default()
+    }))
 }
 
 /// True when both samplers describe identical sampling state. Returns false for
@@ -120,6 +161,36 @@ mod tests {
     }
 
     #[test]
+    fn create_anisotropic_sampler_sets_anisotropy_and_keeps_other_defaults() {
+        let sampler = create_anisotropic_sampler(16.0);
+
+        assert_eq!(sampler.anisotropy, 16.0);
+        assert_eq!(sampler.mag_filter, TextureFilter::Linear);
+        assert_eq!(sampler.min_filter, TextureFilter::LinearMipmapLinear);
+        assert!(sampler.mipmaps);
+        assert_eq!(sampler.wrap_u, TextureWrap::ClampToEdge);
+        assert_eq!(sampler.wrap_v, TextureWrap::ClampToEdge);
+    }
+
+    #[test]
+    fn create_clamp_linear_sampler_produces_the_default_sampler_state() {
+        let sampler = create_clamp_linear_sampler();
+
+        assert!(equals_sampler(Some(&sampler), Some(&create_sampler(None))));
+    }
+
+    #[test]
+    fn create_pixel_art_sampler_uses_nearest_clamp_and_no_mipmaps() {
+        let sampler = create_pixel_art_sampler();
+
+        assert_eq!(sampler.mag_filter, TextureFilter::Nearest);
+        assert_eq!(sampler.min_filter, TextureFilter::Nearest);
+        assert!(!sampler.mipmaps);
+        assert_eq!(sampler.wrap_u, TextureWrap::ClampToEdge);
+        assert_eq!(sampler.wrap_v, TextureWrap::ClampToEdge);
+    }
+
+    #[test]
     fn create_sampler_applies_the_default_sampling_state() {
         let sampler = create_sampler(None);
 
@@ -142,6 +213,17 @@ mod tests {
         assert_eq!(sampler.anisotropy, 16.0);
         assert_eq!(sampler.wrap_u, TextureWrap::Repeat);
         assert_eq!(sampler.wrap_v, TextureWrap::ClampToEdge);
+        assert!(sampler.mipmaps);
+    }
+
+    #[test]
+    fn create_tiling_sampler_uses_repeat_wrap_with_trilinear_filtering() {
+        let sampler = create_tiling_sampler();
+
+        assert_eq!(sampler.wrap_u, TextureWrap::Repeat);
+        assert_eq!(sampler.wrap_v, TextureWrap::Repeat);
+        assert_eq!(sampler.mag_filter, TextureFilter::Linear);
+        assert_eq!(sampler.min_filter, TextureFilter::LinearMipmapLinear);
         assert!(sampler.mipmaps);
     }
 

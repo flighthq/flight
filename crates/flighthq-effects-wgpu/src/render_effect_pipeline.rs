@@ -26,7 +26,6 @@ use flighthq_render_wgpu::render_target_pool::{
     WgpuRenderTargetPool, acquire_wgpu_render_target, create_wgpu_render_target_pool,
     destroy_wgpu_render_target_pool, release_wgpu_render_target,
 };
-use flighthq_types::geometry::Matrix;
 
 use crate::effect_program_cache::{
     WgpuEffectBlend, draw_wgpu_effect_filter_pass, get_wgpu_effect_pipeline,
@@ -104,10 +103,7 @@ pub fn begin_wgpu_render_effect_pipeline(
     }
 
     let clear_color = unpack_wgpu_clear_color(state.render_state.background_color);
-    let render_transform = state
-        .render_state
-        .render_transform_2d
-        .unwrap_or_else(Matrix::default);
+    let render_transform = state.render_state.render_transform_2d.unwrap_or_default();
     let scene_target = pipeline
         .scene_target
         .as_ref()

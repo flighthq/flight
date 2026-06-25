@@ -9,7 +9,9 @@
 pub mod statusbar;
 
 pub use statusbar::{
-    create_web_status_bar_backend, get_status_bar_backend, set_status_bar_backend,
-    set_status_bar_color, set_status_bar_overlays_content, set_status_bar_style,
-    set_status_bar_visible,
+    attach_status_bar, create_status_bar, create_status_bar_info, create_web_status_bar_backend,
+    detach_status_bar, dispose_status_bar, enable_status_bar_signals, get_status_bar_backend,
+    get_status_bar_height, get_status_bar_info, pop_status_bar_style_entry,
+    push_status_bar_style_entry, set_status_bar_backend, set_status_bar_color,
+    set_status_bar_overlays_content, set_status_bar_style, set_status_bar_visible,
 };

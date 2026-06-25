@@ -53,6 +53,12 @@ pub struct SceneLightBlock {
     pub ambient_count: u32,
     pub data: Vec<f32>,
     pub directional_count: u32,
+    // Punctual/area light counts. Zero until the forward punctual-light passes
+    // wire them; renderers zero-fill them today so the block shape stays stable
+    // as lighting grows to `MAX_FORWARD_LIGHTS`.
+    pub hemisphere_count: u32,
+    pub point_count: u32,
+    pub spot_count: u32,
     pub version: u32,
 }
 
@@ -65,6 +71,9 @@ impl Default for SceneLightBlock {
             ambient_count: 0,
             data: vec![0.0; 12],
             directional_count: 0,
+            hemisphere_count: 0,
+            point_count: 0,
+            spot_count: 0,
             version: 0,
         }
     }
@@ -114,6 +123,9 @@ mod tests {
         assert!(block.data.iter().all(|&f| f == 0.0));
         assert_eq!(block.ambient_count, 0);
         assert_eq!(block.directional_count, 0);
+        assert_eq!(block.hemisphere_count, 0);
+        assert_eq!(block.point_count, 0);
+        assert_eq!(block.spot_count, 0);
         assert_eq!(block.version, 0);
     }
 

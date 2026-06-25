@@ -284,10 +284,10 @@ mod tests {
 
     #[test]
     fn read_ts_baseline_fingerprint_defers_when_webgpu_node_lacks_fingerprint() {
-        // `effect-hue-saturation` committed a `webgpu` node with only a sha256
-        // (no fingerprint), so parity must defer rather than fall back to the
-        // canvas baseline, whose CSS hue-rotate is a different algorithm.
-        assert!(read_ts_baseline_fingerprint("effect-hue-saturation").is_none());
+        // `camera-orthographic` has no `webgpu` fingerprint (orthographic is a
+        // known wgpu render gap — see render-backend-support.md), so parity must
+        // defer rather than fall back to a different-backend baseline.
+        assert!(read_ts_baseline_fingerprint("camera-orthographic").is_none());
     }
 
     #[test]

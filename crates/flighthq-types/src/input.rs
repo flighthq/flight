@@ -179,12 +179,26 @@ pub struct InputPointerData {
     pub ctrl_key: bool,
     pub delta_x: f32,
     pub delta_y: f32,
+    /// Contact geometry height in CSS pixels (pen/touch); 1 for mouse.
+    pub height: f32,
     pub is_primary: bool,
     pub meta_key: bool,
     pub pointer_id: i32,
     pub pointer_type: PointerType,
+    /// Normalized pressure in [0, 1]; 0.5 for an active mouse button, 0 otherwise.
+    pub pressure: f32,
     pub shift_key: bool,
+    /// Pen tilt around the X axis in degrees, in [-90, 90].
+    pub tilt_x: f32,
+    /// Pen tilt around the Y axis in degrees, in [-90, 90].
+    pub tilt_y: f32,
+    /// Host event timestamp in milliseconds.
+    pub time_stamp: f64,
+    /// Pen barrel rotation (twist) in degrees, in [0, 359].
+    pub twist: f32,
     pub wheel_mode: MouseWheelMode,
+    /// Contact geometry width in CSS pixels (pen/touch); 1 for mouse.
+    pub width: f32,
     pub x: f32,
     pub y: f32,
 }
@@ -207,6 +221,8 @@ pub struct InputKeyboardData {
     pub num_lock: bool,
     pub repeat: bool,
     pub shift_key: bool,
+    /// Host event timestamp in milliseconds.
+    pub time_stamp: f64,
 }
 
 // ---------------------------------------------------------------------------
@@ -217,6 +233,8 @@ pub struct InputKeyboardData {
 pub struct InputGamepadAxisData {
     pub axis: u32,
     pub gamepad: u32,
+    /// Host event timestamp in milliseconds.
+    pub time_stamp: f64,
     pub value: f32,
 }
 
@@ -224,6 +242,8 @@ pub struct InputGamepadAxisData {
 pub struct InputGamepadButtonData {
     pub button: u32,
     pub gamepad: u32,
+    /// Host event timestamp in milliseconds.
+    pub time_stamp: f64,
     pub value: f32,
 }
 
@@ -231,6 +251,20 @@ pub struct InputGamepadButtonData {
 pub struct InputGamepadConnectData {
     pub gamepad: u32,
     pub id: String,
+    pub mapping: GamepadMapping,
+}
+
+/// The standardization of a gamepad's button/axis mapping. `Standard` is the W3C
+/// standard layout, `Raw` an unmapped device, `Unknown` the unspecified `''` case.
+/// Mirrors the TS `GamepadMapping = 'standard' | 'raw' | ''`.
+#[repr(u8)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+pub enum GamepadMapping {
+    Standard,
+    Raw,
+    /// The empty-string (`''`) case: the host did not specify a mapping.
+    #[default]
+    Unknown,
 }
 
 // ---------------------------------------------------------------------------
@@ -318,4 +352,39 @@ pub struct KeyboardEventData {
     pub key_code: u32,
     pub meta_key: bool,
     pub shift_key: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gamepad_mapping_default_is_unknown() {
+        // Mirrors the TS GamepadMapping `''` (unspecified) default.
+        assert_eq!(GamepadMapping::default(), GamepadMapping::Unknown);
+    }
+
+    #[test]
+    fn input_gamepad_connect_data_default_has_unknown_mapping() {
+        let data = InputGamepadConnectData::default();
+        assert_eq!(data.mapping, GamepadMapping::Unknown);
+        assert_eq!(data.id, "");
+    }
+
+    #[test]
+    fn input_pointer_data_default_zeroes_the_new_geometry_fields() {
+        let data = InputPointerData::default();
+        assert_eq!(data.width, 0.0);
+        assert_eq!(data.height, 0.0);
+        assert_eq!(data.pressure, 0.0);
+        assert_eq!(data.tilt_x, 0.0);
+        assert_eq!(data.tilt_y, 0.0);
+        assert_eq!(data.twist, 0.0);
+        assert_eq!(data.time_stamp, 0.0);
+    }
+
+    #[test]
+    fn input_keyboard_data_default_has_zero_time_stamp() {
+        assert_eq!(InputKeyboardData::default().time_stamp, 0.0);
+    }
 }

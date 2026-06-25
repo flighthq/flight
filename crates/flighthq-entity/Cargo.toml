@@ -7,3 +7,6 @@ description = "Core entity/node/runtime data model and binding system"
 
 [dependencies]
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

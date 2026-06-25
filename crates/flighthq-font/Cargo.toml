@@ -7,3 +7,6 @@ description = "Font and font-resource types and constructors"
 
 [dependencies]
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

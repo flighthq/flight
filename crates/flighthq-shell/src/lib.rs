@@ -16,9 +16,14 @@ pub mod shell;
 
 // shell
 pub use shell::{
-    NativeShellBackend, get_shell_backend, move_item_to_trash, open_external_url, open_shell_path,
-    set_shell_backend, shell_beep, show_item_in_folder,
+    NativeShellBackend, get_shell_backend, is_shell_url_allowed, move_item_to_trash,
+    move_items_to_trash, open_external_url, open_shell_path, open_shell_path_result,
+    read_shell_shortcut_link, set_shell_backend, set_shell_url_scheme_allowlist, shell_beep,
+    show_item_in_folder, write_shell_shortcut_link,
 };
 
 // Shared seam contract lives in the header layer.
-pub use flighthq_types::ShellBackend;
+pub use flighthq_types::{
+    ShellBackend, ShellOpenExternalOptions, ShellOpenPathOptions, ShellShortcutLink,
+    ShellShortcutWriteOperation,
+};

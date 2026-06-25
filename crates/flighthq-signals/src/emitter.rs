@@ -153,6 +153,15 @@ fn commit_snapshot<T>(emitter: &mut SignalEmitter<T>, snap: &[SnapEntry<T>], fir
 /// For a zero-data notification, parameterize the signal as `Signal<()>` and
 /// emit with `emit_signal(&sig, &())`.
 pub fn emit_signal<T>(signal: &Signal<T>, payload: &T) {
+    let _ = emit_signal_cancellable(signal, payload);
+}
+
+/// Emits `signal` like [`emit_signal`], and returns `true` when a slot vetoed
+/// the pass by calling [`cancel_signal`]. The Rust analogue of reading
+/// `signal.data.cancelled` after a TypeScript emit: because the cancelled flag
+/// is reset at the end of every emit, this is the only race-free way to observe
+/// a veto, captured before the reset.
+pub fn emit_signal_cancellable<T>(signal: &Signal<T>, payload: &T) -> bool {
     let snap = {
         let mut guard = signal.emitter.lock().unwrap();
         guard.cancelled = false;
@@ -160,16 +169,19 @@ pub fn emit_signal<T>(signal: &Signal<T>, payload: &T) {
     };
 
     let mut fired = 0;
+    let mut cancelled = false;
     for entry in &snap {
         (entry.callback)(payload);
         fired += 1;
         if signal.emitter.lock().unwrap().cancelled {
+            cancelled = true;
             break;
         }
     }
 
     let mut guard = signal.emitter.lock().unwrap();
     commit_snapshot(&mut guard, &snap, fired);
+    cancelled
 }
 
 // ---- Other free functions ------------------------------------------------
@@ -188,8 +200,13 @@ pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool {
 }
 
 /// Disconnects all slots from `signal`.
-pub fn disconnect_all_signals<T>(signal: &Signal<T>) {
+pub fn clear_signal<T>(signal: &Signal<T>) {
     signal.emitter.lock().unwrap().disconnect_all();
+}
+
+/// Returns `true` if `signal` has at least one connected slot.
+pub fn has_signal_slots<T>(signal: &Signal<T>) -> bool {
+    signal.emitter.lock().unwrap().slot_count() > 0
 }
 
 /// Connects `callback` to `signal`'s emitter and returns a [`SlotId`].
@@ -208,7 +225,7 @@ mod tests {
 
     use super::*;
     use crate::signal::Signal;
-    use crate::slot::connect_signal;
+    use crate::slot::{connect_signal, disconnect_signal};
 
     // --- cancel_signal ---
 
@@ -249,10 +266,10 @@ mod tests {
         assert!(!*fired2.lock().unwrap());
     }
 
-    // --- disconnect_all_signals ---
+    // --- clear_signal ---
 
     #[test]
-    fn disconnect_all_signals_removes_all_slots() {
+    fn clear_signal_removes_all_slots() {
         let sig: Signal<()> = Signal::new();
         let count = Arc::new(Mutex::new(0u32));
         let c1 = Arc::clone(&count);
@@ -271,9 +288,33 @@ mod tests {
             }),
             Default::default(),
         );
-        disconnect_all_signals(&sig);
+        clear_signal(&sig);
         emit_signal(&sig, &());
         assert_eq!(*count.lock().unwrap(), 0);
+    }
+
+    // --- has_signal_slots ---
+
+    #[test]
+    fn has_signal_slots_returns_false_when_no_slot_is_connected() {
+        let sig: Signal<()> = Signal::new();
+        assert!(!has_signal_slots(&sig));
+    }
+
+    #[test]
+    fn has_signal_slots_returns_true_when_a_slot_is_connected() {
+        let sig: Signal<()> = Signal::new();
+        let _slot = connect_signal(&sig, Arc::new(|_: &()| {}), Default::default());
+        assert!(has_signal_slots(&sig));
+    }
+
+    #[test]
+    fn has_signal_slots_returns_false_after_last_slot_disconnected() {
+        let sig: Signal<()> = Signal::new();
+        let slot = connect_signal(&sig, Arc::new(|_: &()| {}), Default::default());
+        let id = slot.id();
+        disconnect_signal(&sig, id);
+        assert!(!has_signal_slots(&sig));
     }
 
     // --- emit_signal ---

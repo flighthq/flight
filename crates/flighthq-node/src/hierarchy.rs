@@ -124,12 +124,11 @@ pub fn get_node_child_by_name(
     source: NodeId,
     name: &str,
 ) -> Option<NodeId> {
-    for &child in &arena[source].children {
-        if arena[child].name.as_deref() == Some(name) {
-            return Some(child);
-        }
-    }
-    None
+    arena[source]
+        .children
+        .iter()
+        .find(|&&child| arena[child].name.as_deref() == Some(name))
+        .copied()
 }
 
 /// Returns the number of direct children of `source`.
@@ -258,14 +257,14 @@ pub fn set_node_child_index(
     if index >= children.len() {
         return;
     }
-    if let Some(pos) = children.iter().position(|&id| id == child) {
-        if pos != index {
-            children.remove(pos);
-            // Final-index semantics (matches TS splice(index, 0) on the
-            // post-removal list). The guard above ensures index < len, so
-            // index is a valid insertion point after removal.
-            children.insert(index, child);
-        }
+    if let Some(pos) = children.iter().position(|&id| id == child)
+        && pos != index
+    {
+        children.remove(pos);
+        // Final-index semantics (matches TS splice(index, 0) on the
+        // post-removal list). The guard above ensures index < len, so
+        // index is a valid insertion point after removal.
+        children.insert(index, child);
     }
 }
 

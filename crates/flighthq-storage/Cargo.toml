@@ -6,4 +6,10 @@ license.workspace = true
 description = "Synchronous key/value persistence over a swappable web/native backend (localStorage by default)"
 
 [dependencies]
+flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }
+serde = "1"
+serde_json = "1"
+
+[lints]
+workspace = true

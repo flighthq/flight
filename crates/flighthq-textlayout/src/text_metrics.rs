@@ -32,10 +32,12 @@ mod tests {
 
     #[test]
     fn get_text_metrics_ceil() {
-        let mut layout = TextLayoutResult::default();
-        layout.text_width = 10.3;
-        layout.text_height = 14.7;
-        layout.num_lines = 2;
+        let layout = TextLayoutResult {
+            text_width: 10.3,
+            text_height: 14.7,
+            num_lines: 2,
+            ..Default::default()
+        };
         let mut out = create_text_metrics();
         get_text_metrics(&mut out, &layout);
         assert_eq!(out.width, 11.0);
@@ -45,10 +47,12 @@ mod tests {
 
     #[test]
     fn get_text_metrics_exact() {
-        let mut layout = TextLayoutResult::default();
-        layout.text_width = 12.0;
-        layout.text_height = 16.0;
-        layout.num_lines = 1;
+        let layout = TextLayoutResult {
+            text_width: 12.0,
+            text_height: 16.0,
+            num_lines: 1,
+            ..Default::default()
+        };
         let mut out = create_text_metrics();
         get_text_metrics(&mut out, &layout);
         assert_eq!(out.width, 12.0);

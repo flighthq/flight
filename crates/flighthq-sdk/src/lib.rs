@@ -18,6 +18,13 @@
 //! crates they need (`flighthq-node`, `flighthq-render`, …) rather than this
 //! barrel, so their public surface and dependency graph stay narrow.
 
+// This crate is intentionally a barrel-of-barrels: it `pub use`s every Flight
+// crate with a glob. Flight's globally-unique naming means the same item can be
+// reachable through more than one re-export path (e.g. a type re-exported by both
+// its owner and a higher crate), which rustc flags as ambiguous — harmless here
+// by design, since the colliding paths resolve to the same item.
+#![allow(ambiguous_glob_reexports)]
+
 // Foundation: shared types, math, logging, entity/runtime primitives, geometry.
 pub use flighthq_entity::*;
 pub use flighthq_geometry::*;
@@ -111,6 +118,7 @@ pub use flighthq_network::*;
 pub use flighthq_notification::*;
 pub use flighthq_platform::*;
 pub use flighthq_power::*;
+pub use flighthq_resource_formats::*;
 pub use flighthq_screen::*;
 pub use flighthq_sensors::*;
 pub use flighthq_share::*;
@@ -119,6 +127,7 @@ pub use flighthq_shortcut::*;
 pub use flighthq_statusbar::*;
 pub use flighthq_storage::*;
 pub use flighthq_tray::*;
+pub use flighthq_useragent::*;
 pub use flighthq_webcam::*;
 
 // Application/process layer: host shell integration beyond a single window.
@@ -126,3 +135,22 @@ pub use flighthq_app::*;
 pub use flighthq_ipc::*;
 pub use flighthq_protocol::*;
 pub use flighthq_updater::*;
+
+#[cfg(test)]
+mod tests {
+    // The barrel only forwards names; these reach a representative export from
+    // each domain through the `flighthq_sdk` path to prove the re-export wiring.
+    use crate as sdk;
+
+    #[test]
+    fn exports_create_application() {
+        // Reaching the function item through the barrel proves the re-export.
+        let _app = sdk::create_application();
+    }
+
+    #[test]
+    fn exports_parse_user_agent_name() {
+        // Reaching a useragent export through the barrel proves the re-export.
+        let _name = sdk::parse_user_agent_name("");
+    }
+}

@@ -7,6 +7,10 @@ description = "Platform identification seam for the desktop/mobile integration s
 
 [dependencies]
 flighthq-types = { workspace = true }
+flighthq-useragent = { workspace = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }
+
+[lints]
+workspace = true

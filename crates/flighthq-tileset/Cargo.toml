@@ -9,3 +9,6 @@ description = "Tilesets: uniform-grid texture atlases and constructors from imag
 flighthq-types = { workspace = true }
 flighthq-image = { workspace = true }
 flighthq-textureatlas = { workspace = true }
+
+[lints]
+workspace = true

@@ -276,7 +276,7 @@ mod tests {
         assert_eq!(mesh.indices.len(), 6); // 2 triangles × 3
         // Second triangle's indices should be offset by 3
         let second = &mesh.indices[3..];
-        assert!(second.iter().all(|&i| i >= 3 && i < 6));
+        assert!(second.iter().all(|&i| (3..6).contains(&i)));
     }
 
     // tessellate_path — quadratic curve path triangulates without panic

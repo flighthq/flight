@@ -1,8 +1,12 @@
 use flighthq_types::{Rectangle, TextAutoSize, TextLayoutResult};
 
+use crate::text_layout::TEXT_LAYOUT_GUTTER;
+
 /// The inner gutter (px) between the field box edge and its text, applied on
 /// every side. Used by scroll-metric helpers that need the visible content area.
-pub const TEXT_BOUNDS_GUTTER: f32 = 2.0;
+/// Alias of `TEXT_LAYOUT_GUTTER` so both names refer to the same shared value
+/// without duplication risk.
+pub const TEXT_BOUNDS_GUTTER: f32 = TEXT_LAYOUT_GUTTER;
 
 /// A minimal description of a text field's sizing constraints, accepted by
 /// all `compute_text_bounds_*` functions.
@@ -73,6 +77,7 @@ pub fn compute_text_bounds_width(spec: &TextBoundsSpec, layout: &TextLayoutResul
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::text_layout::TEXT_LAYOUT_GUTTER;
     use flighthq_types::{TextAutoSize, TextLayoutResult};
 
     fn fixed_spec(w: f32, h: f32) -> TextBoundsSpec {
@@ -218,5 +223,16 @@ mod tests {
             compute_text_bounds_width(&spec, &layout_with(30.0, 20.0)),
             34.0
         );
+    }
+
+    #[test]
+    fn text_bounds_gutter_equals_text_layout_gutter() {
+        assert_eq!(TEXT_BOUNDS_GUTTER, TEXT_LAYOUT_GUTTER);
+    }
+
+    #[test]
+    #[allow(clippy::assertions_on_constants)] // documents the gutter-positive invariant
+    fn text_bounds_gutter_is_positive() {
+        assert!(TEXT_BOUNDS_GUTTER > 0.0);
     }
 }

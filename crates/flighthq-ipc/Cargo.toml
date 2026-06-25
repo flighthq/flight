@@ -8,6 +8,11 @@ description = "Inter-process messaging (send, invoke, per-channel subscribe) ove
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-signals = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }
+pollster = "0.3"
+
+[lints]
+workspace = true

@@ -7,3 +7,6 @@ description = "Color transform and material utilities"
 
 [dependencies]
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

@@ -297,7 +297,9 @@ pub fn fill_surface_perlin_noise_wasm(
     gray_scale: bool,
 ) {
     let mut dest = region_from_desc(dest_data, dest_desc);
-    fill_surface_perlin_noise(&mut dest, base_x, base_y, octaves, seed, gray_scale);
+    fill_surface_perlin_noise(
+        &mut dest, base_x, base_y, octaves, seed, gray_scale, false, 0x7,
+    );
     dest_data.copy_from_slice(&dest.surface.data);
 }
 
