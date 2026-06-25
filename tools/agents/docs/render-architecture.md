@@ -66,15 +66,8 @@ The scene graph is observer-agnostic. Because the camera is a parameter of the r
 
 `Stage` (the 2D `DisplayObject`-graph root) and `Scene` (the 3D `SceneNode`-graph root) are the two graph roots. They do not nest (different node families). **`Texture` is the universal bridge:** any graph renders to a `Texture`, and any `Mesh` + `Material` consumes one. There are no bridge node types — a 2D panel in a 3D world is just a `Mesh` with `createPlaneMeshGeometry` whose material samples a `Stage`-rendered render-target `Texture`; the inverse (3D inside 2D) is a `Scene` rendered to a `Texture` drawn as a `Bitmap`. The passes stay explicit (the user renders each graph), so the two pipelines stay decoupled and tree-shakable.
 
-## Build status & plan
-
-- **Done:** `world`→`scene` + `camera`→`webcam` renames; all data primitives + the 20-material taxonomy (922 tests green).
-- **In progress (this migration):** (1) repo-wide acronym sweep → (2) structural split (extract `render-gl`/`render-wgpu` cores, rename 2D renderers → `displayobject-{backend}`, `effects-*`/`filters-*` → `-gl`/`-wgpu` + re-point, stub `scene-gl`/`scene-wgpu`, wire root) → (3) the scene-build fan-out.
-- **Scene build phasing:** core-lit (all 20 materials, directional + ambient) as the proving slice first, then shadows → IBL → transmission/area as separate named passes. Full feature set + combinations in scope.
-- **Functional tests:** per-material `gl` + `wgpu` parity (a known mesh under standard lighting; not-blank + cross-backend parity + committed baseline).
-
 ## Related docs
 
 - `render-backend-support.md` — the **current** per-backend feature-support matrix and the known deltas from this target (blend-mode/stroke-join/bitmap-smoothing/strikethrough gaps, wgpu orthographic, unwired punctual lights). Read it before assuming a feature renders on a backend; this doc is the intended end state, that one is what ships today.
 - `3d-materials-architecture.md` — the original judge-panel build spec + §0 settled decisions + the full material taxonomy table. (Its body predates this session's naming; this doc supersedes the render-layer and naming sections.)
-- `index.md` — the project map. Its package map + reference-doc list want a refresh once the structural split lands and the package names are final.
+- `3d-pipeline-architecture.md` — the 3D pipeline build-out: explicit named passes, picking, animation core, scene-formats/glTF, and build sequencing.
