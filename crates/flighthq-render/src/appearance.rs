@@ -101,10 +101,12 @@ mod tests {
         let mut store = RenderStateStore::new();
         let id = create_render_state(&mut store, None);
         let state = RenderState::default();
-        let mut proxy = RenderProxy::default();
         // A freshly created proxy starts with the sentinel appearance id, so the first update is
         // always dirty and recalculates (create_render_proxy sets u64::MAX, not the Default 0).
-        proxy.last_appearance_id = u64::MAX;
+        let mut proxy = RenderProxy {
+            last_appearance_id: u64::MAX,
+            ..Default::default()
+        };
         update_render_proxy_appearance(&store, id, &state, &mut proxy, None, 1.0, true, None, 0);
         assert!(proxy.visible);
     }
@@ -114,9 +116,11 @@ mod tests {
         let mut store = RenderStateStore::new();
         let id = create_render_state(&mut store, None);
         let state = RenderState::default();
-        let mut parent = RenderProxy::default();
-        parent.alpha = 0.5;
-        parent.visible = true;
+        let parent = RenderProxy {
+            alpha: 0.5,
+            visible: true,
+            ..Default::default()
+        };
         let mut proxy = RenderProxy::default();
         update_render_proxy_appearance(
             &store,
@@ -138,8 +142,10 @@ mod tests {
         let mut store = RenderStateStore::new();
         let id = create_render_state(&mut store, None);
         let state = RenderState::default();
-        let mut parent = RenderProxy::default();
-        parent.visible = false;
+        let parent = RenderProxy {
+            visible: false,
+            ..Default::default()
+        };
         let mut proxy = RenderProxy::default();
         update_render_proxy_appearance(
             &store,

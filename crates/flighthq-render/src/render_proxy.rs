@@ -876,10 +876,12 @@ mod tests {
             }),
         );
         let state = get_render_state(&store, id).clone();
-        let mut data = RenderProxy::default();
-        data.last_local_transform_id = 1;
-        data.last_appearance_id = 1;
-        data.last_local_content_id = 1;
+        let data = RenderProxy {
+            last_local_transform_id: 1,
+            last_appearance_id: 1,
+            last_local_content_id: 1,
+            ..Default::default()
+        };
         let dirty = is_render_proxy_dirty(&store, id, &state, 1, &data, None, 1, 1, 1);
         assert!(!dirty);
     }
@@ -895,10 +897,12 @@ mod tests {
             }),
         );
         let state = get_render_state(&store, id).clone();
-        let mut data = RenderProxy::default();
-        data.last_local_transform_id = 1;
-        data.last_appearance_id = 1;
-        data.last_local_content_id = 1;
+        let data = RenderProxy {
+            last_local_transform_id: 1,
+            last_appearance_id: 1,
+            last_local_content_id: 1,
+            ..Default::default()
+        };
         // appearance_id bumped to 2.
         let dirty = is_render_proxy_dirty(&store, id, &state, 1, &data, None, 1, 2, 1);
         assert!(dirty);
@@ -917,12 +921,16 @@ mod tests {
         // Bump the frame id so a parent stamped with it counts as dirty.
         get_render_state_runtime_mut(&mut store, id).current_frame_id = 5;
         let state = get_render_state(&store, id).clone();
-        let mut data = RenderProxy::default();
-        data.last_local_transform_id = 1;
-        data.last_appearance_id = 1;
-        data.last_local_content_id = 1;
-        let mut parent = RenderProxy::default();
-        parent.transform_frame_id = 5;
+        let data = RenderProxy {
+            last_local_transform_id: 1,
+            last_appearance_id: 1,
+            last_local_content_id: 1,
+            ..Default::default()
+        };
+        let parent = RenderProxy {
+            transform_frame_id: 5,
+            ..Default::default()
+        };
         let dirty = is_render_proxy_dirty(&store, id, &state, 1, &data, Some(&parent), 1, 1, 1);
         assert!(dirty);
     }
@@ -933,10 +941,12 @@ mod tests {
         // Default policy is RefreshDerivedState, which forces local_dirty.
         let id = create_render_state(&mut store, None);
         let state = get_render_state(&store, id).clone();
-        let mut data = RenderProxy::default();
-        data.last_local_transform_id = 1;
-        data.last_appearance_id = 1;
-        data.last_local_content_id = 1;
+        let data = RenderProxy {
+            last_local_transform_id: 1,
+            last_appearance_id: 1,
+            last_local_content_id: 1,
+            ..Default::default()
+        };
         let dirty = is_render_proxy_dirty(&store, id, &state, 1, &data, None, 1, 1, 1);
         assert!(dirty);
     }
@@ -1058,8 +1068,10 @@ mod tests {
         register_renderer(&mut store, id, kind, Arc::new(CountingRenderer));
         let current = get_render_state_runtime(&store, id).renderer_map_id;
         let state = get_render_state(&store, id).clone();
-        let mut proxy = RenderProxy::default();
-        proxy.renderer_map_id = u64::MAX;
+        let mut proxy = RenderProxy {
+            renderer_map_id: u64::MAX,
+            ..Default::default()
+        };
         update_render_proxy_renderer(&mut store, id, &state, &mut proxy);
         assert_eq!(proxy.renderer_map_id, current);
     }
@@ -1231,8 +1243,10 @@ mod tests {
 
     #[test]
     fn update_node_clip_depth_adds_to_parent_depth() {
-        let mut parent = RenderProxy2D::default();
-        parent.clip_depth = 2;
+        let parent = RenderProxy2D {
+            clip_depth: 2,
+            ..Default::default()
+        };
         let mut data = RenderProxy2D::default();
         update_node_clip(&mut data, Some(&parent), true);
         assert_eq!(data.clip_depth, 3);

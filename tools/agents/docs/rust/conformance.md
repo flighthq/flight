@@ -128,6 +128,17 @@ GPU-backend crates produce shader output that is not meaningfully unit-testable 
 
 Functions whose only implementation is a browser API live in `host-web`, not in native-core logic. The owning core crate holds the seam (`get_*_backend` / `set_*_backend`, which _are_ covered); the verbs are validated in the browser. This covers the platform-integration suite and app/process layer (`clipboard`, `dialog`, `filesystem`, `notification`, `shell`, `menu`, `tray`, `shortcut`, `screen`, `storage`, `device`, `network`, `power`, `lifecycle`, `keyboard`, `sensors`, `media`, `app`, `application`, `protocol`, `updater`, `ipc`, `platform`) plus DOM-bound functions in shared packages (`create*FromDOM`/`Canvas`/`ImageBitmap`/`Blob`/`Base64`, `getAudioContext`, DOM input wiring). These are conformance work to be done in `host-web` and browser-validated, not native-core gaps.
 
+### Backend-default divergences (2026-06-25, blessed)
+
+The governing principle: **TS's default backend is the browser; Rust's is native.** Edges that exist only to serve the browser relocate to `host-web`; the native default reads the OS / real paths; shared types live in `flighthq-types`.
+
+- **`device` / `platform` default backend — UA-parse (TS/web) vs OS-read (Rust/native).** TS's default `device`/`platform` backend parses `navigator.userAgent` via `@flighthq/useragent`. Rust's native default reads the OS directly (`std::env::consts::{OS, ARCH}`, OS-version APIs, `sysinfo`-style sources) and does **not** depend on `flighthq-useragent`. `flighthq-useragent` still exists as a standalone value-leaf on both sides — it is a dependency of **`host-web`'s** device/platform backend fills only, not of native core. Package symmetry intact (`device`, `platform`, `useragent` exist on both TS and Rust with the same names); only _which backend pulls `useragent`_ differs.
+- **`FileDialogHandle` lives in `flighthq-types`** (mirroring TS `Dialog.ts` + `FileSystem.ts`). Both `flighthq-dialog` and `flighthq-filesystem` import it from the header — **no `filesystem → dialog` dependency, no cycle.** Native inverts the web's null-path case: native `dialog` (rfd-style) returns a `FileDialogHandle` whose `path` is a real `PathBuf`, so `read_dialog_handle_*` on native is a thin `std::fs` shim; `flighthq-filesystem`'s native default is `std::fs` over paths. `get_web_file_system_handle` / `get_web_directory_system_handle` (browser `FileSystemFileHandle`, no native existence) live in **`host-web`** only; the handle's backend slot is an opaque `Option` the web backend fills.
+
+### Lint posture (2026-06-25)
+
+`clippy::too_many_arguments` is **allowed workspace-wide** (`[workspace.lints.clippy]` in root `Cargo.toml`, inherited by each crate via `[lints] workspace = true`). Flight's conventions produce wide signatures by design (flattened scalar args, `out`/`target` params); a params-struct refactor would fight the value-type convention and break 1:1 signature conformance with the TS source. Other clippy lints are fixed mechanically (e.g. `derivable_impls`), not allowed.
+
 ## Resolved by the existence rule
 
 Both prior open decisions are settled by the [crate existence rule](#the-crate-existence-rule):

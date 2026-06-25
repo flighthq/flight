@@ -79,9 +79,20 @@ pub fn fill_surface_noise(
 }
 
 /// Fills `dest` region with fractal value noise summed over `octaves`.
-/// `base_x` and `base_y` are the wavelengths (in pixels) of the first octave.
-/// When `gray_scale` is true the same noise drives R, G, and B. Alpha is set
-/// fully opaque (255). Deterministic in `seed`.
+///
+/// - `base_x`, `base_y`: wavelengths in pixels of the first octave (larger = smoother).
+/// - `octaves`: number of frequency doublings (1 = smooth; higher = more detail).
+/// - `seed`: deterministic integer seed.
+/// - `stitch`: when `true`, the noise field tiles seamlessly at the region borders.
+/// - `gray_scale`: when `true`, R=G=B share one noise channel. Overrides
+///   `channel_options` for the RGB channels.
+/// - `channel_options`: bitmask of channels to fill (default `0x7` = RGB, matching
+///   OpenFL's `perlinNoise` default). Channels not selected are left unchanged in
+///   `dest`, except alpha: when the A bit is not selected, alpha is set opaque
+///   (255) rather than left as-is. Use the `SURFACE_NOISE_CHANNEL_*` constants.
+///
+/// Output range is normalized to 0..255. Alpha defaults to 255 unless the A bit
+/// is explicitly included in `channel_options`. Deterministic in `seed`.
 pub fn fill_surface_perlin_noise(
     dest: &mut SurfaceRegion,
     base_x: f32,
@@ -89,13 +100,16 @@ pub fn fill_surface_perlin_noise(
     octaves: u32,
     seed: u32,
     gray_scale: bool,
+    stitch: bool,
+    channel_options: u32,
 ) {
     let fx0 = if base_x > 0.0 { 1.0 / base_x } else { 0.0 };
     let fy0 = if base_y > 0.0 { 1.0 / base_y } else { 0.0 };
     let passes = octaves.max(1);
-    let channels = if gray_scale { 1 } else { 3 };
     let s_width = dest.surface.width;
     let s_height = dest.surface.height;
+    let w = dest.width;
+    let h = dest.height;
     let data = &mut dest.surface.data;
     for py in 0..dest.height {
         let y = dest.y + py;
@@ -108,27 +122,147 @@ pub fn fill_surface_perlin_noise(
                 continue;
             }
             let di = ((y * s_width + x) * 4) as usize;
-            for c in 0..channels {
-                // Per-channel seed offset matches @flighthq/surface (authoritative): R uses the
-                // base seed; G adds 0x9e3779b1, then B/A increment by one each (0x9e3779b2,
-                // 0x9e3779b3). Not c * 0x9e3779b1 — that diverges from B onward.
-                let channel_seed = seed.wrapping_add(if c == 0 {
-                    0
-                } else {
-                    0x9e3779b0u32.wrapping_add(c)
-                });
-                let value =
-                    fractal_value_noise(px as f32 * fx0, py as f32 * fy0, passes, channel_seed);
+
+            let nx = if stitch {
+                stitched_coord(px as f32 * fx0, w as f32 * fx0)
+            } else {
+                px as f32 * fx0
+            };
+            let ny = if stitch {
+                stitched_coord(py as f32 * fy0, h as f32 * fy0)
+            } else {
+                py as f32 * fy0
+            };
+
+            if gray_scale {
+                let value = fractal_value_noise(nx, ny, passes, seed);
                 let byte = (value * 255.0).round() as u8;
-                if gray_scale {
+                if channel_options & SURFACE_NOISE_CHANNEL_R != 0 {
                     data[di] = byte;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_G != 0 {
                     data[di + 1] = byte;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_B != 0 {
                     data[di + 2] = byte;
-                } else {
-                    data[di + c as usize] = byte;
+                }
+            } else {
+                if channel_options & SURFACE_NOISE_CHANNEL_R != 0 {
+                    data[di] = (fractal_value_noise(nx, ny, passes, seed) * 255.0).round() as u8;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_G != 0 {
+                    data[di + 1] = (fractal_value_noise(
+                        nx,
+                        ny,
+                        passes,
+                        seed.wrapping_add(0x9e3779b1),
+                    ) * 255.0)
+                        .round() as u8;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_B != 0 {
+                    data[di + 2] = (fractal_value_noise(
+                        nx,
+                        ny,
+                        passes,
+                        seed.wrapping_add(0x9e3779b2),
+                    ) * 255.0)
+                        .round() as u8;
                 }
             }
-            data[di + 3] = 255;
+            if channel_options & SURFACE_NOISE_CHANNEL_A != 0 {
+                data[di + 3] = (fractal_value_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b3))
+                    * 255.0)
+                    .round() as u8;
+            } else {
+                data[di + 3] = 255;
+            }
+        }
+    }
+    dest.surface.version = dest.surface.version.wrapping_add(1);
+}
+
+/// Fills `dest` with fractal **turbulence** (absolute-value fBm) value noise,
+/// matching OpenFL's `BitmapData.perlinNoise` with `fractalNoise: false`.
+/// Turbulence sums `abs(octave)` values, producing a more vigorous, ridge-like
+/// texture than the smooth fractal sum.
+///
+/// Parameters are identical to `fill_surface_perlin_noise` except there is no
+/// `fractal_noise` flag (this function _is_ the turbulence variant).
+pub fn fill_surface_turbulence(
+    dest: &mut SurfaceRegion,
+    base_x: f32,
+    base_y: f32,
+    octaves: u32,
+    seed: u32,
+    gray_scale: bool,
+    stitch: bool,
+    channel_options: u32,
+) {
+    let fx0 = if base_x > 0.0 { 1.0 / base_x } else { 0.0 };
+    let fy0 = if base_y > 0.0 { 1.0 / base_y } else { 0.0 };
+    let passes = octaves.max(1);
+    let s_width = dest.surface.width;
+    let s_height = dest.surface.height;
+    let w = dest.width;
+    let h = dest.height;
+    let data = &mut dest.surface.data;
+    for py in 0..dest.height {
+        let y = dest.y + py;
+        if y >= s_height {
+            continue;
+        }
+        for px in 0..dest.width {
+            let x = dest.x + px;
+            if x >= s_width {
+                continue;
+            }
+            let di = ((y * s_width + x) * 4) as usize;
+
+            let nx = if stitch {
+                stitched_coord(px as f32 * fx0, w as f32 * fx0)
+            } else {
+                px as f32 * fx0
+            };
+            let ny = if stitch {
+                stitched_coord(py as f32 * fy0, h as f32 * fy0)
+            } else {
+                py as f32 * fy0
+            };
+
+            if gray_scale {
+                let value = turbulence_noise(nx, ny, passes, seed);
+                let byte = (value * 255.0).round() as u8;
+                if channel_options & SURFACE_NOISE_CHANNEL_R != 0 {
+                    data[di] = byte;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_G != 0 {
+                    data[di + 1] = byte;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_B != 0 {
+                    data[di + 2] = byte;
+                }
+            } else {
+                if channel_options & SURFACE_NOISE_CHANNEL_R != 0 {
+                    data[di] = (turbulence_noise(nx, ny, passes, seed) * 255.0).round() as u8;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_G != 0 {
+                    data[di + 1] = (turbulence_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b1))
+                        * 255.0)
+                        .round() as u8;
+                }
+                if channel_options & SURFACE_NOISE_CHANNEL_B != 0 {
+                    data[di + 2] = (turbulence_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b2))
+                        * 255.0)
+                        .round() as u8;
+                }
+            }
+            if channel_options & SURFACE_NOISE_CHANNEL_A != 0 {
+                data[di + 3] = (turbulence_noise(nx, ny, passes, seed.wrapping_add(0x9e3779b3))
+                    * 255.0)
+                    .round() as u8;
+            } else {
+                data[di + 3] = 255;
+            }
         }
     }
     dest.surface.version = dest.surface.version.wrapping_add(1);
@@ -201,6 +335,15 @@ pub fn flood_fill_surface(out: &mut Surface, x: u32, y: u32, color: u32) {
     out.version = out.version.wrapping_add(1);
 }
 
+/// Noise channel bitmask: alpha.
+pub const SURFACE_NOISE_CHANNEL_A: u32 = 0x8;
+/// Noise channel bitmask: blue.
+pub const SURFACE_NOISE_CHANNEL_B: u32 = 0x4;
+/// Noise channel bitmask: green.
+pub const SURFACE_NOISE_CHANNEL_G: u32 = 0x2;
+/// Noise channel bitmask: red.
+pub const SURFACE_NOISE_CHANNEL_R: u32 = 0x1;
+
 // Fractal sum of value noise: doubling frequency, halving amplitude per octave,
 // normalized back to 0..1 by the total amplitude.
 fn fractal_value_noise(x: f32, y: f32, octaves: u32, seed: u32) -> f32 {
@@ -247,6 +390,41 @@ fn next_random_state(state: u32) -> u32 {
 // Smoothstep, so lattice cells blend without visible seams.
 fn smooth_step(t: f32) -> f32 {
     t * t * (3.0 - 2.0 * t)
+}
+
+// Wraps t into [0, period) so that integer lattice indices repeat, producing seamless tiling.
+fn stitched_coord(t: f32, period: f32) -> f32 {
+    if period <= 0.0 {
+        return t;
+    }
+    ((t % period) + period) % period
+}
+
+// Fractal turbulence: abs(2*v - 1) fBm, producing a more vigorous ridge-like texture than
+// the smooth fractal sum (matches OpenFL perlinNoise with fractalNoise=false).
+fn turbulence_noise(x: f32, y: f32, octaves: u32, seed: u32) -> f32 {
+    let mut sum = 0.0f32;
+    let mut amplitude = 1.0f32;
+    let mut amplitude_sum = 0.0f32;
+    let mut frequency = 1.0f32;
+    for o in 0..octaves {
+        sum += (value_noise(
+            x * frequency,
+            y * frequency,
+            seed.wrapping_add(o.wrapping_mul(0x85ebca6b)),
+        ) * 2.0
+            - 1.0)
+            .abs()
+            * amplitude;
+        amplitude_sum += amplitude;
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    if amplitude_sum > 0.0 {
+        sum / amplitude_sum
+    } else {
+        0.0
+    }
 }
 
 // Bilinearly-interpolated lattice hash — one octave of value noise in 0..1.
@@ -315,10 +493,111 @@ mod tests {
         let b = create_surface(16, 16, 0);
         let mut ra = create_surface_region(a, 0, 0, 16, 16);
         let mut rb = create_surface_region(b, 0, 0, 16, 16);
-        fill_surface_perlin_noise(&mut ra, 8.0, 8.0, 3, 99, false);
-        fill_surface_perlin_noise(&mut rb, 8.0, 8.0, 3, 99, false);
+        fill_surface_perlin_noise(&mut ra, 8.0, 8.0, 3, 99, false, false, 0x7);
+        fill_surface_perlin_noise(&mut rb, 8.0, 8.0, 3, 99, false, false, 0x7);
         assert_eq!(ra.surface.data, rb.surface.data);
         assert_eq!(ra.surface.data[3], 255);
+    }
+
+    #[test]
+    fn fill_surface_perlin_noise_selected_channels_only() {
+        let surface = create_surface(8, 8, 0x000000ff);
+        let mut r = create_surface_region(surface, 0, 0, 8, 8);
+        fill_surface_perlin_noise(
+            &mut r,
+            8.0,
+            8.0,
+            2,
+            5,
+            false,
+            false,
+            SURFACE_NOISE_CHANNEL_R,
+        );
+        for i in (0..r.surface.data.len()).step_by(4) {
+            // G and B were not selected, so they stay at their initial 0.
+            assert_eq!(r.surface.data[i + 1], 0);
+            assert_eq!(r.surface.data[i + 2], 0);
+            // Alpha not selected -> forced opaque.
+            assert_eq!(r.surface.data[i + 3], 255);
+        }
+    }
+
+    #[test]
+    fn fill_surface_turbulence_deterministic() {
+        let a = create_surface(8, 8, 0);
+        let b = create_surface(8, 8, 0);
+        let mut ra = create_surface_region(a, 0, 0, 8, 8);
+        let mut rb = create_surface_region(b, 0, 0, 8, 8);
+        fill_surface_turbulence(&mut ra, 16.0, 16.0, 3, 42, false, false, 0x7);
+        fill_surface_turbulence(&mut rb, 16.0, 16.0, 3, 42, false, false, 0x7);
+        assert_eq!(ra.surface.data, rb.surface.data);
+    }
+
+    #[test]
+    fn fill_surface_turbulence_in_range_and_alpha_opaque() {
+        let s = create_surface(8, 8, 0);
+        let mut r = create_surface_region(s, 0, 0, 8, 8);
+        fill_surface_turbulence(&mut r, 8.0, 8.0, 2, 5, false, false, 0x7);
+        for i in (0..r.surface.data.len()).step_by(4) {
+            // u8 is inherently 0..=255; assert alpha opaque.
+            assert_eq!(r.surface.data[i + 3], 255);
+        }
+    }
+
+    #[test]
+    fn fill_surface_turbulence_grayscale_channels_equal() {
+        let s = create_surface(8, 8, 0);
+        let mut r = create_surface_region(s, 0, 0, 8, 8);
+        fill_surface_turbulence(&mut r, 8.0, 8.0, 2, 5, true, false, 0x7);
+        for i in (0..r.surface.data.len()).step_by(4) {
+            assert_eq!(r.surface.data[i], r.surface.data[i + 1]);
+            assert_eq!(r.surface.data[i + 1], r.surface.data[i + 2]);
+        }
+    }
+
+    #[test]
+    fn fill_surface_turbulence_writes_noise_into_alpha() {
+        let surface = create_surface(8, 8, 0x000000ff);
+        let mut r = create_surface_region(surface, 0, 0, 8, 8);
+        fill_surface_turbulence(
+            &mut r,
+            4.0,
+            4.0,
+            3,
+            9,
+            false,
+            false,
+            SURFACE_NOISE_CHANNEL_A,
+        );
+        let mut saw_non_opaque = false;
+        for i in (0..r.surface.data.len()).step_by(4) {
+            if r.surface.data[i + 3] != 255 {
+                saw_non_opaque = true;
+            }
+        }
+        assert!(saw_non_opaque);
+    }
+
+    #[test]
+    fn fill_surface_turbulence_differs_from_fractal_sum() {
+        let turbulent = create_surface(8, 8, 0);
+        let fractal = create_surface(8, 8, 0);
+        let mut rt = create_surface_region(turbulent, 0, 0, 8, 8);
+        let mut rf = create_surface_region(fractal, 0, 0, 8, 8);
+        fill_surface_turbulence(&mut rt, 8.0, 8.0, 3, 7, true, false, 0x7);
+        fill_surface_perlin_noise(&mut rf, 8.0, 8.0, 3, 7, true, false, 0x7);
+        assert_ne!(rt.surface.data, rf.surface.data);
+    }
+
+    #[test]
+    fn fill_surface_turbulence_fills_only_subregion() {
+        let surface = create_surface(2, 1, 0x010203ff);
+        let mut r = create_surface_region(surface, 1, 0, 1, 1);
+        fill_surface_turbulence(&mut r, 8.0, 8.0, 2, 3, false, false, 0x7);
+        // Left pixel untouched.
+        assert_eq!(r.surface.data[0], 1);
+        assert_eq!(r.surface.data[1], 2);
+        assert_eq!(r.surface.data[2], 3);
     }
 
     #[test]

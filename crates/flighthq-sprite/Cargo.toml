@@ -9,5 +9,9 @@ description = "Sprite graph for atlas-based batch rendering: sprites, quad batch
 flighthq-displayobject = { workspace = true }
 flighthq-geometry = { workspace = true }
 flighthq-node = { workspace = true }
+flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }
 slotmap = { workspace = true }
+
+[lints]
+workspace = true

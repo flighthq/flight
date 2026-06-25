@@ -59,10 +59,10 @@ pub fn resolve_wgpu_material_renderer(
     material_kind: Option<KindId>,
 ) -> Option<&dyn WgpuMaterialRenderer> {
     let map = &state.runtime.material_renderer_map;
-    if let Some(kind) = material_kind {
-        if let Some(renderer) = map.get(&kind) {
-            return Some(renderer.as_ref());
-        }
+    if let Some(kind) = material_kind
+        && let Some(renderer) = map.get(&kind)
+    {
+        return Some(renderer.as_ref());
     }
     map.get(&KindId::of::<DefaultMaterialKind>())
         .map(|boxed| boxed.as_ref())

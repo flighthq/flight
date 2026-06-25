@@ -412,6 +412,7 @@ pub const DEFAULT_GL_WHITE_BALANCE_EFFECT_RUNNER: GlRenderEffectRunner =
 // field is itself a `&mut GlRenderState`; recipes need that mutability to
 // compile/cache programs. The context is owned by the pipeline for the duration
 // of the runner call, so the state alias is unique while the runner holds it.
+#[allow(clippy::mut_from_ref)]
 fn reborrow_state<'a>(ctx: &'a GlRenderEffectContext) -> &'a mut GlRenderState {
     let ptr = ctx.state as *const GlRenderState as *mut GlRenderState;
     // SAFETY: `ctx.state` is the only live reference to the render state for the

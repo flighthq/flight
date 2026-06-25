@@ -9,6 +9,8 @@
 pub mod device;
 
 pub use device::{
-    create_device_info, create_native_device_backend, create_safe_area_insets, get_device_backend,
-    get_device_info, get_device_memory, get_safe_area_insets, set_device_backend,
+    create_device_capabilities, create_device_display_metrics, create_device_info,
+    create_native_device_backend, create_safe_area_insets, get_device_backend,
+    get_device_capabilities, get_device_display_metrics, get_device_id, get_device_info,
+    get_safe_area_insets, refresh_device_info, set_device_backend,
 };

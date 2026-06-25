@@ -25,8 +25,7 @@ pub fn get_text_layout_measure_provider() -> Option<Arc<TextMeasureFunction>> {
         return Some(provider);
     }
     if flighthq_textshaper::get_text_shaper_backend().is_some() {
-        let shape: TextMeasureFunction =
-            Box::new(|text, format| flighthq_textshaper::shape_text(text, format));
+        let shape: TextMeasureFunction = Box::new(flighthq_textshaper::shape_text);
         return Some(Arc::new(shape));
     }
     None

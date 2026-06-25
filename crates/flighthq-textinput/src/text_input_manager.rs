@@ -46,12 +46,14 @@ pub fn dispatch_text_input(
 }
 
 /// Dispatches a key-down event to the focused field. Returns `true` when
-/// consumed.
+/// consumed. Copy is reported through `on_copy`, since this crate has no
+/// platform clipboard.
 pub fn dispatch_text_input_key_down(
     manager: &mut TextInputManager,
     source: &mut RichText,
     data: &InputKeyboardData,
     clipboard_text: Option<&str>,
+    on_copy: Option<Box<dyn Fn(String) + Send + Sync>>,
 ) -> bool {
     if !has_focus_target(manager, source) {
         return false;
@@ -66,7 +68,8 @@ pub fn dispatch_text_input_key_down(
     };
     let options = flighthq_types::HandleTextInputKeyboardOptions {
         clipboard_text: clipboard_text.map(|s| s.to_string()),
-        on_copy: None,
+        layout: None,
+        on_copy,
     };
     handle_text_input_keyboard(source, &keyboard, Some(&options))
 }
@@ -205,6 +208,7 @@ mod tests {
             &mut manager,
             &mut target,
             &InputKeyboardData::default(),
+            None,
             None
         ));
     }
@@ -224,9 +228,35 @@ mod tests {
             &mut manager,
             &mut target,
             &data,
+            None,
             None
         ));
         assert_eq!(target.data.text, "ac");
+    }
+
+    #[test]
+    fn dispatch_text_input_key_down_invokes_on_copy() {
+        use std::sync::{Arc, Mutex};
+        let mut manager = create_text_input_manager();
+        let mut target = create_input("hello");
+        set_text_input_selection(&mut target, 0, 5);
+        focus_text_input(&mut manager, &mut target);
+        let copied: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let sink = Arc::clone(&copied);
+        let data = InputKeyboardData {
+            ctrl_key: true,
+            key: "c".to_string(),
+            key_code: key_code::C,
+            ..Default::default()
+        };
+        dispatch_text_input_key_down(
+            &mut manager,
+            &mut target,
+            &data,
+            None,
+            Some(Box::new(move |text| sink.lock().unwrap().push(text))),
+        );
+        assert_eq!(*copied.lock().unwrap(), vec!["hello".to_string()]);
     }
 
     #[test]

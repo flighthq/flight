@@ -9,3 +9,6 @@ description = "3D scene graph and spatial node hierarchy"
 flighthq-geometry = { workspace = true }
 flighthq-node = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

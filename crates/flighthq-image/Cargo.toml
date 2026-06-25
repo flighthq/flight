@@ -7,3 +7,6 @@ description = "Image resources: pixel sources, MIME detection, and constructors"
 
 [dependencies]
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

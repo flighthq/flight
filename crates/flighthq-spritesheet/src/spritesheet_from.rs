@@ -43,7 +43,7 @@ mod tests {
 
     fn make_tileset(columns: u32, rows: u32) -> Tileset {
         let atlas = create_texture_atlas(None, Vec::new());
-        let mut tileset = create_tileset(Some(atlas), 32.0, 32.0, columns, rows);
+        let mut tileset = create_tileset(Some(atlas), 32.0, 32.0, columns, rows, 0.0, 0.0);
         build_tileset_regions(&mut tileset);
         tileset
     }
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn create_spritesheet_from_tileset_no_atlas() {
-        let tileset = create_tileset(None, 32.0, 32.0, 0, 0);
+        let tileset = create_tileset(None, 32.0, 32.0, 0, 0, 0.0, 0.0);
         let sheet = create_spritesheet_from_tileset(&tileset);
         assert_eq!(sheet.frames.len(), 0);
         assert!(sheet.atlas.is_none());

@@ -80,6 +80,16 @@ pub fn build_text_label_layout_params(data: &TextLabelData) -> TextLayoutParams 
     }
 }
 
+/// Appends `value` to `source.data.text`, invalidating local content. A no-op
+/// when `value` is empty.
+pub fn append_text_label_string(source: &mut TextLabel, value: &str) {
+    if value.is_empty() {
+        return;
+    }
+    source.data.text.push_str(value);
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+}
+
 /// Fills `out` with the local-bounds rectangle for `source`.
 ///
 /// Under `auto_size = None` the box is the fixed `data.width` × `data.height`
@@ -157,9 +167,19 @@ pub fn create_text_label_runtime() -> TextLabelRuntime {
     }
 }
 
+/// Returns a reference to the single `TextFormat` of `source`.
+pub fn get_text_label_format(source: &TextLabel) -> &TextFormat {
+    &source.data.text_format
+}
+
 /// Returns a reference to the `TextLabelRuntime` of `source`.
 pub fn get_text_label_runtime(source: &TextLabel) -> &TextLabelRuntime {
     &source.runtime
+}
+
+/// Returns a reference to the plain-text content of `source`.
+pub fn get_text_label_string(source: &TextLabel) -> &str {
+    &source.data.text
 }
 
 /// Sets `auto_size` on `source.data`, invalidating local content and bounds.
@@ -238,6 +258,38 @@ mod tests {
 
     fn bounds_revision(text: &TextLabel) -> u32 {
         get_bounds_node_local_bounds_revision(&text.runtime.bounds)
+    }
+
+    #[test]
+    fn append_text_label_string_appends() {
+        let mut text = create_text_label(Some(&TextLabelData {
+            text: "hello".to_string(),
+            ..TextLabelData::default()
+        }));
+        append_text_label_string(&mut text, " world");
+        assert_eq!(text.data.text, "hello world");
+    }
+
+    #[test]
+    fn append_text_label_string_invalidates_content() {
+        let mut text = create_text_label(Some(&TextLabelData {
+            text: "hi".to_string(),
+            ..TextLabelData::default()
+        }));
+        let content = content_revision(&text);
+        append_text_label_string(&mut text, "!");
+        assert_eq!(content_revision(&text), content + 1);
+    }
+
+    #[test]
+    fn append_text_label_string_no_op_when_empty() {
+        let mut text = create_text_label(Some(&TextLabelData {
+            text: "hi".to_string(),
+            ..TextLabelData::default()
+        }));
+        let content = content_revision(&text);
+        append_text_label_string(&mut text, "");
+        assert_eq!(content_revision(&text), content);
     }
 
     #[test]
@@ -336,11 +388,34 @@ mod tests {
     }
 
     #[test]
+    fn get_text_label_format_returns_format() {
+        let text = create_text_label(Some(&TextLabelData {
+            text_format: TextFormat {
+                size: Some(24.0),
+                bold: Some(true),
+                ..TextFormat::default()
+            },
+            ..TextLabelData::default()
+        }));
+        assert_eq!(get_text_label_format(&text).size, Some(24.0));
+        assert_eq!(get_text_label_format(&text).bold, Some(true));
+    }
+
+    #[test]
     fn get_text_label_runtime_returns_runtime() {
         let text = create_text_label(None);
         let runtime = get_text_label_runtime(&text);
         assert!(runtime.layout.result.is_none());
         assert_eq!(runtime.layout.content_id, -1);
+    }
+
+    #[test]
+    fn get_text_label_string_returns_text() {
+        let text = create_text_label(Some(&TextLabelData {
+            text: "hello".to_string(),
+            ..TextLabelData::default()
+        }));
+        assert_eq!(get_text_label_string(&text), "hello");
     }
 
     #[test]

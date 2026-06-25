@@ -41,7 +41,7 @@ pub fn read_f32(buf: &[AnyBox], i: usize) -> f32 {
 }
 
 pub fn read_key(buf: &[AnyBox], i: usize) -> &'static str {
-    *buf[i].downcast_ref::<&'static str>().expect("key slot")
+    buf[i].downcast_ref::<&'static str>().expect("key slot")
 }
 
 pub fn read_u8_vec(buf: &[AnyBox], i: usize) -> &Vec<u8> {

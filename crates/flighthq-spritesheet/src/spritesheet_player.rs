@@ -6,6 +6,7 @@ use flighthq_types::SpritesheetFrame;
 use flighthq_types::SpritesheetPlayer;
 
 /// Builder options for [`create_spritesheet_player`].
+#[derive(Default)]
 pub struct CreateSpritesheetPlayerOptions {
     pub animation: Option<SpritesheetAnimation>,
     pub complete: Option<bool>,
@@ -14,20 +15,6 @@ pub struct CreateSpritesheetPlayerOptions {
     pub on_complete: Option<Signal<()>>,
     pub on_loop: Option<Signal<()>>,
     pub queue: Option<Vec<SpritesheetAnimation>>,
-}
-
-impl Default for CreateSpritesheetPlayerOptions {
-    fn default() -> Self {
-        Self {
-            animation: None,
-            complete: None,
-            elapsed: None,
-            frame_index: None,
-            on_complete: None,
-            on_loop: None,
-            queue: None,
-        }
-    }
 }
 
 /// Creates a new [`SpritesheetPlayer`] with the given options, using defaults

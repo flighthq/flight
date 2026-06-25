@@ -114,9 +114,62 @@ pub fn create_native_text_runtime() -> NativeTextRuntime {
     }
 }
 
+/// Returns the renderer-written measured height of `source`, or `0` before the
+/// platform renderer writes a measurement.
+pub fn get_native_text_measured_height(source: &NativeText) -> f32 {
+    source.runtime.measured_height
+}
+
+/// Returns the renderer-written measured width of `source`, or `0` before the
+/// platform renderer writes a measurement.
+pub fn get_native_text_measured_width(source: &NativeText) -> f32 {
+    source.runtime.measured_width
+}
+
 /// Returns a reference to the `NativeTextRuntime` of `source`.
 pub fn get_native_text_runtime(source: &NativeText) -> &NativeTextRuntime {
     &source.runtime
+}
+
+/// Returns a reference to the plain-text content of `source`.
+pub fn get_native_text_string(source: &NativeText) -> &str {
+    &source.data.text
+}
+
+/// Returns a reference to the platform style descriptor of `source`.
+pub fn get_native_text_style(source: &NativeText) -> &NativeTextStyle {
+    &source.data.style
+}
+
+/// Merges the `Some` fields of `patch` into the existing style without replacing
+/// the whole descriptor, then invalidates local content and bounds. `None`
+/// fields of `patch` leave the corresponding existing field untouched, mirroring
+/// the TS object spread of a `Partial<NativeTextStyle>`.
+pub fn patch_native_text_style(source: &mut NativeText, patch: &NativeTextStyle) {
+    let style = &mut source.data.style;
+    if patch.align.is_some() {
+        style.align = patch.align;
+    }
+    if patch.bold.is_some() {
+        style.bold = patch.bold;
+    }
+    if patch.color.is_some() {
+        style.color = patch.color;
+    }
+    if patch.font.is_some() {
+        style.font = patch.font.clone();
+    }
+    if patch.italic.is_some() {
+        style.italic = patch.italic;
+    }
+    if patch.leading.is_some() {
+        style.leading = patch.leading;
+    }
+    if patch.size.is_some() {
+        style.size = patch.size;
+    }
+    invalidate_bounds_node_local_content(&mut source.runtime.bounds);
+    invalidate_bounds_node_local_bounds(&mut source.runtime.bounds);
 }
 
 /// Sets `auto_size` on `source.data`, invalidating local content and bounds.
@@ -265,12 +318,98 @@ mod tests {
     }
 
     #[test]
+    fn get_native_text_measured_height_zero_before_measurement() {
+        let native = create_native_text(None);
+        assert_eq!(get_native_text_measured_height(&native), 0.0);
+    }
+
+    #[test]
+    fn get_native_text_measured_height_returns_written_value() {
+        let mut native = create_native_text(None);
+        native.runtime.measured_height = 24.0;
+        assert_eq!(get_native_text_measured_height(&native), 24.0);
+    }
+
+    #[test]
+    fn get_native_text_measured_width_zero_before_measurement() {
+        let native = create_native_text(None);
+        assert_eq!(get_native_text_measured_width(&native), 0.0);
+    }
+
+    #[test]
+    fn get_native_text_measured_width_returns_written_value() {
+        let mut native = create_native_text(None);
+        native.runtime.measured_width = 80.0;
+        assert_eq!(get_native_text_measured_width(&native), 80.0);
+    }
+
+    #[test]
     fn get_native_text_runtime_returns_runtime() {
         let mut native = create_native_text(None);
         native.runtime.measured_width = 42.0;
         let runtime = get_native_text_runtime(&native);
         assert_eq!(runtime.measured_width, 42.0);
         assert_eq!(runtime.measured_height, 0.0);
+    }
+
+    #[test]
+    fn get_native_text_string_returns_text() {
+        let native = create_native_text(Some(&NativeTextData {
+            text: "hello".to_string(),
+            ..NativeTextData::default()
+        }));
+        assert_eq!(get_native_text_string(&native), "hello");
+    }
+
+    #[test]
+    fn get_native_text_style_returns_style() {
+        let native = create_native_text(Some(&NativeTextData {
+            style: NativeTextStyle {
+                size: Some(16.0),
+                bold: Some(true),
+                ..NativeTextStyle::default()
+            },
+            ..NativeTextData::default()
+        }));
+        assert_eq!(get_native_text_style(&native).size, Some(16.0));
+        assert_eq!(get_native_text_style(&native).bold, Some(true));
+    }
+
+    #[test]
+    fn patch_native_text_style_merges_patch() {
+        let mut native = create_native_text(Some(&NativeTextData {
+            style: NativeTextStyle {
+                size: Some(14.0),
+                bold: Some(false),
+                ..NativeTextStyle::default()
+            },
+            ..NativeTextData::default()
+        }));
+        patch_native_text_style(
+            &mut native,
+            &NativeTextStyle {
+                bold: Some(true),
+                color: Some(0xff0000),
+                ..NativeTextStyle::default()
+            },
+        );
+        assert_eq!(native.data.style.size, Some(14.0));
+        assert_eq!(native.data.style.bold, Some(true));
+        assert_eq!(native.data.style.color, Some(0xff0000));
+    }
+
+    #[test]
+    fn patch_native_text_style_bumps_content() {
+        let mut native = create_native_text(None);
+        let content = content_revision(&native);
+        patch_native_text_style(
+            &mut native,
+            &NativeTextStyle {
+                size: Some(20.0),
+                ..NativeTextStyle::default()
+            },
+        );
+        assert_eq!(content_revision(&native), content + 1);
     }
 
     #[test]

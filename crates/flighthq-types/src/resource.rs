@@ -217,12 +217,24 @@ pub struct TextureAtlas {
 impl Entity for TextureAtlas {}
 
 /// A single region within a `TextureAtlas`.
+///
+/// `name` is an optional identifier (e.g. a frame name from a packed
+/// spritesheet); the trim/rotation fields describe how the region was packed:
+/// `trimmed` whitespace, `rotated` 90°, with `source_x`/`source_y` the trimmed
+/// offset and `original_width`/`original_height` the untrimmed source size.
 #[derive(Clone, Debug, Default)]
 pub struct TextureAtlasRegion {
     pub height: f32,
     pub id: u32,
+    pub name: Option<String>,
+    pub original_height: Option<f32>,
+    pub original_width: Option<f32>,
     pub pivot_x: Option<f32>,
     pub pivot_y: Option<f32>,
+    pub rotated: bool,
+    pub source_x: f32,
+    pub source_y: f32,
+    pub trimmed: bool,
     pub x: f32,
     pub y: f32,
     pub width: f32,
@@ -235,8 +247,15 @@ impl Entity for TextureAtlasRegion {}
 pub struct TextureAtlasRegionLike {
     pub height: f32,
     pub id: u32,
+    pub name: Option<String>,
+    pub original_height: Option<f32>,
+    pub original_width: Option<f32>,
     pub pivot_x: Option<f32>,
     pub pivot_y: Option<f32>,
+    pub rotated: bool,
+    pub source_x: f32,
+    pub source_y: f32,
+    pub trimmed: bool,
     pub x: f32,
     pub y: f32,
     pub width: f32,
@@ -247,11 +266,16 @@ pub struct TextureAtlasRegionLike {
 // ---------------------------------------------------------------------------
 
 /// A tileset: a texture atlas plus tile dimensions.
+///
+/// `margin` is the pixel padding between the tile grid and the image edge;
+/// `spacing` is the pixel gap between adjacent tiles.
 #[derive(Clone, Debug, Default)]
 pub struct Tileset {
     pub atlas: Option<TextureAtlas>,
     pub columns: u32,
+    pub margin: f32,
     pub rows: u32,
+    pub spacing: f32,
     pub tile_height: f32,
     pub tile_width: f32,
 }
@@ -271,10 +295,26 @@ pub struct ResourceLoadProgress {
     pub total: u32,
 }
 
+/// Error payload delivered through `ResourceLoader::on_error`. Carries the
+/// boxed error plus the failing item's key (`None` for batch-level errors that
+/// predate the new keyed loader).
+#[derive(Debug)]
+pub struct ResourceLoadErrorEvent {
+    pub error: Box<dyn std::error::Error + Send + Sync>,
+    pub key: Option<String>,
+}
+
 /// Signals for a batch resource-loading operation.
+///
+/// `on_complete` carries the per-item [`crate::ResourceLoadReport`] list;
+/// `on_error` carries the failing item's error and key; `on_cancel`,
+/// `on_pause`, and `on_resume` are bare notifications.
 #[derive(Debug, Default)]
 pub struct ResourceLoader {
-    pub on_complete: Signal<()>,
-    pub on_error: Signal<Box<dyn std::error::Error + Send + Sync>>,
+    pub on_cancel: Signal<()>,
+    pub on_complete: Signal<Vec<crate::resource_load::ResourceLoadReport>>,
+    pub on_error: Signal<ResourceLoadErrorEvent>,
+    pub on_pause: Signal<()>,
     pub on_progress: Signal<ResourceLoadProgress>,
+    pub on_resume: Signal<()>,
 }

@@ -190,13 +190,7 @@ pub fn sample_particle_curve(lut: &[f32], t: f32) -> f32 {
 }
 
 fn clamp01(t: f32) -> f32 {
-    if t <= 0.0 {
-        0.0
-    } else if t >= 1.0 {
-        1.0
-    } else {
-        t
-    }
+    t.clamp(0.0, 1.0)
 }
 
 fn interp_keyframe(sorted: &[CurveKeyframe], t: f32) -> f32 {

@@ -24,8 +24,8 @@ impl GlMaterialRenderer for GlDefaultMaterialRenderer {
         let shader = ensure_gl_quad_batch_shader(state);
         let program = shader.program;
         let loc_corner = shader.loc_corner;
-        let loc_world = shader.loc_world_matrix.clone();
-        let loc_texture = shader.loc_texture.clone();
+        let loc_world = shader.loc_world_matrix;
+        let loc_texture = shader.loc_texture;
         use_gl_quad_batch_program(state, program);
         if let (Some(loc_world), Some(loc_texture)) = (loc_world, loc_texture) {
             set_gl_quad_batch_world_and_texture(state, &loc_world, &loc_texture);

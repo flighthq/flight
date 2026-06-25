@@ -222,10 +222,10 @@ fn apply_tag_format(format: &mut TextFormat, tag: &str, attrs: &Attributes) {
         }
         "li" => format.bullet = Some(true),
         "p" => {
-            if let Some(align) = attrs.get("align") {
-                if let Some(a) = parse_text_align(align) {
-                    format.align = Some(a);
-                }
+            if let Some(align) = attrs.get("align")
+                && let Some(a) = parse_text_align(align)
+            {
+                format.align = Some(a);
             }
         }
         "a" => {
@@ -670,11 +670,12 @@ pub(crate) fn write_format_range(
     if start == end {
         return;
     }
-    if let Some(previous) = ranges.last_mut() {
-        if previous.end == start && text_format_equals(&previous.format, &format) {
-            previous.end = end;
-            return;
-        }
+    if let Some(previous) = ranges.last_mut()
+        && previous.end == start
+        && text_format_equals(&previous.format, &format)
+    {
+        previous.end = end;
+        return;
     }
     ranges.push(TextFormatRange { end, format, start });
 }

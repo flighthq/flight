@@ -55,6 +55,20 @@ pub fn clone_image_resource(resource: &ImageResource) -> ImageResource {
 // Data access
 // ---------------------------------------------------------------------------
 
+/// Returns the byte footprint of the CPU-side pixel data (`data`).
+///
+/// Returns `0` when `data` is `None` (element-only resource — the GPU texture
+/// footprint is tracked by the render state, not here). For `rgba8unorm` (the
+/// default) the result equals `width × height × 4`; other formats are not yet
+/// exercised but the formula still applies (the actual buffer length is
+/// authoritative).
+pub fn get_image_resource_byte_size(resource: &ImageResource) -> usize {
+    match resource.data.as_ref() {
+        Some(data) => data.len(),
+        None => 0,
+    }
+}
+
 /// Returns `true` when the resource carries CPU pixel data.
 pub fn has_image_resource_data(resource: &ImageResource) -> bool {
     resource.data.is_some()
@@ -306,6 +320,37 @@ mod tests {
         );
         dispose_image_resource(&mut r);
         assert!(!has_image_resource_data(&r));
+    }
+
+    #[test]
+    fn get_image_resource_byte_size_zero_when_no_data() {
+        let r = create_image_resource(0, 0, None, PixelFormat::Rgba8Unorm, AlphaType::Straight);
+        assert_eq!(get_image_resource_byte_size(&r), 0);
+    }
+
+    #[test]
+    fn get_image_resource_byte_size_returns_data_len() {
+        let r = create_image_resource(
+            0,
+            0,
+            Some(vec![0u8; 100]),
+            PixelFormat::Rgba8Unorm,
+            AlphaType::Straight,
+        );
+        assert_eq!(get_image_resource_byte_size(&r), 100);
+    }
+
+    #[test]
+    fn get_image_resource_byte_size_reflects_width_height_times_4() {
+        // 4×4 rgba8unorm → 4 × 4 × 4 = 64 bytes.
+        let r = create_image_resource(
+            4,
+            4,
+            Some(vec![0u8; 4 * 4 * 4]),
+            PixelFormat::Rgba8Unorm,
+            AlphaType::Straight,
+        );
+        assert_eq!(get_image_resource_byte_size(&r), 64);
     }
 
     #[test]

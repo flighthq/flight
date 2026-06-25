@@ -10,5 +10,5 @@ pub mod notification;
 pub use notification::{
     get_notification_backend, is_notification_supported, on_notification_action,
     on_notification_click, request_notification_permission, set_notification_backend,
-    show_notification,
+    show_notification, update_notification,
 };

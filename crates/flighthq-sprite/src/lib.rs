@@ -25,35 +25,52 @@ pub mod tilemap;
 
 // sprite
 pub use sprite::{
-    SpriteRuntime, compute_sprite_local_bounds_rectangle, create_sprite, create_sprite_data,
-    create_sprite_runtime, get_sprite_atlas, get_sprite_id, get_sprite_rect, get_sprite_runtime,
-    set_sprite_atlas, set_sprite_id, set_sprite_rect,
+    SpriteMeta, SpriteRuntime, clone_sprite, compute_sprite_local_bounds_rectangle, create_sprite,
+    create_sprite_data, create_sprite_runtime, create_sprite_signals, enable_sprite_signals,
+    get_sprite_atlas, get_sprite_id, get_sprite_origin, get_sprite_rect, get_sprite_region,
+    get_sprite_runtime, get_sprite_signals, set_sprite_atlas, set_sprite_frame,
+    set_sprite_frame_rect, set_sprite_id, set_sprite_rect,
 };
 
 // quad_batch
 pub use quad_batch::{
-    QuadBatchMeta, QuadBatchRuntime, compute_quad_batch_local_bounds_rectangle, create_quad_batch,
-    create_quad_batch_data, create_quad_batch_runtime, get_quad_batch_atlas,
-    get_quad_batch_capacity, get_quad_batch_instance_count, get_quad_batch_runtime,
-    get_quad_transform_stride, hit_test_quad_batch_point, hit_test_quad_batch_point_xy,
-    reserve_quad_batch, resize_quad_batch, set_quad_batch_atlas,
-    set_quad_batch_local_bounds_rectangle,
+    QuadBatchMeta, QuadBatchRuntime, append_quad_batch_instance, clear_quad_batch,
+    clone_quad_batch, compact_quad_batch, compute_quad_batch_local_bounds_rectangle,
+    create_quad_batch, create_quad_batch_data, create_quad_batch_runtime,
+    create_quad_batch_signals, enable_quad_batch_signals, get_quad_batch_atlas,
+    get_quad_batch_capacity, get_quad_batch_instance_count, get_quad_batch_instance_id,
+    get_quad_batch_instance_transform, get_quad_batch_runtime, get_quad_batch_signals,
+    get_quad_transform_stride, hit_test_quad_batch_point, hit_test_quad_batch_point_exact,
+    hit_test_quad_batch_point_exact_xy, hit_test_quad_batch_point_xy, iterate_quad_batch_instances,
+    remove_quad_batch_instance, reserve_quad_batch, resize_quad_batch, set_quad_batch_atlas,
+    set_quad_batch_instance, set_quad_batch_instance_matrix, set_quad_batch_instance_range,
+    set_quad_batch_local_bounds_rectangle, set_quad_batch_transform_type,
 };
 
 // tilemap
 pub use tilemap::{
-    TilemapRuntime, compute_tilemap_local_bounds_rectangle, create_tilemap, create_tilemap_data,
-    create_tilemap_runtime, fill_tilemap_tiles, get_tilemap_columns, get_tilemap_rows,
-    get_tilemap_runtime, get_tilemap_tile, get_tilemap_tileset, resize_tilemap, set_tilemap_tile,
-    set_tilemap_tileset,
+    TilemapMeta, TilemapRuntime, clear_tilemap, clone_tilemap,
+    compute_tilemap_local_bounds_rectangle, create_tilemap, create_tilemap_data,
+    create_tilemap_runtime, create_tilemap_signals, enable_tilemap_signals, fill_tilemap_tiles,
+    get_tilemap_column_at_x, get_tilemap_column_row_at_point, get_tilemap_columns,
+    get_tilemap_row_at_y, get_tilemap_rows, get_tilemap_runtime, get_tilemap_signals,
+    get_tilemap_tile, get_tilemap_tile_at_point, get_tilemap_tile_at_point_xy,
+    get_tilemap_tile_rect, get_tilemap_tileset, resize_tilemap, set_tilemap_tile,
+    set_tilemap_tiles, set_tilemap_tileset,
 };
 
 // particle_emitter
 pub use particle_emitter::{
-    ParticleEmitterMeta, ParticleEmitterRuntime, compute_particle_emitter_local_bounds_rectangle,
-    create_particle_emitter, create_particle_emitter_data, create_particle_emitter_runtime,
-    get_particle_emitter_atlas, get_particle_emitter_capacity, get_particle_emitter_particle_count,
-    get_particle_emitter_runtime, get_particle_emitter_world_space, reserve_particle_emitter,
+    ParticleEmitterMeta, ParticleEmitterRuntime, append_particle_emitter_particle,
+    clear_particle_emitter, clone_particle_emitter, compact_particle_emitter,
+    compute_particle_emitter_local_bounds_rectangle, create_particle_emitter,
+    create_particle_emitter_data, create_particle_emitter_runtime, get_particle_emitter_atlas,
+    get_particle_emitter_capacity, get_particle_emitter_particle_alpha,
+    get_particle_emitter_particle_count, get_particle_emitter_particle_id,
+    get_particle_emitter_particle_velocity, get_particle_emitter_runtime,
+    get_particle_emitter_world_space, remove_particle_emitter_particle, reserve_particle_emitter,
     set_particle_emitter_atlas, set_particle_emitter_local_bounds_rectangle,
-    set_particle_emitter_particle_count, set_particle_emitter_world_space,
+    set_particle_emitter_particle, set_particle_emitter_particle_alpha,
+    set_particle_emitter_particle_color, set_particle_emitter_particle_count,
+    set_particle_emitter_particle_velocity, set_particle_emitter_world_space,
 };

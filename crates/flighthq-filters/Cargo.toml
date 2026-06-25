@@ -8,3 +8,6 @@ description = "Bitmap filter descriptors and shared cross-substrate blur math"
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
+
+[lints]
+workspace = true

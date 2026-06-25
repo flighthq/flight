@@ -1,0 +1,13 @@
+[package]
+name = "flighthq-useragent"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "User-agent / platform & device identity parsing (value-leaf; mirrors @flighthq/useragent)"
+
+[dependencies]
+flighthq-types = { workspace = true }
+regex = { workspace = true }
+
+[lints]
+workspace = true

@@ -90,10 +90,10 @@ pub fn resolve_wgpu_mesh_material_renderer<'a>(
     scene: &'a WgpuSceneRuntime,
     material: Option<&dyn Material>,
 ) -> Option<&'a dyn WgpuMeshMaterialRenderer> {
-    if let Some(material) = material {
-        if let Some(renderer) = scene.material_registry.get(&material.kind()) {
-            return Some(renderer.as_ref());
-        }
+    if let Some(material) = material
+        && let Some(renderer) = scene.material_registry.get(&material.kind())
+    {
+        return Some(renderer.as_ref());
     }
     scene
         .material_registry
@@ -165,10 +165,10 @@ mod tests {
         scene: &'a WgpuSceneRuntime,
         material: Option<&dyn Material>,
     ) -> Option<&'a dyn WgpuMeshMaterialRenderer> {
-        if let Some(material) = material {
-            if let Some(renderer) = scene.material_registry.get(&material.kind()) {
-                return Some(renderer.as_ref());
-            }
+        if let Some(material) = material
+            && let Some(renderer) = scene.material_registry.get(&material.kind())
+        {
+            return Some(renderer.as_ref());
         }
         scene
             .material_registry
@@ -179,14 +179,14 @@ mod tests {
     #[test]
     fn get_wgpu_mesh_material_renderer_returns_none_when_nothing_registered() {
         let scene = create_wgpu_scene_runtime();
-        assert!(scene.material_registry.get(&test_kind()).is_none());
+        assert!(!scene.material_registry.contains_key(&test_kind()));
     }
 
     #[test]
     fn register_wgpu_mesh_material_renderer_registers_a_renderer_retrievable_by_kind() {
         let mut scene = create_wgpu_scene_runtime();
         register_into(&mut scene, test_kind());
-        assert!(scene.material_registry.get(&test_kind()).is_some());
+        assert!(scene.material_registry.contains_key(&test_kind()));
     }
 
     #[test]

@@ -8,3 +8,6 @@ description = "Pixel-level image manipulation using browser ImageData"
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
+
+[lints]
+workspace = true

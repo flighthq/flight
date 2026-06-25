@@ -164,22 +164,134 @@ pub struct LogEntry {
 /// Receives every emitted log entry regardless of console verbosity threshold.
 pub type LogSink = Box<dyn Fn(&LogEntry) + Send + Sync>;
 
+/// A bound logging context: a channel plus base fields merged into every entry
+/// emitted through it. Mirrors the TS `LogContext`. Fields are serialized as
+/// strings for portability (matching [`LogData::Structured`]).
+#[derive(Clone, Debug, Default)]
+pub struct LogContext {
+    /// The bound channel, or `None` when uncategorized.
+    pub channel: Option<String>,
+    pub fields: std::collections::HashMap<String, String>,
+}
+
+/// A deferred log payload. The thunk is invoked only when the entry passes the
+/// level gate, so a suppressed verbose call allocates nothing. Mirrors the TS
+/// `LogDataProvider`.
+pub type LogDataProvider = Box<dyn Fn() -> LogData + Send + Sync>;
+
+/// Renders an entry to a single line of text (JSON envelope or human-readable).
+/// Used by sinks and transports. Mirrors the TS `LogFormatter`.
+pub type LogFormatter = Box<dyn Fn(&LogEntry) -> String + Send + Sync>;
+
+/// A named tracing span — a plain value, inert until `enter_log_span`. While
+/// active, its fields merge into every emitted entry (lower priority than the
+/// entry's own fields). Mirrors the TS `LogSpan`.
+#[derive(Clone, Debug, Default)]
+pub struct LogSpan {
+    pub name: String,
+    pub fields: std::collections::HashMap<String, String>,
+    /// The bound channel, or `None` when uncategorized.
+    pub channel: Option<String>,
+}
+
+/// A running timer started with `start_log_timer`. Pass to `end_log_timer` to
+/// record elapsed time. `started_at` is a high-resolution timestamp in
+/// milliseconds. Mirrors the TS `LogTimer`.
+#[derive(Clone, Debug, Default)]
+pub struct LogTimer {
+    pub label: String,
+    /// The bound channel, or `None` when uncategorized.
+    pub channel: Option<String>,
+    pub started_at: f64,
+}
+
+/// A line-oriented transport for file/remote log sinks. The native default is a
+/// no-op; hosts register an fs-backed implementation via
+/// `set_log_transport_backend`. `flush` and `dispose` default to no-ops. Mirrors
+/// the TS `LogTransportBackend` (its optional `flush`/`dispose` become default
+/// trait methods).
+pub trait LogTransportBackend: Send + Sync {
+    fn write(&self, line: &str);
+    fn flush(&self) {}
+    fn dispose(&self) {}
+}
+
 // ---------------------------------------------------------------------------
 // Application / ApplicationWindow
 // ---------------------------------------------------------------------------
 
 use flighthq_signals::Signal;
 
-/// Main application lifecycle signals.
+/// Main application lifecycle entity: frame stats, run state, the registered
+/// windows, and the lifecycle signals.
+///
+/// `on_activate` / `on_deactivate` / `on_error` / `on_fixed_update` are the
+/// opt-in signals; they are `None` until [`enable_application_lifecycle_signals`]
+/// allocates them (mirroring TS's `null` defaults), so an application that does
+/// not need them carries no cost.
 #[derive(Debug, Default)]
 pub struct Application {
+    /// Milliseconds elapsed in the most recent frame (clamped by `max_delta_time`).
+    pub delta_time: f64,
+    /// Total elapsed time in seconds since the loop started.
+    pub elapsed_time: f64,
+    /// Number of frames driven since the loop started.
+    pub frame_count: u64,
+    /// Position within the current fixed step at render time, in `[0, 1]`.
+    pub interpolation_alpha: f64,
+    /// Whether the loop is currently running (and not paused).
+    pub is_running: bool,
+    /// Opt-in: emitted when the application/window becomes active.
+    pub on_activate: Option<Signal<()>>,
+    /// Opt-in: emitted when the application/window becomes inactive.
+    pub on_deactivate: Option<Signal<()>>,
+    /// Opt-in: emitted with the error when an update/render listener panics or
+    /// throws. In Rust the payload is the error message text.
+    pub on_error: Option<Signal<String>>,
     pub on_exit: Signal<()>,
+    /// Opt-in: emitted once per fixed step with the fixed timestep (ms).
+    pub on_fixed_update: Option<Signal<f64>>,
     pub on_render: Signal<()>,
     pub on_update: Signal<f64>,
+    /// The registered application windows, in registration order.
+    pub windows: Vec<ApplicationWindow>,
+}
+
+/// Options for [`start_application_loop`]. Every field is optional; the defaults
+/// match the TS reference: variable timestep, no frame cap, 250 ms max delta.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ApplicationLoopOptions {
+    /// Frame-rate cap in fps when in the foreground. `None`/`0` = uncapped.
+    pub target_frame_rate: Option<f64>,
+    /// Frame-rate cap in fps when the page/window is backgrounded. `None`/`0` =
+    /// same as foreground.
+    pub background_frame_rate: Option<f64>,
+    /// Fixed-timestep size in ms for `on_fixed_update`. `None`/`0` = disabled
+    /// (pure variable mode).
+    pub fixed_time_step: Option<f64>,
+    /// Maximum delta in ms per frame; clamps huge gaps after a tab restore.
+    /// Defaults to 250.
+    pub max_delta_time: Option<f64>,
+    /// Spiral-of-death guard: maximum fixed-update iterations per frame.
+    /// Defaults to 5.
+    pub max_updates_per_frame: Option<u32>,
+}
+
+/// Host loop backend seam — the clock the application loop reads frame
+/// timestamps from. `now` returns a monotonic timestamp in milliseconds.
+///
+/// TS divergence (recorded): the TS `LoopBackend` also carries
+/// `requestFrame`/`cancelFrame` because the browser loop self-schedules through
+/// `requestAnimationFrame`. The Rust loop is host-pumped — the native host event
+/// loop drives each frame via [`run_application_frame`] — so the only piece the
+/// loop needs from the backend is the clock. The scheduling pair is TS-specific
+/// and intentionally omitted here.
+pub trait LoopBackend: Send + Sync {
+    fn now(&self) -> f64;
 }
 
 /// An OS window entity.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ApplicationWindow {
     pub title: String,
     pub x: f32,
@@ -1018,4 +1130,29 @@ pub enum SpreadMethod {
     Pad,
     Reflect,
     Repeat,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn log_context_default_is_uncategorized_and_empty() {
+        let context = LogContext::default();
+        assert_eq!(context.channel, None);
+        assert!(context.fields.is_empty());
+    }
+
+    #[test]
+    fn log_span_default_is_inert() {
+        let span = LogSpan::default();
+        assert_eq!(span.name, "");
+        assert_eq!(span.channel, None);
+        assert!(span.fields.is_empty());
+    }
+
+    #[test]
+    fn log_timer_default_starts_at_zero() {
+        assert_eq!(LogTimer::default().started_at, 0.0);
+    }
 }

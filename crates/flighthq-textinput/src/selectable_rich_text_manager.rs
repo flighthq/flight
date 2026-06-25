@@ -44,10 +44,10 @@ pub fn dispatch_selectable_rich_text_key_down(
     }
     if is_meta && (key == "c" || data.key_code == key_code::C) {
         let selected = get_selection_text(source);
-        if !selected.is_empty() {
-            if let Some(on_copy) = on_copy {
-                on_copy(&selected);
-            }
+        if !selected.is_empty()
+            && let Some(on_copy) = on_copy
+        {
+            on_copy(&selected);
         }
         return true;
     }
@@ -194,6 +194,50 @@ mod tests {
         assert!(result);
         assert_eq!(get_rich_text_selection_begin_index(&rich), 0);
         assert_eq!(get_rich_text_selection_end_index(&rich), 5);
+    }
+
+    #[test]
+    fn dispatch_selectable_rich_text_key_down_invokes_on_copy() {
+        use std::cell::RefCell;
+        let mut manager = create_selectable_rich_text_manager();
+        let mut rich = with_text("hello world");
+        focus_selectable_rich_text(&mut manager, &rich);
+        set_rich_text_selection_indices(&mut rich, 6, 11);
+        let copied: RefCell<Vec<String>> = RefCell::new(Vec::new());
+        let result = dispatch_selectable_rich_text_key_down(
+            &mut manager,
+            &mut rich,
+            &InputKeyboardData {
+                ctrl_key: true,
+                key: "c".to_string(),
+                key_code: key_code::C,
+                ..Default::default()
+            },
+            Some(&|text| copied.borrow_mut().push(text.to_string())),
+        );
+        assert!(result);
+        assert_eq!(*copied.borrow(), vec!["world".to_string()]);
+    }
+
+    #[test]
+    fn dispatch_selectable_rich_text_key_down_no_on_copy_when_empty() {
+        use std::cell::RefCell;
+        let mut manager = create_selectable_rich_text_manager();
+        let mut rich = with_text("hello");
+        focus_selectable_rich_text(&mut manager, &rich);
+        let copied: RefCell<Vec<String>> = RefCell::new(Vec::new());
+        dispatch_selectable_rich_text_key_down(
+            &mut manager,
+            &mut rich,
+            &InputKeyboardData {
+                ctrl_key: true,
+                key: "c".to_string(),
+                key_code: key_code::C,
+                ..Default::default()
+            },
+            Some(&|text| copied.borrow_mut().push(text.to_string())),
+        );
+        assert!(copied.borrow().is_empty());
     }
 
     #[test]

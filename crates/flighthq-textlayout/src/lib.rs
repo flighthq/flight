@@ -57,7 +57,10 @@ pub use text_format::{
 pub use text_format_range::create_text_format_range;
 
 // text_layout
-pub use text_layout::{compute_text_layout, create_text_layout_result};
+pub use text_layout::{
+    TEXT_LAYOUT_GUTTER, compute_text_layout, create_text_layout_result,
+    get_text_layout_is_truncated,
+};
 
 // text_layout_group
 pub use text_layout_group::create_text_layout_group;

@@ -78,15 +78,14 @@ pub fn pop_wgpu_clip_contours(state: &mut WgpuRenderState) {
         // even if the active color format has since changed.
         if let Some(pipelines) =
             with_clip_contour_registry(state, |reg| reg.pipelines.get(&entry.format).cloned())
+            && let Some(pass) = state.runtime.render_pass.as_mut()
         {
-            if let Some(pass) = state.runtime.render_pass.as_mut() {
-                pass.set_pipeline(&pipelines.erase);
-                pass.set_bind_group(0, &entry.bind_group, &[]);
-                pass.set_vertex_buffer(0, entry.vertex_buffer.slice(..));
-                pass.set_stencil_reference(entry.depth + 1);
-                if entry.vertex_count > 0 {
-                    pass.draw(0..entry.vertex_count, 0..1);
-                }
+            pass.set_pipeline(&pipelines.erase);
+            pass.set_bind_group(0, &entry.bind_group, &[]);
+            pass.set_vertex_buffer(0, entry.vertex_buffer.slice(..));
+            pass.set_stencil_reference(entry.depth + 1);
+            if entry.vertex_count > 0 {
+                pass.draw(0..entry.vertex_count, 0..1);
             }
         }
         // The erase draw just recorded references these buffers; the frame's

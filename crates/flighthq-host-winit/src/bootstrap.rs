@@ -49,15 +49,11 @@ pub fn create_winit_surface(
     // lifetime so the surface can be stored alongside the window it depends on.
     let surface = instance.create_surface(Arc::clone(&window)).ok()?;
 
-    let adapter = pollster::block_on(
-        instance.request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: options
-                .power_preference
-                .unwrap_or(wgpu::PowerPreference::default()),
-            force_fallback_adapter: false,
-            compatible_surface: Some(&surface),
-        }),
-    )?;
+    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+        power_preference: options.power_preference.unwrap_or_default(),
+        force_fallback_adapter: false,
+        compatible_surface: Some(&surface),
+    }))?;
 
     let (device, queue) = pollster::block_on(adapter.request_device(
         &wgpu::DeviceDescriptor {

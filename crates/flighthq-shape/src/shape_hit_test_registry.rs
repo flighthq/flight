@@ -28,11 +28,14 @@ pub type ShapeCommandKey = String;
 /// `(x, y)` falls within the primitive described by the arguments in `args`,
 /// the slice of the raw command buffer beginning at the command's first
 /// argument (after the key and arg-count slots).
+/// A point-in-primitive test: `(x, y)` against the primitive's raw `args` slice.
+pub type ShapeHitTestFn = Box<dyn Fn(f32, f32, &[AnyBox]) -> bool + Send + Sync>;
+
 pub struct ShapeHitTestCommand {
     /// The command verb key this descriptor handles.
     pub key: ShapeCommandKey,
     /// Tests whether `(x, y)` is inside the primitive.
-    pub hit_test: Box<dyn Fn(f32, f32, &[AnyBox]) -> bool + Send + Sync>,
+    pub hit_test: ShapeHitTestFn,
 }
 
 // ---------------------------------------------------------------------------

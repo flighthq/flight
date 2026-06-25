@@ -28,11 +28,7 @@ const UV0_OFFSET: usize = 10;
 pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
     let vertices = &geometry.vertices;
     let floats_per_vertex = (geometry.layout.stride / 4) as usize;
-    let vertex_count = if floats_per_vertex > 0 {
-        vertices.len() / floats_per_vertex
-    } else {
-        0
-    };
+    let vertex_count = vertices.len().checked_div(floats_per_vertex).unwrap_or(0);
 
     let mut min_x = f32::INFINITY;
     let mut min_y = f32::INFINITY;
@@ -85,11 +81,7 @@ pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
 pub fn compute_mesh_geometry_normals(out: &mut MeshGeometry, geometry: &MeshGeometry) {
     let vertices = &geometry.vertices;
     let floats_per_vertex = (geometry.layout.stride / 4) as usize;
-    let vertex_count = if floats_per_vertex > 0 {
-        vertices.len() / floats_per_vertex
-    } else {
-        0
-    };
+    let vertex_count = vertices.len().checked_div(floats_per_vertex).unwrap_or(0);
     let index_count = match &geometry.indices {
         Some(indices) => index_len(indices),
         None => vertex_count,
@@ -155,11 +147,7 @@ pub fn compute_mesh_geometry_normals(out: &mut MeshGeometry, geometry: &MeshGeom
 pub fn compute_mesh_geometry_tangents(out: &mut MeshGeometry, geometry: &MeshGeometry) {
     let vertices = &geometry.vertices;
     let floats_per_vertex = (geometry.layout.stride / 4) as usize;
-    let vertex_count = if floats_per_vertex > 0 {
-        vertices.len() / floats_per_vertex
-    } else {
-        0
-    };
+    let vertex_count = vertices.len().checked_div(floats_per_vertex).unwrap_or(0);
     let index_count = match &geometry.indices {
         Some(indices) => index_len(indices),
         None => vertex_count,

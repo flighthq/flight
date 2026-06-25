@@ -211,21 +211,21 @@ pub fn flush_gl_sprite_batch(state: &mut GlRenderState) {
     apply_gl_blend_mode(state, blend_mode);
 
     // Bind the texture for this batch (key is the opaque cache identity).
-    if let Some(&texture) = state.runtime.texture_cache.get(&texture_key) {
-        if state.runtime.current_texture != Some(texture) {
-            unsafe {
-                state.gl.bind_texture(glow::TEXTURE_2D, Some(texture));
-            }
-            state.runtime.current_texture = Some(texture);
+    if let Some(&texture) = state.runtime.texture_cache.get(&texture_key)
+        && state.runtime.current_texture != Some(texture)
+    {
+        unsafe {
+            state.gl.bind_texture(glow::TEXTURE_2D, Some(texture));
         }
+        state.runtime.current_texture = Some(texture);
     }
 
     // Bind program + base attributes + world/texture uniforms.
     let shader = ensure_gl_quad_batch_shader(state);
     let program = shader.program;
     let loc_corner = shader.loc_corner;
-    let loc_world = shader.loc_world_matrix.clone();
-    let loc_texture = shader.loc_texture.clone();
+    let loc_world = shader.loc_world_matrix;
+    let loc_texture = shader.loc_texture;
     use_gl_quad_batch_program(state, program);
     bind_gl_quad_batch_base_attributes(state, loc_corner);
     if let (Some(loc_world), Some(loc_texture)) = (loc_world, loc_texture) {
