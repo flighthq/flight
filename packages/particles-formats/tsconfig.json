@@ -8,6 +8,13 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../particles" }],
+  "references": [
+    {
+      "path": "../particles"
+    },
+    {
+      "path": "../types"
+    }
+  ],
   "include": ["src"]
 }
