@@ -6,6 +6,10 @@
 // Options:
 //   --tool=examples|functional|site  Which server to use (default: examples)
 //   --url=http://localhost:5173   Use a server that is already running (skips auto-start)
+//   --static                     Serve the pre-built dist instead of starting the Vite dev server.
+//                                Skips on-demand transforms; requires `npm run build:{tool}` first.
+//   --parallel[=N]               Capture N entries concurrently on the same browser (default N=6).
+//                                Output is one line per renderer rather than grouped by entry.
 //   --filter=name                Only run entries whose name contains this string
 //   --renderer=webgl,canvas      Comma-separated renderer filter (default: all)
 //   --out=tools/output           Output base directory (default: tools/output)
@@ -33,6 +37,7 @@ import pc from 'picocolors';
 
 import {
   captureEntry,
+  captureParallel,
   discoverEntries,
   formatSummaryCount,
   formatSummaryLine,
@@ -40,6 +45,7 @@ import {
   isBrowserClosedError,
   launchBrowser,
   resolveServer,
+  resolveStaticServer,
 } from './capture-core.js';
 
 // ---------------------------------------------------------------------------
@@ -69,6 +75,10 @@ const captureFrames =
 const updateBaseline = argv.includes('--update-baseline');
 const failOnChanged = argv.includes('--fail-on-changed');
 const failOnError = argv.includes('--fail-on-error');
+const useStatic = argv.includes('--static');
+const parallelArg = argv.find((a) => a === '--parallel' || a.startsWith('--parallel='));
+const useParallel = parallelArg !== undefined;
+const workerCount = parallelArg?.includes('=') ? Math.max(1, parseInt(parallelArg.split('=')[1], 10) || 6) : 6;
 
 const root = process.cwd();
 
@@ -87,11 +97,17 @@ async function main(): Promise<void> {
 
   if (externalUrl) {
     console.log(`Using server at ${externalUrl}\n`);
+  } else if (useStatic) {
+    console.log(`Serving ${tool} dist…`);
   } else {
     console.log(`Starting ${tool} server…`);
   }
 
-  const server = await resolveServer({ tool, root, externalUrl });
+  const server = externalUrl
+    ? await resolveServer({ tool, root, externalUrl })
+    : useStatic
+      ? await resolveStaticServer({ tool, root })
+      : await resolveServer({ tool, root });
 
   if (!externalUrl) console.log(`Ready at ${server.url}\n`);
 
@@ -103,19 +119,11 @@ async function main(): Promise<void> {
   let failed = 0;
 
   try {
-    for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
-      if (isAborted()) break;
-      const entry = entries[entryIndex];
-      // A progress header: a dimmed [N/M] counter then the entry name in bold. captureEntry prints the
-      // per-renderer ✓/⊘/✗ detail lines below it.
-      console.log(`${pc.dim(`[${entryIndex + 1}/${entries.length}]`)} ${pc.bold(entry.name)}`);
-      const renderers =
-        rendererFilter.length > 0 ? entry.renderers.filter((r) => rendererFilter.includes(r)) : entry.renderers;
-
-      const result = await captureEntry({
+    if (useParallel) {
+      const result = await captureParallel({
         context,
-        entry,
-        renderers,
+        entries,
+        rendererFilter,
         baseUrl: server.url,
         tool,
         outBase,
@@ -125,11 +133,40 @@ async function main(): Promise<void> {
         captureFrames,
         failOnError,
         isAborted,
+        workerCount,
       });
+      captured = result.captured;
+      changed = result.changed;
+      failed = result.failed;
+    } else {
+      for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
+        if (isAborted()) break;
+        const entry = entries[entryIndex];
+        // A progress header: a dimmed [N/M] counter then the entry name in bold. captureEntry prints the
+        // per-renderer ✓/⊘/✗ detail lines below it.
+        console.log(`${pc.dim(`[${entryIndex + 1}/${entries.length}]`)} ${pc.bold(entry.name)}`);
+        const renderers =
+          rendererFilter.length > 0 ? entry.renderers.filter((r) => rendererFilter.includes(r)) : entry.renderers;
 
-      if (result === 'ok') captured += renderers.length;
-      else if (result === 'changed') changed += renderers.length;
-      else failed += renderers.length;
+        const result = await captureEntry({
+          context,
+          entry,
+          renderers,
+          baseUrl: server.url,
+          tool,
+          outBase,
+          root,
+          updateBaseline,
+          extraWait,
+          captureFrames,
+          failOnError,
+          isAborted,
+        });
+
+        if (result === 'ok') captured += renderers.length;
+        else if (result === 'changed') changed += renderers.length;
+        else failed += renderers.length;
+      }
     }
   } finally {
     // The browser may already be closed by Playwright's own signal handler during an interrupt.
