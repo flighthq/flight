@@ -101,6 +101,32 @@ describe('bandwidth throttle (maxBytesPerSecond)', () => {
     expect(dispatchTimes.length).toBeLessThanOrEqual(1);
   });
 
+  it('bounds the dispatch rate to the byte budget (advisory: gates dispatch, not in-flight bytes)', async () => {
+    // Pin the present throttle behavior: the token bucket bounds the rate at which
+    // items are *dispatched*, not the bytes that flow once a load is in flight.
+    // Budget 1000 B/s, three items each hinting 1000 B. The bucket starts full, so
+    // item 0 dispatches immediately; items 1 and 2 each wait ~1s for a refill.
+    // The whole batch therefore cannot complete faster than ~2s — that lower bound
+    // is what "rate-bound" means here.
+    const loader = createResourceLoader({ maxBytesPerSecond: 1000, maxConcurrent: 4 });
+    for (let i = 0; i < 3; i++) {
+      queueResourceLoad(loader, { bytesHint: 1000, key: `item${i}`, load: () => Promise.resolve(i) });
+    }
+
+    const startMs = Date.now();
+    startResourceLoad(loader);
+    const reports = await waitForComplete(loader);
+    const elapsed = Date.now() - startMs;
+
+    expect(reports).toHaveLength(3);
+    expect(reports.every((r) => r.status === 'loaded')).toBe(true);
+    // Two refill windows (~1s each) gate items 1 and 2 — the rate is bounded below.
+    expect(elapsed).toBeGreaterThanOrEqual(1800);
+    // Limit of the advisory model: report.bytes is not metered from the in-flight
+    // transfer, so the throttle gates dispatch only and does not observe actual bytes.
+    expect(reports.every((r) => r.bytes === 0)).toBe(true);
+  });
+
   it('resets token bucket on resetResourceLoader', async () => {
     const loader = createResourceLoader({ maxBytesPerSecond: 500, maxConcurrent: 1 });
     queueResourceLoad(loader, { bytesHint: 500, load: () => Promise.resolve(1) });
@@ -356,6 +382,36 @@ describe('error policy', () => {
     const statuses = reports.map((r) => r.status);
     expect(statuses).toContain('failed');
     expect(statuses).toContain('loaded');
+  });
+
+  it('fail-fast policy: lets in-flight peers finish, only skips not-yet-dispatched items', async () => {
+    // Pin present fail-fast scope: a failure stops *dispatch* of pending items but does
+    // not abort peers already in flight — those run to completion. With maxConcurrent 2,
+    // 'fail' and 'slow' start together; 'fail' rejects, 'slow' is already in flight and
+    // resolves normally, while 'pending' (never dispatched) is skipped.
+    const loader = createResourceLoader({ errorPolicy: 'fail-fast', maxConcurrent: 2 });
+    const slowDeferred = createDeferred<string>();
+
+    const failHandle = queueResourceLoad(loader, { key: 'fail', load: () => Promise.reject(new Error('err')) });
+    const slowHandle = queueResourceLoad(loader, { key: 'slow', load: () => slowDeferred.promise });
+    const pendingHandle = queueResourceLoad(loader, { key: 'pending', load: () => Promise.resolve('never') });
+    failHandle.promise.catch(() => {});
+    pendingHandle.promise.catch(() => {});
+
+    startResourceLoad(loader);
+
+    // Let 'fail' reject and fail-fast cancel the pending queue while 'slow' is still in flight.
+    await new Promise((r) => setTimeout(r, 20));
+    slowDeferred.resolve('ok');
+
+    const reports = await waitForComplete(loader);
+    const statuses = new Map(reports.map((r) => [r.key, r.status]));
+    expect(statuses.get('fail')).toBe('failed');
+    // In-flight peer ran to completion — not aborted.
+    expect(statuses.get('slow')).toBe('loaded');
+    expect(await slowHandle.promise).toBe('ok');
+    // Not-yet-dispatched item was skipped by fail-fast.
+    expect(statuses.get('pending')).toBe('skipped');
   });
 
   it('fail-fast policy: skips remaining items after first failure', async () => {

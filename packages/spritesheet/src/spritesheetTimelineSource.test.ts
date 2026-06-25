@@ -1,5 +1,6 @@
 import { createDisplayContainer, getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { addTextureAtlasRegion, createImageResource, createTextureAtlas } from '@flighthq/resources';
+import { createImageResource } from '@flighthq/image';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import type { DisplayObject } from '@flighthq/types';
 
 import { createSpritesheet } from './spritesheet';

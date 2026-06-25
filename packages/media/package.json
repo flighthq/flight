@@ -27,7 +27,8 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/resources": "*",
+    "@flighthq/audio": "*",
+    "@flighthq/video": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

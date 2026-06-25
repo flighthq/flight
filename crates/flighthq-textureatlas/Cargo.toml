@@ -1,0 +1,10 @@
+[package]
+name = "flighthq-textureatlas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Texture atlases: regions, UVs, and constructors over image resources"
+
+[dependencies]
+flighthq-types = { workspace = true }
+flighthq-image = { workspace = true }
