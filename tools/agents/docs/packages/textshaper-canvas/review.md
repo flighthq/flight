@@ -1,86 +1,85 @@
 ---
 package: '@flighthq/textshaper-canvas'
 status: solid
-score: 82
-updated: 2026-06-24
+score: 80
+updated: 2026-06-25
 ingested:
   - status.md
-  - reviews/depth/textshaper-canvas.md
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
   - source
-  - incoming/builder-67dc46d64
 ---
 
-# textshaper-canvas — Review
+# textshaper-canvas — Review (merge gate)
+
+> Harsh merge-review of the **delta** only: `incoming/integration-b2824e3d8/head/packages/textshaper-canvas/` vs the APPROVED baseline `…/base/…` (`origin/main` `eb73c3d74`). The baseline is the blessed floor and is not under review. Every objection is grounded in a cited `b2824e3d8:<path>` hunk.
 
 ## Verdict
 
-**solid — 82/100.** A faithful, idiomatic Canvas 2D backend for the text-shaping seam that has grown well past the 70/100 advances-only adapter the depth review surveyed: it now implements `getFontMetrics`, plumbs `letterSpacing`/`direction` into the measuring context, memoizes advances, prefers `OffscreenCanvas`, and degrades to a documented sentinel in no-DOM environments. The score is held below the worker's claimed 88 by one real correctness bug — the advance cache key omits `letterSpacing`, so the newly-added letterSpacing plumbing is silently defeated under cache hits — and by a `unitsPerEm: 0` sentinel that violates the `FontMetrics` contract's own division formula. Both are within-package fixes; neither is a design fork.
+**solid — 80/100. Merge-eligible with two must-fix correctness defects.** The incoming change is a clean, idiomatic enlargement of the former advances-only `createCanvasTextShaperBackend` into a real Canvas measure tier: it adds `getFontMetrics`, an explicit `clearCanvasTextShaperBackendCache` invalidation hook, a bounded per-backend advance cache, `letterSpacing`/`wordSpacing`/`direction` plumbing under one-time feature-detect, an `OffscreenCanvas`-first context path, and a documented `-1`/`null` sentinel backend for no-DOM environments. The composition is sound, the naming is exemplary, tree-shaking and side-effect rules are honored, and the seam stays types-first. It is held below merge-clean by exactly two defects the delta itself introduces: the advance cache key omits `letterSpacing`, silently defeating the very plumbing this change adds; and `getFontMetrics` returns `unitsPerEm: 0`, which violates the `FontMetrics` contract's own divide-by-`unitsPerEm` formula. Both are within-package, no signature change, no seam change — they should be fixed before merge.
 
-## Status claims — verified against the diff
+## The delta under review
 
-Every claim in `status.md` checks out against `incoming/builder-67dc46d64`:
+The base already shipped a minimal backend: a single private `document.createElement('canvas')` context and a `measureText` that set `context.font` and returned `measureText(text).width`. The head replaces that body wholesale (`b2824e3d8:packages/textshaper-canvas/src/canvasTextShaper.ts`):
 
-- `clearCanvasTextShaperBackendCache(backend)` and the `CanvasTextShaperBackend extends TextShaperBackend { clearCache() }` interface are present in source and in the realized `dist/canvasTextShaper.d.ts`. ✓
-- `getFontMetrics`, `letterSpacing`/`wordSpacing`/`direction` feature-detect plumbing, the bounded 512-entry advance cache with oldest-first eviction, the `OffscreenCanvas`-then-`document` context path, and the `_createSentinelBackend()` (-1 / null) guard are all in `canvasTextShaper.ts`. ✓
-- The three types-index additions (`TextDirectionKind`, `TextFeature`, `TextShaperOptions`) are present in `head/packages/types/src/index.ts` (lines 411, 412, 433). ✓
-- 15 tests present and aligned. ✓
+- **New export `clearCanvasTextShaperBackendCache(backend)`** (lines 8-10) — free-function cache-invalidation hook.
+- **New exported interface `CanvasTextShaperBackend extends TextShaperBackend { clearCache(): void }`** (lines 124-126).
+- **`createCanvasTextShaperBackend` rebuilt** to add `getFontMetrics`, the LRU advance cache, the feature-detected `letterSpacing`/`wordSpacing`/`direction` plumbing, `_createContext()` (OffscreenCanvas→document), and `_createSentinelBackend()`.
+- **Tests rewritten** — 1 base test grows to ~15 across four `describe` blocks (`b2824e3d8:packages/textshaper-canvas/src/canvasTextShaper.test.ts`).
+- No change to `index.ts`, `package.json`, `tsconfig.json`, `vitest.config.ts`.
 
-The status doc is accurate. Two of its own footnotes turn out to understate the situation — see Gaps.
+## Judgment against the 7 standards
 
-## Present capabilities
+### 1. Composition / bedrock — PASS
 
-Source: `incoming/builder-67dc46d64:packages/textshaper-canvas/src/canvasTextShaper.ts`.
+The unit stays a single backend constructor plus a thin free-function hook; complexity is pushed into two private helpers (`_createContext`, `_createSentinelBackend`) rather than absorbed into one branchy function. `getFontMetrics`, `measureText`, and `clearCache` are distinct methods on the returned object, not config-gated branches of one entry point. No fused subjects — this is one subject (Canvas measurement) decomposed to bedrock. No blood-from-a-stone over-split. The `_createContext`/`_createSentinelBackend` extraction is the right cut: the OffscreenCanvas-vs-DOM-vs-none decision is isolated where it belongs.
 
-- **`createCanvasTextShaperBackend(): CanvasTextShaperBackend`** — the constructor. Owns exactly one private `OffscreenCanvas`/`HTMLCanvasElement` 2D context, no shared global state, no top-level side effects. Returns the sentinel backend when no context can be created.
-- **`measureText(text, format)`** — sets `context.font = computeTextFormatFontString(format)` (the same font-string builder the renderers use, so advances match rasterization), plumbs `letterSpacing`/`wordSpacing`/`direction` under a one-time feature-detect, and returns `context.measureText(text).width`. Memoized in a per-backend `Map<string, number>` keyed by `${fontString}\x00${text}`, capped at `_CACHE_MAX_SIZE` (512) with oldest-first eviction.
-- **`getFontMetrics(format): FontMetrics | null`** — probes `'H'`/`'x'` for cap/x-height ink extents via `actualBoundingBoxAscent`, reads `fontBoundingBox*` (falling back to `actualBoundingBox*`) for ascent/descent, and supplies size-relative estimates for `underlinePosition`/`underlineThickness`/ `lineGap`. This is the highest-value depth gain the depth review left on the table, now delivered.
-- **`clearCanvasTextShaperBackendCache(backend)`** — pure explicit cache-invalidation hook for the webfont-load case. No `document.fonts` listener is registered (correctly keeps the package side-effect-free).
-- **Sentinel backend** — `_createSentinelBackend()` yields `-1` / `null` / no-op `clearCache`, matching the platform-suite "sentinel over throw" convention; the depth review's no-DOM gap is closed.
-- Packaging is clean: `"sideEffects": false`, single `.` export, deps limited to `@flighthq/render`, `@flighthq/textshaper`, `@flighthq/types`; `crate: null` is correct (Canvas2D substrate is not in the Rust box).
+### 2. Naming clarity — PASS
 
-## Gaps
+`createCanvasTextShaperBackend`, `clearCanvasTextShaperBackendCache`, `CanvasTextShaperBackend`, `getFontMetrics`, `measureText`, `clearCache` — every exported name carries the full unabbreviated type words and is globally self-identifying. `get*` prefix used correctly for the accessor. `clearCanvasTextShaperBackendCache` is the verb a reader would reach for. Private helpers (`_createContext`, `_createSentinelBackend`, `_CACHE_MAX_SIZE`) are underscore-prefixed and clear. No abbreviation, no vague name.
 
-Ordered by value. The first two are correctness defects, not missing features.
+### 3. Tree-shaking / bundle invariant — PASS
 
-1. **The advance cache key omits `letterSpacing` (and `wordSpacing`/`direction`) — the new letterSpacing plumbing is silently defeated under cache hits.** `computeTextFormatFontString` (verified in `head/packages/render/src/.../renderTextFormat.ts`) encodes only italic/bold/size/family — _not_ `letterSpacing`. The cache key is `${fontString}\x00${text}`. So `measureText('hi', { letterSpacing: 0 })` then `measureText('hi', { letterSpacing: 8 })` returns the first (zero-spacing) width for the second call: the cache hit short-circuits before `ctx.letterSpacing` is ever set. The very property the session added is dead on the second measurement of any (font, text) pair. The cache key must incorporate every advance-affecting field the context sets — minimally `letterSpacing`. (jsdom's `measureText` returns 0 for everything, so no test catches this; this is exactly why the format-field matrix the status doc defers to a functional scene matters.) **Within-package fix.**
+`"sideEffects": false` and the single root `.` export are unchanged from the approved base (`b2824e3d8:packages/textshaper-canvas/package.json` is byte-identical to base). No eager registration, no top-level side effect: the context is allocated inside `createCanvasTextShaperBackend`, not at module load. The feature-detect (`supportsLetterSpacing` etc.) is computed once per backend instance, not in the hot `measureText` loop, so the new plumbing does not add a per-call branch tax that every importer pays — it is a per-construction cost. The cache is per-backend, not shared global mutable state.
 
-2. **`getFontMetrics` returns `unitsPerEm: 0`, which breaks its own documented division formula.** `FontMetrics.unitsPerEm`'s doc comment says "Divide pixel measurements by `size / unitsPerEm` to convert back to font units." A consumer following that contract divides by zero. The depth-review intent — Canvas cannot read OS/2 — is right, but `0` is not a safe sentinel for a _divisor_. Either the field needs an explicit "0 = unavailable, do not invert" carve-out in the `FontMetrics` doc (a `@flighthq/types` change, so a candidate revision, not a within-package fix) or this backend should return `unitsPerEm: size` (identity, so the inverse is a no-op). The current pairing is a latent trap.
+### 4. Registry vs closed union (fork B) — PASS / N/A
 
-3. **`shapeRun?` is not explicitly present as a `null`-returning marker.** The seam grew to ten optional methods (`getCodePointForGlyph`, `getFontFeatures`, `getFontLanguages`, `getFontMetrics`, `getFontScripts`, `getFontVariationAxes`, `getGlyphExtents`, `getGlyphIndexForCodePoint`, `getGlyphName`, `shapeRun`). All glyph-level ones are correctly missing-by-design — Canvas cannot produce glyph ids. But `TextShaper.ts` documents the intended protocol as _"callers check for `shapeRun` availability and fall back gracefully when it is absent."_ The backend relies on absence rather than an explicit `shapeRun: () => null`. Either is contract-valid; the status doc's own suggestion #2 (add it as an explicit "advances-only tier" marker) would make the tier boundary self-documenting. Worth a deliberate call.
+No `switch (kind)` over a growing family is introduced. The seam is the open `TextShaperBackend` interface in `@flighthq/types`; this package is one registered backend, installed via `setTextShaperBackend(...)` (the registry mechanism lives in `@flighthq/textshaper`). The delta adds nothing closed.
 
-4. **`getFontMetrics` ascent/descent can fall through to `actualBoundingBox*` of `'H'`** when `fontBoundingBox*` is undefined. `actualBoundingBoxDescent` of `'H'` is ~0 (no descender), so on engines lacking `fontBoundingBox*` the descent collapses to near-zero — wrong for layout. The fix would probe a descender glyph (e.g. `'g'`/`'y'`) for the fallback. Minor, engine-dependent.
+### 5. Subject triad + plurality guard — PASS
 
-5. **`wordSpacing` and `TextFormat.direction` are unplumbed because the fields do not exist.** Verified: `TextFormat` has `letterSpacing` and `kerning` but no `wordSpacing`/`direction`. The backend sets `ctx.wordSpacing = '0px'` and `ctx.direction = 'ltr'` as constants. These are correctly deferred multi-package header decisions, not omissions here.
+The package is already correctly homed as a `<subject>-<backend>` leaf (`textshaper-canvas`), the blessed shape for backends at ≥2 plurality (canvas today, harfbuzz designed). The delta does not introduce a format codec (no font-file parsing — a measure backend parses nothing), so no `-formats` layer is owed. No premature split. `crate: null` remains correct: the Canvas2D substrate is not in the Rust box, so there is intentionally no `flighthq-textshaper-canvas` mirror.
 
-6. **No functional/visual coverage that measured advances equal the Canvas renderer's drawn extents.** jsdom's `measureText` returns 0, so all 15 unit tests can only assert non-throw, type, and monotonic-length behavior — none assert a real width, and bug #1 slipped through precisely because of this. The only meaningful correctness test is a `tools/functional` scene. (Cross-package; a candidate open direction, not a within-package add.)
+### 6. Contract hygiene — PARTIAL (one must-fix)
 
-## Charter contradictions
+- Types-first: `FontMetrics`, `TextShaperBackend`, `TextFormat` all consumed from `@flighthq/types` (line 2); no cross-package type defined inline. ✓
+- Sentinels-not-throws: `_createSentinelBackend` returns `-1`/`null` rather than throwing at construction (lines 166-178); `_createContext` swallows `getContext` failure and returns `null` (lines 139-160). ✓
+- `Readonly<>` by default: `getFontMetrics(format: Readonly<TextFormat>)`, `measureText(text: string, format: Readonly<TextFormat>)`, sentinel methods all take `Readonly<TextFormat>` (lines 51, 81, 171, 174). ✓
+- No `dispose*`/`destroy*` confusion: `clearCache`/`clearCanvasTextShaperBackendCache` is correctly neither — it is cache invalidation, not entity teardown or resource free. The detached canvas is GC-managed; nothing owns a non-GC resource, so no `destroy*` is owed. ✓
+- **FAIL — `unitsPerEm: 0` breaks the `FontMetrics` divide contract.** `b2824e3d8:…/canvasTextShaper.ts:76` returns `unitsPerEm: 0, // not accessible from Canvas; 0 signals "unavailable"`, but `@flighthq/types` `FontMetrics.ts` documents _"Callers divide by unitsPerEm to scale to any target size."_ A contract-following consumer divides by zero. The honest within-package fix is `unitsPerEm: size` (identity — the inverse becomes a safe no-op, which Canvas can truthfully supply); the deeper "carve out 0 = unavailable" is a `@flighthq/types` decision, routed to Open directions. This is introduced by the delta (`getFontMetrics` is new) and is a must-fix.
 
-None — the charter's North star, Boundaries, Decisions, and Open directions are all still `TODO` stubs (only "What it is" is seeded). There is no stated principle to contradict. Per the rubric rule, this review falls back to the codebase-map AAA standard; every assumption I had to make is surfaced as a candidate open direction below.
+### 7. Tests & honesty — PARTIAL (one must-fix)
+
+- Colocated `*.test.ts`, four `describe` blocks alphabetized and mirroring exports (`CanvasTextShaperBackend`, `clearCanvasTextShaperBackendCache`, `createCanvasTextShaperBackend`, `createCanvasTextShaperBackend — getFontMetrics`). ✓
+- No dead exports: every export (`createCanvasTextShaperBackend`, `clearCanvasTextShaperBackendCache`, `CanvasTextShaperBackend`) is exercised. ✓
+- Claims match code: the status doc's six enhancement claims all verify against the head source. ✓
+- **FAIL — the cache silently defeats the new `letterSpacing` plumbing, and no test can catch it.** `b2824e3d8:…/canvasTextShaper.ts:83` keys the cache `const cacheKey = \`${fontString}\x00${text}\``, and the cache lookup at lines 85-86 returns before `ctx.letterSpacing`is ever set at lines 93-95.`computeTextFormatFontString`encodes only style/weight/size/family — not`letterSpacing`. So `measureText('hi', { letterSpacing: 0 })`then`measureText('hi', { letterSpacing: 8 })`returns the first (zero-spacing) width for the second call. The letterSpacing plumbing this delta adds is dead on the second measurement of any`(font, text)`pair. The new test`measureText with letterSpacing=0 and non-zero produce number results`cannot catch it because jsdom's`measureText`returns 0 for everything — the test asserts only`typeof`and`>= 0`. This is a correctness regression hidden behind a passing test, and is a must-fix: the key must incorporate every advance-affecting field the context sets (minimally `letterSpacing`).
+
+## Minor (non-blocking)
+
+- **Descender fallback collapses descent.** `b2824e3d8:…/canvasTextShaper.ts:61-62` falls back to `actualBoundingBox*` of `'H'` when `fontBoundingBox*` is undefined; `'H'` has no descender, so descent collapses to ~0 on engines lacking `fontBoundingBox*`. Probe a descender glyph (`'g'`/`'y'`) for the fallback. Within-package, engine-dependent, not merge-blocking.
+- **Double cache-clear surface.** Both the free function `clearCanvasTextShaperBackendCache` and the interface method `clearCache` are public. The free function is the C/C++-portable public verb and the method is its dispatch target — defensible, and the free function is the right primary surface. Leave as-is; noted only so a later agent does not read it as accidental duplication.
+- **`ctx.letterSpacing` cast** through `unknown as Record<string, unknown>` (lines 94, 97, 103) is a TypeScript-lib lag, not a smell. Remove on a future lib bump. Informational.
 
 ## Contract & docs fit
 
-**Lives up to the contract:**
+Lives up to the contract on every axis except the two defects above. The file-head doc comment (lines 4-29) is exemplary: it records the extraction lineage from `createCanvasTextMeasure`, the measurement↔rasterization consistency guarantee, the per-instance ownership, the sentinel behavior, and the cache semantics — durable semantic comments that carry rules a name cannot. No transient `TODO`/work-in-progress notes leak into source.
 
-- Full unabbreviated names (`createCanvasTextShaperBackend`, `clearCanvasTextShaperBackendCache`), `create*`/`clear*` verbs used correctly, globally self-identifying.
-- Sentinels-not-throws: `-1` / `null` on the no-context path, no throws at construction. ✓
-- `@flighthq/types`-first: `FontMetrics`, `TextShaperBackend`, `TextFormat` all consumed from `@flighthq/types`; no cross-package types defined inline. ✓
-- Single root `.` export, `"sideEffects": false`, no top-level registration. ✓
-- `crate: null` is correct and matches the conformance posture (Canvas2D substrate not in the Rust box; the seam, not this impl, is what the Rust shaper conforms to).
-- The file-head doc comment is exemplary — records extraction lineage, ownership, the measurement↔rasterization consistency guarantee, and the advances-only scope. Matches the source-style rule for comments that carry rules a name cannot.
+**Candidate revisions (the user's gate, not the reviewer's):**
 
-**Candidate revisions (the user's gate, not mine):**
+- `FontMetrics.unitsPerEm` doc in `@flighthq/types` should either carve out "0 = unavailable, do not invert" or stop promising an invertible divisor a legitimate backend cannot supply. Root of the §6 defect; lives in the header, not here.
+- Package Map (`tools/agents/docs/index.md`) still reads `text-shaping` _"designed, not yet built"_ and names a hypothetical `@flighthq/text-shaping`, but the seam now ships as `textshaper` + this `textshaper-canvas` backend. Stale against the realized shape; needs reconciling. (Admin-doc owner, not this cell.)
 
-- **`FontMetrics.unitsPerEm` doc** in `@flighthq/types` should carve out the "0 = unavailable, do not invert" case, or the type should not promise an invertible divisor that a legitimate backend cannot supply. This is the root of Gap #2 and it lives in the header, not here.
-- **Package Map** (`tools/agents/docs/index.md`) has no line for `@flighthq/textshaper-canvas` (nor for `@flighthq/textshaper`). The `text-shaping` entry still reads _"designed, not yet built"_ and names a hypothetical `@flighthq/text-shaping` package, but the seam now ships as `textshaper` + this `textshaper-canvas` backend with a wide `TextShaperBackend` interface. The map is stale against the shape the work took — both packages need Package Map entries and the `text-shaping` line needs reconciling with the realized `textshaper` name.
-- **`ctx.letterSpacing` cast** through `unknown as Record<string, unknown>` is a TypeScript lib lag, not a code smell — leave a note for a future lib bump to remove it. (Informational.)
+## Charter contradictions
 
-## Candidate open directions
-
-The charter is a stub, so these are the questions a reviewer had to assume answers to. Each should feed `charter.md › Open directions` for the user to settle:
-
-1. **What is the bar for "the Canvas tier is complete"?** Is advances + `getFontMetrics` the intended ceiling (everything glyph-level delegated to HarfBuzz), or is a richer measure tier (per-cluster advance segmentation via `Intl.Segmenter` for caret/selection on emoji and combining marks) in scope for _this_ package? The status doc parks `Intl.Segmenter` as Gold; whether it belongs here or in `textlayout` is undecided.
-2. **Should `getFontMetrics` be wired into `@flighthq/textlayout`** so layout/autoSize uses real Canvas-derived ascent/descent instead of size estimates? This is the natural consumer of the new metric, and nothing reads it today — the capability exists but is unconsumed. Cross-package.
-3. **Is the explicit-`shapeRun: () => null` marker the intended protocol** (Gap #3), or is absence the blessed signal? This is a seam-wide convention question affecting every advances-only backend.
-4. **Where does the measurement↔rasterization parity test live** (Gap #6) — a functional scene owned here, or in `textlayout`/`render-canvas`? It is the only test that can catch bugs like the letterSpacing cache-key defect, so its home is load-bearing.
-5. **Boundary with a future `textshaper-harfbuzz`** — the charter should state explicitly that glyph-level methods are permanently out of scope for the Canvas backend (missing-by-design), so a later agent does not mistake them for gaps to fill.
+None — the charter's North star / Boundaries / Decisions / Open directions are all still `TODO` stubs (only "What it is" is seeded). There is no blessed principle to contradict; per the rubric this review falls back to the codebase-map AAA standard, and every assumption is surfaced as a candidate open direction in the assessment.

@@ -1,84 +1,99 @@
 ---
 package: '@flighthq/storage'
-status: solid
-score: 88
-updated: 2026-06-24
+status: stub
+score: 30
+updated: 2026-06-25
 ingested:
   - status.md
   - source
+  - 'base=origin/main(eb73c3d74)'
+  - 'evidence=integration-b2824e3d8 delta'
 ---
 
 # storage — Review
 
-> Evidence: `incoming/builder-67dc46d64/head/packages/storage/` (source + tests), `incoming/builder-67dc46d64/head/packages/types/src/Storage*.ts` (types), and the bundle `changes.patch`. No prior `reviews/depth/storage.md` exists — this is the first survey, so the codebase-map AAA standard is the fallback rubric (the charter is a stub). Status doc claims are verified against source below.
+> **Merge-gate review.** Baseline (approved, not under review): `incoming/integration-b2824e3d8/base/packages/storage/` = `origin/main` (`eb73c3d74`) — the 8-export synchronous KV floor. Candidate (judged): `incoming/integration-b2824e3d8/head/packages/storage/` = the integration branch (`b2824e3d8`). Delta = head vs base, plus the `packages/storage/` hunks of `changes.patch`. The charter is a stub, so the AAA codebase-map standard is the fallback rubric. This review **supersedes** the prior `solid — 88` survey, which was written against a _different_ bundle (`builder-67dc46d64`) where the supporting `@flighthq/types` change was present. In **this** integration bundle that type change is absent, which changes the verdict completely.
 
 ## Verdict
 
-**solid — 88/100.** A genuinely broad, well-shaped synchronous KV capability over the platform-suite backend seam: presence/count/entries, JSON convenience, typed scalar accessors, default-value reads, prefix namespacing, bulk ops, byte-size accounting, same-tab + cross-tab change signals, versioned migrations, and async quota estimation. Every export is sentinel-not-throw, `Readonly<T>`-correct, alphabetized, and colocated-tested (81 tests). It is short of the worker's self-estimated 95 mainly because two real seams are knowingly half-wired (bulk ops bypass signals; the `Signal.emit` method is used where the codebase's free-function `emitSignal` is the convention), the migration version key is an unenforced soft convention, and the `-formats` neighbor + Rust crate are absent. None of these is a defect of what shipped; they are honest edges. The status doc's claim list is accurate — every function it lists exists in source with the signature it states.
+**stub / does-not-merge — 30/100.** The storage source delta is an excellent, broad KV surface in isolation (39 functions: presence/count/entries, JSON + typed-scalar accessors, default-value reads, prefix namespacing, bulk ops, byte-size accounting, same-tab + cross-tab change signals, versioned migrations, async quota). But **as integrated it does not compile**: the delta merged the source and test half (`packages/storage/` = 3 changed files) while its required `@flighthq/types` companion was dropped during integration (the `types` delta changed 8 files — `FontMetrics`, `GlyphExtents`, `Notification`, `RenderViewport2D`, `ShapedRun`, `SpritesheetFormat`, `TextShaper`, `index.ts` — and **not** `Storage.ts`). The head `types/src/Storage.ts` is byte-identical to base. Every type the new code imports (`StorageChange`, `StorageMigration`, `StorageNamespace`, `StorageQuota`, `StorageSignals`) is undefined anywhere in the head bundle, and the two `StorageBackend` members the code calls (`byteSize?`, `subscribeChanges?`) do not exist on the interface. A second, independent break: the delta imports `disconnectAllSlots` from `@flighthq/signals`, which exports the symbol as `disconnectAllSignals`. The work is good; the **integration is broken**, and the score reflects the integration state, not the builder's intent.
 
-## Present capabilities
+## Blocking findings (delta defects)
 
-All in `storage.ts` (single file, 39 exported functions) unless noted; types in `@flighthq/types`.
+### B1 — The `@flighthq/types` Storage change is missing; the package does not typecheck
 
-**Backend seam.** `getStorageBackend` (lazy web default, never null), `setStorageBackend` (install native host backend; null restores web default), `createWebStorageBackend` (try/catch-guarded `localStorage` adapter; reads → `null`/`[]`, writes → `false` on denial). `StorageBackend` (`types/src/Storage.ts`) gained two optional members — `byteSize?()` and `subscribeChanges?()` — both additive, so prior backends stay valid. Verified.
+`b2824e3d8:packages/storage/src/storage.ts:1-9` imports five types from `@flighthq/types`:
 
-**Core KV + ergonomics (Bronze).** `getStorageItem`/`setStorageItem`/`removeStorageItem`/`clearStorage`/ `getStorageKeys`, plus `hasStorageItem`, `getStorageItemCount`, `getStorageEntries`, `getStorageItemOr`, and JSON helpers `getStorageJSON`/`getStorageJSONOr`/`setStorageJSON` (parse/stringify failure → sentinel, never throws — corrupt data treated as expected-failure, per the design rule).
+```ts
+import type {
+  StorageBackend,
+  StorageChange,
+  StorageMigration,
+  StorageNamespace,
+  StorageQuota,
+  StorageSignals,
+} from '@flighthq/types';
+```
 
-**Typed scalar accessors (Gold).** `getStorageBoolean`/`getStorageBooleanOr`/`setStorageBoolean` (`'true'`/`'false'`; unrecognized → null), `getStorageNumber`/`getStorageNumberOr`/`setStorageNumber` (`NaN` treated as parse failure). The scalar and JSON setters all route through the signal-aware `setStorageItem`, so they emit `onChange` when signals are enabled — verified in source.
+In the head bundle, `incoming/integration-b2824e3d8/head/packages/types/src/Storage.ts` is **identical to base** and defines only `StorageBackend` (5 sync methods, no `byteSize`, no `subscribeChanges`). A whole-bundle search for `interface StorageSignals|StorageChange|StorageNamespace|StorageQuota|StorageMigration` (and the `type` forms) returns nothing; `grep byteSize|subscribeChanges packages/types/src/` returns nothing. The barrel still reads only `export * from './Storage'` (line 264, unchanged). So:
 
-**Namespacing (Silver).** `createStorageNamespace(prefix)` → `{ prefix }`; keys stored as `prefix + '.' + key`. `get/set/has/remove` namespaced variants plus `getNamespacedStorageKeys`/`getNamespacedStorageEntries`/ `getNamespacedStorageByteSize`/`clearStorageNamespace`. Unprefixing on read is correct (`slice(prefix.length)`).
+- `enableStorageSignals(): StorageSignals` (`storage.ts:126`) returns an undefined type.
+- `migrateStorage(..., readonly Readonly<StorageMigration>[])` (`storage.ts:346`) names an undefined type.
+- every `Readonly<StorageNamespace>` parameter (e.g. `getNamespacedStorageItem`, `storage.ts:174`) names an undefined type.
+- `getStorageByteSize` calls `backend.byteSize()` (`storage.ts:213`) and `enableStorageSignals` calls `backend.subscribeChanges` (`storage.ts:131`) — members absent from the `StorageBackend` interface. `createWebStorageBackend` even _implements_ `subscribeChanges` (`storage.ts:97-104`), which the interface does not declare.
 
-**Bulk ops (Silver).** `setStorageItems(record)`, `getStorageItems(keys)` (parallel-indexed, null for absent), `removeStorageItems(keys)`. Write/remove return `false` if any element fails (partial mutation possible — documented).
+This is a hard `tsc -b` failure across most of the new surface, and it fails `exports:check` indirectly (the package will not build). **The fix is not in this package** — the integration must re-include the dropped `packages/types/src/Storage.ts` rewrite (the 5 new one-concept files / the `StorageBackend` extension with optional `byteSize?()` and `subscribeChanges?()`, plus their barrel exports) from the builder change this source half came from.
 
-**Byte accounting (Silver).** `getStorageByteSize` (delegates to `backend.byteSize()` when present, else `keys()+getItem()` enumeration at 2 bytes/UTF-16 code unit) and the namespaced variant.
+### B2 — `disconnectAllSlots` is not exported by `@flighthq/signals` (it is `disconnectAllSignals`)
 
-**Change notification (Silver).** `enableStorageSignals`/`disableStorageSignals`/`getStorageSignals` over the `StorageSignals` entity (`{ onChange: Signal<(change) => void> }`). `enable*` is idempotent and wires the backend's `subscribeChanges` for cross-tab events; the web backend implements it over the DOM `storage` event. Same-tab writes synthesize `onChange` with `oldValue`/`newValue`. `setStorageBackend` correctly re-wires the cross-tab subscription when signals are active.
+`b2824e3d8:packages/storage/src/storage.ts:1`:
 
-**Versioning (Gold).** `migrateStorage(namespace | null, migrations)` runs ascending-version steps from `stored+1`, persists the resulting version under reserved key `__flight_storage_version`, returns the new version or `-1` on any migration throw / write failure. Verified.
+```ts
+import { createSignal, disconnectAllSlots } from '@flighthq/signals';
+```
 
-**Quota (Gold).** `getStorageQuotaEstimate(): Promise<StorageQuota | null>` bridges `navigator.storage.estimate()`; the only async export, clearly typed, best-effort, sentinel on absence.
+The signals package exports `disconnectAllSignals` (`packages/signals/src/slot.ts:34`), not `disconnectAllSlots`; `disconnectAllSlots` appears in no signals export (`index.ts` re-exports `emitter`, `signal`, `slot`, `throttle`). The base storage imported nothing from signals, so **this dangling reference is introduced by the delta** — `disableStorageSignals` (`storage.ts:118`) calls it. Independent compile failure. (Context for the integration worker: `packages/loader/src/resourceLoader.ts:1` in this same bundle _also_ imports `disconnectAllSlots` while signals still exports `disconnectAllSignals` — suggesting a half-landed signals rename across the integration branch. Resolve at the signals seam: either rename the signals export to `disconnectAllSlots` and update all callers, or fix storage's import to `disconnectAllSignals`. Storage must not merge until its import resolves.)
 
-**Types.** Six new files in `@flighthq/types`, one concept each, alphabetized in the barrel (lines 393–398): `StorageChange`, `StorageMigration`, `StorageNamespace`, `StorageQuota`, `StorageSignals`, plus the `Storage` (backend) update. Header-first convention honored.
+## Present capabilities (source delta, judged in isolation)
 
-**Tests.** `storage.test.ts`: 81 `it`s across 39 alphabetized `describe` blocks mirroring every export (verified one-to-one). `exports:check` will pass.
+These are real and well-shaped _as written_ — they are blocked only by B1/B2, not by their own design. Should the types land, this is a strong surface.
 
-## Gaps
+- **Backend seam (unchanged from base):** `getStorageBackend` (lazy web default, never null), `setStorageBackend` (null restores web default; re-wires the cross-tab subscription when signals are active), `createWebStorageBackend` (try/catch-guarded `localStorage`; reads → `null`/`[]`, writes → `false`). New code _assumes_ the seam grew `byteSize?`/`subscribeChanges?` — see B1.
+- **Core KV + ergonomics:** `hasStorageItem`, `getStorageItemCount`, `getStorageEntries`, `getStorageItemOr`, JSON helpers `getStorageJSON`/`getStorageJSONOr`/`setStorageJSON` (parse/stringify failure → sentinel, never throws).
+- **Typed scalars:** `get/set` Boolean and Number families (`NaN` → parse failure; unrecognized boolean → null). All setters route through the signal-aware `setStorageItem`.
+- **Namespacing:** `createStorageNamespace(prefix)` → `{ prefix }`; `get/set/has/remove` namespaced variants + `getNamespacedStorageKeys`/`Entries`/`ByteSize` + `clearStorageNamespace`. Unprefix on read is correct (`slice(prefix.length)`).
+- **Bulk ops:** `setStorageItems`/`getStorageItems`/`removeStorageItems` (parallel-indexed reads; partial mutation possible on failure — documented).
+- **Byte accounting:** `getStorageByteSize` (+ namespaced) at 2 bytes/UTF-16 code unit, delegating to `backend.byteSize()` when present (blocked by B1).
+- **Change signals:** `enableStorageSignals`/`disableStorageSignals`/`getStorageSignals` (idempotent enable; wires cross-tab via the DOM `storage` event; same-tab writes synthesize `onChange`) — blocked by B1 (`StorageSignals`) and B2 (`disconnectAllSlots`).
+- **Versioning:** `migrateStorage(namespace | null, migrations)` — ascending steps from `stored+1`, persists `__flight_storage_version`, returns new version or `-1` on throw/write failure (blocked by B1: `StorageMigration`).
+- **Quota:** `getStorageQuotaEstimate(): Promise<StorageQuota | null>` — lone async export, best-effort, sentinel on absence (blocked by B1: `StorageQuota`).
 
-Measured against AAA completeness for a mature KV library (the charter is silent, so this is the fallback bar):
+## Non-blocking findings (delta, would survive the type fix)
 
-- **Bulk ops are not signal-aware.** `setStorageItems`, `removeStorageItems`, `clearStorageNamespace`, and `removeNamespacedStorageItem` call the backend directly and emit no `onChange`. A user with signals enabled gets per-key events from `setStorageItem` but silent batch writes — an asymmetry a listener must know about. The worker calls this a deliberate perf tradeoff (avoiding per-key `oldValue` reads) and documents it; it remains a real surface gap, not a bug. A `*Signaled` variant or a batch `StorageChange` (`key: null` already models "whole store" — a batch payload shape exists conceptually) would close it.
-- **Migration version key is an unenforced soft reservation.** `__flight_storage_version` lives in the same keyspace as user data and is reported by `getStorageKeys`/`getStorageEntries`/`getStorageItemCount`/ `getStorageByteSize`. A namespace's migration version also appears in `getNamespacedStorage*` results. No filtering hides it. For a library claiming AAA polish, reserved bookkeeping leaking into enumeration is a visible seam.
-- **No snapshot export/import.** `exportStorageSnapshot`/`importStorageSnapshot` (the `-formats` neighbor) is absent — deferred, reasonably, as a new package. This is the one clear _feature_ gap a mature store has (backup/restore/seed).
-- **No `onStorageChange` flat subscribe convenience.** Subscribing requires `connectSignal(enableStorageSignals().onChange, listener)`. Other event-style packages expose the signals entity the same way, so this is consistent — but the convenience disposer wrapper the roadmap gestures at is unbuilt (and carries an open auto-enable design question).
-- **No Rust `flighthq-storage` crate.** Intentionally deferred until the TS surface freezes; the divergences (native file-KV default under `native` feature, `StorageBackend` trait, `Signal<StorageChange>`) are noted in status but not yet in the conformance map.
-- **`clearStorageNamespace` / `getNamespacedStorageByteSize` are full-keyspace scans.** O(n) over the whole store per call. Fine at expected sizes; a cached prefixed key-set would matter only under profiling. Noted, not pressing.
+- **Convention drift — `Signal.emit` method over the `emitSignal` free function.** `_emitStorageChange` calls `_signals.onChange.emit(change)` (`storage.ts:469`). The codebase convention (and the sibling event package `network`) uses the free function `emitSignal(signal, ...args)` from `@flighthq/signals` — the functions-not-methods path that respects the cancellation / `nullSignalEmit` machinery. Direct `.emit` is supported but off-convention. Single-callsite, behavior-preserving swap. This is the _same_ low-risk cleanup the prior approved review flagged; it is not a merge-blocker.
+- **Async outlier.** `getStorageQuotaEstimate` is the only `Promise`-returning export in a capability whose `StorageBackend` doc explicitly frames storage as synchronous. Justified (the browser API is async) and well-typed; flagged as a contract-texture decision for the charter, not a defect.
+- **Full-keyspace scans.** `clearStorageNamespace` and `getNamespacedStorageByteSize` each scan the whole store O(n) per call. Fine at expected sizes; a within-package single-pass cleanup is the only sweep-safe tightening (a cached prefixed key-set is invalidation-coupled and parked).
 
 ## Charter contradictions
 
-None — the charter is a stub (only "What it is" seeded; North star / Boundaries / Decisions / Open directions all `TODO`). There is no stated principle to contradict. Every gap above is therefore a **candidate Open direction** (see below) rather than a violation.
+None — the charter is a stub (only "What it is" seeded; North star / Boundaries / Decisions / Open directions all `TODO`). There is no stated principle to contradict. The semantic gaps below are therefore candidate Open directions, not violations. The _merge_ objections (B1, B2) are not charter matters — they are build-correctness facts.
 
 ## Contract & docs fit
 
-Strong adherence, two minor convention drifts:
+Where it compiles, adherence is strong: full unabbreviated `Storage`/`NamespacedStorage` names; uniform sentinels (`null`/`false`/`-1`/`[]`/`0`); `Readonly<T>` on every object parameter; single-line root barrel; `sideEffects: false`; lazy/opt-in module state (no import-time side effect); `enable*`/`disable*` signal-group convention matching `enableDisplayObjectSignals`. The two convention drifts are the `.emit` call and the async outlier above.
 
-- **Types-first / header layer:** honored. All cross-package shapes in `@flighthq/types`, one per file, filename = type name, alphabetized barrel. ✓
-- **Full unabbreviated names:** every function carries the full `Storage` / `NamespacedStorage` type word; globally self-identifying. ✓
-- **Sentinels not throws:** uniform — `null`/`false`/`-1`/`[]`/`0` across the surface, try/catch around every host-boundary call. ✓
-- **`Readonly<T>`:** applied to every object parameter (`Readonly<StorageNamespace>`, `Readonly<StorageChange>`, `Readonly<Record<…>>`, `readonly Readonly<StorageMigration>[]`). ✓
-- **Single root export, `sideEffects: false`:** `index.ts` is a one-line `export * from './storage'`; manifest declares `sideEffects: false`. Module-level mutable state (`_backend`, `_signals`, `_signalsActive`, `_crossTabUnsubscribe`) is lazy/opt-in — no top-level side effect; signals stay inert until `enableStorageSignals`. Matches the "no shared top-level mutable state at import" rule. ✓
-- **`enable*`/`disable*` signal-group convention:** matches the codebase-map's `enableDisplayObjectSignals` example exactly. ✓
-- **Drift 1 — `Signal.emit` method vs `emitSignal` free function.** `_emitStorageChange` calls `_signals.onChange.emit(change)`. The sibling event package `network` uses the free function `emitSignal(net.onChange, status)` from `@flighthq/signals`. The free-function form is the functions-not-methods convention and — per `signals/src/slot.ts` — is the path that respects the cancellation/`nullSignalEmit` machinery; calling `.emit` directly is supported but off-convention. Candidate cleanup, low risk.
-- **Drift 2 — async export in a "synchronous" capability.** `getStorageQuotaEstimate` returns a `Promise`, the lone async export in a package whose `StorageBackend` doc explicitly frames storage as synchronous. Justified (the underlying browser API is async) and well-typed, but it is a contract texture worth a charter note so a later agent does not "fix" it.
+The one **contract-hygiene failure** is the types-first rule itself: the integration ships the _implementation_ of cross-package shapes (`StorageChange`, `StorageNamespace`, …) with no corresponding definition in `@flighthq/types`. The header layer must lead the implementation; here the implementation arrived orphaned. `package.json` correctly adds the `@flighthq/signals` dependency (`b2824e3d8:packages/storage/package.json:30`), so the dependency manifest is not the problem — the missing **type definitions** are.
 
-**Candidate doc revisions:** the Package Map line for `@flighthq/storage` ("synchronous persistent key/value (web backend over localStorage)") is now an undersell — it predates namespacing, migrations, change signals, and quota. Worth widening to reflect the realized surface. The `crate: flighthq-storage` front-matter in the charter implies a Rust mirror that does not yet exist; accurate as intent, but the conformance map should carry the three recorded divergences before the crate lands.
+**Candidate doc revision (parked, cross-doc):** the Package-Map line "synchronous persistent key/value (web backend over localStorage)" undersells the realized surface (namespacing, migrations, signals, quota) — but only once the surface actually builds.
 
 ## Candidate open directions
 
-The charter is silent on all of these; each is something this review had to assume to judge the package, so each is a question for the charter rather than an assumption to bake in:
+Charter-silent semantic questions surfaced by the surface (unchanged from the prior survey; each presupposes B1/B2 are fixed and the surface builds):
 
-1. **Signal-aware bulk ops — yes/no, and the payload shape.** Should `setStorageItems` / `clearStorageNamespace` emit? Per-key, or one batch `StorageChange`? This is the largest open semantic question; the current silence is a tradeoff the charter should bless or reject.
-2. **Reserved-key policy.** Is `__flight_storage_version` (and any future bookkeeping) hidden from enumeration, namespaced under a reserved prefix the public reads filter out, or left visible as today? A North-star ruling here also settles whether migration metadata counts toward `byteSize`.
-3. **`-formats` neighbor scope.** Is snapshot export/import in scope for `storage`, and is the `@flighthq/storage-formats` split (per the subject-triad fork) the intended home? Plain-data `StorageSnapshot` keeps parse weight out of core — but the plurality guard says split only on ≥2 formats; one JSON snapshot format may not yet justify the cell.
-4. **Sync-with-one-async-exception, or a hard sync boundary.** Should quota estimation stay an async outlier, move behind the backend seam, or leave the package? Settles drift 2.
-5. **`onStorageChange` convenience + auto-enable.** Add the flat disposer wrapper, and may it auto-enable signals (a cost-assumption the `enable*` convention otherwise makes explicit)?
-6. **Migration ergonomics.** `StorageMigration.migrate(namespace)` takes the prefix string and calls storage functions ambiently — no transaction, no rollback on partial failure (a throw mid-sequence leaves earlier steps applied and returns `-1`). Is best-effort-forward acceptable, or is atomicity a goal? A mature migration system usually states this.
+1. **Signal-aware bulk ops — yes/no, and payload shape.** `setStorageItems`/`removeStorageItems`/`clearStorageNamespace`/`removeNamespacedStorageItem` emit no `onChange`. Per-key vs. one batch `StorageChange` (`key: null` whole-store shape exists).
+2. **Reserved-key policy** for `__flight_storage_version` — hide from enumeration / reserved prefix / leave visible; and whether migration metadata counts toward `byteSize`.
+3. **`storage-formats` neighbor** — is snapshot export/import in scope, and does it justify a `-formats` cell under the plurality guard (≥2 formats)?
+4. **Sync boundary vs. one async exception** — keep / relocate / drop `getStorageQuotaEstimate`.
+5. **`onStorageChange` convenience + auto-enable** — flat disposer wrapper; may it auto-enable signals against the explicit-cost `enable*` convention?
+6. **Migration atomicity** — best-effort-forward vs. rollback-on-partial-failure.
+7. **Rust `flighthq-storage`** — record the native file-KV default + namespacing/JSON layer in the conformance divergence map before the crate lands.

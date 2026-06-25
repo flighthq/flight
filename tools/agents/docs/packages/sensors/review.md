@@ -1,92 +1,89 @@
 ---
 package: '@flighthq/sensors'
-status: solid
-score: 80
-updated: 2026-06-24
+status: partial
+score: 45
+updated: 2026-06-25
 ingested:
   - status.md
   - reviews/depth/sensors.md
   - source
+  - 'base=origin/main(eb73c3d74)'
+  - 'evidence=integration-b2824e3d8 delta'
 ---
 
-# sensors — Review
+# sensors — Review (merge gate: integration-b2824e3d8 → origin/main)
 
 ## Verdict
 
-`solid` — 80/100. This session took the package from a competent-but-thin four-stream event seam (the prior depth review's 55/100) to a near-complete device-sensors library: 11 sensor streams, full availability/permission introspection, sampling-rate options on the backend seam, and a set of quaternion/Euler/gravity/world-frame conversion helpers. Architecture (event-entity + swappable backend, value-typed readings, scratch reuse) is sound and idiomatic. It is not yet `authoritative` because of one unresolved cross-package design decision (fusion math homed unilaterally in `sensors`), a few seam fields that are declared but unwired on the web backend, and the captured `dist` being stale relative to the source.
+`partial` — 45/100 **as a merge candidate**. This is not a judgment of the package design, which is sound and ambitious. It is a judgment of the **integration delta as presented**: the head `packages/sensors/` was expanded to an 11-stream library that imports seven types and many fields from `@flighthq/types` — but the matching `@flighthq/types` header changes **did not land in this integration head**. `head/packages/types/src/Sensors.ts` is byte-identical to base (md5 `2d9363dc060385b2add6c85d67564c2c` in both). The package therefore **does not typecheck** in the bundle under review: it imports symbols that do not exist. This is a hard, mechanical merge blocker that overrides every other axis.
 
-Evidence is the incoming bundle `builder-67dc46d64`; source references are to `head/packages/sensors/src/sensors.ts` and `head/packages/types/src/Sensors.ts`.
+Note on provenance: a prior `review.md` (front-matter `score: 80`, `solid`) reasoned over a _different_ bundle (`builder-67dc46d64`) in which the types file _did_ carry the new surface and `dist` was stale. **That review does not describe the bundle being merged here.** The integration head dropped the types-package half of the change. The score regression from 80 to 45 reflects the integration delta, not a re-litigation of the builder bundle.
 
-## Status claims vs. the diff
+Evidence base: `base/` is `origin/main` (`eb73c3d74`), not under review. The delta is `head/packages/sensors/` plus the `packages/sensors/` hunks of `changes.patch` (`changes.patch:30708` for the test, `:31497` for the source). The `@flighthq/types` half is judged only insofar as the sensors delta _depends_ on it and that dependency is unsatisfied in this head.
 
-The worker `status.md` is broadly accurate but **underclaims** in two ways and one of its "deferred" items was in fact implemented — verify-against-diff caught this:
+## The blocking finding — the header layer is missing from this head
 
-- **Test count.** Status claims "42 tests passing." The head test file has **60** `it(` blocks across 32 `describe` blocks (one per exported function, alphabetized, mirroring source order). The extra 18 cover the helpers the status listed as deferred.
-- **Fusion math was NOT deferred.** Status item 5 says `getWorldAccelerationFromDeviceAcceleration` and the world-frame/complementary-filter helpers were _deferred pending a cross-package decision_ (does quaternion math live in `sensors` or `geometry`?). The diff contradicts this: the patch adds **four** fusion/conversion helpers to source — `getEulerFromQuaternion`, `getGravityFromOrientation`, `getScreenRelativeOrientation`, and `getWorldAccelerationFromDeviceAcceleration` (patch lines 247630, 247653, 247731, 247774). The worker made the cross-package call (math lives in `sensors`) and shipped it, rather than surfacing it. This is the single most important thing for the user to ratify — see Charter contradictions and Candidate open directions.
-- **Stale `dist`.** The bundle's realized API surface (`head/packages/sensors/dist/sensors.d.ts`) lists only 25 exports and is missing all seven source additions made late in the session (`getEulerFromQuaternion`, `getGravityFromOrientation`, `getScreenRelativeOrientation`, `getWorldAccelerationFromDeviceAcceleration`, `hasAccelerometer`, `hasGravitySensor`, `hasLinearAccelerationSensor`). The `dist` was captured before the final `tsc -b`. Source is the ground truth here; the realized-surface artifact is unreliable for this package in this bundle.
+The head implementation (`b2824e3d8:head/packages/sensors/src/sensors.ts:2-14`) opens with:
 
-## Present capabilities
+```ts
+import type {
+  AmbientLightReading,
+  MotionReading,
+  OrientationReading,
+  PressureReading,
+  ProximityReading,
+  QuaternionReading,
+  RotationRateReading,
+  Sensors,
+  SensorsBackend,
+  SensorsPermissionState,
+  SensorSubscribeOptions,
+} from '@flighthq/types';
+```
 
-Source: `head/packages/sensors/src/sensors.ts` (32 exported functions). Types: `head/packages/types/src/Sensors.ts`.
+But `b2824e3d8:head/packages/types/src/Sensors.ts` exports exactly four symbols, with the _base_ shape:
 
-**Streams (11 signals on `Sensors`).** `onAccelerometer` (incl. gravity), `onGyroscope` (now a proper `RotationRateReading` with named alpha/beta/gamma deg/s axes — the prior lossy `MotionReading` reuse is gone), `onLinearAcceleration` (gravity-removed), `onGravity` (derived `accelerationIncludingGravity − acceleration`), `onMagnetometer`, `onOrientation`, `onAbsoluteOrientation` (Generic Sensor `AbsoluteOrientationSensor` with `deviceorientationabsolute` fallback), `onQuaternion`, `onAmbientLight`, `onBarometer`, `onProximity`. `attachSensors` wires all ten backend subscriptions, is idempotent (tears down a prior subscription via the `WeakMap`), and `detachSensors`/`disposeSensors` are the clean teardown pair.
+```ts
+export interface MotionReading { x; y; z; }            // no accuracy / interval / timestamp
+export interface OrientationReading { ... }             // no accuracy / interval / timestamp
+export interface SensorsBackend { subscribeMotion; subscribeOrientation; subscribeMagnetometer; requestPermission; }
+export interface Sensors { onAccelerometer; onGyroscope; onMagnetometer; onOrientation; }  // 4 signals
+```
 
-**Reading allocators (9).** `createMotionReading`, `createOrientationReading`, `createRotationRateReading`, `createQuaternionReading`, `createAmbientLightReading`, `createPressureReading`, `createProximityReading`, plus `createSensors` and `createWebSensorsBackend`. Each reading now carries `accuracy`/`interval`/`timestamp` with documented sentinels (`-1`, identity quaternion `w=1`, `altitude=-1`/`distance=-1`/`max=-1` when underivable).
+Concretely, the delta is unsatisfiable against the header in its own bundle:
 
-**Availability queries (10).** `hasAccelerometer`, `hasGyroscope`, `hasMagnetometer`, `hasOrientationSensor`, `hasGravitySensor`, `hasLinearAccelerationSensor`, `hasAmbientLightSensor`, `hasBarometer`, `hasProximitySensor`, `isSensorsSupported` — each delegating to a backend `is*Supported` query. This closes the prior review's "silent no-op vs. no device" usability gap directly. The web backend answers honestly: `isBarometerSupported`/`isProximitySupported` return `false` (no web API), the others feature-detect `DeviceMotionEvent`/`DeviceOrientationEvent` or the Generic Sensor constructor.
+- **7 missing type imports.** `AmbientLightReading`, `PressureReading`, `ProximityReading`, `QuaternionReading`, `RotationRateReading`, `SensorsPermissionState`, `SensorSubscribeOptions` are imported but exist **nowhere** in `head/packages/types/` (`grep -rl` returns empty). `SensorAccuracy` / `SensorSamplingRate` are likewise absent.
+- **Field gaps on the two surviving types.** Every allocator writes fields the type lacks: `createMotionReading` sets `accuracy/interval/timestamp` (`sensors.ts:78-80`); `createOrientationReading` sets `accuracy/interval/timestamp` (`sensors.ts:84-94`). The base `MotionReading`/`OrientationReading` have none of these.
+- **Signal-count gap.** `createSensors` constructs 11 signals (`sensors.ts:121-135`, incl. `onAbsoluteOrientation`, `onAmbientLight`, `onBarometer`, `onGravity`, `onLinearAcceleration`, `onProximity`, `onQuaternion`); the head `Sensors` type declares 4. `attachSensors` emits to all 11 (`sensors.ts:25-55`).
+- **Backend-method gap.** `createWebSensorsBackend` implements ~20 members (`getPermissionState`, ten `is*Supported`, ten `subscribe*`); the head `SensorsBackend` declares 4. The fake in `sensors.test.ts:72-174` implements the same wide surface.
 
-**Permission.** `requestSensorsPermission` (iOS `DeviceMotionEvent.requestPermission` gate) plus the new non-prompting `getSensorsPermissionState(sensor?)` over the W3C Permissions API, returning the four-state `SensorsPermissionState`.
+This is not a lint nit or a stale artifact — it is a compile failure. `npm run check` (typecheck) cannot pass on this head. Per the contract's types-first rule ("define its types in `@flighthq/types` first, then implement against them"), the header is the design surface, and here it is absent. **A merge that lands this head as-is breaks the build.**
 
-**Rate control.** `SensorSubscribeOptions { frequency?, rate? }` threads through every backend `subscribe*`; the web backend honors `frequency` on Generic Sensor constructors and documents that the window-event streams ignore it.
+## The seven standards, judged on the delta
 
-**Conversion / fusion helpers (4, alias-safe `out`-param).** `getRotationMatrixFromQuaternion` (column-major 3×3), `getQuaternionFromOrientationReading` (Euler ZXY → quaternion), `getEulerFromQuaternion` (quaternion → Euler ZXY, normalized alpha to [0,360)), `getGravityFromOrientation` (device-frame gravity projection at 9.80665 m/s²), `getScreenRelativeOrientation` (compensates raw angles for `screen.orientation.angle`), and `getWorldAccelerationFromDeviceAcceleration` (inverse-quaternion rotation of an acceleration vector into the world frame). Each reads all inputs into locals before writing `out`, with the aliasing contract documented at the function.
+1. **Composition / bedrock — PASS (design), with one open seam.** The unit is a clean event-entity + swappable backend composition; streams are flat `subscribe*`/signal pairs, not config-gated branches. The one composition question is whether the six quaternion/Euler/gravity/world-frame helpers (`getEulerFromQuaternion` `sensors.ts:423`, `getGravityFromOrientation` `:446`, `getQuaternionFromOrientationReading` `:467`, `getRotationMatrixFromQuaternion` `:492`, `getScreenRelativeOrientation` `:524`, `getWorldAccelerationFromDeviceAcceleration` `:566`) are bedrock-here or belong in `geometry`/`math`. They operate on `*Reading` types, which is a real argument for homing them here — this is a charter Open direction, surfaced not blocked.
 
-**Backend seam.** `getSensorsBackend`/`setSensorsBackend`/`createWebSensorsBackend` match the platform-suite command convention exactly; `_backend` lazily defaults to web; `null` restores it. All scratch readings and the `_subscriptions` WeakMap live at the file bottom per source-style.
+2. **Naming clarity — PASS.** Exported names carry full unabbreviated type words and are globally self-identifying (`getWorldAccelerationFromDeviceAcceleration`, `createRotationRateReading`, `hasLinearAccelerationSensor`). `get*`/`has*`/`is*` discipline is correct throughout. No abbreviations.
 
-## Gaps
+3. **Tree-shaking / bundle invariant — PASS, one parked question.** `index.ts` is a single `export * from './sensors'` barrel (`b2824e3d8:head/packages/sensors/src/index.ts:1`); `package.json` unchanged from base (`sideEffects: false` floor intact); no top-level registration or side effects — module scope holds only `let _backend = null` and scratch readings (`sensors.ts:656-667`). The open question is whether 11 unconditionally-allocated signal slots warrant an `enableSensorsSignals` gate; parked pending an `npm run size` measurement (cannot run here).
 
-Measured against an exhaustive native sensor suite (CoreMotion / Android `SensorManager` / Generic Sensor API), what remains:
+4. **Registry vs closed union — N/A.** No `kind`/handler family in the delta. The backend seam is already an open swap (`setSensorsBackend`), which is the right shape.
 
-- **`rate` hint is declared but unwired.** `SensorSubscribeOptions.rate` (`'ui'|'normal'|'game'|'fastest'`) is defined in types and accepted by every `subscribe*`, but the web backend reads only `options?.frequency` — `rate` is never consumed anywhere (grep: zero `.rate` reads in source). On the web that is defensible (only `frequency` maps to a Generic Sensor constructor), but the field is effectively native-backend-only today and nothing documents that asymmetry at the option type beyond a general "backends degrade" note. A native backend must map `rate` → platform hint.
-- **Uncalibrated gyroscope/magnetometer streams** (Android `TYPE_GYROSCOPE_UNCALIBRATED`, CoreMotion raw + bias) — absent. Status item 3; native-only, correctly deferred.
-- **Exotic native streams** — step counter, pedometer, heart rate, significant-motion. Absent; no web equivalent. Status item 4.
-- **`accuracy` is always `'unknown'` on web.** The field exists on every reading but the web backend cannot populate it; a native host fills it. Acceptable, but it means the field is inert in the default backend.
-- **`timestamp` is always `-1`.** The web handlers set `timestamp = -1` unconditionally even though the DOM `Event.timeStamp` is available; the field is plumbed but never sourced from the event. Minor, but the one place the web backend could fill a "calibration-class" field and does not.
-- **No Rust `flighthq-sensors` crate.** Charter front-matter declares `crate: flighthq-sensors`; none exists yet. Correctly deferred until the TS API stabilizes — the value-typed `*Reading` structs and the pure conversion helpers are ideal first conformance/mixing targets (plain `Copy`, headlessly fingerprintable), which strengthens the case for keeping the math here.
-- **Dead scratch object.** `_absoluteOrientationQuaternion` is allocated and written in the `subscribeAbsoluteOrientation` Generic-Sensor path purely to feed `getEulerFromQuaternion`; the `subscribeQuaternion` path exposes the quaternion directly. The status itself flags this as a minor cleanliness issue — it is real but cosmetic.
+5. **Subject triad + plurality guard — PASS.** No format codecs, no second backend yet (web only). The native backend is correctly deferred to a future host, not split prematurely.
 
-## Charter contradictions
+6. **Contract hygiene — MIXED.** Out-params are alias-safe and documented ("read all input values into locals before writing", e.g. `sensors.ts:529-531`, `:571-578`); sentinels (`-1`, identity quaternion, no-op unsubscribe) replace throws; `dispose*` is correct (detach-to-GC, `sensors.ts:415`). **But the types-first rule is violated by omission** — the header the implementation depends on is not present in this head (the blocking finding). Two within-package nits: `getRotationMatrixFromQuaternion` takes a bare `out: number[]` (`sensors.ts:492`) rather than a typed/length-bracketed matrix out, and `getWebSensorsPermissionState` has a dead-equal ternary `sensor === 'orientation' ? 'accelerometer' : 'accelerometer'` (`sensors.ts:742`) — both branches identical, a latent bug if per-sensor permission scoping is ever wanted.
 
-The charter (`charter.md`) is a stub: `What it is` is seeded from the depth review, and `North star`, `Boundaries`, `Decisions`, and `Open directions` are all `TODO`. There is therefore **no blessed principle to contradict** — and that itself is the finding. The session made at least two decisions a charter would normally govern, with no charter to authorize them:
+7. **Tests & honesty — PASS in shape, BLOCKED in fact.** Tests are colocated, `describe` blocks alphabetized and mirror exports one-to-one (`sensors.test.ts:179-771`), and exercise allocators, idempotency, all streams, alias-safety (distinct + aliased `out`), and sentinel ranges. The honesty problem is not the test prose — it is that **the test imports the same seven nonexistent types** (`sensors.test.ts:2-12`) and constructs a fake backend over a surface the header does not declare. The suite cannot compile or run against this bundle's `@flighthq/types`.
 
-1. **Fusion/conversion math homed in `sensors`.** Six quaternion/Euler/gravity/world-frame functions now live here. The status' own deferral note (item 5) and the prior depth review both flagged this as a `sensors`-vs-`geometry` boundary question needing a human decision. It was decided implicitly by shipping. Not wrong — these are sensors-shaped (they speak `OrientationReading`/`MotionReading`/ `QuaternionReading`, not generic `Matrix`/`Vector3`) — but it is exactly the kind of cross-package call the codebase map says to _surface, not act on autonomously_.
-2. **A breaking API change** (`onGyroscope`: `MotionReading` → `RotationRateReading`) was made on pre-release grounds. Correct under the project's no-back-compat rule, but it is a Decision-ledger-worthy ruling that currently lives only in a worker status doc.
+## Why the score, precisely
 
-Both should be promoted into the charter (a Decision or an Open direction) so the next agent inherits them.
+Design and within-package craft would sit comfortably in `solid` territory. The merge-gate score is dragged to `partial`/45 by a single fact: **the delta does not build in its own bundle** because its header dependency is absent. That is disqualifying for a merge gate regardless of how good the implementation reads. Restore the `@flighthq/types/src/Sensors.ts` changes (the 7 new reading types, the field extensions, the 11-signal entity, the widened backend, the `SensorAccuracy`/`SensorsPermissionState`/`SensorSamplingRate`/`SensorSubscribeOptions` aliases) into this integration head and the same code jumps back toward 80.
 
-## Contract & docs fit
+## Notes for the charter's Open directions
 
-**Lives up to the contract:**
-
-- **`@flighthq/types`-first.** All readings, `SensorsBackend`, `Sensors`, `SensorAccuracy`, `SensorsPermissionState`, `SensorSamplingRate`, `SensorSubscribeOptions` are defined in `packages/types/src/Sensors.ts`; the implementation imports them. Header-layer discipline is clean.
-- **Naming.** Full, unabbreviated, self-identifying; the event-capability quartet (`create*`/`attach*`/`detach*`/`dispose*`) and the seam triad (`get*Backend`/`set*Backend`/ `createWeb*Backend`) match `@flighthq/application` and the platform suite exactly. `has*`/`is*` for booleans, `get*` for the `out`-param conversions and accessors, `create*` for allocators.
-- **Sentinels, not throws.** `-1`/`false`/`'unsupported'`/no-op unsubscribe everywhere; no thrown errors on the expected-failure paths; `try/catch` only guards the optional Generic Sensor constructors.
-- **`out`-params + alias safety.** Every conversion helper writes `out` and reads inputs first, with a documented aliasing contract — and the tests include alias cases (7 alias-related assertions).
-- **Allocation discipline.** Scratch readings reused in the hot listener path; the scratch-reuse aliasing contract is now documented on the reading types, on `SensorsBackend`, and on `attachSensors` (closing the prior review's "implied-only" note).
-- **Single root export, `sideEffects: false`.** `index.ts` is `export * from './sensors'`; `package.json` declares `"sideEffects": false`; no top-level side effects (lazy `_backend`).
-- **Order.** Exported functions and `describe` blocks are alphabetized and aligned; every export has a colocated test (`exports:check` would pass against source).
-
-**Candidate revisions to the contract/admin docs:**
-
-- **Package Map line is stale.** `index.md` lists `@flighthq/sensors` as "accelerometer, gyroscope, device orientation." The package now spans 11 streams (light/proximity/barometer/gravity/linear-accel/ quaternion/absolute-orientation) plus fusion math. The map line should be widened, and it is worth a word on whether quaternion/orientation math is in-scope here (per contradiction 1).
-- **`crate: flighthq-sensors`** is asserted in front-matter but unbuilt; the conformance map / register should reflect "TS-only, crate pending" until the port lands.
-
-## Candidate open directions
-
-The charter is silent on all of these; each is something this review had to assume:
-
-1. **Where does sensor-fusion math live — `sensors` or `geometry`?** The session homed six quaternion/Euler/gravity/world-frame helpers in `sensors`. Ratify this, or move the generic core (quaternion↔matrix↔Euler) to `geometry`/`math` and keep only the `*Reading`-typed wrappers here. This is the package's central undecided boundary and the gate on the Rust crate.
-2. **Is `accuracy`/`timestamp`/`rate` a charter Boundary (native-only by design) or a web gap?** Three fields are plumbed through types but inert/unconsumed on the web backend. Decide whether the charter blesses them as native-only (then document the asymmetry at the type) or whether `timestamp` at least should be sourced from `Event.timeStamp` on web.
-3. **`enableSensorsSignals` tree-shaking gate?** The entity now allocates 11 signal slots unconditionally; `enableSensorsSignals` is absent (status item 6 deferred pending an `npm run size` measurement). Decide whether 11 inert signals warrant the opt-in gate the signals convention permits.
-4. **Bless the breaking `onGyroscope` reshape** (`MotionReading` → `RotationRateReading`) as a charter Decision so it is not re-litigated.
-5. **Per-sensor permission granularity.** `getSensorsPermissionState('motion'|'orientation'|'magnetometer')` exists, but the web mapping collapses `'motion'` and `'orientation'` to the same `'accelerometer'` Permissions-API name. Is finer per-sensor scoping a native-backend concern or a charter goal?
+- **Fusion-math homing (the central undecided boundary).** Six quaternion/Euler/gravity/world-frame helpers are shipped in `sensors` operating on `*Reading` types. Ratify homing them here, or move the generic core (quaternion↔matrix↔Euler) to `geometry`/`math` and keep only `*Reading`-typed wrappers. Gate on the Rust crate.
+- **`getRotationMatrixFromQuaternion` out type.** If matrix math stays in `sensors`, decide whether the `out: number[]` should be a typed geometry `Matrix3`/`Float32Array` rather than a bare array.
+- **Inert seam fields.** `accuracy` (`'unknown'`), `timestamp` (`-1`, despite DOM `Event.timeStamp` being available), and the `rate` hint are plumbed but unconsumed on web. Bless as native-only or wire on web.
+- **`enableSensorsSignals` gate.** 11 unconditional signal slots — decide after an `npm run size` read.
+- **Per-sensor permission granularity.** The web mapping collapses `'motion'`/`'orientation'` to `'accelerometer'` — finer scoping is a native concern or a charter goal (and is the source of the dead ternary at `sensors.ts:742`).
+- **Rust `flighthq-sensors` crate.** Asserted in front-matter, unbuilt; an ideal first value-typed conformance/mixing leaf once the fusion-math homing settles.

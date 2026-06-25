@@ -1,74 +1,89 @@
 ---
 package: '@flighthq/statusbar'
-status: solid
-score: 88
-updated: 2026-06-24
+status: partial
+score: 35
+updated: 2026-06-25
 ingested:
   - status.md
-  - reviews/depth/statusbar.md
   - source
-  - incoming/builder-67dc46d64
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
 ---
 
-# Review: @flighthq/statusbar
+# statusbar — Review
 
-## Verdict
+Harsh **merge-gate** review of the `integration-b2824e3d8` delta (head) against the **approved** `origin/main` (`eb73c3d74`) baseline. Only the delta is judged. The baseline `statusbar` is the blessed floor and is not under review.
 
-`solid — 88/100`. The 2026-06-24 builder pass (`builder-67dc46d64`) closed the read side, animation, change-notification, and style-stacking gaps the prior depth review flagged, lifting the package from a clean-but-write-only command surface to a near-complete mobile status-bar library. Every status-doc claim verified against the diff. What keeps it short of authoritative is not TS feature surface but the absence of the Rust crate (`crate: flighthq-statusbar` is declared, not built), a module-level style-stack design wart, and a couple of small contract frictions.
+## Verdict in one line
 
-## What the pass actually changed (verified)
+**REJECT as-is.** The implementation is well-designed and would be a strong Bronze→Gold lift — but the delta is **internally broken**: every new symbol the head code imports from `@flighthq/types` (`StatusBar`, `StatusBarInfo`, `StatusBarAnimation`, `StatusBarStyleEntry`, `StatusBarStyleEntryHandle`) and every new backend method it calls (`getInfo`, `subscribe`, the `animated`/`animation` params) **do not exist** in the integration tree. The package cannot compile. The companion `status.md` claims the types were added; the diff proves they were not.
 
-Base (`builder-67dc46d64/base`) matched the depth review exactly: a write-only `StatusBarBackend` with `setStyle`/`setVisible`/`setBackgroundColor`/`setOverlaysContent`, and no read side. The head bundle adds, all confirmed in `changes.patch` and source:
+## The blocking defect — the type contract was never committed
 
-- **Types** (`67dc46d64:packages/types/src/StatusBar.ts`): `StatusBarAnimation` (`'fade' | 'none' | 'slide'`), `StatusBarInfo` snapshot struct, `StatusBarStyleEntry` (per-field-optional, `readonly` fields), `StatusBarStyleEntryHandle` (`number`, `-1` sentinel), `StatusBar` event entity (`onChange: Signal<…>`), and the backend extended with `getInfo(out)`, `subscribe(listener)`, plus `animation`/`animated` params on `setVisible`/`setBackgroundColor`.
-- **Package**: `@flighthq/signals` added to `dependencies` and the `tsconfig` `references` — correct, since the entity now carries a `Signal`.
-- **Source** (`67dc46d64:packages/statusbar/src/statusbar.ts`): 14 exported functions, all alphabetized, each with a colocated test (31 tests across 17 `describe` blocks, mirroring source order).
+The head `statusbar.ts` opens with:
 
-## Present capabilities
+```ts
+// b2824e3d8:packages/statusbar/src/statusbar.ts
+import { createSignal, emitSignal } from '@flighthq/signals';
+import type {
+  StatusBar,
+  StatusBarAnimation,
+  StatusBarBackend,
+  StatusBarInfo,
+  StatusBarStyle,
+  StatusBarStyleEntry,
+  StatusBarStyleEntryHandle,
+} from '@flighthq/types';
+```
 
-Command surface (unchanged, still canonical): `setStatusBarStyle`, `setStatusBarVisible(visible, animation?)`, `setStatusBarColor(color, animated?)`, `setStatusBarOverlaysContent`, `getStatusBarBackend`/`setStatusBarBackend`, `createWebStatusBarBackend`.
+But `incoming/integration-b2824e3d8/head/packages/types/src/StatusBar.ts` is **byte-identical to base** (`diff base/.../StatusBar.ts head/.../StatusBar.ts` → exit 0). It still declares only:
 
-Read side (new): `createStatusBarInfo()` allocates a zeroed snapshot (`height = -1`, `style = 'default'`); `getStatusBarInfo(out)` delegates to `backend.getInfo(out)` and is alias-safe (the web backend reads all fields into `out` with no cross-field dependency; verified by the alias test); `getStatusBarHeight()` reads height via a module scratch and returns `-1` when unknown.
+```ts
+// b2824e3d8:packages/types/src/StatusBar.ts (unchanged from base)
+export type StatusBarStyle = 'light' | 'dark' | 'default';
+export interface StatusBarBackend {
+  setStyle(style: StatusBarStyle): void;
+  setVisible(visible: boolean): void;
+  setBackgroundColor(color: number): void;
+  setOverlaysContent(overlay: boolean): void;
+}
+```
 
-Event capability (new, matching the `@flighthq/network` shape exactly — verified against `network.ts`): `createStatusBar()`, `attachStatusBar(bar)` (idempotent — tears down a prior subscription first), `detachStatusBar(bar)`, `disposeStatusBar(bar)` (correct verb — detach-and-release-to-GC, nothing native to free). `enableStatusBarSignals()` is a documented no-op opt-in marker.
+The new symbols are referenced **only** inside `statusbar.ts` and `statusbar.test.ts` — they are defined nowhere in the tree (`grep -rln 'StatusBarInfo\|StatusBarStyleEntry\|StatusBarAnimation' head/packages` returns just those two files). Consequences, each independently fatal to compile:
 
-Style stacking (new): `pushStatusBarStyleEntry(entry)` returns an opaque handle and applies a top-down per-field merge (last-pushed wins per field, unset fields fall through); `popStatusBarStyleEntry(handle)` removes by handle, no-ops on unknown/invalid, and re-applies the merged top. This is the RN `pushStackEntry`/`popStackEntry` pattern.
+- **Missing type imports.** `StatusBar`, `StatusBarInfo`, `StatusBarAnimation`, `StatusBarStyleEntry`, `StatusBarStyleEntryHandle` resolve to nothing — `tsc -b` cannot type the module.
+- **Backend method calls the interface does not have.** `getStatusBarInfo` calls `getStatusBarBackend().getInfo(out)` and `attachStatusBar` calls `backend.subscribe(...)`, but the committed `StatusBarBackend` has neither `getInfo` nor `subscribe`.
+- **Backend signature drift.** `setStatusBarColor(color, animated)` forwards to `setBackgroundColor(color, animated)` and `setStatusBarVisible(visible, animation)` forwards to `setVisible(visible, animation)`, but the committed interface methods take a single argument each.
 
-Web backend `getInfo` reads the `theme-color` meta back to a packed `0xRRGGBBFF` (alpha forced opaque, since web write drops alpha) and returns safe defaults elsewhere; `subscribe` returns a no-op unsubscribe (no OS status-bar events on web). The `_webReadThemeColor`/`packedRgbaToHexColor` helpers sit at file bottom per source-style rules.
+The patch's file list (`grep '^diff --git' changes.patch`) confirms it touches `packages/statusbar/{package.json,src/statusbar.ts,src/statusbar.test.ts,tsconfig.json}` and the four `docs/packages/statusbar/*` files — and **nothing under `packages/types/`**. The types half of this feature was dropped on the floor before integration. This is a delta defect (the base imported only the two symbols that exist), not a baseline critique.
 
-## Gaps
+## Honesty failure — status.md contradicts the diff
 
-- **No Rust crate.** `flighthq-statusbar` is declared in the charter front matter but not built. The status doc spells out the intended seam (the `StatusBarBackend` trait, the free functions, the `native`-gated no-op default, the `host-web` theme-color fill). This is the single largest remaining distance to authoritative, and the one the conformance goal cares about most.
-- **No `hasStatusBarStyleEntry(handle)`.** The push/pop pair lacks the boolean `has*` query that would complete the trio and let a consumer check whether an entry is still live. Minor, but it is the `has*`-prefix convention's natural slot.
-- **No `clearStatusBarStyleStack()`.** There is no way to drop the whole stack. The tests feel this directly: `afterEach` pops handles `0..99` as a teardown hack because the stack is module-global with no reset. A `clear*` utility (or a test-only reset) would remove the hack and serve as a debug affordance.
-- **`createStatusBarInfo` default `visible: true` is an assumption.** A zeroed snapshot claims the bar is visible before any backend read; on a host that starts hidden this is a stale default until `getInfo` runs. Defensible (most platforms start visible) but undocumented as a choice.
+`b2824e3d8:tools/agents/docs/packages/statusbar/status.md` (as-claimed, builder-67dc46d64) asserts:
 
-## Charter contradictions
+> ### New types in `@flighthq/types` (`StatusBar.ts`)
+>
+> - `StatusBarAnimation` … `StatusBarInfo` … `StatusBarStyleEntry` … `StatusBarStyleEntryHandle` … `StatusBar` … Extended `StatusBarBackend` with `getInfo` … `subscribe` …
 
-None — the charter's `What it is` ("mobile status-bar control … over a swappable web/native backend seam") is exactly what the code is, and `North star`/`Boundaries`/`Decisions` are all still `TODO`, so there is nothing concrete to contradict. The thinness of the charter is itself the finding (see Candidate open directions).
+None of this is in the diff. The continuity log's own banner flags entries as "as-claimed until a review pass verifies them against the diff" — this review is that pass, and the claim **fails verification**. The estimated "95/100 (gold)" is unreachable: the package does not build.
 
-## Contract & docs fit
+## What the delta gets right (judged on its merits, conditional on the types landing)
 
-Lives up to the contract well:
+This is not sloppy work — it is _unwired_ work. Were the matching `@flighthq/types` change present, most of this would pass the bar:
 
-- **`@flighthq/types`-first**: every cross-package type (`StatusBarInfo`, `StatusBarAnimation`, `StatusBarStyleEntry`, `StatusBarStyleEntryHandle`, `StatusBar`, extended `StatusBarBackend`) is defined in `types/src/StatusBar.ts`, not inline. Good.
-- **Full unabbreviated names**: every export carries the `StatusBar` type word and is globally self-identifying.
-- **`out`-params + alias-safety**: `getStatusBarInfo(out)` returns `out` and is alias-safe; a single-struct read rather than four getters, exactly as the depth review recommended.
-- **Sentinels not throws**: `-1` for unknown height and the invalid handle; `popStatusBarStyleEntry` no-ops on bad input rather than throwing. Correct.
-- **Single root export** (`index.ts` is `export * from './statusbar'`), `sideEffects: false`, `Readonly<>` on the `StatusBarStyleEntry` parameter. All present.
+1. **Composition / bedrock — PASS (design).** The added surface decomposes cleanly: a read side (`createStatusBarInfo` / `getStatusBarInfo` / `getStatusBarHeight`), an event entity (`createStatusBar` / `attachStatusBar` / `detachStatusBar` / `disposeStatusBar`), and an RN-style style stack (`pushStatusBarStyleEntry` / `popStatusBarStyleEntry`). No god-function; `_applyTopStyleEntry` is a single private merge helper. No config-gated feature branches in a hot loop.
+2. **Naming clarity — PASS.** Full unabbreviated type words throughout (`pushStatusBarStyleEntry`, `getStatusBarHeight`), correct `get*` accessors, `dispose*` used correctly (`disposeStatusBar` detaches the subscription and releases to GC — no native resource to free, so `dispose` not `destroy` is right per the teardown-verb rule).
+3. **Tree-shaking / bundle invariant — PASS.** `package.json` keeps `"sideEffects": false`, a single `"."` export, and module state lives at the file bottom under the loose-variable convention. The new `@flighthq/signals` dependency (+ `tsconfig` reference) is justified by the `onChange` event entity and matches the platform-suite event-cell pattern.
+4. **Registry vs closed union — N/A.** No kind/handler family here; backend-seam capability.
+5. **Subject triad — N/A.** No format/backend split implicated.
+6. **Contract hygiene — MIXED.** `getStatusBarInfo(out)` is a correct out-param with an explicit alias-safety comment and an alias test; sentinels are used for expected failure (`popStatusBarStyleEntry` no-ops on an unknown handle, `-1`/`INVALID_HANDLE`; `_webReadThemeColor` returns `0` on parse failure rather than throwing). **But** the entire hygiene story is moot until the types land — the contract it implements against is absent, which is itself the gravest contract-hygiene failure (types-first was inverted: the implementation shipped, the header did not).
+7. **Tests & honesty — MIXED.** The test file is thorough, colocated, alphabetized, and mirrors the new exports — but it imports the same non-existent types and **cannot compile**, so it is not a passing suite; and its parent `status.md` overstates what landed (see above).
 
-Frictions worth flagging:
+## Minor notes (not blocking, surface in assessment)
 
-- **Module-level mutable style stack.** `_styleStack`, `_nextHandle`, and `_scratchInfo` are module globals. The codebase-map ground rule says do not "mutate shared state at module top level"; the counter-argument is that the whole capability is process-singleton (one OS status bar), so a module-global stack is the honest model — the same way the backend itself is a module global (`_backend`). This is consistent with the rest of the platform suite, but it is the reason the tests need the `0..99` pop hack, and it means style-stack handles are process-global rather than per-registry. Worth a deliberate ruling rather than leaving implicit.
-- **`enableStatusBarSignals` is a no-op singleton among event capabilities that lack one.** `@flighthq/network` (the sibling event capability) has no `enableNetworkSignals`. Either statusbar's marker is the start of a pattern the other event capabilities should adopt, or it is an outlier to drop. The codebase-map `enable*` convention is framed around an assumed _cost_ (e.g. `enableDisplayObjectSignals`); statusbar's signals carry no such cost, so the marker is currently decorative.
-- **Package Map line is now stale.** `tools/agents/docs/index.md` still describes statusbar as "mobile status-bar style, visibility, color" — it predates the read side, animation, change notification, and style stacking. Candidate revision: widen the line to mention the query/info snapshot and the event entity.
+- `enableStatusBarSignals()` is a pure documentation-marker no-op (its own comment says so). The `enable*` convention exists to gate an opt-in _cost_; signals here are always present, so the marker buys nothing concrete. Worth a design question rather than retention by default.
+- `popStatusBarStyleEntry`'s afterEach reset in the test (`for (let i = 0; i < 100; i++) popStatusBarStyleEntry(i)`) is a brittle handle-space sweep that leans on handles being small integers; fine for a stub test, but a `clearStatusBarStyleStack()` test helper would be cleaner.
 
-## Candidate open directions
+## Bottom line
 
-The charter's `North star`, `Boundaries`, and `Decisions` are all stubs; each thing this review had to assume becomes a question for the charter:
-
-1. **Rust crate priority.** The status doc treats the Rust port as the final Gold step. Is `flighthq-statusbar` in this milestone, and does the no-op `native` default backend (desktop has no status bar) count as conformant, or does it need a Capacitor-style mobile-native backend to be "done"?
-2. **Height vs. `@flighthq/device` safe-area top inset.** The depth review and the source doc-comment both flag that on notched/island devices `device.getSafeAreaInsets().top` differs from the bar's intrinsic height. The current resolution is documentation-only (no cross-package dep). Is that the blessed boundary, or should `getStatusBarHeight()` forward through `device` on native once that lands? This is a real cross-package fork to settle, not an autonomous fix.
-3. **`enable*Signals` policy for event capabilities.** Should every event capability (network, power, lifecycle, keyboard, sensors, statusbar) carry an `enable*Signals` marker for symmetry, or should statusbar drop its no-op to match `network`? A platform-suite-wide ruling, not a statusbar-local one.
-4. **Style-stack ownership model.** Is the process-global module-level stack the intended design (one OS bar → one stack), and if so should a `clearStatusBarStyleStack()` / `hasStatusBarStyleEntry()` round out the API and retire the test teardown hack?
-5. **Style vocabulary.** `StatusBarStyle` keeps `'light' | 'dark' | 'default'` and maps to iOS `lightContent`/`darkContent` by intent (documented in the type). Is that mapping blessed, or are explicit `'lightContent'`/`'darkContent'` aliases wanted?
+The design is Gold-shaped; the integration is broken. This must not merge until the `@flighthq/types` `StatusBar.ts` change that the implementation was written against is committed and the package type-checks and tests green. See `assessment.md` for routing and `outgoing/integration/statusbar.md` for the worker dispatch.

@@ -1,51 +1,35 @@
 ---
 package: '@flighthq/texture'
-updated: 2026-06-24
+updated: 2026-06-25
 basedOn: ./review.md
 ---
 
-# texture — Assessment
+# texture — Assessment (merge gate: integration-b2824e3d8)
 
-Sorted from `review.md` (score `solid — 74`), absorbing the prior `reviews/maturation/depth/texture.md` roadmap (its Bronze items already landed in the builder pass; the residue is the Silver/Gold work, most of which is a cross-package design gate). The charter is a stub — North star, Boundaries, and Decisions are all `TODO` — so the kind taxonomy (2D-array / 3D / usage), the format/mip/version policy, and the `*Kind` consumers are all open design questions, which keeps `Recommended` deliberately small: only the genuinely within-package, decision-free items qualify. Every structural fork the review raises (the descriptor-ahead-of-consumer question, the renderer cache contract, the `*Kind` consumer story, the `texture-formats` neighbor) is routed to the charter's Open directions, not into `Recommended`.
+> Recommendation layer over `review.md`. Reasoned over the **delta** (head vs the approved `origin/main` base `eb73c3d74`). Sorts the merge-gate findings into sweep-safe `Recommended` (within `@flighthq/texture` only) and parked `Backlog`. `Approved` is the user's verbal gate — left empty. Design / cross-package forks route to the charter's Open directions, not into Recommended. See ../CONTRACT.md.
+>
+> Governing context: the merge is **blocked** by one defect — the cube-texture surface references `CubeFace*` constants that the head bundle never added to `@flighthq/types`, so the delta does not typecheck. The fix crosses into `@flighthq/types`, so it is **not** a within-`texture` sweep; it is a merge directive carried in `outgoing/integration/texture.md` and tracked in Backlog here.
 
-## Recommended
+## Recommended (sweep-safe, within-package, non-design)
 
-Strictly sweep-safe: within `@flighthq/texture`, no cross-package coupling, no breaking change, no open design decision.
+Deliberately narrow. The blocker's fix lives in `@flighthq/types` (cross-package), so it is not listed here — only items that are correct and self-contained within `@flighthq/texture` under any resolution of the type gap:
 
-- **Drop the unused `@flighthq/resources` dependency from `package.json`.** No source file imports `@flighthq/resources` — `ImageResource` is a type from `@flighthq/types`, and a full `grep` over `packages/texture/src/` finds zero references. The dependency inflates the graph and would be flagged by `npm run packages:check`'s workspace-dependency conventions. A pure manifest edit; re-run `packages:check` after. — review.md (Contract & docs fit, defect 1).
+- **Correct the `status.md` honesty claims when the blocker is resolved.** The pass-1 continuity log asserts "All 54 tests pass" and that `CubeFace.ts` / `TextureKind.ts` "were added to `@flighthq/types`" — both false against the integrated tree. Once the types land (or instead of, if the constants move), rewrite the claim to match reality. Administrative; touches only `tools/agents/docs/packages/texture/status.md`.
+- **(After types land) confirm `setCubeTextureFace`'s doc-comment matches the real constants.** The comment at `cubeTexture.ts:82-85` hard-codes the index values `CubeFacePositiveX = 0 … CubeFaceNegativeZ = 5`; if the landed constants differ in value or name, reconcile the comment. Within `texture` only.
 
-- **Complete the uv-transform helper set: `getTextureInverseUvMatrix`, `transformTextureUv(out, texture, u, v)`, `resetTextureUvTransform(texture)`.** The compose path (`getTextureUvMatrix`) and the setters exist; these three finish the operating set over the stored KHR_texture_transform model. Pure in-package math over `@flighthq/geometry` `Matrix3`, no design gate (the status explicitly notes they "can be added in a follow-up without any design decisions"). Out-param / alias-safe like `getTextureUvMatrix`; add a colocated test per export (`exports:check`) and re-run `order:fix` so the new exports stay alphabetized and the `texture.test.ts` `describe` blocks mirror them. — review.md (Gaps: "uv-transform set is incomplete"); maturation Gold ("uv-transform completeness").
+## Backlog (parked, with blocking reason)
 
-## Backlog
-
-Parked: needs a charter decision, crosses a package boundary, belongs to another doc's owner, or is larger than a sweep. Each carries why.
-
-- **`Texture2DArray` descriptor kind** (`createTexture2DArray`/`clone`/`copy`/`equals`/`setLayer`/ `isComplete`, `Texture2DArrayKind`). A contained leaf the same shape as `CubeTexture`. **Parked:** its value is only realized once `render-gl`/`render-wgpu` upload array layers — whether to land the descriptor ahead of the consumer or jointly is a design decision (review Gaps; maturation Silver). Routed to Open directions.
-
-- **`Texture3D` / volume descriptor kind + `TextureUsage` intent + `TextureSwizzle`.** **Parked:** these cross most deeply into the renderer/material layer — `TextureUsage` ('sampled'/'render-target'/ 'storage') touches the render-into-a-texture pipeline and must be designed _with_ the render-target work in `render-wgpu`/`scene-*`. Cross-package joint design (review Gaps; maturation Gold). Routed to Open directions.
-
-- **Descriptor-level `format: PixelFormat | null` + `TextureMipPolicy` ('none'/'auto'/'manual').** **Parked:** a cross-package design gate — the GPU-upload caches in `render-gl`/`render-wgpu` must agree on what `mipPolicy` and `format` mean before the field shape on the `Texture` interface is committed. Types-first change in `@flighthq/types` once the contract is settled (review Gaps; maturation Silver; status "deferred items"). Routed to Open directions.
-
-- **Per-binding `version: number` + `invalidateTexture`/`invalidateCubeTexture` bump helpers.** Mechanically simple, mirrors the established `ImageResource.version` convention. **Parked:** the field only earns its place once the renderers are written to _consume_ `texture.version` for upload-cache invalidation — a cross-package design dependency (review Gaps; maturation Silver; status "deferred items"). Routed to Open directions.
-
-- **Make texture entities kind-bearing / find consumers for `TextureKind`/`SamplerKind`/`CubeTextureKind`.** The constants are defined in `@flighthq/types` but referenced nowhere. **Parked:** whether texture descriptors register renderers or round-trip in a serialized scene (the reason a kind exists) is an architecture decision spanning `render` and the scene-serialization path, not a within-`texture` sweep (review Gaps; Contract & docs fit, defect 2). Routed to Open directions.
-
-- **`@flighthq/texture-formats` neighbor (KTX2 / Basis container parsers).** **Parked:** blocked on the `ImageResource.compressed` slot, explicitly deferred at the `@flighthq/types` level today. New triad cell under the plurality guard; do not start until the upstream types decision lands (review Gaps; maturation Gold; status "deferred items"). Routed to Open directions.
-
-- **Rust-port parity for the ~15 new TS additions** (`equals_texture`, `get_texture_uv_matrix`, the uv setters, `copy_cube_texture`, `set_cube_texture_face` + `CUBE_FACE_*`, the presets, the `*Kind` mirrors). **Parked:** the conformance map / `crates/flighthq-texture` live in the Rust worktree, not this package — out of a within-package TS sweep. Track via the conformance-map entry (status "Gold — Rust parity"). Routed to Open directions (parity scope).
+- **Define the six `CubeFace*` constants in `@flighthq/types` (BLOCKER).** Add `CubeFacePositiveX = 0`, `CubeFaceNegativeX = 1`, `CubeFacePositiveY = 2`, `CubeFaceNegativeY = 3`, `CubeFacePositiveZ = 4`, `CubeFaceNegativeZ = 5` (the worker's intended `CubeFace.ts`) and barrel-export them. _Why parked here:_ the edit is in a different package (`@flighthq/types`), so it is a cross-package merge directive (see `outgoing/integration/texture.md`), not a `texture` sweep. Until it lands the whole delta is uncompilable.
+- **Land the `TextureKind` / `SamplerKind` / `CubeTextureKind` string-kind constants.** The worker `status.md` claims these were added to `@flighthq/types`; they are not in the head tree and are not consumed by any code yet. _Why parked:_ cross-package (`@flighthq/types`), and not on the compile path of this delta (no source imports them) — so it is a follow-up to round out the kind-identity model, not a merge gate. Only land if the charter wants texture entities renderer-registerable now.
+- **Rust conformance mirror.** `flighthq-texture` must gain `equals_texture`, `get_texture_uv_matrix`, `get_texture_height/width`, `set_texture_uv_offset/rotation/scale`, `copy_cube_texture`, `equals_cube_texture`, `get_cube_texture_face_size`, `is_cube_texture_complete`, `set_cube_texture_face`, the `CUBE_FACE_*` consts, and the preset samplers, plus a conformance-map entry. _Why parked:_ owned by the Rust worktree, cross-package, gated on the TS types landing first.
+- **`@flighthq/resources` unused-dependency cleanup (pre-existing).** `package.json` declares `@flighthq/resources` but no `src/` file imports it. _Why parked:_ `package.json` is byte-identical in base and head — this is an `origin/main` carry-over, **not** part of this delta. It is not a merge gate for this change; it is an optional standalone cleanup the user may schedule separately.
 
 ## Approved
 
-_None. Approval is the user's verbal gate; this section is frozen only on explicit approval._
+_None. Approval is the user's verbal gate; this stage never fills it._
 
 ## Notes for the charter's Open directions
 
-Surfaced for an explicit direction conversation (do not edit the charter here). The review enumerates these as candidate Open directions; the assessment confirms they are the design forks that keep the bulk of the backlog parked:
-
-1. **North star** — confirm the durable bar (likely: the portable GPU-agnostic plain-data _description_ of a texture binding — descriptor intent only, zero GPU handles, zero pixel ops).
-2. **Kind taxonomy** — bless the canonical 2D / 2D-array / 3D / cube quartet as in-scope, and decide descriptor-ahead-of-consumer vs jointly-with-the-renderer for the array/volume kinds.
-3. **Format / usage / mip policy** — whether `texture` owns `format`/`TextureMipPolicy`/`TextureUsage`, and the cross-package contract with `render-gl`/`render-wgpu`/`scene-*` on their semantics.
-4. **Per-binding dirty/version signal** — `version` + `invalidate*` mirroring `ImageResource.version`, gated on the renderers consuming it.
-5. **`*Kind` consumers** — do texture entities become kind-bearing descriptors (renderer registration / serialized-scene round-trip), or do the `*Kind` constants stay forward declarations?
-6. **`texture-formats` neighbor** — approve/deny, gated on the deferred `ImageResource.compressed` decision.
-7. **Rust parity scope** — confirm the conformance-map entry tracks every new TS addition so the port does not drift.
+- **`CubeTexture.faces` readonly vs in-place mutation.** The delta adds `setCubeTextureFace` and `copyCubeTexture`, both of which write through `faces` after an `as (ImageResource | null)[]` cast (`cubeTexture.ts:30`, `:87`) because the type is `readonly`. The package now owns mutators that defeat the `readonly` contract. The charter should rule the durable shape: keep `readonly` + documented internal casts, or make `faces` a mutable `(ImageResource | null)[]` since the package's own API mutates it.
+- **Where do `CubeFace*` index constants live, and are they an enum or bare consts?** The worker put them in a standalone `CubeFace.ts`. Confirm that home and the string-vs-number identity (the SDK kind model is string-based; these are numeric _array indices_, a different axis). A blessed ruling here also fixes the blocker.
+- **Texture descriptor completeness (deferred, cross-package).** `format`/`mipPolicy`, per-binding `version`/`invalidate*` dirty tracking, `Texture2DArray`/`Texture3D`/`TextureUsage`, and `@flighthq/texture-formats` (KTX2/Basis) are all gated on the `render-gl`/`render-wgpu` upload contract and the `ImageResource.compressed` slot. Surface to the user as joint design decisions; none belong in this merge.

@@ -1,87 +1,103 @@
 ---
 package: '@flighthq/application'
-status: solid
-score: 88
-updated: 2026-06-24
+status: partial
+score: 38
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/application.md
-  - source
-  - changes.patch
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - head/packages/application/src (application.ts, window.ts, index.ts, *.test.ts)
+  - head/packages/types/src (Application.ts, ApplicationWindow.ts)
+  - changes.patch (packages/application/* and packages/types/* hunks)
+  - charter.md, structural-forks.md, CONTRACT.md
 ---
 
-# application — Review
+# application — Merge Review (integration b2824e3d8 vs approved origin/main eb73c3d74)
 
-## Verdict
+This is a **merge gate**, not a survey. The approved floor is `origin/main` (eb73c3d74): a thin loop (`startApplicationLoop` over rAF, `attachApplicationExit`, `dispose/stop`) plus the windowing surface. The candidate is the integration branch's `@flighthq/application`, which rewrites `application.ts` into a full game-loop (fixed timestep, frame-rate caps, background throttle, pause/resume, FPS metrics, lifecycle signals, a `LoopBackend` seam, a multi-window registry) and extends `window.ts` (pointer-lock rework, `onMove` wiring, `getWindowDisplay`, three native-only `WindowBackend` seams, `centerWindow` on open). Judged only on the **delta**.
 
-`solid — 88/100`. The package is two sub-domains under one roof: a now-mature **application loop/lifecycle** half and a near-authoritative **windowing** half. The bundle reviewed (`builder-67dc46d64`) closes essentially every loop/lifecycle gap the prior depth review flagged at 72/100 — frame-rate control, max-delta clamp, fixed-timestep accumulator, pause/resume, run-state, `stepApplicationLoop`, a `LoopBackend` seam, FPS metrics, a multi-window registry, opt-in lifecycle signals, tick-error routing — and resolves the two naming/behavior mismatches the depth review called out (the `lockApplicationPointer` mis-name and the redundant `createWebApplication`/`AppWindow` aliases). The worker's self-estimate of 93/100 (Gold) is close but slightly generous: the remaining gap is not "a few deferred Gold items" so much as the package still being a hand-written web-loop + web-window-backend whose host-portability is promised by seams that have no native consumer yet, plus a handful of small correctness/idiom nits below. I score it 88 — the strongest non-`authoritative` band, held back from `authoritative` by the seam-without-consumer asymmetry and the open phase/timestep design questions the charter has not settled.
+> A prior survey of this package (score 88, "solid") was written against commit `67dc46d64`, where the matching `@flighthq/types` changes existed. This document re-scores **the integration assembly at b2824e3d8**, which dropped those type changes. The design is the same; the merged artifact is broken.
 
-## Present capabilities
+## Verdict: REJECT for merge as-is — the delta does not compile against the integration branch's own `@flighthq/types`.
 
-Grounded in `67dc46d64:packages/application/src/` and the three types files (`packages/types/src/Application.ts`, `ApplicationWindow.ts`, `LoopBackend.ts`).
+The design of the delta is strong and mostly charter-aligned. But the integration **dropped the `@flighthq/types` half of this change**: the application source now imports and produces types that do not exist at b2824e3d8. This is a hard, mechanical merge-blocker, not a taste call.
 
-**Application loop / lifecycle (`application.ts`)** — the half that grew:
+## Blocking findings (must fix before merge)
 
-- Entity factory `createApplication` minting `onUpdate`/`onRender`/`onExit` plus the new fields `deltaTime`, `elapsedTime`, `frameCount`, `interpolationAlpha`, `isRunning`, `windows[]`, and the four null-by-default opt-in signals (`onActivate`/`onDeactivate`/`onError`/`onFixedUpdate`).
-- `startApplicationLoop(app, options?)` — a single closure (`tick`) implementing: max-delta clamp (`maxDeltaTime`, default 250 ms), frame-rate cap (`targetFrameRate`), background throttle (`backgroundFrameRate` gated on `!_isApplicationVisible()`), the classic fixed-timestep accumulator (`fixedTimeStep` + `maxUpdatesPerFrame` spiral-of-death drain + `interpolationAlpha`), rolling 60-sample FPS buffer, and per-emit tick-error routing to `onError` when allocated.
-- Run-state + continuity: `pauseApplicationLoop` / `resumeApplicationLoop` (re-seeds `lastTime=-1` and zeroes the accumulators on resume so the pause gap is not dumped into the next delta), `isApplicationRunning`, `stopApplicationLoop`, and per-app loop state kept in a `WeakMap` off the entity.
-- `stepApplicationLoop(app, deltaTime)` — manual headless/non-rAF tick that shares the clamp + error-routing path.
-- `LoopBackend` seam: `getLoopBackend` / `setLoopBackend` / `createWebLoopBackend` (`requestAnimationFrame`/`performance.now` wrapper), mirroring `WindowBackend`. This is the asymmetry the depth review wanted closed — the loop is now host-abstracted like the window layer.
-- Multi-window registry: `registerApplicationWindow` / `unregisterApplicationWindow` / `forEachApplicationWindow` (non-allocating) / `getApplicationWindows` (snapshot) / `getApplicationMainWindow` / `setApplicationMainWindow`, with the main-window override in a side `WeakMap`.
-- `enableApplicationLifecycleSignals` (idempotent allocator) and `attachApplicationLifecycle(app, win)` wiring `win.onDeactivate→pause`, `win.onActivate→resume`, keyed per-window in `_lifecycleKeys` so one app can manage several windows' lifecycles.
-- `attachApplicationExit` / `detachApplicationExit` and `disposeApplication` — the internal `WeakMap<Application, Map<symbol, cleanup>>` teardown registry keeps cleanup closures off the public entity.
+### 1. `LoopBackend` and `ApplicationLoopOptions` are imported but undefined in `@flighthq/types` — compile failure.
 
-**Windowing (`window.ts`)** — broad and idiomatic, essentially as the depth review described, now with:
+`b2824e3d8:packages/application/src/application.ts:2`:
 
-- Full state-command surface (`setWindowTitle`/`Position`/`Size`/`MinimumSize`/`MaximumSize`/ `Resizable`/`AlwaysOnTop`/`Opacity`/`Icon`/`SkipTaskbar`/`MenuBarVisible`/`Parent`/`Progress`, `requestWindowAttention`, `centerWindow`) and state transitions (`minimize`/`maximize`/`restore`/`hide`/`show`/`focus`/`setWindowFullscreen`), each change-guarded and signal-emitting.
-- New native-only seam functions added this pass: `setWindowContentProtection`, `flashWindowFrame`, `setWindowHasShadow` (each web no-op, delegating to the three new `WindowBackend` methods), and `getWindowDisplay` (returns `-1` on web — a typed seam for `@flighthq/screen`-backed native hosts).
-- Bounds/DPI: `getWindowBounds(out)`, `computeWindowDeviceTransform(out)` (alias-safe: reads `win.devicePixelRatio` into a local before writing `out`), `attachWindowRenderState`.
-- Real Pointer Lock: `lockApplicationPointer` now calls `element.requestPointerLock()` (handles the promise-vs-undefined return), paired with the new `exitApplicationPointerLock`; the old CSS-prep behavior moved to the honestly-named `prepareElementForInput`. This resolves the depth review's name/behavior mismatch.
-- Paired `attach*`/`detach*` event wiring (Resize, Focus, Visibility, Close+veto, DropFile, Fullscreen, Orientation, RenderContext, RenderState, Move) and a complete `createWebWindowBackend` that guards every API with `typeof window/document` checks and try/catch around popup ops.
-- `openWindow` now applies the `center` option (after backend open) — closing the depth review's `WindowOptions.center` contract gap.
+```ts
+import type { Application, ApplicationLoopOptions, ApplicationWindow, LoopBackend } from '@flighthq/types';
+```
 
-**Tests**: 60 `it` in `application.test.ts` (24 describe blocks, alphabetized, mirroring exports incl. fixed-timestep and tick-error-routing groups), 77 in `window.test.ts` (61 describe blocks). Coverage is broad and tracks the new surface.
+Neither `LoopBackend` nor `ApplicationLoopOptions` exists anywhere in the integration head's `@flighthq/types` (no `LoopBackend.ts`; a grep across `head/packages/types/src` returns nothing for either name), and `changes.patch` carries **no** `packages/types/src/Application.ts` / `LoopBackend.ts` / `ApplicationLoopOptions.ts` hunk (the only `packages/types` hunks are FontMetrics, GlyphExtents, Notification, RenderViewport2D, ShapedRun, SpritesheetFormat, TextShaper, index.ts). `ApplicationLoopOptions` appears in exactly one file in the whole head tree — `application.ts` itself. The type-only import resolves to nothing → `tsc -b` fails. Violates the contract's types-first rule (the header layer must carry the shape) and is a flat compile break.
 
-## Gaps
+### 2. `createApplication()` returns ten fields that are not on the `Application` interface — compile failure.
 
-The windowing half is near-authoritative; the residual gaps are concentrated where the charter has not yet ruled, plus seams whose only implementation is the web/no-op default:
+`b2824e3d8:packages/application/src/application.ts:53`:
 
-- **Seams without a native consumer.** `LoopBackend`, the three new `WindowBackend` methods, and `getWindowDisplay` are all shaped correctly but realized only by the web default (no-op / `-1`). Their host-portability is asserted, not exercised — no `host-winit`/`host-electron` fills them in this bundle. This is by design (the conformance/native consumer lives elsewhere), but it is why the package reads as "solid" rather than "authoritative": the portability claim is untested end-to-end.
-- **Phase scheduler absent.** No named loop phases (`input`/`fixedUpdate`/`update`/`lateUpdate`/ `render`/`postRender`) with priority ordering. `tween`, `input`, and `render` each self-schedule on `onUpdate` today; a mature runtime loop owns ordering. The status doc correctly flags this as an SDK-wide design decision, not a within-package gap.
-- **Only `'fixed'` and pure-variable timestep modes.** `fixedTimeStep===0` (variable) and `fixedTimeStep>0` (accumulator) are covered; a `semiFixed` mode (variable capped at a max, no interpolation) and a `TimestepMode` discriminant are not present.
-- **No deterministic/record-replay loop backend.** The `LoopBackend` seam admits one, but no `DeterministicLoopBackend` (seeded clock) exists — the headless conformance story for Rust parity is unbuilt.
-- **No frame-time jitter / dropped-frame metrics.** Only rolling average FPS via the 60-sample buffer; min/max/avg frame time and dropped-frame counts (standard in profiler overlays) are not exposed.
-- **`attachWindowMove` is a web proxy.** It hooks `'resize'` and reads `window.screenX/Y` as a stand-in for OS move events — unavoidable on web, but the real move event needs a native backend.
-- **No application-level error sink without opt-in.** `onError` exists but is null unless `enableApplicationLifecycleSignals` runs; with it null the loop rethrows (consistent with prior behavior, but there is no uncaught-error hook a host could always rely on).
+```ts
+return {
+  deltaTime: 0,
+  elapsedTime: 0,
+  frameCount: 0,
+  interpolationAlpha: 1,
+  isRunning: false,
+  onActivate: null,
+  onDeactivate: null,
+  onError: null,
+  onExit: createSignal(),
+  onFixedUpdate: null,
+  onRender: createSignal(),
+  onUpdate: createSignal(),
+  windows: [],
+};
+```
 
-## Charter contradictions
+The integration head's `Application` interface (`head/packages/types/src/Application.ts`) is byte-identical to base — only `onExit`/`onRender`/`onUpdate`. Every other field (`deltaTime`, `isRunning`, `windows`, `onActivate`, `onFixedUpdate`, …) is an excess property and a type error. The whole loop/lifecycle/registry surface reads and writes `app.isRunning`, `app.windows`, `app.onError`, `app.onFixedUpdate`, `app.deltaTime`, etc., so this is pervasive, not a single literal.
 
-None — the charter (`What it is` aside) is a stub (`North star`, `Boundaries`, `Decisions`, `Open directions` all `TODO`), so there is nothing concrete for the code to contradict. The one-line `What it is` ("Application lifecycle / main loop + the windowing host layer … over a swappable `WindowBackend`") matches the code exactly. The Package Map entry in `index.md` likewise matches.
+### 3. `window.ts` calls three `WindowBackend` methods the interface does not declare — compile failure.
 
-## Contract & docs fit
+`b2824e3d8:packages/application/src/window.ts` adds:
 
-**Lives up to the contract — well:**
+```ts
+export function setWindowContentProtection(win, enabled) {
+  getWindowBackend().setContentProtection(win, enabled);
+}
+export function flashWindowFrame(win) {
+  getWindowBackend().flashWindowFrame(win);
+}
+export function setWindowHasShadow(win, hasShadow) {
+  getWindowBackend().setHasShadow(win, hasShadow);
+}
+```
 
-- **Types-first.** `Application`, `ApplicationLoopOptions`, `ApplicationWindow`, `WindowBackend`, `LoopBackend`, `WindowBounds`, `WindowOptions` all live in `@flighthq/types`; the package defines no cross-package types inline. New seam methods were added to the `WindowBackend` interface in types, not bolted on locally.
-- **Full unabbreviated names**, house verbs throughout (`create*`/`dispose*`, `attach*`/`detach*`, `set*`/`get*`/`request*`, `enable*` for the opt-in signal group). `lockApplicationPointer` → `prepareElementForInput` rename is exactly the "leave it cleaner" + honest-naming rule applied.
-- **Sentinels not throws** (`getWindowDisplay` → `-1`, `getApplicationMainWindow` → `null`, `closeWindow`/`requestWindowClose` → `bool`). No error-wrapping types.
-- **Single root export** (`index.ts` is a clean two-line barrel — the redundant `webApplication.ts`/ `webWindow.ts` alias files the depth review flagged are gone), `"sideEffects": false`, no top-level side effects (backends lazily created on first `get*Backend`).
-- **`out`-param + alias safety:** `computeWindowDeviceTransform` and `getWindowBounds` take `out`; the former reads inputs into a local first.
-- **Rust mirror present** (`crate: flighthq-application`).
+The integration head's `WindowBackend` interface (`head/packages/types/src/ApplicationWindow.ts:87–114`) ends at `requestAttention`; it declares no `setContentProtection`/`flashWindowFrame`/`setHasShadow`. The web default `createWebWindowBackend()` adds the three no-op stubs (structurally allowed), but the three `getWindowBackend().<method>(...)` callsites reference members the declared `WindowBackend` does not have → type error. (`onMove`/`onActivate`/`onDeactivate` on `ApplicationWindow` already exist in base, so the `attachWindowMove` wiring is fine — the gap is the backend triplet only.)
 
-**Candidate contract / docs revisions (user's gate, not the reviewer's):**
+> All three share one root cause: the integration assembled the `application` source against a commit (the head docs cite `67dc46d64`) where the matching `@flighthq/types` changes existed, but b2824e3d8 carries the source without those type changes. Either the types hunks were lost in the merge or this slice was staged out of order. The fix is to land the `@flighthq/types` half — `Application` fields, `LoopBackend`, `ApplicationLoopOptions`, the three `WindowBackend` methods — in the **same** merge.
 
-- **`ApplicationLoopOptions` is co-located in `types/src/Application.ts`**, not its own file. The types-layout convention is "one concept per file, filename = type name." This is a minor drift — `ApplicationLoopOptions` and `LoopBackend` are arguably one loop-config concept, but the convention would put `ApplicationLoopOptions.ts` alongside `Application.ts`. Flag for the types-layout checker, not necessarily a defect.
-- **Out-param aliased-case test missing.** The contract says out-param functions must test the aliased case (`out` === an input). `computeWindowDeviceTransform`'s test uses a distinct `out` only; the function is in fact alias-safe, so this is a test-coverage gap, not a behavior bug.
-- **Package Map line is accurate** and needs no revision; the depth-review file at `reviews/depth/application.md` is now superseded by this review and can be retired per the migration table in `index.md`.
+## Non-blocking findings (clean up in the same pass)
 
-## Candidate open directions
+- **Dead `LoopState.accumulated` field.** `b2824e3d8:packages/application/src/application.ts:373` declares `accumulated: number`, initialized at line 212 (`accumulated: 0`), and never read again — the live accumulator is `fixedAccumulator`. The comment at line 359 still lists `accumulated` as state. Remove the field and fix the comment ("leave touched files cleaner than you found them").
 
-The charter is a stub, so the following are assumptions this review had to make — each is a question for the charter's `Open directions`/`Decisions`:
+- **`ApplicationLoopOptions` co-located in `Application.ts` (types-layout drift).** Once the types half lands, the one-concept-per-file convention wants its own `ApplicationLoopOptions.ts`. Minor; flag for the types-layout checker. (Already in the charter's Open directions and the head's own docs.)
 
-- **Phase scheduler — SDK-wide or out of scope?** Named loop phases with priority overlap with how `tween`/`input`/`render` self-schedule. This is the single biggest unresolved design fork and cannot be settled within the package. (Cross-package; surface, do not act.)
-- **Where does the loop driver live long-term — `application` or `host-*`?** `LoopBackend` mirrors `WindowBackend` living here, but a native host wanting one unified window+loop driver might pull the seam into `host-*`. The status doc raises this; the charter should rule.
-- **Is `semiFixed` / a `TimestepMode` discriminant in scope**, or are variable + fixed the blessed set? Decides whether the deferred third mode is a gap or a non-goal.
-- **Deterministic/record-replay loop** — is reproducible headless stepping an `application` responsibility (a `DeterministicLoopBackend`) or purely a Rust-conformance-harness concern? Touches the parity instrument.
-- **Multi-window scope.** The registry exists, but "main window," child/modal relationships (`setWindowParent`), and per-window render-state wiring imply a multi-window app model the charter has not described. Where does `application`'s window management end and `host-*`/`@flighthq/app`'s process-level concerns begin?
-- **Boundary with `@flighthq/app` and the platform suite.** App-level `onActivate`/`onDeactivate` exist here and also conceptually in `@flighthq/app`/`@flighthq/lifecycle`. The charter should draw the line so the same lifecycle event is not modeled in two packages.
+## Where the delta is genuinely good (against the 7 standards)
+
+1. **Composition / bedrock — PASS (one watch).** The loop is one coherent subject (timestep + pacing + metrics), not a fusion of unrelated subjects; lifecycle wiring, the registry, and the backend seam are separable exported functions, not config-gated branches in a god-function. The `if (app.onError !== null) try/catch else emit` shape repeats across `tick`, `stepApplicationLoop`, and the fixed-update inner loop — borderline within-unit repetition, but a per-emit guard, not a feature branch, so it does not tax importers. Acceptable.
+2. **Naming — PASS.** Full unabbreviated type words (`getApplicationFrameRate`, `setApplicationMainWindow`, `enableApplicationLifecycleSignals`, `stepApplicationLoop`); `get*`/`is*` correct (`isApplicationRunning`, `getApplicationWindows`). The base's misnamed `lockApplicationPointer` (CSS only) is correctly split into a real `lockApplicationPointer` (requests Pointer Lock) + `prepareElementForInput` (the CSS prep) — exactly the charter's stated correction.
+3. **Tree-shaking / side-effects — PASS.** No new top-level side effects; `_loopBackend` is lazily constructed via `getLoopBackend()`; the loop starts only on `startApplicationLoop`; listeners attach only via explicit `attach*`. Single root barrel (`index.ts` re-exports `application` + `window`).
+4. **Registry vs closed union — N/A.** No new `kind` family; `LoopBackend`/`WindowBackend` are single swappable seams (fork D), the right shape, not a closed switch.
+5. **Subject triad / plurality guard — PASS.** No premature `-formats`/`-backend` split; `LoopBackend` mirrors `WindowBackend` in-package, the established pattern.
+6. **Contract hygiene — MIXED.** `Readonly<>` on read-only params (`forEachApplicationWindow`, `getApplicationWindows`, `getApplicationFrameRate`); sentinels not throws (`getApplicationMainWindow` → `null`, `getWindowDisplay` → `-1`); `dispose*` correct (detach-to-GC, nothing to free). **But types-first is violated** (findings 1–3): the header layer does not carry the shape the implementation depends on. Decisive breach.
+7. **Tests & honesty — PASS in isolation, blocked in aggregate.** `application.test.ts` (~720 lines) is colocated, drives the loop deterministically via `setLoopBackend` with a fake backend, and exercises every new export. Claims match code. But `tsc -b` typechecks `src/*.test.ts`, so findings 1–3 mean the suite cannot compile on this branch — honest, but currently unbuildable.
+
+## Score rationale
+
+The delta is a deliberate, well-named, charter-aligned AAA build-out of the loop and window seams — worth keeping in shape. It scores low (38) only because, **as merged into b2824e3d8**, it does not compile: three independent type dependencies were left behind. A merge gate cannot pass code that fails `tsc`. Land the `@flighthq/types` half and this returns to solid.
+
+## Charter / contract signal
+
+The charter's Open directions already name the design forks this delta touches (phase scheduler, loop-driver placement, `semiFixed`, seams-without-a-native-consumer, the `@flighthq/app` boundary). None are resolved here, and none need to be for a merge — they are the user's gate. The only new contract signal is mechanical: the types-first rule wants a checker that catches an implementation importing a `@flighthq/types` symbol that does not exist; this merge would have been caught by it.

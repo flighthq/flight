@@ -1,106 +1,99 @@
 ---
 package: '@flighthq/notification'
 status: solid
-score: 86
-updated: 2026-06-24
+score: 40
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/notification.md
-  - source
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - head/packages/notification/src
+  - head/packages/types/src/Notification.ts
+  - changes.patch (packages/notification/ + packages/types/src/Notification.ts hunks)
+  - charter.md
+  - status.md (committed in the integration delta)
 ---
 
-# Review: @flighthq/notification
+# notification — Merge Review (integration b2824e3d8 → approved origin/main eb73c3d74)
+
+Evidence: the **delta** between `incoming/integration-b2824e3d8/base/packages/notification/` (origin/main `eb73c3d74`, the approved floor — not reviewed) and `incoming/integration-b2824e3d8/head/packages/notification/`, plus the `packages/notification/` and `packages/types/src/Notification.ts` hunks of `incoming/integration-b2824e3d8/changes.patch`. Findings reference `b2824e3d8:<path>`. The package source itself is the worker's rich rewrite (86 → 687 lines, 25 exports). The decisive finding is not in that source — it is in what the integration **dropped on the way in**.
 
 ## Verdict
 
-**solid — 86/100.** Two builder passes turned a minimal seam (the prior depth review's 52/100) into a genuinely capable web-tier notifications library. Every gap the depth review flagged as highest-value — tri-state permission introspection, id-based identity + close/close-all, scheduling, rich content, lifecycle events, and a service-worker backend that actually delivers action buttons — is now present and tested. The package is a faithful, throw-free, side-effect-free implementation of the platform command-capability pattern. It is not yet 92/100 (the worker's self-estimate): the score sits below that because of the residual type-vs-behavior gaps (`getActiveNotifications` returns lossy partials, SW inline-reply infrastructure that can never fire) and because cross-tier maturity (native host coverage, Rust crate, signals opt-in) is still entirely deferred — and the charter is a stub, so the "is web-tier authoritative _enough_?" question is undecided rather than answered.
+`reject as a merge — 40/100`. The score is a merge-gate score, not a grade of the worker's package in isolation (which, judged on its own terms, is a strong `solid`). The integration head **does not typecheck**: `b2824e3d8:packages/notification/src/notification.ts` imports five cross-package types from `@flighthq/types` that this integration branch does not contain, and implements a `NotificationBackend` whose shape directly conflicts with the one the integration's `@flighthq/types` actually declares. The worker delivered a self-consistent package + types pair at its own SHA (the committed `status.md` documents exactly that), but the integration merge carried the rich `notification.ts`/`notification.test.ts` across while leaving `packages/types/src/Notification.ts` at the approved-base shape plus a single one-line addition. The result is a broken seam. This is a hard blocker; the secondary quality findings below are moot until it is fixed, and most are already parked in the charter's Open directions.
 
-## Present capabilities
+## The blocker — head does not compile (types dropped in integration)
 
-All grounded in `67dc46d6:packages/notification/src/notification.ts` (the realized public surface is confirmed in `dist/notification.d.ts` — 26 exports) and the cross-package types in `67dc46d6:packages/types/src/Notification.ts`.
+`b2824e3d8:packages/notification/src/notification.ts` (lines 1–9):
 
-**Permission & support.**
+```ts
+import type {
+  NotificationBackend,
+  NotificationCapabilities,
+  NotificationChannel,
+  NotificationPermission,
+  NotificationRequest,
+  NotificationSchedule,
+  ScheduledNotification,
+} from '@flighthq/types';
+```
 
-- `getNotificationPermission(): NotificationPermission` — restores the canonical tri-state (`'default' | 'granted' | 'denied'`), the depth review's #1 ask.
-- `requestNotificationPermission(): Promise<NotificationPermission>` — also tri-state. This is the pass-2 breaking change from `Promise<boolean>`; `'denied'` doubles as the host-unavailable sentinel.
-- `isNotificationSupported()`, `getNotificationCapabilities(): NotificationCapabilities` — the capability descriptor replaces ad-hoc `isSupported()` guessing with a plain-data branch surface.
+But `b2824e3d8:packages/types/src/Notification.ts` — the integration head's authoritative header — contains only:
 
-**Show / identity / lifecycle.**
+```ts
+export interface NotificationAction {
+  id: string;
+  title: string;
+}
+export interface NotificationRequest {
+  title: string;
+  body?: string;
+  icon?: string;
+  tag?: string;
+  silent?: boolean;
+  actions?: NotificationAction[];
+}
+export interface NotificationBackend {
+  notify(request: Readonly<NotificationRequest>): Promise<boolean>;
+  requestPermission(): Promise<boolean>;
+  isSupported(): boolean;
+  subscribeClick(listener: (tag: string) => void): () => void;
+  subscribeAction(listener: (tag: string, actionId: string) => void): () => void;
+  updateNotification(id: string, update: Readonly<Partial<NotificationRequest>>): Promise<boolean>;
+}
+```
 
-- `showNotification(request): Promise<string>` — returns an id (echoes `request.id` or generates one), closing the depth review's "no handle" gap. Returns `''` on not-granted / unsupported.
-- `closeNotification(id)`, `closeAllNotifications()`, `updateNotification(id, partial): Promise<boolean>`. The web `updateNotification` simulates via close + re-open against a `_requests` registry so the partial merges onto the retained original.
-- `onNotificationShow / onNotificationClick / onNotificationDismiss / onNotificationAction / onNotificationReply` — full lifecycle subscription set over the backend `subscribe*` methods, each returning an unsubscribe closure. The basic web backend wires per-instance `onclick/onshow/ onclose` so clicks and dismisses actually fire (no longer no-ops, contra the depth review).
+A grep of `b2824e3d8:packages/types/src` for `NotificationCapabilities`, `NotificationChannel`, `NotificationPermission`, `NotificationSchedule`, `ScheduledNotification`, `NotificationImportance`, `NotificationPriority` returns **nothing**. The `changes.patch` hunk for `packages/types/src/Notification.ts` is a single added line (`+ updateNotification(...)`); the rich types the package needs are not in the patch and not on disk.
 
-**Scheduling.**
+Concrete consequences in the integration head:
 
-- `scheduleNotification`, `cancelScheduledNotification`, `getPendingNotifications` — best-effort `setTimeout` scheduler on web (documented as cleared on reload), with a `_repeatMs` cadence map for `minute|hour|day|week|month|year` repeats.
+- **Missing exported members (TS2305).** The five imported type names above do not exist in `@flighthq/types`, so `tsc -b` fails outright.
+- **`NotificationRequest` field mismatch.** `notification.ts` reads `request.id`, `request.badge`, `request.image`, `request.dir`, `request.lang`, `request.data`, `request.renotify`, `request.requireInteraction`, `request.timestamp`, `request.vibrate` (lines 86–101) — none of which exist on the integration's 6-field `NotificationRequest`.
+- **`NotificationBackend` shape conflict.** The package's two factories return objects with ~20 methods (`getCapabilities`, `getPermission(): NotificationPermission`, `scheduleNotification`, `subscribeDismiss/Reply/Show`, `getActiveNotifications`, `getPendingNotifications`, `getLaunchNotification`, `closeNotification`, `closeAllNotifications`, `cancelScheduledNotification`, …) typed `as NotificationBackend`. The integration's `NotificationBackend` declares six methods, two of them with incompatible return types (`notify`/`requestPermission` are `Promise<boolean>` in the header but the package returns `Promise<string>`/`Promise<NotificationPermission>`).
 
-**Channels (Android-class).**
+The committed `status.md` in the same delta states these types **were** added ("All types added in the first pass… `NotificationCapabilities` … `ScheduledNotification`… `requestPermission(): Promise<NotificationPermission>` _(changed in pass 2)_"), and the committed `review.md` cites them at SHA `67dc46d6`. So this is an **integration merge defect**, not a defect in the worker's package: the type half of the change was lost when the package half was merged into `b2824e3d8`. Either way, the gate judges what lands — and what lands does not build.
 
-- `createNotificationChannel`, `deleteNotificationChannel`, `getNotificationChannels` — optional backend methods accessed via guarded `backend.method?.(...)` casts, no-op / `[]` on web.
+## The seven standards, judged on the delta
 
-**Backends.**
+1. **Composition / bedrock — fail (within-package).** `createWebNotificationBackend` (`b2824e3d8:notification.ts` 291–523) and `createServiceWorkerNotificationBackend` (62–284) are ~95% duplicated: each re-declares its own `_idCounter`, `_generateId`, `_fire`, the five listener `Set`s, the `_scheduled` map, the entire `scheduleNotification`/`cancelScheduledNotification` setTimeout scheduler, and five identical `subscribe*` bodies. The shared spine (a listener-registry primitive and a best-effort scheduler primitive) wants extracting — this is the "missing primitive underneath a bundled unit" smell, not simple-by-composition. ~250 lines collapse to two thin backends over one registry + one scheduler.
 
-- `createWebNotificationBackend()` — the lazy default; fully guarded for jsdom / non-secure / absent `Notification`, every touch in try/catch, sentinel returns throughout.
-- `createServiceWorkerNotificationBackend(registration)` — the pass-2 addition that closes the largest type-vs-behavior gap: it uses `registration.showNotification`, so action buttons can be delivered. Paired with `notifyServiceWorkerBackendAction(backend, message)`, the page-side forwarder for the SW `notificationclick` → `postMessage` → page round-trip (the canonical OneSignal/Workbox pattern, documented inline). `getActiveNotifications` reads `registration.getNotifications()`.
-- `getNotificationBackend` / `setNotificationBackend(backend | null)` — the seam with lazy web default and `null`-to-reset, matching the platform-suite command grammar exactly.
+2. **Naming clarity — pass.** Exports carry the full `Notification` type word and are self-identifying (`getNotificationPermission`, `scheduleNotification`, `onNotificationDismiss`, `createServiceWorkerNotificationBackend`). `notifyServiceWorkerBackendAction` is the only slightly awkward name and it is documented; acceptable.
 
-**Type header.** `@flighthq/types/Notification.ts` carries the full design surface: `NotificationRequest` (widened to ~30 rich fields — image, badge, sound, vibrate, priority, channelId, group/groupSummary, interruptionLevel, requireInteraction, ongoing, renotify, autoCancelMs, …), `NotificationAction` (incl. `type: 'button' | 'text-input'` + `inputPlaceholder` for inline reply), `NotificationChannel`, `NotificationCapabilities`, `NotificationSchedule`, `ScheduledNotification`, the three string-union enums (`Permission`/`Priority`/`Importance`), and the `NotificationBackend` seam. This is correctly header-first.
+3. **Tree-shaking / bundle invariant — pass.** `package.json` keeps `"sideEffects": false`, a single root `.` export, and a thin `index.ts` barrel (`export * from './notification'`). The backend is created lazily in `getNotificationBackend` (546–549), `_backend` initialized to `null` at file bottom (687) — no module-top side effect, no eager registration. `_repeatMs` (670–685) is a closed `switch` over a fixed calendar-unit set, a legitimate closed system (units don't grow by user extension), so it does not tax importers.
 
-**Tests.** `notification.test.ts` — 64 tests, 26 alphabetized `describe` blocks mirroring the 26 exports exactly (verified). Covers the SW backend (9), `notifyServiceWorkerBackendAction` (4), `updateNotification` (3), tri-state permission (2), plus the full surface. Status-doc claim of "64 tests covering all 25 functions" verified (the true export count is 26; the claim undercounts).
+4. **Registry vs closed union — pass.** No growing `kind`/handler family is forced through a closed switch; the only switch is the calendar-unit one in (3), correctly closed.
 
-## Gaps vs an authoritative notifications library
+5. **Subject triad + plurality guard — pass.** notification stays a thin subject: two web backends (basic + service-worker) behind one `*Backend` seam, no premature `-formats`/`-backend` split. Native delivery is left to `host-*`. Matches the charter's "thin subject" boundary.
 
-Most of the depth review's gaps are now closed. What remains:
+6. **Contract hygiene — mixed (the blocker plus parked forks).** The types-first rule is the blocker above: the header the package designs against is absent from the integration. Beyond that, three pre-existing design-fork frictions (all already in the charter's Open directions, none a sweep blocker):
+   - **Monkey-patched dispatch via cast.** `createServiceWorkerNotificationBackend` bolts `_dispatchAction`/`_dispatchClick`/`_dispatchDismiss` onto the returned object through `backend as SwBackendInternal` (262–281), read back by `notifyServiceWorkerBackendAction` via another cast (588–596) — the legacy `internal.ts`-style cast the codebase map says not to extend.
+   - **Off-header channel methods.** `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels` reach the backend through structural casts `getNotificationBackend() as NotificationBackend & { … }` (37–40, 527–530, 559–562) rather than living on the seam type.
+   - **Lossy `getActiveNotifications`.** The SW backend returns `{ title, tag }` mapped objects (160–161) typed as `Promise<ReadonlyArray<Readonly<NotificationRequest>>>` (535) — the type over-promises. `Readonly<>` and sentinels (`''`, `[]`, `false`, `null`, no-op) are otherwise used correctly throughout; `dispose*`/`destroy*` are correctly absent (nothing to free). No Rust `flighthq-notification` crate exists yet (conformance-map gap, charter-tracked).
 
-- **`getActiveNotifications` is lossy on every backend.** Web returns `[]`; SW returns `{ title, tag }` partials cast to `Readonly<NotificationRequest>`. The type promises a full request; the runtime delivers two fields. Honest given the platform constraint (the Notification API exposes nothing more), but a caller cannot round-trip a delivered notification's body/icon/data — worth a documented narrowing or an explicit `ActiveNotification` summary type rather than a lossy cast.
-- **SW inline-reply can never fire.** `subscribeReply` / `onNotificationReply` exist, but the SW backend defines only `_dispatchAction / _dispatchClick / _dispatchDismiss` — no `_dispatchReply`, and `notifyServiceWorkerBackendAction` only routes `action`/`click`. The reply listener registry is inert on every shipped backend. This is honest infrastructure-ahead-of-host, but it is dead surface until a native host arrives.
-- **`progress?` field absent.** `updateNotification` is documented as "useful for progress bars," yet `NotificationRequest` has no `progress?: { value, max, indeterminate? }`. The canonical ongoing/download-progress notification cannot be expressed.
-- **No `enableNotificationSignals` opt-in.** Lifecycle is direct-callback only. Per the codebase-map signals rule, multi-listener loose notification (click/action/dismiss across the public API) is a candidate for an opt-in signal group; deferred for the cross-package `@flighthq/signals` dependency.
-- **No native host coverage in this package's orbit.** `host-electron` notification work exists in the same bundle (the SW patch touches it) but is its own package; Tauri/Capacitor are unbuilt.
-- **No Rust crate.** `flighthq-notification` does not exist yet. The conformance map should track the seam (`notify`/`get_permission`/`close`/`schedule`/`get_pending`/`get_active`/`update`/`on_*` over a `NotificationBackend` trait, native default behind the `native` feature).
-- **`'provisional'` permission** (Apple) not in the `NotificationPermission` union — minor, native-only.
+7. **Tests & honesty — pass (with one style nit).** `notification.test.ts` is colocated and its `describe` blocks are alphabetized and mirror the 25 exports (verified: `cancelScheduledNotification` … `updateNotification`). Claims match code; no dead exports. The committed `status.md`'s "64 tests" and surface inventory are accurate against the source. The one nit: the file is littered with stale `// ----` divider-comment headers (e.g. the `// createWebNotificationBackend` divider above `describe('createServiceWorkerNotificationBackend'`) — these violate the codebase-map "avoid structural divider comments" rule and have drifted out of sync with the blocks beneath them. Cosmetic; not an `order:check` failure.
 
-## Charter contradictions
+## Self-check (objections re-examined, dropped where ungrounded)
 
-None — the charter's only authored section is "What it is" (system/OS notifications over a swappable web/native backend), and the package matches it precisely. North star, Boundaries, Decisions, and Open directions are all `TODO`, so there is nothing else to contradict. The silence is itself the finding: see Candidate open directions.
-
-## Contract & docs fit
-
-**Lives up to the contract — strongly:**
-
-- **Types in `@flighthq/types` first** — the entire shape (request, backend, enums, capabilities) is in `Notification.ts`; the package imports them. Header-layer rule satisfied.
-- **Full unabbreviated names** — every export carries the `Notification` type word (`getNotificationPermission`, `scheduleNotification`, `onNotificationDismiss`, …). Globally self-identifying.
-- **Sentinels, not throws** — `''`, `false`, `null`, `[]`, no-op on every unsupported path; the `notify` comment in the type header explicitly frames denial as an expected outcome, not an error.
-- **Single root export** — `index.ts` is a thin `export * from './notification'`; `package.json` has one `.` entry and `"sideEffects": false`; `_backend` is lazily created on first `getNotificationBackend`, never at module top level.
-- **Alphabetized exports + mirrored tests** — confirmed across source and the 26 describe blocks.
-- **Command-capability grammar** — `get*/set*/createWeb*Backend` + `on*` over backend `subscribe*` is exactly the platform-suite shape the codebase map prescribes for a command capability that also receives events.
-
-**Minor contract frictions:**
-
-- **`Readonly<>` on internal collections.** `_requests`/`_live`/`_scheduled` store mutable values; the retained-original `_requests` map holds `Readonly<NotificationRequest>` (good), but `subscribe*` registries reassign `let _clickListeners = new Set(...)` where `const` suffices — they are never reassigned. Trivial cleanliness, not a violation.
-- **Channel methods via structural casts.** `createNotificationChannel` etc. reach the backend through `getNotificationBackend() as NotificationBackend & { createNotificationChannel?: ... }` rather than putting the optional methods on the `NotificationBackend` interface. The seam type already lists the core methods; the channel trio living off-interface is a small header gap — either promote them to optional `NotificationBackend` members or document why they are intentionally out-of-band.
-- **Structural-divider comments in the test file** (`// ----- Helpers -----`, per-function banners). The source style rule says avoid these; the test file uses them heavily. Cosmetic, sweep-safe.
-- **Internal `_dispatch*` hooks attached by cast.** `createServiceWorkerNotificationBackend` bolts `_dispatchAction/_dispatchClick/_dispatchDismiss` onto the returned object via a `SwBackendInternal` cast, and `notifyServiceWorkerBackendAction` reads them back by cast. This is the legacy `internal.ts` pattern the codebase map warns against ("do not extend it; prefer runtime slots"). For a backend factory there is no runtime object to hang a slot on, so the cast is somewhat forced — but a typed companion handle (returning `{ backend, dispatch }`) would be cleaner than monkey-patching the backend and re-reading it through structural casts in a separate free function.
-
-**Where the contract / admin docs need revising (candidate revisions, user-gated):**
-
-- **Package Map line is now stale.** `tools/agents/docs/index.md` lists notification as "OS notifications and permission" — accurate for the 52/100 era, undersized for what shipped (rich content, scheduling, channels, lifecycle, SW backend, capability descriptor). Candidate: widen the one-liner to match the realized scope.
-- **`structural-forks.md` register** does not track notification's built state; with the package now solid and the SW backend a distinct delivery tier, it is a candidate entry under the seam-dimension (fork D) and the bedrock track (fork E).
-
-**Structural-forks fit (applied):**
-
-- **Fork B (closed union vs registry).** `_repeatMs` is a closed `switch` over the six repeat cadences. This is a tight, genuinely closed system (calendar units do not grow), evaluated once per reschedule — not a hot loop. The exception clause in fork B applies; no registry needed. Clean.
-- **Fork D (runtime backend seam).** The `*Backend` + `set*Backend` seam is textbook fork-D. The SW backend is a _second web backend_ alongside the basic one — a small, healthy plurality that justifies the seam without a `-formats`/`-backend` split (notification is a thin subject, not a triad).
-- **No mis-homed type, no hot-loop feature inflation.** Types are correctly in `@flighthq/types`; there is no per-frame path to inflate. The only fused-layer smell is the channel-methods-off-interface noted above.
-
-## Candidate open directions
-
-The charter is a stub; these are the questions a future direction pass must settle, each surfaced because the review had to assume an answer:
-
-1. **Is "web-tier authoritative" the bar, or is native parity in scope for the charter?** The package is excellent on web but has zero native delivery of its own. The charter should state whether notification's North star is "the seam + a complete web backend" (native lives in `host-*`) or "feature-complete across hosts."
-2. **Inert infrastructure policy.** `subscribeReply` and `getActiveNotifications` ship surface that no included backend can fulfill. Is shipping host-ready-but-currently-dead API the blessed posture, or should the web tier expose only what it can deliver and let native hosts widen the type? This recurs across the platform suite and is a fork-worthy decision.
-3. **`progress?` / ongoing notifications** — in or out? It is the one canonical rich field still missing, and `updateNotification`'s own doc promises it.
-4. **Signals opt-in** — does notification get an `enableNotificationSignals` group, or stay callback-only? (Cross-package `@flighthq/signals` dependency; a direction decision, not a sweep.)
-5. **Channel methods on the `NotificationBackend` interface** — promote the optional trio onto the header type, or keep them as documented off-interface extensions? A small but real API-shape fork.
-6. **Lossy `getActiveNotifications`** — accept the partial cast, introduce an `ActiveNotification` summary type, or narrow the return? Determines whether the type tells the truth.
+- **Dropped:** "`describe` blocks are not alphabetized." Re-grepping the file shows they are correctly alphabetized; only the divider _comments_ are misaligned. Re-filed as a cosmetic style nit, not an order failure.
+- **Dropped:** treating the `_dispatch*` cast / lossy active cast / off-header channels as merge blockers. These pre-exist the worker's intent, are explicitly enumerated in the charter's Open directions as design forks for the user, and pre-release latitude (no back-compat duty) means they are not sweep-fixable without a direction decision. Retained only as Open-direction pointers, not must-fix.
+- **Retained:** the missing-types blocker. It is grounded in the head tree and the `changes.patch` hunk, it is about the **delta** (the integration head, not the approved base), and pre-release latitude does not excuse a non-compiling head. It stands.
+- **Retained:** the backend duplication (Composition/bedrock). Grounded in two cited line ranges of the delta; within-package; sweep-safe once the build is restored.

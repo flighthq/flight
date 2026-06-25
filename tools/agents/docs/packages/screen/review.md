@@ -1,79 +1,80 @@
 ---
 package: '@flighthq/screen'
-status: solid
-score: 90
-updated: 2026-06-24
+status: partial
+score: 35
+updated: 2026-06-25
 ingested:
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
   - status.md
-  - reviews/depth/screen.md
-  - reviews/maturation/depth/screen.md
   - source
+  - charter.md
 ---
 
-# Review: @flighthq/screen
+# Review: @flighthq/screen — merge gate (integration-b2824e3d8 vs approved origin/main)
 
-## Verdict
+This is a **merge-gate** review of the incoming change only: `head/packages/screen/` against the **approved** `base/packages/screen/` (`origin/main` `eb73c3d74`), plus the `packages/screen/` hunks of `changes.patch`. The baseline is the blessed floor and is not under review. The question is narrow: **is this delta fit to merge into the approved baseline as the final shape?**
 
-solid — 90/100. The package went from the prior depth review's 55/100 "correct core, minimal surface" to a near-authoritative display-enumeration library in a single builder pass (`builder-67dc46d64`). The base had 7 exported functions over a 9-field `ScreenInfo`; head has 31 over a 25-field `ScreenInfo`, with coordinate converters, point/rect→screen lookup, cursor queries, a real change-event payload, a multi-monitor Screen Details upgrade path, display-mode enumeration, an opt-in signals group, and a mirrored Rust crate. The maturation roadmap's Bronze + Silver are fully landed and most of Gold; what holds it short of `authoritative` is a handful of fields that are declared-but-never-populated, one documented late-subscribe event bug, an unverified Rust compile, and two genuinely-native capabilities (real mode lists, stable ids) that only a host can fill.
+The score (35) is a merge-fitness score for the _delta_, not a maturity score for the feature. The feature design, in isolation, is strong — the prior `builder-67dc46d64` pass aimed at a 93/100 Gold surface. But the integration branch landed only **half** of that work: the screen package `src/` advanced to the 25-field / signals / multi-monitor implementation, while the `@flighthq/types` half it depends on did **not** land. As integrated, the package does not type-check. A non-compiling delta cannot pass a merge gate regardless of design quality.
 
-The status doc's claims were verified against the diff and the realized `dist/*.d.ts`. They hold: 31 exported functions (status says "30"; the count omits the async `requestScreenDetails`/`getScreenDetailPermission` framing but the surface matches), 25-field `ScreenInfo`, 57 tests with one `describe` per export, alphabetized and mirroring source.
+## Verdict: REJECT (does not build as integrated)
 
-## Present capabilities
+## The blocking finding — the type seam the implementation depends on is missing from the merge
 
-Grounded in `67dc46d64:packages/screen/src/screen.ts` and `67dc46d64:packages/types/src/Screen.ts`:
+`head/packages/screen/src/screen.ts` imports six Screen-domain types from `@flighthq/types`:
 
-- **Enumeration & backend seam.** `getScreens(out)`, `getPrimaryScreen(out)` delegate to the active `ScreenBackend`; `getScreenBackend()` lazily creates the web default, `setScreenBackend(backend|null)` installs/clears a native host, `createWebScreenBackend()` builds the web backend. Standard platform-suite command shape, side-effect-free, jsdom/SSR-guarded (every read zero-fills via `fillDefaultScreenInfo` when `window`/`screen` are absent).
-- **Coordinate converters** (pure, alias-safe, read-inputs-into-locals-first): `screenToDipPoint`, `dipToScreenPoint`, `screenToDipRect`, `dipToScreenRect` over `scaleFactor` + origin.
-- **Point/rect → screen lookup** (pure, over `getScreens`): `getScreenNearestPoint` (contains-or-nearest-by-center), `getScreenContainingRect` (largest-overlap, nearest-center fallback), `getScreenNearestRect`, `getScreenById(id, out): ScreenInfo | null` (sentinel `null` on miss).
-- **Cursor queries:** `getScreenCursorPosition(out)` over the backend's `getCursorPosition` (web tracks `pointermove`); `getScreenCursorScreen(out)` composes cursor + `getScreenNearestPoint`.
-- **Geometry-rect accessors** (derived views over flat fields, as the roadmap prescribed — flat fields stay authoritative): `getScreenBounds`, `getScreenWorkArea`.
-- **Display modes:** `ScreenMode` type, `createScreenMode()` allocator, `getScreenModes(screen, out)` (backend enumerate or synthetic single-mode fallback), `getScreenCurrentMode(screen, out)`.
-- **Change events as data:** `onScreenChange(listener: (event: Readonly<ScreenChangeEvent>) => void)`. The web backend diffs a cached `ScreenInfo` snapshot on `resize`/`orientationchange` (single-monitor) or `screenschange` (multi-monitor) and synthesizes `ScreenAdded`/`ScreenRemoved`/`ScreenMetricsChanged` with a `ScreenChangedMetrics` set (`bounds`/`workArea`/`scaleFactor`/`orientation`). `diffScreenInfo` is the shared diff.
-- **Signals group** (opt-in, multi-listener): `enableScreenSignals`/`createScreenSignals`/`attachScreenSignals`/`detachScreenSignals`/`disposeScreenSignals`, fanning the backend subscription into `onScreenAdded`/`onScreenMetricsChanged`/`onScreenRemoved`. `attach` is idempotent (tears down first); `dispose` correctly delegates to `detach` (release-to-GC, the right verb here — nothing non-GC to free).
-- **Web multi-monitor:** `requestScreenDetails()` calls `window.getScreenDetails()` and upgrades the live backend in place via an internal `_upgrade` hook; `getScreenDetailPermission()` queries the `window-management` permission (sentinel `'prompt'` when the Permissions API is absent). After upgrade, `getScreens` enumerates `ScreenDetails.screens`, populating `label`, `internal`, `refreshRate`, and per-screen offsets.
-- **Rich `ScreenInfo`** (25 fields): bounds, work area, `scaleFactor`, `isPrimary`, `rotation`, `orientation`, `refreshRate`, `colorDepth`, `pixelDepth`, `physicalWidth/Height`, `isHdr`, `colorSpace`, `maxLuminance`, `depthPerComponent`, `dpi`, `label`, `internal`, `touchSupport`, `monochrome`. Every field carries a sentinel + unit in the `Screen.ts` comment block. Web populates orientation/rotation/colorDepth/colorSpace/isHdr/physical from `window.screen` + `matchMedia`; the rest sentinel out for a native host.
-- **`refreshScreens()`** cache-invalidation hook (no-op for the re-reading web backend; documented for caching native hosts).
-- **Rust mirror:** `flighthq-screen` + `flighthq-types/src/platform.rs` add the matching enums (`ScreenOrientation`, `ScreenColorSpace`, `ScreenTouchSupport`, `ScreenChangeKind`), `ScreenChangedMetrics`/`ScreenMode`/`ScreenChangeEvent` structs, a 25-field `ScreenInfo`, the updated `ScreenBackend` trait (`subscribe(Box<dyn Fn(&ScreenChangeEvent)...>)`, required `get_cursor_position`, optional `get_modes`), 24 functions in `screen.rs`, and an updated `WinitScreenBackend`. Converter out-params use `[f32; 2]`/`[f32; 4]` to avoid a `flighthq-geometry` dependency.
+```ts
+// b2824e3d8:packages/screen/src/screen.ts:2-13
+import type {
+  RectangleLike,
+  ScreenBackend,
+  ScreenChangedMetrics,
+  ScreenChangeEvent,
+  ScreenColorSpace,
+  ScreenInfo,
+  ScreenMode,
+  ScreenOrientation,
+  ScreenSignals,
+  Vector2Like,
+} from '@flighthq/types';
+```
 
-Naming is fully self-identifying (every function carries the `Screen` type word), exports are alphabetized, no top-level side effects, `sideEffects: false`, single root `.` export. Tests cover all 31 exports including aliased-out cases for the converters and the multi-monitor `_upgrade`/`requestScreenDetails` resolve+reject paths.
+Of these, **only** `ScreenBackend`, `ScreenInfo` (9-field), `RectangleLike`, and `Vector2Like` exist in the integration head's `@flighthq/types`. The other six — `ScreenChangedMetrics`, `ScreenChangeEvent`, `ScreenColorSpace`, `ScreenMode`, `ScreenOrientation`, `ScreenSignals` — and the enabling `ScreenChangeKind` / `ScreenTouchSupport` aliases **do not exist anywhere in head's types**. Grounding:
 
-## Gaps vs an authoritative display library
+- `head/packages/types/src/Screen.ts` is **byte-identical** to `base/packages/types/src/Screen.ts`: a 9-field `ScreenInfo` (`id,x,y,width,height,workWidth,workHeight,scaleFactor,isPrimary`) and a 3-method `ScreenBackend` whose `subscribe(listener: () => void)` takes a **bare** callback — no event payload.
+- `head/packages/types/src/index.ts:223` still exports only `./Screen` (identical to base line 220); there is **no** `ScreenSignals` module and no other Screen type module.
+- `changes.patch` touches `packages/types/.../{FontMetrics,GlyphExtents,Notification,RenderViewport2D,ShapedRun,SpritesheetFormat,TextShaper,index}.ts` — and **not** `Screen.ts`, and creates **no** `ScreenSignals.ts`. The only `screen` hunks in the patch are `packages/screen/{package.json,src/screen.test.ts,src/screen.ts,tsconfig.json}`.
 
-- **Declared-but-never-populated fields.** `monochrome` is `false` everywhere (never read from `matchMedia('(monochrome)')`, which the web _can_ answer). `maxLuminance`, `depthPerComponent`, and `dpi` are always `-1` even on web — `dpi` is derivable (`96 * devicePixelRatio` is the conventional web approximation), and `depthPerComponent` is inferable from `colorDepth`. These read as type-seam-ready-for-native, but several have a cheap web population the pass left on the table.
-- **`getScreenNearestRect` is a pure alias for `getScreenContainingRect`** — same body, two exported names. Electron has both `getDisplayMatching` (overlap) and `getDisplayNearestPoint`; here the two rect functions are identical, so one name is redundant surface. Worth a deliberate keep-or-collapse ruling (the charter is silent).
-- **Late-subscribe + upgrade event bug (documented).** `subscribe` captures `const detailsRef = _screenDetails` at subscription time (`screen.ts:331`). A consumer that calls `onScreenChange` _before_ `requestScreenDetails()` will never receive `screenschange` events from the post-upgrade `ScreenDetails` object — only `resize`/`orientationchange`. Status flags this; it is a real ordering hazard, not just a doc note.
-- **No `getScreenDetailPermission` watch.** The permission read is a one-shot; there is no `PermissionStatus.onchange`-backed variant to react to a later grant/revoke. Status lists this as the gap to 95+.
-- **Real display-mode enumeration is web-synthetic only.** `getScreenModes` returns the single current mode on web (correct — the web cannot enumerate), but there is no `getScreenNativeMode` and no native host yet exercises a real mode list. Type seam is ready; payload awaits a host.
-- **Stable-id contract is convention-only.** `ScreenInfo.id` is `0` (single web) or array index (multi-monitor web); the comment documents it as "reconfiguration-stable" but the web path cannot honor that across hot-plug. Only a native host can mint a truly stable id, and no test asserts the contract.
-- **Rust compile unverified.** The status doc is explicit: cargo was unavailable in the builder sandbox, so the Rust changes are structurally consistent but not compiled. This is the single largest confidence gap in the Rust-parity claim.
+Consequences that block the merge:
 
-## Charter contradictions
+1. **`screen.ts` does not type-check.** The six imported types are unresolved; `createScreenInfo()` (b2824e3d8:screen.ts:34-62) sets 16 fields (`rotation`, `orientation`, `refreshRate`, `colorDepth`, `pixelDepth`, `physicalWidth/Height`, `isHdr`, `colorSpace`, `maxLuminance`, `depthPerComponent`, `dpi`, `label`, `internal`, `touchSupport`, `monochrome`) that the base `ScreenInfo` does not declare; the backend's `subscribe` now calls `listener({ kind: 'ScreenAdded', screen, changedMetrics: null })` (b2824e3d8:screen.ts:298) against a base `subscribe(listener: () => void)` contract that passes no argument.
+2. **`screen.test.ts` does not type-check either.** Its first line imports `ScreenChangeEvent`, `ScreenMode`, `ScreenSignals` from `@flighthq/types` (`b2824e3d8:packages/screen/src/screen.test.ts:1`) — all absent. `tsc -b` typechecks `src/*.test.ts`, so this is a second independent compile failure.
+3. **`package.json` adds `@flighthq/signals` as a dependency** (the one added line in `b2824e3d8:packages/screen/package.json`, `"@flighthq/signals": "*"`) for a signals group whose payload type (`ScreenSignals`) does not exist in the merge. The dependency is correct _for the intended design_; it is dangling in _this_ integration.
 
-None — the charter (`charter.md`) is a stub: `What it is` is seeded from the depth review, and `North star`, `Boundaries`, `Decisions`, and `Open directions` are all `TODO`. There is no stated principle, boundary, or decision for the code to contradict. Every judgement above falls back to the codebase-map AAA standard per the rubric rule, and the silences are surfaced under _Candidate open directions_ below.
+This is not a base-quality objection and not a pre-release-latitude question (no back-compat is at issue). It is a straightforward **split-merge**: the implementation half of one feature was integrated without its type-seam half. The contract rule "define its types in `@flighthq/types` first, then implement against them" was honored in the originating work but **inverted by the merge** — the implementation arrived, the header did not.
 
-## Contract & docs fit
+## Standards scorecard (delta only)
 
-**Lives up to the contract — strongly.** Types-first (`Screen.ts` + `ScreenSignals.ts` in `@flighthq/types`, implemented against), full unabbreviated names, `out`-params with documented alias-safety, sentinels (`null`/`-1`/`''`/`'unknown'`) over throws, single root `.` export, `sideEffects: false`, no top-level mutable state (`_backend`/`_signalSubscriptions`/`_scratchPoint` are module-bottom and lazily initialized), and a `flighthq-screen` crate mirror. The `dispose`/`detach` verb split is correct. The signals group follows the opt-in `enable*` platform-suite pattern exactly.
+| # | Standard | Verdict | Grounding |
+| --- | --- | --- | --- |
+| 1 | Composition / bedrock | PASS (contingent) | The web backend is two parallel populators (`buildCurrentScreenInfo` / `buildScreenInfoFromDetailed`, b2824e3d8:screen.ts:144-214), not one config-gated mega-function. Converters/lookups are value-typed leaves. No decomposition smell introduced. |
+| 2 | Naming clarity | PASS | New exports are fully type-qualified and self-identifying: `getScreenContainingRect`, `dipToScreenPoint`, `attachScreenSignals`, `getScreenCursorPosition`. `get*`/`is*`/`has*` honored. |
+| 3 | Tree-shaking / bundle invariant | PASS | `package.json` keeps `"sideEffects": false` and the single `.` export; `src/index.ts` stays `export * from './screen'`. No top-level side effects; `_backend` is lazily created in `getScreenBackend`. |
+| 4 | Registry vs closed union | PASS | The only `kind` dispatch is `attachScreenSignals`'s fixed 3-way branch over `ScreenChangeKind` (b2824e3d8:screen.ts:21-27) — a closed, exhaustive fan-out, not a growing family. Correct to keep closed. |
+| 5 | Subject triad + plurality guard | PASS | No format/backend mis-homing. The native host adapter correctly lives in `host-*`, not here; only the web default ships in-package. |
+| 6 | Contract hygiene | **FAIL** | Types-first **violated by the merge**: `screen.ts` implements against six `@flighthq/types` exports that are absent (see blocking finding). Sentinels / `Readonly<>` / alias-safety are correct _in the source as written_ (e.g. `dipToScreenPoint` reads inputs into locals before writing, b2824e3d8:screen.ts:381-385), but the package cannot satisfy the contract when its header layer is missing. |
+| 7 | Tests & honesty | **FAIL (compile)** | Structurally excellent — 30 exports, 30 alphabetized `describe` blocks, an exact 1:1 mirror, every export tested. But the file imports absent types and cannot compile. Also: divider comments `// --- attachScreenSignals ---` etc. (b2824e3d8:screen.test.ts:86) violate the "avoid structural divider comments" source-style rule. The status.md claims "57 tests... all passing" — false as integrated, since the suite does not compile. |
 
-**One convention-fit note to verify (not a violation):** `ScreenSignals` types its signals as `Signal<(screen: Readonly<ScreenInfo>) => void>` (parameterized by a _function type_) in `@flighthq/types/src/ScreenSignals.ts`. The Rust port's locked decision is `Signal<T>` parameterized by _payload_ (`flighthq-types` re-export). The TS `Signal<Fn>` shape matches the existing TS signals convention, so this is consistent within TS — but it is the seam where TS-signal-shape and Rust-signal-shape visibly diverge, and the Rust mirror will not be a literal transcription here. Worth a one-line note in the conformance/divergence map rather than a fix.
+## Secondary delta observations (not the blocker, real all the same)
 
-**Structural forks (`structural-forks.md`).** No contract-fit drift:
+- **`getScreenContainingRect` and `getScreenNearestRect` share one body** — `getScreenNearestRect` is `return getScreenContainingRect(rect, out)` (b2824e3d8:screen.ts:600-602): two exported names, identical largest-overlap / nearest-center semantics. A new-in-delta API-shape redundancy. It is a _design fork_ the charter already routes to Open directions (keep as intent-revealing aliases / give distinct semantics / collapse), **not** a merge blocker — but it should not be frozen as the final shape without a ruling.
+- **Late-subscribe + upgrade ordering.** `subscribe` captures `const detailsRef = _screenDetails` at subscription time (b2824e3d8:screen.ts:331-337), so a consumer who calls `onScreenChange` _before_ `requestScreenDetails()` never receives post-upgrade `screenschange` events. The status.md documents this as a known edge case. A behavior decision for the charter, not a build blocker.
+- **Test divider comments** (above) are a cheap source-style cleanup the integration worker should apply while fixing the build.
 
-- _Fork B (closed union vs registry):_ the only `kind` dispatch is `attachScreenSignals`'s 3-way `if/else` over `ScreenChangeKind` — signal fan-out, not a hot loop, and a fixed closed system (the 3 change kinds are exhaustive by nature). No registry pressure.
-- _Fork C (hot function bundling features):_ none. The web backend's `buildScreenInfoFromDetailed`/`buildCurrentScreenInfo` are two parallel populators, not one config-gated mega-function; the `subscribe` diff is O(screens), allocation-light. No within-unit smell.
-- _Fork D (backend seam):_ textbook — `ScreenBackend` trait in types, web default, `setScreenBackend` for native. The `_upgrade` hook is an in-place mutation of the _same_ backend object rather than a swap, deliberately so a held reference stays valid; it is internal (not on the trait) and native backends simply lack it.
-- _Mixing (fork D axis 2):_ the converters/lookups are value-typed leaves and the roadmap already flags them as mixable; live enumeration/events are correctly all-or-nothing.
+## Honesty check against status.md
 
-**Candidate doc revisions.** The Package Map line for `@flighthq/screen` still reads "display enumeration, work area, scale factor" — accurate for the base, but the package now also owns coordinate conversion, cursor queries, change events, display modes, and a signals group. The line understates the realized scope and is a candidate for a one-line expansion. The depth and maturation reviews under `reviews/` are now superseded by this cell and are migration candidates per `index.md`.
+The ingested `status.md` (as-claimed, builder-67dc46d64) describes a 93/100 surface and states the type seam landed in `@flighthq/types/src/Screen.ts` plus a new `ScreenSignals.ts`. **In this integration branch that claim does not hold** — those type files were not part of the merge. The status entry is "as-claimed, not yet review-verified" by its own header; this review verifies it and finds the type half **absent from the delta**. The Rust-compile-unverified caveat in status.md remains true and is the lesser of the two confidence gaps; the missing TS types are the larger.
 
-## Candidate open directions
+## What "fit to merge" would require
 
-The charter is a stub; each item below is something this review had to assume against the AAA fallback and should feed the charter's _Open directions_ for the user to settle:
-
-1. **North star / bar.** Is the target the union of Electron `screen` + Tauri + SDL3 + browser Window Management (the implicit bar this pass built toward), or a deliberately thinner web-first surface? This decides whether the native-only fields are obligations or aspirations.
-2. **Cheap web-populatable fields.** Should `monochrome`, `dpi`, and `depthPerComponent` be populated on web where derivable, or intentionally left sentinel until a native host? (Boundary question: "what does the web backend promise to fill.")
-3. **`getScreenNearestRect` vs `getScreenContainingRect` redundancy.** Keep both names as intent-revealing aliases, give them distinct semantics (e.g. nearest-rect = center-distance, containing = overlap), or collapse to one?
-4. **Late-subscribe + upgrade ordering.** Bless "call `requestScreenDetails` before subscribing" as a usage rule, or fix `subscribe` to re-bind on `_upgrade` (status's options a/b/c)? This is a behavior decision, not a sweep-safe cleanup.
-5. **Stable-id contract.** Numeric vs string, and what guarantee a native host must honor across hot-plug — a seam decision that must precede the first conforming native backend.
-6. **Cross-package boundaries** (raised by the maturation roadmap, undecided): cursor-position ownership vs `@flighthq/input`/`@flighthq/interaction`; display-metrics overlap with `@flighthq/device` (`getDeviceDisplayMetrics`); whether the Window Management granted state persists via `@flighthq/storage`. Each wants a one-line Package Map ruling.
-7. **Rust compile verification.** Not a design question but a standing follow-up: `cargo build -p flighthq-screen -p flighthq-host-winit` must be run in a Rust-capable environment before the parity claim is trusted.
+The delta becomes mergeable the moment its type-seam half is present in the same integration: the expanded 25-field `ScreenInfo`, `ScreenMode`, `ScreenColorSpace`, `ScreenOrientation`, `ScreenChangeKind`, `ScreenChangedMetrics`, `ScreenTouchSupport`, the payload-carrying `ScreenBackend` (`subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void)` + required `getCursorPosition` + optional `getModes`), and the new `ScreenSignals` module — all exported from `@flighthq/types`. With those present and a clean `npm run check`, the design itself reaches the `solid` / near-Gold the prior pass aimed for. As integrated today, it does not build.

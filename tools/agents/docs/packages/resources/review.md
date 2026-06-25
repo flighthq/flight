@@ -1,82 +1,59 @@
 ---
 package: '@flighthq/resources'
-status: solid
-score: 82
-updated: 2026-06-24
+status: partial
+score: 58
+updated: 2026-06-25
 ingested:
   - status.md
   - source
-  - changes.patch (builder-67dc46d64)
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
 ---
 
-# resources — Review
+# resources — Review (merge gate: integration-b2824e3d8 → origin/main)
 
-> Survey layer. Evidence read from the incoming bundle `incoming/builder-67dc46d64/head/packages/resources/` and `changes.patch`. The prior depth review (`reviews/depth/resources.md`) no longer exists as a file; its content is the `status.md` "previous score 76/100" baseline, which this review absorbs and supersedes.
+> Merge-gate survey. Baseline = the **approved** `origin/main` (`eb73c3d74`) at `incoming/integration-b2824e3d8/base/packages/resources/` — not under review. Candidate = the integration head at `incoming/integration-b2824e3d8/head/packages/resources/`. This review judges only the **delta** (head vs base), with the `packages/resources/` hunks of `incoming/integration-b2824e3d8/changes.patch`. Findings cite `b2824e3d8:<path>`.
+>
+> The score is a merge-readiness score for the **delta**, not a re-grade of the mature base. The base is `solid ~82`; the delta as-shipped is **blocked** by a header/implementation split that does not typecheck, which is why this merge-gate review reads `partial / 58` until that single defect is fixed.
 
 ## Verdict
 
-`solid` — **82/100**. The core resource descriptor + loader layer is mature, symmetric, and well-tested (163 tests across 15 files, count verified against source). The pass-2 atlas-region additions are clean and correct. Two real consistency defects survive (`setTextureAtlasRegion` pivot defaults, `buildTilesetRegions` shrink), and the package's _shape_ is the larger open question: the register has a blessed direction that `resources` should **dissolve into per-subject triads**, and `TextureAtlas` is recorded as _mis-homed_ here. The status doc's 91/100 self-estimate overcounts because it scores the `resource-formats` neighbor (a separate package, its own cell) into the `resources` total and does not weigh the dissolution direction.
+**REVISE — do not merge as-is.** The delta's _intent_ is clean and mostly exemplary: a consistent `AbortSignal` threading across the image/video/tileset loaders, a casing fix (`*FromURLs` → `*FromUrls`), two byte-size accessors, six atlas-region helpers (`getTextureAtlasRegionById`/`ByName`/`Sequence`/`Uv` plus the `name`/trim/rotation fields), and tileset `margin`/`spacing`. Every new function is type-word-complete, `get*`-prefixed, out-param-correct, sentinel-correct, and colocated-tested. If the types landed, this would be an approve-as-is delta worth ~88.
 
-## Present capabilities (grounded in source)
+It does **not** land the types. The implementation and tests in `b2824e3d8` write and read new fields on `TextureAtlasRegion` and `Tileset` (`name`, `originalWidth/Height`, `rotated`, `sourceX/Y`, `trimmed`, `margin`, `spacing`) that **were never added to `@flighthq/types`** in this bundle. The head copies of `TextureAtlasRegion.ts` and `Tileset.ts` are byte-identical to base. The result is internally inconsistent and does not typecheck. This is a hard merge-blocker (Contract: types-first; Standard 6/7).
 
-All claims below were checked against `head/packages/resources/src/` and the realized `dist/*.d.ts`.
+## The blocker, grounded
 
-**Image resources** (`imageResource.ts`, `imageResourceFrom.ts`) — `createImageResource`, `cloneImageResource` (documented as sharing pixels by reference — a precise ownership comment), `disposeImageResource` (correctly `dispose*`: releases element/data refs to GC, explicitly does _not_ free the GPU texture or close an owned `ImageBitmap`), `setImageResourceSource`, `invalidateImageResource` (version bump, `>>> 0` wrap), `hasImageResourceData`, `hasImageResourceSource`, `isImageResourceEmpty`, `getImageResourceByteSize` (data byteLength or 0; doc notes the GPU footprint is render-state-owned). Loaders: from URL / Blob / Base64 / ArrayBuffer, plus `detectImageMimeType`, `isImageResourceSameOrigin`, and three element constructors. All four async loaders thread `AbortSignal`.
+`@flighthq/types` was **not** updated. `head/packages/types/src/TextureAtlasRegion.ts` and `head/packages/types/src/Tileset.ts` are identical to base — interface `TextureAtlasRegion` still has only `{height,id,pivotX,pivotY,x,y,width}`; `Tileset` still has only `{atlas,columns,rows,tileHeight,tileWidth}`. But the resources delta introduces consumers of the absent fields at multiple independent sites:
 
-**Texture atlas** (`textureAtlas.ts`, `textureAtlasFrom.ts`, `textureAtlasRegion.ts`) — `createTextureAtlas`, `getTextureAtlasByteSize` (delegates to image byte size). Region API is the richest surface: `createTextureAtlasRegion`, four `addTextureAtlasRegion*` overloads (scalar, Rectangle, RectangleXY, Vector2), `setTextureAtlasRegion`, lookups `getTextureAtlasRegionById` / `getTextureAtlasRegionByName` (linear scan, doc-noted acceptable < 2000 regions), `getTextureAtlasRegionSequence` (name-prefix collection for animation frames), and `getTextureAtlasRegionUv` (normalized UV into `out`; zero-fills on non-positive image dims; alias-safe — reads all inputs into locals before writing, comment present). Eight `loadTextureAtlas*` loaders with `AbortSignal`.
+- `b2824e3d8:packages/resources/src/textureAtlasRegion.ts` — `createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>)` reads `obj?.name`, `obj?.originalHeight`, `obj?.originalWidth`, `obj?.rotated`, `obj?.sourceX`, `obj?.sourceY`, `obj?.trimmed`. `TextureAtlasRegionLike = EntityWithoutRuntime<TextureAtlasRegion>` has none of these → reading them off `Partial<…>` is `TS2339 Property … does not exist`.
+- Same file — `getTextureAtlasRegionByName` / `getTextureAtlasRegionSequence` read `region.name` on a value typed `TextureAtlasRegion`: `if (region.name === name) return region;` and `region.name !== null && region.name.startsWith(prefix)` → `TS2339`.
+- `b2824e3d8:packages/resources/src/tileset.ts` — `buildTilesetRegions` destructures the absent fields: `const { atlas, rows, columns, tileWidth, tileHeight, margin, spacing } = target;` where `target: Tileset`; and `createTileset` reads `obj?.margin`, `obj?.spacing` → `TS2339`.
+- `b2824e3d8:packages/resources/src/textureAtlasRegion.test.ts` — the new specs assert on the absent fields: `expect(region.name).toBeNull()`, `expect(region.originalWidth).toBeNull()`, `expect(region.rotated).toBe(false)`, `expect(region.sourceX).toStrictEqual(0)`, `expect(region.trimmed).toBe(false)`. `tsc -b` typechecks `src/*.test.ts`, so these are compile errors, not just runtime expectations.
+- `b2824e3d8:packages/resources/src/tileset.test.ts` — `expect(tileset.margin).toStrictEqual(0)`, `expect(tileset.spacing).toStrictEqual(0)` → `TS2339`.
 
-**Tileset** (`tileset.ts`, `tilesetFrom.ts`) — `createTileset` (defaults `margin`/`spacing` to 0), `buildTilesetRegions` (honors margin border + inter-tile spacing in the grid layout), `createTilesetFromAtlas` / `createTilesetFromImageResource` (optional `margin`/`spacing`), four `loadTileset*` loaders with `AbortSignal`.
+The status log itself flags the risk: `head/.../resources/status.md` carries the worker's pass-1 claim that these fields were "added in pass 1" to `@flighthq/types` — but that claim is **as-claimed, not review-verified**, and the head tree contradicts it. The types edit is simply missing from this bundle. (I read a static bundle and cannot run `tsc`; the diagnosis is the unambiguous consequence of the strict-mode type rules, with five independent error sites cited above.)
 
-**Audio / video / font** — `createAudioResource`, `getAudioContext`, `createAudioResourceFrom{Url,Urls}` and `loadAudioResourceFrom{Url,Urls}` (signal-threaded; `*Urls` does `canPlayType` source selection with extension fallback). Video mirror is symmetric, with the non-async `loadVideoResourceFromUrl` correctly using `if (signal?.aborted) return Promise.reject(signal.reason)` and wiring `abort` → cleanup + `element.src = ''`. Fonts: `createFont`/`createFontResource`, `loadFontFrom{ArrayBuffer,Name,Url,Urls}` (allocating), and `loadFontResourceFrom{ArrayBuffer,Name,Url,Urls}` (out-into-existing). URL-casing cleanup landed (`*FromUrls`, not `*FromURLs`) — verified in `dist`.
+## Standards scorecard (delta only)
 
-**Types** (`@flighthq/types`) — `TextureAtlasRegion` carries the full pack-tool field set (`name`, `trimmed`, `rotated`, `sourceX/Y`, `originalWidth/Height`, `pivotX/Y: number | null`) with accurate per-field doc comments; `Tileset` carries `margin`/`spacing` with corrected Tiled-terminology docs; `TextureAtlasFormatKind` is a new string-kind family (one-concept-per-file, vendor-prefix convention documented). These are model citizens of the types-layout convention.
+1. **Composition / bedrock — PASS.** The new helpers are bedrock primitives (id/name/sequence lookup, UV-into-`out`, byte-size). No config-gated branch fuses subjects; `getTextureAtlasByteSize` is a one-line composition of `getImageResourceByteSize` (`b2824e3d8:packages/resources/src/textureAtlas.ts`). `margin`/`spacing` fold into the existing grid formula, not a new branch.
+2. **Naming — PASS.** `getImageResourceByteSize`, `getTextureAtlasByteSize`, `getTextureAtlasRegionById/ByName/Sequence/Uv` carry the full type word and `get*`. The `*FromURLs → *FromUrls` rename (`audioResourceFrom.ts`, `videoResourceFrom.ts`, `fontFrom.ts`, `fontResourceFrom.ts`) fixes a casing split with `*FromUrl` — the right call.
+3. **Tree-shaking / bundle invariant — PASS.** No new top-level side effects; `index.ts` is unchanged `export *`; the `textureAtlas.ts → imageResource.ts` import is within-package and tree-shakes. `AbortSignal` is threaded as an optional trailing param — no new hot-loop cost to non-abort callers.
+4. **Registry vs closed union — N/A.** No `kind` switch touched; the atlas-format registry lives in the `resource-formats` neighbor, out of this delta.
+5. **Subject triad + plurality guard — N/A for the delta.** No format/backend code moves here. (The standing dissolution direction is a charter question, routed to Open directions, not a delta defect.)
+6. **Contract hygiene — FAIL.** Types-first is violated: the implementation precedes its own header. This is the blocker. Sub-points that _do_ pass: `getTextureAtlasRegionUv` (`b2824e3d8:packages/resources/src/textureAtlasRegion.ts`) is exemplary — reads `rx/ry/rw/rh` into locals before writing `out`, documents alias-safety, zero-fills on non-positive dims (sentinel, not throw), takes `Readonly<TextureAtlasRegion>`, returns `out`. The loaders return rejected promises / honor `signal.reason` correctly (`videoResourceFrom.ts`, `imageResourceFrom.ts`).
+7. **Tests & honesty — FAIL (consequential).** The tests are well-shaped, alphabetized, and mirror the new exports 1:1 (`getTextureAtlasRegionById/ByName/Sequence/Uv` each get a `describe`; abort cases added for image/video). But they assert on fields the type does not declare, so they do not compile — and the `status.md` "added to `@flighthq/types`" claim is false against the head tree. The honesty gap is the missing types edit, not the tests themselves.
 
-## Gaps
+## What is genuinely good in the delta (approve once unblocked)
 
-What a mature asset-resource library has that this one lacks:
+- **`AbortSignal` threading** is consistent and correct end-to-end: `loadImageResourceFromUrl` guards with `signal?.throwIfAborted()` then races `img.decode()` against an `abort` rejection (`b2824e3d8:packages/resources/src/imageResourceFrom.ts`); `loadVideoResourceFromUrl` adds an `onAbort` that clears `element.src` and rejects with `signal!.reason`, with a `cleanup()` that removes every listener (`b2824e3d8:packages/resources/src/videoResourceFrom.ts`); the `loadTilesetFrom*` / `loadTextureAtlasFrom*` wrappers thread `signal` through to the image loader.
+- **`getTextureAtlasRegionUv`** is a model out-param function (see Standard 6).
+- **`margin`/`spacing` grid math** in `createTilesetFromAtlas` correctly guards `tileWidth > 0` / `tileHeight > 0` before the new `Math.floor((image.width - margin*2 + spacing)/(tileWidth+spacing))` divisor, avoiding a divide-by-zero the base did not have to consider (`b2824e3d8:packages/resources/src/tilesetFrom.ts`).
 
-- **No resource cache / dedup registry.** No `getCachedResource` / content-addressed identity. Loading the same URL twice fetches twice. Status defers this pending a `resources`↔`loader` ownership decision.
-- **No loader-signal opt-in.** `enableResourceLoaderSignals` is gestured at in the `ResourceLoader` type but unwired; progress/error notification is absent from this package.
-- **Single-page atlases only.** `TextureAtlas.image: ImageResource | null` cannot represent a multi-page atlas (libGDX/TexturePacker emit these); a structural change to `pages: ImageResource[]` + per-region `page` is deferred as cross-package.
-- **No animation metadata on the atlas.** Frame-tag/animation data from Aseprite/TexturePacker is dropped; the `getTextureAtlasRegionSequence` name-prefix approach is a workaround, not parsed-tag fidelity.
-- **No per-tile metadata.** `Tileset` has no `tiles: TilesetTile[]` (id/properties/animation/collision), so tile properties and tilemap-layer ingestion (`.tmx`/`.tmj`) are out of reach.
-- **No compressed-texture path.** No `CompressedPixelFormat` / KTX2 / Basis / DDS / transcoder seam — genuine Gold-tier work, and the one place a wasm-bundle-size gate would bite.
-- **Audio decode is unguardable.** `createAudioResourceFromUrl` swallows fetch/decode failure with `.catch(() => {})` and returns a silently-empty resource — no signal, no sentinel a caller can observe. (The `load*` async variants surface rejection; the fire-and-forget `create*` ones do not, which is a defensible split but worth noting.)
+## Cross-package note (not a delta defect, surfaced for the charter)
 
-## Defects (verified against source)
+The Rust mirror is out of sync in the same direction: `head/crates/flighthq-types/src/resource.rs` `TextureAtlasRegion`/`Tileset` structs also lack `name`/`rotated`/`trimmed`/`source_*`/`original_*` and `margin`/`spacing`. Conformance-map drift, owned by the Rust worktree — recorded here, not actionable in this package's merge.
 
-1. **`setTextureAtlasRegion` pivot defaults contradict the new `null` convention.** Pass 2 deliberately changed `createTextureAtlasRegion` to default `pivotX`/`pivotY` to `null` (so "no pivot" ≠ "pivot at 0,0"), and `addTextureAtlasRegion` passes `pivotX ?? null`. But `setTextureAtlasRegion` (textureAtlasRegion.ts:162-177) still has `pivotX: number = 0, pivotY: number = 0` and writes them unconditionally. Reusing a region via `setTextureAtlasRegion` therefore stamps `0` where the constructor would write `null`, re-introducing exactly the conflation the pass set out to remove. `buildTilesetRegions` calls `setTextureAtlasRegion` for every tile, so every pooled tileset region gets `pivot = 0`, not `null`.
+## Charter alignment
 
-2. **`buildTilesetRegions` does not shrink `atlas.regions` when the grid gets smaller.** It reuses/pushes up to `rows*columns` regions (tileset.ts:10-23) but never truncates `atlas.regions.length` to the new tile count. Rebuilding a previously-larger tileset leaves stale trailing regions in the atlas. The reuse-in-place optimization is sound; the missing `atlas.regions.length = rows*columns` after the loop is the bug.
-
-## Charter contradictions
-
-The charter (`charter.md`) is a stub — North star, Boundaries, Decisions, and Open directions are all `TODO`. There is therefore **no stated principle for the code to contradict**. The substantive tension is against an SDK-wide _structural fork_, not against this charter; see Candidate open directions.
-
-## Contract & docs fit
-
-**Lives up to the contract — strongly:**
-
-- Types-first: every cross-package type (`TextureAtlasRegion`, `Tileset`, `TextureAtlasFormatKind`, `*Resource`) lives in `@flighthq/types`, one concept per file, with the entity/`*Like` split. Implementation imports them.
-- Full unabbreviated names throughout; globally self-identifying (`getTextureAtlasRegionUv`, `getImageResourceByteSize`).
-- Sentinels-not-throws: lookups return `null`; UV zero-fills rather than dividing by zero. No error-wrapping types.
-- `out`-param + alias-safety: `getTextureAtlasRegionUv` reads inputs into locals first, with the comment.
-- Teardown verb: `disposeImageResource` is correctly `dispose*` (GC release, not GPU free) — the doc spells out precisely what it does and does not release.
-- Single root `.` export, `"sideEffects": false`, alphabetized exports.
-
-**Contract-fit drift / candidate revisions:**
-
-- **`load*FontResource*` put `out` first and are `async`.** `loadFontResourceFromUrl(out, url)` etc. place the mutable target as the _first_ parameter, whereas the codebase convention is the mutable output last, named `out`/`target`. They are also the only `load*` functions in the package that mutate-in-place rather than allocate — every other `load*` returns a fresh resource. This asymmetry (allocating `loadFontFrom*` vs. out-first `loadFontResourceFrom*`) is worth a deliberate look: either align ordering, or reconsider whether the out-into-existing variant should exist alongside the allocating one.
-- **Package Map line is now imprecise about the formats split.** `index.md` still describes `resources` as the home for "texture atlases" without noting that atlas _parsing_ now lives in the `resource-formats` neighbor and that the register has redirected that neighbor to `textureatlas-formats` pending extraction. The map line is a candidate revision once the dissolution direction is settled.
-- **Rust mirror:** charter declares `crate: flighthq-resources`. Given the blessed dissolution direction, whether a single `flighthq-resources` crate should exist at all (vs. per-subject crates) is itself an open question the conformance map will need to record.
-
-## Candidate open directions
-
-The charter is silent on all of these; each is something this review had to assume or work around.
-
-1. **The package's own shape — dissolve into per-subject triads?** This is the dominant question. The register (`packages/register.md`) records a _standing decomposition direction_: "`resources` → dissolve into per-subject triads … it fuses the data-primitive layer of six subjects" (`image` / `audio` / `video` / `font` / `textureatlas` / `tileset`), and the `resource-formats` redirect verdict is explicit that "the duplication is a _symptom_ of `TextureAtlas` being mis-homed in `resources`." Maturing `resources` _as a grab-bag_ (the path this bundle is on) and dissolving it are opposite directions. The charter must take a position: is `resources` a durable grab-bag, or a staging area to be decomposed? Every gap below (multi-page atlas, per-tile metadata, cache) is cheaper to design _after_ this is settled, since each lands in a different subject home.
-2. **Cache ownership: `resources` vs. `loader`.** Does URL-keyed dedup/content-addressing live here (available to standalone loaders) or in `@flighthq/loader` (lifecycle-tied to the batch queue)? Blocks both the cache and the loader-signal work.
-3. **Atlas page model.** Is single-page `image` the permanent shape, or is multi-page (`pages[]` + per-region `page`) in scope? Ripples into `sprite`, `spritesheet`, and renderers.
-4. **Animation-metadata home.** Should parsed frame-tags become a first-class `animations: TextureAtlasAnimation[]` on `TextureAtlas`, or stay a name-prefix convention? Couples to whether atlas data stays in `resources`.
-5. **Fire-and-forget failure semantics.** Is `createAudioResourceFromUrl`'s silent `.catch(() => {})` the intended contract for the non-`load` constructors, or should failure be observable (signal/sentinel)?
-6. **Compressed-texture scope and the bundle gate.** Whether KTX2/Basis/DDS + a transcoder backend are in scope — and if so, the `npm run size` discipline that keeps the transcoder wasm off the default bundle.
+The delta advances charter North-Star #3 (types-first, atlas-region API) and Open Directions 4 (`getTextureAtlasRegionSequence` name-prefix sequence) and 5 (per-tile-ish region metadata) — the _features_ are wanted. It fails the same North-Star #3's actual rule (the header is the design surface, implemented against, not after). Fixing the types makes the delta charter-aligned.

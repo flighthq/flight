@@ -1,60 +1,61 @@
 ---
 package: '@flighthq/clipboard'
-updated: 2026-06-24
+updated: 2026-06-25
 basedOn: ./review.md
 ---
 
-# Assessment: @flighthq/clipboard
+# Assessment: @flighthq/clipboard (merge gate, integration b2824e3d8 → origin/main eb73c3d74)
 
-The review lands the package at **solid — 88/100**: the generic MIME format seam, atomic multi-flavor write, batch read, file flavor, the completed `has*` set, and the change-event watch capability all shipped this session with full test coverage and an Electron backend. Bronze and most of Silver from the maturation roadmap are done. What remains splits cleanly into a small set of sweep-safe within-package cleanups (below) and a larger backlog gated on design forks the stub charter has not yet settled.
+The review rejects the delta for merge at **partial — 35/100**, not for a design flaw but because the integration tree dropped the `@flighthq/types` half of the change: `clipboard.ts` and its test depend on `ClipboardWatch`, `ClipboardWriteItem`, and ~10 new `ClipboardBackend` methods that do not exist in `@flighthq/types` in the head tree, so `tsc -b` cannot pass. The package-side design itself is sound and should survive the fix intact. The assessment below sorts what to do once the build is restored; the merge gate's must-fix directives live in `outgoing/integration/clipboard.md`.
 
-The charter is still a stub — North star, Boundaries, and Decisions are all `TODO`. Because of that, nothing requiring a scope or dependency-posture decision can be Recommended; those are routed to the charter's Open directions (listed at the bottom for the user to fold in, **not** edited into the charter here).
+The charter is still a **draft** (front matter `draft: true`; Decisions empty). Because of that, nothing requiring a scope, image-model, or dependency-posture decision can be Recommended; those are routed to the charter's Open directions at the bottom for the user to fold in — **not** edited into the charter here.
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/clipboard` (or a mechanical move of a type the package owns), no open design decision, no breaking change to the public surface.
+Sweep-safe: within `@flighthq/clipboard` (or a mechanical move/restore of a type the package owns), no open design decision, no breaking change to the intended public surface. These presuppose the merge blocker is fixed (the types restored) — they are the follow-on tidy, not the gate.
 
-- **Consume the `ClipboardFormat` constants in the package's own code.** `hasClipboardBookmark` hardcodes `'text/x-moz-url'`, `hasClipboardHtml` `'text/html'`, `hasClipboardRTF` `'text/rtf'`, and the `read*Html`/`read*RTF` paths re-spell literal MIME strings. The constants (`ClipboardFormatHtml` / `ClipboardFormatRtf` / `ClipboardFormatBookmark`) were added this session for exactly this de-duplication and are currently unused by the package. Route the literals through the shared constants. Pure within-package, low-stakes. — review.md (Contract & docs fit)
+- **Restore the `@flighthq/types` clipboard header to match the package.** Re-add `packages/types/src/ClipboardWatch.ts`, `ClipboardWriteItem.ts`, and the `ClipboardBackend` extension (`readFormat`/`writeFormat`/`hasFormat`/`getFormats`/`readItems`/`writeItems`/ `readFiles`/`writeFiles`/`getChangeCount`/`subscribeClipboardChange`) so the integration tree type-checks. This is the merge blocker; it is in this list only as the within-scope work item — see the dispatch brief for the imperative form. — review.md (The merge blocker)
 
-- **Move `ClipboardBookmark` to its own file in `@flighthq/types`.** It is defined inside `types/src/Clipboard.ts` alongside `ClipboardBackend`, violating the one-concept-per-file / filename = type-name convention. Relocate to `types/src/ClipboardBookmark.ts` and re-export. Mechanical move of a type the clipboard package owns; no behavior change, no design decision. — review.md (Contract & docs fit)
+- **Fix the `subscribeClipboardChange` feature-detect in the web backend.** Replace the double-cast dead second clause (`(window as unknown as Record<string, unknown>)['clipboardchange']`, `clipboard.ts:216-219`) with a single honest `'onclipboardchange' in window` test. Within-package, no contract change. — review.md (axis 7)
 
-- **Widen the Package Map line.** `tools/agents/docs/index.md` still reads "system clipboard read/write (text, HTML)." It now covers HTML, image, RTF, bookmark, files, the generic MIME seam, atomic write, and change events. Update the one-line description to match. — review.md (Contract & docs fit)
+- **Consume the `ClipboardFormat` constants in the package's own code.** Once restored, route the hardcoded `'text/x-moz-url'` / `'text/html'` / `'text/rtf'` literals in `hasClipboardBookmark` / `hasClipboardHtml` / `hasClipboardRTF` (and the `read*`/`write*` flavor paths) through the shared constants the constants were added for. Pure within-package de-duplication. — review.md (admin docs)
 
-- **Widen the `package.json` description.** `"System clipboard read/write (text, HTML) over a swappable web/native backend"` understates the surface for the same reason. Within-package doc edit. — review.md (Contract & docs fit)
+- **Widen the Package Map line.** `tools/agents/docs/index.md` still reads "system clipboard read/write (text, HTML)"; the surface now covers HTML, image, RTF, bookmark, files, the generic MIME seam, atomic write, and change events. One-line doc edit. — review.md (admin docs)
 
-- **Harden / de-duplicate `createWebClipboardBackend`.** Fold the now-many `getWebClipboard()` + try/catch blocks behind one internal helper, and query the Permissions API (`navigator.permissions.query({ name: 'clipboard-read' })`) in probe paths so `has*`/enumeration do not trigger throwing permission prompts. Within-package refactor; the sentinel contract is unchanged. — reviews/maturation/depth/clipboard.md (Silver: `createWebClipboardBackend` hardening)
+- **Widen the `package.json` description.** `"System clipboard read/write (text, HTML) over a swappable web/native backend"` (`package.json:36`) understates the surface for the same reason. Within-package doc edit. — review.md (admin docs)
 
 ## Backlog
 
-Parked: each needs a design decision the stub charter has not made, crosses a package boundary, or is larger native-host work better sequenced after the Silver seam freezes.
+Parked: each needs a design decision the draft charter has not made, crosses a package boundary, or is larger native-host work better sequenced after the seam freezes.
 
-- **Typed image flavor over `Surface`** (`readClipboardSurface(out)` / `writeClipboardSurface`). Parked — this is the single largest depth gap **and a genuine design fork**: type-only `Surface` from `@flighthq/types` vs a runtime `@flighthq/surface` dependency, the bundle-size impact, and whether the data-URL functions are deprecated or kept as a permanent web-convenience layer. Routed to Open directions; cross-package, not autonomous. — review.md (Gaps; Candidate open directions 1)
+- **Typed image flavor over `Surface`** (`readClipboardSurface(out)` / `writeClipboardSurface`). Parked — the single largest depth gap and a genuine design fork: type-only `Surface` from `@flighthq/types` vs a runtime `@flighthq/surface` dependency, bundle-size impact, and whether the data-URL functions are deprecated or kept as a permanent web-convenience layer. Cross-package, not autonomous; routed to Open directions. — charter Open directions 1
 
-- **Secondary pasteboards (`ClipboardScope = 'system' | 'selection' | 'find'`).** Parked — threading a `scope` parameter through the entire read/write/has/format/watch surface is in/out-of-scope a Boundaries decision the charter has not made. Routed to Open directions. — reviews/maturation/depth/clipboard.md (Gold); review.md (Candidate open directions 3)
+- **Secondary pasteboards (`ClipboardScope = 'system' | 'selection' | 'find'`).** Parked — threading a `scope` parameter through the whole read/write/has/format/watch surface is an in/out-of-scope Boundaries decision the draft charter has not settled. Routed to Open directions. — charter Open directions 3
 
-- **Binary / buffer flavors** (`readClipboardBuffer` / `writeClipboardBuffer`). Parked — needs a canonical binary-type decision (`ArrayBuffer` vs `Uint8Array`, ideally SDK-wide) before the seam is cut; the Electron backend already exposes `readBuffer`/`writeBuffer` to build on. Routed to Open directions. — review.md (Gaps; Candidate open directions 5)
+- **Binary / buffer flavors** (`readClipboardBuffer` / `writeClipboardBuffer`). Parked — needs a canonical binary-type decision (`ArrayBuffer` vs `Uint8Array`, ideally SDK-wide) before the seam is cut. Routed to Open directions. — charter Open directions 5
 
-- **Lazy / promised rendering** (`writeClipboardLazy(formats, provider)`, NSPasteboard promised types). Parked — a significant native-host contract, reasonably deferred until the buffer/scope seam settles. — reviews/maturation/depth/clipboard.md (Gold)
+- **Lazy / promised rendering** (`writeClipboardLazy(formats, provider)`). Parked — a significant native-host contract, reasonably deferred until the buffer/scope seam settles. — charter Open directions 3
 
-- **`getClipboardCapabilities()` introspection.** Parked — only meaningful once scopes and buffers exist; depends on the two forks above. — review.md (Gaps)
+- **`getClipboardCapabilities()` introspection.** Parked — only meaningful once scopes and buffers exist; depends on the two forks above. — charter Open directions 7
 
-- **Atomic `writeItems` on the Electron backend.** Parked — cross-package: the fix lives in `@flighthq/host-electron` (`clipboard.write({ text, html, rtf })` instead of the current per-format loop), and whether true atomicity is _required_ of every `host-*` backend is itself a contract decision routed to Open directions. The web backend is already atomic. — review.md (Gaps; Candidate open directions 4)
+- **Atomic `writeItems` on the Electron backend.** Parked — cross-package: the fix lives in `@flighthq/host-electron` (`clipboard.write({ text, html, rtf })` rather than a per-format loop), and whether true atomicity is _required_ of every `host-*` backend is itself a contract decision. Routed to Open directions. — charter Open directions 4
 
-- **Rust crate `flighthq-clipboard`.** Parked — cross-package new crate; the charter front matter declares `crate: flighthq-clipboard` but the mirror does not exist. Correctly deferred until the Silver seam (especially the `Surface` image decision) stops moving, to avoid re-porting a moving contract. — review.md (Gaps; Candidate open directions 6)
+- **Rust crate `flighthq-clipboard`.** Parked — cross-package new crate; the charter front matter declares `crate: flighthq-clipboard` but the mirror does not exist. Correctly deferred until the seam (especially the `Surface` image decision) stops moving. — charter Open directions 6
 
-- **Ratify the `@flighthq/signals` dependency.** Parked — the watch entity moved clipboard from a `@flighthq/types`-only package to a two-dependency one. Defensible ("signals effectively always present") but it is a dependency-posture choice that is currently decided-by-doing without a blessing; the question of whether a read-only `readClipboardText` import should stay dependency-light belongs in the charter. Routed to Open directions. — review.md (Charter contradictions; Candidate open directions 2)
+- **Ratify the `@flighthq/signals` dependency.** Parked — the watch entity moved clipboard from a `@flighthq/types`-only package to a two-dependency one. Defensible ("signals effectively always present") but currently decided-by-doing without a blessing; whether a read-only `readClipboardText` import should stay dependency-light is a charter call. Routed to Open directions. — charter Open directions 2
 
 ## Approved
 
-_None yet — approval is the user's verbal gate._
+_None. Approval is the user's verbal gate; nothing is approved until the user says so._
 
 ## Notes for the charter's Open directions (do not edit the charter here)
 
-The review surfaced these forks; each is an assumption a reviewer had to make and a decision the user should fold into `charter.md › Open directions`:
+The draft charter already enumerates these forks; this merge review reaffirms them and adds the build-integrity observation. Each is a decision the user should fold into `charter.md › Open directions`:
 
 1. **Image model** — data-URL string vs typed `Surface` (`out`-param, type-only `@flighthq/types` dependency); and whether data-URL functions are deprecated or kept as a web-convenience layer.
 2. **Dependency posture** — bless the `@flighthq/signals` dependency, or rehome the watch entity so a read-only clipboard import stays dependency-light; set the tree-shake floor.
 3. **Seam scope** — are secondary pasteboards (`ClipboardScope`), binary buffers, and lazy rendering in scope, or is "the system clipboard, all flavors" the intended boundary?
 4. **Atomic-write contract** — must `ClipboardBackend.writeItems` be truly atomic (forcing Electron to add a `write({...})` path), or is per-format looping an acceptable backend-defined fallback?
-5. **Binary canonical type** — `ArrayBuffer` vs `Uint8Array` as the SDK-canonical clipboard (ideally SDK-wide) binary type, if buffer flavors land.
-6. **Rust-port timing** — confirm the Silver seam is frozen enough to port Bronze+Silver to `flighthq-clipboard`, or hold until the `Surface` image decision lands.
+5. **Binary canonical type** — `ArrayBuffer` vs `Uint8Array` as the SDK-canonical (ideally SDK-wide) clipboard binary type, if buffer flavors land.
+6. **Rust-port timing** — confirm the seam is frozen enough to port to `flighthq-clipboard`, or hold until the `Surface` image decision lands.
+7. **Merge-integrity guard** — this delta merged the package + its status doc but dropped the `@flighthq/types` half, leaving an unbuildable tree. Worth a charter/process note that a types-first feature must merge its `@flighthq/types` commits atomically with the implementing package.

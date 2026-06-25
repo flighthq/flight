@@ -1,79 +1,96 @@
 ---
 package: '@flighthq/loader'
-status: solid
-score: 80
-updated: 2026-06-24
+status: partial
+score: 38
+updated: 2026-06-25
 ingested:
   - status.md
-  - reviews/depth/loader.md
-  - reviews/maturation/depth/loader.md
+  - charter.md
   - source
   - changes.patch
+  - 'base=origin/main(eb73c3d74)'
+  - 'evidence=integration-b2824e3d8 delta'
 ---
 
-# Review: @flighthq/loader
+# loader — Merge Review (integration → origin/main)
+
+Merge gate. Baseline is the **approved** `origin/main` (`eb73c3d74`) at `incoming/integration-b2824e3d8/base/packages/loader/` — not reviewed. The judged delta is `head` vs `base`, plus the `packages/loader/` hunks of `incoming/integration-b2824e3d8/changes.patch`. Findings reference `b2824e3d8:<path>`. The delta touches exactly two files: `src/resourceLoader.ts` (80 → 660 lines) and `src/resourceLoader.test.ts`. No `packages/types/` hunk in the patch touches any `ResourceLoad*` type.
 
 ## Verdict
 
-**solid — 80/100.** What was an 18/100 thin parallel-promise-runner is now a genuine batch loader: bounded-concurrency worker-pool drain, cancellation, retries with backoff, fail-fast vs continue, timeout, priority, dedup, weight-aware and group-filtered progress, pause/resume, live retune, streaming mode, reset/reuse, and an opt-in per-item signal group — all over a clean type-agnostic `() => Promise<T>` seam with types defined `@flighthq/types`-first. The implementation (`67dc46d64:packages/loader/src/resourceLoader.ts`) is one 660-line file with 60 honest tests. The status doc's self-estimate is 92/100 (Gold); I land lower because the headline Gold feature — byte-progress / `bytes` reporting — is **dead code that can never produce a non-zero value**, the token-bucket throttle has a documented reentrancy hole, and two type docstrings advertise a `bytesHintDefault` option that does not exist. The orchestration core is real and well-tested; the byte/bandwidth tier on top of it is half-wired.
+`reject — 38/100`. The ambition is right and the test suite is well-shaped, but **this delta does not compile in the integration state it is being merged into**, and the failure is not incidental — it is structural. The expanded loader consumes an entire new `@flighthq/types` surface (`ResourceLoaderOptions`, `ResourceLoadItem`, `ResourceLoadHandle`, `ResourceLoadReport`, `ResourceLoadItemStatus`, `ResourceLoaderItemSignals`) and three new `ResourceLoader` signals (`onCancel`/`onPause`/`onResume`) plus a changed `onComplete`/`onError` payload — and **none of those types or signal fields exist in the head bundle's `@flighthq/types`.** It also imports `disconnectAllSlots` from `@flighthq/signals`, a function that does not exist (the real export is `disconnectAllSignals`). On top of the hard build breakage, the headline "byte progress / bandwidth" feature is dead code: `report.bytes` is provably always `0`. The score is a merge-gate score (distance to mergeable), not a grade on the design intent — the orchestration logic, if its header layer existed and its one import were corrected, would be a much higher number.
 
-## Present capabilities
+This is the inverse of the codebase's **types-first** law: the implementation was written and committed against a header layer that was never written. The package's own (draft) charter and the prior in-bundle review both already flag the dead byte tier; neither caught that the type surface is entirely absent from the delta, because they reasoned as if the types were present.
 
-Grounded in `67dc46d64:packages/loader/src/resourceLoader.ts` and the seven type files under `67dc46d64:packages/types/src/ResourceLoad*.ts` / `ResourceLoader*.ts`:
+## Blocking defects (each must-fix before merge)
 
-- **Type-agnostic orchestrator, types-first.** `ResourceLoadItem`, `ResourceLoaderOptions`, `ResourceLoadHandle`, `ResourceLoadReport`, `ResourceLoadItemStatus`, `ResourceLoaderItemSignals`, and the enriched `ResourceLoader` signal entity all live in `@flighthq/types`. The package imports only `@flighthq/signals` and `@flighthq/types`. The boundary the maturation roadmap wanted preserved — loader knows nothing about images/audio/fonts — holds.
-- **Bounded-concurrency drain.** `drainQueue` loops while `inFlight.size < maxConcurrent`; default 6, `0`/`Infinity` → unbounded. `maxConcurrent: 1` is the serial path (test "loads items sequentially when maxConcurrent is 1"), making the Package Map's "sequence or parallel" claim true.
-- **Cancellation.** `cancelResourceLoad` aborts in-flight `AbortController`s, rejects pending items with a `DOMException('…','AbortError')`, records `'cancelled'` reports, emits `onCancel`, and completes immediately if nothing is running. `runEntry` races `entry.wrappedLoad(signal)` against `abortSignalPromise(signal)` so abort/timeout is honored even when a factory ignores the signal.
-- **Retries with backoff.** Per-item `retries` (falls back to loader `retries`); `computeRetryDelay` supports `none`/`linear`/`exponential` clamped to `retryMaxDelayMs`. Abort/timeout errors are excluded from retry. Tests cover exhausted retries and retry-then-succeed.
-- **Error policy.** `'continue'` (default) vs `'fail-fast'`; fail-fast calls `cancelRemainingEntries`, which records `'skipped'` reports for pending items. Both paths tested.
-- **Timeout / priority / dedup.** Per-item `timeoutMs` aborts via a `TimeoutError`; `priority` sorts the pending pool at dispatch (`sortPendingByPriority`); `dedupe` (on by default, keyed) returns the same handle and loads once. All tested.
-- **Progress.** `getResourceLoadProgress` is weight-aware (`weightLoaded/totalWeight`) and group-filterable; the push `onProgress(loaded,total)` fires per settle. Weighted-progress and group-filter tests pass.
-- **Pause/resume + live retune.** `pauseResourceLoad`/`resumeResourceLoad` with `onPause`/`onResume`; `setResourceLoaderConcurrency` and `setResourceLoadPriority` retune a running batch.
-- **Streaming + reset.** `streaming: true` lets `queueResourceLoad` dispatch after start instead of throwing; `resetResourceLoader` clears all state (and refills the token bucket) for batch reuse.
-- **Opt-in item signals.** `enableResourceLoaderItemSignals` lazily allocates the `onItemStart/Complete/Error/Retry` group (the `enable*` pattern), off by default and tree-shakable.
-- **`disposeResourceLoader`.** Disconnects all six loader signals plus the four item signals when enabled — correct use of the `dispose*` verb (GC-release, nothing to `destroy*`).
-- **Internal pool.** `acquirePendingEntry`/`releasePendingEntry` bracket a module-scoped `PendingEntry[]` LIFO, clearing closure refs on release. Three-batch reuse and stale-ref tests pass.
+### 1. The new `@flighthq/types` surface is missing — hard compile failure
 
-## Gaps
+`b2824e3d8:packages/loader/src/resourceLoader.ts:1-9` imports six types from `@flighthq/types`:
 
-The orchestration surface is near-complete for the domain; the gaps are concentrated in the byte/bandwidth tier and a few correctness edges, not in missing canonical features.
+```ts
+import type {
+  ResourceLoader,
+  ResourceLoaderItemSignals,
+  ResourceLoaderOptions,
+  ResourceLoadHandle,
+  ResourceLoadItem,
+  ResourceLoadItemStatus,
+  ResourceLoadReport,
+} from '@flighthq/types';
+```
 
-- **Byte-progress reporting is dead (correctness).** `report.bytes` reads `entry.bytesLoaded` (lines 510/533/578), but `entry.bytesLoaded` is set to `0` in `queueResourceLoad` and **never written again anywhere**. `entry.onBytesProgress` is stored from the descriptor (line 317) but the loader **never invokes it**, and no "tracking shim" exists. The comment at lines 490-493 explicitly claims `entry.onBytesProgress` "is a tracking shim (set up in queueResourceLoad) that also writes `entry.bytesLoaded`" — this is false; it is the raw descriptor callback. Net effect: `bytes` is `0` for every item, always. The status doc lists `ResourceLoadReport.bytes` / `ResourceLoadItem.onBytesProgress` as delivered Gold; in reality the wiring is absent and the three "bytes progress" tests only assert `bytes` is a number `>= 0` (i.e. they pass on the constant 0).
-- **`bytesHintDefault` documented but unimplemented (docs/impl drift).** Both `ResourceLoaderOptions`' `maxBytesPerSecond` docstring and the status doc tell callers to "set `bytesHintDefault` to enforce throttling for all items," but `bytesHintDefault` is not a field on `ResourceLoaderOptions` and is read nowhere. An item with no `bytesHint` is permanently free through the throttle, with no way to change that — directly contradicting the documented escape hatch.
-- **Token-bucket throttle is advisory, not a budget (concurrency).** Flagged honestly in status: multiple concurrent `drainQueue` invocations (one per settle) each `refillTokens` → check → `consumeTokens` with no serialization, so the byte budget can be overspent under concurrency. Acceptable for a soft throttle, but it is not the hard cap the name implies, and there is no test that the _rate_ is actually bounded (the one throttle test only checks the second item is delayed within 50 ms).
-- **Fail-fast does not abort in-flight peers (semantics).** `cancelRemainingEntries` aborts only `pending` entries; other already-running loads continue to completion and are recorded as `'loaded'`/`'failed'` normally. The status doc and roadmap describe fail-fast as aborting "remaining loads"; a caller may reasonably expect in-flight siblings to be cancelled too. The chosen semantics are defensible but undocumented in the type and untested for the in-flight case.
-- **No aggregated error surface.** The roadmap's Silver item asked for an aggregated `ResourceLoadError[]` / summary on `onComplete`. `onComplete` carries the full `reports[]` (status per key), which is arguably sufficient, but there is no first-class "here are all the failures" accessor; a caller must filter `reports` by `status === 'failed'` themselves.
-- **No example in the gallery.** The `batchloading` example referenced in the status doc is **not present in this bundle's `packages/`/`examples/` delta** (the patch touches only `loader/src`, `loader/dist`, and the seven `types` files). Either it did not land in this import or it lives outside the captured tree; the Gold "docs + examples" obligation is unverifiable here and, on the evidence, absent.
-- **No Rust crate.** `flighthq-loader` (charter `crate:` field) is not in this bundle. The deterministic, GPU-free orchestration is the ideal early conformance target the roadmap names; still entirely TS-only.
+Of these, only `ResourceLoader` exists in the head bundle. `incoming/integration-b2824e3d8/head/packages/types/src/ResourceLoader.ts` is **byte-identical to base** and contains only the original three-signal interface. A grep across `head/packages/types/src/` for any of `ResourceLoaderOptions | ResourceLoadHandle | ResourceLoadItem | ResourceLoadReport | ResourceLoaderItemSignals | ResourceLoadItemStatus` returns nothing, and `changes.patch` adds several `packages/types/` files (`FontMetrics.ts`, `ShapedRun.ts`, `TextShaper.ts`, …) but **no `ResourceLoad*` file**. The test file compounds it: `b2824e3d8:packages/loader/src/resourceLoader.test.ts:2` does `import type { ResourceLoadHandle, ResourceLoadReport } from '@flighthq/types'`. Both source and test fail to typecheck. The status doc claims these types were "Implemented … in `@flighthq/types`" (`status.md` › _Types in `@flighthq/types`_) — the diff disproves the claim.
 
-## Charter contradictions
+### 2. `ResourceLoader` interface lacks the new signals and payloads it is assigned/read
 
-The charter (`packages/loader/charter.md`) is a stub — `What it is` is seeded from the depth review; `North star`, `Boundaries`, `Decisions`, and `Open directions` are all `TODO`. There is therefore no blessed principle to contradict. The one substantive line — "batch queue for loading multiple resources in sequence or parallel" — is now **satisfied** (sequential mode via `maxConcurrent: 1`), which was the one prior charter-vs-code contradiction the depth review raised. Net: **no charter contradictions**, because the charter does not yet say enough to contradict. Every assumption I made to review is logged under candidate open directions below.
+`b2824e3d8:packages/loader/src/resourceLoader.ts:140-160` (`createResourceLoader`) assigns `onCancel`, `onPause`, `onResume` and emits `onComplete`/`onError` with new arguments (`emitSignal(loader.onComplete, internal.reports)`, `emitSignal(loader.onError, error, entry.key)`), but `head/packages/types/src/ResourceLoader.ts` is unchanged:
+
+```ts
+export interface ResourceLoader {
+  onComplete: Signal<() => void>;
+  onError: Signal<(error: unknown) => void>;
+  onProgress: Signal<(loaded: number, total: number) => void>;
+}
+```
+
+`loader.onCancel`/`onPause`/`onResume` do not exist on the type; `emitSignal(loader.onComplete, internal.reports)` passes an argument to a `Signal<() => void>`. The test reads `loader.onCancel` (`…test.ts:30`) and expects a reports payload on `onComplete` (`…test.ts:23, 937-941`). All are type errors against the shipped interface.
+
+### 3. `disconnectAllSlots` is not a `@flighthq/signals` export
+
+`b2824e3d8:packages/loader/src/resourceLoader.ts:1` imports `disconnectAllSlots` and calls it ten times in `disposeResourceLoader` (`…:204-216`). The signals package exports **`disconnectAllSignals`** (`head/packages/signals/src/slot.ts:34`), not `disconnectAllSlots`; there is no `disconnectAllSlots` anywhere in `packages/signals/src/`. This is an independent hard import error — even if defects 1 and 2 were fixed, `disposeResourceLoader` would not resolve.
+
+### 4. The "byte progress" feature is dead — `report.bytes` is always `0`
+
+`b2824e3d8:packages/loader/src/resourceLoader.ts:314` sets `entry.bytesLoaded = 0` at queue time, and the value is **only ever read** into the report (`bytes: entry.bytesLoaded` at `:510`, `:533`, `:578`) — it is never written anywhere else. `entry.onBytesProgress` is stored (`:317`) but **never invoked** at any callsite. The in-source comment at `:490-493` asserts the opposite of the code:
+
+```ts
+// The entry's `onBytesProgress` is a tracking shim (set up in
+// queueResourceLoad) that also writes `entry.bytesLoaded`, enabling the report's `bytes`
+// field.
+```
+
+No such shim is set up; `entry.onBytesProgress` is the raw descriptor callback and nothing calls it, so `entry.bytesLoaded` can never leave `0`. The feature is wired to produce a constant. By the charter's own "honest features only" line, a tier that "can only ever produce a constant" is a defect, not partial credit. The whole `bytes` / `onBytesProgress` / `bytesHint` / `maxBytesPerSecond` cluster either has to be made real (a breaking factory-signature change — a design decision, see Open directions) or cut.
+
+## Non-blocking findings (judged on the delta)
+
+- **Sentinel violation — `getResourceLoadItemStatus` returns `'pending'` for an unknown key.** `b2824e3d8:packages/loader/src/resourceLoader.ts:228-238`: after checking reports/pending/in-flight, the fallthrough is `return 'pending'`, so an unknown key is indistinguishable from a genuinely-queued one. The contract says expected-failure lookups return a sentinel (`null`/`-1`/`false`), not a valid in-band value. Needs an `'unknown'`/`'missing'` status member or a `null` return — a small type-shape decision (Open direction), so non-blocking for the gate but a real contract miss the delta introduces.
+
+- **Composition smell — 660-line monolith with feature branches in the hot drain.** `resourceLoader.ts` bundles, in one file, the worker pool, retry/backoff (`computeRetryDelay`), the token-bucket throttle (`createTokenBucket`/`refillTokens`/`tokenBucketDelayMs`/`consumeTokens`), dedupe, priority sort, pause/resume, streaming, weight progress, byte tracking, and the `PendingEntry` pool. The throttle is gated _inside_ the dispatch loop — `b2824e3d8:…:340-360` adds an `if (internal.throttle !== null && entry.bytesHint > 0) { … await delay …}` branch that every `drainQueue` pass now pays. The token bucket is an extractable bedrock primitive (a generic rate limiter is not loader-specific); pulling it out would shrink the drain loop and let the throttle tree-shake when unused. The charter does want canonical batch-loader _breadth_, so this is a within-unit decomposition note, not a "wrong package" call — but the single-file all-branches shape is the within-unit form of the smell the codebase map warns about. Surface to the charter; not a gate blocker.
+
+- **Module-scoped `PendingEntry` pool shared across all loader instances.** `b2824e3d8:…:26-66` declares `const pendingEntryPool: PendingEntry[] = []` at module scope (lazily populated, not an eager top-level side effect, so `sideEffects: false` still holds). `releasePendingEntry` does clear `resolve`/`reject`/`wrappedLoad`/`onBytesProgress` and swaps a fresh `AbortController`, so cross-instance reuse is _probably_ safe — but a global mutable pool shared by every loader in a process is a latent aliasing hazard the status itself flags. Acceptable for now; worth a charter note on whether the pool should be per-loader. Non-blocking.
+
+## What the delta gets right (would survive once it compiles)
+
+- **Naming is clean and contract-correct.** Full unabbreviated type words throughout (`cancelResourceLoad`, `getResourceLoadProgress`, `setResourceLoaderConcurrency`, `enableResourceLoaderItemSignals`); `get*` for accessors; `dispose*` is the correct verb — `disposeResourceLoader` detaches signal listeners to release the loader to GC and frees no non-GC resource, exactly the `dispose` vs `destroy` distinction. No abbreviations. Pass.
+- **`enable*`-group signal opt-in is followed.** Per-item signals are off by default and activated lazily via `enableResourceLoaderItemSignals` (`…:175-186`), matching the signals cost-opt-in rule.
+- **Packaging is untouched and compliant.** `package.json` keeps the single `.` export, `sideEffects: false`, and deps limited to `@flighthq/signals` + `@flighthq/types`. The barrel (`index.ts`) is a thin re-export. No registration at module top level.
+- **Tests are well-structured and would be strong coverage.** `describe` blocks are alphabetized and mirror the exports 1:1; behavior is asserted against non-trivial outcomes (parallel vs sequential ordering, dedupe call-count, retry attempt-count, fail-fast `skipped` status, weight-aware progress fractions, pool reuse across batches). This is the right test shape — it simply cannot run until defects 1-3 are fixed, and the `bytes` tests (`…test.ts:127-202`) only ever assert `bytes >= 0` / `=== 0`, which is exactly the dead-tier tell.
 
 ## Contract & docs fit
 
-**Lives up to the contract:**
+The status doc (`status.md`) is **as-claimed and contradicted by the diff** on its central claim: it lists six `@flighthq/types` files as implemented (`ResourceLoadHandle.ts`, `ResourceLoadItem.ts`, …) and an `examples/batchloading/` example, none of which appear in `changes.patch`. The draft charter already (correctly) flags the byte tier as non-functional and the example as "absent from this bundle's delta," so the charter is ahead of the status doc here. The Rust mirror line (`crate: flighthq-loader`) is named in the charter front matter and is consistent.
 
-- **Types-first, single root export, side-effect-free.** All shared types in `@flighthq/types`; `index.ts` is a one-line barrel; `"sideEffects": false`; no module-top-level registration or listeners (the pool array is internal mutable state, not public API surface).
-- **Full unabbreviated names, free functions.** `createResourceLoader`, `queueResourceLoad`, `cancelResourceLoad`, `getResourceLoadProgress`, etc. — each carries the full `ResourceLoad(er)` type word and is globally self-identifying. No methods.
-- **Verbs.** `dispose*` used correctly (GC-release); `acquire*`/`release*` used as paired brackets for the internal pool; `enable*` for the opt-in signal group; `reset*`/`set*`/`get*` all idiomatic.
-- **Signals vs callbacks.** Multi-listener public notification goes through `@flighthq/signals` (`onComplete`, `onError`, per-item group); the internal per-attempt wiring uses direct calls. Matches the house rule.
-- **Tests colocated, alphabetized, mirror exports.** `resourceLoader.test.ts` `describe` blocks are alphabetized and named per exported function/topic; one test file per source file.
+## Why the score
 
-**Sentinel rule — partial.** `getResourceLoadItemStatus(loader, key)` returns `'pending'` for an **unknown** key (line 241), conflating "queued, not started" with "no such item." The contract wants a sentinel for an expected-failure lookup; there is no `'unknown'` member of `ResourceLoadItemStatus` and no `null` return, so a typo'd key silently reads as `'pending'` forever. Candidate revision: add an `'unknown'`/`'missing'` status or return `null` for an unrecognized key.
-
-**Candidate doc revisions (not acted on):**
-
-- The `bytesHintDefault` references in `ResourceLoaderOptions.ts` and the status doc describe a non-existent option — either implement it or strike the docstrings.
-- The lines 490-493 comment in `resourceLoader.ts` describes a tracking shim that does not exist; it should be corrected or removed alongside fixing/removing the bytes feature.
-- The Package Map line for `@flighthq/loader` ("batch queue for loading multiple resources in sequence or parallel") is now an **understatement** of a fairly complete loader; fine as a one-liner, but the package has clearly outgrown "queue."
-
-## Candidate open directions
-
-The charter is a stub, so these are the questions I had to assume past — each is a candidate Open direction for the charter:
-
-- **`AbortSignal` / `DOMException` in the type seam (raised by the worker).** `ResourceLoadItem.load` takes a web/DOM `AbortSignal`, and cancellation/timeout use `DOMException`. Should `@flighthq/types` define a Flight-neutral `CancellationToken` (web → `AbortSignal`, Rust → cancel token) per the Rust-port async/`Send` guidance, or is the DOM type the accepted seam? This is a `types`-level decision that blocks the Rust mirror — surfaced, not assumed.
-- **First-class byte tracking vs. removal.** The bytes/`onBytesProgress`/`bytesHint`/`maxBytesPerSecond` tier is currently non-functional. The fork is: (a) finish it — extend `load` to `(signal, ctx)` so the loader injects a `reportBytes` that writes `entry.bytesLoaded` (a source-breaking factory-signature change), or (b) cut the dead surface until it can be done right. Either way the throttle's "advisory, not a budget" semantics need a blessed stance.
-- **Fail-fast scope.** Does `'fail-fast'` mean "stop dispatching new work" (current behavior) or "abort in-flight peers too"? Needs a decision and a test pinning it.
-- **Boundary with `@flighthq/resources` (per the roadmap).** Confirm the loader stays type-agnostic and that typed conveniences (`createImageResourceLoadItem(url)`, etc.) live in `resources`, consuming the loader. The status doc already parks these there; the charter should bless that boundary as a non-goal.
-- **Structural forks.** Fork A (source-data vs graph participation) and the triad do not bite here — a loader holds no graph node and parses nothing, so per the roadmap **no `loader-formats` neighbor should exist**. Fork F (thin-by-design vs under-built): loader has moved firmly out of the "under-built stub" column and into "solid"; the charter should record that it is no longer a stub to push on.
+A reject at the gate. Three independent hard compile failures (missing type surface, missing interface signals, missing signals export) each individually block the merge; together they show the change was authored against a header layer that was never committed. One shipped-as-real-but-dead feature (`report.bytes`). The 38 (vs the in-bundle review's 80 and the status doc's self-estimated 92) is the gap between "good orchestration design" and "mergeable into the approved baseline today": the design is most of the way there, the build is not there at all.

@@ -1,86 +1,87 @@
 ---
 package: '@flighthq/shell'
-status: solid
-score: 90
-updated: 2026-06-24
+status: partial
+score: 45
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/shell.md
-  - reviews/maturation/depth/shell.md
-  - source
-  - incoming/builder-67dc46d64
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - packages/shell/src/shell.ts
+  - packages/shell/src/shell.test.ts
+  - packages/types/src/Shell.ts (head + base)
+  - changes.patch (packages/shell hunks)
 ---
 
-# Review: @flighthq/shell
+# Review: @flighthq/shell (merge gate, delta only)
+
+Frame: the approved floor is `origin/main (eb73c3d74)` = `incoming/integration-b2824e3d8/base/packages/shell/`. This review judges **only** the delta to the integration head (`b2824e3d8`) as a merge gate. Findings cite `b2824e3d8:<path>`. The base is not under review.
 
 ## Verdict
 
-solid — 90/100. A faithful, near-complete command-capability cell for the OS-shell domain. The `builder-67dc46d64` pass took it from the prior 78/100 by closing almost every fidelity gap the depth review flagged: options objects, the Windows `.lnk` family, batch trash, the `openPathResult` error-string variant, and a URL-scheme safety seam. It falls short of `authoritative` only on items that are correctly deferred (the Rust crate, a second non-Electron host, `*Result` siblings for batch ops) plus two open design calls the charter has not yet settled (export-naming convention and `getFileIcon` scope).
+**revise — 45/100. The delta does not compile in this head and must not merge as-is.** The shell _source_ and _docs_ for the expanded surface were carried into integration head, but the `@flighthq/types` _contract_ they depend on was **not**. The change is internally inconsistent: `shell.ts` imports four types and calls four backend methods that do not exist in `b2824e3d8:packages/types/src/Shell.ts`. The design intent of the delta is good (options objects, the Windows `.lnk` family, batch trash, an `openPathResult` error channel, a URL-scheme safety seam — all sentinel-clean and tree-shake-clean), but a partial integration that fails `tsc` is a hard merge blocker regardless of intent.
 
-## Status-doc verification (as-claimed → verified)
+This is **not** a critique of the approved base. The base shell package compiles cleanly against the base 5-method `ShellBackend`. The defect is introduced by the delta: it advances `shell.ts`/`shell.test.ts` past a types contract the same head still pins at base.
 
-Every claim in `status.md` checks out against the bundle diff (`67dc46d64:packages/shell/`, `/types/src/Shell.ts`, `/host-electron/src/electronShell.ts`) and the realized `dist/*.d.ts`:
+## Blocker: the delta references a types contract absent from this head
 
-- Base surface was 8 exports + 5 `ShellBackend` methods; head is **14 exports + 9 backend methods**. New exports `isShellUrlAllowed`, `moveItemsToTrash`, `openShellPathResult`, `readShellShortcutLink`, `setShellUrlSchemeAllowlist`, `writeShellShortcutLink`; `openExternalUrl` / `openShellPath` gained options params. Confirmed in `dist/shell.d.ts`.
-- New `@flighthq/types` shapes (`ShellOpenExternalOptions`, `ShellOpenPathOptions`, `ShellShortcutLink`, `ShellShortcutWriteOperation`) are present in `Shell.ts` and the `ShellBackend` interface gained `moveItemsToTrash`, `openPathResult`, `readShortcutLink`, `writeShortcutLink` + options params. Header-first rule honored — nothing typed inline in the package.
-- Test counts match exactly: **32** `it` blocks in `shell.test.ts`, **17** `it` blocks in `electronShell.test.ts`.
-- `createWebShellBackend` implements all 9 methods with the claimed sentinels (`[]` for batch trash, `false` / `null` / `'unavailable on web'`), verified in source.
-- `host-electron` wiring matches: parallel `trashItem` for batch, `activate` forwarded, `openPath` error string surfaced via `openPathResult`, shortcut read/write mapped with throw-to-sentinel guards for non-Windows. The `void options` no-op for `application`/`workingDirectory`/`arguments` on Electron's `openPath` is present and commented as claimed.
+`b2824e3d8:packages/shell/src/shell.ts:1-7` imports four types:
 
-No claim was overstated. The estimated 93/100 is close; I land at 90 because the deferred Rust port and the unsettled naming decision are real distance from `authoritative`, not bookkeeping.
+```ts
+import type {
+  ShellBackend,
+  ShellOpenExternalOptions,
+  ShellOpenPathOptions,
+  ShellShortcutLink,
+  ShellShortcutWriteOperation,
+} from '@flighthq/types';
+```
 
-## Present capabilities
+But `b2824e3d8:packages/types/src/Shell.ts` is **byte-identical to base** — it still declares only:
 
-Fourteen free functions over a `ShellBackend` seam plus the seam lifecycle, all grounded in `shell.ts`:
+```ts
+export interface ShellBackend {
+  openExternal(url: string): Promise<boolean>;
+  openPath(path: string): Promise<boolean>;
+  showItemInFolder(path: string): Promise<boolean>;
+  moveToTrash(path: string): Promise<boolean>;
+  beep(): void;
+}
+```
 
-- **Open / reveal / trash**: `openExternalUrl(url, options?)`, `openShellPath(path, options?)`, `openShellPathResult(path, options?)` (`''`=ok / OS error string), `showItemInFolder(path)`, `moveItemToTrash(path)`, `moveItemsToTrash(paths)` (per-path boolean array), `shellBeep()`.
-- **Windows shortcut links**: `writeShellShortcutLink(shortcutPath, link, operation?)` and `readShellShortcutLink(shortcutPath)` (`null` sentinel off-Windows/web/missing).
-- **URL safety seam**: `setShellUrlSchemeAllowlist(schemes | null)` + `isShellUrlAllowed(url)`. `openExternalUrl` consults the allowlist and returns `false` for a blocked scheme _before_ reaching the backend, and `isShellUrlAllowed` returns `false` for an unparseable URL — closing the classic `openExternal` footgun. Default `null` = allow-all, so no behavior change for existing callers.
-- **Backend lifecycle**: `getShellBackend()` (lazy web default — always returns a backend), `setShellBackend(backend | null)`, `createWebShellBackend()`. Exactly the command-capability shape (`get*Backend` / `set*Backend` / `createWeb*Backend`) the platform-suite docs mandate.
+A grep across the entire `b2824e3d8` head `packages/types/` tree for `ShellOpenExternalOptions`, `ShellOpenPathOptions`, `ShellShortcutLink`, `ShellShortcutWriteOperation`, `moveItemsToTrash`, `openPathResult`, `readShortcutLink`, `writeShortcutLink` returns **zero** matches. Consequences, all grounded in the delta:
 
-The web backend is real and honestly guarded: `openExternal` uses `window.open(url, '_blank', 'noopener')` and distinguishes blocked-vs-opened, everything else sentinels. `host-electron`'s `createElectronShellBackend` maps the full surface 1:1 to Electron's `shell` module, wrapping throw-to-sentinel for the Windows-only ops and Electron's `openPath` string convention. Tests cover options forwarding (distinct + omitted), allowlist allowed/blocked/null/unparseable, batch results, web sentinels, and the `openPathResult` `''`-vs-error split.
+- **Four missing type imports.** `ShellOpenExternalOptions`, `ShellOpenPathOptions`, `ShellShortcutLink`, `ShellShortcutWriteOperation` are imported but undefined in `@flighthq/types` → `tsc` error TS2305 ("has no exported member").
+- **Four missing backend methods.** `b2824e3d8:packages/shell/src/shell.ts` calls `getShellBackend().moveItemsToTrash(paths)` (L78-80), `.openPathResult(...)` (L102-104), `.readShortcutLink(...)` (L108-110), and `.writeShortcutLink(...)` (L139-145). None exist on the base `ShellBackend` → `tsc` error TS2339 ("Property … does not exist on type 'ShellBackend'").
+- **The test file breaks identically.** `b2824e3d8:packages/shell/src/shell.test.ts:1` imports `ShellOpenExternalOptions, ShellOpenPathOptions` from `@flighthq/types`, and the fixture implements `moveItemsToTrash`, `openPathResult`, `readShortcutLink`, `writeShortcutLink` against a `ShellBackend` type that has none of them. The test does not type-check either.
 
-## Gaps
+The barrel (`b2824e3d8:packages/shell/src/index.ts` — `export * from './shell'`) re-exports all of `shell.ts`, so the package's `dist/index.d.ts` cannot be produced. `npm run packages:check` / `tsc -b` would fail at the shell workspace. **This is a broken-build merge, not a quality nit.**
 
-The domain is genuinely small and most canonical surface is now covered. Remaining gaps, none large:
+## Honesty failure: the delta's own docs assert the missing contract is present
 
-- **No Rust crate `flighthq-shell`.** The charter declares `crate: flighthq-shell`; the `crates/` tree does not exist in this (builder) worktree, so the port is unstarted. This is the single largest distance from `authoritative` and is a strong first-port candidate (value/side-effect leaf, mature native crates `opener`/`trash`/`mslnk`). Correctly deferred to follow the TS API freeze.
-- **No second, non-Electron host.** Only `host-electron` fills the seam. The seam's freedom from Electron-shape is asserted in prose but not proven by a Tauri/`host-opener` adapter or fake. The `openPath` options (`application`/`workingDirectory`/`arguments`) are accepted but no host honors them yet — they are seam-forward-compat placeholders, untested against a backend that consumes them.
-- **No `*Result` error fidelity for batch trash / shortcut write.** `moveItemsToTrash` and `writeShellShortcutLink` return bare booleans; only `openShellPathResult` surfaces the OS error. The roadmap's full-error-fidelity model (`moveItemsToTrashResult`, `writeShellShortcutLinkResult`) is unimplemented — additive, low-risk, deferred.
-- **`getFileIcon` absent.** Electron's `shell`/`nativeImage`-adjacent icon query is not present. The roadmap recommends deferring to a future `@flighthq/nativeimage` cell rather than pulling an `ImageSource` dependency into a thin seam — an unsettled scope call, not an oversight.
-- **No path-prefix allowlist for `openShellPath`.** The URL-scheme safety seam has no path-side twin for hosts embedding untrusted content; requires an OS-path-canonicalization design.
+`b2824e3d8:tools/agents/docs/packages/shell/review.md` (a new file in this delta) states under "Status-doc verification":
+
+> "New `@flighthq/types` shapes (`ShellOpenExternalOptions`, `ShellOpenPathOptions`, `ShellShortcutLink`, `ShellShortcutWriteOperation`) **are present in `Shell.ts`** and the `ShellBackend` interface gained `moveItemsToTrash`, `openPathResult`, `readShortcutLink`, `writeShortcutLink` … Header-first rule honored."
+
+`b2824e3d8:tools/agents/docs/packages/shell/status.md` repeats it ("New types in `@flighthq/types` (`packages/types/src/Shell.ts`)"). Both were verified against the **builder** SHA `67dc46d64` (the review explicitly cites `67dc46d64:packages/shell/`, `/types/src/Shell.ts`), **not** the integration head `b2824e3d8` they were committed into. The claim is true of the builder worktree and **false of this head** — the types change was left behind during integration while the source, tests, and docs were carried forward. A merge-gate doc that asserts a contract is present when the same head's types file proves it is not is exactly the "claims match code" failure the standard tests for.
+
+## What is sound (so the fix is small, not a redesign)
+
+The _design_ of the delta is good and would pass cleanly once the types land in the same head:
+
+- **Sentinels, not throws.** `createWebShellBackend` returns `false` / `null` / `[]` / `'unavailable on web'` per method (`b2824e3d8:packages/shell/src/shell.ts:12-56`); `isShellUrlAllowed` returns `false` for an unparseable URL via try/catch (L66-74) rather than throwing. Matches the contract's expected-failure rule.
+- **URL-scheme safety seam is correct.** `openExternalUrl` consults `isShellUrlAllowed` and returns `Promise.resolve(false)` _before_ reaching the backend for a blocked scheme (L89-92); default `_urlSchemeAllowlist = null` = allow-all, so no base-caller behavior changes. Genuine footgun closure.
+- **Tree-shaking clean.** `b2824e3d8:packages/shell/package.json` keeps the single root `.` export, `"sideEffects": false`, and sole dependency `@flighthq/types`. No top-level side effect: the web default is lazily built in `getShellBackend` (L59-62). Module state (`_backend`, `_urlSchemeAllowlist`) sits at file bottom (L147-148). Exports are alphabetized.
+- **Command-capability shape honored** — `getShellBackend` / `setShellBackend` / `createWebShellBackend`, exactly the platform-suite seam.
+- **Tests, once they compile, are well-shaped** — colocated, alphabetized `describe` blocks mirroring exports, covering allowlist allowed/blocked/null/unparseable, options forwarding (distinct + omitted), batch results, and the `''`-vs-error split.
+
+## Carry-over context (corroborates the partial-integration diagnosis; not a shell-scoped objection)
+
+`b2824e3d8:packages/host-electron/src/electronShell.ts` is the **base 5-method** adapter (`openExternal`/`openPath`/`showItemInFolder`/`moveToTrash`/`beep` only) — it implements none of `moveItemsToTrash`/`openPathResult`/`readShortcutLink`/`writeShortcutLink`. So even if the expanded `ShellBackend` interface _had_ landed in head, `host-electron` would also fail to satisfy it. host-electron is outside this package's review scope, but its base state confirms the integration carried the shell+docs change without its types and host wiring — the change set is incomplete, not merely mis-ordered.
 
 ## Charter contradictions
 
-None. The charter's "What it is" (open URLs/paths, reveal, trash, beep; Electron `shell` as the canonical reference) is fully honored and exceeded. North star / Boundaries / Decisions are still `TODO` stubs, so there is no stated principle for the code to violate — the package is judged against the codebase-map AAA standard, which it meets for its declared scope.
+None against the _design_. The charter's "What it is" (open URLs/paths, reveal, trash, beep, Windows shortcut links, URL-scheme allowlist over a host-shaped `ShellBackend`) matches the delta's intent. The contradiction is mechanical, not directional: the charter and the delta's docs describe a surface the head's types layer does not yet provide.
 
-## Contract & docs fit
+## Pre-release latitude applied
 
-**Lives up to the contract — yes, cleanly:**
-
-- Types are `@flighthq/types`-first (`Shell.ts`); nothing cross-package is typed inline.
-- Names are full and self-identifying; `Promise<boolean>` for IO, `void` for beep, `*Result` variant for error-bearing.
-- Sentinels-not-throws throughout (`false` / `null` / `[]` / `'unavailable on web'`); no error-wrapper types. `host-electron` converts every Electron throw into a sentinel at the boundary.
-- Single root `.` export (`index.ts` is a bare `export * from './shell'`); `"sideEffects": false`; default backend lazily created, not registered at module load; sole dependency `@flighthq/types`.
-- Module state (`_backend`, `_urlSchemeAllowlist`) and exports are correctly ordered — loose vars at file bottom, exports alphabetized.
-- `ShellShortcutWriteOperation` is a closed string union (`'create' | 'replace' | 'update'`), which is correct under fork B's closed-union exception: a fixed, Electron-mirrored set with no extensibility goal, not a registry candidate. No mis-homed type, no closed switch that should be a registry, no hot-loop concern (this package has no per-frame path).
-
-**Minor / candidate notes (not violations):**
-
-- Interface fields in `ShellOpenPathOptions` / `ShellShortcutLink` are not alphabetized (`arguments` before `application`; `target` last). The source-order convention binds exported functions and `describe` blocks, not interface members, so this is a style nit, not a contract break — but a `types-layout` field-order pass would tidy it.
-- **Naming asymmetry** (carried from the depth review and flagged in `status.md` as a design item): the surface mixes Electron-canonical un-prefixed names (`openExternalUrl`, `showItemInFolder`, `moveItemToTrash`) with domain-prefixed ones (`openShellPath`, `openShellPathResult`, `shellBeep`, `getShellBackend`). Defensible (recognizability for the Electron migration pool) but should be a _recorded_ decision pre-release, not left implicit.
-
-**Docs-fit (candidate revisions to admin docs):**
-
-- The Package Map line for `@flighthq/shell` ("open external URLs/paths, reveal in folder, move to trash, beep") is now **stale** — it predates the shortcut-link family, batch trash, the `openPathResult` error channel, and the URL-scheme allowlist. Candidate revision: extend the line to mention Windows shortcut links and the URL-safety seam. (User's gate, not the reviewer's.)
-- `host-electron`'s Package Map entry lists the shell seam generically; no change needed, but the expanded surface (shortcut links, batch trash) is now part of what that adapter must keep mapped.
-
-## Candidate open directions
-
-These are questions the charter's `TODO` North star / Boundaries / Decisions do not answer; the review had to assume the AAA default. Each should feed the charter:
-
-1. **Export-naming convention** — namespace every export with the `shell` word, or keep the Electron-canonical un-prefixed names for the high-frequency four? This is a public-API fork that should be settled (and recorded as a Decision) _before_ the Rust port mirrors a frozen surface.
-2. **`getFileIcon` scope** — in-scope here (pulling an `ImageSource`/native-image dependency into the seam) or deferred to a dedicated `@flighthq/nativeimage` cell? Crosses a package boundary; the roadmap leans defer.
-3. **Error-fidelity boundary** — is bare-boolean acceptable for batch trash and shortcut write, or is the `*Result` (OS-error-string) sibling part of the package's definition of done? Settles whether the deferred `moveItemsToTrashResult` / `writeShellShortcutLinkResult` are roadmap or non-goals.
-4. **Path-safety posture** — does the security boundary stop at URL schemes, or does `openShellPath` need a path-prefix allowlist for untrusted-content hosts? Defines the package's threat model.
-5. **Second-host validation as a boundary** — is a non-Electron host adapter (proving the seam is not Electron-shaped, and exercising the currently-inert `openPath` options) part of `authoritative`, or out of this package's scope and owned by the host-package track?
+No back-compat duty is invoked anywhere here. The base-vs-domain naming asymmetry (`openExternalUrl`/`showItemInFolder`/`moveItemToTrash` un-prefixed vs `openShellPath`/`shellBeep`/`getShellBackend` prefixed) is a real open question, but it is a **base** property (those four names pre-date this delta) — surfaced to the user, not charged against the delta. The closed `ShellShortcutWriteOperation` union is a fork-B closed-union exception (a fixed Electron-mirrored set) and in any case lives in the unlanded types file, so it is not a delta objection.

@@ -1,85 +1,71 @@
 ---
 package: '@flighthq/sdk'
-status: authoritative
-score: 96
-updated: 2026-06-24
+status: solid
+score: 90
+updated: 2026-06-25
 ingested:
   - status.md
   - source
   - changes.patch
   - charter.md
+base: origin/main (eb73c3d74)
+evidence: integration-b2824e3d8 delta
 ---
 
-# sdk — Review
+# sdk — Review (merge gate: integration-b2824e3d8 vs approved origin/main eb73c3d74)
 
-> Survey of `@flighthq/sdk` from the incoming bundle `builder-67dc46d64`. Evidence is the head tree at `incoming/builder-67dc46d64/head/packages/sdk/` plus `scripts/sdk-policy.ts`, `scripts/packages.ts`, and `changes.patch`. The prior depth review (`reviews/depth/sdk.md`) does **not** exist on disk — its domain line survives only as the charter's seeded "What it is", so there is no point-in-time review to supersede here; this is the first survey.
+> Harsh merge-review of the **delta only**. Baseline (approved, not critiqued) is `incoming/integration-b2824e3d8/base/packages/sdk/` = `origin/main` (eb73c3d74). Candidate is `incoming/integration-b2824e3d8/head/packages/sdk/`. Findings are grounded in `b2824e3d8:<path>` hunks and the `packages/sdk/` slice of `changes.patch`. This supersedes the prior survey, which reviewed a different bundle (`builder-67dc46d64`); where that survey's findings reappear in this delta they are re-cited against this candidate.
+
+## What the delta is
+
+The base `@flighthq/sdk` was a thin barrel (`index.ts`, 84 lines, alphabetized) plus a one-line smoke test. The integration delta does four things, all within the barrel's scope:
+
+1. **Closes real barrel drift** — adds `device-formats`, `platform-formats`, `resource-formats` to `index.ts`, `package.json` deps, and `tsconfig.json` references. The base barrel was missing these three app-facing packages; the candidate is complete.
+2. **Expands the reachability test** — `index.test.ts` goes from a single `expect(engine).toBeDefined()` to 22 `it`s across 11 domain `describe` blocks, asserting representative `create*` exports are functions and canonical `*Kind` strings carry expected values.
+3. **Adds a collision gate** — new `src/collision.test.ts` (126 lines): a namespace-size lower bound (`>= 4000` keys) plus 46 unique sentinel-name presence checks.
+4. Backs the completeness enforcement with a repo-level gate (`checkSdkBarrelSync` in `scripts/packages.ts`) over a centralized predicate (`scripts/sdk-policy.ts`).
+
+Net: the candidate is a **strict correctness improvement** over the approved base — the barrel is now complete and faithful where the base silently omitted three packages.
 
 ## Verdict
 
-authoritative — 96/100. For a convenience barrel the "authoritative library" bar reframes to _is the aggregation complete, collision-free, and faithful to the inclusion/exclusion policy?_ — and it is. Every one of the 86 app-facing `@flighthq/*` packages is re-exported and depended on, the inclusion policy is centralized in one function and enforced by `packages:check`, and three colocated tests guard completeness, collision, and reachability. The deductions are small and cosmetic: an un-alphabetized `package.json` dependency block, two duplicated sentinel entries, and a couple of stale count comments.
+**solid — 90/100.** The functional change is sound and is the right shape for a convenience barrel: new entries are correctly alphabetized in `index.ts`, the deps/tsconfig mirror them, and every sentinel resolves to a real non-test export (spot-verified: `setTextShaperBackend`, `createCamera`, `createParticleEmitter`, `createSceneNode`, `drawGlScene`, `drawWgpuScene`, `createMesh`, `createColorTransform` all exist in source). The barrel stays `"sideEffects": false`, single `.` export, no subpaths. The one real blemish is an **honesty gap**: the package's own status/review and a source comment in the new `scripts/sdk-policy.ts` claim a `packages/sdk/src/completeness.test.ts` guard that **does not exist** in this head tree. Score sits below the prior survey's 96 specifically for that dead reference / over-claim, not for any regression in the barrel itself.
 
-## Present capabilities
+## Standards scorecard (delta only)
 
-Grounded in `67dc46d64:packages/sdk/src/` and the two repo scripts the work touched:
+1. **Composition / bedrock — PASS.** The barrel adds no logic; it re-exports three more leaf packages. No feature is fused in, no config-gated branch is introduced. The three `-formats` packages are their own cells; the barrel is a simple composition of them.
+   - `b2824e3d8:packages/sdk/src/index.ts` lines 7, 50, 56: `export * from '@flighthq/device-formats';` … `'@flighthq/platform-formats';` … `'@flighthq/resource-formats';`
 
-- **Complete, faithful barrel** (`src/index.ts`). 86 `export * from '@flighthq/<pkg>'` lines, verified by independent enumeration to cover exactly the app-facing set (all `@flighthq/*` workspace packages minus `sdk` itself, `host-*`, and `*-rs`). No app-facing package is missing; no excluded or non-existent package leaks in. `index.ts` is correctly alphabetized.
-- **Centralized inclusion policy** (`scripts/sdk-policy.ts`). One exported predicate `isSdkBarrelExcludedPackage(name)` is the single canonical definition of what stays out of the barrel (`@flighthq/sdk`, `@flighthq/host-*`, `@flighthq/*-rs`). `scripts/packages.ts` imports it; the completeness test keeps an acknowledged local copy (`isExcludedPackage`) with a sync comment because a package cannot import from repo-root `scripts/`.
-- **Repo-level barrel-sync gate** (`scripts/packages.ts › checkSdkBarrelSync`, lines ~346-422). Runs inside `npm run packages:check`: collects app-facing names, parses the `export *` lines and the `@flighthq/*` deps, and reports three error classes (missing-from-export, missing-from-deps, points-at-excluded/nonexistent) with actionable messages; `--json` surfaces a `barrelSync` section. Per the status doc, on first run this caught real drift (`device-formats`, `platform-formats`, `resource-formats` missing from the barrel) — evidence the gate earns its place.
-- **Completeness test** (`src/completeness.test.ts`, 9 `it`s). Reads the monorepo at test time and asserts: every app-facing package appears as both an `export *` and a `"*"` dependency; `host-*` / `*-rs` / `host-electron` are absent from both; and the export↔dep manifest is bidirectionally in sync with all `@flighthq/*` deps pinned to the workspace wildcard `"*"`.
-- **Collision regression gate** (`src/collision.test.ts`, 2 `describe`s). Runtime complement to `tsc -b` (which already makes an ambiguous `export *` a compile error): asserts the flattened namespace holds `>= 4000` keys (baseline 4196) to catch silent net loss from shadowing/removal, and asserts 46 unique sentinel names spanning ~25 domains resolve through the barrel.
-- **Reachability spot-check** (`src/index.test.ts`, 22 `it`s). Eleven domain `describe` blocks assert representative `create*` exports are functions and that canonical `*Kind` strings carry their expected values (`BitmapKind='Bitmap'`, `DisplayObjectKind='DisplayObject'`, `SpriteKind='Sprite'`, `TextLabelKind='TextLabel'`, `ParticleEmitterKind='ParticleEmitter'`) — so a sub-package kind regression surfaces at the barrel.
-- **Correct package envelope** (`package.json`). `"sideEffects": false`, single `.` export (`types`+`default`), `version: 1.0.0`, every `@flighthq/*` dep pinned `"*"`. No subpath exports — a thin re-export, exactly as the codebase map prescribes.
+2. **Naming clarity — PASS.** No names are coined by this delta; it re-exports. The new sentinel list in `collision.test.ts` names real, fully-spelled exports (`createApplicationWindow`, `setTextShaperBackend`, `createParticleEmitterConfig`, etc.). No abbreviations introduced.
+
+3. **Tree-shaking / bundle invariant — PASS.** All three additions are `export *` from `"sideEffects": false` packages; no eager registration, no top-level side effect, no new hot-loop branch or shared switch. The barrel manifest envelope is unchanged (`b2824e3d8:packages/sdk/package.json` line 121 `"sideEffects": false`; lines 7-12 single `.` export). Adding members to the barrel taxes no primitive — barrel users already opt into the whole shakeable set.
+
+4. **Registry vs closed union — N/A (PASS).** No `kind`/handler family is introduced or switched on here. The delta is pure re-export.
+
+5. **Subject triad + plurality guard — PASS for sdk; concern routed upward.** The barrel is correct to include `device-formats` / `platform-formats` / `resource-formats` as the `<subject>-formats` plurality pattern, since they are app-facing and exist. Whether those `-formats` packages themselves satisfy the ≥2-format plurality guard is **out of sdk's scope** — the barrel's job is to reflect the realized app-facing set, not to adjudicate splits. Surfaced to the charter's Open directions (it already carries this as #7).
+
+6. **Contract hygiene — PASS.** Single root `.` export, `"sideEffects": false`, workspace-wildcard deps, full unabbreviated re-exported names (inherited), correct omission of `host-*` / `*-rs` / `sdk` itself. No `out`-param / sentinel / `dispose`-vs-`destroy` surface in a barrel. `index.test.ts` and `collision.test.ts` `describe` blocks are alphabetized.
+
+7. **Tests & honesty — REVISE.** One structural-honesty issue and two cosmetic:
+   - **Claimed-but-absent completeness guard.** The new file `b2824e3d8:scripts/sdk-policy.ts` comments: `//   - packages/sdk/src/completeness.test.ts (local completeness guard)`, and both `tools/agents/docs/packages/sdk/status.md` (its "Bronze: Local completeness guard (`src/completeness.test.ts`)" section, 9 `it`s) and the prior `review.md` describe this test in full as implemented. **No such file exists** in `head/packages/sdk/src/` (the directory holds only `collision.test.ts`, `index.test.ts`, `index.ts`), and `changes.patch` contains no `diff --git ... packages/sdk/src/completeness.test.ts` creating it. The _functional_ completeness enforcement survives via `checkSdkBarrelSync` in `packages.ts` (runs in `packages:check`), so the barrel is not unguarded — but the package-local test the docs and a source comment promise is missing. This is a dead reference plus an over-claiming status doc.
+   - **Duplicate sentinels.** `b2824e3d8:packages/sdk/src/collision.test.ts` lists `DisplayObjectKind` and `BitmapKind` twice — once under `// display object` and again under the `// types (re-exported kind identifiers)` tail — registering two identical `it()`s each. Harmless but the "46/47 sentinel" intent is muddied (48 with dupes).
+   - **Stale package-count comment.** Same file: `// Baseline as of 2026-06-24: 4196 runtime keys across all 83 packages.` — the barrel has 86 `export *` lines (and the status doc says "across 86 packages"). The "83" is internally inconsistent and stale.
 
 ## Status-doc verification (AS-CLAIMED → verified)
 
-Every load-bearing claim in `status.md` was checked against the diff and head source:
-
-- **Barrel completeness / no drift** — VERIFIED. Independent `comm` of app-facing vs. barrel-export vs. barrel-dep sets is empty in both directions (the lone "dep not export" hit is the package's own `"name"` field, not a real dep entry).
-- **Three new packages added to fix drift** (`device-formats`, `platform-formats`, `resource-formats`) — VERIFIED present in both `index.ts` and the deps.
-- **`sdk-policy.ts` single export; `packages.ts` barrel-sync integration; three tests present** — VERIFIED at the cited symbols.
+- **Three new packages added to fix drift** (`device-formats`, `platform-formats`, `resource-formats`) — VERIFIED present in `index.ts`, `package.json`, and `tsconfig.json`, all correctly alphabetized.
 - **`index.ts` alphabetized** — VERIFIED.
-- **"4196 keys across 86 packages" / "83 packages"** — the namespace key count cannot be verified from static source (it needs a build), but the package _count_ is **86** app-facing packages, so the collision test's inline comment "across all 83 packages" (and the status's "86 packages" elsewhere) is internally inconsistent and stale. Cosmetic.
+- **Collision gate + expanded reachability test present** — VERIFIED (`collision.test.ts`, `index.test.ts`).
+- **`scripts/sdk-policy.ts` single export; `checkSdkBarrelSync` integration** — VERIFIED in head (`sdk-policy.ts` exports `isSdkBarrelExcludedPackage`; `packages.ts` references `checkSdkBarrelSync`).
+- **"Local completeness guard (`src/completeness.test.ts`), 9 `it`s"** — **FALSIFIED.** File absent from head; not created in `changes.patch`. See standard 7.
+- **"4196 keys across 86 packages"** — key count is unverifiable from static source (needs a build); the package _count_ is 86, so the in-file "83 packages" comment is stale.
 
-## Gaps
+## Gaps (low ceiling for a barrel; all deferred Gold per status)
 
-A barrel has a low ceiling; these are the only meaningful absences, all of which the status doc already parks as deferred Gold items — recorded here as the gap inventory, not re-prescribed:
+- **No tree-shake conformance proof** — nothing asserts barrel-import bytes == direct-import bytes. Deferred; needs a `size-runner.ts` barrel-vs-direct mode.
+- **No boundary-level side-effect proof** — per-file `checkNoTopLevelSideEffects` runs, but nothing asserts importing the _whole_ barrel registers no renderers / patches no globals.
+- **No full export-surface snapshot** — the 46 sentinels are a stand-in for a committed sorted namespace snapshot.
 
-- **No tree-shake conformance proof.** Nothing asserts `import { X } from '@flighthq/sdk'` tree-shakes to the same bytes as importing `X` from its owning package. This is _the_ load-bearing guarantee of a `sideEffects:false` barrel and it is currently only assumed (relied on transitively via the example `size` baselines). Requires extending `size-runner.ts` with a barrel-vs-direct comparison mode.
-- **No boundary-level side-effect proof.** Per-package `checkNoTopLevelSideEffects` runs on each file, but nothing asserts that importing the _whole barrel_ registers no renderers / patches no globals / starts no timers. The aggregate is the case a user actually hits.
-- **No full export-surface snapshot.** The sentinel list covers 46 names; a committed sorted snapshot of the entire flattened namespace would turn any added/renamed/removed export into a reviewable diff at the barrel boundary. The `MIN_KEY_COUNT` lower bound is the pragmatic stand-in.
+## Charter fit
 
-## Cosmetic / cleanliness findings
-
-Small, within-file, sweep-safe:
-
-- **`package.json` deps are not alphabetized.** `index.ts` is sorted but the manifest dependency block is not (`webcam`, `easing`, `loader`, `scene`/`scene-gl`/`scene-wgpu` are out of position). npm does not care, but it violates the source-style "keep it ordered / leave files cleaner" intent and breaks the symmetry with the sorted barrel. The completeness test enforces _set_ equality, not _order_, so nothing catches this.
-- **Duplicate sentinels.** `SENTINEL_NAMES` lists `DisplayObjectKind` and `BitmapKind` twice (once under display-object, once under a "types (re-exported kind identifiers)" tail), producing two identical `it()` registrations each. Harmless, but the "47 sentinel names" claim is really 46 unique / 48 with dupes.
-- **Stale count comment** in `collision.test.ts` ("across all 83 packages") vs. the actual 86.
-
-## Charter contradictions
-
-None. The charter's "What it is" frames the package exactly as the code behaves — a thin, complete, collision-free, policy-faithful re-export with no domain logic of its own — and the code upholds every clause. North star / Boundaries / Decisions are still `TODO`, so there is little to contradict; the silences are surfaced below as candidate Open directions rather than scored against.
-
-## Contract & docs fit
-
-**Package lives up to the contract:**
-
-- Single root `.` export, `"sideEffects": false`, full unabbreviated re-exported names (inherited), workspace-wildcard deps — all satisfied.
-- Tests are colocated `*.test.ts`, `describe` blocks alphabetized and domain-named.
-- The barrel correctly _omits_ the non-existent `render-canvas`/`render-dom`/`timeline-spritesheet` and the Rust-only `*-rs` and `host-*` packages — faithful to the inclusion policy and to the Rust port's "TS is authoritative; `*-rs` is a mixing leaf, not app-facing API" rule.
-
-**Candidate doc revisions (user's gate, not mine):**
-
-- **Codebase-map Package Map is stale against the realized package set.** The barrel pulls in `@flighthq/log`, `@flighthq/math`, `@flighthq/velocity`, `@flighthq/clip`, `@flighthq/particles-formats`, `@flighthq/device-formats`, `@flighthq/platform-formats`, `@flighthq/resource-formats` and the `displayobject-<backend>` / `effects-<backend>` / `filters-<backend>` / `scene-<backend>` families. The _head_ `tools/agents/docs/index.md` documents some of these (`math`, `log`, `clip`, `particles-formats`) but still lists retired names (`render-canvas`, `render-dom`, `text-shaping` as "designed-not-built", `timeline-spritesheet`) and omits `velocity`, `device-formats`, `platform-formats`, `resource-formats`. The barrel is the ground truth for the app-facing set; the Package Map should be reconciled against it.
-- **`crate: flighthq-sdk` in the charter front matter is questionable.** A convenience barrel has no Rust analogue — the Rust port composes crates directly and there is no aggregation crate. Per the CONTRACT, `crate` may be `null` for packages with no Rust crate; `sdk` looks like a `null`-crate candidate. Flag for the user.
-- **`MANIFEST.json › packages` is empty** in this bundle (0 entries), yet the SKILL describes it as the ingest index. The ingest evidently proceeded from the flat `status/sdk.md` drop instead. Not an sdk finding per se, but worth noting the manifest index was not the working signal here.
-
-## Candidate open directions
-
-The charter's North star / Boundaries / Decisions are all `TODO`; these are the questions a reviewer had to assume, surfaced for the user to settle:
-
-1. **Is the tree-shake guarantee a tested contract or a trusted property?** The whole "hardware store" premise rests on barrel-import == direct-import bytes. Should the SDK own a conformance test for it (Gold tree-shake test), or is the example `size` baseline considered sufficient proof? This is the single highest-value direction for the package and needs a blessed answer.
-2. **Where is the inclusion policy's authoritative home?** Today it is duplicated by necessity — one copy in `scripts/sdk-policy.ts`, one in `completeness.test.ts`. Is the two-copies-with-sync-comment arrangement the accepted end state, or should the policy live somewhere a package _can_ import (e.g. a tiny `@flighthq/*` util, or generation rather than runtime parsing)?
-3. **Is a full namespace snapshot wanted as an API-review surface?** A committed sorted key list would make every barrel-level API change a visible diff. Boundary (file location, churn cost across 86 packages) is a design decision.
-4. **Should `sdk` have a Rust crate at all?** (See the `crate` front-matter note above.) A barrel may be the one package that is legitimately TS-only.
-5. **Boundaries: what is the rule for a package _never_ entering the barrel beyond `host-*`/`*-rs`?** The policy is currently "everything app-facing in"; if a future package is deliberately advanced-only or example-only, the exclusion set needs a named principle, not a one-off.
+No contradiction. The head charter explicitly scopes the barrel-boundary guard tests (completeness, collision/namespace-size, reachability spot-checks) as in-scope, so the new tests align with blessed direction. One tension worth the user's eye (not scored against the delta): the **codebase-map** testing section deprecates "barrel smoke tests" as "a strictly weaker version of work CI already does," yet the sdk charter blesses exactly these guards. The charter governs the package, so this is a doc-reconciliation question, not a merge defect — routed to Open directions.

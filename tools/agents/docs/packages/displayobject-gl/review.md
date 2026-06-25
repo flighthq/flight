@@ -1,91 +1,91 @@
 ---
 package: '@flighthq/displayobject-gl'
 status: solid
-score: 80
-updated: 2026-06-24
+score: 84
+updated: 2026-06-25
 ingested:
   - status.md
   - reviews/depth/displayobject-gl.md
   - reviews/maturation/depth/displayobject-gl.md
   - source
-  - changes.patch (incoming/builder-67dc46d64)
+  - 'base=origin/main(eb73c3d74)'
+  - 'evidence=integration-b2824e3d8 delta (head vs base + changes.patch slice)'
 ---
 
 # Review: @flighthq/displayobject-gl
 
 ## Verdict
 
-solid — **80/100**. A genuinely deep, broad WebGL2 leaf-renderer suite — every 2D display-object leaf type plus GPU-only clipping/masking, materials, render caching, velocity, and particles. The builder-67dc46d64 pass made real, verifiable improvements (turnkey registration, full WebGL1→WebGL2 shader migration, a hot-loop allocation fix), nudging it a couple of points above the prior 78. The ceiling is still set by the same architectural fact the depth review named: gradient/bitmap shape fills, strokes, and all text route through a hidden offscreen-Canvas2D raster instead of the GPU. One status claim does **not** survive into the bundle head and is the most important finding below.
+solid — **84/100**, and this is a **clean merge**. The integration delta is small, test-only, and surgically correct: it severs the cross-package test-helper coupling that the prior review (2026-06-24) named as its single highest-value finding. The package's production surface — every 2D leaf renderer, the GPU clipping/masking/material/cache/velocity subsystems — is **byte-identical** to the approved base; not one non-test `gl*.ts` file changed. The score nudges up two points from 80 precisely because the prior blocker (the unresolvable `makeGlState` import) is now fixed, and fixed the way the charter recommended.
 
-## What the incoming pass changed (verified against the diff)
+This review judges **only the delta** (head vs `incoming/integration-b2824e3d8/base/`, plus the `packages/displayobject-gl/` hunks of `changes.patch`). The approved base is the blessed floor and is not re-litigated; the standing fidelity ceiling (Canvas2D raster fallbacks, borrowed shape commands, no eviction policy) is base-state and out of scope for this gate — it carries forward unchanged into Backlog/Open directions.
 
-All four substantive source deltas in `67dc46d64:packages/displayobject-gl/` check out against `changes.patch`:
+## What the delta changes (verified against changes.patch)
 
-- **`registerGlDisplayObjectRenderers(state)`** — new `glDisplayObjectRegistration.ts`, registers all twelve built-in renderers (Bitmap, DisplayObject, ParticleEmitter, QuadBatch, RenderCache, RichText, Scale9Shape, Shape, Sprite, TextLabel, Tilemap, Video) in one call. Added to the barrel. Colocated test (`glDisplayObjectRegistration.test.ts`, 13 tests) asserts each kind→renderer binding via `getRenderStateRuntime(state).rendererMap`. The docstring correctly frames per-descriptor registration as the tree-shakable golden path and notes the default material is registered separately. This directly resolves the depth review's "no single registration convenience" gap — by deliberate decision, not omission. Good.
-- **WebGL1→WebGL2 shader migration** — `glClipContours.ts` and `glShapeMesh.ts` shaders moved to `#version 300 es` (`attribute`→`in`, `gl_FragColor`→declared `out vec4 fragColor`), and their `WeakMap`/`compileProgram` keys retyped from `WebGLRenderingContext` to `WebGL2RenderingContext`. Verified: every shader-bearing file in the package (`glClipContours`, `glColorTransformMaterial`, `glMaterials`, `glUniformColorTransformMaterial`, `glParticleEmitter`, `glSpriteBatch`, `glVelocity`, `glShapeMesh`) now uses `#version 300 es`; no `WebGLRenderingContext` (non-2) reference remains in source. The status claim "all shaders consistently WebGL2" holds.
-- **Hot-loop allocation fix in `glShapeMesh.ts`** — `shapeMeshMatrix()` previously did `new Float32Array([...])` per call (per shape, per frame). It now writes into a module-scope `shapeMeshMatrixScratch = new Float32Array(9)` and returns it. The scratch is alias-safe in practice: the only caller (`drawGlShapeMeshes`, line 38) consumes it synchronously in `gl.uniformMatrix3fv` before any reuse, and `shapeMeshMatrix` reads all `renderProxy.transform2D` inputs into a local `t` before writing the array. Comment explains the reuse. Matches the established `matrixArray` scratch pattern in `render-gl`.
-- **`ensureGlQuadBatchShader` test coverage** — `glSpriteBatch.test.ts` gains a `describe('ensureGlQuadBatchShader')` block (3 tests: first-call compile+store, idempotent identity, corner-buffer creation), closing an `exports:check` gap.
+The entire incoming change is one new source file plus an import migration across the test suite. Nothing else.
 
-A types-first stub also landed cross-package: `GlBitmapSamplingLike` / `GlBitmapSamplingFilter` (`'linear' | 'nearest'`) in `packages/types/src/GlBitmapSampling.ts`, exported from the types barrel (line 117 — verified). It is **defined but unconsumed** — no reference in `displayobject-gl` or `render-gl` source. The status acknowledges the plumbing (through `prepareGlSpriteBatchWrite`/`bindGlTexture`) is deferred as a cross-package change. This is a legitimate types-first first step, not dead code, but worth tracking so it does not rot as an orphan type.
+- **New `glTestHelper.ts`** (`b2824e3d8:packages/displayobject-gl/src/glTestHelper.ts`, `new file mode`) — a package-local test helper exporting one function, `makeGlState`, that builds a render state through render-gl's **public** entry point:
 
-## Present capabilities
+  ```ts
+  import { createGlRenderState } from '@flighthq/render-gl';
+  ...
+  const state = createGlRenderState(canvas, {
+    backgroundColor: 0x00000000,
+    imageSmoothingEnabled: options?.allowSmoothing ?? true,
+  });
+  return { state, gl: state.gl, canvas };
+  ```
 
-Full leaf-renderer coverage, each an exported renderer descriptor with a paired `draw*`/`render*` free function:
+  It imports only `createGlRenderState` (public) and the `GlRenderState` type from `@flighthq/types` — no reach into render-gl internals. Confirmed it is **not** added to `src/index.ts`, so it never touches the published barrel.
 
-- **Bitmap / Sprite / QuadBatch / Tilemap** over a real instanced sprite batch (`glSpriteBatch`: `prepareGlSpriteBatchWrite`, `flushGlSpriteBatch`, `ensureGlQuadBatchShader`, per-instance material packing, blend-mode + texture-cache handling). The batch VS/FS use `layout(location=…)` instanced attributes — genuinely WebGL2.
-- **Shape** (`defaultGlShapeRenderer`, `drawGlShape`) with the two-path strategy: solid fills → `getShapeFillRegions` → tessellated triangle meshes (`glShapeMesh`, crisp at any zoom, content-revision cached); gradient/bitmap fills and strokes fall through to the offscreen-Canvas2D raster path (`glShapeMesh.ts` comment names this explicitly).
-- **Scale-9 shape** with a mask path (`drawGlScale9Shape`, `drawGlScale9ShapeMask`, `buildGlScale9Mapper`, `remapGlScale9Commands`).
-- **Text** — `defaultGlTextLabelRenderer`, `defaultGlRichTextRenderer` (+ overlay), and an editable-field overlay seam in `glTextInput` — all currently rasterizing glyphs through Canvas2D.
-- **Video** with per-frame texture upload.
-- **Particle emitter** rendered on the GPU with a dedicated program.
-- **Container/passthrough** traversal (`renderGlDisplayObject`).
+- **Import migration in ~22 `*.test.ts` files** — every test file flips `import { makeGlState } from '@flighthq/render-gl'` to `import { makeGlState } from './glTestHelper'`. E.g. `b2824e3d8:packages/displayobject-gl/src/glBitmap.test.ts`:
 
-GPU subsystems beyond Canvas's reach, all still in-package:
+  ```diff
+  -import { makeGlState } from '@flighthq/render-gl';
+   ...
+  +import { makeGlState } from './glTestHelper';
+  ```
 
-- **Clipping & masking** — rectangle scissor stack (`pushGlClipRectangle`/`popGlClipRectangle`), arbitrary stencil contour clipping with even-odd & non-zero winding (`pushGlClipContours`/`popGlClipContours`), `enableGlClipSupport`.
-- **Material/shader system** — `registerDefaultGlMaterial`, color-transform material + shader, uniform-color-transform variant, per-instance material packing.
-- **Render caching** — render-to-FBO `cacheAsBitmap` analogue (`enableGlRenderCache`, `ensureGlRenderCacheTarget`, `refreshGlRenderCache`, …).
-- **Velocity (motion-vector) pass** — `renderGlVelocity`, `createGlVelocityTarget`, `registerGlVelocityWriter`/`getGlVelocityWriter`, default writers for display objects / quad batches / particle emitters. The generic velocity **data** now comes from `@flighthq/velocity` (`getVelocity`); the GL backend owns only the rasterization side — a clean seam consistent with the subject/backend split.
+  No remaining `makeGlState` import from `@flighthq/render-gl` survives anywhere in `src/` (verified). The suite no longer depends on render-gl re-exporting a test helper at all.
 
-Teardown verbs are correct (`destroyGl*Data` frees GPU textures). `register*`/`enable*` opt-in functions follow the no-top-level-side-effects rule. Naming is `gl`-prefixed, full, unabbreviated, self-identifying. Testing depth remains excellent: a colocated `*.test.ts` for every source file (26 source / 26 test files in the head tree).
+- **One assertion tightened in `glRichText.test.ts`** (`b2824e3d8:packages/displayobject-gl/src/glRichText.test.ts`):
 
-## Gaps vs an authoritative WebGL display-object renderer
+  ```diff
+  +    const bindSpy = vi.spyOn(getGlRenderStateRuntime(state).defaultBitmapShader, 'bind');
+       drawGlRichText(state, renderProxy);
+  -    expect(getGlRenderStateRuntime(state).defaultBitmapShader.bind).toHaveBeenCalledWith(state.gl, state, renderProxy);
+  +    expect(bindSpy).toHaveBeenCalledWith(state.gl, state, renderProxy);
+  ```
 
-These are unchanged from the depth review — the incoming pass closed API-shape/correctness gaps, not the fidelity ceiling:
+  This is a **consequence** of the migration, and a genuine improvement. The old render-gl `makeGlState` hand-built the runtime with `defaultBitmapShader: { …, bind: vi.fn() }` — a pre-spied fake. The new helper goes through `createGlRenderState`, which produces the **real** shader, so the test must install its own spy. The assertion now exercises the production construction path instead of asserting against a hand-maintained mirror of internal runtime fields.
 
-- **Offscreen-Canvas2D raster fallbacks are the dominant fidelity gap.** Gradient fills, bitmap fills, strokes, and all text rasterize through a 2D canvas and upload as a texture — resolution-bound, undercutting the "WebGL renderer" promise. Native paths missing: a gradient fragment shader (`glGradientFill`), GPU stroke tessellation (`glStroke`, consuming a `tessellateStroke` from `@flighthq/path`), GPU bitmap fills, and an SDF/MSDF glyph atlas for text. The text path additionally awaits the `@flighthq/text-shaping` seam (designed, not built as of 2026-06-22).
-- **Shape command vocabulary is borrowed, not owned.** `index.ts` still re-exports thirteen `defaultGl*` shape commands as aliases of `defaultCanvas*` from `@flighthq/displayobject-canvas` ("shapes deferred to canvas for now"), and `@flighthq/displayobject-canvas` remains a runtime `dependency`. The package does not own its fill/stroke command surface; it cannot drop the canvas dep until native fill/stroke land.
-- **No texture-cache eviction policy.** `textureCache` is a `WeakMap` with manual `deleteTexture`; no LRU/size budget. `GlBitmapSamplingLike` exists as a type but is unreachable from any draw call.
-- **Context-loss recovery, shape-mesh batching/instancing, advanced blend modes, and velocity/cache writers for the new GPU paths** are all absent — Gold-tier per the maturation roadmap.
-- **Rust port (`flighthq-displayobject-gl`)** not yet mirrored; roadmap defers it until the raster fallbacks are gone so the port doesn't track the wrong architecture.
+## How the delta resolves the prior highest-value finding
 
-## Charter contradictions
+The 2026-06-24 review's finding #1 and the charter's "Open directions" both flagged: in the prior bundle head, `render-gl`'s barrel had dropped `export { makeGlState } from './glTestHelper'`, while every `displayobject-gl/src/*.test.ts` imported it from `@flighthq/render-gl` — leaving the suite unresolvable at import time and contradicting the "193/193 passing" claim. That review added the explicit guidance: *"exporting a `*TestHelper` from a production barrel is itself a smell — prefer a dedicated test-only entry over the production root."\*
 
-The charter is a stub: only "What it is" is filled; North star, Boundaries, Decisions, and Open directions are all `TODO`. There is therefore **no stated principle, boundary, or decision for the code to contradict** — nothing to flag here. The cost is that nearly every judgement below falls back to the codebase-map AAA standard (see Candidate open directions). The "What it is" line is accurate to the source.
+This delta implements exactly that guidance. The fix is **in-package** (no render-gl change required) and uses the recommended seam: a dedicated, barrel-excluded `glTestHelper.ts` consumed only by tests. Whether or not render-gl still exports its own `makeGlState` (it does, at `render-gl/src/index.ts:11` — out of this package's scope), displayobject-gl's suite is now independent of that decision. The cross-package fragility is gone.
+
+## Judged against the seven standards (delta only)
+
+1. **Composition / bedrock — PASS.** The delta adds no production composition. `glTestHelper.ts` is a single-purpose test fixture (one `makeGlState`), not a feature; it bundles nothing and gates nothing. No config-branch creep, no subject fusion.
+2. **Naming clarity — PASS (one minor comment-accuracy nit).** `makeGlState` and `glTestHelper.ts` follow the established `gl`-prefixed, full-word convention used by every sibling helper (`render-gl`, `filters-gl`, `scene-gl`). The one blemish is in the docstring (`b2824e3d8:.../glTestHelper.ts`): it claims to mirror _"render-gl's own **private** glTestHelper pattern,"_ but render-gl's `makeGlState` is in fact publicly re-exported from its barrel. Cosmetic, non-blocking — flag, don't gate.
+3. **Tree-shaking / bundle invariant — PASS.** `glTestHelper.ts` is absent from `src/index.ts`, so it adds zero published surface and cannot leak into any consumer bundle. `package.json` is unchanged (`"sideEffects": false`, single `.` export). No top-level side effect, no eager registration, no new hot-loop branch — the helper only runs under Vitest. This is strictly _better_ than the base state, which leaned on render-gl publishing a test helper.
+4. **Registry vs closed union (fork B) — N/A (PASS).** The delta introduces no dispatch, no `switch(kind)`, no handler family. Untouched.
+5. **Subject triad + plurality guard — PASS.** No format/backend code, no new package, no split. A within-package test fixture; the triad is not engaged.
+6. **Contract hygiene — PASS.** Types-first is respected (the helper imports `GlRenderState` from `@flighthq/types`, defines no cross-package type inline). It calls the public `createGlRenderState` rather than reconstructing private runtime, so it cannot drift from production semantics. No `out`-param, sentinel, `dispose`/`destroy`, or `Readonly<>` concern is in play for a test fixture. The Rust mirror is unaffected (test infra, no crate surface).
+7. **Tests & honesty — PASS.** `glTestHelper.ts` ends in `testhelper.ts`, the exact pattern `scripts/completeness.ts` (line ~121) excludes from `exports:check`, matching the documented convention used by `filters-canvas`, `filters-gl`, `render-wgpu`, `scene-gl`, and others — so it carries no colocated-test obligation and creates no `exports:check` gap. Every leaf source file retains its colocated `*.test.ts`. The delta's own claim (decouple the suite from render-gl's barrel) matches the code exactly. Crucially, this delta makes the prior "193/193 passing" honesty gap _moot_: the suite no longer hinges on a cross-package export that may or may not be present.
+
+## Adversarial self-check (objections dropped)
+
+- _"A non-test `.ts` in `src/` with an untested export fails `exports:check`."_ — Dropped. The `endsWith('testhelper.ts')` exclusion is an established, documented convention; singular `glTestHelper.ts` lands inside it.
+- *"A `*TestHelper.ts` source file is a smell."* — Dropped. The charter's own Open directions named the dedicated test-only entry as the *preferred\* seam over a production-barrel export. This is the recommended shape.
+- _"The spy rewrite weakens the rich-text assertion."_ — Dropped. It strengthens it by exercising the real `createGlRenderState` shader instead of a hand-built `vi.fn()`.
+- _"The local helper omits `backgroundColorRgba`/`shaderLoc` that render-gl's version exposes."_ — Dropped. Appropriate minimization: the local helper exposes only what these tests consume and builds through the public API; divergence from render-gl's richer internal fixture is correct, not a defect.
+
+The only surviving objection is the cosmetic "private" wording in the docstring — too minor to block a merge.
 
 ## Contract & docs fit
 
-Lives up to the contract on most axes:
+The delta conforms on every axis: single root barrel (unchanged), `"sideEffects": false`, no per-file subpaths, types-first, no new side effects. It also _retires_ the prior review's contract-fit concern #1 (the broken cross-package test-helper export) by construction. Concern #2 from the prior review (`remapGlScale9Commands(unknown[])`) is base-state, untouched by this delta, and remains a codebase-wide command-buffer-type decision — carried forward to Open directions, not a merge blocker.
 
-- **Single root barrel**, `"sideEffects": false`, no per-file `exports` subpaths — conforms.
-- **Types-first** — `GlBitmapSamplingLike` was correctly added to `@flighthq/types` before any implementation, the header-layer rule honored even for a deferred feature.
-- **Full unabbreviated names, sentinel-not-throw, `register*`/`enable*` opt-in, `destroy*` for GPU resources** — all conform.
-- **Rust mirror** — `crate: flighthq-displayobject-gl` is declared in the charter front matter; the crate is a planned-but-deferred target, consistent with the rust-port map's tier table.
-
-Two contract-fit concerns:
-
-1. **The render-gl test-helper export is broken in the bundle head — and the status claims the opposite.** Every one of the ~22 `displayobject-gl/src/*.test.ts` files imports `{ makeGlState } from '@flighthq/render-gl'`. In **base**, `render-gl/src/index.ts` exported `export { makeGlState } from './glTestHelper';`. In **head**, that line is **removed** and not replaced — the head barrel exports neither `glTestHelper` nor `makeGlState`, and `render-gl/package.json` has only the `.` export (no subpath). So in the head tree `makeGlState` is unresolvable from `@flighthq/render-gl`, which would fail the entire displayobject-gl test suite at import time. The status doc claims the inverse — that this pass _added_ `export * from './glTestHelper'` to fix "all 22 test files failing… now 193/193 passing." That added line is not present in head; a later edit to the render-gl barrel (the same pass that added `glShaderRegistry`/`glTexture`/etc. exports) appears to have dropped it. **This is the highest-value finding: the "193/193 passing" claim is not reproducible from the bundle as captured.** It is a cross-package (`render-gl`) regression, surfaced here because this package is its sole observed casualty. (Independent of which barrel fixes it, exporting a `*TestHelper` from a production barrel is itself a smell — `completeness.ts` exempts it from `exports:check`, but the cleaner seam is a dedicated test-only entry rather than the production root.)
-2. **`remapGlScale9Commands` still takes `unknown[]`.** The depth review flagged this as the one loose public signature; the status declines to tighten it, arguing `ShapeData.commands` is `unknown[]` codebase-wide (the flat `[key, argCount, ...args]` buffer). That reasoning is sound — tightening here alone would be inconsistent — but it makes the fix a **codebase-wide command-buffer-type decision**, not a within-package cleanup. Worth surfacing as such rather than leaving it as a per-package "loose signature."
-
-Docs-fit (candidate revisions to admin docs, not actions): the codebase map's render section and the rust map both already reflect the post-2026-06-22 `<subject>-<backend>` reorg, `@flighthq/clip`, `@flighthq/velocity`, `@flighthq/filters-gl`, and standalone `@flighthq/particles` — so the depth review's "glVelocity / clip are in-package" framing is now partially superseded by neighbor packages owning the data/region layers while this package owns the GL rasterization. The review above reflects the current split; no map line is stale for this package.
-
-## Candidate open directions
-
-The charter's silence forces these assumptions; each is a question for the user to settle into the charter:
-
-- **North star.** Is the durable bar "eliminate every Canvas2D raster fallback — a true GPU renderer," or "a GPU-accelerated blitter that is allowed to fall back to raster for rare fill/text cases"? The whole gradient/stroke/SDF-text arc is gated on this answer. The depth/maturation reviews assume the former; it is not blessed.
-- **Boundaries.** Is owning the shape command vocabulary (dropping the `@flighthq/displayobject-canvas` runtime dep) in scope, or is "borrow Canvas's shape commands" an accepted permanent boundary? And does AA/MSAA/texture-filtering policy belong here or stay in the `render-gl` core?
-- **Registration story (now decidable).** `registerGlDisplayObjectRenderers` exists; bless it as the sanctioned convenience path alongside per-descriptor registration, or treat the turnkey registrar as a non-goal. This is a one-line Decision the pass has already implemented.
-- **GPU text gating.** Whether to build a measure-only Canvas-fed glyph atlas now (better-cached raster) or wait for `@flighthq/text-shaping` — a project-level dependency decision the package cannot make alone.
-- **Texture-cache eviction semantics.** Budget by pixel count vs texture count vs VRAM estimate, and whether to trade `WeakMap` GC-safety for explicit eviction — a cross-package (`types` + `render-gl`) design fork.
-- **Closed-union vs registry (structural fork B).** The velocity writers already use an open registry (`registerGlVelocityWriter`); good. Confirm no closed `switch(kind)` creeps into the gradient/stroke/blend-mode paths as they grow — blend modes especially are a family that should be registry-dispatched, with dispatch hoisted out of the per-instance hot loop.
+No admin-doc line is made stale by this delta.

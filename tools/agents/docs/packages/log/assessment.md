@@ -1,46 +1,37 @@
 ---
 package: '@flighthq/log'
-updated: 2026-06-24
+updated: 2026-06-25
 basedOn: ./review.md
 ---
 
 # log — Assessment
 
-The review verdict is `solid` (86/100): one builder pass closed the **entire** prior Bronze/Silver/Gold maturation roadmap — multi-sink fan-out, global + per-channel gates, lazy payloads, contextual loggers, pluggable formatters, the sink combinators, rate limiting/sampling, timers/groups/spans, the transport seam, redaction + custom serializers, and the signals group are all built and tested (114 tests, 61 exports). So the roadmap is **absorbed**, not pending: what remains is a thin residue of corrections plus a set of items each blocked on a stub-charter decision. Recommended is therefore small by design; most of the residual surface is genuinely parked on an Open direction, not sweep-safe.
+Reasoned over `review.md` (2026-06-25 merge review of integration `b2824e3d8` against the approved base `origin/main` `eb73c3d74`). The candidate cannot merge until it builds. Recommendations below are within-package, sweep-safe; the design forks the candidate surfaced are routed to the charter's Open directions, not into Recommended.
 
-The maturation roadmap (`reviews/maturation/depth/log.md`) is fully absorbed here and may be removed as one-time seed.
+## Recommended (sweep-safe, within-package)
 
-## Recommended
+1. **Land the seven Log types in `@flighthq/types` before this merge.** Author `LogContext`, `LogDataProvider`, `LogFormatter`, `LogSignals`, `LogSpan`, `LogTimer`, `LogTransportBackend` as their own files under `packages/types/src/` (one concept per file, filename = type name), exported from the types barrel, then re-run `tsc -b`. This is the build blocker — `log.ts:2-13` and `log.test.ts:2` import them and the integration tree defines none. Non-negotiable for merge. (The source worktree `67dc46d64` reportedly had them; the carried-over types files were dropped in assembling `b2824e3d8`.)
 
-Sweep-safe: within `@flighthq/log` (+ the colocated `@flighthq/types` file it owns), no cross-package coupling, no breaking change, no open design decision.
+2. **Remove the three banner divider comments** in `log.ts` (lines 29-31, 613-615, 639-641). They violate the Source Style "no structural divider comments" rule; names and file position already carry the boundaries. While there, fix the mislabeled docstring on `addLogSink` (tagged both "Emit side" by the banner above it and "Listener side" by its own comment).
 
-- **Fix the stale `createHttpLogSink` docstring.** The doc comment on `createWebLogTransportBackend` (`packages/log/src/log.ts`) still describes the deferred HTTP sink ("ships entries to a remote HTTP endpoint via batched POST … flushed when the batch reaches `batchSize`") — an orphaned leftover sitting on the no-op web backend. Rewrite it to describe what actually shipped (the web default transport backend). — review.md#contract--docs-fit
-- **Fix the `LogTransportBackend.ts` reference to `createHttpLogSink`.** The type doc in `@flighthq/types` likewise points at `createHttpLogSink`, which does not exist. Correct it to the shipped `createFileLogSink` / `LogTransportBackend` story. This is the colocated type file `log` owns, so it stays within the package's sweep. — review.md#contract--docs-fit
+3. **After the build is green, re-derive `review.md`'s status/score from the actually-integrated tree** rather than the as-claimed `solid`/86 inherited from `67dc46d64`. The carried review over-claimed against `b2824e3d8`.
 
-## Backlog
+## Backlog (parked, with why)
 
-Parked: each waits on a charter Open direction, or is cross-package / larger than a sweep.
-
-- **`createHttpLogSink` (batched-POST-with-retry remote sink).** Parked on **Open direction #1 (scope ceiling — seam or library?)**. Whether the canonical remote sink is owed or out of scope is precisely the boundary the stub charter has not set; the status doc argues the `LogTransportBackend` + `createBufferedLogSink` composition already covers it. Do not build until the scope ceiling is blessed. — review.md#gaps
-- **Size/allocation proof (`npm run size` baseline + `log.bench.ts`).** Parked on **Open direction #6**. The headline claims (emit-only import carries only the gate + `LogLevel`; suppressed `logVerbose` allocates nothing) are implemented but unmeasured. Promoting them from prose-by-inspection to an enforced gate is a Decision the user should make, not a silent sweep — and it touches the root `size` baseline surface. — review.md#gaps
-- **`flighthq-log` Rust crate (1:1 conformance).** Cross-package: lives in the Rust worktree, not `packages/log`. The charter front matter declares `crate: flighthq-log`, so the mirror is owed, but it should port a _settled_ API (after the scope ceiling and process-global questions resolve), and the intended mapping (`LogDataProvider`→`FnOnce`, `LogSink`→`Arc<dyn Fn + Send + Sync>`) is already recorded for that pass. — review.md#gaps
-- **`disableLogSignals` + fast-path restoration.** Parked on **Open direction #3**. Today `enableLogSignals` is one-way (consistent with the rest of the `enable*` family) and permanently bypasses the empty-sinks fast path for the process lifetime. Whether to add a reversal is an API-symmetry decision against the house `enable*` convention, not a sweep. — review.md#gaps
-- **Per-handle file-sink ownership.** Parked on **Open direction #2 (process-global as the model)**. `createFileLogSink` hands back distinct tokens that all write to — and all dispose — the single global `_transportBackend`; the per-handle token implies ownership it does not have. Giving each handle a real backend is a redesign of the process-global model, which the charter has not yet blessed. — review.md#gaps
-- **`@flighthq/log-formats` neighbor (`parseLogEntry`, NDJSON/logfmt/CLF).** Parked: a new triad `-formats` cell, blocked by the **plurality guard** (held until a second `logs.jsonl` consumer appears) and surfaced as **Open direction #5** to confirm that bar. New-package scope, not within-package work. — review.md#gaps
+- **`npm run size` baseline + `log.bench.ts` for the emit-only / zero-alloc-suppressed claims.** Promotes the headline tree-shake claim from assertion-by-inspection to an enforced gate. Parked: it is a new enforcement mechanism (bundle-discipline fork), not a sweep, and is a charter Decision to bless first (Open direction 7).
+- **Rust `flighthq-log` crate.** Charter front matter declares `crate: flighthq-log`, but no crate exists. Parked: cross-worktree, and gated on the TS scope ceiling settling (Open direction 8).
+- **`@flighthq/log-formats` reader split** (`parseLogEntry`/NDJSON/logfmt). Parked: gated on a second `logs.jsonl` consumer per the plurality guard (Open direction 6). Not owed now.
 
 ## Approved
 
-_None. Approval is the user's verbal gate; nothing is frozen here yet._
+_None. Approval is the user's verbal gate; nothing is auto-approved by this assessment. This section is filled only when the user blesses an item in a direction session._
 
----
+## Notes for the charter's Open directions
 
-### Surfaced to the charter's Open directions (not edited here)
+These are design forks the candidate touches — they belong in `charter.md › Open directions` (several already enumerated there), not in Recommended:
 
-The review already enumerates six candidate Open directions; this assessment does not resolve them and does not touch the charter. They gate the Backlog above and should be settled in a direction session:
-
-1. **Scope ceiling — narrow capture seam or full logging library?** (gates `createHttpLogSink`, sampling/spans breadth).
-2. **Process-global state as the model** — eleven module-level mutable values foreclose multiple independent loggers (gates per-handle file-sink ownership).
-3. **`enableLogSignals` irreversibility** — is enable-once-for-process-lifetime the rule? (gates `disableLogSignals`).
-4. **Tracing-stack ambition** — is `log` the home for spans/groups/timers, or a future `tracing`/`telemetry` neighbor's job?
-5. **`-formats` split trigger** — confirm the plurality-guard bar for `@flighthq/log-formats`.
-6. **Size/bench gate as a Decision** — promote the zero-allocation / emit-only-import claims to an enforced baseline?
+- **Scope ceiling — narrow capture seam vs. full logger** (charter dir. 1). This pass executed the full-library breadth (sampling, rate-limit, spans, contextual loggers). Whether that breadth is the blessed target is the user's call; the merge should not be read as blessing it.
+- **Process-global state model** (charter dir. 3). Eleven module-level mutables; forecloses multiple independent loggers. Ambient-backend-vs-handle is an open fork, not a merge defect.
+- **Tracing-stack ambition / bedrock** (charter dir. 5). Spans/groups/timers may want extraction into a `tracing`/`telemetry` neighbor; deciding this is where `log`'s bedrock lies.
+- **File-sink handle ownership** (charter dir. 9). `createFileLogSink` hands out distinct handles that all write to and dispose the one shared `_transportBackend` — bless shared-backend or make handles own their transport.
+- **`enableLogSignals` irreversibility** (charter dir. 4). No `disableLogSignals`; once enabled the empty-sinks fast path is bypassed for the process lifetime.

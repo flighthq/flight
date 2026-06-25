@@ -1,86 +1,86 @@
 ---
 package: '@flighthq/input'
 status: solid
-score: 84
-updated: 2026-06-24
+score: 62
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/input.md
-  - reviews/alignment/api/input.md
-  - reviews/alignment/deps/input.md
-  - reviews/alignment/ts-rust/input.md
-  - source
-  - incoming/builder-67dc46d64
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - head/packages/input/src/inputManager.ts
+  - head/packages/input/src/inputManager.test.ts
+  - head/packages/types/src (InputSignals, InputGamepadData, InputKeyboardData, InputPointerData, KeyCode, KeyModifier, MouseWheelMode, index)
+  - changes.patch (packages/input + packages/types slices)
+  - charter.md (DRAFT)
 ---
 
-# Review: @flighthq/input
+# input — merge review (integration-b2824e3d8 vs origin/main eb73c3d74)
 
-> Survey layer. Observation only — no recommendations, no sequencing. Evidence from the incoming bundle `builder-67dc46d64` (`incoming/builder-67dc46d64/head/packages/input/`, `changes.patch`). Supersedes the prior depth review (70/100); absorbs the three alignment reviews.
+This is a **merge-gate** review of the incoming `@flighthq/input` change against the approved `origin/main` baseline. It judges only the delta (head vs base). The baseline is the blessed floor and is not under review. The bundled `review.md` carried in the same branch rates the package `solid`/84 — that score is fair for the **code in isolation against its intended types**, and most of this review agrees with it. The merge gate diverges on one axis the in-isolation review could not see: the delta does **not type-check against the `@flighthq/types` that this integration head actually contains.**
 
-## Verdict
+## Verdict: REVISE — strong package, non-mergeable as-is
 
-**solid — 84/100.** A clean, allocation-disciplined DOM input-normalization layer that, since the depth review, has grown the three layers that review named as its biggest gaps: a queryable **held-state snapshot** (`InputState` + `is*Down`/`get*`), **per-frame edge tracking** (`justPressed*`/`justReleased*` + `was*` + `endInputStateFrame`), and real **gamepad semantics** (dead zones, W3C button/axis naming, mapping-kind). Pointer payloads are now enriched (pressure/tilt/ twist/size), events are timestamped, coalesced events and pointer-lock/capture wrappers exist, and an `InputTextData` type replaced the prior `TextSelectionRange` overload. 40 exported functions, 40 `describe` blocks, 84 `it` tests — every export colocated-tested. The score is held below "authoritative" by three deferred-by-design items: no `InputBackend` seam (web-only host coupling), no action/binding or gesture layer, and no gamepad rumble — each correctly parked on an open design fork rather than guessed at.
+The delta is a large, well-built expansion of the input surface: gamepad button/axis semantic naming (`getGamepadButtonName`/`getGamepadAxisName` + W3C standard-mapping tables), linear and radial dead-zone math (`applyGamepadAxisDeadZone`/`applyGamepadStickDeadZone`), a held-state snapshot + per-frame edge system (`InputState`, `createInputState`, `connectInputStateToInputManager`, `is*Down`/`get*`/`was*`, `endInputStateFrame`), a non-DOM key-repeat timer (`createInputKeyRepeatTimer`), pointer lock/capture (`requestInputPointerLock`/`exitInputPointerLock`/`hasInputPointerLock`/`set`/`releaseInputPointerCapture`), coalesced pointer events (`getCoalescedInputPointerEvents`), a richer pointer payload (pressure/tilt/twist/ size/timeStamp), event timestamps on keyboard and gamepad data, gamepad mapping-kind threading, and a much larger keycode table (F13–F24, media, browser, system keys, numpad-by-location). Composition is clean, naming is mostly canonical, tests are thorough and honest, and the surface is the right shape for the game-input layer the charter (DRAFT) anticipates.
 
-The status doc's claims (second-pass APIs, types, test counts, design rationales) **verify against the diff and source**: the new types exist with the documented shapes, every new function is present with the described behavior, and the noted smells (`void options`, eager signal fold, `connectSignal` returning `void`) are real in the source.
+It cannot merge in its current integration state because those additions lean on `@flighthq/types` shapes that the integration head's `@flighthq/types` **does not define or export**. The input package was advanced against a richer `types` than the one carried into this branch. As-is, the package fails `tsc -b`. This is a dependency-coupling failure, not a design failure — but it is a hard merge blocker.
 
-## Present capabilities
+## Standard-by-standard (delta only)
 
-**Device normalization (attach/detach pairs, one internal binding registry).** Keyboard (`attachKeyboardInput`/`detach…`), pointer (`attachPointerInput` over Pointer Events + contextmenu suppression), relative pointer (`attachRelativePointerInput` → `onPointerMoveRelative` from `movementX/Y`), wheel (`attachWheelInput`, `deltaMode`→`MouseWheelMode`), gamepad (`attachGamepadInput` with internal rAF poll + standalone `pollGamepadInput`), text/IME (`attachTextInput` over `beforeinput`+`compositionupdate`). Teardown is tracked in side `WeakMap`s (`_inputBindings`, `_gamepadPollStates`) keyed manager→target→kind, so re-attach is idempotent and callers hold nothing.
+### 1. Composition / bedrock — PASS
 
-**Normalization primitives.** `getKeyCodeFromDomKeyboardEvent` (with numpad-by-location disambiguation and a char-code fallback), `getKeyModifierFromDomKeyboardEvent` (L/R-distinguished bitmask + CapsLock/NumLock), `getMouseWheelModeFromDomWheelEvent`. The key-code tables expanded this pass to F13–F24, browser/media/system keys, and `NumpadEqual`.
+The new surface decomposes into primitives rather than fusing features behind config flags. Dead-zone math is two pure leaves; the held-state snapshot is a separate value type (`InputState`) wired to the manager by an explicit `connect*` returning a disposer; the key-repeat timer is a standalone handle; pointer lock/capture are independent free functions. No within-unit config-gated-branch smell was introduced. The encoded-key packing for gamepad state (`gamepad * MAX_GAMEPAD_BUTTONS + button`) is a reasonable flat-key choice for the `Set<number>`/`Map<number,…>` held state and stays internal. `b2824e3d8:head/packages/input/src/inputManager.ts` L28–29, L329–343.
 
-**Queryable state (new).** `createInputState` + `connectInputStateToInputManager` maintain a held-state snapshot; `isInputKeyDown`, `isInputPointerButtonDown`, `isInputGamepadButtonDown`, `getInputGamepadAxis` poll it. Pointer buttons are a per-`pointerId` bitmask; gamepad axes/buttons use a compact `gamepad * MAX_GAMEPAD_{AXES,BUTTONS} + index` encoding (32/64 caps documented at the head of the file).
+The event-stream vs. queryable-state split is arguably two jobs in one file, but bundling them at this size is defensible and the charter parks "normalization seam vs. full game-input library" as Open direction #1. Not a delta blocker.
 
-**Frame-edge tracking (new).** `InputState` carries four `Set<number>` edge sets; the connect handlers maintain them, `was*Pressed`/`was*Released` query them, and `endInputStateFrame` rolls them — the canonical "just-pressed-this-frame" game-loop surface. Connect/disconnect handlers clear stale per-pad state across all caps.
+### 2. Naming clarity — PASS with two nits
 
-**Gamepad semantics (new).** `applyGamepadAxisDeadZone` (linear rescale) and `applyGamepadStickDeadZone` (radial, alias-safe out-param) match SDL/Unity-grade behavior; `getGamepadButtonName`/`getGamepadAxisName` resolve W3C standard indices to `GamepadButtonKind`/`GamepadAxisKind` via fixed tables; `GamepadMappingKind` (`'standard' | 'raw' | ''`) is threaded through `InputGamepadConnectData` on connect/disconnect so callers know whether the semantic names apply.
+Full unabbreviated type words throughout; `get*`/`has*`/`is*`/`was*` used correctly (`hasInputPointerLock`, `isInputKeyDown`, `wasInputKeyPressed`). Two grounded inconsistencies, both minor:
 
-**Pointer/pen depth (new).** `setInputPointerData` now populates `pressure`, `tiltX/Y`, `twist`, `width/height`, `isPrimary`, `pointerId`, and `timeStamp`; `getCoalescedInputPointerEvents` iterates `getCoalescedEvents()` (single-event jsdom fallback) reusing one scratch payload; `requestInputPointerLock`/`exitInputPointerLock`/`hasInputPointerLock` and `setInputPointerCapture`/`releaseInputPointerCapture` wrap the lock/capture APIs with sentinel/no-throw semantics.
+- `getGamepadAxisName`/`getGamepadButtonName` drop the `Input` infix that the sibling `getInputGamepadAxis` carries — `getInput…` vs `getGamepad…` read as two families for one package. `b2824e3d8:head/packages/input/src/inputManager.ts` L562, L572, L581.
+- Both take a bare `mapping: string` rather than the `GamepadMappingKind` the charter names (Open direction #6): `export function getGamepadAxisName(mapping: string, index: number)` — `b2824e3d8:head/packages/input/src/inputManager.ts` L562. A typed mapping-kind would make the `mapping !== 'standard'` guard self-documenting.
 
-**Key-repeat synthesis (new).** `createInputKeyRepeatTimer({delay, interval})` returns a reusable `{start, stop}` handle for non-DOM sources (d-pad, virtual keys, native backends).
+### 3. Tree-shaking / bundle invariant — PASS
 
-**Engineering quality.** Zero per-event allocation (scratch `_*Data` singletons), `Readonly<>` on all signal payloads and read-only params, `enabled` gate honored on every handler, `preventDefault` opt-out via `AttachInputOptions`, no import-time side effects, `"sideEffects": false`, single root barrel (`export * from './inputManager'`). Deps are exactly `@flighthq/signals` + `@flighthq/types`, both `*`-pinned, no phantom or `@flighthq/sdk` edges.
+`package.json` is byte-identical to base: single `.` export, `"sideEffects": false`, no new dependency. `index.ts` stays a thin `export * from './inputManager'`. No top-level side effects were added — listeners, timers, the `requestAnimationFrame` loop, and pointer-lock calls are all created inside `attach*`/`create*`/ `request*` bodies, never at module load. New module-scope constants (`_standardButtonNames`, `keyCodesByCode`, the scratch payloads, the binding `WeakMap`) are inert data. Each new function is independently importable; no shared hot-loop branch or shared switch now taxes existing importers. `b2824e3d8:head/packages/input/package.json` (unchanged); `…/src/inputManager.ts` L106–119, L823–851, L1091–1117.
 
-## Gaps
+### 4. Registry vs closed union (fork B) — N/A for the delta (parked)
 
-Against a maximal input library (SDL input, Unity Input System, gainput, OpenFL/Lime):
+No closed `switch(kind)` over a growing family was added. The gamepad standard-mapping tables are fixed-index lookup arrays — the correct shape for the genuinely-bounded W3C standard mapping. `GamepadMappingKind` remains a closed `'standard' | 'raw' | ''` union (charter Open direction #6), a pre-existing shape question not introduced or worsened by this delta. No action at the gate.
 
-- **No `InputBackend` seam.** Every `attach*` takes a DOM `EventTarget`/`HTMLElement`/`Window` directly; a native host cannot feed normalized input through the same API without a parallel path. This is the single structural gap keeping "portable" (the package's own description) implicit rather than enforced. Correctly deferred — it is a design fork that reshapes every `attach*` signature and the Rust mirror (see Candidate open directions).
-- **No action / binding map.** No `InputAction`, action sets, rebinding, chord/combo recognition. Status parks this as a `@flighthq/input-bindings` neighbor pending a name/boundary decision.
-- **No gestures.** Tap, double-tap, long-press, swipe/pan (velocity), pinch-zoom, rotate — none. Raw multi-touch pointers are exposed, but no recognizer sits on top. The Bronze timestamps + Silver coalesced-events preconditions are now both met, so the only blocker is the package-shape decision (`@flighthq/gestures`).
-- **No gamepad rumble/vibration** (`GamepadHapticActuator`). Status correctly blocks this on the backend seam (native rumble must route through a backend).
-- **No gamepad mapping database.** Only the W3C `'standard'` mapping is named; `'raw'`/`''` devices get no semantic names. An SDL `GameControllerDB`-style `@flighthq/gamepad-mappings` is the deferred plurality case (≥2 mapping sources → registry).
-- **No multi-device identity / hot-plug beyond gamepads.** No `InputDeviceId` or generalized `onInputDeviceConnect`/`Disconnect` for keyboard/mouse — relevant for native hosts with multiple keyboards/mice.
-- **Internal field-population drift.** `attachRelativePointerInput` hand-assigns all 14 `_pointerData` fields instead of routing through `setInputPointerData`, a parallel codepath that can silently drift from the canonical one (flagged in the API alignment review).
+### 5. Subject triad + plurality guard — N/A for the delta
 
-## Charter contradictions
+The delta adds no `-formats`/`-backend` cell and no premature split. The proposed neighbor packages (`input-bindings`, `gestures`, `gamepad-mappings`) are charter Open directions, correctly **not** acted on here. The standing structural tension — every `attach*` still takes a raw DOM target, so "portable, backend-agnostic" is aspirational rather than seam-enforced (charter Open direction #2, fork D) — is unchanged by this delta and belongs to a direction session, not this gate.
 
-The charter is a **stub** (only "What it is" is seeded; North star, Boundaries, Decisions, Open directions are all `TODO`). There is therefore no stated North-star principle, Boundary, or Decision for the code to contradict — **none found.** The package is judged below against the codebase-map AAA standard, and every assumption I had to make is surfaced as a candidate open direction. The "portable, backend-agnostic representation" phrase in "What it is" is _aspirational_ against today's DOM-coupled `attach*` signatures, but absent a blessed Boundary that is a gap, not a contradiction.
+### 6. Contract hygiene — FAIL (merge blocker) + minor gaps
 
-## Contract & docs fit
+**Types-first is violated against the integration head.** The contract requires cross-package types to be defined in `@flighthq/types` first, then implemented against. The delta implements against types the integration head's `@flighthq/types` does not contain. Concretely, `b2824e3d8:head/packages/input/src/inputManager.ts` imports and uses, but head `@flighthq/types` does **not** define/export:
 
-**Lives up to the contract — strongly.**
+- `GamepadAxisKind`, `GamepadButtonKind` (value constants + types) — imported L2–23, used L562–575, L824–851. `grep -rn "GamepadAxisKind|GamepadButtonKind" head/packages/types/src` → no match.
+- `InputState` — imported L2–17, returned by `createInputState` L472, threaded through ~10 functions. Head `types/src/index.ts` exports `TextInputState`, not `InputState`.
+- `InputTextData` — imported L2–17, the new `onTextInput`/`onTextEdit` payload (`{ isComposing; text }`), L249–264, L1081–1084. Head `InputSignals` types those signals as `Signal<(data: Readonly<TextSelectionRange>) => void>` (`b2824e3d8:head/packages/types/src/InputSignals.ts` L20–21), and the test reads `data.isComposing` (`…/inputManager.test.ts` L255), a field `TextSelectionRange` lacks. Mismatch on assignment and on read.
+- `InputKeyRepeatOptions` — imported L10, the `createInputKeyRepeatTimer` parameter L413. Not in head types.
 
-- **Types-first.** Every cross-package type (`InputState`, `InputTextData`, `InputKeyRepeatOptions`, `GamepadAxisKind`/`GamepadButtonKind`/`GamepadMappingKind`, the `InputGamepad*Data` set) is defined in `@flighthq/types`, one concept per file, and implemented against. The only inline interface (`GamepadPollState`) is module-internal and never crosses a boundary — correct.
-- **Full unabbreviated names, `get*`/`is*`/`was*`/`has*` prefixes, `attach*`/`detach*` source-wiring pairs, `create*` allocation verb** — all clean (corroborated by the API alignment review).
-- **Out-params alias-safe.** `applyGamepadStickDeadZone` reads `x`/`y` into the magnitude before writing `out`; the `setInput*Data` helpers read every event field before writing `out`.
-- **Sentinels, not throws.** Disabled managers short-circuit; missing `navigator.getGamepads` falls back; unknown keys → `KeyCode.UNKNOWN`; `getGamepad*Name` return `null` off-standard/out-of-range; pointer-lock/capture wrappers no-throw.
-- **Single root export, `sideEffects: false`, no top-level side effects** — verified.
-- **Symbol kinds used correctly.** `kGamepadInput` etc. are internal-only `Symbol()` slot keys, never serialized — the permitted symbol case.
+**Field-shape mismatches** compound it — the delta writes fields the head type interfaces do not declare:
 
-**Candidate contract / admin-doc revisions (user's gate, not mine):**
+- `setInputKeyboardData` writes `out.timeStamp` (`…/inputManager.ts` L791) but head `InputKeyboardData` has no `timeStamp` (`b2824e3d8:head/packages/types/src/InputKeyboardData.ts`). The test asserts it (`…/inputManager.test.ts` L160–172).
+- `pollGamepadInput` writes `_axisData.timeStamp`/`_buttonData.timeStamp` (`…/inputManager.ts` L662, L674) but head `InputGamepadAxisData`/`InputGamepadButtonData` have no `timeStamp` (`b2824e3d8:head/packages/types/src/InputGamepadData.ts`).
+- `onGamepadConnected`/`onGamepadDisconnected` write `_connectData.mapping` (`…/inputManager.ts` L89, L101) but head `InputGamepadConnectData` is `{ gamepad; id }` only — no `mapping`.
+- `setInputPointerData` and the `_pointerData` literal write `height`, `pressure`, `tiltX`, `tiltY`, `twist`, `width`, `timeStamp` (`…/inputManager.ts` L806–818, L1057–1079) but head `InputPointerData` declares none of them (`b2824e3d8:head/packages/types/src/InputPointerData.ts`). The test asserts `pressure`/`tiltX` (`…/inputManager.test.ts` L196–211).
 
-- **Package Map line is now stale.** `@flighthq/index.md` still describes input as "maps raw system inputs to a normalized internal representation, feeding into interactions, signals, and other consumers" — it does not mention the now-substantial **state-snapshot + frame-edge query surface** (`InputState`, `is*Down`, `was*`) or **gamepad semantics**. The `package.json` `description` ("…keyboard, pointer, wheel, and text events") omits **gamepad** entirely. Both undersell the package's current scope.
-- **`enable*`-signals convention departure.** `createInputManager` eagerly folds in all 15 signals via `...createInputSignals()`; there is no `enableInputSignals` opt-in seam. The codebase map makes signal-group cost opt-in (`enableDisplayObjectSignals`). Defensible here — signals are this package's _sole_ delivery mechanism, so a manager without them is inert — but it is an undocumented departure from a stated convention. Worth either a blessed Decision ("input signals are not opt-in because they are the delivery mechanism") or a per-group `enable*` split.
-- **TS↔Rust conformance-map drift.** The crate's native push-dispatch family (`dispatch_keyboard_event`, the 12 `dispatch_*` fns, `dispose_input_manager`, `poll_gamepad_snapshots`) has **no TS counterpart** and is only implicitly covered by the conformance map's "DOM input wiring" phrase — which does **not** name `input`. `poll_gamepad_input` is a Rust no-op stub. These belong in the divergence map explicitly (flagged by the ts-rust alignment review).
-- **`GamepadMappingKind` as a closed union.** It is a `*Kind` name but a closed string union (`'standard' | 'raw' | ''`), not an object-constant registry like its `GamepadButtonKind`/ `GamepadAxisKind` siblings. Defensible (the W3C mapping-state set is genuinely fixed/bounded), but it reads inconsistently against the kind-as-string-constant convention. A naming/shape question for the types-layout doc, not a bug.
+The patch **does** touch `packages/types/` (8 files: FontMetrics, GlyphExtents, Notification, RenderViewport2D, ShapedRun, SpritesheetFormat, TextShaper, index) but **none** is an input type file — the input type shapes were left at base while the input implementation moved forward. This is the single decisive merge blocker: `tsc -b` cannot pass on this integration head.
 
-## Candidate open directions
+Where contract hygiene is **met** by the delta (kept specific, not a blanket fail):
 
-The charter is silent on all of the below; each is something a reviewer or worker must currently _assume_. These feed the charter's Open directions for the user to settle.
+- Out-param alias-safety: `applyGamepadStickDeadZone` reads `x`/`y` into `mag` before writing `out.x`/`out.y`, is documented alias-safe, and the test exercises the aliased case (`…/inputManager.test.ts` L90–95). PASS.
+- Sentinels over throws: `getGamepad*Name` return `null` off-standard/out-of-range; `requestInputPointerLock` resolves `false` on rejection; `releaseInputPointerCapture` swallows the already-released `DOMException`; disabled managers short-circuit. No new throw-on-expected-failure. `…/inputManager.ts` L563–574, L693–719.
+- `dispose`/`destroy`: `connectInputStateToInputManager` returns a detach-and-release-to-GC disposer (correct `dispose`-semantics, though returned as a bare `() => void` rather than a named verb); no GPU/native resource, so `destroy*` is correctly absent. L379–391.
+- Internal `Symbol()` binding keys (`kGamepadInput` …) are never serialized — contract-sanctioned. L1110–1115.
 
-1. **Is `@flighthq/input` a normalization seam or a full game-input library?** The depth review framed it as a deliberately thin normalization layer; this pass added state, edges, and gamepad semantics that push it toward "library." The charter must state the intended scope — it decides whether the gaps above are missing-by-design or missing-by-omission.
-2. **The `InputBackend` seam (fork D — runtime backend seam).** Do `attach*` keep DOM-target signatures alongside a backend path, or route entirely through a `*Backend`? This is the gate for native hosts, gamepad rumble, multi-device identity, and Rust parity. The single highest-leverage undecided question.
-3. **Neighbor-package boundaries.** Bless or reject `@flighthq/input-bindings` (action/binding maps), `@flighthq/gestures` (recognizers — preconditions now met), and `@flighthq/gamepad-mappings` (the `GameControllerDB` plurality case). Each is a subject-triad / new-cell decision (bedrock test), not a within-package sweep.
-4. **Boundary with `@flighthq/sensors` and the platform event-suite.** Where do accelerometer/ gyroscope/orientation and on-screen-keyboard events live relative to `input`? Status surfaces this as unresolved.
-5. **Signal-cost model.** Settle the `enableInputSignals` question above as a blessed Decision either way, so the eager fold is documented intent rather than drift.
+Minor, non-blocking: `createInputKeyRepeatTimer` returns an inline anonymous `{ start; stop }` object type rather than a named handle type in `@flighthq/types` (`…/inputManager.ts` L413–416). A named `InputKeyRepeatTimer` in types would match the header-layer rule and give the Rust port a seam to mirror.
+
+### 7. Tests & honesty — PASS (in isolation)
+
+One colocated `*.test.ts`, `describe` blocks alphabetized and mirroring exports, every new export tested (dead zones incl. alias case, frame edges, dispose, pointer lock/capture incl. throw-swallow, coalesced fallback + iteration, gamepad-name range/non-standard, key-repeat delay/interval/restart). Claims match code; no dead or unexported-but-implemented surface found. The honesty caveat is environmental, not authorial: these tests were green in the worktree where the richer `@flighthq/types` existed; on this integration head the file does not compile, so `tsc -b` (which typechecks `src/*.test.ts`) fails before the suite runs.
+
+## Bottom line for the gate
+
+Approve the **shape** of this delta — it is the right surface, cleanly built and honestly tested. Block the **merge** until the matching `@flighthq/types` additions land in the same integration so the package compiles. The fix lives outside `packages/input`'s own tree (it is a `@flighthq/types` change), which is why it is surfaced as a must-fix-before-merge directive and an Open-directions note rather than a within-package recommendation.

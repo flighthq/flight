@@ -1,93 +1,118 @@
 ---
 package: '@flighthq/scene-gl'
 status: solid
-score: 74
-updated: 2026-06-24
+score: 75
+updated: 2026-06-25
 ingested:
   - status.md
   - source
   - changes.patch
+  - charter.md
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
 ---
 
 # scene-gl — Review
 
-> Survey layer. Evidence is the incoming bundle `builder-67dc46d64` (`head/packages/scene-gl/`
->
-> - `changes.patch`). No prior `reviews/depth/scene-gl.md` existed, so this is the first survey; the charter is a seeded stub (only "What it is" filled, North star / Boundaries / Decisions / Open directions all `TODO`), so the package is judged against the codebase-map AAA standard for a real-time WebGL2 forward 3D renderer, with every charter silence flagged as a candidate Open direction below.
+> **Merge-gate review.** Baseline is the **approved** `origin/main` (`eb73c3d74`), carried as `incoming/integration-b2824e3d8/base/packages/scene-gl/`; it is the blessed floor and is **not** under review. The judged subject is the **delta** — `head` vs `base` under `incoming/integration-b2824e3d8/`, plus the `packages/scene-gl/` hunks of `incoming/integration-b2824e3d8/changes.patch`. Findings cite `b2824e3d8:<path>` with a quoted snippet. The package's own North star / Boundaries are still a `draft: true` charter, so the delta is judged against the codebase-map AAA standard and the charter's already-authored "What it is" + Open directions.
 
 ## Verdict
 
-`solid` — 74/100. A genuinely broad, well-factored WebGL2 forward renderer: one PBR uber-shader with seven glTF extension lobes, twenty registered mesh-material families across PBR / classic / stylized / debug, a clean per-state registry, a shared lit-light spine, and now a correct two-pass opaque/blended transparency sort. It is past stub and well into a real library. It is held back from `authoritative` by three things: a **forward lighting model capped at one directional + one ambient light** (the single largest functional gap — no point/spot/hemisphere, no shadows, no IBL), a **non-functional draw-entry "pool"** that allocates fresh every frame (the pass-2 isolation work is correct on ownership but the pool never recycles), and the **absence of any `destroy*` teardown** for the GPU programs / VAOs / buffers this package creates.
+`solid — 75/100`. The delta is a well-scoped, honest step on top of an already-strong forward renderer: it adds a **two-pass opaque/blended transparency sort**, moves the draw-entry pools/lists off module-level singletons and onto the **per-state `GlSceneRuntime`**, and lands a **`HAS_UV1` second-UV-set shader path** (occlusion-via-`TEXCOORD_1`) with its `hasGlMeshGeometryUv1` detector. The transparency sort and the per-state isolation are correct and well-tested. The score moves only +1 over the base review because the same delta also introduces two delta-grounded smells that a merge gate should name: a **draw-entry "pool" that never recycles** (it allocates fresh every frame after the first), and a **dead `HAS_UV1` feature path** — the entire uv1 shader branch and its detector are reachable only from tests; no production `bind()` ever sets `hasUv1` true. Neither blocks correctness, but both are exactly the "is this the final shape worth keeping?" question this gate exists to ask. Recommend **merge with the uv1 wiring required** (it is within-package and sweep-safe) and the pool semantics routed to the charter's standing Open direction.
 
-## Status-doc verification (as-claimed → verified)
+## What the delta changes (head vs base)
 
-Every claim in `status.md` was checked against `changes.patch` and the head source. All verify:
+Non-test source (six files):
 
-- **Two-pass transparency sort** (`drawGlScene.ts:47-159`) — confirmed. Pass 1 draws `opaque`/`mask` subsets in scene order with no blend; pass 2 sorts `blend` subsets back-to-front by clip-space W (`compareBlendedEntriesDescending`, descending W) and enables `SRC_ALPHA`/`ONE_MINUS_SRC_ALPHA`, disabling after. The W computation reads the world translation from matrix column 3 (`m[12..14]`) and dots it with VP row 3 — correct.
-- **Per-state pool isolation** — confirmed. `GlSceneRuntime` carries `blendedDrawList`, `blendedPool`, `opaqueDrawList`, `opaquePool` (`glSceneRuntime.ts:29-38`); `drawGlScene` reads them via `getGlSceneRuntime` rather than module-level singletons; the new test `gives each render state its own draw-entry pools, not shared singletons` exists (`glSceneRuntime.test.ts`).
-- **`GlSceneDrawEntry` exported with `object` fields** — confirmed (`glSceneRuntime.ts:9-17`); the draw path casts to the private `DrawEntry` alias (`drawGlScene.ts:183-191`) for typed access.
-- **`hasGlMeshGeometryUv1` helper + `uv1`/`joints0`/`weights0` attribute locations** — confirmed in `glMeshUpload.ts`; three new colocated tests present.
-- **`hasUv1` define key + `HAS_UV1` shader path** — confirmed (`glPbrPrelude.ts:45,65,87,128-130, 140-142,150-152,164-166,343-347`); the occlusion sample routes through `v_uv1` under `HAS_UV1`, the canonical glTF TEXCOORD_1 placement.
-- **`buildGlPbrStandardDefineKey(…, hasUv1 = false)` third param** and the `makeKey` test fix — confirmed via patch.
-- **`mesh-blend-transparency` functional test** — confirmed (`tests/functional/mesh-blend-transparency/` with `app.ts` + `render.webgl.ts`, WebGL-only). The status's own note that the **baseline is not yet captured** is accurate and remains the one open action item from the pass.
+- `drawGlScene.ts` — rewritten from a single in-order draw loop into a **partition → opaque pass → back-to-front-sorted blended pass**. Adds the clip-W depth proxy, `isBlendedMaterial`, `compareBlendedEntriesDescending`, the private `DrawEntry` alias, and the `acquireOpaqueEntry`/`acquireBlendedEntry`/`createDrawEntry` pool helpers. Reads its pools/lists from `getGlSceneRuntime(state)` instead of module-level arrays.
+- `glSceneRuntime.ts` — adds the exported `GlSceneDrawEntry` interface (fields typed `object` to keep the header free of scene-gl-internal types) and four new runtime fields: `blendedDrawList`, `blendedPool`, `opaqueDrawList`, `opaquePool`.
+- `glMeshUpload.ts` — adds `uv1: 5`, `joints0: 6`, `weights0: 7` to `ATTRIBUTE_LOCATION` (skinning channels reserved) and a new exported `hasGlMeshGeometryUv1(geometry)` detector.
+- `glPbrPrelude.ts` — adds the `hasUv1` key bit, the `2` slot in the define string, `#define HAS_UV1`, the `a_uv1`/`v_uv1` vertex+fragment plumbing, and routes the occlusion sample through `v_uv1` under `HAS_UV1`.
+- `glPbrStandardBlock.ts` — `buildGlPbrStandardDefineKey` gains a third `hasUv1 = false` parameter.
+- `glSceneTestHelper.ts` — fake GL2 gains `BLEND`/`SRC_ALPHA`/`ONE_MINUS_SRC_ALPHA` enums and `blendFunc`, and re-sorts its method table.
 
-The status doc is an honest, accurate merge; nothing in it is overstated.
+Tests: new `drawGlScene` cases (blend enable/disable, opaque-before-blended, back-to-front sort, all-opaque no-blend), new `hasGlMeshGeometryUv1` and `glSceneRuntime` pool-isolation cases, the `glPbrPrelude`/`glPbrStandardBlock` key tests for `hasUv1`, and a **mechanical `SceneLightBlock` literal update across ~16 material-renderer test files** adding `hemisphereCount/pointCount/spotCount: 0` to track an upstream `@flighthq/types` change.
 
-## Present capabilities
+## Delta against the seven standards
 
-- **Two-pass forward draw** (`drawGlScene`): partition → opaque pass → sorted blended pass, with a contiguous-run bind cache (`boundRenderer`/`boundMaterial`) so a shared renderer+material binds once across consecutive subsets. Idempotent `prepareSceneRender` consumed from `@flighthq/render`.
-- **PBR uber-shader** (`glPbrPrelude.ts`): GLSL 300 es Cook-Torrance (GGX / Smith height-correlated visibility / Fresnel-Schlick), one source string specialized by a prepended `#define` block. Map flags (base-color, normal, metallic-roughness, occlusion, emissive) + alpha-mask + `hasUv1` + seven extension lobes (clearcoat, sheen, anisotropy, iridescence, specular, subsurface, transmission), all `#ifdef` branches of one shader. Outputs linear HDR radiance into the rgba16f scene target; tonemap owned downstream.
-- **Define-key program cache** (`buildGlPbrDefineKey` / `buildGlPbrDefineSource`, `glPbrProgramCache.ts`): order-independent stable string key, distinct flag sets → distinct cached programs. The standard PBR path is byte-for-byte unchanged when no extension flag is set.
-- **Twenty material families** registered via per-family `register*GlMaterial(state)` opt-in functions: the PBR family (`standardPbr` + 8 extension variants incl. `specularGlossiness`, `transmissionVolume`), classic (`lambert`, `phong`, `blinnPhong`), stylized (`toon`, `matcap`), attribute (`vertexColor`, `emissive`), and debug (`normal`, `depth`, `wireframe`). This is real AAA breadth for material coverage.
-- **Open registry, not a switch** (`glMeshMaterialRegistry.ts`): `registerGlMeshMaterialRenderer` / `resolveGlMeshMaterialRenderer` over a per-state `Map<Kind, …>` with a `DefaultMaterialKind` fallback and no built-in auto-registration. Satisfies structural fork B (registry by default) and the renderer-registration core pattern cleanly.
-- **Shared lit-light spine** (`glLitProgram.ts`): `GlLitProgram` base interface, `bindGlMeshLightBlock`, `resolveGlLitLocations`, and `GL_MESH_LIGHT_BLOCK_GLSL` keep the CPU upload and the GLSL declaration in lockstep — one place light data reaches GL across all lit families.
-- **Per-state runtime** (`glSceneRuntime.ts`): registry, program cache, geometry upload `WeakMap`, `activeMeshProgram` bind→draw handoff, and the draw-entry pools/lists — surfaced through the header's opaque `GlRenderStateRuntime` slots. Lazy, allocated on first `getGlSceneRuntime`.
-- **Geometry upload** (`glMeshUpload.ts`): `ATTRIBUTE_LOCATION` with version-gated re-upload, including reserved `joints0`/`weights0` skinning channels and the `uv1` set.
-- **Wireframe upload path** (`glWireframeUpload.ts`) for the debug family.
+### 1. Composition / bedrock — pass (with one smell)
 
-## Gaps
+The two-pass draw is a clean composition: partition once, then two independent passes sharing the contiguous-run bind cache. No new config-gated feature branch fuses subjects. The smell is the **duplicate acquire helpers**: `acquireOpaqueEntry` and `acquireBlendedEntry` are byte-identical (`b2824e3d8:packages/scene-gl/src/drawGlScene.ts`):
 
-What a mature WebGL2 forward 3D renderer has that this one lacks:
+```ts
+function acquireOpaqueEntry(pool: GlSceneDrawEntry[]): GlSceneDrawEntry {
+  if (pool.length > 0) return pool.pop()!;
+  return createDrawEntry();
+}
+function acquireBlendedEntry(pool: GlSceneDrawEntry[]): GlSceneDrawEntry {
+  if (pool.length > 0) return pool.pop()!;
+  return createDrawEntry();
+}
+```
 
-1. **Multi-light forward path (highest leverage).** The light block carries at most \*\*one directional
-   - one ambient\*\* (`bindGlMeshLightBlock`, `glLitProgram.ts:25-36`; `u_directionalCount`/ `u_ambientCount` are 0/1 gates). No point lights, no spot lights, no hemisphere light (the type is already defined upstream but unconsumable here), no per-light attenuation. A real forward renderer carries an N-light loop (`MAX_FORWARD_LIGHTS`). The status correctly flags this as cross-package (types / render / scene-gl / scene-wgpu / Rust) and not landable unilaterally.
-2. **No `destroy*` teardown.** The package creates `WebGLProgram`s (program cache), VAOs, vertex/index buffers (`GlMeshUpload`) — non-GC GPU resources — but exposes **no** `destroyGlScene*` / `destroyGlMeshUpload*` to free them. `glSceneRuntime.ts:71-72` only _gestures_ at "a future destroy path." Per the codebase-map teardown rule, a GPU backend that allocates framebuffers/textures/ buffers owes a `destroy*`. This is a correctness/leak gap, not just polish.
-3. **The draw-entry "pool" does not pool.** `acquireOpaqueEntry`/`acquireBlendedEntry` `pop()` from `opaquePool`/`blendedPool`, but entries are pushed into the _draw lists_, never released back to the pools (`drawGlScene.ts:62-101`). After frame 1 the pools are empty and every subsequent frame allocates fresh entries via `createDrawEntry()` (each allocating two `Matrix4`s). `*.length = 0` on the draw lists clears references without recycling. The per-state ownership refactor is correct, but the recycling it was meant to protect is absent — there is no `acquire*`/`release*` bracket, so naming it a pool is misleading.
-4. **IBL / environment lighting** — none. Ambient is flat irradiance over diffuse albedo only (`glPbrPrelude.ts:432-435`, comment: "no IBL specular yet"). No cubemap/prefiltered environment, no BRDF LUT.
-5. **Shadow mapping** — none. No depth pre-pass, no PCF, no shadow descriptor consumption.
-6. **GPU skinning / morph targets / instancing** — groundwork only: `joints0`/`weights0` locations are reserved but there is no `SKINNED` define, joint-palette UBO, or per-instance path.
-7. **Transmission is a placeholder** (`glPbrPrelude.ts:444-451`): no opaque-scene-color capture pass, so refraction is approximated as translucency with an explicit `TODO Phase 5`.
-8. **`hasUv1` is material-time, but `uv1` presence is geometry-time** — the helper to close this (`hasGlMeshGeometryUv1`) now exists but is **not yet wired** into `standardPbrGlMeshMaterialRenderer.bind()` (geometry is not available at `bind()`). Safe today (an unbound attribute reads zero), but the define key and bound attributes can disagree.
-9. **No UBO for the light/per-object block** — lights upload as individual `uniform*` calls; the normal matrix is the lone non-square per-draw matrix (a std140 refactor concern the status flags).
+Two names for one function (the pool argument already carries the opaque/blended distinction). One `acquireDrawEntry(pool)` is the bedrock primitive; the split is blood-from-a-stone.
 
-## Charter contradictions
+### 2. Naming clarity — pass
 
-None — the charter's only authored section is "What it is," and the package matches it precisely (a WebGL2 forward leaf renderer over `render-gl` with a PBR uber-shader + classic/stylized/debug families). North star, Boundaries, and Decisions are all `TODO`, so there is no stated principle to contradict. Every substantive judgement below the "What it is" line is therefore a candidate Open direction, not a contradiction.
+New exports read cleanly with full type words: `hasGlMeshGeometryUv1` (correct `has*` prefix, unabbreviated `MeshGeometry`), `GlSceneDrawEntry`, `isBlendedMaterial`, `compareBlendedEntriesDescending`. The `hasUv1` key bit matches the `uv1`/`TEXCOORD_1` vocabulary. No abbreviation or vague name introduced by the delta.
 
-## Contract & docs fit
+### 3. Tree-shaking / bundle invariant — pass
 
-**Lives up to the contract:**
+No new top-level side effect, no eager registration; `index.ts` stays a thin barrel and the new symbols flow through it. `package.json` `sideEffects: false` is unchanged. The transparency sort is inside `drawGlScene` only — it does not add a branch to a shared hot path every importer pays. The `HAS_UV1` plumbing is `#ifdef`-gated GLSL behind a key bit, so the standard program is byte-for-byte unchanged when `hasUv1` is false (the existing define-key invariant holds; the test asserts the new `-------:-------` / `2` slot).
 
-- **Types-first.** Cross-package types (`GlMeshMaterialRenderer`, `SceneRenderProxy`, `SceneLights`, `SceneLightBlock`, `Material`, `MeshSubset`) come from `@flighthq/types`; scene-gl defines only its own internal program/runtime interfaces. `GlSceneDrawEntry` is deliberately typed with `object` fields to keep the runtime header free of scene-gl-internal imports — a correct application of the entity/runtime-slot pattern.
-- **Single root export, `sideEffects: false`** (`package.json`), thin `index.ts` barrel, no per-file subpaths. No top-level `registerRenderer` — registration is opt-in via `register*` functions.
-- **Open registry over closed switch** — satisfies fork B; the hot loop dispatches via a `Map` lookup hoisted out of the per-subset inner work (bind cached across contiguous runs), so the registry costs nothing in the loop.
-- **Full unabbreviated names** throughout (`registerStandardPbrGlMaterial`, `resolveGlMeshMaterialRenderer`, `bindGlMeshLightBlock`). `get*`/`has*`/`is*` prefixes used correctly. Out-param aliasing respected (`setMatrix3NormalFromMatrix4` into a scratch).
-- **Rust mirror** — charter front matter declares `crate: flighthq-scene-gl`; the Rust map lists `scene-gl` as a real ported subject-backend crate. Consistent.
+### 4. Registry vs closed union (fork B) — pass
 
-**Contract / docs fit issues (candidate revisions, the user's gate):**
+The delta touches no dispatch family. Material resolution still flows through the per-state `Map<Kind, …>` registry; the new blended/opaque split is a property of the material's `alphaMode`, read by `isBlendedMaterial` via structural duck-typing — not a closed `switch (kind)` (`b2824e3d8:packages/scene-gl/src/drawGlScene.ts`):
 
-- **Teardown convention is unmet** (gap 2): the design-constraint rule "a GPU backend owes `destroy*`" is currently unsatisfied. Either the package needs a `destroy*` path or the charter should record an explicit decision about who owns GPU-resource teardown for scene render state (likely `render-gl`).
-- **"Pool" naming without `acquire`/`release` brackets** (gap 3) is slightly at odds with the geometry- ownership convention, which reserves `acquire*`/`release*` for _paired_ pool brackets. The current `acquireOpaqueEntry` has no matching `release`, so the name implies a contract the code does not honor.
-- **Package Map line for `@flighthq/scene`** in `tools/agents/docs/index.md` still reads "A doorway for future development; the road is mostly untaken and the package is not yet built out." Structural fork G (2026-06-24) promotes 3D to first-class in-scope and makes `scene` a priority build-out; the map's Package Map has no `scene-gl` / `scene-wgpu` entry at all despite this being a real, broad package. Candidate revision: add a Package Map line for the `scene-<backend>` family and update the `scene` line to reflect the fork-G decision.
-- **`render-backend-support.md`** notes "punctual lights unwired" generically; it does not yet record the scene-gl-specific single-directional+ambient cap or the transparency-sort being GL-only (wgpu unsorted). Candidate addition.
+```ts
+function isBlendedMaterial(material: Readonly<Material>): boolean {
+  return (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+}
+```
 
-## Candidate open directions
+This is correct: alpha mode is a two-valued partition (blend vs not), the closed form is bedrock, and it does not grow with material kinds.
 
-These are the charter silences this review had to assume past; each should feed the charter's Open directions for the user to settle:
+### 5. Subject triad + plurality guard — pass
 
-1. **Lighting model bound.** Is the one-directional+one-ambient cap a temporary state or a deliberate tier-1 boundary? If multi-light is in scope, the `SceneLights`/`SceneLightBlock` redesign (`MAX_FORWARD_LIGHTS`, point/spot arrays, attenuation) is a cross-package coordination with types / render / scene-wgpu / Rust — a design fork, not within-package work.
-2. **GPU teardown ownership.** Where does `destroy*` for scene programs/VAOs/buffers live — in scene-gl per family, or a single `destroyGlScene*` over `GlSceneRuntime`, or delegated to `render-gl`'s state destroy? The runtime already gestures at it; the charter should rule.
-3. **Pool semantics.** Should the draw-entry pool actually recycle (add a `release*` after each pass), or should the "pool" be dropped in favor of plain per-frame arrays (entries are cheap)? Either is defensible; the current half-state is the worst of both.
-4. **scene-wgpu parity as a stated boundary.** Every scene-gl feature (uv1, HAS_UV1, transparency sort) lands on the wgpu parity-gap list. Is "scene-gl leads, scene-wgpu follows" a blessed boundary, or should new features land in both backends together? The status flags this as a standing risk.
-5. **Extension-map flags in the cache key.** Extension lobe _maps_ (clearcoat/sheen/etc. textures) are bound-when-present but not part of the define key (`glPbrPrelude.ts:32-33`). Is the uniform-fallback behavior the intended end state, or should per-extension map flags eventually enter the key?
-6. **IBL / shadow / skinning scope and sequencing.** Fork G accepts full 3D as in-scope; the charter should state which of IBL, shadow mapping, and GPU skinning are scene-gl's responsibility and in what order, since each is a large cross-package move.
+No format/backend code is mis-homed by the delta. `glMeshUpload`'s reserved `joints0`/`weights0` locations and the `uv1` set stay in the GL leaf where vertex-attribute binding belongs. Nothing here is a premature split.
+
+### 6. Contract hygiene — pass (with one type-laundering note)
+
+Types stay header-first: every cross-package type (`Material`, `MeshSubset`, `SurfaceMaterial`, `SceneLights`, `GlMeshMaterialRenderer`) is imported from `@flighthq/types`; scene-gl defines only its own `GlSceneDrawEntry`/`DrawEntry`. Out-param aliasing is respected — `setMatrix3NormalFromMatrix4` writes into the shared `scratchNormalMatrix`. No throw is introduced; the skip path (`if (renderer === null) continue`) keeps sentinel semantics. The blend pass restores state deterministically (`gl.disable(gl.BLEND)` after the pass).
+
+One note: `GlSceneDrawEntry`'s `object`-typed fields force the draw path to launder through `as DrawEntry` casts. This is the **sanctioned** runtime-slot pattern (the header stays free of scene-gl-internal types), so it is not a regression — but it does mean the entry's field types are unchecked at the cast boundary, which is how the dead-field bug in §7 slipped in unflagged.
+
+### 7. Tests & honesty — partial (two delta-grounded issues)
+
+The new tests are colocated, alphabetized, and mirror exports; the `drawGlScene` and pool-isolation cases genuinely exercise the new behavior. But the delta ships two honesty gaps:
+
+**(a) The "pool" never recycles.** `glSceneRuntime.ts` introduces `opaquePool`/`blendedPool` and `drawGlScene` `acquire`s from them, but **nothing ever returns an entry to a pool**. Entries are pushed onto the draw lists, which are then cleared by reference (`b2824e3d8:packages/scene-gl/src/drawGlScene.ts`):
+
+```ts
+opaqueDrawList.length = 0;
+blendedDrawList.length = 0;
+```
+
+After frame 1 the pools are empty forever, so every subsequent frame calls `createDrawEntry()` per subset — each allocating two matrices (`normalMatrix: createMatrix4()`, `worldMatrix: createMatrix4()`). There is an `acquire*` with no matching `release*`, which inverts the geometry-ownership rule that reserves those verbs for **paired** brackets. The per-state ownership refactor is correct; the recycling it implies is absent. This is delta-introduced (the pool fields are new in this PR) and the charter already lists "Pool semantics" as an Open direction — so it is a **flag**, not a blocker.
+
+**(b) The `HAS_UV1` path is dead surface.** The delta adds the full second-UV-set feature — `hasGlMeshGeometryUv1`, the `hasUv1` key bit, `#define HAS_UV1`, the `a_uv1`/`v_uv1` plumbing, and the occlusion-via-`v_uv1` route — but **no production code path turns it on**. `standardPbrGlMeshMaterialRenderer.bind()` still calls the two-argument form (`b2824e3d8:packages/scene-gl/src/standardPbrGlMeshMaterialRenderer.ts`):
+
+```ts
+buildGlPbrStandardDefineKey(pbr, pbr !== null && pbr.alphaMode === 'mask'),
+```
+
+A grep across the head package confirms the only caller of `hasGlMeshGeometryUv1` is its own test, and no production `buildGlPbrStandardDefineKey` call passes the third argument. So the entire uv1 shader feature is reachable only from unit tests; a real scene with a `uv1` attribute and an occlusion map still samples occlusion from `v_uv0`. It is **safe** (an unbound attribute reads zero, and the standard program is unchanged when `hasUv1` is false), but it is an implemented-yet-unwired surface — the merge-gate's "no dead exports / unexported-but-implemented surface" line. The detector exists precisely to close this; it just was not threaded into `bind()`.
+
+**(c) Minor: a dead, mistyped entry field.** `createDrawEntry()` allocates `normalMatrix: createMatrix4()` and the partition loop writes `entry.normalMatrix = worldMatrix; // placeholder; filled per-draw from the mesh` (`b2824e3d8:packages/scene-gl/src/drawGlScene.ts`), but both draw passes recompute the normal matrix into `scratchNormalMatrix` and **never read `entry.normalMatrix`**. The field is also a `Matrix4` where the private `DrawEntry` alias declares it `Readonly<Matrix4>` while the proxy consumes a `Matrix3` — a confusion the `object`-typed header hides. The field is dead and should be removed (or the placeholder honored), not left as a self-described "placeholder."
+
+## Honesty check against `status.md`
+
+The `status.md` entries for this delta (`builder-67dc46d64`, as-claimed) verify against the diff: the two-pass sort, the per-state pool isolation, the `GlSceneDrawEntry` export, the `uv1`/`joints0`/`weights0` locations, and the `hasGlMeshGeometryUv1` helper are all present as described. The status is honest — and it openly records the two soft spots this gate independently found: it calls `hasGlMeshGeometryUv1` a helper that a renderer's `bind()` _can_ pass (acknowledging it is not yet passed), and it does not overstate the pool as recycling. The one status action item — the `mesh-blend-transparency` functional baseline is not yet captured — remains open and is the regression gate the new blended pass needs.
+
+## Delta-introduced vs pre-existing
+
+To keep the gate fair: the **no-`destroy*`** teardown gap, the **single-directional+ambient lighting cap**, IBL/shadow/skinning absence, and transmission-as-placeholder are **pre-existing** in the approved base and are charter Open directions — they are _not_ charged against this delta. The `SceneLightBlock` literal churn across the renderer tests is this delta correctly tracking an upstream `@flighthq/types` multi-light _type_ addition; scene-gl only zero-fills the new counts (it does not consume point/spot/hemisphere yet), which is consistent with the lighting cap being a parked cross-package fork, not a regression.
+
+## Score rationale
+
+Base review scored 74. The delta is net-positive (correct transparency sort, correct per-state isolation, real shader breadth groundwork) but ships one dead feature path and one mis-named pool, both delta-grounded. +1 to **75**: the additions raise the ceiling, the two smells hold it just above the base. Wiring the uv1 path (within-package, already Recommended) and resolving the pool semantics (charter Open direction) are the two moves that would carry it toward `authoritative`.

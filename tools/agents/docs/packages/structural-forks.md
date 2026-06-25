@@ -2,6 +2,12 @@
 
 Cross-cutting decisions that recur across packages. A per-package charter _references_ these rather than re-litigating them — they are **patterns**, not any single package's vision. Each fork records the question, the current direction (decided / lean / open), and the packages it touches.
 
+## Greenfield mandate — best names now, gated by approval
+
+This SDK is **greenfield**: pre-release, no published consumers, no back-compat obligations. The bar for any name, signature, or module boundary is the **best and clearest** one, not the least-disruptive one. When something is wrong, **rename / restructure / remove** it rather than wrapping it — naming and architecture are first-class outputs of a task, never cosmetic follow-ups.
+
+The freedom is a **direction-and-review-time license, not a blanket execution license.** Reviewers and direction sessions should propose the boldest correct shape; _execution_ stays gated by the approval gate and the charter — a worker does the **blessed** change and does not freelance renames. So the guard against churn is **the approval gate, not withholding the greenfield fact** from agents: every agent may know it is greenfield; only blessed changes land. The license to imagine the right shape is wide; the license to rewrite `main` is earned per change.
+
 ## The frame: monolith decomposition, down to bedrock
 
 This whole project is the decomposition of the OpenFL/Lime monolith into composable primitives (see [Composition and Complexity](../index.md#composition-and-complexity)). Two opposing forces bound the work:
@@ -30,6 +36,8 @@ This generalizes three forks at once: the `-formats` layer is fork B (registry b
 ## B. Closed union vs. open registry _(decided, with nuance)_
 
 **Default: registry.** Maximal tree-shaking — per the bundle invariant a closed `switch(kind)` taxes every user of the pass. **Exception:** a tight loop within a closed system may keep a closed union. **Trigger:** revisit on growth — a closed union that was fine while small flips to a registry once the family grows. **Touches:** particles forces/colliders (growing → lean registry; dispatch can be hoisted out of the hot loop so registry need not cost perf), filters/effects, formats, any `kind` switch. **Candidate to promote** into the global Design Constraints.
+
+**The third alternative: don't build the dispatcher.** Before choosing switch vs. registry, ask whether the _aggregate_ method should exist at all. A `switch` over N kinds calling N implementations is the canonical registry case — but if **no consumer calls it**, the answer is neither: **remove it**, keep the per-kind primitives, and (re)introduce the aggregate _as a registry_ only when a real consumer appears. Build the seam when it earns its consumer, not before; writing N tests to defend an unconsumed dispatcher is effort spent on dead code. **Live case:** `filters` `normalizeBitmapFilter` / `getBitmapFilterMargin` — 14-case switches with zero callers anywhere in the tree → remove, don't registrify-or-test.
 
 ## C. Monolith decomposition — the project telos _(agreed)_
 
@@ -72,4 +80,4 @@ The breadth/depth passes are the mechanism for determining what is in/out of sco
 
 Within-3D boundaries still to design: `animation` (channels/clips) vs `skeleton` (bones/skinning) vs `tween`/`timeline`; and `render-graph`'s reshaping of `render` (architecturally significant — its own design pass).
 
-**Authoritative 3D design already exists** in [`render-architecture.md`](../render-architecture.md) and [`3d-materials-architecture.md`](../3d-materials-architecture.md) — materials, lighting, shadows, and IBL are designed (and `materials` is built). The register reconciles the accepted candidates against them (already-planned vs net-new), and the charter/register system **references these pre-existing blessed docs rather than duplicating them** — a general rule: blessed architecture that predates this structure is linked, not restated.
+**Authoritative 3D design already exists** in [`render-architecture.md`](../render-architecture.md), [`3d-materials-architecture.md`](../3d-materials-architecture.md), and the blessed [`3d-pipeline-architecture.md`](../3d-pipeline-architecture.md) (2026-06-25 — explicit passes, `picking`, shadow/environment as recipes, the target-free `animation` core + `skeleton`, `scene-formats`/glTF, the additive gate, build sequencing) — materials, lighting, shadows, and IBL are designed (and `materials` is built). The register reconciles the accepted candidates against them (already-planned vs net-new), and the charter/register system **references these pre-existing blessed docs rather than duplicating them** — a general rule: blessed architecture that predates this structure is linked, not restated.
