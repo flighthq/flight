@@ -5,16 +5,23 @@ import { NodeKind } from '@flighthq/types';
 import {
   addNodeChild,
   addNodeChildAt,
+  addNodeChildren,
   containsNodeChild,
+  forEachNodeChild,
+  getNodeAncestors,
   getNodeChildAt,
   getNodeChildByName,
   getNodeChildCount,
   getNodeChildIndex,
+  getNodeCommonAncestor,
   getNodeParent,
   getNodeRoot,
+  isNodeAncestorOf,
   removeNodeChild,
   removeNodeChildAt,
   removeNodeChildren,
+  reparentNode,
+  replaceNodeChild,
   setNodeChildIndex,
   swapNodeChildren,
   swapNodeChildrenAt,
@@ -205,6 +212,26 @@ describe('addNodeChildAt', () => {
   });
 });
 
+describe('addNodeChildren', () => {
+  it('adds multiple children in order', () => {
+    addNodeChildren(container, childA, childB);
+    expect(getNodeChildCount(container)).toBe(2);
+    expect(getNodeChildAt(container, 0)).toBe(childA);
+    expect(getNodeChildAt(container, 1)).toBe(childB);
+  });
+
+  it('is a no-op with no children', () => {
+    addNodeChildren(container);
+    expect(getNodeChildCount(container)).toBe(0);
+  });
+
+  it('sets the parent on each child', () => {
+    addNodeChildren(container, childA, childB);
+    expect(getNodeParent(childA)).toBe(container);
+    expect(getNodeParent(childB)).toBe(container);
+  });
+});
+
 describe('containsNodeChild', () => {
   it('returns false if parent does not contain child', () => {
     expect(containsNodeChild(container, childA)).toBe(false);
@@ -219,6 +246,58 @@ describe('containsNodeChild', () => {
     addNodeChild(container, childA);
     addNodeChild(childA, childB);
     expect(containsNodeChild(container, childB)).toBe(true);
+  });
+});
+
+describe('forEachNodeChild', () => {
+  it('does not call callback when there are no children', () => {
+    let called = false;
+    forEachNodeChild(container, () => {
+      called = true;
+    });
+    expect(called).toBe(false);
+  });
+
+  it('visits each child with its index', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    const visited: Array<[Node<NodeTraits>, number]> = [];
+    forEachNodeChild(container, (child, index) => {
+      visited.push([child, index]);
+    });
+    expect(visited).toEqual([
+      [childA, 0],
+      [childB, 1],
+    ]);
+  });
+
+  it('stops early when callback returns false', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    const visited: Node<NodeTraits>[] = [];
+    forEachNodeChild(container, (child) => {
+      visited.push(child);
+      return false;
+    });
+    expect(visited).toHaveLength(1);
+    expect(visited[0]).toBe(childA);
+  });
+});
+
+describe('getNodeAncestors', () => {
+  it('returns an empty array for a root node', () => {
+    expect(getNodeAncestors(container)).toEqual([]);
+  });
+
+  it('returns [parent] for a direct child', () => {
+    addNodeChild(container, childA);
+    expect(getNodeAncestors(childA)).toEqual([container]);
+  });
+
+  it('returns ancestors from parent toward root', () => {
+    addNodeChild(container, childA);
+    addNodeChild(childA, childB);
+    expect(getNodeAncestors(childB)).toEqual([childA, container]);
   });
 });
 
@@ -300,6 +379,30 @@ describe('getNodeChildIndex', () => {
   });
 });
 
+describe('getNodeCommonAncestor', () => {
+  it('returns null for nodes in different trees', () => {
+    const other = createNode(NodeKind);
+    expect(getNodeCommonAncestor(container, other)).toBeNull();
+  });
+
+  it('returns the parent when both nodes are its children', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    expect(getNodeCommonAncestor(childA, childB)).toBe(container);
+  });
+
+  it('returns the ancestor when one node is the ancestor of the other', () => {
+    addNodeChild(container, childA);
+    addNodeChild(childA, childB);
+    expect(getNodeCommonAncestor(container, childB)).toBe(container);
+  });
+
+  it('returns the node itself when both nodes are the same', () => {
+    addNodeChild(container, childA);
+    expect(getNodeCommonAncestor(childA, childA)).toBe(childA);
+  });
+});
+
 describe('getNodeParent', () => {
   it('returns runtime parent reference', () => {
     addNodeChild(container, childA);
@@ -322,6 +425,28 @@ describe('getNodeRoot', () => {
   it('returns the direct parent when depth is one', () => {
     addNodeChild(container, childA);
     expect(getNodeRoot(childA)).toBe(container);
+  });
+});
+
+describe('isNodeAncestorOf', () => {
+  it('returns true when a node is an ancestor', () => {
+    addNodeChild(container, childA);
+    addNodeChild(childA, childB);
+    expect(isNodeAncestorOf(container, childB)).toBe(true);
+  });
+
+  it('returns true when checking a node against itself', () => {
+    expect(isNodeAncestorOf(container, container)).toBe(true);
+  });
+
+  it('returns false when there is no ancestor relationship', () => {
+    addNodeChild(container, childA);
+    expect(isNodeAncestorOf(childA, container)).toBe(false);
+  });
+
+  it('returns false for unrelated nodes', () => {
+    const other = createNode(NodeKind);
+    expect(isNodeAncestorOf(container, other)).toBe(false);
   });
 });
 
@@ -492,6 +617,49 @@ describe('removeNodeChildren', () => {
     });
     removeNodeChildren(container);
     expect(called).toBe(true);
+  });
+});
+
+describe('reparentNode', () => {
+  it('moves a child from one parent to another', () => {
+    const other = createNode(NodeKind);
+    addNodeChild(container, childA);
+    reparentNode(childA, other);
+    expect(getNodeParent(childA)).toBe(other);
+    expect(getNodeChildCount(container)).toBe(0);
+    expect(getNodeChildCount(other)).toBe(1);
+  });
+
+  it('preserves the child local transform (no world-transform preservation)', () => {
+    addNodeChild(container, childA);
+    reparentNode(childA, childB);
+    // The child was moved; its parent is now childB
+    expect(getNodeParent(childA)).toBe(childB);
+  });
+});
+
+describe('replaceNodeChild', () => {
+  it('replaces oldChild with newChild at the same index', () => {
+    addNodeChild(container, childA);
+    addNodeChild(container, childB);
+    const childC = createNode(NodeKind);
+    replaceNodeChild(container, childA, childC);
+    expect(getNodeChildAt(container, 0)).toBe(childC);
+    expect(getNodeChildAt(container, 1)).toBe(childB);
+    expect(getNodeParent(childA)).toBeNull();
+  });
+
+  it('is a no-op when oldChild is not in target', () => {
+    addNodeChild(container, childA);
+    replaceNodeChild(container, childB, childA);
+    expect(getNodeChildCount(container)).toBe(1);
+    expect(getNodeChildAt(container, 0)).toBe(childA);
+  });
+
+  it('sets the parent of newChild to target', () => {
+    addNodeChild(container, childA);
+    replaceNodeChild(container, childA, childB);
+    expect(getNodeParent(childB)).toBe(container);
   });
 });
 

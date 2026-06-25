@@ -10,3 +10,10 @@ export function createEntityRuntime(): EntityRuntime {
 export function getEntityRuntime(source: Readonly<Entity>): Readonly<EntityRuntime> {
   return source[EntityRuntimeKey]!;
 }
+
+// Returns true when the entity's runtime slot has been allocated — i.e. the entity has been
+// bound (attachEntityBinding) or otherwise given a runtime. A fresh or cloned entity has no
+// runtime and returns false.
+export function hasEntityRuntime(source: Readonly<Entity>): boolean {
+  return source[EntityRuntimeKey] !== undefined;
+}

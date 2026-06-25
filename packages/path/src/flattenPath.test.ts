@@ -2,7 +2,7 @@ import type { Path } from '@flighthq/types';
 import { PathCommand } from '@flighthq/types';
 
 import { flattenPath } from './flattenPath';
-import { appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { appendPathClose, appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
 
 describe('flattenPath', () => {
   it('flattens a straight line to its two endpoints', () => {
@@ -60,5 +60,28 @@ describe('flattenPath', () => {
     const fine = flattenPath(path, 0.1)[0].length;
     const coarse = flattenPath(path, 50)[0].length;
     expect(coarse).toBeLessThan(fine);
+  });
+
+  it('appends the start point when a CLOSE verb is present and position differs', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 100, 0);
+    appendPathLineTo(path, 100, 100);
+    appendPathClose(path);
+    const contour = flattenPath(path)[0];
+    // Should end at the start point (0,0)
+    expect(contour[contour.length - 2]).toBe(0);
+    expect(contour[contour.length - 1]).toBe(0);
+  });
+
+  it('does not duplicate the start point when CLOSE is at the same position', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 100, 0);
+    appendPathLineTo(path, 0, 0); // already at start
+    appendPathClose(path);
+    const contour = flattenPath(path)[0];
+    // Length should be 6: (0,0), (100,0), (0,0) — no duplicate close point
+    expect(contour.length).toBe(6);
   });
 });

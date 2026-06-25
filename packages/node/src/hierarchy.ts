@@ -74,6 +74,16 @@ export function addNodeChildAt<Traits extends object>(
 }
 
 /**
+ * Adds multiple children to `target` in order, appending each after the last. Equivalent to
+ * calling `addNodeChild` for each child but signals are still emitted per child.
+ */
+export function addNodeChildren<Traits extends object>(target: Node<Traits>, ...children: Node<Traits>[]): void {
+  for (let i = 0; i < children.length; i++) {
+    addNodeChild(target, children[i]);
+  }
+}
+
+/**
  * Determines whether the specified scene node is a child of the
  * NodeContainer instance or the instance itself.
  **/
@@ -86,6 +96,35 @@ export function containsNodeChild<Traits extends object>(
     current = getNodeParent(current);
   }
   return current === source;
+}
+
+/**
+ * Calls `callback` for each direct child of `source` in index order (back to front).
+ * Stops early if `callback` returns `false`.
+ */
+export function forEachNodeChild<Traits extends object>(
+  source: Readonly<Node<Traits>>,
+  callback: (child: Node<Traits>, index: number) => boolean | void,
+): void {
+  const children = getNodeRuntime(source).children;
+  if (children === null) return;
+  for (let i = 0; i < children.length; i++) {
+    if (callback(children[i] as Node<Traits>, i) === false) return;
+  }
+}
+
+/**
+ * Returns a read-only snapshot of all ancestors of `source`, from immediate parent toward the
+ * root. The source node itself is not included.
+ */
+export function getNodeAncestors<Traits extends object>(source: Readonly<Node<Traits>>): readonly NodeOf<Traits>[] {
+  const result: NodeOf<Traits>[] = [];
+  let current = getNodeParent(source as Node<Traits>);
+  while (current !== null) {
+    result.push(current);
+    current = getNodeParent(current);
+  }
+  return result;
 }
 
 /**
@@ -136,10 +175,34 @@ export function getNodeChildIndex<Traits extends object>(
   const children = getNodeRuntime(source).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      if (children[i] == child) return i;
+      if (children[i] === child) return i;
     }
   }
   return -1;
+}
+
+/**
+ * Returns the lowest common ancestor of `a` and `b`, or `null` if they share no common ancestor.
+ * If one node is an ancestor of the other, that ancestor is returned.
+ */
+export function getNodeCommonAncestor<Traits extends object>(
+  a: Readonly<Node<Traits>>,
+  b: Readonly<Node<Traits>>,
+): NodeOf<Traits> | null {
+  // Build the ancestor set for `a`, then walk `b`'s chain to find the first match.
+  const aAncestors = new Set<Node<Traits>>();
+  aAncestors.add(a as Node<Traits>);
+  let cur = getNodeParent(a as Node<Traits>);
+  while (cur !== null) {
+    aAncestors.add(cur);
+    cur = getNodeParent(cur);
+  }
+  let bCur: Node<Traits> | null = b as Node<Traits>;
+  while (bCur !== null) {
+    if (aAncestors.has(bCur)) return bCur as NodeOf<Traits>;
+    bCur = getNodeParent(bCur);
+  }
+  return null;
 }
 
 export function getNodeParent<Traits extends object>(source: Readonly<Node<Traits>>): NodeOf<Traits> | null {
@@ -158,6 +221,22 @@ export function getNodeRoot<Traits extends object>(source: Readonly<Node<Traits>
     parent = getNodeParent(current);
   }
   return current as NodeOf<Traits>;
+}
+
+/**
+ * Returns `true` if `ancestor` is the same node as `descendant` or is located above
+ * `descendant` in the hierarchy.
+ */
+export function isNodeAncestorOf<Traits extends object>(
+  ancestor: Readonly<Node<Traits>>,
+  descendant: Readonly<Node<Traits>>,
+): boolean {
+  let current: Node<Traits> | null = descendant as Node<Traits>;
+  while (current !== null) {
+    if (current === ancestor) return true;
+    current = getNodeParent(current);
+  }
+  return false;
 }
 
 /**
@@ -237,6 +316,32 @@ export function removeNodeChildren<Traits extends object>(
 }
 
 /**
+ * Moves `child` from its current parent to `newParent`, appending it at the end.
+ * World transform is not preserved; the child's local transform remains unchanged.
+ * If you need to preserve the child's apparent world position after reparenting,
+ * recompute the local transform manually via the transform helpers.
+ */
+export function reparentNode<Traits extends object>(child: Node<Traits>, newParent: Node<Traits>): NodeOf<Traits> {
+  return addNodeChild(newParent, child);
+}
+
+/**
+ * Replaces `oldChild` with `newChild` at the same index position in `target`'s children. If
+ * `oldChild` is not a child of `target`, this is a no-op. If `newChild` is already a child of
+ * `target`, it is moved to `oldChild`'s index.
+ */
+export function replaceNodeChild<Traits extends object>(
+  target: Node<Traits>,
+  oldChild: Node<Traits>,
+  newChild: Node<Traits>,
+): void {
+  const index = getNodeChildIndex(target, oldChild);
+  if (index === -1) return;
+  removeNodeChild(target, oldChild);
+  addNodeChildAt(target, newChild, index);
+}
+
+/**
  * Changes the position of an existing child in the scene node container.
  * This affects the layering of child objects.
  **/
@@ -276,7 +381,7 @@ export function swapNodeChildren<Traits extends object>(
 ): void {
   const targetRuntime = getNodeRuntime(target);
   const children = targetRuntime.children;
-  if (children !== null && getNodeParent(child1) == target && getNodeParent(child2) == target) {
+  if (children !== null && getNodeParent(child1) === target && getNodeParent(child2) === target) {
     const index1 = children.indexOf(child1);
     const index2 = children.indexOf(child2);
     children[index1] = child2;

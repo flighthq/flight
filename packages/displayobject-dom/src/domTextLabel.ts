@@ -16,7 +16,7 @@ import type {
 } from '@flighthq/types';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
-import { escapeHtmlString } from './domTextHelpers';
+import { escapeDomHtmlString } from './domTextHelpers';
 
 interface DomTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -77,7 +77,7 @@ export function drawDomTextLabel(state: DomRenderState, renderProxy: RenderProxy
   let html = '';
   for (const group of result.groups) {
     const fmt = group.format;
-    const slice = escapeHtmlString(text.substring(group.startIndex, group.endIndex));
+    const slice = escapeDomHtmlString(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX;
     const y = group.offsetY;
 

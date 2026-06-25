@@ -30,6 +30,7 @@ export function createElectronWindowBackend(electron: ElectronApi): WindowBacken
         transparent: options.transparent,
       });
       _windows.set(win, bw);
+      _windowsById.set(bw.id, win);
       bw.on('move', () => {
         const bounds = bw.getBounds();
         win.x = bounds.x;
@@ -85,6 +86,7 @@ export function createElectronWindowBackend(electron: ElectronApi): WindowBacken
         /* window already destroyed */
       }
       _windows.delete(win);
+      _windowsById.delete(bw.id);
     },
     setTitle(win, title) {
       const bw = _windows.get(win);
@@ -339,6 +341,12 @@ export function createElectronWindowBackend(electron: ElectronApi): WindowBacken
   };
 }
 
+// Returns the ApplicationWindow mapped to the given Electron BrowserWindow id, or null when unknown.
+// Allows tray/menu/protocol handlers to resolve a native window id back into a Flight window entity.
+export function getApplicationWindowForElectronId(id: number): ApplicationWindow | null {
+  return _windowsById.get(id) ?? null;
+}
+
 // The Electron BrowserWindow backing a Flight window opened via openWindow, or null if not (yet)
 // opened. The escape hatch a host app needs to do Electron-specific things the seam doesn't cover —
 // most importantly loadFile/loadUrl to put content in the window. Host-adapter-only by design.
@@ -346,6 +354,17 @@ export function getElectronBrowserWindow(win: Readonly<ApplicationWindow>): Elec
   return _windows.get(win as ApplicationWindow) ?? null;
 }
 
+// Returns the Electron BrowserWindow id for a Flight window, or -1 when the window is not mapped.
+// Useful for tray/menu click handlers that receive a native window id and need to resolve back to an
+// ApplicationWindow; pair with getApplicationWindowForElectronId.
+export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
+  return _windows.get(win as ApplicationWindow)?.id ?? -1;
+}
+
 // Side table mapping each Flight ApplicationWindow to its Electron BrowserWindow, kept off the public
 // entity. Entries are removed on close so a stale BrowserWindow is never reused.
 const _windows = new WeakMap<ApplicationWindow, ElectronBrowserWindow>();
+
+// Reverse lookup by Electron BrowserWindow id for getApplicationWindowForElectronId. Maintained in
+// lockstep with _windows; entries are removed on close as well.
+const _windowsById = new Map<number, ApplicationWindow>();

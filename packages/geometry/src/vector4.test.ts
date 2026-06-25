@@ -1,9 +1,11 @@
 import {
   addVector4,
+  clampVector4,
   cloneVector4,
   copyVector4,
   createVector3,
   createVector4,
+  divideVector4,
   equalsVector4,
   getVector4AngleBetween,
   getVector4Distance,
@@ -11,18 +13,26 @@ import {
   getVector4Dot,
   getVector4Length,
   getVector4LengthSquared,
+  interpolateVector4,
+  maxVector4,
+  minVector4,
+  multiplyVector4,
   nearEqualsVector4,
   negateVector4,
   normalizeVector4,
   offsetVector4,
   projectVector4,
+  reflectVector4,
   scaleVector4,
   setVector4,
+  setVector4FromFloat32Array,
+  setVector4FromVector3,
   subtractVector4,
   VECTOR4_W_UNIT,
   VECTOR4_X_AXIS,
   VECTOR4_Y_AXIS,
   VECTOR4_Z_AXIS,
+  writeVector4ToFloat32Array,
 } from '@flighthq/geometry';
 import type { Vector4 } from '@flighthq/types';
 
@@ -76,6 +86,17 @@ describe('addVector4', () => {
     expect(result.y).toBe(7);
     expect(result.z).toBe(9);
     expect(result.w).toBe(20);
+  });
+});
+
+describe('clampVector4', () => {
+  it('clamps each component independently', () => {
+    const out = createVector4();
+    clampVector4(out, createVector4(5, -2, 1, 10), createVector4(0, 0, 0, 0), createVector4(3, 3, 3, 3));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(1);
+    expect(out.w).toBe(3);
   });
 });
 
@@ -139,6 +160,26 @@ describe('createVector4', () => {
     expect(v.y).toBe(2);
     expect(v.z).toBe(3);
     expect(v.w).toBe(4);
+  });
+});
+
+describe('divideVector4', () => {
+  it('divides component-wise', () => {
+    const out = createVector4();
+    divideVector4(out, createVector4(6, 8, 9, 12), createVector4(2, 4, 3, 6));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(2);
+  });
+
+  it('produces 0 for zero divisor components', () => {
+    const out = createVector4();
+    divideVector4(out, createVector4(6, 8, 9, 12), createVector4(0, 4, 0, 6));
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(0);
+    expect(out.w).toBe(2);
   });
 });
 
@@ -225,6 +266,75 @@ describe('getVector4LengthSquared', () => {
   });
 });
 
+describe('interpolateVector4', () => {
+  it('returns a at t=0 and b at t=1', () => {
+    const out = createVector4();
+    const a = createVector4(1, 2, 3, 4);
+    const b = createVector4(5, 6, 7, 8);
+    interpolateVector4(out, a, b, 0);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(4);
+    interpolateVector4(out, a, b, 1);
+    expect(out.x).toBe(5);
+    expect(out.y).toBe(6);
+    expect(out.z).toBe(7);
+    expect(out.w).toBe(8);
+  });
+
+  it('interpolates midpoint at t=0.5', () => {
+    const out = createVector4();
+    interpolateVector4(out, createVector4(0, 0, 0, 0), createVector4(2, 4, 6, 8), 0.5);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(4);
+  });
+
+  it('supports out === a', () => {
+    const a = createVector4(0, 0, 0, 0);
+    interpolateVector4(a, a, createVector4(2, 4, 6, 8), 0.5);
+    expect(a.x).toBe(1);
+    expect(a.y).toBe(2);
+    expect(a.z).toBe(3);
+    expect(a.w).toBe(4);
+  });
+});
+
+describe('maxVector4', () => {
+  it('returns the component-wise maximum', () => {
+    const out = createVector4();
+    maxVector4(out, createVector4(1, 5, 2, 9), createVector4(3, 2, 7, 4));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+    expect(out.z).toBe(7);
+    expect(out.w).toBe(9);
+  });
+});
+
+describe('minVector4', () => {
+  it('returns the component-wise minimum', () => {
+    const out = createVector4();
+    minVector4(out, createVector4(1, 5, 2, 9), createVector4(3, 2, 7, 4));
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(2);
+    expect(out.w).toBe(4);
+  });
+});
+
+describe('multiplyVector4', () => {
+  it('multiplies component-wise (Hadamard)', () => {
+    const out = createVector4();
+    multiplyVector4(out, createVector4(2, 3, 4, 5), createVector4(6, 7, 8, 9));
+    expect(out.x).toBe(12);
+    expect(out.y).toBe(21);
+    expect(out.z).toBe(32);
+    expect(out.w).toBe(45);
+  });
+});
+
 describe('nearEqualsVector4', () => {
   it('returns true for identical vectors', () => {
     const a = createVector4(1, 2, 3, 4);
@@ -271,6 +381,8 @@ describe('negateVector4', () => {
     expect(v.w).toBe(4);
   });
 });
+
+// Properties
 
 describe('normalizeVector4', () => {
   it('normalizes the vector', () => {
@@ -358,6 +470,24 @@ describe('projectVector4', () => {
   });
 });
 
+describe('reflectVector4', () => {
+  it('reflects incident vector about a normal', () => {
+    const out = createVector4();
+    // Reflect (1, 0, 0, 0) about normal (1, 0, 0, 0) gives (-1, 0, 0, 0)
+    reflectVector4(out, createVector4(1, 0, 0, 0), createVector4(1, 0, 0, 0));
+    expect(out.x).toBeCloseTo(-1, 6);
+    expect(out.y).toBeCloseTo(0, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+    expect(out.w).toBeCloseTo(0, 6);
+  });
+
+  it('supports out === incident', () => {
+    const v = createVector4(1, 0, 0, 0);
+    reflectVector4(v, v, createVector4(1, 0, 0, 0));
+    expect(v.x).toBeCloseTo(-1, 6);
+  });
+});
+
 describe('scaleVector4', () => {
   it('scales the vector by a scalar', () => {
     const v = createVector4(1, 1, 1, 1);
@@ -399,6 +529,47 @@ describe('setVector4', () => {
   });
 });
 
+describe('setVector4FromFloat32Array', () => {
+  it('reads x/y/z/w from the array at offset', () => {
+    const arr = new Float32Array([0, 1, 2, 3, 4, 5]);
+    const out = createVector4();
+    setVector4FromFloat32Array(out, 1, arr);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(4);
+  });
+});
+
+describe('setVector4FromVector3', () => {
+  it('copies x, y, z and sets w to 0 by default', () => {
+    const src = { x: 1, y: 2, z: 3 };
+    const out = createVector4();
+    setVector4FromVector3(out, src);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(0);
+  });
+
+  it('sets w to the provided value', () => {
+    const src = { x: 1, y: 2, z: 3 };
+    const out = createVector4();
+    setVector4FromVector3(out, src, 1);
+    expect(out.w).toBe(1);
+  });
+
+  it('is safe when out aliases a part of source via a plain object', () => {
+    const src = createVector3(5, 6, 7);
+    const out = createVector4();
+    setVector4FromVector3(out, src, 0);
+    expect(out.x).toBe(5);
+    expect(out.y).toBe(6);
+    expect(out.z).toBe(7);
+    expect(out.w).toBe(0);
+  });
+});
+
 describe('subtractVector4', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector4(4, 5, 6, 7);
@@ -432,8 +603,6 @@ describe('subtractVector4', () => {
   });
 });
 
-// Properties
-
 describe('W_UNIT', () => {
   it('returns the unit vector along the W-dimension', () => {
     const wUnit = VECTOR4_W_UNIT;
@@ -442,6 +611,18 @@ describe('W_UNIT', () => {
     expect(wUnit.y).toBe(0);
     expect(wUnit.z).toBe(0);
     expect(wUnit.w).toBe(1);
+  });
+});
+
+describe('writeVector4ToFloat32Array', () => {
+  it('writes x/y/z/w to the array at offset', () => {
+    const arr = new Float32Array(6);
+    writeVector4ToFloat32Array(arr, 1, createVector4(1, 2, 3, 4));
+    expect(arr[0]).toBe(0);
+    expect(arr[1]).toBe(1);
+    expect(arr[2]).toBe(2);
+    expect(arr[3]).toBe(3);
+    expect(arr[4]).toBe(4);
   });
 });
 

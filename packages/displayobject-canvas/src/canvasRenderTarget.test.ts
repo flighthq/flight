@@ -4,6 +4,7 @@ import { createCanvasRenderState } from './canvasRenderState';
 import {
   beginCanvasRenderTarget,
   createCanvasRenderTarget,
+  destroyCanvasRenderTarget,
   endCanvasRenderTarget,
   resizeCanvasRenderTarget,
 } from './canvasRenderTarget';
@@ -75,6 +76,22 @@ describe('createCanvasRenderTarget', () => {
     const target = createCanvasRenderTarget(10.3, 20.9);
     expect(target.canvas.width).toBe(11);
     expect(target.canvas.height).toBe(21);
+  });
+});
+
+describe('destroyCanvasRenderTarget', () => {
+  it('collapses the canvas to zero size', () => {
+    const target = createCanvasRenderTarget(64, 32);
+    destroyCanvasRenderTarget(target);
+    expect(target.canvas.width).toBe(0);
+    expect(target.canvas.height).toBe(0);
+  });
+
+  it('sets target width and height to zero', () => {
+    const target = createCanvasRenderTarget(128, 64);
+    destroyCanvasRenderTarget(target);
+    expect(target.width).toBe(0);
+    expect(target.height).toBe(0);
   });
 });
 

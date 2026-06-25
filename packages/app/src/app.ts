@@ -114,15 +114,20 @@ export function createWebAppBackend(): AppBackend {
       }
     },
     getAppDirectoryPath() {
+      // Web sentinel '': a web tab has no app-identity-relative directory. Native: userData/logs/
+      // crashDumps under the per-app data root.
       return '';
     },
     getAppPath() {
+      // Web sentinel '': no bundle/exe directory in a tab. Native: the application directory.
       return '';
     },
     getCommandLine() {
+      // Web sentinel []: a tab has no process argv. Native: this process's command-line arguments.
       return [];
     },
     getExecutablePath() {
+      // Web sentinel '': no executable in a tab. Native: the running executable's path.
       return '';
     },
     getLocale() {
@@ -142,12 +147,17 @@ export function createWebAppBackend(): AppBackend {
       }
     },
     getLoginItem() {
+      // Web sentinel: a default with openAtLogin false — a tab has no launch-at-login concept.
+      // Native: the OS launch-at-login registration for this app.
       return { args: [], openAsHidden: false, openAtLogin: false, path: '' };
     },
     getName() {
+      // Web: document.title stands in for the app name ('' when no document). Native: the app's
+      // display name.
       return typeof document !== 'undefined' ? document.title : '';
     },
     getVersion() {
+      // Web sentinel '': a tab carries no app version. Native: the packaged app version string.
       return '';
     },
     hasSingleInstanceLock() {
@@ -222,12 +232,15 @@ export function createWebAppBackend(): AppBackend {
       return false;
     },
     subscribeActivate() {
+      // No web app-activate event; the listener is never called. Native: dock/taskbar re-activation.
       return () => {};
     },
     subscribeAllWindowsClosed() {
+      // No web all-windows-closed event; the listener is never called. Native: last window closed.
       return () => {};
     },
     subscribeOpenFile() {
+      // No web open-file event; the listener is never called. Native: OS file-open / "Open With".
       return () => {};
     },
     subscribeQuitRequest(_listener) {
@@ -241,6 +254,8 @@ export function createWebAppBackend(): AppBackend {
       return () => {};
     },
     subscribeSecondInstance() {
+      // No web second-instance event; the listener is never called. Native: another launch hands its
+      // argv to the lock holder.
       return () => {};
     },
   };

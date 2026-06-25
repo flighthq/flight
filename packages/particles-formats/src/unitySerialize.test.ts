@@ -1,5 +1,7 @@
+import { createParticleEmitterConfig } from '@flighthq/particles';
+
 import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
-import { serializeUnityParticle } from './unitySerialize';
+import { serializeUnityParticle, serializeUnityParticleDocument } from './unitySerialize';
 
 const SMOKE_JSON = JSON.stringify({
   name: 'smoke',
@@ -42,5 +44,34 @@ describe('serializeUnityParticle', () => {
     const { document } = parseUnityParticleDocument(SMOKE_JSON);
     const json2 = JSON.parse(serializeUnityParticle(config, document)) as Record<string, unknown>;
     expect(json2.name).toBe('smoke');
+  });
+});
+
+describe('serializeUnityParticleDocument', () => {
+  it('returns text and empty warnings for a default config', () => {
+    const config = createParticleEmitterConfig();
+    const result = serializeUnityParticleDocument(config);
+    expect(typeof result.text).toBe('string');
+    expect(JSON.parse(result.text)).toBeDefined();
+    expect(result.warnings).toEqual([]);
+  });
+  it('warns when config has horizontal gravity (gravityX)', () => {
+    const config = createParticleEmitterConfig({ gravityX: 50 });
+    const result = serializeUnityParticleDocument(config);
+    expect(result.warnings.some((w) => w.includes('gravityX'))).toBe(true);
+  });
+  it('warns when config has color end variance', () => {
+    const config = createParticleEmitterConfig({ colorEndVarianceR: 0.2 });
+    const result = serializeUnityParticleDocument(config);
+    expect(result.warnings.some((w) => w.includes('colorEndVariance'))).toBe(true);
+  });
+  it('has no warnings for a config with standard representable features', () => {
+    const config = createParticleEmitterConfig({
+      maxParticles: 100,
+      blendMode: 'add',
+      loop: true,
+    });
+    const result = serializeUnityParticleDocument(config);
+    expect(result.warnings).toEqual([]);
   });
 });

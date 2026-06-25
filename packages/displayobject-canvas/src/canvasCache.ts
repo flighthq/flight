@@ -56,6 +56,22 @@ export function createCanvasCacheState(screenState: CanvasRenderState): CanvasRe
   return cacheState;
 }
 
+export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): void {
+  // Explicitly collapses the offscreen canvas backing this cache's render target so the browser
+  // can reclaim its compositor/GPU memory immediately, rather than waiting for GC. After calling
+  // this, the target is invalid. For a plain slot-release without destroying the backing store,
+  // use releaseCanvasRenderCache instead.
+  const targets = getTargets(state);
+  const target = targets.get(cache);
+  if (target !== undefined) {
+    target.canvas.width = 0;
+    target.canvas.height = 0;
+    target.width = 0;
+    target.height = 0;
+    targets.delete(cache);
+  }
+}
+
 export function enableCanvasRenderCache(state: RenderState): void {
   registerRenderCacheRenderer(state, defaultCanvasRenderCacheRenderer);
 }

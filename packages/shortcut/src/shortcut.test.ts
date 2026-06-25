@@ -406,6 +406,16 @@ describe('getRegisteredGlobalShortcuts', () => {
     expect(registered).toContain('Shift+Meta+S');
     expect(registered).toHaveLength(2);
   });
+
+  it('re-normalizes raw backend entries and drops unparseable ones', () => {
+    // A native backend may populate the registry with non-normalized or invalid strings; the getter
+    // normalizes them rather than trusting the cast, so the Accelerator type is earned.
+    const backend = fakeBackend();
+    backend.getRegistered = () => ['ctrl+shift+k', 'Meta+Alt+S', 'bad###key'];
+    setShortcutBackend(backend);
+    const registered = getRegisteredGlobalShortcuts();
+    expect(registered).toEqual(['Control+Shift+K', 'Alt+Meta+S']);
+  });
 });
 
 describe('getShortcutBackend', () => {
@@ -575,6 +585,12 @@ describe('normalizeAccelerator', () => {
     const once = normalizeAccelerator('ctrl+shift+k');
     const twice = normalizeAccelerator(once!);
     expect(once).toBe(twice);
+  });
+
+  it('breaks the Control / CommandOrControl tie deterministically regardless of input order', () => {
+    // CommandOrControl has its own ordinal (after Super), so the two orderings collapse to one form.
+    expect(normalizeAccelerator('CommandOrControl+Control+K')).toBe('Control+CommandOrControl+K');
+    expect(normalizeAccelerator('Control+CommandOrControl+K')).toBe('Control+CommandOrControl+K');
   });
 });
 

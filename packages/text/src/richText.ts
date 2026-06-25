@@ -34,6 +34,7 @@ import type {
   TextFieldScrollEvent,
   TextFieldSignals,
   TextFormat,
+  TextFormatRange,
   TextLabel,
   TextLayoutParams,
   TextLayoutResult,
@@ -224,11 +225,7 @@ export function getRichTextFormatRangeAt(out: TextFormat, source: Readonly<RichT
   }
 }
 
-export function getRichTextFormatRangeByIndex(
-  out: { start: number; end: number; format: TextFormat },
-  source: Readonly<RichText>,
-  i: number,
-): boolean {
+export function getRichTextFormatRangeByIndex(out: TextFormatRange, source: Readonly<RichText>, i: number): boolean {
   const range = source.data.textFormatRanges[i];
   if (range === undefined) return false;
   out.start = range.start;
@@ -239,6 +236,22 @@ export function getRichTextFormatRangeByIndex(
 
 export function getRichTextFormatRangeCount(source: Readonly<RichText>): number {
   return source.data.textFormatRanges.length;
+}
+
+// Writes into `out` every format range overlapping the span `[beginIndex, endIndex)` — the symmetric
+// read partner of removeRichTextFormatRangesIn (same half-open overlap test). The ranges are pushed by
+// reference in their stored order; `out` is cleared first. This is the OpenFL getTextFormat(begin, end)
+// read half, leaving range merging (mergeTextFormat) to the caller when a single effective format is wanted.
+export function getRichTextFormatRangesIn(
+  out: TextFormatRange[],
+  source: Readonly<RichText>,
+  beginIndex: number,
+  endIndex: number,
+): void {
+  out.length = 0;
+  for (const range of source.data.textFormatRanges) {
+    if (range.start < endIndex && range.end > beginIndex) out.push(range);
+  }
 }
 
 export function getRichTextHtml(source: Readonly<RichText>): string {

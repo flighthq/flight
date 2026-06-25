@@ -10,6 +10,13 @@ export function getCanvasRenderEffectRunner(state: CanvasRenderState, kind: stri
   return _registries.get(state)?.get(kind) ?? null;
 }
 
+// Returns true if a runner is registered for the given kind in this state. Use to validate an effect
+// chain before dispatching — the pipeline silently skips unregistered kinds; check up front to apply
+// your own policy (warn, filter) rather than relying on silent no-ops.
+export function hasCanvasRenderEffectRunner(state: CanvasRenderState, kind: string): boolean {
+  return _registries.get(state)?.has(kind) ?? false;
+}
+
 export function registerCanvasRenderEffect(
   state: CanvasRenderState,
   kind: string,

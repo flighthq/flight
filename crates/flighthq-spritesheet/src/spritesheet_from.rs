@@ -37,9 +37,9 @@ pub fn create_spritesheet_from_tileset(tileset: &Tileset) -> Spritesheet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flighthq_resources::build_tileset_regions;
-    use flighthq_resources::create_texture_atlas;
-    use flighthq_resources::create_tileset;
+    use flighthq_textureatlas::create_texture_atlas;
+    use flighthq_tileset::build_tileset_regions;
+    use flighthq_tileset::create_tileset;
 
     fn make_tileset(columns: u32, rows: u32) -> Tileset {
         let atlas = create_texture_atlas(None, Vec::new());

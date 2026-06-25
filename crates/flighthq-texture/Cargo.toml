@@ -7,5 +7,5 @@ description = "Textures and samplers: image-backed material texture bindings and
 
 [dependencies]
 flighthq-geometry = { workspace = true }
-flighthq-resources = { workspace = true }
+flighthq-image = { workspace = true }
 flighthq-types = { workspace = true }

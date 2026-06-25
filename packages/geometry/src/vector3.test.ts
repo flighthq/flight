@@ -1,9 +1,12 @@
 import {
   addVector3,
+  clampVector3,
   cloneVector3,
   copyVector3,
   createVector3,
+  createVector3FromSpherical,
   crossVector3,
+  divideVector3,
   equalsVector3,
   getVector3AngleBetween,
   getVector3Distance,
@@ -11,17 +14,28 @@ import {
   getVector3Dot,
   getVector3Length,
   getVector3LengthSquared,
+  getVector3Spherical,
+  interpolateVector3,
+  maxVector3,
+  minVector3,
+  multiplyVector3,
   nearEqualsVector3,
   negateVector3,
   normalizeVector3,
   offsetVector3,
   projectVector3,
+  reflectVector3,
   scaleVector3,
   setVector3,
+  setVector3FromFloat32Array,
+  setVector3FromSpherical,
+  setVector3FromVector4,
   subtractVector3,
+  transformVector3ByMatrix3,
   VECTOR3_X_AXIS,
   VECTOR3_Y_AXIS,
   VECTOR3_Z_AXIS,
+  writeVector3ToFloat32Array,
 } from '@flighthq/geometry';
 import type { Vector3 } from '@flighthq/types';
 
@@ -70,6 +84,24 @@ describe('addVector3', () => {
     expect(result.x).toBe(5);
     expect(result.y).toBe(7);
     expect(result.z).toBe(9);
+  });
+});
+
+describe('clampVector3', () => {
+  it('clamps each component independently', () => {
+    const out = createVector3();
+    clampVector3(out, createVector3(5, -2, 1), createVector3(0, 0, 0), createVector3(3, 3, 3));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(1);
+  });
+
+  it('supports out === value', () => {
+    const v = createVector3(5, -1, 7);
+    clampVector3(v, v, createVector3(0, 0, 0), createVector3(3, 3, 3));
+    expect(v.x).toBe(3);
+    expect(v.y).toBe(0);
+    expect(v.z).toBe(3);
   });
 });
 
@@ -130,6 +162,24 @@ describe('createVector3', () => {
   });
 });
 
+describe('createVector3FromSpherical', () => {
+  it('produces the correct cartesian point', () => {
+    const v = createVector3FromSpherical(1, Math.PI / 2, 0);
+    expect(v.x).toBeCloseTo(1, 6);
+    expect(v.y).toBeCloseTo(0, 6);
+    expect(v.z).toBeCloseTo(0, 6);
+  });
+
+  it('round-trips with getVector3Spherical', () => {
+    const v = createVector3FromSpherical(2, Math.PI / 3, Math.PI / 4);
+    const sph = createVector3();
+    getVector3Spherical(sph, v);
+    expect(sph.x).toBeCloseTo(2, 5);
+    expect(sph.y).toBeCloseTo(Math.PI / 3, 5);
+    expect(sph.z).toBeCloseTo(Math.PI / 4, 5);
+  });
+});
+
 describe('crossVector3', () => {
   it('returns the cross product of two vectors', () => {
     const a = createVector3(1, 0, 0);
@@ -157,6 +207,32 @@ describe('crossVector3', () => {
     expect(b.x).toBe(0);
     expect(b.y).toBe(0);
     expect(b.z).toBe(1);
+  });
+});
+
+describe('divideVector3', () => {
+  it('divides component-wise', () => {
+    const out = createVector3();
+    divideVector3(out, createVector3(6, 8, 9), createVector3(2, 4, 3));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+  });
+
+  it('produces 0 for zero divisor components', () => {
+    const out = createVector3();
+    divideVector3(out, createVector3(6, 8, 9), createVector3(0, 4, 0));
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(0);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector3(6, 8, 9);
+    divideVector3(v, v, createVector3(2, 4, 3));
+    expect(v.x).toBe(3);
+    expect(v.y).toBe(2);
+    expect(v.z).toBe(3);
   });
 });
 
@@ -244,6 +320,96 @@ describe('getVector3LengthSquared', () => {
   it('allows a vector-like object', () => {
     const v = { x: 3, y: 4, z: 0 };
     expect(getVector3LengthSquared(v)).toBe(25);
+  });
+});
+
+describe('getVector3Spherical', () => {
+  it('returns radius, theta, phi for a known point', () => {
+    const v = createVector3(1, 0, 0);
+    const sph = createVector3();
+    getVector3Spherical(sph, v);
+    expect(sph.x).toBeCloseTo(1, 6); // radius
+    expect(sph.y).toBeCloseTo(Math.PI / 2, 6); // theta (from +Y)
+    expect(sph.z).toBeCloseTo(0, 6); // phi
+  });
+
+  it('handles zero vector', () => {
+    const sph = createVector3();
+    getVector3Spherical(sph, createVector3(0, 0, 0));
+    expect(sph.x).toBe(0);
+    expect(sph.y).toBe(0);
+    expect(sph.z).toBe(0);
+  });
+});
+
+describe('interpolateVector3', () => {
+  it('returns a at t=0 and b at t=1', () => {
+    const out = createVector3();
+    const a = createVector3(1, 2, 3);
+    const b = createVector3(4, 5, 6);
+    interpolateVector3(out, a, b, 0);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    interpolateVector3(out, a, b, 1);
+    expect(out.x).toBe(4);
+    expect(out.y).toBe(5);
+    expect(out.z).toBe(6);
+  });
+
+  it('interpolates midpoint at t=0.5', () => {
+    const out = createVector3();
+    interpolateVector3(out, createVector3(0, 0, 0), createVector3(2, 4, 6), 0.5);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+  });
+
+  it('supports out === a', () => {
+    const a = createVector3(0, 0, 0);
+    const b = createVector3(2, 4, 6);
+    interpolateVector3(a, a, b, 0.5);
+    expect(a.x).toBe(1);
+    expect(a.y).toBe(2);
+    expect(a.z).toBe(3);
+  });
+});
+
+describe('maxVector3', () => {
+  it('returns the component-wise maximum', () => {
+    const out = createVector3();
+    maxVector3(out, createVector3(1, 5, 2), createVector3(3, 2, 7));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+    expect(out.z).toBe(7);
+  });
+});
+
+describe('minVector3', () => {
+  it('returns the component-wise minimum', () => {
+    const out = createVector3();
+    minVector3(out, createVector3(1, 5, 2), createVector3(3, 2, 7));
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(2);
+  });
+});
+
+describe('multiplyVector3', () => {
+  it('multiplies component-wise (Hadamard)', () => {
+    const out = createVector3();
+    multiplyVector3(out, createVector3(2, 3, 4), createVector3(5, 6, 7));
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(18);
+    expect(out.z).toBe(28);
+  });
+
+  it('supports out === a', () => {
+    const a = createVector3(2, 3, 4);
+    multiplyVector3(a, a, createVector3(5, 6, 7));
+    expect(a.x).toBe(10);
+    expect(a.y).toBe(18);
+    expect(a.z).toBe(28);
   });
 });
 
@@ -377,6 +543,32 @@ describe('projectVector3', () => {
   });
 });
 
+describe('reflectVector3', () => {
+  it('reflects incident vector about the x-axis normal', () => {
+    const out = createVector3();
+    // Reflect (1, -1, 0) about normal (1, 0, 0): result should be (-1, -1, 0)
+    reflectVector3(out, createVector3(1, -1, 0), createVector3(1, 0, 0));
+    expect(out.x).toBeCloseTo(-1, 6);
+    expect(out.y).toBeCloseTo(-1, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
+
+  it('reflecting a downward vector about upward normal gives upward', () => {
+    const out = createVector3();
+    reflectVector3(out, createVector3(0, -1, 0), createVector3(0, 1, 0));
+    expect(out.x).toBeCloseTo(0, 6);
+    expect(out.y).toBeCloseTo(1, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
+
+  it('supports out === incident', () => {
+    const v = createVector3(1, -1, 0);
+    reflectVector3(v, v, createVector3(1, 0, 0));
+    expect(v.x).toBeCloseTo(-1, 6);
+    expect(v.y).toBeCloseTo(-1, 6);
+  });
+});
+
 describe('scaleVector3', () => {
   it('scales the vector by a scalar', () => {
     const v = createVector3(1, 1, 1);
@@ -414,6 +606,48 @@ describe('setVector3', () => {
   });
 });
 
+describe('setVector3FromFloat32Array', () => {
+  it('reads x/y/z from the array at offset', () => {
+    const arr = new Float32Array([0, 1, 2, 3, 4]);
+    const out = createVector3();
+    setVector3FromFloat32Array(out, 1, arr);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+  });
+});
+
+describe('setVector3FromSpherical', () => {
+  it('produces the north pole at theta=0', () => {
+    const out = createVector3();
+    setVector3FromSpherical(out, 5, 0, 0);
+    expect(out.x).toBeCloseTo(0, 6);
+    expect(out.y).toBeCloseTo(5, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
+});
+
+describe('setVector3FromVector4', () => {
+  it('copies x, y, z and drops w', () => {
+    const src = { x: 1, y: 2, z: 3, w: 99 };
+    const out = createVector3();
+    setVector3FromVector4(out, src);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+  });
+
+  it('does not perform a perspective divide', () => {
+    const src = { x: 2, y: 4, z: 6, w: 2 };
+    const out = createVector3();
+    setVector3FromVector4(out, src);
+    // Should NOT divide by w
+    expect(out.x).toBe(2);
+    expect(out.y).toBe(4);
+    expect(out.z).toBe(6);
+  });
+});
+
 describe('subtractVector3', () => {
   it('returns a new vector when no target is passed', () => {
     const a = createVector3(4, 5, 6);
@@ -441,6 +675,46 @@ describe('subtractVector3', () => {
     expect(b.x).toBe(3);
     expect(b.y).toBe(3);
     expect(b.z).toBe(3);
+  });
+});
+
+describe('transformVector3ByMatrix3', () => {
+  it('transforms by an identity matrix', () => {
+    const identity = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+    const out = createVector3();
+    transformVector3ByMatrix3(out, createVector3(1, 2, 3), identity);
+    expect(out.x).toBeCloseTo(1, 6);
+    expect(out.y).toBeCloseTo(2, 6);
+    expect(out.z).toBeCloseTo(3, 6);
+  });
+
+  it('transforms by a scale matrix', () => {
+    const scale = { m: new Float32Array([2, 0, 0, 0, 3, 0, 0, 0, 4]) };
+    const out = createVector3();
+    transformVector3ByMatrix3(out, createVector3(1, 1, 1), scale);
+    expect(out.x).toBeCloseTo(2, 6);
+    expect(out.y).toBeCloseTo(3, 6);
+    expect(out.z).toBeCloseTo(4, 6);
+  });
+
+  it('supports out === source', () => {
+    const identity = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
+    const v = createVector3(1, 2, 3);
+    transformVector3ByMatrix3(v, v, identity);
+    expect(v.x).toBe(1);
+    expect(v.y).toBe(2);
+    expect(v.z).toBe(3);
+  });
+});
+
+describe('writeVector3ToFloat32Array', () => {
+  it('writes x/y/z to the array at offset', () => {
+    const arr = new Float32Array(5);
+    writeVector3ToFloat32Array(arr, 1, createVector3(1, 2, 3));
+    expect(arr[0]).toBe(0);
+    expect(arr[1]).toBe(1);
+    expect(arr[2]).toBe(2);
+    expect(arr[3]).toBe(3);
   });
 });
 

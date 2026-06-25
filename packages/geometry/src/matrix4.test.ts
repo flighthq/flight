@@ -39,6 +39,7 @@ import {
   setMatrix4,
   setMatrix4Element,
   setMatrix4From2D,
+  setMatrix4FromFloat32Array,
   setMatrix4FromMatrix,
   setMatrix4FromMatrix3,
   setMatrix4FromQuaternion,
@@ -50,6 +51,7 @@ import {
   setQuaternionFromAxisAngle,
   translateMatrix4,
   transposeMatrix4,
+  writeMatrix4ToFloat32Array,
 } from '@flighthq/geometry';
 import type { Matrix, Matrix4 } from '@flighthq/types';
 
@@ -714,17 +716,16 @@ describe('inverseMatrix4', () => {
     m.m[0] = 0; // make determinant zero
 
     const inv = createMatrix4();
-    inverseMatrix4(inv, m);
+    const ok = inverseMatrix4(inv, m);
 
     const det = getMatrix4Determinant(m);
     expect(det).toBeCloseTo(0);
 
-    // Inverse should either be NaN or throw an error
+    // Documented sentinel for a singular matrix: returns false and fills the output with NaN.
+    expect(ok).toBe(false);
     expect(inv.m[0]).toBeNaN();
     expect(inv.m[1]).toBeNaN();
     expect(inv.m[2]).toBeNaN();
-    // or, if you prefer to throw an error:
-    // expect(() => inverseMatrix4(m, inv)).toThrowError();
   });
 });
 
@@ -1262,6 +1263,38 @@ describe('setMatrix4From2D', () => {
   });
 });
 
+describe('setMatrix4FromFloat32Array', () => {
+  it('reads 16 elements at offset 0', () => {
+    const arr = new Float32Array(16);
+    for (let i = 0; i < 16; i++) arr[i] = i + 1;
+    const m = createMatrix4();
+    setMatrix4FromFloat32Array(m, 0, arr);
+    for (let i = 0; i < 16; i++) {
+      expect(m.m[i]).toBe(i + 1);
+    }
+  });
+
+  it('reads 16 elements at a non-zero offset', () => {
+    const arr = new Float32Array(20);
+    for (let i = 0; i < 20; i++) arr[i] = i + 1;
+    const m = createMatrix4();
+    setMatrix4FromFloat32Array(m, 4, arr);
+    for (let i = 0; i < 16; i++) {
+      expect(m.m[i]).toBe(i + 5);
+    }
+  });
+
+  it('round-trips with writeMatrix4ToFloat32Array', () => {
+    const m = createMatrix4();
+    translateMatrix4(m, m, 3, 4, 5);
+    const arr = new Float32Array(16);
+    writeMatrix4ToFloat32Array(arr, 0, m);
+    const m2 = createMatrix4();
+    setMatrix4FromFloat32Array(m2, 0, arr);
+    expect(equalsMatrix4(m, m2)).toBe(true);
+  });
+});
+
 describe('setMatrix4FromMatrix', () => {
   it('should convert an Matrix to a Matrix4', () => {
     const mat2D: Matrix = createMatrix();
@@ -1542,6 +1575,31 @@ describe('transposeMatrix4', () => {
 
     transposeMatrix4(matrix, matrix);
     expect(equalsMatrix4(matrix, expected)).toBe(true);
+  });
+});
+
+describe('writeMatrix4ToFloat32Array', () => {
+  it('writes 16 elements at offset 0', () => {
+    const m = createMatrix4();
+    setMatrix4(m, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const arr = new Float32Array(16);
+    writeMatrix4ToFloat32Array(arr, 0, m);
+    for (let i = 0; i < 16; i++) {
+      expect(arr[i]).toBe(m.m[i]);
+    }
+  });
+
+  it('writes 16 elements at a non-zero offset', () => {
+    const m = createMatrix4();
+    translateMatrix4(m, m, 1, 2, 3);
+    const arr = new Float32Array(20);
+    writeMatrix4ToFloat32Array(arr, 4, m);
+    for (let i = 0; i < 16; i++) {
+      expect(arr[4 + i]).toBe(m.m[i]);
+    }
+    // Bytes before offset untouched
+    expect(arr[0]).toBe(0);
+    expect(arr[3]).toBe(0);
   });
 });
 

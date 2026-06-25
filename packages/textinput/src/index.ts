@@ -12,6 +12,9 @@ export { disableTextInput, enableTextInput, getTextInputState, hasTextInput } fr
 export {
   appendTextInput,
   applyTextInputRestriction,
+  canRedoTextInput,
+  canUndoTextInput,
+  clearTextInputHistory,
   deleteTextInputBackward,
   deleteTextInputForward,
   deleteTextInputWordBackward,
@@ -29,13 +32,18 @@ export {
   moveTextInputCaret,
   moveTextInputCaretByWord,
   moveTextInputCaretDown,
+  moveTextInputCaretToLineEnd,
+  moveTextInputCaretToLineStart,
   moveTextInputCaretUp,
+  redoTextInput,
   replaceSelectedTextInput,
   replaceTextInput,
+  scrollTextInputCaretIntoView,
   selectAllTextInput,
   selectLineAtTextInputIndex,
   selectWordAtTextInputIndex,
   setTextInputSelection,
+  undoTextInput,
 } from './textInputEditing';
 export {
   blurTextInput,

@@ -5,6 +5,7 @@ import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } 
 import {
   createCanvasCacheState,
   defaultCanvasRenderCacheRenderer,
+  destroyCanvasRenderCacheTarget,
   enableCanvasRenderCache,
   ensureCanvasRenderCacheTarget,
   getCanvasRenderCacheTarget,
@@ -62,6 +63,26 @@ describe('defaultCanvasRenderCacheRenderer', () => {
     const spy = vi.spyOn(state.context, 'drawImage');
     defaultCanvasRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(spy).toHaveBeenCalledWith(target.canvas, 0, 0);
+  });
+});
+
+describe('destroyCanvasRenderCacheTarget', () => {
+  it('collapses the canvas to zero size and removes the target', () => {
+    const state = makeCanvasState();
+    const cache = createRenderCache();
+    const target = ensureCanvasRenderCacheTarget(state, cache, 8, 8);
+    destroyCanvasRenderCacheTarget(state, cache);
+    expect(target.canvas.width).toBe(0);
+    expect(target.canvas.height).toBe(0);
+    expect(target.width).toBe(0);
+    expect(target.height).toBe(0);
+    expect(getCanvasRenderCacheTarget(state, cache)).toBeNull();
+  });
+
+  it('is a no-op when the target does not exist', () => {
+    const state = makeCanvasState();
+    const cache = createRenderCache();
+    expect(() => destroyCanvasRenderCacheTarget(state, cache)).not.toThrow();
   });
 });
 

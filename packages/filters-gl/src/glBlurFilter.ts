@@ -1,7 +1,7 @@
 import { computeBoxBlurPassRadius } from '@flighthq/filters';
 import type { GlRenderTarget } from '@flighthq/render-gl';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl';
-import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types';
+import type { BlurFilter, GlFullscreenProgram, GlRenderState } from '@flighthq/types';
 
 const BOX_BLUR_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
@@ -63,6 +63,28 @@ type GaussianBlurShaderLocations = BoxBlurShaderLocations & {
 
 const boxBlurShaders = new WeakMap<GlRenderState, BoxBlurShaderLocations>();
 const gaussianBlurShaders = new WeakMap<GlRenderState, GaussianBlurShaderLocations>();
+
+/**
+ * Applies a blur filter descriptor to `source`, writing to `dest`. Dispatches
+ * to `applyBoxBlurFilterToGl` with the descriptor's `blurX`/`blurY` values,
+ * giving the same `Readonly<Omit<BlurFilter,'kind'>>` signature as the other
+ * `apply*FilterToGl` functions in this package.
+ *
+ * `temp` is a caller-provided ping-pong scratch target distinct from both
+ * `source` and `dest`.
+ */
+export function applyBlurFilterToGl(
+  state: GlRenderState,
+  source: GlRenderTarget,
+  dest: GlRenderTarget,
+  temp: GlRenderTarget,
+  filter: Readonly<Omit<BlurFilter, 'kind'>>,
+): void {
+  applyBoxBlurFilterToGl(state, source, dest, temp, {
+    blurX: filter.blurX,
+    blurY: filter.blurY,
+  });
+}
 
 /**
  * Applies a separable box blur to `source`, writing to `dest`. `blurX`/`blurY` are the target

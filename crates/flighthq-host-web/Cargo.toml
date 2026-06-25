@@ -13,7 +13,7 @@ flighthq-render = { workspace = true }
 flighthq-render-wgpu = { workspace = true }
 flighthq-displayobject = { workspace = true }
 flighthq-application = { workspace = true }
-flighthq-resources = { workspace = true }
+flighthq-image = { workspace = true }
 
 # Platform capability crates. host-web fills each crate's `*Backend` seam with a
 # browser implementation and installs it through that crate's `set_*_backend`.

@@ -28,6 +28,18 @@ export function computeBoxBlurRadius(sigma: number, passes: number): number {
   return Math.max(0, Math.round((-1 + Math.sqrt(1 + (12 * sigma * sigma) / passes)) / 2));
 }
 
+/**
+ * Converts a box-blur radius to the approximate Gaussian sigma that a single-pass box blur of
+ * that radius corresponds to. Inverse of the `computeBoxBlurRadius` uniform-pass formula:
+ * sigma = sqrt(passes * (2*radius + 1)^2 / 12). Useful for the reverse mapping (e.g. to feed a
+ * sigma-based backend from a Flash `blurX` value).
+ */
+export function computeGaussianSigmaForBlurRadius(radius: number, passes: number): number {
+  if (radius <= 0 || passes <= 0) return 0;
+  const width = 2 * radius + 1;
+  return Math.sqrt((passes * width * width) / 12);
+}
+
 // Largest odd box width whose `passes`-fold variance stays at or below a Gaussian
 // of standard deviation `sigma`. Odd keeps the radius (width - 1) / 2 integral.
 function computeBoxBlurLowerWidth(sigma: number, passes: number): number {

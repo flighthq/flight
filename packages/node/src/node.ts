@@ -1,5 +1,5 @@
 import { createEntityRuntime, getEntityRuntime } from '@flighthq/entity';
-import { createSignal } from '@flighthq/signals';
+import { clearSignal, createSignal } from '@flighthq/signals';
 import type {
   Kind,
   MethodsOf,
@@ -14,6 +14,7 @@ import type {
 } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
+import { removeNodeChild } from './hierarchy';
 import { invalidateNode } from './revision';
 
 export function createNode<
@@ -77,6 +78,55 @@ export function defaultNodeRuntimeCanAddChild<Traits extends object>(
   _child: Node<Traits>,
 ): boolean {
   return true;
+}
+
+/**
+ * Detaches `target` from its parent, recursively removes all descendants, and clears the
+ * `nodeSignals` and `interactionSignals` registries so the node becomes eligible for garbage
+ * collection. After disposal, `target` must not be added to a graph.
+ *
+ * Nodes in this package own no non-GC resources (GPU textures, native handles); therefore no
+ * `destroyNode` counterpart exists at this tier. Higher-level packages that attach non-GC
+ * resources (render proxies, GPU textures) should call `disposeNode` first and then release those
+ * resources themselves.
+ */
+export function disposeNode<Traits extends object = NodeTraits>(target: Node<Traits>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Traits>;
+
+  // Detach from parent first so the parent's children list stays consistent.
+  const parent = runtime.parent as Node<Traits> | null;
+  if (parent !== null) {
+    removeNodeChild(parent, target);
+  }
+
+  // Recursively dispose children bottom-up (snapshot the array before mutating).
+  const children = runtime.children;
+  if (children !== null) {
+    // Snapshot to avoid mutation during iteration.
+    const snapshot = children.slice() as Node<Traits>[];
+    for (let i = 0; i < snapshot.length; i++) {
+      disposeNode(snapshot[i]);
+    }
+    runtime.children = null;
+  }
+
+  // Clear all signal listeners so they cannot fire after disposal.
+  const nodeSignals = runtime.nodeSignals;
+  if (nodeSignals !== null) {
+    clearSignal(nodeSignals.onChildAdded);
+    clearSignal(nodeSignals.onChildRemoved);
+    clearSignal(nodeSignals.onChildrenChanged);
+    clearSignal(nodeSignals.onChildrenOrderChanged);
+    clearSignal(nodeSignals.onParentChanged);
+    runtime.nodeSignals = null;
+  }
+
+  const interactionSignals = runtime.interactionSignals;
+  if (interactionSignals !== null) {
+    // InteractionSignals fields are owned by the interaction package; we can only clear our
+    // reference so the owning package's signals are released via GC.
+    runtime.interactionSignals = null;
+  }
 }
 
 export function enableNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals {

@@ -3,7 +3,12 @@ import { createRichText } from '@flighthq/text';
 import { enableTextInput } from '@flighthq/textinput';
 
 import { createCanvasRenderState } from './canvasRenderState';
-import { defaultCanvasRichTextRenderer, drawCanvasRichText, registerCanvasTextInputOverlay } from './canvasRichText';
+import {
+  defaultCanvasRichTextRenderer,
+  drawCanvasRichText,
+  drawCanvasRichTextMask,
+  registerCanvasTextInputOverlay,
+} from './canvasRichText';
 
 function makeState() {
   const canvas = document.createElement('canvas');
@@ -11,6 +16,16 @@ function makeState() {
   canvas.height = 200;
   return createCanvasRenderState(canvas);
 }
+
+describe('defaultCanvasRichTextRenderer', () => {
+  it('has noopRendererData as createData', () => {
+    expect(typeof defaultCanvasRichTextRenderer.createData).toBe('function');
+  });
+
+  it('has drawCanvasRichText as submit', () => {
+    expect(defaultCanvasRichTextRenderer.submit).toBe(drawCanvasRichText);
+  });
+});
 
 describe('drawCanvasRichText', () => {
   it('does not throw when text is empty', () => {
@@ -42,6 +57,17 @@ describe('drawCanvasRichText', () => {
 
     expect(spy).toHaveBeenCalledWith('red', expect.any(Number), expect.any(Number));
     expect(spy).toHaveBeenCalledWith('bold', expect.any(Number), expect.any(Number));
+  });
+});
+
+describe('drawCanvasRichTextMask', () => {
+  // The mask path is a no-op stub on the Canvas backend — masking is handled uniformly
+  // through pushCanvasClipContours (the clip hooks), not through per-kind draw-mask functions.
+  it('does not throw', () => {
+    const state = makeState();
+    const node = createRichText({ data: { text: 'hello' } });
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    expect(() => drawCanvasRichTextMask(state, renderProxy)).not.toThrow();
   });
 });
 

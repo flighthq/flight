@@ -33,6 +33,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "System clipboard read/write (text, HTML) over a swappable web/native backend",
+  "description": "System clipboard read/write (text, HTML, image, RTF, bookmark, files, generic MIME formats) with atomic multi-flavor write and change events, over a swappable web/native backend",
   "sideEffects": false
 }

@@ -31,6 +31,7 @@ export * from './canvasPixelateEffect';
 export * from './canvasPosterizeEffect';
 export * from './canvasRadialBlurEffect';
 export * from './canvasRenderEffectPipeline';
+export * from './canvasRenderEffectRegistration';
 export * from './canvasRenderEffectRegistry';
 export * from './canvasScanlinesEffect';
 export * from './canvasScreenSpaceFogEffect';

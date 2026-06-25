@@ -3,6 +3,10 @@ import { connectSignal } from '@flighthq/signals';
 import {
   applyTween,
   createTween,
+  getActiveTweenCount,
+  getTweensOf,
+  hasTweensOf,
+  killTweensOfProperty,
   pauseAllTweens,
   pauseTween,
   pauseTweens,
@@ -91,6 +95,104 @@ describe('createTween', () => {
     const tween = createTween(manager, { x: 0, y: 0 }, 1000, { x: 100, y: 200 });
     expect(tween.properties).toHaveLength(2);
     expect(tween.properties.map((d) => d.key)).toEqual(expect.arrayContaining(['x', 'y']));
+  });
+});
+
+describe('getActiveTweenCount', () => {
+  it('returns 0 for an empty manager', () => {
+    const manager = createTweenManager();
+    expect(getActiveTweenCount(manager)).toBe(0);
+  });
+
+  it('counts total tweens across all targets', () => {
+    const manager = createTweenManager();
+    createTween(manager, { x: 0 }, 1000, { x: 100 });
+    createTween(manager, { y: 0 }, 1000, { y: 100 });
+    expect(getActiveTweenCount(manager)).toBe(2);
+  });
+
+  it('decreases after tweens complete and are cleaned up', () => {
+    const manager = createTweenManager();
+    createTween(manager, { x: 0 }, 1000, { x: 100 });
+    updateTweens(manager, 1000);
+    updateTweens(manager, 0); // cleanup pass
+    expect(getActiveTweenCount(manager)).toBe(0);
+  });
+});
+
+describe('getTweensOf', () => {
+  it('returns empty array when target has no tweens', () => {
+    const manager = createTweenManager();
+    expect(getTweensOf(manager, {})).toEqual([]);
+  });
+
+  it('returns the tweens registered for a target', () => {
+    const manager = createTweenManager();
+    const target = { x: 0, y: 0 };
+    const t1 = createTween(manager, target, 1000, { x: 100 });
+    const t2 = createTween(manager, target, 1000, { y: 100 }, { overwrite: false });
+    const result = getTweensOf(manager, target);
+    expect(result).toContain(t1);
+    expect(result).toContain(t2);
+  });
+});
+
+describe('hasTweensOf', () => {
+  it('returns false when target has no tweens', () => {
+    const manager = createTweenManager();
+    expect(hasTweensOf(manager, {})).toBe(false);
+  });
+
+  it('returns true when target has active tweens', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    createTween(manager, target, 1000, { x: 100 });
+    expect(hasTweensOf(manager, target)).toBe(true);
+  });
+
+  it('returns false after all tweens for that target complete and are cleaned up', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    createTween(manager, target, 1000, { x: 100 });
+    updateTweens(manager, 1000);
+    updateTweens(manager, 0); // cleanup pass
+    expect(hasTweensOf(manager, target)).toBe(false);
+  });
+});
+
+describe('killTweensOfProperty', () => {
+  it('marks all tweens with the given property as complete', () => {
+    const manager = createTweenManager();
+    const a = createTween(manager, { x: 0 }, 1000, { x: 100 });
+    const b = createTween(manager, { x: 0 }, 1000, { x: 200 }, { overwrite: false });
+    killTweensOfProperty(manager, 'x');
+    expect(a.complete).toBe(true);
+    expect(b.complete).toBe(true);
+  });
+
+  it('does not affect tweens without the given property', () => {
+    const manager = createTweenManager();
+    const target = { x: 0, y: 0 };
+    const a = createTween(manager, target, 1000, { x: 100 });
+    const b = createTween(manager, target, 1000, { y: 100 }, { overwrite: false });
+    killTweensOfProperty(manager, 'x');
+    expect(a.complete).toBe(true);
+    expect(b.complete).toBe(false);
+  });
+
+  it('is a no-op when no tweens match', () => {
+    const manager = createTweenManager();
+    createTween(manager, { x: 0 }, 1000, { x: 100 });
+    expect(() => killTweensOfProperty(manager, 'z')).not.toThrow();
+  });
+
+  it('kills matching tweens across multiple targets', () => {
+    const manager = createTweenManager();
+    const t1 = createTween(manager, { x: 0 }, 1000, { x: 100 });
+    const t2 = createTween(manager, { x: 0 }, 1000, { x: 200 });
+    killTweensOfProperty(manager, 'x');
+    expect(t1.complete).toBe(true);
+    expect(t2.complete).toBe(true);
   });
 });
 

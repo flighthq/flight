@@ -26,6 +26,7 @@ import {
   getScreens,
   getScreenWorkArea,
   onScreenChange,
+  onScreenDetailPermissionChange,
   refreshScreens,
   requestScreenDetails,
   screenToDipPoint,
@@ -758,6 +759,54 @@ describe('onScreenChange', () => {
     unsubscribe();
     backend.fire();
     expect(events).toHaveLength(1);
+  });
+});
+
+// --- onScreenDetailPermissionChange ---
+
+describe('onScreenDetailPermissionChange', () => {
+  it('returns a no-op unsubscribe when the Permissions API is unavailable', () => {
+    const hadPermissions = 'permissions' in navigator;
+    const original = (navigator as { permissions?: unknown }).permissions;
+    delete (navigator as { permissions?: unknown }).permissions;
+    try {
+      const unsubscribe = onScreenDetailPermissionChange(() => {});
+      expect(typeof unsubscribe).toBe('function');
+      expect(() => unsubscribe()).not.toThrow();
+    } finally {
+      if (hadPermissions) (navigator as { permissions?: unknown }).permissions = original;
+    }
+  });
+
+  it('delivers the new state when the permission status fires a change', async () => {
+    const listeners: Array<() => void> = [];
+    const status = {
+      state: 'prompt' as 'denied' | 'granted' | 'prompt',
+      addEventListener: (_type: 'change', l: () => void) => listeners.push(l),
+      removeEventListener: (_type: 'change', l: () => void) => {
+        const i = listeners.indexOf(l);
+        if (i >= 0) listeners.splice(i, 1);
+      },
+    };
+    const original = (navigator as { permissions?: unknown }).permissions;
+    (navigator as { permissions?: unknown }).permissions = {
+      query: () => Promise.resolve(status),
+    };
+    try {
+      const states: string[] = [];
+      const unsubscribe = onScreenDetailPermissionChange((s) => states.push(s));
+      // Let the query promise resolve so the change listener is registered.
+      await Promise.resolve();
+      await Promise.resolve();
+      status.state = 'granted';
+      for (const l of listeners) l();
+      expect(states).toEqual(['granted']);
+      unsubscribe();
+      expect(listeners).toHaveLength(0);
+    } finally {
+      if (original === undefined) delete (navigator as { permissions?: unknown }).permissions;
+      else (navigator as { permissions?: unknown }).permissions = original;
+    }
   });
 });
 

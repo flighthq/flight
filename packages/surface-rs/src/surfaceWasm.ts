@@ -1,4 +1,4 @@
-import { invalidateImageResource } from '@flighthq/resources';
+import { invalidateImageResource } from '@flighthq/image';
 import type {
   SurfaceBevelOptions,
   SurfaceBevelType,
@@ -39,9 +39,18 @@ import {
   blur_surface_pixels_vertical_wasm,
   blur_surface_pixels_vertical_weighted_wasm,
   box_blur_surface_wasm,
+  build_surface_brightness_color_matrix_wasm,
+  build_surface_contrast_color_matrix_wasm,
+  build_surface_grayscale_color_matrix_wasm,
+  build_surface_hue_rotation_color_matrix_wasm,
+  build_surface_invert_color_matrix_wasm,
+  build_surface_saturation_color_matrix_wasm,
+  build_surface_sepia_color_matrix_wasm,
   color_matrix_surface_wasm,
   composite_surface_pixels_wasm,
   composite_surface_region_wasm,
+  compute_gaussian_kernel_wasm,
+  concat_surface_color_matrix_wasm,
   convert_surface_pixel_order_wasm,
   convolve_surface_wasm,
   copy_surface_channel_wasm,
@@ -80,6 +89,7 @@ import {
   rotate_surface_counter_clockwise_wasm,
   rotate_surface_wasm,
   scroll_surface_wasm,
+  set_surface_color_matrix_identity_wasm,
   sharpen_surface_wasm,
   unpremultiply_surface_pixels_wasm,
   write_surface_pixels_32_wasm,
@@ -253,6 +263,34 @@ export function boxBlurSurface(
   );
 }
 
+export function buildSurfaceBrightnessColorMatrix(out: number[], amount: number): void {
+  writeColorMatrix(out, (m) => build_surface_brightness_color_matrix_wasm(m, amount));
+}
+
+export function buildSurfaceContrastColorMatrix(out: number[], amount: number): void {
+  writeColorMatrix(out, (m) => build_surface_contrast_color_matrix_wasm(m, amount));
+}
+
+export function buildSurfaceGrayscaleColorMatrix(out: number[]): void {
+  writeColorMatrix(out, (m) => build_surface_grayscale_color_matrix_wasm(m));
+}
+
+export function buildSurfaceHueRotationColorMatrix(out: number[], degrees: number): void {
+  writeColorMatrix(out, (m) => build_surface_hue_rotation_color_matrix_wasm(m, degrees));
+}
+
+export function buildSurfaceInvertColorMatrix(out: number[]): void {
+  writeColorMatrix(out, (m) => build_surface_invert_color_matrix_wasm(m));
+}
+
+export function buildSurfaceSaturationColorMatrix(out: number[], amount: number): void {
+  writeColorMatrix(out, (m) => build_surface_saturation_color_matrix_wasm(m, amount));
+}
+
+export function buildSurfaceSepiaColorMatrix(out: number[]): void {
+  writeColorMatrix(out, (m) => build_surface_sepia_color_matrix_wasm(m));
+}
+
 export function colorMatrixSurface(
   out: Uint8ClampedArray,
   source: Readonly<SurfaceRegion>,
@@ -286,6 +324,21 @@ export function compositeSurfaceRegion(
     blendMode,
   );
   invalidateImageResource(dest.surface);
+}
+
+export function computeGaussianKernel(out: Float32Array, radius: number, sigma: number): void {
+  ensureSurfaceRs();
+  compute_gaussian_kernel_wasm(out, roundRadius(radius), sigma);
+}
+
+export function concatSurfaceColorMatrix(
+  out: number[],
+  first: ReadonlyArray<number>,
+  second: ReadonlyArray<number>,
+): void {
+  writeColorMatrix(out, (m) =>
+    concat_surface_color_matrix_wasm(m, Float32Array.from(first), Float32Array.from(second)),
+  );
 }
 
 export function convertSurfacePixelOrder(
@@ -777,6 +830,10 @@ export function scrollSurface(out: Surface, dx: number, dy: number): void {
   invalidateImageResource(out);
 }
 
+export function setSurfaceColorMatrixIdentity(out: number[]): void {
+  writeColorMatrix(out, (m) => set_surface_color_matrix_identity_wasm(m));
+}
+
 export function sharpenSurface(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
@@ -815,6 +872,15 @@ export function writeSurfacePixels32(dest: Readonly<SurfaceRegion>, pixels: Read
   ensureSurfaceRs();
   write_surface_pixels_32_wasm(asUint8(dest.surface.data), descOf(dest), pixels as Uint32Array);
   invalidateImageResource(dest.surface);
+}
+
+// Color-matrix builders write into a wasm-owned Float32Array, then copy back into
+// the caller's plain `number[]` out-param (the `@flighthq/surface` signature shape).
+function writeColorMatrix(out: number[], fill: (scratch: Float32Array) => void): void {
+  ensureSurfaceRs();
+  const scratch = new Float32Array(20);
+  fill(scratch);
+  for (let i = 0; i < 20; i++) out[i] = scratch[i];
 }
 
 // Radius/pass guards matching `@flighthq/surface`: radii floor at 0, pass

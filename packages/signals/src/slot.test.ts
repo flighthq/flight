@@ -72,6 +72,45 @@ describe('connectSignal', () => {
     emitSignal(signal);
     expect(order).toEqual([2, 3, 1]);
   });
+
+  it('delivers to every slot when a slot re-emits the same signal', () => {
+    // Re-entrant emit on the same signal must not skip any slot. The inner
+    // emit re-traverses the shared slot list, so each slot still runs; the
+    // guard variable keeps the recursion to a single level.
+    const signal = createSignal<() => void>();
+    const calls: string[] = [];
+    let reentered = false;
+    connectSignal(signal, () => {
+      calls.push('a');
+      if (!reentered) {
+        reentered = true;
+        emitSignal(signal);
+      }
+    });
+    connectSignal(signal, () => calls.push('b'));
+    emitSignal(signal);
+    expect(calls).toContain('a');
+    expect(calls).toContain('b');
+  });
+
+  it('removes a once slot exactly once across a re-entrant emit', () => {
+    // A once slot fired during a nested emit on the same signal must be
+    // removed after its single invocation and never fire again, even though
+    // the inner emit re-traverses the slot list.
+    const signal = createSignal<() => void>();
+    let onceCount = 0;
+    connectSignal(signal, () => onceCount++, { once: true });
+    let reentered = false;
+    connectSignal(signal, () => {
+      if (!reentered) {
+        reentered = true;
+        emitSignal(signal);
+      }
+    });
+    emitSignal(signal);
+    emitSignal(signal);
+    expect(onceCount).toBe(1);
+  });
 });
 
 describe('disconnectSignal', () => {

@@ -30,6 +30,10 @@ export function applyTween<T extends object>(
   }
 }
 
+// `duration` (and `options.delay`) are unit-agnostic: they are expressed in the
+// same unit the caller later feeds `updateTweens(manager, deltaTime)`. The
+// package performs no time conversion, so seconds, milliseconds, and frames are
+// all valid as long as duration and `deltaTime` use one consistent unit.
 export function createTween<T extends object>(
   manager: TweenManager,
   target: T,
@@ -75,8 +79,32 @@ export function createTween<T extends object>(
   return tween;
 }
 
+export function getActiveTweenCount(manager: TweenManager): number {
+  let count = 0;
+  for (const list of manager.tweens.values()) count += list.length;
+  return count;
+}
+
+export function getTweensOf(manager: TweenManager, target: object): readonly Tween<any>[] {
+  return manager.tweens.get(target) ?? [];
+}
+
+export function hasTweensOf(manager: TweenManager, target: object): boolean {
+  const list = manager.tweens.get(target);
+  return list !== undefined && list.length > 0;
+}
+
 function isTweenManager(value: unknown): value is TweenManager {
   return typeof value === 'object' && value !== null && (value as any).__brand === 'TweenManager';
+}
+
+export function killTweensOfProperty(manager: TweenManager, key: string): void {
+  for (const list of manager.tweens.values()) {
+    for (const tween of list) {
+      const p = tween.propertyMap as Record<string, unknown>;
+      if (key in p) tween.complete = true;
+    }
+  }
 }
 
 function makeTween<T extends object>(

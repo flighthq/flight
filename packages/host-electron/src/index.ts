@@ -12,6 +12,7 @@ export * from './electronRegister';
 export * from './electronScreen';
 export * from './electronShell';
 export * from './electronShortcut';
+export * from './electronStorage';
 export * from './electronTray';
 export * from './electronUpdater';
 export * from './electronWindow';

@@ -1,6 +1,8 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { ALL_WGPU_FILTER_PIPELINE_CACHES } from './wgpuFilterPipelineCache';
+
 // Shared vertex shader: full-screen quad via vertex_index, no vertex buffer needed.
 // UV convention: y=0 = texture top, y=1 = texture bottom (Wgpu top-left origin).
 // NDC y=+1 (top) → uv.y=0, NDC y=-1 (bottom) → uv.y=1.
@@ -65,6 +67,12 @@ type WgpuFilterState = {
 };
 
 const filterStates = new WeakMap<WgpuRenderState, WgpuFilterState>();
+
+// Registry of all per-filter pipeline caches. Each filter module registers its module-level
+// WeakMap here via registerWgpuFilterPipelineCache so destroyWgpuFilterPipelines can evict stale
+// pipeline entries on device loss / state teardown. Without eviction, a filter that cached a
+// pipeline before destroy would continue drawing with a pipeline referencing the old (lost) device.
+const pipelineCacheRegistry: WeakMap<WgpuRenderState, unknown>[] = [];
 
 function getOrCreateFilterState(state: WgpuRenderState): WgpuFilterState {
   let fs = filterStates.get(state);
@@ -318,6 +326,24 @@ export function createWgpuTripleSourcePipeline(
 }
 
 /**
+ * Destroys the filter infrastructure (uniform ring buffer, bind groups, sampler) held
+ * for `state`, freeing the associated GPU resources. Also evicts `state` from every
+ * per-filter pipeline cache registered via `registerWgpuFilterPipelineCache` so the next
+ * filter draw recompiles on the current device. Call when the render state itself is being
+ * destroyed — for example when a WebGPU device is lost or an offscreen render target is torn
+ * down. After this call any filter draw that re-uses `state` will re-create all infrastructure
+ * from scratch. Idempotent.
+ */
+export function destroyWgpuFilterPipelines(state: WgpuRenderState): void {
+  const fs = filterStates.get(state);
+  if (fs === undefined) return;
+  fs.uniformBuffer.destroy();
+  filterStates.delete(state);
+  for (const cache of ALL_WGPU_FILTER_PIPELINE_CACHES) cache.delete(state);
+  for (const cache of pipelineCacheRegistry) cache.delete(state);
+}
+
+/**
  * Draws a full-screen pass reading from two source textures.
  * source0 binds to group 1, source1 to group 2.
  */
@@ -432,4 +458,18 @@ export function getWgpuFilterState(state: WgpuRenderState): {
     writeSlot: (offset, fn) => writeUniformSlot(state, fs, offset, fn),
     beginPass: (dest, loadOp) => beginFilterPass(state, dest, loadOp),
   };
+}
+
+/**
+ * Registers a per-filter pipeline WeakMap with the central eviction registry. Call this
+ * once per module-level WeakMap (at module load or first use). When `destroyWgpuFilterPipelines`
+ * is called for a render state, it deletes that state's entry from every registered cache so
+ * the next filter draw recompiles the pipeline on the current (possibly new) device.
+ *
+ * Filter modules that cache pipelines in a module-level
+ * `WeakMap<WgpuRenderState, WgpuFilterPipeline>` should call this to participate in
+ * device-loss recovery via `destroyWgpuFilterPipelines`.
+ */
+export function registerWgpuFilterPipelineCache(cache: WeakMap<WgpuRenderState, unknown>): void {
+  pipelineCacheRegistry.push(cache);
 }

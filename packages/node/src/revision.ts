@@ -29,7 +29,7 @@ export function getNodeLocalTransformRevision<Traits extends object>(source: Rea
   return getNodeRuntime(source).localTransformId;
 }
 
-export function getNodeWorldTransformRevision<Traits extends object>(source: Node<Traits>): number {
+export function getNodeWorldTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
   return getNodeRuntime(source).worldTransformId;
 }
 

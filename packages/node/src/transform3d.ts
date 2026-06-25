@@ -1,5 +1,13 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { copyMatrix4, createMatrix4, inverseMatrix4, matrix4TransformPoint, multiplyMatrix4 } from '@flighthq/geometry';
+import {
+  acquireMatrix4,
+  copyMatrix4,
+  createMatrix4,
+  inverseMatrix4,
+  matrix4TransformPoint,
+  multiplyMatrix4,
+  releaseMatrix4,
+} from '@flighthq/geometry';
 import type { HasTransform3DRuntime, Matrix4Like, NodeRuntime, Transform3DNode, Vector3Like } from '@flighthq/types';
 
 import { computeNodeWorldTransformRevision } from './revision';
@@ -9,9 +17,11 @@ export function convertNodeVector3GlobalToLocal<Traits extends object>(
   source: Transform3DNode<Traits>,
   point: Readonly<Vector3Like>,
 ): void {
-  const inv = createMatrix4();
+  // Acquire from pool instead of allocating to avoid hot-path GC pressure.
+  const inv = acquireMatrix4();
   inverseMatrix4(inv, getNodeWorldTransformMatrix4(source));
   matrix4TransformPoint(out, inv, point);
+  releaseMatrix4(inv);
 }
 
 export function convertNodeVector3LocalToGlobal<Traits extends object>(

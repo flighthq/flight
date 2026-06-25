@@ -23,6 +23,52 @@ export function buildParticleCurve(f: (t: number) => number, samples = 33): numb
   return lut;
 }
 
+/** Linearly interpolate two sRGB colors through HSV space, writing into `out[offset..+3]`.
+ *  Used by the `colorInterpolation: 'hsv'` path in updateParticleEmitter. */
+export function lerpHsvDirect(
+  out: Float32Array | number[],
+  offset: number,
+  r0: number,
+  g0: number,
+  b0: number,
+  r1: number,
+  g1: number,
+  b1: number,
+  t: number,
+): void {
+  const [h0, s0, v0] = rgbToHsv(r0, g0, b0);
+  const [h1, s1, v1] = rgbToHsv(r1, g1, b1);
+  // Hue wraps around — take the shorter arc.
+  let dh = h1 - h0;
+  if (dh > 0.5) dh -= 1;
+  else if (dh < -0.5) dh += 1;
+  const [r, g, b] = hsvToRgb(h0 + dh * t, s0 + (s1 - s0) * t, v0 + (v1 - v0) * t);
+  out[offset] = r;
+  out[offset + 1] = g;
+  out[offset + 2] = b;
+}
+
+/** Interpolate through HSV space using per-particle birth/death color arrays. */
+export function lerpHsvInPlace(
+  colorsOut: Float32Array | number[],
+  offset: number,
+  birth: Float32Array,
+  death: Float32Array,
+  t: number,
+): void {
+  lerpHsvDirect(
+    colorsOut,
+    offset,
+    birth[offset],
+    birth[offset + 1],
+    birth[offset + 2],
+    death[offset],
+    death[offset + 1],
+    death[offset + 2],
+    t,
+  );
+}
+
 /** Bake a piecewise-linear RGB timeline (e.g. an imported color gradient) into a
  *  uniform interleaved LUT (length N×3). */
 export function particleColorCurveFromKeyframes(keys: ReadonlyArray<ColorKeyframe>, samples = 33): number[] {
@@ -69,6 +115,50 @@ export function particleCurveToKeyframes(lut: ParticleCurve): CurveKeyframe[] {
   return keys;
 }
 
+/** Convert HSV to sRGB [0, 1]. Internal helper for HSV interpolation. */
+function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
+  const m = v - c;
+  const hi = Math.floor(h * 6) % 6;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  switch (hi) {
+    case 0:
+      r = c;
+      g = x;
+      b = 0;
+      break;
+    case 1:
+      r = x;
+      g = c;
+      b = 0;
+      break;
+    case 2:
+      r = 0;
+      g = c;
+      b = x;
+      break;
+    case 3:
+      r = 0;
+      g = x;
+      b = c;
+      break;
+    case 4:
+      r = x;
+      g = 0;
+      b = c;
+      break;
+    default:
+      r = c;
+      g = 0;
+      b = x;
+      break;
+  }
+  return [r + m, g + m, b + m];
+}
+
 function interpKeyframe(sorted: ReadonlyArray<CurveKeyframe>, t: number): number {
   const seg = locateKeyframe(sorted, t);
   if (seg.f === 0) return sorted[seg.i].value;
@@ -92,6 +182,22 @@ function locateKeyframe(sorted: ReadonlyArray<{ time: number }>, t: number): { f
     }
   }
   return { f: 0, i: n - 1 };
+}
+
+/** Convert sRGB [0, 1] to HSV. Internal helper for HSV interpolation. */
+function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  let h = 0;
+  if (delta > 0) {
+    if (max === r) h = ((g - b) / delta) % 6;
+    else if (max === g) h = (b - r) / delta + 2;
+    else h = (r - g) / delta + 4;
+    h /= 6;
+    if (h < 0) h += 1;
+  }
+  return [h, max === 0 ? 0 : delta / max, max];
 }
 
 /** Sample an interleaved RGB curve (length N×3) at t∈[0,1], writing the three

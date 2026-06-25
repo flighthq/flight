@@ -64,6 +64,15 @@ export function createCanvasRenderTarget(width: number, height: number): CanvasR
   return { canvas, context, width: canvas.width, height: canvas.height };
 }
 
+export function destroyCanvasRenderTarget(target: CanvasRenderTarget): void {
+  // Collapse the canvas to zero size so the browser can reclaim its backing store now.
+  // Setting width/height to 0 also implicitly resets the context state.
+  target.canvas.width = 0;
+  target.canvas.height = 0;
+  target.width = 0;
+  target.height = 0;
+}
+
 /**
  * Restores the canvas, context, and renderTransform2D saved by the matching
  * `beginCanvasRenderTarget` call.

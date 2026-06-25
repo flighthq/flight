@@ -63,11 +63,11 @@ export function createServiceWorkerNotificationBackend(
   registration: ServiceWorkerRegistrationLike,
 ): NotificationBackend {
   let _idCounter = 0;
-  let _clickListeners = new Set<(id: string) => void>();
-  let _actionListeners = new Set<(id: string, actionId: string) => void>();
-  let _dismissListeners = new Set<(id: string) => void>();
-  let _replyListeners = new Set<(id: string, actionId: string, text: string) => void>();
-  let _showListeners = new Set<(id: string) => void>();
+  const _clickListeners = new Set<(id: string) => void>();
+  const _actionListeners = new Set<(id: string, actionId: string) => void>();
+  const _dismissListeners = new Set<(id: string) => void>();
+  const _replyListeners = new Set<(id: string, actionId: string, text: string) => void>();
+  const _showListeners = new Set<(id: string) => void>();
   const _scheduled = new Map<string, { timeout: ReturnType<typeof setTimeout>; entry: ScheduledNotification }>();
 
   function _generateId(): string {
@@ -263,6 +263,7 @@ export function createServiceWorkerNotificationBackend(
     _dispatchAction: (notificationId: string, actionId: string) => void;
     _dispatchClick: (notificationId: string) => void;
     _dispatchDismiss: (notificationId: string) => void;
+    _dispatchReply: (notificationId: string, actionId: string, text: string) => void;
   };
 
   // Exposes internal dispatch hooks so page-side message handlers can forward SW events.
@@ -279,6 +280,10 @@ export function createServiceWorkerNotificationBackend(
   internal._dispatchDismiss = (notificationId) => {
     _fire(_dismissListeners, notificationId);
   };
+  internal._dispatchReply = (notificationId, actionId, text) => {
+    // Inline-reply submission (a `text-input` action): deliver the reply text to reply listeners.
+    for (const fn of _replyListeners) fn(notificationId, actionId, text);
+  };
 
   return backend;
 }
@@ -293,11 +298,11 @@ export function createWebNotificationBackend(): NotificationBackend {
   const _live = new Map<string, InstanceType<typeof Notification>>();
   // Live request registry: id → the original request, needed to merge partial updates.
   const _requests = new Map<string, Readonly<NotificationRequest>>();
-  let _clickListeners = new Set<(id: string) => void>();
-  let _actionListeners = new Set<(id: string, actionId: string) => void>();
-  let _dismissListeners = new Set<(id: string) => void>();
-  let _replyListeners = new Set<(id: string, actionId: string, text: string) => void>();
-  let _showListeners = new Set<(id: string) => void>();
+  const _clickListeners = new Set<(id: string) => void>();
+  const _actionListeners = new Set<(id: string, actionId: string) => void>();
+  const _dismissListeners = new Set<(id: string) => void>();
+  const _replyListeners = new Set<(id: string, actionId: string, text: string) => void>();
+  const _showListeners = new Set<(id: string) => void>();
 
   // Scheduled-notification registry (best-effort setTimeout — cleared on page reload).
   const _scheduled = new Map<string, { timeout: ReturnType<typeof setTimeout>; entry: ScheduledNotification }>();
@@ -579,17 +584,23 @@ export function isNotificationSupported(): boolean {
 
 // Forwards a service-worker click/action event received via postMessage to the given SW backend's
 // listeners. Call this from your page's `navigator.serviceWorker.addEventListener('message', ...)`
-// handler when the SW posts a `{ type: 'notificationclick', notificationId, actionId? }` message.
+// handler when the SW posts a `{ type: 'notificationclick', notificationId, actionId?, reply? }`
+// message. When `reply` is present alongside `actionId` (a `text-input` action), the reply text is
+// routed to onNotificationReply listeners; otherwise an `actionId` routes to action listeners and a
+// bare message routes to click listeners.
 export function notifyServiceWorkerBackendAction(
   backend: NotificationBackend,
-  message: Readonly<{ type: string; notificationId: string; actionId?: string }>,
+  message: Readonly<{ type: string; notificationId: string; actionId?: string; reply?: string }>,
 ): void {
   if (message.type !== 'notificationclick') return;
   const b = backend as NotificationBackend & {
     _dispatchAction?: (notificationId: string, actionId: string) => void;
     _dispatchClick?: (notificationId: string) => void;
+    _dispatchReply?: (notificationId: string, actionId: string, text: string) => void;
   };
-  if (message.actionId !== undefined && b._dispatchAction !== undefined) {
+  if (message.actionId !== undefined && message.reply !== undefined && b._dispatchReply !== undefined) {
+    b._dispatchReply(message.notificationId, message.actionId, message.reply);
+  } else if (message.actionId !== undefined && b._dispatchAction !== undefined) {
     b._dispatchAction(message.notificationId, message.actionId);
   } else if (b._dispatchClick !== undefined) {
     b._dispatchClick(message.notificationId);

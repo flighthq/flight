@@ -36,8 +36,8 @@ export function findGraphHitTarget<Traits extends object>(
 }
 
 /**
- * Evaluates the bounding box of the display object to see if it overlaps or
- * intersects with the bounding box of the `obj` display object.
+ * Evaluates the world bounding box of one node to see if it overlaps or
+ * intersects the world bounding box of another.
  **/
 export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObject): boolean {
   if (getNodeParent(source) !== null && getNodeParent(other) !== null) {
