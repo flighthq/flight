@@ -1,4 +1,4 @@
-import type { ScreenBackend, ScreenInfo } from '@flighthq/types';
+import type { ScreenBackend, ScreenChangeEvent, ScreenChangeKind, ScreenInfo } from '@flighthq/types';
 
 import type { ElectronApi, ElectronDisplay } from './electronModule';
 
@@ -21,14 +21,41 @@ export function createElectronScreenBackend(electron: ElectronApi): ScreenBacken
     getPrimaryScreen(out) {
       return fillScreenInfo(out, screen.getPrimaryDisplay(), true);
     },
+    getCursorPosition(out) {
+      const point = screen.getCursorScreenPoint();
+      out.x = point.x;
+      out.y = point.y;
+      return out;
+    },
     subscribe(listener) {
-      screen.on('display-added', listener);
-      screen.on('display-removed', listener);
-      screen.on('display-metrics-changed', listener);
+      const primaryId = () => screen.getPrimaryDisplay().id;
+      // Electron passes (event, display) for each display change; adapt that into a ScreenChangeEvent.
+      const makeHandler =
+        (kind: ScreenChangeKind) =>
+        (...args: unknown[]): void => {
+          const display = args[1] as ElectronDisplay | undefined;
+          const event: ScreenChangeEvent = {
+            kind,
+            screen: display
+              ? fillScreenInfo({} as ScreenInfo, display, display.id === primaryId())
+              : ({} as ScreenInfo),
+            changedMetrics:
+              kind === 'ScreenMetricsChanged'
+                ? { bounds: true, workArea: true, scaleFactor: true, orientation: true }
+                : null,
+          };
+          listener(event);
+        };
+      const onAdded = makeHandler('ScreenAdded');
+      const onRemoved = makeHandler('ScreenRemoved');
+      const onMetrics = makeHandler('ScreenMetricsChanged');
+      screen.on('display-added', onAdded);
+      screen.on('display-removed', onRemoved);
+      screen.on('display-metrics-changed', onMetrics);
       return () => {
-        screen.removeListener('display-added', listener);
-        screen.removeListener('display-removed', listener);
-        screen.removeListener('display-metrics-changed', listener);
+        screen.removeListener('display-added', onAdded);
+        screen.removeListener('display-removed', onRemoved);
+        screen.removeListener('display-metrics-changed', onMetrics);
       };
     },
   };

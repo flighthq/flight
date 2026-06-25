@@ -31,6 +31,20 @@ export interface ElectronApp {
   getName(): string;
   getVersion(): string;
   getLocale(): string;
+  getSystemLocale(): string;
+  getPreferredSystemLanguages(): string[];
+  getAppPath(): string;
+  getPath(name: string): string;
+  setName(name: string): void;
+  setAppUserModelId(id: string): void;
+  setActivationPolicy(policy: 'regular' | 'accessory' | 'prohibited'): void;
+  hide(): void;
+  show(): void;
+  isHidden(): boolean;
+  addRecentDocument(path: string): void;
+  clearRecentDocuments(): void;
+  getLoginItemSettings(): ElectronLoginItemSettings;
+  setLoginItemSettings(settings: ElectronLoginItemSettingsLike): void;
   quit(): void;
   exit(code?: number): void;
   relaunch(): void;
@@ -46,6 +60,19 @@ export interface ElectronApp {
   removeListener(event: string, listener: (...args: unknown[]) => void): void;
   // Present on macOs only.
   dock?: ElectronDock;
+}
+
+export interface ElectronLoginItemSettings {
+  openAtLogin: boolean;
+  openAsHidden: boolean;
+  executableWillLaunchAtLogin?: boolean;
+}
+
+export interface ElectronLoginItemSettingsLike {
+  openAtLogin?: boolean;
+  openAsHidden?: boolean;
+  path?: string;
+  args?: string[];
 }
 
 export interface ElectronDock {
@@ -66,7 +93,19 @@ export interface ElectronClipboard {
   writeBookmark(title: string, url: string): void;
   readImage(): ElectronNativeImage;
   writeImage(image: ElectronNativeImage): void;
+  read(format: string): string;
+  write(data: ElectronClipboardData): void;
+  has(format: string): boolean;
+  availableFormats(): string[];
   clear(): void;
+}
+
+export interface ElectronClipboardData {
+  text?: string;
+  html?: string;
+  rtf?: string;
+  bookmark?: string;
+  image?: ElectronNativeImage;
 }
 
 export interface ElectronShell {
@@ -75,6 +114,22 @@ export interface ElectronShell {
   showItemInFolder(path: string): void;
   trashItem(path: string): Promise<void>;
   beep(): void;
+  readShortcutLink(shortcutPath: string): ElectronShortcutDetails;
+  writeShortcutLink(
+    shortcutPath: string,
+    operation: 'create' | 'update' | 'replace',
+    options: ElectronShortcutDetails,
+  ): boolean;
+}
+
+export interface ElectronShortcutDetails {
+  target: string;
+  appUserModelId?: string;
+  args?: string;
+  description?: string;
+  icon?: string;
+  iconIndex?: number;
+  cwd?: string;
 }
 
 export interface ElectronDialog {
@@ -127,8 +182,9 @@ export interface ElectronGlobalShortcut {
 export interface ElectronScreen {
   getPrimaryDisplay(): ElectronDisplay;
   getAllDisplays(): ElectronDisplay[];
-  on(event: string, listener: () => void): void;
-  removeListener(event: string, listener: () => void): void;
+  getCursorScreenPoint(): { x: number; y: number };
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  removeListener(event: string, listener: (...args: unknown[]) => void): void;
 }
 
 export interface ElectronDisplay {
@@ -141,6 +197,8 @@ export interface ElectronDisplay {
 export interface ElectronPowerMonitor {
   on(event: string, listener: () => void): void;
   removeListener(event: string, listener: () => void): void;
+  getSystemIdleState(idleThresholdSeconds: number): 'active' | 'idle' | 'locked' | 'unknown';
+  getSystemIdleTime(): number;
   onBatteryPower?: boolean;
 }
 
@@ -238,6 +296,8 @@ export interface ElectronBrowserWindow {
   setOpacity(opacity: number): void;
   setProgressBar(progress: number): void;
   flashFrame(flag: boolean): void;
+  setContentProtection(enable: boolean): void;
+  setHasShadow(hasShadow: boolean): void;
   setSkipTaskbar(skip: boolean): void;
   setMenuBarVisibility(visible: boolean): void;
   setParentWindow(parent: ElectronBrowserWindow | null): void;
@@ -277,9 +337,27 @@ export interface ElectronTrayConstructor {
 export interface ElectronTray {
   setToolTip(tooltip: string): void;
   setTitle(title: string): void;
+  setImage(image: string | ElectronNativeImage): void;
+  setPressedImage(image: string | ElectronNativeImage): void;
   setContextMenu(menu: ElectronMenu | null): void;
-  on(event: string, listener: () => void): void;
+  popUpContextMenu(menu?: ElectronMenu, position?: { x: number; y: number }): void;
+  setIgnoreDoubleClickEvents(ignore: boolean): void;
+  displayBalloon(options: ElectronTrayBalloonOptions): void;
+  removeBalloon(): void;
+  getBounds(): ElectronRectangle;
+  isDestroyed(): boolean;
+  on(event: string, listener: (...args: unknown[]) => void): void;
   destroy(): void;
+}
+
+export interface ElectronTrayBalloonOptions {
+  icon?: string | ElectronNativeImage;
+  iconType?: 'none' | 'info' | 'warning' | 'error';
+  title: string;
+  content: string;
+  largeIcon?: boolean;
+  noSound?: boolean;
+  respectQuietTime?: boolean;
 }
 
 export interface ElectronNotificationConstructor {

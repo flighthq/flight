@@ -39,7 +39,7 @@ const FONT_SIZE = 40;
 
 const TEXT = 'BG';
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,

@@ -73,20 +73,6 @@ const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
   weights0: 7,
 };
 
-// Returns true when a MeshGeometry's vertex layout contains a `uv1` semantic (glTF TEXCOORD_1).
-// Used by material renderers to drive the `hasUv1` flag in GlPbrDefineKey at bind time, so the
-// compiled shader variant matches the actual geometry layout without the caller needing to know.
-// A geometry without `uv1` in its layout will have location 5 unbound; the shader path is
-// disabled (#ifndef HAS_UV1) and the attribute reads zero — safe but wasted sampler. Pass the
-// result to buildGlPbrStandardDefineKey as the `hasUv1` argument.
-export function hasGlMeshGeometryUv1(geometry: Readonly<MeshGeometry>): boolean {
-  const attributes = geometry.layout.attributes;
-  for (let i = 0; i < attributes.length; i++) {
-    if (attributes[i].semantic === 'uv1') return true;
-  }
-  return false;
-}
-
 function bindGlVertexAttribute(gl: WebGL2RenderingContext, attribute: Readonly<VertexAttribute>, stride: number): void {
   const location = ATTRIBUTE_LOCATION[attribute.semantic];
   if (location === undefined) return;

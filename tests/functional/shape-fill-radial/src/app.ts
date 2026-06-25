@@ -31,7 +31,7 @@ const A_CY = 300;
 const B_CX = 560; // off-center focal point
 const B_CY = 300;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

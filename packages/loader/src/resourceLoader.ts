@@ -1,4 +1,4 @@
-import { createSignal, disconnectAllSlots, emitSignal } from '@flighthq/signals';
+import { clearSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type {
   ResourceLoader,
   ResourceLoaderItemSignals,
@@ -201,19 +201,19 @@ export function createResourceLoader(options?: Readonly<ResourceLoaderOptions>):
 }
 
 export function disposeResourceLoader(loader: ResourceLoader): void {
-  disconnectAllSlots(loader.onCancel);
-  disconnectAllSlots(loader.onComplete);
-  disconnectAllSlots(loader.onError);
-  disconnectAllSlots(loader.onPause);
-  disconnectAllSlots(loader.onProgress);
-  disconnectAllSlots(loader.onResume);
+  clearSignal(loader.onCancel);
+  clearSignal(loader.onComplete);
+  clearSignal(loader.onError);
+  clearSignal(loader.onPause);
+  clearSignal(loader.onProgress);
+  clearSignal(loader.onResume);
 
   const internal = loader as ResourceLoaderInternal;
   if (internal.itemSignals !== null) {
-    disconnectAllSlots(internal.itemSignals.onItemComplete);
-    disconnectAllSlots(internal.itemSignals.onItemError);
-    disconnectAllSlots(internal.itemSignals.onItemRetry);
-    disconnectAllSlots(internal.itemSignals.onItemStart);
+    clearSignal(internal.itemSignals.onItemComplete);
+    clearSignal(internal.itemSignals.onItemError);
+    clearSignal(internal.itemSignals.onItemRetry);
+    clearSignal(internal.itemSignals.onItemStart);
   }
 }
 

@@ -15,7 +15,6 @@
     { "path": "../clip" },
     { "path": "../clipboard" },
     { "path": "../device" },
-    { "path": "../device-formats" },
     { "path": "../dialog" },
     { "path": "../displayobject" },
     { "path": "../displayobject-canvas" },
@@ -56,7 +55,6 @@
     { "path": "../particles-formats" },
     { "path": "../path" },
     { "path": "../platform" },
-    { "path": "../platform-formats" },
     { "path": "../power" },
     { "path": "../protocol" },
     { "path": "../render" },
@@ -93,6 +91,7 @@
     { "path": "../easing" },
     { "path": "../types" },
     { "path": "../updater" },
+    { "path": "../useragent" },
     { "path": "../velocity" },
     { "path": "../webcam" }
   ],

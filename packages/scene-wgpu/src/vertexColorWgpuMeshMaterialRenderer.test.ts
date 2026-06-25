@@ -16,7 +16,15 @@ function makeCamera(): Camera {
   return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
-const NO_LIGHTS: SceneLightBlock = { ambientCount: 0, data: new Float32Array(12), directionalCount: 0, version: 1 };
+const NO_LIGHTS: SceneLightBlock = {
+  ambientCount: 0,
+  data: new Float32Array(12),
+  directionalCount: 0,
+  hemisphereCount: 0,
+  pointCount: 0,
+  spotCount: 0,
+  version: 1,
+};
 
 function makeProxy(): SceneRenderProxy {
   const geometry = createBoxMeshGeometry();

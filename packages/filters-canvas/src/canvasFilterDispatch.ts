@@ -1,11 +1,5 @@
-import {
-  computeBlurFilterCss,
-  computeDropShadowFilterCss,
-  computeOuterGlowFilterCss,
-  createSvgFilterDataUri,
-  svgFeColorMatrix,
-} from '@flighthq/filters-css';
-import type { BitmapFilter, BlurFilter, ColorMatrixFilter, DropShadowFilter, OuterGlowFilter } from '@flighthq/types';
+import { computeBlurFilterCss, computeDropShadowFilterCss, computeOuterGlowFilterCss } from '@flighthq/filters-css';
+import type { BitmapFilter, BlurFilter, DropShadowFilter, OuterGlowFilter } from '@flighthq/types';
 
 /**
  * Applies `filter` to `source` and draws the result onto `dest` at (x, y).
@@ -16,13 +10,13 @@ import type { BitmapFilter, BlurFilter, ColorMatrixFilter, DropShadowFilter, Out
  * - BlurFilter (isotropic) and non-knockout DropShadowFilter: CSS fast-path via
  *   save/filter/drawImage/restore.
  * - OuterGlowFilter: CSS drop-shadow approximation via save/filter/drawImage/restore.
- * - ColorMatrixFilter: SVG feColorMatrix encoded as a data URI CSS filter url().
  * - DisplacementMapFilter: no displacement map available in the Canvas 2D context;
  *   draws `source` directly as a degraded pass-through.
- * - BevelFilter, GradientBevelFilter, GradientGlowFilter, InnerGlowFilter,
- *   InnerShadowFilter, MedianFilter, PixelateFilter, SharpenFilter,
- *   ConvolutionFilter: canvas cannot render these natively; draws `source` directly
- *   as a degraded pass-through.
+ * - ColorMatrixFilter, BevelFilter, GradientBevelFilter, GradientGlowFilter,
+ *   InnerGlowFilter, InnerShadowFilter, MedianFilter, PixelateFilter, SharpenFilter,
+ *   ConvolutionFilter: canvas cannot render these natively (a color-matrix needs an
+ *   SVG/feColorMatrix tier not present in filters-css); draws `source` directly as a
+ *   degraded pass-through.
  * - Unknown kind: returns false without drawing.
  */
 export function applyCanvasFilter(
@@ -72,18 +66,8 @@ export function applyCanvasFilter(
       return true;
     }
 
-    case 'ColorMatrixFilter': {
-      const f = filter as ColorMatrixFilter;
-      const svgFilter = svgFeColorMatrix(f.matrix as number[]);
-      const url = createSvgFilterDataUri(svgFilter);
-      dest.save();
-      dest.filter = `url(${url})`;
-      dest.drawImage(source, x, y);
-      dest.restore();
-      return true;
-    }
-
     case 'DisplacementMapFilter':
+    case 'ColorMatrixFilter':
     case 'BevelFilter':
     case 'GradientBevelFilter':
     case 'GradientGlowFilter':

@@ -92,7 +92,7 @@ describe('createElectronTrayBackend', () => {
     const backend = createElectronTrayBackend(electron);
     const id = backend.create({});
     const events: [number, TrayEventType][] = [];
-    const unsubscribe = backend.subscribe((trayId, event) => events.push([trayId, event]));
+    const unsubscribe = backend.subscribe((event) => events.push([event.id, event.type]));
     trays[0].handlers['click']();
     trays[0].handlers['right-click']();
     trays[0].handlers['double-click']();

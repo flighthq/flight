@@ -36,7 +36,7 @@ const ROWS = 3;
 const MAP_X = 200; // top-left of the tilemap in logical pixels
 const MAP_Y = 120;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

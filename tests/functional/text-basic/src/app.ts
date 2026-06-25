@@ -22,7 +22,7 @@ const FIELD_W = 420;
 const FIELD_H = 120;
 const FONT_SIZE = 72;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

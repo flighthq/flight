@@ -25,12 +25,20 @@ const headStatus = join(bundle, 'head', 'tools', 'agents', 'docs', 'status');
 const STAMP = '2026-06-24';
 
 const NO_CRATE = new Set([
-  'displayobject-canvas', 'displayobject-dom', 'effects-canvas', 'filters-canvas',
-  'filters-css', 'host-electron', 'surface-rs', 'textshaper-canvas',
+  'displayobject-canvas',
+  'displayobject-dom',
+  'effects-canvas',
+  'filters-canvas',
+  'filters-css',
+  'host-electron',
+  'surface-rs',
+  'textshaper-canvas',
 ]);
 
 const livePkgs = new Set(
-  readdirSync(join(repoRoot, 'packages'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name),
+  readdirSync(join(repoRoot, 'packages'), { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name),
 );
 const bundlePkgs = readdirSync(headPkgs, { withFileTypes: true })
   .filter((d) => d.isDirectory())
@@ -63,7 +71,9 @@ for (const name of bundlePkgs) {
   }
 }
 
-console.log(`bundle packages: ${bundlePkgs.length}  new cells: ${newCells}  status distributed: ${distributed}  no report: ${noReport}`);
+console.log(
+  `bundle packages: ${bundlePkgs.length}  new cells: ${newCells}  status distributed: ${distributed}  no report: ${noReport}`,
+);
 if (newPackages.length) {
   console.log(`NEW packages (need bless + Package Map entry + charter): ${newPackages.join(', ')}`);
 }

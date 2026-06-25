@@ -46,7 +46,7 @@ const ROUND_APEX_Y = 200;
 const BEVEL_APEX_Y = 360;
 const MITER_APEX_Y = 520;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

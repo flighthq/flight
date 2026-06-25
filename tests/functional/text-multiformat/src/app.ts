@@ -40,7 +40,7 @@ const FONT_SIZE = 56;
 const TEXT = 'REDSIDE BLUESIDE';
 const SPLIT = TEXT.indexOf(' '); // end of the red range / start (after space) of the blue range
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

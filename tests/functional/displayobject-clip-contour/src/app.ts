@@ -43,7 +43,7 @@ const BASE_LEFT_X = 250;
 const BASE_RIGHT_X = 550;
 const BASE_Y = 450;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

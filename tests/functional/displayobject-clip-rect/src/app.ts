@@ -38,7 +38,7 @@ const CLIP_X = SHAPE_X;
 const CLIP_Y = SHAPE_Y;
 const CLIP_SIZE = 160;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

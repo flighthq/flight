@@ -30,7 +30,7 @@ const FIELD_H = 110;
 const RIGHT_FIELD_Y = 120; // align='right'
 const CONTROL_FIELD_Y = 320; // align='left' control
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
