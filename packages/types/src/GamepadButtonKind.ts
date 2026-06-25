@@ -17,6 +17,6 @@ export const GamepadButtonKind = {
   TOUCHPAD: 'Touchpad',
   TRIGGER_LEFT: 'TriggerLeft',
   TRIGGER_RIGHT: 'TriggerRight',
-} as const;
+};
 
 export type GamepadButtonKind = (typeof GamepadButtonKind)[keyof typeof GamepadButtonKind];

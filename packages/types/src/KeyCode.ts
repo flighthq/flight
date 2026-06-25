@@ -234,6 +234,6 @@ export const KeyCode = {
   X: 0x78,
   Y: 0x79,
   Z: 0x7a,
-} as const;
+};
 
 export type KeyCode = number;
