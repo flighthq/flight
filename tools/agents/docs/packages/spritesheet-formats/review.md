@@ -1,82 +1,96 @@
 ---
 package: '@flighthq/spritesheet-formats'
-status: solid
-score: 82
-updated: 2026-06-24
+status: partial
+score: 58
+updated: 2026-06-25
 ingested:
-  - status.md
-  - source
-  - changes.patch
-  - reviews/depth/spritesheet-formats.md (absent — none on disk)
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta (head vs base)
+  - changes.patch (packages/spritesheet-formats/ hunks)
+  - status.md (as-claimed, builder-67dc46d64)
+  - charter.md (DRAFT, unblessed)
 ---
 
-# spritesheet-formats — Review
+# spritesheet-formats — Review (merge gate: integration-b2824e3d8 → approved origin/main)
 
 ## Verdict
 
-`solid` — 82/100. A genuinely useful, well-factored format-interop layer: five text-based atlas formats with full parse↔serialize round-trips, a clean lazy registry seam, a tolerant diagnostics path, and 169 tests. It clears the "mature sub-library" bar for the _common_ atlas formats. It is held back from `authoritative` by a model ceiling it cannot break alone (single-page `SpritesheetData`, no polygon/mesh, locally-defined `SpritesheetParseResult`), a clarity bug in the libGDX schema field naming, test-colocation drift, and Rust conformance that covers only 3 of the 5 formats.
+`partial` — 58/100, **revise before merge.** This is a merge-gate review of the **delta only** (head `b2824e3d8` vs the approved base `origin/main` eb73c3d74), not a survey of the package. The base (aseprite / starling / texture-packer parse + serialize + schema, with colocated tests) is the blessed floor and is not under review.
 
-The reviewer judged against a near-stub charter (only "What it is" is filled; North star, Boundaries, Decisions, Open directions are all `TODO`), so most gaps are measured against the codebase-map AAA standard and surfaced as candidate Open directions below.
+The delta adds two new parsers (Cocos plist, libGDX `.atlas`), their schema(s), a registry-backed auto-detect/dispatch module (`spritesheetDetect.ts`), and a re-export shim (`xmlParse.ts`). The **registry design is genuinely good** — it is the canonical fork-B open `Map` registry, not a closed `switch`, and the kinds are types-first in `@flighthq/types`. But the delta does **not** clear the merge bar, for three concrete reasons grounded below: (1) it ships **eight new exported functions with zero colocated tests**, which the package's own `exports:check` gate forbids; (2) it ships a **dead, mis-scoped `xmlParse.ts`** that re-exports another package's API through this barrel and carries a false comment; and (3) the integration's **committed docs claim a body of work that did not land in the integration's source** — `status.md`/`review.md` (stamped `builder-67dc46d64`) describe serializers, a grid slicer, a diagnostics path, and "169 tests across 14 files" that are **absent** from `b2824e3d8`. Merging would land `solid`/82 docs over a partial codebase.
 
-## Present capabilities
+## What the delta actually adds (grounded in `b2824e3d8:`)
 
-Grounded in `67dc46d64:packages/spritesheet-formats/src/`:
+- `src/cocosPlistParse.ts` — `parseCocosPlistSpritesheet`, `parseCocosPlistSpritesheetDocument`, plus `CocosPlistParsed` / `CocosPlistParseOptions` interfaces. Parse-only.
+- `src/cocosPlistSchema.ts` — `CocosPlistFrame`, `CocosPlistMetadata`, `CocosPlistDocument`.
+- `src/libgdxAtlasParse.ts` — `parseLibgdxAtlasSpritesheet` + `LibgdxAtlasParseOptions`. Parse-only, single-pass line parser, `baseName_NNN` animation inference. No schema file, no serializer.
+- `src/spritesheetDetect.ts` — `detectSpritesheetFormat`, `getSpritesheetFormat`, `parseSpritesheet`, `registerSpritesheetFormat` over a lazily-initialized `Map<SpritesheetFormatKind, FormatEntry>`.
+- `src/xmlParse.ts` — re-exports `parseXmlAttributes`, `parseXmlDocument`, `XmlElement` from `@flighthq/resource-formats`.
+- `src/index.ts` — adds the four new modules to the barrel.
+- `package.json` — adds `@flighthq/resource-formats` and `@flighthq/types` deps; `tsconfig.json` adds the matching project references. Both correct.
+- `packages/types/src/SpritesheetFormat.ts` — five PascalCase kind constants + the open `SpritesheetFormatKind = string` alias. Types-first, one concept per file. **This is correct.**
 
-- **Five built-in formats, each parse + serialize:**
-  - Texture Packer JSON (`texturePackerParse.ts` / `texturePackerSerialize.ts`) — Hash and Array variants, `frameTags` → animations with `direction`, `scale` as number-or-string, pivots.
-  - Aseprite JSON (`asepriteParse.ts` / `asepriteSerialize.ts`) — per-frame `duration` preserved into `animation.frameDurations` when non-uniform; serializer writes durations back; Hash/Array variant selection; tag `color`/`layers` round-tripped through an `existing` document.
-  - Starling/Sparrow XML (`starlingParse.ts` / `starlingSerialize.ts`) — now over the shared `xmlParse.ts` tree parser (replacing the prior regex), with `frameX/Y` → offset, `pivotX/Y` normalized to 0–1, `imageWidth/Height` options for the dimensions Starling XML omits.
-  - libGDX/Spine `.atlas` text (`libgdxAtlasParse.ts` / `libgdxAtlasSerialize.ts`) — multi-page line parser, indexed-region animation inference, document round-trip preserving filter/format/repeat metadata.
-  - Cocos2d-x/Creator plist XML (`cocosPlistParse.ts` / `cocosPlistSerialize.ts`) — old-style (`frame`) and new-style (`textureRect`) key support, rotation w/h swap, alias arrays.
-- **Descriptor-free grid slicing** (`gridSlice.ts`) — `parseGridSpritesheet` over `GridSliceOptions` with margin/spacing/derived-frame-size and `namePrefix`. The one "format" that is a generator, not a codec.
-- **Shared XML spine** (`xmlParse.ts`) — `parseXmlDocument`/`parseXmlAttributes` handle entities, comments, CDATA, single/double quotes, self-closing tags, PIs. Used by both XML formats; a real de-duplication win over two ad-hoc parsers.
-- **Registry + auto-detection** (`spritesheetDetect.ts`) — `detectSpritesheetFormat`, `parseSpritesheet(text, formatKind?, options?)`, `registerSpritesheetFormat`, and `getSpritesheetFormat` read accessor over a lazily-initialized `Map<SpritesheetFormatKind, …>`. Lazy init is deliberate to keep `sideEffects: false` honest while staying tree-shakable (a caller importing only `parseTexturePackerSpritesheet` excludes the registry).
-- **Tolerant diagnostics** (`spritesheetDiagnostics.ts`) — `parseSpritesheetWithDiagnostics` never throws, returns best-effort data + structured `SpritesheetParseDiagnostic[]` with error/warning severities and field/frame scoping.
-- **Types-first additions** in `@flighthq/types`: `SpritesheetFormatKind` (string kind + 5 bare PascalCase-valued constants), `SpritesheetParseDiagnostic`(+`Severity`), `GridSliceOptions` — all one-concept-per-file. `package.json` correctly adds the `@flighthq/types` dependency, `sideEffects: false`, single root `.` export.
-- **Tests:** 169 across 14 files; new files use exact-function-name `describe` blocks; registry, detection, diagnostics, and every serializer have dedicated coverage.
+## Merge-blocking findings
 
-The status doc's claims check out against the diff, with one correction: `getSpritesheetFormat` is **implemented and tested** (`spritesheetDetect.ts:111`, `spritesheetDetect.test.ts:108`), not deferred — the status "Deferred / Gold" note and the "add `getSpritesheetFormat`" suggestion are stale relative to the shipped code.
+### 1. Eight new exported functions, zero colocated tests (standard 7 — FAIL)
 
-## Gaps
+The delta adds these exported functions and **adds no `*.test.ts` for any of them**. The head `src/` still has only `asepriteParse.test.ts`, `starlingParse.test.ts`, `texturePackerParse.test.ts` — all inherited from base.
 
-Measured against AAA completeness for an atlas-interop layer:
+- `b2824e3d8:src/cocosPlistParse.ts:186` `export function parseCocosPlistSpritesheet`
+- `b2824e3d8:src/cocosPlistParse.ts:192` `export function parseCocosPlistSpritesheetDocument`
+- `b2824e3d8:src/libgdxAtlasParse.ts:230` `export function parseLibgdxAtlasSpritesheet`
+- `b2824e3d8:src/spritesheetDetect.ts:99` `export function detectSpritesheetFormat`
+- `b2824e3d8:src/spritesheetDetect.ts:111` `export function getSpritesheetFormat`
+- `b2824e3d8:src/spritesheetDetect.ts:124` `export function parseSpritesheet`
+- `b2824e3d8:src/spritesheetDetect.ts:142` `export function registerSpritesheetFormat`
+- `b2824e3d8:src/xmlParse.ts:6` re-exported `parseXmlAttributes`, `parseXmlDocument`
 
-- **Single-page model ceiling.** libGDX multi-page pages are parsed into `document.pages` but collapsed to the first page for `SpritesheetData.imageFile/Width/Height`; every frame loses its `pageIndex`. Texture Packer `meta.related_multi_packs` is not followed. This is the dominant gap and is genuinely blocked on `SpritesheetData` (owned by `@flighthq/spritesheet`) gaining a `pages[]` + per-frame `pageIndex` model — a cross-package design decision, not within-package work.
-- **No polygon/mesh trim.** Texture Packer Phaser/Pixi `vertices`/`verticesUV`/`triangles` and any mesh-sprite trim are dropped. Blocked on a `@flighthq/sprite` mesh-renderability decision.
-- **`SpritesheetParseResult` is mis-homed.** It is defined locally in `spritesheetDiagnostics.ts` rather than in `@flighthq/types`, violating the header-layer rule. The status explains why (it embeds `SpritesheetData`, still in `@flighthq/spritesheet`, so moving it to types would invert the dependency). Correct diagnosis; the fix is gated on the same `SpritesheetData`→types migration.
-- **Format breadth short of "everything a dev would reach for."** Missing: Unity sprite atlas, Godot `.tres`, Spine region attachments, Adobe Animate JSON, Phaser legacy variants, and the Aseprite binary `.ase`. All additive text-format work except `.ase` (binary).
-- **No `dataToDocument`-only export for the formats lacking it.** Cocos/libGDX expose document round-trip, but several `documentToData`/`dataToDocument` helpers stay private; there is no symmetric public `*Document` constructor for callers assembling a document from scratch. Minor.
-- **Rust conformance lags.** `crates/flighthq-spritesheet-formats` has only `aseprite`, `starling`, `texture_packer`. libGDX, Cocos plist, grid slicing, detection, and diagnostics have no Rust mirror or conformance fixtures. The TS↔Rust 1:1 goal is unmet for this package.
-- **No format-support matrix doc and no functional/round-trip example.** A user cannot tell at a glance which fields survive which format's round-trip.
+The contract requires one colocated `*.test.ts` per source file with exports, and `npm run exports:check` "checks for missing test files and missing tests for exported functions." This delta fails that gate by construction. The two XML parsers in particular have **non-trivial, error-prone regex/structural logic** — `parsePlistRect`'s nested-brace regex (`cocosPlistParse.ts:28`), the `dictToMap` even/odd key-pairing walk (`:38`), the rotation w/h swap (`:147`), and the libGDX whitespace-significant line state machine (`libgdxAtlasParse.ts:47`) — exactly the code that needs fixtures, shipped untested.
 
-## Charter contradictions
+### 2. `xmlParse.ts` is a dead, mis-scoped re-export with a false comment (standards 1, 2, 3 — FAIL)
 
-The charter's North star / Boundaries / Decisions are all `TODO`, so there is little to contradict. Against the one filled line ("a format-interop layer that maps third-party atlas files to and from Flight's internal `SpritesheetData`"), the package is faithful: it never reaches past mapping into rendering or graph participation. No contradiction found.
+```ts
+// b2824e3d8:src/xmlParse.ts
+// XML parsing for the Starling and Cocos plist parsers is owned by @flighthq/resource-formats.
+// Re-export the canonical parser so spritesheet-formats users (and the SDK barrel) resolve a
+// single shared declaration rather than a duplicate.
+export type { XmlElement } from '@flighthq/resource-formats';
+export { parseXmlAttributes, parseXmlDocument } from '@flighthq/resource-formats';
+```
 
-## Contract & docs fit
+Three problems, all in the delta:
 
-**Lives up to the contract:**
+- **It is dead.** Nothing in the package imports `./xmlParse`. `cocosPlistParse.ts:1-2` imports `parseXmlDocument`/`XmlElement` **directly** from `@flighthq/resource-formats`, not through this shim; `starlingParse.ts` is unchanged from base and still uses its own hand-rolled regex attribute parser (`b2824e3d8:src/starlingParse.ts:21 parseAttrs`). So the file's only effect is on the public barrel.
+- **The comment is false.** It claims "the Starling and Cocos plist parsers" resolve through it; the Starling parser does not use `parseXmlDocument` at all, and the Cocos parser bypasses this shim. A comment that misstates what the code does is worse than no comment (Source Style: comments are durable semantic statements of what the code _is_).
+- **It pollutes this package's public root with another package's names.** `index.ts:14` re-exports `parseXmlDocument`, `parseXmlAttributes`, `XmlElement` from `@flighthq/spritesheet-formats` — generic names that do not contain the `spritesheet`/format vocabulary and that already have a canonical home in `@flighthq/resource-formats`. This works against "globally unique exported function names from package roots" and adds public surface for zero in-package consumer. Remove the file; let callers import XML helpers from their owning package.
 
-- Types-first: the three cross-package types live in `@flighthq/types`, one per file, filename = type name. Good.
-- Single root export, `sideEffects: false`, no top-level mutation (the registry is lazy precisely to honor this) — clean.
-- Sentinels-not-throws: `parseSpritesheet`/`detectSpritesheetFormat` return `null` on the expected "unrecognized format" failure; `parseSpritesheetWithDiagnostics` catches and reports rather than throwing. Correct.
-- Full unabbreviated names, `Readonly<>` on serializer inputs and `GridSliceOptions`. Good.
-- Registry-by-default (structural fork B): the format dispatch is an open `Map` registry with last-write-wins and a vendor-prefix convention — the canonical shape, not a closed `switch`. This is the subject triad's `-formats` layer done right.
+### 3. Integration docs claim work that is absent from the integration source (standard 7 — FAIL)
 
-**Drift / candidate revisions:**
+The integration's own committed `status.md` (stamped `ingest:builder-67dc46d64`) and prior `review.md` (grounded in `67dc46d64:`) describe, as present:
 
-- **libGDX schema field naming is inverted vs. the format's real keys** (`libgdxAtlasSchema.ts`). The parser maps the file's `orig:` key into `region.origSize` and the file's `offset:` key into `region.orig`; the serializer mirrors the same swap, so the round-trip and the produced frames are _numerically correct_. But the field names `orig`/`origSize` are semantically backwards relative to libGDX (`orig` is the original size, `offset` is the trim offset), and the schema doc comments describe `orig` as "Offset…" and `offset` as "Packed position." A future Rust port or contributor reading the schema will be misled. This is a clarity/correctness-of-naming defect worth fixing even though pixels are right today. (Not a data bug; do not over-state it downstream.)
-- **Test-colocation / order drift.** `serializeStarlingSpritesheet`, `serializeTexturePackerSpritesheet`, and `serializeAsepriteSpritesheet` each have a `describe` block in _both_ the parse test file (`starlingParse.test.ts:185`, `texturePackerParse.test.ts:246`, `asepriteParse.test.ts:244`) and the dedicated serialize test file. One test file per source file with `describe` mirroring that file's exports is the rule; the serialize describes belong only in the `*Serialize.test.ts`. The status's "pre-existing `exports:check` (0/2)" note on the three parse files is the related symptom (describe names with ` — suffix`).
-- **Cocos `CocosPlistParseOptions.frameDuration` is dead** — accepted but unused (`_options`), since Cocos plist carries no animation data. Status concern #3 is accurate; it is API-symmetry padding that the contract's "no speculative surface" leaning would trim, or repurpose for frame-name animation inference.
-- **Package Map silence.** `tools/agents/docs/index.md` Package Map has a `@flighthq/particles-formats` entry that explicitly cites "the same relationship as `@flighthq/spritesheet-formats` to `@flighthq/spritesheet`" — yet there is no `@flighthq/spritesheet-formats` line of its own. The map references this package without listing it. **Candidate revision:** add a Package Map entry for `spritesheet-formats` mirroring the `particles-formats` one.
+- `libgdxAtlasSerialize.ts` (`serializeLibgdxAtlasSpritesheet`), `cocosPlistSerialize.ts` (`serializeCocosPlistSpritesheet`)
+- `gridSlice.ts` (`parseGridSpritesheet`) and a `GridSliceOptions` type
+- `spritesheetDiagnostics.ts` (`parseSpritesheetWithDiagnostics`, `SpritesheetParseResult`, `SpritesheetParseDiagnostic`)
+- `libgdxAtlasSchema.ts`
+- "169 tests across 14 files" including `cocosPlistParse.test.ts`, `libgdxAtlasParse.test.ts`, `spritesheetDetect.test.ts`, `xmlParse.test.ts`, and every `*Serialize.test.ts`.
 
-## Candidate open directions
+**None of these files exist in `b2824e3d8/packages/spritesheet-formats/src/`,** and none are added by the `packages/spritesheet-formats/` hunks of `changes.patch` (which add exactly six source files: `cocosPlistParse`, `cocosPlistSchema`, `index`, `libgdxAtlasParse`, `spritesheetDetect`, `xmlParse`). The status doc explicitly flags its entries as "as-claimed until a review pass verifies them against the diff." This review is that pass, and the verification **fails**: the integration is a strict subset of the `67dc46d64` branch the docs describe. Merging would publish a `solid`/82 review and a `builder-67dc46d64` status over a codebase that has no serializers, no diagnostics, no grid slicer, and no tests for the new exports. The committed `review.md`/`status.md`/`assessment.md` must be brought into line with what actually landed before this is a faithful merge.
 
-The charter is silent on all of these; each is a question for the user to settle, not a reviewer decision:
+## Secondary findings (real, non-blocking)
 
-1. **Is multi-page in scope, and does it gate on moving `SpritesheetData` into `@flighthq/types`?** This is the package's central blocked thread (status defers it explicitly). The charter should state whether `pages[]`/`pageIndex` is a target and own the cross-package `SpritesheetData` ownership decision, since `SpritesheetParseResult` placement, polygon trim, and Rust conformance all hang off it.
-2. **Format breadth: where is bedrock?** Which formats are in scope (Unity, Godot, Spine attachments, Adobe Animate, Phaser legacy, binary `.ase`) vs. explicitly out? The "AAA = every format a dev reaches for" default would pull all of them in; the charter should set the line.
-3. **Polygon/mesh trim** — in scope for this layer, or deferred until `@flighthq/sprite` decides mesh renderability? (Cross-package; surface, don't assume.)
-4. **Serializer-input symmetry** — should every format expose a public `*Document` constructor and a `dataToDocument`, so a caller can assemble and emit a document without first parsing one?
-5. **Diagnostics as the default path** — should `parseSpritesheetWithDiagnostics` be the canonical entry, with `parseSpritesheet` the terse convenience, or remain a parallel API? The charter should bless one as the golden path.
-6. **Rust conformance posture** — confirm the "port after the TS API stabilizes per format" policy the status assumes, and which formats are conformance-gated vs. TS-only for now.
+- **Parse-only Cocos/libGDX break the package's round-trip pattern (standard 1 / charter North star).** Aseprite, Starling, and Texture Packer all ship `*Serialize.ts` in base; the delta adds two formats with **no serializer and (for libGDX) no schema**, so the new formats cannot round-trip. The charter's proposed North star is "a format that parses must serialize back." This is delta-introduced asymmetry, not a base trait. Either land the serializers or have the charter bless parse-only as acceptable.
+- **Dangling reference to a function that does not exist.** `b2824e3d8:src/cocosPlistParse.ts:184-185`: `Use parseCocosPlistSpritesheetDocument instead when you need round-trip serialisation` and `:191` `preserve the full document for round-trip serialisation via serializeCocosPlistSpritesheet` — but `serializeCocosPlistSpritesheet` is not implemented anywhere in the delta. The doc comment promises a round trip the package cannot perform.
+- **The registry-entry shape is an inline type, duplicated three times, not in `@flighthq/types` (standard 6).** The `{ detect; parse }` shape that users must construct to call `registerSpritesheetFormat` is the public seam of the registry, yet it is written inline as the local `FormatEntry` (`spritesheetDetect.ts:28`), again as the `Readonly<{…}>` return of `getSpritesheetFormat` (`:111`), and a third time as the `registerSpritesheetFormat` parameter (`:144`). It crosses the package boundary (callers author it), so per the header-layer rule it belongs as a named type in `@flighthq/types` (e.g. `SpritesheetFormatEntry`) and should be referenced, not re-spelled.
+- **Structural divider comments (Source Style — FAIL).** Every new file uses banner dividers the style rule forbids: `b2824e3d8:src/cocosPlistParse.ts:18` `// ─── plist structural helpers ───`, `:63` `// ─── Internal parser ───`, `:180` `// ─── Public API ───`; same pattern in `libgdxAtlasParse.ts:13` / `:36` / `:222` and `spritesheetDetect.ts:26` / `:93`. "Avoid structural divider comments … Use names, file boundaries, and package boundaries instead." These also misorder the file against the alphabetized-exports rule (public functions sit at the bottom under a banner rather than ordered).
+- **Dead option carried for symmetry.** `b2824e3d8:src/cocosPlistParse.ts:186` accepts `_options?: CocosPlistParseOptions` (underscore-prefixed, never read); `CocosPlistParseOptions.frameDuration` (`:13`) is documented for "inferred animations" the Cocos parser never builds. Speculative surface the contract's "no speculative surface" leaning would trim.
+
+## What the delta gets right (do not regress)
+
+- **Fork B done right.** `spritesheetDetect.ts` is an open `Map<SpritesheetFormatKind, FormatEntry>` with lazy init (no top-level `Map.set`, so `sideEffects: false` stays honest), last-write-wins, a documented vendor-prefix convention, and a `getSpritesheetFormat` read accessor. This is the canonical `-formats` dispatch shape and should be preserved.
+- **Types-first kinds.** `packages/types/src/SpritesheetFormat.ts` adds the five kind constants and the open `SpritesheetFormatKind = string` alias in `@flighthq/types`, one concept per file — exactly the string-kind model. `package.json`/`tsconfig.json` deps and references are correct.
+- **Sentinels, not throws.** `detectSpritesheetFormat`/`parseSpritesheet` return `null` on the expected "unrecognized format" failure (`spritesheetDetect.ts:103`, `:131`) rather than throwing. Correct.
+- **`getSpritesheetFormat` return is `Readonly<>`** (`:111`). Const-by-default honored at the read seam.
+
+## Charter fit
+
+The charter is a `draft: true`, unblessed first pass whose "What it is" already describes the richer `67dc46d64` shape ("five formats with full parse↔serialize round-trips … a shared XML parser spine … a tolerant diagnostics path — 169 tests"). That description is **ahead of the code under review**; it is not a rubric the `b2824e3d8` delta meets, and the mismatch is itself evidence for finding 3. Judged against the charter's _proposed_ North stars: registry-by-default ✅, types-first kinds ✅, round-trip fidelity ❌ (new formats are parse-only), honest unabbreviated names ✅ for the format functions but the `xmlParse` re-export leaks generic names. Nothing here should edit the charter — its Open directions already park the cross-package threads (multi-page, `SpritesheetData`→types, Rust conformance) that are correctly out of this merge's scope.

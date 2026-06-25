@@ -1,86 +1,79 @@
 ---
 package: '@flighthq/textinput'
 status: partial
-score: 58
-updated: 2026-06-24
+score: 38
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/textinput.md
-  - source
-  - changes.patch
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - head/packages/textinput/src
+  - head/packages/types/src
+  - changes.patch (packages/textinput/ slice)
   - charter.md
 ---
 
 # textinput — Review
 
-Evidence: `incoming/builder-67dc46d64/head/packages/textinput/` + `changes.patch` (committed/working split). Findings reference `67dc46d64:<path>`. This survey absorbs and supersedes the prior depth review (`reviews/depth/textinput.md`, verdict `solid — 74`) and the maturation roadmap (`reviews/maturation/depth/textinput.md`).
+Merge-gate review of the **delta** only: `incoming/integration-b2824e3d8/head/packages/textinput/` vs the approved baseline `incoming/integration-b2824e3d8/base/packages/textinput/` (= `origin/main` `eb73c3d74`). Findings cite `b2824e3d8:<path>`. The baseline is the blessed floor and is not under review. This supersedes the prior `67dc46d64` review against a different snapshot — its central diagnosis no longer holds (see "Honesty note" below).
 
-## Verdict
+## What the delta tries to do
 
-`partial — 58/100`. The _design_ of this package is genuinely strong — a complete OpenFL `TextField` caret/selection/edit/restrict/password core, word + vertical motion, an undo/redo seam, line-relative home/end, and caret-scroll-into-view are all present as source, and `@flighthq/types` carries the full header for all of it. But the committed source **does not compile**: `textInputEditing.ts` calls five helper functions (`recordTextInputEdit`, `applyHistoryRecord`, `getCaretLineIndex`, `getLineStartIndex`, `getLineEndIndex`) that are never defined or imported anywhere in the package. The new Silver functions are also **not exported from the barrel** (`index.ts`), and `dist/` reflects an older Bronze-only build that predates these edits. The status doc's central claim — that undo/redo, line-relative Home/End, and caret-scroll are "deferred to a follow-up session" — is materially false against the committed tree. The score reflects that a reviewer cannot trust the package builds or that its public surface matches its source; the underlying _design_ would score in the 80s once it compiles and is wired. This is a **broken intermediate**, not a stub and not a clean solid.
+The incoming change is a large, well-scoped feature expansion of editable-field behavior, all natural AAA additions to the charter's stated scope:
 
-## Present capabilities (verified against source)
+- **Word motion + word delete** — `moveTextInputCaretByWord`, `deleteTextInputWordBackward/Forward`, with `findWordStartBefore`/`findWordEndAfter` reusing the existing `isWordChar` boundary; wired into `getKeyboardCommand` for Ctrl+Arrow (Win/Linux), Alt+Arrow (macOS), and Ctrl/Alt+Backspace/Delete.
+- **Vertical navigation** — `moveTextInputCaretUp`/`Down` with a preserved desired-x column (`desiredCaretX`), plus `moveTextInputCaretToLineStart`/`ToLineEnd`, over layout-group scans.
+- **Undo/redo** — `undoTextInput`/`redoTextInput`/`canUndoTextInput`/`canRedoTextInput`/`clearTextInputHistory`, a `recordTextInputEdit` ring with `historyLimit` and `mergeKind` coalescing, threaded into `replaceTextInput`.
+- **Scroll-into-view** — `scrollTextInputCaretIntoView` over `setRichTextScrollH/V`.
+- **Clipboard de-coupling** — removes the hidden `navigator.clipboard?.writeText(...)` side effect from `selectableRichTextManager.ts` and `textInputManager.ts`, replacing it with an explicit `onCopy?` callback threaded through the dispatchers. A genuinely good move toward the "no magic side effect" rule.
 
-What follows is what the _source_ (`head/src/`) contains — distinct from what the barrel exports and what `dist/` realized (see Charter contradictions / Contract & docs fit for that gap).
+As a feature design this is the right shape and the right vocabulary. The problem is not the design — it is that **the change is not internally complete and does not build.**
 
-**Enablement / runtime slot** (`textInput.ts`). `enableTextInput` / `disableTextInput` / `hasTextInput` / `getTextInputState` — the idempotent opt-in slot pattern on `RichTextRuntime.input`, matching the SDK `enable*` convention. `createTextInputState` now initializes the full `TextInputState`: `history: []`, `historyIndex: -1`, `historyLimit: 100` (clamped `Math.max(0, …)`), `desiredCaretX: -1`, `caretColor: 0x000000`, `caretWidth: 1`, plus the OpenFL-matching password/selection defaults (`•`, `0x0078d7`, `0.35`). `applyTextInputOptions` re-applies the configurable subset on re-enable. All field defaults verified.
+## Merge-gate verdict: REJECT — the delta does not compile
 
-**Selection / caret model + geometry** (`textInputEditing.ts`). `setTextInputSelection`, `getTextInputSelectionBeginIndex`/`EndIndex` (min/max with `clampIndex`), `getTextInputSelectionText`, `selectAllTextInput`, `moveTextInputCaret` (with `extendSelection`, resets `desiredCaretX`), `getTextInputCaretIndex`. `selectWordAtTextInputIndex` / `selectLineAtTextInputIndex` for double/triple- click. Out-param geometry: `getTextInputCaretRectangle`, `getTextInputSelectionRectangles` (delegates to `getRichTextSelectionRectangles`), and the strong `getTextInputCharacterIndexAtPoint` (nearest-line resolution + half-advance rounding via `getTextLayoutGroupCharacterIndexAtX`).
+Three independent, grounded structural breaks. Any one blocks merge; together they show the branch was captured mid-flight.
 
-**Editing + format-range adjustment** (`textInputEditing.ts`). `insertTextInput`, `appendTextInput`, `replaceTextInput`, `replaceSelectedTextInput`, `deleteTextInputBackward`/`Forward`. `adjustTextFormatRanges` is a real implementation of shifting/splitting/dropping `TextFormatRange`s across insert/delete (empty-insert and collapse-to-default cases handled). The OpenFL `restrict` grammar is fully present: `restrictTextInput`/`splitRestrictRanges`/`matchesRestrictRanges` (`^` exclusion toggling, `a-z` ranges, `\` escapes), plus `maxChars` clamping and multiline newline stripping in `applyTextInputRestriction`. `getTextInputDisplayText` does password masking. This is the hard core of editable rich text and it is complete and well-factored.
+### 1. The implementation grew without its header — the types-first contract is violated, and the source does not typecheck
 
-**Word + vertical motion (Bronze, this session — wired and tested).** `moveTextInputCaretByWord(source, direction, extendSelection)` over `findWordStartBefore`/`findWordEndAfter` (skip-non-word-then-skip-word semantics); `deleteTextInputWordBackward`/`Forward`; and `moveTextInputCaretDown`/`Up` with `desiredCaretX` column preservation and a layout-null fallback to document end/start. `getKeyboardCommand` maps `wordLeft`/`wordRight`/`deleteWordBackward`/`deleteWordForward` (Ctrl on Win/Linux, Alt on macOS) and `up`/`down`. These five are exported from the barrel and have 34 new tests (`textInputEditing.test.ts` describe blocks confirm `moveTextInputCaretByWord`, `moveTextInputCaretDown`, `moveTextInputCaretUp`, `deleteTextInputWord*`). This part is solid.
+The new source reads and writes `TextInputState` fields, `*Options` fields, and a type that **do not exist** in `@flighthq/types` in this snapshot. The textinput-owned types are byte-identical between base and head (`b2824e3d8:packages/types/src/TextInputState.ts`, `TextInputEditingOptions.ts` carry **no delta**), while the source depends on fields the header never gained:
 
-**Undo/redo + line-relative + caret-scroll (Silver, committed — present in source, but broken/unwired).** `undoTextInput`, `redoTextInput`, `canUndoTextInput`, `canRedoTextInput`, `clearTextInputHistory`; `moveTextInputCaretToLineStart`/`ToLineEnd`; and `scrollTextInputCaretIntoView` (consuming `setRichTextScrollV`/`setRichTextScrollH` from `@flighthq/text`). `replaceTextInput` now records edits (`recordTextInputEdit(...)`, gated on `historyLimit > 0` and `skipHistory`). These are real, thoughtful implementations — but see Gaps: they reference undefined helpers, so the file does not compile, and none are exported from `index.ts`.
+- `b2824e3d8:packages/textinput/src/textInput.ts:53-69` returns a `TextInputState` literal with `caretColor`, `caretWidth`, `desiredCaretX`, `history`, `historyIndex`, `historyLimit`:
+  ```ts
+  caretColor: options?.caretColor ?? 0x000000,
+  ...
+  history: [],
+  historyIndex: -1,
+  historyLimit: options?.historyLimit !== undefined ? Math.max(0, options.historyLimit) : 100,
+  ```
+  but `TextInputState` in `@flighthq/types` has only `{ alwaysShowSelection, caretIndex, displayAsPassword, focused, passwordCharacter, restrict, selectionAlpha, selectionColor, selectionIndex }`. The excess-property literal is a TS error, and every later `state.history` / `state.historyIndex` / `state.historyLimit` / `state.desiredCaretX` read (`textInputEditing.ts:46-47, 59-60, 328, 410-412, 459-460, 622, 754-781`) is a property-does-not-exist error.
+- `TextInputOptions` lacks `caretColor`/`caretWidth`/`historyLimit`, which `applyTextInputOptions` reads (`b2824e3d8:packages/textinput/src/textInput.ts:39-42`).
+- `ReplaceTextInputOptions` has only `{ applyInputRules? }`, but `replaceTextInput` reads `options?.mergeKind` and `options?.skipHistory` (`b2824e3d8:packages/textinput/src/textInputEditing.ts:459-460`).
+- `HandleTextInputKeyboardOptions` has only `{ clipboardText?, onCopy? }`, but `handleTextInputKeyboard` reads `options?.layout` for `'up'`/`'down'` (`b2824e3d8:packages/textinput/src/textInputEditing.ts:248, 273`).
+- `b2824e3d8:packages/textinput/src/textInputManager.ts:3,23` imports and uses `InputTextData`, which **does not exist** in `@flighthq/types` (the `onTextInput` payload is still `TextSelectionRange` per `InputSignals.ts:21`), so `connectInputToTextInput`'s `onTextInput = (data: Readonly<InputTextData>) => …` fails twice: undefined type, and a payload mismatch against the `Signal<(TextSelectionRange) => void>` it connects to.
+- `recordTextInputEdit` pushes a history record (`textBefore`, `textAfter`, `caretIndex{Before,After}`, `selectionIndex{Before,After}`, `mergeKind`) with no `TextInputEditRecord` type anywhere; `state.history` has no element type to satisfy.
 
-**Managers.** `TextInputManager` (`textInputManager.ts`): `create`/`focus`/`blur`, pointer-down with `clickCount` (double→word, triple→line), pointer-move drag-select, wheel→scrollV, keyDown, textInput, and `connectInputToTextInput` wiring `@flighthq/signals` `onKeyDown`/`onTextInput`. `SelectableRichTextManager` (`selectableRichTextManager.ts`): read-only focus/blur, pointer drag-select, wheel, select-all + copy via `getRichTextCharIndexAtPoint`.
+This inverts the contract rule "define its types in `@flighthq/types` first, then implement against them." The header is the design surface and it was never extended.
 
-**Clipboard decoupling (Bronze, this session — verified).** Both managers' `navigator.clipboard?.writeText` calls are gone. `dispatchTextInputKeyDown` and `dispatchSelectableRichTextKeyDown` take an optional `onCopy?: (text: string) => void`; the copy/cut paths fire the callback instead of touching a browser global. This removes the platform-coupling leak the prior depth review flagged.
+### 2. The test fixtures don't typecheck either
 
-## Gaps
+`b2824e3d8:packages/textinput/src/selectableRichTextManager.test.ts:30` and `textInputManager.test.ts:47` add `timeStamp: 0` to `InputKeyboardData` fixtures, but `InputKeyboardData` has no `timeStamp` field — an excess-property error (`tsc -b` typechecks `src/*.test.ts`).
 
-The dominant gap is a build/wiring breakage, not a missing feature. Listed worst-first.
+### 3. Eight implemented, tested public functions are unreachable from the barrel
 
-- **The package does not compile (critical).** `67dc46d64:textInputEditing.ts` calls `recordTextInputEdit` (line ~461), `applyHistoryRecord` (lines ~413, ~560), `getCaretLineIndex` (lines ~355, ~371), `getLineStartIndex` (line ~372), and `getLineEndIndex` (line ~356). None of the five is defined as a `function`/`const`, and none is imported — verified by an exhaustive grep over `src/`. `undoTextInput`/`redoTextInput`/`moveTextInputCaretToLineStart`/`ToLineEnd` and the history-recording branch of `replaceTextInput` all depend on these missing functions, so a `tsc -b` over this package fails. (`replaceTextInput` is on the _tested_ path, so even existing tests cannot pass against this source.)
-- **Silver functions are not exported from the barrel.** `index.ts` was modified this session (committed) but still lists only the 26 Bronze functions; `undoTextInput`, `redoTextInput`, `canUndoTextInput`, `canRedoTextInput`, `clearTextInputHistory`, `moveTextInputCaretToLineStart`, `moveTextInputCaretToLineEnd`, and `scrollTextInputCaretIntoView` are unreachable from `@flighthq/textinput`'s public surface even if they compiled. `exports:check` would also fail: these exported functions have no colocated tests (see below).
-- **`dist/` is stale.** `dist/index.d.ts` and `dist/textInputEditing.d.ts` declare 26 functions, omit every Silver addition, and `dist/textInputEditing.js` contains no `setRichTextScrollH` import or `recordTextInputEdit`/`undoTextInput` reference. The realized public-API artifact predates the committed source edits — consistent with the source never having built successfully after the Silver edits landed.
-- **No tests for the Silver surface.** `textInputEditing.test.ts` describe blocks cover only the 26 Bronze functions; there is no `describe('undoTextInput')`, `redoTextInput`, line-relative, or `scrollTextInputCaretIntoView` block (grep count 0). The undo/line/scroll code is entirely unexercised.
-- **Two selection models persist.** The editable path uses `TextInputState.caretIndex/selectionIndex`; `SelectableRichTextManager` uses `runtime.selectionBeginIndex/selectionEndIndex` on `RichTextRuntime`. Two representations of "a selected range," with `SelectableRichTextManager` reimplementing select-all/copy/hit-test independently. A depth/consistency smell the prior review and the status doc both name; unification is parked as a design decision (see Open directions).
-- **IME / composition absent.** No `TextInputComposition`, no marked-text lifecycle. The single largest _feature_ gap for a from-scratch input core that renders its own caret (CJK / mobile).
-- **Grapheme-cluster + bidi correctness absent.** Caret motion, deletion, and hit-testing index in UTF-16 code units; no extended-grapheme-cluster boundaries (emoji/ZWJ/combining marks) and no bidi/RTL-aware caret or selection. Both depend on `@flighthq/textlayout` exposing the needed data.
-- **Drag-select auto-scroll absent.** `scrollTextInputCaretIntoView` covers caret-into-view (once it compiles), but a pointer-move drag that leaves the field bounds does not advance scroll toward the pointer; the pointer-move dispatchers take no viewport-bounds argument.
-- **No restrict/maxChars feedback.** A rejected/truncated insert is dropped silently; no result or signal a UI could flash/beep on.
-- **No selection-changed / edit signals.** No `enableTextInputSignals` opt-in group, so app code must poll for caret/selection/text changes.
-- **Performance is O(text-length) per keystroke.** `replaceTextInput` rebuilds the whole string and rescans format ranges every edit; no rope/gap-buffer. Acceptable for now, behind stable signatures.
+`textInputEditing.ts` exports `canRedoTextInput`, `canUndoTextInput`, `clearTextInputHistory`, `moveTextInputCaretToLineEnd`, `moveTextInputCaretToLineStart`, `redoTextInput`, `undoTextInput`, and `scrollTextInputCaretIntoView` as `export function`, but the named barrel `b2824e3d8:packages/textinput/src/index.ts:12-39` re-exports none of them (it added only `deleteTextInputWord*` and `moveTextInputCaretByWord/Down/Up`). They have colocated `describe` blocks in the test diff, so `npm run exports:check` and the single-root-`.`-entry contract both fail: implemented-and-tested surface with no public reach. Root cause: textinput's barrel is a hand-maintained named-export list (unlike the `export *` barrels elsewhere), so new exports must be added by hand and were not.
 
-## Charter contradictions
+## Honesty note on the incoming docs
 
-The charter is a `draft`/stub: only "What it is" is filled (and the code matches it — caret/selection model, edit/delete/replace, restrictions, password masking, focus/dispatch managers over a `RichText` runtime slot, plus the editable + read-only modes). North star, Boundaries, Decisions, and Open directions are all `TODO`, so there is no blessed rule to contradict. The honest finding is therefore not a charter contradiction but a **status-doc contradiction**: the worker's status claims undo/redo, line-relative Home/End, and caret-scroll are _deferred_, while the committed source contains all three (broken and unwired). The continuity log is wrong about what is in the tree — exactly the kind of claim the review-verify pass exists to catch. The two-selection-model "deferred" claim is accurate; the three "deferred features" claims are not.
+The branch ships `b2824e3d8:tools/agents/docs/packages/textinput/review.md`/`assessment.md` asserting the build is broken by "five undefined helpers … `recordTextInputEdit`, `applyHistoryRecord`, `getCaretLineIndex`, `getLineStartIndex`/`getLineEndIndex`" and that "`@flighthq/types` carries the full header for all of it." Both claims are **stale/false against this snapshot**: all five helpers are defined (`b2824e3d8:packages/textinput/src/textInputEditing.ts:612-624, 633-637, 687-712, 745-783`), and the header is exactly what is missing (#1). Those docs are superseded by this review.
 
-## Contract & docs fit
+## What is sound (so the fix is finishing, not redesigning)
 
-**Lives up to the contract (design level):** full unabbreviated names throughout (`getTextInputCharacterIndexAtPoint`, `moveTextInputCaretToLineStart`, never abbreviated); `get*`/`has*`/`is*` prefixes correct; out-param geometry (`getTextInputCaretRectangle`, `getTextInputSelectionRectangles`) writes into `out` first arg and reuses a module-bottom `scratchRect` for vertical navigation (no per-keystroke allocation); editing functions allocate nothing visible; `getInputState` _throws_ on a not-enabled `RichText` (documented as API misuse — consistent with "throw only for programmer error"), while expected-failure paths return sentinels (`getSelectableRichTextSelectionText` → `''`, `getTextLayoutGroupAtIndex` → `null`). Types are header-first in `@flighthq/types` and complete: `TextInputState` (with `history`/`historyIndex`/`historyLimit`/ `desiredCaretX`/`caretColor`/`caretWidth`), `TextInputEditRecord`, `TextInputEditingOptions` (`ReplaceTextInputOptions` with `mergeKind`/`skipHistory`/`applyInputRules`, `HandleTextInputKeyboardOptions` with `layout`), all exported from the types barrel. `package.json` is `sideEffects: false`, single `.` export. The clipboard decoupling removes the one prior platform-coupling defect. `crate: flighthq-textinput` mirror is named in the charter front matter.
+- **Composition / bedrock** (pass): functions are small and single-purpose; word/line/vertical/undo are separate exports, not config branches. Vertical nav reuses one `scratchRect` to avoid per-keystroke allocation (`b2824e3d8:packages/textinput/src/textInputEditing.ts:886-892`) — correct allocation discipline.
+- **Naming** (pass): `moveTextInputCaretByWord`, `deleteTextInputWordBackward`, `scrollTextInputCaretIntoView`, `canUndoTextInput` are full, unabbreviated, self-identifying, with correct `move`/`delete`/`can`/`scroll` verbs.
+- **Tree-shaking** (pass, modulo #3): `package.json` keeps `"sideEffects": false`; no top-level side effects; the `navigator.clipboard` removal makes the package cleaner, not heavier.
+- **Registry vs union** (n/a): `getKeyboardCommand`'s `KeyboardCommand` union grows but stays a tight internal keymap inside one closed function — acceptable; no user-extension story is implied.
+- **Contract hygiene** (mixed): `getTextInputCaretRectangle` is alias-safe; `getInputState` correctly throws on "input not enabled" as API misuse (`b2824e3d8:packages/textinput/src/textInputEditing.ts:645-648`) rather than returning a sentinel — right call. The one violation is types-first (#1).
+- **Cross-package wiring** (verified present): `TextLayoutResult.numLines/lineHeights`, `RichText.scrollH/scrollV`, `@flighthq/text` `setRichTextScrollH/V` (via `export *`), and `@flighthq/textlayout` `TEXT_BOUNDS_GUTTER` all exist in head — the scroll/layout dependencies are real; only the textinput-owned header is missing.
 
-**Defects / candidate revisions:**
+## Score
 
-- **Broken build = contract violation at the most basic level.** The package must `tsc -b` and pass `npm run check`/`exports:check`. With five undefined helpers and eight unexported-but-`export`ed functions, it does neither. This is the finding that gates everything else — no other contract point matters until the source compiles, the helpers are written, the barrel is updated, `dist/` is rebuilt, and the Silver functions get colocated tests.
-- **`package.json` dependency drift.** `dependencies` lists `displayobject`, `node`, `signals`, `text`, `textlayout`, `types`. The source imports `@flighthq/node`, `@flighthq/text`, `@flighthq/textlayout`, `@flighthq/signals`, `@flighthq/types` — but **not** `@flighthq/displayobject` (no import in any of the five source files), and `@flighthq/input`'s types (`InputKeyboardData`, `InputTextData`, `TextInputSource`) are consumed via `@flighthq/types` re-exports rather than a direct `@flighthq/input` dependency. `displayobject` looks like a stale dependency `packages:check` should flag; confirm and drop if truly unused.
-- **`TextInputState.ts` holds two exported interfaces** (`TextInputState` + `TextInputOptions`), against the types-layout one-concept-per-file convention (filename = type name). This is a defensible cohesion pairing (options are the authoring subset of the state), but it is a deviation worth a ruling by the types-layout owner — candidate revision, not a defect in `textinput`.
-- **Package Map line is accurate but thin.** `index.md` says only "supports user input editing within a text primitive." Given the breadth actually present (or designed), the line under-describes the package, but it is not _wrong_. Low-priority candidate revision.
-
-## Candidate open directions (charter is a stub — these are the questions it should settle)
-
-1. **North star.** What is the durable bar? Likely: a single unified selection/caret model; pure free-function editing over a `RichText` runtime slot with no host coupling in the core; index semantics (code-unit vs grapheme) stated and held consistent across TS and the Rust crate.
-2. **One manager + `readOnly`, or two entry points?** Whether to collapse `SelectableRichTextManager` onto `TextInputState` (a `readOnly: boolean`) so "selectable" is a subset of "editable" and one selection/caret/copy path serves both — or keep the two managers. The two-selection-model smell hinges on this. Pre-release means no migration cost.
-3. **IME posture.** Build the `TextInputComposition` seam now (cross-package: `@flighthq/types`, `@flighthq/input` event wiring, `displayobject-*` marked-text rendering) or record it as deliberately deferred with the functional gap documented in source.
-4. **Index-semantics contract.** Code-unit vs extended-grapheme-cluster indexing, decided once and mirrored in `flighthq-textinput`, before grapheme/bidi work — a divergence here would break Rust↔TS conformance.
-5. **Clipboard default placement.** Where the default web clipboard lives now that the core is `onCopy`-only: an examples/app-layer `createWebTextInputClipboard()` helper, or wiring the manager to `@flighthq/clipboard`'s backend seam. The core staying pure is the lean choice; confirm.
-6. **`textinput-formats` neighbor.** Whether masked/numeric/date/credit-card formatters justify a `-formats` neighbor (triad pattern) layered above `restrict`, and the formatter-seam shape.
-7. **Accessibility descriptor.** Whether `textinput` owns a platform-neutral AT descriptor (data in `@flighthq/types`, consumed by a host backend) for screen-reader mirroring.
-
-## Notes for status verification (as-claimed → verified)
-
-The status doc is **partly inaccurate** and must not be taken at face value:
-
-- **Confirmed:** the five Bronze functions exist, are exported, and are tested (word motion, word delete, vertical nav); the clipboard decoupling is real (`navigator.clipboard` gone, `onCopy` added); the `desiredCaretX`/`caretColor`/`caretWidth`/history fields are in `@flighthq/types`; the two-selection-model smell is real (managers vs `TextInputState`).
-- **Contradicted:** undo/redo, line-relative Home/End, and caret-scroll-into-view are described as _deferred to a follow-up session_, but they are **committed in the source** (in `committed.patch`, not the working split) — as non-compiling, unexported code. The "Estimated new score: 84/100" and "all 105 passing" claims cannot hold against a source tree that does not build. Treat the status's deferred-items list as unreliable for this package; the source is the authority and it is broken.
+`partial — 38`. The feature design and code body are AAA-shaped and would score in the 80s once they build; the score is dominated by the merge-gate fact that the delta does not compile against its own snapshot (missing types delta + barrel gap + test fixtures). Not mergeable as captured.

@@ -1,93 +1,72 @@
 ---
 package: '@flighthq/text'
-status: solid
-score: 82
-updated: 2026-06-24
+status: partial
+score: 58
+updated: 2026-06-25
 ingested:
-  - status.md
-  - reviews/depth/text.md
-  - source
-  - changes.patch
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - head/packages/text/src
+  - head/packages/types/src/RichText.ts, TextInputState.ts, TextFormatRange.ts, index.ts
+  - changes.patch (packages/text/ hunks)
 ---
 
-# Review: @flighthq/text
+# Review: @flighthq/text — MERGE GATE (integration-b2824e3d8 vs approved origin/main eb73c3d74)
 
-Evidence: incoming bundle `builder-67dc46d64`. Source read from `67dc46d6:packages/text/src/`; delta from `changes.patch`; cross-package ripple verified in `packages/types/`, `packages/textlayout/`, and the renderer packages.
+This is a merge-gate review of the **incoming delta only**: head vs base under `incoming/integration-b2824e3d8/`. The approved baseline (`base/`, `origin/main` `eb73c3d74`) is the blessed floor and is not under review. Every finding cites a `b2824e3d8:<path>` hunk.
 
 ## Verdict
 
-**solid — 82/100.** The entity surface this package is chartered to own (the `TextLabel` / `RichText` / `NativeText` field family, their mutators, accessors, autoSize bounds, and the lazy layout-cache seam) is now essentially complete and OpenFL-faithful — the depth review's biggest gap (a half-finished `RichText` mutator surface) is closed, and the work went _past_ its own status report by also landing signals, insert/replace, and the textlayout hit-test fix. Two real defects hold the score below authoritative: a **missing `@flighthq/signals` dependency** in `package.json` (`richText.ts` imports `createSignal` from it), and **six exported functions with no colocated tests** — both of which `npm run check` (`packages:check` / `exports:check`) would fail on as delivered.
+**partial — 58/100. REJECT for merge as integrated.** The _design_ of the delta is strong and worth keeping: it completes the RichText field surface, adds string-edit operations with format-range re-indexing, an opt-in TextField signals group, entity-level metric conveniences, and retires the legacy `internal.ts` cast. The feature is the right shape. But the delta **does not compile in this branch**: the `text` half landed without its `@flighthq/types` companion changes. `richText.ts` imports four types that no longer exist in the head `types` barrel, assigns to two `readonly` fields after deleting the cast that made that legal, and reads/writes a runtime slot that was never declared. A test literal constructs `TextInputState` fields the head type does not have. And the new `@flighthq/signals` import is not declared in `package.json`. The score reflects merge-readiness against the approved floor, not the quality of the idea — once the header split is healed, this is a clean, high-value merge.
 
-The single most important meta-finding: **the status doc materially under-reports the diff.** It is AS-CLAIMED and now superseded — verify against this review, not status.md.
+Note on the bundle's own pre-written `review.md`/`assessment.md`/`status.md` (authored against `builder-67dc46d64`, score "solid 82"): those were written against a tree where the `types` changes DID land and where the six signals/edit exports were untested. Against the _actual integration head_, the types changes are absent (so it does not compile) and the six exports are now fully tested (so that defect is resolved). This review supersedes them for the merge decision.
 
-## Status-doc reconciliation (AS-CLAIMED → verified)
+## Blockers (compile / CI failures introduced by the delta)
 
-The worker report (72→88 claim) listed signals, insert/replace, and the textlayout bug as **deferred**. The diff refutes all three — they are _implemented_, not deferred:
+1. **Four imported types are undefined.** `b2824e3d8:packages/text/src/richText.ts:8-43` imports `TextFieldSignals`, `TextFieldChangeEvent`, `TextFieldLinkEvent`, `TextFieldScrollEvent` from `@flighthq/types`. None exist in head `packages/types/src/` (`index.ts` exports no `TextField*`; `grep -rln TextFieldSignals head/packages/types/` is empty). The `changes.patch` `packages/types/` hunks add `FontMetrics`/`GlyphExtents`/`TextShaper`/etc. but no signals types. → TS2305.
 
-- **Signals group is built, not deferred.** `@flighthq/types` gained `TextFieldChangeEvent`, `TextFieldLinkEvent`, `TextFieldScrollEvent`, `TextFieldSignals`; `RichTextRuntime` gained a `textFieldSignals` slot; `richText.ts` exports `enableTextFieldSignals`, `createTextFieldSignals`, `getTextFieldSignals`, `dispatchRichTextLinkAtPoint`, and emits change/scroll/link events from the setters. Status said this was "deferred to avoid a write conflict."
-- **`insertRichTextString` / `replaceRichTextString` are implemented** with full format-range re-indexing (shift/extend/trim/remove on splice) — status said "deferred (non-trivial)."
-- **The `textlayout` `richTextQuery.ts` bug status flagged is fixed in this same bundle.** The buggy `let lineStart = text.length` (referencing the param renamed to `_text`) is replaced with `layout.groups`-derived `lineStart`; both params are now genuinely `_text` (unused). The `y = 9999` test workaround the status mentions is no longer load-bearing.
-- Renderer packages (`displayobject-canvas/dom/wgpu` RichText) were also touched in the bundle — partly the `enableCanvasTextInput*` rename and mask-contract comments, i.e. work outside this package's charter that rode along in the builder. Noted for the ingest, not scored here.
+2. **`readonly` write after the cast was deleted.** The delta removed `packages/text/src/internal.ts` (the `RichTextDataInternal` cast). Head `packages/types/src/RichText.ts:22-23` still declares `readonly scrollH: number;` / `readonly scrollV: number;`. `b2824e3d8:packages/text/src/richText.ts` now writes them directly: `:480` `source.data.scrollH = clamped;`, `:491` `source.data.scrollV = clamped;`, and `createRichTextData` `:129-130`. → TS2540 ("cannot assign to … read-only property"). The base compiled because it routed these writes through the now-deleted cast (`base:packages/text/src/richText.ts:101-102,154,163`). The delta broke that without the compensating `types` change.
 
-The status doc's "estimated 88/100" is plausible _for the feature delivery_, but it was written against a smaller delta than actually shipped and missed the two CI-breaking defects below.
+3. **Undeclared runtime slot.** Head `RichTextRuntime` (`head/packages/types/src/RichText.ts:44-53`) has `input`, `richTextContent`, `selectionBeginIndex`, `selectionEndIndex` — no `textFieldSignals`. But `b2824e3d8:packages/text/src/richText.ts:153` assigns `out.textFieldSignals = null;` and `:175`, `:190`, `:314`, `:567`, `:576` read it. → TS2339 / TS2353.
 
-## Present capabilities
+4. **Test constructs missing `TextInputState` fields.** Head `head/packages/types/src/TextInputState.ts` declares only `alwaysShowSelection` and `caretIndex`, but `b2824e3d8:packages/text/src/richText.test.ts:530-541` builds an `input` literal also setting `caretColor`, `caretWidth`, `desiredCaretX`, `history`, `historyIndex`, `historyLimit`. `tsc -b` typechecks `src/*.test.ts`, so this is a build failure. → TS2353.
 
-Four source files; the entity coverage is now deliberate and close to AAA for a text _display-object_ layer.
+5. **Missing `@flighthq/signals` dependency.** `b2824e3d8:packages/text/src/richText.ts:7` `import { createSignal } from '@flighthq/signals'` (and `richText.test.ts:4` `connectSignal`), but `b2824e3d8:packages/text/package.json` `dependencies` lists only `displayobject, entity, geometry, node, textlayout, types`. → `npm run packages:check` (workspace dependency conventions) fails; the build survives only by hoisting.
 
-- **Three entity quartets**, each with `create*` / `create*Data` / `create*Runtime` / `get*Runtime`: `TextLabel` (single-format, single-run lean path), `RichText` (multi-format/HTML on the layout spine, cached `richTextContent`, selection indices, nullable `input` editing slot, nullable `textFieldSignals` slot), and `NativeText` (platform-measured, opts out of the layout spine; DOM writes `measuredWidth/Height` back onto the runtime).
-- **Full `RichText` field-mutator surface** (`richText.ts`, 52 exports): `setRichTextBackground/ BackgroundColor/Border/BorderColor/CondenseWhite/DefaultTextFormat/Height/Html/MaxChars/ MouseWheelEnabled/Multiline/ScrollH/ScrollV/Selectable/String/StyleSheet/TextColor/Width/ WordWrap`, each with diff-skip and the correct content-vs-bounds invalidation split (`invalidateRichTextContent` re-invalidates bounds only under autoSize). This closes the depth review's #1 gap.
-- **Read accessors restoring OpenFL symmetry**: `getRichTextString/Html/Length/DefaultTextFormat`, `getTextLabelString/Format`, `getNativeTextString/Style/MeasuredWidth/MeasuredHeight`, and the effective-format-at-index reader `getRichTextFormatRangeAt(out, source, index)` (merges `defaultTextFormat` + overlapping ranges via `mergeTextFormat`).
-- **Format-range introspection / editing**: `getRichTextFormatRangeCount`, `getRichTextFormatRangeByIndex`, `removeRichTextFormatRangesIn`, `clearRichTextFormatRanges`, `setRichTextFormatRange`, plus string editing `appendRichTextString` / `insertRichTextString` / `replaceRichTextString` with format-range re-indexing.
-- **Entity-level metric conveniences** (the `*Value` family) wrapping `textlayout` after `ensureTextLayout`: `getRichTextLineCountValue`, `getRichTextTextWidthValue/TextHeightValue`, `getRichTextMaxScrollHValue/MaxScrollVValue/BottomScrollVValue`, `getRichTextLineMetricsValue`, `getRichTextCharIndexAtPointValue` — each returns a sentinel (`0`/`1`/`-1`/`null`) when no measure provider is registered. Correct sentinel discipline.
-- **Lazy layout cache** (`textLabelLayout.ts`): `ensureTextLayout` / `getTextLayout` / `getTextLayoutMetrics`, revision-stamped, render-pass-free, per-kind via the `runtime.buildTextLayoutParams` seam (the one difference between label and rich text).
-- **AutoSize bounds** for all three kinds via `compute*LocalBoundsRectangle(out, source)`, ensuring layout on demand with a fixed-box fallback before a measure provider exists.
-- **Signals group** (opt-in): `enableTextFieldSignals` lazily creates the group; change/scroll emit from setters guarded on a non-null slot (zero cost when unused); `dispatchRichTextLinkAtPoint` fires `onTextFieldLink`. Matches the SDK signals convention (`enable*` in the owning package).
-- **Password seam**: `getRichTextPasswordCharacter` reads masking off the editable-input slot, keeping a static `RichText` mask-free and password state out of `RichTextData`.
+Root cause is singular: the feature's `@flighthq/types` half (the four event types + the `textFieldSignals` slot + dropping `readonly` on the scroll fields + the editing-slot fields) was not included in the integration. Blockers 1–4 all heal with that one header change; blocker 5 is an independent manifest fix.
 
-Tests: 149 (`richText` 91, `textLabel` 26, `nativeText` 25, `textLabelLayout` 7), every setter asserting both the diff-skip path and the invalidation bump.
+## What the delta gets right (judged against the contract, not scored against the absent header)
 
-## Gaps
-
-Defects (CI-breaking as delivered):
-
-- **Missing `@flighthq/signals` dependency.** `richText.ts:7` `import { createSignal } from '@flighthq/signals'`, but `packages/text/package.json` `dependencies` omits it (`displayobject`, `entity`, `geometry`, `node`, `textlayout`, `types` only). `packages:check` (workspace dependency conventions) would flag this; the build only survives via hoisting.
-- **Six exported functions with no colocated test** → `exports:check` failure. `richText.test.ts` has no `describe` for, and no reference to: `createTextFieldSignals`, `dispatchRichTextLinkAtPoint`, `enableTextFieldSignals`, `getTextFieldSignals`, `insertRichTextString`, `replaceRichTextString`. The signal-emission paths inside the setters are likewise unexercised (no test enables the group and asserts an emit). This is the load-bearing risk of the bundle: the most subtle new code (format-range re-indexing in insert/replace, link/scroll emission) is the least tested.
-
-Thin spots / omissions at the entity layer (not defects, completeness):
-
-- **`getRichTextFormatRangeByIndex`'s `out` parameter is an inline structural type** (`{ start: number; end: number; format: TextFormat }`) rather than the named `TextFormatRange` from `@flighthq/types`. The codebase-map rule is that cross-package shapes live in `types`; `TextFormatRange` already exists and is the correct annotation.
-- **No `getRichTextFormatRangesIn(beginIndex, endIndex)`** OpenFL-style range read (the symmetric partner to `removeRichTextFormatRangesIn`); `getRichTextFormatRangeAt` covers single-index only.
-- **`condenseWhite` / `styleSheet` are settable but not honored** — `setRichTextHtml`, `setRichTextCondenseWhite`, `setRichTextStyleSheet` set fields + invalidate, but the content-build (`computeRichTextContent` in `textlayout`) must actually consume them. By-design a `textlayout` responsibility, but the entity surface now _promises_ behavior the engine does not yet deliver — worth flagging so it does not read as silently working.
-- **Functional/parity tests absent** — multi-format RichText, autoSize anchors, word-wrap reflow, scroll, links, NativeText measurement. jsdom unit tests cannot reach the render path; the entity surface is now complete enough to unblock these.
-
-By-design delegation (correctly _not_ here, not scored against): glyph layout / line metrics / hit-test geometry (`textlayout`), caret/selection/editing (`textinput`), shaping/measure provider (`textshaper`), per-backend rasterization (renderer packages).
-
-## Charter contradictions
-
-The charter is a stub (What-it-is seeded from the depth review; North star / Boundaries / Decisions / Open directions all `TODO`). Nothing to contradict. The work is consistent with the _implied_ charter (display-object entity layer, delegating the engine). The `*Value` accessor family and the signals-group home are the two shape questions a real charter should rule on — surfaced below.
+- **RichText field-mutator surface** (`b2824e3d8:packages/text/src/richText.ts:397-532`): ~20 `setRichText*` setters, each with a diff-skip guard and the correct content-vs-bounds invalidation split — `invalidateRichTextContent` (`:540-543`) re-invalidates bounds only when `autoSize !== 'none'`; fixed-box-only setters call `invalidateNodeLocalContent` and deliberately skip bounds. This closes the depth review's top gap.
+- **String editing with format-range re-indexing**: `appendRichTextString` (`:48`), `insertRichTextString` (`:321-340`, shift / extend-straddle), `replaceRichTextString` (`:361-395`, the full shift / shrink-both-boundaries / remove-inside / trim-left / trim-right case split on a reverse splice). This is the most subtle new code and the new tests cover every branch (`richText.test.ts` `insertRichTextString` / `replaceRichTextString` blocks). Alias-safe: inputs are read into `previousText` before the mutation.
+- **Signals seam shape** is correct per the SDK convention: `enableTextFieldSignals` (`:188-191`) is idempotent (`??=`), the slot is nullable and zero-cost when unused, emission is guarded on a non-null slot (`emitTextFieldChange` `:566-571`, `emitTextFieldScroll` `:575-585`), and `dispatchRichTextLinkAtPoint` (`:169-182`) is the convenience-that-also-emits, distinct from `textlayout`'s pure `getRichTextLinkAtPoint`.
+- **`*Value` metric conveniences** (`:193-311`) wrap `textlayout` after `ensureTextLayout` and return sentinels (`0`/`1`/`-1`/`null`) when no measure provider is registered — correct sentinel discipline, no throws for expected failure.
+- **NativeText additions** (`b2824e3d8:packages/text/src/nativeText.ts:65-91`): `getNativeText MeasuredWidth/Height/String/Style`, `patchNativeTextStyle` (shallow merge + invalidate). Read off the runtime; no DOM measurement leaks into the entity. Fine.
+- **`internal.ts` retirement** is the map-sanctioned direction ("do not extend `internal.ts`; prefer the proper shape") — it is only _incomplete_ because the paired `types` change did not land.
+- **Naming / ordering / tests**: full unabbreviated type words and correct verbs throughout; exports alphabetized; `describe` blocks mirror exports 1:1 across all three test files (verified — every export has a colocated block, including the six the bundle's review flagged as untested). No dead exports, no eager registration, `sideEffects: false`, single `.` export.
 
 ## Contract & docs fit
 
-Lives up to the contract on most axes:
+- **Composition / bedrock**: PASS. The delta adds free functions over the existing entity/runtime split; no feature bundled as config-gated branches, no subject fusion, no over-split. The signals group is a runtime-slot subsystem, correctly homed.
+- **Naming clarity**: PASS.
+- **Tree-shaking / bundle invariant**: PASS for the `text` package itself (no new hot-loop branch, no shared switch). The undeclared `signals` dependency (blocker 5) is a manifest-hygiene miss, not a bundle-invariant violation.
+- **Registry vs closed union**: N/A — no dispatch family here.
+- **Subject triad + plurality guard**: N/A for the delta; the `text-formats` question is an Open direction, not introduced here.
+- **Contract hygiene**: FAIL as integrated — types are _not_ types-first (blockers 1–4 land the type _usage_ in `text` without the type _definitions_ in `@flighthq/types`), which is the precise inversion of the header-layer rule. One minor secondary drift: `getRichTextFormatRangeByIndex`'s `out` is an inline structural literal (`richText.ts:227-228`) where the existing named `TextFormatRange` (`head/packages/types/src/TextFormatRange.ts`, exactly `{ end, format, start }`) is the correct annotation. Sentinels, out-params, alias-safety, `Readonly<>` usage are otherwise correct.
+- **Rust mirror**: the new `types` seam must be mirrored in `flighthq-types` before/with merge (see the dispatch brief).
 
-- **Types-first**: all new shapes (`TextField*Event`, `TextFieldSignals`) defined in `@flighthq/types`, one concept per file. Good — except the inline `out` literal noted above.
-- **Naming**: full unabbreviated type words throughout (`getRichTextDefaultTextFormat`, not `getRTFmt`); `create*`/`get*`/`set*`/`compute*`/`ensure*`/`enable*`/`dispatch*` verbs used correctly; `dispatchRichTextLinkAtPoint` is the convenience-that-also-emits, distinct from `textlayout`'s pure `getRichTextLinkAtPoint`.
-- **Sentinels not throws**: the `*Value` family returns `0`/`1`/`-1`/`null` for "no measure provider yet" rather than throwing. Correct.
-- **Out-params**: `compute*LocalBoundsRectangle(out, source)` and `getRichTextFormatRangeAt(out, …)` follow the convention; `getRichTextFormatRangeAt` reads inputs before writing `out` (alias-safe).
-- **`internal.ts` retired**: the legacy `RichTextDataInternal` cast is gone; `scrollH`/`scrollV` are now plain mutable fields on `RichTextData` (the `readonly` removed in `types/RichText.ts`). This is exactly the map's "do not extend `internal.ts`; prefer the proper shape" direction. The depth review's migration recommendation is satisfied.
-- **Single root export, `sideEffects: false`**: both present and correct.
+## Thin spots (completeness, not merge blockers)
 
-Contract violations: the **missing `signals` workspace dependency** (above) and the **untested exports** (above) are the two places the package does not currently satisfy `npm run check`.
-
-Structural-forks fit: the `out`-literal in `getRichTextFormatRangeByIndex` is a small contract-fit drift (a cross-package shape defined inline rather than homed in `types`) — fork-adjacent (mis-homed type), low cost to fix. No closed-switch / hot-loop-inflation issues; the package has no dispatch loop. The signals-group seam follows fork D's runtime-backend pattern (opt-in `enable*`, nullable slot) correctly.
-
-Candidate doc revisions: none required — the Package Map line for `@flighthq/text` still matches (it already names `TextLabel`/`RichText`/`NativeText` and the layout-spine relationship). The status.md entry should be marked **superseded** by this review (it under-claims the delivery).
+- **`condenseWhite` / `styleSheet` settable but not honored**: `setRichTextHtml` / `setRichTextCondenseWhite` / `setRichTextStyleSheet` set fields + invalidate, but the content-build (`computeRichTextContent` in `textlayout`) does not yet consume them. By design a `textlayout` responsibility; flag so it does not read as silently working.
+- **No `getRichTextFormatRangesIn(beginIndex, endIndex)`** — the symmetric range _read_ partner to the existing `removeRichTextFormatRangesIn`; `getRichTextFormatRangeAt` is single-index only.
+- **No functional/parity coverage** for multi-format RichText, autoSize anchors, word-wrap reflow, scroll, links, NativeText measurement — render-path scenes jsdom cannot reach. Cross-tree, parked.
 
 ## Candidate open directions (for the charter to settle)
 
-1. **The `*Value` accessor family — keep, rename, or drop?** The suffix exists only to avoid name collision with the `textlayout` functions they wrap (`getRichTextLineCount` lives in both). The charter should decide whether `text` re-exposes layout metrics as entity conveniences at all, or whether users call `textlayout` directly after `ensureTextLayout`. (Raised by the worker too.)
-2. **Where do HTML/`styleSheet` semantics live?** `setRichTextHtml`/`setRichTextStyleSheet` set fields the content-build does not yet honor. Is there a `@flighthq/text-formats` neighbor (an HTML/CSS parse seam, registry-dispatched like the shaper), or does `textlayout` own it? This is a structural-forks B/triad question (a `-formats` cell) that needs a plurality check before creation.
-3. **Is the signals group correctly homed in `text`?** It is, per convention — but the charter should bless `TextFieldSignals` (change/link/scroll) as the canonical field-event set, and rule on whether a `selection`/`caret` event belongs here or in `textinput`.
-4. **Append/insert/replace on a non-editable field — in scope?** These now exist on the static entity (editing proper lives in `textinput`). The charter should confirm the field owns programmatic text mutation while `textinput` owns _interactive_ editing, so the boundary is explicit rather than assumed.
-5. **Rust mirror posture.** `flighthq-text` should wait until #1–#3 settle (they shape the final TS surface the port conforms to), per the worker's own note.
+The charter is a stub (North star / Boundaries / Decisions / Open directions all `TODO`), so most of "what good means here" is undecided. The shape questions this delta raises:
+
+1. The `*Value` accessor family — keep, rename, or drop (the suffix only dodges a `textlayout` name collision).
+2. Bless `TextFieldSignals` (change/link/scroll) as the canonical field-event set; rule on `selection`/`caret` belonging in `text` vs `textinput`.
+3. Append/insert/replace on a non-editable field — confirm the static-field-owns-programmatic-mutation vs. `textinput`-owns-interactive-editing boundary.
+4. Where HTML/`styleSheet` semantics live — a `text-formats` neighbor (plurality-gated) vs. folding into `textlayout`'s content-build.
+5. Rust mirror posture — `flighthq-text` waits until #1–#2 settle.

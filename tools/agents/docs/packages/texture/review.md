@@ -1,73 +1,74 @@
 ---
 package: '@flighthq/texture'
 status: solid
-score: 74
-updated: 2026-06-24
+score: 58
+updated: 2026-06-25
 ingested:
   - status.md
   - reviews/depth/texture.md
   - source
   - changes.patch
   - charter.md
+  - 'base=origin/main(eb73c3d74)'
+  - 'evidence=integration-b2824e3d8 delta'
 ---
 
-# texture — Review
+# texture — Review (merge gate: integration-b2824e3d8 → origin/main)
 
-Evidence: `incoming/builder-67dc46d64/head/packages/texture/` + `changes.patch` (the texture diff is in `committed.patch`/`working.patch`). Findings reference `67dc46d64:<path>`. Ingested the prior depth review (`reviews/depth/texture.md`, verdict 62/100) and the maturation roadmap (`reviews/maturation/depth/texture.md`); this survey supersedes both as the new baseline.
+> Harsh merge-gate survey. Judges **only the delta** — `incoming/integration-b2824e3d8/head/packages/texture/` vs the approved `origin/main` base `eb73c3d74` (`.../base/packages/texture/`), plus the `packages/texture/` hunks of `incoming/integration-b2824e3d8/changes.patch` (the texture diff lands in `committed.patch`). The base is the blessed floor and is **not** under review. Findings cite `b2824e3d8:<path>` with a quoted snippet. This survey supersedes the prior depth review (`reviews/depth/texture.md`, 62/100) as the new baseline.
 
 ## Verdict
 
-`solid — 74/100`. A correct, tightly-scoped plain-data texture-binding leaf: the three canonical entities (Texture / Sampler / CubeTexture), each now carrying the full create/clone/copy quartet plus value-equality, the KHR_texture_transform compose-to-`Matrix3` math, accessors, named cube-face constants, and four sampler presets. The builder pass closed every symmetry gap the depth review flagged as "fix" (equality on all three entities, `copyCubeTexture`, `setCubeTextureFace` + face constants, `isCubeTextureComplete`, the uv setters + `getTextureUvMatrix`, width/height/face-size accessors). The 74 (above the depth review's 62, below the worker's self-estimated 80) reflects: the genuine depth added, against the codebase-map AAA bar for a 3D texture library — which still expects the 2D-array / 3D-volume kinds, descriptor-level format/usage/mip policy, and per-binding dirty tracking that are all absent — plus two contract findings (an unused `resources` dependency; three `*Kind` constants with no consumer) and a charter that is a stub, so most of "what good means here" is still assumed, not blessed.
+**REVISE — blocked. 58/100.** The delta is a large, well-shaped symmetry build (base: 9 exports across three files → head: 27 exports) with clean naming, tree-shaking, `out`-param alias-safety, and colocated tests. But it ships **broken as integrated**: the cube-texture surface consumes `CubeFace*` constants from `@flighthq/types` that the head bundle **never defines**, so `tsc -b` (which typechecks `src/*.test.ts`) fails to compile and `setCubeTextureFace`'s own doc-comment points users at non-existent symbols. This is a single, mechanical, cross-package blocker — not a design flaw — but it gates the merge.
 
-## Present capabilities (verified against source)
+## The blocker — references to undefined `@flighthq/types` symbols
 
-**Texture entity** (`texture.ts`). `createTexture` / `cloneTexture` / `copyTexture` over the `Texture` interface (`@flighthq/types` `Texture.ts`): `image` (nullable `ImageResource`), `sampler`, `colorSpace` (`'srgb'` | `'linear'`), and the full KHR_texture_transform triple (`uvOffset`/`uvRotation`/`uvScale`). Defaults are deliberate and correct (`'srgb'` albedo, identity transform, default sampler). Ownership hygiene is right: `createTexture` and `cloneTexture` deep-clone the supplied sampler and uv vectors (verified: `cloneTexture` shares `image`, clones `sampler`/`uvOffset`/`uvScale` — `texture.test.ts:22`); `copyTexture` is alias-safe (reads `colorSpace`/`image`/`uvRotation` into locals before writing, copies sampler/vectors into `out`'s existing entities preserving their identity — covered by both a distinct-`out` test and an `out === source` test, `texture.test.ts:49-78`).
+`b2824e3d8:packages/texture/src/cubeTexture.test.ts:2` (an added line, `committed.patch:46380`):
 
-**New texture behavior** (the builder additions): `equalsTexture` (null-safe value equality over colorSpace/image-identity/uv fields, delegating to `equalsSampler`; returns `false` for null/undefined operands, `true` on same-reference fast path); `getTextureUvMatrix(out, texture)` composing the transform into the row-major `Matrix3` a shader consumes (`[sx·cos, -sy·sin, tx; sx·sin, sy·cos, ty; 0,0,1]` — matches the `@flighthq/geometry` row-major `Matrix3` layout, verified against `matrix3.ts`); `getTextureWidth`/`getTextureHeight` (`-1` sentinel when unbound); `setTextureUvOffset`/`setTextureUvRotation`/`setTextureUvScale` in-place mutators; `setTextureImage`; `isTextureReady`. Exports alphabetized; `texture.test.ts` `describe` blocks mirror them 1:1 (12 blocks, 26 `it`s), including KHR-formula assertions for the uv matrix (`texture.test.ts:180`).
+```ts
+import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types';
+```
 
-**Sampler entity** (`sampler.ts`). `createSampler` / `cloneSampler` / `copySampler` / `equalsSampler` over the canonical GL/Wgpu sampler state (per-axis `wrapU`/`wrapV`, `minFilter`/`magFilter` over the six-mode filter enum, `mipmaps`, `anisotropy`). AAA defaults (clamp-to-edge, linear mag, trilinear min, mipmaps on). `equalsSampler` is the de-dup hook backends key on. Four presets added: `createPixelArtSampler` (nearest/clamp/no-mips), `createTilingSampler` (repeat/trilinear), `createClampLinearSampler` (named default), `createAnisotropicSampler(level)`. These tree-shake to nothing if unused. `copySampler` is field-wise alias-safe (each field read-then-write, independent).
+and `b2824e3d8:packages/texture/src/cubeTexture.test.ts:163`:
 
-**CubeTexture entity** (`cubeTexture.ts`). `createCubeTexture` / `cloneCubeTexture` / `copyCubeTexture` / `equalsCubeTexture` over six faces in canonical +X,-X,+Y,-Y,+Z,-Z order, shared sampler + color space. `copyCubeTexture` is alias-safe (all six face refs read into locals before writing — `cubeTexture.ts:20`). Plus `setCubeTextureFace(cube, faceIndex, image)`, `getCubeTextureFaceSize` (first non-null face width, `-1` sentinel), `isCubeTextureComplete` (all-six gate, parallel to `isTextureReady`). 7 `describe` blocks / 16 `it`s, all mirroring exports.
+```ts
+setCubeTextureFace(cube, CubeFacePositiveX, fakeFace);
+expect(cube.faces[CubeFacePositiveX]).toBe(fakeFace);
+```
 
-**New type files** (`@flighthq/types`): `CubeFace.ts` (`CubeFacePositiveX = 0` … `CubeFaceNegativeZ = 5` — removes magic-number face indexing) and `TextureKind.ts` (`TextureKind`/`SamplerKind`/`CubeTextureKind` string constants). Both are exported from the types barrel (`index.ts:66`, `:439`). `CubeFace*` is consumed in the cube-texture tests; the `*Kind` constants are not yet consumed anywhere (see Gaps).
+None of `CubeFacePositiveX`, `CubeFaceNegativeX`, `CubeFacePositiveY` (nor the other three faces) exist anywhere in the head bundle. The `@flighthq/types` barrel (`head/packages/types/src/index.ts:47`) does only `export * from './CubeTexture'`, and `CubeTexture.ts` defines just the interface — no face-index constants. A whole-tree grep for `CubeFace` / `PositiveX` / `NegativeX` finds matches **only** inside `packages/texture/` (the import, the usages, and a doc-comment). The patch contains **no** file-add hunk for `packages/types/src/CubeFace.ts` and **no** `export const CubeFacePositiveX` definition; the only `CubeFace.ts` strings in `changes.patch` are inside the worker's own `status.md` / `review.md` _prose_ (`changes.patch:81779`, `:81711`) claiming the file was added.
 
-**Style & packaging.** Plain-data entities, free functions, `Readonly<>` inputs, `out`-params for the matrix math, `-1` sentinels, `is*`/`get*`/`set*`/`equals*`/`create*`/`clone*`/`copy*` verbs all canonical and fully unabbreviated. Types live in `@flighthq/types`. `sideEffects: false`, single `.` export, `crate: flighthq-texture` mirror named in the charter front matter. 54 tests across 3 files (verified by count: 26 + 12 + 16).
+Consequences, all delta-introduced (the base `cubeTexture.test.ts` had no such import):
 
-## Gaps (vs the AAA 3D-texture-library target; charter North-star/Boundaries are stubs, so codebase-map standard applies)
+- **Does not compile.** `tsc -b` typechecks colocated `*.test.ts`; three imported symbols are undefined. `npm run check` / `npm run exports:check` would fail on this package.
+- **Dishonest docs.** `b2824e3d8:packages/texture/src/cubeTexture.ts:82-85` instructs users to "Use the CubeFace\* constants from @flighthq/types (CubeFacePositiveX = 0, …)" — a documented API contract that resolves to nothing. The worker `status.md` claims "All 54 tests pass" and `review.md` claims the consts "are exported from the types barrel (`index.ts:66`, `:439`)" — both false against the integrated tree.
 
-Missing-by-omission, in-domain, not delegated elsewhere:
+The same class of defect blocks the sibling `@flighthq/resources` delta in this integration (impl referencing `@flighthq/types` fields the bundle never added), so this is an integration-wide ingest slippage, not a one-off. The fix is small (define the six `CubeFace*` constants in `@flighthq/types` — ideally a `CubeFace.ts` per the worker's intent — and barrel-export them), but it lands in a **different package**, so it is a merge directive, not a within-`texture` sweep.
 
-- **No 2D-array or 3D/volume texture kind.** A canonical GPU texture library exposes 2D, 2D-array, 3D, and cube as first-class kinds. Only single-2D + cube exist. `Texture2DArray` (sprite layers, shadow cascades) and `Texture3D` (LUTs, volumetrics) are standard and roadmapped (Silver/Gold) but absent. Both cross into the renderer-upload layer, so the descriptor-ahead-of-consumer question is a design decision, not a sweep.
-- **No descriptor-level format / usage / mip policy.** No `format: PixelFormat | null` hint, no `TextureMipPolicy` ('none'/'auto'/'manual') generation strategy beyond `Sampler.mipmaps`, and no `TextureUsage` ('sampled'/'render-target'/'storage') intent — even though `Texture.ts`'s own doc describes "a graph that renders into a Texture." `PixelFormat` exists in `@flighthq/types` but the descriptor does not reference it. A real texture library carries at least a format hint and a mip/usage policy. The status correctly parks all three as cross-package design gates (the `render-gl`/`render-wgpu` upload caches must agree on the field semantics first).
-- **No per-binding dirty / version tracking.** No `version: number` on `Texture`/`CubeTexture` and no `invalidateTexture`/`invalidateCubeTexture` bump helpers. `equals*` gives a value-diff hook, but the established `ImageResource.version` convention (a cheap "re-upload me" signal) has no texture analogue. Parked in status as needing the renderer cache strategy confirmed.
-- **uv-transform set is incomplete.** Compose (`getTextureUvMatrix`) and the setters exist, but `getTextureInverseUvMatrix`, `transformTextureUv(out, texture, u, v)`, and `resetTextureUvTransform(texture)` do not. These are pure in-package math with no design gate — the one genuinely sweep-safe depth item still open.
-- **`*Kind` constants have no consumer.** `TextureKind`/`SamplerKind`/`CubeTextureKind` are defined in `@flighthq/types` but are referenced nowhere in the codebase (`grep` over `packages/` finds only the types `dist`). The entities extend `Entity`, not a kind-bearing descriptor — they carry no `kind` field — so nothing registers a renderer against these kinds and no serialization round-trips them. Defining the kind in the owning area ahead of the consumer is consistent with the types-layout convention, so this is a "data with no behavior yet" observation, not a defect; but the kinds are inert until a registry or a serialized-scene path consumes them.
-- **No swizzle / channel-remap descriptor** (`TextureSwizzle` for packed data maps). Gold-tier, plain data, backend-applied — absent.
+## Axis-by-axis (the delta against the seven standards)
 
-Reasonably **missing-by-design / delegated** (do not count against depth): pixel reads/writes/resize → `@flighthq/surface`; GPU upload + `WebGLTexture`/`GPUTexture` lifecycle + mip execution → `render-gl`/`render-wgpu`; decode/load → `resources`/`loader`; atlas packing → `resources`; compressed (KTX2/Basis) payloads → explicitly deferred at the `ImageResource`/`PixelFormat` level, and the `@flighthq/texture-formats` neighbor is blocked on that decision.
+1. **Composition / bedrock — PASS.** Each new function is a bedrock primitive over the `Texture` / `CubeTexture` / `Sampler` value: per-field `equals*`, `get*Width/Height/FaceSize`, in-place `set*` mutators, and the `getTextureUvMatrix` compose. No config-gated branches, no fused subjects. The sampler presets (`createAnisotropicSampler`, `createClampLinearSampler`, `createPixelArtSampler`, `createTilingSampler`, `b2824e3d8:packages/texture/src/sampler.ts:31-65`) are thin named compositions over `createSampler` — assemblies that do not tax the primitive.
 
-## Charter contradictions
+2. **Naming clarity — PASS.** Full unabbreviated type words throughout (`getTextureUvMatrix`, `getCubeTextureFaceSize`, `setCubeTextureFace`, `equalsCubeTexture`), correct `get*` / `is*` prefixes (`isCubeTextureComplete`, `isTextureReady`), and `equals*` matching the SDK's existing `equalsSampler` convention. `uvOffset/uvRotation/uvScale` are the KHR_texture_transform vocabulary a reader expects.
 
-None. The charter's only non-stub section ("What it is") describes exactly what the code is — the portable plain-data description of a texture binding, sitting between `@flighthq/resources` (pixels) and the renderer upload layer, explicitly _not_ pixel manipulation (`surface`) and _not_ the GPU upload layer. The code honors that boundary precisely: no pixel ops, no GPU handles, no decoding. The North star, Boundaries, and Decisions are all `TODO`, so there is no blessed rule to violate — which is itself the chief finding (see Candidate open directions).
+3. **Tree-shaking / bundle invariant — PASS.** `package.json` is **byte-identical** to base (no delta): `"sideEffects": false`, single root `.` export, no per-file subpaths. No top-level side effects; presets and equals helpers tree-shake independently. No new dependency was added by the delta.
 
-## Contract & docs fit
+4. **Registry vs closed union (fork B) — N/A / PASS.** `setCubeTextureFace` takes a numeric `faceIndex` (intended to be a named constant), not a closed `switch (kind)`. No handler family here.
 
-**Lives up to the contract:** types-first in `@flighthq/types` (every interface + the two new constant files); full unabbreviated names (`getCubeTextureFaceSize`, not `getCubeFaceSize`; `setTextureUvOffset`, not `setUvOffset`); `out`-param for the one allocation-sensitive function (`getTextureUvMatrix`) with a documented no-alias note that is _honest_ here (the `out: Matrix3Like` and `texture: TextureLike` types cannot alias, and the comment says so rather than claiming a false alias-safety); `-1` sentinels for unbound dimensions; `equals*` returns `false` not throw for null operands; single `.` export; `sideEffects: false`; `crate: flighthq-texture` mirror named. Good contract hygiene overall.
+5. **Subject triad + plurality guard — PASS.** No format/backend code mis-homed into `texture`. The worker correctly _deferred_ `@flighthq/texture-formats` (KTX2/Basis) behind the unresolved `ImageResource.compressed` slot rather than splitting prematurely (`status.md`).
 
-**Defects / candidate revisions:**
+6. **Contract hygiene — MOSTLY PASS, one cross-package crack.**
+   - `out`-params are alias-safe: `copyTexture` (`texture.ts:24-34`) and `copyCubeTexture` (`cubeTexture.ts:20-37`) read every input into locals before writing — and both have explicit aliased-out tests (`texture.test.ts:67`, `cubeTexture.test.ts:59`). `getTextureUvMatrix` reads all texture fields into locals before writing `out.m` (`texture.ts:81-99`).
+   - Sentinels correct: `-1` for unbound size (`getTextureHeight/Width`, `getCubeTextureFaceSize`), `false` for null operands in every `equals*`.
+   - `Readonly<>` defaults are respected on inputs.
+   - **Crack:** `CubeTexture.faces` is typed `readonly (ImageResource | null)[]`, yet the new mutators cast it away — `b2824e3d8:packages/texture/src/cubeTexture.ts:30` (`const faces = out.faces as (ImageResource | null)[]`) and `:87` (`(cube.faces as (ImageResource | null)[])[faceIndex] = image`). The cast is documented and runtime-correct (the array is always freshly `slice()`d), but a package that owns in-place face mutators writing through a `readonly` field is a types-shape question for the charter, not a clean final shape. Route to Open directions; not a merge blocker.
 
-- **Unused `@flighthq/resources` dependency.** `package.json` declares `"@flighthq/resources": "*"`, but no source file imports it — `ImageResource` is imported as a type from `@flighthq/types`, and a full `grep` over `packages/texture/src/` for `@flighthq/resources` finds nothing (`67dc46d64:packages/texture/package.json:32`). This inflates the dependency graph and would be flagged by `npm run packages:check`'s workspace-dependency conventions. Drop it — a pure manifest edit, sweep-safe.
-- **`*Kind` constants defined but unconsumed (forward declaration).** Not a contract violation — the types-layout convention is to home a kind in the owning area — but worth recording that the texture package itself never references its own `*Kind` strings, and no `getTextureKind`/registration path uses them. They are inert until a renderer registry or a serialized-scene round-trip consumes them (Silver/cross-package).
-- **`equalsSampler` null-guard order differs from the texture/cube siblings.** `equalsSampler` checks `a === b` _inside_ the value comparison (after the `!a || !b` early-`false`), so two distinct null operands return `false` (correct); `equalsTexture`/`equalsCubeTexture` put the same-reference fast path _after_ the null guard. The three are now consistent (all return `false` for null/undefined), which the status's "concerns" note describes accurately — no defect, recorded for continuity.
-- **`faces` mutability cast.** `CubeTexture.faces` is typed `readonly (ImageResource | null)[]` but `copyCubeTexture` and `setCubeTextureFace` cast to `(ImageResource | null)[]` to mutate in place. The cast is sound (the array is always freshly `slice()`d/created in `createCubeTexture`/`cloneCubeTexture`, so it is never an aliased frozen array), but it relies on that invariant and is the one place the read-only type and the mutating function disagree. Documented in the source comment; recorded here as a continuity note, not a fix.
-- **Package Map line is accurate** — the texture package is not separately enumerated in the codebase map's Package Map (it lives under the 3D `texture` family described in `rust/index.md`'s "3D pipeline" note). The charter's "What it is" is the authoritative description; no stale Package Map line to correct.
+7. **Tests & honesty — FAIL (compile) / otherwise strong.** Tests are colocated, `describe` blocks alphabetized and mirroring exports across all three files, and cover the per-field `equals*` false-matrix, null/undefined operands, and both distinct-out and aliased-out `copy*` cases. But the suite **cannot compile** (the `CubeFace*` import), and the worker's `status.md` "54 tests pass" / "fields added to @flighthq/types" claims are unverifiable-to-false against the head tree. Honesty fails at the continuity-log level even though the test _intent_ is sound.
 
-## Candidate open directions (charter is a stub — these are the questions it should settle)
+## Pre-existing, not delta (do not block)
 
-1. **North star.** What is the durable bar? Likely: the portable, GPU-agnostic plain-data _description_ of a texture binding — descriptor-level intent (format/usage/mip/color-space/uv) with zero GPU handles and zero pixel ops — so every backend reads one model. Confirm so future work is judged against it.
-2. **Kind taxonomy: how far does `texture` go?** Bless the canonical 2D / 2D-array / 3D / cube quartet as in-scope, and decide whether descriptors land ahead of their renderer-upload consumer or jointly with it. This is the single largest scope question.
-3. **Format / usage / mip policy ownership and shape.** Whether `texture` owns `format`/`TextureMipPolicy`/ `TextureUsage` descriptor fields, and the cross-package contract with `render-gl`/`render-wgpu`/`scene-*` on what each means before the field shape is committed.
-4. **Per-binding dirty/version signal.** Does `texture` carry `version` + `invalidate*` mirroring `ImageResource.version`, and do the renderers consume it for upload-cache invalidation? Cross-package.
-5. **`*Kind` consumers.** Settle whether texture entities become kind-bearing descriptors that register renderers / round-trip in a serialized scene, or whether the `*Kind` constants stay forward declarations. Today they are defined but inert.
-6. **`@flighthq/texture-formats` neighbor.** Approve/deny the KTX2/Basis container-parser neighbor, gated on the deferred `ImageResource.compressed` types decision (raise as a prerequisite).
-7. **Rust parity scope.** The crate `flighthq-texture` exists with the base entities; confirm the conformance-map entry tracks the ~15 new TS additions (`equals_*`, `get_texture_uv_matrix`, the setters, `copy_cube_texture`, `set_cube_texture_face` + `CUBE_FACE_*`, the presets, the `*Kind` mirrors) so the port does not silently drift.
+- **`@flighthq/resources` is an unused dependency** in `package.json` — no `packages/texture/src/` file imports it. But `package.json` is **identical** between base and head (no hunk in `changes.patch`), so this is an `origin/main` carry-over, not a delta regression. The worker's own `assessment.md` wrongly elevates it to a "must-fix" for this change; that critiques the approved base. Note it as an optional post-merge cleanup only.
+
+## Score rationale
+
+Naming, composition, tree-shaking, and `out`-param hygiene are all merge-clean, and the new surface is the right symmetric build (create/clone/copy/equals quartets, size accessors, readiness gates, uv-matrix compose, sampler presets) — easily a 78-80 on shape alone. The hard compile blocker (undefined cross-package symbols, broken `tsc -b`, dishonest docs) caps it at **58 (REVISE-blocked)**: a one-line-of-types fix away from mergeable, but unmergeable until that fix lands.

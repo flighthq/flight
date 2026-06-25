@@ -1,47 +1,33 @@
 ---
 package: '@flighthq/resources'
-updated: 2026-06-24
+updated: 2026-06-25
 basedOn: ./review.md
 ---
 
-# resources — Assessment
+# resources — Assessment (merge gate: integration-b2824e3d8)
 
-> Recommendation layer over `review.md`. Sorts the surveyed gaps + the prior maturation roadmap (`reviews/maturation/depth/resources.md`, now absorbed) into sweep-safe `Recommended` and parked `Backlog`. `Approved` is the user's verbal gate — left empty. See ../CONTRACT.md.
+> Recommendation layer over `review.md`. Reasoned over the **delta** (head vs the approved `origin/main` base `eb73c3d74`). Sorts the merge-gate findings into sweep-safe `Recommended` (within `@flighthq/resources` only) and parked `Backlog`. `Approved` is the user's verbal gate — left empty. Design/cross-package forks route to the charter's Open directions, not into Recommended. See ../CONTRACT.md.
+>
+> Governing context: the merge is **blocked** by one defect — the resources implementation references `TextureAtlasRegion`/`Tileset` fields that the head bundle never added to `@flighthq/types`, so the delta does not typecheck. The fix is small but **crosses into `@flighthq/types`**, so it is not a within-`resources` sweep; it is a merge directive carried in `outgoing/integration/resources.md` and tracked in Backlog here.
 
-The governing context: the register records a **blessed standing direction that `resources` should dissolve into per-subject triads** (`image` / `audio` / `video` / `font` / `textureatlas` / `tileset`), with `TextureAtlas` explicitly recorded as _mis-homed_ here. That makes almost every feature, format, and structural item from the roadmap **cross-package or design-gated** — each lands in a different subject home depending on a decision the charter has not yet made. `Recommended` is therefore deliberately narrow: only the two verified within-package defects, which are correct under _any_ future home. Everything else is parked with its blocking reason, and the package-shape / fire-and-forget / cache / page-model / compressed-texture questions are routed to the charter's Open directions (the charter is a stub — North star and Boundaries are still `TODO`).
+## Recommended (sweep-safe, within-package, non-design)
 
-## Recommended
+Deliberately narrow. The blocker's fix lives in `@flighthq/types` (cross-package), so it is **not** listed here — only items that are correct and self-contained within `@flighthq/resources` under any resolution of the type gap:
 
-Sweep-safe: within `@flighthq/resources` (plus its `@flighthq/types` header), no cross-package coupling, no breaking change, no open design decision. Both are correctness fixes that hold under any future home for the atlas/tileset subject.
+- **None that are independently mergeable.** Every within-`resources` change in this delta (atlas-region helpers, tileset `margin`/`spacing`, the byte-size accessors) is downstream of the missing `@flighthq/types` fields and cannot compile until those land. There is no `resources`-only edit that is safe to sweep ahead of the type fix.
 
-- **Fix `setTextureAtlasRegion` pivot defaults to honor the `null` convention.** `textureAtlasRegion.ts:162-177` still declares `pivotX: number = 0, pivotY: number = 0` and writes them unconditionally, contradicting the pass-2 decision that `createTextureAtlasRegion` defaults pivots to `null` ("no pivot" ≠ "pivot at 0,0"). Reusing a region via `setTextureAtlasRegion` re-stamps `0`, re-introducing exactly the conflation the pass removed — and because `buildTilesetRegions` calls it per tile, every pooled tileset region gets `pivot = 0`. Align the setter's defaults/handling with the constructor (`pivotX ?? null`). Verified defect; restores an already-decided in-package convention. — review.md#defects (1)
+## Backlog (parked, with blocking reason)
 
-- **Make `buildTilesetRegions` truncate `atlas.regions` to the new tile count.** `tileset.ts:10-23` reuses/pushes up to `rows*columns` regions but never sets `atlas.regions.length = rows*columns` after the loop, so rebuilding a previously-larger tileset leaves stale trailing regions. The reuse-in-place optimization is sound; only the final truncation is missing. Add a colocated alias-safe test for the shrink case. Verified defect, within-package. — review.md#defects (2)
-
-## Backlog
-
-Parked: each is cross-package, a real design decision, breaking, or blocked on an Open direction. The dominant blocker for the feature/format items is the **dissolution direction** — each gap is cheaper to design _after_ the charter decides whether `resources` is a durable grab-bag or a staging area to be decomposed, because each lands in a different subject home.
-
-- **`load*FontResource*` out-first / async ordering asymmetry.** `loadFontResourceFromUrl(out, url)` places the mutable target _first_ (convention is `out`/`target` last) and is the only `load*` family that mutates-in-place rather than allocating. _Parked:_ this is a public-API-shape decision — align ordering, or reconsider whether the out-into-existing variant should exist alongside the allocating `loadFontFrom*` at all — not a clean sweep. Surfaced to the charter's Open directions. — review.md#contract-fit-drift
-
-- **Fire-and-forget failure semantics.** `createAudioResourceFromUrl` swallows fetch/decode failure with `.catch(() => {})` and returns a silently-empty resource. _Parked:_ whether the non-`load` constructors _should_ fail observably (signal/sentinel) is an intended-contract decision (Open direction #5), and the natural fix (a signal group) couples to the loader-signal work below.
-
-- **Resource cache / dedup registry.** No content-addressed identity; loading the same URL twice fetches twice. _Parked — cross-package:_ ownership is undecided between `resources` (content-addressed identity) and `@flighthq/loader` (batch lifecycle). Open direction #2; blocks the loader-signal work too.
-
-- **Loader signals via `enableResourceLoaderSignals`.** The `ResourceLoader` type gestures at `onComplete`/`onError`/`onProgress` but is unwired. _Parked:_ depends on the cache/loader ownership decision above and on the fire-and-forget semantics; an opt-in signal group is the right shape once those settle.
-
-- **Multi-page atlas (`pages: ImageResource[]` + per-region `page`).** Single-`image` cannot represent libGDX/large-TexturePacker exports. _Parked — cross-package structural:_ changes the `TextureAtlas`/`TextureAtlasRegion` header shape and ripples into `sprite`, `spritesheet`, and renderers (Open direction #3). Settle before any format parser proliferates against the single-page assumption.
-
-- **Animation metadata on the atlas (`animations: TextureAtlasAnimation[]`).** Aseprite/TexturePacker frame-tags are dropped; `getTextureAtlasRegionSequence`'s name-prefix scan is a workaround. _Parked — cross-package + home decision:_ feeds `spritesheet`/`timeline-spritesheet`, and whether parsed-tag fidelity is first-class or stays a naming convention couples to whether atlas data even stays in `resources` (Open direction #4).
-
-- **Per-tile metadata + Tiled tileset/tilemap ingestion.** No `tiles: TilesetTile[]` (id/properties/animation/collision); `.tsx`/`.tsj`/`.tmx`/`.tmj` parsing out of reach. _Parked:_ the parsers belong in the `-formats` triad layer (the register's `resource-formats` → `textureatlas-formats`/tileset destination), i.e. a separate cell, and per-tile _types_ land in whatever subject home the dissolution gives `tileset`. Cross-package.
-
-- **Compressed-texture path (KTX2 / Basis / DDS + transcoder backend seam).** No `CompressedPixelFormat`, no `compressed` slot, no swappable Basis transcoder. _Parked:_ genuine Gold-tier scope question (Open direction #6) plus the one place a `npm run size` bundle gate bites — the transcoder wasm must stay off the default bundle. Cross-package types + backend seam.
-
-- **Package Map + Rust-crate revisions.** `index.md` still calls `resources` the home for "texture atlases" without noting the `-formats` redirect, and the charter's `crate: flighthq-resources` presupposes a single crate the dissolution may not want. _Parked — not code:_ admin-doc and conformance-map edits that are blocked on the dissolution direction landing first.
-
-- **The dissolution itself — dissolve `resources` into per-subject triads, or keep it a grab-bag?** _Parked — design fork._ This is the dominant question and is not in-package work; it is a charter Boundary/North-star decision (and aligns with structural-forks "grab-bags are fused primitive-layers"). Routed to the charter's Open directions, where it gates the home of every feature item above. Not actioned autonomously.
+- **Land the `TextureAtlasRegion` / `Tileset` type fields in `@flighthq/types` (BLOCKER).** Add `name: string | null`, `originalWidth: number | null`, `originalHeight: number | null`, `rotated: boolean`, `sourceX: number`, `sourceY: number`, `trimmed: boolean` to `TextureAtlasRegion` (and its `*Like`), and `margin: number`, `spacing: number` to `Tileset`. _Why parked here:_ the edit is in a different package (`@flighthq/types`), so it is a cross-package merge directive (see `outgoing/integration/resources.md`), not a `resources` sweep. Until it lands the whole delta is uncompilable.
+- **Rust conformance mirror.** `flighthq-types` `TextureAtlasRegion`/`Tileset` structs (and the `flighthq-resources` region helpers) must gain the same fields/functions to keep the conformance map honest. _Why parked:_ owned by the Rust worktree, cross-package, and gated on the TS types landing first.
+- **`status.md` honesty correction.** The pass-1 claim "fields added to `@flighthq/types`" is false against the head tree. _Why parked:_ a continuity-log correction the integration worker should make when (or instead of) landing the types — administrative, not a code change in `resources`.
 
 ## Approved
 
-_None. Frozen on the user's verbal approval only._
+_None. Approval is the user's verbal gate; this stage never fills it._
+
+## Notes for the charter's Open directions
+
+- **Direction 4 (animation-metadata home) is now partially exercised in code.** `getTextureAtlasRegionSequence` (name-prefix collection) and the `name` field are the name-prefix-convention answer — the delta picks that lane implicitly. The charter should rule whether this convention is the durable home or whether a first-class `animations[]` on `TextureAtlas` supersedes it, since the delta has now committed code to the convention.
+- **Direction 5 (per-tile metadata) and the region trim/rotation fields** (`trimmed`, `rotated`, `source*`, `original*`) are the atlas-side analogue of per-tile metadata. They belong in `@flighthq/types` regardless of the eventual subject home — but _which_ subject crate owns them depends on Direction 1 (dissolution into per-subject triads). Settle Direction 1 before treating these fields as permanently homed in `resources`.
+- **Direction 1 (dissolution) is unaffected by this delta** but the delta adds more `TextureAtlas` / `Tileset` surface to `resources`, increasing the mis-homed mass the dissolution would have to relocate. No new fork; a data point for the cost of deferring Direction 1.

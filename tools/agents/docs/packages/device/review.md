@@ -1,95 +1,139 @@
 ---
 package: '@flighthq/device'
-status: solid
-score: 78
-updated: 2026-06-24
+status: partial
+score: 35
+updated: 2026-06-25
 ingested:
-  - status.md
-  - source
-  - changes.patch
+  - base=origin/main(eb73c3d74)
+  - evidence=integration-b2824e3d8 delta
+  - head/packages/device/{src,package.json}
+  - head/packages/types/src/Device.ts
+  - head/packages/{device-formats,platform-formats}/src
+  - changes.patch (packages/device slice)
   - structural-forks.md
-  - register.md
+  - charter.md (draft)
 ---
 
-# device — Review
+# device — Review (MERGE GATE: integration-b2824e3d8 → origin/main)
 
-> Survey layer. Observation only — no roadmap, no approval. Evidence is the incoming bundle `builder-67dc46d64` (`packages/device/`, `packages/device-formats/`, `packages/types/src/Device.ts`, `changes.patch`). The prior depth review (`reviews/depth/device.md`) does not exist, so this is the first survey of the cell. Findings reference `67dc46d64:<path>`.
+> Merge-gate survey. The **approved baseline** is `origin/main` (`eb73c3d74`) under `base/packages/device/` and is NOT under review. The judged unit is the **delta** — `head` vs `base` — i.e. the incoming change `integration-b2824e3d8` proposes to land on the blessed floor. Findings cite `b2824e3d8:<path>`. The prior `review.md` (score 78, against the `builder-67dc46d64` bundle) reviewed the device runtime in isolation and is superseded here: against the actual integration head, the delta **does not compile**, which the prior survey did not catch.
 
 ## Verdict
 
-**solid — 78/100.** The `@flighthq/device` package itself is genuinely well-built: a clean backend seam, complete sentinel discipline, full `out`-param + `create*` quartet hygiene, a thorough `DeviceInfo`/`DeviceCapabilities`/`DeviceDisplayMetrics` field set, and 26 colocated tests against a fake backend. On its own merits it reads near-Gold.
+**REJECT for merge — partial / 35.** The `device` runtime rewrite is well-crafted in isolation (the prior review's praise stands for the code's intent), but the integration is **internally inconsistent and does not build**. The delta rewrites `@flighthq/device` to a much richer API — `DeviceCapabilities`, `DeviceDisplayMetrics`, `getDeviceId`, `refreshDeviceInfo`, `enableWebSafeAreaInsets`, and ~20 new `DeviceInfo` fields — and adds two new packages (`device-formats`, `platform-formats`), **but never lands the corresponding `@flighthq/types` header changes.** Every new type the delta consumes is absent from the integration's `types` package. On top of that compile-blocking gap, the delta makes `@flighthq/device` depend on `@flighthq/device-formats`, a package the SDK structural-forks register names **explicitly as rejected**. This is not a final shape worth keeping; it is a half-landed change missing its header commit.
 
-The score is held down not by `device` but by the neighbor the session spawned. The worker's headline design choice — extracting UA parsing into a new `@flighthq/device-formats` package — is the **exact package the SDK-wide register has already rejected** (`register.md:38`: blood-from-a-stone, no plurality, misnamed `-formats` on a UA string, duplicate `parseUserAgentArch` export → collapse into `useragent`). The status doc claims 91/100 "Gold" and presents the split as a virtue; measured against the structural forks it is a structural regression that now ships a literal duplicate export across two packages. The `device` runtime is solid; its dependency edge points at a package that should not exist.
+## What the delta changes (head vs base)
 
-## Present capabilities
+Base (`eb73c3d74`) `device` is a small, self-contained leaf: `createDeviceInfo`/`createSafeAreaInsets`/`createWebDeviceBackend`/`getDeviceBackend`/`getDeviceInfo`/`getSafeAreaInsets`/`setDeviceBackend`, an inline `detectWebOsName`, no formats dependency, and a narrow `DeviceInfo` (model/manufacturer/osName/osVersion/platform/isVirtual/memory). It compiles against the base `types`.
 
-Grounded in `67dc46d64:packages/device/src/device.ts` and `Device.ts`.
+The delta (`b2824e3d8`):
 
-**Backend seam.** `DeviceBackend` (`getCapabilities`/`getDisplayMetrics`/`getId`/`getInfo`/ `getSafeAreaInsets`) with `getDeviceBackend` (lazy web default), `setDeviceBackend(backend | null)` (null → web fallback). Matches the platform-suite command-capability pattern: flat free functions delegating to a swappable backend, web default always available. No top-level side effects; `sideEffects: false` is declared and honored (the web backend is lazily constructed in `getDeviceBackend`, not at module load).
+- **Expands the API surface** (`b2824e3d8:packages/device/src/device.ts`): adds `createDeviceCapabilities`, `createDeviceDisplayMetrics`, `enableWebSafeAreaInsets`, `getDeviceCapabilities`, `getDeviceDisplayMetrics`, `getDeviceId`, `refreshDeviceInfo`; expands `getInfo` to fill `arch`, `cpuCores`, `gpuVendor/Renderer`, `formFactor`, `osBuild`, `supportedAbis`, `totalMemory`, etc.
+- **Adds two new packages** `@flighthq/device-formats` and `@flighthq/platform-formats` (`b2824e3d8:packages/device-formats/`, `packages/platform-formats/`), and **adds them as dependencies** of `device` (`b2824e3d8:packages/device/package.json:30-31`).
+- **Does NOT change** `@flighthq/types/src/Device.ts`: the integration head file is byte-identical to base and still declares only the 7-field `DeviceInfo` and the 2-method `DeviceBackend`.
 
-**Value quartet + out-params.** `createDeviceCapabilities`, `createDeviceDisplayMetrics`, `createDeviceInfo`, `createSafeAreaInsets` all allocate zeroed snapshots with correct sentinels (`'' / [] / false / -1`; insets `0`). Every read function (`getDeviceInfo`, `getDeviceCapabilities`, `getDeviceDisplayMetrics`, `getSafeAreaInsets`) is `out`-param and returns `out`. Allocation boundaries are explicit and C/C++-portable.
+## Blocking findings (merge gate)
 
-**Web backend coverage.** `getInfo` resolves `arch` (UA + `userAgentData.platform` hint), `cpuCores` (`hardwareConcurrency`), `totalMemory` (`deviceMemory` GiB→bytes), `isLowEndDevice` (memory/core heuristic), `formFactor` (UA + `maxTouchPoints`), `osName`/`osVersion` (UA), `gpuRenderer`/`gpuVendor` (`WEBGL_debug_renderer_info` via a transient context, try/caught), `platformString` (raw UA). All genuinely-unknowable-on-web fields are honestly sentinelled (model, manufacturer, board, ABIs, HDR, color gamut, font scale, jailbreak/root, available memory, webview version).
+### 1. The delta does not compile — the types header was never landed. (BLOCKER)
 
-**Safe-area insets.** `getSafeAreaInsets` reads zeros by default; `enableWebSafeAreaInsets()` mounts a hidden `env(safe-area-inset-*)` CSS probe with a `ResizeObserver` and returns a dispose function (correctly verbed — it detaches the observer and removes the element, no native resource freed). Graceful degradation when `document`/`ResizeObserver` are absent.
+`b2824e3d8:packages/device/src/device.ts:3-10` imports type `DeviceCapabilities`, `DeviceDisplayMetrics` and value `DeviceFormFactorUnknown` from `@flighthq/types`:
 
-**Install id.** `getId` persists a `crypto.randomUUID()` to `localStorage`, try/caught, `''` on failure. Comment is honest that this is a resettable install id, not a hardware serial.
+```ts
+import type {
+  DeviceBackend,
+  DeviceCapabilities,
+  DeviceDisplayMetrics,
+  DeviceInfo,
+  SafeAreaInsets,
+} from '@flighthq/types';
+import { DeviceFormFactorUnknown } from '@flighthq/types';
+```
 
-**Refresh seam.** `refreshDeviceInfo()` duck-types an optional `backend.refresh()` so the interface need not carry a method every backend must implement; no-op on the stateless web default.
+`b2824e3d8:packages/device/src/device.test.ts:8` additionally imports `DeviceFormFactorDesktop, DeviceFormFactorPhone`, and `b2824e3d8:packages/device-formats/src/userAgentParse.ts:1-10` imports `DeviceFormFactor` plus all seven `DeviceFormFactor*` constants.
 
-**device-formats (the neighbor).** `parseUserAgentArch`, `parseUserAgentFormFactor`, `parseUserAgentOsName`, `parseUserAgentOsVersion` — pure, DOM-free, `node`-env-tested (33 tests). As _code_ these parsers are fine; the problem is the package they live in, not their internals.
+**None of these symbols exist in the integration's `@flighthq/types`.** `b2824e3d8:packages/types/src/Device.ts` (whole file, 27 lines) defines only:
 
-**Type home.** All five types (`DeviceInfo`, `DeviceCapabilities`, `DeviceDisplayMetrics`, `SafeAreaInsets`, `DeviceBackend`, plus the `DeviceFormFactor*` string-kind constants) are correctly defined in `@flighthq/types/src/Device.ts` with the deliberate cross-package split documented inline (locale/touch→platform, battery→power, screen→screen, etc.). Exemplary header-layer discipline.
+```ts
+export interface DeviceInfo {
+  model;
+  manufacturer;
+  osName;
+  osVersion;
+  platform;
+  isVirtual;
+  memory;
+}
+export interface SafeAreaInsets {
+  top;
+  right;
+  bottom;
+  left;
+}
+export interface DeviceBackend {
+  getInfo(out): DeviceInfo;
+  getSafeAreaInsets(out): SafeAreaInsets;
+}
+```
 
-## Gaps
+A `grep` across the entire head `types` package for `DeviceCapabilities`, `DeviceDisplayMetrics`, and `DeviceFormFactor` returns nothing, and `changes.patch` contains **no hunk that adds** `+export interface DeviceCapabilities`, `+export const DeviceFormFactor*`, or the new `DeviceInfo` fields (`+arch:`, `+cpuCores:`, …). Consequently:
 
-Measured against the AAA device-library target (the charter is a stub — see candidate directions).
+- `device.ts` references a `DeviceInfo` shape (`out.arch`, `out.cpuCores`, `out.gpuVendor`, `out.formFactor`, `out.supportedAbis`, …) whose fields do not exist on the declared `DeviceInfo` → type errors throughout `getInfo`.
+- `DeviceBackend` in head `types` has no `getCapabilities`/`getDisplayMetrics`/`getId`, yet the web backend and `getDeviceBackend()` callers assume them.
+- Both new `-formats` packages import `DeviceFormFactor*` constants that do not exist.
 
-- **Async id seam.** `getDeviceIdAsync(): Promise<string>` for native keystores (Android Keystore, iOS Keychain) is absent. The status doc defers it; the sync path covers web. A real gap once a native host lands, not before.
-- **Rust crate.** No `flighthq-device` crate exists. `crate: flighthq-device` is asserted in the charter front matter but unbuilt. As a value-typed leaf it is mixable per the conformance map; this is expected unbuilt work, flagged for completeness.
-- **README.** No human-readable field/unit/sentinel/web-vs-native table. Minor.
-- **No `isDeviceTablet`-style predicate convenience.** Consumers must compare `formFactor === DeviceFormFactorTablet`. The status doc surfaces this as a design question — correctly, since it is a taste call, not an omission.
-- **`getId` storage coupling.** The web backend writes `localStorage` directly rather than through a `@flighthq/storage` seam. A dependency-direction question (status doc flags it); not a defect.
+This is a hard, mechanical merge blocker: `tsc -b` cannot succeed. Per the contract ("define its types in `@flighthq/types` first, then implement against them"), the header commit is the missing half of this change. **The integration must land the `Device.ts` expansion before this delta is mergeable.** Until then the prior review's claim "Types-first in `@flighthq/types` ✓ — all shapes in `Device.ts`" is false against this head.
 
-## Charter contradictions
+### 2. `device` now depends on a rejected package. (BLOCKER for "final shape")
 
-The charter is a seed stub (North star / Boundaries / Decisions all `TODO`), so there is no _blessed_ principle for the code to contradict. **But the SDK-wide structural forks are charter-equivalent here**, and the work contradicts them squarely — this is the highest-value finding in this review:
+`b2824e3d8:packages/device/package.json:30` adds `"@flighthq/device-formats": "*"` and `b2824e3d8:packages/device/src/device.ts:1` imports from it:
 
-- **`device-formats` is a rejected package.** `structural-forks.md` (the plurality guard, line 34) and `register.md:38` both name `device-formats` explicitly as **rejected**: "blood-from-a-stone: split a subject with no plurality, misnamed (`-formats` on a UA string), duplicate `parseUserAgentArch` export." The mandated resolution is **collapse into a new `useragent` primitive** (`register.md:44`) shared by the web backends of both `device` and `platform`. The session created the package the register exists to prevent, and the status doc (line 140) frames it as a positive design choice "consistent with `particles-formats`/`spritesheet-formats`" — but those are _real_ `-formats` subjects with format plurality; a UA string is not a format, and there is exactly one.
+```ts
+import { parseUserAgentFormFactor, parseUserAgentOsName, parseUserAgentOsVersion } from '@flighthq/device-formats';
+```
 
-- **The duplicate export is now real, not theoretical.** Verified: `parseUserAgentArch` is exported from **both** `@flighthq/device-formats` (`userAgentParse.ts:22`) and `@flighthq/platform-formats` (consumed at `platform.ts:2`/`:153`). Two packages ship a same-named UA-arch parser. This is the precise duplication the register cites, now concrete in the bundle. A `useragent` package would dedupe it to one home.
+`structural-forks.md:22` (the plurality guard, bedrock for the triad) names this exact split as a rejection: _"`device-formats`/`platform-formats` failed exactly this: they split a subject with no plurality."_ The upstream-library oracle (`structural-forks.md:23`) confirms it: _"No library for 'UA-parsing split by consumer' → not a subject."_ A UA string is not a `-format`, and there is exactly one of it — so the `-formats` suffix is misnamed (fork E, honest-naming gate, `structural-forks.md:57`). The blessed resolution is to collapse UA parsing into a single shared `useragent` value-leaf consumed by the web backends of both `device` and `platform`.
 
-- **Internal duplication too.** `detectDesktopUa` in `device.ts:289` re-implements the desktop-UA regex that `parseUserAgentFormFactor` already owns (`userAgentParse.ts:71`) — the same `win(?:dows)?nt| macintosh|mac os x|linux(?!.*android)|...` pattern, split across the package boundary. A unified `useragent` home would collapse this too.
+The base did not have this dependency edge; the delta introduces it. Merging it ships a package the register exists to prevent and bakes a `device → device-formats` edge that the `useragent` collapse will then have to unwind. This is a cross-package design fork — it requires the user's bless (see the brief's open questions), but the merge gate position is: do not land the delta in its current `-formats`-dependent shape.
 
-None of this faults the `device` _runtime_. The contradiction lives entirely on the packaging edge: a correct package importing from a package the register says should not exist.
+## Non-blocking findings (grounded, within-delta)
 
-## Contract & docs fit
+### 3. Cross-boundary regex duplication — `detectDesktopUa`.
 
-**Where the package lives up to the contract (device proper):**
+`b2824e3d8:packages/device/src/device.ts:285-287` adds:
 
-- Types-first in `@flighthq/types` ✓ — all shapes in `Device.ts`, nothing inlined.
-- Full unabbreviated names ✓ — `getDeviceDisplayMetrics`, `createDeviceCapabilities`, etc.
-- `out`-params + `create*` allocation discipline ✓.
-- Sentinels-not-throws ✓ — every unknowable field returns `'' / -1 / false / []`; `getId`/`readWebGpuInfo` try/catch to a sentinel rather than throwing.
-- Single root `.` export ✓ (`index.ts` is `export * from './device'`); `sideEffects: false` ✓.
-- `dispose`/teardown verb ✓ — `enableWebSafeAreaInsets` returns a dispose (detach-to-GC, not destroy).
-- Exports alphabetized; tests mirror source order and use the constructors. `getDeviceId` correctly _omits_ the `out`-param shape (returns a primitive `string`).
+```ts
+function detectDesktopUa(ua: string): boolean {
+  return /win(?:dows)?nt|macintosh|mac os x|linux(?!.*android)|cros|x11/i.test(ua);
+}
+```
 
-**Where the contract / admin docs are out of sync with reality (candidate revisions — user-gated):**
+This re-implements the desktop branch that `parseUserAgentFormFactor` already owns in the sibling package (`b2824e3d8:packages/device-formats/src/userAgentParse.ts:40`): `/win(?:dows)?nt|macintosh|mac os x|linux(?!.*android)|x11/i`. Two copies of the same desktop-UA pattern split across the package boundary — a `useragent` home collapses both. Introduced by this delta (base had only `detectWebOsName`). Cleanup, entangled with finding 2.
 
-- **Package Map omits `device-formats`.** `tools/agents/docs/index.md` lists `@flighthq/device` but not `@flighthq/device-formats`, even though the bundle ships it as a real workspace package with a charter cell. This is _correct by intent_ (the register rejected it) but means the live tree and the Map disagree. Resolution is not "add it to the Map" — it is to execute the register's `useragent` collapse so the package stops existing.
-- **No `device-formats` status cell, but a `charter.md` exists.** `packages/device-formats/charter.md` was scaffolded; pairing a charter with a rejected package risks blessing-by-inertia. Flag for the user: the `device-formats` cell should be resolved (collapsed/removed), not charter-authored.
-- **Charter front matter asserts `crate: flighthq-device`** while the crate is unbuilt — accurate as an intent stamp, but worth noting the conformance map has no `flighthq-device` yet.
+### 4. `refreshDeviceInfo` casts past its own backend type.
 
-**Rust mirror:** none built. Expected for a leaf this early; recorded, not faulted.
+`b2824e3d8:packages/device/src/device.ts:266-270` duck-types an optional `refresh()` via `backend as unknown as { refresh?: () => void }` because `DeviceBackend` does not declare `refresh`. This is a deliberate, honestly-commented optional-method seam (so backends needn't implement an unused method), and it is sound in isolation. Minor: once the header is landed, prefer declaring `refresh?(): void` on `DeviceBackend` so the cast disappears. Not a blocker.
 
-## Candidate open directions
+## What is genuinely good in the delta (for the rebuild)
 
-The charter's North star / Boundaries / Decisions are all `TODO`. Each assumption this review had to make is a question for the user to settle into the charter:
+These survive the rejection and should be preserved when the change is re-landed correctly:
 
-1. **Resolve the `device-formats` / `useragent` fork — the load-bearing one.** The register's verdict (collapse `device-formats` + `platform-formats` → a shared `useragent` value-leaf) is a _recommended_ resolution, not yet blessed and not yet executed. Does the user bless the collapse? Until then the bundle ships a rejected package and a duplicate export. This is a cross-package design decision — surfaced here, not actioned.
-2. **`device` ↔ `screen` boundary.** `DeviceDisplayMetrics` (static built-in display) vs `@flighthq/screen` (live multi-display, work-area, orientation). The split is sensibly documented in `Device.ts` but never blessed in the Package Map. Needs a one-line ruling to prevent future overlap.
-3. **`getId` durability seam.** Inject `@flighthq/storage` vs direct `localStorage`. Affects the dependency-weight North star (device should stay dependency-light) and id durability across backends.
-4. **`installSource` / `installerSource` home.** Play Store / App Store / sideloaded provenance is a common device-library field; Flight's layering suggests `@flighthq/app`. Confirm placement.
-5. **Predicate-convenience policy.** `isDeviceTablet(info)` etc. as free functions, or leave consumers to compare the `formFactor` string-kind? A taste call the charter should record once.
-6. **What "Gold" means for a host-identity leaf.** The status doc's 91/100 self-score counts only within-`device` completeness and ignores the packaging verdict. The charter should state the bar so a future session does not re-spawn a rejected neighbor and call it Gold.
+- **Sentinel discipline is complete and honest.** Every web-unknowable field resolves to `'' / -1 / false / []` (`device.ts:128-161`); `getId` and `readWebGpuInfo` try/catch to a sentinel rather than throw (`device.ts:110-120`, `:299-313`).
+- **`out`-param + `create*` quartet hygiene** across all four shapes; reads return `out` (`device.ts:14-71`, `:231-258`).
+- **`enableWebSafeAreaInsets` returns a `dispose`** that detaches the `ResizeObserver` and removes the probe element (`device.ts:216-220`) — correct `dispose*` verb (release-to-GC, no native resource freed).
+- **No top-level side effects**; `sideEffects: false` honored; web backend lazily built in `getDeviceBackend` (`device.ts:224-227`).
+- **Single root `.` export**; `index.ts` is `export * from './device'`.
+
+The runtime is the right target. The problem is the merge state around it: a missing header commit and a rejected dependency edge.
+
+## Contract & docs fit (delta)
+
+- **Types-first ✗ (this delta).** The implementation landed without its `@flighthq/types` header — the contract's stated order is reversed and the result does not compile. This is the single most important correction to the prior review, which scored types-first a pass.
+- **Naming ✓.** Exported names are full and unabbreviated (`getDeviceDisplayMetrics`, `createDeviceCapabilities`); `get*`/`has*`/`is*`/`enable*`/`refresh*` verbs are correct; `getDeviceId` correctly omits the `out`-param shape (returns a primitive).
+- **Tree-shaking ✓ (intent).** `sideEffects: false`, lazy backend, single barrel. Cannot be confirmed by `npm run size` here (static bundle), but no eager registration or shared hot-loop branch is introduced.
+- **Registry vs closed union — n/a.** No `kind` switch family is added; UA parsing is a flat function set.
+- **Subject triad / plurality guard ✗.** The delta creates `-formats` cells with no format plurality (finding 2) — the precise mis-split the guard forbids.
+- **Tests ✓ (shape), ✗ (will not run).** `device.test.ts` is colocated, alphabetized, mirrors exports, and uses the constructors and the fake-backend pattern. But it imports the absent `DeviceFormFactor*` constants, so it cannot typecheck or run against this head.
+
+## Rust mirror
+
+No `flighthq-device` crate built; expected for a leaf this early. Recorded, not faulted. Note: if/when built, it mirrors whichever shape the `useragent` collapse settles on — another reason to resolve finding 2 before the crate is cut.
