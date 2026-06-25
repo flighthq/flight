@@ -174,12 +174,7 @@ export function getTilemapTileAtPointXY(source: Readonly<Tilemap>, x: number, y:
  * Writes the local-space rectangle for the cell at `(column, row)` into `out`.
  * Returns false and does not modify `out` when the tileset is null or the column/row is out of bounds.
  */
-export function getTilemapTileRect(
-  out: Rectangle,
-  source: Readonly<Tilemap>,
-  column: number,
-  row: number,
-): boolean {
+export function getTilemapTileRect(out: Rectangle, source: Readonly<Tilemap>, column: number, row: number): boolean {
   const { tileset, columns, rows } = source.data;
   if (tileset === null || column < 0 || column >= columns || row < 0 || row >= rows) return false;
   out.x = column * tileset.tileWidth;

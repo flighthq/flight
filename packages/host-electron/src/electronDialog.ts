@@ -1,11 +1,11 @@
-import type { DialogBackend } from '@flighthq/types';
+import type { DialogBackend, FileDialogHandle } from '@flighthq/types';
 
 import type { ElectronApi } from './electronModule';
 
 // Maps Flight's DialogBackend onto Electron's main-process dialog module. Open/save dialogs resolve
-// to sentinels ([] / null) on cancel rather than throwing, matching the backend contract. The
-// modal-parent window is not threaded through here, so dialogs are application-modal (window
-// argument undefined).
+// to sentinels ([] / null) on cancel rather than throwing, matching the backend contract. Native paths
+// are wrapped as FileDialogHandles (path populated, since Electron exposes real host paths). The
+// modal-parent window is not threaded through here, so dialogs are application-modal (window undefined).
 export function createElectronDialogBackend(electron: ElectronApi): DialogBackend {
   const dialog = electron.dialog;
   return {
@@ -19,7 +19,17 @@ export function createElectronDialogBackend(electron: ElectronApi): DialogBacken
         filters: options.filters,
         properties,
       });
-      return r.canceled ? [] : r.filePaths;
+      const kind = options.directory ? 'Directory' : 'File';
+      return r.canceled ? [] : r.filePaths.map((path) => toFileHandle(path, kind));
+    },
+    async openDirectory(options) {
+      const properties: string[] = ['openDirectory'];
+      if (options.multiple) properties.push('multiSelections');
+      const r = await dialog.showOpenDialog(undefined, {
+        title: options.title,
+        properties,
+      });
+      return r.canceled ? [] : r.filePaths.map((path) => toFileHandle(path, 'Directory'));
     },
     async saveFile(options) {
       const r = await dialog.showSaveDialog(undefined, {
@@ -27,7 +37,7 @@ export function createElectronDialogBackend(electron: ElectronApi): DialogBacken
         defaultPath: options.defaultPath,
         filters: options.filters,
       });
-      return r.canceled || !r.filePath ? null : r.filePath;
+      return r.canceled || !r.filePath ? null : toFileHandle(r.filePath, 'File');
     },
     async message(options) {
       const r = await dialog.showMessageBox(undefined, {
@@ -41,7 +51,11 @@ export function createElectronDialogBackend(electron: ElectronApi): DialogBacken
         checkboxLabel: options.checkboxLabel,
         checkboxChecked: options.checkboxChecked,
       });
-      return { buttonIndex: r.response, checkboxChecked: r.checkboxChecked };
+      return {
+        buttonIndex: r.response,
+        cancelled: options.cancelId !== undefined && r.response === options.cancelId,
+        checkboxChecked: r.checkboxChecked,
+      };
     },
     async confirm(options) {
       const r = await dialog.showMessageBox(undefined, {
@@ -60,4 +74,14 @@ export function createElectronDialogBackend(electron: ElectronApi): DialogBacken
       return Promise.resolve(null);
     },
   };
+}
+
+function toFileHandle(path: string, kind: 'File' | 'Directory'): FileDialogHandle {
+  return { kind, name: basename(path), path };
+}
+
+function basename(path: string): string {
+  const normalized = path.replace(/[/\\]+$/, '');
+  const index = Math.max(normalized.lastIndexOf('/'), normalized.lastIndexOf('\\'));
+  return index >= 0 ? normalized.slice(index + 1) : normalized;
 }

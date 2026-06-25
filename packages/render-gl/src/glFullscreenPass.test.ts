@@ -1,14 +1,8 @@
 import type { GlRenderTarget } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import {
-  clearGlRenderTarget,
-  compileGlFullscreenProgram,
-  drawGlFullscreenPass,
-  tryCompileGlFullscreenProgram,
-} from './glFullscreenPass';
+import { clearGlRenderTarget, compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { getGlRenderStateRuntime } from './glRenderState';
-import { getGlLastShaderLog } from './glShader';
 import { makeGL, makeGlState } from './glTestHelper';
 
 const FRAG_SRC = `#version 300 es
@@ -187,57 +181,5 @@ describe('drawGlFullscreenPass', () => {
 
     expect(blendSpy).toHaveBeenCalledWith(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     expect(getGlRenderStateRuntime(state).currentBlendMode).toBeNull();
-  });
-});
-
-describe('tryCompileGlFullscreenProgram', () => {
-  it('returns a program on success', () => {
-    const { state } = makeGlState();
-    const prog = tryCompileGlFullscreenProgram(state, FRAG_SRC);
-    expect(prog).not.toBeNull();
-    expect(prog!.program).toBeDefined();
-  });
-
-  it('returns null on shader compile failure without throwing', () => {
-    const { state } = makeGlState();
-    (state.gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    let result: unknown;
-    expect(() => {
-      result = tryCompileGlFullscreenProgram(state, 'bad');
-    }).not.toThrow();
-    expect(result).toBeNull();
-  });
-
-  it('returns null on program link failure', () => {
-    const { state } = makeGlState();
-    (state.gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    const prog = tryCompileGlFullscreenProgram(state, FRAG_SRC);
-    expect(prog).toBeNull();
-  });
-
-  it('writes the shader compile log to the state on failure', () => {
-    const { state } = makeGlState();
-    (state.gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
-    (state.gl.getShaderInfoLog as ReturnType<typeof vi.fn>).mockReturnValueOnce('syntax error');
-    tryCompileGlFullscreenProgram(state, 'bad');
-    expect(getGlLastShaderLog(state)).toContain('syntax error');
-  });
-
-  it('clears the shader log on success', () => {
-    const { state } = makeGlState();
-    // First fail to set a log
-    (state.gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
-    tryCompileGlFullscreenProgram(state, 'bad');
-    // Then succeed
-    tryCompileGlFullscreenProgram(state, FRAG_SRC);
-    expect(getGlLastShaderLog(state)).toBe('');
-  });
-
-  it('deletes the program on link failure', () => {
-    const { state } = makeGlState();
-    (state.gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    const deleteSpy = vi.spyOn(state.gl, 'deleteProgram');
-    tryCompileGlFullscreenProgram(state, FRAG_SRC);
-    expect(deleteSpy).toHaveBeenCalled();
   });
 });

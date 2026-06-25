@@ -1,4 +1,4 @@
-import { connectSignal, disconnectAllSlots } from '@flighthq/signals';
+import { clearSignal, connectSignal } from '@flighthq/signals';
 import type {
   AcceleratorParseError,
   ParsedAccelerator,
@@ -80,7 +80,7 @@ afterEach(() => {
   setShortcutBackend(null);
   // Disconnect any signal listeners registered in this test to avoid cross-test bleed.
   const signals = enableGlobalShortcutSignals();
-  disconnectAllSlots(signals.onTrigger);
+  clearSignal(signals.onTrigger);
 });
 
 describe('areAcceleratorsEqual', () => {

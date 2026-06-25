@@ -25,6 +25,10 @@ export default [
       // Agent orchestration scripts in tools/agents/docs/ — workflow JS files,
       // not TypeScript source, not subject to project lint rules.
       'tools/agents/docs/**/*.js',
+      // Dispatch staging area: recovered test files are copied into their owning
+      // packages by the worker; the staging copies keep their original relative
+      // imports (which only resolve once placed) and are not source to lint.
+      'tools/agents/docs/assignments/_recovered/**',
     ],
   },
   {

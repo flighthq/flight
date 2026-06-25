@@ -1,6 +1,18 @@
 import { emitSignal } from './emitter';
 import { createSignal } from './signal';
-import { connectSignal, disconnectAllSignals, disconnectSignal, isSlotConnected } from './slot';
+import { clearSignal, connectSignal, disconnectSignal, hasSignalSlots, isSlotConnected } from './slot';
+
+describe('clearSignal', () => {
+  it('removes all slots', () => {
+    const signal = createSignal<() => void>();
+    let count = 0;
+    connectSignal(signal, () => count++);
+    connectSignal(signal, () => count++);
+    clearSignal(signal);
+    emitSignal(signal);
+    expect(count).toBe(0);
+  });
+});
 
 describe('connectSignal', () => {
   it('connects a slot that receives emits', () => {
@@ -62,18 +74,6 @@ describe('connectSignal', () => {
   });
 });
 
-describe('disconnectAllSignals', () => {
-  it('removes all slots', () => {
-    const signal = createSignal<() => void>();
-    let count = 0;
-    connectSignal(signal, () => count++);
-    connectSignal(signal, () => count++);
-    disconnectAllSignals(signal);
-    emitSignal(signal);
-    expect(count).toBe(0);
-  });
-});
-
 describe('disconnectSignal', () => {
   it('removes a specific slot', () => {
     const signal = createSignal<() => void>();
@@ -96,6 +96,27 @@ describe('disconnectSignal', () => {
     emitSignal(signal);
     expect(a).toBe(0);
     expect(b).toBe(1);
+  });
+});
+
+describe('hasSignalSlots', () => {
+  it('returns false when no slot is connected', () => {
+    const signal = createSignal<() => void>();
+    expect(hasSignalSlots(signal)).toBe(false);
+  });
+
+  it('returns true when at least one slot is connected', () => {
+    const signal = createSignal<() => void>();
+    connectSignal(signal, () => {});
+    expect(hasSignalSlots(signal)).toBe(true);
+  });
+
+  it('returns false after the last slot is disconnected', () => {
+    const signal = createSignal<() => void>();
+    const slot = () => {};
+    connectSignal(signal, slot);
+    disconnectSignal(signal, slot);
+    expect(hasSignalSlots(signal)).toBe(false);
   });
 });
 

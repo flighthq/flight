@@ -32,7 +32,7 @@ const HALF = SIDE / 2; // 80
 const CENTER_X = 400;
 const CENTER_Y = 300;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

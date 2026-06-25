@@ -6,6 +6,11 @@ import { nullSignalEmit } from './internal';
 
 export type { SignalConnectOptions } from '@flighthq/types';
 
+export function clearSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
+  signal.emit = nullSignalEmit as unknown as T;
+  signal.data = null;
+}
+
 export function connectSignal<T extends (...args: any[]) => void>(
   signal: Signal<T>,
   slot: T,
@@ -31,11 +36,6 @@ export function connectSignal<T extends (...args: any[]) => void>(
   data.repeat.push(repeat);
 }
 
-export function disconnectAllSignals<T extends (...args: any[]) => void>(signal: Signal<T>): void {
-  signal.emit = nullSignalEmit as unknown as T;
-  signal.data = null;
-}
-
 export function disconnectSignal<T extends (...args: any[]) => void>(signal: Signal<T>, slot: T): void {
   const data = signal.data;
   if (data === null) return;
@@ -53,6 +53,10 @@ export function disconnectSignal<T extends (...args: any[]) => void>(signal: Sig
     signal.emit = nullSignalEmit as unknown as T;
     signal.data = null;
   }
+}
+
+export function hasSignalSlots<T extends (...args: any[]) => void>(signal: Readonly<Signal<T>>): boolean {
+  return signal.data !== null && signal.data.slots.length > 0;
 }
 
 function initSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {

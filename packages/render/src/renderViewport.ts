@@ -1,5 +1,4 @@
-import type { Rectangle } from '@flighthq/geometry';
-import type { HasTransform2D, RenderProxy2D, RenderViewport2D } from '@flighthq/types';
+import type { HasTransform2D, Rectangle, RenderProxy2D, RenderViewport2D } from '@flighthq/types';
 
 // Detects whether `source` carries the HasTransform2D trait. Checks for `pivotX`, a field unique to
 // that interface and not present on bare entities or trait-less proxies.
@@ -11,7 +10,10 @@ function hasTransform2D(source: unknown): source is HasTransform2D {
 // `source` carries HasTransform2D and the bounds were written; returns false and leaves `out`
 // unchanged when the source has no spatial trait. For a source at rest (default transform) the
 // bounds collapse to (x, y, 0, 0) — a zero-size point at the object's position.
-export function computeRenderProxyWorldBounds(out: Rectangle, source: unknown): boolean {
+export function computeRenderProxyWorldBounds(
+  out: Pick<Rectangle, 'x' | 'y' | 'width' | 'height'>,
+  source: unknown,
+): boolean {
   if (!hasTransform2D(source)) return false;
   const s = source as HasTransform2D;
   out.x = s.x;

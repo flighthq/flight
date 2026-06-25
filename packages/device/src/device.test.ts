@@ -217,7 +217,7 @@ describe('createWebDeviceBackend', () => {
   it('osVersion parses Android version from UA', () => {
     const backend = createWebDeviceBackend();
     const result = backend.getInfo(createDeviceInfo());
-    // jsdom UA results in a string; actual parsing is covered by device-formats unit tests
+    // jsdom UA results in a string; actual parsing is covered by useragent unit tests
     expect(typeof result.osVersion).toBe('string');
   });
 

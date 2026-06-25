@@ -309,6 +309,33 @@ export function createElectronWindowBackend(electron: ElectronApi): WindowBacken
         /* window already destroyed */
       }
     },
+    setContentProtection(win, enabled) {
+      const bw = _windows.get(win);
+      if (bw === undefined) return;
+      try {
+        bw.setContentProtection(enabled);
+      } catch {
+        /* window already destroyed */
+      }
+    },
+    flashWindowFrame(win) {
+      const bw = _windows.get(win);
+      if (bw === undefined) return;
+      try {
+        bw.flashFrame(true);
+      } catch {
+        /* window already destroyed */
+      }
+    },
+    setHasShadow(win, hasShadow) {
+      const bw = _windows.get(win);
+      if (bw === undefined) return;
+      try {
+        bw.setHasShadow(hasShadow);
+      } catch {
+        /* window already destroyed */
+      }
+    },
   };
 }
 

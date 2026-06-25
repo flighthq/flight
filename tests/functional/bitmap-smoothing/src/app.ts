@@ -25,7 +25,6 @@ const HEIGHT = 600;
 // 4×4 checkerboard, cell (col+row) even → white, odd → black. Top-left (0,0) is white.
 const GRID = 4;
 const SCALE = 40; // each source texel becomes a 40×40 output block → 160px total.
-const SIZE = GRID * SCALE; // 160
 
 // Two copies side by side.
 const CRISP_X = 120; // smoothing = false
@@ -47,7 +46,7 @@ function buildCheckerCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

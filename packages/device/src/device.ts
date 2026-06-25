@@ -1,5 +1,3 @@
-import { parseUserAgentFormFactor, parseUserAgentOsName, parseUserAgentOsVersion } from '@flighthq/device-formats';
-import { parseUserAgentArch } from '@flighthq/platform-formats';
 import type {
   DeviceBackend,
   DeviceCapabilities,
@@ -8,6 +6,12 @@ import type {
   SafeAreaInsets,
 } from '@flighthq/types';
 import { DeviceFormFactorUnknown } from '@flighthq/types';
+import {
+  parseUserAgentArch,
+  parseUserAgentFormFactor,
+  parseUserAgentOsName,
+  parseUserAgentOsVersion,
+} from '@flighthq/useragent';
 
 // Allocates a zeroed DeviceCapabilities; use as the `out` for getDeviceCapabilities.
 // All boolean fields default to false (unknown).

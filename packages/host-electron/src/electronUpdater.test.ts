@@ -74,8 +74,28 @@ describe('createElectronUpdaterBackend', () => {
     backend.subscribeUpdateDownloaded((info) => (downloaded = info));
     emit(listeners, 'update-available', {}, 'release notes', '1.2.3', '2026-01-01');
     emit(listeners, 'update-downloaded', {}, 'dl notes', '4.5.6', '2026-02-02');
-    expect(available).toEqual({ version: '1.2.3', notes: 'release notes', releaseDate: '2026-01-01' });
-    expect(downloaded).toEqual({ version: '4.5.6', notes: 'dl notes', releaseDate: '2026-02-02' });
+    expect(available).toEqual({
+      version: '1.2.3',
+      notes: 'release notes',
+      releaseDate: '2026-01-01',
+      deltaFromVersion: null,
+      downloadSizeBytes: -1,
+      isMandatory: false,
+      minimumOsVersion: null,
+      sha512: '',
+      stagedRolloutPercent: 100,
+    });
+    expect(downloaded).toEqual({
+      version: '4.5.6',
+      notes: 'dl notes',
+      releaseDate: '2026-02-02',
+      deltaFromVersion: null,
+      downloadSizeBytes: -1,
+      isMandatory: false,
+      minimumOsVersion: null,
+      sha512: '',
+      stagedRolloutPercent: 100,
+    });
   });
 
   it('subscribeDownloadProgress is inert for the built-in updater', () => {
@@ -86,11 +106,11 @@ describe('createElectronUpdaterBackend', () => {
     expect(() => unsubscribe()).not.toThrow();
   });
 
-  it('subscribeError extracts a message string from the error payload', () => {
+  it('subscribeError wraps the error payload message into an UpdaterError', () => {
     const { electron, listeners } = fakeElectron();
     const backend = createElectronUpdaterBackend(electron);
     let message = '';
-    backend.subscribeError((m) => (message = m));
+    backend.subscribeError((error) => (message = error.message));
     emit(listeners, 'error', new Error('boom'));
     expect(message).toBe('boom');
   });

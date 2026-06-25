@@ -1,5 +1,20 @@
+import type { PowerStatus } from '@flighthq/types';
+
 import type { ElectronApi } from './electronModule';
 import { createElectronPowerBackend } from './electronPower';
+
+function emptyStatus(): PowerStatus {
+  return {
+    batteryLevel: 0,
+    chargingTime: 0,
+    dischargingTime: 0,
+    isBatteryLow: false,
+    isCharging: false,
+    isLowPower: false,
+    isOnBattery: false,
+    thermalState: 'Unknown',
+  };
+}
 
 function fakeElectron(options: { onBatteryPower?: boolean; startId?: number }): {
   electron: ElectronApi;
@@ -38,10 +53,21 @@ function fakeElectron(options: { onBatteryPower?: boolean; startId?: number }): 
 describe('createElectronPowerBackend', () => {
   it('getStatus reports no battery level and infers charging from AC power', () => {
     const onAc = createElectronPowerBackend(fakeElectron({ onBatteryPower: false }).electron);
-    const status = onAc.getStatus({ batteryLevel: 5, isCharging: false, isLowPower: true });
-    expect(status).toEqual({ batteryLevel: -1, isCharging: true, isLowPower: false });
+    const status = onAc.getStatus(emptyStatus());
+    expect(status).toEqual({
+      batteryLevel: -1,
+      chargingTime: -1,
+      dischargingTime: -1,
+      isBatteryLow: false,
+      isCharging: true,
+      isLowPower: false,
+      isOnBattery: false,
+      thermalState: 'Unknown',
+    });
     const onBattery = createElectronPowerBackend(fakeElectron({ onBatteryPower: true }).electron);
-    expect(onBattery.getStatus({ batteryLevel: 0, isCharging: false, isLowPower: false }).isCharging).toBe(false);
+    const batteryStatus = onBattery.getStatus(emptyStatus());
+    expect(batteryStatus.isCharging).toBe(false);
+    expect(batteryStatus.isOnBattery).toBe(true);
   });
 
   it('subscribe wires both AC and battery events and unsubscribes both', () => {

@@ -34,7 +34,15 @@ function emptyLights(): SceneLights {
 }
 
 function newLightBlock(): SceneLightBlock {
-  return { ambientCount: 0, data: new Float32Array(12), directionalCount: 0, version: 0 };
+  return {
+    ambientCount: 0,
+    data: new Float32Array(12),
+    directionalCount: 0,
+    hemisphereCount: 0,
+    pointCount: 0,
+    spotCount: 0,
+    version: 0,
+  };
 }
 
 describe('packSceneLightBlock', () => {

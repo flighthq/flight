@@ -56,7 +56,7 @@ function buildAlphaRampCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x0000ffff, // opaque blue (packed RGBA, low byte = alpha)

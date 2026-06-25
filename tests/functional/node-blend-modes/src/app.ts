@@ -44,7 +44,7 @@ const OVERLAY_W = 180;
 const NORMAL_X = 180;
 const ADD_X = 440;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

@@ -547,7 +547,9 @@ export function setQuadBatchTransformType(target: QuadBatch, newType: QuadTransf
   const count = data.instanceCount;
   if (newType === 'matrix3x2') {
     // Expanding: allocate new buffer, fill in reverse order to avoid clobbering inputs.
-    const newTransforms = new Float32Array(Math.max(data.transforms.length / QUAD_VECTOR2_STRIDE, count) * QUAD_MATRIX3X2_STRIDE);
+    const newTransforms = new Float32Array(
+      Math.max(data.transforms.length / QUAD_VECTOR2_STRIDE, count) * QUAD_MATRIX3X2_STRIDE,
+    );
     for (let i = count - 1; i >= 0; i--) {
       const src = i * QUAD_VECTOR2_STRIDE;
       const dst = i * QUAD_MATRIX3X2_STRIDE;

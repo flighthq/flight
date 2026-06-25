@@ -1,3 +1,11 @@
+import type {
+  PlatformBackend,
+  PlatformEngine,
+  PlatformInfo,
+  PlatformKind,
+  PlatformName,
+  PlatformRuntime,
+} from '@flighthq/types';
 import {
   parseUserAgentArch,
   parseUserAgentEngine,
@@ -8,15 +16,7 @@ import {
   parseUserAgentRuntime,
   parseUserAgentVersion,
   probeEndianness,
-} from '@flighthq/platform-formats';
-import type {
-  PlatformBackend,
-  PlatformEngine,
-  PlatformInfo,
-  PlatformKind,
-  PlatformName,
-  PlatformRuntime,
-} from '@flighthq/types';
+} from '@flighthq/useragent';
 
 // Compares two dotted version strings numerically, segment by segment. Returns -1, 0, or 1.
 // Non-numeric trailing segments are ignored; '' sorts lowest. '' compared with '' returns 0.

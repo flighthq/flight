@@ -35,7 +35,7 @@ const RECT_W = 300;
 const RECT_H = 180;
 const RECT_THICKNESS = 10;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

@@ -27,7 +27,7 @@ const FRAME_H = 120;
 const VIDEO_X = 300;
 const VIDEO_Y = 240;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

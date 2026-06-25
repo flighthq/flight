@@ -1,4 +1,4 @@
-import { createSignal, disconnectAllSlots } from '@flighthq/signals';
+import { clearSignal, createSignal } from '@flighthq/signals';
 import type {
   StorageBackend,
   StorageChange,
@@ -115,7 +115,7 @@ export function disableStorageSignals(): void {
     _crossTabUnsubscribe = null;
   }
   if (_signals !== null) {
-    disconnectAllSlots(_signals.onChange);
+    clearSignal(_signals.onChange);
     _signals = null;
   }
 }

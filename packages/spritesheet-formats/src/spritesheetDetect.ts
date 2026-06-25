@@ -64,7 +64,7 @@ function getRegistry(): FormatRegistry {
   _registry = new Map();
   _registry.set(ASEPRITE, {
     detect: detectAseprite,
-    parse: (text, opts) => parseAsepriteSpritesheet(text, { frameDuration: opts.frameDuration }),
+    parse: (text) => parseAsepriteSpritesheet(text),
   });
   _registry.set(COCOS_PLIST, {
     detect: detectCocosPlist,
@@ -72,16 +72,11 @@ function getRegistry(): FormatRegistry {
   });
   _registry.set(TEXTURE_PACKER, {
     detect: detectTexturePacker,
-    parse: (text, opts) => parseTexturePackerSpritesheet(text, { frameDuration: opts.frameDuration }),
+    parse: (text) => parseTexturePackerSpritesheet(text),
   });
   _registry.set(STARLING, {
     detect: detectStarling,
-    parse: (text, opts) =>
-      parseStarlingSpritesheet(text, {
-        frameDuration: opts.frameDuration,
-        imageHeight: opts.imageHeight,
-        imageWidth: opts.imageWidth,
-      }),
+    parse: (text, opts) => parseStarlingSpritesheet(text, { frameDuration: opts.frameDuration }),
   });
   _registry.set(LIBGDX_ATLAS, {
     detect: detectLibgdxAtlas,

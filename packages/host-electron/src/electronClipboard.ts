@@ -1,6 +1,6 @@
 import type { ClipboardBackend, ClipboardBookmark } from '@flighthq/types';
 
-import type { ElectronApi } from './electronModule';
+import type { ElectronApi, ElectronClipboardData } from './electronModule';
 
 // Maps Flight's ClipboardBackend onto Electron's synchronous clipboard module, adapting to the
 // async Promise contract. Images cross the seam as data URLs (Flight's convention), converted via
@@ -101,6 +101,74 @@ export function createElectronClipboardBackend(electron: ElectronApi): Clipboard
         return false;
       }
     },
+    async readFormat(format) {
+      try {
+        return cb.read(format);
+      } catch {
+        return '';
+      }
+    },
+    async writeFormat(format, data) {
+      try {
+        const payload: ElectronClipboardData = {};
+        payload[formatKey(format)] = data;
+        cb.write(payload);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    async hasFormat(format) {
+      try {
+        return cb.has(format);
+      } catch {
+        return false;
+      }
+    },
+    async getFormats() {
+      try {
+        return cb.availableFormats();
+      } catch {
+        return [];
+      }
+    },
+    async readItems(formats) {
+      const out: Record<string, string> = {};
+      for (const format of formats) {
+        try {
+          if (cb.has(format)) out[format] = cb.read(format);
+        } catch {
+          /* skip a format that cannot be read */
+        }
+      }
+      return out;
+    },
+    async writeItems(items) {
+      try {
+        const data: ElectronClipboardData = {};
+        for (const item of items) data[formatKey(item.format)] = item.data;
+        cb.write(data);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    async readFiles() {
+      // Electron's clipboard has no first-class file-list flavor; report none.
+      return [];
+    },
+    async writeFiles() {
+      // Electron's clipboard has no first-class file-list flavor; report unsupported.
+      return false;
+    },
+    getChangeCount() {
+      // Electron does not expose a clipboard change counter; -1 sentinel per the contract.
+      return -1;
+    },
+    subscribeClipboardChange() {
+      // Electron emits no clipboard-change event; inert unsubscribe.
+      return () => {};
+    },
     async clear() {
       try {
         cb.clear();
@@ -110,4 +178,13 @@ export function createElectronClipboardBackend(electron: ElectronApi): Clipboard
       }
     },
   };
+}
+
+// Maps a MIME/flavor string to the keyed field Electron's clipboard.write accepts. Unknown flavors
+// fall back to the plain-text slot.
+function formatKey(format: string): 'text' | 'html' | 'rtf' | 'bookmark' {
+  if (format === 'text/html' || format === 'html') return 'html';
+  if (format === 'text/rtf' || format === 'application/rtf' || format === 'rtf') return 'rtf';
+  if (format === 'bookmark') return 'bookmark';
+  return 'text';
 }

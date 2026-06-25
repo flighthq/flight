@@ -584,6 +584,7 @@ function createInputKeyboardData(key: string, keyCode: number): InputKeyboardDat
     numLock: false,
     repeat: false,
     shiftKey: false,
+    timeStamp: 0,
   };
 }
 
@@ -595,12 +596,19 @@ function createInputPointerData(x: number, y: number): InputPointerData {
     ctrlKey: false,
     deltaX: 0,
     deltaY: 0,
+    height: 1,
     isPrimary: true,
     metaKey: false,
     pointerId: 0,
     pointerType: 'mouse',
+    pressure: 0,
     shiftKey: false,
+    tiltX: 0,
+    tiltY: 0,
+    timeStamp: 0,
+    twist: 0,
     wheelMode: 'unknown',
+    width: 1,
     x,
     y,
   };

@@ -124,7 +124,15 @@ function ensurePreparedScene(state: RenderState): PreparedScene {
     const viewProjection = createMatrix4();
     const meshes: Mesh[] = [];
     const list: SceneRenderList = {
-      lights: { ambientCount: 0, data: new Float32Array(LIGHT_BLOCK_FLOATS), directionalCount: 0, version: 0 },
+      lights: {
+        ambientCount: 0,
+        data: new Float32Array(LIGHT_BLOCK_FLOATS),
+        directionalCount: 0,
+        hemisphereCount: 0,
+        pointCount: 0,
+        spotCount: 0,
+        version: 0,
+      },
       meshCount: 0,
       viewProjection: viewProjection,
       visibleMeshes: meshes,

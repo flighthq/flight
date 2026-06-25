@@ -3,30 +3,19 @@ export {
   isBevelFilter,
   isBitmapFilter,
   isBlurFilter,
+  isColorMatrixFilter,
+  isConvolutionFilter,
+  isDisplacementMapFilter,
   isDropShadowFilter,
   isGradientBevelFilter,
   isGradientGlowFilter,
+  isInnerGlowFilter,
+  isInnerShadowFilter,
+  isMedianFilter,
   isOuterGlowFilter,
+  isPixelateFilter,
+  isSharpenFilter,
 } from './bitmapFilterGuards';
-export type { BitmapFilterMargin } from './bitmapFilterMargin';
-export { getBitmapFilterMargin } from './bitmapFilterMargin';
-export {
-  cloneBitmapFilter,
-  cloneBitmapFilterList,
-  copyBitmapFilterInto,
-  DEFAULT_FILTER_ALPHA,
-  DEFAULT_FILTER_ANGLE,
-  DEFAULT_FILTER_BLUR_X,
-  DEFAULT_FILTER_BLUR_Y,
-  DEFAULT_FILTER_COLOR,
-  DEFAULT_FILTER_DISTANCE,
-  DEFAULT_FILTER_KNOCKOUT,
-  DEFAULT_FILTER_QUALITY,
-  DEFAULT_FILTER_STRENGTH,
-  equalsBitmapFilter,
-  equalsBitmapFilterList,
-  normalizeBitmapFilter,
-} from './bitmapFilterOps';
 export {
   clampFilterQuality,
   clampFilterStrength,

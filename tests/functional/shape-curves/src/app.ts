@@ -33,7 +33,7 @@ const K = 0.5522847498 * R;
 
 const FILL_COLOR = 0xff8800; // solid orange
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

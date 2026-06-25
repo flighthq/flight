@@ -53,7 +53,7 @@ const target = await createFunctionalTarget({
   kinds: [ShapeKind],
   cache: true,
 });
-const { height, render, width } = target;
+const { render, width } = target;
 
 const root = createDisplayContainer();
 

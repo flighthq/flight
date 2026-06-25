@@ -90,15 +90,9 @@ export function bindGlPbrStandardTexture(
 // calls this and then ORs in its own extension flag; the StandardPbr renderer uses it as-is. Keeps
 // the map-present test (hasTexturePixels) in one place so the compiled variant and the bound
 // textures never disagree.
-//
-// `hasUv1` enables the second UV set (attribute location 5) in the vertex shader and routes the
-// occlusion map to the `v_uv1` varying. Pass true when the geometry carries a `uv1` attribute and
-// the material's occlusion map should sample from TEXCOORD_1 (the canonical glTF placement for
-// baked lightmaps/AO).
 export function buildGlPbrStandardDefineKey(
   standard: Readonly<StandardPbrMaterialProperties> | null,
   alphaMaskEnabled: boolean,
-  hasUv1 = false,
 ): GlPbrDefineKey {
   return {
     alphaMaskEnabled,
@@ -109,7 +103,6 @@ export function buildGlPbrStandardDefineKey(
     hasMetallicRoughnessMap: hasTexturePixels(standard?.metallicRoughnessMap ?? null),
     hasNormalMap: hasTexturePixels(standard?.normalMap ?? null),
     hasOcclusionMap: hasTexturePixels(standard?.occlusionMap ?? null),
-    hasUv1,
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,

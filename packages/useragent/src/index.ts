@@ -9,3 +9,4 @@ export {
   parseUserAgentVersion,
   probeEndianness,
 } from './userAgent';
+export { parseUserAgentFormFactor, parseUserAgentOsName, parseUserAgentOsVersion } from './userAgentParse';
