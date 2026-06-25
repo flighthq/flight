@@ -6,7 +6,9 @@ import { chromium } from '@playwright/test';
 import { spawn, spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { createServer } from 'http';
+import type { AddressInfo } from 'net';
+import { extname, join, relative, resolve } from 'path';
 import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baseline-store.js';
@@ -179,6 +181,11 @@ export interface CaptureEntryOptions {
    * renderer loop stops and a torn-down page is not reported as a failure. See installAbortHandler.
    */
   isAborted?: () => boolean;
+  /**
+   * When set, replaces the renderer name in status lines. Used by captureParallel so each line
+   * identifies its entry: `entry.name/renderer` rather than just `renderer`.
+   */
+  displayLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -330,6 +337,73 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
   });
 }
 
+// Serve a pre-built tool dist from a lightweight Node.js HTTP server, bypassing the Vite dev
+// server and its on-demand transform overhead. Requires `npm run build:{tool}` to have been run
+// first; errors with a helpful message if the dist directory is missing.
+export function resolveStaticServer(opts: { tool: Tool; root: string }): Promise<Server> {
+  const { tool, root } = opts;
+  const distDir = join(root, 'tools', tool, 'dist');
+
+  if (!existsSync(distDir)) {
+    return Promise.reject(
+      new Error(
+        `No build found at tools/${tool}/dist.\n` +
+          `Run "npm run build:${tool}" first, or omit --static to use the dev server.`,
+      ),
+    );
+  }
+
+  const MIME: Record<string, string> = {
+    '.css': 'text/css',
+    '.gif': 'image/gif',
+    '.html': 'text/html; charset=utf-8',
+    '.jpeg': 'image/jpeg',
+    '.jpg': 'image/jpeg',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.jsonl': 'text/plain; charset=utf-8',
+    '.mp3': 'audio/mpeg',
+    '.ogg': 'audio/ogg',
+    '.png': 'image/png',
+    '.svg': 'image/svg+xml',
+    '.ttf': 'font/ttf',
+    '.utf8': 'text/plain; charset=utf-8',
+    '.wav': 'audio/wav',
+    '.webp': 'image/webp',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+  };
+
+  return new Promise((resolve, reject) => {
+    const server = createServer((req, res) => {
+      let urlPath = (req.url ?? '/').split('?')[0];
+      if (urlPath.endsWith('/')) urlPath += 'index.html';
+
+      const fsPath = join(distDir, urlPath);
+      if (relative(distDir, fsPath).startsWith('..')) {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+
+      if (!existsSync(fsPath)) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+
+      res.setHeader('Content-Type', MIME[extname(fsPath)] ?? 'application/octet-stream');
+      res.end(readFileSync(fsPath));
+    });
+
+    server.on('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address() as AddressInfo;
+      resolve({ url: `http://localhost:${port}`, kill: () => server.close() });
+    });
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Browser
 // ---------------------------------------------------------------------------
@@ -433,15 +507,18 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     failOnError = false,
     isAborted = () => false,
   } = opts;
+  const { displayLabel } = opts;
   let anyFailed = false;
   let anyChanged = false;
 
   // Detail lines below the caller's [N/M] header drop the entry name (the header carries it) and
   // column-align on the renderer label, matching compare-render.ts. The renderer name carries the
   // verdict color; routine confirmations dim (see formatStatusLine).
-  const labelWidth = Math.max(6, ...renderers.map((r) => r.length));
-  const statusLine = (tone: DetailTone, label: string, message: string): string =>
-    formatStatusLine(tone, label, labelWidth, message);
+  // displayLabel overrides the renderer name when set (used by captureParallel).
+  const labelWidth = displayLabel ? Math.max(6, displayLabel.length) : Math.max(6, ...renderers.map((r) => r.length));
+  const label = (renderer: string) => displayLabel ?? renderer;
+  const statusLine = (tone: DetailTone, renderer: string, message: string): string =>
+    formatStatusLine(tone, label(renderer), labelWidth, message);
 
   for (const renderer of renderers) {
     // Stop launching pages once an interrupt has begun; the partial result is reported by the caller.
@@ -579,7 +656,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         console.log(
           formatDetailLine(
             pc.green('✓'),
-            renderer,
+            label(renderer),
             labelWidth,
             pc.yellow('changed (hash differs from baseline)'),
             pc.green,
@@ -648,4 +725,85 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   if (anyFailed) return 'error';
   if (anyChanged) return 'changed';
   return 'ok';
+}
+
+// ---------------------------------------------------------------------------
+// Parallel capture
+// ---------------------------------------------------------------------------
+
+export interface ParallelCaptureOptions {
+  context: BrowserContext;
+  entries: Entry[];
+  rendererFilter: string[];
+  baseUrl: string;
+  tool: Tool;
+  outBase: string;
+  root: string;
+  updateBaseline?: boolean;
+  extraWait?: number;
+  captureFrames?: number;
+  failOnError?: boolean;
+  isAborted?: () => boolean;
+  /** Number of Playwright pages to run concurrently. Default: 6. */
+  workerCount?: number;
+}
+
+export interface ParallelCaptureResult {
+  captured: number;
+  changed: number;
+  failed: number;
+}
+
+// Flattens entries × renderers into a shared job queue and processes them with workerCount
+// concurrent Playwright pages on the same browser context. Each worker pulls one (entry, renderer)
+// pair at a time, runs the full captureEntry pipeline on it, and returns it to the queue for the
+// next job. Single-threaded JS makes the queue safe without locks: shift() is synchronous and
+// cannot interleave with another worker's shift().
+export async function captureParallel(opts: ParallelCaptureOptions): Promise<ParallelCaptureResult> {
+  const { context, entries, rendererFilter, workerCount = 6, isAborted = () => false } = opts;
+
+  const jobs: Array<{ entry: Entry; renderer: string }> = [];
+  for (const entry of entries) {
+    const renderers =
+      rendererFilter.length > 0 ? entry.renderers.filter((r) => rendererFilter.includes(r)) : entry.renderers;
+    for (const renderer of renderers) {
+      jobs.push({ entry, renderer });
+    }
+  }
+
+  let captured = 0;
+  let changed = 0;
+  let failed = 0;
+
+  const activeWorkers = Math.min(workerCount, jobs.length);
+  const workers = Array.from({ length: activeWorkers }, async () => {
+    while (true) {
+      if (isAborted()) break;
+      const job = jobs.shift();
+      if (!job) break;
+
+      const result = await captureEntry({
+        context,
+        entry: job.entry,
+        renderers: [job.renderer],
+        displayLabel: `${job.entry.name}/${job.renderer}`,
+        baseUrl: opts.baseUrl,
+        tool: opts.tool,
+        outBase: opts.outBase,
+        root: opts.root,
+        updateBaseline: opts.updateBaseline,
+        extraWait: opts.extraWait,
+        captureFrames: opts.captureFrames,
+        failOnError: opts.failOnError,
+        isAborted: () => isAborted(),
+      });
+
+      if (result === 'ok') captured++;
+      else if (result === 'changed') changed++;
+      else failed++;
+    }
+  });
+
+  await Promise.all(workers);
+  return { captured, changed, failed };
 }
