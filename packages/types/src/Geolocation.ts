@@ -11,9 +11,24 @@ export interface GeoPosition {
   accuracy: number;
   altitude: number;
   altitudeAccuracy: number;
+  floorLevel: number;
   heading: number;
   speed: number;
   timestamp: number;
+}
+
+// Why a position read failed. 'denied' — permission refused; 'timeout' — no fix within the deadline;
+// 'unavailable' — the capability is absent (insecure context, jsdom, missing navigator).
+export type GeolocationErrorReason = 'denied' | 'timeout' | 'unavailable';
+
+// Current permission state. 'prompt' means the user has not yet been asked.
+export type GeolocationPermissionState = 'granted' | 'denied' | 'prompt';
+
+// A position read paired with its failure reason. On success, position is set and reason is null;
+// on failure, position is null and reason carries why.
+export interface GeoPositionResult {
+  position: GeoPosition | null;
+  reason: GeolocationErrorReason | null;
 }
 
 export interface GeolocationRequestOptions {
@@ -24,10 +39,14 @@ export interface GeolocationRequestOptions {
 
 export interface GeolocationBackend {
   getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null>;
+  getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult>;
+  getPermission(): Promise<GeolocationPermissionState>;
   watchPosition(
     listener: (position: Readonly<GeoPosition>) => void,
     options: Readonly<GeolocationRequestOptions>,
+    onError?: (reason: GeolocationErrorReason) => void,
   ): number;
   clearWatch(id: number): void;
   requestPermission(): Promise<boolean>;
+  subscribePermission(listener: (state: GeolocationPermissionState) => void): () => void;
 }

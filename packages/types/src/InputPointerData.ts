@@ -8,12 +8,19 @@ export interface InputPointerData {
   ctrlKey: boolean;
   deltaX: number;
   deltaY: number;
+  height: number;
   isPrimary: boolean;
   metaKey: boolean;
   pointerId: number;
   pointerType: PointerType;
+  pressure: number;
   shiftKey: boolean;
+  tiltX: number;
+  tiltY: number;
+  timeStamp: number;
+  twist: number;
   wheelMode: MouseWheelMode;
+  width: number;
   x: number;
   y: number;
 }

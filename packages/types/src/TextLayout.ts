@@ -1,6 +1,8 @@
 import type { TextAutoSize } from './TextAutoSize';
+import type { TextDirection } from './TextDirection';
 import type { TextFormat } from './TextFormat';
 import type { TextFormatRange } from './TextFormatRange';
+import type { TextJustification } from './TextJustification';
 
 export type TextMeasureFunction = (text: string, format: TextFormat) => number;
 
@@ -23,11 +25,19 @@ export interface TextLayoutGroup {
 export interface TextLayoutParams {
   autoSize?: TextAutoSize;
   border?: boolean;
+  // Base writing direction; resolves the 'start'/'end' alignment aliases. Defaults to 'ltr'.
+  direction?: TextDirection;
   formatRanges: readonly TextFormatRange[];
   height: number;
+  // Inter-word/inter-character distribution mode for justified lines. Defaults to 'interWord'.
+  justification?: TextJustification;
+  // Maximum line count before truncation; -1 (the default) means unlimited.
+  maxLines?: number;
   measure: TextMeasureFunction;
   multiline?: boolean;
   text: string;
+  // Character appended to the final line when truncated by maxLines. Defaults to the ellipsis '…'.
+  truncationCharacter?: string;
   width: number;
   wordWrap?: boolean;
 }

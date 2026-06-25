@@ -11,4 +11,5 @@ export interface InputKeyboardData {
   numLock: boolean;
   repeat: boolean;
   shiftKey: boolean;
+  timeStamp: number;
 }

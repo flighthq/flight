@@ -1,14 +1,48 @@
 import type { Signal } from './Signal';
 
-export type NetworkConnectionType = 'wifi' | 'cellular' | 'ethernet' | 'bluetooth' | 'none' | 'unknown';
+export type NetworkConnectionType =
+  | 'wifi'
+  | 'cellular'
+  | 'ethernet'
+  | 'bluetooth'
+  | 'vpn'
+  | 'wimax'
+  | 'other'
+  | 'none'
+  | 'unknown';
 
 export interface NetworkStatus {
   online: boolean;
   type: NetworkConnectionType;
   // Estimated downlink in Mbps, or -1 when the host does not report it.
   downlink: number;
+  // Maximum downlink of the underlying connection technology in Mbps, or -1 when not reported.
+  downlinkMax: number;
   // Effective connection class ('4g', '3g', …) or '' when unknown.
   effectiveType: string;
+  // Estimated round-trip time in milliseconds, or -1 when the host does not report it.
+  rtt: number;
+  // True when the user or OS has requested reduced data usage.
+  saveData: boolean;
+  // True when the connection is metered (cellular or save-data is set).
+  metered: boolean;
+}
+
+// One-shot reachability probe result, written into an `out` by probeReachability. Sentinel values
+// (reachable=false, latency=-1) indicate the probe failed rather than throwing.
+export interface NetworkReachability {
+  reachable: boolean;
+  // Round-trip latency of the probe in milliseconds, or -1 on failure.
+  latency: number;
+}
+
+// Inputs to a reachability probe: the URL to reach plus optional timeout and cancellation.
+export interface NetworkReachabilityOptions {
+  url: string;
+  // Probe timeout in milliseconds; the backend chooses a default when omitted.
+  timeout?: number;
+  // Optional caller-supplied abort signal, combined with the backend's internal timeout.
+  signal?: AbortSignal;
 }
 
 // Event seam for connectivity: a snapshot reader plus a change subscription. The web backend wraps
@@ -16,6 +50,11 @@ export interface NetworkStatus {
 // through the same subscribe callback.
 export interface NetworkBackend {
   getStatus(out: NetworkStatus): NetworkStatus;
+  // Optional one-shot reachability probe; callers fall back to a fetch-based default when absent.
+  probeReachability?(
+    options: Readonly<NetworkReachabilityOptions>,
+    out: NetworkReachability,
+  ): Promise<NetworkReachability>;
   // Registers a listener invoked on any connectivity change; returns an unsubscribe function.
   subscribe(listener: () => void): () => void;
 }
@@ -23,6 +62,8 @@ export interface NetworkBackend {
 // Connectivity event entity. Enable delivery with attachNetwork; the signals stay inert until then.
 export interface Network {
   onChange: Signal<(status: Readonly<NetworkStatus>) => void>;
+  onConnectionTypeChange: Signal<(type: NetworkConnectionType) => void>;
+  onMeteredChange: Signal<(metered: boolean) => void>;
   onOnline: Signal<() => void>;
   onOffline: Signal<() => void>;
 }

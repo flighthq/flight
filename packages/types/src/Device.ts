@@ -1,14 +1,36 @@
+import type { DeviceCapabilities } from './DeviceCapabilities';
+import type { DeviceDisplayMetrics } from './DeviceDisplayMetrics';
+import type { DeviceFormFactor } from './DeviceFormFactor';
+
 // Device identity and environment seam. Free functions in @flighthq/device delegate to the active
 // DeviceBackend (web default or a native host's). Snapshot reads fill an `out` value and return it;
 // unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
 export interface DeviceInfo {
-  model: string;
+  arch: string;
+  availableMemory: number;
+  boardName: string;
+  colorGamut: string;
+  cpuCores: number;
+  fontScale: number;
+  formFactor: DeviceFormFactor;
+  gpuRenderer: string;
+  gpuVendor: string;
+  isHdr: boolean;
+  isJailbroken: boolean;
+  isLowEndDevice: boolean;
+  isRooted: boolean;
+  isVirtual: boolean;
   manufacturer: string;
+  marketingName: string;
+  model: string;
+  osBuild: string;
   osName: string;
   osVersion: string;
-  platform: string;
-  isVirtual: boolean;
-  memory: number;
+  platformString: string;
+  productName: string;
+  supportedAbis: readonly string[];
+  totalMemory: number;
+  webViewVersion: string;
   // Battery state is not here — it is a live, event-bearing concern owned by @flighthq/power
   // (PowerStatus.batteryLevel/isCharging + Power.onChange). DeviceInfo is a static identity snapshot.
 }
@@ -22,6 +44,9 @@ export interface SafeAreaInsets {
 }
 
 export interface DeviceBackend {
+  getCapabilities(out: DeviceCapabilities): DeviceCapabilities;
+  getDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics;
+  getId(): string;
   getInfo(out: DeviceInfo): DeviceInfo;
   getSafeAreaInsets(out: SafeAreaInsets): SafeAreaInsets;
 }

@@ -17,5 +17,10 @@ export interface SceneLightBlock {
   ambientCount: number;
   data: Float32Array<ArrayBuffer>;
   directionalCount: number;
+  // Punctual/area light counts. Zero until the forward punctual-light passes wire them; renderers
+  // zero-fill them today so the block shape stays stable as lighting grows to MAX_FORWARD_LIGHTS.
+  hemisphereCount: number;
+  pointCount: number;
+  spotCount: number;
   version: number;
 }
