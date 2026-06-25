@@ -41,7 +41,7 @@ const OFFSETS: ReadonlyArray<readonly [number, number]> = [
   [300, 250],
 ];
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

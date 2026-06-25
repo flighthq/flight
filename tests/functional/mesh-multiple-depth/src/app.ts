@@ -24,7 +24,6 @@ import {
   createBoxMeshGeometry,
   createCamera,
   createDirectionalLight,
-  createMatrix4,
   createMesh,
   createPerspectiveProjection,
   createUnlitMaterial,

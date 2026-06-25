@@ -39,7 +39,7 @@ const OVERLAY_W = 180;
 const MULTIPLY_X = 200; // Multiply(0.5,0.5) → ~64 (darken)
 const SCREEN_X = 460; // Screen(0.5,0.5)   → ~192 (brighten)
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

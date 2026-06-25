@@ -46,7 +46,7 @@ const ITALIC_END = WORD.length;
 const REGULAR_START = WORD.length + 1; // after the space
 const REGULAR_END = TEXT.length;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

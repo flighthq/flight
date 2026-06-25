@@ -39,7 +39,7 @@ const HIDDEN_W = 200;
 const HIDDEN_H = 200;
 const HIDDEN_FILL = 0x00ff00; // green
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

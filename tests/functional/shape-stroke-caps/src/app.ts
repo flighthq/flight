@@ -27,7 +27,6 @@ const WIDTH = 800;
 const HEIGHT = 600;
 
 const THICKNESS = 20;
-const HALF = THICKNESS / 2; // = 10, the cap extension distance for round/square
 const SEG_X0 = 250;
 const SEG_X1 = 550; // shared geometric endpoint x for all three segments
 
@@ -36,7 +35,7 @@ const ROW_NONE_Y = 160;
 const ROW_ROUND_Y = 320;
 const ROW_SQUARE_Y = 480;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

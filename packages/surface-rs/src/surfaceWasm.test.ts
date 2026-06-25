@@ -529,10 +529,8 @@ describe('floodFillSurface', () => {
   it('matches @flighthq/surface', () => {
     const refSurface = createSurface(8, 8, 0x000000ff);
     const rsSurface = createSurface(8, 8, 0x000000ff);
-    const refVisited = new Uint8Array(8 * 8);
-    const rsVisited = new Uint8Array(8 * 8);
-    reference.floodFillSurface(refSurface, 4, 4, 0xff8800ff, refVisited);
-    floodFillSurface(rsSurface, 4, 4, 0xff8800ff, rsVisited);
+    reference.floodFillSurface(refSurface, 4, 4, 0xff8800ff);
+    floodFillSurface(rsSurface, 4, 4, 0xff8800ff);
     expect(rsSurface.data).toEqual(refSurface.data);
     expect(rsSurface.version).toBe(refSurface.version);
   });
@@ -862,8 +860,7 @@ describe('scrollSurface', () => {
   it('matches @flighthq/surface', () => {
     const refSurface = paintSurface(6, 6);
     const rsSurface = paintSurface(6, 6);
-    const scratch = new Uint8ClampedArray(refSurface.width * refSurface.height * 4);
-    reference.scrollSurface(refSurface, 2, -1, scratch);
+    reference.scrollSurface(refSurface, 2, -1);
     scrollSurface(rsSurface, 2, -1);
     expect(rsSurface.data).toEqual(refSurface.data);
     expect(rsSurface.version).toBe(refSurface.version);
@@ -1023,10 +1020,21 @@ describe('wasm discriminant map cardinality', () => {
     // Invert=6, Layer=7, Lighten=8, Multiply=9, Normal=10 (`_`), Overlay=11,
     // Screen=12, Shader=13, Subtract=14.
     const modes = [
-      BlendMode.Add, BlendMode.Alpha, BlendMode.Darken, BlendMode.Difference,
-      BlendMode.Erase, BlendMode.Hardlight, BlendMode.Invert, BlendMode.Layer,
-      BlendMode.Lighten, BlendMode.Multiply, BlendMode.Normal, BlendMode.Overlay,
-      BlendMode.Screen, BlendMode.Shader, BlendMode.Subtract,
+      BlendMode.Add,
+      BlendMode.Alpha,
+      BlendMode.Darken,
+      BlendMode.Difference,
+      BlendMode.Erase,
+      BlendMode.Hardlight,
+      BlendMode.Invert,
+      BlendMode.Layer,
+      BlendMode.Lighten,
+      BlendMode.Multiply,
+      BlendMode.Normal,
+      BlendMode.Overlay,
+      BlendMode.Screen,
+      BlendMode.Shader,
+      BlendMode.Subtract,
     ];
     expect(modes).toHaveLength(15);
     const pixels = paintedPixels(4 * 4 * 4);
@@ -1084,7 +1092,12 @@ describe('wasm discriminant map cardinality', () => {
     for (const mode of modes) {
       const refOut = new Uint8ClampedArray(4 * 4 * 4);
       const rsOut = new Uint8ClampedArray(4 * 4 * 4);
-      reference.displaceSurface(refOut, fullRegion(source), { map: fullRegion(mapSurface), mode, scaleX: 2, scaleY: 2 });
+      reference.displaceSurface(refOut, fullRegion(source), {
+        map: fullRegion(mapSurface),
+        mode,
+        scaleX: 2,
+        scaleY: 2,
+      });
       displaceSurface(rsOut, fullRegion(source), { map: fullRegion(mapSurface), mode, scaleX: 2, scaleY: 2 });
       expect(rsOut).toEqual(refOut);
     }

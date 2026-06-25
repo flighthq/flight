@@ -32,7 +32,7 @@ const FIELD_Y = 180;
 const FIELD_W = 400;
 const FIELD_H = 240;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,

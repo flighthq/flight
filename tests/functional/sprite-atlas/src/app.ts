@@ -33,7 +33,7 @@ const A_Y = 200;
 const B_X = 520;
 const B_Y = 360;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

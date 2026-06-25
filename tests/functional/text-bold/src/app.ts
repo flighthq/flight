@@ -49,7 +49,7 @@ const BOX_W = FIELD_W * 0.42;
 const BOLD_BOX_X = FIELD_X + 8;
 const REGULAR_BOX_X = FIELD_X + FIELD_W - 8 - BOX_W;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

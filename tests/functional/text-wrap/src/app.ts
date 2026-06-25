@@ -28,7 +28,7 @@ const BAND1_Y = FIELD_Y + 24;
 const BAND2_Y = FIELD_Y + 170;
 const BAND_HALF_HEIGHT = 14;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

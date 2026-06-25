@@ -64,7 +64,7 @@ function buildCheckerCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x808080ff, // opaque mid-gray, so off-image samples are distinguishable from content.

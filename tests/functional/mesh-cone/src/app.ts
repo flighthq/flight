@@ -89,7 +89,6 @@ export function assertRender(surface: Readonly<Surface>): void {
 
   // 3) Taper signature: low-and-near-center (over the wide base) is on the cone; high-and-off-to-the-
   //    side (above the narrowing apex) is background. Lenient offsets keep this robust to view shifts.
-  const tx = Math.floor(surface.width * 0.04);
   const ty = Math.floor(surface.width * 0.12);
   // Low center — over the broad base → on the cone.
   if (getSurfacePixelLuminance(surface, cx, cy + ty) <= 30) {

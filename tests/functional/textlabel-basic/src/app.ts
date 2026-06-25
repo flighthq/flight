@@ -26,7 +26,7 @@ const FIELD_W = 420;
 const FIELD_H = 120;
 const INK = 0xffcc00; // amber
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

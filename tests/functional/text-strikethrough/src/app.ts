@@ -38,7 +38,7 @@ const FONT_SIZE = 72;
 
 const TEXT = 'Flight';
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,

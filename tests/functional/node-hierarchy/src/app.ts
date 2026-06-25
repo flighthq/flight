@@ -37,7 +37,7 @@ const INNER_DY = 90;
 const COMPOUND_X = OUTER_X + INNER_DX;
 const COMPOUND_Y = OUTER_Y + INNER_DY;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

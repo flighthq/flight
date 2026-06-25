@@ -30,7 +30,7 @@ const TOP_X = 350;
 const TOP_Y = 300;
 const SQUARE = 200;
 
-const { height, render, width } = await createFunctionalTarget({
+const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

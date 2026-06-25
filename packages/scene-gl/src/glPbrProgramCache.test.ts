@@ -13,7 +13,6 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     hasMetallicRoughnessMap: false,
     hasNormalMap: false,
     hasOcclusionMap: false,
-    hasUv1: false,
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
