@@ -12,3 +12,6 @@ wgpu = { workspace = true }
 
 [dev-dependencies]
 pollster = "0.3"
+
+[lints]
+workspace = true

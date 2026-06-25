@@ -195,6 +195,8 @@ fn build_tone_map_fragment(operator: ToneMapOperator) -> String {
 }
 
 // Reborrows the context's pool as a fresh mutable reference. See `reborrow_state`.
+// The &->&mut reborrow is the documented unique-alias invariant below, not a bug.
+#[allow(clippy::mut_from_ref)]
 fn reborrow_pool<'a>(ctx: &'a GlRenderEffectContext) -> &'a mut GlRenderTargetPool {
     let ptr = ctx.pool as *const GlRenderTargetPool as *mut GlRenderTargetPool;
     // SAFETY: `ctx.pool` is the only live reference to the pool for the duration
@@ -207,6 +209,7 @@ fn reborrow_pool<'a>(ctx: &'a GlRenderEffectContext) -> &'a mut GlRenderTargetPo
 // field is itself a `&mut GlRenderState`; recipes need that mutability to
 // compile/cache programs. The context is owned by the pipeline for the duration
 // of the runner call, so the state alias is unique while the runner holds it.
+#[allow(clippy::mut_from_ref)]
 fn reborrow_state<'a>(ctx: &'a GlRenderEffectContext) -> &'a mut GlRenderState {
     let ptr = ctx.state as *const GlRenderState as *mut GlRenderState;
     // SAFETY: `ctx.state` is the only live reference to the render state for the

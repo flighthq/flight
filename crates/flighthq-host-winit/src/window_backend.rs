@@ -109,9 +109,23 @@ impl WindowBackend for WinitWindowBackend {
         self.window.set_window_level(level);
     }
 
+    fn set_content_protection(&self, _win: &ApplicationWindow, enabled: bool) {
+        self.window.set_content_protected(enabled);
+    }
+
+    fn flash_window_frame(&self, _win: &ApplicationWindow) {
+        self.window
+            .request_user_attention(Some(winit::window::UserAttentionType::Informational));
+    }
+
     fn set_fullscreen(&self, _win: &ApplicationWindow, fullscreen: bool) {
         let mode = fullscreen.then(|| Fullscreen::Borderless(None));
         self.window.set_fullscreen(mode);
+    }
+
+    fn set_has_shadow(&self, _win: &ApplicationWindow, _has_shadow: bool) {
+        // winit has no portable window-shadow control; a platform-specific
+        // backend (macOS) fills this. No-op on the base host.
     }
 
     fn set_icon(&self, _win: &ApplicationWindow, _icon: &str) {

@@ -64,6 +64,8 @@ flighthq-interaction = { workspace = true }
 flighthq-application = { workspace = true }
 flighthq-media = { workspace = true }
 flighthq-platform = { workspace = true }
+flighthq-useragent = { workspace = true }
+flighthq-resource-formats = { workspace = true }
 flighthq-filesystem = { workspace = true }
 flighthq-storage = { workspace = true }
 flighthq-shell = { workspace = true }
@@ -89,3 +91,6 @@ flighthq-geolocation = { workspace = true }
 flighthq-haptics = { workspace = true }
 flighthq-share = { workspace = true }
 flighthq-statusbar = { workspace = true }
+
+[lints]
+workspace = true

@@ -75,7 +75,7 @@ fn main() {
         move |_dt: f32, state: &mut WgpuRenderState, _input: &mut InputManager| {
             // Pulse the clear color each frame so the window visibly updates.
             let n = frame_counter.fetch_add(1, Ordering::Relaxed);
-            let phase = (n % 256) as u32;
+            let phase = n % 256;
             state.render_state.background_color = 0x10_20_00_ff | (phase << 8);
         };
 

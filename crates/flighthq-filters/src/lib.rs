@@ -6,8 +6,26 @@
 //! (surface) apply functions live in `flighthq-filters-surface`, which bridges
 //! these descriptors onto the pixel operations in `flighthq-surface`.
 
+pub mod bitmap_filter_guards;
+pub mod bitmap_filter_validation;
+pub mod blur_quality;
+pub mod color_matrix_math;
 pub mod css;
 pub mod math;
+
+pub use bitmap_filter_guards::{
+    is_bevel_filter, is_bitmap_filter, is_blur_filter, is_color_matrix_filter,
+    is_convolution_filter, is_displacement_map_filter, is_drop_shadow_filter,
+    is_gradient_bevel_filter, is_gradient_glow_filter, is_inner_glow_filter,
+    is_inner_shadow_filter, is_median_filter, is_outer_glow_filter, is_pixelate_filter,
+    is_sharpen_filter,
+};
+pub use bitmap_filter_validation::{
+    clamp_filter_quality, clamp_filter_strength, is_valid_bitmap_filter,
+    is_valid_bitmap_filter_list,
+};
+pub use blur_quality::get_blur_pass_count_for_quality;
+pub use color_matrix_math::COLOR_MATRIX_LENGTH;
 
 // Re-export filter types from the types crate so users only need one import.
 pub use flighthq_types::{

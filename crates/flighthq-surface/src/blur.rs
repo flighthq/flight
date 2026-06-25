@@ -337,13 +337,13 @@ pub fn compute_gaussian_kernel(out: &mut [f32], radius: u32, sigma: f32) {
     }
     let mut sum = 0.0_f32;
     let two_sigma_sq = 2.0 * sigma * sigma;
-    for i in 0..len {
+    for (i, v) in out.iter_mut().take(len).enumerate() {
         let x = i as f32 - radius as f32;
-        out[i] = (-(x * x) / two_sigma_sq).exp();
-        sum += out[i];
+        *v = (-(x * x) / two_sigma_sq).exp();
+        sum += *v;
     }
-    for i in 0..len {
-        out[i] /= sum;
+    for v in out.iter_mut().take(len) {
+        *v /= sum;
     }
 }
 
@@ -520,7 +520,7 @@ mod tests {
         // 4 px alpha: [_, 255, 100, _]. Blurring region (1,0,2,1) extracts
         // [255, 100] and averages them.
         let mut source = create_surface(4, 1, 0);
-        source.data[1 * 4 + 3] = 255;
+        source.data[4 + 3] = 255;
         source.data[2 * 4 + 3] = 100;
         let region = SurfaceRegion {
             surface: source,

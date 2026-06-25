@@ -569,12 +569,13 @@ fn raw_to_config(raw: &JsonValue, ppu: f32) -> ParticleEmitterConfig {
 fn collect_unity_warnings(raw: &JsonValue) -> Vec<String> {
     let mut warnings = Vec::new();
     for (key, label) in UNSUPPORTED_UNITY_MODULES {
-        if let Some(module) = raw.get(key) {
-            if module.is_object() && rb(module.get("enabled"), false) {
-                warnings.push(format!(
-                    "Unity {label} module is not supported and was ignored"
-                ));
-            }
+        if let Some(module) = raw.get(key)
+            && module.is_object()
+            && rb(module.get("enabled"), false)
+        {
+            warnings.push(format!(
+                "Unity {label} module is not supported and was ignored"
+            ));
         }
     }
     let bursts = raw
@@ -1195,15 +1196,16 @@ fn gradient_json(g: &UnityGradient) -> String {
         .color_keys
         .iter()
         .map(|k| {
+            let color = format!(
+                "{{\n            \"r\": {},\n            \"g\": {},\n            \"b\": {}\n          }}",
+                format_json_number(k.color.r),
+                format_json_number(k.color.g),
+                format_json_number(k.color.b)
+            );
             format!(
                 "{{\n          \"time\": {},\n          \"color\": {}\n        }}",
                 format_json_number(k.time),
-                format!(
-                    "{{\n            \"r\": {},\n            \"g\": {},\n            \"b\": {}\n          }}",
-                    format_json_number(k.color.r),
-                    format_json_number(k.color.g),
-                    format_json_number(k.color.b)
-                )
+                color
             )
         })
         .collect();

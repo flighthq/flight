@@ -492,8 +492,9 @@ pub fn get_wgpu_render_state_runtime_mut(
 
 /// Returns `true` if wgpu / WebGPU is available in this environment.
 pub fn is_wgpu_supported() -> bool {
-    // On native targets wgpu is always compiled in; support depends on available adapters.
-    cfg!(target_arch = "wasm32") || true
+    // wgpu is compiled in on every target Flight builds for (native + wasm32);
+    // actual device availability is resolved later when an adapter is requested.
+    true
 }
 
 #[cfg(test)]

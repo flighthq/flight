@@ -197,7 +197,7 @@ mod tests {
         let runtime = create_video_runtime();
         let expected =
             compute_video_local_bounds_rectangle as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert_eq!(runtime, Some(expected));
+        assert!(std::ptr::fn_addr_eq(runtime.unwrap(), expected));
     }
 
     // get_video_runtime
@@ -208,7 +208,10 @@ mod tests {
         let id = create_video(&mut arena);
         let expected =
             compute_video_local_bounds_rectangle as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert_eq!(get_video_runtime(&arena, id), Some(expected));
+        assert!(std::ptr::fn_addr_eq(
+            get_video_runtime(&arena, id).unwrap(),
+            expected
+        ));
     }
 
     // get_video_smoothing / set_video_smoothing

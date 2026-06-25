@@ -46,6 +46,7 @@ pub fn build_sdl_keyboard_data(
         num_lock: false,
         repeat,
         shift_key: shift,
+        time_stamp: 0.0,
     }
 }
 

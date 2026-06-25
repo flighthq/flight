@@ -9,3 +9,6 @@ description = "Textures and samplers: image-backed material texture bindings and
 flighthq-geometry = { workspace = true }
 flighthq-image = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

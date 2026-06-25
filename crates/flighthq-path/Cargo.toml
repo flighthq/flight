@@ -8,3 +8,6 @@ description = "Vector path geometry: curve flattening and tessellation of Graphi
 [dependencies]
 flighthq-geometry = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

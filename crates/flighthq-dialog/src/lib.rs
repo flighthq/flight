@@ -7,6 +7,7 @@
 pub mod dialog;
 
 pub use dialog::{
-    get_dialog_backend, set_dialog_backend, show_confirm_dialog, show_message_dialog,
-    show_open_file_dialog, show_prompt_dialog, show_save_file_dialog,
+    get_dialog_backend, set_dialog_backend, show_confirm_dialog, show_error_box, show_error_dialog,
+    show_info_dialog, show_message_dialog, show_open_directory_dialog, show_open_file_dialog,
+    show_prompt_dialog, show_save_file_dialog, show_warning_dialog,
 };

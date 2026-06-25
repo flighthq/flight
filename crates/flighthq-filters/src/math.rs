@@ -44,7 +44,7 @@ pub fn compute_box_blur_radius(sigma: f32, passes: u32) -> u32 {
 /// Gaussian of standard deviation `sigma`.
 fn compute_box_blur_lower_width(sigma: f32, passes: u32) -> u32 {
     let mut width = f32::sqrt((12.0 * sigma * sigma) / passes as f32 + 1.0).floor() as u32;
-    if width % 2 == 0 {
+    if width.is_multiple_of(2) {
         width = width.saturating_sub(1);
     }
     width

@@ -111,15 +111,24 @@ pub fn ensure_gl_mesh_upload<'a>(
     &scene.upload_cache[&geometry_id]
 }
 
-/// Vertex attribute location the PBR vertex shader fixes with `layout(location =
-/// …)`. Returns `None` for a semantic the canonical PBR shader does not consume.
+/// Vertex attribute location the mesh vertex shaders fix with `layout(location =
+/// …)`; the upload's VAO wires the interleaved buffer to these by semantic.
+/// Locations 0–3 are the canonical PBR record (position/normal/tangent/uv0);
+/// `color0` (location 4) is bound only when a geometry's layout carries it (the
+/// VertexColor path); `uv1` (location 5) is the second UV set (occlusion/lightmap
+/// channel per glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the
+/// skinning channels (reserved for a future GPU-skinning pass). Returns `None` for
+/// a semantic absent from this map, which is left unbound.
 pub fn gl_pbr_attribute_location(semantic: VertexSemantic) -> Option<u32> {
     match semantic {
         VertexSemantic::Position => Some(0),
         VertexSemantic::Normal => Some(1),
         VertexSemantic::Tangent => Some(2),
         VertexSemantic::Uv0 => Some(3),
-        _ => None,
+        VertexSemantic::Color0 => Some(4),
+        VertexSemantic::Uv1 => Some(5),
+        VertexSemantic::Joints0 => Some(6),
+        VertexSemantic::Weights0 => Some(7),
     }
 }
 
@@ -182,11 +191,11 @@ mod tests {
     }
 
     #[test]
-    fn gl_pbr_attribute_location_returns_none_for_unconsumed_semantics() {
-        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Uv1), None);
-        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Color0), None);
-        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Joints0), None);
-        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Weights0), None);
+    fn gl_pbr_attribute_location_maps_the_extended_skinning_and_secondary_uv_semantics() {
+        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Color0), Some(4));
+        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Uv1), Some(5));
+        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Joints0), Some(6));
+        assert_eq!(gl_pbr_attribute_location(VertexSemantic::Weights0), Some(7));
     }
 
     // resolve_gl_vertex_format

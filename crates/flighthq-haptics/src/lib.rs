@@ -9,6 +9,8 @@
 pub mod haptics;
 
 pub use haptics::{
-    create_default_haptics_backend, get_haptics_backend, set_haptics_backend,
+    cancel_device_vibration, create_default_haptics_backend, get_haptics_backend,
+    get_haptics_capabilities, is_haptics_supported, prepare_haptics, set_haptics_backend,
     trigger_haptic_impact, trigger_haptic_notification, trigger_haptic_selection, vibrate_device,
+    vibrate_device_pattern, vibrate_device_waveform,
 };

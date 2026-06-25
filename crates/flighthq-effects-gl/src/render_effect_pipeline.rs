@@ -23,7 +23,6 @@ use flighthq_render_gl::render_target_pool::{
     destroy_gl_render_target_pool, get_gl_render_target, release_gl_render_target,
 };
 use flighthq_render_gl::{GlRenderState, GlRenderTarget, GlRenderTargetFormat};
-use flighthq_types::geometry::Matrix;
 
 use crate::effect_program_cache::{draw_gl_effect_fullscreen_pass, get_gl_effect_program};
 use crate::render_effect_registry::{
@@ -110,10 +109,7 @@ pub fn begin_gl_render_effect_pipeline(
         }
     }
 
-    let render_transform = state
-        .render_state
-        .render_transform_2d
-        .unwrap_or_else(Matrix::default);
+    let render_transform = state.render_state.render_transform_2d.unwrap_or_default();
     // Borrow-split: begin reads the target while mutating state's runtime. The
     // target lives in the pipeline (disjoint from state), so a raw read is safe.
     let scene_ptr: *const GlRenderTarget = pipeline

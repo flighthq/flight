@@ -11,5 +11,14 @@
 //! side-effect-free rule.
 
 mod text_shaper;
+mod text_shaper_hooks;
+mod text_shaper_run;
 
 pub use text_shaper::{get_text_shaper_backend, set_text_shaper_backend, shape_text};
+pub use text_shaper_hooks::{TextShaperBackendHook, set_text_shaper_backend_hook};
+pub use text_shaper_run::{
+    clear_shaped_run, create_shaped_run, get_code_point_for_glyph, get_font_metrics,
+    get_font_metrics_into, get_font_unit_scale, get_glyph_extents, get_glyph_extents_batch,
+    get_glyph_extents_into, get_glyph_index_for_code_point, get_glyph_name, shape_text_run,
+    shape_text_run_into,
+};

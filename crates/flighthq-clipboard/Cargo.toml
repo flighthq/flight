@@ -7,6 +7,11 @@ description = "System clipboard read/write (text, HTML) over a swappable web/nat
 
 [dependencies]
 flighthq-types = { workspace = true }
+flighthq-signals = { workspace = true }
 
 [dev-dependencies]
 serial_test = { workspace = true }
+pollster = "0.3"
+
+[lints]
+workspace = true

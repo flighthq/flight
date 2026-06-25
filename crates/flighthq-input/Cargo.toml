@@ -8,3 +8,6 @@ description = "Portable input normalization for keyboard, pointer, wheel, and te
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-signals = { workspace = true }
+
+[lints]
+workspace = true

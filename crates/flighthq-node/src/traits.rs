@@ -261,17 +261,9 @@ pub struct Transform3DRuntimeTrait {
 }
 
 /// Data-side 3D transform fields.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Transform3DTrait {
     pub local_matrix: Matrix4,
-}
-
-impl Default for Transform3DTrait {
-    fn default() -> Self {
-        Self {
-            local_matrix: Matrix4::default(),
-        }
-    }
 }
 
 /// Optional override for [`init_transform3d_trait`].

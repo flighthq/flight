@@ -346,7 +346,7 @@ fn iter_sub_texture_attrs(xml: &str) -> Vec<String> {
     while let Some(idx) = rest.find("<SubTexture") {
         let after = &rest[idx + "<SubTexture".len()..];
         // `[^/]*` — attribute run ends at the first '/' (or '>').
-        let attr_end = after.find(|c| c == '/' || c == '>').unwrap_or(after.len());
+        let attr_end = after.find(['/', '>']).unwrap_or(after.len());
         out.push(after[..attr_end].to_string());
         rest = &after[attr_end..];
     }
@@ -391,15 +391,15 @@ fn frame_to_sub_texture(frame: &SpritesheetFrameData) -> StarlingSubTexture {
     if frame.source_height != frame.height {
         st.frame_height = Some(frame.source_height);
     }
-    if let Some(px) = frame.pivot_x {
-        if frame.source_width > 0.0 {
-            st.pivot_x = Some(px * frame.source_width);
-        }
+    if let Some(px) = frame.pivot_x
+        && frame.source_width > 0.0
+    {
+        st.pivot_x = Some(px * frame.source_width);
     }
-    if let Some(py) = frame.pivot_y {
-        if frame.source_height > 0.0 {
-            st.pivot_y = Some(py * frame.source_height);
-        }
+    if let Some(py) = frame.pivot_y
+        && frame.source_height > 0.0
+    {
+        st.pivot_y = Some(py * frame.source_height);
     }
     if frame.rotated {
         st.rotated = Some(true);

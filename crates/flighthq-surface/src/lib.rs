@@ -65,7 +65,9 @@ pub use encode::{decode_surface, encode_surface};
 
 // fill
 pub use fill::{
-    fill_surface_noise, fill_surface_perlin_noise, fill_surface_rectangle, flood_fill_surface,
+    SURFACE_NOISE_CHANNEL_A, SURFACE_NOISE_CHANNEL_B, SURFACE_NOISE_CHANNEL_G,
+    SURFACE_NOISE_CHANNEL_R, fill_surface_noise, fill_surface_perlin_noise, fill_surface_rectangle,
+    fill_surface_turbulence, flood_fill_surface,
 };
 
 // fingerprint
@@ -128,8 +130,8 @@ pub use transform::{
 // Re-export key types for convenience.
 pub use flighthq_types::{
     AlphaType, ImageChannel, ImageFormat, PixelFormat, PixelOrder, RectangleLike, Surface,
-    SurfaceFingerprint, SurfaceHistogram, SurfaceMismatch, SurfaceRegion, SurfaceResizeMode,
-    ThresholdOperation,
+    SurfaceEdgeMode, SurfaceFingerprint, SurfaceHistogram, SurfaceMismatch, SurfaceRegion,
+    SurfaceResizeMode, ThresholdOperation,
 };
 
 // Bitmap-filter pixel operations (the CPU algorithms `flighthq-filters-surface`

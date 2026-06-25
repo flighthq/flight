@@ -101,7 +101,7 @@ mod tests {
         draw_surface(&mut dest, &src, -1, -1);
         assert_eq!(&dest.data[0..4], &[0xaa, 0xbb, 0xcc, 0xff]);
         // (1,1) is outside the blit footprint.
-        let di = ((1 * 4 + 1) * 4) as usize;
+        let di = ((4 + 1) * 4) as usize;
         assert_eq!(&dest.data[di..di + 4], &[0, 0, 0, 0]);
     }
 

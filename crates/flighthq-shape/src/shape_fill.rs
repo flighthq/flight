@@ -252,14 +252,14 @@ fn append_round_rectangle_to_path(
 }
 
 fn flush_region(regions: &mut Vec<ShapeFillRegion>, path: Option<Path>, color: u32, alpha: f32) {
-    if let Some(p) = path {
-        if !p.commands.is_empty() {
-            regions.push(ShapeFillRegion {
-                path: p,
-                color,
-                alpha,
-            });
-        }
+    if let Some(p) = path
+        && !p.commands.is_empty()
+    {
+        regions.push(ShapeFillRegion {
+            path: p,
+            color,
+            alpha,
+        });
     }
 }
 

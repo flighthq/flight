@@ -22,6 +22,7 @@ pub mod render_proxy;
 pub mod render_proxy_adapter;
 pub mod render_state;
 pub mod render_target;
+pub mod render_viewport;
 pub mod renderer;
 pub mod text_format;
 pub mod transform2d;
@@ -73,6 +74,12 @@ pub use render_target::{
     compute_render_target_size,
 };
 
+// render_viewport
+pub use render_viewport::{
+    compute_render_proxy_world_bounds, create_render_viewport_2d, is_render_proxy_in_viewport,
+    is_renderable_in_viewport,
+};
+
 // renderer
 pub use renderer::{
     copy_all_renderers_from_render_state, copy_renderers_from_render_state, noop_renderer_data,
@@ -88,6 +95,6 @@ pub use transform2d::{update_display_object_render_transform, update_render_prox
 // Re-export core render types from flighthq-types for convenience.
 pub use flighthq_types::{
     RenderCache, RenderCacheAdapterSignals, RenderProxy, RenderProxy2D, RenderProxyAdapter,
-    RenderState, RenderTargetDepth, RenderTargetDescriptor, RenderTargetFormat, Renderer,
-    RendererData, SceneGraphSyncPolicy,
+    RenderState, RenderTargetDepth, RenderTargetDescriptor, RenderTargetFormat, RenderViewport2D,
+    Renderer, RendererData, SceneGraphSyncPolicy,
 };

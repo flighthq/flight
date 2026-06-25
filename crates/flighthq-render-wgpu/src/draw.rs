@@ -290,11 +290,13 @@ fn lookup_wgpu_pipeline(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     // apply_wgpu_blend_mode / state_format
 
     #[test]
+    // The literal `Some`/`None` are the point: this test demonstrates the override-vs-surface
+    // precedence rule that `unwrap_or` encodes, so the "unnecessary" unwrap is deliberate.
+    #[allow(clippy::unnecessary_literal_unwrap)]
     fn state_format_prefers_render_target_override() {
         // We exercise the format resolution logic with a synthetic runtime-less view by
         // asserting the precedence rule directly: override wins, else the surface format.

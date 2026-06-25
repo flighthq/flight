@@ -281,7 +281,7 @@ mod tests {
         let runtime = create_stage_runtime();
         let expected =
             compute_stage_local_bounds_rectangle as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert_eq!(runtime, Some(expected));
+        assert!(std::ptr::fn_addr_eq(runtime.unwrap(), expected));
     }
 
     // create_stage_signals
@@ -304,7 +304,10 @@ mod tests {
         let id = create_stage(&mut arena);
         let expected =
             compute_stage_local_bounds_rectangle as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert_eq!(get_stage_runtime(&arena, id), Some(expected));
+        assert!(std::ptr::fn_addr_eq(
+            get_stage_runtime(&arena, id).unwrap(),
+            expected
+        ));
     }
 
     // get_stage_signals

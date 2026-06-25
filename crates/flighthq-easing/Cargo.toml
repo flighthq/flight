@@ -7,3 +7,6 @@ description = "Easing functions for animation"
 
 [dependencies]
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

@@ -282,8 +282,10 @@ fn draw_demo_scene(
 // Registers an eased tween that drives the `phase` property to `target` over one
 // second. The host's frame loop reads the result back and re-arms the loop.
 fn queue_phase_tween(tweens: &mut flighthq_types::TweenManager, target_ptr: u64, target: f32) {
-    let mut options = TweenOptions::default();
-    options.ease = Some(Arc::new(ease_in_out_sine));
+    let options = TweenOptions {
+        ease: Some(Arc::new(ease_in_out_sine)),
+        ..Default::default()
+    };
     create_tween(
         tweens,
         target_ptr,

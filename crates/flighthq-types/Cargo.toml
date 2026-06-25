@@ -8,3 +8,6 @@ description = "Shared interfaces, enums, kind identifiers, and cross-package typ
 [dependencies]
 bitflags = { workspace = true }
 flighthq-signals = { workspace = true }
+
+[lints]
+workspace = true

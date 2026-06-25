@@ -24,14 +24,18 @@ pub use text_input::{disable_text_input, enable_text_input, get_text_input_state
 
 // text_input_editing
 pub use text_input_editing::{
-    append_text_input, apply_text_input_restriction, delete_text_input_backward,
-    delete_text_input_forward, get_text_input_caret_index, get_text_input_caret_rectangle,
-    get_text_input_character_index_at_point, get_text_input_display_text,
-    get_text_input_selection_begin_index, get_text_input_selection_end_index,
-    get_text_input_selection_rectangles, get_text_input_selection_text, handle_text_input_keyboard,
-    insert_text_input, move_text_input_caret, replace_selected_text_input, replace_text_input,
-    select_all_text_input, select_line_at_text_input_index, select_word_at_text_input_index,
-    set_text_input_selection,
+    append_text_input, apply_text_input_restriction, can_redo_text_input, can_undo_text_input,
+    clear_text_input_history, delete_text_input_backward, delete_text_input_forward,
+    delete_text_input_word_backward, delete_text_input_word_forward, get_text_input_caret_index,
+    get_text_input_caret_rectangle, get_text_input_character_index_at_point,
+    get_text_input_display_text, get_text_input_selection_begin_index,
+    get_text_input_selection_end_index, get_text_input_selection_rectangles,
+    get_text_input_selection_text, handle_text_input_keyboard, insert_text_input,
+    move_text_input_caret, move_text_input_caret_by_word, move_text_input_caret_down,
+    move_text_input_caret_to_line_end, move_text_input_caret_to_line_start,
+    move_text_input_caret_up, redo_text_input, replace_selected_text_input, replace_text_input,
+    scroll_text_input_caret_into_view, select_all_text_input, select_line_at_text_input_index,
+    select_word_at_text_input_index, set_text_input_selection, undo_text_input,
 };
 
 // text_input_manager

@@ -388,24 +388,24 @@ pub fn update_particle_emitter(
 
             // World-space: transform spawn position and velocity into world space,
             // and distribute origins along the emitter's movement path.
-            if config.world_space {
-                if let Some(wt) = world_transform {
-                    let t = if to_spawn > 1 {
-                        s as f32 / (to_spawn - 1) as f32
-                    } else {
-                        1.0
-                    };
-                    let origin_x = prev_path_x + (track_x - prev_path_x) * t;
-                    let origin_y = prev_path_y + (track_y - prev_path_y) * t;
-                    let wx = wt.a * spawn_x + wt.c * spawn_y + origin_x;
-                    let wy = wt.b * spawn_x + wt.d * spawn_y + origin_y;
-                    spawn_x = wx;
-                    spawn_y = wy;
-                    let wvx = wt.a * vx + wt.c * vy;
-                    let wvy = wt.b * vx + wt.d * vy;
-                    vx = wvx;
-                    vy = wvy;
-                }
+            if config.world_space
+                && let Some(wt) = world_transform
+            {
+                let t = if to_spawn > 1 {
+                    s as f32 / (to_spawn - 1) as f32
+                } else {
+                    1.0
+                };
+                let origin_x = prev_path_x + (track_x - prev_path_x) * t;
+                let origin_y = prev_path_y + (track_y - prev_path_y) * t;
+                let wx = wt.a * spawn_x + wt.c * spawn_y + origin_x;
+                let wy = wt.b * spawn_x + wt.d * spawn_y + origin_y;
+                spawn_x = wx;
+                spawn_y = wy;
+                let wvx = wt.a * vx + wt.c * vy;
+                let wvy = wt.b * vx + wt.d * vy;
+                vx = wvx;
+                vy = wvy;
             }
 
             // Velocity inheritance: blend emitter velocity into new particle velocity.
@@ -533,13 +533,7 @@ pub fn update_particle_emitter(
 }
 
 fn clamp01(v: f32) -> f32 {
-    if v < 0.0 {
-        0.0
-    } else if v > 1.0 {
-        1.0
-    } else {
-        v
-    }
+    v.clamp(0.0, 1.0)
 }
 
 fn curve_len(curve: &Option<Vec<f32>>) -> usize {

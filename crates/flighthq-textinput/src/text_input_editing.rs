@@ -1,12 +1,18 @@
 use flighthq_types::{
     HandleTextInputKeyboardOptions, KeyboardEventData, ReplaceTextInputOptions, TextFormat,
-    TextFormatRange, TextLayoutGroup, TextLayoutResult, TextSelectionRectangle, key_code,
+    TextFormatRange, TextInputHistoryEntry, TextInputState, TextLayoutGroup, TextLayoutResult,
+    TextSelectionRectangle, key_code,
 };
 
-use flighthq_text::RichText;
-use flighthq_textlayout::get_rich_text_selection_rectangles;
+use flighthq_text::{RichText, set_rich_text_scroll_h, set_rich_text_scroll_v};
+use flighthq_textlayout::{TEXT_BOUNDS_GUTTER, get_rich_text_selection_rectangles};
 
 use crate::text_input::get_text_input_state;
+
+// Horizontal navigation resets the desired-x column so the next vertical motion
+// anchors to the new caret position. Vertical navigation reads (and on first
+// use, sets) `desired_caret_x`.
+const DESIRED_CARET_X_UNSET: f32 = -1.0;
 
 // All indices in this module are character (`char`) indices, matching the
 // layout engine in `flighthq-textlayout`. Slicing/length use `char` counts,
@@ -52,6 +58,27 @@ pub fn apply_text_input_restriction(
     value
 }
 
+/// Returns `true` if there is an edit record available to redo (the history
+/// cursor is not at the most-recent record).
+pub fn can_redo_text_input(source: &RichText) -> bool {
+    let state = get_input_state(source);
+    state.history_index < state.history.len() as i64 - 1
+}
+
+/// Returns `true` if there is an edit record available to undo (at least one
+/// edit has been recorded and the cursor is not before the first record).
+pub fn can_undo_text_input(source: &RichText) -> bool {
+    get_input_state(source).history_index >= 0
+}
+
+/// Clears the undo/redo history for this field. Does not change the text or
+/// selection.
+pub fn clear_text_input_history(source: &mut RichText) {
+    let state = get_input_state_mut(source);
+    state.history.clear();
+    state.history_index = -1;
+}
+
 /// Deletes backward from the caret: if there is a selection, deletes the
 /// selection; otherwise deletes the character before the caret.
 pub fn delete_text_input_backward(source: &mut RichText) {
@@ -75,6 +102,38 @@ pub fn delete_text_input_forward(source: &mut RichText) {
         replace_text_input(source, start, end, "", None);
     } else if start < char_len(&source.data.text) {
         replace_text_input(source, start, start + 1, "", None);
+    }
+}
+
+/// Deletes backward by one word — from the caret to the beginning of the
+/// previous word (or the beginning of the text). If a range is selected, deletes
+/// the selection instead, matching typical Ctrl/Alt+Backspace behavior.
+pub fn delete_text_input_word_backward(source: &mut RichText) {
+    let start = get_text_input_selection_begin_index(source);
+    let end = get_text_input_selection_end_index(source);
+    if start != end {
+        replace_text_input(source, start, end, "", None);
+        return;
+    }
+    let word_start = find_word_start_before(&source.data.text, start);
+    if word_start < start {
+        replace_text_input(source, word_start, start, "", None);
+    }
+}
+
+/// Deletes forward by one word — from the caret to the end of the next word (or
+/// the end of the text). If a range is selected, deletes the selection instead,
+/// matching typical Ctrl/Alt+Delete behavior.
+pub fn delete_text_input_word_forward(source: &mut RichText) {
+    let start = get_text_input_selection_begin_index(source);
+    let end = get_text_input_selection_end_index(source);
+    if start != end {
+        replace_text_input(source, start, end, "", None);
+        return;
+    }
+    let word_end = find_word_end_after(&source.data.text, start);
+    if word_end > start {
+        replace_text_input(source, start, word_end, "", None);
     }
 }
 
@@ -168,9 +227,7 @@ pub fn get_text_input_display_text(source: &RichText) -> String {
         return source.data.text.clone();
     }
     let password_character = state.password_character;
-    std::iter::repeat(password_character)
-        .take(char_len(&source.data.text))
-        .collect()
+    std::iter::repeat_n(password_character, char_len(&source.data.text)).collect()
 }
 
 /// Returns the lower of `caret_index` and `selection_index`, clamped to the
@@ -228,10 +285,10 @@ pub fn handle_text_input_keyboard(
         }
         KeyboardCommand::Copy => {
             let copy_text = get_text_input_selection_text(source);
-            if !copy_text.is_empty() {
-                if let Some(on_copy) = options.and_then(|o| o.on_copy.as_ref()) {
-                    on_copy(copy_text);
-                }
+            if !copy_text.is_empty()
+                && let Some(on_copy) = options.and_then(|o| o.on_copy.as_ref())
+            {
+                on_copy(copy_text);
             }
             true
         }
@@ -247,6 +304,19 @@ pub fn handle_text_input_keyboard(
         }
         KeyboardCommand::Delete => {
             delete_text_input_forward(source);
+            true
+        }
+        KeyboardCommand::DeleteWordBackward => {
+            delete_text_input_word_backward(source);
+            true
+        }
+        KeyboardCommand::DeleteWordForward => {
+            delete_text_input_word_forward(source);
+            true
+        }
+        KeyboardCommand::Down => {
+            let layout = options.and_then(|o| o.layout.as_ref());
+            move_text_input_caret_down(source, layout, data.shift_key);
             true
         }
         KeyboardCommand::End => {
@@ -286,6 +356,19 @@ pub fn handle_text_input_keyboard(
             select_all_text_input(source);
             true
         }
+        KeyboardCommand::Up => {
+            let layout = options.and_then(|o| o.layout.as_ref());
+            move_text_input_caret_up(source, layout, data.shift_key);
+            true
+        }
+        KeyboardCommand::WordLeft => {
+            move_text_input_caret_by_word(source, -1, data.shift_key);
+            true
+        }
+        KeyboardCommand::WordRight => {
+            move_text_input_caret_by_word(source, 1, data.shift_key);
+            true
+        }
     }
 }
 
@@ -297,6 +380,7 @@ pub fn insert_text_input(source: &mut RichText, text: &str) {
         text,
         Some(&ReplaceTextInputOptions {
             apply_input_rules: true,
+            ..Default::default()
         }),
     );
 }
@@ -310,7 +394,162 @@ pub fn move_text_input_caret(source: &mut RichText, index: usize, extend_selecti
     if !extend_selection {
         state.selection_index = caret;
     }
+    // Horizontal motion resets the desired-x column so subsequent vertical
+    // navigation re-anchors.
+    state.desired_caret_x = DESIRED_CARET_X_UNSET;
     invalidate_appearance(source);
+}
+
+/// Moves the caret by one word in the given direction (negative = backward/left,
+/// positive = forward/right). When `extend_selection` is `false`, the anchor
+/// collapses to the new caret; when `true`, the anchor stays and the selection
+/// extends.
+pub fn move_text_input_caret_by_word(
+    source: &mut RichText,
+    direction: i32,
+    extend_selection: bool,
+) {
+    let caret_index = get_text_input_caret_index(source);
+    let target = if direction < 0 {
+        find_word_start_before(&source.data.text, caret_index)
+    } else {
+        find_word_end_after(&source.data.text, caret_index)
+    };
+    move_text_input_caret(source, target, extend_selection);
+}
+
+/// Moves the caret down one line, preserving the desired-x column for continuous
+/// vertical navigation. When `layout` is absent, falls back to moving to the end
+/// of the text.
+pub fn move_text_input_caret_down(
+    source: &mut RichText,
+    layout: Option<&TextLayoutResult>,
+    extend_selection: bool,
+) {
+    let Some(layout) = layout else {
+        let len = char_len(&source.data.text);
+        move_text_input_caret(source, len, extend_selection);
+        return;
+    };
+    let mut out = TextSelectionRectangle::default();
+    get_text_input_caret_rectangle(&mut out, source, layout);
+    if get_input_state(source).desired_caret_x == DESIRED_CARET_X_UNSET {
+        get_input_state_mut(source).desired_caret_x = out.x;
+    }
+    let target_line_index = out.line_index as usize + 1;
+    if target_line_index >= layout.num_lines as usize {
+        let len = char_len(&source.data.text);
+        move_text_input_caret(source, len, extend_selection);
+        return;
+    }
+    let target_y = get_line_offset_y(layout, target_line_index)
+        + layout
+            .line_heights
+            .get(target_line_index)
+            .copied()
+            .unwrap_or(0.0)
+            / 2.0;
+    let desired_x = get_input_state(source).desired_caret_x;
+    let target_index = get_text_input_character_index_at_point(source, layout, desired_x, target_y);
+    let new_caret = clamp_index(target_index, char_len(&source.data.text));
+    let state = get_input_state_mut(source);
+    state.caret_index = new_caret;
+    if !extend_selection {
+        state.selection_index = new_caret;
+    }
+    // Preserve desired_caret_x across vertical steps (do not reset it).
+    invalidate_appearance(source);
+}
+
+/// Moves the caret to the end of the current line using `layout`. Falls back to
+/// the end of the text when `layout` is absent.
+pub fn move_text_input_caret_to_line_end(
+    source: &mut RichText,
+    layout: Option<&TextLayoutResult>,
+    extend_selection: bool,
+) {
+    let Some(layout) = layout else {
+        let len = char_len(&source.data.text);
+        move_text_input_caret(source, len, extend_selection);
+        return;
+    };
+    let line_index = get_caret_line_index(source, layout);
+    let line_end = get_line_end_index(layout, line_index, char_len(&source.data.text));
+    move_text_input_caret(source, line_end, extend_selection);
+}
+
+/// Moves the caret to the start of the current line using `layout`. Falls back
+/// to the start of the text when `layout` is absent.
+pub fn move_text_input_caret_to_line_start(
+    source: &mut RichText,
+    layout: Option<&TextLayoutResult>,
+    extend_selection: bool,
+) {
+    let Some(layout) = layout else {
+        move_text_input_caret(source, 0, extend_selection);
+        return;
+    };
+    let line_index = get_caret_line_index(source, layout);
+    let line_start = get_line_start_index(layout, line_index);
+    move_text_input_caret(source, line_start, extend_selection);
+}
+
+/// Moves the caret up one line, preserving the desired-x column for continuous
+/// vertical navigation. When `layout` is absent, falls back to moving to the
+/// beginning of the text.
+pub fn move_text_input_caret_up(
+    source: &mut RichText,
+    layout: Option<&TextLayoutResult>,
+    extend_selection: bool,
+) {
+    let Some(layout) = layout else {
+        move_text_input_caret(source, 0, extend_selection);
+        return;
+    };
+    let mut out = TextSelectionRectangle::default();
+    get_text_input_caret_rectangle(&mut out, source, layout);
+    if get_input_state(source).desired_caret_x == DESIRED_CARET_X_UNSET {
+        get_input_state_mut(source).desired_caret_x = out.x;
+    }
+    if out.line_index == 0 {
+        move_text_input_caret(source, 0, extend_selection);
+        return;
+    }
+    let target_line_index = out.line_index as usize - 1;
+    let target_y = get_line_offset_y(layout, target_line_index)
+        + layout
+            .line_heights
+            .get(target_line_index)
+            .copied()
+            .unwrap_or(0.0)
+            / 2.0;
+    let desired_x = get_input_state(source).desired_caret_x;
+    let target_index = get_text_input_character_index_at_point(source, layout, desired_x, target_y);
+    let new_caret = clamp_index(target_index, char_len(&source.data.text));
+    let state = get_input_state_mut(source);
+    state.caret_index = new_caret;
+    if !extend_selection {
+        state.selection_index = new_caret;
+    }
+    // Preserve desired_caret_x across vertical steps (do not reset it).
+    invalidate_appearance(source);
+}
+
+/// Reapplies the next edit record in the history, moving the cursor forward.
+/// Does nothing when there is nothing to redo.
+pub fn redo_text_input(source: &mut RichText) {
+    if !can_redo_text_input(source) {
+        return;
+    }
+    let state = get_input_state_mut(source);
+    state.history_index += 1;
+    let record = state.history[state.history_index as usize].clone();
+    apply_history_record(
+        source,
+        record.text_after,
+        record.caret_index_after,
+        record.selection_index_after,
+    );
 }
 
 /// Replaces the current selection with `text`, optionally applying input rules.
@@ -352,8 +591,13 @@ pub fn replace_text_input(
         return;
     }
 
-    let prefix = char_slice(&source.data.text, 0, start);
-    let suffix = char_slice(&source.data.text, end, len);
+    let text_before = source.data.text.clone();
+    let before_len = char_len(&text_before);
+    let caret_before = clamp_index(get_input_state(source).caret_index, before_len);
+    let selection_before = clamp_index(get_input_state(source).selection_index, before_len);
+
+    let prefix = char_slice(&text_before, 0, start);
+    let suffix = char_slice(&text_before, end, len);
     source.data.text = format!("{prefix}{value}{suffix}");
 
     let default_format = source.data.default_text_format.clone();
@@ -364,8 +608,85 @@ pub fn replace_text_input(
         end,
         value_len,
     );
+    // An edit changes the caret position, so any stored desired-x column is no
+    // longer valid.
+    get_input_state_mut(source).desired_caret_x = DESIRED_CARET_X_UNSET;
     set_text_input_selection(source, start + value_len, start + value_len);
+
+    let skip_history = options.map(|o| o.skip_history).unwrap_or(false);
+    if !skip_history && get_input_state(source).history_limit > 0 {
+        let text_after = source.data.text.clone();
+        let merge_kind = options.and_then(|o| o.merge_kind.clone());
+        let state = get_input_state_mut(source);
+        record_text_input_edit(
+            state,
+            text_before,
+            text_after,
+            caret_before,
+            selection_before,
+            merge_kind,
+        );
+    }
+
     invalidate_appearance(source);
+}
+
+/// Scrolls the field so the caret is visible within the given viewport
+/// dimensions. Uses `layout` to locate the caret rectangle, then adjusts
+/// `scroll_v` (vertical, 1-based line) and `scroll_h` (horizontal, pixels).
+pub fn scroll_text_input_caret_into_view(
+    source: &mut RichText,
+    layout: &TextLayoutResult,
+    viewport_width: f32,
+    viewport_height: f32,
+) {
+    let mut out = TextSelectionRectangle::default();
+    get_text_input_caret_rectangle(&mut out, source, layout);
+
+    // Vertical scroll (line-based: scroll_v is the 1-based line number).
+    let caret_top = out.y;
+    let caret_bottom = out.y + out.height;
+    // Pixel offset of the current scroll_v (0-based line index = scroll_v - 1).
+    let scroll_v_line = (source.data.scroll_v as i64 - 1).max(0) as usize;
+    let mut view_top = 0.0;
+    for i in 0..scroll_v_line {
+        view_top += layout.line_heights.get(i).copied().unwrap_or(0.0);
+    }
+    let view_bottom = view_top + viewport_height;
+
+    if caret_top < view_top {
+        // Caret is above the viewport: scroll to the line containing the caret.
+        set_rich_text_scroll_v(source, out.line_index + 1, Some(layout));
+    } else if caret_bottom > view_bottom {
+        // Caret is below the viewport: scroll down so the caret line is visible.
+        let mut pixel_offset = 0.0;
+        let mut first_visible_line = 0usize;
+        for i in 0..layout.num_lines as usize {
+            let height = layout.line_heights.get(i).copied().unwrap_or(0.0);
+            if pixel_offset + height > caret_bottom - viewport_height {
+                first_visible_line = i;
+                break;
+            }
+            pixel_offset += height;
+        }
+        set_rich_text_scroll_v(source, first_visible_line as u32 + 1, Some(layout));
+    }
+
+    // Horizontal scroll (pixel-based). Add a small margin so the caret is not
+    // right at the edge.
+    const CARET_SCROLL_MARGIN: f32 = 8.0;
+    let scroll_h = source.data.scroll_h;
+    let caret_left = out.x - scroll_h;
+    let caret_right = caret_left + out.width;
+    if caret_left < 0.0 {
+        set_rich_text_scroll_h(source, (out.x - CARET_SCROLL_MARGIN).max(0.0), Some(layout));
+    } else if caret_right + CARET_SCROLL_MARGIN > viewport_width {
+        set_rich_text_scroll_h(
+            source,
+            out.x + out.width + CARET_SCROLL_MARGIN - viewport_width,
+            Some(layout),
+        );
+    }
 }
 
 /// Selects all text in the field.
@@ -421,6 +742,42 @@ pub fn set_text_input_selection(source: &mut RichText, begin_index: usize, end_i
     let state = get_input_state_mut(source);
     state.selection_index = begin;
     state.caret_index = end;
+    invalidate_appearance(source);
+}
+
+/// Restores the most-recent edit, moving the cursor backward. Does nothing when
+/// there is nothing to undo.
+pub fn undo_text_input(source: &mut RichText) {
+    if !can_undo_text_input(source) {
+        return;
+    }
+    let state = get_input_state_mut(source);
+    let record = state.history[state.history_index as usize].clone();
+    state.history_index -= 1;
+    apply_history_record(
+        source,
+        record.text_before,
+        record.caret_index_before,
+        record.selection_index_before,
+    );
+}
+
+// Restores a recorded text/caret/selection snapshot onto the field. Used by
+// undo_text_input and redo_text_input, which differ only in which side of the
+// record they restore. Sets the text directly without recording a new history
+// entry, resets desired_caret_x, and invalidates.
+fn apply_history_record(
+    source: &mut RichText,
+    text: String,
+    caret_index: usize,
+    selection_index: usize,
+) {
+    let len = char_len(&text);
+    source.data.text = text;
+    let state = get_input_state_mut(source);
+    state.caret_index = clamp_index(caret_index, len);
+    state.selection_index = clamp_index(selection_index, len);
+    state.desired_caret_x = DESIRED_CARET_X_UNSET;
     invalidate_appearance(source);
 }
 
@@ -493,6 +850,15 @@ fn clamp_index(value: usize, length: usize) -> usize {
     value.min(length)
 }
 
+// Returns the layout line index the caret currently sits on. Reads the caret
+// rectangle (which resolves the caret's layout group) and returns its
+// line_index. Falls back to 0 for an empty layout.
+fn get_caret_line_index(source: &RichText, layout: &TextLayoutResult) -> usize {
+    let mut out = TextSelectionRectangle::default();
+    get_text_input_caret_rectangle(&mut out, source, layout);
+    out.line_index as usize
+}
+
 fn get_fallback_line_height(layout: &TextLayoutResult) -> f32 {
     *layout.line_heights.first().unwrap_or(&12.0)
 }
@@ -525,13 +891,45 @@ fn get_keyboard_command(data: &KeyboardEventData) -> KeyboardCommand {
         if key == "x" || data.key_code == key_code::X {
             return KeyboardCommand::Cut;
         }
+        // Word-motion: Ctrl+Left / Ctrl+Right (Windows/Linux).
+        if data.key_code == key_code::LEFT || data.key == "ArrowLeft" {
+            return KeyboardCommand::WordLeft;
+        }
+        if data.key_code == key_code::RIGHT || data.key == "ArrowRight" {
+            return KeyboardCommand::WordRight;
+        }
+        // Word-delete: Ctrl+Backspace / Ctrl+Delete.
+        if data.key_code == key_code::BACKSPACE || data.key == "Backspace" {
+            return KeyboardCommand::DeleteWordBackward;
+        }
+        if data.key_code == key_code::DELETE || data.key == "Delete" {
+            return KeyboardCommand::DeleteWordForward;
+        }
         return KeyboardCommand::None;
+    }
+    // Alt+Left / Alt+Right: word motion on macOS.
+    if data.alt_key {
+        if data.key_code == key_code::LEFT || data.key == "ArrowLeft" {
+            return KeyboardCommand::WordLeft;
+        }
+        if data.key_code == key_code::RIGHT || data.key == "ArrowRight" {
+            return KeyboardCommand::WordRight;
+        }
+        if data.key_code == key_code::BACKSPACE || data.key == "Backspace" {
+            return KeyboardCommand::DeleteWordBackward;
+        }
+        if data.key_code == key_code::DELETE || data.key == "Delete" {
+            return KeyboardCommand::DeleteWordForward;
+        }
     }
     if data.key_code == key_code::BACKSPACE || data.key == "Backspace" {
         return KeyboardCommand::Backspace;
     }
     if data.key_code == key_code::DELETE || data.key == "Delete" {
         return KeyboardCommand::Delete;
+    }
+    if data.key_code == key_code::DOWN || data.key == "ArrowDown" {
+        return KeyboardCommand::Down;
     }
     if data.key_code == key_code::END || data.key == "End" {
         return KeyboardCommand::End;
@@ -548,7 +946,23 @@ fn get_keyboard_command(data: &KeyboardEventData) -> KeyboardCommand {
     if data.key_code == key_code::RIGHT || data.key == "ArrowRight" {
         return KeyboardCommand::Right;
     }
+    if data.key_code == key_code::UP || data.key == "ArrowUp" {
+        return KeyboardCommand::Up;
+    }
     KeyboardCommand::None
+}
+
+// Returns the character index at the end of `line_index` — the largest
+// end_index among the line's groups. Falls back to text_length for an empty
+// line.
+fn get_line_end_index(layout: &TextLayoutResult, line_index: usize, text_length: usize) -> usize {
+    let mut end: isize = -1;
+    for group in &layout.groups {
+        if group.line_index == line_index && group.end_index as isize > end {
+            end = group.end_index as isize;
+        }
+    }
+    if end < 0 { text_length } else { end as usize }
 }
 
 fn get_line_offset_y(layout: &TextLayoutResult, line_index: usize) -> f32 {
@@ -562,6 +976,18 @@ fn get_line_offset_y(layout: &TextLayoutResult, line_index: usize) -> f32 {
         y += layout.line_heights.get(i).copied().unwrap_or(0.0);
     }
     y
+}
+
+// Returns the character index at the start of `line_index` — the smallest
+// start_index among the line's groups. Falls back to 0 for an empty line.
+fn get_line_start_index(layout: &TextLayoutResult, line_index: usize) -> usize {
+    let mut start: isize = -1;
+    for group in &layout.groups {
+        if group.line_index == line_index && (start < 0 || (group.start_index as isize) < start) {
+            start = group.start_index as isize;
+        }
+    }
+    if start < 0 { 0 } else { start as usize }
 }
 
 fn get_text_layout_group_at_index(
@@ -603,6 +1029,36 @@ fn invalidate_appearance(source: &mut RichText) {
     flighthq_text::invalidate_rich_text_appearance(source);
 }
 
+// Returns the index of the start of the word preceding `index`. Skips non-word
+// chars first (to step out of whitespace/punctuation), then scans backward
+// through word chars. Returns 0 if already at the beginning.
+fn find_word_start_before(text: &str, index: usize) -> usize {
+    let chars: Vec<char> = text.chars().collect();
+    let mut i = index.min(chars.len());
+    while i > 0 && !is_word_char(chars[i - 1]) {
+        i -= 1;
+    }
+    while i > 0 && is_word_char(chars[i - 1]) {
+        i -= 1;
+    }
+    i
+}
+
+// Returns the index of the end of the word following `index`. Skips non-word
+// chars first, then scans forward through word chars. Returns text length if
+// already at the end.
+fn find_word_end_after(text: &str, index: usize) -> usize {
+    let chars: Vec<char> = text.chars().collect();
+    let mut i = index.min(chars.len());
+    while i < chars.len() && !is_word_char(chars[i]) {
+        i += 1;
+    }
+    while i < chars.len() && is_word_char(chars[i]) {
+        i += 1;
+    }
+    i
+}
+
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
 }
@@ -628,6 +1084,59 @@ fn matches_restrict_ranges(c: char, ranges: &[char]) -> bool {
         i += 1;
     }
     false
+}
+
+// Appends an edit record to the history. When the new edit shares a non-`None`
+// merge_kind with the record the cursor currently points at, the two are
+// coalesced (before from the existing record, after from the new one) so a run
+// of same-kind keystrokes collapses into one undo step. Any records ahead of the
+// cursor (the redo tail) are discarded first, then the history is trimmed to
+// history_limit.
+fn record_text_input_edit(
+    state: &mut TextInputState,
+    text_before: String,
+    text_after: String,
+    caret_index_before: usize,
+    selection_index_before: usize,
+    merge_kind: Option<String>,
+) {
+    // Drop any redo tail: a fresh edit makes previously-undone records
+    // unreachable.
+    if state.history_index < state.history.len() as i64 - 1 {
+        state
+            .history
+            .truncate((state.history_index + 1).max(0) as usize);
+    }
+
+    if state.history_index >= 0 {
+        let caret_after = state.caret_index;
+        let selection_after = state.selection_index;
+        let previous = &mut state.history[state.history_index as usize];
+        if merge_kind.is_some() && previous.merge_kind == merge_kind {
+            previous.text_after = text_after;
+            previous.caret_index_after = caret_after;
+            previous.selection_index_after = selection_after;
+            return;
+        }
+    }
+
+    state.history.push(TextInputHistoryEntry {
+        caret_index_after: state.caret_index,
+        caret_index_before,
+        merge_kind,
+        selection_index_after: state.selection_index,
+        selection_index_before,
+        text_after,
+        text_before,
+    });
+    state.history_index = state.history.len() as i64 - 1;
+
+    // Trim the oldest records past the limit, keeping the cursor on the newest.
+    if state.history.len() > state.history_limit {
+        let overflow = state.history.len() - state.history_limit;
+        state.history.drain(0..overflow);
+        state.history_index = state.history.len() as i64 - 1;
+    }
 }
 
 fn restrict_text_input(text: &str, restrict: &str) -> String {
@@ -691,9 +1200,13 @@ enum KeyboardCommand {
     Return,
     Right,
     SelectAll,
+    Up,
+    WordLeft,
+    WordRight,
+    DeleteWordBackward,
+    DeleteWordForward,
+    Down,
 }
-
-const TEXT_BOUNDS_GUTTER: f32 = 2.0;
 
 #[cfg(test)]
 mod tests {
@@ -703,15 +1216,26 @@ mod tests {
         create_rich_text, create_rich_text_data, get_rich_text_appearance_revision,
         set_rich_text_format_range,
     };
-    use flighthq_types::{RichTextData, TextInputOptions};
+    use flighthq_types::{RichTextData, TextAutoSize, TextInputOptions};
 
     // Mirrors the TS `createRichText({ data })` partial-override: unset fields
     // take the RichText create defaults, not the all-zero struct default.
     fn create_input(data: RichTextData, options: TextInputOptions) -> RichText {
         let merged = RichTextData {
+            auto_size: data.auto_size,
+            height: if data.height != 0.0 {
+                data.height
+            } else {
+                create_rich_text_data(None).height
+            },
             max_chars: data.max_chars,
             multiline: data.multiline,
             text: data.text,
+            width: if data.width != 0.0 {
+                data.width
+            } else {
+                create_rich_text_data(None).width
+            },
             ..create_rich_text_data(None)
         };
         let mut text = create_rich_text(Some(&merged));
@@ -767,6 +1291,39 @@ mod tests {
             num_lines: 2,
             text_height: 24.0,
             text_width: 40.0,
+        }
+    }
+
+    // A 4-line layout (12px per line, one char per line) used by the vertical
+    // scroll tests.
+    fn tall_layout() -> TextLayoutResult {
+        let mut groups = Vec::new();
+        for line in 0..4usize {
+            groups.push(TextLayoutGroup {
+                ascent: 10.0,
+                descent: 2.0,
+                end_index: line + 1,
+                format: TextFormat::default(),
+                height: 12.0,
+                leading: 0.0,
+                line_index: line,
+                offset_x: 2.0,
+                offset_y: 2.0 + line as f32 * 12.0,
+                positions: vec![10.0],
+                start_index: line,
+                width: 10.0,
+            });
+        }
+        TextLayoutResult {
+            groups,
+            line_ascents: vec![10.0, 10.0, 10.0, 10.0],
+            line_descents: vec![2.0, 2.0, 2.0, 2.0],
+            line_heights: vec![12.0, 12.0, 12.0, 12.0],
+            line_leadings: vec![0.0, 0.0, 0.0, 0.0],
+            line_widths: vec![10.0, 10.0, 10.0, 10.0],
+            num_lines: 4,
+            text_height: 48.0,
+            text_width: 10.0,
         }
     }
 
@@ -1033,6 +1590,7 @@ mod tests {
             },
             Some(&HandleTextInputKeyboardOptions {
                 clipboard_text: Some("b23".to_string()),
+                layout: None,
                 on_copy: None,
             }),
         );
@@ -1123,6 +1681,7 @@ mod tests {
             "c345",
             Some(&ReplaceTextInputOptions {
                 apply_input_rules: true,
+                ..Default::default()
             }),
         );
         assert_eq!(text.data.text, "a34b");
@@ -1219,5 +1778,567 @@ mod tests {
         set_text_input_selection(&mut text, 0, 10);
         assert_eq!(get_text_input_selection_begin_index(&text), 0);
         assert_eq!(get_text_input_selection_end_index(&text), 3);
+    }
+
+    #[test]
+    fn can_redo_text_input_states() {
+        let mut none = with_text("abc");
+        insert_text_input(&mut none, "X");
+        assert!(!can_redo_text_input(&none));
+
+        let mut undone = with_text("abc");
+        insert_text_input(&mut undone, "X");
+        undo_text_input(&mut undone);
+        assert!(can_redo_text_input(&undone));
+    }
+
+    #[test]
+    fn can_undo_text_input_states() {
+        let fresh = with_text("abc");
+        assert!(!can_undo_text_input(&fresh));
+
+        let mut edited = with_text("abc");
+        insert_text_input(&mut edited, "X");
+        assert!(can_undo_text_input(&edited));
+    }
+
+    #[test]
+    fn clear_text_input_history_resets_without_changing_text() {
+        let mut text = with_text("abc");
+        insert_text_input(&mut text, "X");
+        assert!(can_undo_text_input(&text));
+        clear_text_input_history(&mut text);
+        assert!(!can_undo_text_input(&text));
+        assert!(!can_redo_text_input(&text));
+        assert_eq!(text.data.text, "Xabc");
+    }
+
+    #[test]
+    fn delete_text_input_word_backward_deletes_word() {
+        let mut text = with_text("hello world");
+        set_text_input_selection(&mut text, 11, 11);
+        delete_text_input_word_backward(&mut text);
+        assert_eq!(text.data.text, "hello ");
+        assert_eq!(get_text_input_caret_index(&text), 6);
+    }
+
+    #[test]
+    fn delete_text_input_word_backward_crosses_whitespace() {
+        let mut text = with_text("hello world");
+        set_text_input_selection(&mut text, 6, 6);
+        delete_text_input_word_backward(&mut text);
+        assert_eq!(text.data.text, "world");
+        assert_eq!(get_text_input_caret_index(&text), 0);
+    }
+
+    #[test]
+    fn delete_text_input_word_backward_deletes_selection() {
+        let mut text = with_text("hello world");
+        set_text_input_selection(&mut text, 0, 5);
+        delete_text_input_word_backward(&mut text);
+        assert_eq!(text.data.text, " world");
+    }
+
+    #[test]
+    fn delete_text_input_word_backward_noop_at_beginning() {
+        let mut text = with_text("abc");
+        set_text_input_selection(&mut text, 0, 0);
+        delete_text_input_word_backward(&mut text);
+        assert_eq!(text.data.text, "abc");
+    }
+
+    #[test]
+    fn delete_text_input_word_forward_deletes_word() {
+        let mut text = with_text("hello world");
+        set_text_input_selection(&mut text, 6, 6);
+        delete_text_input_word_forward(&mut text);
+        assert_eq!(text.data.text, "hello ");
+        assert_eq!(get_text_input_caret_index(&text), 6);
+    }
+
+    #[test]
+    fn delete_text_input_word_forward_deletes_selection() {
+        let mut text = with_text("hello world");
+        set_text_input_selection(&mut text, 6, 11);
+        delete_text_input_word_forward(&mut text);
+        assert_eq!(text.data.text, "hello ");
+    }
+
+    #[test]
+    fn delete_text_input_word_forward_noop_at_end() {
+        let mut text = with_text("abc");
+        set_text_input_selection(&mut text, 3, 3);
+        delete_text_input_word_forward(&mut text);
+        assert_eq!(text.data.text, "abc");
+    }
+
+    #[test]
+    fn handle_text_input_keyboard_word_and_vertical() {
+        let mut left = with_text("hello world");
+        set_text_input_selection(&mut left, 11, 11);
+        handle_text_input_keyboard(
+            &mut left,
+            &KeyboardEventData {
+                ctrl_key: true,
+                key: "ArrowLeft".to_string(),
+                key_code: key_code::LEFT,
+                ..Default::default()
+            },
+            None,
+        );
+        assert_eq!(get_text_input_caret_index(&left), 6);
+
+        let mut right = with_text("hello world");
+        set_text_input_selection(&mut right, 0, 0);
+        handle_text_input_keyboard(
+            &mut right,
+            &KeyboardEventData {
+                ctrl_key: true,
+                key: "ArrowRight".to_string(),
+                key_code: key_code::RIGHT,
+                ..Default::default()
+            },
+            None,
+        );
+        assert_eq!(get_text_input_caret_index(&right), 5);
+
+        let mut back = with_text("hello world");
+        set_text_input_selection(&mut back, 11, 11);
+        handle_text_input_keyboard(
+            &mut back,
+            &KeyboardEventData {
+                ctrl_key: true,
+                key: "Backspace".to_string(),
+                key_code: key_code::BACKSPACE,
+                ..Default::default()
+            },
+            None,
+        );
+        assert_eq!(back.data.text, "hello ");
+
+        let mut del = with_text("hello world");
+        set_text_input_selection(&mut del, 6, 6);
+        handle_text_input_keyboard(
+            &mut del,
+            &KeyboardEventData {
+                ctrl_key: true,
+                key: "Delete".to_string(),
+                key_code: key_code::DELETE,
+                ..Default::default()
+            },
+            None,
+        );
+        assert_eq!(del.data.text, "hello ");
+    }
+
+    #[test]
+    fn handle_text_input_keyboard_down_and_up_with_layout() {
+        let mut down = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut down, 1, 1);
+        handle_text_input_keyboard(
+            &mut down,
+            &keyboard("ArrowDown", key_code::DOWN),
+            Some(&HandleTextInputKeyboardOptions {
+                layout: Some(layout()),
+                ..Default::default()
+            }),
+        );
+        assert!(get_text_input_caret_index(&down) >= 3);
+
+        let mut up = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut up, 5, 5);
+        handle_text_input_keyboard(
+            &mut up,
+            &keyboard("ArrowUp", key_code::UP),
+            Some(&HandleTextInputKeyboardOptions {
+                layout: Some(layout()),
+                ..Default::default()
+            }),
+        );
+        assert!(get_text_input_caret_index(&up) <= 3);
+
+        let mut down_last = with_text("abcdefg");
+        set_text_input_selection(&mut down_last, 5, 5);
+        handle_text_input_keyboard(
+            &mut down_last,
+            &keyboard("ArrowDown", key_code::DOWN),
+            Some(&HandleTextInputKeyboardOptions {
+                layout: Some(layout()),
+                ..Default::default()
+            }),
+        );
+        assert_eq!(get_text_input_caret_index(&down_last), 7);
+
+        let mut up_first = with_text("abcdefg");
+        set_text_input_selection(&mut up_first, 1, 1);
+        handle_text_input_keyboard(
+            &mut up_first,
+            &keyboard("ArrowUp", key_code::UP),
+            Some(&HandleTextInputKeyboardOptions {
+                layout: Some(layout()),
+                ..Default::default()
+            }),
+        );
+        assert_eq!(get_text_input_caret_index(&up_first), 0);
+    }
+
+    #[test]
+    fn handle_text_input_keyboard_unhandled_returns_false() {
+        let mut text = with_text("abc");
+        assert!(!handle_text_input_keyboard(
+            &mut text,
+            &keyboard("F1", 112),
+            None
+        ));
+    }
+
+    #[test]
+    fn move_text_input_caret_resets_desired_caret_x() {
+        let mut text = with_text("abc");
+        get_input_state_mut(&mut text).desired_caret_x = 50.0;
+        move_text_input_caret(&mut text, 1, false);
+        assert_eq!(get_input_state(&text).desired_caret_x, -1.0);
+    }
+
+    #[test]
+    fn move_text_input_caret_by_word_motion() {
+        let mut back = with_text("hello world");
+        set_text_input_selection(&mut back, 11, 11);
+        move_text_input_caret_by_word(&mut back, -1, false);
+        assert_eq!(get_text_input_caret_index(&back), 6);
+
+        let mut fwd = with_text("hello world");
+        set_text_input_selection(&mut fwd, 0, 0);
+        move_text_input_caret_by_word(&mut fwd, 1, false);
+        assert_eq!(get_text_input_caret_index(&fwd), 5);
+
+        let mut ext = with_text("hello world");
+        set_text_input_selection(&mut ext, 0, 0);
+        move_text_input_caret_by_word(&mut ext, 1, true);
+        assert_eq!(get_text_input_selection_begin_index(&ext), 0);
+        assert_eq!(get_text_input_selection_end_index(&ext), 5);
+
+        let mut clamp_start = with_text("hi");
+        set_text_input_selection(&mut clamp_start, 1, 1);
+        move_text_input_caret_by_word(&mut clamp_start, -1, false);
+        assert_eq!(get_text_input_caret_index(&clamp_start), 0);
+
+        let mut clamp_end = with_text("hi");
+        set_text_input_selection(&mut clamp_end, 2, 2);
+        move_text_input_caret_by_word(&mut clamp_end, 1, false);
+        assert_eq!(get_text_input_caret_index(&clamp_end), 2);
+    }
+
+    #[test]
+    fn move_text_input_caret_down_motion() {
+        let mut next = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut next, 1, 1);
+        move_text_input_caret_down(&mut next, Some(&layout()), false);
+        assert!(get_text_input_caret_index(&next) >= 3);
+
+        let mut last = with_text("abcdefg");
+        set_text_input_selection(&mut last, 5, 5);
+        move_text_input_caret_down(&mut last, Some(&layout()), false);
+        assert_eq!(get_text_input_caret_index(&last), 7);
+
+        let mut no_layout = with_text("abc");
+        set_text_input_selection(&mut no_layout, 1, 1);
+        move_text_input_caret_down(&mut no_layout, None, false);
+        assert_eq!(get_text_input_caret_index(&no_layout), 3);
+
+        let mut preserve = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut preserve, 1, 1);
+        move_text_input_caret_down(&mut preserve, Some(&layout()), false);
+        assert_ne!(get_input_state(&preserve).desired_caret_x, -1.0);
+
+        let mut ext = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut ext, 1, 1);
+        move_text_input_caret_down(&mut ext, Some(&layout()), true);
+        assert_eq!(get_text_input_selection_begin_index(&ext), 1);
+        assert!(get_text_input_selection_end_index(&ext) > 1);
+    }
+
+    #[test]
+    fn move_text_input_caret_to_line_end_motion() {
+        let mut text = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut text, 1, 1);
+        move_text_input_caret_to_line_end(&mut text, Some(&layout()), false);
+        assert_eq!(get_text_input_caret_index(&text), 3);
+
+        let mut no_layout = with_text("abc");
+        set_text_input_selection(&mut no_layout, 1, 1);
+        move_text_input_caret_to_line_end(&mut no_layout, None, false);
+        assert_eq!(get_text_input_caret_index(&no_layout), 3);
+
+        let mut ext = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut ext, 1, 1);
+        move_text_input_caret_to_line_end(&mut ext, Some(&layout()), true);
+        assert_eq!(get_text_input_selection_begin_index(&ext), 1);
+        assert_eq!(get_text_input_selection_end_index(&ext), 3);
+    }
+
+    #[test]
+    fn move_text_input_caret_to_line_start_motion() {
+        let mut text = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut text, 6, 6);
+        move_text_input_caret_to_line_start(&mut text, Some(&layout()), false);
+        assert_eq!(get_text_input_caret_index(&text), 3);
+
+        let mut no_layout = with_text("abc");
+        set_text_input_selection(&mut no_layout, 2, 2);
+        move_text_input_caret_to_line_start(&mut no_layout, None, false);
+        assert_eq!(get_text_input_caret_index(&no_layout), 0);
+
+        let mut ext = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut ext, 6, 6);
+        move_text_input_caret_to_line_start(&mut ext, Some(&layout()), true);
+        assert_eq!(get_text_input_selection_begin_index(&ext), 3);
+        assert_eq!(get_text_input_selection_end_index(&ext), 6);
+    }
+
+    #[test]
+    fn move_text_input_caret_up_motion() {
+        let mut prev = create_input(
+            RichTextData {
+                multiline: true,
+                text: "abcdefg".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut prev, 5, 5);
+        move_text_input_caret_up(&mut prev, Some(&layout()), false);
+        assert!(get_text_input_caret_index(&prev) <= 3);
+
+        let mut first = with_text("abcdefg");
+        set_text_input_selection(&mut first, 1, 1);
+        move_text_input_caret_up(&mut first, Some(&layout()), false);
+        assert_eq!(get_text_input_caret_index(&first), 0);
+
+        let mut no_layout = with_text("abc");
+        set_text_input_selection(&mut no_layout, 2, 2);
+        move_text_input_caret_up(&mut no_layout, None, false);
+        assert_eq!(get_text_input_caret_index(&no_layout), 0);
+    }
+
+    #[test]
+    fn redo_text_input_reapplies() {
+        let mut text = with_text("abc");
+        insert_text_input(&mut text, "X");
+        assert_eq!(text.data.text, "Xabc");
+        undo_text_input(&mut text);
+        assert_eq!(text.data.text, "abc");
+        redo_text_input(&mut text);
+        assert_eq!(text.data.text, "Xabc");
+
+        let mut nothing = with_text("abc");
+        insert_text_input(&mut nothing, "X");
+        redo_text_input(&mut nothing);
+        assert_eq!(nothing.data.text, "Xabc");
+
+        let mut caret = with_text("abc");
+        set_text_input_selection(&mut caret, 0, 0);
+        insert_text_input(&mut caret, "X");
+        undo_text_input(&mut caret);
+        redo_text_input(&mut caret);
+        assert_eq!(get_text_input_caret_index(&caret), 1);
+    }
+
+    #[test]
+    fn scroll_text_input_caret_into_view_motion() {
+        let mut down = create_input(
+            RichTextData {
+                auto_size: TextAutoSize::None,
+                height: 28.0,
+                multiline: true,
+                text: "abcd".to_string(),
+                width: 100.0,
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut down, 4, 4);
+        scroll_text_input_caret_into_view(&mut down, &tall_layout(), 100.0, 24.0);
+        assert!(down.data.scroll_v > 1.0);
+
+        let mut visible = create_input(
+            RichTextData {
+                auto_size: TextAutoSize::None,
+                height: 60.0,
+                multiline: true,
+                text: "abcd".to_string(),
+                width: 100.0,
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut visible, 0, 0);
+        scroll_text_input_caret_into_view(&mut visible, &tall_layout(), 100.0, 60.0);
+        assert_eq!(visible.data.scroll_v, 1.0);
+        assert_eq!(visible.data.scroll_h, 0.0);
+
+        let mut horizontal = create_input(
+            RichTextData {
+                auto_size: TextAutoSize::None,
+                height: 40.0,
+                text: "abcdefg".to_string(),
+                width: 20.0,
+                ..Default::default()
+            },
+            TextInputOptions::default(),
+        );
+        set_text_input_selection(&mut horizontal, 7, 7);
+        scroll_text_input_caret_into_view(&mut horizontal, &layout(), 20.0, 40.0);
+        assert!(horizontal.data.scroll_h > 0.0);
+    }
+
+    #[test]
+    fn undo_text_input_restores() {
+        let mut basic = with_text("abc");
+        insert_text_input(&mut basic, "X");
+        assert_eq!(basic.data.text, "Xabc");
+        undo_text_input(&mut basic);
+        assert_eq!(basic.data.text, "abc");
+
+        let mut nothing = with_text("abc");
+        undo_text_input(&mut nothing);
+        assert_eq!(nothing.data.text, "abc");
+
+        let mut multi = with_text("");
+        replace_text_input(
+            &mut multi,
+            0,
+            0,
+            "a",
+            Some(&ReplaceTextInputOptions {
+                merge_kind: None,
+                ..Default::default()
+            }),
+        );
+        replace_text_input(
+            &mut multi,
+            1,
+            1,
+            "b",
+            Some(&ReplaceTextInputOptions {
+                merge_kind: None,
+                ..Default::default()
+            }),
+        );
+        assert_eq!(multi.data.text, "ab");
+        undo_text_input(&mut multi);
+        assert_eq!(multi.data.text, "a");
+        undo_text_input(&mut multi);
+        assert_eq!(multi.data.text, "");
+
+        let mut merged = with_text("");
+        replace_text_input(
+            &mut merged,
+            0,
+            0,
+            "a",
+            Some(&ReplaceTextInputOptions {
+                merge_kind: Some("type".to_string()),
+                ..Default::default()
+            }),
+        );
+        replace_text_input(
+            &mut merged,
+            1,
+            1,
+            "b",
+            Some(&ReplaceTextInputOptions {
+                merge_kind: Some("type".to_string()),
+                ..Default::default()
+            }),
+        );
+        assert_eq!(merged.data.text, "ab");
+        undo_text_input(&mut merged);
+        assert_eq!(merged.data.text, "");
+
+        let mut zero = create_input(
+            RichTextData {
+                text: "abc".to_string(),
+                ..Default::default()
+            },
+            TextInputOptions {
+                history_limit: Some(0),
+                ..Default::default()
+            },
+        );
+        insert_text_input(&mut zero, "X");
+        assert!(!can_undo_text_input(&zero));
+        undo_text_input(&mut zero);
+        assert_eq!(zero.data.text, "Xabc");
+
+        let mut caret = with_text("abc");
+        set_text_input_selection(&mut caret, 1, 1);
+        insert_text_input(&mut caret, "X");
+        assert_eq!(get_text_input_caret_index(&caret), 2);
+        undo_text_input(&mut caret);
+        assert_eq!(get_text_input_caret_index(&caret), 1);
     }
 }

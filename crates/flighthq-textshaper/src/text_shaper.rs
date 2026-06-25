@@ -2,6 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use flighthq_types::{TextFormat, TextShaperBackend};
 
+use crate::text_shaper_hooks::dispatch_text_shaper_backend_hook;
+
 /// Returns the active text-shaper backend, or `None` when none has been registered. Unlike the
 /// always-on platform capabilities (clipboard, storage), shaping has no light default that lives
 /// here: the canvas backend needs DOM + font-string computation, and the native full-glyph backend
@@ -18,7 +20,10 @@ pub fn get_text_shaper_backend() -> Option<Arc<dyn TextShaperBackend>> {
 /// existing backend replaces it, which is how a host swaps the canvas default for HarfBuzz. Never
 /// panics on re-registration.
 pub fn set_text_shaper_backend(backend: Option<Arc<dyn TextShaperBackend>>) {
-    *BACKEND.lock().expect("text shaper backend poisoned") = backend;
+    {
+        *BACKEND.lock().expect("text shaper backend poisoned") = backend.clone();
+    }
+    dispatch_text_shaper_backend_hook(backend.as_ref());
 }
 
 /// Shapes `text` in `format` to its horizontal advance, in pixels, via the active backend. Advances

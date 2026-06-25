@@ -117,10 +117,10 @@ pub fn resolve_gl_mesh_material_renderer(
     scene: &GlSceneRuntime,
     material_kind: Option<KindId>,
 ) -> Option<&dyn GlMeshMaterialRenderer> {
-    if let Some(kind) = material_kind {
-        if let Some(renderer) = scene.material_registry.get(&kind) {
-            return Some(renderer.as_ref());
-        }
+    if let Some(kind) = material_kind
+        && let Some(renderer) = scene.material_registry.get(&kind)
+    {
+        return Some(renderer.as_ref());
     }
     scene
         .material_registry

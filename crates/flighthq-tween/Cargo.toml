@@ -9,3 +9,6 @@ description = "Tween animation system with easing functions"
 flighthq-signals = { workspace = true }
 flighthq-easing = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

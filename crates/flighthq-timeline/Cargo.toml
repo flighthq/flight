@@ -10,3 +10,6 @@ flighthq-displayobject = { workspace = true }
 flighthq-node = { workspace = true }
 flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

@@ -157,6 +157,7 @@ pub fn build_winit_keyboard_data(
         meta_key: meta,
         caps_lock,
         num_lock,
+        time_stamp: 0.0,
     }
 }
 

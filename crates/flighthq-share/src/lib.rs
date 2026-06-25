@@ -11,6 +11,8 @@
 pub mod share;
 
 pub use share::{
-    can_share_content, create_web_share_backend, get_share_backend, set_share_backend,
-    share_content,
+    attach_share_signals, can_share_content, create_web_share_backend, detach_share_signals,
+    dispose_share_signals, enable_share_signals, get_share_backend, is_share_available,
+    is_share_content_valid, set_share_backend, share_content, share_content_with_result,
+    share_text, share_url,
 };

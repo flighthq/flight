@@ -465,7 +465,7 @@ mod tests {
             flighthq_render_wgpu::render_target::create_wgpu_render_target(&state, 16, 16, None);
         // No panic, no pass: there is no cache entry / pipeline for this key.
         draw_wgpu_effect_filter_pass(&mut state, "test.never-compiled", &target, None, |_, _| {});
-        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&mut state, target);
+        flighthq_render_wgpu::render_target::destroy_wgpu_render_target(&state, target);
         clear_wgpu_effect_pipeline_cache(&state);
     }
 }

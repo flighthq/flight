@@ -8,6 +8,23 @@ edition = "2024"
 license = "MIT"
 authors = ["FlightHQ Contributors"]
 
+# One greppable lint decision, inherited by every crate via `[lints] workspace = true`.
+# `too_many_arguments` is allowed workspace-wide on purpose: Flight's conventions PRODUCE wide
+# signatures by design — explicit free-function params, `out`/`target` params, and flattened scalar
+# args instead of wrapper-object params (a material ctor takes rgba + metallic + roughness + … as
+# scalars). A params-struct refactor would fight the value-type convention and break 1:1 signature
+# conformance with the authoritative TS source. See rust/conformance.md.
+#
+# `type_complexity` is likewise allowed: the event-capability seam recurs the same boxed-callback
+# subscription registry — `Mutex<Option<HashMap<id, Box<dyn Fn(...) + Send + Sync>>>>` — identically
+# across the whole platform suite (screen/power/lifecycle/keyboard/network/…). That shape is produced
+# by Flight's free-function-callback + lazy-registry conventions, not a code smell; where a piece of it
+# names a real concept it is given a `type` alias, but a workspace-wide refactor would just scatter
+# near-identical aliases. Allow it once here.
+[workspace.lints.clippy]
+too_many_arguments = "allow"
+type_complexity = "allow"
+
 [workspace.dependencies]
 # Internal crates
 flighthq-types = { path = "crates/flighthq-types" }
@@ -69,6 +86,8 @@ flighthq-interaction = { path = "crates/flighthq-interaction" }
 flighthq-application = { path = "crates/flighthq-application" }
 flighthq-media = { path = "crates/flighthq-media" }
 flighthq-platform = { path = "crates/flighthq-platform" }
+flighthq-useragent = { path = "crates/flighthq-useragent" }
+flighthq-resource-formats = { path = "crates/flighthq-resource-formats" }
 flighthq-filesystem = { path = "crates/flighthq-filesystem" }
 flighthq-storage = { path = "crates/flighthq-storage" }
 flighthq-shell = { path = "crates/flighthq-shell" }
@@ -108,3 +127,4 @@ log = "0.4"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 serial_test = "3"
+regex = "1"

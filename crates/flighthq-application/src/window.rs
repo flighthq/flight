@@ -42,7 +42,16 @@ pub trait WindowBackend: Send + Sync {
     fn request_attention(&self, win: &ApplicationWindow, attention: bool);
     fn restore(&self, win: &ApplicationWindow);
     fn set_always_on_top(&self, win: &ApplicationWindow, always_on_top: bool);
+    /// Prevents (or allows) the window contents from being captured in
+    /// screenshots / screen sharing. Native only; the default is a no-op.
+    fn set_content_protection(&self, win: &ApplicationWindow, enabled: bool);
+    /// Briefly flashes the window frame to attract attention. Native only; the
+    /// default is a no-op.
+    fn flash_window_frame(&self, win: &ApplicationWindow);
     fn set_fullscreen(&self, win: &ApplicationWindow, fullscreen: bool);
+    /// Shows or hides the native drop shadow around the window. macOS/native
+    /// only; the default is a no-op.
+    fn set_has_shadow(&self, win: &ApplicationWindow, has_shadow: bool);
     fn set_icon(&self, win: &ApplicationWindow, icon: &str);
     fn set_maximum_size(&self, win: &ApplicationWindow, width: f32, height: f32);
     fn set_menu_bar_visible(&self, win: &ApplicationWindow, visible: bool);
@@ -160,6 +169,18 @@ pub fn attach_window_fullscreen(
     attach_observer(win, ObserverKind::Fullscreen)
 }
 
+/// Wires OS/screen-originated window-move events to `signals.on_move`. The TS
+/// reference best-effort-wires this to the browser `resize` event (no reliable
+/// page-move event exists); on native the move source is the host window
+/// backend, installed later. Records a per-window observer slot so detach/dispose
+/// are meaningful today. Idempotent: a prior move wiring is cleared first.
+pub fn attach_window_move(
+    win: &ApplicationWindow,
+    _signals: &ApplicationWindowSignals,
+) -> WindowEventGuard {
+    attach_observer(win, ObserverKind::Move)
+}
+
 /// Wires device orientation-change events to `signals.on_orientation_changed`.
 pub fn attach_window_orientation(
     win: &ApplicationWindow,
@@ -233,6 +254,11 @@ pub fn detach_window_focus(guard: WindowEventGuard) {
 
 /// Detaches the fullscreen event wiring from [`attach_window_fullscreen`].
 pub fn detach_window_fullscreen(guard: WindowEventGuard) {
+    drop(guard);
+}
+
+/// Detaches the move event wiring from [`attach_window_move`].
+pub fn detach_window_move(guard: WindowEventGuard) {
     drop(guard);
 }
 
@@ -326,6 +352,12 @@ pub fn dispose_application_window(win: &ApplicationWindow) {
     guard.remove(&window_key(win));
 }
 
+/// Briefly flashes the window frame to attract attention. No-op on the default
+/// backend; native hosts implement it (e.g. Electron `flashFrame(true)`).
+pub fn flash_window_frame(win: &ApplicationWindow) {
+    get_window_backend().flash_window_frame(win);
+}
+
 /// Brings the window to the foreground and marks it focused.
 pub fn focus_window(win: &mut ApplicationWindow) {
     win.focused = true;
@@ -350,6 +382,13 @@ pub fn get_window_bounds<'a>(
 ) -> &'a mut WindowBounds {
     get_window_backend().get_bounds(win, out);
     out
+}
+
+/// Returns the index of the display (screen) the window is currently on, or
+/// `-1` if unknown. Seam: the default returns `-1` (no native screen API wired);
+/// native backends resolve the display and return its index.
+pub fn get_window_display(_win: &ApplicationWindow) -> i32 {
+    -1
 }
 
 /// Hides the window without closing it. No-op when already hidden.
@@ -431,7 +470,12 @@ pub fn open_window(win: &mut ApplicationWindow, options: &WindowOptions) -> bool
     if let Some(v) = options.max_height {
         win.max_height = v;
     }
-    get_window_backend().open(win, options)
+    let result = get_window_backend().open(win, options);
+    // Apply center after open so the backend has registered the OS window first.
+    if options.center {
+        center_window(win);
+    }
+    result
 }
 
 /// Requests user attention on the window (taskbar flash / dock bounce). Pass
@@ -473,6 +517,12 @@ pub fn set_window_backend(new_backend: Option<Arc<dyn WindowBackend>>) {
     *guard = new_backend;
 }
 
+/// Prevents (or allows) the window contents from being captured in screenshots
+/// or screen sharing. No-op on the default backend; native hosts implement it.
+pub fn set_window_content_protection(win: &ApplicationWindow, enabled: bool) {
+    get_window_backend().set_content_protection(win, enabled);
+}
+
 /// Sets fullscreen state. Updates state and emits `on_fullscreen_changed` when
 /// the state changes. No-op when the state is already as requested.
 pub fn set_window_fullscreen(
@@ -486,6 +536,12 @@ pub fn set_window_fullscreen(
     win.fullscreen = fullscreen;
     get_window_backend().set_fullscreen(win, fullscreen);
     emit_signal(&signals.on_fullscreen_changed, &());
+}
+
+/// Shows or hides the native drop shadow around the window. macOS/native only;
+/// no-op on the default backend.
+pub fn set_window_has_shadow(win: &ApplicationWindow, has_shadow: bool) {
+    get_window_backend().set_has_shadow(win, has_shadow);
 }
 
 /// Sets the window icon path. On native this updates the real OS icon.
@@ -625,6 +681,7 @@ enum ObserverKind {
     DropFile,
     Focus,
     Fullscreen,
+    Move,
     Orientation,
     RenderContext,
     RenderState,
@@ -680,7 +737,10 @@ impl WindowBackend for NativeNoOpWindowBackend {
     fn request_attention(&self, _win: &ApplicationWindow, _attention: bool) {}
     fn restore(&self, _win: &ApplicationWindow) {}
     fn set_always_on_top(&self, _win: &ApplicationWindow, _always_on_top: bool) {}
+    fn set_content_protection(&self, _win: &ApplicationWindow, _enabled: bool) {}
+    fn flash_window_frame(&self, _win: &ApplicationWindow) {}
     fn set_fullscreen(&self, _win: &ApplicationWindow, _fullscreen: bool) {}
+    fn set_has_shadow(&self, _win: &ApplicationWindow, _has_shadow: bool) {}
     fn set_icon(&self, _win: &ApplicationWindow, _icon: &str) {}
     fn set_maximum_size(&self, _win: &ApplicationWindow, _width: f32, _height: f32) {}
     fn set_menu_bar_visible(&self, _win: &ApplicationWindow, _visible: bool) {}
@@ -763,8 +823,17 @@ mod tests {
         fn set_always_on_top(&self, _win: &ApplicationWindow, v: bool) {
             self.push(format!("setAlwaysOnTop:{v}"));
         }
+        fn set_content_protection(&self, _win: &ApplicationWindow, v: bool) {
+            self.push(format!("setContentProtection:{v}"));
+        }
+        fn flash_window_frame(&self, _win: &ApplicationWindow) {
+            self.push("flashWindowFrame");
+        }
         fn set_fullscreen(&self, _win: &ApplicationWindow, v: bool) {
             self.push(format!("setFullscreen:{v}"));
+        }
+        fn set_has_shadow(&self, _win: &ApplicationWindow, v: bool) {
+            self.push(format!("setHasShadow:{v}"));
         }
         fn set_icon(&self, _win: &ApplicationWindow, icon: &str) {
             self.push(format!("setIcon:{icon}"));
@@ -965,6 +1034,40 @@ mod tests {
     }
 
     #[test]
+    fn attach_and_detach_window_move_manage_observer() {
+        let win = create_application_window();
+        let signals = create_application_window_signals();
+        let g = attach_window_move(&win, &signals);
+        {
+            let guard = observers().lock().unwrap();
+            assert!(
+                guard
+                    .get(&window_key(&win))
+                    .unwrap()
+                    .contains(&ObserverKind::Move)
+            );
+        }
+        detach_window_move(g);
+        let guard = observers().lock().unwrap();
+        assert!(guard.get(&window_key(&win)).is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn flash_window_frame_delegates() {
+        with_recording_backend(|backend| {
+            flash_window_frame(&create_application_window());
+            assert!(backend.calls().contains(&"flashWindowFrame".to_string()));
+        });
+    }
+
+    #[test]
+    fn get_window_display_returns_minus_one() {
+        let win = create_application_window();
+        assert_eq!(get_window_display(&win), -1);
+    }
+
+    #[test]
     #[serial]
     fn focus_window_marks_focused_and_delegates() {
         with_recording_backend(|backend| {
@@ -1075,6 +1178,35 @@ mod tests {
 
     #[test]
     #[serial]
+    fn open_window_centers_when_center_option_set() {
+        with_recording_backend(|backend| {
+            let mut win = create_application_window();
+            let options = WindowOptions {
+                title: Some("Centered".into()),
+                center: true,
+                ..Default::default()
+            };
+            open_window(&mut win, &options);
+            assert!(backend.calls().contains(&"center".to_string()));
+        });
+    }
+
+    #[test]
+    #[serial]
+    fn open_window_does_not_center_without_option() {
+        with_recording_backend(|backend| {
+            let mut win = create_application_window();
+            let options = WindowOptions {
+                title: Some("Normal".into()),
+                ..Default::default()
+            };
+            open_window(&mut win, &options);
+            assert!(!backend.calls().contains(&"center".to_string()));
+        });
+    }
+
+    #[test]
+    #[serial]
     fn request_window_attention_delegates() {
         with_recording_backend(|backend| {
             request_window_attention(&create_application_window(), true);
@@ -1144,6 +1276,28 @@ mod tests {
         set_window_backend(None);
         // get_window_backend reinstalls the default; no panic, valid backend.
         let _b = get_window_backend();
+    }
+
+    #[test]
+    #[serial]
+    fn set_window_content_protection_delegates() {
+        with_recording_backend(|backend| {
+            set_window_content_protection(&create_application_window(), true);
+            assert!(
+                backend
+                    .calls()
+                    .contains(&"setContentProtection:true".to_string())
+            );
+        });
+    }
+
+    #[test]
+    #[serial]
+    fn set_window_has_shadow_delegates() {
+        with_recording_backend(|backend| {
+            set_window_has_shadow(&create_application_window(), false);
+            assert!(backend.calls().contains(&"setHasShadow:false".to_string()));
+        });
     }
 
     #[test]

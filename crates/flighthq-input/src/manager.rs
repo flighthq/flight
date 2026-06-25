@@ -2,7 +2,7 @@
 
 pub use flighthq_types::input::InputManager;
 
-use flighthq_signals::disconnect_all_signals;
+use flighthq_signals::clear_signal;
 
 use crate::signals::create_input_signals;
 
@@ -26,21 +26,21 @@ pub fn create_input_manager() -> InputManager {
 /// signals are reset.
 pub fn dispose_input_manager(manager: &mut InputManager) {
     let s = &manager.signals;
-    disconnect_all_signals(&s.on_gamepad_axis_move);
-    disconnect_all_signals(&s.on_gamepad_button_down);
-    disconnect_all_signals(&s.on_gamepad_button_up);
-    disconnect_all_signals(&s.on_gamepad_connect);
-    disconnect_all_signals(&s.on_gamepad_disconnect);
-    disconnect_all_signals(&s.on_key_down);
-    disconnect_all_signals(&s.on_key_up);
-    disconnect_all_signals(&s.on_pointer_cancel);
-    disconnect_all_signals(&s.on_pointer_down);
-    disconnect_all_signals(&s.on_pointer_move);
-    disconnect_all_signals(&s.on_pointer_move_relative);
-    disconnect_all_signals(&s.on_pointer_up);
-    disconnect_all_signals(&s.on_text_edit);
-    disconnect_all_signals(&s.on_text_input);
-    disconnect_all_signals(&s.on_wheel);
+    clear_signal(&s.on_gamepad_axis_move);
+    clear_signal(&s.on_gamepad_button_down);
+    clear_signal(&s.on_gamepad_button_up);
+    clear_signal(&s.on_gamepad_connect);
+    clear_signal(&s.on_gamepad_disconnect);
+    clear_signal(&s.on_key_down);
+    clear_signal(&s.on_key_up);
+    clear_signal(&s.on_pointer_cancel);
+    clear_signal(&s.on_pointer_down);
+    clear_signal(&s.on_pointer_move);
+    clear_signal(&s.on_pointer_move_relative);
+    clear_signal(&s.on_pointer_up);
+    clear_signal(&s.on_text_edit);
+    clear_signal(&s.on_text_input);
+    clear_signal(&s.on_wheel);
     manager.enabled = false;
 }
 

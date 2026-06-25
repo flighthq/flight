@@ -9,4 +9,8 @@ description = "System notifications over a swappable web (Notification API) / na
 flighthq-types = { workspace = true }
 
 [dev-dependencies]
+pollster = "0.3"
 serial_test = { workspace = true }
+
+[lints]
+workspace = true

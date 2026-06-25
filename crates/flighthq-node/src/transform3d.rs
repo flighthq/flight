@@ -211,14 +211,14 @@ fn recompute_world_transform3d(
         let id = create_matrix4_identity();
         let out = arena[target]
             .world_matrix
-            .get_or_insert_with(|| Matrix4Like { m: id.m });
+            .get_or_insert(Matrix4Like { m: id.m });
         multiply_matrix4(out, &parent_world, &local);
     } else {
         let local = matrix4_to_like(&arena[target].local_matrix);
         let id = create_matrix4_identity();
         let out = arena[target]
             .world_matrix
-            .get_or_insert_with(|| Matrix4Like { m: id.m });
+            .get_or_insert(Matrix4Like { m: id.m });
         copy_matrix4(out, &local);
     }
 

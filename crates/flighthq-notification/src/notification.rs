@@ -70,6 +70,16 @@ pub async fn show_notification(request: &NotificationRequest) -> bool {
     get_notification_backend().notify(request).await
 }
 
+/// Updates a live notification by id, merging `update` into the existing
+/// notification — useful for progress bars and live-content updates. Returns
+/// `true` when the update was applied; `false` when the notification is no
+/// longer visible or the backend does not support updates.
+pub async fn update_notification(id: &str, update: &NotificationRequest) -> bool {
+    get_notification_backend()
+        .update_notification(id, update)
+        .await
+}
+
 // ---------------------------------------------------------------------------
 // Module-level state
 // ---------------------------------------------------------------------------
@@ -93,6 +103,55 @@ mod tests {
             _request: &NotificationRequest,
         ) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>> {
             Box::pin(async { false })
+        }
+        fn update_notification(
+            &self,
+            _id: &str,
+            _update: &NotificationRequest,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>> {
+            Box::pin(async { false })
+        }
+        fn request_permission(
+            &self,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>> {
+            Box::pin(async { false })
+        }
+        fn is_supported(&self) -> bool {
+            false
+        }
+        fn subscribe_click(
+            &self,
+            _listener: Box<dyn Fn(String) + Send + Sync>,
+        ) -> Box<dyn Fn() + Send + Sync> {
+            Box::new(|| {})
+        }
+        fn subscribe_action(
+            &self,
+            _listener: Box<dyn Fn(String, String) + Send + Sync>,
+        ) -> Box<dyn Fn() + Send + Sync> {
+            Box::new(|| {})
+        }
+    }
+
+    // Records the id passed to update_notification and reports whether it was called.
+    struct UpdateRecordingBackend {
+        updated_id: Mutex<Option<String>>,
+    }
+
+    impl NotificationBackend for UpdateRecordingBackend {
+        fn notify(
+            &self,
+            _request: &NotificationRequest,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>> {
+            Box::pin(async { false })
+        }
+        fn update_notification(
+            &self,
+            id: &str,
+            _update: &NotificationRequest,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>> {
+            *self.updated_id.lock().unwrap() = Some(id.to_owned());
+            Box::pin(async { true })
         }
         fn request_permission(
             &self,
@@ -122,6 +181,30 @@ mod tests {
         set_notification_backend(Some(Arc::new(StubBackend)));
         assert!(!is_notification_supported());
         // Clear after test
+        set_notification_backend(None);
+    }
+
+    // Ports the TS `updateNotification` "delegates to the active backend" assertion:
+    // the call reaches the backend with the given id and returns its boolean result.
+    #[test]
+    #[serial]
+    fn update_notification_delegates_to_backend() {
+        let backend = Arc::new(UpdateRecordingBackend {
+            updated_id: Mutex::new(None),
+        });
+        set_notification_backend(Some(backend.clone()));
+        let applied = pollster::block_on(update_notification(
+            "notif-1",
+            &NotificationRequest {
+                body: Some("Updated body".to_owned()),
+                ..Default::default()
+            },
+        ));
+        assert!(applied);
+        assert_eq!(
+            backend.updated_id.lock().unwrap().as_deref(),
+            Some("notif-1")
+        );
         set_notification_backend(None);
     }
 }

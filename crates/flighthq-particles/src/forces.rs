@@ -124,10 +124,11 @@ fn accumulate_forces(forces: &[ParticleForce], px: f32, py: f32, vx: f32, vy: f3
 
 fn falloff_factor(falloff: flighthq_types::ForceFalloff, dist: f32, radius: Option<f32>) -> f32 {
     use flighthq_types::ForceFalloff;
-    if let Some(r) = radius {
-        if r > 0.0 && dist > r {
-            return 0.0; // hard cutoff
-        }
+    if let Some(r) = radius
+        && r > 0.0
+        && dist > r
+    {
+        return 0.0; // hard cutoff
     }
     match falloff {
         ForceFalloff::Linear => match radius {

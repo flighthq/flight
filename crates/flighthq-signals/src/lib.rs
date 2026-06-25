@@ -29,8 +29,8 @@ pub mod slot;
 pub mod throttle;
 
 pub use emitter::{
-    SignalCallback, SignalConnectOptions, SlotId, cancel_signal, disconnect_all_signals,
-    emit_signal, is_slot_connected,
+    SignalCallback, SignalConnectOptions, SlotId, cancel_signal, clear_signal, emit_signal,
+    emit_signal_cancellable, has_signal_slots, is_slot_connected,
 };
 pub use signal::{Signal, create_signal};
 pub use slot::{SlotGuard, connect_signal, connect_signal_once, disconnect_signal};

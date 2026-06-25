@@ -12,6 +12,8 @@ pub mod geolocation;
 
 pub use geolocation::{
     GEO_WATCH_UNAVAILABLE, clear_geo_watch, create_default_geolocation_backend,
-    create_geo_position, get_current_geo_position, get_geolocation_backend,
-    request_geolocation_permission, set_geolocation_backend, watch_geo_position,
+    create_geo_position, get_current_geo_position, get_current_geo_position_result,
+    get_geolocation_backend, get_geolocation_permission, is_geolocation_available,
+    on_geolocation_permission_change, request_geolocation_permission, set_geolocation_backend,
+    watch_geo_position,
 };

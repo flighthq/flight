@@ -13,3 +13,6 @@ flighthq-node = { workspace = true }
 flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }
 slotmap = { workspace = true }
+
+[lints]
+workspace = true

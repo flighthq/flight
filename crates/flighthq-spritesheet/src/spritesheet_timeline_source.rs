@@ -91,7 +91,16 @@ mod tests {
         let mut atlas = create_texture_atlas(None, Vec::new());
         let mut frames = Vec::new();
         for i in 0..frame_count {
-            add_texture_atlas_region(&mut atlas, (i * 32) as f32, 0.0, 32.0, 32.0, None, None);
+            add_texture_atlas_region(
+                &mut atlas,
+                (i * 32) as f32,
+                0.0,
+                32.0,
+                32.0,
+                None,
+                None,
+                None,
+            );
             frames.push(create_spritesheet_frame(CreateSpritesheetFrameOptions {
                 id: Some(i),
                 ..Default::default()

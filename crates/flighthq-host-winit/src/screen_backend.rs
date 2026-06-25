@@ -8,7 +8,8 @@
 
 use std::sync::Arc;
 
-use flighthq_types::platform::{ScreenBackend, ScreenInfo};
+use flighthq_types::Vector2Like;
+use flighthq_types::screen::{ScreenBackend, ScreenChangeListener, ScreenInfo};
 
 use winit::monitor::MonitorHandle;
 
@@ -46,6 +47,9 @@ pub fn build_winit_screen_info(
         work_height: logical_height,
         scale_factor: scale,
         is_primary,
+        physical_width: width as f32,
+        physical_height: height as f32,
+        ..ScreenInfo::default()
     }
 }
 
@@ -106,10 +110,19 @@ impl ScreenBackend for WinitScreenBackend {
         out
     }
 
-    fn subscribe(&self, _listener: Box<dyn Fn() + Send + Sync>) -> Box<dyn Fn() + Send + Sync> {
+    fn subscribe(&self, _listener: ScreenChangeListener) -> Box<dyn Fn() + Send + Sync> {
         // The snapshot does not change; monitor hot-plug would be delivered by a
         // live backend wired to winit's window events. No-op unsubscribe.
         Box::new(|| {})
+    }
+
+    fn get_cursor_position<'a>(&self, out: &'a mut Vector2Like) -> &'a mut Vector2Like {
+        // winit reports cursor position per-window via events, not a global
+        // virtual-desktop query. The snapshot backend has no global cursor, so
+        // it reports the (0, 0) sentinel; a live backend wires pointer events.
+        out.x = 0.0;
+        out.y = 0.0;
+        out
     }
 }
 

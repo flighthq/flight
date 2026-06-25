@@ -296,7 +296,7 @@ mod tests {
         color_matrix_surface(&mut out, &r, &identity);
         // Only the top-left pixel of the 2x2 region is in-bounds.
         assert_eq!(out[0], 0xff);
-        let i = (1 * 2 + 1) * 4;
+        let i = (2 + 1) * 4;
         assert_eq!(out[i], 0);
     }
 

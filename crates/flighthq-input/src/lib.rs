@@ -20,6 +20,7 @@ pub mod keyboard;
 pub mod manager;
 pub mod pointer;
 pub mod signals;
+pub mod state;
 
 // Re-export public surface at crate root.
 
@@ -42,8 +43,17 @@ pub use pointer::{
 
 // gamepad
 pub use gamepad::{
-    GamepadButtonSnapshot, GamepadPollState, GamepadSnapshot, dispatch_gamepad_axis_event,
-    dispatch_gamepad_button_down_event, dispatch_gamepad_button_up_event,
-    dispatch_gamepad_connect_event, dispatch_gamepad_disconnect_event, poll_gamepad_input,
-    poll_gamepad_snapshots,
+    GamepadButtonSnapshot, GamepadPollState, GamepadSnapshot, apply_gamepad_axis_dead_zone,
+    apply_gamepad_stick_dead_zone, dispatch_gamepad_axis_event, dispatch_gamepad_button_down_event,
+    dispatch_gamepad_button_up_event, dispatch_gamepad_connect_event,
+    dispatch_gamepad_disconnect_event, get_gamepad_axis_name, get_gamepad_button_name,
+    poll_gamepad_input, poll_gamepad_snapshots,
+};
+
+// state
+pub use state::{
+    InputState, InputStateConnection, connect_input_state_to_input_manager, create_input_state,
+    end_input_state_frame, get_input_gamepad_axis, is_input_gamepad_button_down, is_input_key_down,
+    is_input_pointer_button_down, was_input_gamepad_button_pressed,
+    was_input_gamepad_button_released, was_input_key_pressed, was_input_key_released,
 };

@@ -402,7 +402,7 @@ mod tests {
         // 3x1: transparent | opaque | transparent. Inner glow appears only on
         // the opaque pixel.
         let mut source = create_surface(3, 1, 0);
-        source.data[1 * 4 + 3] = 255;
+        source.data[4 + 3] = 255;
         let mut out = vec![0_u8; 12];
         let mut scratch = vec![0_u8; 12];
         inner_glow_surface(
@@ -417,12 +417,12 @@ mod tests {
                 intensity: 1.0,
             },
         );
-        assert_eq!(out[0 * 4 + 3], 0);
+        assert_eq!(out[3], 0);
         assert_eq!(out[2 * 4 + 3], 0);
-        assert_eq!(out[1 * 4 + 3], 170);
-        assert_eq!(out[1 * 4 + 0], 0);
-        assert_eq!(out[1 * 4 + 1], 0xff);
-        assert_eq!(out[1 * 4 + 2], 0);
+        assert_eq!(out[4 + 3], 170);
+        assert_eq!(out[4], 0);
+        assert_eq!(out[4 + 1], 0xff);
+        assert_eq!(out[4 + 2], 0);
     }
 
     #[test]
@@ -448,7 +448,7 @@ mod tests {
     #[test]
     fn inner_shadow_surface_runs() {
         let mut source = create_surface(3, 1, 0);
-        source.data[1 * 4 + 3] = 255;
+        source.data[4 + 3] = 255;
         let mut out = vec![0_u8; 12];
         let mut scratch = vec![0_u8; 12];
         inner_shadow_surface(
@@ -463,9 +463,9 @@ mod tests {
                 intensity: 1.0,
             },
         );
-        assert_eq!(out[1 * 4 + 0], 0);
-        assert_eq!(out[1 * 4 + 1], 0);
-        assert_eq!(out[1 * 4 + 2], 0);
-        assert_eq!(out[1 * 4 + 3], 170);
+        assert_eq!(out[4], 0);
+        assert_eq!(out[4 + 1], 0);
+        assert_eq!(out[4 + 2], 0);
+        assert_eq!(out[4 + 3], 170);
     }
 }

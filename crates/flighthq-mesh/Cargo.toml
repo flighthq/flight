@@ -8,3 +8,6 @@ description = "Mesh geometry: vertex layouts, primitive builders, and normals/ta
 [dependencies]
 flighthq-geometry = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

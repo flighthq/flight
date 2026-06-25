@@ -10,3 +10,6 @@ flighthq-node = { workspace = true }
 flighthq-text = { workspace = true }
 flighthq-textlayout = { workspace = true }
 flighthq-types = { workspace = true }
+
+[lints]
+workspace = true
