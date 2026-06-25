@@ -1,6 +1,7 @@
 import type { RichTextContent } from './RichTextContent';
 import type { RichTextStyleSheet } from './RichTextStyleSheet';
 import type { TextAutoSize } from './TextAutoSize';
+import type { TextFieldSignals } from './TextFieldSignals';
 import type { TextFormat } from './TextFormat';
 import type { TextFormatRange } from './TextFormatRange';
 import type { TextInputState } from './TextInputState';
@@ -19,8 +20,8 @@ export interface RichTextData extends TextLabelData {
   maxChars: number;
   mouseWheelEnabled: boolean;
   multiline: boolean;
-  readonly scrollH: number;
-  readonly scrollV: number;
+  scrollH: number;
+  scrollV: number;
   selectable: boolean;
   styleSheet: RichTextStyleSheet | null;
   text: string;
@@ -50,6 +51,10 @@ export interface RichTextRuntime extends TextLabelRuntime {
   richTextContent: RichTextContent | null;
   selectionBeginIndex: number;
   selectionEndIndex: number;
+  // The opt-in text-field notification group: null until enableTextFieldSignals(source) is called.
+  // Setters emit change/scroll/link events only when this is non-null, so a field that never enables
+  // signals pays nothing.
+  textFieldSignals: TextFieldSignals | null;
 }
 
 export interface RichText extends TextLabel {
