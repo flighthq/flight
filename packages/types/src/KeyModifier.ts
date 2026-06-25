@@ -15,6 +15,6 @@ export const KeyModifier = {
   RIGHT_META: 0x0800,
   RIGHT_SHIFT: 0x0002,
   SHIFT: 0x0001 | 0x0002,
-} as const;
+};
 
 export type KeyModifier = number;

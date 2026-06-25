@@ -43,6 +43,8 @@ export interface SafeAreaInsets {
   left: number;
 }
 
+// The swappable backend behind @flighthq/device. Each read fills the caller's `out` value and returns
+// it; unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
 export interface DeviceBackend {
   getCapabilities(out: DeviceCapabilities): DeviceCapabilities;
   getDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics;

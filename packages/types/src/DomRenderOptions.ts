@@ -1,5 +1,4 @@
 import type { SceneGraphSyncPolicy } from './RenderState';
-
 export interface DomRenderOptions {
   backgroundColor?: number | null;
   imageSmoothingEnabled?: boolean;

@@ -14,16 +14,11 @@ export const PathCommand = {
   WIDE_MOVE_TO: 4,
   WIDE_LINE_TO: 5,
   CUBIC_CURVE_TO: 6,
-} as const;
+  CLOSE: 7,
+};
 
 export type PathCommand = (typeof PathCommand)[keyof typeof PathCommand];
 
-/**
- * An authored vector outline as plain data: a verb stream, a flat coordinate stream, and a fill rule.
- * This is the one outline representation shared across the SDK — shapes emit it (`drawPath`), clip
- * regions consume it, and `@flighthq/path` flattens/tessellates it. Not entity-backed (no runtime
- * identity); construct with `createPath` and the `appendPath*` helpers.
- */
 export interface Path {
   commands: number[];
   data: number[];
