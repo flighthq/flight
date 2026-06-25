@@ -1,4 +1,4 @@
-export type SpritesheetAnimationDirection = 'forward' | 'pingpong' | 'pingpong_reverse' | 'reverse';
+import type { SpritesheetAnimationDirection } from '@flighthq/types';
 
 export interface SpritesheetAnimationData {
   direction: SpritesheetAnimationDirection;

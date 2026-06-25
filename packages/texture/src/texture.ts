@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
-import { cloneVector2, copyVector2, createVector2 } from '@flighthq/geometry';
-import type { ImageResource, Matrix3Like, Texture, TextureLike } from '@flighthq/types';
+import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry';
+import type { ImageResource, Matrix3Like, Texture, TextureLike, Vector2Like } from '@flighthq/types';
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 
@@ -72,6 +72,16 @@ export function getTextureHeight(texture: Readonly<TextureLike>): number {
   return texture.image !== null ? texture.image.height : -1;
 }
 
+// Composes the KHR_texture_transform fields and inverts the result, producing the matrix that maps
+// already-transformed uv coordinates back to the unit-square source uv. The forward transform is
+// affine, so the inverse always exists for a non-degenerate (non-zero) scale; a zero scale yields a
+// degenerate inverse (matching inverseMatrix3's affine-singular handling).
+// Out-param form — write into a pre-allocated Matrix3 to avoid per-call allocation.
+export function getTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<TextureLike>): void {
+  getTextureUvMatrix(out, texture);
+  inverseMatrix3(out, out);
+}
+
 // Composes the KHR_texture_transform fields (uvOffset, uvRotation, uvScale) into the 3×3 matrix
 // a shader consumes at sample time. Row-major layout matching @flighthq/geometry Matrix3.
 // The resulting transform applies: scale → rotate → translate, per the KHR_texture_transform spec:
@@ -109,6 +119,16 @@ export function isTextureReady(texture: Readonly<TextureLike>): boolean {
   return texture.image !== null;
 }
 
+// Resets the KHR_texture_transform to identity in place: zero offset, no rotation, unit scale.
+// Leaves the image, color space, and sampler untouched.
+export function resetTextureUvTransform(texture: TextureLike): void {
+  texture.uvOffset.x = 0;
+  texture.uvOffset.y = 0;
+  texture.uvRotation = 0;
+  texture.uvScale.x = 1;
+  texture.uvScale.y = 1;
+}
+
 // Binds (or clears, with null) the texture's image source in place. Does not touch sampling state
 // or the uv-transform.
 export function setTextureImage(texture: TextureLike, image: ImageResource | null): void {
@@ -131,4 +151,20 @@ export function setTextureUvRotation(texture: TextureLike, radians: number): voi
 export function setTextureUvScale(texture: TextureLike, x: number, y: number): void {
   texture.uvScale.x = x;
   texture.uvScale.y = y;
+}
+
+// Applies the texture's KHR_texture_transform (scale → rotate → translate) to a single (u, v)
+// coordinate, writing the transformed coordinate into out. Equivalent to multiplying [u, v, 1] by
+// getTextureUvMatrix's result, computed inline to avoid allocating a scratch matrix.
+// Out-param form — out may be any Vector2; no aliasing hazard (u and v are scalar inputs).
+export function transformTextureUv(out: Vector2Like, texture: Readonly<TextureLike>, u: number, v: number): void {
+  const r = texture.uvRotation;
+  const sx = texture.uvScale.x;
+  const sy = texture.uvScale.y;
+  const tx = texture.uvOffset.x;
+  const ty = texture.uvOffset.y;
+  const cosR = Math.cos(r);
+  const sinR = Math.sin(r);
+  out.x = sx * cosR * u - sy * sinR * v + tx;
+  out.y = sx * sinR * u + sy * cosR * v + ty;
 }

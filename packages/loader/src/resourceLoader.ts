@@ -487,10 +487,6 @@ async function runEntry(
   try {
     // Race the factory against the abort signal so cancellation/timeout is always honored,
     // even if the factory itself does not check the signal.
-    // Bytes tracking: factories that report sub-item progress call `descriptor.onBytesProgress`
-    // from their own closure. The entry's `onBytesProgress` is a tracking shim (set up in
-    // queueResourceLoad) that also writes `entry.bytesLoaded`, enabling the report's `bytes`
-    // field. Factories that do not call `onBytesProgress` leave `entry.bytesLoaded` at 0.
     const value = await Promise.race([entry.wrappedLoad(signal), abortSignalPromise(signal)]);
 
     if (timeoutId !== undefined) clearTimeout(timeoutId);

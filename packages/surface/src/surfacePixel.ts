@@ -1,4 +1,4 @@
-import { invalidateImageResource } from '@flighthq/resources';
+import { invalidateImageResource } from '@flighthq/image';
 import type { Surface } from '@flighthq/types';
 
 import type { ImageChannel } from './surfaceImageChannel';

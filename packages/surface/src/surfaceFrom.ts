@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import { createImageResourceFromCanvas } from '@flighthq/resources';
+import { createImageResourceFromCanvas } from '@flighthq/image';
 import type { ImageResource, Surface } from '@flighthq/types';
 
 export function createImageResourceFromSurface(surface: Readonly<Surface>): ImageResource {

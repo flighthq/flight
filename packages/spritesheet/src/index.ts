@@ -5,3 +5,4 @@ export * from './spritesheetFrame';
 export * from './spritesheetFrom';
 export * from './spritesheetPlayer';
 export * from './spritesheetTimelineSource';
+export * from './spritesheetValidation';
