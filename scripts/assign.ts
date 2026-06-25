@@ -1,9 +1,9 @@
 /**
- * Dispatch a review session's staged guidance into a worker's worktree — the outbound twin of
- * `import:worktree`.
+ * Assign a review session's staged guidance to a worker's worktree — the guidance-delivery verb,
+ * distinct from the get/send work-transfer pair (it moves *assignments*, not completed work).
  *
- *   npm run dispatch:worktree ../builder
- *   npm run dispatch:worktree ../builder -- --from=./outgoing/builder --clean --dry-run
+ *   npm run assign:worktree ../builder
+ *   npm run assign:worktree ../builder -- --from=./outgoing/builder --clean --dry-run
  *
  * Why this exists: a review session shapes a blessed workplan and fans it out to several worker
  * agents, each in its own worktree. The reviewer agent lives in a sandbox and must never write across
@@ -46,7 +46,7 @@ function parseArgs(argv: readonly string[]): Args {
     else if (!arg.startsWith('--') && target === undefined) target = arg;
   }
   if (target === undefined) {
-    console.error('usage: npm run dispatch:worktree <worktree-path> -- [--from=<dir>] [--clean] [--dry-run]');
+    console.error('usage: npm run assign:worktree <worktree-path> -- [--from=<dir>] [--clean] [--dry-run]');
     process.exit(1);
   }
   return { target: path.resolve(target), from, clean, dryRun };
@@ -63,6 +63,20 @@ function listBriefs(dir: string): string[] {
     .readdirSync(dir)
     .filter((name) => name.endsWith('.md'))
     .sort();
+}
+
+// Every file under the staging dir, as paths relative to it — briefs AND any deposited payload
+// (e.g. _recovered/<pkg>/<file>.test.ts that a worker cannot pull from a donor worktree it lacks).
+// Subdirectory structure is preserved on deposit.
+function walkFiles(dir: string, base: string = dir): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const out: string[] = [];
+  for (const name of fs.readdirSync(dir).sort()) {
+    const full = path.join(dir, name);
+    if (fs.statSync(full).isDirectory()) out.push(...walkFiles(full, base));
+    else out.push(path.relative(base, full));
+  }
+  return out;
 }
 
 const args = parseArgs(process.argv.slice(2));
@@ -104,10 +118,20 @@ if (args.clean) {
   }
 }
 
-for (const brief of briefs) {
-  const dest = path.join(inbox, brief);
-  if (!args.dryRun) fs.copyFileSync(path.join(stagingDir, brief), dest);
-  console.log(`${verb} ${path.join(INBOX_REL, brief)}`);
+// Deposit every staged file (briefs at the inbox root + the _recovered/ payload tree), preserving
+// relative structure, so a worker with no donor worktree still receives the files it must place.
+const allFiles = walkFiles(stagingDir);
+for (const rel of allFiles) {
+  const dest = path.join(inbox, rel);
+  if (!args.dryRun) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.join(stagingDir, rel), dest);
+  }
+  console.log(`${verb} ${path.join(INBOX_REL, rel)}`);
 }
 
-console.log(`${args.dryRun ? 'dry-run: ' : ''}${briefs.length} brief(s) → ${path.relative(process.cwd(), inbox)}`);
+const briefCount = allFiles.filter((f) => !f.includes(path.sep) && f.endsWith('.md')).length;
+const payloadCount = allFiles.length - briefCount;
+console.log(
+  `${args.dryRun ? 'dry-run: ' : ''}${briefCount} brief(s) + ${payloadCount} payload file(s) → ${path.relative(process.cwd(), inbox)}`,
+);
