@@ -1,4 +1,5 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import type { WgpuRenderState } from '@flighthq/types';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -6,10 +7,12 @@ import {
   createWgpuDualSourcePipeline,
   createWgpuFilterPipeline,
   createWgpuTripleSourcePipeline,
+  destroyWgpuFilterPipelines,
   drawWgpuDualSourcePass,
   drawWgpuFilterPass,
   drawWgpuTripleSourcePass,
   getWgpuFilterState,
+  registerWgpuFilterPipelineCache,
 } from './wgpuFilterPass';
 import { installWgpuMock, makeFilterState, makeRenderTarget } from './wgpuTestHelper';
 
@@ -95,6 +98,53 @@ describe('createWgpuTripleSourcePipeline', () => {
   });
 });
 
+describe('destroyWgpuFilterPipelines', () => {
+  it('does not throw when called before any filter is applied (no state yet)', async () => {
+    const state = await makeFilterState();
+    // No filter applied yet — filter infrastructure not yet created.
+    expect(() => destroyWgpuFilterPipelines(state)).not.toThrow();
+  });
+
+  it('destroys the uniform buffer and allows re-creation after destroy', async () => {
+    const state = await makeFilterState();
+    const pipeline = createWgpuFilterPipeline(state, MINIMAL_FRAGMENT_WGSL);
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    // Apply a filter to ensure filter state is initialized.
+    drawWgpuFilterPass(state, source, dest, pipeline, () => {});
+    // Destroy should not throw.
+    expect(() => destroyWgpuFilterPipelines(state)).not.toThrow();
+    // Re-using state after destroy should re-create infrastructure without error.
+    expect(() => drawWgpuFilterPass(state, source, dest, pipeline, () => {})).not.toThrow();
+  });
+
+  it('evicts registered per-filter pipeline caches for the destroyed state', async () => {
+    const state = await makeFilterState();
+    const cache = new WeakMap<WgpuRenderState, unknown>();
+    registerWgpuFilterPipelineCache(cache);
+    // Populate the cache for this state.
+    cache.set(state, { pipeline: {} });
+    expect(cache.has(state)).toBe(true);
+    // Trigger filter-state init so destroyWgpuFilterPipelines has something to clear.
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    drawWgpuFilterPass(state, source, dest, createWgpuFilterPipeline(state, MINIMAL_FRAGMENT_WGSL), () => {});
+    // destroyWgpuFilterPipelines must evict the registered cache entry.
+    destroyWgpuFilterPipelines(state);
+    expect(cache.has(state)).toBe(false);
+  });
+
+  it('is idempotent — double destroy does not throw', async () => {
+    const state = await makeFilterState();
+    createWgpuFilterPipeline(state, MINIMAL_FRAGMENT_WGSL);
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    drawWgpuFilterPass(state, source, dest, createWgpuFilterPipeline(state, MINIMAL_FRAGMENT_WGSL), () => {});
+    destroyWgpuFilterPipelines(state);
+    expect(() => destroyWgpuFilterPipelines(state)).not.toThrow();
+  });
+});
+
 describe('drawWgpuDualSourcePass', () => {
   it('draws with two source bind groups and calls draw(6)', async () => {
     const state = await makeFilterState();
@@ -177,5 +227,31 @@ describe('getWgpuFilterState', () => {
     const fs1 = getWgpuFilterState(state);
     const fs2 = getWgpuFilterState(state);
     expect(fs1.uniformBG).toBe(fs2.uniformBG);
+  });
+});
+
+describe('registerWgpuFilterPipelineCache', () => {
+  it('accepts a cache that was never populated — no-op on empty map', async () => {
+    const state = await makeFilterState();
+    const emptyCache = new WeakMap<WgpuRenderState, unknown>();
+    registerWgpuFilterPipelineCache(emptyCache);
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    drawWgpuFilterPass(state, source, dest, createWgpuFilterPipeline(state, MINIMAL_FRAGMENT_WGSL), () => {});
+    // destroy must not throw even if the cache was never set for this state.
+    expect(() => destroyWgpuFilterPipelines(state)).not.toThrow();
+  });
+
+  it('registers a cache that is evicted on destroyWgpuFilterPipelines', async () => {
+    const state = await makeFilterState();
+    const cache = new WeakMap<WgpuRenderState, unknown>();
+    registerWgpuFilterPipelineCache(cache);
+    cache.set(state, { marker: true });
+    expect(cache.has(state)).toBe(true);
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    drawWgpuFilterPass(state, source, dest, createWgpuFilterPipeline(state, MINIMAL_FRAGMENT_WGSL), () => {});
+    destroyWgpuFilterPipelines(state);
+    expect(cache.has(state)).toBe(false);
   });
 });

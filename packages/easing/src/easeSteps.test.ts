@@ -37,6 +37,13 @@ describe('easeSteps', () => {
     expect(ease(1)).toBe(1);
   });
 
+  it('jumpNone with count=1 yields NaN, matching the CSS-forbidden steps(1, jump-none)', () => {
+    const ease = easeSteps(1, 'jumpNone');
+    expect(Number.isNaN(ease(0))).toBe(true);
+    expect(Number.isNaN(ease(0.5))).toBe(true);
+    expect(Number.isNaN(ease(1))).toBe(true);
+  });
+
   it('jumpBoth never outputs 0 at the start, with interior 1/(n+1) steps', () => {
     const ease = easeSteps(4, 'jumpBoth');
     expect(ease(0)).toBeCloseTo(0.2);

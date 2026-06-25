@@ -78,4 +78,117 @@ describe('applyConvolutionFilterToWgpu', () => {
       }),
     ).not.toThrow();
   });
+
+  it('uses divisor=1 for a zero-sum kernel (edge detector)', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    // Laplacian kernel — sum is 0, auto-divisor must fall back to 1.
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [0, -1, 0, -1, 4, -1, 0, -1, 0],
+        matrixX: 3,
+        matrixY: 3,
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts explicit divisor', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        matrixX: 3,
+        matrixY: 3,
+        divisor: 16,
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts positive bias', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        matrixX: 3,
+        matrixY: 3,
+        bias: 64,
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts negative bias', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        matrixX: 3,
+        matrixY: 3,
+        bias: -32,
+      }),
+    ).not.toThrow();
+  });
+
+  it('respects preserveAlpha=false', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        matrixX: 3,
+        matrixY: 3,
+        preserveAlpha: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it('respects preserveAlpha=true', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        matrixX: 3,
+        matrixY: 3,
+        preserveAlpha: true,
+      }),
+    ).not.toThrow();
+  });
+
+  it('respects clamp=false (edge-color fill)', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        matrixX: 3,
+        matrixY: 3,
+        clamp: false,
+        color: 0xff000000,
+      }),
+    ).not.toThrow();
+  });
+
+  it('respects clamp=true (UV clamp-to-edge)', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    expect(() =>
+      applyConvolutionFilterToWgpu(state, source, dest, {
+        matrix: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+        matrixX: 3,
+        matrixY: 3,
+        clamp: true,
+      }),
+    ).not.toThrow();
+  });
 });

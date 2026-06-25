@@ -273,12 +273,12 @@ export function createTextLogFormatter(
   };
 }
 
-// Creates a sink that ships entries to a remote HTTP endpoint via batched POST. Entries are
-// accumulated in a buffer and flushed when the batch reaches `batchSize` entries or `intervalMs`
-// milliseconds have elapsed (default: 50 entries / 5000 ms). Requires a LogTransportBackend set
-// via setLogTransportBackend — on the web the default backend is a no-op (network requests from
-// within a sink are outside the SDK's concern; provide a real backend for remote shipping).
-// The formatter defaults to createJsonLogFormatter (NDJSON lines).
+// Creates the web default LogTransportBackend — a no-op transport whose write/flush/dispose do
+// nothing. The web has no destination a sink can write a formatted line to (no filesystem, and
+// network requests from within a sink are outside the SDK's concern), so createFileLogSink entries
+// silently drop until a host registers a real backend via setLogTransportBackend. Native/Node hosts
+// register a backend that writes the lines to a file or stream; for remote shipping, compose
+// createBufferedLogSink over such a backend rather than baking batching into the transport.
 export function createWebLogTransportBackend(): LogTransportBackend {
   // Web default: no-op transport (the SDK does not own network requests from sinks).
   return {

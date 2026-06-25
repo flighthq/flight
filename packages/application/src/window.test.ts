@@ -497,6 +497,22 @@ describe('computeWindowDeviceTransform', () => {
     expect(out.tx).toBe(0);
     expect(out.ty).toBe(0);
   });
+
+  it('overwrites every field when out already carries stale values (read-before-write)', () => {
+    const win = createApplicationWindow();
+    win.devicePixelRatio = 2;
+    // out's only input is win (a different object), so out cannot alias an input here; this asserts
+    // the read-before-write guarantee by handing the function a fully-populated out it must clobber.
+    const out = { a: 99, b: 99, c: 99, d: 99, tx: 99, ty: 99 } as unknown as Matrix;
+    const result = computeWindowDeviceTransform(win, out);
+    expect(result).toBe(out);
+    expect(out.a).toBe(2);
+    expect(out.b).toBe(0);
+    expect(out.c).toBe(0);
+    expect(out.d).toBe(2);
+    expect(out.tx).toBe(0);
+    expect(out.ty).toBe(0);
+  });
 });
 
 describe('createApplicationWindow', () => {

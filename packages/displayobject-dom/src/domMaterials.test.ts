@@ -1,6 +1,6 @@
 import { BlendMode } from '@flighthq/types';
 
-import { applyDomBlendMode, enableDomBlendModeSupport } from './domMaterials';
+import { applyDomBlendMode, enableDomBlendModeSupport, getDomBlendModeFidelity } from './domMaterials';
 import { createDomRenderState } from './domRenderState';
 
 describe('applyDomBlendMode', () => {
@@ -77,5 +77,35 @@ describe('enableDomBlendModeSupport', () => {
     const el = document.createElement('div');
     state.applyBlendMode!(el, BlendMode.Multiply);
     expect(el.style.mixBlendMode).toBe('multiply');
+  });
+});
+
+describe('getDomBlendModeFidelity', () => {
+  it('returns "approximate" for BlendMode.Add', () => {
+    expect(getDomBlendModeFidelity(BlendMode.Add)).toBe('approximate');
+  });
+
+  it('returns "exact" for BlendMode.Multiply', () => {
+    expect(getDomBlendModeFidelity(BlendMode.Multiply)).toBe('exact');
+  });
+
+  it('returns "exact" for BlendMode.Normal', () => {
+    expect(getDomBlendModeFidelity(BlendMode.Normal)).toBe('exact');
+  });
+
+  it('returns "unsupported" for BlendMode.Alpha', () => {
+    expect(getDomBlendModeFidelity(BlendMode.Alpha)).toBe('unsupported');
+  });
+
+  it('returns "unsupported" for BlendMode.Erase', () => {
+    expect(getDomBlendModeFidelity(BlendMode.Erase)).toBe('unsupported');
+  });
+
+  it('returns "unsupported" for BlendMode.Invert', () => {
+    expect(getDomBlendModeFidelity(BlendMode.Invert)).toBe('unsupported');
+  });
+
+  it('returns "unsupported" for BlendMode.Subtract', () => {
+    expect(getDomBlendModeFidelity(BlendMode.Subtract)).toBe('unsupported');
   });
 });

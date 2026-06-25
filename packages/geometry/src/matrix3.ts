@@ -131,6 +131,21 @@ export function equalsMatrix3(
   return true;
 }
 
+/**
+ * Returns the determinant of a 3×3 matrix.
+ */
+export function getMatrix3Determinant(source: Readonly<Matrix3Like>): number {
+  const m = source.m;
+  return (
+    m[0] * m[4] * m[8] +
+    m[1] * m[5] * m[6] +
+    m[2] * m[3] * m[7] -
+    m[2] * m[4] * m[6] -
+    m[1] * m[3] * m[8] -
+    m[0] * m[5] * m[7]
+  );
+}
+
 export function getMatrix3Element(source: Readonly<Matrix3Like>, row: number, column: number): number {
   return source.m[row * 3 + column];
 }
@@ -347,6 +362,16 @@ export function setMatrix3Element(out: Matrix3Like, row: number, column: number,
   out.m[row * 3 + column] = value;
 }
 
+/**
+ * Reads a Matrix3 from a Float32Array at a byte offset (row-major, 9 floats).
+ */
+export function setMatrix3FromFloat32Array(out: Matrix3Like, offset: number, source: Readonly<Float32Array>): void {
+  const m = out.m;
+  for (let i = 0; i < 9; i++) {
+    m[i] = source[offset + i];
+  }
+}
+
 export function setMatrix3FromMatrix(out: Matrix3Like, source: Readonly<MatrixLike>): void {
   const _out = out.m;
   _out[0] = source.a;
@@ -436,6 +461,16 @@ export function transposeMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>
   o[6] = m2;
   o[7] = m5;
   o[8] = s[8];
+}
+
+/**
+ * Writes a Matrix3 into a Float32Array at a byte offset (row-major, 9 floats).
+ */
+export function writeMatrix3ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Matrix3Like>): void {
+  const m = source.m;
+  for (let i = 0; i < 9; i++) {
+    out[offset + i] = m[i];
+  }
 }
 
 const __identity: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);

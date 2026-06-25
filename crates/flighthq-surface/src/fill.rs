@@ -109,13 +109,16 @@ pub fn fill_surface_perlin_noise(
             }
             let di = ((y * s_width + x) * 4) as usize;
             for c in 0..channels {
-                let value = fractal_value_noise(
-                    px as f32 * fx0,
-                    py as f32 * fy0,
-                    passes,
-                    (seed as i32).wrapping_add((c as i32).wrapping_mul(0x9e3779b1u32 as i32))
-                        as u32,
-                );
+                // Per-channel seed offset matches @flighthq/surface (authoritative): R uses the
+                // base seed; G adds 0x9e3779b1, then B/A increment by one each (0x9e3779b2,
+                // 0x9e3779b3). Not c * 0x9e3779b1 — that diverges from B onward.
+                let channel_seed = seed.wrapping_add(if c == 0 {
+                    0
+                } else {
+                    0x9e3779b0u32.wrapping_add(c)
+                });
+                let value =
+                    fractal_value_noise(px as f32 * fx0, py as f32 * fy0, passes, channel_seed);
                 let byte = (value * 255.0).round() as u8;
                 if gray_scale {
                     data[di] = byte;

@@ -37,10 +37,6 @@ import {
   updateNotification,
 } from './notification';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const WEB_CAPABILITIES: NotificationCapabilities = {
   actions: false,
   channels: false,
@@ -164,10 +160,6 @@ function fakeBackend(): NotificationBackend & {
 
 afterEach(() => setNotificationBackend(null));
 
-// ---------------------------------------------------------------------------
-// cancelScheduledNotification
-// ---------------------------------------------------------------------------
-
 describe('cancelScheduledNotification', () => {
   it('delegates to the active backend', () => {
     const backend = fakeBackend();
@@ -181,10 +173,6 @@ describe('cancelScheduledNotification', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// closeAllNotifications
-// ---------------------------------------------------------------------------
-
 describe('closeAllNotifications', () => {
   it('delegates to the active backend', () => {
     const backend = fakeBackend();
@@ -194,10 +182,6 @@ describe('closeAllNotifications', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// closeNotification
-// ---------------------------------------------------------------------------
-
 describe('closeNotification', () => {
   it('delegates to the active backend', () => {
     const backend = fakeBackend();
@@ -206,10 +190,6 @@ describe('closeNotification', () => {
     expect(backend.closedIds).toEqual(['msg-1']);
   });
 });
-
-// ---------------------------------------------------------------------------
-// createNotificationChannel
-// ---------------------------------------------------------------------------
 
 describe('createNotificationChannel', () => {
   it('calls createNotificationChannel on backends that support it', () => {
@@ -232,10 +212,6 @@ describe('createNotificationChannel', () => {
     expect(() => createNotificationChannel({ id: 'x', name: 'X' })).not.toThrow();
   });
 });
-
-// ---------------------------------------------------------------------------
-// createWebNotificationBackend
-// ---------------------------------------------------------------------------
 
 describe('createServiceWorkerNotificationBackend', () => {
   function fakeRegistration() {
@@ -335,10 +311,6 @@ describe('createServiceWorkerNotificationBackend', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// deleteNotificationChannel
-// ---------------------------------------------------------------------------
-
 describe('createWebNotificationBackend', () => {
   it('returns sentinels without throwing in jsdom', async () => {
     const backend = createWebNotificationBackend();
@@ -433,10 +405,6 @@ describe('createWebNotificationBackend', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// getActiveNotifications
-// ---------------------------------------------------------------------------
-
 describe('deleteNotificationChannel', () => {
   it('calls deleteNotificationChannel on backends that support it', () => {
     const backend = fakeBackend() as ReturnType<typeof fakeBackend> & {
@@ -458,10 +426,6 @@ describe('deleteNotificationChannel', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// getLaunchNotification
-// ---------------------------------------------------------------------------
-
 describe('getActiveNotifications', () => {
   it('delegates to the active backend', async () => {
     const backend = fakeBackend();
@@ -471,10 +435,6 @@ describe('getActiveNotifications', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// getNotificationBackend
-// ---------------------------------------------------------------------------
-
 describe('getLaunchNotification', () => {
   it('delegates to the active backend', async () => {
     const backend = fakeBackend();
@@ -483,10 +443,6 @@ describe('getLaunchNotification', () => {
     expect(result).toBeNull();
   });
 });
-
-// ---------------------------------------------------------------------------
-// getNotificationCapabilities
-// ---------------------------------------------------------------------------
 
 describe('getNotificationBackend', () => {
   it('falls back to a web backend', () => {
@@ -500,10 +456,6 @@ describe('getNotificationBackend', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// getNotificationChannels
-// ---------------------------------------------------------------------------
-
 describe('getNotificationCapabilities', () => {
   it('delegates to the active backend', () => {
     const backend = fakeBackend();
@@ -514,10 +466,6 @@ describe('getNotificationCapabilities', () => {
     expect(typeof caps.scheduling).toBe('boolean');
   });
 });
-
-// ---------------------------------------------------------------------------
-// getNotificationPermission
-// ---------------------------------------------------------------------------
 
 describe('getNotificationChannels', () => {
   it('returns an empty array on backends without channel support', () => {
@@ -537,10 +485,6 @@ describe('getNotificationChannels', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// getPendingNotifications
-// ---------------------------------------------------------------------------
-
 describe('getNotificationPermission', () => {
   it('delegates to the active backend', () => {
     const backend = fakeBackend();
@@ -553,10 +497,6 @@ describe('getNotificationPermission', () => {
     expect(['default', 'granted', 'denied']).toContain(perm);
   });
 });
-
-// ---------------------------------------------------------------------------
-// isNotificationSupported
-// ---------------------------------------------------------------------------
 
 describe('getPendingNotifications', () => {
   it('delegates to the active backend', async () => {
@@ -571,10 +511,6 @@ describe('getPendingNotifications', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// onNotificationAction
-// ---------------------------------------------------------------------------
-
 describe('isNotificationSupported', () => {
   it('delegates to the active backend', () => {
     setNotificationBackend(fakeBackend());
@@ -585,10 +521,6 @@ describe('isNotificationSupported', () => {
     expect(typeof isNotificationSupported()).toBe('boolean');
   });
 });
-
-// ---------------------------------------------------------------------------
-// onNotificationClick
-// ---------------------------------------------------------------------------
 
 describe('notifyServiceWorkerBackendAction', () => {
   function fakeSwRegistration() {
@@ -612,6 +544,36 @@ describe('notifyServiceWorkerBackendAction', () => {
       actionId: 'reply',
     });
     expect(received).toEqual(['n1', 'reply']);
+  });
+
+  it('delivers inline-reply text to subscribeReply listeners when reply is present', () => {
+    const backend = createServiceWorkerNotificationBackend(fakeSwRegistration());
+    let received: [string, string, string] | null = null;
+    backend.subscribeReply((id, actionId, text) => {
+      received = [id, actionId, text];
+    });
+    notifyServiceWorkerBackendAction(backend, {
+      type: 'notificationclick',
+      notificationId: 'chat',
+      actionId: 'quick-reply',
+      reply: 'Hello back!',
+    });
+    expect(received).toEqual(['chat', 'quick-reply', 'Hello back!']);
+  });
+
+  it('routes a reply message to reply listeners only, not action listeners', () => {
+    const backend = createServiceWorkerNotificationBackend(fakeSwRegistration());
+    let actionFired = false;
+    backend.subscribeAction(() => {
+      actionFired = true;
+    });
+    notifyServiceWorkerBackendAction(backend, {
+      type: 'notificationclick',
+      notificationId: 'chat',
+      actionId: 'quick-reply',
+      reply: 'Hi',
+    });
+    expect(actionFired).toBe(false);
   });
 
   it('delivers click events to subscribeClick listeners when no actionId', () => {
@@ -650,10 +612,6 @@ describe('notifyServiceWorkerBackendAction', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// onNotificationDismiss
-// ---------------------------------------------------------------------------
-
 describe('onNotificationAction', () => {
   it('delivers id and action id via the active backend', () => {
     const backend = fakeBackend();
@@ -683,10 +641,6 @@ describe('onNotificationAction', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// onNotificationReply
-// ---------------------------------------------------------------------------
-
 describe('onNotificationClick', () => {
   it('delivers the notification id via the active backend', () => {
     const backend = fakeBackend();
@@ -712,10 +666,6 @@ describe('onNotificationClick', () => {
     expect(count).toBe(1);
   });
 });
-
-// ---------------------------------------------------------------------------
-// onNotificationShow
-// ---------------------------------------------------------------------------
 
 describe('onNotificationDismiss', () => {
   it('delivers the notification id via the active backend', () => {
@@ -743,10 +693,6 @@ describe('onNotificationDismiss', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// requestNotificationPermission
-// ---------------------------------------------------------------------------
-
 describe('onNotificationReply', () => {
   it('delivers id, actionId, and reply text via the active backend', () => {
     const backend = fakeBackend();
@@ -772,10 +718,6 @@ describe('onNotificationReply', () => {
     expect(count).toBe(1);
   });
 });
-
-// ---------------------------------------------------------------------------
-// scheduleNotification
-// ---------------------------------------------------------------------------
 
 describe('onNotificationShow', () => {
   it('delivers the notification id via the active backend', () => {
@@ -803,10 +745,6 @@ describe('onNotificationShow', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// setNotificationBackend
-// ---------------------------------------------------------------------------
-
 describe('requestNotificationPermission', () => {
   it('delegates to the active backend and returns a tri-state NotificationPermission', async () => {
     setNotificationBackend(fakeBackend());
@@ -820,10 +758,6 @@ describe('requestNotificationPermission', () => {
     expect(['default', 'granted', 'denied']).toContain(result);
   });
 });
-
-// ---------------------------------------------------------------------------
-// showNotification
-// ---------------------------------------------------------------------------
 
 describe('scheduleNotification', () => {
   it('echoes the supplied id', async () => {
@@ -844,10 +778,6 @@ describe('scheduleNotification', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// createServiceWorkerNotificationBackend
-// ---------------------------------------------------------------------------
-
 describe('setNotificationBackend', () => {
   it('clears back to the web fallback when passed null', () => {
     setNotificationBackend(fakeBackend());
@@ -855,10 +785,6 @@ describe('setNotificationBackend', () => {
     expect(getNotificationBackend()).not.toBeNull();
   });
 });
-
-// ---------------------------------------------------------------------------
-// notifyServiceWorkerBackendAction
-// ---------------------------------------------------------------------------
 
 describe('showNotification', () => {
   it('delegates to the active backend and returns a string id', async () => {
@@ -881,10 +807,6 @@ describe('showNotification', () => {
     expect(typeof (await showNotification({ title: 'Hello' }))).toBe('string');
   });
 });
-
-// ---------------------------------------------------------------------------
-// updateNotification
-// ---------------------------------------------------------------------------
 
 describe('updateNotification', () => {
   it('delegates to the active backend', async () => {

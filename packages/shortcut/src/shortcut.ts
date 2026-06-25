@@ -129,8 +129,17 @@ export function getAcceleratorModifiers(
 }
 
 // Returns all currently registered accelerators in normalized form. Empty on the web backend.
+// The backend's registry is re-normalized rather than trusted: a native backend may populate the
+// registry with non-normalized strings, so each entry is parsed and any that fail to parse are dropped
+// — the Accelerator type is earned, not asserted.
 export function getRegisteredGlobalShortcuts(): readonly Accelerator[] {
-  return getShortcutBackend().getRegistered() as readonly Accelerator[];
+  const raw = getShortcutBackend().getRegistered();
+  const result: Accelerator[] = [];
+  for (const entry of raw) {
+    const normalized = normalizeAccelerator(entry);
+    if (normalized !== null) result.push(normalized);
+  }
+  return result;
 }
 
 // The active shortcut backend, or a lazily-created web default. There is always a backend.
@@ -252,8 +261,10 @@ let _backend: ShortcutBackend | null = null;
 let _signals: ShortcutSignals | null = null;
 const _emptyList: readonly string[] = [];
 
-// Canonical modifier order used in normalized form: Control < Alt < Shift < Meta < Super.
-const _modifierOrder: ShortcutModifier[] = ['Control', 'Alt', 'Shift', 'Meta', 'Super'];
+// Canonical modifier order used in normalized form: Control < Alt < Shift < Meta < Super < CommandOrControl.
+// CommandOrControl carries its own ordinal (last) so any chord — including one mixing Control and
+// CommandOrControl — has a single, input-independent normalized order.
+const _modifierOrder: ShortcutModifier[] = ['Control', 'Alt', 'Shift', 'Meta', 'Super', 'CommandOrControl'];
 
 // Alias map: lowercase alias → canonical ShortcutModifier.
 const _modifierAliases = new Map<string, ShortcutModifier>([
@@ -443,7 +454,6 @@ const _keyDisplayNames = new Map<string, string>([
   ['CapsLock', '⇪'],
   ['Delete', '⌦'],
   ['End', 'End'],
-  ['Enter', '↵'],
   ['Escape', 'Esc'],
   ['Home', 'Home'],
   ['Insert', 'Ins'],
@@ -550,11 +560,9 @@ function _parseDetailed(input: string): _Parsed | AcceleratorParseError {
   }
 
   // Sort modifiers in canonical order (Control < Alt < Shift < Meta < Super < CommandOrControl).
-  modifiers.sort((a, b) => {
-    const ai = _modifierOrder.indexOf(a === 'CommandOrControl' ? 'Control' : a);
-    const bi = _modifierOrder.indexOf(b === 'CommandOrControl' ? 'Control' : b);
-    return ai - bi;
-  });
+  // CommandOrControl has its own ordinal so a chord containing both Control and CommandOrControl
+  // sorts deterministically instead of tying on a shared index.
+  modifiers.sort((a, b) => _modifierOrder.indexOf(a) - _modifierOrder.indexOf(b));
 
   return { key: canonicalKey, modifiers };
 }

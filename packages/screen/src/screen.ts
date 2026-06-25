@@ -626,6 +626,32 @@ export function onScreenChange(listener: (event: Readonly<ScreenChangeEvent>) =>
   return getScreenBackend().subscribe(listener);
 }
 
+// Watches the Window Management permission for later grant/revoke and invokes `listener` with the
+// new state on each change. Backed by the Permissions API PermissionStatus change event, so it
+// reflects a grant/revoke made outside this call (browser UI, another tab) without polling.
+// Returns a no-op unsubscribe when the Permissions API is unavailable (SSR, jsdom, non-Chromium)
+// or the query rejects — matching getScreenDetailPermission's sentinel discipline.
+export function onScreenDetailPermissionChange(listener: (state: 'denied' | 'granted' | 'prompt') => void): () => void {
+  if (typeof navigator === 'undefined' || !('permissions' in navigator)) return () => {};
+  let status: PermissionStatus | null = null;
+  let cancelled = false;
+  const handleChange = () => {
+    if (status !== null) listener(status.state as 'denied' | 'granted' | 'prompt');
+  };
+  navigator.permissions
+    .query({ name: 'window-management' as PermissionName })
+    .then((s) => {
+      if (cancelled) return;
+      status = s;
+      s.addEventListener('change', handleChange);
+    })
+    .catch(() => {});
+  return () => {
+    cancelled = true;
+    status?.removeEventListener('change', handleChange);
+  };
+}
+
 // Invalidates the backend's cached enumeration so the next getScreens / getPrimaryScreen call reads
 // fresh data. Call after a known reconfiguration (e.g. when the backend fires a change event but
 // the application needs to force-refresh before the next natural poll).

@@ -45,16 +45,10 @@ export function createWebClipboardBackend(): ClipboardBackend {
       return '';
     },
     async writeFormat(format, data) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined') return false;
+      const cb = getWritableWebClipboard();
+      if (cb === null) return false;
       try {
-        let blob: Blob;
-        if (format.startsWith('image/') && data.startsWith('data:')) {
-          const response = await fetch(data);
-          blob = await response.blob();
-        } else {
-          blob = new Blob([data], { type: format });
-        }
+        const blob = await blobFromFormatData(format, data);
         await cb.write([new ClipboardItem({ [format]: blob })]);
         return true;
       } catch {
@@ -82,19 +76,12 @@ export function createWebClipboardBackend(): ClipboardBackend {
       }
     },
     async writeItems(items) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined') return false;
+      const cb = getWritableWebClipboard();
+      if (cb === null) return false;
       try {
         const entry: Record<string, Blob> = {};
         for (const item of items) {
-          let blob: Blob;
-          if (item.format.startsWith('image/') && item.data.startsWith('data:')) {
-            const response = await fetch(item.data);
-            blob = await response.blob();
-          } else {
-            blob = new Blob([item.data], { type: item.format });
-          }
-          entry[item.format] = blob;
+          entry[item.format] = await blobFromFormatData(item.format, item.data);
         }
         await cb.write([new ClipboardItem(entry)]);
         return true;
@@ -167,8 +154,8 @@ export function createWebClipboardBackend(): ClipboardBackend {
       return '';
     },
     async writeImage(dataUrl) {
-      const cb = getWebClipboard();
-      if (cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined') return false;
+      const cb = getWritableWebClipboard();
+      if (cb === null) return false;
       try {
         const response = await fetch(dataUrl);
         const blob = await response.blob();
@@ -375,9 +362,27 @@ export function writeClipboardText(text: string): Promise<boolean> {
 let _backend: ClipboardBackend | null = null;
 const _watchSubscriptions = new WeakMap<ClipboardWatch, () => void>();
 
+// Converts a format/data pair into a Blob. Image data URLs are fetched into their decoded bytes;
+// every other flavor wraps the string payload directly under its MIME type.
+async function blobFromFormatData(format: string, data: string): Promise<Blob> {
+  if (format.startsWith('image/') && data.startsWith('data:')) {
+    const response = await fetch(data);
+    return response.blob();
+  }
+  return new Blob([data], { type: format });
+}
+
 function getWebClipboard(): Clipboard | null {
   if (typeof navigator === 'undefined') return null;
   return navigator.clipboard ?? null;
+}
+
+// The web clipboard when ClipboardItem writes are possible, or null. Centralizes the shared
+// write-path guard so every write/writeItems/writeImage caller folds to one null check.
+function getWritableWebClipboard(): Clipboard | null {
+  const cb = getWebClipboard();
+  if (cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined') return null;
+  return cb;
 }
 
 // Reads a Blob into a data URL via FileReader, resolving '' when reading fails.

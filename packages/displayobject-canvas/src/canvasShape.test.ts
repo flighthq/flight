@@ -1,9 +1,13 @@
-﻿import { registerRenderer } from '@flighthq/render';
+﻿import { createMatrix } from '@flighthq/geometry';
+import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import {
+  appendShapeBeginBitmapFill,
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape';
@@ -111,5 +115,69 @@ describe('renderCanvasShapeCommands', () => {
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, shape.data.commands);
     expect(spy).toHaveBeenCalledWith('evenodd');
+  });
+
+  it('does not throw on a zero-size rectangle', () => {
+    const context = makeContext();
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeRectangle(shape, 10, 10, 0, 0);
+    appendShapeEndFill(shape);
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+  });
+
+  it('does not throw on NaN coordinates', () => {
+    const context = makeContext();
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeMoveTo(shape, Number.NaN, Number.NaN);
+    appendShapeLineTo(shape, Number.NaN, 10);
+    appendShapeRectangle(shape, Number.NaN, 0, Number.NaN, 10);
+    appendShapeEndFill(shape);
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+  });
+
+  it('does not throw on Infinity coordinates', () => {
+    const context = makeContext();
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeMoveTo(shape, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY);
+    appendShapeLineTo(shape, Number.POSITIVE_INFINITY, 0);
+    appendShapeEndFill(shape);
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+  });
+
+  it('does not throw on very large coordinates', () => {
+    const context = makeContext();
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeRectangle(shape, -1e20, -1e20, 2e20, 2e20);
+    appendShapeEndFill(shape);
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+  });
+
+  it('does not throw on a singular bitmap-fill matrix', () => {
+    const context = makeContext();
+    const bitmapSource = document.createElement('canvas');
+    bitmapSource.width = 50;
+    bitmapSource.height = 50;
+    const bitmap = { source: bitmapSource, width: 50, height: 50 } as never;
+    const singular = createMatrix(0, 0, 0, 0, 0, 0);
+    const shape = createShape();
+    appendShapeBeginBitmapFill(shape, bitmap, singular);
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
+    expect(() => renderCanvasShapeCommands(context, shape.data.commands)).not.toThrow();
+  });
+
+  it('skips an unknown command key without throwing', () => {
+    const context = makeContext();
+    const fillSpy = vi.spyOn(context, 'fill');
+    // Raw buffer: [key, argCount, ...args]. The unknown key has no registered
+    // handler, so getCanvasShapeCommand returns the undefined sentinel and the
+    // walk advances past it rather than throwing.
+    const commands: unknown[] = ['acme.unknownCommand', 2, 1, 2];
+    expect(() => renderCanvasShapeCommands(context, commands)).not.toThrow();
+    expect(fillSpy).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,14 @@
+import { connectSignal } from '@flighthq/signals';
 import type { Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types';
+import { NodeKind } from '@flighthq/types';
 
+import { addNodeChild, getNodeChildCount, getNodeParent } from './hierarchy';
 import {
   createNode,
   createNodeRuntime,
   createNodeSignals,
   defaultNodeRuntimeCanAddChild,
+  disposeNode,
   enableNodeSignals,
   getNodeRuntime,
   getNodeSignals,
@@ -129,6 +133,46 @@ describe('defaultNodeRuntimeCanAddChild', () => {
     const parent = createNode(NodeTestKind);
     const child = createNode(NodeTestKind);
     expect(defaultNodeRuntimeCanAddChild(parent, child)).toBe(true);
+  });
+});
+
+describe('disposeNode', () => {
+  it('detaches the node from its parent', () => {
+    const parent = createNode(NodeKind);
+    const child = createNode(NodeKind);
+    addNodeChild(parent, child);
+    disposeNode(child);
+    expect(getNodeParent(child)).toBeNull();
+    expect(getNodeChildCount(parent)).toBe(0);
+  });
+
+  it('recursively removes all descendants', () => {
+    const parent = createNode(NodeKind);
+    const child = createNode(NodeKind);
+    const grandchild = createNode(NodeKind);
+    addNodeChild(parent, child);
+    addNodeChild(child, grandchild);
+    disposeNode(parent);
+    expect(getNodeChildCount(parent)).toBe(0);
+    expect(getNodeParent(child)).toBeNull();
+    expect(getNodeParent(grandchild)).toBeNull();
+  });
+
+  it('clears nodeSignals after disposal', () => {
+    const node = createNode(NodeKind);
+    enableNodeSignals(node);
+    disposeNode(node);
+    expect(getNodeSignals(node)).toBeNull();
+  });
+
+  it('is safe to call on a root node with no parent', () => {
+    const node = createNode(NodeKind);
+    expect(() => disposeNode(node)).not.toThrow();
+  });
+
+  it('is safe to call on a leaf node with no children', () => {
+    const node = createNode(NodeKind);
+    expect(() => disposeNode(node)).not.toThrow();
   });
 });
 

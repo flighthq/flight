@@ -1,9 +1,11 @@
 import {
   addVector2,
+  clampVector2,
   cloneVector2,
   copyVector2,
   createVector2,
   createVector2FromPolar,
+  divideVector2,
   equalsVector2,
   getVector2AngleBetween,
   getVector2Distance,
@@ -12,14 +14,19 @@ import {
   getVector2Length,
   getVector2LengthSquared,
   interpolateVector2,
+  maxVector2,
+  minVector2,
+  multiplyVector2,
   nearEqualsVector2,
   negateVector2,
   normalizeVector2,
   offsetVector2,
+  reflectVector2,
   scaleVector2,
   setVector2,
   setVector2FromFloat32Array,
   setVector2FromPolar,
+  setVector2FromVector3,
   subtractVector2,
   writeVector2ToFloat32Array,
 } from '@flighthq/geometry';
@@ -84,6 +91,35 @@ describe('addVector2', () => {
     expect(result.y).toBe(30);
     expect(result).not.toBe(pt);
     expect(result).not.toBe(pt2);
+  });
+});
+
+describe('clampVector2', () => {
+  it('clamps each component independently', () => {
+    const out = createVector2();
+    const value = createVector2(5, -2);
+    const min = createVector2(0, 0);
+    const max = createVector2(3, 3);
+    clampVector2(out, value, min, max);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(0);
+  });
+
+  it('leaves values within range unchanged', () => {
+    const out = createVector2();
+    const value = createVector2(1, 2);
+    const min = createVector2(0, 0);
+    const max = createVector2(3, 3);
+    clampVector2(out, value, min, max);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+  });
+
+  it('supports out === value', () => {
+    const v = createVector2(5, -1);
+    clampVector2(v, v, createVector2(0, 0), createVector2(3, 3));
+    expect(v.x).toBe(3);
+    expect(v.y).toBe(0);
   });
 });
 
@@ -154,6 +190,29 @@ describe('createVector2FromPolar', () => {
     const pt = createVector2FromPolar(5, 0);
     setVector2FromPolar(pt2, 5, 0);
     expect(equalsVector2(pt, pt2)).toBe(true);
+  });
+});
+
+describe('divideVector2', () => {
+  it('divides component-wise', () => {
+    const out = createVector2();
+    divideVector2(out, createVector2(6, 8), createVector2(2, 4));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(2);
+  });
+
+  it('produces 0 for zero divisor components', () => {
+    const out = createVector2();
+    divideVector2(out, createVector2(6, 8), createVector2(0, 4));
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(2);
+  });
+
+  it('supports out === source', () => {
+    const v = createVector2(6, 8);
+    divideVector2(v, v, createVector2(2, 4));
+    expect(v.x).toBe(3);
+    expect(v.y).toBe(2);
   });
 });
 
@@ -385,6 +444,56 @@ describe('interpolateVector2', () => {
   });
 });
 
+describe('maxVector2', () => {
+  it('returns the component-wise maximum', () => {
+    const out = createVector2();
+    maxVector2(out, createVector2(1, 5), createVector2(3, 2));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+  });
+
+  it('supports out === a', () => {
+    const a = createVector2(1, 5);
+    const b = createVector2(3, 2);
+    maxVector2(a, a, b);
+    expect(a.x).toBe(3);
+    expect(a.y).toBe(5);
+  });
+});
+
+describe('minVector2', () => {
+  it('returns the component-wise minimum', () => {
+    const out = createVector2();
+    minVector2(out, createVector2(1, 5), createVector2(3, 2));
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+  });
+
+  it('supports out === a', () => {
+    const a = createVector2(1, 5);
+    const b = createVector2(3, 2);
+    minVector2(a, a, b);
+    expect(a.x).toBe(1);
+    expect(a.y).toBe(2);
+  });
+});
+
+describe('multiplyVector2', () => {
+  it('multiplies component-wise (Hadamard)', () => {
+    const out = createVector2();
+    multiplyVector2(out, createVector2(2, 3), createVector2(4, 5));
+    expect(out.x).toBe(8);
+    expect(out.y).toBe(15);
+  });
+
+  it('supports out === a', () => {
+    const a = createVector2(2, 3);
+    multiplyVector2(a, a, createVector2(4, 5));
+    expect(a.x).toBe(8);
+    expect(a.y).toBe(15);
+  });
+});
+
 describe('nearEqualsVector2', () => {
   it('returns true for identical vectors', () => {
     const a = createVector2(1, 2);
@@ -533,6 +642,30 @@ describe('offsetVector2', () => {
   });
 });
 
+describe('reflectVector2', () => {
+  it('reflects incident vector about a normal', () => {
+    const out = createVector2();
+    // Reflect (1, -1) about the y-axis normal (1, 0)
+    reflectVector2(out, createVector2(1, -1), createVector2(1, 0));
+    expect(out.x).toBeCloseTo(-1, 6);
+    expect(out.y).toBeCloseTo(-1, 6);
+  });
+
+  it('reflects straight down about horizontal normal gives straight up', () => {
+    const out = createVector2();
+    reflectVector2(out, createVector2(0, -1), createVector2(0, 1));
+    expect(out.x).toBeCloseTo(0, 6);
+    expect(out.y).toBeCloseTo(1, 6);
+  });
+
+  it('supports out === incident', () => {
+    const v = createVector2(1, -1);
+    reflectVector2(v, v, createVector2(1, 0));
+    expect(v.x).toBeCloseTo(-1, 6);
+    expect(v.y).toBeCloseTo(-1, 6);
+  });
+});
+
 describe('scaleVector2', () => {
   it('scales the vector by a scalar', () => {
     const v = createVector2(1, 2);
@@ -649,6 +782,24 @@ describe('setVector2FromPolar', () => {
     setVector2FromPolar(p, 5, 0);
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(0);
+  });
+});
+
+describe('setVector2FromVector3', () => {
+  it('copies x and y from a Vector3Like, dropping z', () => {
+    const src = { x: 3, y: 7, z: 99 };
+    const out = createVector2();
+    setVector2FromVector3(out, src);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(7);
+  });
+
+  it('is safe when out shares x/y memory with source (plain object)', () => {
+    const out = createVector2(1, 2);
+    const src = { x: out.x, y: out.y, z: 5 };
+    setVector2FromVector3(out, src);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
   });
 });
 

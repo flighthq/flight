@@ -31,6 +31,7 @@ export * from './wgpuPixelateEffect';
 export * from './wgpuPosterizeEffect';
 export * from './wgpuRadialBlurEffect';
 export * from './wgpuRenderEffectPipeline';
+export * from './wgpuRenderEffectRegistrants';
 export * from './wgpuRenderEffectRegistry';
 export * from './wgpuScanlinesEffect';
 export * from './wgpuScreenSpaceFogEffect';

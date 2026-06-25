@@ -1,7 +1,7 @@
 import { createVector3 } from '@flighthq/geometry';
 import { AreaLightKind } from '@flighthq/types';
 
-import { cloneAreaLight, createAreaLight } from './areaLight';
+import { cloneAreaLight, createAreaLight, setAreaLightOrientation } from './areaLight';
 
 describe('cloneAreaLight', () => {
   it('creates an independent copy with fresh position/direction/right/up vectors', () => {
@@ -64,5 +64,37 @@ describe('createAreaLight', () => {
     expect(light.up).not.toBe(up);
     expect(light.right.x).toBe(4);
     expect(light.up.z).toBe(5);
+  });
+});
+
+describe('setAreaLightOrientation', () => {
+  it('updates the direction, right, and up axes while preserving half-extent lengths', () => {
+    // right has length 3, up has length 4 — half-extents should survive the orientation update.
+    const light = createAreaLight({
+      direction: createVector3(0, -1, 0),
+      right: createVector3(3, 0, 0),
+      up: createVector3(0, 0, 4),
+    });
+    setAreaLightOrientation(light, createVector3(0, 0, -1), createVector3(1, 0, 0), createVector3(0, 1, 0));
+    // Direction should now point into -z.
+    expect(light.direction.z).toBeCloseTo(-1, 6);
+    // Right and up half-extent lengths should be preserved.
+    const rightLen = Math.sqrt(light.right.x ** 2 + light.right.y ** 2 + light.right.z ** 2);
+    const upLen = Math.sqrt(light.up.x ** 2 + light.up.y ** 2 + light.up.z ** 2);
+    expect(rightLen).toBeCloseTo(3, 5);
+    expect(upLen).toBeCloseTo(4, 5);
+  });
+
+  it('ignores zero-length input vectors', () => {
+    const light = createAreaLight({
+      direction: createVector3(0, -1, 0),
+      right: createVector3(1, 0, 0),
+      up: createVector3(0, 0, 1),
+    });
+    setAreaLightOrientation(light, createVector3(0, 0, 0), createVector3(0, 0, 0), createVector3(0, 0, 0));
+    // All vectors unchanged when all inputs are zero.
+    expect(light.direction.y).toBeCloseTo(-1, 6);
+    expect(light.right.x).toBeCloseTo(1, 6);
+    expect(light.up.z).toBeCloseTo(1, 6);
   });
 });

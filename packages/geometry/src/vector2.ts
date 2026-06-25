@@ -1,9 +1,30 @@
 import { createEntity } from '@flighthq/entity';
-import type { Vector2, Vector2Like } from '@flighthq/types';
+import type { Vector2, Vector2Like, Vector3Like } from '@flighthq/types';
 
 export function addVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
   out.x = a.x + b.x;
   out.y = a.y + b.y;
+}
+
+/**
+ * Clamps each component of a Vector2Like independently to [min, max].
+ *
+ * Safe when `out` aliases `value`, `min`, or `max`.
+ */
+export function clampVector2(
+  out: Vector2Like,
+  value: Readonly<Vector2Like>,
+  min: Readonly<Vector2Like>,
+  max: Readonly<Vector2Like>,
+): void {
+  const vx = value.x,
+    vy = value.y;
+  const minX = min.x,
+    minY = min.y;
+  const maxX = max.x,
+    maxY = max.y;
+  out.x = vx < minX ? minX : vx > maxX ? maxX : vx;
+  out.y = vy < minY ? minY : vy > maxY ? maxY : vy;
 }
 
 export function cloneVector2(source: Readonly<Vector2Like>): Vector2 {
@@ -36,6 +57,22 @@ export function createVector2FromPolar(length: number, angle: number): Vector2 {
   const out = createVector2();
   setVector2FromPolar(out, length, angle);
   return out;
+}
+
+/**
+ * Component-wise division of two vectors (Hadamard division). Each component of
+ * `source` is divided by the corresponding component of `divisor`. Components with a
+ * zero divisor produce `0` in the output.
+ *
+ * Safe when `out` aliases `source` or `divisor`.
+ */
+export function divideVector2(out: Vector2Like, source: Readonly<Vector2Like>, divisor: Readonly<Vector2Like>): void {
+  const sx = source.x,
+    sy = source.y;
+  const dx = divisor.x,
+    dy = divisor.y;
+  out.x = dx !== 0 ? sx / dx : 0;
+  out.y = dy !== 0 ? sy / dy : 0;
 }
 
 export function equalsVector2(
@@ -112,6 +149,36 @@ export function interpolateVector2(
 }
 
 /**
+ * Writes the per-component maximum of two vectors.
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function maxVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
+  out.x = a.x > b.x ? a.x : b.x;
+  out.y = a.y > b.y ? a.y : b.y;
+}
+
+/**
+ * Writes the per-component minimum of two vectors.
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function minVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
+  out.x = a.x < b.x ? a.x : b.x;
+  out.y = a.y < b.y ? a.y : b.y;
+}
+
+/**
+ * Component-wise product of two vectors (Hadamard product).
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function multiplyVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
+  out.x = a.x * b.x;
+  out.y = a.y * b.y;
+}
+
+/**
  * Compares the elements of the current Vector2Like object with the elements of a
  * specified Vector2Like object to determine whether they are nearly equal.
  *
@@ -160,6 +227,24 @@ export function offsetVector2(out: Vector2Like, source: Readonly<Vector2Like>, d
 }
 
 /**
+ * Reflects an incident vector about a unit normal. The result is the reflection of
+ * `incident` across the line whose normal is `normal`.
+ *
+ * Formula: out = incident - 2 * dot(incident, normal) * normal
+ *
+ * Safe when `out` aliases `incident` or `normal`.
+ */
+export function reflectVector2(out: Vector2Like, incident: Readonly<Vector2Like>, normal: Readonly<Vector2Like>): void {
+  const ix = incident.x,
+    iy = incident.y;
+  const nx = normal.x,
+    ny = normal.y;
+  const twoDot = 2 * (ix * nx + iy * ny);
+  out.x = ix - twoDot * nx;
+  out.y = iy - twoDot * ny;
+}
+
+/**
  * Scales the current Vector2Like object by a scalar, a magnitude. The Vector2Like object's
  * x and y elements are multiplied by the provided scalar number.
  **/
@@ -181,6 +266,16 @@ export function setVector2FromFloat32Array(out: Vector2Like, offset: number, sou
 export function setVector2FromPolar(out: Vector2Like, length: number, angle: number): void {
   out.x = length * Math.cos(angle);
   out.y = length * Math.sin(angle);
+}
+
+/**
+ * Copies the x and y components of a Vector3Like into a Vector2Like, dropping the z component.
+ *
+ * Safe when `out` aliases the same memory as `source`.
+ */
+export function setVector2FromVector3(out: Vector2Like, source: Readonly<Vector3Like>): void {
+  out.x = source.x;
+  out.y = source.y;
 }
 
 export function subtractVector2(out: Vector2Like, source: Readonly<Vector2Like>, other: Readonly<Vector2Like>): void {

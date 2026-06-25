@@ -132,16 +132,13 @@ export function removeMovieClipFrameScript(clip: MovieClip, frame: number | stri
 // its construct target, and realizes the initial frame so the clip isn't blank before play. The source
 // comes from a format — createTimelineSource (hand-authored), createSpritesheetTimelineSource, etc.
 export function setMovieClipSource(clip: MovieClip, source: TimelineSource): void {
+  // Reuse the clip's existing timeline if it has one: enableMovieClipSignals may have already created and
+  // armed it (storing the same group in runtime.movieClipSignals), so pointing a source at the same object
+  // keeps those signals live with no re-wire needed — the runtime slot and timeline.signals are one group.
   const timeline = clip.data.timeline ?? createTimeline();
   timeline.source = source;
   timeline.target = clip;
   clip.data.timeline = timeline;
-  // Re-wire the signals slot if signals have already been enabled on this clip's runtime.
-  const runtime = clip[EntityRuntimeKey] as MovieClipRuntime;
-  if (runtime.movieClipSignals !== null) {
-    const signals = enableTimelineSignals(timeline);
-    runtime.movieClipSignals = signals;
-  }
   gotoAndStopTimeline(timeline, timeline.currentFrame);
 }
 

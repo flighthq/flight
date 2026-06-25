@@ -1,3 +1,4 @@
+import { createRandomSource } from '@flighthq/math';
 import { createParticleEmitter, reserveParticleEmitter } from '@flighthq/sprite';
 import type { TextureAtlas } from '@flighthq/types';
 
@@ -583,5 +584,48 @@ describe('updateParticleEmitter', () => {
     for (let i = 0; i < 30; i++) updateParticleEmitter(emitter, state, config, 0.1);
     // 3 seconds at rate 10 → ~30 particles, well past the 1s duration.
     expect(emitter.data.particleCount).toBeGreaterThan(20);
+  });
+
+  it('replays byte-identically when stepped from the same seed (deterministic replay)', () => {
+    // North star: the same seed + the same step sequence reproduces the same SoA
+    // buffers exactly. The engine draws only from the injected RandomSource, so two
+    // runs seeded identically must produce bit-identical particle state.
+    const run = (): {
+      transforms: number[];
+      colors: number[];
+      velocities: number[];
+      lifetimes: number[];
+      count: number;
+    } => {
+      const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+      const state = createParticleEmitterState(createRandomSource(1234));
+      const config = createParticleEmitterConfig({
+        spawnRate: 30,
+        maxParticles: 200,
+        speedMin: 10,
+        speedMax: 200,
+        spread: Math.PI,
+        lifetimeMin: 0.5,
+        lifetimeMax: 2,
+        rotationSpeedMin: -2,
+        rotationSpeedMax: 2,
+        scaleMin: 0.5,
+        scaleMax: 2,
+        gravityY: 50,
+      });
+      for (let i = 0; i < 60; i++) updateParticleEmitter(emitter, state, config, 1 / 60);
+      const count = emitter.data.particleCount;
+      return {
+        transforms: Array.from(emitter.data.transforms.slice(0, count * 4)),
+        colors: Array.from(emitter.data.colors.slice(0, count * 3)),
+        velocities: Array.from(state.velocities.slice(0, count * 2)),
+        lifetimes: Array.from(state.lifetimes.slice(0, count * 2)),
+        count,
+      };
+    };
+    const first = run();
+    const second = run();
+    expect(first.count).toBeGreaterThan(0);
+    expect(second).toEqual(first);
   });
 });

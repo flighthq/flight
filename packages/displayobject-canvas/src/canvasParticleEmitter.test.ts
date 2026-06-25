@@ -75,6 +75,18 @@ describe('drawCanvasParticleEmitter', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
+  it('does not throw on NaN particle transforms', () => {
+    const state = makeState();
+    expect(() =>
+      drawCanvasParticleEmitter(
+        state,
+        makeRenderProxy({
+          transforms: new Float32Array([Number.NaN, Number.NaN, Number.NaN, Number.NaN]),
+        }),
+      ),
+    ).not.toThrow();
+  });
+
   it('skips particles with out-of-range region ids', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');

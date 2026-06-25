@@ -1,7 +1,12 @@
 import { createEntity } from '@flighthq/entity';
-import { cloneVector3, createVector3 } from '@flighthq/geometry';
+import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry';
 import type { SpotLight, Vector3Like } from '@flighthq/types';
 import { SpotLightKind } from '@flighthq/types';
+
+export interface SpotLightConeAngles {
+  innerDegrees: number;
+  outerDegrees: number;
+}
 
 export interface SpotLightOptions {
   castsShadow?: boolean;
@@ -62,10 +67,47 @@ export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight
   return light;
 }
 
+// Reads the inner and outer cone half-angles from precomputed cosines and writes them as degrees
+// into `out`. Provides the round-trip for `createSpotLight` which accepts degrees but stores
+// cosines. The `out` object is a plain `{ innerDegrees, outerDegrees }` struct.
+export function getSpotLightConeDegrees(out: SpotLightConeAngles, source: Readonly<SpotLight>): void {
+  out.innerDegrees = (Math.acos(source.innerConeCos) * 180) / Math.PI;
+  out.outerDegrees = (Math.acos(source.outerConeCos) * 180) / Math.PI;
+}
+
 // Writes the precomputed cone cosines from inner/outer half-angles given in degrees. A larger
 // half-angle yields a smaller cosine, so the stored invariant innerConeCos >= outerConeCos holds
 // exactly when innerDegrees <= outerDegrees; callers are responsible for ordering their inputs.
 export function setSpotLightCone(out: SpotLight, innerDegrees: number, outerDegrees: number): void {
   out.innerConeCos = Math.cos((innerDegrees * Math.PI) / 180);
   out.outerConeCos = Math.cos((outerDegrees * Math.PI) / 180);
+}
+
+// Writes a normalized direction into `out.direction`. Normalizes x/y/z before storing.
+// Alias-safe: scalar arguments cannot alias the output vector.
+export function setSpotLightDirection(out: SpotLight, x: number, y: number, z: number): void {
+  const lx = x;
+  const ly = y;
+  const lz = z;
+  const len = Math.sqrt(lx * lx + ly * ly + lz * lz);
+  if (len > 0) {
+    setVector3(out.direction, lx / len, ly / len, lz / len);
+  }
+}
+
+// Writes the normalized direction from `out.position` toward `targetX,targetY,targetZ` into
+// `out.direction`. Derives `direction` from a target point — the most common authoring gesture.
+// If `out.position` equals the target (zero-length direction), `direction` is left unchanged.
+export function setSpotLightTarget(out: SpotLight, targetX: number, targetY: number, targetZ: number): void {
+  // Read position into locals before writing direction for alias safety.
+  const px = out.position.x;
+  const py = out.position.y;
+  const pz = out.position.z;
+  const dx = targetX - px;
+  const dy = targetY - py;
+  const dz = targetZ - pz;
+  const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (len > 0) {
+    setVector3(out.direction, dx / len, dy / len, dz / len);
+  }
 }

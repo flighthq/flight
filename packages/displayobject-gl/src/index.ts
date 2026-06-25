@@ -6,6 +6,7 @@ export * from './glClipRectangle';
 export * from './glColorTransformMaterial';
 export * from './glDefaultMaterial';
 export * from './glDisplayObject';
+export * from './glDisplayObjectRegistration';
 export * from './glMaterials';
 export * from './glParticleEmitter';
 export * from './glQuadBatch';

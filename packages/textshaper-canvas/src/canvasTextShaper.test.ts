@@ -105,6 +105,39 @@ describe('createCanvasTextShaperBackend', () => {
     expect(noSpacing).toBeGreaterThanOrEqual(0);
     expect(withSpacing).toBeGreaterThanOrEqual(0);
   });
+
+  it('keys the advance cache on letterSpacing — differing letterSpacing does not collapse to one entry', () => {
+    // jsdom's measureText returns 0 for every string, so a wrong width is invisible; instead pin
+    // the fix by observing the underlying measureText call count. Two calls that differ only in
+    // letterSpacing must each reach measureText (distinct cache keys); a repeated identical call
+    // must hit the cache (no second measureText). A spy on the 2D context proves both.
+    const realGetContext = HTMLCanvasElement.prototype.getContext;
+    const measureSpy = vi.fn((_text: string) => ({ width: 0 }) as TextMetrics);
+    const fakeContext = {
+      font: '',
+      letterSpacing: '0px',
+      wordSpacing: '0px',
+      direction: 'ltr',
+      measureText: measureSpy,
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fakeContext as never);
+    try {
+      const backend = createCanvasTextShaperBackend();
+      if (backend.measureText('probe', {}) === -1) return; // sentinel path; nothing to assert
+
+      measureSpy.mockClear();
+      backend.measureText('same', { size: 16, letterSpacing: 0 });
+      backend.measureText('same', { size: 16, letterSpacing: 0 });
+      // Identical key — second call is served from cache.
+      expect(measureSpy).toHaveBeenCalledTimes(1);
+
+      backend.measureText('same', { size: 16, letterSpacing: 4 });
+      // Different letterSpacing — distinct key, must re-measure rather than return the cached 0-spacing width.
+      expect(measureSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      HTMLCanvasElement.prototype.getContext = realGetContext;
+    }
+  });
 });
 
 describe('createCanvasTextShaperBackend — getFontMetrics', () => {
@@ -129,6 +162,19 @@ describe('createCanvasTextShaperBackend — getFontMetrics', () => {
     if (metrics === null) return;
     expect(metrics.ascent).toBeGreaterThanOrEqual(0);
     expect(metrics.descent).toBeGreaterThanOrEqual(0);
+  });
+
+  it('reports a non-zero unitsPerEm (identity size) so the documented inverse never divides by zero', () => {
+    const backend = createCanvasTextShaperBackend();
+    const metrics = backend.getFontMetrics!({ size: 16 });
+    if (metrics === null) return;
+    // Canvas cannot read OS/2 units; it returns the identity unitsPerEm === size, making the
+    // documented "divide by size / unitsPerEm" conversion a safe no-op (divide by 1) instead of /0.
+    expect(metrics.unitsPerEm).toBe(16);
+    const defaultMetrics = backend.getFontMetrics!({});
+    if (defaultMetrics === null) return;
+    // No explicit size falls back to the 12px default — still non-zero.
+    expect(defaultMetrics.unitsPerEm).toBe(12);
   });
 
   it('underlineThickness is positive', () => {

@@ -340,7 +340,10 @@ function buildGroups(
     bulletGroup.offsetY = offsetY + TEXT_LAYOUT_GUTTER;
     bulletGroup.height = lineHeight;
     groups.push(bulletGroup);
-    // Ensure a positive indent so text doesn't overlap with the bullet.
+    // An explicit positive indent set by the user always wins, even if it is
+    // narrower than the bullet glyph (the text may then overlap the bullet) —
+    // the user owns the hanging-indent width. Only when no indent is supplied
+    // (indent <= 0) do we auto-compute one wide enough to clear the bullet.
     if (indent <= 0) {
       indent = Math.ceil(bulletW) + 2;
     }

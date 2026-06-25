@@ -4,6 +4,8 @@ import type { TextureAtlas } from '@flighthq/types';
 import {
   buildParticleColorCurve,
   buildParticleCurve,
+  lerpHsvDirect,
+  lerpHsvInPlace,
   particleColorCurveFromKeyframes,
   particleColorCurveToKeyframes,
   particleCurveFromKeyframes,
@@ -38,6 +40,74 @@ describe('buildParticleCurve', () => {
     expect(lut[0]).toBe(0);
     expect(lut[4]).toBe(1);
     expect(sampleParticleCurve(lut, 0.5)).toBeCloseTo(0.25, 1);
+  });
+});
+
+describe('lerpHsvDirect', () => {
+  it('interpolates from red to green through yellow at t=0.5', () => {
+    const out = [0, 0, 0];
+    // Red → Green: at t=0.5, hue should be ~yellow (1/12 of hue circle)
+    lerpHsvDirect(out, 0, 1, 0, 0, 0, 1, 0, 0.5);
+    // Yellow = R≈1, G≈1, B≈0
+    expect(out[0]).toBeGreaterThan(0.7); // R
+    expect(out[1]).toBeGreaterThan(0.7); // G
+    expect(out[2]).toBeCloseTo(0, 2); // B
+  });
+
+  it('takes the short arc when interpolating hues', () => {
+    // From blue (hue=2/3) to red (hue=0) — short arc goes through magenta (hue≈5/6), not through green
+    const out = [0, 0, 0];
+    lerpHsvDirect(out, 0, 0, 0, 1, 1, 0, 0, 0.5);
+    // At midpoint (magenta direction): R should be high, G low
+    expect(out[0]).toBeGreaterThan(0.5); // R is prominent
+    expect(out[1]).toBeCloseTo(0, 2); // no green in blue/red short arc
+  });
+
+  it('writes at the given offset', () => {
+    const out = [9, 9, 9, 0, 0, 0];
+    lerpHsvDirect(out, 3, 1, 0, 0, 1, 0, 0, 0);
+    expect(out[3]).toBeCloseTo(1); // red at t=0
+    expect(out[4]).toBeCloseTo(0);
+    expect(out[5]).toBeCloseTo(0);
+  });
+});
+
+describe('lerpHsvInPlace', () => {
+  it('interpolates RGB values stored in birth/death arrays via HSV at the given offset', () => {
+    const colorsOut = [0, 0, 0];
+    const birth = new Float32Array([1, 0, 0]); // red
+    const death = new Float32Array([0, 1, 0]); // green
+    lerpHsvInPlace(colorsOut, 0, birth, death, 0.5);
+    // Red (hue=0) → green (hue=1/3) at t=0.5 → yellow (hue≈1/6)
+    expect(colorsOut[0]).toBeGreaterThan(0.5); // R dominant
+    expect(colorsOut[1]).toBeGreaterThan(0.5); // G dominant
+    expect(colorsOut[2]).toBeCloseTo(0, 2); // no blue
+  });
+
+  it('returns birth color at t=0 and death color at t=1', () => {
+    const birth = new Float32Array([0.2, 0.4, 0.6]);
+    const death = new Float32Array([0.6, 0.4, 0.2]);
+    const out0 = [0, 0, 0];
+    lerpHsvInPlace(out0, 0, birth, death, 0);
+    expect(out0[0]).toBeCloseTo(0.2, 3);
+    expect(out0[1]).toBeCloseTo(0.4, 3);
+    expect(out0[2]).toBeCloseTo(0.6, 3);
+    const out1 = [0, 0, 0];
+    lerpHsvInPlace(out1, 0, birth, death, 1);
+    expect(out1[0]).toBeCloseTo(0.6, 3);
+    expect(out1[1]).toBeCloseTo(0.4, 3);
+    expect(out1[2]).toBeCloseTo(0.2, 3);
+  });
+
+  it('reads and writes at the specified offset', () => {
+    const birth = new Float32Array([9, 9, 9, 1, 0, 0]); // offset 3 = red
+    const death = new Float32Array([9, 9, 9, 0, 1, 0]); // offset 3 = green
+    const out = [9, 9, 9, 0, 0, 0];
+    lerpHsvInPlace(out, 3, birth, death, 0);
+    expect(out[0]).toBe(9); // slots before offset unchanged
+    expect(out[3]).toBeCloseTo(1); // red at t=0
+    expect(out[4]).toBeCloseTo(0);
+    expect(out[5]).toBeCloseTo(0);
   });
 });
 

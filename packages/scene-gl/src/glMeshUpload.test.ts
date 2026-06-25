@@ -1,6 +1,6 @@
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 
-import { ensureGlMeshUpload } from './glMeshUpload';
+import { ensureGlMeshUpload, hasGlMeshGeometryUv1 } from './glMeshUpload';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 
@@ -43,5 +43,39 @@ describe('ensureGlMeshUpload', () => {
     expect(second.vao).toBe(first.vao);
     expect(gl.calls.filter((c) => c.name === 'bufferData').length).toBeGreaterThan(bufferDataCount);
     expect(second.version).toBe(geometry.version);
+  });
+});
+
+describe('hasGlMeshGeometryUv1', () => {
+  it('returns false for geometry without a uv1 semantic', () => {
+    const geometry = createBoxMeshGeometry();
+    expect(hasGlMeshGeometryUv1(geometry)).toBe(false);
+  });
+
+  it('returns true when the geometry layout carries a uv1 semantic', () => {
+    const geometry = createBoxMeshGeometry();
+    const withUv1 = {
+      ...geometry,
+      layout: {
+        attributes: [
+          ...geometry.layout.attributes,
+          {
+            byteOffset: geometry.layout.stride,
+            format: 'float32x2',
+            semantic: 'uv1',
+          } as (typeof geometry.layout.attributes)[number],
+        ],
+        stride: geometry.layout.stride + 8,
+      },
+    };
+    expect(hasGlMeshGeometryUv1(withUv1)).toBe(true);
+  });
+
+  it('returns false for geometry with only standard PBR attributes but no uv1', () => {
+    const geometry = createBoxMeshGeometry();
+    // createBoxMeshGeometry produces position/normal/tangent/uv0 — no uv1.
+    const semantics = geometry.layout.attributes.map((a) => a.semantic);
+    expect(semantics).not.toContain('uv1');
+    expect(hasGlMeshGeometryUv1(geometry)).toBe(false);
   });
 });

@@ -27,7 +27,7 @@ import type {
 
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
-import { escapeHtmlString } from './domTextHelpers';
+import { escapeDomHtmlString } from './domTextHelpers';
 
 interface DomRichTextData extends RendererData {
   div: HTMLDivElement | null;
@@ -136,7 +136,7 @@ function drawDomRichTextField(state: DomRenderState, renderProxy: RenderProxy2D)
     if (group.lineIndex < firstVisibleLine) continue;
 
     const fmt = group.format;
-    const slice = escapeHtmlString(text.substring(group.startIndex, group.endIndex));
+    const slice = escapeDomHtmlString(text.substring(group.startIndex, group.endIndex));
     const x = group.offsetX - scrollXOffset;
     const fontStr = computeTextFormatFontString(fmt);
     // Align the CSS alphabetic baseline with canvas: canvas draws at offsetY + group.ascent

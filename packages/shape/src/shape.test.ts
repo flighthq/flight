@@ -9,8 +9,11 @@ import {
   createShape,
   createShapeData,
   createShapeRuntime,
+  getShapeBounds,
+  getShapeCommandCount,
   getShapeRuntime,
   invalidateShapeGeometry,
+  isShapeEmpty,
 } from './shape';
 
 describe('clearShapeCommands', () => {
@@ -124,6 +127,46 @@ describe('createShapeRuntime', () => {
   });
 });
 
+describe('getShapeBounds', () => {
+  it('returns the same bounds as computeShapeLocalBoundsRectangle', () => {
+    const shape = createShape();
+    shape.data.commands.push('drawRectangle', 4, 5, 10, 200, 80);
+    const out1 = createRectangle();
+    const out2 = createRectangle();
+    computeShapeLocalBoundsRectangle(out1, shape);
+    getShapeBounds(out2, shape);
+    expect(out2.x).toBe(out1.x);
+    expect(out2.y).toBe(out1.y);
+    expect(out2.width).toBe(out1.width);
+    expect(out2.height).toBe(out1.height);
+  });
+
+  it('returns zero bounds for an empty shape', () => {
+    const shape = createShape();
+    const out = createRectangle(1, 2, 3, 4);
+    getShapeBounds(out, shape);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(0);
+    expect(out.width).toBe(0);
+    expect(out.height).toBe(0);
+  });
+});
+
+describe('getShapeCommandCount', () => {
+  it('returns 0 for an empty shape', () => {
+    const shape = createShape();
+    expect(getShapeCommandCount(shape)).toBe(0);
+  });
+
+  it('counts each command entry (not each flat array element)', () => {
+    const shape = createShape();
+    shape.data.commands.push('beginFill', 2, 0xff0000, 1);
+    shape.data.commands.push('drawRectangle', 4, 0, 0, 100, 100);
+    shape.data.commands.push('endFill', 0);
+    expect(getShapeCommandCount(shape)).toBe(3);
+  });
+});
+
 describe('getShapeRuntime', () => {
   it('returns the runtime for a Shape', () => {
     const shape = createShape();
@@ -140,5 +183,25 @@ describe('invalidateShapeGeometry', () => {
     invalidateShapeGeometry(shape);
     expect(getNodeLocalContentRevision(shape)).toBe(content + 1);
     expect(getNodeLocalBoundsRevision(shape)).toBe(bounds + 1);
+  });
+});
+
+describe('isShapeEmpty', () => {
+  it('returns true for a shape with no commands', () => {
+    const shape = createShape();
+    expect(isShapeEmpty(shape)).toBe(true);
+  });
+
+  it('returns false after any command is appended', () => {
+    const shape = createShape();
+    shape.data.commands.push('endFill', 0);
+    expect(isShapeEmpty(shape)).toBe(false);
+  });
+
+  it('returns true again after clearShapeCommands', () => {
+    const shape = createShape();
+    shape.data.commands.push('endFill', 0);
+    clearShapeCommands(shape);
+    expect(isShapeEmpty(shape)).toBe(true);
   });
 });

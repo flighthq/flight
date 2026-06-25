@@ -3,6 +3,8 @@ export * from './color';
 export * from './colorTransform';
 export * from './colorTransformMaterial';
 export * from './material';
+export * from './materialPresets';
+export * from './materialValidation';
 export * from './pbrExtensionMaterials';
 export * from './pbrMaterials';
 export * from './surfaceMaterial';

@@ -225,16 +225,25 @@ describe('createClipRegionFromCircle', () => {
 });
 
 describe('createClipRegionFromContours', () => {
-  it('stores the provided contours and computes bounds', () => {
+  it('deep-copies the provided contours and computes bounds', () => {
     const contours = [[0, 0, 10, 0, 10, 10, 0, 10]];
     const clip = createClipRegionFromContours(contours, 'nonZero');
-    expect(clip.contours).toBe(contours);
+    expect(clip.contours).not.toBe(contours);
+    expect(clip.contours?.[0]).not.toBe(contours[0]);
+    expect(clip.contours).toEqual(contours);
     expect(clip.rect.x).toBe(0);
     expect(clip.rect.y).toBe(0);
     expect(clip.rect.width).toBe(10);
     expect(clip.rect.height).toBe(10);
     expect(clip.winding).toBe('nonZero');
     expect(clip.version).toBe(0);
+  });
+
+  it('does not observe later edits to the caller array', () => {
+    const contours = [[0, 0, 10, 0, 10, 10, 0, 10]];
+    const clip = createClipRegionFromContours(contours, 'nonZero');
+    contours[0][2] = 999;
+    expect(clip.contours?.[0][2]).toBe(10);
   });
 
   it('produces an empty region for an empty contours array', () => {

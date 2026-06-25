@@ -5,6 +5,7 @@ import type {
   TrayCapabilities,
   TrayEventData,
   TrayIcon,
+  TrayIconBounds,
   TrayIconOptions,
 } from '@flighthq/types';
 import type { Vector2Like } from '@flighthq/types';
@@ -124,9 +125,7 @@ export function getTrayCapabilities(): Readonly<TrayCapabilities> {
 
 // Returns the screen bounds of the tray icon (x/y/width/height), or null when the platform does not
 // expose icon geometry (Linux/AppIndicator, web). Use for anchoring popovers or windows to the icon.
-export function getTrayIconBounds(
-  tray: TrayIcon,
-): Readonly<{ height: number; width: number; x: number; y: number }> | null {
+export function getTrayIconBounds(tray: TrayIcon): Readonly<TrayIconBounds> | null {
   return getTrayBackend().getBounds(tray.id);
 }
 

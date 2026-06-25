@@ -18,4 +18,32 @@ export function getGlEffectProgram(state: GlRenderState, key: string, fragmentSo
   return compiled;
 }
 
+// Returns a cached WebGLUniformLocation for the given program and uniform name. The texture-slot
+// locations (u_texture0..N) are already resolved by compileGlFullscreenProgram and live on
+// GlFullscreenProgram.textures. This cache covers the per-effect uniforms (u_threshold, u_intensity,
+// u_matrix, etc.) that the render-gl layer does not pre-resolve. Because getUniformLocation is a
+// GL driver call that involves string hashing on every draw, caching here removes O(N * uniforms)
+// driver round-trips per frame for a 44-effect chain.
+export function getGlEffectUniformLocation(
+  state: GlRenderState,
+  program: Readonly<GlFullscreenProgram>,
+  name: string,
+): WebGLUniformLocation | null {
+  let cache = _uniformLocations.get(program);
+  if (cache === undefined) {
+    cache = new Map();
+    _uniformLocations.set(program, cache);
+  }
+  const existing = cache.get(name);
+  if (existing !== undefined) return existing;
+  const loc = state.gl.getUniformLocation(program.program, name);
+  cache.set(name, loc);
+  return loc;
+}
+
 const _programs = new WeakMap<GlRenderState, Map<string, GlFullscreenProgram>>();
+
+// Keyed by program object (not state) so the cache survives state-key rotation and is naturally
+// freed when the program itself is garbage-collected (all GlFullscreenPrograms are stored in
+// _programs above, which is already WeakMap-keyed by state).
+const _uniformLocations = new WeakMap<Readonly<GlFullscreenProgram>, Map<string, WebGLUniformLocation | null>>();

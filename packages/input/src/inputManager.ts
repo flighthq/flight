@@ -207,38 +207,17 @@ export function attachRelativePointerInput(
   element: HTMLElement,
   options?: Readonly<AttachInputOptions>,
 ): void {
+  const preventDefault = options?.preventDefault ?? true;
   const target = element.ownerDocument;
   const handler = (e: Event) => {
     if (!manager.enabled) return;
     const me = e as MouseEvent;
-    _pointerData.altKey = me.altKey;
-    _pointerData.button = me.button;
-    _pointerData.buttons = me.buttons;
-    _pointerData.ctrlKey = me.ctrlKey;
-    _pointerData.deltaX = me.movementX;
-    _pointerData.deltaY = me.movementY;
-    _pointerData.height = 1;
-    _pointerData.isPrimary = true;
-    _pointerData.metaKey = me.metaKey;
-    _pointerData.pointerId = 0;
-    _pointerData.pointerType = 'mouse';
-    _pointerData.pressure = 0;
-    _pointerData.shiftKey = me.shiftKey;
-    _pointerData.tiltX = 0;
-    _pointerData.tiltY = 0;
-    _pointerData.timeStamp = me.timeStamp;
-    _pointerData.twist = 0;
-    _pointerData.wheelMode = 'unknown';
-    _pointerData.width = 1;
-    _pointerData.x = me.clientX;
-    _pointerData.y = me.clientY;
+    if (preventDefault) me.preventDefault();
+    setInputPointerData(_pointerData, me, me.movementX, me.movementY);
     emitSignal(manager.onPointerMoveRelative, _pointerData);
   };
   target.addEventListener('mousemove', handler);
   setInputBinding(manager, element, kRelativePointerInput, () => target.removeEventListener('mousemove', handler));
-
-  // Suppress unused-options warning; options accepted for API symmetry.
-  void options;
 }
 
 export function attachTextInput(
@@ -793,7 +772,7 @@ function setInputKeyboardData(out: InputKeyboardData, event: KeyboardEvent): voi
 
 function setInputPointerData(
   out: InputPointerData,
-  event: PointerEvent | WheelEvent,
+  event: PointerEvent | WheelEvent | MouseEvent,
   deltaX: number,
   deltaY: number,
 ): void {
@@ -853,6 +832,7 @@ const _standardAxisNames: readonly (GamepadAxisKind | undefined)[] = [
 // DOM KeyboardEvent.code → KeyCode. Exhaustive for all keys in the KeyCode enum
 // that have a direct W3C code string.
 const keyCodesByCode: Record<string, number> = {
+  Again: KeyCode.AGAIN,
   AltLeft: KeyCode.LEFT_ALT,
   AltRight: KeyCode.RIGHT_ALT,
   ArrowDown: KeyCode.DOWN,
@@ -873,6 +853,8 @@ const keyCodesByCode: Record<string, number> = {
   ControlLeft: KeyCode.LEFT_CTRL,
   ControlRight: KeyCode.RIGHT_CTRL,
   Convert: KeyCode.UNKNOWN, // IME convert (Japanese) — no direct SDL equiv
+  Copy: KeyCode.COPY,
+  Cut: KeyCode.CUT,
   Delete: KeyCode.DELETE,
   Eject: KeyCode.EJECT,
   End: KeyCode.END,
@@ -1031,10 +1013,22 @@ const numpadKeyCodesByCode: Record<string, number> = {
   Numpad8: KeyCode.NUMPAD_8,
   Numpad9: KeyCode.NUMPAD_9,
   NumpadAdd: KeyCode.NUMPAD_PLUS,
+  NumpadBackspace: KeyCode.NUMPAD_BACKSPACE,
+  NumpadClear: KeyCode.NUMPAD_CLEAR,
+  NumpadClearEntry: KeyCode.NUMPAD_CLEAR_ENTRY,
+  NumpadComma: KeyCode.NUMPAD_COMMA,
   NumpadDecimal: KeyCode.NUMPAD_PERIOD,
   NumpadDivide: KeyCode.NUMPAD_DIVIDE,
   NumpadEqual: KeyCode.NUMPAD_EQUALS,
+  NumpadHash: KeyCode.NUMPAD_HASH,
+  NumpadMemoryAdd: KeyCode.NUMPAD_MEM_ADD,
+  NumpadMemoryClear: KeyCode.NUMPAD_MEM_CLEAR,
+  NumpadMemoryRecall: KeyCode.NUMPAD_MEM_RECALL,
+  NumpadMemoryStore: KeyCode.NUMPAD_MEM_STORE,
+  NumpadMemorySubtract: KeyCode.NUMPAD_MEM_SUBTRACT,
   NumpadMultiply: KeyCode.NUMPAD_MULTIPLY,
+  NumpadParenLeft: KeyCode.NUMPAD_LEFT_PARENTHESIS,
+  NumpadParenRight: KeyCode.NUMPAD_RIGHT_PARENTHESIS,
   NumpadSubtract: KeyCode.NUMPAD_MINUS,
 };
 

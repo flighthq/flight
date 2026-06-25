@@ -52,14 +52,18 @@ export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
       const fontString = computeTextFormatFontString(format);
       ctx.font = fontString;
 
-      // Probe strings chosen to expose the font's cap-height and x-height ink extents.
+      // Probe strings chosen to expose the font's cap-height, x-height, and descender ink extents.
       const capMeasure = ctx.measureText('H');
       const xMeasure = ctx.measureText('x');
+      // 'g' carries a descender; its actualBoundingBoxDescent is a real below-baseline extent,
+      // unlike 'H' (descent ~0), so the fallback descent does not collapse to zero on engines
+      // that lack fontBoundingBox* (Firefox before 116, older Safari).
+      const descenderMeasure = ctx.measureText('g');
 
       // fontBoundingBoxAscent/Descent are the reliable font-level values (defined even for
       // whitespace-only strings). actualBoundingBoxAscent gives the ink ascent above the baseline.
       const ascent = capMeasure.fontBoundingBoxAscent ?? capMeasure.actualBoundingBoxAscent;
-      const descent = capMeasure.fontBoundingBoxDescent ?? capMeasure.actualBoundingBoxDescent;
+      const descent = capMeasure.fontBoundingBoxDescent ?? descenderMeasure.actualBoundingBoxDescent;
 
       // Canvas does not expose OS/2 table fields (unitsPerEm, lineGap, underline metrics). We
       // provide size-relative estimates consistent with typical web-font conventions. These are
@@ -73,14 +77,23 @@ export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
         lineGap: 0,
         underlinePosition: -(size * 0.1),
         underlineThickness: Math.max(1, size * 0.05),
-        unitsPerEm: 0, // not accessible from Canvas; 0 signals "unavailable"
+        // Canvas cannot read OS/2 font units. Returning the identity (unitsPerEm === size) makes
+        // FontMetrics' documented inverse — divide by size / unitsPerEm to recover font units — a
+        // safe no-op (it divides by 1) rather than a divide-by-zero. A full-glyph backend that can
+        // read the font (HarfBuzz) overrides this with the real units-per-em.
+        unitsPerEm: size,
         xHeight: xMeasure.actualBoundingBoxAscent,
       };
     },
 
     measureText(text: string, format: Readonly<TextFormat>): number {
       const fontString = computeTextFormatFontString(format);
-      const cacheKey = `${fontString}\x00${text}`;
+      // The key must encode every field that changes the measured advance. computeTextFormatFontString
+      // covers italic/bold/size/family, but letterSpacing is set on the context below and is NOT in
+      // the font string — omitting it would return the first call's width for a later call with a
+      // different letterSpacing on the same (font, text). wordSpacing and direction are constant
+      // today, so letterSpacing is the only extra discriminator the key needs.
+      const cacheKey = `${fontString}\x00${format.letterSpacing ?? 0}\x00${text}`;
 
       const cached = cache.get(cacheKey);
       if (cached !== undefined) return cached;

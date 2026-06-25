@@ -4,7 +4,7 @@ import {
   getDisplayObjectRuntime,
 } from '@flighthq/displayobject';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
-import type { Node, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
+import type { BoundsNodeAny, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
 export function clearShapeCommands(shape: Shape): void {
@@ -12,8 +12,8 @@ export function clearShapeCommands(shape: Shape): void {
   invalidateShapeGeometry(shape);
 }
 
-export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const shape = source as Shape;
+export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
+  const shape = source as unknown as Shape;
   const commands = shape.data.commands;
 
   let minX = Infinity;
@@ -215,6 +215,27 @@ export function createShapeRuntime(): ShapeRuntime {
   return createDisplayObjectRuntime({ computeLocalBoundsRectangle: computeShapeLocalBoundsRectangle }) as ShapeRuntime;
 }
 
+// Returns the tight local bounding rectangle for the shape's command stream, writing into `out`.
+// This is a public allocation-explicit wrapper over computeShapeLocalBoundsRectangle that spares
+// callers from reaching through the runtime. `out` may alias the shape if needed (the shape is
+// read-only here).
+export function getShapeBounds(out: Rectangle, source: Readonly<Shape>): void {
+  computeShapeLocalBoundsRectangle(out, source);
+}
+
+// Returns the number of drawing commands in the shape's command stream.
+export function getShapeCommandCount(source: Readonly<Shape>): number {
+  const commands = source.data.commands;
+  let count = 0;
+  let i = 0;
+  while (i < commands.length) {
+    const argCount = commands[i + 1] as number;
+    count++;
+    i += argCount + 2;
+  }
+  return count;
+}
+
 export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime> {
   return getDisplayObjectRuntime(source) as ShapeRuntime;
 }
@@ -225,4 +246,9 @@ export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime>
 export function invalidateShapeGeometry(shape: Shape): void {
   invalidateNodeLocalContent(shape);
   invalidateNodeLocalBounds(shape);
+}
+
+// True when the shape has no drawing commands in its command stream.
+export function isShapeEmpty(source: Readonly<Shape>): boolean {
+  return source.data.commands.length === 0;
 }

@@ -1,0 +1,138 @@
+import type { WgpuRenderState } from '@flighthq/types';
+
+import { defaultWgpuBloomEffectRunner } from './wgpuBloomEffect';
+import { defaultWgpuBokehDepthOfFieldEffectRunner } from './wgpuBokehDepthOfFieldEffect';
+import { defaultWgpuBrightnessContrastEffectRunner } from './wgpuBrightnessContrastEffect';
+import { defaultWgpuCameraMotionBlurEffectRunner } from './wgpuCameraMotionBlurEffect';
+import { defaultWgpuChannelMixerEffectRunner } from './wgpuChannelMixerEffect';
+import { defaultWgpuChromaticAberrationEffectRunner } from './wgpuChromaticAberrationEffect';
+import { defaultWgpuColorGradeEffectRunner } from './wgpuColorGradeEffect';
+import { defaultWgpuCrtEffectRunner } from './wgpuCrtEffect';
+import { defaultWgpuDirectionalBlurEffectRunner } from './wgpuDirectionalBlurEffect';
+import { defaultWgpuDisplacementEffectRunner } from './wgpuDisplacementEffect';
+import { defaultWgpuDitherEffectRunner } from './wgpuDitherEffect';
+import { defaultWgpuExposureEffectRunner } from './wgpuExposureEffect';
+import { defaultWgpuFilmGrainEffectRunner } from './wgpuFilmGrainEffect';
+import { defaultWgpuFxaaEffectRunner } from './wgpuFxaaEffect';
+import { defaultWgpuGlitchEffectRunner } from './wgpuGlitchEffect';
+import { defaultWgpuGodRaysEffectRunner } from './wgpuGodRaysEffect';
+import { defaultWgpuGrayscaleEffectRunner } from './wgpuGrayscaleEffect';
+import { defaultWgpuHalftoneEffectRunner } from './wgpuHalftoneEffect';
+import { defaultWgpuHueSaturationEffectRunner } from './wgpuHueSaturationEffect';
+import { defaultWgpuInvertEffectRunner } from './wgpuInvertEffect';
+import { defaultWgpuKuwaharaEffectRunner } from './wgpuKuwaharaEffect';
+import { defaultWgpuLensDirtEffectRunner } from './wgpuLensDirtEffect';
+import { defaultWgpuLensDistortionEffectRunner } from './wgpuLensDistortionEffect';
+import { defaultWgpuLensFlareEffectRunner } from './wgpuLensFlareEffect';
+import { defaultWgpuLiftGammaGainEffectRunner } from './wgpuLiftGammaGainEffect';
+import { defaultWgpuLookupTableGradeEffectRunner } from './wgpuLookupTableGradeEffect';
+import { defaultWgpuMotionBlurEffectRunner } from './wgpuMotionBlurEffect';
+import { defaultWgpuOutlineEffectRunner } from './wgpuOutlineEffect';
+import { defaultWgpuPixelateEffectRunner } from './wgpuPixelateEffect';
+import { defaultWgpuPosterizeEffectRunner } from './wgpuPosterizeEffect';
+import { defaultWgpuRadialBlurEffectRunner } from './wgpuRadialBlurEffect';
+import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { defaultWgpuScanlinesEffectRunner } from './wgpuScanlinesEffect';
+import { defaultWgpuScreenSpaceFogEffectRunner } from './wgpuScreenSpaceFogEffect';
+import { defaultWgpuSepiaEffectRunner } from './wgpuSepiaEffect';
+import { defaultWgpuSharpenEffectRunner } from './wgpuSharpenEffect';
+import { defaultWgpuSketchEffectRunner } from './wgpuSketchEffect';
+import { defaultWgpuSmaaEffectRunner } from './wgpuSmaaEffect';
+import { defaultWgpuSsaoEffectRunner } from './wgpuSsaoEffect';
+import { defaultWgpuSsrEffectRunner } from './wgpuSsrEffect';
+import { defaultWgpuTaaEffectRunner } from './wgpuTaaEffect';
+import { defaultWgpuTiltShiftEffectRunner } from './wgpuTiltShiftEffect';
+import { defaultWgpuToneMapEffectRunner } from './wgpuToneMapEffect';
+import { defaultWgpuVignetteEffectRunner } from './wgpuVignetteEffect';
+import { defaultWgpuWhiteBalanceEffectRunner } from './wgpuWhiteBalanceEffect';
+
+// Curated registrant helpers — each function registers a taxonomy band of default runners under their
+// canonical kind keys. The full-set helper composes all bands. Each helper is a named export so callers
+// can import only the band they need (the rest tree-shakes). The Wgpu mirror of the equivalent helpers
+// in effects-gl.
+
+// Antialiasing band: FxaaEffect, SmaaEffect, TaaEffect.
+export function registerAntialiasingWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'FxaaEffect', defaultWgpuFxaaEffectRunner);
+  registerWgpuRenderEffect(state, 'SmaaEffect', defaultWgpuSmaaEffectRunner);
+  registerWgpuRenderEffect(state, 'TaaEffect', defaultWgpuTaaEffectRunner);
+}
+
+// Bloom / optical band: BloomEffect, ChromaticAberrationEffect, GodRaysEffect, LensDirtEffect,
+// LensDistortionEffect, LensFlareEffect, VignetteEffect.
+export function registerBloomWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
+  registerWgpuRenderEffect(state, 'ChromaticAberrationEffect', defaultWgpuChromaticAberrationEffectRunner);
+  registerWgpuRenderEffect(state, 'GodRaysEffect', defaultWgpuGodRaysEffectRunner);
+  registerWgpuRenderEffect(state, 'LensDirtEffect', defaultWgpuLensDirtEffectRunner);
+  registerWgpuRenderEffect(state, 'LensDistortionEffect', defaultWgpuLensDistortionEffectRunner);
+  registerWgpuRenderEffect(state, 'LensFlareEffect', defaultWgpuLensFlareEffectRunner);
+  registerWgpuRenderEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
+}
+
+// Blur band: BokehDepthOfFieldEffect, CameraMotionBlurEffect, DirectionalBlurEffect, MotionBlurEffect,
+// RadialBlurEffect, TiltShiftEffect.
+export function registerBlurWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BokehDepthOfFieldEffect', defaultWgpuBokehDepthOfFieldEffectRunner);
+  registerWgpuRenderEffect(state, 'CameraMotionBlurEffect', defaultWgpuCameraMotionBlurEffectRunner);
+  registerWgpuRenderEffect(state, 'DirectionalBlurEffect', defaultWgpuDirectionalBlurEffectRunner);
+  registerWgpuRenderEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
+  registerWgpuRenderEffect(state, 'RadialBlurEffect', defaultWgpuRadialBlurEffectRunner);
+  registerWgpuRenderEffect(state, 'TiltShiftEffect', defaultWgpuTiltShiftEffectRunner);
+}
+
+// Color / tone band: BrightnessContrastEffect, ChannelMixerEffect, ColorGradeEffect, ExposureEffect,
+// GrayscaleEffect, HueSaturationEffect, InvertEffect, LiftGammaGainEffect, LookupTableGradeEffect,
+// PosterizeEffect, SepiaEffect, ToneMapEffect, WhiteBalanceEffect.
+export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BrightnessContrastEffect', defaultWgpuBrightnessContrastEffectRunner);
+  registerWgpuRenderEffect(state, 'ChannelMixerEffect', defaultWgpuChannelMixerEffectRunner);
+  registerWgpuRenderEffect(state, 'ColorGradeEffect', defaultWgpuColorGradeEffectRunner);
+  registerWgpuRenderEffect(state, 'ExposureEffect', defaultWgpuExposureEffectRunner);
+  registerWgpuRenderEffect(state, 'GrayscaleEffect', defaultWgpuGrayscaleEffectRunner);
+  registerWgpuRenderEffect(state, 'HueSaturationEffect', defaultWgpuHueSaturationEffectRunner);
+  registerWgpuRenderEffect(state, 'InvertEffect', defaultWgpuInvertEffectRunner);
+  registerWgpuRenderEffect(state, 'LiftGammaGainEffect', defaultWgpuLiftGammaGainEffectRunner);
+  registerWgpuRenderEffect(state, 'LookupTableGradeEffect', defaultWgpuLookupTableGradeEffectRunner);
+  registerWgpuRenderEffect(state, 'PosterizeEffect', defaultWgpuPosterizeEffectRunner);
+  registerWgpuRenderEffect(state, 'SepiaEffect', defaultWgpuSepiaEffectRunner);
+  registerWgpuRenderEffect(state, 'ToneMapEffect', defaultWgpuToneMapEffectRunner);
+  registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
+}
+
+// Screen-space / atmospheric band: DisplacementEffect, ScreenSpaceFogEffect, SharpenEffect,
+// SsaoEffect, SsrEffect.
+export function registerScreenSpaceWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'DisplacementEffect', defaultWgpuDisplacementEffectRunner);
+  registerWgpuRenderEffect(state, 'ScreenSpaceFogEffect', defaultWgpuScreenSpaceFogEffectRunner);
+  registerWgpuRenderEffect(state, 'SharpenEffect', defaultWgpuSharpenEffectRunner);
+  registerWgpuRenderEffect(state, 'SsaoEffect', defaultWgpuSsaoEffectRunner);
+  registerWgpuRenderEffect(state, 'SsrEffect', defaultWgpuSsrEffectRunner);
+}
+
+// Full standard set — composes all taxonomy bands. Registers all 45 default runners under their
+// canonical kind keys. Import this when the full effect palette is needed; import individual band
+// helpers when only a subset of effects is used.
+export function registerStandardWgpuRenderEffects(state: WgpuRenderState): void {
+  registerAntialiasingWgpuRenderEffects(state);
+  registerBloomWgpuRenderEffects(state);
+  registerBlurWgpuRenderEffects(state);
+  registerColorWgpuRenderEffects(state);
+  registerScreenSpaceWgpuRenderEffects(state);
+  registerStylizeWgpuRenderEffects(state);
+}
+
+// Stylize band: CrtEffect, DitherEffect, FilmGrainEffect, GlitchEffect, HalftoneEffect,
+// KuwaharaEffect, OutlineEffect, PixelateEffect, ScanlinesEffect, SketchEffect.
+export function registerStylizeWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
+  registerWgpuRenderEffect(state, 'DitherEffect', defaultWgpuDitherEffectRunner);
+  registerWgpuRenderEffect(state, 'FilmGrainEffect', defaultWgpuFilmGrainEffectRunner);
+  registerWgpuRenderEffect(state, 'GlitchEffect', defaultWgpuGlitchEffectRunner);
+  registerWgpuRenderEffect(state, 'HalftoneEffect', defaultWgpuHalftoneEffectRunner);
+  registerWgpuRenderEffect(state, 'KuwaharaEffect', defaultWgpuKuwaharaEffectRunner);
+  registerWgpuRenderEffect(state, 'OutlineEffect', defaultWgpuOutlineEffectRunner);
+  registerWgpuRenderEffect(state, 'PixelateEffect', defaultWgpuPixelateEffectRunner);
+  registerWgpuRenderEffect(state, 'ScanlinesEffect', defaultWgpuScanlinesEffectRunner);
+  registerWgpuRenderEffect(state, 'SketchEffect', defaultWgpuSketchEffectRunner);
+}

@@ -6,6 +6,9 @@ import {
   createMatrix4,
   createVector3,
   getBoundingSphereContainsPoint,
+  getBoundingSphereIntersectsBoundingSphere,
+  getClosestPointOnBoundingSphere,
+  mergeBoundingSphere,
   setBoundingSphere,
   setBoundingSphereFromAabb,
   setMatrix4Position,
@@ -71,6 +74,116 @@ describe('getBoundingSphereContainsPoint', () => {
   it('an empty sphere contains no points', () => {
     const s = createBoundingSphere(0, 0, 0, -1);
     expect(getBoundingSphereContainsPoint(s, createVector3(0, 0, 0))).toBe(false);
+  });
+});
+
+describe('getBoundingSphereIntersectsBoundingSphere', () => {
+  it('returns true for overlapping spheres', () => {
+    const a = createBoundingSphere(0, 0, 0, 2);
+    const b = createBoundingSphere(3, 0, 0, 2);
+    expect(getBoundingSphereIntersectsBoundingSphere(a, b)).toBe(true);
+  });
+
+  it('returns true for touching spheres', () => {
+    const a = createBoundingSphere(0, 0, 0, 1);
+    const b = createBoundingSphere(2, 0, 0, 1);
+    expect(getBoundingSphereIntersectsBoundingSphere(a, b)).toBe(true);
+  });
+
+  it('returns false for separated spheres', () => {
+    const a = createBoundingSphere(0, 0, 0, 1);
+    const b = createBoundingSphere(5, 0, 0, 1);
+    expect(getBoundingSphereIntersectsBoundingSphere(a, b)).toBe(false);
+  });
+
+  it('returns false if either sphere is empty', () => {
+    const a = createBoundingSphere(0, 0, 0, 1);
+    const empty = createBoundingSphere(0, 0, 0, -1);
+    expect(getBoundingSphereIntersectsBoundingSphere(a, empty)).toBe(false);
+    expect(getBoundingSphereIntersectsBoundingSphere(empty, a)).toBe(false);
+  });
+});
+
+describe('getClosestPointOnBoundingSphere', () => {
+  it('projects an outside point onto the surface', () => {
+    const s = createBoundingSphere(0, 0, 0, 2);
+    const out = createVector3();
+    getClosestPointOnBoundingSphere(out, s, createVector3(10, 0, 0));
+    expect(out.x).toBeCloseTo(2, 6);
+    expect(out.y).toBeCloseTo(0, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
+
+  it('pulls an inside point out to the surface', () => {
+    const s = createBoundingSphere(0, 0, 0, 5);
+    const out = createVector3();
+    getClosestPointOnBoundingSphere(out, s, createVector3(0, 1, 0));
+    expect(out.x).toBeCloseTo(0, 6);
+    expect(out.y).toBeCloseTo(5, 6);
+    expect(out.z).toBeCloseTo(0, 6);
+  });
+
+  it('uses the +X fallback when the point is at the center', () => {
+    const s = createBoundingSphere(1, 2, 3, 4);
+    const out = createVector3();
+    getClosestPointOnBoundingSphere(out, s, createVector3(1, 2, 3));
+    expect(out.x).toBeCloseTo(5, 6);
+    expect(out.y).toBeCloseTo(2, 6);
+    expect(out.z).toBeCloseTo(3, 6);
+  });
+
+  it('writes the center for an empty sphere', () => {
+    const s = createBoundingSphere(1, 2, 3, -1);
+    const out = createVector3();
+    getClosestPointOnBoundingSphere(out, s, createVector3(9, 9, 9));
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+  });
+
+  it('supports out === point', () => {
+    const s = createBoundingSphere(0, 0, 0, 3);
+    const p = createVector3(6, 0, 0);
+    getClosestPointOnBoundingSphere(p, s, p);
+    expect(p.x).toBeCloseTo(3, 6);
+  });
+});
+
+describe('mergeBoundingSphere', () => {
+  it('merges two overlapping spheres into a containing sphere', () => {
+    const a = createBoundingSphere(-1, 0, 0, 1);
+    const b = createBoundingSphere(1, 0, 0, 1);
+    const out = createBoundingSphere();
+    mergeBoundingSphere(out, a, b);
+    // Both original spheres must be contained.
+    expect(getBoundingSphereContainsPoint(out, createVector3(-2, 0, 0))).toBe(true);
+    expect(getBoundingSphereContainsPoint(out, createVector3(2, 0, 0))).toBe(true);
+  });
+
+  it('if a contains b, result equals a', () => {
+    const a = createBoundingSphere(0, 0, 0, 10);
+    const b = createBoundingSphere(1, 0, 0, 1);
+    const out = createBoundingSphere();
+    mergeBoundingSphere(out, a, b);
+    expect(out.center.x).toBeCloseTo(0, 5);
+    expect(out.radius).toBeCloseTo(10, 5);
+  });
+
+  it('empty source returns the other sphere', () => {
+    const a = createBoundingSphere();
+    const b = createBoundingSphere(3, 0, 0, 2);
+    const out = createBoundingSphere();
+    mergeBoundingSphere(out, a, b);
+    expect(out.center.x).toBeCloseTo(3, 5);
+    expect(out.radius).toBeCloseTo(2, 5);
+  });
+
+  it('supports out === a', () => {
+    const a = createBoundingSphere(-1, 0, 0, 1);
+    const b = createBoundingSphere(1, 0, 0, 1);
+    mergeBoundingSphere(a, a, b);
+    expect(getBoundingSphereContainsPoint(a, createVector3(-2, 0, 0))).toBe(true);
+    expect(getBoundingSphereContainsPoint(a, createVector3(2, 0, 0))).toBe(true);
   });
 });
 

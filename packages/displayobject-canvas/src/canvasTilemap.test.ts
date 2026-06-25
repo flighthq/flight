@@ -1,12 +1,8 @@
-﻿import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
-import {
-  addTextureAtlasRegion,
-  buildTilesetRegions,
-  createImageResource,
-  createTextureAtlas,
-  createTileset,
-} from '@flighthq/resources';
+﻿import { createImageResource } from '@flighthq/image';
+import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 import { createTilemap, setTilemapTile } from '@flighthq/sprite';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
+import { buildTilesetRegions, createTileset } from '@flighthq/tileset';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import { drawCanvasTilemap } from './canvasTilemap';

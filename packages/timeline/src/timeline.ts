@@ -128,6 +128,12 @@ const EMPTY_LABELS: readonly TimelineLabel[] = [];
 
 function noopConstructFrame(): void {}
 
+// Frame accounting matches Flash/OpenFL: when accumulated time spans multiple frames in one update,
+// the playhead jumps straight to the landing frame (currentFrame + floor(timeElapsed / frameTime)).
+// Skipped intermediate frames are not visited — fireConstructFrame runs for the landing frame only, so
+// their onEnterFrame/onExitFrame signals and frame scripts do not fire. This is intentional (a slow
+// frame should not replay every in-between frame's scripts); a maxFrameSkip clamp or fractional-frame
+// interpolation would be a separate policy decision, not part of this contract.
 function advanceFrame(timeline: Timeline, deltaTime: number): number {
   const frameRate = getTimelineFrameRate(timeline);
   const totalFrames = getTimelineTotalFrames(timeline);
@@ -175,6 +181,10 @@ function createTimelineSignals(): TimelineSignals {
   };
 }
 
+// Constructs and fires exactly one frame — the current playhead frame — regardless of how far it moved
+// since the last update. When advanceFrame jumps across skipped frames, only the landing frame is
+// constructed here; the intervening frames' scripts and enter/exit signals are not run (landing-frame-only,
+// matching Flash). frameEvent.previousFrame carries the prior landing frame, which may be many frames back.
 function fireConstructFrame(timeline: Timeline): void {
   const previous = timeline.lastFrameUpdate;
   const current = timeline.currentFrame;

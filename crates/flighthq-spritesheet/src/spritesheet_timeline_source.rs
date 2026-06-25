@@ -84,7 +84,7 @@ mod tests {
         CreateSpritesheetAnimationOptions, create_spritesheet_animation,
     };
     use crate::spritesheet_frame::{CreateSpritesheetFrameOptions, create_spritesheet_frame};
-    use flighthq_resources::{add_texture_atlas_region, create_texture_atlas};
+    use flighthq_textureatlas::{add_texture_atlas_region, create_texture_atlas};
     use std::sync::{Arc, Mutex};
 
     fn make_sheet(frame_count: u32) -> Spritesheet {

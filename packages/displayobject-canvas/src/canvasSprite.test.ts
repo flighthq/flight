@@ -1,7 +1,8 @@
+import { createImageResource } from '@flighthq/image';
 import { addNodeChild } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
-import { addTextureAtlasRegion, createImageResource, createTextureAtlas } from '@flighthq/resources';
 import { createSprite } from '@flighthq/sprite';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import { SpriteKind } from '@flighthq/types';
 
 import { createCanvasRenderState } from './canvasRenderState';
