@@ -182,10 +182,10 @@ packages/*/src/wasm/package.json
 !packages/*/src/wasm/*.d.ts
 packages/*/src/wasm/*_bg.wasm.d.ts
 
-# import:worktree incoming review bundles
+# get:worktree incoming review bundles
 /incoming/
 
-# dispatch:worktree outbound staging + worker assignment inbox (ephemeral host-transmitted guidance)
+# assign:worktree outbound staging + worker assignment inbox (ephemeral host-transmitted guidance)
 /outgoing/
 /tools/agents/docs/assignments/
 

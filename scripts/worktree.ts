@@ -1,9 +1,11 @@
 /**
- * Import a worktree's changes into a self-contained, git-free incoming bundle a reviewer can read with
- * no git.
+ * Move a worktree's changes into a self-contained, git-free incoming bundle a reviewer can read with
+ * no git. One engine, two directions — you name the OTHER worktree and the verb sets which way work
+ * flows; both run on the host (git) and land a bundle in the destination's `incoming/`:
  *
- *   npm run import:worktree ../builder
- *   npm run import:worktree ../builder -- --base=main --out=./incoming
+ *   npm run get:worktree ../builder      # pull THEIR work into ./incoming (run from the reviewer)
+ *   npm run send:worktree ../review      # push MY work into ../review/incoming (run from the source)
+ *   npm run get:worktree ../builder -- --base=origin/main --out=./incoming
  *
  * Why this exists: work is produced by an agent in a sandbox that has the worktree *files* but no git
  * (the object store lives in the host's main checkout, which the sandbox doesn't mount). A reviewer
@@ -43,7 +45,10 @@ import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+type WorktreeMode = 'get' | 'send';
+
 interface Args {
+  mode: WorktreeMode;
   target: string;
   base?: string;
   out: string;
@@ -76,27 +81,40 @@ function gitMaybe(target: string, gitArgs: readonly string[]): string {
 }
 
 function parseArgs(argv: readonly string[]): Args {
-  let target = '';
+  let mode = '';
+  let worktree = '';
   let base: string | undefined;
-  let out = path.join(process.cwd(), 'incoming');
+  let outOverride: string | undefined;
   let artifacts: string[] = [];
   let trees = true;
   let json = false;
+  // First positional is the mode (get|send), baked in by the npm script; second is the other worktree.
   for (const arg of argv) {
     if (arg === '--no-trees') trees = false;
     else if (arg === '--json') json = true;
     else if (arg.startsWith('--base=')) base = arg.slice('--base='.length);
-    else if (arg.startsWith('--out=')) out = path.resolve(arg.slice('--out='.length));
+    else if (arg.startsWith('--out=')) outOverride = path.resolve(arg.slice('--out='.length));
     else if (arg.startsWith('--artifacts=')) artifacts = arg.slice('--artifacts='.length).split(',').filter(Boolean);
-    else if (!arg.startsWith('--') && !target) target = arg;
+    else if (!arg.startsWith('--')) {
+      if (!mode) mode = arg;
+      else if (!worktree) worktree = arg;
+    }
   }
-  if (!target) {
+  if ((mode !== 'get' && mode !== 'send') || !worktree) {
     console.error(
-      'usage: npm run import:worktree <worktree-path> -- [--base=<ref>] [--out=<dir>] [--artifacts=<sub,str>] [--no-trees] [--json]',
+      'usage:\n' +
+        '  npm run get:worktree <source-worktree> -- [opts]   pull their work into ./incoming\n' +
+        '  npm run send:worktree <dest-worktree>  -- [opts]   push my work into <dest>/incoming\n' +
+        '  opts: [--base=<ref>] [--out=<dir>] [--artifacts=<sub,str>] [--no-trees] [--json]',
     );
     process.exit(1);
   }
-  return { target: path.resolve(target), base, out, artifacts, trees, json };
+  // get <source>: bundle the named worktree into the local ./incoming.
+  // send <dest>:  bundle the CURRENT worktree (cwd) into the destination's incoming.
+  const target = mode === 'get' ? path.resolve(worktree) : process.cwd();
+  const defaultOut =
+    mode === 'get' ? path.join(process.cwd(), 'incoming') : path.join(path.resolve(worktree), 'incoming');
+  return { mode, target, base, out: outOverride ?? defaultOut, artifacts, trees, json };
 }
 
 // The base is the point this work should be reviewed against: where the branch diverged from main, so
