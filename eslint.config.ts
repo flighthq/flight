@@ -22,13 +22,13 @@ export default [
       // surface-rs): the wasm-bindgen glue plus the base64-embedded module.
       // Baked by `npm run wasm`; never linted.
       '**/src/wasm/**',
-      // Agent orchestration scripts in tools/agents/docs/ — workflow JS files,
-      // not TypeScript source, not subject to project lint rules.
-      'tools/agents/docs/**/*.js',
-      // Dispatch staging area: recovered test files are copied into their owning
-      // packages by the worker; the staging copies keep their original relative
-      // imports (which only resolve once placed) and are not source to lint.
-      'tools/agents/docs/assignments/_recovered/**',
+      // The entire agent-docs tree is documentation, orchestration scripts (workflow
+      // JS), and inbound dispatch/staging (`assignments/`, `_port/`, `_recovered/`) —
+      // never package source. Staging copies carry relative imports that only resolve
+      // once placed into their owning packages, so linting them breaks `npm run check`
+      // any round a staging dir is present. Exclude the whole tree, not just known
+      // subfolders, so future docs dirs don't reintroduce the failure.
+      'tools/agents/docs/**',
     ],
   },
   {
