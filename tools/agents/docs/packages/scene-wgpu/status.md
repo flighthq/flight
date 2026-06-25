@@ -8,6 +8,18 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the assessment's `## Recommended` section. It contained exactly one sweep-safe item.
+
+**Parked (1):**
+
+- **Mark the dormant `HAS_UV1` key field as inert in-source.** Already resolved: the current `packages/scene-wgpu/src/wgpuPbrPrelude.ts` no longer contains a `hasUv1` field, a `HAS_UV1` const emission, or any `uv1` reference. The `WgpuPbrDefineKey` interface now holds 14 flags (alpha-mask, double-sided, five map flags, seven extension lobes) with no uv1 slot, and `vs_main`/`VertexOutput` carry a single `uv` at location 3. The source has been revised past the state the 2026-06-24 assessment was written against — the dormant field was _removed_ rather than merely documented, so there is nothing left to annotate. (The stale `dist/wgpuPbrPrelude.js` build artifact still shows the old `HAS_UV1` + inert-comment state; source is the source of truth.) Re-introducing the field just to comment on it would be wrong, so this item is parked as moot/already-resolved rather than executed.
+
+**Done:** none (the sole Recommended item was already resolved in source).
+
+**Verification:** `npm run test --workspace=packages/scene-wgpu` — 35 files, 168 tests, all passing. No source edits were made this pass, so no mechanical drift to fix.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/scene-wgpu

@@ -8,6 +8,22 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+No-op sweep, by design. Read `assessment.md` › Recommended: it is explicitly **"None."** Every remaining roadmap item is parked for a cross-package, open-direction, or user-gated reason, so there is no within-package, sweep-safe, non-design code change to make.
+
+- **Done:** verified the package's own tests still pass (`npm run test --workspace=packages/network` → 1 file, 32 tests passing).
+- **Parked (carried from the assessment Backlog, all out of this sweep's hard boundary):**
+  - In-box native backend (`host-electron` `NetworkBackend`) — cross-boundary: `@flighthq/host-electron` + `registerElectronBackends`.
+  - `host-capacitor` mobile backend — cross-boundary: a package that does not yet exist.
+  - Continuous reachability monitor (`createNetworkReachabilityMonitor`) — design decision: gated on Open direction 1 (ownership/shape), first async sub-entity.
+  - `estimateNetworkQuality(out)` — parked behind the native-backend track; value unrealized until a non-web backend feeds it (review: low priority until native backends exist).
+  - Rust crate `flighthq-network` — cross-boundary: `crates/`, `flighthq-types`, conformance map.
+  - Package Map one-clause widening — cross-boundary: `tools/agents/docs/index.md`, user-gated doc edit.
+  - Retire the seed roadmap (`reviews/maturation/depth/network.md`) — cross-boundary doc delete, user-gated.
+
+No source, test, barrel, or manifest edits were made under `packages/network/`. The cell is at a healthy end state for the no-native-backend stage.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/network

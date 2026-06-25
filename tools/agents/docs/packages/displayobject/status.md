@@ -8,6 +8,21 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` › Recommended.
+
+**Done:**
+
+- Dropped the stale `@flighthq/textlayout` dependency. Verified zero `textlayout`/`TextLayout` references remain in `src/`, then removed it from `package.json` `dependencies` and from the `references` array in `tsconfig.json` (the project reference to `../textlayout` was also stale). Own-package tests still pass (87/87).
+
+**Parked (source no longer present in `src/`):** The current `src/` tree is `bitmap`, `displayContainer`, `displayObject`, `htmlView`, `renderView`, `stage`, `video` (plus `internal`). The Loader entity, the `fullScreenWidth`/`fullScreenHeight` Stage fields, and the `setLoaderResourceLoader` setter that the prior session's status log claims were added are **not in the current source** — only stale compiled artifacts remain under `dist/`. The two remaining Recommended items target that absent source, so neither is actionable as a within-package sweep edit now:
+
+- `setStageFullScreenWidth` / `setStageFullScreenHeight` setters — `StageData` in `packages/types/src/Stage.ts` currently declares only `color`, `stageHeight`, `stageWidth`; the `fullScreen*` fields exist only in stale `dist/`. Adding the setters first requires re-adding the fields to `StageData` in `@flighthq/types`. **Parked: cross-boundary** (would touch `packages/types`).
+- Disconnect prior loader slots in `setLoaderResourceLoader` — there is no `loader.ts` in `src/` and no `setLoaderResourceLoader` export anywhere in package source; only `dist/loader.js` remains. **Parked: stale-target** — the function/source no longer exists to edit.
+
+The package shape has diverged from the assessment (which was written against the prior session's claimed state); these two items should be re-derived in the next review/assessment pass against the current source.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/displayobject

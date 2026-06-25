@@ -8,6 +8,24 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the single sweep-safe item from `assessment.md` "## Recommended".
+
+**Done**
+
+- **Debounce/coalescing property tests over transition storms.** Added four property/fuzz tests to the `attachAppLifecycle` describe block in `packages/lifecycle/src/lifecycle.test.ts`, each running 100–200 random trials of up to 30 state-fire notifications over the `{active, inactive, background}` set:
+  - `onStateChange` fires exactly once per backend notification (raw, not deduped) across random storms.
+  - `onResume`/`onPause` collapse a random storm to the minimal active-boundary edge set, checked against an independently-computed expected edge count.
+  - A focus/blur flutter that never leaves `active` emits `onStateChange` each time but zero pause/resume.
+  - Pause vs. resume counts stay within one of each other across any storm (the alternation invariant).
+
+  No new exported functions (no `exports:check`/`order` impact); validates already-built, already-documented edge-dedup behavior. `npm run test --workspace=packages/lifecycle` → 43 passed (was 39).
+
+**Parked**
+
+- Everything else in the assessment is Backlog/Open-directions, not Recommended (4-edge set, `timeInBackground`, idle ownership, native producers, the Rust crate, the Package Map line) — each waits on a user decision or crosses a package boundary, so out of scope for this sweep.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/lifecycle

@@ -8,6 +8,18 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the three sweep-safe items from `assessment.md` → `## Recommended`. All within `packages/textlayout/`; own-package tests pass (147 tests, 12 files).
+
+**Done**
+
+- **Gutter literal de-dup in `richTextQuery.ts`.** `getLineOffsetY` started `y = 2`; replaced the bare literal with the shared `TEXT_LAYOUT_GUTTER` constant (imported from `./textLayout`), finishing the unification the prior diff began across `textLayout.ts`/`textBounds.ts`. Value-identical, no signature change; existing query tests still pass.
+- **Wrap×truncation test.** Added `textLayout.test.ts` case "truncates a single long word that straddles the maxLines boundary across both truncation paths" — a short space-wrapped word followed by an unbroken long word at `maxLines: 2`, so the main-loop truncation (post space-wrap commit) and `breakLongWord`'s own `checkTruncation` are both reachable in one layout.
+- **Bullet-overlap edge case pinned down.** Chose the document-as-intentional resolution (user-set positive `indent` wins, not clamped to bullet width). Expanded the `emitBullet` comment in `textLayout.ts` into a durable contract note and added a test ("lets an explicit positive indent win over the bullet width") asserting that with `indent: 1` the text group sits at `GUTTER + 1`, inside the 10px bullet span (overlap is accepted behavior). No new field; the `hangingIndent` alternative remains a charter/types decision.
+
+**Parked** — none of the Recommended items required parking. (Backlog items were already routed to the charter's Open directions by the assessment and are out of sweep scope.)
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/textlayout

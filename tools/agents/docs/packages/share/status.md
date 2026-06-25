@@ -8,6 +8,23 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the single sweep-safe item from `assessment.md › Recommended`:
+
+- **Fixed casing `shareFileTodomFile` → `shareFileToDomFile`.** Renamed the private helper and its lone callsite in `src/share.ts`. The old name dropped the `D` in `Dom`, violating the full-unabbreviated/correctly-cased type-word rule. Pure mechanical rename; no public surface, no behavior change.
+
+Parked (per assessment Backlog / Open directions — not sweep-safe):
+
+- Keep-or-cut `_signalSubscriptions` stub — tied to North-star Open direction 2 (speculative scaffolding vs. forward event-capability template); a decision, not a mechanical change.
+- `shareTextWithResult` / `shareUrlWithResult` twins — tied to Open direction 3 (result-variant symmetry); adding pre-decision prejudges surface size.
+- `flighthq-share` Rust crate — cross-boundary: lives in the Rust worktree (crates/), not this package.
+- Native host share backends (`host-electron`/`host-tauri`/`host-capacitor`) — cross-boundary: host packages, not `share`.
+- URL validation in `isShareContentValid` — deliberate non-change (sentinel-not-throw contract).
+- Doc-revision notes (stale Package Map line, `ShareSignals.ts` types-layout inventory) — cross-boundary: `tools/agents/docs/index.md` / types-layout inventory, the user's gate.
+
+Verification: `npm run test --workspace=packages/share` → 44 passed.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/share

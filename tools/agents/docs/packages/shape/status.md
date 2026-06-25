@@ -8,6 +8,22 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep against `assessment.md` (dated 2026-06-24). **All three Recommended items were obsolete against the live worktree and parked — none could be executed.**
+
+The assessment was sorted from the 2026-06-24 `review.md`, which in turn rested on the **as-claimed, not-yet-review-verified** worker report `builder-67dc46d64` (the entry below). That report claimed a much larger `shapeCommands.ts` surface (`appendShapeArcTo`, `appendShapePolygon`, `appendShapePolyline`, `appendShapeArc`, `appendShapeDrawTriangles`, `appendShapeRoundRectangleVarying`) plus a `shapeGraphicsData.ts` (`forEachShapeCommand`, `getShapeGraphicsData`) and a `getShapeBounds`. None of those exist in the current `packages/shape/src/` tree — the live source is the leaner set (`scale9Shape.ts`, `shape.ts`, `shapeCommands.ts`, `shapeFill.ts`, `shapeHitTestRegistry.ts`), and bounds is `computeShapeLocalBoundsRectangle` in `shape.ts` with no aliasing comment. A repo-wide grep for every target string (`forEachShapeCommand`, `Does not allocate`, `may alias`, `ArcTo`, `Polygon`, `bisector`, `points.length`) returned zero matches.
+
+Each Recommended item targeted a function/comment that is not present, so executing any of them would require inventing new API (the missing append helpers) or fabricating a comment to "fix" — both guessing at API shape / behavioral contract, which is out of a mechanical sweep's scope. Parked all three; surfaced that `review.md` and `assessment.md` need regeneration against the live tree (the as-claimed surface they describe was never landed here).
+
+Verification: `npm run test --workspace=packages/shape` → 5 files, 61 tests, all passing. No source files were edited.
+
+**Done:** none (all targets obsolete). **Parked:**
+
+- Fix false `forEachShapeCommand` allocation doc — target `shapeGraphicsData.ts` / `forEachShapeCommand` / `getShapeGraphicsData` does not exist in the live tree (assessment rests on the unverified `builder-67dc46d64` claim).
+- Remove meaningless `getShapeBounds` aliasing comment — no `getShapeBounds` function and no "may alias" comment exist; the live bounds fn `computeShapeLocalBoundsRectangle` carries no such comment.
+- Degenerate-input policy for `appendShapePolygon` / `appendShapeArcTo` — neither function exists in the live tree; defining policy would mean authoring the absent functions (a design decision).
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/shape

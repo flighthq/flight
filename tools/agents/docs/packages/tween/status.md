@@ -1,12 +1,27 @@
 ---
 package: '@flighthq/tween'
-updated: 2026-06-24
+updated: 2026-06-25
 by: ingest:builder-67dc46d64
 ---
 
 # tween — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the sweep-safe items from `assessment.md` `## Recommended`. Important context: the assessment (and the `builder-67dc46d64` status entry below) describe a **more advanced state** of the package than this worktree's `packages/tween/src/` actually contains. The live source has no `onStart` signal, no `repeatDelay`/`timeScale`, no `seekTween`/`setTweenProgress`, and no `tweenProgress.ts`. Several Recommended bullets reference those non-existent surfaces and were parked accordingly.
+
+Done:
+
+- **Documented the unit-agnostic time contract in source.** Added durable semantic comments at the two time boundaries: atop `updateTweens` (the `deltaTime` entry point) in `updateTweens.ts`, and atop the public `createTween` overload (the `duration`/`delay` entry) in `tween.ts`. Both state that time is unit-agnostic (seconds/ms/frames), the package performs no conversion, and the only contract is consistency between durations and `deltaTime`. Pure comment additions — no signature change, no new export, all 69 package tests still pass.
+
+Parked:
+
+- **Add the `onYoyo` (direction-flip) signal.** Cross-boundary: the assessment itself specifies the `Tween.onYoyo` field "lands in `@flighthq/types` first" (`packages/types/src/Tween.ts`). Adding a signal field to the shared header layer is outside the `packages/tween/` boundary. The `reflect` flip site in `updateTween` (`updateTweens.ts:49`) is ready for a one-line `emitSignal` once the type field exists.
+- **Pin the `seekTween`-to-end completion behavior with a test + comment.** `seekTween` and `setTweenProgress` (and `tweenProgress.ts`) do not exist in this worktree's source, so there is nothing to comment or test. The item presupposes a scrub/seek API the live package has not yet grown.
+
+Tests: `npm run test --workspace=packages/tween` → 5 files, 69 passed.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

@@ -8,6 +8,24 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep against this worktree's head source. **All three Recommended items were parked — none of them map to the source present in this worktree.**
+
+The assessment (and the prior `builder-67dc46d64` status entry below) were written against a richer `spritesheetPlayer.ts` that has direction-aware playback, per-frame durations, a `seekSpritesheetPlayerToFrame` / `seekSpritesheetPlayerToTime` transport, and an `// ----- Internal helpers -----` divider. That diff is **not present** in this worktree. The head `packages/spritesheet/src/spritesheetPlayer.ts` is the lean version: `createSpritesheetPlayer`, `getSpritesheetPlayerFrame`, `playSpritesheetAnimation`, `queueSpritesheetAnimation`, `updateSpritesheetPlayer` — no seek function, no direction handling in the player, no divider comment. (Confirmed by grep: `seekSpritesheetPlayerToFrame`, `resolveVirtualIndex*`, and any `// ---`/`// ===` divider are absent across `src/`. `direction` exists only as data in `spritesheetData.ts`, unconsumed by the player.)
+
+Parked:
+
+- **Fix `seekSpritesheetPlayerToFrame` for non-forward directions** — the function does not exist in head; there is no seek path and no direction-aware player to fix.
+- **Add non-forward-direction tests for the seek path** — no seek path exists to test.
+- **Replace the `// ----- Internal helpers -----` divider** — no divider comment exists in any source file.
+
+Building the seek/direction subsystem from scratch to satisfy these items would be a large API-surface addition and a design decision (transport shape, virtual-index semantics, per-frame durations), not the sweep-safe correctness fixes the assessment describes. That is out of scope for a Recommended sweep.
+
+Baseline `npm run test --workspace=packages/spritesheet` is green: 7 files, 63 tests passing. No source edits made.
+
+> Note for a future review pass: the `2026-06-24 · builder-67dc46d64` entry below and `assessment.md` are out of sync with this worktree's head — the claimed direction-aware player diff (108 tests) is not applied here (head has 63 tests). The assessment's Recommended section should be re-derived against the actual head source, or the missing diff re-applied, before this package can be swept.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/spritesheet

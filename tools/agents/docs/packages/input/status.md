@@ -8,6 +8,21 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md`'s Recommended list. All edits within `packages/input/`.
+
+Done:
+
+- **Routed `attachRelativePointerInput` through `setInputPointerData`.** Widened the private `setInputPointerData` to also accept a `MouseEvent` (`PointerEvent | WheelEvent | MouseEvent`); its pointer-specific reads were already `'field' in event`-guarded so a bare `MouseEvent` defaults `height/width=1`, `isPrimary=true`, `pointerId=0`, `pointerType='mouse'`, `pressure/tilt/twist=0` — matching the old inline field list exactly. `movementX/Y` map to the `deltaX/deltaY` out-args. Removed the duplicate 24-line inline field assignment and its drift surface. Added a test asserting the canonical fields (`x/y/ctrlKey/pointerType/isPrimary/width/height/wheelMode`) populate through the shared writer.
+- **Honored `preventDefault` in `attachRelativePointerInput`** instead of `void options`. Added the standard `const preventDefault = options?.preventDefault ?? true` gate and call `me.preventDefault()` in the `mousemove` handler, matching every other attach pair. Added tests for both the true and false branches. (Note: the relative tests share the global `document`, so each now detaches its handler to keep frame-edge isolation.)
+- **Exhaustive key-code table fill.** Added W3C `code`→`KeyCode` rows that had a clean enum match but were absent: `keyCodesByCode` gained `Again`, `Copy`, `Cut` (`Undo` was already present); `numpadKeyCodesByCode` gained `NumpadBackspace`, `NumpadClear`, `NumpadClearEntry`, `NumpadComma`, `NumpadHash`, `NumpadMemoryAdd/Clear/Recall/Store/Subtract`, `NumpadParenLeft/Right`. Skipped enum members with no canonical W3C `code` string (`NUMPAD_BINARY/OCTAL/HEXADECIMAL`, `NUMPAD_MEM_DIVIDE/MULTIPLY`, `NUMPAD_PLUS_MINUS`) and W3C codes with no enum member (`IntlYen/Ro`, `Lang1-4`, `KanaMode`, `Open`, `Props`). Added `it.each` table-driven tests for all added rows.
+- **`package.json` description.** Now reads "...keyboard, pointer, wheel, **gamepad**, and text events, with a **held-state snapshot and per-frame edge queries**."
+
+Parked (per assessment Backlog / cross-boundary): the `InputBackend` seam, gamepad rumble, `input-bindings`/`gestures`/`gamepad-mappings` neighbor packages, multi-device hot-plug, the `sensors` boundary, the `enableInputSignals` cost-model Decision, the `GamepadMappingKind` shape question, TS↔Rust conformance-map drift, and the stale `index.md` Package Map line — all are cross-package, new-cell, or blocked on a charter Open direction.
+
+Tests: `npm run test --workspace=packages/input` → 104 passed.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/input

@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the two sweep-safe Recommended items from `assessment.md`, in-package tests only (no exported-function changes, so `exports:check` surface is unchanged). `npm run test --workspace=packages/ipc` passes (43 tests).
+
+Done:
+
+- **Pinned the `onIpcMessageEvent` no-realizable-reply contract.** Sharpened the existing `reply` test to assert `senderId` is observed as `-1` and that `reply()` early-returns even against a `sendTo`-capable fake backend (zero outbound sends) — proving the gate is on `senderId`, not method presence, so the forward-compatible behavior is locked until a backend surfaces real sender identity. Test only; no behavior change.
+- **Pinned the lazy `IpcSignals` group / tree-shake contract.** Made the previously-hedged `getIpcSignals` "returns null before enable" test deterministic via `vi.resetModules()` + a fresh isolated `import('./ipc')`, and asserted that delivery still works with the group disabled (the emit is guarded, never required). Added a companion `enableIpcSignals` test asserting `onChannelMessage` does **not** emit at subscribe time, only on delivery — pinning that the signal is a per-delivery notification.
+
+Parked (cross-boundary or design-gated — unchanged from assessment Backlog):
+
+- Doc comment on `IpcMessageEvent.reply` stating it is inert until a backend supplies `senderId` — cross-boundary: lives in `@flighthq/types` (`IpcMessageEvent`), outside this package's sweep scope.
+- Realize new Silver arms in `host-electron`; capability-flags-vs-method-presence canonicity; realize `IpcError`/`IpcErrorCode`; Gold tier (`IpcPort`, `IpcTransferable`, swappable `IpcSerializer`); the Rust `flighthq-ipc` crate; Package Map line refresh in `tools/agents/docs/index.md` — all cross-package, cross-worktree, shared-doc, or gated on an Open-direction decision.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/ipc

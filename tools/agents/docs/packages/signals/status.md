@@ -8,6 +8,28 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the assessment's `## Recommended` list against the **current** live source under `packages/signals/src/`. Key finding: the worktree's signals source is the **lean parallel-array implementation** (`slots`/`priorities`/`repeat`/`cancelled` only), not the elaborate handle/scope/`depth`/tombstone surface the 2026-06-24 `as-claimed, not yet review-verified` status entry below describes. None of `SignalConnection`, `SignalScope`, `scope.ts`, `depth`, tombstones, `disconnectSignalConnection`, `disconnectAllSignals`/`disconnectAllSlots`, `connectSignalThrottled`/`connectSignalDebounced`, or any `@deprecated` alias is present in this worktree. The Recommended items were authored against that absent surface, so two of three do not apply to the current code as written.
+
+### Done
+
+- **Nested re-entrant emit tests (safe portion of the "add nested re-entrant emit test" item).** Added two colocated cases to `slot.test.ts` under the `connectSignal` describe block:
+  - `delivers to every slot when a slot re-emits the same signal` — asserts a same-signal re-entrant emit visits every slot (no skip, no crash).
+  - `removes a once slot exactly once across a re-entrant emit` — asserts a `once` slot fired during a nested emit is removed after its single invocation.
+
+  Behavior was confirmed by probing the current `makeDispatch` before writing assertions: same-signal re-entrant emit re-traverses the shared slot list, so the inner emit drains everything and no slot is net-skipped. Tests assert only genuinely-correct current behavior; they do **not** assert the (parked) disconnect-during-dispatch fix. Package tests: 30 passed (5 files).
+
+### Parked
+
+- **Close the once-removal re-entrancy hazard.** The assessment prescribes "extend the existing tombstone discipline … unlike `disconnectSignalConnection` which tombstones when `depth > 0`." Neither `depth`, tombstones, nor `disconnectSignalConnection` exists in the current lean source — there is no discipline to extend. Empirically, the genuine reachable skip in the current code is **disconnect-during-dispatch** (a slot disconnecting another slot shifts the cursor and skips the next slot), not nested-once-removal (which the re-traversing inner emit masks). A robust fix needs a `depth` counter on `SignalData` (cross-boundary: `packages/types/src/Signal.ts`) plus a compaction pass — a dispatch-semantics design decision. _Reason: cross-boundary (`@flighthq/types` `SignalData`) + design decision._
+
+- **Delete the two zero-caller deprecated aliases (`disconnectAllSignals`, `connectSignalAtRate`).** `disconnectAllSignals` does not exist in this worktree. `connectSignalAtRate` exists but is a **live, non-deprecated, tested, exported** function (no `@deprecated` marker, no `connectSignalAtFrameRate` rename present) — deleting it would remove a real export, not retire a shim. _Reason: design decision — removing a live tested export (not a deprecated alias) is a behavioral/API call, not the described mechanical cleanup; the premise (a deprecated shim with a migrated rename) is absent from current source._
+
+### Notes
+
+- The assessment (`assessment.md`, updated 2026-06-24) and the status entry below describe a surface that is not present in this worktree. Both likely need re-grounding against the current lean source — flagged for a review/assessment refresh. Not edited here (assessment refresh is out of sweep scope).
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/signals

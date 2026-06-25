@@ -8,6 +8,14 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep for `@flighthq/filters-wgpu`. The assessment's `## Recommended` section contained exactly one item, and it could not be executed because it is **stale**: it asks to add a doc comment to `destroyWgpuFilterPipelines` naming the companion `destroyWgpuGradientRampTextures`, and references `ALL_WGPU_FILTER_PIPELINE_CACHES` and a `rampCaches` eviction split. None of those symbols exist in the current source — the package was refactored after the assessment was written (same day, 2026-06-24 15:29). Today the pipeline caches live per-render-state inside `getWgpuFilterState` (`wgpuFilterPass.ts`), there is no global cache array, and `wgpuGradientRamp.ts` exposes no `destroy*` teardown export at all (its `rampCaches` WeakMap is GC-managed and the public `createWgpuGradientRampTexture` / cached `getWgpuGradientRampTexture` already document their ownership inline). There is no within-package, non-design edit that maps to the item as written, so it is parked rather than guessed at; the underlying device-loss / teardown-completeness question is Open direction 5 and belongs in a direction session, and the assessment should be regenerated against the refactored source.
+
+- **Done:** nothing — the sole Recommended item is stale (targets removed symbols).
+- **Parked:** "Document the gradient-ramp / pipeline-cache eviction split at the teardown call site" — the named functions (`destroyWgpuFilterPipelines`, `destroyWgpuGradientRampTextures`) and `ALL_WGPU_FILTER_PIPELINE_CACHES` no longer exist; the doc-comment target is gone. Re-deriving a substitute would be guessing at an unblessed teardown contract (Open direction 5).
+- **Verification:** `npm run test --workspace=packages/filters-wgpu` — 19 files, 85 tests, all passing (no edits made to source or tests).
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/filters-wgpu

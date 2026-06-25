@@ -123,3 +123,13 @@ The binding-specific wire types (`descOf` 6-element region pack, 256-byte channe
 3. **BlendMode discriminant audit:** Cross-check `blend_mode_from_u8` in Rust against TS `BlendMode` enum values to confirm they agree on every mode, and add a cardinality test to `wasm discriminant map cardinality`.
 4. **Gold: generated enum bridge.** Add a `#[wasm_bindgen]` const table or a `build.rs`-emitted `surfaceWasmEnums.ts` so discriminant values are never hand-maintained.
 5. **Gold: exhaustive option-permutation tests.** Extend each discriminant variant test to also assert byte-exact output against the JS reference (not just "doesn't throw").
+
+## 2026-06-25 — builder Phase 6 (expose beneficial flighthq-surface wasm methods)
+
+Widened the wasm seam with 10 previously-unbridged `flighthq-surface` helpers that complete the already-exposed `colorMatrixSurface`/`convolveSurface` story: the color-matrix builders (`buildSurfaceBrightness/Contrast/Grayscale/HueRotation/Invert/Saturation/SepiaColorMatrix`), `concatSurfaceColorMatrix`, `setSurfaceColorMatrixIdentity`, and `computeGaussianKernel`. Added the `*_wasm` bindings in `flighthq-surface-wasm`, the matching `@flighthq/surface`-signature TS wrappers in `surfaceWasm.ts` (marshalling the `number[]` out-params through a scratch `Float32Array`), explicit re-exports in `index.ts` (so the wasm-backed versions shadow the JS `export *`), and conformance tests vs `@flighthq/surface`. f32 (wasm) vs f64 (JS) coefficient builders agree to float precision, so those tests use a 4-decimal `toBeCloseTo` tolerance (the byte-producing ops stay exact). Rebuilt the wasm; surface-rs 92/92 pass; full TS `npm run check` green.
+
+**Note:** `cargo clippy -D warnings` on the `flighthq-surface` dependency still fails on pre-existing lints (`needless_range_loop`, `too_many_arguments`) unrelated to these bindings — see `_QUESTIONS.md` Phase 5 (pre-existing Rust clippy debt). The new bindings themselves build clean.
+
+### Still-unbridged flighthq-surface methods (candidates for a future pass)
+
+~23 remain, mostly object/codec/analytical: per-pixel get/set (`getSurfacePixel*`/`setSurfacePixel*`), `encode_surface`/`decode_surface` (codecs — likely need `image-rs`), the fingerprint family (`createSurfaceFingerprint`/`compareSurfaceFingerprints`/…), `cloneSurface`, and the surface↔image-source bridges. The color-matrix builders were the cleanest, highest-value cohesive set; the rest want a scoping decision (codec deps, object-semantics over the buffer seam).

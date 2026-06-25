@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/keyboard'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-06-25
+by: builder Phase 3 (Recommended sweep)
 ---
 
 # keyboard — Status Log
@@ -106,3 +106,21 @@ Requires coordination with `@flighthq/device` safe-area insets — a cross-packa
 2. **Confirm and implement the textinput boundary** — clarify the field-attribute control split with the user, then build the Gold setters in whichever package the boundary decision assigns them to.
 3. **Multi-listener stress tests** — signal priority/cancellation ordering across `onWill*`/`onDid*` edge cases, rapid show/hide bursts, and re-entrancy during emit. These are Gold robustness items that would complete the test suite.
 4. **Rust port** — when working in the `rust` worktree: port `SoftKeyboard` signals, `SoftKeyboardInfo`, `SoftKeyboardBackend` trait, `set_soft_keyboard_backend`, all free functions, and the `*Kind` string consts. The will/did phase dispatch logic is straightforward to mirror in Rust. Record the conformance entry.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the four sweep-safe items from `assessment.md` → **## Recommended**. All within `@flighthq/keyboard`; no source change (the entity/web backend were already correct), no new dependency, no API change.
+
+### Done
+
+- **Multi-listener / event-edge stress tests** — added to the `attachSoftKeyboard` describe block: multi-listener dispatch on a single did-show edge, listener `priority` ordering on `onWillShow`, `cancelSignal` stopping the will-show chain, will→did ordering across a full show transition, visibility tracking across rapid show/hide bursts, no re-emit of show/hide edges when visibility is unchanged (resize still fires per did edge), and re-entrant `detach` / re-`attach` from inside a listener. Imported `cancelSignal` from `@flighthq/signals` for the cancellation case.
+- **Idempotency / teardown audit tests** — `detachSoftKeyboard`: re-attach-after-detach resumes delivery. `disposeSoftKeyboard`: safe-to-call-twice and safe-when-never-attached. (Re-attach-tears-down-prior and re-entrant-detach were folded into the stress block above.)
+- **Backend-absence edge-case suite** — added to `createWebSoftKeyboardBackend`: visualViewport-shrink height inference (and the no-shrink → hidden case), visualViewport resize/scroll subscription firing a `did` transition + clean unsubscribe, no-op subscription when `visualViewport` is absent, the Chromium VirtualKeyboard `boundingRect` geometry path, the `geometrychange` subscription path, and `show()`/`hide()` driving the VirtualKeyboard API. Added `stubVisualViewport` / `stubVirtualKeyboard` / `stubWindowMetrics` helpers that install on the jsdom `window`/`navigator` and restore.
+- **Package usage doc** — created `packages/keyboard/README.md` (matching the `@flighthq/device` README convention): functions table, the nine-signal will/did/alias table, `SoftKeyboardInfo` fields, the resize-mode/style/accessory-bar/scroll-assist capability matrix, and the keyboard-aware-layout recipe (will-phase timing + `durationSeconds` + frame height, did-phase web fallback). Documents only what ships; notes the easing-curve extension as deferred.
+
+Test count went from 32 to **60**, all passing (`npm run test --workspace=packages/keyboard`).
+
+### Parked
+
+- One drafted test — "two attached keyboards isolate on detach" — was dropped (not parked as a code item): the single-listener `fakeBackend` cannot model two concurrent subscriptions, so the assertion would be testing the fake, not the package. Genuine multi-subscription isolation is a backend concern, out of scope for this sweep.
+- All **## Backlog** items remain parked per the assessment (easing wiring, field-attribute controls, safe-area coordination, open-vs-closed `*Kind` unions, the duplicate types re-export, the Package Map line, and the Rust crate) — each is cross-boundary or an open design fork. None touched.

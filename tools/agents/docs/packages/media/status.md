@@ -8,6 +8,18 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the `## Recommended` section of `assessment.md`. It contained exactly one sweep-safe item, which had to be **parked** because the assessment is stale relative to the live `src/`.
+
+**Parked:**
+
+- **Document the `getAudioChannelInputNode` transient-node lifetime contract.** The target function does not exist in `packages/media/src/`. The current `src/audioChannel.ts` is the older/simpler implementation (`playAudioResource`, WeakMap `channelRuntime`, no `get*InputNode`/`get*OutputNode`, no mixer). The richer surface the assessment describes (`getAudioChannelInputNode`, `getAudioChannelOutputNode`, `audioMixer`, `busToMixerRuntimes`) is present only as build artifacts under `packages/media/dist/` — output from the prior `builder-67dc46d64` session whose `src/` changes are absent in this worktree. Executing the item would require either adding the unblessed `getAudioChannelInputNode` function or relocating the ownership comment onto a different function (e.g. the `gainNode` in `setAudioChannelGain`) — both are API/contract guesses outside the sweep mandate. Parked for the assessment to be re-run against the live `src/`.
+
+**Note for next reviewer:** `assessment.md` (and the `dist/` artifacts) describe a media surface that is not in this tree's `src/`. The assessment should be regenerated from the current `src/` before another sweep.
+
+**Tests:** `npm run test --workspace=packages/media` — 2 files, 18 tests, all passing (unchanged; no source edits made).
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/media

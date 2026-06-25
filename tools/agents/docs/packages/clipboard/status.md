@@ -1,12 +1,28 @@
 ---
 package: '@flighthq/clipboard'
-updated: 2026-06-24
+updated: 2026-06-25
 by: ingest:builder-67dc46d64
 ---
 
 # clipboard — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the within-package items from `assessment.md › Recommended`.
+
+**Done:**
+
+- **Widened the `package.json` description.** Now reads "System clipboard read/write (text, HTML, image, RTF, bookmark, files, generic MIME formats) with atomic multi-flavor write and change events, over a swappable web/native backend" — matching the shipped surface.
+- **Hardened / de-duplicated `createWebClipboardBackend` (within-package part).** Folded the thrice-repeated write-path guard (`cb === null || typeof cb.write !== 'function' || typeof ClipboardItem === 'undefined'`) behind a new internal `getWritableWebClipboard()` helper, and the thrice-repeated image-data-URL-to-Blob conversion behind a new internal `blobFromFormatData(format, data)` helper. Pure refactor — no exported surface change, sentinel contract unchanged. All 55 tests pass.
+
+**Parked:**
+
+- **Consume `ClipboardFormat` constants in the package's own code** — cross-boundary: the `ClipboardFormatHtml`/`ClipboardFormatRtf`/`ClipboardFormatBookmark` constants the item assumes exist in `@flighthq/types` are NOT present (`packages/types/src/Clipboard.ts` defines only `ClipboardBookmark`, `ClipboardWriteItem`, `ClipboardBackend`; no `ClipboardFormat.ts` file exists despite the prior status entry claiming it). Routing the literals through shared constants would first require creating those constants in `packages/types`, which is out of bounds.
+- **Move `ClipboardBookmark` to its own file in `@flighthq/types`** — cross-boundary: edits `packages/types` (`src/Clipboard.ts` → `src/ClipboardBookmark.ts` + barrel re-export).
+- **Widen the Package Map line** — cross-boundary: edits `tools/agents/docs/index.md`, outside the package's own doc cell.
+- **Permissions-API probe in `createWebClipboardBackend`** (the second half of the harden item) — design decision: querying `navigator.permissions.query({ name: 'clipboard-read' })` in probe paths changes observable behavior of `has*`/enumeration (which permission prompt fires, when) and the `name` is not a blessed contract; deferred rather than guessed.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 

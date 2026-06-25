@@ -141,3 +141,23 @@ by: ingest:builder-67dc46d64
 5. **Rust `flighthq-particles`** — after Silver stabilizes, this is a strong early Rust target. The SoA arrays are `Vec<f32>`, deterministic, and buffer-in/buffer-out. Port after TS API is stable.
 
 6. **`stepParticleEmitter` example** — a functional test scene demonstrating the full pipeline (spawn shapes, forces, colliders) would be a good addition to `tests/functional/`.
+
+---
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md`'s Recommended list against the **current** source. Note: several Recommended items were written against an older source shape that no longer exists in this worktree (no `spawnShape.ts`, no `computeParticleSpawnOffset`, no `'edge'` shape / `emitFromEdge`, no `stepParticleEmitter`; spawn logic is inline in `updateParticleEmitter.ts`/`emitParticleBurst.ts` with `point`/`circle`/`rect` only). Those items are parked as not-applicable below.
+
+### Done
+
+- **Alphabetized `createParticleEmitterConfig`'s returned object fields** (`particleEmitterConfig.ts`). The interleaved `colorCurve`/`scaleCurve`/`burst*`/`duration`/`loop`/`colorEnd*`/`colorStart*` block is now in strict key order. `npm run order` does not police object-literal key order, so this was done by hand. No behavior change.
+- **Added a committed deterministic-replay test** in `updateParticleEmitter.test.ts` (inside the existing `updateParticleEmitter` describe). Two `createParticleEmitterState(createRandomSource(1234))` runs stepped through the same 60-frame `updateParticleEmitter` sequence are asserted to produce byte-identical SoA buffers (`transforms`, `colors`, `velocities`, `lifetimes`, `particleCount`). Guards North-star #1. Added the `createRandomSource` import from `@flighthq/math`. (The prior burst-only determinism check existed; this covers the continuous-update sequence the assessment named.)
+
+### Parked
+
+- **Resolve `computeParticleSpawnOffset`'s public/internal status** — not-applicable: no `computeParticleSpawnOffset` or `spawnShape.ts` exists in current source. The barrel (`index.ts`) has no `./spawnShape` export. Stale relative to this worktree; nothing to fix.
+- **Collapse or document the redundant `'edge'` spawn shape** — not-applicable: there is no `'edge'` member or `emitFromEdge` in current source; shapes are `point`/`circle`/`rect` only. Even the assessment flagged the member-removal variant as cross-boundary (`@flighthq/types` union + `particles-formats`); neither variant has a target here.
+
+### Verification
+
+`npm run test --workspace=packages/particles` → 11 files, 143 tests passing. Did not run any monorepo-wide or fixer commands per task constraints.

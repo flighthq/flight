@@ -8,6 +8,23 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md › Recommended` that are strictly within `packages/interaction/`. Tests: `npm run test --workspace=packages/interaction` → 85 passed.
+
+**Note on source/assessment drift:** the live source in this worktree is the simpler, pre-ingest shape (`hitTests.ts`, `displayHitTests.ts`, `spriteHitTests.ts`, `interactionManager.ts` — no `Cursor.ts`, no `spatialQuery.ts`, no `containsDisplayObject`/`getDisplayObjectOverlapRectangle`/`hitTestDisplayObjectsShape`). The assessment and the `builder-67dc46d64` status entry above describe an as-claimed mature state that is not present in this tree, so two Recommended items reference code that does not exist here and were parked.
+
+### Done
+
+- **Removed the stale `@flighthq/scene` dependency.** Dropped `@flighthq/scene` from `package.json` dependencies and the `../scene` entry from `tsconfig.json` references. No source or test imported it (only "scene graph" appears in a comment). No behavior change.
+- **Widened `hitTestDisplayObjects` to the `Spatial2DNode` graph-feature alias.** Both params went from concrete `DisplayObject` to `Spatial2DNode` (the only member of the named overlap family that exists in this tree). The body only uses `getNodeParent` + `getNodeWorldBoundsRectangle`, so the wider type is exact and existing `DisplayObject` callers still satisfy it — non-breaking, no test change required. Doc-comment updated to describe world-bounds overlap over any spatial 2D node.
+
+### Parked
+
+- **Fix the `createWebCursorBackend` doc-string mismatch** — cross-boundary/non-existent: there is no `Cursor.ts` or `createWebCursorBackend` in this worktree's source. Nothing to correct here.
+- **Widen the rest of the overlap family (`containsDisplayObject`, `getDisplayObjectOverlapRectangle`, `hitTestDisplayObjectsShape`)** — those functions and `spatialQuery.ts` do not exist in this tree; only `hitTestDisplayObjects` was present and was widened.
+- **Update the Package Map one-liner for interaction** — cross-boundary: the Package Map lives in `tools/agents/docs/index.md`, outside the allowed `tools/agents/docs/packages/interaction/` doc scope.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/interaction

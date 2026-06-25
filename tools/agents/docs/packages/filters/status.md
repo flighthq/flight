@@ -8,6 +8,22 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the `assessment.md` Recommended list within `packages/filters/` only. **Key finding:** this worktree's source does **not** contain the state the 2026-06-24 assessment assumes. The `builder-67dc46d64` status entries below (the `BitmapFilterKind.ts` constants in `@flighthq/types`, the constructor/guard kind-constant migration, `normalizeBitmapFilter`, `getBitmapFilterMargin`, `cloneBitmapFilter`/`copyBitmapFilterInto`, `equalsBitmapFilter`, `fromBitmapFilterData`/ `toBitmapFilterData`, the color-matrix preset library, and the convolution-kernel builders) are marked **as-claimed, not yet review-verified** — and they are absent from the live source. The package here is the thin-constructor + guards + validation + blur-math state. Several Recommended items therefore target functions/files that do not exist and could only be executed by editing `@flighthq/types`, which is outside this sweep's hard boundary.
+
+### Done
+
+- **Guard-exhaustiveness structural law.** Added two colocated assertions to the `isBitmapFilter` describe block in `bitmapFilterGuards.test.ts`: every known kind is accepted by `isBitmapFilter`, and each kind matches **exactly one** specific `is*` guard (no unguarded kind, no double-claimed kind). Bound to the existing `isBitmapFilter` export; no new public surface. (Sweep-safe subset of "round out the structural-law tests".)
+- **Package README (descriptor reference).** Added `packages/filters/README.md`: OpenFL filter-class → Flight `kind`/constructor mapping table, guard/validation reference, a color-matrix recipe cheat-sheet, the blur-math table, and a usage snippet. Documentation only; grounded strictly in the live exports.
+
+### Parked
+
+- **Kind-dispatch switches → `*Kind` constants** (cross-boundary). The `*Kind` constants do not exist in `@flighthq/types` in this worktree (no `BitmapFilterKind.ts`), and the guards/validators use string literals, not imported constants. Executing requires adding the constants to `packages/types` — outside the hard boundary. Also, `normalizeBitmapFilter` and `getBitmapFilterMargin` (two of the three named switch sites) do not exist here.
+- **Numeric robustness in matrix/kernel builders + zero/negative-blur normalization** (no substrate + design). `normalizeBitmapFilter` does not exist; the color-matrix/convolution constructors are thin literal builders with no numeric processing or preset/kernel math to guard. What a builder should do with NaN/Infinity (clamp vs. sentinel vs. throw) is an unsettled design ruling, not a mechanical fix.
+- **Deep-clone coverage for nested gradient arrays** (no substrate). `cloneBitmapFilter` / `copyBitmapFilterInto` do not exist in this worktree; nothing to assert against.
+- **Round-trip / equals / normalize structural laws** (no substrate). `fromBitmapFilterData`/ `toBitmapFilterData`, `equalsBitmapFilter`, and `normalizeBitmapFilter` do not exist; only the guard-exhaustiveness sub-law had live substrate (done above).
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/filters

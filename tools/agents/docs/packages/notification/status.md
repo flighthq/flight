@@ -8,6 +8,22 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from assessment.md "## Recommended" that are strictly within `packages/notification/`.
+
+Done:
+
+- **Wired `_dispatchReply` in the service-worker backend.** Added the `_dispatchReply` hook to `SwBackendInternal` and `createServiceWorkerNotificationBackend`'s `internal` block, fanning a reply to `_replyListeners` (id, actionId, text). Added a reply branch to `notifyServiceWorkerBackendAction`: when a `notificationclick` message carries both `actionId` and `reply`, it routes to `_dispatchReply` (ahead of the action/click branches) so a `text-input` action's reply text now round-trips on the SW path. Widened the message type to `{ type; notificationId; actionId?; reply? }` and updated the doc comment. Added two colocated tests under the existing `notifyServiceWorkerBackendAction` describe (reply text delivered to `subscribeReply`; reply message does not fire action listeners).
+- **`let` → `const` on the `subscribe*` listener registries.** Both backends: `_clickListeners`, `_actionListeners`, `_dismissListeners`, `_replyListeners`, `_showListeners` are `new Set(...)` once and never reassigned.
+- **Dropped the structural-divider banner comments from `notification.test.ts`.** Removed the `// ----` / label / `// ----` banners (Helpers and per-function) the source-style rule forbids; `describe` boundaries and import order already carry the structure.
+
+Parked:
+
+- **Add `'provisional'` to `NotificationPermission`.** cross-boundary: edits `@flighthq/types` (packages/types/src/Notification.ts), outside this package's cell per the hard boundary. Additive/non-breaking but not sweepable here.
+
+Verification: `npm run test --workspace=packages/notification` — 66 passed (1 file). No new exported functions added (reply wiring rides existing `notifyServiceWorkerBackendAction` / `createServiceWorkerNotificationBackend`), so exports:check binding is already satisfied.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/notification

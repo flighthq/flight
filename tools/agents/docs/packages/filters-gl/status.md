@@ -8,6 +8,23 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep against `assessment.md`. **All three Recommended items were parked** because the worktree's `packages/filters-gl/src/` is regressed below the surface the assessment (and the prior status entry) were written against.
+
+Finding (state divergence):
+
+- The advanced surface the assessment builds on — `glScratchCount.ts` (the 13-member `get*FilterGlScratchCount` family), `glFilterProgramCache.ts` (`clearGlFilterProgramCache`), `applyBlurFilterToGl`, `GL_CONVOLUTION_MAX_KERNEL_SIZE`, `GL_MEDIAN_MAX_RADIUS`, knockout — exists **only in stale `dist/` build output**, not in `src/`. `src/index.ts` exports only the base appliers (`applyBoxBlurFilterToGl`/`applyGaussianBlurFilterToGl`, no scratch-count helpers, no program-cache clear).
+- `src/*.ts` mtimes (15:29) are newer than `dist/*.js` (10:23), and the package's own tests pass (18 files / 61 tests). The `src/` tree is internally consistent — it is simply an earlier checkpoint than the work recorded in the prior `[2026-06-24 · builder-67dc46d64]` entry.
+
+Why parked rather than executed:
+
+- **Correct `clearGlFilterProgramCache` doc** — the function and its file `glFilterProgramCache.ts` do not exist in `src/`. Nothing to reword.
+- **Add `getBlurFilterGlScratchCount`** — premised on the `glScratchCount.ts` family, absent from `src/`. Adding one helper to a non-existent family (or reconstructing the whole family from `dist/`) is not a minimal convention-matching edit and requires a judgment call about whether/how to restore a regressed surface.
+- **Note the blur scratch-count exception in status** — premised on the two items above.
+
+No source edits were made. Resolving this needs a decision (outside the sweep's authority) on whether to restore the regressed `src/` from the recorded prior work, or re-derive it — surfaced to the user.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/filters-gl

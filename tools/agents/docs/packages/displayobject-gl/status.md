@@ -8,6 +8,18 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` "## Recommended". Scope strictly within `packages/displayobject-gl/`.
+
+**Done**
+
+- **Typed runtime-slot accessor for `createGlShapeData` / `createGlTextLabelData`.** Replaced the scattered `as unknown as GlShapeData` / `as unknown as RendererData` casts in `glShape.ts` and `glTextLabel.ts` with a per-file private accessor pair — `getGlShapeData(data) / toGlShapeRendererData(data)` and `getGlTextLabelData(data) / toGlTextLabelRendererData(data)`. The single unavoidable cast (the `Gl*Data` scratch bag is not an `Entity`, so it cannot satisfy `RendererData`'s `EntityRuntimeKey`) is now confined to one named site per file; `createData`, `drawGl*`, and `destroyData` read/write through the typed helpers. Helpers are not exported (no `exports:check` test owed); existing draw/create/destroy tests cover them. No public-signature change. Own-tests: 177/177 pass.
+
+**Parked**
+
+- **Track the orphan `GlBitmapSamplingLike`.** The assessment's premise (the type "landed types-first in `@flighthq/types`" and is a deferred-not-dead seam) no longer matches the source tree: `GlBitmapSamplingLike` / `GlBitmapSamplingFilter` exist **only in `@flighthq/types/dist`** (stale build artifact) and are **absent from `packages/types/src/`** (no `GlBitmapSampling.ts`, not exported from `types/src/index.ts`). Adding a within-package test-anchor that imports the symbol would bind this package to the stale dist — passing now (resolved against dist) but breaking the instant `@flighthq/types` rebuilds from its current src, converting a benign orphan into active cross-package drift. Making it a genuine non-rotting seam requires re-establishing the type in `packages/types/src`, which is outside this package's hard boundary. Reason: cross-boundary — needs `@flighthq/types` (`packages/types/src`) to actually define/export the type before any in-package anchor can reference it without depending on a stale build artifact.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/displayobject-gl

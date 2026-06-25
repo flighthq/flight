@@ -8,6 +8,17 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep for `@flighthq/filters-surface`. The assessment's single Recommended item (replace raw kind-string literals with imported `*Kind` constants in `surfaceFilterComposite.ts` and `surfaceFilterBounds.ts`, aligning with `surfaceFilterList.ts`) was **not actionable in this worktree**: none of the files or functions it targets exist here.
+
+- `src/` contains only the 14 per-filter leaf functions (`apply*FilterToSurface`). There are no `surfaceFilterComposite.ts`, `surfaceFilterBounds.ts`, or `surfaceFilterList.ts` files; no `getFilterCompositeRole`, `getFilterSurfaceBounds`, `applyFilterListToSurface`, or `compositeFilterResultToSurface` exports; and no `switch`/`case` statements or kind-string literals anywhere in source (`grep -rn "switch"`, `grep -rn "case '"`, and `grep -rn "Kind"` over `src/` all return nothing).
+- The composite/bounds/list/scratch tier that the 2026-06-24 as-claimed entry above describes — and that the assessment's Recommended item presumes — is absent from this build of the package. The literal-vs-constant seam the item exists to fix therefore does not exist here to fix.
+
+Done: nothing — the one Recommended item has no target in this worktree. Parked: the Recommended kind-literal substitution (precondition files/functions missing; see above). All Backlog items remain parked (cross-package, design-decision, or cross-tree, per the assessment).
+
+Verification: `npm run test --workspace=packages/filters-surface` — 14 files, 16 tests, all passing. No source edits were made.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/filters-surface

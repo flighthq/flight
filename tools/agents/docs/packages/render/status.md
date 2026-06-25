@@ -8,6 +8,22 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep against this worktree's `packages/render/`. **Nothing executed — all three Recommended items are ungroundable here and were parked.**
+
+Root cause: the assessment's Recommended list (and the `review.md`/`status.md` it is built on) describe the `builder-67dc46d64` ingested bundle, which claimed a Pass 1 + Pass 2 build adding a shared draw driver (`renderDriver.ts`, `drawRenderProxy`, `flushRenderBatch`), a retained `RenderQueue`, a `RenderDrawContext`/`RenderBatchKey`/`RenderStateStats` type family, and `getRenderStateStats`. **None of that source is present in this worktree.** This worktree's `packages/render/src/` is the leaner pre-driver package (no `renderDriver.ts`, no queue, no draw context, no stats), and `packages/types/src/` has no `RenderQueue`, `RenderBatchKey`, `RenderDrawContext`, or `RenderStateStats`. The claimed work was never landed here — it was ingested as-claimed, not merged into this tree.
+
+Each Recommended item, as parked:
+
+1. **Soften the `RenderQueue` doc comment's `drawRenderQueue` reference** — parked. The `RenderQueue` type does not exist in this worktree, and it lives in `@flighthq/types` regardless (outside the in-package boundary).
+2. **Split `RenderBatchKey` into its own file** — parked. `RenderBatchKey` does not exist here, and the item is explicitly a relocation _within_ `@flighthq/types` (cross-boundary).
+3. **Make `getRenderStateStats` return an honest snapshot** — parked. `getRenderStateStats`, `RenderStateStats`, and `RenderDrawContext` do not exist in this worktree's `render` src or `@flighthq/types`. Nothing to harden.
+
+Verification: `npm run test --workspace=packages/render` → 13 files, 143 tests, all pass. No edits made to any source; the package was left untouched. No mechanical drift to fix.
+
+Suggested follow-up for a human: reconcile the assessment/review/status docs for `render` with this worktree's actual source — either the driver/queue/stats work needs to be (re)landed here before its residual nits are actionable, or the docs should be re-based on the source that is actually present.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/render

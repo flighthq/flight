@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` → `## Recommended`.
+
+**Done:**
+
+- Unified the two traversal styles in `traversal.ts`: `walkNodeDescendants` now hoists the children array once (`getNodeRuntime(source).children`, null-guarded) and iterates over `children.length` directly, matching its sibling `forEachNodeDescendant`. Previously it re-fetched `getNodeRuntime(source).children!` inside the loop each iteration and drove iteration off `getNodeChildCount`. Behavior-preserving; the now-unused `getNodeChildCount` import was dropped. (review.md#minor-in-source-nits)
+
+No new exported functions, so `exports:check` surface is unchanged. The pre-existing `walkNodeDescendants` test (leaf node returns `true`) already covers the null-children path.
+
+**Parked:** nothing additional — the assessment's `## Recommended` lists exactly one strictly sweep-safe outstanding item (the hoist above). The conditional signal-coverage item is gated on Open direction #5 and lives in Backlog by design.
+
+**Tests:** `npm run test --workspace=packages/node` — 14 files, 280 passed.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/node
@@ -111,3 +125,9 @@ The depth review and Bronze roadmap both flag that `render`'s `walkNode` and the
 3. **3D TRS decision** — settle quaternion vs Euler for `HasTransform3D` and build the cached local-matrix composition analogous to the 2D path.
 4. **Signal coverage** — add the transform/bounds/enabled-change signals to `enableNodeSignals`. The revision channels are already there; it is just wiring.
 5. **`disposeNode` in higher packages** — render packages (`render-canvas`, `render-webgl`, `render-dom`) that hold GPU resources per node should expose their own `destroy*` functions that call `disposeNode` first and then release GPU resources. Coordinate this pattern with those packages.
+
+## 2026-06-25 — builder Phase 1 (pruned-core port)
+
+Applied the staged `_port/node` additive superset. New/expanded files: **traversal** (new — `findNode`/`findNodeByName`, `getNodeChildren`, `getNodeDepth`, `getNodeNextSibling`/ `getNodePreviousSibling`, `forEachNodeAncestor`/`forEachNodeDescendant`, `walkNodeDescendants`), **disposeNode** (added to `node.ts` — detaches, recursively disposes children, clears nodeSignals), and hierarchy helpers (`addNodeChildren`, `forEachNodeChild`, `getNodeAncestors`, `getNodeCommonAncestor`, `isNodeAncestorOf`, `reparentNode`, `replaceNodeChild`). Ride-alongs kept: `===` identity in `hierarchy.ts`, `Readonly<>` on `getNodeWorldTransformRevision`. Added type `NodeDescendantVisitor` to `@flighthq/types`.
+
+**Fix-forward:** `disposeNode` was staged calling a non-existent `disconnectAllSlots`; the real signals API is `clearSignal`. Substituted. The three dropped trait files (`hasCacheAsBitmap`/`hasOpaqueBackground`/`hasScrollRect`) were correctly NOT re-added — the `_port` index still listed them, so the index was merged surgically (only `traversal` added). 280 node tests pass; `npm run check` green.

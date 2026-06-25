@@ -8,6 +8,27 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the sweep against `assessment.md`'s `## Recommended` list. The blocking finding: **the assessment (and the prior `91/100` status entry below) describe a `src/` tree that the live worktree no longer contains.** Every Recommended item except the test-gap one is built on source modules that are absent from `packages/render-gl/src/`:
+
+- Absent from `src/` (present only as stale `dist/` build artifacts): `glTexture.ts`, `glInstrumentation.ts`, `glPipelineState.ts`, `glCapabilities.ts`, `glContextLoss.ts`, `glExtension.ts`, `glReadback.ts`. The current barrel (`src/index.ts`) exports only `glBackground`, `glDraw`, `glElement`, `glFullscreenPass`, `glMaterialRegistry`, `glRenderState`, `glRenderTarget`, `glRenderTargetPool`, `glShader`, `glShaderBinding`, plus `makeGlState`.
+- Confirmed absent symbols: `recordGlDrawCall` / `getGlRenderStats` (instrumentation), `createGlUniformBuffer`, `createGlSampler`, `copyGlRenderTarget` / `blitGlRenderTarget`, `uploadGlCompressedTexture`, `setGlPixelStore`, `updateGlTextureSubImage` — none in `src/`; `GlTextureInternalFormat` is not in `@flighthq/types/src/` either.
+
+Net: the prior session's `glTexture`/`glPipelineState`/`glInstrumentation` work (the "as-claimed, not yet review-verified" entry below) is not in the current source. The Recommended items 1–8 cannot be executed as additive within-package edits — they would require authoring entirely new public modules **and** their cross-package descriptors (`GlTextureInternalFormat`, UBO/sampler descriptors) in `@flighthq/types`, which is both cross-boundary and an API-shape design decision. Parked rather than fabricated.
+
+**Done**
+
+- Item 9 (close colocated-test gaps): verified already satisfied in the live tree — `glRenderTargetPool.test.ts` exists; `clearGlRenderTarget` + `drawGlFullscreenPass` (`glFullscreenPass.test.ts`), `resolveGlRenderTarget` (`glRenderTarget.test.ts`), and the `getGlMaterialShader` / `getGlShader` material-shader getters (`glShaderBinding.test.ts`) all have matching `describe` blocks. No edit needed. `npm run test --workspace=packages/render-gl` → 11 files, 159 tests, all pass.
+
+**Parked**
+
+- Items 1–7 (instrumentation wiring, UBO, sampler objects, blit/copy, compressed-texture upload, pixel-store + dev error checking, generalize `updateGlTextureSubImage`) — their source modules and symbols are absent from the live `src/`; landing them means new public modules + new `@flighthq/types` descriptors. Cross-boundary + design decision.
+- Item 8 (`npm run size` tree-shaking confirmation) — nothing new landed to verify, and `npm run size` is a monorepo build command outside the allowed command set.
+- Item 10 (retire the `internal.ts` cast in `createGlRenderState`) — the `(state as { canvas })` / `(state as { gl })` writes target fields that are `readonly` **on the entity** `GlRenderState`. The only "proper runtime slots" resolution relocates `canvas`/`gl` off the readonly entity into `GlRenderStateRuntime`, which edits `@flighthq/types/src/GlRenderState.ts`. Cross-boundary.
+
+No source files changed this pass. Recommend re-running `package-assess` against the live `src/` so the assessment reflects the actual (smaller) core surface before the next sweep.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/render-gl

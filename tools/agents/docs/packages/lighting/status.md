@@ -8,6 +8,26 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+**Outcome: nothing executed — assessment is stale relative to this worktree's source. All three Recommended items parked.**
+
+The Recommended section of `assessment.md` was written against the **as-claimed** prior pass (builder-67dc46d64, see entry below, explicitly "not yet review-verified"). That pass's APIs are **not present** in this worktree's actual `packages/lighting/src/`:
+
+- `src/` contains only the 7 light-descriptor files: `ambientLight`, `areaLight`, `directionalLight`, `environment`, `hemisphereLight`, `pointLight`, `spotLight` (+ their colocated tests). 24 tests, all green.
+- `lightIntensity.ts` and `lightAnalysis.ts` exist **only in stale `dist/`** build artifacts; there is no `src/` source for them and `src/index.ts` does not export them.
+- The type fields the items depend on are absent from `@flighthq/types`: `PointLight`/`SpotLight`/`AreaLight` have no `intensityUnit`, no `decay`, no `enabled`. `Light.ts` is the open base contract only. So even the "header-only types additions where noted" substrate is missing.
+
+Each Recommended item therefore cannot be done as a sweep edit, and doing it would require fabricating that entire prior pass — net-new module authoring plus `@flighthq/types` edits plus behavioral-contract design decisions — all outside the hard boundary / no-guess rule:
+
+1. **State the spot candela/lumen cone-coupling foot-gun in `lightIntensity.ts`.** PARKED — `lightIntensity.ts` does not exist in `src/`; there are no candela/lumen helpers to document. A "doc-only" edit has no target. Recreating the module is net-new authoring + a cross-boundary `intensityUnit` field on `@flighthq/types`.
+2. **Dispatch `getLightLuminance`/`getLightInfluenceBounds` on `kind`.** PARKED — `lightAnalysis.ts` and those functions do not exist in `src/`. This is not the described "within-file cleanup"; it would be authoring the whole analysis API surface from scratch (a design decision), not refactoring a structural cast.
+3. **Add CPU-side `getLightAttenuation(distance, light)`.** PARKED — depends on the `decay` field and the windowed inverse-square-to-`range` curve, neither of which is present on the current `@flighthq/types` light types. Cross-boundary into `@flighthq/types`, plus the attenuation model is an unblessed behavioral contract here.
+
+No source edited. Baseline verified green: `npm run test --workspace=packages/lighting` → 7 files, 24 tests pass.
+
+**Recommendation for the host:** re-derive `assessment.md` (and `review.md`) from this worktree's actual source, or merge/restore the as-claimed builder-67dc46d64 pass first. The current assessment's Recommended list describes a package state that is not on disk here.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/lighting

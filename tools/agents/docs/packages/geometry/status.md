@@ -176,3 +176,25 @@ Remaining 4 points:
 - (-1) Rust crate conformance gap (not a TS-package defect, but part of Gold)
 
 To reach 100: implement the closest-point suite, fix the two quaternion formulas, and port the full op set to `flighthq-geometry`.
+
+## 2026-06-25 — builder Phase 1 (pruned-core port)
+
+Applied the staged `_port/geometry` additive superset (re-derived helpers the integration curation dropped). New/expanded files: **ray3d** (new — `createRay3D`, `getRay3DPointAt`, ray/sphere/plane/aabb intersection), plus added exports across aabb (extents/size/intersect), boundingSphere (intersection, merge), frustum (corners, sphere intersection — culling), matrix3/matrix4 (Float32Array read/write, determinant), plane (from-points, normalize, project, coplanar), quaternion (Euler conversions, dot, inverse, look-rotation, from-unit-vectors), vector2/3/4 (clamp/min/max/divide/multiply/reflect, Float32Array I/O, spherical). Ride-along: `acquireMatrix4`/`releaseMatrix4` pooling consumed by `node/transform3d.ts`. Added types to `@flighthq/types`: `Ray3D`/`Ray3DLike`, `EulerOrder`. All 890 geometry tests pass; `npm run check` green.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` → `## Recommended`, all strictly within `packages/geometry/`.
+
+Done:
+
+- **Fixed `getQuaternionEuler` extraction (correctness defect).** Rewrote the get side as the true inverse of the existing `setQuaternionFromEuler` for all six Euler orders: build the rotation matrix the set side implies (m[row][col] inline from the unit quaternion, allocation-free), then read the angles off that matrix with the standard per-order branch. Verified offline against brute-force/fuzz that set → get round-trips to |dot| ≈ 1 (worst |1−|dot|| ≈ 6e-16 over 120k random quats, all orders, including the gimbal branch). Added per-order deterministic round-trip tests for the combined (0.3, 0.5, 0.7) input, a seeded 200-sample fuzz round-trip per order, and a gimbal-singularity round-trip per order.
+- **Closest-point / distance suite.** Added `getClosestPointOnAabb` (clamp), `getClosestPointOnBoundingSphere` (project to surface, +X fallback at center, empty→center), `getClosestPointOnPlane` (project along normal; documented to agree with `projectVector3OntoPlane`), `getClosestPointOnRay3D` (project + clamp t≥0), and `getClosestPointBetweenRay3Ds` (line-line closest pair with t≥0 clamping and parallel fallback; verified against brute force for skew/away/parallel cases). All alias-safe, allocation-free, barrel-exported via existing `export *`, each with a colocated test block.
+- **`expandAabbBySphere` now takes `Readonly<BoundingSphereLike>`** instead of the inline anonymous `{ center; radius }` shape — uses the homed `@flighthq/types` entry; non-breaking (structurally assignable). Existing test unchanged.
+- **Documented `setQuaternionLookRotation`'s axis convention** precisely in JSDoc (the internal X/Z swap of `forward`, so +Z forward is not identity) and pinned the non-identity behavior with a regression test. The convention itself is left unchanged — blessing a new look-rotation convention is the parked Open direction.
+- **Numerical / edge-case hardening.** Added an antiparallel-along-+Y test for `setQuaternionFromUnitVectors` (exercises the non-X perpendicular-axis branch), the per-order gimbal + fuzz round-trips above, and firmed up the `inverseMatrix4` singular-matrix test to assert the documented sentinel (returns `false`, fills NaN). Compose∘decompose and quat↔matrix round-trips already existed and remain green.
+
+Parked:
+
+- **Batch / performance pass (`applyMatrix4ToVector3Array`).** A batch vertex-buffer transform already exists as `matrix4TransformVectors(out: Float32Array, source, vectors: Float32Array)`. Adding a second, differently-shaped/named batch transform is an API-shape decision (count-based vs whole-packed-array; an unblessed name colliding with an existing capability), and verifying the tree-shaking claim needs `npm run size`, which is outside the allowed command set for this pass. Left as-is rather than duplicating the existing primitive.
+
+Verification: `npm run test --workspace=packages/geometry` → 929 tests pass (22 files). Did not run `npm run check`/`fix`/`order:fix`/`size` per pass constraints; new exports and `describe` blocks were inserted in alphabetical position by hand.

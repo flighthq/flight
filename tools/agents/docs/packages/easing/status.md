@@ -8,6 +8,22 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the assessment's `## Recommended` list against this worktree's actual `packages/easing/src/`. Notable: the source in this worktree is at an **earlier state** than the 2026-06-24 status entry below claims — `easeStep`, `easeSmoothstepRange`, `easeCombinators.ts`, `easePower.ts`, `easePiecewise.ts`, `createEasingSamples.ts`, and `getEasingDerivative.ts` are **not present** here. Several Recommended items therefore point at functions that do not exist in this tree and were parked rather than guessed.
+
+Done:
+
+- **Documented the `easeSteps(count, 'jumpNone')` divide-by-zero sharp edge.** Added a doc-comment note in `easeSteps.ts` explaining that `jumps = count - 1 = 0` for `easeSteps(1, 'jumpNone')` yields `NaN`, mirroring the CSS spec which forbids `steps(1, jump-none)`. Added a guarded test in `easeSteps.test.ts` asserting the documented NaN behavior at t = 0, 0.5, 1.
+
+Parked:
+
+- **Tighten `easeStep` doc-comment's CSS mapping** — `easeStep` does not exist in this worktree's `easeSteps.ts` (the single-jump convenience was not present in the source here). Nothing to reword.
+- **Name `easeSmoothstepRange`'s return type in `@flighthq/types`** — `easeSmoothstepRange` does not exist in this worktree's `easeSmoothstep.ts`; only `easeSmoothstep` and `easeSmootherstep` are present. The naming target (`ScalarRemap`) would also live in `@flighthq/types`, a cross-boundary edit.
+- **Refresh the Package Map line for `@flighthq/easing`** — that line lives in `tools/agents/docs/index.md`, outside the allowed edit boundary (only `packages/easing/` and `tools/agents/docs/packages/easing/`). Cross-boundary.
+
+Verification: `npm run test --workspace=packages/easing` → 14 files, 82 tests, all pass.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/easing

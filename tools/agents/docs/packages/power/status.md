@@ -8,6 +8,16 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the assessment's `Recommended` section. It contained a single item.
+
+**Parked (no in-package edits made):**
+
+- **Coalescing guard for chatty native subscriptions.** The assessment frames the deliverable as an emit-debounce inside `attachPower`'s subscription wiring plus "a fake-timer test asserting a burst collapses to one `onChange`." Collapsing N synchronous backend events into one `onChange` is only achievable by deferring the emit out of the synchronous turn (a frame / microtask / timer flush) — which converts `onChange` from synchronous to coalesced-deferred delivery. That is a behavioral-contract change, not a mechanical guard: (1) every existing `attachPower` test asserts synchronous delivery (`backend.fire(); expect(changes).toBe(1)`), and (2) the charging-transition logic reads `status.isCharging !== wasCharging` synchronously inside the `subscribe` callback, so coalescing must define how opposite transitions inside one window are handled (they could cancel to no `onCharging`/`onDischarging`). Today no real fan-out exists — only the single `backend.subscribe()` channel drives `onChange`; the lock/unlock/lowpower/thermal channels emit their own dedicated signals and never trigger `onChange` — so the guard addresses a speculative ("if a native backend proves chatty") risk by picking a delivery-timing model. Choosing sync-vs-coalesced delivery for `onChange` (and the transition-survival rule) is an unblessed API-model decision, sibling to the idle "poll vs push" Open direction the charter has not yet ruled on. Parked for a behavioral-contract decision rather than guessed.
+
+No source, test, or barrel edits were made in `packages/power/`. Own-package tests remain green (44 passing).
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/power

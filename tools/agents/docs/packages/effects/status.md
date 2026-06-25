@@ -8,6 +8,23 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+**Outcome: both Recommended items parked. No source edits made. Tests pass (44 files, 88 tests).**
+
+The two Recommended items in `assessment.md` both target source modules that **do not exist** in this worktree's `packages/effects/src/`:
+
+- "Add `ChannelMixerEffect` to the `DEFAULTS` table" requires `renderEffectDefaults.ts` (a `DEFAULTS` table / `getRenderEffectDefaults` / `normalizeRenderEffect`). That file is absent from `src/`.
+- "Add `FilmicToneMapOptions` / `AgxToneMapOptions` and thread them through `computeFilmicToneMap` / `computeAgxToneMap`" requires `toneMapMath.ts` with those functions. That file is absent from `src/`.
+
+The current `src/` contains **only** the thin `create*Effect` factory files (44 files, e.g. `channelMixerEffect.ts` = a 5-line `createChannelMixerEffect`). None of the math / introspection / defaults surface described in the prior `[2026-06-24 · builder-67dc46d64]` "as-claimed, not yet review-verified" entry (gaussianMath, toneMapMath, renderEffectDefaults, renderEffectInputs, interpolation, etc.) is present here.
+
+Those modules **do** appear in the stale `dist/` build output (`dist/renderEffectDefaults.d.ts`, `dist/toneMapMath.d.ts` declare `getRenderEffectDefaults`, `computeFilmicToneMap`, `computeAgxToneMap`), confirming they existed at an earlier build but their `.ts` sources are not in this checkout. The `src/` tree (44 factory files) and the live test count (88 tests, vs. the claimed 291) corroborate that the larger surface the assessment/review was built on top of is not present in this worktree.
+
+Executing either item would mean reconstructing a substantial absent API surface (a per-kind defaults table over the whole catalog; the tone-map operator math + new option structs), which is well beyond a sweep-safe additive/correctness edit and would require guessing the intended shapes. Item 2 additionally would need the `*Options` types, which under the types-as-header rule belong in `@flighthq/types` — a hard cross-boundary.
+
+Surfaced for the user: the `effects` review/assessment/status fragments are out of sync with the actual worktree source. The assessment's "90/100, roadmap already landed" framing reflects the as-claimed entry, not the verified tree. A review pass should re-verify `effects` against the live `src/` before its Recommended list can be acted on.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/effects

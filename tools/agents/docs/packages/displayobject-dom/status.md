@@ -8,6 +8,23 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md › Recommended`. Net: 1 of 3 done, 2 parked on a source/assessment mismatch.
+
+**Done**
+
+- **HiDPI follow-up for `drawDomBitmap`.** The canvas-backed bitmap path (`renderBitmapAsCanvas`, taken for bitmaps with a `sourceRectangle` or a non-`HTMLImageElement` source) now sizes its backing `<canvas>` at physical pixels (`drawWidth*pixelRatio × drawHeight*pixelRatio`), constrains layout via `style.width`/`style.height` in logical px, and applies `ctx.scale(pixelRatio, pixelRatio)` after the resize — matching `@flighthq/displayobject-canvas`'s `createCanvasElement` HiDPI shape. `state.pixelRatio` is the ratio source. Existing tests still hold at the default `pixelRatio: 1`; added a colocated test asserting `128×128` backing store and `64px` CSS box at `pixelRatio: 2`. `packages/displayobject-dom/src/domBitmap.ts`, `domBitmap.test.ts`.
+
+**Parked — assessment premises not present in this worktree's source**
+
+The assessment's preamble and items 2–3 lean on infrastructure the `2026-06-24` ingest entry claimed ("as-claimed, not yet review-verified") but which is **absent from `src/` in this worktree**: there is no `hasDomCssFilterEquivalent`, no `getDomBlendModeFidelity`, no `enableDomAccessibility`, and no `domSvgFilter.ts` / `getDomSvgColorMatrixFilter` (no SVG `<feColorMatrix>` path at all). `grep` over `src/` confirms only the CSS-filter-string binding (`enableDomCssFilterSupport`/`setDomCssFilter`/`getDomCssFilter`) exists for filtering. Both remaining Recommended items therefore require building the foundation they describe as "already present," which crosses from a mechanical sweep into new-feature design.
+
+- **Wire `enableDomRasterFilterSupport(state)`** — parked. Premise ("`hasDomCssFilterEquivalent` already detects CSS-unsupported filters; only the wiring remains") is false here: no equivalence-detection layer exists. Building it plus the cache-routing render path is a new feature with API-shape decisions (filter representation on the proxy, subtree identification for rasterization), not wiring.
+- **SVG exact-filter paths (`<feConvolveMatrix>`, `<feDisplacementMap>`)** — parked. Premise ("extend the established `domSvgFilter.ts` color-matrix pattern") is false here: the module and the `getDomSvgColorMatrixFilter`/`release*` pattern do not exist. There is no established SVG `<fe*>` injection seam to extend additively; creating one from scratch (filter-element construction, `url(#id)` plumbing, per-state lifecycle) is foundational design.
+
+Recommend a review pass re-verify this package against its actual diff before re-asserting items 2–3 — the assessment was sorted from an as-claimed review whose claims this source does not bear out.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/displayobject-dom

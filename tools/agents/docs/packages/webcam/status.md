@@ -8,6 +8,25 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep. **No Recommended item was actionable: all five target source that is not present in the current worktree.**
+
+The assessment (and the `[2026-06-24 · builder-67dc46d64]` status entry below) describe the richer live-streaming "bundle" — `webcamStream.ts`, `WebcamStreamRuntime`, `WebcamCapabilities`, `applyWebcamStreamConstraints`, `destroyWebcamStream`, `stopWebcamRecording`, the track-`ended` handler, etc. Those symbols survive only in the stale built `dist/` output. The live `src/` tree is the **picker-only** baseline:
+
+- `packages/webcam/src/` contains only `index.ts` (`export * from './webcam'`), `webcam.ts`, and `webcam.test.ts`.
+- `packages/types/src/Webcam.ts` is the picker-only seam (`WebcamSource`, `WebcamCaptureOptions`, `WebcamPhoto`, `WebcamVideo`, `WebcamBackend` with `capture`/`captureVideo`/`requestPermission`). No `WebcamCapabilities`, no `WebcamStream*`.
+
+Item-by-item against the actual source:
+
+- **Barrel leak of `./webcamStream`** — `src/index.ts` re-exports only `./webcam`; there is no `webcamStream` module to drop. Not applicable (nothing leaks).
+- **`WebcamBackend.requestPermission` false doc** — the interface line in `Webcam.ts` has no doc comment at all; there is no "Returns the new state" text to correct. Also `Webcam.ts` lives in `packages/types/` — cross-boundary regardless.
+- **`WebcamCapabilities` copy-paste comments** — no `WebcamCapabilities` type exists in the current `Webcam.ts`. Not applicable; would be cross-boundary (`packages/types`) if it did.
+- **`WebcamStreamRuntime.mediaStream` slot** — no such type/file exists. Not applicable.
+- **Three `(x as { active }).active = false` casts** — no `destroyStream` / `stopWebcamRecording` / track-`ended` handler exists. Not applicable.
+
+`npm run test --workspace=packages/webcam` passes (10/10) on the picker-only baseline. No source edits made. `dist/` left untouched (build artifact). The assessment should be regenerated against the live `src/` once the bundle's claimed source changes are either re-applied or the assessment is re-pointed at the picker-only baseline.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/webcam

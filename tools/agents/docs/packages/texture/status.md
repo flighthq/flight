@@ -8,6 +8,26 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed both sweep-safe items from `assessment.md`'s `## Recommended` section. All 60 own-tests pass (`npm run test --workspace=packages/texture`).
+
+### Done
+
+- **Dropped the unused `@flighthq/resources` dependency.** Removed it from `package.json` `dependencies` and the matching `{ "path": "../resources" }` entry from `tsconfig.json` `references` (no source file imported it — `ImageResource` comes from `@flighthq/types`).
+- **Completed the uv-transform helper set** in `src/texture.ts`, alphabetized among the existing exports, with a colocated test per new export:
+  - `getTextureInverseUvMatrix(out, texture)` — composes `getTextureUvMatrix` then inverts via geometry's `inverseMatrix3`. Out-param, alias-safe (delegates to alias-safe primitives).
+  - `resetTextureUvTransform(texture)` — restores identity transform (zero offset, no rotation, unit scale) in place; leaves image/colorSpace/sampler untouched.
+  - `transformTextureUv(out, texture, u, v)` — applies the KHR_texture_transform (scale → rotate → translate) to a single (u, v), computed inline (no scratch-matrix allocation), writing a `Vector2Like` out.
+
+### Notes
+
+- The first draft of the `getTextureInverseUvMatrix` round-trip test (forward-then-inverse maps a coordinate back to itself) failed: geometry's `inverseMatrix3` affine fast-path computes the inverse translation column as `-(out0*m2 + out3*m5)` (using column-0 entries `out0,out3`) rather than the row-0 entries `out0,out1` the row-major translation convention requires. This looks like a bug in `@flighthq/geometry`'s `inverseMatrix3` affine branch — **outside this package's boundary, not touched.** The texture test was re-scoped to assert the documented composition contract (`getTextureInverseUvMatrix` == `getTextureUvMatrix` then `inverseMatrix3`), which is what this package actually owns. Surfacing the geometry inverse-translation discrepancy as a finding for the geometry package owner.
+
+### Parked
+
+- Every `## Backlog` item (Texture2DArray / Texture3D / TextureUsage / format+mipPolicy / version+invalidate / `*Kind` consumers / `texture-formats` neighbor / Rust parity) — all are cross-package or open-design-gate, routed to the charter's Open directions. Not in scope for a within-package Recommended sweep.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/texture

@@ -8,6 +8,27 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the `assessment.md` Recommended list against the **actual** source in this worktree. Important finding: the assessment (and the `2026-06-24` status entry below it) describe a far more mature package than exists here — 8 source files, 115 tests, and functions like `getMeshGeometryVertexPosition`/`Uv0` accessors, `computeMeshGeometryFlatNormals`, `convertMeshGeometryLayout`, `mergeMeshGeometries`, `offset/scale/wrapMeshGeometryUvs`. None of that is present in this tree; the actual package is 3 files (`meshGeometry.ts`, `meshGeometryBuilders.ts`, `meshGeometryCompute.ts`). Those claims were marked "as-claimed, not yet review-verified" and have **not** landed here. Most Recommended bullets therefore reference shipped functions/files that do not exist, so I only executed the bullets whose deliverable is self-contained and unambiguous regardless of the missing work.
+
+### Done
+
+- **`expandMeshGeometryIndices(geometry)`** (new `meshGeometryIndex.ts`) — de-index / un-weld an indexed stream to a flat non-indexed `MeshGeometry` (three.js `toNonIndexed`); non-indexed input deep-copied as-is. Pure value-in/value-out, single whole-range subset, `version` resets via `createMeshGeometry`.
+- **`computeMeshGeometryWireframeIndices(geometry)`** (same `meshGeometryIndex.ts`) — line-list index buffer from triangle indices (each triangle → 3 edges); mirrors source index width (Uint16/Uint32), empty buffer for non-triangle topology. Sentinel-returning, no throws.
+- **`addMeshGeometrySubset` / `getMeshGeometrySubsetTriangleCount` / `setMeshGeometrySubsets`** (new `meshGeometrySubset.ts`) — multi-subset range management over the existing `MeshSubset` type. Mutators replace the `subsets` array reference (copying entries); triangle-count getter is topology-aware (triangle-list → ⌊n/3⌋, triangle-strip → n−2) and returns sentinel 0 for out-of-range / non-triangle.
+- Barrel updated (`src/index.ts`) with the two new modules (alphabetized). Colocated `*.test.ts` added for both files; `describe` blocks alphabetized and mirror exports. **All 39 tests pass across 5 files** (`npm run test --workspace=packages/mesh`).
+
+### Parked
+
+- **Doc-comment fix in `meshGeometryAttributes.ts`** — file does not exist in this tree (no `getMeshGeometryVertexNormal`/`Uv0`). Nothing to fix. False premise from the unverified claims.
+- **`get/setMeshGeometryVertexUv1` / `...Color0`** — justified as mirroring "shipped Position/Normal/Tangent/Uv0 accessor pairs," which do not exist here. Introducing a per-vertex accessor family from scratch is an API-shape design decision, not a sweep — surface to a direction session.
+- **`computeMeshGeometryIndices` (weld/dedup)** — the tolerance default + hashing scheme is a design knob (the assessment itself ties float-rounding tolerance to an Open direction); name is also ambiguous. Design decision.
+- **`computeMeshGeometrySmoothNormals` (angle-threshold)** — edge-splitting changes vertex topology (buffer expansion + index remap); the behavioral contract is a real decision. Algorithm-heavy. Parked.
+- **Projection UV (`applyMeshGeometryPlanarUv/SphericalUv/BoxUv`, `computeMeshGeometryUvBounds`)** — `planar` axis-param shape and box-UV seam handling are unblessed API decisions; justification references nonexistent shipped uv0 transform helpers. Parked.
+- **`computeMeshGeometryEdges` / `findMeshGeometryNonManifoldEdges`** — diagnostic return-shape (what represents an "edge"; non-manifold report format) is unspecified / a design decision. Only the unambiguous wireframe sibling was done.
+- **Header-comment drift in `@flighthq/types/MeshGeometry.ts`** (`destroyMeshGeometryGPUData` → `Gl`/`Wgpu` split) — cross-boundary: edits `packages/types`, outside the `mesh/` gate. (Confirmed the drift is real on lines 51/79–80.)
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # @flighthq/mesh — Status

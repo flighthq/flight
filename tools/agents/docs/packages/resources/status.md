@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/resources'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-06-25
+by: builder-phase3
 ---
 
 # resources — Status Log
@@ -256,3 +256,20 @@ Parsing Tiled `.tmx`/`.tmj` map layers into `TilemapData` (tile index arrays, ob
 | **Total**                         | **67/100** | **91/100** |                                         |
 
 The main remaining gap is multi-page atlas support and the resource cache design, which together account for the 9 points below 100. Both require cross-package coordination or a design decision call — neither is a standalone coding task.
+
+## 2026-06-25 — atlas/tileset extracted to @flighthq/textureatlas (builder Phase 2)
+
+`textureAtlas*` and `tileset*` moved out to the new `@flighthq/textureatlas` package (cycle-free layering — see that package's status). `resources` now scopes to image/audio/video/font resources. Dropped the now-unused `@flighthq/geometry` dependency (package.json + tsconfig ref). 79 tests pass.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the assessment's `## Recommended` list. Both items are now **out of scope for this package**: they target `setTextureAtlasRegion` (`textureAtlasRegion.ts`) and `buildTilesetRegions` (`tileset.ts`), which the prior Phase-2 extraction moved out of `packages/resources/src/` into the new `@flighthq/textureatlas` package. The assessment.md (dated 2026-06-24) predates that move and still cites `textureAtlasRegion.ts` / `tileset.ts` line numbers as if they lived here; they do not. Only stale `dist/` build artifacts for those modules remain under `packages/resources/`, and `dist/` is generated output (not edited, not committed by this sweep).
+
+Both defects were verified to still exist verbatim in their new home (`packages/textureatlas/src/textureAtlasRegion.ts:162-177` writes `pivotX/Y = 0` unconditionally; `packages/textureatlas/src/tileset.ts:10-23` never truncates `atlas.regions.length`), so they are real and actionable — just in `@flighthq/textureatlas`, outside this builder's hard boundary.
+
+- PARKED (cross-boundary): pivot-default `null` fix for `setTextureAtlasRegion` — now in `@flighthq/textureatlas`, not `@flighthq/resources`.
+- PARKED (cross-boundary): `buildTilesetRegions` region-array truncation — now in `@flighthq/textureatlas`, not `@flighthq/resources`.
+
+Suggestion for the user: regenerate `resources/assessment.md` (its `## Recommended` is empty for the post-extraction `resources`), and route these two verified defects to a `@flighthq/textureatlas` assessment instead.
+
+No source edits made in `packages/resources/`. Own tests: 10 files / 79 tests pass.

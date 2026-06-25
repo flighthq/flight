@@ -8,6 +8,23 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep against the live worktree. **Result: nothing executable; all four items parked.** The blocker is a state mismatch between the assessment and the actual source.
+
+The current `packages/menu/src/` is the minimal MVP — a single `menu.ts` (~60 lines) implementing the backend-seam delegation (`createMenuItemTemplate`, `createWebMenuBackend`, `getMenuBackend`, `onMenuSelect`, `setApplicationMenu`, `setMenuBackend`, `showContextMenu`) plus `menu.test.ts` (12 tests, all passing) and a one-line `index.ts` barrel. The web backend returns sentinels (`setApplicationMenu → false`, `popupContextMenu → null`); `packages/types/src/Menu.ts` confirms "a real web context-menu renderer is out of scope for the MVP."
+
+The assessment's Recommended items were written against the richer "Gold-adjacent" state claimed in the builder-67dc46d64 entry below (real DOM context-menu renderer, handles, mutators, signals, builders, a `WellKnownMenuItemRole` source file, `menu-templates.ts`). That state is **not present in the current `src/`** — it survives only as stale `dist/` build artifacts (`dist/menu-templates.js`, a 22KB `dist/menu.js`). The live source has been reverted/simplified back to the MVP. Per the log header, the builder-67dc46d64 entry is "as-claimed, not yet review-verified" — this sweep is evidence the live tree diverges from it.
+
+Per-item disposition (all parked):
+
+- **Functional/visual test for the web context-menu renderer** — parked. Cross-boundary (`tests/functional/`) and the renderer it would capture does not exist (`popupContextMenu` returns null).
+- **jsdom unit tests for the web context-menu render + keyboard-nav paths** — parked. There is no DOM-build or keyboard-nav code in `src/menu.ts` to cover; the sentinel/early-return path is already tested.
+- **Incremental menu diffing on `setApplicationMenu` re-call** — parked. The web `setApplicationMenu` builds nothing and returns false; there is no rebuild/callback-collection logic to optimize.
+- **Regenerate the stale `WellKnownMenuItemRole.d.ts.map`** — parked. No `WellKnownMenuItemRole` source exists in this package, and regenerating sourcemaps requires `tsc -b`, which this phase must not run.
+
+No source edits made. Own-tests still green (12/12). Recommendation for the next direction/review pass: re-run package-review against the live worktree to reconcile the assessment/status with the actual MVP source before the Recommended list is trusted again.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/menu
