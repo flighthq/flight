@@ -1,5 +1,6 @@
 import { getAppName, setAppBackend } from '@flighthq/app';
 import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard';
+import { setStorageBackend } from '@flighthq/storage';
 
 import type { ElectronApi } from './electronModule';
 import { registerElectronBackends } from './electronRegister';
@@ -14,11 +15,17 @@ function fakeElectron(): ElectronApi {
     app: {
       getName: () => 'ElectronApp',
       getLocale: () => 'en-US',
+      getPath: () => '/userData',
       on: noop,
       removeListener: noop,
     },
     clipboard: {
       readText: () => 'ELECTRON-TEXT',
+    },
+    fs: {
+      existsSync: () => false,
+      readFileSync: () => '{}',
+      writeFileSync: noop,
     },
     globalShortcut: {},
     screen: { on: noop, removeListener: noop },
@@ -38,6 +45,7 @@ function fakeElectron(): ElectronApi {
 afterEach(() => {
   setClipboardBackend(null);
   setAppBackend(null);
+  setStorageBackend(null);
 });
 
 describe('registerElectronBackends', () => {

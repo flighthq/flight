@@ -1,6 +1,7 @@
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles';
 import type { ParticleEmitterConfig } from '@flighthq/types';
 
+import type { ParticleSerializeResult } from './serializeResult';
 import type {
   UnityAnimationCurve,
   UnityColor,
@@ -147,4 +148,37 @@ export function serializeUnityParticle(
   const ppu = options?.pixelsPerUnit ?? DEFAULT_PPU;
   const doc = configToDocument(config, existing ?? {}, ppu);
   return JSON.stringify(doc, null, 2);
+}
+
+/** Serialise a ParticleEmitterConfig to a Unity Shuriken particle system JSON
+ *  string, returning both the serialized text and any warnings for features the
+ *  format cannot represent.
+ *
+ *  Pass the `document` returned by `parseUnityParticleDocument` to preserve
+ *  fields that don't round-trip through the config. */
+export function serializeUnityParticleDocument(
+  config: Readonly<ParticleEmitterConfig>,
+  existing?: Partial<UnityParticleDocument>,
+  options?: UnitySerializeOptions,
+): ParticleSerializeResult {
+  const text = serializeUnityParticle(config, existing, options);
+  const warnings = collectUnitySerializeWarnings(config);
+  return { text, warnings };
+}
+
+function collectUnitySerializeWarnings(config: Readonly<ParticleEmitterConfig>): string[] {
+  const warnings: string[] = [];
+  if (config.colorEndVarianceR !== 0 || config.colorEndVarianceG !== 0 || config.colorEndVarianceB !== 0) {
+    warnings.push('colorEndVariance is not supported by the Unity format and was ignored');
+  }
+  if (config.colorStartVarianceR !== 0 || config.colorStartVarianceG !== 0 || config.colorStartVarianceB !== 0) {
+    warnings.push('colorStartVariance is not supported by the Unity format and was ignored');
+  }
+  if (config.velocityInheritance !== 0) {
+    warnings.push('velocityInheritance is not supported by the Unity format and was ignored');
+  }
+  if (config.gravityX !== 0) {
+    warnings.push('gravityX (horizontal gravity) is not supported by the Unity format and was ignored');
+  }
+  return warnings;
 }

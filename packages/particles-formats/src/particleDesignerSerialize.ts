@@ -1,6 +1,7 @@
 import type { ParticleEmitterConfig } from '@flighthq/types';
 
 import type { ParticleDesignerDocument } from './particleDesignerSchema';
+import type { ParticleSerializeResult } from './serializeResult';
 
 export interface ParticleDesignerSerializeOptions {
   /** Side length of the particle texture in pixels — reverses the normalisation
@@ -198,4 +199,47 @@ export function serializeParticleDesignerPlist(
   const textureSize = options?.textureSize ?? 1;
   const doc = configToDocument(config, existing ?? {}, textureSize);
   return documentToPlist(doc);
+}
+
+/** Serialise a ParticleEmitterConfig to a Particle Designer plist XML string,
+ *  returning both the serialized text and any warnings for features the format
+ *  cannot represent.
+ *
+ *  Pass the `document` returned by `parseParticleDesignerPlistDocument` to
+ *  preserve any fields that don't round-trip through the config. */
+export function serializeParticleDesignerPlistDocument(
+  config: Readonly<ParticleEmitterConfig>,
+  existing?: Partial<ParticleDesignerDocument>,
+  options?: ParticleDesignerSerializeOptions,
+): ParticleSerializeResult {
+  const text = serializeParticleDesignerPlist(config, existing, options);
+  const warnings = collectParticleDesignerSerializeWarnings(config);
+  return { text, warnings };
+}
+
+/** Collect serialize-side warnings for features in `config` that the Particle
+ *  Designer plist format cannot represent. */
+function collectParticleDesignerSerializeWarnings(config: Readonly<ParticleEmitterConfig>): string[] {
+  const warnings: string[] = [];
+  if (config.blendMode !== null && config.blendMode !== 'add' && config.blendMode !== 'normal') {
+    warnings.push(
+      `Blend mode '${config.blendMode}' has no Particle Designer equivalent and was approximated as 'normal'`,
+    );
+  }
+  if (config.colorCurve !== null) {
+    warnings.push('Color curve has more than two stops; Particle Designer stores only start and end colors');
+  }
+  if (config.alphaCurve !== null) {
+    warnings.push('Alpha curve has more than two stops; Particle Designer stores only start and end alpha');
+  }
+  if (config.scaleCurve !== null) {
+    warnings.push('Scale curve has more than two stops; Particle Designer stores only start and end size');
+  }
+  if (config.burstCount > 0) {
+    warnings.push('Emission bursts are not supported by the Particle Designer format and were ignored');
+  }
+  if (config.velocityInheritance !== 0) {
+    warnings.push('velocityInheritance is not supported by the Particle Designer format and was ignored');
+  }
+  return warnings;
 }

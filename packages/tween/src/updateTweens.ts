@@ -54,6 +54,11 @@ function updateTween<T extends object>(tween: Tween<T>, deltaTime: number): void
   }
 }
 
+// Time is unit-agnostic. `deltaTime` here and every duration value (`duration`,
+// `delay`, `repeatDelay`, `each`) pass through unchanged in whatever unit the
+// caller supplies — there is no built-in seconds assumption. The only contract
+// is consistency: feed `updateTweens` and the duration fields the same unit
+// (all seconds, or all milliseconds, or all frames). The package never converts.
 export function updateTweens(manager: TweenManager, deltaTime: number): void {
   for (const [target, list] of manager.tweens) {
     let i = list.length - 1;

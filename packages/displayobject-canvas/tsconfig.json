@@ -9,7 +9,9 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../resources" },
+    { "path": "../image" },
+    { "path": "../textureatlas" },
+    { "path": "../tileset" },
     { "path": "../geometry" },
     { "path": "../materials" },
     { "path": "../render" },

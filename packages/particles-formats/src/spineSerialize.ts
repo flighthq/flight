@@ -1,6 +1,7 @@
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles';
 import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types';
 
+import type { ParticleSerializeResult } from './serializeResult';
 import type { SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './spineSchema';
 
 const RAD2DEG = 180 / Math.PI;
@@ -93,4 +94,36 @@ export function serializeSpineParticle(
 ): string {
   const doc = configToDocument(config, existing ?? {});
   return JSON.stringify(doc, null, 2);
+}
+
+/** Serialise a ParticleEmitterConfig to a Spine particle effect JSON string,
+ *  returning both the serialized text and any warnings for features the format
+ *  cannot represent.
+ *
+ *  Pass the `document` returned by `parseSpineParticleDocument` to preserve
+ *  fields that don't round-trip through the config. */
+export function serializeSpineParticleDocument(
+  config: Readonly<ParticleEmitterConfig>,
+  existing?: Partial<SpineParticleDocument>,
+): ParticleSerializeResult {
+  const text = serializeSpineParticle(config, existing);
+  const warnings = collectSpineSerializeWarnings(config);
+  return { text, warnings };
+}
+
+function collectSpineSerializeWarnings(config: Readonly<ParticleEmitterConfig>): string[] {
+  const warnings: string[] = [];
+  if (config.burstCount > 0) {
+    warnings.push('Emission bursts are not supported by the Spine particle format and were ignored');
+  }
+  if (config.colorEndVarianceR !== 0 || config.colorEndVarianceG !== 0 || config.colorEndVarianceB !== 0) {
+    warnings.push('colorEndVariance is not supported by the Spine format and was ignored');
+  }
+  if (config.colorStartVarianceR !== 0 || config.colorStartVarianceG !== 0 || config.colorStartVarianceB !== 0) {
+    warnings.push('colorStartVariance is not supported by the Spine format and was ignored');
+  }
+  if (config.velocityInheritance !== 0) {
+    warnings.push('velocityInheritance is not supported by the Spine format and was ignored');
+  }
+  return warnings;
 }

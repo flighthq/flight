@@ -6,6 +6,8 @@ import type {
   TextSelectionRectangle,
 } from '@flighthq/types';
 
+import { TEXT_LAYOUT_GUTTER } from './textLayout';
+
 /**
  * @param _text Unused — character indices are already encoded in the layout groups. Kept for
  *   backward compatibility; will be removed in a future breaking release.
@@ -234,7 +236,7 @@ function getLineOffsetY(layout: Readonly<TextLayoutResult>, lineIndex: number): 
   for (const group of layout.groups) {
     if (group.lineIndex === lineIndex) return group.offsetY;
   }
-  let y = 2;
+  let y = TEXT_LAYOUT_GUTTER;
   for (let i = 0; i < lineIndex; i++) y += layout.lineHeights[i] ?? 0;
   return y;
 }

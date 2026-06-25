@@ -6,6 +6,6 @@ license.workspace = true
 description = "Group resource loading with progress and completion signals"
 
 [dependencies]
-flighthq-resources = { workspace = true }
+flighthq-image = { workspace = true }
 flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }

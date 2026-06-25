@@ -1,4 +1,5 @@
 import { connectSignal } from '@flighthq/signals';
+import type { InputPointerData } from '@flighthq/types';
 import { GamepadAxisKind, GamepadButtonKind, KeyCode, KeyModifier } from '@flighthq/types';
 
 import {
@@ -240,6 +241,69 @@ describe('attachRelativePointerInput', () => {
     element.ownerDocument.dispatchEvent(new MouseEvent('mousemove', { movementX: 5, movementY: -3 }));
     expect(receivedDeltaX).toBe(5);
     expect(receivedDeltaY).toBe(-3);
+    detachRelativePointerInput(manager, element);
+  });
+
+  it('populates the canonical pointer fields routed through the shared writer', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachRelativePointerInput(manager, element);
+
+    let received: Readonly<InputPointerData> | null = null;
+    connectSignal(manager.onPointerMoveRelative, (data) => {
+      received = { ...data };
+    });
+
+    element.ownerDocument.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: 7, clientY: 9, ctrlKey: true, movementX: 2, movementY: 4 }),
+    );
+    expect(received).not.toBeNull();
+    const data = received!;
+    expect(data.x).toBe(7);
+    expect(data.y).toBe(9);
+    expect(data.ctrlKey).toBe(true);
+    expect(data.pointerType).toBe('mouse');
+    expect(data.isPrimary).toBe(true);
+    expect(data.width).toBe(1);
+    expect(data.height).toBe(1);
+    expect(data.wheelMode).toBe('unknown');
+    detachRelativePointerInput(manager, element);
+  });
+
+  it('honors preventDefault from options', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachRelativePointerInput(manager, element, { preventDefault: true });
+
+    const event = new MouseEvent('mousemove', { cancelable: true });
+    element.ownerDocument.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    detachRelativePointerInput(manager, element);
+  });
+
+  it('leaves the event un-prevented when preventDefault is false', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachRelativePointerInput(manager, element, { preventDefault: false });
+
+    const event = new MouseEvent('mousemove', { cancelable: true });
+    element.ownerDocument.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+    detachRelativePointerInput(manager, element);
+  });
+
+  it('respects the enabled flag', () => {
+    const manager = createInputManager();
+    const element = document.createElement('div');
+    attachRelativePointerInput(manager, element);
+
+    let fired = 0;
+    connectSignal(manager.onPointerMoveRelative, () => fired++);
+
+    manager.enabled = false;
+    element.ownerDocument.dispatchEvent(new MouseEvent('mousemove'));
+    expect(fired).toBe(0);
+    detachRelativePointerInput(manager, element);
   });
 });
 
@@ -757,6 +821,36 @@ describe('getKeyCodeFromDomKeyboardEvent', () => {
         }),
       ),
     ).toBe(KeyCode.NUMPAD_1);
+  });
+
+  it.each([
+    ['Again', KeyCode.AGAIN],
+    ['Copy', KeyCode.COPY],
+    ['Cut', KeyCode.CUT],
+    ['Undo', KeyCode.UNDO],
+  ])('maps editing code %s', (code, expected) => {
+    expect(getKeyCodeFromDomKeyboardEvent(createKeyboardEvent('keydown', { code, key: '' }))).toBe(expected);
+  });
+
+  it.each([
+    ['NumpadBackspace', KeyCode.NUMPAD_BACKSPACE],
+    ['NumpadClear', KeyCode.NUMPAD_CLEAR],
+    ['NumpadClearEntry', KeyCode.NUMPAD_CLEAR_ENTRY],
+    ['NumpadComma', KeyCode.NUMPAD_COMMA],
+    ['NumpadHash', KeyCode.NUMPAD_HASH],
+    ['NumpadMemoryAdd', KeyCode.NUMPAD_MEM_ADD],
+    ['NumpadMemoryClear', KeyCode.NUMPAD_MEM_CLEAR],
+    ['NumpadMemoryRecall', KeyCode.NUMPAD_MEM_RECALL],
+    ['NumpadMemoryStore', KeyCode.NUMPAD_MEM_STORE],
+    ['NumpadMemorySubtract', KeyCode.NUMPAD_MEM_SUBTRACT],
+    ['NumpadParenLeft', KeyCode.NUMPAD_LEFT_PARENTHESIS],
+    ['NumpadParenRight', KeyCode.NUMPAD_RIGHT_PARENTHESIS],
+  ])('maps numpad code %s by location', (code, expected) => {
+    expect(
+      getKeyCodeFromDomKeyboardEvent(
+        createKeyboardEvent('keydown', { code, key: '', location: KeyboardEvent.DOM_KEY_LOCATION_NUMPAD }),
+      ),
+    ).toBe(expected);
   });
 });
 

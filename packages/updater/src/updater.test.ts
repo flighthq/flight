@@ -372,6 +372,16 @@ describe('checkAndDownloadAppUpdate', () => {
     expect(backend.checked).toBe(1);
     expect(backend.downloaded).toBe(0);
   });
+
+  it('downloads immediately under autoDownload without gating on update-available', () => {
+    const backend = fakeBackend();
+    setUpdaterBackend(backend);
+    backend.setConfig({ allowPrerelease: false, autoDownload: true, autoInstallOnAppQuit: false });
+    checkAndDownloadAppUpdate();
+    // The download fires in the same call as the check; it does not wait for fireUpdateAvailable.
+    // This pins the documented fire-both convenience for instant-trigger backends.
+    expect(backend.downloaded).toBe(1);
+  });
 });
 
 describe('checkForAppUpdate', () => {

@@ -1,4 +1,4 @@
-import { computeBoxBlurPassRadius, computeBoxBlurRadius } from './blurMath';
+import { computeBoxBlurPassRadius, computeBoxBlurRadius, computeGaussianSigmaForBlurRadius } from './blurMath';
 
 describe('computeBoxBlurPassRadius', () => {
   // Combined variance of n box passes of radius rᵢ is Σ (rᵢ² + rᵢ) / 3; the effective σ is its
@@ -68,5 +68,29 @@ describe('computeBoxBlurRadius', () => {
   it('returns radius 6 for sigma 4 with 1 pass', () => {
     // round((-1 + sqrt(1 + 12·16/1)) / 2) = round((-1 + sqrt(193)) / 2) ≈ round(6.44) = 6
     expect(computeBoxBlurRadius(4, 1)).toBe(6);
+  });
+});
+
+describe('computeGaussianSigmaForBlurRadius', () => {
+  it('returns 0 for radius 0', () => {
+    expect(computeGaussianSigmaForBlurRadius(0, 1)).toBe(0);
+  });
+
+  it('returns 0 for negative radius', () => {
+    expect(computeGaussianSigmaForBlurRadius(-1, 1)).toBe(0);
+  });
+
+  it('returns 0 for non-positive passes', () => {
+    expect(computeGaussianSigmaForBlurRadius(4, 0)).toBe(0);
+  });
+
+  it('returns a positive sigma for positive radius and passes', () => {
+    expect(computeGaussianSigmaForBlurRadius(6, 1)).toBeGreaterThan(0);
+  });
+
+  it('produces a larger sigma for more passes at the same radius', () => {
+    const s1 = computeGaussianSigmaForBlurRadius(4, 1);
+    const s3 = computeGaussianSigmaForBlurRadius(4, 3);
+    expect(s3).toBeGreaterThan(s1);
   });
 });

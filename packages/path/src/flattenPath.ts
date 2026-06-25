@@ -6,6 +6,7 @@ import { PathCommand } from '@flighthq/types';
 // adaptively subdivided until their deviation from a chord is within `tolerance` (path units).
 // Consumers (clip stencil fill, future hardware shape fills) take these contours; the path's winding
 // rule travels on the path itself, not here. Verb/stride semantics mirror the canvas command reader.
+// A CLOSE verb appends the contour's start point, making the closure explicit in the output.
 export function flattenPath(path: Readonly<Path>, tolerance = 0.25): number[][] {
   const commands = path.commands;
   const data = path.data;
@@ -14,6 +15,9 @@ export function flattenPath(path: Readonly<Path>, tolerance = 0.25): number[][] 
   let contour: number[] | null = null;
   let x = 0;
   let y = 0;
+  // Start point of the current contour — used by CLOSE to append the closing segment.
+  let contourStartX = 0;
+  let contourStartY = 0;
   let di = 0;
 
   for (let ci = 0; ci < commands.length; ci++) {
@@ -22,12 +26,16 @@ export function flattenPath(path: Readonly<Path>, tolerance = 0.25): number[][] 
       x = data[di];
       y = data[di + 1];
       di += 2;
+      contourStartX = x;
+      contourStartY = y;
       contour = [x, y];
       contours.push(contour);
     } else if (command === PathCommand.WIDE_MOVE_TO) {
       x = data[di + 2];
       y = data[di + 3];
       di += 4;
+      contourStartX = x;
+      contourStartY = y;
       contour = [x, y];
       contours.push(contour);
     } else if (command === PathCommand.LINE_TO) {
@@ -66,6 +74,15 @@ export function flattenPath(path: Readonly<Path>, tolerance = 0.25): number[][] 
       x = data[di + 4];
       y = data[di + 5];
       di += 6;
+    } else if (command === PathCommand.CLOSE) {
+      // Explicit authored closure: append the start point if the current position is not already there.
+      if (contour !== null && (x !== contourStartX || y !== contourStartY)) {
+        contour.push(contourStartX, contourStartY);
+      }
+      x = contourStartX;
+      y = contourStartY;
+      // Reset contour so the next draw verb starts a fresh implicit contour if needed.
+      contour = null;
     }
     // NO_OP and unrecognized verbs consume no data and are skipped.
   }

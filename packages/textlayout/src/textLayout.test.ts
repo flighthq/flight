@@ -237,6 +237,30 @@ describe('computeTextLayout — bullet list items', () => {
     expect(bulletGroup).toBeDefined();
     expect(bulletGroup!.lineIndex).toBe(0);
   });
+
+  it('lets an explicit positive indent win over the bullet width (text may overlap the bullet)', () => {
+    // Contract: a user-set positive indent is authoritative — it is NOT clamped
+    // up to the bullet glyph width. With fixedMeasure the bullet '•' is 10px wide,
+    // but indent:1 keeps the text at baseX = GUTTER(2) + indent(1) = 3, inside the
+    // bullet's 10px span, so the text deliberately overlaps the bullet.
+    const text = 'item';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, bullet: true, indent: 1 }, 0, text.length)],
+      width: 200,
+      height: 100,
+      measure: fixedMeasure,
+      multiline: true,
+    });
+    const bulletGroup = result.groups.find((g) => g.startIndex === g.endIndex);
+    const textGroup = result.groups.find((g) => g.startIndex !== g.endIndex);
+    expect(bulletGroup).toBeDefined();
+    expect(textGroup).toBeDefined();
+    expect(bulletGroup!.offsetX).toBe(TEXT_LAYOUT_GUTTER); // bullet at the gutter
+    expect(textGroup!.offsetX).toBe(TEXT_LAYOUT_GUTTER + 1); // explicit indent honored, not clamped
+    // The text starts inside the bullet's drawn width → overlap is the accepted behavior.
+    expect(textGroup!.offsetX).toBeLessThan(bulletGroup!.offsetX + bulletGroup!.width);
+  });
 });
 
 describe('computeTextLayout — codepoint iteration', () => {
@@ -410,6 +434,31 @@ describe('computeTextLayout — conformance: truncation + word-wrap combined', (
     // There must be at least one group (ellipsis or text) on the last line.
     const lastGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
     expect(lastGroups.length).toBeGreaterThan(0);
+  });
+
+  it('truncates a single long word that straddles the maxLines boundary across both truncation paths', () => {
+    // A short word "go " wraps via the main-loop path onto line 0, then a single
+    // unbroken long word is split by breakLongWord across the remaining lines.
+    // With maxLines=2, the long word crosses the line-2 boundary, so the
+    // main-loop truncation (after the space-wrap commit) and breakLongWord's own
+    // checkTruncation are both reachable in one layout.
+    const text = 'go abcdefghijklmnopqrstuvwxyz';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16 }, 0, text.length)],
+      width: 60, // ~5-6 chars/line → long word spans several broken segments
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      wordWrap: true,
+      maxLines: 2,
+    });
+    // Clipped to at most maxLines.
+    expect(result.numLines).toBeLessThanOrEqual(2);
+    // The last visible line carries a group (the truncated word segment or ellipsis).
+    const lastGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
+    expect(lastGroups.length).toBeGreaterThan(0);
+    expect(getTextLayoutIsTruncated(result, { ...singleRangeParams(text), maxLines: 2 })).toBe(true);
   });
 });
 

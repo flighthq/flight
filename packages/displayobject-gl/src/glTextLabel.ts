@@ -19,6 +19,10 @@ import { BatchFormat } from '@flighthq/types';
 
 import { ensureGlQuadBatchShader, packGlSpriteBatchMaterialInstance, prepareGlSpriteBatchWrite } from './glSpriteBatch';
 
+// Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
+// carries no EntityRuntimeKey), so the slot is read and written through the typed accessor pair
+// below — getGlTextLabelData / toGlTextLabelRendererData — which confine the single unavoidable cast
+// to one named site instead of scattering it at every callsite.
 interface GlTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -31,18 +35,26 @@ interface GlTextLabelData {
   logH: number;
 }
 
+function getGlTextLabelData(data: RendererData): GlTextLabelData {
+  return data as unknown as GlTextLabelData;
+}
+
+function toGlTextLabelRendererData(data: GlTextLabelData): RendererData {
+  return data as unknown as RendererData;
+}
+
 function createGlTextLabelData(_state: GlRenderState, _source: Renderable): RendererData {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastContentId: -1, lastPixelRatio: 0, logW: 0, logH: 0 } as unknown as RendererData;
+  return toGlTextLabelRendererData({ canvas, ctx, lastContentId: -1, lastPixelRatio: 0, logW: 0, logH: 0 });
 }
 
 // Free the GPU texture the batch uploaded for this node's canvas when the text node is torn down.
 function destroyGlTextLabelData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { canvas } = data as unknown as GlTextLabelData;
+  const { canvas } = getGlTextLabelData(data);
   const texture = runtime.textureCache.get(canvas);
   if (texture !== undefined) {
     state.gl.deleteTexture(texture);
@@ -61,7 +73,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  const textData = renderProxy.rendererData as unknown as GlTextLabelData;
+  const textData = getGlTextLabelData(renderProxy.rendererData);
   const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
 

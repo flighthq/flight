@@ -202,12 +202,12 @@ export function createWebSensorsBackend(): SensorsBackend {
           const handler = () => {
             const q = sensor.quaternion;
             if (q) {
-              _absoluteOrientationQuaternion.x = q[0] ?? 0;
-              _absoluteOrientationQuaternion.y = q[1] ?? 0;
-              _absoluteOrientationQuaternion.z = q[2] ?? 0;
-              _absoluteOrientationQuaternion.w = q[3] ?? 1;
+              _quaternionReading.x = q[0] ?? 0;
+              _quaternionReading.y = q[1] ?? 0;
+              _quaternionReading.z = q[2] ?? 0;
+              _quaternionReading.w = q[3] ?? 1;
               // Derive Euler orientation from the quaternion using ZXY convention.
-              getEulerFromQuaternion(_absoluteOrientation, _absoluteOrientationQuaternion);
+              getEulerFromQuaternion(_absoluteOrientation, _quaternionReading);
             }
             _absoluteOrientation.absolute = true;
             _absoluteOrientation.heading = -1;
@@ -655,7 +655,6 @@ export function setSensorsBackend(backend: SensorsBackend | null): void {
 
 let _backend: SensorsBackend | null = null;
 const _absoluteOrientation: OrientationReading = createOrientationReading();
-const _absoluteOrientationQuaternion: QuaternionReading = createQuaternionReading();
 const _ambientLight: AmbientLightReading = createAmbientLightReading();
 const _gravity: MotionReading = createMotionReading();
 const _linearAcceleration: MotionReading = createMotionReading();

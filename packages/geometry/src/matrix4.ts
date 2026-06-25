@@ -962,6 +962,15 @@ export function setMatrix4From2D(
   _out[15] = 1;
 }
 
+/**
+ * Reads 16 elements of a column-major Float32Array at `offset` into a Matrix4Like.
+ *
+ * Mirrors `writeMatrix4ToFloat32Array` and matches the existing vec2/3/4 and Matrix3 bridges.
+ */
+export function setMatrix4FromFloat32Array(out: Matrix4Like, offset: number, source: Readonly<Float32Array>): void {
+  out.m.set(source.subarray(offset, offset + 16));
+}
+
 export function setMatrix4FromMatrix(out: Matrix4Like, source: Readonly<MatrixLike>): void {
   setMatrix4From2D(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
 }
@@ -1205,6 +1214,16 @@ export function translateMatrix4(
   o[14] = a[2] * tx + a[6] * ty + a[10] * tz + a[14];
 }
 
+export function transposeMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
+  if (out !== source) out.m.set(source.m);
+  __swap(out, source, 1, 4);
+  __swap(out, source, 2, 8);
+  __swap(out, source, 3, 12);
+  __swap(out, source, 6, 9);
+  __swap(out, source, 7, 13);
+  __swap(out, source, 11, 14);
+}
+
 /**
  * Transposes the matrix (swaps rows and columns).
  *
@@ -1216,14 +1235,13 @@ export function translateMatrix4(
  * - Computing inverse-transpose for normals
  * - Switching between row- and column-vector math conventions
  */
-export function transposeMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
-  if (out !== source) out.m.set(source.m);
-  __swap(out, source, 1, 4);
-  __swap(out, source, 2, 8);
-  __swap(out, source, 3, 12);
-  __swap(out, source, 6, 9);
-  __swap(out, source, 7, 13);
-  __swap(out, source, 11, 14);
+/**
+ * Writes 16 column-major elements of a Matrix4Like into a Float32Array at `offset`.
+ *
+ * Mirrors `setMatrix4FromFloat32Array` and the existing vec2/3/4 and Matrix3 bridges.
+ */
+export function writeMatrix4ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Matrix4Like>): void {
+  out.set(source.m, offset);
 }
 
 function __getAxisRotation(out: Matrix4Like, x: number, y: number, z: number, degrees: number): void {

@@ -116,6 +116,17 @@ describe('clearStorageNamespace', () => {
     expect(getNamespacedStorageKeys(ns)).toEqual([]);
     expect(getStorageItem('global')).toBe('g');
   });
+
+  it('drives the namespace byte-size and key-set to empty after cleanup', () => {
+    setStorageBackend(fakeBackend());
+    const ns = createStorageNamespace('ns');
+    setNamespacedStorageItem(ns, 'a', '1');
+    setNamespacedStorageItem(ns, 'b', '2');
+    expect(getNamespacedStorageByteSize(ns)).toBeGreaterThan(0);
+    expect(clearStorageNamespace(ns)).toBe(true);
+    expect(getNamespacedStorageKeys(ns)).toEqual([]);
+    expect(getNamespacedStorageByteSize(ns)).toBe(0);
+  });
 });
 
 describe('createStorageNamespace', () => {

@@ -1,4 +1,10 @@
-import type { ColorMatrixFilter, ConvolutionFilter, GradientBevelFilter, GradientGlowFilter } from '@flighthq/types';
+import type {
+  BitmapFilter,
+  ColorMatrixFilter,
+  ConvolutionFilter,
+  GradientBevelFilter,
+  GradientGlowFilter,
+} from '@flighthq/types';
 
 import {
   isBevelFilter,
@@ -17,6 +23,26 @@ import {
   isPixelateFilter,
   isSharpenFilter,
 } from './bitmapFilterGuards';
+
+// Every kind string `isBitmapFilter` accepts, paired with the single specific guard that owns it.
+// The structural law tested below is that each kind matches exactly one specific guard — no kind
+// is left unguarded and none is claimed by two guards.
+const KIND_GUARDS: ReadonlyArray<readonly [string, (filter: BitmapFilter) => boolean]> = [
+  ['BevelFilter', isBevelFilter],
+  ['BlurFilter', isBlurFilter],
+  ['ColorMatrixFilter', isColorMatrixFilter],
+  ['ConvolutionFilter', isConvolutionFilter],
+  ['DisplacementMapFilter', isDisplacementMapFilter],
+  ['DropShadowFilter', isDropShadowFilter],
+  ['GradientBevelFilter', isGradientBevelFilter],
+  ['GradientGlowFilter', isGradientGlowFilter],
+  ['InnerGlowFilter', isInnerGlowFilter],
+  ['InnerShadowFilter', isInnerShadowFilter],
+  ['MedianFilter', isMedianFilter],
+  ['OuterGlowFilter', isOuterGlowFilter],
+  ['PixelateFilter', isPixelateFilter],
+  ['SharpenFilter', isSharpenFilter],
+];
 
 describe('isBevelFilter', () => {
   it('returns true for a bevel filter', () => {
@@ -43,6 +69,20 @@ describe('isBitmapFilter', () => {
 
   it('returns true for any object with a string kind', () => {
     expect(isBitmapFilter({ kind: 'BlurFilter' })).toBe(true);
+  });
+
+  it('accepts exactly the kinds owned by the specific guards', () => {
+    for (const [kind] of KIND_GUARDS) {
+      expect(isBitmapFilter({ kind })).toBe(true);
+    }
+  });
+
+  it('matches every kind to exactly one specific guard', () => {
+    for (const [kind] of KIND_GUARDS) {
+      const filter = { kind } as BitmapFilter;
+      const matches = KIND_GUARDS.filter(([, guard]) => guard(filter));
+      expect(matches.map(([k]) => k)).toEqual([kind]);
+    }
   });
 });
 

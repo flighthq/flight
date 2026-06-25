@@ -182,13 +182,13 @@ function shareContentToNavigatorData(content: Readonly<ShareContent>): ShareData
   if (content.text !== undefined) data.text = content.text;
   if (content.url !== undefined) data.url = content.url;
   if (content.files !== undefined && content.files.length > 0) {
-    data.files = content.files.map((f) => shareFileTodomFile(f));
+    data.files = content.files.map((f) => shareFileToDomFile(f));
   }
   return data;
 }
 
 // Converts a portable ShareFile descriptor to a DOM File for navigator.share / navigator.canShare.
-function shareFileTodomFile(file: { dataUrl: string; mimeType: string; name: string }): File {
+function shareFileToDomFile(file: { dataUrl: string; mimeType: string; name: string }): File {
   // Parse the data URL: 'data:<mimeType>;base64,<data>' or 'data:<mimeType>,<data>'
   const comma = file.dataUrl.indexOf(',');
   const header = file.dataUrl.substring(0, comma);

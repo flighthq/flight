@@ -1,9 +1,11 @@
-import { createAabb } from '@flighthq/geometry';
+import { createAabb, createBoundingSphere } from '@flighthq/geometry';
 import type { VertexAttributeLayout } from '@flighthq/types';
 
 import { createMeshGeometry } from './meshGeometry';
 import {
+  computeMeshGeometryBoundingSphere,
   computeMeshGeometryBounds,
+  computeMeshGeometryFlatNormals,
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
 } from './meshGeometryCompute';
@@ -36,6 +38,46 @@ function makeTriangle() {
   return createMeshGeometry({ indices: indices, layout: CANONICAL_LAYOUT, vertices: vertices });
 }
 
+describe('computeMeshGeometryBoundingSphere', () => {
+  it('writes the center and radius for a unit-side triangle', () => {
+    const geometry = makeTriangle();
+    const out = createBoundingSphere();
+    computeMeshGeometryBoundingSphere(out, geometry);
+    // AABB of the triangle: min=(0,0,0) max=(1,1,0) → center=(0.5,0.5,0).
+    expect(out.center.x).toBeCloseTo(0.5);
+    expect(out.center.y).toBeCloseTo(0.5);
+    expect(out.center.z).toBeCloseTo(0);
+    expect(out.radius).toBeGreaterThan(0);
+  });
+
+  it('radius encloses all vertices', () => {
+    const geometry = makeTriangle();
+    const out = createBoundingSphere();
+    computeMeshGeometryBoundingSphere(out, geometry);
+    const cx = out.center.x,
+      cy = out.center.y,
+      cz = out.center.z;
+    const r = out.radius;
+    const verts = geometry.vertices;
+    for (let i = 0; i < 3; i++) {
+      const dx = verts[i * 12] - cx;
+      const dy = verts[i * 12 + 1] - cy;
+      const dz = verts[i * 12 + 2] - cz;
+      expect(Math.sqrt(dx * dx + dy * dy + dz * dz)).toBeLessThanOrEqual(r + 1e-6);
+    }
+  });
+
+  it('yields empty sphere (radius -1) for an empty vertex stream', () => {
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: new Float32Array(0) });
+    const out = createBoundingSphere();
+    computeMeshGeometryBoundingSphere(out, geometry);
+    expect(out.radius).toBe(-1);
+    expect(out.center.x).toBe(0);
+    expect(out.center.y).toBe(0);
+    expect(out.center.z).toBe(0);
+  });
+});
+
 describe('computeMeshGeometryBounds', () => {
   it('writes the tight AABB of all positions', () => {
     const geometry = makeTriangle();
@@ -62,6 +104,65 @@ describe('computeMeshGeometryBounds', () => {
     computeMeshGeometryBounds(out, geometry);
     expect(out.min.x).toBe(Number.POSITIVE_INFINITY);
     expect(out.max.x).toBe(Number.NEGATIVE_INFINITY);
+  });
+});
+
+describe('computeMeshGeometryFlatNormals', () => {
+  it('writes the face normal to all three vertices of a CCW triangle (indexed)', () => {
+    const geometry = makeTriangle();
+    computeMeshGeometryFlatNormals(geometry, geometry);
+    // All three vertices should have the face normal +Z.
+    for (let i = 0; i < 3; i++) {
+      expect(geometry.vertices[i * 12 + 3]).toBeCloseTo(0);
+      expect(geometry.vertices[i * 12 + 4]).toBeCloseTo(0);
+      expect(geometry.vertices[i * 12 + 5]).toBeCloseTo(1);
+    }
+  });
+
+  it('writes the face normal to all three vertices of a CCW triangle (non-indexed)', () => {
+    const vertices = new Float32Array(3 * 12);
+    const setVertex = (i: number, px: number, py: number): void => {
+      const b = i * 12;
+      vertices[b] = px;
+      vertices[b + 1] = py;
+      vertices[b + 2] = 0;
+    };
+    setVertex(0, 0, 0);
+    setVertex(1, 1, 0);
+    setVertex(2, 0, 1);
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: vertices });
+    computeMeshGeometryFlatNormals(geometry, geometry);
+    for (let i = 0; i < 3; i++) {
+      expect(geometry.vertices[i * 12 + 3]).toBeCloseTo(0);
+      expect(geometry.vertices[i * 12 + 4]).toBeCloseTo(0);
+      expect(geometry.vertices[i * 12 + 5]).toBeCloseTo(1);
+    }
+  });
+
+  it('is safe when out aliases geometry (alias-safe)', () => {
+    const geometry = makeTriangle();
+    const prevVersion = geometry.version;
+    computeMeshGeometryFlatNormals(geometry, geometry);
+    expect(geometry.version).toBe(prevVersion + 1);
+    expect(geometry.vertices[5]).toBeCloseTo(1);
+  });
+
+  it('bumps version', () => {
+    const geometry = makeTriangle();
+    const prevVersion = geometry.version;
+    computeMeshGeometryFlatNormals(geometry, geometry);
+    expect(geometry.version).toBe(prevVersion + 1);
+  });
+
+  it('produces unit-length normals', () => {
+    const geometry = makeTriangle();
+    computeMeshGeometryFlatNormals(geometry, geometry);
+    for (let i = 0; i < 3; i++) {
+      const nx = geometry.vertices[i * 12 + 3];
+      const ny = geometry.vertices[i * 12 + 4];
+      const nz = geometry.vertices[i * 12 + 5];
+      expect(Math.sqrt(nx * nx + ny * ny + nz * nz)).toBeCloseTo(1);
+    }
   });
 });
 

@@ -6,7 +6,7 @@ import type { ClipRegion, Rectangle } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { enableDomClipSupport } from './domClip';
-import { renderDomDisplayObject } from './domDisplayObject';
+import { defaultDomDisplayObjectRenderer, drawDomDisplayObject, renderDomDisplayObject } from './domDisplayObject';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 
 function makeRectangleClip(rect: Rectangle): ClipRegion {
@@ -39,6 +39,21 @@ function setupRenderedNode(
   data.rendererMapId = getDomRenderStateRuntime(state).rendererMapId;
   return data;
 }
+
+describe('defaultDomDisplayObjectRenderer', () => {
+  it('exposes a createData and submit function', () => {
+    expect(typeof defaultDomDisplayObjectRenderer.createData).toBe('function');
+    expect(typeof defaultDomDisplayObjectRenderer.submit).toBe('function');
+  });
+});
+
+describe('drawDomDisplayObject', () => {
+  it('does not throw for any render proxy', () => {
+    const state = makeState();
+    const proxy = getOrCreateRenderProxy2D(state, createDisplayObject());
+    expect(() => drawDomDisplayObject(state, proxy)).not.toThrow();
+  });
+});
 
 describe('renderDomDisplayObject', () => {
   it('does not throw for a simple visible object', () => {

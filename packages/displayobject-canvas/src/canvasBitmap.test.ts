@@ -1,8 +1,8 @@
 ﻿import { createBitmap } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
+import { createImageResource } from '@flighthq/image';
 import { registerRenderer } from '@flighthq/render';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import { createImageResource } from '@flighthq/resources';
 import { BitmapKind } from '@flighthq/types';
 
 import { defaultCanvasBitmapRenderer, drawCanvasBitmap } from './canvasBitmap';

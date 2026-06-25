@@ -22,12 +22,13 @@ export function createCamera(opts: Readonly<CameraOptions>): Camera {
 }
 
 // Writes the inverse of the camera's view-projection matrix into `out` and returns true, or
-// returns false (leaving `out` untouched) when the view-projection is non-invertible. `aspect`
+// returns false (writing NaN into `out`) when the view-projection is non-invertible. `aspect`
 // is the viewport width / height. This is the matrix the existing TAA / velocity / fog /
 // depth-of-field effects consume to reconstruct world position from NDC.
 //
 // Reads camera fields into a scratch matrix before writing `out`, so it is safe even if `out`
-// aliases the camera's own `inverseViewProjection` or `view`.
+// aliases the camera's own `inverseViewProjection` or `view`. Use
+// `updateCameraInverseViewProjection` instead to safely update the cached field.
 export function getCameraInverseViewProjectionMatrix4(
   out: Matrix4Like,
   camera: Readonly<Camera>,
@@ -75,6 +76,21 @@ export function setCameraViewMatrix4FromMatrix4(camera: Camera, view: Readonly<M
   camera.view.m.set(view.m);
 }
 
+// Recomputes and stores the inverse view-projection into camera.inverseViewProjection for the
+// given aspect. Returns true on success or false when the matrix is non-invertible (leaving the
+// cached field untouched). `aspect` is viewport width / height.
+//
+// Call this once per frame after setting the view matrix and before any effects that read
+// camera.inverseViewProjection (TAA, velocity, fog, depth-of-field).
+export function updateCameraInverseViewProjection(camera: Camera, aspect: number): boolean {
+  // Write into a scratch first so the cache is never clobbered with NaN on failure.
+  const ok = getCameraInverseViewProjectionMatrix4(__scratchInverse, camera, aspect);
+  if (ok) {
+    camera.inverseViewProjection.m.set(__scratchInverse.m);
+  }
+  return ok;
+}
+
 // Structural inputs for createCamera.
 export interface CameraOptions {
   far: number;
@@ -83,5 +99,6 @@ export interface CameraOptions {
 }
 
 // Scratch matrices reused by the view-projection helpers. Single-threaded; not re-entrant.
+const __scratchInverse = createMatrix4();
 const __scratchProjection = createMatrix4();
 const __scratchViewProjection = createMatrix4();

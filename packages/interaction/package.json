@@ -31,8 +31,7 @@
     "@flighthq/node": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/signals": "*",
-    "@flighthq/types": "*",
-    "@flighthq/scene": "*"
+    "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/sprite": "*",

@@ -49,6 +49,131 @@ export function getBoundingSphereContainsPoint(
 }
 
 /**
+ * Returns whether two bounding spheres overlap (share any interior or surface point).
+ * An empty sphere (negative radius) does not intersect anything.
+ */
+export function getBoundingSphereIntersectsBoundingSphere(
+  a: Readonly<BoundingSphereLike>,
+  b: Readonly<BoundingSphereLike>,
+): boolean {
+  if (a.radius < 0 || b.radius < 0) return false;
+  const dx = a.center.x - b.center.x;
+  const dy = a.center.y - b.center.y;
+  const dz = a.center.z - b.center.z;
+  const distSq = dx * dx + dy * dy + dz * dz;
+  const sumR = a.radius + b.radius;
+  return distSq <= sumR * sumR;
+}
+
+/**
+ * Writes the point on the surface of a bounding sphere closest to `point`: the point projected
+ * onto the sphere along the ray from the center. When `point` lies at the center (no defined
+ * direction) the sphere center offset by `radius` along +X is written as a stable fallback. An
+ * empty sphere (negative radius) writes the sphere center.
+ *
+ * Reads `point` and the sphere into locals before writing, so it is safe when `out` aliases
+ * `point`.
+ */
+export function getClosestPointOnBoundingSphere(
+  out: Vector3Like,
+  sphere: Readonly<BoundingSphereLike>,
+  point: Readonly<Vector3Like>,
+): void {
+  const cx = sphere.center.x,
+    cy = sphere.center.y,
+    cz = sphere.center.z,
+    r = sphere.radius;
+  if (r < 0) {
+    out.x = cx;
+    out.y = cy;
+    out.z = cz;
+    return;
+  }
+  const dx = point.x - cx,
+    dy = point.y - cy,
+    dz = point.z - cz;
+  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (dist === 0) {
+    out.x = cx + r;
+    out.y = cy;
+    out.z = cz;
+    return;
+  }
+  const scale = r / dist;
+  out.x = cx + dx * scale;
+  out.y = cy + dy * scale;
+  out.z = cz + dz * scale;
+}
+
+/**
+ * Writes the smallest sphere that encloses both `a` and `b`. An empty sphere (negative radius)
+ * is treated as having no volume; merging an empty sphere with a non-empty sphere returns the
+ * non-empty sphere.
+ *
+ * Reads all inputs before writing, so it is safe when `out` aliases `a` or `b`.
+ */
+export function mergeBoundingSphere(
+  out: BoundingSphereLike,
+  a: Readonly<BoundingSphereLike>,
+  b: Readonly<BoundingSphereLike>,
+): void {
+  // Handle empty spheres
+  if (a.radius < 0) {
+    out.center.x = b.center.x;
+    out.center.y = b.center.y;
+    out.center.z = b.center.z;
+    out.radius = b.radius;
+    return;
+  }
+  if (b.radius < 0) {
+    out.center.x = a.center.x;
+    out.center.y = a.center.y;
+    out.center.z = a.center.z;
+    out.radius = a.radius;
+    return;
+  }
+
+  const acx = a.center.x,
+    acy = a.center.y,
+    acz = a.center.z,
+    ar = a.radius;
+  const bcx = b.center.x,
+    bcy = b.center.y,
+    bcz = b.center.z,
+    br = b.radius;
+
+  const dx = bcx - acx,
+    dy = bcy - acy,
+    dz = bcz - acz;
+  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+  // One sphere completely contains the other
+  if (dist + br <= ar) {
+    out.center.x = acx;
+    out.center.y = acy;
+    out.center.z = acz;
+    out.radius = ar;
+    return;
+  }
+  if (dist + ar <= br) {
+    out.center.x = bcx;
+    out.center.y = bcy;
+    out.center.z = bcz;
+    out.radius = br;
+    return;
+  }
+
+  // General case: new radius = (dist + ar + br) / 2
+  const newRadius = (dist + ar + br) * 0.5;
+  // New center is along the line from a to b, offset by (newRadius - ar)
+  const t = dist !== 0 ? (newRadius - ar) / dist : 0;
+  out.center.x = acx + dx * t;
+  out.center.y = acy + dy * t;
+  out.center.z = acz + dz * t;
+  out.radius = newRadius;
+}
+
+/**
  * Sets the center and radius of a bounding sphere.
  */
 export function setBoundingSphere(

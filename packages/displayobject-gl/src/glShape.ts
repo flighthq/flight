@@ -18,6 +18,10 @@ import type { GlShapeMesh } from './glShapeMesh';
 import { drawGlShapeMeshes } from './glShapeMesh';
 import { ensureGlQuadBatchShader, packGlSpriteBatchMaterialInstance, prepareGlSpriteBatchWrite } from './glSpriteBatch';
 
+// Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
+// carries no EntityRuntimeKey), so the slot is read and written through the typed accessor pair
+// below — getGlShapeData / toGlShapeRendererData — which confine the single unavoidable cast to one
+// named site instead of scattering it at every callsite.
 interface GlShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -30,12 +34,20 @@ interface GlShapeData {
   meshes: GlShapeMesh[] | null;
 }
 
+function getGlShapeData(data: RendererData): GlShapeData {
+  return data as unknown as GlShapeData;
+}
+
+function toGlShapeRendererData(data: GlShapeData): RendererData {
+  return data as unknown as RendererData;
+}
+
 function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return {
+  return toGlShapeRendererData({
     canvas,
     ctx,
     lastContentId: -1,
@@ -43,14 +55,14 @@ function createGlShapeData(_state: GlRenderState, _source: Renderable): Renderer
     lastH: 0,
     meshVersion: -1,
     meshes: null,
-  } as unknown as RendererData;
+  });
 }
 
 // The batch uploads this shape's canvas into the shared texture cache; free that GPU texture when
 // the shape is torn down so it does not leak past the canvas it was keyed on.
 function destroyGlShapeData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { canvas } = data as unknown as GlShapeData;
+  const { canvas } = getGlShapeData(data);
   const texture = runtime.textureCache.get(canvas);
   if (texture !== undefined) {
     state.gl.deleteTexture(texture);
@@ -70,7 +82,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   // the canvas-raster path for gradient/bitmap fills and strokes (getShapeFillRegions returns null).
   const regions = getShapeFillRegions(commands);
   if (regions !== null && regions.length > 0) {
-    const meshData = renderProxy.rendererData as unknown as GlShapeData;
+    const meshData = getGlShapeData(renderProxy.rendererData);
     if (meshData.meshVersion !== version) {
       meshData.meshes = regions.map((region) => {
         const mesh = tessellatePath(region.path);
@@ -91,7 +103,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  const shapeData = renderProxy.rendererData as unknown as GlShapeData;
+  const shapeData = getGlShapeData(renderProxy.rendererData);
   const bounds = getNodeLocalBoundsRectangle(source);
   const w = Math.ceil(bounds.width);
   const h = Math.ceil(bounds.height);

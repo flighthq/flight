@@ -8,6 +8,11 @@ import type { EasingFunction, StepPosition } from '@flighthq/types';
 //   jumpNone  - no jump at either edge; output spans the closed range 0..1 with count-1 jumps.
 //   jumpBoth  - a jump at both edges; interior intervals span 1/(count+1)..count/(count+1).
 // Implements the canonical CSS Easing Level 1 step algorithm.
+//
+// Sharp edge: easeSteps(1, 'jumpNone') has jumps = count - 1 = 0, so the returned
+// function divides by zero and yields NaN. This mirrors the CSS spec, which forbids
+// steps(1, jump-none) for the same reason. Callers must pass count >= 2 with
+// 'jumpNone'; every other position is well-defined for count >= 1.
 export function easeSteps(count: number, position: StepPosition = 'jumpEnd'): EasingFunction {
   const jumps = position === 'jumpNone' ? count - 1 : position === 'jumpBoth' ? count + 1 : count;
   const startOffset = position === 'jumpStart' || position === 'jumpBoth' ? 1 : 0;

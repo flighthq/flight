@@ -102,11 +102,16 @@ export function createClipRegionFromCircle(x: number, y: number, radius: number,
 
 // Builds a clip region from raw flattened contours (x,y pairs per sub-path) and a winding rule.
 // The caller is responsible for providing valid, closed contours. The bounding rect is computed
-// from the contour data; pass an empty array for an empty region.
-export function createClipRegionFromContours(contours: number[][], winding: PathWinding): ClipRegion {
+// from the contour data; pass an empty array for an empty region. The contours are deep-copied so
+// later edits to the caller's array do not mutate the region — symmetry with the rest of create*.
+export function createClipRegionFromContours(
+  contours: Readonly<ReadonlyArray<ReadonlyArray<number>>>,
+  winding: PathWinding,
+): ClipRegion {
   const rect = createRectangle();
   setRectangleToContoursBounds(rect, contours);
-  return { contours, rect, version: 0, winding };
+  const owned = contours.map((c) => c.slice());
+  return { contours: owned, rect, version: 0, winding };
 }
 
 // Builds a clip region from an axis-aligned ellipse bounded by the given rectangle.

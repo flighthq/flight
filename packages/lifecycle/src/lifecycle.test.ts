@@ -183,6 +183,117 @@ describe('attachAppLifecycle', () => {
     backend.fireMemory('critical');
     expect(levels).toEqual(['critical']);
   });
+
+  // Property/fuzz coverage over transition storms. These validate the already-documented edge
+  // contract — onStateChange is raw (one emit per backend notification), while onResume/onPause are
+  // deduped 'active'↔non-'active' boundary edges — against random sequences of the three states,
+  // rather than a single hand-picked path. The invariants are derived independently from the same
+  // model the implementation describes, so a regression in the dedup logic surfaces as a mismatch.
+  it('property: onStateChange fires exactly once per backend notification across random storms', () => {
+    const states: AppLifecycleState[] = ['active', 'inactive', 'background'];
+    for (let trial = 0; trial < 200; trial++) {
+      const backend = fakeBackend();
+      setLifecycleBackend(backend);
+      const app = createAppLifecycle();
+      let changes = 0;
+      connectSignal(app.onStateChange, () => changes++);
+      attachAppLifecycle(app);
+      const fireCount = 1 + Math.floor(Math.random() * 30);
+      for (let i = 0; i < fireCount; i++) {
+        backend.state = states[Math.floor(Math.random() * states.length)];
+        backend.fire();
+      }
+      // Raw, not deduped: every notification emits, even when the derived state is unchanged.
+      expect(changes).toBe(fireCount);
+      detachAppLifecycle(app);
+    }
+  });
+
+  it('property: onResume/onPause collapse a random storm to the minimal active-boundary edge set', () => {
+    const states: AppLifecycleState[] = ['active', 'inactive', 'background'];
+    for (let trial = 0; trial < 200; trial++) {
+      const backend = fakeBackend();
+      const start = states[Math.floor(Math.random() * states.length)];
+      backend.state = start;
+      setLifecycleBackend(backend);
+      const app = createAppLifecycle();
+      let pauses = 0;
+      let resumes = 0;
+      connectSignal(app.onPause, () => pauses++);
+      connectSignal(app.onResume, () => resumes++);
+      attachAppLifecycle(app);
+
+      // Drive a random storm while computing the expected edge counts from an independent model:
+      // a pause edge is every 'active' → non-'active' transition, a resume edge every
+      // non-'active' → 'active' transition. inactive↔background never fires either.
+      let previous = start;
+      let expectedPauses = 0;
+      let expectedResumes = 0;
+      const fireCount = 1 + Math.floor(Math.random() * 30);
+      for (let i = 0; i < fireCount; i++) {
+        const next = states[Math.floor(Math.random() * states.length)];
+        backend.state = next;
+        backend.fire();
+        if (previous === 'active' && next !== 'active') expectedPauses++;
+        else if (previous !== 'active' && next === 'active') expectedResumes++;
+        previous = next;
+      }
+      expect(pauses).toBe(expectedPauses);
+      expect(resumes).toBe(expectedResumes);
+      detachAppLifecycle(app);
+    }
+  });
+
+  it('property: a focus/blur flutter that never leaves active emits no pause or resume', () => {
+    // A common real storm: rapid blur→focus while the document stays visible. Every notification
+    // re-reads 'active' (the fake holds 'active'), so onStateChange fires each time but the deduped
+    // edges stay silent — there is no active-boundary crossing.
+    for (let trial = 0; trial < 100; trial++) {
+      const backend = fakeBackend();
+      backend.state = 'active';
+      setLifecycleBackend(backend);
+      const app = createAppLifecycle();
+      let changes = 0;
+      let pauses = 0;
+      let resumes = 0;
+      connectSignal(app.onStateChange, () => changes++);
+      connectSignal(app.onPause, () => pauses++);
+      connectSignal(app.onResume, () => resumes++);
+      attachAppLifecycle(app);
+      const fireCount = 1 + Math.floor(Math.random() * 30);
+      for (let i = 0; i < fireCount; i++) backend.fire();
+      expect(changes).toBe(fireCount);
+      expect(pauses).toBe(0);
+      expect(resumes).toBe(0);
+      detachAppLifecycle(app);
+    }
+  });
+
+  it('property: pause and resume counts stay balanced within one across any storm', () => {
+    // Across a full storm the deduped edges alternate (pause then resume then pause …) starting
+    // from whichever side of the active boundary the storm began on, so the running counts can
+    // never differ by more than one — the structural guarantee a state machine of one boolean
+    // ('was active') provides.
+    const states: AppLifecycleState[] = ['active', 'inactive', 'background'];
+    for (let trial = 0; trial < 200; trial++) {
+      const backend = fakeBackend();
+      backend.state = states[Math.floor(Math.random() * states.length)];
+      setLifecycleBackend(backend);
+      const app = createAppLifecycle();
+      let pauses = 0;
+      let resumes = 0;
+      connectSignal(app.onPause, () => pauses++);
+      connectSignal(app.onResume, () => resumes++);
+      attachAppLifecycle(app);
+      const fireCount = 1 + Math.floor(Math.random() * 30);
+      for (let i = 0; i < fireCount; i++) {
+        backend.state = states[Math.floor(Math.random() * states.length)];
+        backend.fire();
+      }
+      expect(Math.abs(pauses - resumes)).toBeLessThanOrEqual(1);
+      detachAppLifecycle(app);
+    }
+  });
 });
 
 describe('createAppLifecycle', () => {

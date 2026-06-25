@@ -16,6 +16,26 @@ export {
   isPixelateFilter,
   isSharpenFilter,
 } from './bitmapFilterGuards';
+export type { BitmapFilterMargin } from './bitmapFilterMargin';
+export { getBitmapFilterMargin } from './bitmapFilterMargin';
+export {
+  cloneBitmapFilter,
+  cloneBitmapFilterList,
+  copyBitmapFilterInto,
+  DEFAULT_FILTER_ALPHA,
+  DEFAULT_FILTER_ANGLE,
+  DEFAULT_FILTER_BLUR_X,
+  DEFAULT_FILTER_BLUR_Y,
+  DEFAULT_FILTER_COLOR,
+  DEFAULT_FILTER_DISTANCE,
+  DEFAULT_FILTER_KNOCKOUT,
+  DEFAULT_FILTER_QUALITY,
+  DEFAULT_FILTER_STRENGTH,
+  equalsBitmapFilter,
+  equalsBitmapFilterList,
+  normalizeBitmapFilter,
+} from './bitmapFilterOps';
+export { enumerateBitmapFilterKinds, fromBitmapFilterData, toBitmapFilterData } from './bitmapFilterSerialization';
 export {
   clampFilterQuality,
   clampFilterStrength,
@@ -23,11 +43,48 @@ export {
   isValidBitmapFilterList,
 } from './bitmapFilterValidation';
 export { createBlurFilter } from './blurFilter';
-export { computeBoxBlurPassRadius, computeBoxBlurRadius } from './blurMath';
+export { computeBoxBlurPassRadius, computeBoxBlurRadius, computeGaussianSigmaForBlurRadius } from './blurMath';
 export { getBlurPassCountForQuality } from './blurQuality';
 export { createColorMatrixFilter } from './colorMatrixFilter';
-export { COLOR_MATRIX_LENGTH } from './colorMatrixMath';
+export {
+  applyColorMatrixToColor,
+  COLOR_MATRIX_LENGTH,
+  concatColorMatrix,
+  createBrightnessColorMatrix,
+  createChannelMixerColorMatrix,
+  createColorBalanceColorMatrix,
+  createColorMatrixFromTint,
+  createContrastColorMatrix,
+  createDesaturateColorMatrix,
+  createGrayscaleColorMatrix,
+  createHueRotateColorMatrix,
+  createIdentityColorMatrix,
+  createInvertColorMatrix,
+  createLevelsColorMatrix,
+  createOpacityColorMatrix,
+  createPolaroidColorMatrix,
+  createSaturationColorMatrix,
+  createSepiaColorMatrix,
+  createTechnicolorColorMatrix,
+  createVintageColorMatrix,
+  createWhiteBalanceColorMatrix,
+  multiplyColorMatrix,
+} from './colorMatrixMath';
 export { createConvolutionFilter } from './convolutionFilter';
+export type { ConvolutionKernelData } from './convolutionKernels';
+export {
+  createBoxBlurKernel,
+  createEdgeDetectKernel,
+  createEmbossKernel,
+  createGaussianKernel,
+  createLaplacianKernel,
+  createOutlineKernel,
+  createSharpenKernel,
+  getConvolutionDivisor,
+  getSeparableKernelFactors,
+  isSeparableKernel,
+  normalizeConvolutionKernel,
+} from './convolutionKernels';
 export { createDisplacementMapFilter } from './displacementMapFilter';
 export { createDropShadowFilter } from './dropShadowFilter';
 export { createGradientBevelFilter } from './gradientBevelFilter';
@@ -37,6 +94,7 @@ export { createInnerShadowFilter } from './innerShadowFilter';
 export { createMedianFilter } from './medianFilter';
 export { createOuterGlowFilter } from './outerGlowFilter';
 export { createPixelateFilter } from './pixelateFilter';
+export { getShadowFilterOffset } from './shadowFilterOffset';
 export { createSharpenFilter } from './sharpenFilter';
 export type {
   BevelFilter,

@@ -1,5 +1,13 @@
 import { createEntity } from '@flighthq/entity';
-import type { AabbLike, Frustum, FrustumLike, Matrix4Like, PlaneLike, Vector3Like } from '@flighthq/types';
+import type {
+  AabbLike,
+  BoundingSphereLike,
+  Frustum,
+  FrustumLike,
+  Matrix4Like,
+  PlaneLike,
+  Vector3Like,
+} from '@flighthq/types';
 
 import { createPlane } from './plane';
 
@@ -16,6 +24,47 @@ export function createFrustum(): Frustum {
     right: createPlane(),
     top: createPlane(),
   });
+}
+
+/**
+ * Computes the 8 world-space corner points of the frustum from the inverse view-projection
+ * matrix. The NDC corners (all ±1 combinations in clip space) are unprojected via
+ * `inverseViewProjection`.
+ *
+ * Writes exactly 8 Vector3-like objects to `out` in the order:
+ *   0: near-left-bottom  1: near-right-bottom  2: near-right-top  3: near-left-top
+ *   4: far-left-bottom   5: far-right-bottom   6: far-right-top   7: far-left-top
+ *
+ * The caller is responsible for passing the correct inverse matrix (e.g. the inverse of the
+ * same view-projection used with `setFrustumFromMatrix4`). If `out` has fewer than 8 elements
+ * this function writes only as many as are available.
+ */
+export function getFrustumCorners(out: readonly Vector3Like[], inverseViewProjection: Readonly<Matrix4Like>): void {
+  const m = inverseViewProjection.m;
+  const ndcCorners: readonly [number, number, number][] = [
+    [-1, -1, -1],
+    [1, -1, -1],
+    [1, 1, -1],
+    [-1, 1, -1],
+    [-1, -1, 1],
+    [1, -1, 1],
+    [1, 1, 1],
+    [-1, 1, 1],
+  ];
+  const len = Math.min(out.length, ndcCorners.length);
+  for (let i = 0; i < len; i++) {
+    const [nx, ny, nz] = ndcCorners[i];
+    // Homogeneous multiply: p = M * [nx, ny, nz, 1]^T
+    const x = m[0] * nx + m[4] * ny + m[8] * nz + m[12];
+    const y = m[1] * nx + m[5] * ny + m[9] * nz + m[13];
+    const z = m[2] * nx + m[6] * ny + m[10] * nz + m[14];
+    const w = m[3] * nx + m[7] * ny + m[11] * nz + m[15];
+    const invW = w !== 0 ? 1 / w : 1;
+    const corner = out[i];
+    corner.x = x * invW;
+    corner.y = y * invW;
+    corner.z = z * invW;
+  }
 }
 
 /**
@@ -47,6 +96,29 @@ export function isFrustumIntersectingAabb(frustum: Readonly<FrustumLike>, aabb: 
     __planeIntersectsAabb(frustum.top, aabb) &&
     __planeIntersectsAabb(frustum.near, aabb) &&
     __planeIntersectsAabb(frustum.far, aabb)
+  );
+}
+
+/**
+ * Returns whether a bounding sphere intersects (or is contained by) the frustum. A sphere is
+ * rejected only when its signed distance to some plane is less than -radius (entirely on the
+ * outside of that plane). An empty sphere (negative radius) always returns false.
+ *
+ * This may report false positives for spheres near frustum edges but never false negatives.
+ */
+export function isFrustumIntersectingSphere(
+  frustum: Readonly<FrustumLike>,
+  sphere: Readonly<BoundingSphereLike>,
+): boolean {
+  if (sphere.radius < 0) return false;
+  const r = sphere.radius;
+  return (
+    __planeSignedDistance(frustum.left, sphere.center) >= -r &&
+    __planeSignedDistance(frustum.right, sphere.center) >= -r &&
+    __planeSignedDistance(frustum.bottom, sphere.center) >= -r &&
+    __planeSignedDistance(frustum.top, sphere.center) >= -r &&
+    __planeSignedDistance(frustum.near, sphere.center) >= -r &&
+    __planeSignedDistance(frustum.far, sphere.center) >= -r
   );
 }
 

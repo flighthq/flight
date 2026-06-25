@@ -665,6 +665,32 @@ describe('stepApplicationLoop', () => {
 
     expect(updates[0]).toBe(250);
   });
+
+  it('produces reproducible metrics when stepped to a fixed frame count with a fixed delta', () => {
+    // Pins the headless-stepping contract: identical caller-supplied deltas across a fixed frame
+    // count must yield identical frameCount / elapsedTime / deltaTime, independent of wall-clock.
+    const run = (): Readonly<{
+      deltaTime: number;
+      elapsedTime: number;
+      frameCount: number;
+      updates: readonly number[];
+    }> => {
+      const app = createApplication();
+      const updates: number[] = [];
+      connectSignal(app.onUpdate, (dt) => updates.push(dt));
+      for (let i = 0; i < 10; i++) stepApplicationLoop(app, 16);
+      return { deltaTime: app.deltaTime, elapsedTime: app.elapsedTime, frameCount: app.frameCount, updates };
+    };
+
+    const first = run();
+    const second = run();
+
+    expect(first.frameCount).toBe(10);
+    expect(first.deltaTime).toBe(16);
+    expect(first.elapsedTime).toBeCloseTo(0.16, 10);
+    expect(first.updates).toEqual(new Array(10).fill(16));
+    expect(second).toEqual(first);
+  });
 });
 
 describe('stopApplicationLoop', () => {

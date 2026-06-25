@@ -1,7 +1,12 @@
 import { createVector3 } from '@flighthq/geometry';
 import { DirectionalLightKind } from '@flighthq/types';
 
-import { cloneDirectionalLight, createDirectionalLight } from './directionalLight';
+import {
+  cloneDirectionalLight,
+  createDirectionalLight,
+  setDirectionalLightDirection,
+  setDirectionalLightTarget,
+} from './directionalLight';
 
 describe('cloneDirectionalLight', () => {
   it('creates an independent copy with a fresh direction vector', () => {
@@ -48,5 +53,37 @@ describe('createDirectionalLight', () => {
     const light = createDirectionalLight({ direction });
     expect(light.direction).not.toBe(direction);
     expect(light.direction.z).toBe(1);
+  });
+});
+
+describe('setDirectionalLightDirection', () => {
+  it('writes a normalized direction into the light', () => {
+    const light = createDirectionalLight();
+    setDirectionalLightDirection(light, 0, 0, 3);
+    expect(light.direction.x).toBeCloseTo(0, 6);
+    expect(light.direction.y).toBeCloseTo(0, 6);
+    expect(light.direction.z).toBeCloseTo(1, 6);
+  });
+
+  it('leaves direction unchanged for a zero-length input', () => {
+    const light = createDirectionalLight({ direction: createVector3(0, -1, 0) });
+    setDirectionalLightDirection(light, 0, 0, 0);
+    expect(light.direction.y).toBeCloseTo(-1, 6);
+  });
+});
+
+describe('setDirectionalLightTarget', () => {
+  it('sets direction toward the target from the from-point', () => {
+    const light = createDirectionalLight();
+    setDirectionalLightTarget(light, 0, 0, 0, 0, 0, 5);
+    expect(light.direction.x).toBeCloseTo(0, 6);
+    expect(light.direction.y).toBeCloseTo(0, 6);
+    expect(light.direction.z).toBeCloseTo(1, 6);
+  });
+
+  it('leaves direction unchanged when from equals to', () => {
+    const light = createDirectionalLight({ direction: createVector3(0, -1, 0) });
+    setDirectionalLightTarget(light, 1, 2, 3, 1, 2, 3);
+    expect(light.direction.y).toBeCloseTo(-1, 6);
   });
 });

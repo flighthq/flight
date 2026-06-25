@@ -1,5 +1,5 @@
 import { computeBoxBlurPassRadius } from '@flighthq/filters';
-import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { BlurFilter, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
 import { applyWgpuBlitPass } from './wgpuBlitShader';
 import type { WgpuFilterPipeline } from './wgpuFilterPass';
@@ -117,6 +117,30 @@ function applyGaussianBlurPass(
     f32[3] = dirY;
     f32[4] = radius;
     f32[5] = sigma;
+  });
+}
+
+/**
+ * Applies a `BlurFilter` descriptor to `source`, writing to `dest`. Selects the
+ * Gaussian path — a faithful, sigma-exact blur matching the CSS and surface references —
+ * as the default. `temp` is a ping-pong scratch target distinct from both `source` and
+ * `dest`.
+ *
+ * The Gaussian path is the authoritative default because it exactly matches the CSS
+ * `blur()` and surface reference outputs. Use `applyBoxBlurFilterToWgpu` directly when
+ * the cheaper multi-pass box approximation is preferred (e.g. for soft spreads in glow
+ * and shadow effects).
+ */
+export function applyBlurFilterToWgpu(
+  state: WgpuRenderState,
+  source: WgpuRenderTarget,
+  dest: WgpuRenderTarget,
+  temp: WgpuRenderTarget,
+  filter: Readonly<Omit<BlurFilter, 'kind'>>,
+): void {
+  applyGaussianBlurFilterToWgpu(state, source, dest, temp, {
+    blurX: filter.blurX,
+    blurY: filter.blurY,
   });
 }
 

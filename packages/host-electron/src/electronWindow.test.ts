@@ -2,9 +2,15 @@ import { createApplicationWindow } from '@flighthq/application';
 import { connectSignal } from '@flighthq/signals';
 
 import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from './electronModule';
-import { createElectronWindowBackend, getElectronBrowserWindow } from './electronWindow';
+import {
+  createElectronWindowBackend,
+  getApplicationWindowForElectronId,
+  getElectronBrowserWindow,
+  getElectronWindowId,
+} from './electronWindow';
 
 interface FakeBrowserWindow {
+  id: number;
   options: ElectronBrowserWindowOptions;
   calls: { method: string; args: unknown[] }[];
   bounds: ElectronRectangle;
@@ -14,7 +20,9 @@ interface FakeBrowserWindow {
 
 function fakeElectron(): { electron: ElectronApi; created: FakeBrowserWindow[] } {
   const created: FakeBrowserWindow[] = [];
+  let nextId = 1;
   class FakeWindow {
+    id = nextId++;
     options: ElectronBrowserWindowOptions;
     calls: { method: string; args: unknown[] }[] = [];
     bounds: ElectronRectangle = { x: 0, y: 0, width: 0, height: 0 };
@@ -173,6 +181,18 @@ describe('createElectronWindowBackend', () => {
   });
 });
 
+describe('getApplicationWindowForElectronId', () => {
+  it('returns the ApplicationWindow for a known Electron id and null for an unknown one', () => {
+    const { electron, created } = fakeElectron();
+    const backend = createElectronWindowBackend(electron);
+    const win = createApplicationWindow();
+    backend.open(win, {});
+    const id = created[0].id;
+    expect(getApplicationWindowForElectronId(id)).toBe(win);
+    expect(getApplicationWindowForElectronId(9999)).toBeNull();
+  });
+});
+
 describe('getElectronBrowserWindow', () => {
   it('returns the backing BrowserWindow after open and null before', () => {
     const { electron, created } = fakeElectron();
@@ -181,5 +201,17 @@ describe('getElectronBrowserWindow', () => {
     expect(getElectronBrowserWindow(win)).toBeNull();
     backend.open(win, {});
     expect(getElectronBrowserWindow(win)).toBe(created[0]);
+  });
+});
+
+describe('getElectronWindowId', () => {
+  it('returns the numeric Electron window id after open and -1 before', () => {
+    const { electron, created } = fakeElectron();
+    const backend = createElectronWindowBackend(electron);
+    const win = createApplicationWindow();
+    expect(getElectronWindowId(win)).toBe(-1);
+    backend.open(win, {});
+    const expectedId = created[0].id;
+    expect(getElectronWindowId(win)).toBe(expectedId);
   });
 });

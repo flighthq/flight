@@ -1,3 +1,7 @@
 export * from './mesh';
 export * from './scene';
 export * from './sceneNode';
+export * from './sceneNodeBounds';
+export * from './sceneNodeCulling';
+export * from './sceneNodeDispose';
+export * from './sceneNodeTransform';

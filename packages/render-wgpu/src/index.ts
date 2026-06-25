@@ -1,12 +1,16 @@
+export * from './wgpuAdapterCapabilities';
 export * from './wgpuBackground';
 export * from './wgpuDraw';
 export * from './wgpuElement';
+export * from './wgpuFullscreenPass';
 export * from './wgpuMaterialRegistry';
 export * from './wgpuRenderState';
 export * from './wgpuRenderTarget';
 export * from './wgpuRenderTargetPool';
+export * from './wgpuScissor';
 export * from './wgpuShader';
 export * from './wgpuShaderBinding';
+export * from './wgpuShaderRegistry';
 export * from './wgpuSurface';
 export { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 export type { WgpuRenderTarget, WgpuRenderTargetPool } from '@flighthq/types';

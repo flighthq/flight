@@ -7,6 +7,7 @@ import {
   setCameraJitter,
   setCameraViewMatrix4FromLookAt,
   setCameraViewMatrix4FromMatrix4,
+  updateCameraInverseViewProjection,
 } from './camera';
 import { createPerspectiveProjection, setProjectionMatrix4 } from './projection';
 
@@ -150,5 +151,39 @@ describe('setCameraViewMatrix4FromMatrix4', () => {
     for (let i = 0; i < 16; i++) {
       expect(camera.view.m[i]).toBeCloseTo(view.m[i]);
     }
+  });
+});
+
+describe('updateCameraInverseViewProjection', () => {
+  it('stores the inverse view-projection into camera.inverseViewProjection and returns true', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    setCameraViewMatrix4FromLookAt(camera, createVector3(1, 2, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+
+    const result = updateCameraInverseViewProjection(camera, 1.5);
+    expect(result).toBe(true);
+
+    // Compute expected inverse independently.
+    const vp = createMatrix4();
+    getCameraViewProjectionMatrix4(vp, camera, 1.5);
+    const expected = createMatrix4();
+    inverseMatrix4(expected, vp);
+
+    for (let i = 0; i < 16; i++) {
+      expect(camera.inverseViewProjection.m[i]).toBeCloseTo(expected.m[i]);
+    }
+  });
+
+  it('returns false and leaves inverseViewProjection untouched for a non-invertible matrix', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    camera.near = 1;
+    camera.far = 1; // Degenerate.
+    // Store a known value so we can confirm it was not overwritten.
+    camera.inverseViewProjection.m[0] = 42;
+
+    const result = updateCameraInverseViewProjection(camera, 1);
+    expect(result).toBe(false);
+    expect(camera.inverseViewProjection.m[0]).toBe(42);
   });
 });

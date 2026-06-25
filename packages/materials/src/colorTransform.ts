@@ -46,16 +46,16 @@ export function copyColorTransformToArrays(
   outColorOffsets[3] = source.alphaOffset;
 }
 
-export function createColorTransform(obj?: Partial<ColorTransformLike>): ColorTransform {
+export function createColorTransform(opts?: Readonly<Partial<ColorTransformLike>>): ColorTransform {
   return createEntity({
-    redMultiplier: obj?.redMultiplier ?? 1,
-    greenMultiplier: obj?.greenMultiplier ?? 1,
-    blueMultiplier: obj?.blueMultiplier ?? 1,
-    alphaMultiplier: obj?.alphaMultiplier ?? 1,
-    redOffset: obj?.redOffset ?? 0,
-    greenOffset: obj?.greenOffset ?? 0,
-    blueOffset: obj?.blueOffset ?? 0,
-    alphaOffset: obj?.alphaOffset ?? 0,
+    redMultiplier: opts?.redMultiplier ?? 1,
+    greenMultiplier: opts?.greenMultiplier ?? 1,
+    blueMultiplier: opts?.blueMultiplier ?? 1,
+    alphaMultiplier: opts?.alphaMultiplier ?? 1,
+    redOffset: opts?.redOffset ?? 0,
+    greenOffset: opts?.greenOffset ?? 0,
+    blueOffset: opts?.blueOffset ?? 0,
+    alphaOffset: opts?.alphaOffset ?? 0,
   });
 }
 

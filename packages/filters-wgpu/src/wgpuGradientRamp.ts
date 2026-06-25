@@ -35,6 +35,24 @@ export function createWgpuGradientRampTexture(
 }
 
 /**
+ * Destroys all cached gradient ramp textures held for `state`, freeing the GPU resources.
+ * Call when the render state is being destroyed. The cached textures are tiny (256×1 = 1 KB
+ * each) but explicit destroy is necessary to free GPU memory deterministically rather than
+ * waiting for GC.
+ *
+ * After this call, the next `getWgpuGradientRampTexture` for `state` will re-create fresh
+ * textures as needed.
+ */
+export function destroyWgpuGradientRampTextures(state: WgpuRenderState): void {
+  const cache = rampCaches.get(state);
+  if (cache === undefined) return;
+  for (const texture of cache.values()) {
+    texture.destroy();
+  }
+  rampCaches.delete(state);
+}
+
+/**
  * Returns a cached 256-entry RGBA gradient ramp texture for the given stops,
  * building it on first use and reusing it on later calls with the same stops.
  * The texture is owned by the render state and lives for its lifetime — callers

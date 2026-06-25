@@ -1,4 +1,4 @@
-import { clearSignal, createSignal } from '@flighthq/signals';
+import { clearSignal, createSignal, emitSignal } from '@flighthq/signals';
 import type {
   StorageBackend,
   StorageChange,
@@ -20,12 +20,11 @@ export function clearStorage(): boolean {
 // Removes all keys under the namespace without touching other keys. Returns false on denial.
 export function clearStorageNamespace(namespace: Readonly<StorageNamespace>): boolean {
   const prefix = namespace.prefix + '.';
-  const keys = getStorageBackend()
-    .keys()
-    .filter((k) => k.startsWith(prefix));
+  const backend = getStorageBackend();
   let success = true;
-  for (const key of keys) {
-    if (!getStorageBackend().removeItem(key)) success = false;
+  for (const key of backend.keys()) {
+    if (!key.startsWith(prefix)) continue;
+    if (!backend.removeItem(key)) success = false;
   }
   return success;
 }
@@ -466,7 +465,7 @@ let _signalsActive = false;
 let _crossTabUnsubscribe: (() => void) | null = null;
 
 function _emitStorageChange(change: Readonly<StorageChange>): void {
-  if (_signals !== null) _signals.onChange.emit(change);
+  if (_signals !== null) emitSignal(_signals.onChange, change);
 }
 
 function _namespacedKey(namespace: Readonly<StorageNamespace>, key: string): string {

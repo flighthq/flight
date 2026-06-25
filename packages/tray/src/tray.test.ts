@@ -29,6 +29,7 @@ import {
   setTrayIconTemplate,
   setTrayIconTitle,
   setTrayIconTooltip,
+  setTrayIgnoreDoubleClickEvents,
   setTrayPressedIcon,
   startTrayIconAnimation,
 } from './tray';
@@ -573,13 +574,12 @@ describe('setTrayIgnoreDoubleClickEvents', () => {
     const backend = fakeBackend();
     setTrayBackend(backend);
     const tray = createTrayIcon()!;
-    setTrayBackend(backend);
-    backend.setIgnoreDoubleClickEvents(tray.id, true);
+    setTrayIgnoreDoubleClickEvents(tray, true);
     expect(backend.trays.get(tray.id)!.ignoreDoubleClick).toBe(true);
   });
 
   it('is a no-op on web', () => {
-    expect(() => getTrayBackend().setIgnoreDoubleClickEvents(0, true)).not.toThrow();
+    expect(() => setTrayIgnoreDoubleClickEvents({ id: 0 }, true)).not.toThrow();
   });
 });
 

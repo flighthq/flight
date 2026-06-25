@@ -88,10 +88,18 @@ function renderBitmapAsCanvas(
 
   const drawWidth = sourceRectangle !== null ? sourceRectangle.width : width;
   const drawHeight = sourceRectangle !== null ? sourceRectangle.height : height;
-  data.canvas.width = drawWidth;
-  data.canvas.height = drawHeight;
+
+  // Size the backing store at physical pixels and constrain layout to logical pixels via CSS so the
+  // bitmap stays crisp on HiDPI displays, matching the canvas backend's createCanvasElement. Resizing
+  // clears the canvas and resets context state, so apply the scale afterward.
+  const pixelRatio = state.pixelRatio;
+  data.canvas.width = drawWidth * pixelRatio;
+  data.canvas.height = drawHeight * pixelRatio;
+  data.canvas.style.width = `${drawWidth}px`;
+  data.canvas.style.height = `${drawHeight}px`;
 
   const ctx = data.context!;
+  if (pixelRatio !== 1) ctx.scale(pixelRatio, pixelRatio);
   ctx.imageSmoothingEnabled = smoothing;
   if (sourceRectangle !== null) {
     ctx.drawImage(

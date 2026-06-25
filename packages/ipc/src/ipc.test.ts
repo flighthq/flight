@@ -156,6 +156,23 @@ describe('enableIpcSignals', () => {
     backend.fire('events', []);
     expect(channels).toEqual(['events']);
   });
+
+  it('does not emit onChannelMessage at subscribe time, only on delivery', () => {
+    const signals = enableIpcSignals();
+    const backend = fakeBackend();
+    setIpcBackend(backend);
+    const channels: string[] = [];
+    signals.onChannelMessage.emit = (ch) => {
+      channels.push(ch);
+    };
+    onIpcMessage('events', () => {});
+    onIpcMessageEvent('events2', () => {});
+    // Registering listeners must not emit; the signal is a per-delivery notification.
+    expect(channels).toEqual([]);
+    backend.fire('events', []);
+    backend.fire('events2', []);
+    expect(channels).toEqual(['events', 'events2']);
+  });
 });
 
 describe('getIpcBackend', () => {
@@ -202,12 +219,22 @@ describe('getIpcListenerCount', () => {
 });
 
 describe('getIpcSignals', () => {
-  it('returns null before enableIpcSignals is called', () => {
-    // Note: if enableIpcSignals was called in a previous test in this suite, the module-level
-    // singleton persists. This test is meaningful only if run in isolation or first.
-    // We check for the type rather than null-ness to be robust.
-    const sig = getIpcSignals();
-    expect(sig === null || typeof sig === 'object').toBe(true);
+  it('returns null before enableIpcSignals is called', async () => {
+    // The IpcSignals group is a module-level singleton, so once any test in this suite calls
+    // enableIpcSignals the value persists. Re-import the module in isolation to assert the
+    // lazy-null contract deterministically: a fresh module has no group until enable is called.
+    vi.resetModules();
+    const fresh = await import('./ipc');
+    expect(fresh.getIpcSignals()).toBeNull();
+    // Delivery still works with the group disabled — the emit is guarded, never required.
+    const backend = fakeBackend();
+    fresh.setIpcBackend(backend);
+    const received: unknown[] = [];
+    fresh.onIpcMessage('disabled', (...args) => received.push(...args));
+    backend.fire('disabled', ['x']);
+    expect(received).toEqual(['x']);
+    expect(fresh.getIpcSignals()).toBeNull();
+    fresh.setIpcBackend(null);
   });
 
   it('returns the signals object after enableIpcSignals', () => {
@@ -366,17 +393,21 @@ describe('onIpcMessageEvent', () => {
     off();
   });
 
-  it('reply is a no-op when senderId is -1', () => {
+  it('reply is a no-op when senderId is -1, even with a sendTo-capable backend', () => {
+    // No backend surfaces sender identity yet, so senderId is permanently -1 and reply must
+    // early-return before touching backend.sendTo. Use a sendTo-capable fake to prove the gate
+    // is on senderId, not method presence: a reply still produces zero outbound sends. This pins
+    // the forward-compatible contract until a backend supplies a real senderId.
     const backend = fakeBackend();
     setIpcBackend(backend);
-    let replyCalled = false;
+    let observedSenderId: number | undefined;
     const off = onIpcMessageEvent('ch', (ev) => {
+      observedSenderId = ev.senderId;
       ev.reply('pong');
-      replyCalled = true;
     });
     backend.fire('ch', []);
-    expect(replyCalled).toBe(true);
-    // sendTo should NOT have been called since senderId is -1.
+    expect(observedSenderId).toBe(-1);
+    expect(typeof backend.sendTo).toBe('function');
     expect(backend.sentTo).toHaveLength(0);
     off();
   });

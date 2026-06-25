@@ -72,8 +72,13 @@ pub use flighthq_textlayout::*;
 pub use flighthq_textshaper::*;
 
 // Resources and loading.
+pub use flighthq_audio::*;
+pub use flighthq_font::*;
+pub use flighthq_image::*;
 pub use flighthq_loader::*;
-pub use flighthq_resources::*;
+pub use flighthq_textureatlas::*;
+pub use flighthq_tileset::*;
+pub use flighthq_video::*;
 
 // Animation: tweens, timelines, spritesheets, particles.
 pub use flighthq_easing::*;

@@ -13,5 +13,20 @@ export { applyInnerShadowFilterToGl } from './glInnerShadowFilter';
 export { applyMedianFilterToGl } from './glMedianFilter';
 export { applyOuterGlowFilterToGl } from './glOuterGlowFilter';
 export { applyPixelateFilterToGl } from './glPixelateFilter';
+export {
+  getBevelFilterGlScratchCount,
+  getColorMatrixFilterGlScratchCount,
+  getConvolutionFilterGlScratchCount,
+  getDisplacementMapFilterGlScratchCount,
+  getDropShadowFilterGlScratchCount,
+  getGradientBevelFilterGlScratchCount,
+  getGradientGlowFilterGlScratchCount,
+  getInnerGlowFilterGlScratchCount,
+  getInnerShadowFilterGlScratchCount,
+  getMedianFilterGlScratchCount,
+  getOuterGlowFilterGlScratchCount,
+  getPixelateFilterGlScratchCount,
+  getSharpenFilterGlScratchCount,
+} from './glScratchCount';
 export { applySharpenFilterToGl } from './glSharpenFilter';
 export { applyGlInvertTintPass, applyGlTintPass, getGlInvertTintShader, getGlTintShader } from './glTintShader';

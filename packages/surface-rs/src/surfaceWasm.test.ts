@@ -268,6 +268,76 @@ describe('boxBlurSurface', () => {
   });
 });
 
+describe('buildSurfaceBrightnessColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.buildSurfaceBrightnessColorMatrix(ref, 1.4);
+    rs.buildSurfaceBrightnessColorMatrix(got, 1.4);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
+describe('buildSurfaceContrastColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.buildSurfaceContrastColorMatrix(ref, 0.6);
+    rs.buildSurfaceContrastColorMatrix(got, 0.6);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
+describe('buildSurfaceGrayscaleColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.buildSurfaceGrayscaleColorMatrix(ref);
+    rs.buildSurfaceGrayscaleColorMatrix(got);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
+describe('buildSurfaceHueRotationColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.buildSurfaceHueRotationColorMatrix(ref, 75);
+    rs.buildSurfaceHueRotationColorMatrix(got, 75);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
+describe('buildSurfaceInvertColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.buildSurfaceInvertColorMatrix(ref);
+    rs.buildSurfaceInvertColorMatrix(got);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
+describe('buildSurfaceSaturationColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.buildSurfaceSaturationColorMatrix(ref, 1.6);
+    rs.buildSurfaceSaturationColorMatrix(got, 1.6);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
+describe('buildSurfaceSepiaColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.buildSurfaceSepiaColorMatrix(ref);
+    rs.buildSurfaceSepiaColorMatrix(got);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
 describe('colorMatrixSurface', () => {
   it('matches @flighthq/surface', () => {
     const source = paintSurface(6, 4);
@@ -302,6 +372,30 @@ describe('compositeSurfaceRegion', () => {
     reference.compositeSurfaceRegion(fullRegion(refDest), fullRegion(refSource), 9);
     compositeSurfaceRegion(fullRegion(rsDest), fullRegion(rsSource), 9);
     expect(rsDest.data).toEqual(refDest.data);
+  });
+});
+
+describe('computeGaussianKernel', () => {
+  it('matches @flighthq/surface', () => {
+    const ref = new Float32Array(5);
+    const got = new Float32Array(5);
+    reference.computeGaussianKernel(ref, 2, 1.25);
+    rs.computeGaussianKernel(got, 2, 1.25);
+    for (let i = 0; i < ref.length; i++) expect(got[i]).toBeCloseTo(ref[i], 4);
+  });
+});
+
+describe('concatSurfaceColorMatrix', () => {
+  it('matches @flighthq/surface', () => {
+    const first: number[] = [];
+    const second: number[] = [];
+    reference.buildSurfaceBrightnessColorMatrix(first, 1.3);
+    reference.buildSurfaceSaturationColorMatrix(second, 1.7);
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.concatSurfaceColorMatrix(ref, first, second);
+    rs.concatSurfaceColorMatrix(got, first, second);
+    expectColorMatrixClose(got, ref);
   });
 });
 
@@ -763,6 +857,70 @@ describe('mergeSurface', () => {
   });
 });
 
+// ─── Bronze: conformance-drift guard ─────────────────────────────────────────
+
+// The set of all bulk-pixel ops that surface-rs is expected to shadow.
+// Any new export added to @flighthq/surface that should be wasm-backed must be
+// added here and to surfaceWasm.ts; this test makes omissions mechanically
+// detectable rather than silent. Functions intentionally kept as JS re-exports
+// (compareSurface, getSurfaceMismatch, createSurfaceFingerprint, and the
+// create*/single-pixel/builder/browser-bound set) are absent from this list.
+const EXPECTED_WASM_SHADOWS: ReadonlyArray<string> = [
+  'applySurfaceColorTransform',
+  'applySurfacePaletteMap',
+  'applySurfaceThreshold',
+  'bevelSurface',
+  'blurSurfacePixelsHorizontal',
+  'blurSurfacePixelsHorizontalWeighted',
+  'blurSurfacePixelsVertical',
+  'blurSurfacePixelsVerticalWeighted',
+  'boxBlurSurface',
+  'colorMatrixSurface',
+  'compositeSurfacePixels',
+  'compositeSurfaceRegion',
+  'convertSurfacePixelOrder',
+  'convolveSurface',
+  'copySurfaceChannel',
+  'copySurfacePixels',
+  'dilateSurface',
+  'displaceSurface',
+  'dissolveSurfacePixels',
+  'dropShadowSurface',
+  'equalizeSurfaceHistogram',
+  'erodeSurface',
+  'extractSurfacePixels',
+  'extractSurfacePixels32',
+  'fillSurfaceNoise',
+  'fillSurfacePerlinNoise',
+  'fillSurfaceRectangle',
+  'flipSurfaceHorizontal',
+  'flipSurfaceVertical',
+  'floodFillSurface',
+  'gaussianBlurSurface',
+  'getSurfaceColorBoundsRectangle',
+  'getSurfaceCoverage',
+  'getSurfaceHistogram',
+  'glowSurface',
+  'gradientBevelSurface',
+  'gradientGlowSurface',
+  'innerGlowSurface',
+  'innerShadowSurface',
+  'medianSurface',
+  'mergeSurface',
+  'pixelateSurface',
+  'premultiplySurfacePixels',
+  'resizeSurface',
+  'rotateSurface',
+  'rotateSurface180',
+  'rotateSurfaceClockwise',
+  'rotateSurfaceCounterClockwise',
+  'scrollSurface',
+  'sharpenSurface',
+  'unpremultiplySurfacePixels',
+  'writeSurfacePixels',
+  'writeSurfacePixels32',
+];
+
 describe('pixelateSurface', () => {
   it('matches @flighthq/surface', () => {
     const source = paintSurface(8, 8);
@@ -784,6 +942,12 @@ describe('premultiplySurfacePixels', () => {
     expect(rsOut).toEqual(refOut);
   });
 });
+
+// These tests assert that the TS discriminant maps have the exact same key count
+// as their corresponding Rust enums, catching any silent addition/removal that
+// would corrupt the u8 discriminant passed across the wasm boundary. Each variant
+// is also tested for byte-exact output match against @flighthq/surface, not just
+// "doesn't throw", to catch silent wrong-variant-selected bugs.
 
 describe('resizeSurface', () => {
   it('matches @flighthq/surface for nearest downscale', () => {
@@ -867,6 +1031,16 @@ describe('scrollSurface', () => {
   });
 });
 
+describe('setSurfaceColorMatrixIdentity', () => {
+  it('matches @flighthq/surface', () => {
+    const ref: number[] = [];
+    const got: number[] = [];
+    reference.setSurfaceColorMatrixIdentity(ref);
+    rs.setSurfaceColorMatrixIdentity(got);
+    expectColorMatrixClose(got, ref);
+  });
+});
+
 describe('sharpenSurface', () => {
   it('matches @flighthq/surface', () => {
     const source = paintSurface(8, 8);
@@ -879,70 +1053,6 @@ describe('sharpenSurface', () => {
     expectByteClose(rsOut, refOut);
   });
 });
-
-// ─── Bronze: conformance-drift guard ─────────────────────────────────────────
-
-// The set of all bulk-pixel ops that surface-rs is expected to shadow.
-// Any new export added to @flighthq/surface that should be wasm-backed must be
-// added here and to surfaceWasm.ts; this test makes omissions mechanically
-// detectable rather than silent. Functions intentionally kept as JS re-exports
-// (compareSurface, getSurfaceMismatch, createSurfaceFingerprint, and the
-// create*/single-pixel/builder/browser-bound set) are absent from this list.
-const EXPECTED_WASM_SHADOWS: ReadonlyArray<string> = [
-  'applySurfaceColorTransform',
-  'applySurfacePaletteMap',
-  'applySurfaceThreshold',
-  'bevelSurface',
-  'blurSurfacePixelsHorizontal',
-  'blurSurfacePixelsHorizontalWeighted',
-  'blurSurfacePixelsVertical',
-  'blurSurfacePixelsVerticalWeighted',
-  'boxBlurSurface',
-  'colorMatrixSurface',
-  'compositeSurfacePixels',
-  'compositeSurfaceRegion',
-  'convertSurfacePixelOrder',
-  'convolveSurface',
-  'copySurfaceChannel',
-  'copySurfacePixels',
-  'dilateSurface',
-  'displaceSurface',
-  'dissolveSurfacePixels',
-  'dropShadowSurface',
-  'equalizeSurfaceHistogram',
-  'erodeSurface',
-  'extractSurfacePixels',
-  'extractSurfacePixels32',
-  'fillSurfaceNoise',
-  'fillSurfacePerlinNoise',
-  'fillSurfaceRectangle',
-  'flipSurfaceHorizontal',
-  'flipSurfaceVertical',
-  'floodFillSurface',
-  'gaussianBlurSurface',
-  'getSurfaceColorBoundsRectangle',
-  'getSurfaceCoverage',
-  'getSurfaceHistogram',
-  'glowSurface',
-  'gradientBevelSurface',
-  'gradientGlowSurface',
-  'innerGlowSurface',
-  'innerShadowSurface',
-  'medianSurface',
-  'mergeSurface',
-  'pixelateSurface',
-  'premultiplySurfacePixels',
-  'resizeSurface',
-  'rotateSurface',
-  'rotateSurface180',
-  'rotateSurfaceClockwise',
-  'rotateSurfaceCounterClockwise',
-  'scrollSurface',
-  'sharpenSurface',
-  'unpremultiplySurfacePixels',
-  'writeSurfacePixels',
-  'writeSurfacePixels32',
-];
 
 describe('sub-region marshalling', () => {
   it('fillSurfaceRectangle on a sub-region fills only that area and matches reference', () => {
@@ -1002,12 +1112,6 @@ describe('unpremultiplySurfacePixels', () => {
     expect(rsOut).toEqual(refOut);
   });
 });
-
-// These tests assert that the TS discriminant maps have the exact same key count
-// as their corresponding Rust enums, catching any silent addition/removal that
-// would corrupt the u8 discriminant passed across the wasm boundary. Each variant
-// is also tested for byte-exact output match against @flighthq/surface, not just
-// "doesn't throw", to catch silent wrong-variant-selected bugs.
 
 describe('wasm discriminant map cardinality', () => {
   it('BlendMode passes 15 variants correctly (Add=0 … Subtract=14) and matches reference for each', () => {
@@ -1217,3 +1321,10 @@ describe('zero-area region edge cases', () => {
     expect(getSurfaceColorBoundsRectangle(zeroRegion, 0xffffffff, 0xff0000ff)).toBeNull();
   });
 });
+
+// f32 (wasm) vs f64 (JS reference) coefficient builders agree to float precision, not bit-for-bit;
+// 4-decimal tolerance is comfortably above the ~1e-6 f32 round-trip error.
+function expectColorMatrixClose(got: ReadonlyArray<number>, ref: ReadonlyArray<number>): void {
+  expect(got.length).toBe(ref.length);
+  for (let i = 0; i < ref.length; i++) expect(got[i]).toBeCloseTo(ref[i], 4);
+}

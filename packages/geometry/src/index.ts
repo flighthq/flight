@@ -10,6 +10,7 @@ export * from './matrixPool';
 export * from './plane';
 export * from './quaternion';
 export * from './quaternionPool';
+export * from './ray3d';
 export * from './rectangle';
 export * from './rectanglePool';
 export * from './typedarray';

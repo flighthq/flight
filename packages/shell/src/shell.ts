@@ -86,6 +86,10 @@ export function moveItemToTrash(path: string): Promise<boolean> {
 
 // Opens a URL in the user's default browser / external handler. Returns false when blocked, popup-
 // blocked, or the URL scheme is not in the active allowlist (see setShellUrlSchemeAllowlist).
+// SECURITY: handing an attacker-controlled URL to the OS default handler is the classic openExternal
+// footgun — a non-http(s) scheme can launch a local application or protocol handler. When the url may
+// be untrusted, constrain the accepted schemes with setShellUrlSchemeAllowlist (e.g. ['https',
+// 'mailto']); isShellUrlAllowed exposes the same check for a caller that wants to gate the URL itself.
 export function openExternalUrl(url: string, options?: Readonly<ShellOpenExternalOptions>): Promise<boolean> {
   if (!isShellUrlAllowed(url)) return Promise.resolve(false);
   return getShellBackend().openExternal(url, options);

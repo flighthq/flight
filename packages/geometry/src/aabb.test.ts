@@ -2,11 +2,18 @@ import {
   cloneAabb,
   copyAabb,
   createAabb,
+  createBoundingSphere,
   createMatrix4,
   createVector3,
   expandAabbByPoint,
+  expandAabbBySphere,
   getAabbCenter,
   getAabbContainsPoint,
+  getAabbExtents,
+  getAabbSize,
+  getClosestPointOnAabb,
+  intersectAabb,
+  intersectsAabb,
   setAabb,
   setAabbFromPoints,
   setMatrix4Position,
@@ -86,6 +93,35 @@ describe('expandAabbByPoint', () => {
   });
 });
 
+describe('expandAabbBySphere', () => {
+  it('grows the box to contain the sphere', () => {
+    const a = createAabb(0, 0, 0, 1, 1, 1);
+    const s = createBoundingSphere(0, 0, 0, 3);
+    const out = createAabb();
+    expandAabbBySphere(out, a, s);
+    expect(out.min.x).toBe(-3);
+    expect(out.max.x).toBe(3);
+    expect(out.min.y).toBe(-3);
+    expect(out.max.y).toBe(3);
+  });
+
+  it('an empty sphere leaves the box unchanged', () => {
+    const a = createAabb(0, 0, 0, 1, 1, 1);
+    const s = createBoundingSphere(0, 0, 0, -1);
+    const out = createAabb();
+    expandAabbBySphere(out, a, s);
+    expect(out.min.x).toBe(0);
+    expect(out.max.x).toBe(1);
+  });
+
+  it('supports out === aabb', () => {
+    const a = createAabb(0, 0, 0, 1, 1, 1);
+    const s = createBoundingSphere(5, 0, 0, 1);
+    expandAabbBySphere(a, a, s);
+    expect(a.max.x).toBe(6);
+  });
+});
+
 describe('getAabbCenter', () => {
   it('writes the midpoint of the corners', () => {
     const a = createAabb(-2, -4, -6, 2, 4, 6);
@@ -107,6 +143,107 @@ describe('getAabbContainsPoint', () => {
   it('returns false for a point outside', () => {
     const a = createAabb(0, 0, 0, 2, 2, 2);
     expect(getAabbContainsPoint(a, createVector3(3, 1, 1))).toBe(false);
+  });
+});
+
+describe('getAabbExtents', () => {
+  it('writes half-widths of the box', () => {
+    const a = createAabb(-2, -4, -6, 2, 4, 6);
+    const out = createVector3();
+    getAabbExtents(out, a);
+    expect(out.x).toBe(2);
+    expect(out.y).toBe(4);
+    expect(out.z).toBe(6);
+  });
+});
+
+describe('getAabbSize', () => {
+  it('writes the full width/height/depth', () => {
+    const a = createAabb(-1, -2, -3, 3, 6, 9);
+    const out = createVector3();
+    getAabbSize(out, a);
+    expect(out.x).toBe(4);
+    expect(out.y).toBe(8);
+    expect(out.z).toBe(12);
+  });
+});
+
+describe('getClosestPointOnAabb', () => {
+  it('clamps an outside point to the nearest face', () => {
+    const a = createAabb(0, 0, 0, 2, 2, 2);
+    const out = createVector3();
+    getClosestPointOnAabb(out, a, createVector3(5, -1, 1));
+    expect(out.x).toBe(2);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(1);
+  });
+
+  it('returns the point unchanged when it is inside the box', () => {
+    const a = createAabb(0, 0, 0, 4, 4, 4);
+    const out = createVector3();
+    getClosestPointOnAabb(out, a, createVector3(1, 2, 3));
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+  });
+
+  it('supports out === point', () => {
+    const a = createAabb(0, 0, 0, 2, 2, 2);
+    const p = createVector3(-3, 5, 1);
+    getClosestPointOnAabb(p, a, p);
+    expect(p.x).toBe(0);
+    expect(p.y).toBe(2);
+    expect(p.z).toBe(1);
+  });
+});
+
+describe('intersectAabb', () => {
+  it('produces the overlapping sub-box for two overlapping boxes', () => {
+    const a = createAabb(0, 0, 0, 4, 4, 4);
+    const b = createAabb(2, 2, 2, 6, 6, 6);
+    const out = createAabb();
+    intersectAabb(out, a, b);
+    expect(out.min.x).toBe(2);
+    expect(out.max.x).toBe(4);
+    expect(out.min.y).toBe(2);
+    expect(out.max.y).toBe(4);
+  });
+
+  it('produces an empty box (min > max) for non-overlapping boxes', () => {
+    const a = createAabb(0, 0, 0, 1, 1, 1);
+    const b = createAabb(5, 5, 5, 6, 6, 6);
+    const out = createAabb();
+    intersectAabb(out, a, b);
+    // min > max in at least one axis
+    expect(out.min.x).toBeGreaterThan(out.max.x);
+  });
+
+  it('supports out === a', () => {
+    const a = createAabb(0, 0, 0, 4, 4, 4);
+    const b = createAabb(2, 2, 2, 6, 6, 6);
+    intersectAabb(a, a, b);
+    expect(a.min.x).toBe(2);
+    expect(a.max.x).toBe(4);
+  });
+});
+
+describe('intersectsAabb', () => {
+  it('returns true for overlapping boxes', () => {
+    const a = createAabb(0, 0, 0, 2, 2, 2);
+    const b = createAabb(1, 1, 1, 3, 3, 3);
+    expect(intersectsAabb(a, b)).toBe(true);
+  });
+
+  it('returns true for touching boxes (shared face)', () => {
+    const a = createAabb(0, 0, 0, 1, 1, 1);
+    const b = createAabb(1, 0, 0, 2, 1, 1);
+    expect(intersectsAabb(a, b)).toBe(true);
+  });
+
+  it('returns false for separated boxes', () => {
+    const a = createAabb(0, 0, 0, 1, 1, 1);
+    const b = createAabb(5, 5, 5, 6, 6, 6);
+    expect(intersectsAabb(a, b)).toBe(false);
   });
 });
 

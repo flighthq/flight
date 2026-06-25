@@ -12,6 +12,35 @@ export function addVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readon
   out.w = a.w + b.w;
 }
 
+/**
+ * Clamps each component of a Vector4Like independently to [min, max].
+ *
+ * Safe when `out` aliases `value`, `min`, or `max`.
+ */
+export function clampVector4(
+  out: Vector4Like,
+  value: Readonly<Vector4Like>,
+  min: Readonly<Vector4Like>,
+  max: Readonly<Vector4Like>,
+): void {
+  const vx = value.x,
+    vy = value.y,
+    vz = value.z,
+    vw = value.w;
+  const minX = min.x,
+    minY = min.y,
+    minZ = min.z,
+    minW = min.w;
+  const maxX = max.x,
+    maxY = max.y,
+    maxZ = max.z,
+    maxW = max.w;
+  out.x = vx < minX ? minX : vx > maxX ? maxX : vx;
+  out.y = vy < minY ? minY : vy > maxY ? maxY : vy;
+  out.z = vz < minZ ? minZ : vz > maxZ ? maxZ : vz;
+  out.w = vw < minW ? minW : vw > maxW ? maxW : vw;
+}
+
 export function cloneVector4(source: Readonly<Vector4Like>): Vector4 {
   return createVector4(source.x, source.y, source.z, source.w);
 }
@@ -46,6 +75,28 @@ export function copyVector4(out: Vector4Like, source: Readonly<Vector4Like>): vo
  */
 export function createVector4(x?: number, y?: number, z?: number, w?: number): Vector4 {
   return createEntity({ x: x ?? 0, y: y ?? 0, z: z ?? 0, w: w ?? 0 });
+}
+
+/**
+ * Component-wise division of two vectors (Hadamard division). Each component of
+ * `source` is divided by the corresponding component of `divisor`. Components with a
+ * zero divisor produce `0` in the output.
+ *
+ * Safe when `out` aliases `source` or `divisor`.
+ */
+export function divideVector4(out: Vector4Like, source: Readonly<Vector4Like>, divisor: Readonly<Vector4Like>): void {
+  const sx = source.x,
+    sy = source.y,
+    sz = source.z,
+    sw = source.w;
+  const dx = divisor.x,
+    dy = divisor.y,
+    dz = divisor.z,
+    dw = divisor.w;
+  out.x = dx !== 0 ? sx / dx : 0;
+  out.y = dy !== 0 ? sy / dy : 0;
+  out.z = dz !== 0 ? sz / dz : 0;
+  out.w = dw !== 0 ? sw / dw : 0;
 }
 
 export function equalsVector4(
@@ -126,6 +177,64 @@ export function getVector4Length(source: Readonly<Vector4Like>): number {
  **/
 export function getVector4LengthSquared(source: Readonly<Vector4Like>): number {
   return source.x ** 2 + source.y ** 2 + source.z ** 2 + source.w ** 2;
+}
+
+/**
+ * Linear interpolation between two Vector4Like objects at parameter `t` in [0, 1].
+ * `t=0` returns `a`; `t=1` returns `b`.
+ *
+ * Safe when `out` aliases `a` or `b` (all inputs are read into locals first).
+ */
+export function interpolateVector4(
+  out: Vector4Like,
+  a: Readonly<Vector4Like>,
+  b: Readonly<Vector4Like>,
+  t: number,
+): void {
+  const ax = a.x,
+    ay = a.y,
+    az = a.z,
+    aw = a.w;
+  out.x = ax + t * (b.x - ax);
+  out.y = ay + t * (b.y - ay);
+  out.z = az + t * (b.z - az);
+  out.w = aw + t * (b.w - aw);
+}
+
+/**
+ * Writes the per-component maximum of two vectors.
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function maxVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
+  out.x = a.x > b.x ? a.x : b.x;
+  out.y = a.y > b.y ? a.y : b.y;
+  out.z = a.z > b.z ? a.z : b.z;
+  out.w = a.w > b.w ? a.w : b.w;
+}
+
+/**
+ * Writes the per-component minimum of two vectors.
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function minVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
+  out.x = a.x < b.x ? a.x : b.x;
+  out.y = a.y < b.y ? a.y : b.y;
+  out.z = a.z < b.z ? a.z : b.z;
+  out.w = a.w < b.w ? a.w : b.w;
+}
+
+/**
+ * Component-wise product of two vectors (Hadamard product).
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function multiplyVector4(out: Vector4Like, a: Readonly<Vector4Like>, b: Readonly<Vector4Like>): void {
+  out.x = a.x * b.x;
+  out.y = a.y * b.y;
+  out.z = a.z * b.z;
+  out.w = a.w * b.w;
 }
 
 /**
@@ -212,6 +321,30 @@ export function projectVector4(out: Vector3Like, source: Readonly<Vector4Like>):
 }
 
 /**
+ * Reflects an incident vector about a unit normal. The result is the reflection of
+ * `incident` across the hyperplane whose normal is `normal`.
+ *
+ * Formula: out = incident - 2 * dot(incident, normal) * normal
+ *
+ * Safe when `out` aliases `incident` or `normal`.
+ */
+export function reflectVector4(out: Vector4Like, incident: Readonly<Vector4Like>, normal: Readonly<Vector4Like>): void {
+  const ix = incident.x,
+    iy = incident.y,
+    iz = incident.z,
+    iw = incident.w;
+  const nx = normal.x,
+    ny = normal.y,
+    nz = normal.z,
+    nw = normal.w;
+  const twoDot = 2 * (ix * nx + iy * ny + iz * nz + iw * nw);
+  out.x = ix - twoDot * nx;
+  out.y = iy - twoDot * ny;
+  out.z = iz - twoDot * nz;
+  out.w = iw - twoDot * nw;
+}
+
+/**
  * Scales the current Vector4Like object by a scalar, a magnitude. The Vector4Like object's
  * x, y, z and w elements are multiplied by the provided scalar number.
  **/
@@ -233,6 +366,32 @@ export function setVector4(out: Vector4Like, x: number, y: number, z: number, w:
 }
 
 /**
+ * Reads a Vector4Like from a Float32Array at a byte offset.
+ */
+export function setVector4FromFloat32Array(out: Vector4Like, offset: number, source: Readonly<Float32Array>): void {
+  out.x = source[offset];
+  out.y = source[offset + 1];
+  out.z = source[offset + 2];
+  out.w = source[offset + 3];
+}
+
+/**
+ * Copies the x, y, and z components of a Vector3Like into a Vector4Like, setting w to the
+ * given value (default 0). Use `w = 1` for a position, `w = 0` for a direction.
+ *
+ * Safe when `out` aliases any part of `source`.
+ */
+export function setVector4FromVector3(out: Vector4Like, source: Readonly<Vector3Like>, w = 0): void {
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  out.x = x;
+  out.y = y;
+  out.z = z;
+  out.w = w;
+}
+
+/**
  * Subtracts the value of the x, y, z and w elements of the current Vector4Like object
  * from the values of the x, y, z and w elements of another Vector4Like object.
  **/
@@ -241,6 +400,16 @@ export function subtractVector4(out: Vector4Like, source: Readonly<Vector4Like>,
   out.y = source.y - other.y;
   out.z = source.z - other.z;
   out.w = source.w - other.w;
+}
+
+/**
+ * Writes a Vector4Like into a Float32Array at a byte offset.
+ */
+export function writeVector4ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Vector4Like>): void {
+  out[offset] = source.x;
+  out[offset + 1] = source.y;
+  out[offset + 2] = source.z;
+  out[offset + 3] = source.w;
 }
 
 export const VECTOR4_W_UNIT: Readonly<Vector4> = createVector4(0, 0, 0, 1);

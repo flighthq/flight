@@ -7,6 +7,8 @@ import {
   createVideoData,
   createVideoRuntime,
   getVideoRuntime,
+  setVideoSmoothing,
+  setVideoSource,
 } from './video';
 
 describe('computeVideoLocalBoundsRectangle', () => {
@@ -84,5 +86,27 @@ describe('getVideoRuntime', () => {
     const video = createVideo();
     const runtime = getVideoRuntime(video);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('setVideoSmoothing', () => {
+  it('updates the smoothing field', () => {
+    const video = createVideo();
+    setVideoSmoothing(video, false);
+    expect(video.data.smoothing).toBe(false);
+    setVideoSmoothing(video, true);
+    expect(video.data.smoothing).toBe(true);
+  });
+});
+
+describe('setVideoSource', () => {
+  it('updates the source field', () => {
+    const video = createVideo();
+    const el = document.createElement('video');
+    const source = { element: el } as never;
+    setVideoSource(video, source);
+    expect(video.data.source).toBe(source);
+    setVideoSource(video, null);
+    expect(video.data.source).toBeNull();
   });
 });

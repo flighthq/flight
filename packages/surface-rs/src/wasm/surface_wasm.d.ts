@@ -19,11 +19,29 @@ export function blur_surface_pixels_vertical_weighted_wasm(out: Uint8Array, sour
 
 export function box_blur_surface_wasm(out: Uint8Array, scratch: Uint8Array, source_data: Uint8Array, source_desc: Uint32Array, radius_x: number, radius_y: number, passes: number): void;
 
+export function build_surface_brightness_color_matrix_wasm(out: Float32Array, amount: number): void;
+
+export function build_surface_contrast_color_matrix_wasm(out: Float32Array, amount: number): void;
+
+export function build_surface_grayscale_color_matrix_wasm(out: Float32Array): void;
+
+export function build_surface_hue_rotation_color_matrix_wasm(out: Float32Array, degrees: number): void;
+
+export function build_surface_invert_color_matrix_wasm(out: Float32Array): void;
+
+export function build_surface_saturation_color_matrix_wasm(out: Float32Array, amount: number): void;
+
+export function build_surface_sepia_color_matrix_wasm(out: Float32Array): void;
+
 export function color_matrix_surface_wasm(out: Uint8Array, source_data: Uint8Array, source_desc: Uint32Array, matrix: Float32Array): void;
 
 export function composite_surface_pixels_wasm(dest_data: Uint8Array, dest_desc: Uint32Array, pixels: Uint8Array, blend_mode: number): void;
 
 export function composite_surface_region_wasm(dest_data: Uint8Array, dest_desc: Uint32Array, source_data: Uint8Array, source_desc: Uint32Array, blend_mode: number): void;
+
+export function compute_gaussian_kernel_wasm(out: Float32Array, radius: number, sigma: number): void;
+
+export function concat_surface_color_matrix_wasm(out: Float32Array, first: Float32Array, second: Float32Array): void;
 
 export function convert_surface_pixel_order_wasm(out: Uint8Array, source: Uint8Array, length: number, from: number, to: number): void;
 
@@ -99,6 +117,8 @@ export function rotate_surface_wasm(dest_data: Uint8Array, dest_desc: Uint32Arra
 
 export function scroll_surface_wasm(data: Uint8Array, width: number, height: number, dx: number, dy: number): void;
 
+export function set_surface_color_matrix_identity_wasm(out: Float32Array): void;
+
 export function sharpen_surface_wasm(out: Uint8Array, scratch: Uint8Array, source_data: Uint8Array, source_desc: Uint32Array, amount: number, radius_x: number, radius_y: number, passes: number): void;
 
 export function unpremultiply_surface_pixels_wasm(out: Uint8Array, source: Uint8Array, length: number): void;
@@ -120,9 +140,18 @@ export interface InitOutput {
     readonly blur_surface_pixels_vertical_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
     readonly blur_surface_pixels_vertical_weighted_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
     readonly box_blur_surface_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number) => void;
+    readonly build_surface_brightness_color_matrix_wasm: (a: number, b: number, c: number, d: number) => void;
+    readonly build_surface_contrast_color_matrix_wasm: (a: number, b: number, c: number, d: number) => void;
+    readonly build_surface_grayscale_color_matrix_wasm: (a: number, b: number, c: number) => void;
+    readonly build_surface_hue_rotation_color_matrix_wasm: (a: number, b: number, c: number, d: number) => void;
+    readonly build_surface_invert_color_matrix_wasm: (a: number, b: number, c: number) => void;
+    readonly build_surface_saturation_color_matrix_wasm: (a: number, b: number, c: number, d: number) => void;
+    readonly build_surface_sepia_color_matrix_wasm: (a: number, b: number, c: number) => void;
     readonly color_matrix_surface_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
     readonly composite_surface_pixels_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
     readonly composite_surface_region_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => void;
+    readonly compute_gaussian_kernel_wasm: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly concat_surface_color_matrix_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly convert_surface_pixel_order_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => void;
     readonly convolve_surface_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: number, p: number) => void;
     readonly copy_surface_channel_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => void;
@@ -160,6 +189,7 @@ export interface InitOutput {
     readonly rotate_surface_counter_clockwise_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
     readonly rotate_surface_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number) => void;
     readonly scroll_surface_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+    readonly set_surface_color_matrix_identity_wasm: (a: number, b: number, c: number) => void;
     readonly sharpen_surface_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number) => void;
     readonly unpremultiply_surface_pixels_wasm: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
     readonly write_surface_pixels_32_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;

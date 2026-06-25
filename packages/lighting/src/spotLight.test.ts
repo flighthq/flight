@@ -1,7 +1,14 @@
 import { createVector3 } from '@flighthq/geometry';
 import { SpotLightKind } from '@flighthq/types';
 
-import { cloneSpotLight, createSpotLight, setSpotLightCone } from './spotLight';
+import {
+  cloneSpotLight,
+  createSpotLight,
+  getSpotLightConeDegrees,
+  setSpotLightCone,
+  setSpotLightDirection,
+  setSpotLightTarget,
+} from './spotLight';
 
 describe('cloneSpotLight', () => {
   it('creates an independent copy with fresh position and direction vectors', () => {
@@ -70,6 +77,24 @@ describe('createSpotLight', () => {
   });
 });
 
+describe('getSpotLightConeDegrees', () => {
+  it('round-trips inner and outer degrees through create → get', () => {
+    const light = createSpotLight({ innerConeDegrees: 15, outerConeDegrees: 35 });
+    const angles = { innerDegrees: 0, outerDegrees: 0 };
+    getSpotLightConeDegrees(angles, light);
+    expect(angles.innerDegrees).toBeCloseTo(15, 4);
+    expect(angles.outerDegrees).toBeCloseTo(35, 4);
+  });
+
+  it('writes into the provided out object', () => {
+    const light = createSpotLight({ innerConeDegrees: 0, outerConeDegrees: 45 });
+    const out = { innerDegrees: -1, outerDegrees: -1 };
+    getSpotLightConeDegrees(out, light);
+    expect(out.innerDegrees).toBeCloseTo(0, 4);
+    expect(out.outerDegrees).toBeCloseTo(45, 4);
+  });
+});
+
 describe('setSpotLightCone', () => {
   it('writes the cosines of the inner and outer half-angles into the light', () => {
     const light = createSpotLight();
@@ -82,5 +107,37 @@ describe('setSpotLightCone', () => {
     const light = createSpotLight();
     setSpotLightCone(light, 25, 25);
     expect(light.innerConeCos).toBeCloseTo(light.outerConeCos, 6);
+  });
+});
+
+describe('setSpotLightDirection', () => {
+  it('writes a normalized direction into the light', () => {
+    const light = createSpotLight();
+    setSpotLightDirection(light, 0, 2, 0);
+    expect(light.direction.x).toBeCloseTo(0, 6);
+    expect(light.direction.y).toBeCloseTo(1, 6);
+    expect(light.direction.z).toBeCloseTo(0, 6);
+  });
+
+  it('leaves direction unchanged for a zero-length input', () => {
+    const light = createSpotLight({ direction: createVector3(0, -1, 0) });
+    setSpotLightDirection(light, 0, 0, 0);
+    expect(light.direction.y).toBeCloseTo(-1, 6);
+  });
+});
+
+describe('setSpotLightTarget', () => {
+  it('sets direction from position toward target', () => {
+    const light = createSpotLight({ position: createVector3(0, 0, 0) });
+    setSpotLightTarget(light, 0, 0, 5);
+    expect(light.direction.x).toBeCloseTo(0, 6);
+    expect(light.direction.y).toBeCloseTo(0, 6);
+    expect(light.direction.z).toBeCloseTo(1, 6);
+  });
+
+  it('leaves direction unchanged when target equals position', () => {
+    const light = createSpotLight({ direction: createVector3(0, -1, 0), position: createVector3(1, 2, 3) });
+    setSpotLightTarget(light, 1, 2, 3);
+    expect(light.direction.y).toBeCloseTo(-1, 6);
   });
 });

@@ -3,7 +3,7 @@ import { createRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRevision, getNodeLocalContentRevision } from '@flighthq/node';
 import { connectSignal } from '@flighthq/signals';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
-import type { Node, RichText, RichTextRuntime } from '@flighthq/types';
+import type { Node, RichText, RichTextRuntime, TextFormatRange } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
 import {
@@ -24,6 +24,7 @@ import {
   getRichTextFormatRangeAt,
   getRichTextFormatRangeByIndex,
   getRichTextFormatRangeCount,
+  getRichTextFormatRangesIn,
   getRichTextHtml,
   getRichTextLength,
   getRichTextLineCountValue,
@@ -468,6 +469,45 @@ describe('getRichTextFormatRangeCount', () => {
     setRichTextFormatRange(richText, { bold: true }, 0, 2);
     setRichTextFormatRange(richText, { italic: true }, 2, 5);
     expect(getRichTextFormatRangeCount(richText)).toBe(2);
+  });
+});
+
+describe('getRichTextFormatRangesIn', () => {
+  it('clears out and leaves it empty when no ranges overlap the span', () => {
+    const richText = createRichText({ data: { text: 'hello world' } });
+    setRichTextFormatRange(richText, { bold: true }, 6, 11);
+    const out: TextFormatRange[] = [{ start: 99, end: 99, format: {} }];
+    getRichTextFormatRangesIn(out, richText, 0, 5);
+    expect(out).toHaveLength(0);
+  });
+
+  it('collects every range overlapping the half-open span in stored order', () => {
+    const richText = createRichText({ data: { text: 'hello world' } });
+    setRichTextFormatRange(richText, { bold: true }, 0, 5);
+    setRichTextFormatRange(richText, { italic: true }, 4, 8);
+    setRichTextFormatRange(richText, { underline: true }, 8, 11);
+    const out: TextFormatRange[] = [];
+    getRichTextFormatRangesIn(out, richText, 3, 6);
+    expect(out).toHaveLength(2);
+    expect(out[0].format).toEqual({ bold: true });
+    expect(out[1].format).toEqual({ italic: true });
+  });
+
+  it('excludes a range that only touches the span boundaries (half-open)', () => {
+    const richText = createRichText({ data: { text: 'hello world' } });
+    setRichTextFormatRange(richText, { bold: true }, 5, 8);
+    const out: TextFormatRange[] = [];
+    // span [0, 5): range starting at 5 does not overlap.
+    getRichTextFormatRangesIn(out, richText, 0, 5);
+    expect(out).toHaveLength(0);
+  });
+
+  it('pushes ranges by reference', () => {
+    const richText = createRichText({ data: { text: 'hello' } });
+    setRichTextFormatRange(richText, { bold: true }, 0, 5);
+    const out: TextFormatRange[] = [];
+    getRichTextFormatRangesIn(out, richText, 0, 5);
+    expect(out[0]).toBe(richText.data.textFormatRanges[0]);
   });
 });
 

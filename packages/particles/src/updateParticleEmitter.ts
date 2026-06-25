@@ -9,6 +9,7 @@ import type {
 } from '@flighthq/types';
 
 import { sampleParticleColorCurve, sampleParticleCurve } from './curve';
+import { getParticleEmitterSignals } from './particleEmitterSignals';
 import { ensureParticleEmitterStateCapacity } from './particleEmitterState';
 
 export type { ParticleEmitterCallbacks, WorldTransform2D };
@@ -98,6 +99,8 @@ export function updateParticleEmitter(
   const hasFlipbook = config.frameCount > 1;
   const onDeath = callbacks?.onDeath;
   const onSpawn = callbacks?.onSpawn;
+  // Opt-in signals: null when enableParticleEmitterSignals has not been called on this state.
+  const signals = getParticleEmitterSignals(state);
 
   let liveCount = data.particleCount;
   let i = 0;
@@ -105,9 +108,12 @@ export function updateParticleEmitter(
     const lt = i * 2;
     lifetimes[lt] += deltaTime;
     if (lifetimes[lt] >= lifetimes[lt + 1]) {
-      if (onDeath !== undefined) {
+      if (onDeath !== undefined || signals !== null) {
         const tt = i * PARTICLE_TRANSFORM_STRIDE;
-        onDeath(data.transforms[tt], data.transforms[tt + 1]);
+        const dx = data.transforms[tt];
+        const dy = data.transforms[tt + 1];
+        onDeath?.(dx, dy);
+        signals?.onParticleDeath.emit(dx, dy);
       }
       liveCount--;
       if (i < liveCount) {
@@ -331,6 +337,9 @@ export function updateParticleEmitter(
       state.rotationSpeeds[idx] = hasRotSpeed ? config.rotationSpeedMin + state.random() * rotSpeedRange : 0;
 
       onSpawn?.(spawnX, spawnY);
+      if (signals !== null) {
+        signals.onParticleSpawn.emit(spawnX, spawnY, state.velocities[vt], state.velocities[vt + 1]);
+      }
     }
     data.particleCount = newCount;
   }
@@ -345,6 +354,11 @@ export function updateParticleEmitter(
   const liveVelocityCount = data.particleCount * 2;
   if (data.velocities.length >= liveVelocityCount) {
     data.velocities.set(state.velocities.subarray(0, liveVelocityCount));
+  }
+
+  // Fire onEmitterComplete when a finite emitter has just finished and all particles are gone.
+  if (signals !== null && isParticleEmitterComplete(emitter, state, config)) {
+    signals.onEmitterComplete.emit();
   }
 
   invalidateNodeLocalBounds(emitter);

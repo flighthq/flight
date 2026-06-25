@@ -11,6 +11,7 @@ import { setProtocolBackend } from '@flighthq/protocol';
 import { setScreenBackend } from '@flighthq/screen';
 import { setShellBackend } from '@flighthq/shell';
 import { setShortcutBackend } from '@flighthq/shortcut';
+import { setStorageBackend } from '@flighthq/storage';
 import { setTrayBackend } from '@flighthq/tray';
 import { setUpdaterBackend } from '@flighthq/updater';
 
@@ -27,20 +28,27 @@ import { createElectronProtocolBackend } from './electronProtocol';
 import { createElectronScreenBackend } from './electronScreen';
 import { createElectronShellBackend } from './electronShell';
 import { createElectronShortcutBackend } from './electronShortcut';
+import { createElectronStorageBackend } from './electronStorage';
 import { createElectronTrayBackend } from './electronTray';
 import { createElectronUpdaterBackend } from './electronUpdater';
 import { createElectronWindowBackend } from './electronWindow';
 
+export interface ElectronBackendOptions {
+  storageFileName?: string;
+}
+
 // Installs every Electron host backend into its capability package in one call. Run this once in the
-// Electron main process, passing the `electron` module:
+// Electron main process, passing the `electron` module plus the real node:fs module (needed for the
+// storage backend):
 //
 //   import * as electron from 'electron';
-//   registerElectronBackends(electron);
+//   import * as fs from 'node:fs';
+//   registerElectronBackends({ ...electron, fs });
 //
 // After this, the platform/app/window seams resolve to their Electron implementations instead of the
 // web defaults. Each set*Backend(null) (per package) reverts to the web default; there is no bulk
 // unregister because backends are independent — clear the ones you replaced.
-export function registerElectronBackends(electron: ElectronApi): void {
+export function registerElectronBackends(electron: ElectronApi, options: Readonly<ElectronBackendOptions> = {}): void {
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
   setWindowBackend(createElectronWindowBackend(electron));
@@ -53,6 +61,7 @@ export function registerElectronBackends(electron: ElectronApi): void {
   setPowerBackend(createElectronPowerBackend(electron));
   setNotificationBackend(createElectronNotificationBackend(electron));
   setShellBackend(createElectronShellBackend(electron));
+  setStorageBackend(createElectronStorageBackend(electron, options.storageFileName));
   setProtocolBackend(createElectronProtocolBackend(electron));
   setUpdaterBackend(createElectronUpdaterBackend(electron));
   setIpcBackend(createElectronIpcBackend(electron));

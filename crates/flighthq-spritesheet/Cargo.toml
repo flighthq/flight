@@ -6,6 +6,7 @@ license.workspace = true
 description = "Spritesheet frame animation playback"
 
 [dependencies]
-flighthq-resources = { workspace = true }
+flighthq-textureatlas = { workspace = true }
+flighthq-tileset = { workspace = true }
 flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }

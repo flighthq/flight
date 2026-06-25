@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import type { Aabb, AabbLike, Matrix4Like, Vector3Like } from '@flighthq/types';
+import type { Aabb, AabbLike, BoundingSphereLike, Matrix4Like, Vector3Like } from '@flighthq/types';
 
 import { createVector3 } from './vector3';
 
@@ -66,6 +66,39 @@ export function expandAabbByPoint(out: AabbLike, aabb: Readonly<AabbLike>, point
 }
 
 /**
+ * Grows an axis-aligned bounding box to include a bounding sphere. The sphere is expanded to
+ * its AABB first, then unioned with the existing box.
+ *
+ * Safe when `out` aliases `aabb`.
+ */
+export function expandAabbBySphere(
+  out: AabbLike,
+  aabb: Readonly<AabbLike>,
+  sphere: Readonly<BoundingSphereLike>,
+): void {
+  if (sphere.radius < 0) {
+    // empty sphere — no expansion
+    out.min.x = aabb.min.x;
+    out.min.y = aabb.min.y;
+    out.min.z = aabb.min.z;
+    out.max.x = aabb.max.x;
+    out.max.y = aabb.max.y;
+    out.max.z = aabb.max.z;
+    return;
+  }
+  const cx = sphere.center.x,
+    cy = sphere.center.y,
+    cz = sphere.center.z,
+    r = sphere.radius;
+  out.min.x = Math.min(aabb.min.x, cx - r);
+  out.min.y = Math.min(aabb.min.y, cy - r);
+  out.min.z = Math.min(aabb.min.z, cz - r);
+  out.max.x = Math.max(aabb.max.x, cx + r);
+  out.max.y = Math.max(aabb.max.y, cy + r);
+  out.max.z = Math.max(aabb.max.z, cz + r);
+}
+
+/**
  * Writes the center point of an axis-aligned bounding box (the midpoint of its corners).
  */
 export function getAabbCenter(out: Vector3Like, aabb: Readonly<AabbLike>): void {
@@ -85,6 +118,82 @@ export function getAabbContainsPoint(aabb: Readonly<AabbLike>, point: Readonly<V
     point.y <= aabb.max.y &&
     point.z >= aabb.min.z &&
     point.z <= aabb.max.z
+  );
+}
+
+/**
+ * Writes the half-extents (half the size along each axis) of an axis-aligned bounding box.
+ */
+export function getAabbExtents(out: Vector3Like, aabb: Readonly<AabbLike>): void {
+  out.x = (aabb.max.x - aabb.min.x) * 0.5;
+  out.y = (aabb.max.y - aabb.min.y) * 0.5;
+  out.z = (aabb.max.z - aabb.min.z) * 0.5;
+}
+
+/**
+ * Writes the full size (extent along each axis) of an axis-aligned bounding box.
+ */
+export function getAabbSize(out: Vector3Like, aabb: Readonly<AabbLike>): void {
+  out.x = aabb.max.x - aabb.min.x;
+  out.y = aabb.max.y - aabb.min.y;
+  out.z = aabb.max.z - aabb.min.z;
+}
+
+/**
+ * Writes the point on (or inside) an axis-aligned bounding box closest to `point` — each
+ * coordinate is clamped to the box's range on that axis. When `point` is already inside the box
+ * the result equals `point`. An empty box (min > max) clamps to the inverted range and yields a
+ * degenerate result; callers should guard empties.
+ *
+ * Safe when `out` aliases `point`.
+ */
+export function getClosestPointOnAabb(out: Vector3Like, aabb: Readonly<AabbLike>, point: Readonly<Vector3Like>): void {
+  const px = point.x,
+    py = point.y,
+    pz = point.z;
+  out.x = Math.min(Math.max(px, aabb.min.x), aabb.max.x);
+  out.y = Math.min(Math.max(py, aabb.min.y), aabb.max.y);
+  out.z = Math.min(Math.max(pz, aabb.min.z), aabb.max.z);
+}
+
+/**
+ * Writes the intersection (overlap region) of two axis-aligned bounding boxes to `out`.
+ * If the boxes do not overlap, `out` is set to an empty box (min > max).
+ *
+ * Reads all inputs into locals before writing, so it is safe when `out` aliases `a` or `b`.
+ */
+export function intersectAabb(out: AabbLike, a: Readonly<AabbLike>, b: Readonly<AabbLike>): void {
+  const aMinX = a.min.x,
+    aMinY = a.min.y,
+    aMinZ = a.min.z;
+  const aMaxX = a.max.x,
+    aMaxY = a.max.y,
+    aMaxZ = a.max.z;
+  const bMinX = b.min.x,
+    bMinY = b.min.y,
+    bMinZ = b.min.z;
+  const bMaxX = b.max.x,
+    bMaxY = b.max.y,
+    bMaxZ = b.max.z;
+  out.min.x = Math.max(aMinX, bMinX);
+  out.min.y = Math.max(aMinY, bMinY);
+  out.min.z = Math.max(aMinZ, bMinZ);
+  out.max.x = Math.min(aMaxX, bMaxX);
+  out.max.y = Math.min(aMaxY, bMaxY);
+  out.max.z = Math.min(aMaxZ, bMaxZ);
+}
+
+/**
+ * Returns whether two axis-aligned bounding boxes overlap (share any interior or surface point).
+ */
+export function intersectsAabb(a: Readonly<AabbLike>, b: Readonly<AabbLike>): boolean {
+  return (
+    a.min.x <= b.max.x &&
+    a.max.x >= b.min.x &&
+    a.min.y <= b.max.y &&
+    a.max.y >= b.min.y &&
+    a.min.z <= b.max.z &&
+    a.max.z >= b.min.z
   );
 }
 

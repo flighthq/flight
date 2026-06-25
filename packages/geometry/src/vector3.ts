@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity';
-import type { Vector2Like, Vector3, Vector3Like } from '@flighthq/types';
+import type { Vector2Like, Vector3, Vector3Like, Vector4Like } from '@flighthq/types';
 
 /**
  * Adds the x, y and z components of two vector objects
@@ -9,6 +9,31 @@ export function addVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readon
   out.x = a.x + b.x;
   out.y = a.y + b.y;
   out.z = a.z + b.z;
+}
+
+/**
+ * Clamps each component of a Vector3Like independently to [min, max].
+ *
+ * Safe when `out` aliases `value`, `min`, or `max`.
+ */
+export function clampVector3(
+  out: Vector3Like,
+  value: Readonly<Vector3Like>,
+  min: Readonly<Vector3Like>,
+  max: Readonly<Vector3Like>,
+): void {
+  const vx = value.x,
+    vy = value.y,
+    vz = value.z;
+  const minX = min.x,
+    minY = min.y,
+    minZ = min.z;
+  const maxX = max.x,
+    maxY = max.y,
+    maxZ = max.z;
+  out.x = vx < minX ? minX : vx > maxX ? maxX : vx;
+  out.y = vy < minY ? minY : vy > maxY ? maxY : vy;
+  out.z = vz < minZ ? minZ : vz > maxZ ? maxZ : vz;
 }
 
 export function cloneVector3(source: Readonly<Vector3Like>): Vector3 {
@@ -50,6 +75,19 @@ export function createVector3(x?: number, y?: number, z?: number): Vector3 {
 }
 
 /**
+ * Creates a Vector3 from spherical coordinates (physics convention: radius, inclination θ from
+ * +Y axis, azimuth φ from +X axis in the XZ plane).
+ *
+ * - `theta` is the polar angle measured from the +Y axis (0 = north pole, π = south pole).
+ * - `phi` is the azimuthal angle measured from the +X axis in the XZ plane.
+ */
+export function createVector3FromSpherical(radius: number, theta: number, phi: number): Vector3 {
+  const out = createVector3();
+  setVector3FromSpherical(out, radius, theta, phi);
+  return out;
+}
+
+/**
  * Writes a Vector3Like object that is perpendicular (at a right angle) to the
  * current Vector3Like and another Vector3Like object. If the returned Vector3Like object's
  * coordinates are (0,0,0), then the two Vector3Like objects are parallel to each other.
@@ -61,6 +99,25 @@ export function crossVector3(out: Vector3Like, source: Readonly<Vector3Like>, ot
   out.x = x;
   out.y = y;
   out.z = z;
+}
+
+/**
+ * Component-wise division of two vectors (Hadamard division). Each component of
+ * `source` is divided by the corresponding component of `divisor`. Components with a
+ * zero divisor produce `0` in the output.
+ *
+ * Safe when `out` aliases `source` or `divisor`.
+ */
+export function divideVector3(out: Vector3Like, source: Readonly<Vector3Like>, divisor: Readonly<Vector3Like>): void {
+  const sx = source.x,
+    sy = source.y,
+    sz = source.z;
+  const dx = divisor.x,
+    dy = divisor.y,
+    dz = divisor.z;
+  out.x = dx !== 0 ? sx / dx : 0;
+  out.y = dy !== 0 ? sy / dy : 0;
+  out.z = dz !== 0 ? sz / dz : 0;
 }
 
 export function equalsVector3(
@@ -142,6 +199,83 @@ export function getVector3LengthSquared(source: Readonly<Vector3Like>): number {
 }
 
 /**
+ * Reads the spherical coordinates (radius, theta, phi) from a Vector3Like. Uses the same
+ * convention as `setVector3FromSpherical` / `createVector3FromSpherical`:
+ * - `theta` is the polar angle from the +Y axis (0 = north pole, π = south pole).
+ * - `phi` is the azimuthal angle from the +X axis in the XZ plane.
+ *
+ * Writes to `out` as (x=radius, y=theta, z=phi).
+ */
+export function getVector3Spherical(out: Vector3Like, source: Readonly<Vector3Like>): void {
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  const radius = Math.sqrt(x * x + y * y + z * z);
+  if (radius === 0) {
+    out.x = 0;
+    out.y = 0;
+    out.z = 0;
+    return;
+  }
+  out.x = radius;
+  out.y = Math.acos(Math.min(1, Math.max(-1, y / radius)));
+  out.z = Math.atan2(z, x);
+}
+
+/**
+ * Linear interpolation between two Vector3Like objects at parameter `t` in [0, 1].
+ * `t=0` returns `a`; `t=1` returns `b`.
+ *
+ * Safe when `out` aliases `a` or `b` (all inputs are read into locals first).
+ */
+export function interpolateVector3(
+  out: Vector3Like,
+  a: Readonly<Vector3Like>,
+  b: Readonly<Vector3Like>,
+  t: number,
+): void {
+  const ax = a.x,
+    ay = a.y,
+    az = a.z;
+  out.x = ax + t * (b.x - ax);
+  out.y = ay + t * (b.y - ay);
+  out.z = az + t * (b.z - az);
+}
+
+/**
+ * Writes the per-component maximum of two vectors.
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function maxVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
+  out.x = a.x > b.x ? a.x : b.x;
+  out.y = a.y > b.y ? a.y : b.y;
+  out.z = a.z > b.z ? a.z : b.z;
+}
+
+/**
+ * Writes the per-component minimum of two vectors.
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function minVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
+  out.x = a.x < b.x ? a.x : b.x;
+  out.y = a.y < b.y ? a.y : b.y;
+  out.z = a.z < b.z ? a.z : b.z;
+}
+
+/**
+ * Component-wise product of two vectors (Hadamard product).
+ *
+ * Safe when `out` aliases `a` or `b`.
+ */
+export function multiplyVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
+  out.x = a.x * b.x;
+  out.y = a.y * b.y;
+  out.z = a.z * b.z;
+}
+
+/**
  * Compares the elements of the current Vector3Like object with the elements of a
  * specified Vector3Like object to determine whether they are nearly equal.
  *
@@ -214,6 +348,27 @@ export function projectVector3(out: Vector2Like, source: Readonly<Vector3Like>):
 }
 
 /**
+ * Reflects an incident vector about a unit normal. The result is the reflection of
+ * `incident` across the plane whose normal is `normal`.
+ *
+ * Formula: out = incident - 2 * dot(incident, normal) * normal
+ *
+ * Safe when `out` aliases `incident` or `normal`.
+ */
+export function reflectVector3(out: Vector3Like, incident: Readonly<Vector3Like>, normal: Readonly<Vector3Like>): void {
+  const ix = incident.x,
+    iy = incident.y,
+    iz = incident.z;
+  const nx = normal.x,
+    ny = normal.y,
+    nz = normal.z;
+  const twoDot = 2 * (ix * nx + iy * ny + iz * nz);
+  out.x = ix - twoDot * nx;
+  out.y = iy - twoDot * ny;
+  out.z = iz - twoDot * nz;
+}
+
+/**
  * Scales the current Vector3Like object by a scalar, a magnitude. The Vector3Like object's
  * x, y, and z elements are multiplied by the provided scalar number.
  **/
@@ -233,6 +388,42 @@ export function setVector3(out: Vector3Like, x: number, y: number, z: number): v
 }
 
 /**
+ * Reads a Vector3Like from a Float32Array at a byte offset.
+ */
+export function setVector3FromFloat32Array(out: Vector3Like, offset: number, source: Readonly<Float32Array>): void {
+  out.x = source[offset];
+  out.y = source[offset + 1];
+  out.z = source[offset + 2];
+}
+
+/**
+ * Writes a Vector3Like into spherical coordinates.
+ * Uses the physics convention: theta is polar angle from +Y, phi is azimuthal from +X in XZ.
+ */
+export function setVector3FromSpherical(out: Vector3Like, radius: number, theta: number, phi: number): void {
+  const sinTheta = Math.sin(theta);
+  out.x = radius * sinTheta * Math.cos(phi);
+  out.y = radius * Math.cos(theta);
+  out.z = radius * sinTheta * Math.sin(phi);
+}
+
+/**
+ * Copies the x, y, and z components of a Vector4Like into a Vector3Like, dropping the w component.
+ * For perspective-correct results (when w ≠ 1) use projectVector4 instead, which performs the
+ * perspective divide.
+ *
+ * Safe when `out` aliases the same memory as `source`.
+ */
+export function setVector3FromVector4(out: Vector3Like, source: Readonly<Vector4Like>): void {
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  out.x = x;
+  out.y = y;
+  out.z = z;
+}
+
+/**
  * Subtracts the value of the x, y, and z elements of the current Vector3Like object
  * from the values of the x, y, and z elements of another Vector3Like object.
  **/
@@ -240,6 +431,35 @@ export function subtractVector3(out: Vector3Like, source: Readonly<Vector3Like>,
   out.x = source.x - other.x;
   out.y = source.y - other.y;
   out.z = source.z - other.z;
+}
+
+/**
+ * Transforms a Vector3Like by a Matrix3 (column-major, row-major storage).
+ * Useful for transforming normals by a normal matrix.
+ *
+ * Safe when `out` aliases `source`.
+ */
+export function transformVector3ByMatrix3(
+  out: Vector3Like,
+  source: Readonly<Vector3Like>,
+  matrix: Readonly<{ m: Readonly<Float32Array> }>,
+): void {
+  const m = matrix.m;
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  out.x = m[0] * x + m[1] * y + m[2] * z;
+  out.y = m[3] * x + m[4] * y + m[5] * z;
+  out.z = m[6] * x + m[7] * y + m[8] * z;
+}
+
+/**
+ * Writes a Vector3Like into a Float32Array at a byte offset.
+ */
+export function writeVector3ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Vector3Like>): void {
+  out[offset] = source.x;
+  out[offset + 1] = source.y;
+  out[offset + 2] = source.z;
 }
 
 export const VECTOR3_X_AXIS: Readonly<Vector3> = createVector3(1, 0, 0);

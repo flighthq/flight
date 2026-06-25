@@ -10,6 +10,7 @@ import {
   createMatrix4,
   createVector3,
   equalsMatrix3,
+  getMatrix3Determinant,
   getMatrix3Element,
   inverseMatrix3,
   isAffineMatrix3,
@@ -18,12 +19,14 @@ import {
   scaleMatrix3,
   setMatrix3,
   setMatrix3Element,
+  setMatrix3FromFloat32Array,
   setMatrix3FromMatrix,
   setMatrix3FromMatrix4,
   setMatrix3Identity,
   setMatrix3NormalFromMatrix4,
   translateMatrix3,
   transposeMatrix3,
+  writeMatrix3ToFloat32Array,
 } from '@flighthq/geometry';
 import type { Matrix3 } from '@flighthq/types';
 
@@ -303,6 +306,22 @@ describe('equalsMatrix3', () => {
   });
 });
 
+describe('getMatrix3Determinant', () => {
+  it('returns 1 for the identity matrix', () => {
+    expect(getMatrix3Determinant(createMatrix3())).toBeCloseTo(1, 6);
+  });
+
+  it('returns 0 for a singular matrix', () => {
+    // Two identical rows → determinant = 0.
+    expect(getMatrix3Determinant(createMatrix3(1, 2, 3, 1, 2, 3, 4, 5, 6))).toBeCloseTo(0, 6);
+  });
+
+  it('returns a negative value when a row is negated (sign flip)', () => {
+    // Negate one row flips sign of det. Identity det = 1, negate row 0 → -1.
+    expect(getMatrix3Determinant(createMatrix3(-1, 0, 0, 0, 1, 0, 0, 0, 1))).toBeCloseTo(-1, 6);
+  });
+});
+
 describe('getMatrix3Element', () => {
   it('returns the element at the given row and column', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -519,6 +538,22 @@ describe('setMatrix3Element', () => {
   });
 });
 
+describe('setMatrix3FromFloat32Array', () => {
+  it('reads 9 values starting at the given offset', () => {
+    const data = new Float32Array([99, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const m = createMatrix3();
+    setMatrix3FromFloat32Array(m, 1, data);
+    expect(Array.from(m.m)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it('defaults offset to 0', () => {
+    const data = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const m = createMatrix3();
+    setMatrix3FromFloat32Array(m, 0, data);
+    expect(Array.from(m.m)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+});
+
 describe('setMatrix3FromMatrix', () => {
   it('should convert a Matrix3x2 to a Matrix3', () => {
     // Define a matrix (6 values, row-major)
@@ -695,5 +730,23 @@ describe('transposeMatrix3', () => {
     const out = createMatrix3();
     transposeMatrix3(out, m);
     expect(Array.from(out.m)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  });
+});
+
+describe('writeMatrix3ToFloat32Array', () => {
+  it('writes 9 values starting at the given offset', () => {
+    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const data = new Float32Array(10);
+    writeMatrix3ToFloat32Array(data, 1, m);
+    expect(Array.from(data)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it('round-trips through setMatrix3FromFloat32Array', () => {
+    const m = createMatrix3(9, 8, 7, 6, 5, 4, 3, 2, 1);
+    const data = new Float32Array(9);
+    writeMatrix3ToFloat32Array(data, 0, m);
+    const m2 = createMatrix3();
+    setMatrix3FromFloat32Array(m2, 0, data);
+    expect(equalsMatrix3(m2, m)).toBe(true);
   });
 });

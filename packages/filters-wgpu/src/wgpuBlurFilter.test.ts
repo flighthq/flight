@@ -1,9 +1,35 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyBoxBlurFilterToWgpu, applyGaussianBlurFilterToWgpu } from './wgpuBlurFilter';
+import { applyBlurFilterToWgpu, applyBoxBlurFilterToWgpu, applyGaussianBlurFilterToWgpu } from './wgpuBlurFilter';
 import { installWgpuMock, makeFilterState, makeRenderTarget, makeScratch } from './wgpuTestHelper';
 
 installWgpuMock();
+
+describe('applyBlurFilterToWgpu', () => {
+  it('completes without error using default options', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    const [temp] = makeScratch(1);
+    expect(() => applyBlurFilterToWgpu(state, source, dest, temp, {})).not.toThrow();
+  });
+
+  it('handles zero blur (copies source to dest)', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    const [temp] = makeScratch(1);
+    expect(() => applyBlurFilterToWgpu(state, source, dest, temp, { blurX: 0, blurY: 0 })).not.toThrow();
+  });
+
+  it('delegates to the Gaussian path (asymmetric sigma)', async () => {
+    const state = await makeFilterState();
+    const source = makeRenderTarget();
+    const dest = makeRenderTarget();
+    const [temp] = makeScratch(1);
+    expect(() => applyBlurFilterToWgpu(state, source, dest, temp, { blurX: 3, blurY: 8 })).not.toThrow();
+  });
+});
 
 describe('applyBoxBlurFilterToWgpu', () => {
   it('completes without error for default options', async () => {

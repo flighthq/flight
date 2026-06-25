@@ -12,6 +12,7 @@
 export interface ElectronApi {
   app: ElectronApp;
   clipboard: ElectronClipboard;
+  fs: ElectronFs;
   shell: ElectronShell;
   dialog: ElectronDialog;
   globalShortcut: ElectronGlobalShortcut;
@@ -25,6 +26,15 @@ export interface ElectronApi {
   Menu: ElectronMenuConstructor;
   Tray: ElectronTrayConstructor;
   Notification: ElectronNotificationConstructor;
+}
+
+// The minimal node:fs slice the storage backend needs. Injected on ElectronApi rather than imported
+// so this package stays node:fs-dependency-free (matching the electron-free design principle); in a
+// real Electron app the host passes the real node:fs module to registerElectronBackends.
+export interface ElectronFs {
+  existsSync(path: string): boolean;
+  readFileSync(path: string, encoding: 'utf-8'): string;
+  writeFileSync(path: string, data: string): void;
 }
 
 export interface ElectronApp {

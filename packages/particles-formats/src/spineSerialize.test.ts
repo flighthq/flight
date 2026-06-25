@@ -1,5 +1,7 @@
+import { createParticleEmitterConfig } from '@flighthq/particles';
+
 import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
-import { serializeSpineParticle } from './spineSerialize';
+import { serializeSpineParticle, serializeSpineParticleDocument } from './spineSerialize';
 
 const SPARK_JSON = JSON.stringify({
   name: 'spark',
@@ -55,5 +57,25 @@ describe('serializeSpineParticle', () => {
     const { document } = parseSpineParticleDocument(SPARK_JSON);
     const json2 = JSON.parse(serializeSpineParticle(config, document)) as Record<string, unknown>;
     expect(json2.name).toBe('spark');
+  });
+});
+
+describe('serializeSpineParticleDocument', () => {
+  it('returns text and empty warnings for a default config', () => {
+    const config = createParticleEmitterConfig();
+    const result = serializeSpineParticleDocument(config);
+    expect(typeof result.text).toBe('string');
+    expect(JSON.parse(result.text)).toBeDefined();
+    expect(result.warnings).toEqual([]);
+  });
+  it('warns when config has emission bursts', () => {
+    const config = createParticleEmitterConfig({ burstCount: 5 });
+    const result = serializeSpineParticleDocument(config);
+    expect(result.warnings.some((w) => w.toLowerCase().includes('burst'))).toBe(true);
+  });
+  it('warns when config has color start variance', () => {
+    const config = createParticleEmitterConfig({ colorStartVarianceR: 0.1 });
+    const result = serializeSpineParticleDocument(config);
+    expect(result.warnings.some((w) => w.includes('colorStartVariance'))).toBe(true);
   });
 });

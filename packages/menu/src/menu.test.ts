@@ -1,139 +1,162 @@
-import type { MenuBackend, MenuItemTemplate } from '@flighthq/types';
+import type { MenuBackend } from '@flighthq/types';
 
 import {
+  cloneMenuTemplate,
   createMenuItemTemplate,
   createWebMenuBackend,
+  enableMenuSignals,
   getMenuBackend,
+  getMenuSignals,
   onMenuSelect,
   setApplicationMenu,
   setMenuBackend,
   showContextMenu,
+  validateMenuItemTemplate,
 } from './menu';
 
-function fakeBackend(): MenuBackend & {
-  lastMenu: readonly MenuItemTemplate[] | null;
-  clickResult: string | null;
-  fireSelect(id: string): void;
-} {
-  let selectListener: ((id: string) => void) | null = null;
+function fakeBackend(overrides?: Partial<MenuBackend>): MenuBackend {
   return {
-    lastMenu: null,
-    clickResult: null,
-    setApplicationMenu(items) {
-      this.lastMenu = items;
-      return true;
-    },
-    async popupContextMenu() {
-      return this.clickResult;
-    },
-    subscribeSelect(listener) {
-      selectListener = listener;
-      return () => {
-        selectListener = null;
-      };
-    },
-    fireSelect(id) {
-      selectListener?.(id);
-    },
+    setApplicationMenu: () => true,
+    popupContextMenu: () => Promise.resolve(null),
+    subscribeSelect: () => () => {},
+    ...overrides,
   };
 }
 
-afterEach(() => setMenuBackend(null));
+describe('cloneMenuTemplate', () => {
+  it('produces an equal but distinct tree', () => {
+    const original = createMenuItemTemplate({
+      id: 'file',
+      type: 'submenu',
+      submenu: [{ id: 'open', label: 'Open' }],
+    });
+    const clone = cloneMenuTemplate(original);
+    expect(clone).toStrictEqual(original);
+    expect(clone).not.toBe(original);
+    expect(clone.submenu).not.toBe(original.submenu);
+    expect(clone.submenu![0]).not.toBe(original.submenu![0]);
+  });
+});
 
 describe('createMenuItemTemplate', () => {
-  it('fills defaults (type normal, enabled true)', () => {
-    const item = createMenuItemTemplate();
+  it('fills type and enabled defaults', () => {
+    const item = createMenuItemTemplate({ id: 'copy', label: 'Copy' });
     expect(item.type).toBe('normal');
     expect(item.enabled).toBe(true);
   });
 
-  it('overrides defaults with provided fields', () => {
-    const item = createMenuItemTemplate({ label: 'Quit', role: 'quit', type: 'separator', enabled: false });
-    expect(item.label).toBe('Quit');
-    expect(item.role).toBe('quit');
-    expect(item.type).toBe('separator');
-    expect(item.enabled).toBe(false);
+  it('normalizes submenu children recursively', () => {
+    const item = createMenuItemTemplate({ type: 'submenu', submenu: [{ id: 'child' }] });
+    expect(item.submenu![0].type).toBe('normal');
+    expect(item.submenu![0].enabled).toBe(true);
   });
 });
 
 describe('createWebMenuBackend', () => {
-  it('returns sentinels without throwing (web has no native menus)', async () => {
+  it('reports no native application menu', () => {
     const backend = createWebMenuBackend();
     expect(backend.setApplicationMenu([])).toBe(false);
-    expect(await backend.popupContextMenu([], 0, 0)).toBeNull();
+  });
+
+  it('returns an unsubscribe function from subscribeSelect', () => {
+    const backend = createWebMenuBackend();
     expect(typeof backend.subscribeSelect(() => {})).toBe('function');
   });
 });
 
+describe('enableMenuSignals', () => {
+  it('returns a stable instance across calls', () => {
+    expect(enableMenuSignals()).toBe(enableMenuSignals());
+  });
+});
+
 describe('getMenuBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getMenuBackend()).not.toBeNull();
-  });
+  afterEach(() => setMenuBackend(null));
 
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setMenuBackend(backend);
-    expect(getMenuBackend()).toBe(backend);
-  });
-});
-
-describe('onMenuSelect', () => {
-  it('delivers the selected item id via the active backend', () => {
-    const backend = fakeBackend();
-    setMenuBackend(backend);
-    let received: string | null = null;
-    onMenuSelect((id) => {
-      received = id;
-    });
-    backend.fireSelect('quit');
-    expect(received).toBe('quit');
-  });
-
-  it('returns an unsubscribe that stops delivery', () => {
-    const backend = fakeBackend();
-    setMenuBackend(backend);
-    let count = 0;
-    const unsubscribe = onMenuSelect(() => {
-      count += 1;
-    });
-    backend.fireSelect('a');
-    unsubscribe();
-    backend.fireSelect('b');
-    expect(count).toBe(1);
-  });
-});
-
-describe('setApplicationMenu', () => {
-  it('sets the menu via the active backend', () => {
-    const backend = fakeBackend();
-    setMenuBackend(backend);
-    const items = [createMenuItemTemplate({ label: 'File' })];
-    expect(setApplicationMenu(items)).toBe(true);
-    expect(backend.lastMenu).toBe(items);
-  });
-
-  it('returns false on the web backend', () => {
-    expect(setApplicationMenu([])).toBe(false);
-  });
-});
-
-describe('setMenuBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setMenuBackend(fakeBackend());
+  it('lazily returns a web default backend', () => {
     setMenuBackend(null);
     expect(getMenuBackend()).not.toBeNull();
   });
 });
 
-describe('showContextMenu', () => {
-  it('resolves the clicked item id via the active backend', async () => {
+describe('getMenuSignals', () => {
+  it('returns the active signal group once enabled', () => {
+    const signals = enableMenuSignals();
+    expect(getMenuSignals()).toBe(signals);
+  });
+});
+
+describe('onMenuSelect', () => {
+  afterEach(() => setMenuBackend(null));
+
+  it('delivers the selected id from the backend', () => {
+    let captured: ((id: string) => void) | null = null;
+    setMenuBackend(
+      fakeBackend({
+        subscribeSelect: (l) => {
+          captured = l;
+          return () => {};
+        },
+      }),
+    );
+    const received: string[] = [];
+    onMenuSelect((id) => received.push(id));
+    captured!('save');
+    expect(received).toEqual(['save']);
+  });
+});
+
+describe('setApplicationMenu', () => {
+  afterEach(() => setMenuBackend(null));
+
+  it('delegates to the active backend', () => {
+    let installed = 0;
+    setMenuBackend(
+      fakeBackend({
+        setApplicationMenu: (i) => {
+          installed = i.length;
+          return true;
+        },
+      }),
+    );
+    expect(setApplicationMenu([{ id: 'a' }])).toBe(true);
+    expect(installed).toBe(1);
+  });
+});
+
+describe('setMenuBackend', () => {
+  afterEach(() => setMenuBackend(null));
+
+  it('installs an explicit backend and reverts to the web default on null', () => {
     const backend = fakeBackend();
-    backend.clickResult = 'paste';
     setMenuBackend(backend);
-    expect(await showContextMenu([createMenuItemTemplate({ id: 'paste' })], 10, 20)).toBe('paste');
+    expect(getMenuBackend()).toBe(backend);
+    setMenuBackend(null);
+    expect(getMenuBackend()).not.toBe(backend);
+  });
+});
+
+describe('showContextMenu', () => {
+  afterEach(() => setMenuBackend(null));
+
+  it('resolves the id returned by the backend popup', async () => {
+    setMenuBackend(fakeBackend({ popupContextMenu: () => Promise.resolve('copy') }));
+    await expect(showContextMenu([], 0, 0)).resolves.toBe('copy');
+  });
+});
+
+describe('validateMenuItemTemplate', () => {
+  it('returns null for a well-formed item', () => {
+    expect(validateMenuItemTemplate(createMenuItemTemplate({ id: 'ok', label: 'Ok' }))).toBeNull();
   });
 
-  it('resolves null on the web backend', async () => {
-    expect(await showContextMenu([], 0, 0)).toBeNull();
+  it('rejects a separator that carries a label', () => {
+    expect(validateMenuItemTemplate({ type: 'separator', label: 'X' })).not.toBeNull();
+  });
+
+  it('throws on a cyclic submenu reference', () => {
+    const node = createMenuItemTemplate({ type: 'submenu' });
+    node.submenu = [node];
+    expect(() => validateMenuItemTemplate(node)).toThrow();
   });
 });

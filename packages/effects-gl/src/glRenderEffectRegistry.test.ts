@@ -1,4 +1,4 @@
-import { getGlRenderEffectRunner, registerGlRenderEffect } from './glRenderEffectRegistry';
+import { getGlRenderEffectRunner, hasGlRenderEffectRunner, registerGlRenderEffect } from './glRenderEffectRegistry';
 
 describe('getGlRenderEffectRunner', () => {
   it('is a function', () => {
@@ -8,6 +8,24 @@ describe('getGlRenderEffectRunner', () => {
   it('returns null for an unregistered kind', () => {
     const fakeState = {} as never;
     expect(getGlRenderEffectRunner(fakeState, 'UnknownEffect')).toBeNull();
+  });
+});
+
+describe('hasGlRenderEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof hasGlRenderEffectRunner).toBe('function');
+  });
+
+  it('returns false for an unregistered kind', () => {
+    const fakeState = {} as never;
+    expect(hasGlRenderEffectRunner(fakeState, 'NotRegisteredEffect')).toBe(false);
+  });
+
+  it('returns true after a runner is registered', () => {
+    const fakeState = {} as never;
+    const runner = vi.fn();
+    registerGlRenderEffect(fakeState, 'HasTestEffect', runner);
+    expect(hasGlRenderEffectRunner(fakeState, 'HasTestEffect')).toBe(true);
   });
 });
 

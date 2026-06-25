@@ -45,7 +45,12 @@ flighthq-text = { workspace = true }
 flighthq-textlayout = { workspace = true }
 flighthq-textinput = { workspace = true }
 flighthq-textshaper = { workspace = true }
-flighthq-resources = { workspace = true }
+flighthq-audio = { workspace = true }
+flighthq-font = { workspace = true }
+flighthq-image = { workspace = true }
+flighthq-textureatlas = { workspace = true }
+flighthq-tileset = { workspace = true }
+flighthq-video = { workspace = true }
 flighthq-loader = { workspace = true }
 flighthq-tween = { workspace = true }
 flighthq-easing = { workspace = true }

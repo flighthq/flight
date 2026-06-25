@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { createWgpuGradientRampTexture, getWgpuGradientRampTexture } from './wgpuGradientRamp';
+import {
+  createWgpuGradientRampTexture,
+  destroyWgpuGradientRampTextures,
+  getWgpuGradientRampTexture,
+} from './wgpuGradientRamp';
 import { installWgpuMock, makeFilterState } from './wgpuTestHelper';
 
 installWgpuMock();
@@ -30,6 +34,34 @@ describe('createWgpuGradientRampTexture', () => {
     const state = await makeFilterState();
     const tex = createWgpuGradientRampTexture(state, [0xff0000, 0x00ff00, 0x0000ff], [1, 1, 1], [0, 128, 255]);
     expect(tex).toBeDefined();
+  });
+});
+
+describe('destroyWgpuGradientRampTextures', () => {
+  it('does not throw when called with no cached textures', async () => {
+    const state = await makeFilterState();
+    expect(() => destroyWgpuGradientRampTextures(state)).not.toThrow();
+  });
+
+  it('clears the cache so subsequent calls re-create textures', async () => {
+    const state = await makeFilterState();
+    const internalState = state as never as { device: { createTexture: ReturnType<typeof vi.fn> } };
+    const createTextureSpy = vi.spyOn(internalState.device, 'createTexture');
+
+    const first = getWgpuGradientRampTexture(state, [0x000000, 0xffffff], [1, 1], [0, 255]);
+    expect(createTextureSpy).toHaveBeenCalledTimes(1);
+    destroyWgpuGradientRampTextures(state);
+    // After destroy the cache is cleared — a new texture is created for the same stops.
+    const second = getWgpuGradientRampTexture(state, [0x000000, 0xffffff], [1, 1], [0, 255]);
+    expect(createTextureSpy).toHaveBeenCalledTimes(2);
+    expect(second).not.toBe(first);
+  });
+
+  it('is idempotent — double destroy does not throw', async () => {
+    const state = await makeFilterState();
+    getWgpuGradientRampTexture(state, [0x000000, 0xffffff], [1, 1], [0, 255]);
+    destroyWgpuGradientRampTextures(state);
+    expect(() => destroyWgpuGradientRampTextures(state)).not.toThrow();
   });
 });
 

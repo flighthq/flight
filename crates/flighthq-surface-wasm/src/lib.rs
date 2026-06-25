@@ -43,6 +43,13 @@ use flighthq_surface::{
     scroll_surface, sharpen_surface, unpremultiply_surface_pixels, write_surface_pixels,
     write_surface_pixels_32,
 };
+use flighthq_surface::{
+    build_surface_brightness_color_matrix, build_surface_contrast_color_matrix,
+    build_surface_grayscale_color_matrix, build_surface_hue_rotation_color_matrix,
+    build_surface_invert_color_matrix, build_surface_saturation_color_matrix,
+    build_surface_sepia_color_matrix, compute_gaussian_kernel, concat_surface_color_matrix,
+    set_surface_color_matrix_identity,
+};
 use flighthq_types::{BlendMode, ColorTransformLike, ImageChannel, PixelOrder, ThresholdOperation};
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -995,4 +1002,71 @@ fn threshold_op_from_u8(value: u8) -> ThresholdOperation {
         4 => ThresholdOperation::GreaterThan,
         _ => ThresholdOperation::GreaterEqual,
     }
+}
+
+// --- Color-matrix builders + Gaussian kernel ----------------------------------------------------
+// Pure coefficient producers that pair with `color_matrix_surface_wasm` / `convolve_surface_wasm`.
+// Each writes into a caller-provided Float32Array (the 20-entry color matrix, or the
+// (2*radius+1)-entry kernel) that wasm-bindgen copies back to JS.
+
+fn color_matrix_out(out: &mut [f32]) -> &mut [f32; 20] {
+    out.try_into().expect("color matrix must have 20 entries")
+}
+
+fn color_matrix_in(m: &[f32]) -> &[f32; 20] {
+    m.try_into().expect("color matrix must have 20 entries")
+}
+
+#[wasm_bindgen]
+pub fn build_surface_brightness_color_matrix_wasm(out: &mut [f32], amount: f32) {
+    build_surface_brightness_color_matrix(color_matrix_out(out), amount);
+}
+
+#[wasm_bindgen]
+pub fn build_surface_contrast_color_matrix_wasm(out: &mut [f32], amount: f32) {
+    build_surface_contrast_color_matrix(color_matrix_out(out), amount);
+}
+
+#[wasm_bindgen]
+pub fn build_surface_grayscale_color_matrix_wasm(out: &mut [f32]) {
+    build_surface_grayscale_color_matrix(color_matrix_out(out));
+}
+
+#[wasm_bindgen]
+pub fn build_surface_hue_rotation_color_matrix_wasm(out: &mut [f32], degrees: f32) {
+    build_surface_hue_rotation_color_matrix(color_matrix_out(out), degrees);
+}
+
+#[wasm_bindgen]
+pub fn build_surface_invert_color_matrix_wasm(out: &mut [f32]) {
+    build_surface_invert_color_matrix(color_matrix_out(out));
+}
+
+#[wasm_bindgen]
+pub fn build_surface_saturation_color_matrix_wasm(out: &mut [f32], amount: f32) {
+    build_surface_saturation_color_matrix(color_matrix_out(out), amount);
+}
+
+#[wasm_bindgen]
+pub fn build_surface_sepia_color_matrix_wasm(out: &mut [f32]) {
+    build_surface_sepia_color_matrix(color_matrix_out(out));
+}
+
+#[wasm_bindgen]
+pub fn concat_surface_color_matrix_wasm(out: &mut [f32], first: &[f32], second: &[f32]) {
+    concat_surface_color_matrix(
+        color_matrix_out(out),
+        color_matrix_in(first),
+        color_matrix_in(second),
+    );
+}
+
+#[wasm_bindgen]
+pub fn set_surface_color_matrix_identity_wasm(out: &mut [f32]) {
+    set_surface_color_matrix_identity(color_matrix_out(out));
+}
+
+#[wasm_bindgen]
+pub fn compute_gaussian_kernel_wasm(out: &mut [f32], radius: u32, sigma: f32) {
+    compute_gaussian_kernel(out, radius, sigma);
 }

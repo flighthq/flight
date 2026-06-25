@@ -1,4 +1,5 @@
-import type { Node, PartialNode, Rectangle, Video, VideoData, VideoRuntime } from '@flighthq/types';
+import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
+import type { MethodsOf, Node, PartialNode, Rectangle, Video, VideoData, VideoRuntime } from '@flighthq/types';
 import { VideoKind } from '@flighthq/types';
 
 import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
@@ -30,7 +31,19 @@ export function getVideoRuntime(source: Readonly<Video>): Readonly<VideoRuntime>
   return getDisplayObjectRuntime(source) as VideoRuntime;
 }
 
-import type { MethodsOf } from '@flighthq/types';
+export function setVideoSmoothing(source: Video, value: boolean): void {
+  // Sampler filter mode is a content-rasterization concern, not a compositing one — same tier as a
+  // new image on a Bitmap, and it does not change the node's bounds.
+  source.data.smoothing = value;
+  invalidateNodeLocalContent(source);
+}
+
+export function setVideoSource(source: Video, value: VideoData['source']): void {
+  // A new source is new pixels (content) and possibly new dimensions (bounds).
+  source.data.source = value;
+  invalidateNodeLocalContent(source);
+  invalidateNodeLocalBounds(source);
+}
 
 const defaultMethods: Partial<MethodsOf<VideoRuntime>> = {
   computeLocalBoundsRectangle: computeVideoLocalBoundsRectangle,
