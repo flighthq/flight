@@ -9,4 +9,5 @@ export * from './renderState';
 export * from './renderTarget';
 export * from './renderTextFormat';
 export * from './renderTransform2d';
+export * from './renderViewport';
 export * from './sceneRender';
