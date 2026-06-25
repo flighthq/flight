@@ -1,5 +1,7 @@
 import type { TextFormat, TextShaperBackend } from '@flighthq/types';
 
+import { _textShaperBackendHook } from './_textShaperHooks';
+
 // Returns the active text-shaper backend, or null when none has been registered. Unlike the
 // always-on platform capabilities (clipboard, storage), shaping has no light web default that lives
 // here: the canvas backend needs DOM + font-string computation, so it ships in
@@ -16,6 +18,7 @@ export function getTextShaperBackend(): TextShaperBackend | null {
 // throws on re-registration.
 export function setTextShaperBackend(backend: TextShaperBackend | null): void {
   _backend = backend;
+  _textShaperBackendHook?.(backend);
 }
 
 // Shapes `text` in `format` to its horizontal advance, in pixels, via the active backend. Advances
