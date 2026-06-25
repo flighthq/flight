@@ -8,6 +8,13 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+No code changes. The assessment's `## Recommended` section is explicitly empty of code work ("Nothing requiring code change") — Bronze and Silver have landed (13 exported functions, 31 colocated tests) and everything remaining is in Backlog: design-gated (the `HapticPattern` event model) or cross-package (a `-formats` neighbor, a signals group, a `host-*` backend, the Rust crate). The two doc-refresh candidates the review raised are flagged as the user's gate on shared docs, not a within-package sweep, so they were not touched here.
+
+- Verified the package own-tests still pass: `npm run test --workspace=packages/haptics` → 1 file, 31 tests passed.
+- Parked (unchanged from assessment Backlog): custom haptic events / `HapticPattern`; live continuous-haptic player; `@flighthq/haptics-formats`; haptics signals group; native `host-*` backend reference; Rust `flighthq-haptics` crate.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/haptics

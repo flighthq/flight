@@ -8,7 +8,14 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
-## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the assessment's two `## Recommended` items. **Both parked; no source edits made.** Package own-tests still green (37 files, 192 tests).
+
+**Parked:**
+
+- **Capture the `mesh-blend-transparency` baseline.** Cross-boundary: the artifact lives under `tests/functional/mesh-blend-transparency/` (outside `packages/scene-gl/`), and committing a baseline requires running the visual-capture loop — neither is a within-package source edit this sweep may perform.
+- **Wire `hasGlMeshGeometryUv1` into standard-PBR `bind()` (gap 8).** The item's factual premise does not match the current code: there is no `hasGlMeshGeometryUv1` helper anywhere in `packages/scene-gl/src/` (the only `uv1` reference is the `ATTRIBUTE_LOCATION` entry in `glMeshUpload.ts`), `buildGlPbrStandardDefineKey` has no `hasUv1` parameter, `GlPbrDefineKey` has no `hasUv1`/UV1 field, and the PBR shader source has no `HAS_UV1` path or `a_uv1` input. Genuinely closing this gap would require (a) adding a `hasUv1` flag to `GlPbrDefineKey` plus a `HAS_UV1` shader branch, (b) authoring the missing `hasGlMeshGeometryUv1` predicate, and (c) making the geometry available at program-selection time — but the `GlMeshMaterialRenderer.bind(state, material, lights, camera)` contract in `@flighthq/types` does not receive geometry (only `draw()` does). That is a cross-boundary contract change to `@flighthq/types` plus a design decision about where program selection happens, so it is not a sweep-safe within-package edit. Recommend the assessment be re-derived from the current source before this is reattempted.
 
 # Status: @flighthq/scene-gl
 

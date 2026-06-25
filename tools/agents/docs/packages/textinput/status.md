@@ -8,6 +8,23 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` `## Recommended`. The committed source had already advanced past the state the assessment describes: `textInputEditing.ts` already defines all five "missing" helpers (`recordTextInputEdit`, `applyHistoryRecord`, `getCaretLineIndex`, `getLineStartIndex`, `getLineEndIndex`) and compiles, and `textInputEditing.test.ts` already carries `describe` blocks for the full Silver surface (`canRedoTextInput`, `canUndoTextInput`, `clearTextInputHistory`, `moveTextInputCaretToLineStart`/`ToLineEnd`, `redoTextInput`, `scrollTextInputCaretIntoView`, `undoTextInput`). The types (`TextInputHistoryEntry`, `history`/`historyIndex`/`historyLimit` on `TextInputState`) are present in `@flighthq/types`.
+
+Done:
+
+- **Barrel exports (Recommended #2).** Added the eight Silver functions — `canRedoTextInput`, `canUndoTextInput`, `clearTextInputHistory`, `moveTextInputCaretToLineEnd`, `moveTextInputCaretToLineStart`, `redoTextInput`, `scrollTextInputCaretIntoView`, `undoTextInput` — to `src/index.ts`, kept alphabetized within the `textInputEditing` re-export block. They were already `export function` in source but unreachable from `@flighthq/textinput`.
+- **Dependency hygiene (Recommended #5).** Dropped the stale `@flighthq/displayobject` dependency from `package.json`; no `src/` file imports it (verified by grep — the used deps are `node`, `signals`, `text`, `textlayout`, `types`).
+
+Already satisfied in the committed tree (Recommended #1 and #3): the five private helpers compile and the colocated Silver tests exist. No source/test edits were needed for those beyond confirming them.
+
+Verified: `npm run test --workspace=packages/textinput` → 4 files, 128 tests passing.
+
+Parked:
+
+- **Rebuild `dist/` + `npm run check` (Recommended #4).** Build output regeneration is outside this sweep's allowed commands (no `tsc -b` / `npm run check`). The barrel-export change means `dist/index.d.ts`/`.js` are now stale and must be rebuilt by a build pass before publish.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/textinput

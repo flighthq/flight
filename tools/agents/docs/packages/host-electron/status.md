@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Swept the two `Recommended` items in `assessment.md` against the **live** worktree source.
+
+**Done**
+
+- **Gold seam-audit table** → added `seam-audit.md` (within-package doc). A per-method map of all 15 implemented seams (platform, app, window, dialog, clipboard, menu, tray, shortcut, screen, power, notification, shell, protocol, updater, ipc) to their Electron call or documented sentinel, with a Status column distinguishing **real** / **tracked** / **limit** (permanent main-process limit) / **deferred** (electron-updater or renderer-targeted IPC). Grounded strictly in the live source. This is the home for the otherwise-parked "permanent limit vs. deferred" annotations (power battery detail, IPC receive-only, updater inertness) — now recorded in-package without touching any seam.
+
+**Parked**
+
+- **`package.json` description: add the `storage` seam** — PARKED (stale premise). The assessment/review and the prior `[2026-06-24 · builder-67dc46d64]` status entry below are **as-claimed** and describe a bundle with `electronStorage.ts` + a registered `storage` seam + an `ElectronApi.fs` slice. **None of that is present in the live worktree**: no `electronStorage.ts`, no `StorageBackend` import in `electronRegister.ts`, no `fs`/`ElectronFs` in `electronModule.ts`, no `@flighthq/storage` dependency. The live `registerElectronBackends` registers exactly the 15 seams the `description` already enumerates. Adding `storage` to the description would make it claim a seam this package does not implement. Re-evaluate once the storage work actually lands in this worktree (then both the description and a `storage` row in `seam-audit.md` follow naturally).
+
+**Notes** — own-package tests: 16 files / 60 tests, all passing (the as-claimed "144 tests" reflects the unmerged bundle, not the live worktree). No source edits made; docs-only.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/host-electron

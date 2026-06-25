@@ -8,6 +8,21 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the single sweep-safe item from `assessment.md › Recommended`:
+
+- **Dropped "node" from the `package.json` description.** Changed `"Core entity/node/runtime data model and binding system"` → `"Core entity/runtime data model and binding system"`. The **node** concept belongs to `@flighthq/node`; this package owns no node type. Purely within `packages/entity/package.json`.
+
+Parked (out of scope — all in `assessment.md › Backlog`):
+
+- **TS↔Rust behavioral conformance pass** — cross-worktree (Rust crates).
+- **Find/wire a caller for `stripEntityRuntime`** — waiting on a scene serializer consumer.
+- **Audit `@flighthq/node` for inlined lazy-runtime logic** — cross-package (`@flighthq/node`).
+- **Enrich the Package Map line in `index.md`** — shared codebase-map doc + user's gate.
+
+Verification: `npm run test --workspace=packages/entity` → 3 test files, 10 tests, all passing. No new exported function added, so no test/order/exports drift.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/entity

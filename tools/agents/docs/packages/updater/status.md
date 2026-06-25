@@ -102,3 +102,20 @@ The Gold roadmap includes a 1:1 Rust crate mirror. No `crates/` directory exists
 2. **`@flighthq/updater-formats`** (Silver completion): confirm the new package boundary with the user, then implement `parseUpdaterFeedYaml` (latest.yml), `parseUpdaterFeedJson` (Tauri manifest), and `parseAppcastXml` (Sparkle appcast) as pure value-in/value-out parsers returning `UpdateInfo[]`.
 3. **Rust `flighthq-updater`** (Gold completion): 1:1 crate mirror in the `rust` worktree per the conformance map. `is_app_update_eligible` and the `updater-formats` parsers are the first conformance targets (mixable value-typed leaves).
 4. **Package-level docs** (Gold completion): a lifecycle diagram (Idle→Checking→Available→Downloading→Downloaded→Staging→install / Error / Cancelled), host registration guide, and electron-updater mapping table.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` "## Recommended" that fall strictly within `packages/updater/`.
+
+### Done
+
+- **Pinned the `checkAndDownloadAppUpdate` fire-both simplification.** Added a colocated test in `src/updater.test.ts` ("downloads immediately under autoDownload without gating on update-available") asserting that `downloadUpdate` fires in the same call as `checkForUpdates` under `autoDownload: true`, without waiting for a `fireUpdateAvailable` signal. The two pre-existing branch tests (download fires under `true`, only-check under `false`) remain. This locks the documented instant-trigger semantics against silent drift. Own-tests: 39 passed.
+
+### Parked
+
+- **Document the no-op-stub expectation on `UpdaterBackend`.** cross-boundary: the `UpdaterBackend` interface lives in `packages/types/src/Updater.ts`, not `packages/updater/`. The doc comment would have to edit `@flighthq/types`, which is outside the hard boundary.
+- **Alphabetize the `UpdaterConfig` interface fields.** cross-boundary: `UpdaterConfig` is also declared in `packages/types/src/Updater.ts`. Reordering its interface fields touches `@flighthq/types`, outside the boundary. (`createUpdaterConfig` in this package already returns the fields alphabetized.)
+
+### Notes
+
+- Did not run `npm run check`, `npm run fix`, `order:fix`, `tsc -b`, or any monorepo-wide command per task constraints. Verification was `npm run test --workspace=packages/updater` only (39/39 pass).

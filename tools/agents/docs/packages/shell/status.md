@@ -8,6 +8,21 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md › Recommended` that fall strictly within `packages/shell/`.
+
+Done:
+
+- **URL-safety security note on `openExternalUrl`.** Extended the source doc-comment to spell out the attacker-controlled-URL footgun (a non-http(s) scheme launching a local app / protocol handler) and to point at `setShellUrlSchemeAllowlist` and `isShellUrlAllowed` as the gate. Prose-only; no signature or behavior change. `packages/shell/src/shell.ts`.
+
+Verification: `npm run test --workspace=packages/shell` — 32 tests pass.
+
+Parked:
+
+- **Alphabetize the new interface fields in `@flighthq/types/Shell.ts`** — cross-boundary: edits `packages/types`, outside the `packages/shell/` boundary for this sweep.
+- **Refresh the stale `@flighthq/shell` Package Map line** — cross-boundary: the Package Map lives in `tools/agents/docs/index.md` (the codebase map / project CLAUDE.md), not under `tools/agents/docs/packages/shell/`; the assessment also flags it as gated on the user's exact wording.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/shell

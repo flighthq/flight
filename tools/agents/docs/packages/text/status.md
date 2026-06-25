@@ -8,6 +8,24 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` `## Recommended` that are strictly within `@flighthq/text`.
+
+Done:
+
+- **Added the missing `@flighthq/signals` workspace dependency** to `packages/text/package.json` (`richText.ts:7` imports `createSignal` from it; the manifest only declared `displayobject`/`entity`/`geometry`/`node`/`textlayout`/`types`). Manifest-only change, placed alphabetically.
+- **Homed `getRichTextFormatRangeByIndex`'s `out` type in `@flighthq/types`.** Swapped the inline structural literal `{ start; end; format }` for the named `TextFormatRange` import (one-line annotation swap, no behavior change). The field set is identical, so the existing tests still pass.
+- **Added `getRichTextFormatRangesIn(out, source, beginIndex, endIndex)`** — the symmetric range _read_ partner to `removeRichTextFormatRangesIn`. Same half-open overlap test (`range.start < endIndex && range.end > beginIndex`), out-array convention (`out.length = 0` then push by reference, mirroring `getTextLineBreaks`), alphabetized between `getRichTextFormatRangeCount` and `getRichTextHtml`. Added a colocated `describe` covering no-overlap clearing, in-order collection, half-open boundary exclusion, and push-by-reference.
+
+Already delivered (no-op — the assessment was stale on this point):
+
+- The "six untested exports" item (`createTextFieldSignals`, `dispatchRichTextLinkAtPoint`, `enableTextFieldSignals`, `getTextFieldSignals`, `insertRichTextString`, `replaceRichTextString`) is **already covered** in `richText.test.ts` with substantive `describe` blocks, including the `textFormatRanges` re-indexing cases (shift/extend/trim/remove) and the change/scroll/link emission paths. No new tests needed for these.
+
+Parked: none of the remaining Recommended items needed parking — the only stale one above was already satisfied. All Backlog items remain cross-package / charter decisions as recorded in `assessment.md`.
+
+Verification: `npm run test --workspace=packages/text` → 4 files, 178 tests pass. Did not run `check`/`fix`/`order:fix`/`tsc -b` per task constraints.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/text

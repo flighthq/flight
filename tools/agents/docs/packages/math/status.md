@@ -8,6 +8,28 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Attempted the assessment's five Recommended items. **All five parked — blocked by a source/assessment discrepancy in this worktree.**
+
+Live state of `packages/math/src/` in this worktree:
+
+- `index.ts` (barrel: `export * from './nextPowerOfTwo'` and `'./random'`)
+- `nextPowerOfTwo.ts` (+ test) — only `nextPowerOfTwo`
+- `random.ts` (+ test) — only `createRandomSource` and `export type { RandomSource }`
+
+That is a two-function stub. The assessment (2026-06-24), this status log's prior entry ("277 tests passing across 15 files"), and the package's `dist/` (which still contains compiled `clamp.js`, `comparison.js`, `constants.js`, `hash.js`, `interpolation.js`, `interpolationAdvanced.js`, `rounding.js`, `scalar.js`, `statistics.js`, `randomRange.js`, `randomDistributions.js`, `angle.js`, …) all describe a fully-built ~15-module AAA package. The `dist/` is a stale build from that fuller state; the current `src/` no longer contains those modules.
+
+Consequence: every Recommended item targets a function that is **absent from the live `src/`**, so none is executable as a minimal doc/cleanup sweep:
+
+1. `previousPowerOfTwo` doc comment — function not in `src/` (only `nextPowerOfTwo` exists).
+2. Duplicate `RandomSource` re-export — only `random.ts` exists; `randomRange.ts` is not in `src/`, so there is no duplicate to remove. The single re-export in `random.ts` is already the lone home.
+3. `lcm` overflow doc note — `lcm` not in `src/`.
+4. `saturate`/`clamp` NaN doc — neither `saturate` nor `clamp` in `src/`.
+5. `order:check` confirmation — not run (Phase-3 forbids order commands); the live `src/` is two single-function files plus an alphabetized barrel, so ordering is trivially satisfied.
+
+No source edits made. Own-tests verified green (`npm run test --workspace=packages/math`: 2 files, 9 tests passing) against the current stub. **Surfaced to user:** the live `src/` appears to have regressed to a stub relative to the assessment/status/`dist`. Re-authoring the missing modules is a build, not a Recommended sweep, and is out of this task's scope. Recommend a direction/review pass to confirm whether the reduction was intentional before the sweep items can apply.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/math

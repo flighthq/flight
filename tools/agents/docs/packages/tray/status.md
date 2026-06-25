@@ -8,6 +8,17 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed both sweep-safe Recommended items from `assessment.md`; package own-tests pass (50/50).
+
+**Done:**
+
+- **`getTrayIconBounds` now returns `Readonly<TrayIconBounds> | null`.** Replaced the inline structural literal `Readonly<{ height; width; x; y }> | null` with the shared header type the backend's `getBounds` already returns (`TrayIconBounds`, defined in the tray-owned `@flighthq/types/src/Tray.ts`). Single-source the field set; non-breaking (identical shape). Note: the assessment named `RectangleLike`, but the backend method (`TrayBackend.getBounds`) is actually typed `Readonly<TrayIconBounds> | null`, so referencing `TrayIconBounds` is the true single-source fix and keeps the public return aligned with the backend it delegates to — using `RectangleLike` would have re-introduced a two-type divergence.
+- **`setTrayIgnoreDoubleClickEvents` now exercised through its own free function.** Re-pointed the `describe('setTrayIgnoreDoubleClickEvents')` block from `backend.setIgnoreDoubleClickEvents(...)` / `getTrayBackend().setIgnoreDoubleClickEvents(...)` to `setTrayIgnoreDoubleClickEvents(tray, true)` and the web no-op to `setTrayIgnoreDoubleClickEvents({ id: 0 }, true)`, mirroring every other setter's test; added the missing import. The exported function's body is now actually covered.
+
+**Parked:** all Backlog items (host-electron realization, Rust crate extension, theme-aware icons, Linux/AppIndicator coverage, capability-degradation example, the `Tray`/`TrayIcon` naming Decision, the stale codebase-map line, the `TrayBalloonOptions`/`notification` boundary) — each is cross-package, cross-worktree, an examples/admin-doc concern, or a human-gated charter decision, as recorded in `assessment.md › Backlog`.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/tray

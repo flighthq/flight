@@ -126,3 +126,19 @@ This is a deliberate design limitation: changing the factory signature to `(sign
 3. Implement `crates/flighthq-loader` Rust mirror — the orchestration logic is deterministic, conformance-testable, and an ideal early Rust target.
 4. Resolve the `AbortSignal` vs neutral `CancellationToken` design question before the Rust mirror is built.
 5. Add typed `createImageResourceLoadItem` / `createFontResourceLoadItem` helpers in `@flighthq/resources`.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` › Recommended that fall strictly within `packages/loader/`.
+
+### Done
+
+- **Removed the false "tracking shim" comment** in `resourceLoader.ts` `runEntry` (former lines ~490-493). The comment asserted that `entry.onBytesProgress` was a shim "set up in queueResourceLoad" that also writes `entry.bytesLoaded` — no such shim exists; `entry.onBytesProgress` is the raw descriptor callback and `entry.bytesLoaded` is never rewritten. Collapsed to the accurate two-line note about racing the factory against the abort signal.
+- **Added a rate-bound throttle test** (`bandwidth throttle (maxBytesPerSecond)` › "bounds the dispatch rate to the byte budget"). Pins that the token bucket gates _dispatch_ over ~2 refill windows (asserts total elapsed ≥ 1800 ms for three 1000-B items at 1000 B/s) and documents the advisory limit (`report.bytes` stays 0 — the throttle does not meter in-flight bytes). Does not commit to the hard-cap-vs-advisory Open direction.
+- **Added a fail-fast scope regression test** (`error policy` › "lets in-flight peers finish, only skips not-yet-dispatched items"). Pins present behavior: `cancelRemainingEntries` skips only pending entries; an in-flight peer ('slow') runs to completion and resolves while the never-dispatched item is `skipped`. Records today's behavior without changing the fail-fast-scope Open direction.
+
+Loader own-tests: 62 passed (was 60), 1 file. `npm run test --workspace=packages/loader`.
+
+### Parked
+
+- **Strike the `bytesHintDefault` docstrings.** The only live reference is in `@flighthq/types` (`ResourceLoaderOptions.maxBytesPerSecond` docstring, visible in `packages/types/dist/ResourceLoaderOptions.d.ts`) and the package-facing docs — there is no loader-package source or README carrying it. Editing it would touch `packages/types`. cross-boundary: @flighthq/types (packages/types/src/ResourceLoaderOptions.ts). Left for a types-scoped pass.

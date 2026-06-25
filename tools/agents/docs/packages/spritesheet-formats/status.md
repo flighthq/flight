@@ -104,3 +104,23 @@ by: ingest:builder-67dc46d64
 - **Add `SpritesheetFormatKindCocosPlist` detection to `detectSpritesheetFormat`** — currently implemented; Cocos plist is already in the built-in registry set.
 - **Port new formats to Rust** — `flighthq-spritesheet-formats` crate should gain `libgdx_atlas`, `cocos_plist`, and `grid_slice` modules mirroring the TS additions, with shared test fixtures for conformance checking.
 - **Fix pre-existing `exports:check` failures** — rename the three parse test files' describe blocks to exact function names (remove the ` — suffix`). This is a cosmetic fix that brings the package into full compliance.
+
+---
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md › Recommended` that fall strictly inside this package.
+
+### Done
+
+- **Removed the serialize `describe` blocks duplicated into the parse test files.** The `serializeStarlingSpritesheet`, `serializeTexturePackerSpritesheet`, and `serializeAsepriteSpritesheet` round-trip `describe`s lived in _both_ the parse test file and the dedicated `*Serialize.test.ts`. Relocated each block's `it`s (and the fixtures they needed) into the single existing `describe` in the matching `*Serialize.test.ts`, then deleted the duplicate from the parse test. To avoid clashing with the differently-bodied fixtures already in the serialize files, the moved fixtures were renamed (`ROUNDTRIP_HASH_JSON` / `ROUNDTRIP_ARRAY_JSON` / `ROUNDTRIP_MINIMAL_JSON` / `ROUNDTRIP_NO_TAGS_JSON`). No coverage lost; the round-trip assertions are preserved verbatim under the serialize files. Dropped the now-unused `serialize*` imports from the three parse test files. This also clears the `exports:check (0/2)` drift the status flagged on those parse files (their serialize describes were the source of the mismatch).
+- **Retired the dead Cocos `frameDuration` option.** Removed the `CocosPlistParseOptions` interface (Cocos plist carries no animation data, so `frameDuration` was never read — both parse functions took `_options`) and dropped the unused param from `parseCocosPlistSpritesheet` / `parseCocosPlistSpritesheetDocument`. Pre-release, no shipped consumer, within-package. (Supersedes Note 3 above.)
+
+### Parked
+
+- **Fix the inverted libGDX schema field naming/comments.** Not applicable as written: the assessment targets a `libgdxAtlasSchema.ts` file and `region.origSize` / `region.orig` field names that do not exist in the current tree. The live `libgdxAtlasParse.ts` already maps `orig:` → `sourceWidth/sourceHeight` (original size) and `offset:` → `offsetX/offsetY` (trim offset) with matching comments — i.e. the bug the assessment describes was already resolved by a prior refactor. Nothing to change.
+- **Add the missing `@flighthq/spritesheet-formats` Package Map entry.** Cross-boundary: requires editing `tools/agents/docs/index.md`, which is outside this package's allowed doc scope (`tools/agents/docs/packages/spritesheet-formats/`).
+
+### Verification
+
+`npm run test --workspace=packages/spritesheet-formats` → 9 files, 130 tests, all passing.

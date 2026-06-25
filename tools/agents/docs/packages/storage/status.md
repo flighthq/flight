@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed both sweep-safe items from `assessment.md` § Recommended. Within-package only; no cross-boundary edits.
+
+**Done:**
+
+- **Drift 1 — `_emitStorageChange` now routes through the `emitSignal` free function.** Imported `emitSignal` from `@flighthq/signals` and replaced the direct `_signals.onChange.emit(change)` call with `emitSignal(_signals.onChange, change)`. Behavior-preserving single-callsite swap matching the functions-not-methods convention (mirrors the `network` sibling's `emitSignal(net.onChange, status)`).
+- **Single-pass the namespaced full-keyspace scan in `clearStorageNamespace`.** Hoisted `getStorageBackend()` to one `backend` binding and folded the prefix `.filter()` into the removal loop (`if (!key.startsWith(prefix)) continue;`), dropping the intermediate array allocation and the per-key `getStorageBackend()` re-lookup. Semantics unchanged. `getNamespacedStorageByteSize` was already single-pass (one `keys()` call, hoisted backend) — left as-is.
+- Added a colocated test under `describe('clearStorageNamespace')` pinning that post-cleanup byte-size returns to 0 and the namespace key-set is empty.
+
+**Verification:** `npm run test --workspace=packages/storage` — 82/82 pass.
+
+**Parked:** the entire Backlog section (signal-aware bulk ops, reserved-key policy, `-formats` neighbor, `onStorageChange` convenience, migration atomicity, the async outlier, cached prefixed key-set, the Rust crate, the Package-Map line) — each is a charter decision and/or crosses a package boundary, per the assessment's own routing. Not touched.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/storage

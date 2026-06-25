@@ -8,6 +8,18 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` "## Recommended".
+
+Done:
+
+- Removed the dead `_absoluteOrientationQuaternion` scratch object. The `subscribeAbsoluteOrientation` Generic-Sensor path now reuses the existing `_quaternionReading` scratch before calling `getEulerFromQuaternion`, so the dedicated scratch (and its `createQuaternionReading()` allocation) is gone. Within-package, purely cosmetic — the two subscribe paths run independently and `getEulerFromQuaternion` reads all quaternion fields into locals before writing, so reuse is safe.
+
+Parked: none from Recommended — it contained only the single item above. All Backlog items remain parked (gated on Open directions #2/#3, native-backend-only, cross-package admin docs, or the separate Rust crate task).
+
+Verification: `npm run test --workspace=packages/sensors` — 60/60 pass.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/sensors

@@ -8,6 +8,17 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep for `@flighthq/filters-css`. Both Recommended items resolved to **no source edit** in this worktree:
+
+- **Honest-`null` rationale for the SVG-anisotropy decline** — PARKED (premise absent). The item targets "the five SVG-backed emitters whose `svgFeGaussianBlur` already accepts a `"bx by"` stdDeviation." This worktree's live source contains **no SVG-backed emitters** and no `svgFeGaussianBlur` / data-URI path. The package here is the earlier three-emitter state: `cssBlurFilter.ts` (`computeBlurFilterCss`), `cssDropShadowFilter.ts` (`computeDropShadowFilterCss`, `getShadowFilterOffset`), `cssOuterGlowFilter.ts` (`computeOuterGlowFilterCss`) — all using CSS shorthands (`blur()`, `drop-shadow()`), which are inherently isotropic. Each already **records** its anisotropy `null` decline in JSDoc ("CSS `blur()` is isotropic, so an anisotropic blur (`blurX !== blurY`)... return `null`"; "anisotropic blur... cannot be expressed with CSS `drop-shadow()` and returns `null`"). So the decline is already not silent for the emitters that exist, and there is no SVG emitter to annotate. No edit made.
+- **Status-doc filename drift** — explicitly a no-action note in the assessment; nothing to do.
+
+Discrepancy noted: the prior ingested entry (`builder-67dc46d64`, marked _as-claimed, not yet review-verified_) and the current `review.md`/`assessment.md` describe a much more complete package — SVG data-URI emitters, `cssFiltersAggregator.ts`, `computeInnerShadowFilterCss`, `computeColorMatrixFilterCss`, convolution/sharpen, all 15 `BitmapFilter` kinds. **None of that exists in this live worktree source** (`src/` holds only the three shorthand emitters above). The claimed work is not present here; recreating it would be a large API build, not a sweep, so it was not attempted. Surfacing this drift for the user — the assessment's Recommended list is written against a state ahead of this worktree.
+
+Own-tests: `npm run test --workspace=packages/filters-css` → 3 files, 17 tests, all pass.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/filters-css

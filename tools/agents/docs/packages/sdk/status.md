@@ -8,6 +8,21 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` § Recommended.
+
+Done:
+
+- **Alphabetized the `package.json` dependency block.** Moved `easing`, `loader`, `scene`/`scene-gl`/`scene-wgpu`, `useragent`, `velocity`, and `webcam` into their correct alphabetical slots so the manifest matches the sorted `src/index.ts` barrel. No version or set change — pure ordering.
+- **De-duplicated `SENTINEL_NAMES` in `src/collision.test.ts`.** Dropped the trailing "types (re-exported kind identifiers)" block whose `DisplayObjectKind` / `BitmapKind` entries duplicated the display-object entries, removing two redundant `it()` registrations.
+
+Parked:
+
+- **"Fix the stale `83 packages` count comment"** — not applicable. `collision.test.ts` was rebaselined earlier on 2026-06-25; the offending "across all 83 packages" comment and the 46-unique-name count assertion the item referenced no longer exist in the file. Nothing to fix.
+
+Verification: `npm run test --workspace=packages/sdk` → 2 files, 69 tests, all pass. Did not run repo-wide checks/fix/order per dispatch constraints.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Session Status: @flighthq/sdk

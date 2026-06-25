@@ -8,6 +8,21 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` `## Recommended` that fall strictly within `@flighthq/timeline`.
+
+**Done:**
+
+- **Simplified the `setMovieClipSource` signal re-wire branch** (`movieClip.ts`). The `if (runtime.movieClipSignals !== null) { … enableTimelineSignals(timeline); runtime.movieClipSignals = signals; }` branch was correctness-neutral dead code: `setMovieClipSource` reuses the clip's existing `clip.data.timeline`, and `enableTimelineSignals` is `??=`-idempotent, so it re-fetched the same already-armed group and reassigned it to itself. Dropped the branch and replaced it with a durable semantic comment pinning _why_ no re-wire is needed (the runtime slot and `timeline.signals` are the same group). No behavior change — all 95 tests still pass. `EntityRuntimeKey` and `enableTimelineSignals` imports remain in use elsewhere in the file.
+- **Documented the multi-frame-skip frame-accounting behavior in source** (`timeline.ts`). Added durable semantic comments on `advanceFrame` (the `floor(timeElapsed / frameTime)` landing-frame jump) and `fireConstructFrame` (constructs/fires the landing frame only; skipped frames' enter/exit signals and scripts do not run; `previousFrame` may be many frames back). States the Flash/OpenFL landing-frame-only contract already covered by `timeline.test.ts`. Documentation only, no behavior change. Noted explicitly that a `maxFrameSkip` clamp and fractional-frame hook are out of scope (policy decision → Open directions).
+
+**Parked:**
+
+- **Fix the over-claiming `TimelineSignals.ts` header comment.** cross-boundary: the file is `packages/types/src/TimelineSignals.ts`, owned by `@flighthq/types`, outside the `@flighthq/timeline` edit boundary for this sweep. The reword ("the three per-frame signals carry a `TimelineFrameEvent`; `onComplete`/`onLoop` are bare") is correct and ready, but must be applied by a session permitted to edit `packages/types/`.
+
+**Tests:** `npm run test --workspace=packages/timeline` → 2 files, 95 tests, all pass.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/timeline

@@ -126,3 +126,21 @@ The accelerator value logic (parse/normalize/format/validate) is a mixable leaf 
 2. Align `ShortcutKeyName` with `@flighthq/input` key vocabulary — ensure no duplicate spellings across the SDK.
 3. Update `@flighthq/menu` and `@flighthq/tray` to use `formatAcceleratorForDisplay` for menu item accelerator labels — unblocked by this session.
 4. Consider a `ShortcutRegistrationSignals` for registration-change notifications (shortcut registered / unregistered) — adds observability for conflict detection UIs.
+
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Executed the sweep-safe items from `assessment.md` § Recommended that fall strictly within `packages/shortcut/`.
+
+### Done
+
+- **Removed the dead `'Enter'` display entry.** `_keyDisplayNames` mapped `'Enter' → '↵'`, but `enter` aliases to canonical `'Return'` (also mapped), so the parser never emits the literal string `'Enter'` and the entry was unreachable. Deleted it; existing `getAcceleratorKeyLabel` tests already assert `'Return' → '↵'`. Pure dead-data cleanup, no behavior change.
+- **Made `getRegisteredGlobalShortcuts` honest with a normalize pass.** Replaced the `as readonly Accelerator[]` cast over the backend's raw `readonly string[]` with a real pass that runs `normalizeAccelerator` over each entry and drops any that fail to parse. A native backend populating the registry with non-normalized strings is now re-normalized rather than trusted. Added a colocated test feeding raw non-normalized + unparseable strings through a fake backend.
+- **Broke the `CommandOrControl` sort tie deterministically.** `_modifierOrder` mapped `CommandOrControl` onto `Control`'s index (0), so a chord containing both sorted to a tie with input-dependent order. Gave `CommandOrControl` its own ordinal (last, after `Super`) and simplified the sort comparator to index the modifier directly. Correct under either future ruling on resolve-vs-preserve. Added a `normalizeAccelerator` test proving both input orders collapse to `Control+CommandOrControl+K`.
+
+### Parked
+
+- **Add `onRegister` / `onUnregister` to the signal group.** Cross-boundary: the `ShortcutSignals` interface is defined in `@flighthq/types` (`packages/types/src/ShortcutSignals.ts`), not in `packages/shortcut/`. Adding the new signal fields requires editing the types package, which is outside this package's hard boundary. The firing side (`registerGlobalShortcut` / `unregisterGlobalShortcut` / `unregisterAllGlobalShortcuts` behind the `_signals === null` guard) would live here, but it cannot land without the type change first.
+
+### Verification
+
+`npm run test --workspace=packages/shortcut` — 98 passed (1 file). No mechanical drift.

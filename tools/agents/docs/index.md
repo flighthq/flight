@@ -209,7 +209,12 @@ Geometry types (rectangles, vectors, matrices) follow explicit allocation and ow
 - `@flighthq/interaction`: hit testing, pointer dispatch, and object overlap detection.
 - `@flighthq/materials`: the 3D material system — a full PBR material taxonomy (unlit, Blinn-Phong, metallic-roughness PBR with clearcoat/anisotropy/emissive/transmission, depth) plus color-transform. Built (the 20-material taxonomy, 922 tests); canonical design in [3d-materials-architecture.md](3d-materials-architecture.md).
 - `@flighthq/signals`: strictly-typed signals and slots for event dispatching. Signals support multiple listeners, priority, and cancellation. The package is effectively always present in the SDK; specific signal groups are opt-in via `enable*` functions defined in the owning package. Signals is fundamental infrastructure and should have few dependencies.
-- `@flighthq/resources`: resource primitives and loading (image/audio/video/font resources, texture atlases, tilesets).
+- `@flighthq/image`: image resources — pixel sources, MIME detection, and constructors (from canvas/ImageBitmap/element, load from URL/ArrayBuffer/Base64/Blob). (Split out of the former `@flighthq/resources`.)
+- `@flighthq/font`: font and font-resource types and constructors. (Split out of `resources`.)
+- `@flighthq/video`: video resources and URL constructors. (Split out of `resources`.)
+- `@flighthq/audio`: audio resources, URL constructors, and the shared audio context. (Split out of `resources`.)
+- `@flighthq/textureatlas`: texture atlases — regions, UVs, and constructors over image resources (depends on `@flighthq/image`). (Extracted from `resources`.)
+- `@flighthq/tileset`: tilesets — uniform-grid texture atlases and constructors from images (depends on `@flighthq/textureatlas`). The former `@flighthq/resources` package is eliminated; its contents now live in these six packages.
 - `@flighthq/loader`: batch queue for loading multiple resources in sequence or parallel.
 - `@flighthq/spritesheet`: animation layer built on raw resources — a logical package providing sprite-based animation, analogous in structure to `particles`.
 - `@flighthq/particles`: particle emitter simulation — `ParticleEmitter`, `ParticleEmitterConfig`, `createParticleEmitterConfig`, `updateParticleEmitter`, `emitParticleBurst`, `prewarmParticleEmitter`, force fields (`applyParticleForces`), colliders (`applyParticleCollisions`), and curve helpers (`particleColorCurveFromKeyframes`, `particleCurveFromKeyframes`, `sampleParticleCurve`).

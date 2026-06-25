@@ -8,6 +8,20 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-06-25 — builder Phase 3 (Recommended sweep)
+
+Ran the Recommended sweep against the live `src/`. **All three Recommended items target source that no longer exists in `packages/textshaper/src/`** — the package was pared down since `assessment.md`/`review.md` were written (both dated 2026-06-24, against the larger `builder-67dc46d64` state). The current `src/` is just `textShaper.ts` (backend register + `shapeText`), `textShaperRun.ts` (`shapeTextRun`/`shapeTextRunInto` + the introspection wrappers `getCodePointForGlyph`/`getFontMetrics`/`getGlyphExtents`/`getGlyphIndexForCodePoint`/`getGlyphName` + metric helpers), and the `_textShaperHooks.ts` helper. No `textShaperCluster.ts`, no `textShaperSignals.ts`, no `textShaperItemize.ts`/`Cache`/`Pool` in source — those survive only as **stale `dist/` artifacts** from an earlier build.
+
+Per-item disposition:
+
+- **Item 1 — dead branch in `getIndexRangeForCluster` (`textShaperCluster.ts:61`).** Parked. The file and function do not exist in `src/`; a `grep` over `src/` for `getIndexRangeForCluster` returns nothing. Nothing to fix.
+- **Item 2 — add the four font-introspection wrappers (`getFontFeatures`/`getFontScripts`/`getFontLanguages`/`getFontVariationAxes`).** Parked. The current `TextShaperBackend` in `@flighthq/types` (`packages/types/src/TextShaper.ts`) no longer declares any of these four methods — its optional method set is `getCodePointForGlyph`/`getFontMetrics`/`getGlyphExtents`/`getGlyphIndexForCodePoint`/`getGlyphName`/`shapeRun`, every one of which already has a colocated wrapper. Adding the four wrappers would require (re)adding the methods to `@flighthq/types` (cross-boundary) or inventing a backend API shape (design decision). Both are out of sweep scope.
+- **Item 3 — replace hand-rolled `enableTextShaperSignals` signal with a real `@flighthq/signals` construction.** Parked. No `textShaperSignals.ts`, no `enableTextShaperSignals`/`onBackendChanged` in `src/`. The package currently exposes no signal group at all. Nothing to fix.
+
+No source edits made. Own-tests verified green: `npm run test --workspace=packages/textshaper` → 3 files, 51 tests passing. Did not run global/fix/order/tsc/cargo commands per task constraints.
+
+Suggested follow-up for a reviewer/charter pass: regenerate `review.md`/`assessment.md` against the current trimmed `src/` (and remove the stale `dist/` artifacts via the normal clean), since the present Recommended list is entirely obsolete relative to the shipped source.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/textshaper
