@@ -1,7 +1,5 @@
-import type { Signal } from './Signal';
+import type { TimelineSignals } from './TimelineSignals';
 
-export interface MovieClipSignals {
-  onEnterFrame: Signal<() => void>;
-  onExitFrame: Signal<() => void>;
-  onFrameConstructed: Signal<() => void>;
-}
+// A MovieClip's per-frame lifecycle signals are exactly its timeline's signals — enableMovieClipSignals
+// arms the underlying timeline and exposes the same group on the clip's runtime.
+export type MovieClipSignals = TimelineSignals;

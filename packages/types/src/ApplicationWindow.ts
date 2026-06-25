@@ -112,4 +112,11 @@ export interface WindowBackend {
   setProgress(win: ApplicationWindow, progress: number): void;
   // Flashes the taskbar entry / bounces the dock to draw attention; false stops it.
   requestAttention(win: ApplicationWindow, attention: boolean): void;
+  // Prevents (true) or allows (false) the window contents from being captured in screenshots or
+  // screen sharing. Web no-op; native hosts implement it (e.g. Electron setContentProtection).
+  setContentProtection(win: ApplicationWindow, enabled: boolean): void;
+  // Briefly flashes the window frame to attract attention. Web no-op; native hosts implement it.
+  flashWindowFrame(win: ApplicationWindow): void;
+  // Shows or hides the native drop shadow around the window. macOS / native only; web no-op.
+  setHasShadow(win: ApplicationWindow, hasShadow: boolean): void;
 }

@@ -1,8 +1,8 @@
 import type { InputGamepadAxisData, InputGamepadButtonData, InputGamepadConnectData } from './InputGamepadData';
 import type { InputKeyboardData } from './InputKeyboardData';
 import type { InputPointerData } from './InputPointerData';
+import type { InputTextData } from './InputTextData';
 import type { Signal } from './Signal';
-import type { TextSelectionRange } from './TextSelectionRange';
 
 export interface InputSignals {
   onGamepadAxisMove: Signal<(data: Readonly<InputGamepadAxisData>) => void>;
@@ -17,7 +17,7 @@ export interface InputSignals {
   onPointerMove: Signal<(data: Readonly<InputPointerData>) => void>;
   onPointerMoveRelative: Signal<(data: Readonly<InputPointerData>) => void>;
   onPointerUp: Signal<(data: Readonly<InputPointerData>) => void>;
-  onTextEdit: Signal<(data: Readonly<TextSelectionRange>) => void>;
-  onTextInput: Signal<(data: Readonly<TextSelectionRange>) => void>;
+  onTextEdit: Signal<(data: Readonly<InputTextData>) => void>;
+  onTextInput: Signal<(data: Readonly<InputTextData>) => void>;
   onWheel: Signal<(data: Readonly<InputPointerData>) => void>;
 }
