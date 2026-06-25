@@ -9,12 +9,27 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../displayobject" },
-    { "path": "../entity" },
-    { "path": "../geometry" },
-    { "path": "../node" },
-    { "path": "../textlayout" },
-    { "path": "../types" }
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../textlayout"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

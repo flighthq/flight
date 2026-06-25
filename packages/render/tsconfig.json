@@ -9,17 +9,42 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../camera" },
-    { "path": "../entity" },
-    { "path": "../geometry" },
-    { "path": "../lighting" },
-    { "path": "../materials" },
-    { "path": "../mesh" },
-    { "path": "../node" },
-    { "path": "../displayobject" },
-    { "path": "../scene" },
-    { "path": "../sprite" },
-    { "path": "../types" }
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../lighting"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../mesh"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../scene"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../sprite"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

@@ -9,12 +9,27 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../geometry" },
-    { "path": "../materials" },
-    { "path": "../node" },
-    { "path": "../displayobject" },
-    { "path": "../sprite" },
-    { "path": "../types" }
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../sprite"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

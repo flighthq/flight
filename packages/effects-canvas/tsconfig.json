@@ -9,11 +9,24 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../effects" },
-    { "path": "../filters" },
-    { "path": "../filters-canvas" },
-    { "path": "../displayobject-canvas" },
-    { "path": "../types" }
+    {
+      "path": "../displayobject-canvas"
+    },
+    {
+      "path": "../effects"
+    },
+    {
+      "path": "../filters"
+    },
+    {
+      "path": "../filters-canvas"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

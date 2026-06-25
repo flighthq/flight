@@ -9,11 +9,24 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../geometry" },
-    { "path": "../math" },
-    { "path": "../node" },
-    { "path": "../sprite" },
-    { "path": "../types" }
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../sprite"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

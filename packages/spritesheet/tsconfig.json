@@ -9,14 +9,33 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../displayobject" },
-    { "path": "../node" },
-    { "path": "../image" },
-    { "path": "../textureatlas" },
-    { "path": "../tileset" },
-    { "path": "../geometry" },
-    { "path": "../signals" },
-    { "path": "../types" }
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../textureatlas"
+    },
+    {
+      "path": "../tileset"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

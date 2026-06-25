@@ -9,10 +9,21 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../displayobject" },
-    { "path": "../geometry" },
-    { "path": "../types" },
-    { "path": "../node" }
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

@@ -9,18 +9,45 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../geometry" },
-    { "path": "../materials" },
-    { "path": "../displayobject-canvas" },
-    { "path": "../render" },
-    { "path": "../node" },
-    { "path": "../displayobject" },
-    { "path": "../text" },
-    { "path": "../shape" },
-    { "path": "../textinput" },
-    { "path": "../textlayout" },
-    { "path": "../types" }
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../displayobject-canvas"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../text"
+    },
+    {
+      "path": "../textinput"
+    },
+    {
+      "path": "../textlayout"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

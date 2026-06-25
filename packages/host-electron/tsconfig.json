@@ -10,23 +10,60 @@
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
-    { "path": "../app" },
-    { "path": "../application" },
-    { "path": "../clipboard" },
-    { "path": "../dialog" },
-    { "path": "../ipc" },
-    { "path": "../menu" },
-    { "path": "../notification" },
-    { "path": "../platform" },
-    { "path": "../power" },
-    { "path": "../protocol" },
-    { "path": "../screen" },
-    { "path": "../shell" },
-    { "path": "../shortcut" },
-    { "path": "../signals" },
-    { "path": "../tray" },
-    { "path": "../types" },
-    { "path": "../updater" }
+    {
+      "path": "../app"
+    },
+    {
+      "path": "../application"
+    },
+    {
+      "path": "../clipboard"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../ipc"
+    },
+    {
+      "path": "../menu"
+    },
+    {
+      "path": "../notification"
+    },
+    {
+      "path": "../platform"
+    },
+    {
+      "path": "../power"
+    },
+    {
+      "path": "../protocol"
+    },
+    {
+      "path": "../screen"
+    },
+    {
+      "path": "../shell"
+    },
+    {
+      "path": "../shortcut"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../storage"
+    },
+    {
+      "path": "../tray"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../updater"
+    }
   ],
   "include": ["src"]
 }
