@@ -47,222 +47,226 @@ const SMOKE_JSON = JSON.stringify({
 
 const PPU = 100;
 
-describe('parseUnityParticle — gradient / size curves bake into curves', () => {
-  it('leaves curves null when colorOverLifetime has only start/end', () => {
-    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(c.colorCurve).toBeNull();
-    expect(c.alphaCurve).toBeNull();
-    expect(c.scaleCurve).toBeNull();
+describe('parseUnityParticle', () => {
+  describe('gradient / size curves bake into curves', () => {
+    it('leaves curves null when colorOverLifetime has only start/end', () => {
+      const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(c.colorCurve).toBeNull();
+      expect(c.alphaCurve).toBeNull();
+      expect(c.scaleCurve).toBeNull();
+    });
+
+    it('bakes a multi-stop gradient (colorKeys + alphaKeys) into curves', () => {
+      const json = JSON.stringify({
+        ...JSON.parse(SMOKE_JSON),
+        colorOverLifetime: {
+          enabled: true,
+          gradient: {
+            colorKeys: [
+              { time: 0, color: { r: 1, g: 0, b: 0 } },
+              { time: 0.5, color: { r: 0, g: 1, b: 0 } },
+              { time: 1, color: { r: 0, g: 0, b: 1 } },
+            ],
+            alphaKeys: [
+              { time: 0, alpha: 0 },
+              { time: 0.5, alpha: 1 },
+              { time: 1, alpha: 0 },
+            ],
+          },
+        },
+      });
+      const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
+      expect(c.colorCurve).not.toBeNull();
+      expect(c.alphaCurve).not.toBeNull();
+      const out = [0, 0, 0];
+      sampleParticleColorCurve(out, 0, c.colorCurve!, 0.5);
+      expect(out[1]).toBeGreaterThan(0.8); // green mid-life
+      expect(sampleParticleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9); // alpha peaks mid-life
+    });
+
+    it('bakes a size-over-lifetime AnimationCurve into scaleCurve', () => {
+      const json = JSON.stringify({
+        ...JSON.parse(SMOKE_JSON),
+        sizeOverLifetime: {
+          enabled: true,
+          curve: {
+            keys: [
+              { time: 0, value: 0 },
+              { time: 0.5, value: 1 },
+              { time: 1, value: 0 },
+            ],
+          },
+        },
+      });
+      const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
+      expect(c.scaleCurve).not.toBeNull();
+      expect(sampleParticleCurve(c.scaleCurve!, 0.5)).toBeGreaterThan(sampleParticleCurve(c.scaleCurve!, 0));
+    });
+
+    it('does not warn about a gradient now that it is baked', () => {
+      const json = JSON.stringify({
+        ...JSON.parse(SMOKE_JSON),
+        colorOverLifetime: {
+          enabled: true,
+          gradient: {
+            colorKeys: [
+              { time: 0, color: { r: 1, g: 1, b: 1 } },
+              { time: 0.5, color: { r: 0.5, g: 0.5, b: 0.5 } },
+              { time: 1, color: { r: 0, g: 0, b: 0 } },
+            ],
+          },
+        },
+      });
+      expect(parseUnityParticleDocument(json).warnings.some((w) => w.toLowerCase().includes('gradient'))).toBe(false);
+    });
   });
 
-  it('bakes a multi-stop gradient (colorKeys + alphaKeys) into curves', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      colorOverLifetime: {
-        enabled: true,
-        gradient: {
-          colorKeys: [
-            { time: 0, color: { r: 1, g: 0, b: 0 } },
-            { time: 0.5, color: { r: 0, g: 1, b: 0 } },
-            { time: 1, color: { r: 0, g: 0, b: 1 } },
-          ],
-          alphaKeys: [
-            { time: 0, alpha: 0 },
-            { time: 0.5, alpha: 1 },
-            { time: 1, alpha: 0 },
+  describe('lightweight, returns config directly', () => {
+    it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
+      const result = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(typeof result.maxParticles).toBe('number');
+      expect((result as unknown as Record<string, unknown>).document).toBeUndefined();
+    });
+
+    it('parses maxParticles', () => {
+      expect(parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).maxParticles).toBe(500);
+    });
+
+    it('maps startLifetime to lifetimeMin/Max', () => {
+      const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(c.lifetimeMin).toBeCloseTo(1.0);
+      expect(c.lifetimeMax).toBeCloseTo(2.5);
+    });
+
+    it('scales speed by pixelsPerUnit', () => {
+      const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(c.speedMin).toBeCloseTo(50);
+      expect(c.speedMax).toBeCloseTo(150);
+    });
+
+    it('converts gravity with gravityModifier and physicsGravity', () => {
+      const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(c.gravityY).toBeCloseTo(0.1 * 9.81 * PPU, 1);
+    });
+
+    it('maps Cone shape to spread', () => {
+      expect(parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).spread).toBeCloseTo((15 * Math.PI) / 180, 3);
+    });
+
+    it('maps colorOverLifetime when enabled', () => {
+      const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(c.colorStartR).toBeCloseTo(0.8);
+      expect(c.colorEndR).toBeCloseTo(0.3);
+      expect(c.alphaStart).toBeCloseTo(1.0);
+      expect(c.alphaEnd).toBeCloseTo(0.0);
+    });
+
+    it('maps sizeOverLifetime to scaleEnd', () => {
+      expect(parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).scaleEnd).toBeCloseTo(2.0);
+    });
+
+    it('maps rotationOverLifetime to rotationSpeedMin/Max', () => {
+      const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(c.rotationSpeedMin).toBeCloseTo((-45 * Math.PI) / 180, 3);
+      expect(c.rotationSpeedMax).toBeCloseTo((45 * Math.PI) / 180, 3);
+    });
+
+    it('maps a looping system to loop=true / duration=0 (emit forever)', () => {
+      const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(c.loop).toBe(true);
+      expect(c.duration).toBe(0);
+    });
+
+    it('maps a non-looping system to loop=false with its duration', () => {
+      const json = JSON.stringify({ ...JSON.parse(SMOKE_JSON), looping: false, duration: 3 });
+      const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
+      expect(c.loop).toBe(false);
+      expect(c.duration).toBeCloseTo(3);
+    });
+
+    it('maps burst count and interval', () => {
+      const json = JSON.stringify({
+        ...JSON.parse(SMOKE_JSON),
+        emission: {
+          rateOverTime: { mode: 'constant', constant: 0 },
+          bursts: [{ time: 0, count: 25, cycleCount: 0, repeatInterval: 2 }],
+        },
+      });
+      const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
+      expect(c.burstCount).toBe(25);
+      expect(c.burstInterval).toBe(2);
+    });
+  });
+
+  describe('malformed input', () => {
+    it('throws a clear, format-tagged error on invalid JSON', () => {
+      expect(() => parseUnityParticle('{not valid')).toThrow(/Invalid Unity particle JSON/);
+    });
+
+    it('throws a clear error when the root is not an object', () => {
+      expect(() => parseUnityParticle('null')).toThrow(/expected a JSON object/);
+      expect(() => parseUnityParticle('42')).toThrow(/expected a JSON object/);
+      expect(() => parseUnityParticle('[]')).toThrow(/expected a JSON object/);
+    });
+
+    it('falls back to defaults for an empty object rather than producing NaN', () => {
+      const c = parseUnityParticle('{}');
+      expect(Number.isFinite(c.maxParticles)).toBe(true);
+      expect(Number.isFinite(c.lifetimeMin)).toBe(true);
+      expect(Number.isFinite(c.gravityY)).toBe(true);
+      expect(Number.isFinite(c.spawnRate)).toBe(true);
+    });
+  });
+});
+
+describe('parseUnityParticleDocument', () => {
+  describe('full round-trip, returns { config, document }', () => {
+    it('returns the same config values as parseUnityParticle', () => {
+      const config = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
+      const { config: loaded } = parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(loaded.maxParticles).toBe(config.maxParticles);
+      expect(loaded.gravityY).toBeCloseTo(config.gravityY, 5);
+    });
+
+    it('preserves name, looping, and prewarm in document', () => {
+      const { document } = parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU });
+      expect(document.name).toBe('smoke');
+      expect(document.looping).toBe(true);
+      expect(document.prewarm).toBe(false);
+    });
+  });
+
+  describe('import warnings', () => {
+    it('has no warnings for a config-representable system', () => {
+      expect(parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU }).warnings).toEqual([]);
+    });
+
+    it('warns about unsupported modules that are enabled', () => {
+      const json = JSON.stringify({
+        ...JSON.parse(SMOKE_JSON),
+        noise: { enabled: true },
+        collision: { enabled: true },
+        trails: { enabled: false }, // disabled → no warning
+      });
+      const { warnings } = parseUnityParticleDocument(json, { pixelsPerUnit: PPU });
+      expect(warnings.some((w) => w.includes('noise'))).toBe(true);
+      expect(warnings.some((w) => w.includes('collision'))).toBe(true);
+      expect(warnings.some((w) => w.includes('trails'))).toBe(false);
+    });
+
+    it('warns when more than one burst is present', () => {
+      const json = JSON.stringify({
+        ...JSON.parse(SMOKE_JSON),
+        emission: {
+          rateOverTime: { mode: 'constant', constant: 0 },
+          bursts: [
+            { time: 0, count: 5 },
+            { time: 1, count: 5 },
           ],
         },
-      },
+      });
+      expect(parseUnityParticleDocument(json).warnings.some((w) => w.includes('burst'))).toBe(true);
     });
-    const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
-    expect(c.colorCurve).not.toBeNull();
-    expect(c.alphaCurve).not.toBeNull();
-    const out = [0, 0, 0];
-    sampleParticleColorCurve(out, 0, c.colorCurve!, 0.5);
-    expect(out[1]).toBeGreaterThan(0.8); // green mid-life
-    expect(sampleParticleCurve(c.alphaCurve!, 0.5)).toBeGreaterThan(0.9); // alpha peaks mid-life
-  });
-
-  it('bakes a size-over-lifetime AnimationCurve into scaleCurve', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      sizeOverLifetime: {
-        enabled: true,
-        curve: {
-          keys: [
-            { time: 0, value: 0 },
-            { time: 0.5, value: 1 },
-            { time: 1, value: 0 },
-          ],
-        },
-      },
-    });
-    const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
-    expect(c.scaleCurve).not.toBeNull();
-    expect(sampleParticleCurve(c.scaleCurve!, 0.5)).toBeGreaterThan(sampleParticleCurve(c.scaleCurve!, 0));
-  });
-
-  it('does not warn about a gradient now that it is baked', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      colorOverLifetime: {
-        enabled: true,
-        gradient: {
-          colorKeys: [
-            { time: 0, color: { r: 1, g: 1, b: 1 } },
-            { time: 0.5, color: { r: 0.5, g: 0.5, b: 0.5 } },
-            { time: 1, color: { r: 0, g: 0, b: 0 } },
-          ],
-        },
-      },
-    });
-    expect(parseUnityParticleDocument(json).warnings.some((w) => w.toLowerCase().includes('gradient'))).toBe(false);
-  });
-});
-
-describe('parseUnityParticle — lightweight, returns config directly', () => {
-  it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
-    const result = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(typeof result.maxParticles).toBe('number');
-    expect((result as unknown as Record<string, unknown>).document).toBeUndefined();
-  });
-
-  it('parses maxParticles', () => {
-    expect(parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).maxParticles).toBe(500);
-  });
-
-  it('maps startLifetime to lifetimeMin/Max', () => {
-    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(c.lifetimeMin).toBeCloseTo(1.0);
-    expect(c.lifetimeMax).toBeCloseTo(2.5);
-  });
-
-  it('scales speed by pixelsPerUnit', () => {
-    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(c.speedMin).toBeCloseTo(50);
-    expect(c.speedMax).toBeCloseTo(150);
-  });
-
-  it('converts gravity with gravityModifier and physicsGravity', () => {
-    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(c.gravityY).toBeCloseTo(0.1 * 9.81 * PPU, 1);
-  });
-
-  it('maps Cone shape to spread', () => {
-    expect(parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).spread).toBeCloseTo((15 * Math.PI) / 180, 3);
-  });
-
-  it('maps colorOverLifetime when enabled', () => {
-    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(c.colorStartR).toBeCloseTo(0.8);
-    expect(c.colorEndR).toBeCloseTo(0.3);
-    expect(c.alphaStart).toBeCloseTo(1.0);
-    expect(c.alphaEnd).toBeCloseTo(0.0);
-  });
-
-  it('maps sizeOverLifetime to scaleEnd', () => {
-    expect(parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU }).scaleEnd).toBeCloseTo(2.0);
-  });
-
-  it('maps rotationOverLifetime to rotationSpeedMin/Max', () => {
-    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(c.rotationSpeedMin).toBeCloseTo((-45 * Math.PI) / 180, 3);
-    expect(c.rotationSpeedMax).toBeCloseTo((45 * Math.PI) / 180, 3);
-  });
-
-  it('maps a looping system to loop=true / duration=0 (emit forever)', () => {
-    const c = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(c.loop).toBe(true);
-    expect(c.duration).toBe(0);
-  });
-
-  it('maps a non-looping system to loop=false with its duration', () => {
-    const json = JSON.stringify({ ...JSON.parse(SMOKE_JSON), looping: false, duration: 3 });
-    const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
-    expect(c.loop).toBe(false);
-    expect(c.duration).toBeCloseTo(3);
-  });
-
-  it('maps burst count and interval', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      emission: {
-        rateOverTime: { mode: 'constant', constant: 0 },
-        bursts: [{ time: 0, count: 25, cycleCount: 0, repeatInterval: 2 }],
-      },
-    });
-    const c = parseUnityParticle(json, { pixelsPerUnit: PPU });
-    expect(c.burstCount).toBe(25);
-    expect(c.burstInterval).toBe(2);
-  });
-});
-
-describe('parseUnityParticle — malformed input', () => {
-  it('throws a clear, format-tagged error on invalid JSON', () => {
-    expect(() => parseUnityParticle('{not valid')).toThrow(/Invalid Unity particle JSON/);
-  });
-
-  it('throws a clear error when the root is not an object', () => {
-    expect(() => parseUnityParticle('null')).toThrow(/expected a JSON object/);
-    expect(() => parseUnityParticle('42')).toThrow(/expected a JSON object/);
-    expect(() => parseUnityParticle('[]')).toThrow(/expected a JSON object/);
-  });
-
-  it('falls back to defaults for an empty object rather than producing NaN', () => {
-    const c = parseUnityParticle('{}');
-    expect(Number.isFinite(c.maxParticles)).toBe(true);
-    expect(Number.isFinite(c.lifetimeMin)).toBe(true);
-    expect(Number.isFinite(c.gravityY)).toBe(true);
-    expect(Number.isFinite(c.spawnRate)).toBe(true);
-  });
-});
-
-describe('parseUnityParticleDocument — full round-trip, returns { config, document }', () => {
-  it('returns the same config values as parseUnityParticle', () => {
-    const config = parseUnityParticle(SMOKE_JSON, { pixelsPerUnit: PPU });
-    const { config: loaded } = parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(loaded.maxParticles).toBe(config.maxParticles);
-    expect(loaded.gravityY).toBeCloseTo(config.gravityY, 5);
-  });
-
-  it('preserves name, looping, and prewarm in document', () => {
-    const { document } = parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU });
-    expect(document.name).toBe('smoke');
-    expect(document.looping).toBe(true);
-    expect(document.prewarm).toBe(false);
-  });
-});
-
-describe('parseUnityParticleDocument — import warnings', () => {
-  it('has no warnings for a config-representable system', () => {
-    expect(parseUnityParticleDocument(SMOKE_JSON, { pixelsPerUnit: PPU }).warnings).toEqual([]);
-  });
-
-  it('warns about unsupported modules that are enabled', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      noise: { enabled: true },
-      collision: { enabled: true },
-      trails: { enabled: false }, // disabled → no warning
-    });
-    const { warnings } = parseUnityParticleDocument(json, { pixelsPerUnit: PPU });
-    expect(warnings.some((w) => w.includes('noise'))).toBe(true);
-    expect(warnings.some((w) => w.includes('collision'))).toBe(true);
-    expect(warnings.some((w) => w.includes('trails'))).toBe(false);
-  });
-
-  it('warns when more than one burst is present', () => {
-    const json = JSON.stringify({
-      ...JSON.parse(SMOKE_JSON),
-      emission: {
-        rateOverTime: { mode: 'constant', constant: 0 },
-        bursts: [
-          { time: 0, count: 5 },
-          { time: 1, count: 5 },
-        ],
-      },
-    });
-    expect(parseUnityParticleDocument(json).warnings.some((w) => w.includes('burst'))).toBe(true);
   });
 });
 

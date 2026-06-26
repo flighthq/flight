@@ -5,7 +5,12 @@ import { enableTextInput } from '@flighthq/textinput';
 import { RichTextKind } from '@flighthq/types';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultDomRichTextRenderer, drawDomRichText, registerDomTextInputOverlay } from './domRichText';
+import {
+  defaultDomRichTextRenderer,
+  drawDomRichText,
+  drawDomRichTextMask,
+  registerDomTextInputOverlay,
+} from './domRichText';
 
 function makeState() {
   const container = document.createElement('div');
@@ -129,6 +134,16 @@ describe('drawDomRichText', () => {
 
     const div = drawGetEl(state, () => drawDomRichText(state, renderProxy))!;
     expect(div.style.backgroundColor).toBe('');
+  });
+});
+
+describe('drawDomRichTextMask', () => {
+  it('does not throw and produces a DOM element', () => {
+    const state = makeState();
+    const node = createRichText({ data: { text: 'mask text' } });
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    const el = drawGetEl(state, () => drawDomRichTextMask(state, renderProxy));
+    expect(el).not.toBeNull();
   });
 });
 

@@ -31,6 +31,24 @@ describe('bindGlQuadBatchBaseAttributes', () => {
   });
 });
 
+describe('ensureGlQuadBatchShader', () => {
+  it('returns a shader with a program and attribute locations', () => {
+    const { state } = makeGlState();
+    const shader = ensureGlQuadBatchShader(state);
+    expect(shader.program).toBeDefined();
+    expect(typeof shader.locCorner).toBe('number');
+    expect(shader.locWorldMatrix).toBeDefined();
+    expect(shader.locTexture).toBeDefined();
+  });
+
+  it('is idempotent — returns the same shader on repeated calls', () => {
+    const { state } = makeGlState();
+    const s1 = ensureGlQuadBatchShader(state);
+    const s2 = ensureGlQuadBatchShader(state);
+    expect(s1).toBe(s2);
+  });
+});
+
 describe('flushGlSpriteBatch', () => {
   it('does nothing when batch count is zero', () => {
     const { state, gl } = makeGlState();
