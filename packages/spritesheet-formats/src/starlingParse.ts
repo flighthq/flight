@@ -4,6 +4,9 @@ import {
   createSpritesheetData,
   createSpritesheetFrameData,
 } from '@flighthq/spritesheet';
+import { createTextureAtlas } from '@flighthq/textureatlas';
+import { parseTextureAtlasStarlingXml } from '@flighthq/textureatlas-formats';
+import type { TextureAtlasRegion } from '@flighthq/types';
 
 import type { StarlingDocument, StarlingSubTexture } from './starlingSchema';
 
@@ -63,28 +66,26 @@ function parseStarlingXml(xml: string): StarlingDocument {
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
-function subTextureToFrame(st: StarlingSubTexture): SpritesheetFrameData {
-  const offsetX = st.frameX !== undefined ? -st.frameX : 0;
-  const offsetY = st.frameY !== undefined ? -st.frameY : 0;
-  const sourceWidth = st.frameWidth ?? st.width;
-  const sourceHeight = st.frameHeight ?? st.height;
-
-  const pivotX = st.pivotX !== undefined && sourceWidth > 0 ? st.pivotX / sourceWidth : null;
-  const pivotY = st.pivotY !== undefined && sourceHeight > 0 ? st.pivotY / sourceHeight : null;
-
+// Maps an atlas region (geometry owned by @flighthq/textureatlas-formats — incl. Starling's negated
+// frameX/Y offsets and trim handling) to a spritesheet frame. Starling pivots are authored in source
+// pixels; the spritesheet layer normalizes them to the 0..1 range, so re-divide the atlas's raw pivot
+// by the source size here.
+function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
+  const sourceWidth = region.originalWidth ?? region.width;
+  const sourceHeight = region.originalHeight ?? region.height;
   return createSpritesheetFrameData({
-    height: st.height,
-    name: st.name,
-    offsetX,
-    offsetY,
-    pivotX,
-    pivotY,
-    rotated: st.rotated ?? false,
+    height: region.height,
+    name: region.name ?? '',
+    offsetX: region.sourceX,
+    offsetY: region.sourceY,
+    pivotX: region.pivotX !== null && sourceWidth > 0 ? region.pivotX / sourceWidth : null,
+    pivotY: region.pivotY !== null && sourceHeight > 0 ? region.pivotY / sourceHeight : null,
+    rotated: region.rotated,
     sourceHeight,
     sourceWidth,
-    width: st.width,
-    x: st.x,
-    y: st.y,
+    width: region.width,
+    x: region.x,
+    y: region.y,
   });
 }
 
@@ -120,8 +121,14 @@ function inferAnimations(frameNames: string[], frameDuration: number): Spriteshe
   return animations;
 }
 
-function documentToData(doc: StarlingDocument, frameDuration: number): SpritesheetData {
-  const frames = doc.subTextures.map(subTextureToFrame);
+// Region geometry is delegated to @flighthq/textureatlas-formats; this layer keeps the imagePath and
+// the inferred `baseName_NNN` animations. `regions` come from the atlas parser over the same XML.
+function documentToData(
+  doc: StarlingDocument,
+  regions: readonly TextureAtlasRegion[],
+  frameDuration: number,
+): SpritesheetData {
+  const frames = regions.map(frameFromRegion);
   const frameNames = frames.map((f) => f.name);
   const animations = inferAnimations(frameNames, frameDuration);
 
@@ -135,6 +142,10 @@ function documentToData(doc: StarlingDocument, frameDuration: number): Spriteshe
   });
 }
 
+function regionsFromXml(xml: string): readonly TextureAtlasRegion[] {
+  return parseTextureAtlasStarlingXml(xml, createTextureAtlas()).regions;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /** Parse a Starling / Sparrow XML atlas string directly to a SpritesheetData.
@@ -143,12 +154,12 @@ function documentToData(doc: StarlingDocument, frameDuration: number): Spriteshe
  *  Animations are inferred from the standard `baseName_NNN` frame-naming convention.
  *  Use `parseStarlingSpritesheetDocument` instead when you need round-trip serialisation. */
 export function parseStarlingSpritesheet(xml: string, options?: StarlingParseOptions): SpritesheetData {
-  return documentToData(parseStarlingXml(xml), options?.frameDuration ?? 100);
+  return documentToData(parseStarlingXml(xml), regionsFromXml(xml), options?.frameDuration ?? 100);
 }
 
 /** Parse a Starling / Sparrow XML atlas string and preserve the full document
  *  for round-trip serialisation via `serializeStarlingSpritesheet`. */
 export function parseStarlingSpritesheetDocument(xml: string, options?: StarlingParseOptions): StarlingParsed {
   const document = parseStarlingXml(xml);
-  return { data: documentToData(document, options?.frameDuration ?? 100), document };
+  return { data: documentToData(document, regionsFromXml(xml), options?.frameDuration ?? 100), document };
 }
