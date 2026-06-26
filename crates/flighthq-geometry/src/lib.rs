@@ -4,11 +4,13 @@
 //! vectors, affine matrices, rectangles, typed-array helpers, and a generic
 //! object pool for acquire/release bracket allocation.
 
+pub mod aabb;
 pub mod matrix;
 pub mod matrix3;
 pub mod matrix4;
 pub mod pool;
 pub mod pools;
+pub mod ray3d;
 pub mod rectangle;
 pub mod typedarray;
 pub mod vector2;
@@ -16,6 +18,14 @@ pub mod vector3;
 pub mod vector4;
 
 // Re-export the complete public surface at the crate root.
+
+// aabb
+pub use aabb::{
+    clone_aabb, copy_aabb, create_aabb, expand_aabb_by_point, expand_aabb_by_sphere,
+    get_aabb_center, get_aabb_contains_point, get_aabb_extents, get_aabb_size,
+    get_closest_point_on_aabb, intersect_aabb, intersects_aabb, set_aabb, set_aabb_from_points,
+    transform_aabb_by_matrix4, union_aabb,
+};
 
 // matrix
 pub use matrix::{
@@ -69,6 +79,13 @@ pub use pools::{
     clear_rectangle_pool, clear_vector2_pool, clear_vector3_pool, clear_vector4_pool,
     release_matrix, release_matrix3, release_matrix4, release_rectangle, release_vector2,
     release_vector3, release_vector4,
+};
+
+// ray3d
+pub use ray3d::{
+    create_ray3d, get_closest_point_between_ray3ds, get_closest_point_on_ray3d, get_ray3d_point_at,
+    intersect_ray3d_aabb, intersect_ray3d_plane, intersect_ray3d_sphere, intersect_ray3d_triangle,
+    set_ray3d,
 };
 
 // rectangle

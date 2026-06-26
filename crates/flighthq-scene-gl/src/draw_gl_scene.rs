@@ -6,17 +6,15 @@
 //! material's registered mesh-material renderer, re-binding only when the resolved
 //! renderer or material changes (the "contiguous run" contract).
 //!
-//! TODO(align): this is a COMPILING STUB. A faithful port needs the 3D
+//! // TODO(align): this is a COMPILING STUB. A faithful port needs the 3D
 //! scene-render contract that is not yet ported to the Rust crates:
-//!
-//! - `prepare_scene_render` + `SceneRenderList` (`flighthq-render`) — resolves
-//!   world matrices, the camera view-projection, frustum culling, and the packed
-//!   light block into the per-state visible-mesh list.
-//! - the `scene` graph's `Mesh` / `createScene` / `createMesh` API
-//!   (`flighthq-scene` still exposes the old `world`/`WorldNode` graph).
-//! - `SceneLights` and `StandardPbrMaterial` (`flighthq-types` /
-//!   `flighthq-materials`).
-//!
+//!   - `prepare_scene_render` + `SceneRenderList` (`flighthq-render`) — resolves
+//!     world matrices, the camera view-projection, frustum culling, and the packed
+//!     light block into the per-state visible-mesh list.
+//!   - the `scene` graph's `Mesh` / `createScene` / `createMesh` API
+//!     (`flighthq-scene` still exposes the old `world`/`WorldNode` graph).
+//!   - `SceneLights` and `StandardPbrMaterial` (`flighthq-types` /
+//!     `flighthq-materials`).
 //! Until those land, this function exposes the canonical seam and performs no
 //! draws. The per-subset bind/run loop, the alias-safe `boundRenderer`/
 //! `boundMaterial` tracking, and `setMatrix3NormalFromMatrix4` per mesh are the

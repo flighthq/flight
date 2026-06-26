@@ -65,6 +65,8 @@ fn color_transform_to_like(ct: &flighthq_types::ColorTransform) -> ColorTransfor
 
 #[cfg(test)]
 mod tests {
+    use flighthq_types::Material;
+
     use super::*;
     use crate::color_transform::create_color_transform_from;
     use crate::color_transform_material::{

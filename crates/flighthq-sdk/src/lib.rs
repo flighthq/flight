@@ -87,7 +87,8 @@ pub use flighthq_textureatlas::*;
 pub use flighthq_tileset::*;
 pub use flighthq_video::*;
 
-// Animation: tweens, timelines, spritesheets, particles.
+// Animation: tweens, timelines, spritesheets, particles, keyframe animation.
+pub use flighthq_animation::*;
 pub use flighthq_easing::*;
 pub use flighthq_particles::*;
 pub use flighthq_particles_formats::*;
@@ -109,6 +110,7 @@ pub use flighthq_clipboard::*;
 pub use flighthq_device::*;
 pub use flighthq_dialog::*;
 pub use flighthq_filesystem::*;
+pub use flighthq_filters_math::*;
 pub use flighthq_geolocation::*;
 pub use flighthq_haptics::*;
 pub use flighthq_keyboard::*;
@@ -116,16 +118,19 @@ pub use flighthq_lifecycle::*;
 pub use flighthq_menu::*;
 pub use flighthq_network::*;
 pub use flighthq_notification::*;
+pub use flighthq_picking::*;
 pub use flighthq_platform::*;
 pub use flighthq_power::*;
-pub use flighthq_resource_formats::*;
+pub use flighthq_scene_formats::*;
 pub use flighthq_screen::*;
 pub use flighthq_sensors::*;
 pub use flighthq_share::*;
 pub use flighthq_shell::*;
 pub use flighthq_shortcut::*;
+pub use flighthq_skeleton::*;
 pub use flighthq_statusbar::*;
 pub use flighthq_storage::*;
+pub use flighthq_textureatlas_formats::*;
 pub use flighthq_tray::*;
 pub use flighthq_useragent::*;
 pub use flighthq_webcam::*;

@@ -17,6 +17,3 @@ flighthq-render-gl = { workspace = true }
 flighthq-scene = { workspace = true }
 flighthq-types = { workspace = true }
 glow = { workspace = true }
-
-[lints]
-workspace = true

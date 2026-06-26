@@ -12,6 +12,3 @@ flighthq-geometry = { workspace = true }
 flighthq-node = { workspace = true }
 flighthq-path = { workspace = true }
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

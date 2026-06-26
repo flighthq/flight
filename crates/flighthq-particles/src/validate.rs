@@ -159,7 +159,7 @@ pub fn validate_particle_emitter_config(
 fn is_finite_curve(curve: Option<&[f32]>) -> bool {
     match curve {
         None => false,
-        Some([]) => false,
+        Some(c) if c.is_empty() => false,
         Some(c) => c.iter().all(|v| v.is_finite()),
     }
 }

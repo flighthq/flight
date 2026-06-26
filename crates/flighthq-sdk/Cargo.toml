@@ -52,6 +52,7 @@ flighthq-textureatlas = { workspace = true }
 flighthq-tileset = { workspace = true }
 flighthq-video = { workspace = true }
 flighthq-loader = { workspace = true }
+flighthq-animation = { workspace = true }
 flighthq-tween = { workspace = true }
 flighthq-easing = { workspace = true }
 flighthq-timeline = { workspace = true }
@@ -59,13 +60,17 @@ flighthq-spritesheet = { workspace = true }
 flighthq-spritesheet-formats = { workspace = true }
 flighthq-particles = { workspace = true }
 flighthq-particles-formats = { workspace = true }
+flighthq-filters-math = { workspace = true }
+flighthq-textureatlas-formats = { workspace = true }
+flighthq-skeleton = { workspace = true }
+flighthq-picking = { workspace = true }
+flighthq-scene-formats = { workspace = true }
 flighthq-input = { workspace = true }
 flighthq-interaction = { workspace = true }
 flighthq-application = { workspace = true }
 flighthq-media = { workspace = true }
 flighthq-platform = { workspace = true }
 flighthq-useragent = { workspace = true }
-flighthq-resource-formats = { workspace = true }
 flighthq-filesystem = { workspace = true }
 flighthq-storage = { workspace = true }
 flighthq-shell = { workspace = true }
@@ -91,6 +96,3 @@ flighthq-geolocation = { workspace = true }
 flighthq-haptics = { workspace = true }
 flighthq-share = { workspace = true }
 flighthq-statusbar = { workspace = true }
-
-[lints]
-workspace = true

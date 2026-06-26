@@ -533,7 +533,13 @@ pub fn update_particle_emitter(
 }
 
 fn clamp01(v: f32) -> f32 {
-    v.clamp(0.0, 1.0)
+    if v < 0.0 {
+        0.0
+    } else if v > 1.0 {
+        1.0
+    } else {
+        v
+    }
 }
 
 fn curve_len(curve: &Option<Vec<f32>>) -> usize {

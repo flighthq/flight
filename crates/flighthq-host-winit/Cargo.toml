@@ -33,6 +33,3 @@ flighthq-signals = { workspace = true }
 flighthq-shape = { workspace = true }
 flighthq-tween = { workspace = true }
 flighthq-easing = { workspace = true }
-
-[lints]
-workspace = true

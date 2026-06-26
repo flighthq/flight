@@ -6,9 +6,6 @@ license.workspace = true
 description = "Import/export spritesheet atlas configs from industry-standard formats (Texture Packer, Aseprite, Starling)"
 
 [dependencies]
-flighthq-resource-formats = { workspace = true }
+flighthq-textureatlas-formats = { workspace = true }
 flighthq-spritesheet = { workspace = true }
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

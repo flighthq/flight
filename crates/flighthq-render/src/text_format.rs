@@ -50,13 +50,12 @@ mod tests {
         size: Option<f32>,
         font: Option<String>,
     ) -> TextFormat {
-        TextFormat {
-            bold,
-            italic,
-            size,
-            font,
-            ..Default::default()
-        }
+        let mut f = TextFormat::default();
+        f.bold = bold;
+        f.italic = italic;
+        f.size = size;
+        f.font = font;
+        f
     }
 
     // compute_text_format_font_string

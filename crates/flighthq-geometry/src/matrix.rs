@@ -1125,8 +1125,8 @@ mod tests {
         let m = mat(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
         let mut array = [0.0f32; 6];
         write_matrix_to_f32_slice(&mut array, 0, &m);
-        for (i, &v) in array.iter().enumerate() {
-            assert_eq!(v, (i + 1) as f32);
+        for i in 0..6 {
+            assert_eq!(array[i], (i + 1) as f32);
         }
     }
 

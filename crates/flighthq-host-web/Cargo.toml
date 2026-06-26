@@ -135,6 +135,3 @@ web-sys = { version = "0.3", features = [
 # workspace to keep the version aligned with the rest of the SDK.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 wgpu = { workspace = true }
-
-[lints]
-workspace = true

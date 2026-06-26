@@ -231,7 +231,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::assertions_on_constants)] // documents the gutter-positive invariant
     fn text_bounds_gutter_is_positive() {
         assert!(TEXT_BOUNDS_GUTTER > 0.0);
     }

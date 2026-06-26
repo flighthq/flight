@@ -226,10 +226,8 @@ mod tests {
 
     #[test]
     fn invalidate_bounds_node_local_bounds_bumps_and_marks_dirty() {
-        let mut bounds = BoundsNode {
-            dirty: false,
-            ..Default::default()
-        };
+        let mut bounds = BoundsNode::default();
+        bounds.dirty = false;
         let before = get_bounds_node_local_bounds_revision(&bounds);
         invalidate_bounds_node_local_bounds(&mut bounds);
         assert!(bounds.dirty);

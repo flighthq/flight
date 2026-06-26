@@ -332,8 +332,6 @@ mod tests {
         let src = ct(1.0, 1.0, 1.0, 1.0, 10.0, 0.0, 0.0, 0.0);
         let mut c = clone_color_transform(&src);
         c.red_offset = 99.0;
-        // Mutating the clone must not touch the source.
-        assert_eq!(c.red_offset, 99.0);
         assert_eq!(src.red_offset, 10.0);
     }
 

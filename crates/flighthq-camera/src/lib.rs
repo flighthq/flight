@@ -6,13 +6,17 @@
 //! in `flighthq-types`; this crate owns the constructors and matrix helpers.
 
 pub mod camera;
+pub mod picking;
 pub mod projection;
+pub mod shadow_camera;
 
 pub use camera::{
     create_camera, get_camera_inverse_view_projection_matrix4, get_camera_view_projection_matrix4,
     set_camera_jitter, set_camera_view_matrix4_from_look_at, set_camera_view_matrix4_from_matrix4,
 };
+pub use picking::{get_camera_screen_to_world_ray, get_camera_world_to_screen};
 pub use projection::{
     create_orthographic_projection, create_perspective_projection, is_orthographic_projection,
     is_perspective_projection, set_projection_matrix4,
 };
+pub use shadow_camera::setup_directional_shadow_camera;

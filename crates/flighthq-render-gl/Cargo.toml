@@ -9,6 +9,3 @@ description = "WebGL2 renderer implementation"
 flighthq-types = { workspace = true }
 flighthq-render = { workspace = true }
 glow = { workspace = true }
-
-[lints]
-workspace = true

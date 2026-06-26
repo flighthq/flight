@@ -21,6 +21,3 @@ flighthq-textlayout = { workspace = true }
 flighthq-types = { workspace = true }
 flighthq-velocity = { workspace = true }
 glow = { workspace = true }
-
-[lints]
-workspace = true

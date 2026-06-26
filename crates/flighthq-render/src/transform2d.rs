@@ -163,17 +163,15 @@ mod tests {
         let mut store = RenderStateStore::new();
         let id = create_render_state(&mut store, None);
         let state = RenderState::default();
+        let mut parent = RenderProxy2D::default();
         // Parent at tx=100.
-        let parent = RenderProxy2D {
-            transform_2d: Matrix {
-                a: 1.0,
-                b: 0.0,
-                c: 0.0,
-                d: 1.0,
-                tx: 100.0,
-                ty: 0.0,
-            },
-            ..Default::default()
+        parent.transform_2d = Matrix {
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            tx: 100.0,
+            ty: 0.0,
         };
         // Local at tx=50.
         let local = Matrix {
