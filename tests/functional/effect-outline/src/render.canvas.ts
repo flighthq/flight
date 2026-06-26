@@ -29,7 +29,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'outline', defaultCanvasOutlineEffectRunner);
+registerCanvasRenderEffect(state, 'OutlineEffect', defaultCanvasOutlineEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

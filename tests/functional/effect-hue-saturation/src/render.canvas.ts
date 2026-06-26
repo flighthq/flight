@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'hueSaturation', defaultCanvasHueSaturationEffectRunner);
+registerCanvasRenderEffect(state, 'HueSaturationEffect', defaultCanvasHueSaturationEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

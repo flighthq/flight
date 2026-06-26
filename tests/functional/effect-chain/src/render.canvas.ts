@@ -32,9 +32,9 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'bloom', defaultCanvasBloomEffectRunner);
-registerCanvasRenderEffect(state, 'colorGrade', defaultCanvasColorGradeEffectRunner);
-registerCanvasRenderEffect(state, 'vignette', defaultCanvasVignetteEffectRunner);
+registerCanvasRenderEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
+registerCanvasRenderEffect(state, 'ColorGradeEffect', defaultCanvasColorGradeEffectRunner);
+registerCanvasRenderEffect(state, 'VignetteEffect', defaultCanvasVignetteEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

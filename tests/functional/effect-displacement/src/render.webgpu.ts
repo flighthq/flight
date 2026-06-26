@@ -31,7 +31,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'displacement', defaultWgpuDisplacementEffectRunner);
+registerWgpuRenderEffect(state, 'DisplacementEffect', defaultWgpuDisplacementEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 

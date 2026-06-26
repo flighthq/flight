@@ -36,7 +36,7 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
 enableGlClipSupport(state);
-registerGlRenderEffect(state, 'bloom', defaultGlBloomEffectRunner);
+registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 1,

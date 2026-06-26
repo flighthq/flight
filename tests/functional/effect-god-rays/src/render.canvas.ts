@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'godRays', defaultCanvasGodRaysEffectRunner);
+registerCanvasRenderEffect(state, 'GodRaysEffect', defaultCanvasGodRaysEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
