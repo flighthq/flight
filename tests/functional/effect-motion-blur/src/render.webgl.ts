@@ -45,7 +45,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'motionBlur', defaultGlMotionBlurEffectRunner);
+registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
 registerGlVelocityWriter(state, ShapeKind, defaultGlDisplayObjectVelocityWriter);
 

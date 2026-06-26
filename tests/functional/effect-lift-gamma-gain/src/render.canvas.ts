@@ -28,7 +28,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'liftGammaGain', defaultCanvasLiftGammaGainEffectRunner);
+registerCanvasRenderEffect(state, 'LiftGammaGainEffect', defaultCanvasLiftGammaGainEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
