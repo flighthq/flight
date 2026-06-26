@@ -106,9 +106,7 @@ const NO_TAGS_JSON = JSON.stringify({
   },
 });
 
-// ─── parseAsepriteSpritesheetDocument ────────────────────────────────────────────────────────────
-
-describe('parseAsepriteSpritesheet — lightweight, returns SpritesheetData directly', () => {
+describe('parseAsepriteSpritesheet', () => {
   it('returns a SpritesheetData (not a Parsed object)', () => {
     const result = parseAsepriteSpritesheet(HASH_JSON);
     expect(typeof result.frames).toBe('object');
@@ -210,9 +208,7 @@ describe('parseAsepriteSpritesheet — lightweight, returns SpritesheetData dire
   });
 });
 
-// ─── parseAsepriteSpritesheet ───────────────────────────────────────────────────────────
-
-describe('parseAsepriteSpritesheetDocument — full round-trip, returns { data, document }', () => {
+describe('parseAsepriteSpritesheetDocument', () => {
   it('returns the same data as parseAsepriteSpritesheet', () => {
     const parsed = parseAsepriteSpritesheet(HASH_JSON);
     const { data } = parseAsepriteSpritesheetDocument(HASH_JSON);

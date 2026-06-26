@@ -26,9 +26,7 @@ const MINIMAL_XML = `<TextureAtlas imagePath="mini.png">
   <SubTexture name="tile" x="0" y="0" width="8" height="8"/>
 </TextureAtlas>`;
 
-// ─── parseStarlingSpritesheetDocument ────────────────────────────────────────────────────────────
-
-describe('parseStarlingSpritesheet — lightweight, returns SpritesheetData directly', () => {
+describe('parseStarlingSpritesheet', () => {
   it('returns a SpritesheetData (not a Parsed object)', () => {
     const result = parseStarlingSpritesheet(ATLAS_XML);
     expect(typeof result.frames).toBe('object');
@@ -146,9 +144,7 @@ describe('parseStarlingSpritesheet — lightweight, returns SpritesheetData dire
   });
 });
 
-// ─── parseStarlingSpritesheet ───────────────────────────────────────────────────────────
-
-describe('parseStarlingSpritesheetDocument — full round-trip, returns { data, document }', () => {
+describe('parseStarlingSpritesheetDocument', () => {
   it('returns the same data as parseStarlingSpritesheet', () => {
     const parsed = parseStarlingSpritesheet(ATLAS_XML);
     const { data } = parseStarlingSpritesheetDocument(ATLAS_XML);

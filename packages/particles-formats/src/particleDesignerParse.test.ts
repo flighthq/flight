@@ -54,184 +54,190 @@ const FIRE_PLIST = `<?xml version="1.0" encoding="utf-8"?>
 </dict>
 </plist>`;
 
-describe('parseParticleDesignerPlist — color variance and blend mode', () => {
-  it('maps startColorVariance fields to colorStartVariance', () => {
-    const plist = FIRE_PLIST.replace(
-      '<key>startColorVarianceRed</key><real>0</real>',
-      '<key>startColorVarianceRed</key><real>0.3</real>',
-    );
-    const c = parseParticleDesignerPlist(plist);
-    expect(c.colorStartVarianceR).toBeCloseTo(0.3);
+describe('parseParticleDesignerPlist', () => {
+  describe('color variance and blend mode', () => {
+    it('maps startColorVariance fields to colorStartVariance', () => {
+      const plist = FIRE_PLIST.replace(
+        '<key>startColorVarianceRed</key><real>0</real>',
+        '<key>startColorVarianceRed</key><real>0.3</real>',
+      );
+      const c = parseParticleDesignerPlist(plist);
+      expect(c.colorStartVarianceR).toBeCloseTo(0.3);
+    });
+
+    it('maps additive blend func (770, 1) to blendMode="add"', () => {
+      const plist = FIRE_PLIST.replace(
+        '<key>blendFuncDestination</key><integer>771</integer>',
+        '<key>blendFuncDestination</key><integer>1</integer>',
+      );
+      const c = parseParticleDesignerPlist(plist);
+      expect(c.blendMode).toBe('add');
+    });
+
+    it('round-trips color variance through serialize', () => {
+      const modified = FIRE_PLIST.replace(
+        '<key>startColorVarianceGreen</key><real>0</real>',
+        '<key>startColorVarianceGreen</key><real>0.2</real>',
+      );
+      const config = parseParticleDesignerPlist(modified);
+      const { document } = parseParticleDesignerPlistDocument(modified);
+      const xml = serializeParticleDesignerPlist(config, document);
+      const config2 = parseParticleDesignerPlist(xml);
+      expect(config2.colorStartVarianceG).toBeCloseTo(0.2, 3);
+    });
   });
 
-  it('maps additive blend func (770, 1) to blendMode="add"', () => {
-    const plist = FIRE_PLIST.replace(
-      '<key>blendFuncDestination</key><integer>771</integer>',
-      '<key>blendFuncDestination</key><integer>1</integer>',
-    );
-    const c = parseParticleDesignerPlist(plist);
-    expect(c.blendMode).toBe('add');
+  describe('lightweight, returns config directly', () => {
+    it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
+      const result = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(typeof result.maxParticles).toBe('number');
+      expect((result as unknown as Record<string, unknown>).document).toBeUndefined();
+    });
+
+    it('parses maxParticles', () => {
+      expect(parseParticleDesignerPlist(FIRE_PLIST).maxParticles).toBe(200);
+    });
+
+    it('converts lifetime with variance to min/max', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(c.lifetimeMin).toBeCloseTo(1.0);
+      expect(c.lifetimeMax).toBeCloseTo(2.0);
+    });
+
+    it('converts speed with variance to min/max', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(c.speedMin).toBeCloseTo(80);
+      expect(c.speedMax).toBeCloseTo(120);
+    });
+
+    it('maps angle=90 to upward direction (−Y screen)', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(c.directionX).toBeCloseTo(0, 3);
+      expect(c.directionY).toBeCloseTo(-1, 3);
+    });
+
+    it('converts angleVariance to spread in radians', () => {
+      expect(parseParticleDesignerPlist(FIRE_PLIST).spread).toBeCloseTo((30 * Math.PI) / 180, 4);
+    });
+
+    it('maps gravity directly', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(c.gravityX).toBeCloseTo(0);
+      expect(c.gravityY).toBeCloseTo(200);
+    });
+
+    it('maps color start and end', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(c.colorStartR).toBeCloseTo(1);
+      expect(c.colorStartG).toBeCloseTo(0.5);
+      expect(c.colorStartB).toBeCloseTo(0);
+      expect(c.colorEndR).toBeCloseTo(1);
+      expect(c.colorEndG).toBeCloseTo(0);
+      expect(c.colorEndB).toBeCloseTo(0);
+    });
+
+    it('maps alpha start and end', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(c.alphaStart).toBeCloseTo(1);
+      expect(c.alphaEnd).toBeCloseTo(0);
+    });
+
+    it('normalises scale by textureSize', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
+      expect(c.scaleMin).toBeCloseTo(0.75);
+      expect(c.scaleMax).toBeCloseTo(1.25);
+    });
+
+    it('computes scaleEnd as finishSize / startSize', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
+      expect(c.scaleEnd).toBeCloseTo(0.25);
+    });
+
+    it('uses point emitter shape when sourcePositionVariance is zero', () => {
+      expect(parseParticleDesignerPlist(FIRE_PLIST).emitterShape).toBe('point');
+    });
+
+    it('maps duration=-1 to an infinite (looping) emitter', () => {
+      const c = parseParticleDesignerPlist(FIRE_PLIST);
+      expect(c.loop).toBe(true);
+      expect(c.duration).toBe(0);
+    });
+
+    it('maps a positive duration to a finite, non-looping emitter', () => {
+      const plist = FIRE_PLIST.replace('<key>duration</key><real>-1</real>', '<key>duration</key><real>2.5</real>');
+      const c = parseParticleDesignerPlist(plist);
+      expect(c.loop).toBe(false);
+      expect(c.duration).toBeCloseTo(2.5);
+    });
   });
 
-  it('round-trips color variance through serialize', () => {
-    const modified = FIRE_PLIST.replace(
-      '<key>startColorVarianceGreen</key><real>0</real>',
-      '<key>startColorVarianceGreen</key><real>0.2</real>',
-    );
-    const config = parseParticleDesignerPlist(modified);
-    const { document } = parseParticleDesignerPlistDocument(modified);
-    const xml = serializeParticleDesignerPlist(config, document);
-    const config2 = parseParticleDesignerPlist(xml);
-    expect(config2.colorStartVarianceG).toBeCloseTo(0.2, 3);
-  });
-});
+  describe('malformed input', () => {
+    it('falls back to defaults (not NaN) for empty numeric tags', () => {
+      const xml =
+        '<plist><dict>' +
+        '<key>maxParticles</key><integer></integer>' +
+        '<key>speed</key><real></real>' +
+        '</dict></plist>';
+      const c = parseParticleDesignerPlist(xml);
+      expect(c.maxParticles).toBe(200); // default, not NaN-coerced 0
+      expect(Number.isFinite(c.speedMin)).toBe(true);
+      expect(Number.isFinite(c.speedMax)).toBe(true);
+    });
 
-describe('parseParticleDesignerPlist — lightweight, returns config directly', () => {
-  it('returns a ParticleEmitterConfig (not a Parsed object)', () => {
-    const result = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(typeof result.maxParticles).toBe('number');
-    expect((result as unknown as Record<string, unknown>).document).toBeUndefined();
-  });
-
-  it('parses maxParticles', () => {
-    expect(parseParticleDesignerPlist(FIRE_PLIST).maxParticles).toBe(200);
-  });
-
-  it('converts lifetime with variance to min/max', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(c.lifetimeMin).toBeCloseTo(1.0);
-    expect(c.lifetimeMax).toBeCloseTo(2.0);
-  });
-
-  it('converts speed with variance to min/max', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(c.speedMin).toBeCloseTo(80);
-    expect(c.speedMax).toBeCloseTo(120);
-  });
-
-  it('maps angle=90 to upward direction (−Y screen)', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(c.directionX).toBeCloseTo(0, 3);
-    expect(c.directionY).toBeCloseTo(-1, 3);
-  });
-
-  it('converts angleVariance to spread in radians', () => {
-    expect(parseParticleDesignerPlist(FIRE_PLIST).spread).toBeCloseTo((30 * Math.PI) / 180, 4);
-  });
-
-  it('maps gravity directly', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(c.gravityX).toBeCloseTo(0);
-    expect(c.gravityY).toBeCloseTo(200);
-  });
-
-  it('maps color start and end', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(c.colorStartR).toBeCloseTo(1);
-    expect(c.colorStartG).toBeCloseTo(0.5);
-    expect(c.colorStartB).toBeCloseTo(0);
-    expect(c.colorEndR).toBeCloseTo(1);
-    expect(c.colorEndG).toBeCloseTo(0);
-    expect(c.colorEndB).toBeCloseTo(0);
-  });
-
-  it('maps alpha start and end', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(c.alphaStart).toBeCloseTo(1);
-    expect(c.alphaEnd).toBeCloseTo(0);
-  });
-
-  it('normalises scale by textureSize', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
-    expect(c.scaleMin).toBeCloseTo(0.75);
-    expect(c.scaleMax).toBeCloseTo(1.25);
-  });
-
-  it('computes scaleEnd as finishSize / startSize', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
-    expect(c.scaleEnd).toBeCloseTo(0.25);
-  });
-
-  it('uses point emitter shape when sourcePositionVariance is zero', () => {
-    expect(parseParticleDesignerPlist(FIRE_PLIST).emitterShape).toBe('point');
-  });
-
-  it('maps duration=-1 to an infinite (looping) emitter', () => {
-    const c = parseParticleDesignerPlist(FIRE_PLIST);
-    expect(c.loop).toBe(true);
-    expect(c.duration).toBe(0);
-  });
-
-  it('maps a positive duration to a finite, non-looping emitter', () => {
-    const plist = FIRE_PLIST.replace('<key>duration</key><real>-1</real>', '<key>duration</key><real>2.5</real>');
-    const c = parseParticleDesignerPlist(plist);
-    expect(c.loop).toBe(false);
-    expect(c.duration).toBeCloseTo(2.5);
-  });
-});
-
-describe('parseParticleDesignerPlist — malformed input', () => {
-  it('falls back to defaults (not NaN) for empty numeric tags', () => {
-    const xml =
-      '<plist><dict>' +
-      '<key>maxParticles</key><integer></integer>' +
-      '<key>speed</key><real></real>' +
-      '</dict></plist>';
-    const c = parseParticleDesignerPlist(xml);
-    expect(c.maxParticles).toBe(200); // default, not NaN-coerced 0
-    expect(Number.isFinite(c.speedMin)).toBe(true);
-    expect(Number.isFinite(c.speedMax)).toBe(true);
-  });
-
-  it('returns an all-defaults config for empty/garbage input without throwing', () => {
-    expect(() => parseParticleDesignerPlist('')).not.toThrow();
-    const c = parseParticleDesignerPlist('not xml at all');
-    expect(Number.isFinite(c.maxParticles)).toBe(true);
-    expect(Number.isFinite(c.gravityY)).toBe(true);
-  });
-});
-
-describe('parseParticleDesignerPlistDocument — full round-trip, returns { config, document }', () => {
-  it('returns the same config values as parseParticleDesignerPlist', () => {
-    const config = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
-    const { config: loadedConfig } = parseParticleDesignerPlistDocument(FIRE_PLIST, { textureSize: 32 });
-    expect(loadedConfig.maxParticles).toBe(config.maxParticles);
-    expect(loadedConfig.directionY).toBeCloseTo(config.directionY, 5);
-    expect(loadedConfig.gravityY).toBeCloseTo(config.gravityY, 5);
-  });
-
-  it('preserves textureFileName in document', () => {
-    expect(parseParticleDesignerPlistDocument(FIRE_PLIST).document.textureFileName).toBe('fire.png');
-  });
-
-  it('preserves blend function in document', () => {
-    const { document } = parseParticleDesignerPlistDocument(FIRE_PLIST);
-    expect(document.blendFuncSource).toBe(770);
-    expect(document.blendFuncDestination).toBe(771);
+    it('returns an all-defaults config for empty/garbage input without throwing', () => {
+      expect(() => parseParticleDesignerPlist('')).not.toThrow();
+      const c = parseParticleDesignerPlist('not xml at all');
+      expect(Number.isFinite(c.maxParticles)).toBe(true);
+      expect(Number.isFinite(c.gravityY)).toBe(true);
+    });
   });
 });
 
-describe('parseParticleDesignerPlistDocument — import warnings', () => {
-  it('has no warnings for a standard gravity emitter', () => {
-    expect(parseParticleDesignerPlistDocument(FIRE_PLIST).warnings).toEqual([]);
+describe('parseParticleDesignerPlistDocument', () => {
+  describe('full round-trip, returns { config, document }', () => {
+    it('returns the same config values as parseParticleDesignerPlist', () => {
+      const config = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
+      const { config: loadedConfig } = parseParticleDesignerPlistDocument(FIRE_PLIST, { textureSize: 32 });
+      expect(loadedConfig.maxParticles).toBe(config.maxParticles);
+      expect(loadedConfig.directionY).toBeCloseTo(config.directionY, 5);
+      expect(loadedConfig.gravityY).toBeCloseTo(config.gravityY, 5);
+    });
+
+    it('preserves textureFileName in document', () => {
+      expect(parseParticleDesignerPlistDocument(FIRE_PLIST).document.textureFileName).toBe('fire.png');
+    });
+
+    it('preserves blend function in document', () => {
+      const { document } = parseParticleDesignerPlistDocument(FIRE_PLIST);
+      expect(document.blendFuncSource).toBe(770);
+      expect(document.blendFuncDestination).toBe(771);
+    });
   });
 
-  it('warns that a radial emitter is approximated', () => {
-    const plist = FIRE_PLIST.replace(
-      '<key>emitterType</key><integer>0</integer>',
-      '<key>emitterType</key><integer>1</integer>',
-    );
-    expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.toLowerCase().includes('radial'))).toBe(
-      true,
-    );
-  });
+  describe('import warnings', () => {
+    it('has no warnings for a standard gravity emitter', () => {
+      expect(parseParticleDesignerPlistDocument(FIRE_PLIST).warnings).toEqual([]);
+    });
 
-  it('warns about unsupported radial/tangential acceleration', () => {
-    const plist = FIRE_PLIST.replace(
-      '<key>maxParticles</key><integer>200</integer>',
-      '<key>maxParticles</key><integer>200</integer><key>radialAcceleration</key><real>50</real>',
-    );
-    expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.includes('radialAcceleration'))).toBe(true);
+    it('warns that a radial emitter is approximated', () => {
+      const plist = FIRE_PLIST.replace(
+        '<key>emitterType</key><integer>0</integer>',
+        '<key>emitterType</key><integer>1</integer>',
+      );
+      expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.toLowerCase().includes('radial'))).toBe(
+        true,
+      );
+    });
+
+    it('warns about unsupported radial/tangential acceleration', () => {
+      const plist = FIRE_PLIST.replace(
+        '<key>maxParticles</key><integer>200</integer>',
+        '<key>maxParticles</key><integer>200</integer><key>radialAcceleration</key><real>50</real>',
+      );
+      expect(parseParticleDesignerPlistDocument(plist).warnings.some((w) => w.includes('radialAcceleration'))).toBe(
+        true,
+      );
+    });
   });
 });
 

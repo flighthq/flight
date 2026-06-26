@@ -89,9 +89,7 @@ const MINIMAL_HASH_JSON = JSON.stringify({
   },
 });
 
-// ─── parseTexturePackerSpritesheetDocument ───────────────────────────────────────────────────────
-
-describe('parseTexturePackerSpritesheet — lightweight, returns SpritesheetData directly', () => {
+describe('parseTexturePackerSpritesheet', () => {
   it('returns a SpritesheetData (not a Parsed object)', () => {
     const result = parseTexturePackerSpritesheet(HASH_JSON);
     expect(typeof result.frames).toBe('object');
@@ -208,9 +206,7 @@ describe('parseTexturePackerSpritesheet — lightweight, returns SpritesheetData
   });
 });
 
-// ─── parseTexturePackerSpritesheet ──────────────────────────────────────────────────────
-
-describe('parseTexturePackerSpritesheetDocument — full round-trip, returns { data, document }', () => {
+describe('parseTexturePackerSpritesheetDocument', () => {
   it('returns the same data as parseTexturePackerSpritesheet', () => {
     const parsed = parseTexturePackerSpritesheet(HASH_JSON);
     const { data } = parseTexturePackerSpritesheetDocument(HASH_JSON);

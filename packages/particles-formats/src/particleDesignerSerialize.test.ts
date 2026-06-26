@@ -1,5 +1,7 @@
+import { createParticleEmitterConfig } from '@flighthq/particles';
+
 import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
-import { serializeParticleDesignerPlist } from './particleDesignerSerialize';
+import { serializeParticleDesignerPlist, serializeParticleDesignerPlistDocument } from './particleDesignerSerialize';
 
 const FIRE_PLIST = `<?xml version="1.0" encoding="utf-8"?>
 <plist version="1.0">
@@ -83,5 +85,29 @@ describe('serializeParticleDesignerPlist', () => {
     const xml = serializeParticleDesignerPlist(config, { textureFileName: 'a&b<c>.png' });
     expect(xml).not.toContain('a&b<c>');
     expect(xml).toContain('&amp;');
+  });
+});
+
+describe('serializeParticleDesignerPlistDocument', () => {
+  it('returns { text, warnings } for a standard config', () => {
+    const config = parseParticleDesignerPlist(FIRE_PLIST);
+    const result = serializeParticleDesignerPlistDocument(config);
+    expect(typeof result.text).toBe('string');
+    expect(result.text).toContain('<plist version="1.0">');
+    expect(Array.isArray(result.warnings)).toBe(true);
+    expect(result.warnings).toHaveLength(0);
+  });
+
+  it('warns when the config uses unsupported features', () => {
+    const config = createParticleEmitterConfig({ burstCount: 5 });
+    const result = serializeParticleDesignerPlistDocument(config);
+    expect(result.warnings.some((w) => w.toLowerCase().includes('burst'))).toBe(true);
+  });
+
+  it('preserves textureFileName from existing document in the text output', () => {
+    const config = parseParticleDesignerPlist(FIRE_PLIST);
+    const { document } = parseParticleDesignerPlistDocument(FIRE_PLIST);
+    const result = serializeParticleDesignerPlistDocument(config, document);
+    expect(result.text).toContain('fire.png');
   });
 });
