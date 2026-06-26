@@ -27,7 +27,8 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/resource-formats": "*",
+    "@flighthq/textureatlas": "*",
+    "@flighthq/textureatlas-formats": "*",
     "@flighthq/spritesheet": "*",
     "@flighthq/types": "*"
   },

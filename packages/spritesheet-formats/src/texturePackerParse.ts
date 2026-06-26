@@ -4,14 +4,11 @@ import {
   createSpritesheetData,
   createSpritesheetFrameData,
 } from '@flighthq/spritesheet';
+import { createTextureAtlas } from '@flighthq/textureatlas';
+import { parseTextureAtlasPackerDocument } from '@flighthq/textureatlas-formats';
+import type { TextureAtlasRegion } from '@flighthq/types';
 
-import type {
-  TexturePackerArrayFrame,
-  TexturePackerDocument,
-  TexturePackerFrameTag,
-  TexturePackerHashFrame,
-  TexturePackerMeta,
-} from './texturePackerSchema';
+import type { TexturePackerDocument, TexturePackerFrameTag, TexturePackerMeta } from './texturePackerSchema';
 
 export interface TexturePackerParsed {
   data: SpritesheetData;
@@ -20,20 +17,24 @@ export interface TexturePackerParsed {
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
-function frameFromEntry(name: string, entry: TexturePackerHashFrame): SpritesheetFrameData {
+// Maps an atlas region (geometry owned by @flighthq/textureatlas-formats — the single source of truth
+// for the region rect, rotation, and trim handling) to a spritesheet frame. This package adds only the
+// animation/frame metadata on top. The untrimmed source size falls back to the region rect, because the
+// atlas parser leaves originalW/H null when a frame is not trimmed (where the source equals the frame).
+function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
   return createSpritesheetFrameData({
-    height: entry.frame.h,
-    name,
-    offsetX: entry.spriteSourceSize.x,
-    offsetY: entry.spriteSourceSize.y,
-    pivotX: entry.pivot !== undefined ? entry.pivot.x : null,
-    pivotY: entry.pivot !== undefined ? entry.pivot.y : null,
-    rotated: entry.rotated,
-    sourceHeight: entry.sourceSize.h,
-    sourceWidth: entry.sourceSize.w,
-    width: entry.frame.w,
-    x: entry.frame.x,
-    y: entry.frame.y,
+    height: region.height,
+    name: region.name ?? '',
+    offsetX: region.sourceX,
+    offsetY: region.sourceY,
+    pivotX: region.pivotX,
+    pivotY: region.pivotY,
+    rotated: region.rotated,
+    sourceHeight: region.originalHeight ?? region.height,
+    sourceWidth: region.originalWidth ?? region.width,
+    width: region.width,
+    x: region.x,
+    y: region.y,
   });
 }
 
@@ -55,20 +56,11 @@ function metaScale(meta: TexturePackerMeta): number {
 }
 
 function documentToData(doc: TexturePackerDocument): SpritesheetData {
-  const frames: SpritesheetFrameData[] = [];
-  const frameNames: string[] = [];
-
-  if (Array.isArray(doc.frames)) {
-    for (const entry of doc.frames as TexturePackerArrayFrame[]) {
-      frames.push(frameFromEntry(entry.filename, entry));
-      frameNames.push(entry.filename);
-    }
-  } else {
-    for (const [name, entry] of Object.entries(doc.frames)) {
-      frames.push(frameFromEntry(name, entry));
-      frameNames.push(name);
-    }
-  }
+  // Delegate region geometry to the atlas-formats parser (the TexturePacker document shapes are shared),
+  // then layer the spritesheet frame/animation metadata on top — no independent re-parse of the frames.
+  const regions = parseTextureAtlasPackerDocument(doc, createTextureAtlas()).regions;
+  const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);
+  const frameNames: string[] = regions.map((region) => region.name ?? '');
 
   const { meta } = doc;
   const animations = meta.frameTags ? animationsFromFrameTags(meta.frameTags, frameNames) : [];

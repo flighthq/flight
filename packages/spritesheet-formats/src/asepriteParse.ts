@@ -4,14 +4,11 @@ import {
   createSpritesheetData,
   createSpritesheetFrameData,
 } from '@flighthq/spritesheet';
+import { createTextureAtlas } from '@flighthq/textureatlas';
+import { parseTextureAtlasAsepriteDocument } from '@flighthq/textureatlas-formats';
+import type { TextureAtlasRegion } from '@flighthq/types';
 
-import type {
-  AsepriteArrayFrame,
-  AsepriteBaseFrame,
-  AsepriteDocument,
-  AsepriteFrameTag,
-  AsepriteMeta,
-} from './asepriteSchema';
+import type { AsepriteArrayFrame, AsepriteDocument, AsepriteFrameTag, AsepriteMeta } from './asepriteSchema';
 
 export interface AsepriteParsed {
   data: SpritesheetData;
@@ -20,20 +17,22 @@ export interface AsepriteParsed {
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
-function frameFromEntry(name: string, entry: AsepriteBaseFrame): SpritesheetFrameData {
+// Maps an atlas region (geometry owned by @flighthq/textureatlas-formats) to a spritesheet frame.
+// Aseprite carries no pivot; per-frame durations are layered on separately from the document.
+function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
   return createSpritesheetFrameData({
-    height: entry.frame.h,
-    name,
-    offsetX: entry.spriteSourceSize.x,
-    offsetY: entry.spriteSourceSize.y,
-    pivotX: null,
-    pivotY: null,
-    rotated: entry.rotated,
-    sourceHeight: entry.sourceSize.h,
-    sourceWidth: entry.sourceSize.w,
-    width: entry.frame.w,
-    x: entry.frame.x,
-    y: entry.frame.y,
+    height: region.height,
+    name: region.name ?? '',
+    offsetX: region.sourceX,
+    offsetY: region.sourceY,
+    pivotX: region.pivotX,
+    pivotY: region.pivotY,
+    rotated: region.rotated,
+    sourceHeight: region.originalHeight ?? region.height,
+    sourceWidth: region.originalWidth ?? region.width,
+    width: region.width,
+    x: region.x,
+    y: region.y,
   });
 }
 
@@ -63,22 +62,17 @@ function animationFromTag(
 }
 
 function documentToData(doc: AsepriteDocument): SpritesheetData {
-  const frames: SpritesheetFrameData[] = [];
-  const frameNames: string[] = [];
-  const durationMap = new Map<string, number>();
+  // Region geometry is delegated to the atlas-formats parser (shared Aseprite document shape); this
+  // package adds the per-frame durations and tag-based animations, which the atlas layer does not model.
+  const regions = parseTextureAtlasAsepriteDocument(doc, createTextureAtlas()).regions;
+  const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);
+  const frameNames: string[] = regions.map((region) => region.name ?? '');
 
+  const durationMap = new Map<string, number>();
   if (Array.isArray(doc.frames)) {
-    for (const entry of doc.frames as AsepriteArrayFrame[]) {
-      frames.push(frameFromEntry(entry.filename, entry));
-      frameNames.push(entry.filename);
-      durationMap.set(entry.filename, entry.duration);
-    }
+    for (const entry of doc.frames as AsepriteArrayFrame[]) durationMap.set(entry.filename, entry.duration);
   } else {
-    for (const [name, entry] of Object.entries(doc.frames)) {
-      frames.push(frameFromEntry(name, entry));
-      frameNames.push(name);
-      durationMap.set(name, entry.duration);
-    }
+    for (const [name, entry] of Object.entries(doc.frames)) durationMap.set(name, entry.duration);
   }
 
   const { meta } = doc;

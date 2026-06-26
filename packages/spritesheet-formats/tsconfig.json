@@ -9,15 +9,10 @@
     "sourceMap": true
   },
   "references": [
-    {
-      "path": "../resource-formats"
-    },
-    {
-      "path": "../spritesheet"
-    },
-    {
-      "path": "../types"
-    }
+    { "path": "../spritesheet" },
+    { "path": "../textureatlas" },
+    { "path": "../textureatlas-formats" },
+    { "path": "../types" }
   ],
   "include": ["src"]
 }
