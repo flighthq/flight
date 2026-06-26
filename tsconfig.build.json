@@ -24,6 +24,7 @@
     { "path": "./packages/filters-canvas" },
     { "path": "./packages/filters-css" },
     { "path": "./packages/filters-gl" },
+    { "path": "./packages/filters-math" },
     { "path": "./packages/filters-surface" },
     { "path": "./packages/filters-wgpu" },
     { "path": "./packages/geolocation" },

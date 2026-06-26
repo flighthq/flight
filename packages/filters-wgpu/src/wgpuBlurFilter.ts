@@ -1,4 +1,4 @@
-import { computeBoxBlurPassRadius } from '@flighthq/filters';
+import { computeBoxBlurPassRadius } from '@flighthq/filters-math';
 import type { BlurFilter, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
 import { applyWgpuBlitPass } from './wgpuBlitShader';

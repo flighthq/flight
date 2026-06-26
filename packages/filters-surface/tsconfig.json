@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../filters" }, { "path": "../surface" }, { "path": "../types" }],
+  "references": [{ "path": "../filters-math" }, { "path": "../surface" }, { "path": "../types" }],
   "include": ["src"]
 }

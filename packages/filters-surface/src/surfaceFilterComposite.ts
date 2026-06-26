@@ -1,4 +1,4 @@
-import { getShadowFilterOffset } from '@flighthq/filters';
+import { getShadowFilterOffset } from '@flighthq/filters-math';
 import { compositeSurfacePixels, compositeSurfaceRegion } from '@flighthq/surface';
 import type { BevelFilter, BitmapFilter, DropShadowFilter, InnerShadowFilter, SurfaceRegion } from '@flighthq/types';
 

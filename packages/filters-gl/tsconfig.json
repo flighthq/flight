@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../filters" }, { "path": "../render-gl" }, { "path": "../types" }],
+  "references": [{ "path": "../filters-math" }, { "path": "../render-gl" }, { "path": "../types" }],
   "include": ["src"]
 }

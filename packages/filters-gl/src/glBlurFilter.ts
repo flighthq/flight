@@ -1,4 +1,4 @@
-import { computeBoxBlurPassRadius } from '@flighthq/filters';
+import { computeBoxBlurPassRadius } from '@flighthq/filters-math';
 import type { GlRenderTarget } from '@flighthq/render-gl';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl';
 import type { BlurFilter, GlFullscreenProgram, GlRenderState } from '@flighthq/types';

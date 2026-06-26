@@ -22,6 +22,7 @@ export * from '@flighthq/filters';
 export * from '@flighthq/filters-canvas';
 export * from '@flighthq/filters-css';
 export * from '@flighthq/filters-gl';
+export * from '@flighthq/filters-math';
 export * from '@flighthq/filters-surface';
 export * from '@flighthq/filters-wgpu';
 export * from '@flighthq/font';

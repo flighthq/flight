@@ -1,4 +1,4 @@
-import { computeBoxBlurRadius } from '@flighthq/filters';
+import { computeBoxBlurRadius } from '@flighthq/filters-math';
 import { buildSurfaceGradientRamp, gradientBevelSurface } from '@flighthq/surface';
 import type { GradientBevelFilter, SurfaceRegion } from '@flighthq/types';
 
