@@ -13,7 +13,7 @@ use flighthq_spritesheet::{
     SpritesheetData, SpritesheetFrameData, create_spritesheet_data, create_spritesheet_frame_data,
 };
 
-use flighthq_resource_formats::{XmlElement, parse_xml_document};
+use flighthq_textureatlas_formats::{XmlElement, parse_xml_document};
 
 pub use schema::{CocosPlistDocument, CocosPlistFrame, CocosPlistMetadata};
 

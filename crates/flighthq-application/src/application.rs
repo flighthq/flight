@@ -518,11 +518,11 @@ fn loop_state() -> &'static Mutex<HashMap<usize, LoopState>> {
     STATE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-// Lifecycle observers keyed by (window, event) slot; the boxed `Any` is the type-erased listener.
-type LifecycleObservers = Mutex<HashMap<(usize, usize), Vec<Box<dyn std::any::Any + Send>>>>;
-
-fn lifecycle_observers() -> &'static LifecycleObservers {
-    static OBSERVERS: std::sync::OnceLock<LifecycleObservers> = std::sync::OnceLock::new();
+fn lifecycle_observers()
+-> &'static Mutex<HashMap<(usize, usize), Vec<Box<dyn std::any::Any + Send>>>> {
+    static OBSERVERS: std::sync::OnceLock<
+        Mutex<HashMap<(usize, usize), Vec<Box<dyn std::any::Any + Send>>>>,
+    > = std::sync::OnceLock::new();
     OBSERVERS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 

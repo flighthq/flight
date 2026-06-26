@@ -8,6 +8,3 @@ description = "Render-effect intents and substrate-agnostic recipe math"
 [dependencies]
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
-
-[lints]
-workspace = true

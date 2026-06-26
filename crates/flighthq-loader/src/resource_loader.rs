@@ -532,9 +532,7 @@ pub fn start_resource_load(handle: &mut ResourceLoaderHandle) {
 fn drain_queue(handle: &mut ResourceLoaderHandle) {
     while !handle.pending.is_empty() && !handle.paused && !handle.cancelled {
         // Stable sort by descending priority; insertion order breaks ties.
-        handle
-            .pending
-            .sort_by_key(|e| std::cmp::Reverse(e.priority));
+        handle.pending.sort_by(|a, b| b.priority.cmp(&a.priority));
         let entry = handle.pending.remove(0);
         run_entry(handle, entry);
         if handle.loaded == handle.total {

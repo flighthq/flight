@@ -548,6 +548,7 @@ mod tests {
     // clears the backend to a known state; the returned guard must stay bound.
     static TEST_GUARD: Mutex<()> = Mutex::new(());
 
+    #[must_use]
     fn serial() -> std::sync::MutexGuard<'static, ()> {
         let guard = TEST_GUARD.lock().unwrap_or_else(|e| e.into_inner());
         set_protocol_backend(None);

@@ -10,6 +10,3 @@ flighthq-textureatlas = { workspace = true }
 flighthq-tileset = { workspace = true }
 flighthq-signals = { workspace = true }
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

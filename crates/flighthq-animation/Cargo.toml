@@ -1,0 +1,9 @@
+[package]
+name = "flighthq-animation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Animation tracks, clips, and player for the Flight SDK"
+
+[dependencies]
+flighthq-types = { workspace = true }

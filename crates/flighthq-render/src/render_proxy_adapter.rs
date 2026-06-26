@@ -130,10 +130,8 @@ mod tests {
         let mut store = RenderStateStore::new();
         let id = create_render_state(&mut store, None);
         let state = RenderState::default();
-        let mut data = RenderProxy2D {
-            traverse_children: false,
-            ..Default::default()
-        };
+        let mut data = RenderProxy2D::default();
+        data.traverse_children = false;
         apply_render_proxy_adapter(&mut store, id, &state, 1, &mut data);
         assert!(data.traverse_children);
     }
@@ -149,10 +147,8 @@ mod tests {
             1,
             Some(Box::new(ResultAdapter(Some(false)))),
         );
-        let mut data = RenderProxy2D {
-            traverse_children: true,
-            ..Default::default()
-        };
+        let mut data = RenderProxy2D::default();
+        data.traverse_children = true;
         apply_render_proxy_adapter(&mut store, id, &state, 1, &mut data);
         assert!(!data.traverse_children);
     }

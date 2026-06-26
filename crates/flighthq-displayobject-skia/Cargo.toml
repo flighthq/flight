@@ -21,6 +21,3 @@ flighthq-textlayout = { workspace = true }
 flighthq-types = { workspace = true }
 tiny-skia = { workspace = true }
 ttf-parser = { workspace = true }
-
-[lints]
-workspace = true

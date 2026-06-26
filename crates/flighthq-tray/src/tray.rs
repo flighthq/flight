@@ -938,7 +938,7 @@ mod tests {
         let backend = install_fake();
         let received: Arc<StdMutex<Option<TrayEventData>>> = Arc::new(StdMutex::new(None));
         let captured = Arc::clone(&received);
-        let _ = on_tray_event(Box::new(move |event: &TrayEventData| {
+        on_tray_event(Box::new(move |event: &TrayEventData| {
             *captured.lock().unwrap() = Some(event.clone());
         }));
         let mut evt = make_tray_event(TrayEventType::RightClick, 7);
@@ -964,7 +964,7 @@ mod tests {
         let backend = install_fake();
         let received: Arc<StdMutex<Option<TrayEventData>>> = Arc::new(StdMutex::new(None));
         let captured = Arc::clone(&received);
-        let _ = on_tray_event(Box::new(move |e: &TrayEventData| {
+        on_tray_event(Box::new(move |e: &TrayEventData| {
             *captured.lock().unwrap() = Some(e.clone());
         }));
         let mut evt = make_tray_event(TrayEventType::DropFiles, 1);
@@ -999,7 +999,7 @@ mod tests {
         let backend = install_fake();
         let types: Arc<StdMutex<Vec<TrayEventType>>> = Arc::new(StdMutex::new(Vec::new()));
         let captured = Arc::clone(&types);
-        let _ = on_tray_event(Box::new(move |e: &TrayEventData| {
+        on_tray_event(Box::new(move |e: &TrayEventData| {
             captured.lock().unwrap().push(e.event_type);
         }));
         backend.fire_event(&make_tray_event(TrayEventType::BalloonShow, 1));

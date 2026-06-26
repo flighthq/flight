@@ -182,7 +182,7 @@ mod tests {
         let runtime = create_html_view_runtime();
         let expected = compute_html_view_local_bounds_rectangle
             as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert!(std::ptr::fn_addr_eq(runtime.unwrap(), expected));
+        assert_eq!(runtime, Some(expected));
     }
 
     // get_html_view_runtime
@@ -193,10 +193,7 @@ mod tests {
         let id = create_html_view(&mut arena);
         let expected = compute_html_view_local_bounds_rectangle
             as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert!(std::ptr::fn_addr_eq(
-            get_html_view_runtime(&arena, id).unwrap(),
-            expected
-        ));
+        assert_eq!(get_html_view_runtime(&arena, id), Some(expected));
     }
 
     // get_html_view_width / get_html_view_height

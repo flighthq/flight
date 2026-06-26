@@ -2486,21 +2486,21 @@ const VIGNETTE_RECTS: &[RectFill] = &[axis_rect(
 )];
 
 // The `solid-red` scene: one 32x32 rect on a dark field.
-const SOLID_RED_RECTS: &[RectFill] = &[axis_rect(0xe0_30_30_ff, 16.0, 16.0, 32.0, 32.0)];
+const SOLID_RED_RECTS: &[RectFill] = &[axis_rect(0xE0_30_30_ff, 16.0, 16.0, 32.0, 32.0)];
 
 // The `overlap-rects` scene: three overlapping rects exercising draw order.
 const OVERLAP_RECTS: &[RectFill] = &[
-    axis_rect(0xe0_30_30_ff, 20.0, 20.0, 60.0, 60.0),
-    axis_rect(0x30_c0_50_ff, 48.0, 48.0, 60.0, 60.0),
-    axis_rect(0x40_70_e0_ff, 75.0, 20.0, 35.0, 80.0),
+    axis_rect(0xE0_30_30_ff, 20.0, 20.0, 60.0, 60.0),
+    axis_rect(0x30_C0_50_ff, 48.0, 48.0, 60.0, 60.0),
+    axis_rect(0x40_70_E0_ff, 75.0, 20.0, 35.0, 80.0),
 ];
 
 // The `quadrants` scene: four 32x32 rects filling the 64x64 frame's quadrants.
 const QUADRANTS_RECTS: &[RectFill] = &[
-    axis_rect(0xe0_30_30_ff, 0.0, 0.0, 32.0, 32.0),
-    axis_rect(0x30_c0_50_ff, 32.0, 0.0, 32.0, 32.0),
-    axis_rect(0x40_70_e0_ff, 0.0, 32.0, 32.0, 32.0),
-    axis_rect(0xe0_c0_30_ff, 32.0, 32.0, 32.0, 32.0),
+    axis_rect(0xE0_30_30_ff, 0.0, 0.0, 32.0, 32.0),
+    axis_rect(0x30_C0_50_ff, 32.0, 0.0, 32.0, 32.0),
+    axis_rect(0x40_70_E0_ff, 0.0, 32.0, 32.0, 32.0),
+    axis_rect(0xE0_C0_30_ff, 32.0, 32.0, 32.0, 32.0),
 ];
 
 // `effect-tone-map/app.ts`: four 160x160 axis-aligned rects centered at
@@ -2722,7 +2722,7 @@ fn register_scene_effects(
 // fed to reproduce the TS-rendered pixels.
 //
 // The TS functional baselines were captured with a shape renderer that unpacks
-// the packed fill color as **ARGB** (`0xaaRRGGBB`): the rendered RGB is the
+// the packed fill color as **ARGB** (`0xAARRGGBB`): the rendered RGB is the
 // source's `(G, B, A)` bytes (so blue always reads as 255 from the source's
 // `0xff` alpha byte). All three TS backends (canvas, webgl, webgpu) agree on
 // this, so it is the rendered behavior the baselines encode — not a per-backend

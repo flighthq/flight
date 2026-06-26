@@ -17,6 +17,3 @@ flighthq-render-wgpu = { workspace = true }
 flighthq-scene = { workspace = true }
 flighthq-types = { workspace = true }
 wgpu = { workspace = true }
-
-[lints]
-workspace = true

@@ -300,3 +300,95 @@ pub struct SpritesheetPlayer {
     pub on_loop: Signal<()>,
     pub queue: Vec<SpritesheetAnimation>,
 }
+
+// ---------------------------------------------------------------------------
+// AnimationInterpolation
+// ---------------------------------------------------------------------------
+
+/// How keyframe values are interpolated between adjacent samples.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum AnimationInterpolation {
+    Cubic,
+    #[default]
+    Linear,
+    Step,
+}
+
+// ---------------------------------------------------------------------------
+// AnimationTrack
+// ---------------------------------------------------------------------------
+
+/// A sequence of keyframed values for a single animated property.
+///
+/// `times` and `values` are parallel arrays; `values` stores `components`
+/// scalar values per keyframe (e.g. 4 for a quaternion, 3 for translation).
+#[derive(Clone)]
+pub struct AnimationTrack {
+    pub components: u32,
+    pub easing: Option<EasingFunction>,
+    pub interpolation: AnimationInterpolation,
+    pub quaternion: bool,
+    pub times: Vec<f32>,
+    pub values: Vec<f32>,
+}
+
+impl std::fmt::Debug for AnimationTrack {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AnimationTrack")
+            .field("components", &self.components)
+            .field("has_easing", &self.easing.is_some())
+            .field("interpolation", &self.interpolation)
+            .field("quaternion", &self.quaternion)
+            .field("times", &self.times)
+            .field("values", &self.values)
+            .finish()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AnimationChannel
+// ---------------------------------------------------------------------------
+
+/// Binds an `AnimationTrack` to a scene target via an opaque reference.
+///
+/// `target_ref` is `Some` when the channel has been bound to a concrete scene
+/// node; downcasting to the concrete target type is the caller's responsibility.
+pub struct AnimationChannel {
+    pub target_ref: Option<Box<dyn std::any::Any + Send + Sync>>,
+    pub track: AnimationTrack,
+}
+
+impl std::fmt::Debug for AnimationChannel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AnimationChannel")
+            .field("has_target", &self.target_ref.is_some())
+            .field("track", &self.track)
+            .finish()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AnimationClip
+// ---------------------------------------------------------------------------
+
+/// A collection of `AnimationChannel` values with a total duration.
+#[derive(Debug, Default)]
+pub struct AnimationClip {
+    pub channels: Vec<AnimationChannel>,
+    pub duration: f32,
+}
+
+// ---------------------------------------------------------------------------
+// AnimationPlayer
+// ---------------------------------------------------------------------------
+
+/// Runtime state for playing back an `AnimationClip`.
+#[derive(Debug)]
+pub struct AnimationPlayer {
+    pub clip: AnimationClip,
+    /// Whether to restart when the clip reaches `duration`.
+    pub loop_: bool,
+    pub playing: bool,
+    pub speed: f32,
+    pub time: f32,
+}

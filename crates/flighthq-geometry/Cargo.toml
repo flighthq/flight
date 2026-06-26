@@ -7,6 +7,3 @@ description = "2D/3D math primitives: vectors, matrices, rectangles, and object 
 
 [dependencies]
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

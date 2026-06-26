@@ -7,6 +7,3 @@ description = "Audio resources, URL constructors, and the shared audio context"
 
 [dependencies]
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

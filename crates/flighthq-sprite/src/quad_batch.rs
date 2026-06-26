@@ -854,7 +854,9 @@ pub fn set_quad_batch_instance_range(
     let stride = get_quad_transform_stride(data.transform_type);
     let dst = start_index as usize * stride;
     let len = count as usize * stride;
-    data.transforms[dst..dst + len].copy_from_slice(&source[..len]);
+    for k in 0..len {
+        data.transforms[dst + k] = source[k];
+    }
 }
 
 // ---------------------------------------------------------------------------

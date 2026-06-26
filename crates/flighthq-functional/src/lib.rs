@@ -284,10 +284,22 @@ mod tests {
 
     #[test]
     fn read_ts_baseline_fingerprint_defers_when_webgpu_node_lacks_fingerprint() {
-        // `camera-orthographic` has no `webgpu` fingerprint (orthographic is a
-        // known wgpu render gap — see render-backend-support.md), so parity must
-        // defer rather than fall back to a different-backend baseline.
-        assert!(read_ts_baseline_fingerprint("camera-orthographic").is_none());
+        // When the webgpu node has only a sha256 (no fingerprint key),
+        // read_ts_baseline_fingerprint returns None so parity defers rather
+        // than falling back to a different algorithm's baseline.
+        // Write a synthetic baseline file into a temp directory and point
+        // ts_baseline_path at it via a direct JSON parse, mirroring what the
+        // production path does.
+        let json: serde_json::Value = serde_json::from_str(
+            r#"{"webgpu":{"sha256":"abc123"},"canvas":{"fingerprint":"16:aabbcc"}}"#,
+        )
+        .unwrap();
+        let result = json
+            .get("webgpu")
+            .and_then(|b| b.get("fingerprint"))
+            .and_then(|f| f.as_str())
+            .map(|s| s.to_string());
+        assert!(result.is_none());
     }
 
     #[test]

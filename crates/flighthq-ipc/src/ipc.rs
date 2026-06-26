@@ -19,9 +19,6 @@ use std::time::Duration;
 
 use flighthq_signals::emit_signal;
 use flighthq_types::platform::{IpcInvokeHandler, IpcValue};
-
-/// The unsubscribe thunk every `on_ipc_*` returns: call it once to drop the listener.
-type IpcUnsubscribe = Box<dyn Fn() + Send + Sync>;
 use flighthq_types::{
     IpcBackend, IpcChannel, IpcMessageEvent, IpcSignals, IpcTarget, IpcTimeoutError,
 };
@@ -49,7 +46,7 @@ impl IpcBackend for StubIpcBackend {
         &self,
         _channel: &str,
         _listener: Box<dyn Fn(Vec<IpcValue>) + Send + Sync>,
-    ) -> IpcUnsubscribe {
+    ) -> Box<dyn Fn() + Send + Sync> {
         Box::new(|| {})
     }
 }
@@ -167,7 +164,7 @@ pub async fn invoke_ipc_with_timeout(
 /// Registers a responder for `invoke_ipc` calls on `channel`. Returns an
 /// unregister thunk. When the active backend does not support handling, returns
 /// an inert no-op unsubscribe.
-pub fn on_ipc_invoke(channel: &str, handler: IpcInvokeHandler) -> IpcUnsubscribe {
+pub fn on_ipc_invoke(channel: &str, handler: IpcInvokeHandler) -> Box<dyn Fn() + Send + Sync> {
     match get_ipc_backend().handle(channel, handler) {
         Some(off) => off,
         None => Box::new(|| {}),
@@ -183,10 +180,10 @@ pub fn on_ipc_invoke(channel: &str, handler: IpcInvokeHandler) -> IpcUnsubscribe
 pub fn once_ipc_message(
     channel: &str,
     listener: Box<dyn Fn(Vec<IpcValue>) + Send + Sync>,
-) -> IpcUnsubscribe {
+) -> Box<dyn Fn() + Send + Sync> {
     // The unsubscribe thunk is shared into the wrapping listener so the first
     // delivery can disconnect before invoking the user listener.
-    let slot: Arc<Mutex<Option<IpcUnsubscribe>>> = Arc::new(Mutex::new(None));
+    let slot: Arc<Mutex<Option<Box<dyn Fn() + Send + Sync>>>> = Arc::new(Mutex::new(None));
     let slot_inner = Arc::clone(&slot);
     let off = on_ipc_message(
         channel,
@@ -212,7 +209,7 @@ pub fn once_ipc_message(
 pub fn on_ipc_message(
     channel: &str,
     listener: Box<dyn Fn(Vec<IpcValue>) + Send + Sync>,
-) -> IpcUnsubscribe {
+) -> Box<dyn Fn() + Send + Sync> {
     let name = channel.to_string();
     let signals = get_ipc_signals();
     let emit_name = name.clone();
@@ -236,7 +233,7 @@ pub fn on_ipc_message(
 pub fn on_ipc_message_event(
     channel: &str,
     listener: Box<dyn Fn(IpcMessageEvent) + Send + Sync>,
-) -> IpcUnsubscribe {
+) -> Box<dyn Fn() + Send + Sync> {
     let name = channel.to_string();
     let signals = get_ipc_signals();
     let emit_name = name.clone();
@@ -277,7 +274,7 @@ pub fn on_ipc_message_event(
 
 /// Drops every in-package listener for `channel`.
 pub fn remove_all_ipc_listeners(channel: &str) {
-    let thunks: Vec<IpcUnsubscribe> = {
+    let thunks: Vec<Box<dyn Fn() + Send + Sync>> = {
         let mut guard = LISTENERS.lock().expect("ipc listeners mutex poisoned");
         match guard.remove(channel) {
             Some(set) => set.into_iter().map(|(_, off)| off).collect(),
@@ -291,9 +288,10 @@ pub fn remove_all_ipc_listeners(channel: &str) {
 
 /// Drops every in-package listener for all channels.
 pub fn remove_all_ipc_listeners_for_all_channels() {
-    let thunks: Vec<IpcUnsubscribe> = {
+    let thunks: Vec<Box<dyn Fn() + Send + Sync>> = {
         let mut guard = LISTENERS.lock().expect("ipc listeners mutex poisoned");
-        let drained: HashMap<String, Vec<(u64, IpcUnsubscribe)>> = std::mem::take(&mut *guard);
+        let drained: HashMap<String, Vec<(u64, Box<dyn Fn() + Send + Sync>)>> =
+            std::mem::take(&mut *guard);
         drained
             .into_values()
             .flat_map(|set| set.into_iter().map(|(_, off)| off))
@@ -326,7 +324,10 @@ pub fn send_ipc_message_to(target: &IpcTarget, channel: &str, args: &[IpcValue])
 
 // Registers `unsubscribe` under `channel` and returns a tracked unsubscribe that
 // also untracks the registry entry — mirroring the TS `tracked` closure.
-fn track_and_wrap(name: String, unsubscribe: IpcUnsubscribe) -> IpcUnsubscribe {
+fn track_and_wrap(
+    name: String,
+    unsubscribe: Box<dyn Fn() + Send + Sync>,
+) -> Box<dyn Fn() + Send + Sync> {
     let id = NEXT_LISTENER_ID.fetch_add(1, Ordering::Relaxed);
     {
         let mut guard = LISTENERS.lock().expect("ipc listeners mutex poisoned");
@@ -363,7 +364,7 @@ fn track_and_wrap(name: String, unsubscribe: IpcUnsubscribe) -> IpcUnsubscribe {
 static BACKEND: Mutex<Option<Arc<dyn IpcBackend>>> = Mutex::new(None);
 static SIGNALS: Mutex<Option<IpcSignals>> = Mutex::new(None);
 #[allow(clippy::type_complexity)]
-static LISTENERS: LazyLock<Mutex<HashMap<String, Vec<(u64, IpcUnsubscribe)>>>> =
+static LISTENERS: LazyLock<Mutex<HashMap<String, Vec<(u64, Box<dyn Fn() + Send + Sync>)>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 static NEXT_LISTENER_ID: AtomicU64 = AtomicU64::new(0);
 
@@ -459,7 +460,7 @@ mod tests {
             &self,
             channel: &str,
             listener: Box<dyn Fn(Vec<IpcValue>) + Send + Sync>,
-        ) -> IpcUnsubscribe {
+        ) -> Box<dyn Fn() + Send + Sync> {
             let id = self.next_id.fetch_add(1, Ordering::Relaxed);
             let arc: Arc<dyn Fn(Vec<IpcValue>) + Send + Sync> = Arc::from(listener);
             self.listeners
@@ -477,7 +478,11 @@ mod tests {
             })
         }
 
-        fn handle(&self, channel: &str, _handler: IpcInvokeHandler) -> Option<IpcUnsubscribe> {
+        fn handle(
+            &self,
+            channel: &str,
+            _handler: IpcInvokeHandler,
+        ) -> Option<Box<dyn Fn() + Send + Sync>> {
             if !self.can_handle {
                 return None;
             }

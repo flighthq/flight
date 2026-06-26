@@ -239,6 +239,7 @@ pub fn poll_gamepad_snapshots(
                         gamepad: pad.index,
                         time_stamp: 0.0,
                         value,
+                        ..Default::default()
                     },
                 );
             }
@@ -258,6 +259,7 @@ pub fn poll_gamepad_snapshots(
                     gamepad: pad.index,
                     time_stamp: 0.0,
                     value: btn.value,
+                    ..Default::default()
                 };
                 if btn.pressed {
                     emit_signal(&manager.signals.on_gamepad_button_down, &data);
