@@ -1,4 +1,4 @@
-import { computeBoxBlurRadius } from '@flighthq/filters';
+import { computeBoxBlurRadius } from '@flighthq/filters-math';
 import { innerGlowSurface } from '@flighthq/surface';
 import type { InnerGlowFilter, SurfaceRegion } from '@flighthq/types';
 

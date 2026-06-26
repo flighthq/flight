@@ -1,4 +1,4 @@
-import { computeBoxBlurRadius } from '@flighthq/filters';
+import { computeBoxBlurRadius } from '@flighthq/filters-math';
 import { sharpenSurface } from '@flighthq/surface';
 import type { SharpenFilter, SurfaceRegion } from '@flighthq/types';
 

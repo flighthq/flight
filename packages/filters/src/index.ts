@@ -43,7 +43,6 @@ export {
   isValidBitmapFilterList,
 } from './bitmapFilterValidation';
 export { createBlurFilter } from './blurFilter';
-export { computeBoxBlurPassRadius, computeBoxBlurRadius, computeGaussianSigmaForBlurRadius } from './blurMath';
 export { getBlurPassCountForQuality } from './blurQuality';
 export { createColorMatrixFilter } from './colorMatrixFilter';
 export {
@@ -94,7 +93,6 @@ export { createInnerShadowFilter } from './innerShadowFilter';
 export { createMedianFilter } from './medianFilter';
 export { createOuterGlowFilter } from './outerGlowFilter';
 export { createPixelateFilter } from './pixelateFilter';
-export { getShadowFilterOffset } from './shadowFilterOffset';
 export { createSharpenFilter } from './sharpenFilter';
 export type {
   BevelFilter,

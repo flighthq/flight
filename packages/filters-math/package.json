@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/filters-wgpu",
+  "name": "@flighthq/filters-math",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
@@ -27,14 +27,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/filters-math": "*",
-    "@flighthq/render-wgpu": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },
-  "description": "WebGPU shader implementations for bitmap filter effects",
+  "description": "Shared filter math: shadow offsets and cross-substrate box-blur radius conversions, depended on by the filters intents package and every filter backend",
   "sideEffects": false
 }

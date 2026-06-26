@@ -50,6 +50,7 @@
     "@flighthq/filters-canvas": "*",
     "@flighthq/filters-css": "*",
     "@flighthq/filters-gl": "*",
+    "@flighthq/filters-math": "*",
     "@flighthq/filters-surface": "*",
     "@flighthq/filters-wgpu": "*",
     "@flighthq/geolocation": "*",

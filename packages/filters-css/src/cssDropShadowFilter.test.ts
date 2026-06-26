@@ -1,4 +1,4 @@
-import { computeDropShadowFilterCss, getShadowFilterOffset } from './cssDropShadowFilter';
+import { computeDropShadowFilterCss } from './cssDropShadowFilter';
 
 describe('computeDropShadowFilterCss', () => {
   it('returns drop-shadow CSS for a basic shadow', () => {
@@ -31,38 +31,5 @@ describe('computeDropShadowFilterCss', () => {
       alpha: 0.5,
     });
     expect(result).toContain('rgba(255,128,64,0.500)');
-  });
-});
-
-describe('getShadowFilterOffset', () => {
-  it('computes offset for angle 0 (pointing right)', () => {
-    const { dx, dy } = getShadowFilterOffset({ kind: 'DropShadowFilter', angle: 0, distance: 10 });
-    expect(dx).toBe(10);
-    expect(dy).toBe(0);
-  });
-
-  it('computes offset for angle 90 (pointing down)', () => {
-    const { dx, dy } = getShadowFilterOffset({ kind: 'DropShadowFilter', angle: 90, distance: 10 });
-    expect(dx).toBe(0);
-    expect(dy).toBe(10);
-  });
-
-  it('uses default angle 45 and distance 4', () => {
-    const { dx, dy } = getShadowFilterOffset({ kind: 'DropShadowFilter' });
-    const expected = Math.round(Math.cos((45 * Math.PI) / 180) * 4);
-    expect(dx).toBe(expected);
-    expect(dy).toBe(expected);
-  });
-
-  it('works with BevelFilter', () => {
-    const { dx, dy } = getShadowFilterOffset({ kind: 'BevelFilter', angle: 0, distance: 5 });
-    expect(dx).toBe(5);
-    expect(dy).toBe(0);
-  });
-
-  it('works with InnerShadowFilter', () => {
-    const { dx, dy } = getShadowFilterOffset({ kind: 'InnerShadowFilter', angle: 0, distance: 3 });
-    expect(dx).toBe(3);
-    expect(dy).toBe(0);
   });
 });

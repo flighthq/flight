@@ -1,4 +1,4 @@
-import { computeBoxBlurRadius } from '@flighthq/filters';
+import { computeBoxBlurRadius } from '@flighthq/filters-math';
 import { bevelSurface } from '@flighthq/surface';
 import type { BevelFilter, SurfaceRegion } from '@flighthq/types';
 

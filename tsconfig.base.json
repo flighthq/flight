@@ -83,6 +83,8 @@
       "@flighthq/filters-css/*": ["./packages/filters-css/src/*"],
       "@flighthq/filters-gl": ["./packages/filters-gl/src/index.ts"],
       "@flighthq/filters-gl/*": ["./packages/filters-gl/src/*"],
+      "@flighthq/filters-math": ["./packages/filters-math/src/index.ts"],
+      "@flighthq/filters-math/*": ["./packages/filters-math/src/*"],
       "@flighthq/filters-surface": ["./packages/filters-surface/src/index.ts"],
       "@flighthq/filters-surface/*": ["./packages/filters-surface/src/*"],
       "@flighthq/filters-wgpu": ["./packages/filters-wgpu/src/index.ts"],
