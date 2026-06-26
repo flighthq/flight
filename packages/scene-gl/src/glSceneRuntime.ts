@@ -1,7 +1,35 @@
-import type { GlMeshMaterialRenderer, GlRenderState, GlRenderStateRuntime, Kind, MeshGeometry } from '@flighthq/types';
+import type {
+  GlMeshMaterialRenderer,
+  GlRenderState,
+  GlRenderStateRuntime,
+  GlRenderTarget,
+  Kind,
+  Matrix4,
+  MeshGeometry,
+} from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
+
+// The active directional shadow for this state, set by drawGlSceneShadowMap and read by the lit bind
+// (bindGlMeshLightBlock) so every lit family samples the same shadow map. Null = no shadow this frame.
+export interface GlSceneShadow {
+  matrix: Matrix4; // light view-projection (world -> shadow clip)
+  texture: WebGLTexture; // the sampleable depth shadow map
+}
+
+// The baked image-based-lighting set for this state, produced by bakeEnvironmentIbl and read by the
+// PBR ambient bind so every PBR draw samples the same environment. Null = no IBL this frame (the PBR
+// ambient falls back to the flat ambient term). The three GPU textures are the split-sum approximation:
+// a diffuse irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF
+// integration LUT. `intensity` scales the environment's contribution (Environment.intensity).
+export interface GlSceneIbl {
+  brdfLut: WebGLTexture;
+  intensity: number;
+  irradianceCube: WebGLTexture;
+  prefilteredCube: WebGLTexture;
+  prefilteredMipCount: number;
+}
 
 // A per-subset draw record held in the two-pass draw lists. Pooled on GlSceneRuntime to avoid
 // per-frame allocation. Fields are set at partition time and consumed during the opaque/blended
@@ -30,10 +58,15 @@ export interface GlSceneRuntime {
   activeMeshProgram: GlMeshProgram | null;
   blendedDrawList: GlSceneDrawEntry[];
   blendedPool: GlSceneDrawEntry[];
+  environmentSourceCube: WebGLTexture | null;
+  ibl: GlSceneIbl | null;
+  iblBakeFramebuffer: WebGLFramebuffer | null;
   materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
   opaqueDrawList: GlSceneDrawEntry[];
   opaquePool: GlSceneDrawEntry[];
   programCache: Map<string, GlMeshProgram>;
+  shadow: GlSceneShadow | null;
+  shadowTarget: GlRenderTarget | null;
   uploadCache: WeakMap<MeshGeometry, GlMeshUpload>;
 }
 
@@ -61,10 +94,15 @@ export function getGlSceneRuntime(state: GlRenderState): GlSceneRuntime {
       activeMeshProgram: null,
       blendedDrawList: [],
       blendedPool: [],
+      environmentSourceCube: null,
+      ibl: null,
+      iblBakeFramebuffer: null,
       materialRegistry: new Map(),
       opaqueDrawList: [],
       opaquePool: [],
       programCache: new Map(),
+      shadow: null,
+      shadowTarget: null,
       uploadCache: new WeakMap(),
     };
     sceneRuntimes.set(state, scene);
