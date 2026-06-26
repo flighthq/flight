@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../animation" },
     { "path": "../geometry" },
     { "path": "../materials" },
     { "path": "../mesh" },
