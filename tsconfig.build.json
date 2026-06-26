@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "./packages/animation" },
     { "path": "./packages/app" },
     { "path": "./packages/application" },
     { "path": "./packages/camera" },
@@ -48,6 +49,7 @@
     { "path": "./packages/notification" },
     { "path": "./packages/particles" },
     { "path": "./packages/particles-formats" },
+    { "path": "./packages/picking" },
     { "path": "./packages/path" },
     { "path": "./packages/platform" },
     { "path": "./packages/power" },
@@ -55,7 +57,7 @@
     { "path": "./packages/render" },
     { "path": "./packages/render-gl" },
     { "path": "./packages/render-wgpu" },
-    { "path": "./packages/resource-formats" },
+    { "path": "./packages/textureatlas-formats" },
     { "path": "./packages/audio" },
     { "path": "./packages/font" },
     { "path": "./packages/image" },
@@ -69,6 +71,7 @@
     { "path": "./packages/shell" },
     { "path": "./packages/shortcut" },
     { "path": "./packages/signals" },
+    { "path": "./packages/skeleton" },
     { "path": "./packages/sprite" },
     { "path": "./packages/spritesheet" },
     { "path": "./packages/spritesheet-formats" },
@@ -92,6 +95,7 @@
     { "path": "./packages/useragent" },
     { "path": "./packages/velocity" },
     { "path": "./packages/scene" },
+    { "path": "./packages/scene-formats" },
     { "path": "./packages/scene-gl" },
     { "path": "./packages/scene-wgpu" }
   ]
