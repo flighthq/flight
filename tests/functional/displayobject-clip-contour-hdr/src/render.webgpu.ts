@@ -34,7 +34,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
 enableWgpuClipSupport(state);
-registerWgpuRenderEffect(state, 'bloom', defaultWgpuBloomEffectRunner);
+registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba16f' });
 

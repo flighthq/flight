@@ -34,7 +34,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'chromaticAberration', defaultWgpuChromaticAberrationEffectRunner);
+registerWgpuRenderEffect(state, 'ChromaticAberrationEffect', defaultWgpuChromaticAberrationEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 

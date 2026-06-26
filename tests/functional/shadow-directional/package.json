@@ -1,0 +1,11 @@
+{
+  "name": "functional-test-shadow-directional",
+  "private": true,
+  "type": "module",
+  "renderers": [
+    "webgl"
+  ],
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

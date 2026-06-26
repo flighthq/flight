@@ -35,7 +35,7 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x101014ff,
 });
 registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);
-registerGlRenderEffect(state, 'motionBlur', defaultGlMotionBlurEffectRunner);
+registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
 registerGlVelocityWriter(state, ParticleEmitterKind, defaultGlParticleEmitterVelocityWriter);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });

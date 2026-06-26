@@ -32,7 +32,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'bokehDoF', defaultWgpuBokehDepthOfFieldEffectRunner);
+registerWgpuRenderEffect(state, 'BokehDepthOfFieldEffect', defaultWgpuBokehDepthOfFieldEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 

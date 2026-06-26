@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x05060aff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'bokehDoF', defaultCanvasBokehDepthOfFieldEffectRunner);
+registerCanvasRenderEffect(state, 'BokehDepthOfFieldEffect', defaultCanvasBokehDepthOfFieldEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

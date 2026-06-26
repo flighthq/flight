@@ -28,7 +28,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'lutGrade', defaultCanvasLookupTableGradeEffectRunner);
+registerCanvasRenderEffect(state, 'LookupTableGradeEffect', defaultCanvasLookupTableGradeEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 

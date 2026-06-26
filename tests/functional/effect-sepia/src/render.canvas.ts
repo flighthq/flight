@@ -27,7 +27,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'sepia', defaultCanvasSepiaEffectRunner);
+registerCanvasRenderEffect(state, 'SepiaEffect', defaultCanvasSepiaEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
