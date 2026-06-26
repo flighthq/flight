@@ -4,6 +4,9 @@ import {
   createSpritesheetData,
   createSpritesheetFrameData,
 } from '@flighthq/spritesheet';
+import { createTextureAtlas } from '@flighthq/textureatlas';
+import { parseTextureAtlasLibgdxAtlas } from '@flighthq/textureatlas-formats';
+import type { TextureAtlasRegion } from '@flighthq/types';
 
 export interface LibgdxAtlasParseOptions {
   /** Default duration (ms) per frame when building inferred animations. Defaults to 100. */
@@ -167,21 +170,20 @@ function parseLibgdxAtlas(text: string): { pages: LibgdxPage[]; regions: LibgdxR
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-function regionToFrame(region: LibgdxRegion): SpritesheetFrameData {
-  const sourceWidth = region.sourceWidth > 0 ? region.sourceWidth : region.spriteWidth;
-  const sourceHeight = region.sourceHeight > 0 ? region.sourceHeight : region.spriteHeight;
-
+// Maps an atlas region (geometry owned by @flighthq/textureatlas-formats — incl. libGDX rotate/orig/
+// offset handling and the `name_index` disambiguation for indexed regions) to a spritesheet frame.
+function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
   return createSpritesheetFrameData({
-    height: region.spriteHeight,
-    name: region.name,
-    offsetX: region.offsetX,
-    offsetY: region.offsetY,
-    pivotX: null,
-    pivotY: null,
+    height: region.height,
+    name: region.name ?? '',
+    offsetX: region.sourceX,
+    offsetY: region.sourceY,
+    pivotX: region.pivotX,
+    pivotY: region.pivotY,
     rotated: region.rotated,
-    sourceHeight,
-    sourceWidth,
-    width: region.spriteWidth,
+    sourceHeight: region.originalHeight ?? region.height,
+    sourceWidth: region.originalWidth ?? region.width,
+    width: region.width,
     x: region.x,
     y: region.y,
   });
@@ -229,7 +231,9 @@ function inferAnimations(frameNames: string[], frameDuration: number): Spriteshe
  *  indexed regions (`index >= 0`) are also grouped into animations. */
 export function parseLibgdxAtlasSpritesheet(text: string, options?: LibgdxAtlasParseOptions): SpritesheetData {
   const frameDuration = options?.frameDuration ?? 100;
-  const { pages, regions } = parseLibgdxAtlas(text);
+  // Page metadata (image file + size) is libGDX-specific and not modeled by TextureAtlas, so it is read
+  // from the local page parse; the region geometry is delegated to the atlas-formats parser.
+  const { pages } = parseLibgdxAtlas(text);
 
   // Use the first page for top-level image metadata
   const firstPage = pages[0];
@@ -237,7 +241,8 @@ export function parseLibgdxAtlasSpritesheet(text: string, options?: LibgdxAtlasP
   const imageWidth = firstPage?.width ?? 0;
   const imageHeight = firstPage?.height ?? 0;
 
-  const frames: SpritesheetFrameData[] = regions.map(regionToFrame);
+  const regions: readonly TextureAtlasRegion[] = parseTextureAtlasLibgdxAtlas(text, createTextureAtlas()).regions;
+  const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);
   const frameNames = frames.map((f) => f.name);
   const animations = inferAnimations(frameNames, frameDuration);
 
