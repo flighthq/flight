@@ -9,6 +9,3 @@ description = "Renderer registration, render state, render queue, and backend dr
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
 flighthq-signals = { workspace = true }
-
-[lints]
-workspace = true

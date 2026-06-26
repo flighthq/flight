@@ -9,6 +9,3 @@ description = "WebGL shader implementations for bitmap filter effects"
 flighthq-filters = { workspace = true }
 flighthq-render-gl = { workspace = true }
 glow = { workspace = true }
-
-[lints]
-workspace = true

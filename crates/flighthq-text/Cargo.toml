@@ -16,6 +16,3 @@ flighthq-types = { workspace = true }
 # The text-layout measure provider is a process-global backend; tests that set
 # or clear it must not run concurrently, or they clobber each other's state.
 serial_test = { workspace = true }
-
-[lints]
-workspace = true

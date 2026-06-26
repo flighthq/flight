@@ -524,14 +524,20 @@ pub struct NodeSignals {
 }
 
 // ---------------------------------------------------------------------------
-// WorldNode
+// SceneNode (formerly WorldNode — renamed 2026-06-22)
 // ---------------------------------------------------------------------------
 
 use crate::kind::KindId;
 
-pub fn world_node_kind() -> KindId {
+pub fn scene_node_kind() -> KindId {
     static ID: std::sync::OnceLock<KindId> = std::sync::OnceLock::new();
     *ID.get_or_init(KindId::new)
+}
+
+/// Deprecated alias — use `scene_node_kind()`.
+#[deprecated(since = "0.0.0", note = "renamed to scene_node_kind")]
+pub fn world_node_kind() -> KindId {
+    scene_node_kind()
 }
 
 // ---------------------------------------------------------------------------

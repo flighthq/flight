@@ -470,6 +470,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-animation"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
+]
+
+[[package]]
 name = "flighthq-app"
 version = "0.1.0"
 dependencies = [
@@ -699,6 +706,13 @@ dependencies = [
  "flighthq-filters",
  "flighthq-render-gl",
  "glow 0.14.2",
+]
+
+[[package]]
+name = "flighthq-filters-math"
+version = "0.1.0"
+dependencies = [
+ "flighthq-types",
 ]
 
 [[package]]
@@ -1028,6 +1042,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "flighthq-picking"
+version = "0.1.0"
+dependencies = [
+ "flighthq-camera",
+ "flighthq-geometry",
+ "flighthq-mesh",
+ "flighthq-node",
+ "flighthq-scene",
+ "flighthq-types",
+]
+
+[[package]]
 name = "flighthq-platform"
 version = "0.1.0"
 dependencies = [
@@ -1082,16 +1108,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "flighthq-resource-formats"
-version = "0.1.0"
-
-[[package]]
 name = "flighthq-scene"
 version = "0.1.0"
 dependencies = [
+ "flighthq-animation",
  "flighthq-geometry",
  "flighthq-node",
  "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-scene-formats"
+version = "0.1.0"
+dependencies = [
+ "flighthq-mesh",
+ "flighthq-node",
+ "flighthq-scene",
+ "flighthq-types",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1141,6 +1176,7 @@ dependencies = [
 name = "flighthq-sdk"
 version = "0.1.0"
 dependencies = [
+ "flighthq-animation",
  "flighthq-app",
  "flighthq-application",
  "flighthq-audio",
@@ -1161,6 +1197,7 @@ dependencies = [
  "flighthq-filesystem",
  "flighthq-filters",
  "flighthq-filters-gl",
+ "flighthq-filters-math",
  "flighthq-filters-surface",
  "flighthq-filters-wgpu",
  "flighthq-font",
@@ -1187,14 +1224,15 @@ dependencies = [
  "flighthq-particles",
  "flighthq-particles-formats",
  "flighthq-path",
+ "flighthq-picking",
  "flighthq-platform",
  "flighthq-power",
  "flighthq-protocol",
  "flighthq-render",
  "flighthq-render-gl",
  "flighthq-render-wgpu",
- "flighthq-resource-formats",
  "flighthq-scene",
+ "flighthq-scene-formats",
  "flighthq-scene-gl",
  "flighthq-scene-wgpu",
  "flighthq-screen",
@@ -1204,6 +1242,7 @@ dependencies = [
  "flighthq-shell",
  "flighthq-shortcut",
  "flighthq-signals",
+ "flighthq-skeleton",
  "flighthq-sprite",
  "flighthq-spritesheet",
  "flighthq-spritesheet-formats",
@@ -1216,6 +1255,7 @@ dependencies = [
  "flighthq-textshaper",
  "flighthq-texture",
  "flighthq-textureatlas",
+ "flighthq-textureatlas-formats",
  "flighthq-tileset",
  "flighthq-timeline",
  "flighthq-tray",
@@ -1280,6 +1320,16 @@ name = "flighthq-signals"
 version = "0.1.0"
 
 [[package]]
+name = "flighthq-skeleton"
+version = "0.1.0"
+dependencies = [
+ "flighthq-geometry",
+ "flighthq-node",
+ "flighthq-scene",
+ "flighthq-types",
+]
+
+[[package]]
 name = "flighthq-sprite"
 version = "0.1.0"
 dependencies = [
@@ -1305,8 +1355,8 @@ dependencies = [
 name = "flighthq-spritesheet-formats"
 version = "0.1.0"
 dependencies = [
- "flighthq-resource-formats",
  "flighthq-spritesheet",
+ "flighthq-textureatlas-formats",
  "flighthq-types",
 ]
 
@@ -1399,6 +1449,14 @@ name = "flighthq-textureatlas"
 version = "0.1.0"
 dependencies = [
  "flighthq-image",
+ "flighthq-types",
+]
+
+[[package]]
+name = "flighthq-textureatlas-formats"
+version = "0.1.0"
+dependencies = [
+ "flighthq-textureatlas",
  "flighthq-types",
 ]
 
@@ -1817,9 +1875,9 @@ dependencies = [
 
 [[package]]
 name = "js-sys"
-version = "0.3.102"
+version = "0.3.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03d04c30968dffe80775bd4d7fb676131cd04a1fb46d2686dbffbaec2d9dfd31"
+checksum = "53b44bfcdb3f8d5837a46dae1ca9660a837176eee74a28b229bc626816589102"
 dependencies = [
  "cfg-if",
  "futures-util",
@@ -1921,9 +1979,9 @@ checksum = "88904434abc2901f197fe8cc55f0445e7ded921dba5911dad2e2b39b48e663c4"
 
 [[package]]
 name = "memmap2"
-version = "0.9.10"
+version = "0.9.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "714098028fe011992e1c3962653c96b2d578c4b4bce9036e15ff220319b1e0e3"
+checksum = "d1219ed1b7f229ee7104d281dd01d6802fe28bb6e95d292942c4daacdeb798c0"
 dependencies = [
  "libc",
 ]
@@ -2477,9 +2535,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.45"
+version = "1.0.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924"
+checksum = "dfbc457d0c7a0759a614551b11a6409e5951f6c7537be1f1b7682b9ae9230368"
 dependencies = [
  "proc-macro2",
 ]
@@ -2760,6 +2818,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
 dependencies = [
  "serde_core",
+ "serde_derive",
 ]
 
 [[package]]
@@ -3190,9 +3249,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.125"
+version = "0.2.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ddb3f79143bced6de84270411622a2699cee572fc0875aeaf1e7867cf9fca1a"
+checksum = "4b067c0c11094aef6b7a801c1e34a26affafdf3d051dba08456b868789aaf9a4"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -3203,9 +3262,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.75"
+version = "0.4.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "503b14d284f2c8dac03b819967e155ea753f573586193b2b2c95990cb5d69280"
+checksum = "c62df1340f32221cb9c54d6a27b030e3dba64361d4a95bed55f9aacb44da291d"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -3213,9 +3272,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.125"
+version = "0.2.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e21a184b13fb19e157296e2c46056aec9092264fab83e4ba59e68c61b323c3d"
+checksum = "167ce5e579f6bcf889c4f7175a8a5a585de84e8ff93976ce393efa5f2837aab1"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -3223,9 +3282,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.125"
+version = "0.2.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fecefd9c35bd935a20fc3fc344b5f29138961e4f47fb03297d88f2587afb5ebd"
+checksum = "f3997c7839262f4ef12cf90b818d6340c18e80f263f1a94bf157d0ec4420380e"
 dependencies = [
  "bumpalo",
  "proc-macro2",
@@ -3236,9 +3295,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.125"
+version = "0.2.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23939e44bb9a5d7576fa2b563dc2e136628f1224e88a8deed09e04858b77871f"
+checksum = "dc1b4cb0cc549fcf58d7dfc081778139b3d283a081644e833e84682ad71cea24"
 dependencies = [
  "unicode-ident",
 ]
@@ -3354,9 +3413,9 @@ dependencies = [
 
 [[package]]
 name = "web-sys"
-version = "0.3.102"
+version = "0.3.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6430a72df5eb332242960fe84b3002a241163998241eb596d4f739b9757061d"
+checksum = "8622dcb61c0bcc9fffa6938bed81210af2da9a7e4a1a834b2e37a59b6dfb6141"
 dependencies = [
  "js-sys",
  "wasm-bindgen",

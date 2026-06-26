@@ -18,6 +18,3 @@ wasm-bindgen = "0.2"
 # A newer binaryen can be wired in later to shrink the artifact further.
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
-
-[lints]
-workspace = true

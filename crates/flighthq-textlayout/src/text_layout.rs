@@ -149,17 +149,18 @@ fn char_advances(
 
         // Look ahead for the next codepoint to compute a kerned pair advance.
         let next_start = i + 1;
-        let advance = if kerning_enabled && next_start < end && chars[next_start] != '\t' {
+        let advance;
+        if kerning_enabled && next_start < end && chars[next_start] != '\t' {
             // Pair-wise measurement accounts for kerning between adjacent chars.
             let next_s: String = chars[next_start].to_string();
             let pair_s: String = [ch, chars[next_start]].iter().collect();
             let next_w = measure(&next_s, format);
             let pair_w = measure(&pair_s, format);
-            pair_w - next_w
+            advance = pair_w - next_w;
         } else {
             let single: String = ch.to_string();
-            measure(&single, format)
-        };
+            advance = measure(&single, format);
+        }
         out.push(advance + letter_spacing);
         current_x += advance + letter_spacing;
         i += 1;
@@ -886,7 +887,9 @@ fn justify_lines(
         return;
     }
 
-    for (li, &line_w) in line_widths.iter().enumerate() {
+    let line_count = line_widths.len();
+
+    for li in 0..line_count {
         // Skip the final line of each paragraph — it is left-aligned per CSS standard.
         if paragraph_last_lines.contains(&li) {
             continue;
@@ -903,6 +906,7 @@ fn justify_lines(
             continue;
         }
 
+        let line_w = line_widths[li];
         let available = container_width - TEXT_LAYOUT_GUTTER * 2.0;
         let residual = available - line_w;
         if residual <= 0.0 {
@@ -1714,7 +1718,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::assertions_on_constants)] // documents the gutter-positive invariant
     fn text_layout_gutter_is_positive() {
         assert!(TEXT_LAYOUT_GUTTER > 0.0);
     }

@@ -9,6 +9,3 @@ description = "Light descriptors: ambient/directional/point/spot/hemisphere/area
 flighthq-entity = { workspace = true }
 flighthq-geometry = { workspace = true }
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

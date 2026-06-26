@@ -773,7 +773,7 @@ mod tests {
             "text/rtf".to_string(),
         ]));
         assert_eq!(result.get("text/plain").map(String::as_str), Some("hi"));
-        assert!(!result.contains_key("text/rtf"));
+        assert!(result.get("text/rtf").is_none());
         set_clipboard_backend(None);
     }
 

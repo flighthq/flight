@@ -12,6 +12,3 @@ flighthq-types = { workspace = true }
 serial_test = { workspace = true }
 pollster = "0.3"
 
-
-[lints]
-workspace = true

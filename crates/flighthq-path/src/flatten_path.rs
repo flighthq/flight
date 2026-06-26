@@ -29,7 +29,8 @@ pub fn flatten_path(path: &Path, tolerance: f32) -> Vec<Vec<f32>> {
     let mut y = 0.0f32;
     let mut di = 0usize;
 
-    for &command in commands {
+    for ci in 0..commands.len() {
+        let command = commands[ci];
         if command == path_command::MOVE_TO {
             x = data[di];
             y = data[di + 1];

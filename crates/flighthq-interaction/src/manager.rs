@@ -1642,11 +1642,9 @@ mod tests {
         let _guards =
             connect_input_to_interaction(&input, Arc::clone(&manager), Arc::clone(&arena), 1.0);
 
-        let data = InputPointerData {
-            x: 50.0,
-            y: 50.0,
-            ..Default::default()
-        };
+        let mut data = InputPointerData::default();
+        data.x = 50.0;
+        data.y = 50.0;
         emit_signal(&input.on_pointer_down, &data);
         assert_eq!(count.load(Ordering::SeqCst), 1);
 
@@ -1678,11 +1676,9 @@ mod tests {
         let _guards =
             connect_keyboard_input_to_interaction(&input, Arc::clone(&manager), Arc::clone(&arena));
 
-        let data = InputKeyboardData {
-            key: "a".to_string(),
-            key_code: 97,
-            ..Default::default()
-        };
+        let mut data = InputKeyboardData::default();
+        data.key = "a".to_string();
+        data.key_code = 97;
         emit_signal(&input.on_key_down, &data);
         assert_eq!(*got.lock().unwrap(), "a");
     }

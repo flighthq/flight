@@ -6,9 +6,7 @@ license.workspace = true
 description = "3D scene graph and spatial node hierarchy"
 
 [dependencies]
+flighthq-animation = { workspace = true }
 flighthq-geometry = { workspace = true }
 flighthq-node = { workspace = true }
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

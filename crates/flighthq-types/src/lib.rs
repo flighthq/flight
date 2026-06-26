@@ -51,6 +51,7 @@ pub mod render;
 pub mod render_viewport_2d;
 pub mod resource;
 pub mod resource_load;
+pub mod scene_animation_path;
 pub mod scene_render;
 pub mod screen;
 pub mod shaped_run;
@@ -79,6 +80,7 @@ pub use alpha::AlphaType;
 
 // animation
 pub use animation::{
+    AnimationChannel, AnimationClip, AnimationInterpolation, AnimationPlayer, AnimationTrack,
     EasingFunction, Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer,
     StopTweenOptions, Timeline, TimelineLabel, TimelineSource, Tween, TweenManager,
     TweenManagerOptions, TweenOptions, TweenPropertyDetail,
@@ -168,8 +170,9 @@ pub use glyph_extents::GlyphExtents;
 
 // geometry
 pub use geometry::{
-    Aabb, Matrix, Matrix3, Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Rectangle, RectangleLike,
-    Vector2, Vector2Like, Vector3, Vector3Like, Vector4, Vector4Like,
+    Aabb, BoundingSphere, Matrix, Matrix3, Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Plane,
+    Ray3D, Rectangle, RectangleLike, Vector2, Vector2Like, Vector3, Vector3Like, Vector4,
+    Vector4Like,
 };
 
 // image
@@ -231,7 +234,7 @@ pub use misc::{
     SurfaceHistogram, SurfaceMismatch, SurfaceRegion, SurfaceResizeMode, TaaEffect,
     ThresholdOperation, TiltShiftEffect, ToneMapEffect, ToneMapOperator, Velocity2D, VelocityField,
     VelocitySample, VignetteEffect, WhiteBalanceEffect, WindowBounds, WindowOptions, path_command,
-    world_node_kind,
+    scene_node_kind, world_node_kind,
 };
 
 // network
@@ -322,6 +325,9 @@ pub use resource_load::{
     ResourceLoadErrorPolicy, ResourceLoadItemError, ResourceLoadItemRetry, ResourceLoadItemStatus,
     ResourceLoadReport, ResourceLoadRetryBackoff, ResourceLoaderItemSignals, ResourceLoaderOptions,
 };
+
+// scene_animation_path
+pub use scene_animation_path::SceneAnimationPath;
 
 // scene_render
 pub use scene_render::{SceneLightBlock, SceneLights, SceneRenderProxy};

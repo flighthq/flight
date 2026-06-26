@@ -8,6 +8,3 @@ description = "Import/export particle emitter configs from industry-standard for
 [dependencies]
 flighthq-particles = { workspace = true }
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

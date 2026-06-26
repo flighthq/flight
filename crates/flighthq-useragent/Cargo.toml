@@ -8,6 +8,3 @@ description = "User-agent / platform & device identity parsing (value-leaf; mirr
 [dependencies]
 flighthq-types = { workspace = true }
 regex = { workspace = true }
-
-[lints]
-workspace = true

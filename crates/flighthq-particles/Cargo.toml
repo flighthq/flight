@@ -9,6 +9,3 @@ description = "Particle system: emitter simulation and typed-array-backed partic
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
 flighthq-node = { workspace = true }
-
-[lints]
-workspace = true

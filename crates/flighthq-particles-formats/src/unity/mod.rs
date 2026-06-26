@@ -1196,16 +1196,15 @@ fn gradient_json(g: &UnityGradient) -> String {
         .color_keys
         .iter()
         .map(|k| {
-            let color = format!(
-                "{{\n            \"r\": {},\n            \"g\": {},\n            \"b\": {}\n          }}",
-                format_json_number(k.color.r),
-                format_json_number(k.color.g),
-                format_json_number(k.color.b)
-            );
             format!(
                 "{{\n          \"time\": {},\n          \"color\": {}\n        }}",
                 format_json_number(k.time),
-                color
+                format!(
+                    "{{\n            \"r\": {},\n            \"g\": {},\n            \"b\": {}\n          }}",
+                    format_json_number(k.color.r),
+                    format_json_number(k.color.g),
+                    format_json_number(k.color.b)
+                )
             )
         })
         .collect();

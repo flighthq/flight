@@ -345,10 +345,8 @@ mod tests {
 
         #[test]
         fn clears_the_webgl_upload_slot() {
-            let mut runtime = MeshGeometryRuntime {
-                webgl_data: Some(Box::new(FakeGlData)),
-                ..Default::default()
-            };
+            let mut runtime = MeshGeometryRuntime::default();
+            runtime.webgl_data = Some(Box::new(FakeGlData));
             destroy_mesh_geometry_gl_data(&mut runtime);
             assert!(runtime.webgl_data.is_none());
         }
@@ -363,10 +361,8 @@ mod tests {
 
         #[test]
         fn clears_the_webgpu_upload_slot() {
-            let mut runtime = MeshGeometryRuntime {
-                webgpu_data: Some(Box::new(FakeWgpuData)),
-                ..Default::default()
-            };
+            let mut runtime = MeshGeometryRuntime::default();
+            runtime.webgpu_data = Some(Box::new(FakeWgpuData));
             destroy_mesh_geometry_wgpu_data(&mut runtime);
             assert!(runtime.webgpu_data.is_none());
         }

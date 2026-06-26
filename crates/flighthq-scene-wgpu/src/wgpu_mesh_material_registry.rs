@@ -179,14 +179,14 @@ mod tests {
     #[test]
     fn get_wgpu_mesh_material_renderer_returns_none_when_nothing_registered() {
         let scene = create_wgpu_scene_runtime();
-        assert!(!scene.material_registry.contains_key(&test_kind()));
+        assert!(scene.material_registry.get(&test_kind()).is_none());
     }
 
     #[test]
     fn register_wgpu_mesh_material_renderer_registers_a_renderer_retrievable_by_kind() {
         let mut scene = create_wgpu_scene_runtime();
         register_into(&mut scene, test_kind());
-        assert!(scene.material_registry.contains_key(&test_kind()));
+        assert!(scene.material_registry.get(&test_kind()).is_some());
     }
 
     #[test]

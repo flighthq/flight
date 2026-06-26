@@ -7,6 +7,3 @@ description = "Read/write files and directories over a swappable web (OPFS) / na
 
 [dependencies]
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

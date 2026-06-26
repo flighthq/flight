@@ -1,0 +1,12 @@
+[package]
+name = "flighthq-skeleton"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Skin skeleton: joint palette and bind-pose math — port of @flighthq/skeleton"
+
+[dependencies]
+flighthq-geometry = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-scene = { workspace = true }
+flighthq-types = { workspace = true }

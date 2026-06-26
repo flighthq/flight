@@ -9,6 +9,3 @@ description = "Renderer-agnostic text layout engine: measures and positions glyp
 flighthq-types = { workspace = true }
 flighthq-geometry = { workspace = true }
 flighthq-textshaper = { workspace = true }
-
-[lints]
-workspace = true

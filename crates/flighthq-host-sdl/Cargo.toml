@@ -32,6 +32,3 @@ pollster = "0.3"
 # reorg split out of `render-wgpu` into `displayobject-wgpu`. The host lib
 # itself draws via a caller-supplied closure, so this is example-only.
 flighthq-displayobject-wgpu = { workspace = true }
-
-[lints]
-workspace = true

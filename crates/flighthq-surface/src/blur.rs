@@ -337,13 +337,13 @@ pub fn compute_gaussian_kernel(out: &mut [f32], radius: u32, sigma: f32) {
     }
     let mut sum = 0.0_f32;
     let two_sigma_sq = 2.0 * sigma * sigma;
-    for (i, v) in out.iter_mut().take(len).enumerate() {
+    for i in 0..len {
         let x = i as f32 - radius as f32;
-        *v = (-(x * x) / two_sigma_sq).exp();
-        sum += *v;
+        out[i] = (-(x * x) / two_sigma_sq).exp();
+        sum += out[i];
     }
-    for v in out.iter_mut().take(len) {
-        *v /= sum;
+    for i in 0..len {
+        out[i] /= sum;
     }
 }
 

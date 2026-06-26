@@ -41,6 +41,7 @@ flighthq-displayobject = { path = "crates/flighthq-displayobject" }
 flighthq-sprite = { path = "crates/flighthq-sprite" }
 flighthq-scene = { path = "crates/flighthq-scene" }
 flighthq-mesh = { path = "crates/flighthq-mesh" }
+flighthq-skeleton = { path = "crates/flighthq-skeleton" }
 flighthq-lighting = { path = "crates/flighthq-lighting" }
 flighthq-texture = { path = "crates/flighthq-texture" }
 flighthq-camera = { path = "crates/flighthq-camera" }
@@ -55,6 +56,7 @@ flighthq-displayobject-wgpu = { path = "crates/flighthq-displayobject-wgpu" }
 flighthq-displayobject-skia = { path = "crates/flighthq-displayobject-skia" }
 flighthq-filters = { path = "crates/flighthq-filters" }
 flighthq-filters-gl = { path = "crates/flighthq-filters-gl" }
+flighthq-filters-math = { path = "crates/flighthq-filters-math" }
 flighthq-filters-wgpu = { path = "crates/flighthq-filters-wgpu" }
 flighthq-effects = { path = "crates/flighthq-effects" }
 flighthq-effects-gl = { path = "crates/flighthq-effects-gl" }
@@ -72,8 +74,12 @@ flighthq-font = { path = "crates/flighthq-font" }
 flighthq-video = { path = "crates/flighthq-video" }
 flighthq-audio = { path = "crates/flighthq-audio" }
 flighthq-textureatlas = { path = "crates/flighthq-textureatlas" }
+flighthq-textureatlas-formats = { path = "crates/flighthq-textureatlas-formats" }
 flighthq-tileset = { path = "crates/flighthq-tileset" }
 flighthq-loader = { path = "crates/flighthq-loader" }
+flighthq-animation = { path = "crates/flighthq-animation" }
+flighthq-picking = { path = "crates/flighthq-picking" }
+flighthq-scene-formats = { path = "crates/flighthq-scene-formats" }
 flighthq-tween = { path = "crates/flighthq-tween" }
 flighthq-easing = { path = "crates/flighthq-easing" }
 flighthq-timeline = { path = "crates/flighthq-timeline" }
@@ -87,7 +93,6 @@ flighthq-application = { path = "crates/flighthq-application" }
 flighthq-media = { path = "crates/flighthq-media" }
 flighthq-platform = { path = "crates/flighthq-platform" }
 flighthq-useragent = { path = "crates/flighthq-useragent" }
-flighthq-resource-formats = { path = "crates/flighthq-resource-formats" }
 flighthq-filesystem = { path = "crates/flighthq-filesystem" }
 flighthq-storage = { path = "crates/flighthq-storage" }
 flighthq-shell = { path = "crates/flighthq-shell" }
@@ -117,6 +122,9 @@ flighthq-sdk = { path = "crates/flighthq-sdk" }
 flighthq-capture = { path = "crates/flighthq-capture" }
 
 # External crates
+base64 = "0.22"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 slotmap = "1"
 glow = "0.14"
 wgpu = { version = "22", default-features = false, features = ["wgsl"] }

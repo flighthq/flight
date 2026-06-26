@@ -256,7 +256,7 @@ mod tests {
         let runtime = create_bitmap_runtime();
         let expected = compute_bitmap_local_bounds_rectangle
             as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert!(std::ptr::fn_addr_eq(runtime.unwrap(), expected));
+        assert_eq!(runtime, Some(expected));
     }
 
     // get_bitmap_runtime
@@ -267,10 +267,7 @@ mod tests {
         let id = create_bitmap(&mut arena);
         let expected = compute_bitmap_local_bounds_rectangle
             as fn(&mut Rectangle, &DisplayObjectArena, NodeId);
-        assert!(std::ptr::fn_addr_eq(
-            get_bitmap_runtime(&arena, id).unwrap(),
-            expected
-        ));
+        assert_eq!(get_bitmap_runtime(&arena, id), Some(expected));
     }
 
     // get_bitmap_smoothing / set_bitmap_smoothing

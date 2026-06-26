@@ -7,6 +7,3 @@ description = "OS shell integration over a swappable web/native backend: open ex
 
 [dependencies]
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true

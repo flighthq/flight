@@ -9,6 +9,3 @@ description = "WebGPU renderer implementation"
 flighthq-types = { workspace = true }
 flighthq-render = { workspace = true }
 wgpu = { workspace = true }
-
-[lints]
-workspace = true

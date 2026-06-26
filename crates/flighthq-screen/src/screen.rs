@@ -434,11 +434,8 @@ pub fn set_screen_backend(backend: Option<Arc<dyn ScreenBackend>>) {
     *guard = backend;
 }
 
-// Screen-change listeners keyed by subscription id; lazily allocated on first subscribe.
-type ScreenSubscriptions = Mutex<Option<HashMap<usize, Box<dyn Fn() + Send + Sync>>>>;
-
 static BACKEND: Mutex<Option<Arc<dyn ScreenBackend>>> = Mutex::new(None);
-static SUBSCRIPTIONS: ScreenSubscriptions = Mutex::new(None);
+static SUBSCRIPTIONS: Mutex<Option<HashMap<usize, Box<dyn Fn() + Send + Sync>>>> = Mutex::new(None);
 
 // Copies all fields from `src` to `dst`.
 fn copy_screen_info(src: &ScreenInfo, dst: &mut ScreenInfo) {

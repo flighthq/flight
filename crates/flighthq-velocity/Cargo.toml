@@ -10,6 +10,3 @@ flighthq-geometry = { workspace = true }
 flighthq-node = { workspace = true }
 flighthq-types = { workspace = true }
 slotmap = { workspace = true }
-
-[lints]
-workspace = true

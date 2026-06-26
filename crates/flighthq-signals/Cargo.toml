@@ -6,6 +6,3 @@ license.workspace = true
 description = "Strictly-typed signals and slots for event dispatching"
 
 [dependencies]
-
-[lints]
-workspace = true

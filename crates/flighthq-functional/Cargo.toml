@@ -32,6 +32,3 @@ khronos-egl = { version = "6", features = ["dynamic"] }
 [[bin]]
 name = "flighthq-functional"
 path = "src/main.rs"
-
-[lints]
-workspace = true

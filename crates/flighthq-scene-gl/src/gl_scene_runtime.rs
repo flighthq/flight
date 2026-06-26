@@ -21,6 +21,7 @@
 use std::collections::HashMap;
 
 use flighthq_types::kind::KindId;
+use flighthq_types::{Matrix4, SceneLights};
 
 use crate::gl_mesh_material_registry::GlMeshMaterialRenderer;
 use crate::gl_pbr_program_cache::GlPbrProgram;
@@ -45,17 +46,61 @@ pub struct GlMeshUpload {
     pub vertex_buffer: Option<glow::Buffer>,
 }
 
+/// The active directional shadow for this state, set by `draw_gl_scene_shadow_map` and read by
+/// the lit bind so every lit family samples the same shadow map. `None` = no shadow this frame.
+/// Mirrors the TS `GlSceneShadow` interface in `glSceneRuntime.ts`.
+pub struct GlSceneShadow {
+    /// Light view-projection (world → shadow clip).
+    pub matrix: Matrix4,
+    /// The sampleable depth shadow map texture.
+    pub texture: glow::Texture,
+    /// The framebuffer holding the depth attachment (owned here for cleanup).
+    pub framebuffer: glow::Framebuffer,
+}
+
+/// The baked image-based-lighting set for this state, produced by `bake_environment_ibl` and read
+/// by the PBR ambient bind so every PBR draw samples the same environment.
+/// Mirrors the TS `GlSceneIbl` interface in `glSceneRuntime.ts`.
+pub struct GlSceneIbl {
+    /// The 2D BRDF integration LUT (split-sum approximation).
+    pub brdf_lut: glow::Texture,
+    /// Scales the environment's contribution.
+    pub intensity: f32,
+    /// Diffuse irradiance cubemap.
+    pub irradiance_cube: glow::Texture,
+    /// Roughness-mipped prefiltered specular cubemap.
+    pub prefiltered_cube: glow::Texture,
+    /// Number of mip levels in `prefiltered_cube`.
+    pub prefiltered_mip_count: u32,
+}
+
 /// scene-gl's per-state private runtime. One is created per `GlRenderState` and
 /// owned by the caller (see the module-level divergence note).
 #[derive(Default)]
 pub struct GlSceneRuntime {
     pub active_pbr_program: Option<GlPbrProgram>,
+    /// Environment source cubemap GPU texture, shared between IBL bake and skybox draw.
+    pub environment_source_cube: Option<glow::Texture>,
+    /// Baked IBL state; `None` until `bake_environment_ibl` runs. Read by the lit bind.
+    pub ibl: Option<GlSceneIbl>,
+    /// Framebuffer for IBL bake passes.
+    pub ibl_bake_framebuffer: Option<glow::Framebuffer>,
     pub material_registry: HashMap<KindId, Box<dyn GlMeshMaterialRenderer>>,
     pub pbr_program_cache: HashMap<String, GlPbrProgram>,
+    /// Active shadow state; `None` until `draw_gl_scene_shadow_map` runs. Read by the lit bind.
+    pub shadow: Option<GlSceneShadow>,
     /// Geometry upload cache, keyed by a stable geometry identity (the geometry's
     /// arena/entity id). The TS port keys a `WeakMap` by the geometry entity; the
     /// Rust port keys by an explicit `u64` id the caller supplies.
     pub upload_cache: HashMap<u64, GlMeshUpload>,
+}
+
+/// Cache for per-frame scene light block, threaded alongside `GlSceneRuntime`.
+/// The TS pack lives in `bindGlMeshLightBlock`; the Rust equivalent is
+/// `pack_scene_lights` in the lighting module.
+pub struct GlSceneFrameState<'a> {
+    pub runtime: &'a mut GlSceneRuntime,
+    pub lights: SceneLights,
 }
 
 /// Allocates a fresh, empty scene runtime. Mutable by design: the draw path

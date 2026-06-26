@@ -9,6 +9,7 @@
 //! assertions colocated per source file).
 
 pub mod mesh_geometry;
+pub mod mesh_geometry_attributes;
 pub mod mesh_geometry_builders;
 pub mod mesh_geometry_compute;
 
@@ -16,6 +17,9 @@ pub use mesh_geometry::{
     MeshGeometryKindId, MeshGeometryOptions, clone_mesh_geometry, create_mesh_geometry,
     destroy_mesh_geometry_gl_data, destroy_mesh_geometry_wgpu_data, get_mesh_geometry_index_count,
     get_mesh_geometry_vertex_count, get_mesh_kind,
+};
+pub use mesh_geometry_attributes::{
+    get_mesh_geometry_index, get_mesh_geometry_triangle_count, get_mesh_geometry_vertex_position,
 };
 pub use mesh_geometry_builders::{
     create_box_mesh_geometry, create_cone_mesh_geometry, create_cylinder_mesh_geometry,

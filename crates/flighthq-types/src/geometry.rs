@@ -74,6 +74,54 @@ pub struct Aabb {
 impl Entity for Aabb {}
 
 // ---------------------------------------------------------------------------
+// Ray3D
+// ---------------------------------------------------------------------------
+
+/// A 3D ray: an origin point and a direction (conventionally unit-length).
+/// Points along the ray are parameterized as `origin + t * direction` for
+/// `t >= 0`.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct Ray3D {
+    pub origin: Vector3,
+    pub direction: Vector3,
+}
+
+impl Entity for Ray3D {}
+
+// ---------------------------------------------------------------------------
+// BoundingSphere
+// ---------------------------------------------------------------------------
+
+/// Bounding sphere: a center point and a radius. A negative radius
+/// conventionally marks an empty sphere.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct BoundingSphere {
+    pub center: Vector3,
+    pub radius: f32,
+}
+
+impl Entity for BoundingSphere {}
+
+// ---------------------------------------------------------------------------
+// Plane
+// ---------------------------------------------------------------------------
+
+/// A plane in the form `a·x + b·y + c·z + d = 0`. `(a, b, c)` is the plane
+/// normal (unit-length when normalized), and `d` is the signed distance from
+/// the origin along that normal. The signed distance of a point `p` to the
+/// plane is `a·p.x + b·p.y + c·p.z + d`; positive is the side the normal
+/// points toward.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct Plane {
+    pub a: f32,
+    pub b: f32,
+    pub c: f32,
+    pub d: f32,
+}
+
+impl Entity for Plane {}
+
+// ---------------------------------------------------------------------------
 // Rectangle
 // ---------------------------------------------------------------------------
 

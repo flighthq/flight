@@ -7,6 +7,3 @@ description = "Video resources and URL constructors"
 
 [dependencies]
 flighthq-types = { workspace = true }
-
-[lints]
-workspace = true
