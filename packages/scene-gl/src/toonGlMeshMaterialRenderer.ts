@@ -44,7 +44,7 @@ export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
-    bindGlMeshLightBlock(gl, program, lights);
+    bindGlMeshLightBlock(state, program, lights);
     bindGlToonMaterialUniforms(state, program, toon);
   },
 

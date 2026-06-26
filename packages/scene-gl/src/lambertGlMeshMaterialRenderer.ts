@@ -40,7 +40,7 @@ export const lambertGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     beginGlMeshDraw(state, program, lambert !== null && lambert.doubleSided);
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
-    bindGlMeshLightBlock(gl, program, lights);
+    bindGlMeshLightBlock(state, program, lights);
     bindGlLambertMaterialUniforms(state, program, lambert);
   },
 

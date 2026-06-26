@@ -42,7 +42,7 @@ export const blinnPhongGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
-    bindGlMeshLightBlock(gl, program, lights);
+    bindGlMeshLightBlock(state, program, lights);
     bindGlBlinnPhongMaterialUniforms(state, program, blinnPhong);
   },
 

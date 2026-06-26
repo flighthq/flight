@@ -44,7 +44,7 @@ export const sheenPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
-    bindGlMeshLightBlock(gl, program, lights);
+    bindGlMeshLightBlock(state, program, lights);
     bindGlPbrStandardBlock(state, program, standard);
     gl.uniform1f(program.locAlphaCutoff, sheen !== null ? sheen.alphaCutoff : 0.5);
 
