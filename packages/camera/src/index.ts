@@ -6,3 +6,4 @@ export * from './frustumCorners';
 export * from './intersection';
 export * from './picking';
 export * from './projection';
+export * from './shadowCamera';
