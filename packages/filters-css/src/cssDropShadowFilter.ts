@@ -1,4 +1,5 @@
-import type { BevelFilter, DropShadowFilter, InnerShadowFilter } from '@flighthq/types';
+import { getShadowFilterOffset } from '@flighthq/filters-math';
+import type { DropShadowFilter } from '@flighthq/types';
 
 /**
  * Computes the CSS `filter` string for a drop shadow filter, or `null` when the
@@ -11,24 +12,11 @@ export function computeDropShadowFilterCss(filter: DropShadowFilter): string | n
   const blurX = filter.blurX ?? 4;
   const blurY = filter.blurY ?? 4;
   if (blurX !== blurY) return null;
-  const { dx, dy } = getShadowFilterOffset(filter);
-  return `drop-shadow(${dx}px ${dy}px ${blurX}px ${rgbaFromInt(filter.color ?? 0, filter.alpha ?? 1)})`;
-}
-
-/**
- * Computes the pixel offset for shadow and bevel effects from angle and distance.
- * Angle is in degrees; 0 points right, increasing clockwise.
- */
-export function getShadowFilterOffset(filter: DropShadowFilter | InnerShadowFilter | BevelFilter): {
-  dx: number;
-  dy: number;
-} {
-  const angle = ((filter.angle ?? 45) * Math.PI) / 180;
-  const distance = filter.distance ?? 4;
-  return {
-    dx: Math.round(Math.cos(angle) * distance),
-    dy: Math.round(Math.sin(angle) * distance),
-  };
+  // The angle/distance → (dx, dy) math is the shared, single-source helper from
+  // @flighthq/filters-math; do not re-derive it here.
+  const offset = { dx: 0, dy: 0 };
+  getShadowFilterOffset(filter, offset);
+  return `drop-shadow(${offset.dx}px ${offset.dy}px ${blurX}px ${rgbaFromInt(filter.color ?? 0, filter.alpha ?? 1)})`;
 }
 
 function rgbaFromInt(color: number, alpha: number): string {

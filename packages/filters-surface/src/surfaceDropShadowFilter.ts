@@ -1,4 +1,4 @@
-import { computeBoxBlurRadius } from '@flighthq/filters';
+import { computeBoxBlurRadius } from '@flighthq/filters-math';
 import { dropShadowSurface } from '@flighthq/surface';
 import type { DropShadowFilter, SurfaceRegion } from '@flighthq/types';
 

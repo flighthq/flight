@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../filters-math" }, { "path": "../render-wgpu" }, { "path": "../types" }],
+  "references": [{ "path": "../types" }],
   "include": ["src"]
 }

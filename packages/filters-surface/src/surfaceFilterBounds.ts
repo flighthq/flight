@@ -1,4 +1,4 @@
-import { getShadowFilterOffset } from '@flighthq/filters';
+import { getShadowFilterOffset } from '@flighthq/filters-math';
 import type {
   BevelFilter,
   BitmapFilter,

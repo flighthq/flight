@@ -1,3 +1,4 @@
+import { computeBoxBlurRadius } from '@flighthq/filters-math';
 import type { BitmapFilter } from '@flighthq/types';
 
 import {
@@ -14,7 +15,6 @@ import {
   DEFAULT_FILTER_BLUR_Y,
   DEFAULT_FILTER_DISTANCE,
 } from './bitmapFilterOps';
-import { computeBoxBlurRadius } from './blurMath';
 import { getBlurPassCountForQuality } from './blurQuality';
 
 /**
