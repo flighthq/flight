@@ -163,6 +163,58 @@ uniform vec3 u_ambientRadiance;
 uniform float u_directionalCount;
 uniform float u_ambientCount;
 
+uniform sampler2D u_shadowMap;       // directional shadow depth map
+uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
+uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
+
+// Directional shadow factor (1.0 = lit, 0.0 = shadowed) with 3x3 PCF; fragments outside the shadow
+// frustum read as lit. Multiplied into the directional term below.
+float sampleDirectionalShadow(vec3 worldPos) {
+  if (u_shadowEnabled < 0.5) return 1.0;
+  vec4 clip = u_shadowMatrix * vec4(worldPos, 1.0);
+  vec3 ndc = clip.xyz / clip.w;
+  vec3 uvz = ndc * 0.5 + 0.5;
+  if (uvz.x < 0.0 || uvz.x > 1.0 || uvz.y < 0.0 || uvz.y > 1.0 || uvz.z > 1.0) return 1.0;
+  float current = uvz.z - 0.0025;
+  vec2 texel = 1.0 / vec2(textureSize(u_shadowMap, 0));
+  float sum = 0.0;
+  for (int x = -1; x <= 1; ++x) {
+    for (int y = -1; y <= 1; ++y) {
+      float closest = texture(u_shadowMap, uvz.xy + vec2(float(x), float(y)) * texel).r;
+      sum += current <= closest ? 1.0 : 0.0;
+    }
+  }
+  return sum / 9.0;
+}
+
+uniform samplerCube u_iblIrradiance;  // diffuse irradiance cubemap
+uniform samplerCube u_iblPrefiltered; // roughness-mipped prefiltered specular cubemap
+uniform sampler2D u_iblBrdf;          // split-sum BRDF integration LUT (RG)
+uniform float u_iblEnabled;           // 0 or 1 — gates image-based ambient
+uniform float u_iblIntensity;         // environment contribution scale
+uniform float u_iblMaxMip;            // highest prefiltered mip index (roughness 1.0)
+
+// Roughness-aware Fresnel for the IBL specular term (Sébastien Lagarde): rougher surfaces reflect less
+// at grazing angles than the smooth Schlick approximation.
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+  return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+// Image-based ambient via the split-sum approximation: diffuse irradiance over the albedo plus
+// prefiltered specular weighted by the BRDF LUT. Replaces the flat ambient term when an environment
+// is baked (bakeEnvironmentIbl). All three cubemap/LUT samples are already linear (baked from
+// sRGB-decoded sources), so no decode here.
+vec3 sampleIblAmbient(vec3 N, vec3 V, float rough, vec3 F0, vec3 diffuseColor, float occ) {
+  float nv = max(dot(N, V), 1e-4);
+  vec3 F = fresnelSchlickRoughness(nv, F0, rough);
+  vec3 diffuse = texture(u_iblIrradiance, N).rgb * diffuseColor;
+  vec3 R = reflect(-V, N);
+  vec3 prefiltered = textureLod(u_iblPrefiltered, R, rough * u_iblMaxMip).rgb;
+  vec2 brdf = texture(u_iblBrdf, vec2(nv, rough)).rg;
+  vec3 specular = prefiltered * (F * brdf.x + brdf.y);
+  return ((vec3(1.0) - F) * diffuse + specular) * occ * u_iblIntensity;
+}
+
 #ifdef HAS_BASE_COLOR_MAP
 uniform sampler2D u_baseColorMap;
 #endif
@@ -402,11 +454,14 @@ void main() {
     direct = direct * (1.0 - ccF) + ccSpec;
 #endif
 
-    radiance += direct;
+    radiance += direct * sampleDirectionalShadow(v_worldPosition);
   }
 
-  // Ambient term: flat irradiance over the diffuse albedo (no IBL specular yet), attenuated by AO.
-  if (u_ambientCount > 0.5) {
+  // Ambient term: image-based lighting (diffuse irradiance + prefiltered specular) when an environment
+  // is baked, else the flat ambient irradiance over the diffuse albedo. Both are attenuated by AO.
+  if (u_iblEnabled > 0.5) {
+    radiance += sampleIblAmbient(normal, viewDir, roughness, f0, diffuseColor, occlusion);
+  } else if (u_ambientCount > 0.5) {
     radiance += diffuseColor * u_ambientRadiance * occlusion;
   }
 

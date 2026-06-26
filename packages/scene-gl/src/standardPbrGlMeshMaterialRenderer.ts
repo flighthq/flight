@@ -42,7 +42,7 @@ export const standardPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
-    bindGlMeshLightBlock(gl, program, lights);
+    bindGlMeshLightBlock(state, program, lights);
     bindGlPbrStandardBlock(state, program, pbr);
     gl.uniform1f(program.locAlphaCutoff, pbr !== null ? pbr.alphaCutoff : 0.5);
   },

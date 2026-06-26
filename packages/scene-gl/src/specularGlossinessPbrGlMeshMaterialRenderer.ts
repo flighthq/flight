@@ -61,7 +61,7 @@ export const specularGlossinessPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer
 
     setGlMeshViewProjection(gl, program.locViewProjection, camera);
     setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
-    bindGlMeshLightBlock(gl, program, lights);
+    bindGlMeshLightBlock(state, program, lights);
     bindGlPbrStandardBlock(state, program, standard);
     gl.uniform1f(program.locAlphaCutoff, specGloss !== null ? specGloss.alphaCutoff : 0.5);
   },
