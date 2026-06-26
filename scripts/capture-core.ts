@@ -338,18 +338,33 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
 }
 
 // Serve a pre-built tool dist from a lightweight Node.js HTTP server, bypassing the Vite dev
-// server and its on-demand transform overhead. Requires `npm run build:{tool}` to have been run
-// first; errors with a helpful message if the dist directory is missing.
-export function resolveStaticServer(opts: { tool: Tool; root: string }): Promise<Server> {
-  const { tool, root } = opts;
+// server and its on-demand transform overhead. Auto-builds when dist is absent; pass forceBuild to
+// always rebuild (e.g. for baseline captures that must be authoritative).
+export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild?: boolean }): Promise<Server> {
+  const { tool, root, forceBuild = false } = opts;
   const distDir = join(root, 'tools', tool, 'dist');
+
+  if (!existsSync(distDir) || forceBuild) {
+    console.log(`Building tools/${tool}…`);
+    const npmExecPath = process.env['npm_execpath'];
+    const result = npmExecPath
+      ? spawnSync(process.execPath, [npmExecPath, 'run', 'build', `--workspace=tools/${tool}`], {
+          cwd: root,
+          stdio: 'inherit',
+        })
+      : spawnSync('npm', ['run', 'build', `--workspace=tools/${tool}`], {
+          cwd: root,
+          stdio: 'inherit',
+          shell: true,
+        });
+    if (result.status !== 0) {
+      return Promise.reject(new Error(`Build failed for tools/${tool}. Run "npm run build:${tool}" to debug.`));
+    }
+  }
 
   if (!existsSync(distDir)) {
     return Promise.reject(
-      new Error(
-        `No build found at tools/${tool}/dist.\n` +
-          `Run "npm run build:${tool}" first, or omit --static to use the dev server.`,
-      ),
+      new Error(`No build found at tools/${tool}/dist after build. Run "npm run build:${tool}" to debug.`),
     );
   }
 
@@ -611,11 +626,17 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
       if (extraWait > 0) await page.waitForTimeout(extraWait);
 
-      // Wgpu is not presentable on the headless/software adapter, so the browser screenshots a blank
-      // canvas. The functional verifier reads the frame back from the GPU and exposes it as a PNG data
-      // URL (window.__ftRenderImage); use that as the screenshot when present. All other renderers (and
-      // the examples/landing tools, which do not run the verifier) screenshot the page normally.
-      let screenshotBuffer = await page.screenshot();
+      // Screenshot the render output only — not the full viewport — so all renderers produce the same
+      // frame size and the gallery blink comparator has something meaningful to compare.
+      //
+      // - webgpu: SwiftShader can't present to the swapchain, so the canvas is blank in a Playwright
+      //   screenshot. The functional verifier reads the frame back from the GPU and exposes it as a PNG
+      //   data URL (window.__ftRenderImage). Fall back to a full page screenshot if unavailable (e.g.
+      //   examples, which don't run the verifier).
+      // - dom: no canvas; the renderer appends a sized <div> directly to <body>.
+      // - canvas / webgl: a <canvas> is appended directly to <body>.
+      // - fallback: full page screenshot when neither canvas nor div is found (unknown layout).
+      let screenshotBuffer: Buffer;
       if (renderer === 'webgpu') {
         const dataUrl = await page
           .waitForFunction(() => (window as { __ftRenderImage?: string }).__ftRenderImage ?? null, null, {
@@ -623,7 +644,23 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           })
           .then((handle) => handle.jsonValue() as Promise<string>)
           .catch(() => null);
-        if (dataUrl) screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
+        if (dataUrl) {
+          screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
+        } else {
+          screenshotBuffer = await page.screenshot();
+        }
+      } else if (renderer === 'dom') {
+        screenshotBuffer = await page
+          .locator('body > div')
+          .first()
+          .screenshot()
+          .catch(() => page.screenshot());
+      } else {
+        screenshotBuffer = await page
+          .locator('canvas')
+          .first()
+          .screenshot()
+          .catch(() => page.screenshot());
       }
       const hash = createHash('sha256').update(screenshotBuffer).digest('hex');
 

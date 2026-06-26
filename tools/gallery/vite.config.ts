@@ -28,8 +28,9 @@ interface GalleryTest {
 function discoverGallery(): GalleryTest[] {
   if (!existsSync(artifactsDir)) return [];
 
+  const toolFilter = process.env['VITE_GALLERY_TOOL'];
   const toolDirs = readdirSync(artifactsDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !EXCLUDE_TOOLS.has(d.name))
+    .filter((d) => d.isDirectory() && !EXCLUDE_TOOLS.has(d.name) && (!toolFilter || d.name === toolFilter))
     .sort((a, b) => {
       const ai = TOOL_ORDER.indexOf(a.name);
       const bi = TOOL_ORDER.indexOf(b.name);
