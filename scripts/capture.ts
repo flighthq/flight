@@ -6,10 +6,16 @@
 // Options:
 //   --tool=examples|functional|site  Which server to use (default: examples)
 //   --url=http://localhost:5173   Use a server that is already running (skips auto-start)
-//   --static                     Serve the pre-built dist instead of starting the Vite dev server.
-//                                Skips on-demand transforms; requires `npm run build:{tool}` first.
-//   --parallel[=N]               Capture N entries concurrently on the same browser (default N=6).
-//                                Output is one line per renderer rather than grouped by entry.
+//   --dev                        Use the Vite dev server instead of the pre-built dist. Slower;
+//                                suited for live-editing a single test (npm run dev:functional).
+//                                The default is static + parallel: a lightweight Node.js server
+//                                over the pre-built dist, with N concurrent Playwright pages.
+//   --build                      Force a fresh build before serving, even if dist already exists.
+//                                The static server auto-builds when dist is absent; --build makes
+//                                the build unconditional (useful for authoritative baseline runs).
+//   --sequential                 Disable parallel capture and process one (entry × renderer) at a
+//                                time. Output is grouped by entry with a [N/M] header per entry.
+//   --parallel=N                 Override the parallel worker count (default N=6).
 //   --filter=name                Only run entries whose name contains this string
 //   --renderer=webgl,canvas      Comma-separated renderer filter (default: all)
 //   --out=tools/output           Output base directory (default: tools/output)
@@ -75,9 +81,14 @@ const captureFrames =
 const updateBaseline = argv.includes('--update-baseline');
 const failOnChanged = argv.includes('--fail-on-changed');
 const failOnError = argv.includes('--fail-on-error');
-const useStatic = argv.includes('--static');
+// --dev opts into the Vite dev server; static is the default.
+const useDev = argv.includes('--dev');
+// --build forces a rebuild even when dist already exists.
+const forceBuild = argv.includes('--build');
+// --sequential opts out of parallel; parallel is the default.
+const useParallel = !argv.includes('--sequential');
+// --parallel=N overrides the worker count; --parallel alone is accepted for backwards compatibility.
 const parallelArg = argv.find((a) => a === '--parallel' || a.startsWith('--parallel='));
-const useParallel = parallelArg !== undefined;
 const workerCount = parallelArg?.includes('=') ? Math.max(1, parseInt(parallelArg.split('=')[1], 10) || 6) : 6;
 
 const root = process.cwd();
@@ -97,17 +108,19 @@ async function main(): Promise<void> {
 
   if (externalUrl) {
     console.log(`Using server at ${externalUrl}\n`);
-  } else if (useStatic) {
-    console.log(`Serving ${tool} dist…`);
+  } else if (useDev) {
+    console.log(`Starting ${tool} dev server…`);
+  } else if (forceBuild) {
+    console.log(`Building and serving ${tool} dist…`);
   } else {
-    console.log(`Starting ${tool} server…`);
+    console.log(`Serving ${tool} dist (use --build to rebuild, --dev for the Vite server)…`);
   }
 
   const server = externalUrl
     ? await resolveServer({ tool, root, externalUrl })
-    : useStatic
-      ? await resolveStaticServer({ tool, root })
-      : await resolveServer({ tool, root });
+    : useDev
+      ? await resolveServer({ tool, root })
+      : await resolveStaticServer({ tool, root, forceBuild });
 
   if (!externalUrl) console.log(`Ready at ${server.url}\n`);
 
