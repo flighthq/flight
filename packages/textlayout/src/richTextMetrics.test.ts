@@ -1,13 +1,13 @@
 import type { RichTextData, TextLayoutResult } from '@flighthq/types';
 
 import {
-  getRichTextBottomScrollV,
-  getRichTextLineCount,
-  getRichTextMaxScrollH,
-  getRichTextMaxScrollV,
+  computeRichTextBottomScrollV,
+  computeRichTextLineCount,
+  computeRichTextMaxScrollH,
+  computeRichTextMaxScrollV,
+  computeRichTextTextHeight,
+  computeRichTextTextWidth,
   getRichTextScrollYOffset,
-  getRichTextTextHeight,
-  getRichTextTextWidth,
 } from './richTextMetrics';
 
 function createData(data: Partial<RichTextData> = {}): RichTextData {
@@ -53,47 +53,59 @@ function createLayout(layout: Partial<TextLayoutResult> = {}): TextLayoutResult 
   };
 }
 
-describe('getRichTextBottomScrollV', () => {
+describe('computeRichTextBottomScrollV', () => {
   it('returns the last visible 1-based line', () => {
     const data = createData({ height: 34, scrollV: 2 });
     const layout = createLayout({ lineHeights: [10, 10, 10, 10], numLines: 4 });
-    expect(getRichTextBottomScrollV(data, layout)).toBe(4);
+    expect(computeRichTextBottomScrollV(data, layout)).toBe(4);
   });
 
   it('clamps to the total line count', () => {
     const data = createData({ height: 80, scrollV: 2 });
     const layout = createLayout({ lineHeights: [10, 10, 10], numLines: 3 });
-    expect(getRichTextBottomScrollV(data, layout)).toBe(3);
+    expect(computeRichTextBottomScrollV(data, layout)).toBe(3);
   });
 });
 
-describe('getRichTextLineCount', () => {
+describe('computeRichTextLineCount', () => {
   it('returns the layout line count', () => {
-    expect(getRichTextLineCount(createLayout({ numLines: 3 }))).toBe(3);
+    expect(computeRichTextLineCount(createLayout({ numLines: 3 }))).toBe(3);
   });
 });
 
-describe('getRichTextMaxScrollH', () => {
+describe('computeRichTextMaxScrollH', () => {
   it('returns horizontal overflow beyond the visible field width', () => {
     const data = createData({ width: 54 });
     const layout = createLayout({ textWidth: 80 });
-    expect(getRichTextMaxScrollH(data, layout)).toBe(30);
+    expect(computeRichTextMaxScrollH(data, layout)).toBe(30);
   });
 
   it('returns zero when text fits horizontally', () => {
-    expect(getRichTextMaxScrollH(createData({ width: 100 }), createLayout({ textWidth: 50 }))).toBe(0);
+    expect(computeRichTextMaxScrollH(createData({ width: 100 }), createLayout({ textWidth: 50 }))).toBe(0);
   });
 });
 
-describe('getRichTextMaxScrollV', () => {
+describe('computeRichTextMaxScrollV', () => {
   it('returns the first scrollV where the final line is visible', () => {
     const data = createData({ height: 34 });
     const layout = createLayout({ lineHeights: [10, 10, 10, 10], numLines: 4 });
-    expect(getRichTextMaxScrollV(data, layout)).toBe(2);
+    expect(computeRichTextMaxScrollV(data, layout)).toBe(2);
   });
 
   it('returns one for a single line', () => {
-    expect(getRichTextMaxScrollV(createData(), createLayout({ numLines: 1 }))).toBe(1);
+    expect(computeRichTextMaxScrollV(createData(), createLayout({ numLines: 1 }))).toBe(1);
+  });
+});
+
+describe('computeRichTextTextHeight', () => {
+  it('returns the ceil text height', () => {
+    expect(computeRichTextTextHeight(createLayout({ textHeight: 12.2 }))).toBe(13);
+  });
+});
+
+describe('computeRichTextTextWidth', () => {
+  it('returns the ceil text width', () => {
+    expect(computeRichTextTextWidth(createLayout({ textWidth: 21.1 }))).toBe(22);
   });
 });
 
@@ -108,17 +120,5 @@ describe('getRichTextScrollYOffset', () => {
 
   it('clamps to the available line count', () => {
     expect(getRichTextScrollYOffset([10, 12], 5)).toBe(22);
-  });
-});
-
-describe('getRichTextTextHeight', () => {
-  it('returns the ceil text height', () => {
-    expect(getRichTextTextHeight(createLayout({ textHeight: 12.2 }))).toBe(13);
-  });
-});
-
-describe('getRichTextTextWidth', () => {
-  it('returns the ceil text width', () => {
-    expect(getRichTextTextWidth(createLayout({ textWidth: 21.1 }))).toBe(22);
   });
 });

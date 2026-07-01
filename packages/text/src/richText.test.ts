@@ -18,8 +18,8 @@ import {
   dispatchRichTextLinkAtPoint,
   dispatchRichTextWheel,
   enableTextFieldSignals,
-  getRichTextBottomScrollVValue,
-  getRichTextCharIndexAtPointValue,
+  getRichTextBottomScrollV,
+  getRichTextCharIndexAtPoint,
   getRichTextDefaultTextFormat,
   getRichTextFormatRangeAt,
   getRichTextFormatRangeByIndex,
@@ -27,15 +27,15 @@ import {
   getRichTextFormatRangesIn,
   getRichTextHtml,
   getRichTextLength,
-  getRichTextLineCountValue,
-  getRichTextLineMetricsValue,
-  getRichTextMaxScrollHValue,
-  getRichTextMaxScrollVValue,
+  getRichTextLineCount,
+  getRichTextLineMetrics,
+  getRichTextMaxScrollH,
+  getRichTextMaxScrollV,
   getRichTextPasswordCharacter,
   getRichTextRuntime,
   getRichTextString,
-  getRichTextTextHeightValue,
-  getRichTextTextWidthValue,
+  getRichTextTextHeight,
+  getRichTextTextWidth,
   getTextFieldSignals,
   insertRichTextString,
   removeRichTextFormatRangesIn,
@@ -359,7 +359,7 @@ describe('enableTextFieldSignals', () => {
   });
 });
 
-describe('getRichTextBottomScrollVValue', () => {
+describe('getRichTextBottomScrollV', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -367,18 +367,18 @@ describe('getRichTextBottomScrollVValue', () => {
   it('returns 1 when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextBottomScrollVValue(richText)).toBe(1);
+    expect(getRichTextBottomScrollV(richText)).toBe(1);
   });
 
   it('returns a value >= 1 when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
     const richText = createRichText({ data: { height: 20 } });
     setRichTextString(richText, 'line1\nline2\nline3');
-    expect(getRichTextBottomScrollVValue(richText)).toBeGreaterThanOrEqual(1);
+    expect(getRichTextBottomScrollV(richText)).toBeGreaterThanOrEqual(1);
   });
 });
 
-describe('getRichTextCharIndexAtPointValue', () => {
+describe('getRichTextCharIndexAtPoint', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -386,7 +386,7 @@ describe('getRichTextCharIndexAtPointValue', () => {
   it('returns -1 when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextCharIndexAtPointValue(richText, 5, 5)).toBe(-1);
+    expect(getRichTextCharIndexAtPoint(richText, 5, 5)).toBe(-1);
   });
 
   it('returns a valid index when layout is available and point is past last line', () => {
@@ -395,7 +395,7 @@ describe('getRichTextCharIndexAtPointValue', () => {
     setRichTextString(richText, 'hello');
     // Use a y well beyond the text height to hit the end-of-field code path (avoids a known
     // textlayout bug in the mid-line hit-test branch that references `text` instead of `_text`).
-    const index = getRichTextCharIndexAtPointValue(richText, 0, 9999);
+    const index = getRichTextCharIndexAtPoint(richText, 0, 9999);
     expect(index).toBeGreaterThanOrEqual(0);
   });
 });
@@ -529,7 +529,7 @@ describe('getRichTextLength', () => {
   });
 });
 
-describe('getRichTextLineCountValue', () => {
+describe('getRichTextLineCount', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -537,18 +537,18 @@ describe('getRichTextLineCountValue', () => {
   it('returns 0 when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextLineCountValue(richText)).toBe(0);
+    expect(getRichTextLineCount(richText)).toBe(0);
   });
 
   it('returns >= 1 when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
     const richText = createRichText({ data: { width: 200 } });
     setRichTextString(richText, 'hello');
-    expect(getRichTextLineCountValue(richText)).toBeGreaterThanOrEqual(1);
+    expect(getRichTextLineCount(richText)).toBeGreaterThanOrEqual(1);
   });
 });
 
-describe('getRichTextLineMetricsValue', () => {
+describe('getRichTextLineMetrics', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -556,20 +556,20 @@ describe('getRichTextLineMetricsValue', () => {
   it('returns null when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextLineMetricsValue(richText, 0)).toBeNull();
+    expect(getRichTextLineMetrics(richText, 0)).toBeNull();
   });
 
   it('returns metrics for line 0 when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
     const richText = createRichText({ data: { width: 200 } });
     setRichTextString(richText, 'hello');
-    const metrics = getRichTextLineMetricsValue(richText, 0);
+    const metrics = getRichTextLineMetrics(richText, 0);
     expect(metrics).not.toBeNull();
     expect(metrics!.width).toBeGreaterThan(0);
   });
 });
 
-describe('getRichTextMaxScrollHValue', () => {
+describe('getRichTextMaxScrollH', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -577,11 +577,11 @@ describe('getRichTextMaxScrollHValue', () => {
   it('returns 0 when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextMaxScrollHValue(richText)).toBe(0);
+    expect(getRichTextMaxScrollH(richText)).toBe(0);
   });
 });
 
-describe('getRichTextMaxScrollVValue', () => {
+describe('getRichTextMaxScrollV', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -589,7 +589,7 @@ describe('getRichTextMaxScrollVValue', () => {
   it('returns 1 when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextMaxScrollVValue(richText)).toBe(1);
+    expect(getRichTextMaxScrollV(richText)).toBe(1);
   });
 });
 
@@ -658,7 +658,7 @@ describe('getRichTextString', () => {
   });
 });
 
-describe('getRichTextTextHeightValue', () => {
+describe('getRichTextTextHeight', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -666,18 +666,18 @@ describe('getRichTextTextHeightValue', () => {
   it('returns 0 when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextTextHeightValue(richText)).toBe(0);
+    expect(getRichTextTextHeight(richText)).toBe(0);
   });
 
   it('returns a positive value when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
     const richText = createRichText({ data: { width: 200 } });
     setRichTextString(richText, 'hello');
-    expect(getRichTextTextHeightValue(richText)).toBeGreaterThan(0);
+    expect(getRichTextTextHeight(richText)).toBeGreaterThan(0);
   });
 });
 
-describe('getRichTextTextWidthValue', () => {
+describe('getRichTextTextWidth', () => {
   afterEach(() => {
     setTextLayoutMeasureProvider(null);
   });
@@ -685,14 +685,14 @@ describe('getRichTextTextWidthValue', () => {
   it('returns 0 when no measure provider is registered', () => {
     const richText = createRichText();
     setRichTextString(richText, 'hello');
-    expect(getRichTextTextWidthValue(richText)).toBe(0);
+    expect(getRichTextTextWidth(richText)).toBe(0);
   });
 
   it('returns a positive value when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
     const richText = createRichText({ data: { width: 200 } });
     setRichTextString(richText, 'hello');
-    expect(getRichTextTextWidthValue(richText)).toBeGreaterThan(0);
+    expect(getRichTextTextWidth(richText)).toBeGreaterThan(0);
   });
 });
 

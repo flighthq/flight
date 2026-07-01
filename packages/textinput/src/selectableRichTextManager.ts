@@ -1,5 +1,5 @@
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text';
-import { getRichTextCharIndexAtPoint } from '@flighthq/textlayout';
+import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout';
 import type { InputKeyboardData, RichText, RichTextRuntime, SelectableRichTextManager } from '@flighthq/types';
 import { KeyCode } from '@flighthq/types';
 
@@ -59,7 +59,7 @@ export function dispatchSelectableRichTextPointerDown(
   }
   const content = runtime.richTextContent;
   const text = content?.text ?? target.data.text;
-  const index = getRichTextCharIndexAtPoint(text, layout, x, y);
+  const index = computeRichTextCharIndexAtPoint(text, layout, x, y);
   if (extend) {
     runtime.selectionEndIndex = index;
   } else {
@@ -76,7 +76,7 @@ export function dispatchSelectableRichTextPointerMove(manager: SelectableRichTex
   if (layout === null) return;
   const content = runtime.richTextContent;
   const text = content?.text ?? target.data.text;
-  runtime.selectionEndIndex = getRichTextCharIndexAtPoint(text, layout, x, y);
+  runtime.selectionEndIndex = computeRichTextCharIndexAtPoint(text, layout, x, y);
 }
 
 export function dispatchSelectableRichTextWheel(manager: SelectableRichTextManager, deltaLines: number): void {
