@@ -179,8 +179,8 @@ export function inverseMatrix(out: MatrixLike, source: Readonly<MatrixLike>): vo
     out.b = outB;
     out.c = outC;
     out.d = outD;
-    out.tx = -(outA * tx + outB * ty);
-    out.ty = -(outC * tx + outD * ty);
+    out.tx = -(outA * tx + outC * ty);
+    out.ty = -(outB * tx + outD * ty);
   }
 }
 
