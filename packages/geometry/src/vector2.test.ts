@@ -23,6 +23,7 @@ import {
   offsetVector2,
   reflectVector2,
   scaleVector2,
+  scaleVector2ToLength,
   setVector2,
   setVector2FromFloat32Array,
   setVector2FromPolar,
@@ -538,77 +539,58 @@ describe('negateVector2', () => {
 });
 
 describe('normalizeVector2', () => {
-  it('scales a vector to the specified length', () => {
+  it('produces a unit vector', () => {
     const pt = createVector2(3, 4);
     const result = createVector2();
-    normalizeVector2(result, pt, 10);
+    normalizeVector2(result, pt);
     expect(pt).not.toBe(result);
-    expect(result.x).toBeCloseTo(6);
-    expect(result.y).toBeCloseTo(8);
-    expect(getVector2Length(result)).toBeCloseTo(10);
+    expect(result.x).toBeCloseTo(0.6);
+    expect(result.y).toBeCloseTo(0.8);
+    expect(getVector2Length(result)).toBeCloseTo(1);
+  });
+
+  it('returns the original length', () => {
+    const pt = createVector2(3, 4);
+    const result = createVector2();
+    const length = normalizeVector2(result, pt);
+    expect(length).toBeCloseTo(5);
   });
 
   it('returns zero for a zero-length vector', () => {
     const pt = createVector2(0, 0);
     const result = createVector2();
-    normalizeVector2(result, pt, 5);
+    const length = normalizeVector2(result, pt);
     expect(result).not.toBe(pt);
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
-    expect(getVector2Length(result)).toBe(0);
-  });
-
-  it('scales vector to zero length', () => {
-    const pt = createVector2(3, 4);
-    const result = createVector2();
-    normalizeVector2(result, pt, 0);
-    expect(result.x).toBe(0);
-    expect(result.y).toBe(0);
-    expect(getVector2Length(result)).toBe(0);
-  });
-
-  it('scales vector to length 1 (unit vector)', () => {
-    const pt = createVector2(0, 5);
-    const result = createVector2();
-    normalizeVector2(result, pt, 1);
-    expect(result.x).toBeCloseTo(0);
-    expect(result.y).toBeCloseTo(1);
-    expect(getVector2Length(result)).toBeCloseTo(1);
-  });
-
-  it('scales vector to negative length', () => {
-    const pt = createVector2(3, 4);
-    const result = createVector2();
-    normalizeVector2(result, pt, -10);
-    expect(result.x).toBeCloseTo(-6);
-    expect(result.y).toBeCloseTo(-8);
-    expect(getVector2Length(result)).toBeCloseTo(10); // length is magnitude
+    expect(length).toBe(0);
   });
 
   it('handles very small vectors correctly', () => {
     const pt = createVector2(0.0001, 0.0001);
     const result = createVector2();
-    normalizeVector2(result, pt, 1);
+    normalizeVector2(result, pt);
     expect(result.x).toBeCloseTo(0.7071, 4);
     expect(result.y).toBeCloseTo(0.7071, 4);
+    expect(getVector2Length(result)).toBeCloseTo(1);
   });
 
   it('supports out === source', () => {
     const pt = createVector2(3, 4);
-    normalizeVector2(pt, pt, 10);
-    expect(pt.x).toBeCloseTo(6);
-    expect(pt.y).toBeCloseTo(8);
-    expect(getVector2Length(pt)).toBeCloseTo(10);
+    const length = normalizeVector2(pt, pt);
+    expect(pt.x).toBeCloseTo(0.6);
+    expect(pt.y).toBeCloseTo(0.8);
+    expect(length).toBeCloseTo(5);
   });
 
   it('allows a vector-like object', () => {
     const pt = { x: 3, y: 4 };
     const result = { x: 0, y: 0 };
-    normalizeVector2(result, pt, 10);
+    normalizeVector2(result, pt);
     expect(pt).not.toBe(result);
-    expect(result.x).toBeCloseTo(6);
-    expect(result.y).toBeCloseTo(8);
-    expect(getVector2Length(result)).toBeCloseTo(10);
+    expect(result.x).toBeCloseTo(0.6);
+    expect(result.y).toBeCloseTo(0.8);
+    expect(getVector2Length(result)).toBeCloseTo(1);
   });
 });
 
@@ -680,6 +662,64 @@ describe('scaleVector2', () => {
     scaleVector2(v, v, 3);
     expect(v.x).toBe(3);
     expect(v.y).toBe(6);
+  });
+});
+
+describe('scaleVector2ToLength', () => {
+  it('scales a vector to the specified length', () => {
+    const pt = createVector2(3, 4);
+    const result = createVector2();
+    scaleVector2ToLength(result, pt, 10);
+    expect(pt).not.toBe(result);
+    expect(result.x).toBeCloseTo(6);
+    expect(result.y).toBeCloseTo(8);
+    expect(getVector2Length(result)).toBeCloseTo(10);
+  });
+
+  it('returns zero for a zero-length vector', () => {
+    const pt = createVector2(0, 0);
+    const result = createVector2();
+    scaleVector2ToLength(result, pt, 5);
+    expect(result).not.toBe(pt);
+    expect(result.x).toBe(0);
+    expect(result.y).toBe(0);
+    expect(getVector2Length(result)).toBe(0);
+  });
+
+  it('scales vector to zero length', () => {
+    const pt = createVector2(3, 4);
+    const result = createVector2();
+    scaleVector2ToLength(result, pt, 0);
+    expect(result.x).toBe(0);
+    expect(result.y).toBe(0);
+    expect(getVector2Length(result)).toBe(0);
+  });
+
+  it('scales vector to negative length', () => {
+    const pt = createVector2(3, 4);
+    const result = createVector2();
+    scaleVector2ToLength(result, pt, -10);
+    expect(result.x).toBeCloseTo(-6);
+    expect(result.y).toBeCloseTo(-8);
+    expect(getVector2Length(result)).toBeCloseTo(10);
+  });
+
+  it('supports out === source', () => {
+    const pt = createVector2(3, 4);
+    scaleVector2ToLength(pt, pt, 10);
+    expect(pt.x).toBeCloseTo(6);
+    expect(pt.y).toBeCloseTo(8);
+    expect(getVector2Length(pt)).toBeCloseTo(10);
+  });
+
+  it('allows a vector-like object', () => {
+    const pt = { x: 3, y: 4 };
+    const result = { x: 0, y: 0 };
+    scaleVector2ToLength(result, pt, 10);
+    expect(pt).not.toBe(result);
+    expect(result.x).toBeCloseTo(6);
+    expect(result.y).toBeCloseTo(8);
+    expect(getVector2Length(result)).toBeCloseTo(10);
   });
 });
 
