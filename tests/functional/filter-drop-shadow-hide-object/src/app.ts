@@ -7,7 +7,7 @@
 // cross-backend parity) and the oracle checks the defining behaviour: a red shadow appears at the offset,
 // and the square's own footprint is no longer white because the object is hidden.
 import { createDropShadowFilter } from '@flighthq/filters';
-import { getShadowFilterOffset } from '@flighthq/filters-css';
+import { getShadowFilterOffset } from '@flighthq/filters-math';
 import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
@@ -47,7 +47,7 @@ const filter = createDropShadowFilter({
   blurY: 4,
   hideObject: true,
 });
-const { dx, dy } = getShadowFilterOffset(filter);
+const { dx, dy } = getShadowFilterOffset(filter, { dx: 0, dy: 0 });
 
 const mask = new Uint8ClampedArray(TILE * TILE * 4);
 const blurBuffer = new Uint8ClampedArray(TILE * TILE * 4);

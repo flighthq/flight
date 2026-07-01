@@ -6,7 +6,7 @@
 // WRITES A TINTED BLURRED ALPHA MASK; the effect is completed here by compositing that mask onto the
 // result at the shadow offset (down-right for angle 45) and then drawing the original source on top.
 import { createDropShadowFilter } from '@flighthq/filters';
-import { getShadowFilterOffset } from '@flighthq/filters-css';
+import { getShadowFilterOffset } from '@flighthq/filters-math';
 import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
@@ -43,7 +43,7 @@ const filter = createDropShadowFilter({
   blurY: 4,
   strength: 1,
 });
-const { dx, dy } = getShadowFilterOffset(filter);
+const { dx, dy } = getShadowFilterOffset(filter, { dx: 0, dy: 0 });
 
 const mask = new Uint8ClampedArray(TILE * TILE * 4);
 const blurBuffer = new Uint8ClampedArray(TILE * TILE * 4);
