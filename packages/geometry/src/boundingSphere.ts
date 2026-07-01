@@ -49,23 +49,6 @@ export function getBoundingSphereContainsPoint(
 }
 
 /**
- * Returns whether two bounding spheres overlap (share any interior or surface point).
- * An empty sphere (negative radius) does not intersect anything.
- */
-export function getBoundingSphereIntersectsBoundingSphere(
-  a: Readonly<BoundingSphereLike>,
-  b: Readonly<BoundingSphereLike>,
-): boolean {
-  if (a.radius < 0 || b.radius < 0) return false;
-  const dx = a.center.x - b.center.x;
-  const dy = a.center.y - b.center.y;
-  const dz = a.center.z - b.center.z;
-  const distSq = dx * dx + dy * dy + dz * dz;
-  const sumR = a.radius + b.radius;
-  return distSq <= sumR * sumR;
-}
-
-/**
  * Writes the point on the surface of a bounding sphere closest to `point`: the point projected
  * onto the sphere along the ray from the center. When `point` lies at the center (no defined
  * direction) the sphere center offset by `radius` along +X is written as a stable fallback. An
@@ -103,6 +86,23 @@ export function getClosestPointOnBoundingSphere(
   out.x = cx + dx * scale;
   out.y = cy + dy * scale;
   out.z = cz + dz * scale;
+}
+
+/**
+ * Returns whether two bounding spheres overlap (share any interior or surface point).
+ * An empty sphere (negative radius) does not intersect anything.
+ */
+export function isBoundingSphereIntersectingBoundingSphere(
+  a: Readonly<BoundingSphereLike>,
+  b: Readonly<BoundingSphereLike>,
+): boolean {
+  if (a.radius < 0 || b.radius < 0) return false;
+  const dx = a.center.x - b.center.x;
+  const dy = a.center.y - b.center.y;
+  const dz = a.center.z - b.center.z;
+  const distSq = dx * dx + dy * dy + dz * dz;
+  const sumR = a.radius + b.radius;
+  return distSq <= sumR * sumR;
 }
 
 /**

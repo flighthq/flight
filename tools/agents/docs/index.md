@@ -189,7 +189,7 @@ See [testing conventions](conventions/testing.md) for the full rules, WebGL spec
 
 ## Package Map
 
-Core: `@flighthq/types` (header layer — all shared types), `@flighthq/entity` (entity/runtime primitives), `@flighthq/geometry` (rectangles, vectors, matrices, pools), `@flighthq/math` (scalar utilities — interpolation, angles, random, hashing, statistics; pure free functions), `@flighthq/node` (graph hierarchy, transforms, bounds, appearance), `@flighthq/signals` (typed signals and slots with priority and cancellation).
+Core: `@flighthq/types` (header layer — all shared types), `@flighthq/entity` (entity/runtime primitives), `@flighthq/geometry` (rectangles, vectors, matrices, quaternion, bounding volumes (AABB, OBB, sphere, plane, frustum, capsule), Ray3D intersection, closest-point, pools), `@flighthq/math` (scalar utilities — interpolation, angles, random, hashing, statistics; pure free functions), `@flighthq/node` (graph hierarchy, transforms, bounds, appearance), `@flighthq/signals` (typed signals and slots with priority and cancellation).
 
 Scene graph: `@flighthq/displayobject` (bitmaps, shapes, containers, masks, stages, videos), `@flighthq/text` (`TextLabel`, `RichText`, `NativeText`), `@flighthq/sprite` (sprite/tilemap/quad-batch for atlas rendering), `@flighthq/scene` (3D world graph; early stage), `@flighthq/clip` (geometric clip regions as plain data — constructors, composition, queries, transform, pool bracket), `@flighthq/interaction` (hit testing, pointer dispatch, overlap detection).
 
