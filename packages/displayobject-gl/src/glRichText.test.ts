@@ -11,7 +11,7 @@ import {
   drawGlRichTextWithOverlay,
   registerGlTextInputOverlay,
 } from './glRichText';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeRichTextNode(): RenderProxy2D {
   const richText = createRichText();
@@ -26,7 +26,7 @@ function makeRichTextNode(): RenderProxy2D {
 
 describe('createGlRichTextData', () => {
   it('allocates per-node data with no texture yet', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const data = createGlRichTextData(state, createRichText()) as unknown as { texture: WebGLTexture | null };
     expect(data.texture).toBeNull();
   });
@@ -44,7 +44,7 @@ describe('defaultGlRichTextRenderer', () => {
 
 describe('destroyGlRichTextData', () => {
   it('deletes the GPU texture the node owns', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const texture = gl.createTexture();
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
     destroyGlRichTextData(state, { texture } as unknown as RendererData);
@@ -52,7 +52,7 @@ describe('destroyGlRichTextData', () => {
   });
 
   it('is a no-op when no texture was allocated', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
     destroyGlRichTextData(state, { texture: null } as unknown as RendererData);
     expect(deleteSpy).not.toHaveBeenCalled();
@@ -61,7 +61,7 @@ describe('destroyGlRichTextData', () => {
 
 describe('drawGlRichText', () => {
   it('binds the active bitmap shader when drawing rich text', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
 
@@ -72,13 +72,13 @@ describe('drawGlRichText', () => {
   });
 
   it('returns early without drawing when text and chrome are empty', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlRichText(state, makeRichTextNode());
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('draws when text is non-empty', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
     drawGlRichText(state, renderProxy);
@@ -86,7 +86,7 @@ describe('drawGlRichText', () => {
   });
 
   it('draws resolved htmlText spans', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
     drawGlRichText(state, renderProxy);
@@ -94,7 +94,7 @@ describe('drawGlRichText', () => {
   });
 
   it('draws field chrome even when text is empty', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.background = true;
     drawGlRichText(state, renderProxy);
@@ -104,7 +104,7 @@ describe('drawGlRichText', () => {
 
 describe('drawGlRichTextWithOverlay', () => {
   it('runs an optional canvas overlay after layout', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
     const overlay = vi.fn();
@@ -119,7 +119,7 @@ describe('registerGlTextInputOverlay', () => {
   it('invokes the registered overlay only for a RichText with an input slot', () => {
     const overlay = vi.fn();
     registerGlTextInputOverlay(overlay);
-    const { state } = makeGlState();
+    const { state } = createGlState();
 
     const plain = makeRichTextNode();
     (plain.source as RichText).data.text = 'x';

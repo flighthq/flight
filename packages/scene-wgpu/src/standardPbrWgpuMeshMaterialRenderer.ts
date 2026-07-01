@@ -17,7 +17,7 @@ import type {
 import {
   beginWgpuMeshDraw,
   drawWgpuMeshSubset,
-  hasWgpuMaterialTexture,
+  isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
@@ -47,11 +47,11 @@ export function buildWgpuPbrStandardDefineKey(
     anisotropyEnabled: false,
     clearcoatEnabled: false,
     doubleSided: surface !== null && surface.doubleSided,
-    hasBaseColorMap: standard !== null && hasWgpuMaterialTexture(standard.baseColorMap),
-    hasEmissiveMap: standard !== null && hasWgpuMaterialTexture(standard.emissiveMap),
-    hasMetallicRoughnessMap: standard !== null && hasWgpuMaterialTexture(standard.metallicRoughnessMap),
-    hasNormalMap: standard !== null && hasWgpuMaterialTexture(standard.normalMap),
-    hasOcclusionMap: standard !== null && hasWgpuMaterialTexture(standard.occlusionMap),
+    hasBaseColorMap: standard !== null && isWgpuTextureReady(standard.baseColorMap),
+    hasEmissiveMap: standard !== null && isWgpuTextureReady(standard.emissiveMap),
+    hasMetallicRoughnessMap: standard !== null && isWgpuTextureReady(standard.metallicRoughnessMap),
+    hasNormalMap: standard !== null && isWgpuTextureReady(standard.normalMap),
+    hasOcclusionMap: standard !== null && isWgpuTextureReady(standard.occlusionMap),
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
@@ -121,9 +121,9 @@ export function getWgpuPbrMaterialScratch(): Float32Array {
   return _materialScratch;
 }
 
-// Uploads the MaterialBlock scratch (192 bytes) into a material binding's uniform buffer. Call after
+// Writes the MaterialBlock scratch (192 bytes) into a material binding's uniform buffer. Call after
 // writeWgpuPbrStandardBlock + any extension packer has filled the scratch.
-export function uploadWgpuPbrMaterialUniform(state: WgpuRenderState, binding: Readonly<WgpuMaterialBinding>): void {
+export function writeWgpuPbrMaterialUniform(state: WgpuRenderState, binding: Readonly<WgpuMaterialBinding>): void {
   state.device.queue.writeBuffer(binding.buffer, 0, _materialScratch.buffer, 0, WGPU_PBR_MATERIAL_UNIFORM_FLOATS * 4);
 }
 
@@ -217,7 +217,7 @@ export const standardPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, pbr ?? FALLBACK_MATERIAL, pbr);
     writeWgpuPbrStandardBlock(_materialScratch, pbr, pbr !== null ? pbr.alphaCutoff : 0.5);
     _materialScratch.fill(0, 16);
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
 
     beginWgpuMeshDraw(state, pipeline);
     pass.setBindGroup(2, binding.bindGroup);

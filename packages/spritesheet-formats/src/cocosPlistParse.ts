@@ -1,7 +1,7 @@
 import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet';
 import { createSpritesheetData, createSpritesheetFrameData } from '@flighthq/spritesheet';
-import type { XmlElement } from '@flighthq/textureatlas-formats';
-import { parseXmlDocument } from '@flighthq/textureatlas-formats';
+import type { XmlElement } from '@flighthq/xml';
+import { parseXmlDocument } from '@flighthq/xml';
 
 import type { CocosPlistDocument, CocosPlistFrame, CocosPlistMetadata } from './cocosPlistSchema';
 

@@ -12,45 +12,45 @@ import {
 } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 describe('applyGlBlendMode', () => {
   it('does not call blendFunc when blend mode has not changed', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     getGlRenderStateRuntime(state).currentBlendMode = BlendMode.Normal;
     applyGlBlendMode(state, BlendMode.Normal);
     expect(gl.blendFunc).not.toHaveBeenCalled();
   });
 
   it('sets normal blend (ONE, ONE_MINUS_SRC_ALPHA) for BlendMode.Normal', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     applyGlBlendMode(state, BlendMode.Normal);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
 
   it('sets additive blend (ONE, ONE) for BlendMode.Add', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     applyGlBlendMode(state, BlendMode.Add);
     const g = gl as unknown as { ONE: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
   });
 
   it('falls back to normal blend for a mode with no fixed-function equivalent', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     applyGlBlendMode(state, BlendMode.Multiply);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
 
   it('updates currentBlendMode after the change', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     applyGlBlendMode(state, BlendMode.Add);
     expect(getGlRenderStateRuntime(state).currentBlendMode).toBe(BlendMode.Add);
   });
 
   it('calls blendFunc again when mode switches', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     applyGlBlendMode(state, BlendMode.Normal);
     applyGlBlendMode(state, BlendMode.Add);
     expect(gl.blendFunc).toHaveBeenCalledTimes(2);
@@ -59,21 +59,21 @@ describe('applyGlBlendMode', () => {
 
 describe('bindGlTexture', () => {
   it('creates a new texture for an uncached image source', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const img = document.createElement('img');
     bindGlTexture(state, img);
     expect(gl.createTexture).toHaveBeenCalled();
   });
 
   it('uploads texture data on first bind', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const img = document.createElement('img');
     bindGlTexture(state, img);
     expect(gl.texImage2D).toHaveBeenCalled();
   });
 
   it('returns the same texture object on subsequent calls with the same source', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const img = document.createElement('img');
     const t1 = bindGlTexture(state, img);
     const t2 = bindGlTexture(state, img);
@@ -81,7 +81,7 @@ describe('bindGlTexture', () => {
   });
 
   it('does not call texImage2D again for a cached texture', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const img = document.createElement('img');
     bindGlTexture(state, img);
     const uploadCount = (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length;
@@ -93,7 +93,7 @@ describe('bindGlTexture', () => {
     // Canvas pixels reach texImage2D as straight alpha; premultiplying on upload keeps canvas-backed
     // shapes/text consistent with the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend. Without this a
     // semi-transparent shape blows out to full opacity.
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const canvas = document.createElement('canvas');
     bindGlTexture(state, canvas);
     expect(gl.pixelStorei).toHaveBeenCalledWith(
@@ -103,7 +103,7 @@ describe('bindGlTexture', () => {
   });
 
   it('sets premultiply to true for non-canvas image sources', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const img = document.createElement('img');
     bindGlTexture(state, img);
     expect(gl.pixelStorei).toHaveBeenCalledWith(
@@ -113,7 +113,7 @@ describe('bindGlTexture', () => {
   });
 
   it('rebinds and updates currentTexture when switching to a cached texture', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const img = document.createElement('img');
     const texture = bindGlTexture(state, img);
     const runtime = getGlRenderStateRuntime(state);
@@ -126,19 +126,19 @@ describe('bindGlTexture', () => {
 
 describe('createGlTexture', () => {
   it('creates and returns a WebGLTexture', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const texture = createGlTexture(state);
     expect(texture).toBeDefined();
   });
 
   it('binds the new texture', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const texture = createGlTexture(state);
     expect(gl.bindTexture).toHaveBeenCalledWith((gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D, texture);
   });
 
   it('sets CLAMP_TO_EDGE for both wrap modes', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     createGlTexture(state);
     const g = gl as unknown as {
       TEXTURE_2D: number;
@@ -151,7 +151,7 @@ describe('createGlTexture', () => {
   });
 
   it('uses LINEAR filter when allowSmoothing is true', () => {
-    const { state, gl } = makeGlState({ allowSmoothing: true });
+    const { state, gl } = createGlState({ allowSmoothing: true });
     createGlTexture(state);
     const g = gl as unknown as {
       TEXTURE_2D: number;
@@ -164,7 +164,7 @@ describe('createGlTexture', () => {
   });
 
   it('uses NEAREST filter when allowSmoothing is false', () => {
-    const { state, gl } = makeGlState({ allowSmoothing: false });
+    const { state, gl } = createGlState({ allowSmoothing: false });
     createGlTexture(state);
     const g = gl as unknown as {
       TEXTURE_2D: number;
@@ -177,7 +177,7 @@ describe('createGlTexture', () => {
   });
 
   it('stores the new texture as currentTexture on state', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const texture = createGlTexture(state);
     expect(getGlRenderStateRuntime(state).currentTexture).toBe(texture);
   });
@@ -185,7 +185,7 @@ describe('createGlTexture', () => {
 
 describe('drawGlQuad', () => {
   it('writes vertex positions and UVs into quadVertexData', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     drawGlQuad(state, 0, 0, 100, 50, 0, 0, 1, 1);
     const v = getGlRenderStateRuntime(state).quadVertexData;
     // Bottom-left
@@ -211,7 +211,7 @@ describe('drawGlQuad', () => {
   });
 
   it('calls bufferSubData to upload vertex data', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlQuad(state, 10, 20, 110, 70, 0.1, 0.2, 0.9, 0.8);
     expect(gl.bufferSubData).toHaveBeenCalledWith(
       (gl as unknown as { ARRAY_BUFFER: number }).ARRAY_BUFFER,
@@ -221,7 +221,7 @@ describe('drawGlQuad', () => {
   });
 
   it('calls drawElements for 6 indices forming 2 triangles', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlQuad(state, 0, 0, 100, 50, 0, 0, 1, 1);
     const g = gl as unknown as { TRIANGLES: number; UNSIGNED_SHORT: number };
     expect(gl.drawElements).toHaveBeenCalledWith(g.TRIANGLES, 6, g.UNSIGNED_SHORT, 0);
@@ -230,14 +230,14 @@ describe('drawGlQuad', () => {
 
 describe('enableGlBlendModeSupport', () => {
   it('wires applyBlendMode onto the state', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     expect(state.applyBlendMode).toBeNull();
     enableGlBlendModeSupport(state);
     expect(state.applyBlendMode).not.toBeNull();
   });
 
   it('causes blend modes to be applied via gl.blendFunc', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     enableGlBlendModeSupport(state);
     state.applyBlendMode!(state, BlendMode.Add);
     expect(gl.blendFunc).toHaveBeenCalled();
@@ -246,7 +246,7 @@ describe('enableGlBlendModeSupport', () => {
 
 describe('setGlQuadMatrixFromOffset', () => {
   it('bakes the offset into the translation before setting the matrix', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     // Identity transform + offset (dx=10, dy=20): effective tx = 0 + 1*10 + 0*20 = 10
     const runtime = getGlRenderStateRuntime(state);
     setGlQuadMatrixFromOffset(state, 1, 0, 0, 1, 0, 0, 10, 20);
@@ -258,7 +258,7 @@ describe('setGlQuadMatrixFromOffset', () => {
   });
 
   it('applies the offset through the transform matrix components', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     // Scale-2 transform with offset (dx=5, dy=0): effective tx = 0 + 2*5 + 0*0 = 10
     setGlQuadMatrixFromOffset(state, 2, 0, 0, 2, 0, 0, 5, 0);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
@@ -268,7 +268,7 @@ describe('setGlQuadMatrixFromOffset', () => {
 
 describe('updateGlTexture', () => {
   it('binds the texture when it is not the current one', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
     const canvas = document.createElement('canvas');
     getGlRenderStateRuntime(state).currentTexture = null;
@@ -277,7 +277,7 @@ describe('updateGlTexture', () => {
   });
 
   it('updates currentTexture after binding', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const texture = {} as WebGLTexture;
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentTexture = null;
@@ -288,7 +288,7 @@ describe('updateGlTexture', () => {
   });
 
   it('skips bindTexture when texture is already current', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
     getGlRenderStateRuntime(state).currentTexture = texture;
     updateGlTexture(state, texture, document.createElement('canvas'));
@@ -296,7 +296,7 @@ describe('updateGlTexture', () => {
   });
 
   it('always calls texImage2D to upload canvas data', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
     getGlRenderStateRuntime(state).currentTexture = texture;
     updateGlTexture(state, texture, document.createElement('canvas'));
@@ -304,7 +304,7 @@ describe('updateGlTexture', () => {
   });
 
   it('sets premultiply alpha before uploading', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
     getGlRenderStateRuntime(state).currentTexture = texture;
     updateGlTexture(state, texture, document.createElement('canvas'));
@@ -317,7 +317,7 @@ describe('updateGlTexture', () => {
 
 describe('useGlProgram', () => {
   it('calls useProgram when no program is active', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentProgram = null;
     useGlProgram(state);
@@ -325,7 +325,7 @@ describe('useGlProgram', () => {
   });
 
   it('does not call useProgram when program is already active', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentProgram = runtime.shaderLoc.program;
     useGlProgram(state);
@@ -333,7 +333,7 @@ describe('useGlProgram', () => {
   });
 
   it('stores the program as currentProgram after activation', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentProgram = null;
     useGlProgram(state);
@@ -341,7 +341,7 @@ describe('useGlProgram', () => {
   });
 
   it('uses the registered bitmap shader program and locations', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const shader = {
       bind: vi.fn(),

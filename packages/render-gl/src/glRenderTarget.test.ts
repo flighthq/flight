@@ -12,10 +12,10 @@ import {
   resizeGlRenderTarget,
   resolveGlRenderTarget,
 } from './glRenderTarget';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeState() {
-  const { state: _state, gl: _gl } = makeGlState();
+  const { state: _state, gl: _gl } = createGlState();
 
   const mockFramebuffer = {} as WebGLFramebuffer;
   const mockTexture = {} as WebGLTexture;

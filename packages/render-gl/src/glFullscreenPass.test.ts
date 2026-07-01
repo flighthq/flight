@@ -3,7 +3,7 @@ import { BlendMode } from '@flighthq/types';
 
 import { clearGlRenderTarget, compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { getGlRenderStateRuntime } from './glRenderState';
-import { makeGL, makeGlState } from './glTestHelper';
+import { createGlState, makeGL } from './glTestHelper';
 
 const FRAG_SRC = `#version 300 es
 precision mediump float;
@@ -32,7 +32,7 @@ function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlR
 
 describe('clearGlRenderTarget', () => {
   it('binds the target framebuffer and clears it', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const fb = {} as WebGLFramebuffer;
     const target = makeTarget(fb);
     const bindSpy = vi.spyOn(gl, 'bindFramebuffer');
@@ -45,7 +45,7 @@ describe('clearGlRenderTarget', () => {
   });
 
   it('sets the viewport and renderTargetViewport to the target size', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const target = makeTarget({} as WebGLFramebuffer, 48, 24);
     const viewportSpy = vi.spyOn(gl, 'viewport');
 
@@ -56,7 +56,7 @@ describe('clearGlRenderTarget', () => {
   });
 
   it('clears to fully transparent', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const clearColorSpy = vi.spyOn(gl, 'clearColor');
 
     clearGlRenderTarget(state, makeTarget({} as WebGLFramebuffer));
@@ -65,7 +65,7 @@ describe('clearGlRenderTarget', () => {
   });
 
   it('invalidates cached texture and blend-mode bindings', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentTexture = {} as WebGLTexture;
     runtime.currentBlendMode = BlendMode.Add;
@@ -77,7 +77,7 @@ describe('clearGlRenderTarget', () => {
   });
 
   it('skips rebinding when the target framebuffer is already current', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const fb = {} as WebGLFramebuffer;
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentFramebuffer = fb;
@@ -119,7 +119,7 @@ describe('compileGlFullscreenProgram', () => {
 
 describe('drawGlFullscreenPass', () => {
   it('binds the destination framebuffer and sets its viewport', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
     const dest = makeTarget({} as WebGLFramebuffer, 40, 20);
     const bindSpy = vi.spyOn(gl, 'bindFramebuffer');
@@ -133,7 +133,7 @@ describe('drawGlFullscreenPass', () => {
   });
 
   it('targets the canvas and clears renderTargetViewport when dest is null', () => {
-    const { state, gl, canvas } = makeGlState();
+    const { state, gl, canvas } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
     const viewportSpy = vi.spyOn(gl, 'viewport');
 
@@ -144,7 +144,7 @@ describe('drawGlFullscreenPass', () => {
   });
 
   it('binds each input texture to its sampler unit', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
     const inputs = [{} as WebGLTexture, {} as WebGLTexture];
     const bindTextureSpy = vi.spyOn(gl, 'bindTexture');
@@ -159,7 +159,7 @@ describe('drawGlFullscreenPass', () => {
   });
 
   it('invokes the setUniforms callback before drawing', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
     const drawSpy = vi.spyOn(gl, 'drawElements');
     const setUniforms = vi.fn(() => {
@@ -173,7 +173,7 @@ describe('drawGlFullscreenPass', () => {
   });
 
   it('sets premultiplied-alpha blending and invalidates the cached blend mode', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
     const blendSpy = vi.spyOn(gl, 'blendFunc');
 

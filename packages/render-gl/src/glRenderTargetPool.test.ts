@@ -4,11 +4,11 @@ import {
   destroyGlRenderTargetPool,
   releaseGlRenderTarget,
 } from './glRenderTargetPool';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 describe('acquireGlRenderTarget', () => {
   it('allocates a new target when the pool is empty', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const pool = createGlRenderTargetPool();
     const target = acquireGlRenderTarget(state, pool, { width: 64, height: 48 });
     expect(target.width).toBe(64);
@@ -17,7 +17,7 @@ describe('acquireGlRenderTarget', () => {
   });
 
   it('reuses a matching released target instead of allocating', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const pool = createGlRenderTargetPool();
     const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48 });
     releaseGlRenderTarget(pool, first);
@@ -28,7 +28,7 @@ describe('acquireGlRenderTarget', () => {
   });
 
   it('allocates a new target when the free target has different dimensions', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const pool = createGlRenderTargetPool();
     const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48 });
     releaseGlRenderTarget(pool, first);
@@ -40,7 +40,7 @@ describe('acquireGlRenderTarget', () => {
   });
 
   it('matches the ceiled, clamped descriptor dimensions', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const pool = createGlRenderTargetPool();
     const first = acquireGlRenderTarget(state, pool, { width: 10.2, height: 0 });
     releaseGlRenderTarget(pool, first);
@@ -60,7 +60,7 @@ describe('createGlRenderTargetPool', () => {
 
 describe('destroyGlRenderTargetPool', () => {
   it('destroys every parked target and empties the free list', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const pool = createGlRenderTargetPool();
     const a = acquireGlRenderTarget(state, pool, { width: 32, height: 32 });
     const b = acquireGlRenderTarget(state, pool, { width: 16, height: 16 });
@@ -76,7 +76,7 @@ describe('destroyGlRenderTargetPool', () => {
   });
 
   it('is a no-op on an empty pool', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const pool = createGlRenderTargetPool();
     expect(() => destroyGlRenderTargetPool(state, pool)).not.toThrow();
   });
@@ -84,7 +84,7 @@ describe('destroyGlRenderTargetPool', () => {
 
 describe('releaseGlRenderTarget', () => {
   it('returns the target to the free list without destroying it', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const pool = createGlRenderTargetPool();
     const target = acquireGlRenderTarget(state, pool, { width: 64, height: 64 });
 

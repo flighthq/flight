@@ -5,7 +5,7 @@ import { createGlRenderTarget } from '@flighthq/render-gl';
 import type { Camera, GlRenderState, Mesh, SceneNode, SceneNodeTraits } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 import { ensureGlMeshUpload } from './glMeshUpload';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
@@ -15,7 +15,7 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // the shadow during shading. Shadows are opt-in: an app that never calls this leaves runtime.shadow
 // null, so existing scenes render unchanged.
 //
-// `shadowCamera` is the orthographic light camera (see camera's setupDirectionalShadowCamera). All
+// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera). All
 // meshes are drawn (no frustum cull — an off-screen caster can still shadow the visible scene).
 export function drawGlSceneShadowMap(
   state: GlRenderState,
@@ -80,7 +80,7 @@ export function drawGlSceneShadowMap(
 }
 
 function compileShadowDepthProgram(gl: WebGL2RenderingContext): GlMeshProgram {
-  const program = linkGlProgram(gl, SHADOW_DEPTH_VERTEX, SHADOW_DEPTH_FRAGMENT);
+  const program = compileGlProgram(gl, SHADOW_DEPTH_VERTEX, SHADOW_DEPTH_FRAGMENT);
   return {
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: null,

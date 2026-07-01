@@ -15,7 +15,7 @@ import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
-  uploadWgpuPbrMaterialUniform,
+  writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
 } from './standardPbrWgpuMeshMaterialRenderer';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -59,7 +59,7 @@ export const clearcoatPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     // clearcoat group (floats 16..19): clearcoat strength, clearcoat roughness.
     out[16] = clearcoat !== null ? clearcoat.clearcoat : 0;
     out[17] = clearcoat !== null ? clearcoat.clearcoatRoughness : 0;
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
 
     beginWgpuMeshDraw(state, pipeline);
     pass.setBindGroup(2, binding.bindGroup);

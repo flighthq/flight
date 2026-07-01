@@ -12,7 +12,8 @@
     { "path": "../spritesheet" },
     { "path": "../textureatlas" },
     { "path": "../textureatlas-formats" },
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../xml" }
   ],
   "include": ["src"]
 }

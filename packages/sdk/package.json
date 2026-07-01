@@ -121,7 +121,8 @@
     "@flighthq/updater": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
-    "@flighthq/webcam": "*"
+    "@flighthq/webcam": "*",
+    "@flighthq/xml": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

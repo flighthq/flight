@@ -103,7 +103,8 @@
     { "path": "../updater" },
     { "path": "../useragent" },
     { "path": "../velocity" },
-    { "path": "../webcam" }
+    { "path": "../webcam" },
+    { "path": "../xml" }
   ],
   "include": ["src"]
 }
