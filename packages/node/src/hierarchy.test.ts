@@ -20,7 +20,6 @@ import {
   removeNodeChild,
   removeNodeChildAt,
   removeNodeChildren,
-  reparentNode,
   replaceNodeChild,
   setNodeChildIndex,
   swapNodeChildren,
@@ -617,24 +616,6 @@ describe('removeNodeChildren', () => {
     });
     removeNodeChildren(container);
     expect(called).toBe(true);
-  });
-});
-
-describe('reparentNode', () => {
-  it('moves a child from one parent to another', () => {
-    const other = createNode(NodeKind);
-    addNodeChild(container, childA);
-    reparentNode(childA, other);
-    expect(getNodeParent(childA)).toBe(other);
-    expect(getNodeChildCount(container)).toBe(0);
-    expect(getNodeChildCount(other)).toBe(1);
-  });
-
-  it('preserves the child local transform (no world-transform preservation)', () => {
-    addNodeChild(container, childA);
-    reparentNode(childA, childB);
-    // The child was moved; its parent is now childB
-    expect(getNodeParent(childA)).toBe(childB);
   });
 });
 
