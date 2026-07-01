@@ -5,7 +5,7 @@ import {
   bindGlPbrStandardBlock,
   bindGlPbrStandardTexture,
   buildGlPbrStandardDefineKey,
-  hasTexturePixels,
+  isGlTextureReady,
 } from './glPbrStandardBlock';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 
@@ -57,8 +57,8 @@ describe('buildGlPbrStandardDefineKey', () => {
   });
 });
 
-describe('hasTexturePixels', () => {
+describe('isGlTextureReady', () => {
   it('is false for a null texture', () => {
-    expect(hasTexturePixels(null)).toBe(false);
+    expect(isGlTextureReady(null)).toBe(false);
   });
 });

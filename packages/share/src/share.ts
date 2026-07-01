@@ -103,23 +103,23 @@ export function getShareBackend(): ShareBackend {
   return _backend;
 }
 
-// True when the active backend's platform supports sharing at all (capability-level probe,
-// independent of any content). Distinct from canShareContent: this asks "can this platform share?"
-// while canShareContent asks "is this specific content shareable?".
-export function isShareAvailable(): boolean {
-  return getShareBackend().isAvailable();
-}
-
 // True when content has at least one populated field (title, text, url, or a non-empty files array).
 // The Web Share API requires at least one field to be present; calling shareContent with an empty
 // payload will throw on some engines, which shareContent swallows to false. Use this to detect
 // an obviously-empty payload before calling shareContent.
-export function isShareContentValid(content: Readonly<ShareContent>): boolean {
+export function hasShareContentFields(content: Readonly<ShareContent>): boolean {
   if (content.title !== undefined && content.title !== '') return true;
   if (content.text !== undefined && content.text !== '') return true;
   if (content.url !== undefined && content.url !== '') return true;
   if (content.files !== undefined && content.files.length > 0) return true;
   return false;
+}
+
+// True when the active backend's platform supports sharing at all (capability-level probe,
+// independent of any content). Distinct from canShareContent: this asks "can this platform share?"
+// while canShareContent asks "is this specific content shareable?".
+export function isShareAvailable(): boolean {
+  return getShareBackend().isAvailable();
 }
 
 // Installs a native host share backend; pass null to fall back to the web default.
@@ -129,11 +129,11 @@ export function setShareBackend(backend: ShareBackend | null): void {
 
 // Opens the native share sheet with the given content. Resolves true on success, false when the host
 // denies, the user cancels, or sharing is unavailable. An empty content payload (no title/text/url/
-// files) is caught by isShareContentValid and returns false immediately rather than forwarding to the
+// files) is caught by hasShareContentFields and returns false immediately rather than forwarding to the
 // backend (which may throw). Pass options to control presentation on native hosts (parentWindow,
 // sourceRect on iPad).
 export function shareContent(content: Readonly<ShareContent>, options?: Readonly<ShareOptions>): Promise<boolean> {
-  if (!isShareContentValid(content)) return Promise.resolve(false);
+  if (!hasShareContentFields(content)) return Promise.resolve(false);
   return getShareBackend().share(content, options);
 }
 
@@ -145,7 +145,7 @@ export async function shareContentWithResult(
   content: Readonly<ShareContent>,
   options?: Readonly<ShareOptions>,
 ): Promise<ShareResult> {
-  if (!isShareContentValid(content)) {
+  if (!hasShareContentFields(content)) {
     return { completed: false, activityType: null, dismissed: false };
   }
   const result = await getShareBackend().shareWithResult(content, options);

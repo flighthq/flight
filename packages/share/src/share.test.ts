@@ -9,8 +9,8 @@ import {
   disposeShareSignals,
   enableShareSignals,
   getShareBackend,
+  hasShareContentFields,
   isShareAvailable,
-  isShareContentValid,
   setShareBackend,
   shareContent,
   shareContentWithResult,
@@ -227,6 +227,37 @@ describe('getShareBackend', () => {
   });
 });
 
+describe('hasShareContentFields', () => {
+  it('returns false for empty object', () => {
+    expect(hasShareContentFields({})).toBe(false);
+  });
+
+  it('returns false for empty strings', () => {
+    expect(hasShareContentFields({ title: '', text: '', url: '' })).toBe(false);
+  });
+
+  it('returns false for empty files array', () => {
+    expect(hasShareContentFields({ files: [] })).toBe(false);
+  });
+
+  it('returns true for non-empty title', () => {
+    expect(hasShareContentFields({ title: 'Hello' })).toBe(true);
+  });
+
+  it('returns true for non-empty text', () => {
+    expect(hasShareContentFields({ text: 'x' })).toBe(true);
+  });
+
+  it('returns true for non-empty url', () => {
+    expect(hasShareContentFields({ url: 'https://example.com' })).toBe(true);
+  });
+
+  it('returns true for non-empty files array', () => {
+    const file: ShareFile = { name: 'img.png', mimeType: 'image/png', dataUrl: 'data:image/png;base64,AA==' };
+    expect(hasShareContentFields({ files: [file] })).toBe(true);
+  });
+});
+
 describe('isShareAvailable', () => {
   it('returns false from the web backend in jsdom', () => {
     expect(isShareAvailable()).toBe(false);
@@ -244,37 +275,6 @@ describe('isShareAvailable', () => {
     });
     expect(isShareAvailable()).toBe(true);
     Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
-  });
-});
-
-describe('isShareContentValid', () => {
-  it('returns false for empty object', () => {
-    expect(isShareContentValid({})).toBe(false);
-  });
-
-  it('returns false for empty strings', () => {
-    expect(isShareContentValid({ title: '', text: '', url: '' })).toBe(false);
-  });
-
-  it('returns false for empty files array', () => {
-    expect(isShareContentValid({ files: [] })).toBe(false);
-  });
-
-  it('returns true for non-empty title', () => {
-    expect(isShareContentValid({ title: 'Hello' })).toBe(true);
-  });
-
-  it('returns true for non-empty text', () => {
-    expect(isShareContentValid({ text: 'x' })).toBe(true);
-  });
-
-  it('returns true for non-empty url', () => {
-    expect(isShareContentValid({ url: 'https://example.com' })).toBe(true);
-  });
-
-  it('returns true for non-empty files array', () => {
-    const file: ShareFile = { name: 'img.png', mimeType: 'image/png', dataUrl: 'data:image/png;base64,AA==' };
-    expect(isShareContentValid({ files: [file] })).toBe(true);
   });
 });
 
