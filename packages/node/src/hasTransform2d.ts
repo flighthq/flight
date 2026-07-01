@@ -17,6 +17,8 @@ export function initTransform2DTrait(target: HasTransform2D, obj?: Readonly<Part
   target.rotation = obj?.rotation ?? 0;
   target.scaleX = obj?.scaleX ?? 1;
   target.scaleY = obj?.scaleY ?? 1;
+  target.skewX = obj?.skewX ?? 0;
+  target.skewY = obj?.skewY ?? 0;
   target.x = obj?.x ?? 0;
   target.y = obj?.y ?? 0;
 }
