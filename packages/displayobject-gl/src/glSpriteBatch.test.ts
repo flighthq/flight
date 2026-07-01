@@ -11,7 +11,7 @@ import {
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
 } from './glSpriteBatch';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeTexture(): HTMLImageElement {
   return document.createElement('img');
@@ -23,7 +23,7 @@ function makeMaterial(): Material {
 
 describe('bindGlQuadBatchBaseAttributes', () => {
   it('sets up the corner and base instance attribute pointers', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     ensureGlQuadBatchShader(state);
     bindGlQuadBatchBaseAttributes(state, 0);
     expect(gl.vertexAttribPointer).toHaveBeenCalled();
@@ -33,7 +33,7 @@ describe('bindGlQuadBatchBaseAttributes', () => {
 
 describe('ensureGlQuadBatchShader', () => {
   it('returns a shader with a program and attribute locations', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const shader = ensureGlQuadBatchShader(state);
     expect(shader.program).toBeDefined();
     expect(typeof shader.locCorner).toBe('number');
@@ -42,7 +42,7 @@ describe('ensureGlQuadBatchShader', () => {
   });
 
   it('is idempotent — returns the same shader on repeated calls', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const s1 = ensureGlQuadBatchShader(state);
     const s2 = ensureGlQuadBatchShader(state);
     expect(s1).toBe(s2);
@@ -51,13 +51,13 @@ describe('ensureGlQuadBatchShader', () => {
 
 describe('flushGlSpriteBatch', () => {
   it('does nothing when batch count is zero', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     flushGlSpriteBatch(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('draws when instances are pending and resets state', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
 
@@ -75,7 +75,7 @@ describe('flushGlSpriteBatch', () => {
 
 describe('packGlSpriteBatchMaterialInstance', () => {
   it('is a no-op when no per-instance material renderer is active', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     getGlRenderStateRuntime(state).spriteBatchMaterialRenderer = null;
     expect(() => packGlSpriteBatchMaterialInstance(state, null, 0)).not.toThrow();
   });
@@ -83,7 +83,7 @@ describe('packGlSpriteBatchMaterialInstance', () => {
 
 describe('prepareGlSpriteBatchWrite', () => {
   it('returns float index 0 for an empty batch', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const tex = makeTexture();
 
     const base = prepareGlSpriteBatchWrite(state, tex, null, null, defaultGlMaterialRenderer, 2);
@@ -91,7 +91,7 @@ describe('prepareGlSpriteBatchWrite', () => {
   });
 
   it('flushes when texture changes', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const tex1 = makeTexture();
     const tex2 = makeTexture();
@@ -106,7 +106,7 @@ describe('prepareGlSpriteBatchWrite', () => {
   });
 
   it('flushes when material changes', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
     const materialA = makeMaterial();
@@ -122,7 +122,7 @@ describe('prepareGlSpriteBatchWrite', () => {
   });
 
   it('grows instance data when capacity is exceeded', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
     const initialFloats = runtime.spriteBatchInstanceData.length;
@@ -135,7 +135,7 @@ describe('prepareGlSpriteBatchWrite', () => {
 
 describe('setGlQuadBatchWorldAndTexture', () => {
   it('uploads the world matrix and texture unit', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     setGlQuadBatchWorldAndTexture(state, {} as WebGLUniformLocation, {} as WebGLUniformLocation);
     expect(gl.uniformMatrix3fv).toHaveBeenCalled();
     expect(gl.uniform1i).toHaveBeenCalled();
@@ -144,7 +144,7 @@ describe('setGlQuadBatchWorldAndTexture', () => {
 
 describe('useGlQuadBatchProgram', () => {
   it('binds the program and records it as current', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const program = {} as WebGLProgram;
     useGlQuadBatchProgram(state, program);
     expect(gl.useProgram).toHaveBeenCalledWith(program);

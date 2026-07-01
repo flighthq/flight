@@ -11,7 +11,7 @@ import { createOrthographicProjection } from './projection';
 //
 // Backend-agnostic CPU math (no GL). `lightDirection` need not be normalized. A degenerate (single
 // point) bounds falls back to unit radius so the frustum stays valid.
-export function setupDirectionalShadowCamera(
+export function configureDirectionalShadowCamera(
   camera: Camera,
   lightDirection: Readonly<Vector3Like>,
   sceneBounds: Readonly<AabbLike>,

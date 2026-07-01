@@ -2,7 +2,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { drawGlShapeMeshes } from './glShapeMesh';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeProxy(): RenderProxy2D {
   return {
@@ -21,7 +21,7 @@ const TRIANGLE = {
 
 describe('drawGlShapeMeshes', () => {
   it('binds the mesh program and draws each mesh', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
 
     drawGlShapeMeshes(state, makeProxy(), [TRIANGLE]);
 
@@ -30,7 +30,7 @@ describe('drawGlShapeMeshes', () => {
   });
 
   it('records the mesh program as currentProgram so content draws re-bind', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     expect(getGlRenderStateRuntime(state).currentProgram).toBeNull();
 
     drawGlShapeMeshes(state, makeProxy(), [TRIANGLE]);
@@ -39,7 +39,7 @@ describe('drawGlShapeMeshes', () => {
   });
 
   it('uploads premultiplied color (color * alpha) for the standard blend', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
 
     drawGlShapeMeshes(state, makeProxy(), [{ ...TRIANGLE, color: 0xffffff, alpha: 0.5 }]);
 
@@ -47,7 +47,7 @@ describe('drawGlShapeMeshes', () => {
   });
 
   it('skips fully transparent meshes', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
 
     drawGlShapeMeshes(state, makeProxy(), [{ ...TRIANGLE, alpha: 0 }]);
 
@@ -55,7 +55,7 @@ describe('drawGlShapeMeshes', () => {
   });
 
   it('is a no-op for an empty mesh list', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
 
     drawGlShapeMeshes(state, makeProxy(), []);
 

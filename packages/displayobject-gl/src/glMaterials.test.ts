@@ -2,7 +2,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
 
 import { getGlRenderProxyColorTransform, registerGlColorTransformShader } from './glMaterials';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 describe('getGlRenderProxyColorTransform', () => {
   it('returns null when the node has no material', () => {
@@ -24,7 +24,7 @@ describe('getGlRenderProxyColorTransform', () => {
 
 describe('registerGlColorTransformShader', () => {
   it('registers a color transform shader on the render state', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
 
     registerGlColorTransformShader(state);
 
@@ -32,7 +32,7 @@ describe('registerGlColorTransformShader', () => {
   });
 
   it('does not make the color transform shader the state default shader', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
 
     registerGlColorTransformShader(state);
 
@@ -41,7 +41,7 @@ describe('registerGlColorTransformShader', () => {
   });
 
   it('includes color transform uniform locations', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
 
     registerGlColorTransformShader(state);
 
@@ -52,7 +52,7 @@ describe('registerGlColorTransformShader', () => {
   });
 
   it('binds color transform uniforms from the node material data', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const renderProxy = {
       alpha: 0.75,
       material: { kind: ColorTransformMaterialKind },
@@ -80,7 +80,7 @@ describe('registerGlColorTransformShader', () => {
   });
 
   it('does not replace an existing color transform shader', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
 
     registerGlColorTransformShader(state);
     const first = getGlRenderStateRuntime(state).colorTransformBitmapShader;

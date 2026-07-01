@@ -2,7 +2,7 @@ import { getGlMaterialRenderer } from '@flighthq/render-gl';
 import { ColorTransformMaterialKind } from '@flighthq/types';
 
 import { colorTransformGlMaterialRenderer, registerGlColorTransformMaterial } from './glColorTransformMaterial';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeColorTransform(redMultiplier: number) {
   return {
@@ -38,7 +38,7 @@ describe('colorTransformGlMaterialRenderer', () => {
 
 describe('registerGlColorTransformMaterial', () => {
   it('registers the per-instance color transform material renderer', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerGlColorTransformMaterial(state);
     expect(getGlMaterialRenderer(state, ColorTransformMaterialKind)).toBe(colorTransformGlMaterialRenderer);
   });

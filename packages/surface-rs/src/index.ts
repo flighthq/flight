@@ -51,7 +51,7 @@ export {
   glowSurface,
   gradientBevelSurface,
   gradientGlowSurface,
-  initSurfaceRs,
+  initSurfaceWasm,
   innerGlowSurface,
   innerShadowSurface,
   medianSurface,

@@ -14,12 +14,7 @@ import type {
 import { UnlitMaterialKind } from '@flighthq/types';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import {
-  beginWgpuMeshDraw,
-  drawWgpuMeshSubset,
-  hasWgpuMaterialTexture,
-  writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
 import type { WgpuUnlitDefineKey } from './wgpuUnlitPrelude';
 import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
 
@@ -70,7 +65,7 @@ function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): WgpuUnl
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasColorMap: material !== null && hasWgpuMaterialTexture(material.baseColorMap),
+    hasColorMap: material !== null && isWgpuTextureReady(material.baseColorMap),
   };
 }
 

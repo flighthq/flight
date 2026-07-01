@@ -28,7 +28,7 @@ export interface NetworkStatus {
   metered: boolean;
 }
 
-// One-shot reachability probe result, written into an `out` by probeReachability. Sentinel values
+// One-shot reachability probe result, written into an `out` by detectReachability. Sentinel values
 // (reachable=false, latency=-1) indicate the probe failed rather than throwing.
 export interface NetworkReachability {
   reachable: boolean;
@@ -51,7 +51,7 @@ export interface NetworkReachabilityOptions {
 export interface NetworkBackend {
   getStatus(out: NetworkStatus): NetworkStatus;
   // Optional one-shot reachability probe; callers fall back to a fetch-based default when absent.
-  probeReachability?(
+  detectReachability?(
     options: Readonly<NetworkReachabilityOptions>,
     out: NetworkReachability,
   ): Promise<NetworkReachability>;

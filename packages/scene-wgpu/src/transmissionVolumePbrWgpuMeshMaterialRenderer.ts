@@ -17,7 +17,7 @@ import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
-  uploadWgpuPbrMaterialUniform,
+  writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
 } from './standardPbrWgpuMeshMaterialRenderer';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -82,7 +82,7 @@ export const transmissionVolumePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
       out[46] = 1;
       out[47] = 1;
     }
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
 
     beginWgpuMeshDraw(state, pipeline);
     pass.setBindGroup(2, binding.bindGroup);

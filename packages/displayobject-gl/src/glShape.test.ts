@@ -5,7 +5,7 @@ import { BatchFormat } from '@flighthq/types';
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { defaultGlShapeRenderer, drawGlShape } from './glShape';
 import { flushGlSpriteBatch } from './glSpriteBatch';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 vi.mock('@flighthq/node', () => ({
   getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
@@ -54,34 +54,34 @@ describe('defaultGlShapeRenderer', () => {
 
 describe('drawGlShape', () => {
   it('returns early without writing to batch when commands array is empty', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [] }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}] }, null));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when no material renderer is registered', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     drawGlShape(state, makeShapeNode({ commands: [{}] }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('writes one instance to the sprite batch when shape has valid commands and bounds', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     flushGlSpriteBatch(state);
@@ -89,7 +89,7 @@ describe('drawGlShape', () => {
   });
 
   it('writes correct size into instance data', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlShape(state, makeShapeNode({ commands: [{}], version: 1 }, makeShapeData()));
     const d = getGlRenderStateRuntime(state).spriteBatchInstanceData;

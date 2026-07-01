@@ -9,8 +9,8 @@ import {
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
   standardPbrWgpuMeshMaterialRenderer,
-  uploadWgpuPbrMaterialUniform,
   WGPU_PBR_MATERIAL_UNIFORM_FLOATS,
+  writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
 } from './standardPbrWgpuMeshMaterialRenderer';
 import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
@@ -140,20 +140,20 @@ describe('standardPbrWgpuMeshMaterialRenderer', () => {
   });
 });
 
-describe('uploadWgpuPbrMaterialUniform', () => {
+describe('WGPU_PBR_MATERIAL_UNIFORM_FLOATS', () => {
+  it('is the 48-float (192-byte) MaterialBlock size', () => {
+    expect(WGPU_PBR_MATERIAL_UNIFORM_FLOATS).toBe(48);
+  });
+});
+
+describe('writeWgpuPbrMaterialUniform', () => {
   it('writes the scratch into the binding buffer', () => {
     const { fake, state } = makeWgpuSceneState();
     const pipeline = ensureWgpuPbrPipeline(state, buildWgpuPbrStandardDefineKey(null, null), 'bgra8unorm');
     const binding = ensureWgpuPbrMaterialBindGroup(state, pipeline, {}, null);
     const writes = fake.calls.filter((c) => c.name === 'writeBuffer').length;
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(writes + 1);
-  });
-});
-
-describe('WGPU_PBR_MATERIAL_UNIFORM_FLOATS', () => {
-  it('is the 48-float (192-byte) MaterialBlock size', () => {
-    expect(WGPU_PBR_MATERIAL_UNIFORM_FLOATS).toBe(48);
   });
 });
 

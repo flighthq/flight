@@ -79,7 +79,7 @@ export function createWebNetworkBackend(): NetworkBackend {
       out.metered = out.saveData || out.type === 'cellular';
       return out;
     },
-    async probeReachability(options, out) {
+    async detectReachability(options, out) {
       if (typeof fetch === 'undefined') {
         out.reachable = false;
         out.latency = -1;
@@ -130,6 +130,29 @@ export function detachNetwork(net: Network): void {
   }
 }
 
+// Performs a one-shot reachability probe against the given URL using the active backend's
+// detectReachability, falling back to a fetch-based implementation when the backend does not provide
+// one. Writes the result into `out` and returns it. Returns a sentinel on failure rather than throwing.
+// NOTE: navigator.onLine reports an interface, not internet reachability. Use this function when you
+// need to distinguish "a network interface is up" from "the internet is actually reachable."
+export async function detectNetworkReachability(
+  options: Readonly<NetworkReachabilityOptions>,
+  out: NetworkReachability,
+): Promise<NetworkReachability> {
+  const backend = getNetworkBackend();
+  if (backend.detectReachability !== undefined) {
+    return backend.detectReachability(options, out);
+  }
+  // Fallback: use the web backend's implementation directly
+  const webBackend = createWebNetworkBackend();
+  if (webBackend.detectReachability !== undefined) {
+    return webBackend.detectReachability(options, out);
+  }
+  out.reachable = false;
+  out.latency = -1;
+  return out;
+}
+
 // Releases `net` for garbage collection by detaching its backend subscription. The signals remain
 // plain GC-managed memory afterward.
 export function disposeNetwork(net: Network): void {
@@ -174,29 +197,6 @@ export function isNetworkOnline(): boolean {
 // True when the user or OS has requested reduced data usage. Convenience over getNetworkStatus.
 export function isNetworkSaveDataEnabled(): boolean {
   return getNetworkBackend().getStatus(_scratch).saveData;
-}
-
-// Performs a one-shot reachability probe against the given URL using the active backend's
-// probeReachability, falling back to a fetch-based implementation when the backend does not provide
-// one. Writes the result into `out` and returns it. Returns a sentinel on failure rather than throwing.
-// NOTE: navigator.onLine reports an interface, not internet reachability. Use this function when you
-// need to distinguish "a network interface is up" from "the internet is actually reachable."
-export async function probeNetworkReachability(
-  options: Readonly<NetworkReachabilityOptions>,
-  out: NetworkReachability,
-): Promise<NetworkReachability> {
-  const backend = getNetworkBackend();
-  if (backend.probeReachability !== undefined) {
-    return backend.probeReachability(options, out);
-  }
-  // Fallback: use the web backend's implementation directly
-  const webBackend = createWebNetworkBackend();
-  if (webBackend.probeReachability !== undefined) {
-    return webBackend.probeReachability(options, out);
-  }
-  out.reachable = false;
-  out.latency = -1;
-  return out;
 }
 
 // Installs a native host network backend; pass null to fall back to the web default.

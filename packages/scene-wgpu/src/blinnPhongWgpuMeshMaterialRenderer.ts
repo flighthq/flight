@@ -16,12 +16,7 @@ import { BlinnPhongMaterialKind } from '@flighthq/types';
 import type { WgpuClassicDefineKey } from './wgpuClassicPrelude';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import {
-  beginWgpuMeshDraw,
-  drawWgpuMeshSubset,
-  hasWgpuMaterialTexture,
-  writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
 
 // The built-in classic BlinnPhong forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // BlinnPhongMaterialKind) — the WGSL mirror of blinnPhongGlMeshMaterialRenderer. Lambert diffuse plus
@@ -90,9 +85,9 @@ function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): Wg
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasDiffuseMap: material !== null && hasWgpuMaterialTexture(material.diffuseMap),
-    hasNormalMap: material !== null && hasWgpuMaterialTexture(material.normalMap),
-    hasSpecularMap: material !== null && hasWgpuMaterialTexture(material.specularMap),
+    hasDiffuseMap: material !== null && isWgpuTextureReady(material.diffuseMap),
+    hasNormalMap: material !== null && isWgpuTextureReady(material.normalMap),
+    hasSpecularMap: material !== null && isWgpuTextureReady(material.specularMap),
     lightingModel: 'blinnphong',
   };
 }

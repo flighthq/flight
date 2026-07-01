@@ -5,7 +5,7 @@ import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
 
 vi.mock('@flighthq/textlayout', async (importOriginal) => {
@@ -68,34 +68,34 @@ describe('defaultGlTextLabelRenderer', () => {
 
 describe('drawGlTextLabel', () => {
   it('returns early without writing to batch when text is empty', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('', makeTextData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when rendererData is null', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', null));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('returns early without writing to batch when no material renderer is registered', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
   it('writes one instance to the sprite batch when text has content', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('draws via drawElementsInstanced after flush', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     flushGlSpriteBatch(state);
@@ -103,7 +103,7 @@ describe('drawGlTextLabel', () => {
   });
 
   it('skips layout and rasterization on repeated calls when the content version is unchanged', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
     const deleteSpy = vi.spyOn(getGlRenderStateRuntime(state).textureCache, 'delete');
@@ -114,7 +114,7 @@ describe('drawGlTextLabel', () => {
   });
 
   it('re-rasterizes when the content version is bumped', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
     const deleteSpy = vi.spyOn(getGlRenderStateRuntime(state).textureCache, 'delete');
@@ -125,7 +125,7 @@ describe('drawGlTextLabel', () => {
   });
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerDefaultGlMaterial(state);
     const proxy = makeTextProxy('hello', makeTextData());
     const deleteSpy = vi.spyOn(getGlRenderStateRuntime(state).textureCache, 'delete');

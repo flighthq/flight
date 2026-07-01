@@ -1,4 +1,5 @@
 import {
+  detectEndianness,
   parseUserAgentArch,
   parseUserAgentEngine,
   parseUserAgentEngineVersion,
@@ -7,8 +8,18 @@ import {
   parseUserAgentPointerWidth,
   parseUserAgentRuntime,
   parseUserAgentVersion,
-  probeEndianness,
 } from './userAgent';
+
+describe('detectEndianness', () => {
+  it('returns a known canonical value', () => {
+    expect(['little', 'big', 'unknown']).toContain(detectEndianness());
+  });
+
+  it('returns little on Node.js (x64 host)', () => {
+    // Node.js always runs on x64/arm64 hardware which is little-endian.
+    expect(detectEndianness()).toBe('little');
+  });
+});
 
 describe('parseUserAgentArch', () => {
   it('detects arm64 from aarch64 token', () => {
@@ -289,16 +300,5 @@ describe('parseUserAgentVersion', () => {
 
   it('returns empty string when version is absent', () => {
     expect(parseUserAgentVersion('', 'windows')).toBe('');
-  });
-});
-
-describe('probeEndianness', () => {
-  it('returns a known canonical value', () => {
-    expect(['little', 'big', 'unknown']).toContain(probeEndianness());
-  });
-
-  it('returns little on Node.js (x64 host)', () => {
-    // Node.js always runs on x64/arm64 hardware which is little-endian.
-    expect(probeEndianness()).toBe('little');
   });
 });

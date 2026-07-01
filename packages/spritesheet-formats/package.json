@@ -30,7 +30,8 @@
     "@flighthq/textureatlas": "*",
     "@flighthq/textureatlas-formats": "*",
     "@flighthq/spritesheet": "*",
-    "@flighthq/types": "*"
+    "@flighthq/types": "*",
+    "@flighthq/xml": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

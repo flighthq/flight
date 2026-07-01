@@ -95,7 +95,7 @@ export function compactQuadBatch(target: QuadBatch): void {
   // The only meaningful compaction is when callers zero-out ids for "deleted" entries and need
   // to collapse those holes. That is a caller convention; this function preserves order.
   // We re-copy only if there are id==-1 sentinel entries (which some callers use for deletion).
-  const stride = getQuadTransformStride(data.transformType);
+  const stride = getQuadBatchTransformStride(data.transformType);
   let write = 0;
   for (let read = 0; read < data.instanceCount; read++) {
     if (data.ids[read] === 0xffff) continue; // sentinel for "deleted" slots (Uint16Array max)
@@ -229,7 +229,7 @@ export function enableQuadBatchSignals(target: QuadBatch): QuadBatchSignals {
 
 export function getQuadBatchCapacity(source: Readonly<QuadBatch>): number {
   const data = source.data;
-  const stride = getQuadTransformStride(data.transformType);
+  const stride = getQuadBatchTransformStride(data.transformType);
   const transformCapacity = (data.transforms.length / stride) | 0;
   return Math.min(data.ids.length, transformCapacity);
 }
@@ -273,7 +273,7 @@ export function getQuadBatchSignals(source: Readonly<QuadBatch>): QuadBatchSigna
   return (source as QuadBatchWithSignals)[quadBatchSignalsSlot] ?? null;
 }
 
-export function getQuadTransformStride(transformType: QuadTransformType): number {
+export function getQuadBatchTransformStride(transformType: QuadTransformType): number {
   return quadTransformStride[transformType];
 }
 
@@ -407,7 +407,7 @@ export function iterateQuadBatchInstances(
   visitor: (index: number, id: number, transforms: Float32Array) => void,
 ): void {
   const { ids, instanceCount, transforms, transformType } = source.data;
-  const stride = getQuadTransformStride(transformType);
+  const stride = getQuadBatchTransformStride(transformType);
   for (let i = 0; i < instanceCount; i++) {
     visitor(i, ids[i], transforms.subarray(i * stride, i * stride + stride));
   }
@@ -450,7 +450,7 @@ export function reserveQuadBatch(target: QuadBatch, capacity: number): void {
   if (currentCapacity >= capacity) return;
   const data = target.data;
   data.ids = reserveUint16Array(data.ids, capacity);
-  data.transforms = reserveFloat32Array(data.transforms, capacity * getQuadTransformStride(data.transformType));
+  data.transforms = reserveFloat32Array(data.transforms, capacity * getQuadBatchTransformStride(data.transformType));
 }
 
 export function resizeQuadBatch(target: QuadBatch, instanceCount: number): void {
@@ -510,7 +510,7 @@ export function setQuadBatchInstanceMatrix(
 
 /**
  * Writes `count` contiguous transform entries from `source` into the batch starting at `startIndex`.
- * Reads `count * stride` floats from `source` (where stride = `getQuadTransformStride(target.data.transformType)`).
+ * Reads `count * stride` floats from `source` (where stride = `getQuadBatchTransformStride(target.data.transformType)`).
  * No-ops when `startIndex + count` exceeds `instanceCount`.
  * This is the bulk variant of `setQuadBatchInstance`/`setQuadBatchInstanceMatrix`.
  */
@@ -522,7 +522,7 @@ export function setQuadBatchInstanceRange(
 ): void {
   const data = target.data;
   if (startIndex < 0 || count <= 0 || startIndex + count > data.instanceCount) return;
-  const stride = getQuadTransformStride(data.transformType);
+  const stride = getQuadBatchTransformStride(data.transformType);
   const dst = startIndex * stride;
   const len = count * stride;
   for (let k = 0; k < len; k++) data.transforms[dst + k] = source[k];

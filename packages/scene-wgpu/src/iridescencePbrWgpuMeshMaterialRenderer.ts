@@ -15,7 +15,7 @@ import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
-  uploadWgpuPbrMaterialUniform,
+  writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
 } from './standardPbrWgpuMeshMaterialRenderer';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -66,7 +66,7 @@ export const iridescencePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = 
       out[29] = 1.3;
       out[30] = 250;
     }
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
 
     beginWgpuMeshDraw(state, pipeline);
     pass.setBindGroup(2, binding.bindGroup);

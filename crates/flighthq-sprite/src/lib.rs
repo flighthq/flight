@@ -40,7 +40,7 @@ pub use quad_batch::{
     create_quad_batch_signals, enable_quad_batch_signals, get_quad_batch_atlas,
     get_quad_batch_capacity, get_quad_batch_instance_count, get_quad_batch_instance_id,
     get_quad_batch_instance_transform, get_quad_batch_runtime, get_quad_batch_signals,
-    get_quad_transform_stride, hit_test_quad_batch_point, hit_test_quad_batch_point_exact,
+    get_quad_batch_transform_stride, hit_test_quad_batch_point, hit_test_quad_batch_point_exact,
     hit_test_quad_batch_point_exact_xy, hit_test_quad_batch_point_xy, iterate_quad_batch_instances,
     remove_quad_batch_instance, reserve_quad_batch, resize_quad_batch, set_quad_batch_atlas,
     set_quad_batch_instance, set_quad_batch_instance_matrix, set_quad_batch_instance_range,

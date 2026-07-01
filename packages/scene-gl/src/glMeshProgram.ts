@@ -41,6 +41,28 @@ export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshPr
   }
 }
 
+// Compiles a vertex + fragment source pair into a linked GL program. Shared by every family's
+// program compile. Throws on a compile or link failure, which is a programmer error (a malformed
+// prelude), not an expected runtime condition — correct preludes always compile.
+export function compileGlProgram(
+  gl: WebGL2RenderingContext,
+  vertexSource: string,
+  fragmentSource: string,
+): WebGLProgram {
+  const vertexShader = compileGlShader(gl, gl.VERTEX_SHADER, vertexSource);
+  const fragmentShader = compileGlShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+  const program = gl.createProgram()!;
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  gl.deleteShader(vertexShader);
+  gl.deleteShader(fragmentShader);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(`scene-gl program link error: ${gl.getProgramInfoLog(program)}`);
+  }
+  return program;
+}
+
 // The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from
 // the proxy, lazily uploads the geometry's GPU buffers (cached by geometry.version), and issues the
 // indexed (or array) draw over the proxy's subset range. Families call this from draw() after bind()
@@ -84,24 +106,6 @@ export function ensureGlSceneProgram<T extends GlMeshProgram>(
     runtime.programCache.set(key, program);
   }
   return program as T;
-}
-
-// Compiles a vertex + fragment source pair into a linked GL program. Shared by every family's
-// program compile. Throws on a compile or link failure, which is a programmer error (a malformed
-// prelude), not an expected runtime condition — correct preludes always compile.
-export function linkGlProgram(gl: WebGL2RenderingContext, vertexSource: string, fragmentSource: string): WebGLProgram {
-  const vertexShader = compileGlShader(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragmentShader = compileGlShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-  gl.deleteShader(vertexShader);
-  gl.deleteShader(fragmentShader);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`scene-gl program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  return program;
 }
 
 // Uploads the camera world position (the translation of the inverse view matrix) to a lit family's

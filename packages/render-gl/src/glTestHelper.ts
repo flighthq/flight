@@ -5,15 +5,7 @@ import { EntityRuntimeKey } from '@flighthq/types';
 import { createGlRenderStateRuntime } from './glRenderState';
 import type { GlShaderLocations } from './glShaderTypes';
 
-// makeGL returns a fresh isolated mock for unit tests that call GL functions
-// directly (e.g. shader math tests) and need a clean call-count slate.
-// Relies on the jsdom webgl2Mock setup file patching HTMLCanvasElement.getContext.
-export function makeGL(): WebGL2RenderingContext {
-  const canvas = document.createElement('canvas');
-  return canvas.getContext('webgl2') as WebGL2RenderingContext;
-}
-
-export function makeGlState(options?: { allowSmoothing?: boolean; backgroundColorRgba?: number[] }): {
+export function createGlState(options?: { allowSmoothing?: boolean; backgroundColorRgba?: number[] }): {
   state: GlRenderState;
   gl: WebGL2RenderingContext;
   canvas: HTMLCanvasElement;
@@ -65,6 +57,14 @@ export function makeGlState(options?: { allowSmoothing?: boolean; backgroundColo
   state[EntityRuntimeKey] = runtime;
 
   return { state, gl, canvas, shaderLoc };
+}
+
+// makeGL returns a fresh isolated mock for unit tests that call GL functions
+// directly (e.g. shader math tests) and need a clean call-count slate.
+// Relies on the jsdom webgl2Mock setup file patching HTMLCanvasElement.getContext.
+export function makeGL(): WebGL2RenderingContext {
+  const canvas = document.createElement('canvas');
+  return canvas.getContext('webgl2') as WebGL2RenderingContext;
 }
 
 export function makeShaderLoc(): GlShaderLocations {

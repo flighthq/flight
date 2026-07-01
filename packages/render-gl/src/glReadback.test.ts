@@ -1,7 +1,7 @@
 import type { GlRenderTarget } from '@flighthq/types';
 
 import { readGlRenderTargetPixels } from './glReadback';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
   return {
@@ -22,21 +22,21 @@ function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
 
 describe('readGlRenderTargetPixels', () => {
   it('returns false for a zero-width target', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = makeTarget({ width: 0, height: 4 });
     const out = new Uint8Array(16);
     expect(readGlRenderTargetPixels(state, target, 0, 0, 1, 1, out)).toBe(false);
   });
 
   it('returns false for a zero-height target', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = makeTarget({ width: 4, height: 0 });
     const out = new Uint8Array(16);
     expect(readGlRenderTargetPixels(state, target, 0, 0, 1, 1, out)).toBe(false);
   });
 
   it('returns false when the framebuffer is incomplete', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = makeTarget();
     vi.spyOn(state.gl, 'checkFramebufferStatus').mockReturnValue(state.gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT ?? 36054);
     const out = new Uint8Array(16);
@@ -44,7 +44,7 @@ describe('readGlRenderTargetPixels', () => {
   });
 
   it('returns true and calls readPixels when the framebuffer is complete', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = makeTarget();
     vi.spyOn(state.gl, 'checkFramebufferStatus').mockReturnValue(state.gl.FRAMEBUFFER_COMPLETE ?? 36053);
     const readPixelsSpy = vi.spyOn(state.gl, 'readPixels').mockImplementation(() => {});
@@ -55,7 +55,7 @@ describe('readGlRenderTargetPixels', () => {
   });
 
   it('uses FLOAT type for Float32Array output', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = makeTarget({ format: 'rgba32f' });
     vi.spyOn(state.gl, 'checkFramebufferStatus').mockReturnValue(state.gl.FRAMEBUFFER_COMPLETE ?? 36053);
     const readPixelsSpy = vi.spyOn(state.gl, 'readPixels').mockImplementation(() => {});
@@ -66,7 +66,7 @@ describe('readGlRenderTargetPixels', () => {
   });
 
   it('uses the resolveFramebuffer when present', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const resolveFbo = {} as WebGLFramebuffer;
     const drawFbo = {} as WebGLFramebuffer;
     const target = makeTarget({ framebuffer: drawFbo, resolveFramebuffer: resolveFbo });

@@ -1,10 +1,10 @@
 import { getGlRenderStateRuntime } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
-import { makeGlState, makeShaderLoc } from './glTestHelper';
+import { createGlState, makeShaderLoc } from './glTestHelper';
 
 describe('registerGlBitmapShader', () => {
   it('uses the provided shader as the state default shader', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const loc = makeShaderLoc();
     const shader = {
       bind: vi.fn(),

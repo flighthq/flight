@@ -3,7 +3,7 @@ import { enableTextInput, setTextInputSelection } from '@flighthq/textinput';
 import type { RenderProxy2D, RichText } from '@flighthq/types';
 
 import { drawGlRichText } from './glRichText';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 import { drawGlTextInputOverlay, enableGlTextInput } from './glTextInput';
 
 function makeFocusedInputProxy(): RenderProxy2D {
@@ -25,7 +25,7 @@ describe('drawGlTextInputOverlay', () => {
 
   it('rasterizes a focused collapsed selection without throwing', () => {
     enableGlTextInput();
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const renderProxy = makeFocusedInputProxy();
     setTextInputSelection(renderProxy.source as RichText, 2, 2);
 
@@ -35,7 +35,7 @@ describe('drawGlTextInputOverlay', () => {
 
   it('rasterizes a focused expanded selection without throwing', () => {
     enableGlTextInput();
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const renderProxy = makeFocusedInputProxy();
     setTextInputSelection(renderProxy.source as RichText, 1, 4);
 

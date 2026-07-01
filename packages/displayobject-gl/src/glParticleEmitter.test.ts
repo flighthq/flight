@@ -1,7 +1,7 @@
 import type { RenderProxy2D } from '@flighthq/types';
 
 import { defaultGlParticleEmitterRenderer, drawGlParticleEmitter } from './glParticleEmitter';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeAtlas() {
   const img = document.createElement('img');
@@ -42,31 +42,31 @@ describe('defaultGlParticleEmitterRenderer', () => {
 
 describe('drawGlParticleEmitter', () => {
   it('returns early without drawing when atlas is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlParticleEmitter(state, makeParticleEmitterNode({ atlas: null }));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlParticleEmitter(state, makeParticleEmitterNode({ atlas: { image: null, regions: [] } }));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when atlas.image.source is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlParticleEmitter(state, makeParticleEmitterNode({ atlas: { image: { source: null }, regions: [] } }));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('returns early without drawing when particleCount is 0', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlParticleEmitter(state, makeParticleEmitterNode({ particleCount: 0 }));
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
 
   it('draws all live particles in a single instanced draw call', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlParticleEmitter(
       state,
       makeParticleEmitterNode({
@@ -82,7 +82,7 @@ describe('drawGlParticleEmitter', () => {
   });
 
   it('skips out-of-range region ids and draws only valid particles', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlParticleEmitter(
       state,
       makeParticleEmitterNode({

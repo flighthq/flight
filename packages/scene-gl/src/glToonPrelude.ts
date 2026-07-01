@@ -2,7 +2,7 @@ import type { GlRenderState } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 
 // The shared Gl Toon (cel-shading) prelude: the GLSL 300 es vertex + fragment shader for the Toon
 // forward-lit path. One source string is specialized per material at compile time by a leading
@@ -59,7 +59,7 @@ export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {
 // by ensureGlToonProgram. Throws on a compile/link failure, which is a programmer error (a malformed
 // prelude), not an expected runtime condition.
 export function compileGlToonProgram(gl: WebGL2RenderingContext, key: Readonly<GlToonDefineKey>): GlToonProgram {
-  const program = linkGlProgram(gl, getGlToonVertexSourceForKey(key), getGlToonFragmentSourceForKey(key));
+  const program = compileGlProgram(gl, getGlToonVertexSourceForKey(key), getGlToonFragmentSourceForKey(key));
   return {
     ...resolveGlLitLocations(gl, program),
     program,

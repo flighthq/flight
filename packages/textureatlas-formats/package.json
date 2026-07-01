@@ -28,11 +28,12 @@
   },
   "dependencies": {
     "@flighthq/textureatlas": "*",
-    "@flighthq/types": "*"
+    "@flighthq/types": "*",
+    "@flighthq/xml": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Texture-atlas descriptor format parsers (TexturePacker / Starling / LibGDX / Aseprite -> TextureAtlas), plus the shared XML parse primitive (parseXmlDocument/parseXmlAttributes) consumed by spritesheet-formats.",
+  "description": "Texture-atlas descriptor format parsers (TexturePacker / Starling / LibGDX / Aseprite -> TextureAtlas)",
   "sideEffects": false
 }

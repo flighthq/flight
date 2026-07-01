@@ -3,13 +3,13 @@ import type { OrthographicProjection } from '@flighthq/types';
 
 import { createCamera } from './camera';
 import { createPerspectiveProjection } from './projection';
-import { setupDirectionalShadowCamera } from './shadowCamera';
+import { configureDirectionalShadowCamera } from './shadowCamera';
 
 function bounds() {
   return createAabb(-1, -1, -1, 1, 1, 1);
 }
 
-describe('setupDirectionalShadowCamera', () => {
+describe('configureDirectionalShadowCamera', () => {
   it('switches the camera to an orthographic frustum sized to the scene sphere', () => {
     const camera = createCamera({
       far: 100,
@@ -17,7 +17,7 @@ describe('setupDirectionalShadowCamera', () => {
       projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
     });
 
-    setupDirectionalShadowCamera(camera, { x: 0, y: -1, z: 0 }, bounds());
+    configureDirectionalShadowCamera(camera, { x: 0, y: -1, z: 0 }, bounds());
 
     expect(camera.projection.kind).toBe('orthographic');
     const radius = Math.hypot(1, 1, 1);
@@ -33,7 +33,7 @@ describe('setupDirectionalShadowCamera', () => {
       projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
     });
 
-    setupDirectionalShadowCamera(camera, { x: 0, y: -1, z: 0 }, bounds());
+    configureDirectionalShadowCamera(camera, { x: 0, y: -1, z: 0 }, bounds());
 
     // The world origin (= scene centre) maps to (0, 0, -distance) in the shadow camera's view space;
     // the view matrix's translation column carries that view-space position of the world origin.

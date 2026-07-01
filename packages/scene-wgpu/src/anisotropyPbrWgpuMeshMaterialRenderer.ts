@@ -15,7 +15,7 @@ import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
-  uploadWgpuPbrMaterialUniform,
+  writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
 } from './standardPbrWgpuMeshMaterialRenderer';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -59,7 +59,7 @@ export const anisotropyPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     // anisotropy group (floats 24..25): strength, rotation (radians).
     out[24] = anisotropy !== null ? anisotropy.anisotropyStrength : 0;
     out[25] = anisotropy !== null ? anisotropy.anisotropyRotation : 0;
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
 
     beginWgpuMeshDraw(state, pipeline);
     pass.setBindGroup(2, binding.bindGroup);

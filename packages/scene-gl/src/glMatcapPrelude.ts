@@ -3,7 +3,7 @@ import { bindGlTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 
 // The shared Gl matcap prelude: the GLSL 300 es vertex + fragment shader for the lighting-
 // independent Matcap (material-capture) material. A matcap is a prebaked-lit sphere texture; the
@@ -67,7 +67,7 @@ export function buildGlMatcapDefineKey(key: Readonly<GlMatcapDefineKey>): string
 // Compiles the matcap shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlMatcapProgram.
 export function compileGlMatcapProgram(gl: WebGL2RenderingContext, key: Readonly<GlMatcapDefineKey>): GlMatcapProgram {
-  const program = linkGlProgram(gl, getGlMatcapVertexSourceForKey(key), getGlMatcapFragmentSourceForKey(key));
+  const program = compileGlProgram(gl, getGlMatcapVertexSourceForKey(key), getGlMatcapFragmentSourceForKey(key));
   return {
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locMatcap: gl.getUniformLocation(program, 'u_matcap'),

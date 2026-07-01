@@ -1,7 +1,7 @@
 ﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { RendererData, RenderProxy2D } from '@flighthq/types';
 
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 import { createGlVideoData, defaultGlVideoRenderer, destroyGlVideoData, drawGlVideo } from './glVideo';
 
 function makeVideoNode(element: HTMLVideoElement | null = null): RenderProxy2D {
@@ -16,7 +16,7 @@ function makeVideoNode(element: HTMLVideoElement | null = null): RenderProxy2D {
 
 describe('createGlVideoData', () => {
   it('allocates per-node data with no element recorded yet', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const data = createGlVideoData(state, {} as never) as unknown as { lastElement: HTMLVideoElement | null };
     expect(data.lastElement).toBeNull();
   });
@@ -31,7 +31,7 @@ describe('defaultGlVideoRenderer', () => {
 
 describe('destroyGlVideoData', () => {
   it('deletes the cached GPU texture for the recorded element', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const element = document.createElement('video');
     const texture = gl.createTexture();
@@ -43,7 +43,7 @@ describe('destroyGlVideoData', () => {
   });
 
   it('is a no-op when no element was recorded', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const deleteSpy = vi.spyOn(gl, 'deleteTexture');
     destroyGlVideoData(state, { lastElement: null } as unknown as RendererData);
     expect(deleteSpy).not.toHaveBeenCalled();
@@ -52,13 +52,13 @@ describe('destroyGlVideoData', () => {
 
 describe('drawGlVideo', () => {
   it('returns early when source is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlVideo(state, makeVideoNode(null));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });
 
   it('returns early when element has not loaded', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     drawGlVideo(state, makeVideoNode(document.createElement('video')));
     expect(gl.drawElements).not.toHaveBeenCalled();
   });

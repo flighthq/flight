@@ -7,9 +7,9 @@ import type { Camera } from '@flighthq/types';
 import type { GlMeshProgram } from './glMeshProgram';
 import {
   beginGlMeshDraw,
+  compileGlProgram,
   drawGlMeshSubset,
   ensureGlSceneProgram,
-  linkGlProgram,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
@@ -41,6 +41,25 @@ describe('beginGlMeshDraw', () => {
     const { state, gl } = makeGlSceneState();
     beginGlMeshDraw(state, makeProgram(), true);
     expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+  });
+});
+
+describe('compileGlProgram', () => {
+  it('compiles, attaches, and links a vertex + fragment pair', () => {
+    const gl = makeFakeGl2();
+    const program = compileGlProgram(gl, '#version 300 es\nvoid main(){}', '#version 300 es\nvoid main(){}');
+    expect(program).not.toBeNull();
+    expect(gl.calls.some((c) => c.name === 'linkProgram')).toBe(true);
+  });
+
+  it('throws on a shader compile failure', () => {
+    const gl = makeFakeGl2({ compileOk: false });
+    expect(() => compileGlProgram(gl, 'v', 'f')).toThrow(/compile error/);
+  });
+
+  it('throws on a program link failure', () => {
+    const gl = makeFakeGl2({ linkOk: false });
+    expect(() => compileGlProgram(gl, 'v', 'f')).toThrow(/link error/);
   });
 });
 
@@ -103,25 +122,6 @@ describe('ensureGlSceneProgram', () => {
     ensureGlSceneProgram(state, 'fam:b', makeProgram);
     // Two distinct keys → two cached entries (the shared programCache spans every family).
     ensureGlSceneProgram(state, 'fam:a', makeProgram);
-  });
-});
-
-describe('linkGlProgram', () => {
-  it('compiles, attaches, and links a vertex + fragment pair', () => {
-    const gl = makeFakeGl2();
-    const program = linkGlProgram(gl, '#version 300 es\nvoid main(){}', '#version 300 es\nvoid main(){}');
-    expect(program).not.toBeNull();
-    expect(gl.calls.some((c) => c.name === 'linkProgram')).toBe(true);
-  });
-
-  it('throws on a shader compile failure', () => {
-    const gl = makeFakeGl2({ compileOk: false });
-    expect(() => linkGlProgram(gl, 'v', 'f')).toThrow(/compile error/);
-  });
-
-  it('throws on a program link failure', () => {
-    const gl = makeFakeGl2({ linkOk: false });
-    expect(() => linkGlProgram(gl, 'v', 'f')).toThrow(/link error/);
   });
 });
 

@@ -2,7 +2,7 @@ import type { GlRenderState } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 
 // The shared Gl classic prelude: the GLSL 300 es vertex + fragment uber-shader for the three classic
 // lit mesh-material families — Lambert (diffuse only), Phong (reflection-vector specular), and
@@ -77,7 +77,7 @@ export function compileGlClassicProgram(
 ): GlClassicProgram {
   const vertexSource = getGlClassicVertexSourceForKey(key);
   const fragmentSource = getGlClassicFragmentSourceForKey(key);
-  const program = linkGlProgram(gl, vertexSource, fragmentSource);
+  const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
     ...resolveGlLitLocations(gl, program),
     program,

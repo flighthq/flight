@@ -3,7 +3,7 @@ import { bindGlTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 
 // The shared Gl unlit prelude: the GLSL 300 es vertex + fragment shader for every lighting-
 // independent flat-color material (Unlit, Emissive, VertexColor). All three output LINEAR color with
@@ -66,7 +66,7 @@ export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlUnlitProgram.
 export function compileGlUnlitProgram(gl: WebGL2RenderingContext, key: Readonly<GlUnlitDefineKey>): GlUnlitProgram {
-  const program = linkGlProgram(gl, getGlUnlitVertexSourceForKey(key), getGlUnlitFragmentSourceForKey(key));
+  const program = compileGlProgram(gl, getGlUnlitVertexSourceForKey(key), getGlUnlitFragmentSourceForKey(key));
   return {
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locColor: gl.getUniformLocation(program, 'u_color'),

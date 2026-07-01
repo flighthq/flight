@@ -1,7 +1,7 @@
 import { getGlMaterialRenderer } from '@flighthq/render-gl';
 import { UniformColorTransformMaterialKind } from '@flighthq/types';
 
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 import {
   registerGlUniformColorTransformMaterial,
   uniformColorTransformGlMaterialRenderer,
@@ -9,7 +9,7 @@ import {
 
 describe('registerGlUniformColorTransformMaterial', () => {
   it('registers the uniform color transform material renderer', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerGlUniformColorTransformMaterial(state);
     expect(getGlMaterialRenderer(state, UniformColorTransformMaterialKind)).toBe(
       uniformColorTransformGlMaterialRenderer,

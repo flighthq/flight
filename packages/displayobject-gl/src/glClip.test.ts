@@ -4,7 +4,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { ClipRegion, DisplayObject, RenderProxy2D } from '@flighthq/types';
 
 import { enableGlClipSupport } from './glClip';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeRectClip(): ClipRegion {
   return { rect: createRectangle(0, 0, 50, 50), contours: null, winding: 'nonZero', version: 0 };
@@ -25,7 +25,7 @@ function makeProxy(source: DisplayObject, clipDepth: number): RenderProxy2D {
 
 describe('enableGlClipSupport', () => {
   it('installs the clip hooks on the render state', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
 
     enableGlClipSupport(state);
 
@@ -36,7 +36,7 @@ describe('enableGlClipSupport', () => {
   });
 
   it('pushClip enables the scissor test for a rectangle clip', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     enableGlClipSupport(state);
     const source = createDisplayObject();
     source.clip = makeRectClip();
@@ -48,7 +48,7 @@ describe('enableGlClipSupport', () => {
   });
 
   it('pushClip enables the stencil test for a contour clip', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     enableGlClipSupport(state);
     const source = createDisplayObject();
     source.clip = makeContourClip();
@@ -62,7 +62,7 @@ describe('enableGlClipSupport', () => {
   });
 
   it('pushClip does nothing when the source has no clip', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     enableGlClipSupport(state);
     const source = createDisplayObject();
 
@@ -72,7 +72,7 @@ describe('enableGlClipSupport', () => {
   });
 
   it('popClip unwinds forms down to the source parent depth', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     enableGlClipSupport(state);
     const source = createDisplayObject();
     source.clip = makeRectClip();
@@ -85,7 +85,7 @@ describe('enableGlClipSupport', () => {
   });
 
   it('finalize pops every remaining clip form', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     enableGlClipSupport(state);
     const rectSource = createDisplayObject();
     rectSource.clip = makeRectClip();

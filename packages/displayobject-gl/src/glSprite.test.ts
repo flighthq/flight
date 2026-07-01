@@ -4,7 +4,7 @@ import { createSprite } from '@flighthq/sprite';
 import { SpriteKind } from '@flighthq/types';
 
 import { renderGlSprite } from './glSprite';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeRenderer() {
   return { createData: () => null, submit: vi.fn() } as any;
@@ -12,7 +12,7 @@ function makeRenderer() {
 
 describe('renderGlSprite', () => {
   it('does not throw for an empty sprite node', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const sprite = createSprite();
     expect(() => {
       prepareDisplayObjectRender(state, sprite);
@@ -21,7 +21,7 @@ describe('renderGlSprite', () => {
   });
 
   it('calls renderer.submit for a visible sprite with a registered renderer', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderer = makeRenderer();
     registerRenderer(state, SpriteKind, renderer);
 
@@ -35,7 +35,7 @@ describe('renderGlSprite', () => {
   });
 
   it('skips a sprite node with visible set to false', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderer = makeRenderer();
     registerRenderer(state, SpriteKind, renderer);
 
@@ -49,7 +49,7 @@ describe('renderGlSprite', () => {
   });
 
   it('skips a sprite node with alpha at or below 0', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderer = makeRenderer();
     registerRenderer(state, SpriteKind, renderer);
 
@@ -63,7 +63,7 @@ describe('renderGlSprite', () => {
   });
 
   it('recurses into children and renders visible ones', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderer = makeRenderer();
     registerRenderer(state, SpriteKind, renderer);
 

@@ -50,7 +50,7 @@ import {
   glowSurface,
   gradientBevelSurface,
   gradientGlowSurface,
-  initSurfaceRs,
+  initSurfaceWasm,
   innerGlowSurface,
   innerShadowSurface,
   medianSurface,
@@ -756,10 +756,10 @@ describe('in-place aliased dest/source', () => {
   });
 });
 
-describe('initSurfaceRs', () => {
+describe('initSurfaceWasm', () => {
   it('is idempotent and lets bulk ops run afterward', () => {
-    initSurfaceRs();
-    initSurfaceRs();
+    initSurfaceWasm();
+    initSurfaceWasm();
     const out = new Uint8ClampedArray(8);
     expect(() => premultiplySurfacePixels(out, paintedPixels(8), 8)).not.toThrow();
   });
