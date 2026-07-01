@@ -1,6 +1,6 @@
 import type { Environment, GlRenderState } from '@flighthq/types';
 
-import { ensureGlEnvironmentSourceCube, glCubeFaceTarget } from './glEnvironmentCube';
+import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // Bakes an Environment's source radiance cubemap into the split-sum image-based-lighting set —
@@ -115,7 +115,7 @@ function renderGlBakeCubeFaces(
   const gl = state.gl;
   gl.viewport(0, 0, size, size);
   for (let face = 0; face < 6; face++) {
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, glCubeFaceTarget(gl, face), cube, mipLevel);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, getGlCubeFaceTarget(gl, face), cube, mipLevel);
     const b = CUBE_FACE_BASIS[face];
     gl.uniform3f(program.locFaceForward, b[0], b[1], b[2]);
     gl.uniform3f(program.locFaceRight, b[3], b[4], b[5]);
@@ -135,7 +135,7 @@ function createGlBakeCube(gl: WebGL2RenderingContext, size: number, mipped: bool
   for (let mip = 0; mip < levels; mip++) {
     const mipSize = Math.max(1, size >> mip);
     for (let face = 0; face < 6; face++) {
-      gl.texImage2D(glCubeFaceTarget(gl, face), mip, gl.RGBA16F, mipSize, mipSize, 0, gl.RGBA, gl.HALF_FLOAT, null);
+      gl.texImage2D(getGlCubeFaceTarget(gl, face), mip, gl.RGBA16F, mipSize, mipSize, 0, gl.RGBA, gl.HALF_FLOAT, null);
     }
   }
   const minFilter = mipped ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR;

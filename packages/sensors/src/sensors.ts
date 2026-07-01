@@ -68,6 +68,169 @@ export function attachSensors(sensors: Sensors): void {
   });
 }
 
+// Extracts Euler angles (alpha/beta/gamma in degrees) from a quaternion into an OrientationReading,
+// using the ZXY convention that matches the W3C deviceorientation spec. Propagates interval,
+// timestamp, and accuracy from the quaternion. Writes into `out`.
+// Safe when `out` aliases any field of `quaternion` because all inputs are read first.
+export function computeEulerFromQuaternion(out: OrientationReading, quaternion: Readonly<QuaternionReading>): void {
+  const x = quaternion.x;
+  const y = quaternion.y;
+  const z = quaternion.z;
+  const w = quaternion.w;
+  // ZXY (yaw-pitch-roll) decomposition matching deviceorientation alpha/beta/gamma convention.
+  const sinBeta = 2 * (w * x - y * z);
+  const beta = Math.abs(sinBeta) >= 1 ? (Math.sign(sinBeta) * Math.PI) / 2 : Math.asin(sinBeta);
+  const alpha = Math.atan2(2 * (w * z + x * y), 1 - 2 * (x * x + z * z));
+  const gamma = Math.atan2(2 * (w * y + x * z), 1 - 2 * (x * x + y * y));
+  const toDeg = 180 / Math.PI;
+  out.alpha = (((alpha * toDeg) % 360) + 360) % 360; // normalize to [0, 360)
+  out.beta = beta * toDeg;
+  out.gamma = gamma * toDeg;
+  out.interval = quaternion.interval;
+  out.timestamp = quaternion.timestamp;
+  out.accuracy = quaternion.accuracy;
+}
+
+// Derives the gravity vector (m/s²) from Euler orientation angles (alpha/beta/gamma in degrees)
+// into a MotionReading. The result is the device-frame projection of the 9.81 m/s² downward
+// gravity vector onto each device axis. Writes into `out`.
+// Safe when `out` aliases any field of `orientation` because all inputs are read first.
+export function computeGravityFromOrientation(out: MotionReading, orientation: Readonly<OrientationReading>): void {
+  const toRad = Math.PI / 180;
+  const b = orientation.beta * toRad;
+  const g = orientation.gamma * toRad;
+  // Gravity components in device frame. g is 9.81 m/s².
+  const G = 9.80665;
+  const sinG = Math.sin(g);
+  const cosG = Math.cos(g);
+  const sinB = Math.sin(b);
+  const cosB = Math.cos(b);
+  out.x = G * cosB * sinG;
+  out.y = -G * sinB;
+  out.z = G * cosB * cosG;
+  out.interval = orientation.interval;
+  out.timestamp = orientation.timestamp;
+  out.accuracy = orientation.accuracy;
+}
+
+// Derives an approximate quaternion from Euler orientation angles (alpha/beta/gamma in degrees).
+// Uses the ZXY convention matching the deviceorientation spec. Writes into `out`.
+// Safe when `out` aliases any field of `orientation` because all inputs are read first.
+export function computeQuaternionFromOrientationReading(
+  out: QuaternionReading,
+  orientation: Readonly<OrientationReading>,
+): void {
+  const toRad = Math.PI / 180;
+  const a = orientation.alpha * toRad * 0.5;
+  const b = orientation.beta * toRad * 0.5;
+  const g = orientation.gamma * toRad * 0.5;
+  const ca = Math.cos(a);
+  const sa = Math.sin(a);
+  const cb = Math.cos(b);
+  const sb = Math.sin(b);
+  const cg = Math.cos(g);
+  const sg = Math.sin(g);
+  out.x = sa * sb * cg - ca * cb * sg;
+  out.y = sa * cb * sg + ca * sb * cg;
+  out.z = ca * cb * sg - sa * sb * cg;
+  out.w = ca * cb * cg + sa * sb * sg;
+  out.interval = orientation.interval;
+  out.timestamp = orientation.timestamp;
+  out.accuracy = orientation.accuracy;
+}
+
+// Converts a quaternion reading into a 3×3 rotation matrix written to `out` (column-major, 9
+// elements). Safe when `out` aliases any field of `quaternion` because all inputs are read first.
+export function computeRotationMatrixFromQuaternion(out: number[], quaternion: Readonly<QuaternionReading>): void {
+  const x = quaternion.x;
+  const y = quaternion.y;
+  const z = quaternion.z;
+  const w = quaternion.w;
+  const x2 = x + x;
+  const y2 = y + y;
+  const z2 = z + z;
+  const xx = x * x2;
+  const xy = x * y2;
+  const xz = x * z2;
+  const yy = y * y2;
+  const yz = y * z2;
+  const zz = z * z2;
+  const wx = w * x2;
+  const wy = w * y2;
+  const wz = w * z2;
+  out[0] = 1 - (yy + zz);
+  out[1] = xy + wz;
+  out[2] = xz - wy;
+  out[3] = xy - wz;
+  out[4] = 1 - (xx + zz);
+  out[5] = yz + wx;
+  out[6] = xz + wy;
+  out[7] = yz - wx;
+  out[8] = 1 - (xx + yy);
+}
+
+// Compensates an OrientationReading for the current screen rotation angle (in degrees, clockwise,
+// as returned by screen.orientation.angle). Raw deviceorientation angles are in device-physical
+// frame; this function rotates alpha/beta/gamma so they are relative to the current screen
+// orientation. Writes into `out`. Safe when `out` aliases `orientation` because all inputs are read first.
+export function computeScreenRelativeOrientation(
+  out: OrientationReading,
+  orientation: Readonly<OrientationReading>,
+  screenAngle: number,
+): void {
+  const alpha = orientation.alpha;
+  const beta = orientation.beta;
+  const gamma = orientation.gamma;
+  // Read all inputs before writing any output (alias safety).
+  const toRad = Math.PI / 180;
+  const angle = screenAngle * toRad;
+  const sinA = Math.sin(angle);
+  const cosA = Math.cos(angle);
+  // Rotate gamma and beta components by the screen angle in the horizontal plane.
+  out.alpha = alpha;
+  out.beta = beta * cosA - gamma * sinA;
+  out.gamma = beta * sinA + gamma * cosA;
+  out.absolute = orientation.absolute;
+  out.heading = orientation.heading;
+  out.interval = orientation.interval;
+  out.timestamp = orientation.timestamp;
+  out.accuracy = orientation.accuracy;
+}
+
+// Rotates a device-frame acceleration vector (m/s²) into the world frame using a quaternion that
+// describes the device's orientation. The quaternion represents the rotation from world to device
+// frame; this function applies the inverse (device-to-world) rotation. Writes into `out`.
+// Safe when `out` aliases `acceleration` because all inputs are read first.
+export function computeWorldAccelerationFromDeviceAcceleration(
+  out: MotionReading,
+  acceleration: Readonly<MotionReading>,
+  quaternion: Readonly<QuaternionReading>,
+): void {
+  // Read all inputs before writing any output (alias safety).
+  const ax = acceleration.x;
+  const ay = acceleration.y;
+  const az = acceleration.z;
+  const qx = quaternion.x;
+  const qy = quaternion.y;
+  const qz = quaternion.z;
+  const qw = quaternion.w;
+  // Apply the inverse (conjugate) quaternion rotation: q^-1 * v * q.
+  // Using the efficient vector rotation formula: v' = v + 2*qw*(q × v) + 2*(q × (q × v)).
+  const twx = 2 * qw;
+  const cx = qy * az - qz * ay;
+  const cy = qz * ax - qx * az;
+  const cz = qx * ay - qy * ax;
+  const ccx = qy * cz - qz * cy;
+  const ccy = qz * cx - qx * cz;
+  const ccz = qx * cy - qy * cx;
+  out.x = ax + twx * cx + 2 * ccx;
+  out.y = ay + twx * cy + 2 * ccy;
+  out.z = az + twx * cz + 2 * ccz;
+  out.interval = acceleration.interval;
+  out.timestamp = acceleration.timestamp;
+  out.accuracy = acceleration.accuracy;
+}
+
 // Allocates a zeroed AmbientLightReading with unknown accuracy/interval/timestamp.
 export function createAmbientLightReading(): AmbientLightReading {
   return { accuracy: 'unknown', illuminance: 0, interval: -1, timestamp: -1 };
@@ -207,7 +370,7 @@ export function createWebSensorsBackend(): SensorsBackend {
               _quaternionReading.z = q[2] ?? 0;
               _quaternionReading.w = q[3] ?? 1;
               // Derive Euler orientation from the quaternion using ZXY convention.
-              getEulerFromQuaternion(_absoluteOrientation, _quaternionReading);
+              computeEulerFromQuaternion(_absoluteOrientation, _quaternionReading);
             }
             _absoluteOrientation.absolute = true;
             _absoluteOrientation.heading = -1;
@@ -416,135 +579,6 @@ export function disposeSensors(sensors: Sensors): void {
   detachSensors(sensors);
 }
 
-// Extracts Euler angles (alpha/beta/gamma in degrees) from a quaternion into an OrientationReading,
-// using the ZXY convention that matches the W3C deviceorientation spec. Propagates interval,
-// timestamp, and accuracy from the quaternion. Writes into `out`.
-// Safe when `out` aliases any field of `quaternion` because all inputs are read first.
-export function getEulerFromQuaternion(out: OrientationReading, quaternion: Readonly<QuaternionReading>): void {
-  const x = quaternion.x;
-  const y = quaternion.y;
-  const z = quaternion.z;
-  const w = quaternion.w;
-  // ZXY (yaw-pitch-roll) decomposition matching deviceorientation alpha/beta/gamma convention.
-  const sinBeta = 2 * (w * x - y * z);
-  const beta = Math.abs(sinBeta) >= 1 ? (Math.sign(sinBeta) * Math.PI) / 2 : Math.asin(sinBeta);
-  const alpha = Math.atan2(2 * (w * z + x * y), 1 - 2 * (x * x + z * z));
-  const gamma = Math.atan2(2 * (w * y + x * z), 1 - 2 * (x * x + y * y));
-  const toDeg = 180 / Math.PI;
-  out.alpha = (((alpha * toDeg) % 360) + 360) % 360; // normalize to [0, 360)
-  out.beta = beta * toDeg;
-  out.gamma = gamma * toDeg;
-  out.interval = quaternion.interval;
-  out.timestamp = quaternion.timestamp;
-  out.accuracy = quaternion.accuracy;
-}
-
-// Derives the gravity vector (m/s²) from Euler orientation angles (alpha/beta/gamma in degrees)
-// into a MotionReading. The result is the device-frame projection of the 9.81 m/s² downward
-// gravity vector onto each device axis. Writes into `out`.
-// Safe when `out` aliases any field of `orientation` because all inputs are read first.
-export function getGravityFromOrientation(out: MotionReading, orientation: Readonly<OrientationReading>): void {
-  const toRad = Math.PI / 180;
-  const b = orientation.beta * toRad;
-  const g = orientation.gamma * toRad;
-  // Gravity components in device frame. g is 9.81 m/s².
-  const G = 9.80665;
-  const sinG = Math.sin(g);
-  const cosG = Math.cos(g);
-  const sinB = Math.sin(b);
-  const cosB = Math.cos(b);
-  out.x = G * cosB * sinG;
-  out.y = -G * sinB;
-  out.z = G * cosB * cosG;
-  out.interval = orientation.interval;
-  out.timestamp = orientation.timestamp;
-  out.accuracy = orientation.accuracy;
-}
-
-// Derives an approximate quaternion from Euler orientation angles (alpha/beta/gamma in degrees).
-// Uses the ZXY convention matching the deviceorientation spec. Writes into `out`.
-// Safe when `out` aliases any field of `orientation` because all inputs are read first.
-export function getQuaternionFromOrientationReading(
-  out: QuaternionReading,
-  orientation: Readonly<OrientationReading>,
-): void {
-  const toRad = Math.PI / 180;
-  const a = orientation.alpha * toRad * 0.5;
-  const b = orientation.beta * toRad * 0.5;
-  const g = orientation.gamma * toRad * 0.5;
-  const ca = Math.cos(a);
-  const sa = Math.sin(a);
-  const cb = Math.cos(b);
-  const sb = Math.sin(b);
-  const cg = Math.cos(g);
-  const sg = Math.sin(g);
-  out.x = sa * sb * cg - ca * cb * sg;
-  out.y = sa * cb * sg + ca * sb * cg;
-  out.z = ca * cb * sg - sa * sb * cg;
-  out.w = ca * cb * cg + sa * sb * sg;
-  out.interval = orientation.interval;
-  out.timestamp = orientation.timestamp;
-  out.accuracy = orientation.accuracy;
-}
-
-// Converts a quaternion reading into a 3×3 rotation matrix written to `out` (column-major, 9
-// elements). Safe when `out` aliases any field of `quaternion` because all inputs are read first.
-export function getRotationMatrixFromQuaternion(out: number[], quaternion: Readonly<QuaternionReading>): void {
-  const x = quaternion.x;
-  const y = quaternion.y;
-  const z = quaternion.z;
-  const w = quaternion.w;
-  const x2 = x + x;
-  const y2 = y + y;
-  const z2 = z + z;
-  const xx = x * x2;
-  const xy = x * y2;
-  const xz = x * z2;
-  const yy = y * y2;
-  const yz = y * z2;
-  const zz = z * z2;
-  const wx = w * x2;
-  const wy = w * y2;
-  const wz = w * z2;
-  out[0] = 1 - (yy + zz);
-  out[1] = xy + wz;
-  out[2] = xz - wy;
-  out[3] = xy - wz;
-  out[4] = 1 - (xx + zz);
-  out[5] = yz + wx;
-  out[6] = xz + wy;
-  out[7] = yz - wx;
-  out[8] = 1 - (xx + yy);
-}
-
-// Compensates an OrientationReading for the current screen rotation angle (in degrees, clockwise,
-// as returned by screen.orientation.angle). Raw deviceorientation angles are in device-physical
-// frame; this function rotates alpha/beta/gamma so they are relative to the current screen
-// orientation. Writes into `out`. Safe when `out` aliases `orientation` because all inputs are read first.
-export function getScreenRelativeOrientation(
-  out: OrientationReading,
-  orientation: Readonly<OrientationReading>,
-  screenAngle: number,
-): void {
-  const alpha = orientation.alpha;
-  const beta = orientation.beta;
-  const gamma = orientation.gamma;
-  // Read all inputs before writing any output (alias safety).
-  const toRad = Math.PI / 180;
-  const angle = screenAngle * toRad;
-  const sinA = Math.sin(angle);
-  const cosA = Math.cos(angle);
-  // Rotate gamma and beta components by the screen angle in the horizontal plane.
-  out.alpha = alpha;
-  out.beta = beta * cosA - gamma * sinA;
-  out.gamma = beta * sinA + gamma * cosA;
-  out.absolute = orientation.absolute;
-  out.heading = orientation.heading;
-  out.interval = orientation.interval;
-  out.timestamp = orientation.timestamp;
-  out.accuracy = orientation.accuracy;
-}
-
 // The active sensors backend, or a lazily-created web default. There is always a backend.
 export function getSensorsBackend(): SensorsBackend {
   if (_backend === null) _backend = createWebSensorsBackend();
@@ -557,40 +591,6 @@ export function getSensorsPermissionState(
   sensor?: 'motion' | 'orientation' | 'magnetometer',
 ): Promise<SensorsPermissionState> {
   return getSensorsBackend().getPermissionState(sensor);
-}
-
-// Rotates a device-frame acceleration vector (m/s²) into the world frame using a quaternion that
-// describes the device's orientation. The quaternion represents the rotation from world to device
-// frame; this function applies the inverse (device-to-world) rotation. Writes into `out`.
-// Safe when `out` aliases `acceleration` because all inputs are read first.
-export function getWorldAccelerationFromDeviceAcceleration(
-  out: MotionReading,
-  acceleration: Readonly<MotionReading>,
-  quaternion: Readonly<QuaternionReading>,
-): void {
-  // Read all inputs before writing any output (alias safety).
-  const ax = acceleration.x;
-  const ay = acceleration.y;
-  const az = acceleration.z;
-  const qx = quaternion.x;
-  const qy = quaternion.y;
-  const qz = quaternion.z;
-  const qw = quaternion.w;
-  // Apply the inverse (conjugate) quaternion rotation: q^-1 * v * q.
-  // Using the efficient vector rotation formula: v' = v + 2*qw*(q × v) + 2*(q × (q × v)).
-  const twx = 2 * qw;
-  const cx = qy * az - qz * ay;
-  const cy = qz * ax - qx * az;
-  const cz = qx * ay - qy * ax;
-  const ccx = qy * cz - qz * cy;
-  const ccy = qz * cx - qx * cz;
-  const ccz = qx * cy - qy * cx;
-  out.x = ax + twx * cx + 2 * ccx;
-  out.y = ay + twx * cy + 2 * ccy;
-  out.z = az + twx * cz + 2 * ccz;
-  out.interval = acceleration.interval;
-  out.timestamp = acceleration.timestamp;
-  out.accuracy = acceleration.accuracy;
 }
 
 // True if the accelerometer (including gravity) is available on this device.

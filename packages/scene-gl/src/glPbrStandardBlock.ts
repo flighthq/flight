@@ -78,7 +78,7 @@ export function bindGlPbrStandardTexture(
   location: WebGLUniformLocation | null,
   unit: number,
 ): void {
-  if (!hasTexturePixels(texture)) return;
+  if (!isGlTextureReady(texture)) return;
   const gl = state.gl;
   gl.activeTexture(gl.TEXTURE0 + unit);
   bindGlTexture(state, texture!.image!.source!);
@@ -88,7 +88,7 @@ export function bindGlPbrStandardTexture(
 // Builds a GlPbrDefineKey with the standard-block map flags from `standard` and the alpha-mask flag
 // from the material's surface trailer, with every extension lobe disabled. Each extension renderer
 // calls this and then ORs in its own extension flag; the StandardPbr renderer uses it as-is. Keeps
-// the map-present test (hasTexturePixels) in one place so the compiled variant and the bound
+// the map-present test (isGlTextureReady) in one place so the compiled variant and the bound
 // textures never disagree.
 export function buildGlPbrStandardDefineKey(
   standard: Readonly<StandardPbrMaterialProperties> | null,
@@ -98,11 +98,11 @@ export function buildGlPbrStandardDefineKey(
     alphaMaskEnabled,
     anisotropyEnabled: false,
     clearcoatEnabled: false,
-    hasBaseColorMap: hasTexturePixels(standard?.baseColorMap ?? null),
-    hasEmissiveMap: hasTexturePixels(standard?.emissiveMap ?? null),
-    hasMetallicRoughnessMap: hasTexturePixels(standard?.metallicRoughnessMap ?? null),
-    hasNormalMap: hasTexturePixels(standard?.normalMap ?? null),
-    hasOcclusionMap: hasTexturePixels(standard?.occlusionMap ?? null),
+    hasBaseColorMap: isGlTextureReady(standard?.baseColorMap ?? null),
+    hasEmissiveMap: isGlTextureReady(standard?.emissiveMap ?? null),
+    hasMetallicRoughnessMap: isGlTextureReady(standard?.metallicRoughnessMap ?? null),
+    hasNormalMap: isGlTextureReady(standard?.normalMap ?? null),
+    hasOcclusionMap: isGlTextureReady(standard?.occlusionMap ?? null),
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
@@ -114,7 +114,7 @@ export function buildGlPbrStandardDefineKey(
 // True when a texture slot has bound, uploadable pixels (an image resource with a backing source).
 // The single predicate the define-key builder and the bind path share, so "map present" means the
 // same thing in both places.
-export function hasTexturePixels(texture: Readonly<Texture> | null): boolean {
+export function isGlTextureReady(texture: Readonly<Texture> | null): boolean {
   return texture !== null && texture.image !== null && texture.image.source !== null;
 }
 

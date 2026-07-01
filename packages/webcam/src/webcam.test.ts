@@ -3,9 +3,9 @@ import type { WebcamBackend, WebcamCaptureOptions } from '@flighthq/types';
 import {
   createWebWebcamBackend,
   getWebcamBackend,
-  pickWebcamImage,
   recordWebcamVideo,
   requestWebcamPermission,
+  selectWebcamImage,
   setWebcamBackend,
   takeWebcamPhoto,
 } from './webcam';
@@ -48,16 +48,6 @@ describe('getWebcamBackend', () => {
   });
 });
 
-describe('pickWebcamImage', () => {
-  it('captures with the photos source', async () => {
-    const backend = fakeBackend();
-    setWebcamBackend(backend);
-    const photo = await pickWebcamImage({ quality: 0.5 });
-    expect(photo).not.toBeNull();
-    expect(backend.lastOptions).toEqual({ quality: 0.5, source: 'photos' });
-  });
-});
-
 describe('recordWebcamVideo', () => {
   it('captures video with the camera source', async () => {
     const backend = fakeBackend();
@@ -81,6 +71,16 @@ describe('requestWebcamPermission', () => {
 
   it('returns a boolean from the web backend without throwing', async () => {
     expect(typeof (await requestWebcamPermission())).toBe('boolean');
+  });
+});
+
+describe('selectWebcamImage', () => {
+  it('captures with the photos source', async () => {
+    const backend = fakeBackend();
+    setWebcamBackend(backend);
+    const photo = await selectWebcamImage({ quality: 0.5 });
+    expect(photo).not.toBeNull();
+    expect(backend.lastOptions).toEqual({ quality: 0.5, source: 'photos' });
   });
 });
 

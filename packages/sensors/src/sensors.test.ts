@@ -13,6 +13,12 @@ import type {
 
 import {
   attachSensors,
+  computeEulerFromQuaternion,
+  computeGravityFromOrientation,
+  computeQuaternionFromOrientationReading,
+  computeRotationMatrixFromQuaternion,
+  computeScreenRelativeOrientation,
+  computeWorldAccelerationFromDeviceAcceleration,
   createAmbientLightReading,
   createMotionReading,
   createOrientationReading,
@@ -24,14 +30,8 @@ import {
   createWebSensorsBackend,
   detachSensors,
   disposeSensors,
-  getEulerFromQuaternion,
-  getGravityFromOrientation,
-  getQuaternionFromOrientationReading,
-  getRotationMatrixFromQuaternion,
-  getScreenRelativeOrientation,
   getSensorsBackend,
   getSensorsPermissionState,
-  getWorldAccelerationFromDeviceAcceleration,
   hasAccelerometer,
   hasAmbientLightSensor,
   hasBarometer,
@@ -293,6 +293,214 @@ describe('attachSensors', () => {
   });
 });
 
+describe('computeEulerFromQuaternion', () => {
+  it('converts an identity quaternion to zero Euler angles', () => {
+    const q = createQuaternionReading();
+    const out = createOrientationReading();
+    computeEulerFromQuaternion(out, q);
+    // Identity quaternion → zero rotation → alpha near 0, beta near 0, gamma near 0.
+    expect(out.beta).toBeCloseTo(0, 5);
+    expect(out.gamma).toBeCloseTo(0, 5);
+  });
+
+  it('propagates interval, timestamp, and accuracy from the quaternion', () => {
+    const q = createQuaternionReading();
+    q.interval = 20;
+    q.timestamp = 99999;
+    q.accuracy = 'high';
+    const out = createOrientationReading();
+    computeEulerFromQuaternion(out, q);
+    expect(out.interval).toBe(20);
+    expect(out.timestamp).toBe(99999);
+    expect(out.accuracy).toBe('high');
+  });
+
+  it('is alias-safe when out is a separate object', () => {
+    const q = createQuaternionReading();
+    // 90-degree rotation around Z.
+    const angle = Math.PI / 4;
+    q.w = Math.cos(angle);
+    q.z = Math.sin(angle);
+    const out = createOrientationReading();
+    computeEulerFromQuaternion(out, q);
+    // alpha should reflect a ~90-degree rotation around Z.
+    expect(out.alpha).toBeGreaterThan(80);
+    expect(out.alpha).toBeLessThan(100);
+  });
+});
+
+describe('computeGravityFromOrientation', () => {
+  it('returns a near-zero gravity vector for zero orientation', () => {
+    const orientation = createOrientationReading();
+    const out = createMotionReading();
+    computeGravityFromOrientation(out, orientation);
+    // Device flat on table: gravity points in +Z (device frame), with ~9.8 m/s².
+    expect(out.x).toBeCloseTo(0, 3);
+    expect(out.y).toBeCloseTo(0, 3);
+    expect(Math.abs(out.z)).toBeCloseTo(9.80665, 3);
+  });
+
+  it('propagates interval, timestamp, and accuracy from the orientation', () => {
+    const orientation = createOrientationReading();
+    orientation.interval = 10;
+    orientation.timestamp = 5000;
+    orientation.accuracy = 'medium';
+    const out = createMotionReading();
+    computeGravityFromOrientation(out, orientation);
+    expect(out.interval).toBe(10);
+    expect(out.timestamp).toBe(5000);
+    expect(out.accuracy).toBe('medium');
+  });
+
+  it('is alias-safe: does not corrupt the input when out differs', () => {
+    const orientation = createOrientationReading();
+    orientation.beta = 90;
+    const out = createMotionReading();
+    computeGravityFromOrientation(out, orientation);
+    // When device is tilted 90° around X (beta=90), gravity aligns with -Y in device frame.
+    expect(out.y).toBeCloseTo(-9.80665, 3);
+  });
+});
+
+describe('computeQuaternionFromOrientationReading', () => {
+  it('converts a zero-rotation orientation to approximately identity quaternion', () => {
+    const orientation = createOrientationReading();
+    const out = createQuaternionReading();
+    computeQuaternionFromOrientationReading(out, orientation);
+    expect(out.w).toBeCloseTo(1, 5);
+    expect(out.x).toBeCloseTo(0, 5);
+    expect(out.y).toBeCloseTo(0, 5);
+    expect(out.z).toBeCloseTo(0, 5);
+  });
+
+  it('propagates interval and timestamp from the orientation', () => {
+    const orientation = createOrientationReading();
+    orientation.interval = 16;
+    orientation.timestamp = 12345;
+    const out = createQuaternionReading();
+    computeQuaternionFromOrientationReading(out, orientation);
+    expect(out.interval).toBe(16);
+    expect(out.timestamp).toBe(12345);
+  });
+
+  it('is alias-safe when out is the same object that contains orientation-like values', () => {
+    const orientation = createOrientationReading();
+    orientation.alpha = 90;
+    const out = createQuaternionReading();
+    // Capture expected value with a distinct output first.
+    const expected = createQuaternionReading();
+    computeQuaternionFromOrientationReading(expected, orientation);
+    computeQuaternionFromOrientationReading(out, orientation);
+    expect(out.w).toBeCloseTo(expected.w, 5);
+    expect(out.x).toBeCloseTo(expected.x, 5);
+  });
+});
+
+describe('computeRotationMatrixFromQuaternion', () => {
+  it('returns identity matrix for identity quaternion', () => {
+    const q = createQuaternionReading();
+    const out: number[] = new Array(9).fill(0);
+    computeRotationMatrixFromQuaternion(out, q);
+    // Column-major identity: diagonal elements = 1, off-diagonal = 0.
+    expect(out[0]).toBeCloseTo(1, 5);
+    expect(out[4]).toBeCloseTo(1, 5);
+    expect(out[8]).toBeCloseTo(1, 5);
+    expect(out[1]).toBeCloseTo(0, 5);
+    expect(out[2]).toBeCloseTo(0, 5);
+    expect(out[3]).toBeCloseTo(0, 5);
+  });
+
+  it('is alias-safe: output array separate from quaternion does not corrupt quaternion fields', () => {
+    const q = createQuaternionReading();
+    const out: number[] = new Array(9).fill(0);
+    computeRotationMatrixFromQuaternion(out, q);
+    // Quaternion should remain identity after the call.
+    expect(q.w).toBe(1);
+    expect(q.x).toBe(0);
+  });
+});
+
+describe('computeScreenRelativeOrientation', () => {
+  it('returns unchanged orientation when screenAngle is 0', () => {
+    const orientation = createOrientationReading();
+    orientation.beta = 30;
+    orientation.gamma = 15;
+    const out = createOrientationReading();
+    computeScreenRelativeOrientation(out, orientation, 0);
+    expect(out.beta).toBeCloseTo(30, 5);
+    expect(out.gamma).toBeCloseTo(15, 5);
+    expect(out.alpha).toBeCloseTo(0, 5);
+  });
+
+  it('propagates absolute, heading, interval, timestamp, and accuracy', () => {
+    const orientation = createOrientationReading();
+    orientation.absolute = true;
+    orientation.heading = 45;
+    orientation.interval = 16;
+    orientation.timestamp = 1000;
+    orientation.accuracy = 'high';
+    const out = createOrientationReading();
+    computeScreenRelativeOrientation(out, orientation, 0);
+    expect(out.absolute).toBe(true);
+    expect(out.heading).toBe(45);
+    expect(out.interval).toBe(16);
+    expect(out.timestamp).toBe(1000);
+    expect(out.accuracy).toBe('high');
+  });
+
+  it('is alias-safe when out is separate from orientation', () => {
+    const orientation = createOrientationReading();
+    orientation.beta = 20;
+    orientation.gamma = 10;
+    const out = createOrientationReading();
+    computeScreenRelativeOrientation(out, orientation, 90);
+    // With 90-degree screen rotation: beta' = beta*cos(90) - gamma*sin(90) = -gamma.
+    expect(out.beta).toBeCloseTo(-10, 3);
+    expect(out.gamma).toBeCloseTo(20, 3);
+  });
+});
+
+describe('computeWorldAccelerationFromDeviceAcceleration', () => {
+  it('returns the same vector for an identity quaternion orientation', () => {
+    const accel = createMotionReading();
+    accel.x = 1;
+    accel.y = 2;
+    accel.z = 3;
+    const q = createQuaternionReading(); // identity
+    const out = createMotionReading();
+    computeWorldAccelerationFromDeviceAcceleration(out, accel, q);
+    expect(out.x).toBeCloseTo(1, 5);
+    expect(out.y).toBeCloseTo(2, 5);
+    expect(out.z).toBeCloseTo(3, 5);
+  });
+
+  it('propagates interval, timestamp, and accuracy from acceleration', () => {
+    const accel = createMotionReading();
+    accel.interval = 8;
+    accel.timestamp = 42000;
+    accel.accuracy = 'low';
+    const q = createQuaternionReading();
+    const out = createMotionReading();
+    computeWorldAccelerationFromDeviceAcceleration(out, accel, q);
+    expect(out.interval).toBe(8);
+    expect(out.timestamp).toBe(42000);
+    expect(out.accuracy).toBe('low');
+  });
+
+  it('is alias-safe when out is the same object as acceleration', () => {
+    const accel = createMotionReading();
+    accel.x = 1;
+    accel.y = 0;
+    accel.z = 0;
+    const q = createQuaternionReading();
+    // Out aliases the acceleration input.
+    computeWorldAccelerationFromDeviceAcceleration(accel, accel, q);
+    expect(accel.x).toBeCloseTo(1, 5);
+    expect(accel.y).toBeCloseTo(0, 5);
+    expect(accel.z).toBeCloseTo(0, 5);
+  });
+});
+
 describe('createAmbientLightReading', () => {
   it('allocates a zeroed reading with unknown accuracy and sentinel interval/timestamp', () => {
     const r = createAmbientLightReading();
@@ -435,173 +643,6 @@ describe('disposeSensors', () => {
   });
 });
 
-describe('getEulerFromQuaternion', () => {
-  it('converts an identity quaternion to zero Euler angles', () => {
-    const q = createQuaternionReading();
-    const out = createOrientationReading();
-    getEulerFromQuaternion(out, q);
-    // Identity quaternion → zero rotation → alpha near 0, beta near 0, gamma near 0.
-    expect(out.beta).toBeCloseTo(0, 5);
-    expect(out.gamma).toBeCloseTo(0, 5);
-  });
-
-  it('propagates interval, timestamp, and accuracy from the quaternion', () => {
-    const q = createQuaternionReading();
-    q.interval = 20;
-    q.timestamp = 99999;
-    q.accuracy = 'high';
-    const out = createOrientationReading();
-    getEulerFromQuaternion(out, q);
-    expect(out.interval).toBe(20);
-    expect(out.timestamp).toBe(99999);
-    expect(out.accuracy).toBe('high');
-  });
-
-  it('is alias-safe when out is a separate object', () => {
-    const q = createQuaternionReading();
-    // 90-degree rotation around Z.
-    const angle = Math.PI / 4;
-    q.w = Math.cos(angle);
-    q.z = Math.sin(angle);
-    const out = createOrientationReading();
-    getEulerFromQuaternion(out, q);
-    // alpha should reflect a ~90-degree rotation around Z.
-    expect(out.alpha).toBeGreaterThan(80);
-    expect(out.alpha).toBeLessThan(100);
-  });
-});
-
-describe('getGravityFromOrientation', () => {
-  it('returns a near-zero gravity vector for zero orientation', () => {
-    const orientation = createOrientationReading();
-    const out = createMotionReading();
-    getGravityFromOrientation(out, orientation);
-    // Device flat on table: gravity points in +Z (device frame), with ~9.8 m/s².
-    expect(out.x).toBeCloseTo(0, 3);
-    expect(out.y).toBeCloseTo(0, 3);
-    expect(Math.abs(out.z)).toBeCloseTo(9.80665, 3);
-  });
-
-  it('propagates interval, timestamp, and accuracy from the orientation', () => {
-    const orientation = createOrientationReading();
-    orientation.interval = 10;
-    orientation.timestamp = 5000;
-    orientation.accuracy = 'medium';
-    const out = createMotionReading();
-    getGravityFromOrientation(out, orientation);
-    expect(out.interval).toBe(10);
-    expect(out.timestamp).toBe(5000);
-    expect(out.accuracy).toBe('medium');
-  });
-
-  it('is alias-safe: does not corrupt the input when out differs', () => {
-    const orientation = createOrientationReading();
-    orientation.beta = 90;
-    const out = createMotionReading();
-    getGravityFromOrientation(out, orientation);
-    // When device is tilted 90° around X (beta=90), gravity aligns with -Y in device frame.
-    expect(out.y).toBeCloseTo(-9.80665, 3);
-  });
-});
-
-describe('getQuaternionFromOrientationReading', () => {
-  it('converts a zero-rotation orientation to approximately identity quaternion', () => {
-    const orientation = createOrientationReading();
-    const out = createQuaternionReading();
-    getQuaternionFromOrientationReading(out, orientation);
-    expect(out.w).toBeCloseTo(1, 5);
-    expect(out.x).toBeCloseTo(0, 5);
-    expect(out.y).toBeCloseTo(0, 5);
-    expect(out.z).toBeCloseTo(0, 5);
-  });
-
-  it('propagates interval and timestamp from the orientation', () => {
-    const orientation = createOrientationReading();
-    orientation.interval = 16;
-    orientation.timestamp = 12345;
-    const out = createQuaternionReading();
-    getQuaternionFromOrientationReading(out, orientation);
-    expect(out.interval).toBe(16);
-    expect(out.timestamp).toBe(12345);
-  });
-
-  it('is alias-safe when out is the same object that contains orientation-like values', () => {
-    const orientation = createOrientationReading();
-    orientation.alpha = 90;
-    const out = createQuaternionReading();
-    // Capture expected value with a distinct output first.
-    const expected = createQuaternionReading();
-    getQuaternionFromOrientationReading(expected, orientation);
-    getQuaternionFromOrientationReading(out, orientation);
-    expect(out.w).toBeCloseTo(expected.w, 5);
-    expect(out.x).toBeCloseTo(expected.x, 5);
-  });
-});
-
-describe('getRotationMatrixFromQuaternion', () => {
-  it('returns identity matrix for identity quaternion', () => {
-    const q = createQuaternionReading();
-    const out: number[] = new Array(9).fill(0);
-    getRotationMatrixFromQuaternion(out, q);
-    // Column-major identity: diagonal elements = 1, off-diagonal = 0.
-    expect(out[0]).toBeCloseTo(1, 5);
-    expect(out[4]).toBeCloseTo(1, 5);
-    expect(out[8]).toBeCloseTo(1, 5);
-    expect(out[1]).toBeCloseTo(0, 5);
-    expect(out[2]).toBeCloseTo(0, 5);
-    expect(out[3]).toBeCloseTo(0, 5);
-  });
-
-  it('is alias-safe: output array separate from quaternion does not corrupt quaternion fields', () => {
-    const q = createQuaternionReading();
-    const out: number[] = new Array(9).fill(0);
-    getRotationMatrixFromQuaternion(out, q);
-    // Quaternion should remain identity after the call.
-    expect(q.w).toBe(1);
-    expect(q.x).toBe(0);
-  });
-});
-
-describe('getScreenRelativeOrientation', () => {
-  it('returns unchanged orientation when screenAngle is 0', () => {
-    const orientation = createOrientationReading();
-    orientation.beta = 30;
-    orientation.gamma = 15;
-    const out = createOrientationReading();
-    getScreenRelativeOrientation(out, orientation, 0);
-    expect(out.beta).toBeCloseTo(30, 5);
-    expect(out.gamma).toBeCloseTo(15, 5);
-    expect(out.alpha).toBeCloseTo(0, 5);
-  });
-
-  it('propagates absolute, heading, interval, timestamp, and accuracy', () => {
-    const orientation = createOrientationReading();
-    orientation.absolute = true;
-    orientation.heading = 45;
-    orientation.interval = 16;
-    orientation.timestamp = 1000;
-    orientation.accuracy = 'high';
-    const out = createOrientationReading();
-    getScreenRelativeOrientation(out, orientation, 0);
-    expect(out.absolute).toBe(true);
-    expect(out.heading).toBe(45);
-    expect(out.interval).toBe(16);
-    expect(out.timestamp).toBe(1000);
-    expect(out.accuracy).toBe('high');
-  });
-
-  it('is alias-safe when out is separate from orientation', () => {
-    const orientation = createOrientationReading();
-    orientation.beta = 20;
-    orientation.gamma = 10;
-    const out = createOrientationReading();
-    getScreenRelativeOrientation(out, orientation, 90);
-    // With 90-degree screen rotation: beta' = beta*cos(90) - gamma*sin(90) = -gamma.
-    expect(out.beta).toBeCloseTo(-10, 3);
-    expect(out.gamma).toBeCloseTo(20, 3);
-  });
-});
-
 describe('getSensorsBackend', () => {
   it('falls back to a web backend when none is installed', () => {
     expect(getSensorsBackend()).not.toBeNull();
@@ -613,47 +654,6 @@ describe('getSensorsPermissionState', () => {
     setSensorsBackend(fakeBackend());
     const state = await getSensorsPermissionState();
     expect(['granted', 'denied', 'prompt', 'unsupported']).toContain(state);
-  });
-});
-
-describe('getWorldAccelerationFromDeviceAcceleration', () => {
-  it('returns the same vector for an identity quaternion orientation', () => {
-    const accel = createMotionReading();
-    accel.x = 1;
-    accel.y = 2;
-    accel.z = 3;
-    const q = createQuaternionReading(); // identity
-    const out = createMotionReading();
-    getWorldAccelerationFromDeviceAcceleration(out, accel, q);
-    expect(out.x).toBeCloseTo(1, 5);
-    expect(out.y).toBeCloseTo(2, 5);
-    expect(out.z).toBeCloseTo(3, 5);
-  });
-
-  it('propagates interval, timestamp, and accuracy from acceleration', () => {
-    const accel = createMotionReading();
-    accel.interval = 8;
-    accel.timestamp = 42000;
-    accel.accuracy = 'low';
-    const q = createQuaternionReading();
-    const out = createMotionReading();
-    getWorldAccelerationFromDeviceAcceleration(out, accel, q);
-    expect(out.interval).toBe(8);
-    expect(out.timestamp).toBe(42000);
-    expect(out.accuracy).toBe('low');
-  });
-
-  it('is alias-safe when out is the same object as acceleration', () => {
-    const accel = createMotionReading();
-    accel.x = 1;
-    accel.y = 0;
-    accel.z = 0;
-    const q = createQuaternionReading();
-    // Out aliases the acceleration input.
-    getWorldAccelerationFromDeviceAcceleration(accel, accel, q);
-    expect(accel.x).toBeCloseTo(1, 5);
-    expect(accel.y).toBeCloseTo(0, 5);
-    expect(accel.z).toBeCloseTo(0, 5);
   });
 });
 
