@@ -92,10 +92,19 @@ function recomputeLocalTransform2D<Traits extends object>(
   }
   if (runtime.localTransform2D === null) runtime.localTransform2D = createMatrix();
   const matrix = runtime.localTransform2D;
-  matrix.a = runtime.rotationCosine * target.scaleX;
-  matrix.b = runtime.rotationSine * target.scaleX;
-  matrix.c = -runtime.rotationSine * target.scaleY;
-  matrix.d = runtime.rotationCosine * target.scaleY;
+  if (target.skewX === 0 && target.skewY === 0) {
+    matrix.a = runtime.rotationCosine * target.scaleX;
+    matrix.b = runtime.rotationSine * target.scaleX;
+    matrix.c = -runtime.rotationSine * target.scaleY;
+    matrix.d = runtime.rotationCosine * target.scaleY;
+  } else {
+    const radY = (runtime.rotationAngle + target.skewY) * DEG_TO_RAD;
+    const radX = (runtime.rotationAngle + target.skewX) * DEG_TO_RAD;
+    matrix.a = Math.cos(radY) * target.scaleX;
+    matrix.b = Math.sin(radY) * target.scaleX;
+    matrix.c = -Math.sin(radX) * target.scaleY;
+    matrix.d = Math.cos(radX) * target.scaleY;
+  }
   // Pivot: the local point (pivotX, pivotY) maps to (x, y). With pivot 0,0 this reduces to tx=x, ty=y.
   matrix.tx = target.x - (matrix.a * target.pivotX + matrix.c * target.pivotY);
   matrix.ty = target.y - (matrix.b * target.pivotX + matrix.d * target.pivotY);

@@ -13,6 +13,8 @@ export interface HasTransform2D extends Entity {
   rotation: number;
   scaleX: number;
   scaleY: number;
+  skewX: number;
+  skewY: number;
   x: number;
   y: number;
 }
