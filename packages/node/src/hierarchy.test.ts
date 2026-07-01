@@ -1,7 +1,10 @@
+import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity';
+import { cloneMatrix } from '@flighthq/geometry';
 import { connectSignal } from '@flighthq/signals';
-import type { Node, NodeRuntime, NodeTraits } from '@flighthq/types';
+import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime, NodeTraits } from '@flighthq/types';
 import { NodeKind } from '@flighthq/types';
 
+import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';
 import {
   addNodeChild,
   addNodeChildAt,
@@ -20,12 +23,15 @@ import {
   removeNodeChild,
   removeNodeChildAt,
   removeNodeChildren,
+  reparentNode,
   replaceNodeChild,
   setNodeChildIndex,
   swapNodeChildren,
   swapNodeChildrenAt,
 } from './hierarchy';
 import { createNode, enableNodeSignals, getNodeRuntime } from './node';
+import { invalidateNodeLocalTransform } from './revision';
+import { getNodeWorldTransformMatrix } from './transform2d';
 
 let container: Node<NodeTraits>;
 let childA: Node<NodeTraits>;
@@ -616,6 +622,219 @@ describe('removeNodeChildren', () => {
     });
     removeNodeChildren(container);
     expect(called).toBe(true);
+  });
+});
+
+describe('reparentNode', () => {
+  type TransformNode = Node<HasTransform2D> & HasTransform2D;
+  const TransformKind = 'TransformTest';
+
+  function createTransformNode(): TransformNode {
+    const node = createNode(TransformKind) as TransformNode;
+    const runtime = getRawEntityRuntime(node);
+    initTransform2DTrait(node);
+    initTransform2DRuntimeTrait(runtime as HasTransform2DRuntime);
+    return node;
+  }
+
+  it('preserves world position after reparenting', () => {
+    const parentA = createTransformNode();
+    parentA.x = 100;
+    parentA.y = 50;
+    parentA.rotation = 30;
+    invalidateNodeLocalTransform(parentA);
+
+    const child = createTransformNode();
+    child.x = 20;
+    child.y = 10;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+
+    const parentB = createTransformNode();
+    parentB.x = 200;
+    parentB.y = 100;
+    invalidateNodeLocalTransform(parentB);
+
+    reparentNode(child, parentB);
+    const after = getNodeWorldTransformMatrix(child);
+
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
+  });
+
+  it('preserves world position with scaled parents', () => {
+    const parentA = createTransformNode();
+    parentA.scaleX = 2;
+    parentA.scaleY = 2;
+    invalidateNodeLocalTransform(parentA);
+
+    const child = createTransformNode();
+    child.x = 10;
+    child.y = 10;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+
+    const parentB = createTransformNode();
+    invalidateNodeLocalTransform(parentB);
+
+    reparentNode(child, parentB);
+    const after = getNodeWorldTransformMatrix(child);
+
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
+  });
+
+  it('preserves skewX and skewY values', () => {
+    const parentA = createTransformNode();
+    parentA.x = 50;
+    parentA.rotation = 45;
+    invalidateNodeLocalTransform(parentA);
+
+    const child = createTransformNode();
+    child.x = 10;
+    child.skewX = 15;
+    child.skewY = 20;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    const parentB = createTransformNode();
+    parentB.x = 100;
+    invalidateNodeLocalTransform(parentB);
+
+    reparentNode(child, parentB);
+
+    expect(child.skewX).toBe(15);
+    expect(child.skewY).toBe(20);
+  });
+
+  it('preserves world position with pivot', () => {
+    const parentA = createTransformNode();
+    parentA.x = 100;
+    parentA.rotation = 45;
+    invalidateNodeLocalTransform(parentA);
+
+    const child = createTransformNode();
+    child.x = 30;
+    child.y = 20;
+    child.pivotX = 50;
+    child.pivotY = 50;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+
+    const parentB = createTransformNode();
+    parentB.x = 200;
+    invalidateNodeLocalTransform(parentB);
+
+    reparentNode(child, parentB);
+    const after = getNodeWorldTransformMatrix(child);
+
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
+  });
+
+  it('preserves world position when reparenting a root node', () => {
+    const child = createTransformNode();
+    child.x = 80;
+    child.y = 40;
+    child.rotation = 60;
+    child.scaleX = 1.5;
+    invalidateNodeLocalTransform(child);
+
+    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+
+    const parentB = createTransformNode();
+    parentB.x = 50;
+    parentB.y = 25;
+    parentB.rotation = 10;
+    invalidateNodeLocalTransform(parentB);
+
+    reparentNode(child, parentB);
+    const after = getNodeWorldTransformMatrix(child);
+
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
+  });
+
+  it('preserves world position with reflected scale', () => {
+    const parentA = createTransformNode();
+    parentA.scaleX = -1;
+    parentA.scaleY = 1;
+    invalidateNodeLocalTransform(parentA);
+
+    const child = createTransformNode();
+    child.x = 30;
+    child.y = 20;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+
+    const parentB = createTransformNode();
+    parentB.x = 100;
+    invalidateNodeLocalTransform(parentB);
+
+    reparentNode(child, parentB);
+    const after = getNodeWorldTransformMatrix(child);
+
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
+  });
+
+  it('produces matching local TRS when reparented to identity parent', () => {
+    const parentA = createTransformNode();
+    parentA.x = 100;
+    parentA.y = 50;
+    parentA.rotation = 45;
+    parentA.scaleX = 2;
+    parentA.scaleY = 3;
+    invalidateNodeLocalTransform(parentA);
+
+    const child = createTransformNode();
+    child.x = 10;
+    child.y = 5;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+
+    const identityParent = createTransformNode();
+    invalidateNodeLocalTransform(identityParent);
+
+    reparentNode(child, identityParent);
+    const after = getNodeWorldTransformMatrix(child);
+
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
   });
 });
 

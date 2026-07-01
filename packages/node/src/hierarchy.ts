@@ -1,8 +1,10 @@
+import { acquireMatrix, copyMatrix, inverseMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
 import { emitSignal } from '@flighthq/signals';
-import type { Node, NodeOf, NodeRuntime } from '@flighthq/types';
+import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
-import { invalidateNodeParentReference } from './revision';
+import { invalidateNodeLocalTransform, invalidateNodeParentReference } from './revision';
+import { ensureNodeWorldTransformMatrix, getNodeWorldTransformMatrix } from './transform2d';
 
 /**
  * Adds a child Node instance to this Node
@@ -316,6 +318,54 @@ export function removeNodeChildren<Traits extends object>(
 }
 
 /**
+ * Moves a child to a new parent while preserving its world-space position.
+ * The child's local TRS fields (x, y, rotation, scaleX, scaleY) are recomputed
+ * so its visual position, rotation, and scale remain unchanged. Existing skewX/skewY
+ * values are preserved (skew is not decomposable from a general affine matrix).
+ *
+ * To reparent without preserving world position (keeping local TRS unchanged),
+ * use addNodeChild instead.
+ */
+export function reparentNode<Traits extends object>(
+  child: Transform2DNode<Traits>,
+  newParent: Transform2DNode<Traits>,
+): NodeOf<Traits> {
+  ensureNodeWorldTransformMatrix(child);
+  const oldWorld = acquireMatrix();
+  const localM = acquireMatrix();
+  try {
+    copyMatrix(oldWorld, getNodeWorldTransformMatrix(child));
+    addNodeChild(newParent, child);
+    inverseMatrix(localM, getNodeWorldTransformMatrix(newParent));
+    multiplyMatrix(localM, localM, oldWorld);
+
+    const a = localM.a;
+    const b = localM.b;
+    const c = localM.c;
+    const d = localM.d;
+
+    child.scaleX = Math.sqrt(a * a + b * b);
+    child.scaleY = Math.sqrt(c * c + d * d);
+
+    if (a * d - b * c < 0) {
+      child.scaleY = -child.scaleY;
+    }
+
+    const skewYRad = child.skewY * DEG_TO_RAD;
+    child.rotation = (Math.atan2(b, a) - skewYRad) * RAD_TO_DEG;
+
+    child.x = localM.tx + (a * child.pivotX + c * child.pivotY);
+    child.y = localM.ty + (b * child.pivotX + d * child.pivotY);
+
+    invalidateNodeLocalTransform(child);
+  } finally {
+    releaseMatrix(oldWorld);
+    releaseMatrix(localM);
+  }
+  return child as unknown as NodeOf<Traits>;
+}
+
+/**
  * Replaces `oldChild` with `newChild` at the same index position in `target`'s children. If
  * `oldChild` is not a child of `target`, this is a no-op. If `newChild` is already a child of
  * `target`, it is moved to `oldChild`'s index.
@@ -404,3 +454,6 @@ export function swapNodeChildrenAt<Traits extends object>(target: Node<Traits>, 
 function throwOutOfBoundsError(): void {
   throw new RangeError('The supplied index is out of bounds.');
 }
+
+const DEG_TO_RAD = Math.PI / 180;
+const RAD_TO_DEG = 180 / Math.PI;
