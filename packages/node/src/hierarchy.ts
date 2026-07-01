@@ -316,16 +316,6 @@ export function removeNodeChildren<Traits extends object>(
 }
 
 /**
- * Moves `child` from its current parent to `newParent`, appending it at the end.
- * World transform is not preserved; the child's local transform remains unchanged.
- * If you need to preserve the child's apparent world position after reparenting,
- * recompute the local transform manually via the transform helpers.
- */
-export function reparentNode<Traits extends object>(child: Node<Traits>, newParent: Node<Traits>): NodeOf<Traits> {
-  return addNodeChild(newParent, child);
-}
-
-/**
  * Replaces `oldChild` with `newChild` at the same index position in `target`'s children. If
  * `oldChild` is not a child of `target`, this is a no-op. If `newChild` is already a child of
  * `target`, it is moved to `oldChild`'s index.
