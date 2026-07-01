@@ -497,15 +497,11 @@ export function setQuaternionIdentity(out: QuaternionLike): void {
 
 /**
  * Builds a "look rotation" quaternion from a `forward` and an `up` direction. Both vectors are
- * assumed unit length.
+ * assumed unit length. Convention: +Z forward with +Y up = identity quaternion (matches
+ * three.js / Unity).
  *
- * Axis convention (current, deterministic, undocumented design until the SDK look-rotation
- * convention is blessed): the implementation forms its orthonormal basis from the components of
- * `forward` swapped on the X/Z axes — internally it reads `(forward.z, forward.y, forward.x)` as
- * the basis "forward" and builds `right = forward × up`, `correctedUp = right × forward`, then
- * extracts the quaternion from the basis `[right, correctedUp, forward]`. As a consequence
- * `setQuaternionLookRotation(out, (0, 0, 1), (0, 1, 0))` is *not* identity — callers should rely
- * on the function's measured output for a given pair, not on a "+Z forward = identity" assumption.
+ * Internally computes `right = up × forward`, `correctedUp = forward × right`, and builds the
+ * rotation matrix from `[right, correctedUp, forward]` as column vectors.
  *
  * If `forward` and `up` are parallel or `forward` has zero length, the result is the
  * identity quaternion.
@@ -517,17 +513,17 @@ export function setQuaternionLookRotation(
   forward: Readonly<Vector3Like>,
   up: Readonly<Vector3Like>,
 ): void {
-  const fz = forward.x,
+  const fx = forward.x,
     fy = forward.y,
-    fx = forward.z;
-
-  // right = forward × up (cross product)
+    fz = forward.z;
   const ux = up.x,
     uy = up.y,
     uz = up.z;
-  let rx = fy * uz - fz * uy;
-  let ry = fz * ux - fx * uz;
-  let rz = fx * uy - fy * ux;
+
+  // right = up × forward
+  let rx = uy * fz - uz * fy;
+  let ry = uz * fx - ux * fz;
+  let rz = ux * fy - uy * fx;
   const rLen = Math.sqrt(rx * rx + ry * ry + rz * rz);
   if (rLen === 0) {
     setQuaternionIdentity(out);
@@ -538,20 +534,21 @@ export function setQuaternionLookRotation(
   ry *= rInv;
   rz *= rInv;
 
-  // corrected up = right × forward
-  const cu = { x: ry * fz - rz * fy, y: rz * fx - rx * fz, z: rx * fy - ry * fx };
+  // correctedUp = forward × right
+  const cux = fy * rz - fz * ry;
+  const cuy = fz * rx - fx * rz;
+  const cuz = fx * ry - fy * rx;
 
-  // Build rotation matrix from the orthonormal basis [right, correctedUp, forward]
-  // then extract quaternion via trace
+  // Rotation matrix columns: col0 = right, col1 = correctedUp, col2 = forward
   const m00 = rx,
-    m01 = cu.x,
-    m02 = fz;
+    m01 = cux,
+    m02 = fx;
   const m10 = ry,
-    m11 = cu.y,
+    m11 = cuy,
     m12 = fy;
   const m20 = rz,
-    m21 = cu.z,
-    m22 = fx;
+    m21 = cuz,
+    m22 = fz;
 
   const trace = m00 + m11 + m22;
   if (trace > 0) {

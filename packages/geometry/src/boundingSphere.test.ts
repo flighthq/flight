@@ -6,8 +6,8 @@ import {
   createMatrix4,
   createVector3,
   getBoundingSphereContainsPoint,
-  getBoundingSphereIntersectsBoundingSphere,
   getClosestPointOnBoundingSphere,
+  isBoundingSphereIntersectingBoundingSphere,
   mergeBoundingSphere,
   setBoundingSphere,
   setBoundingSphereFromAabb,
@@ -77,33 +77,6 @@ describe('getBoundingSphereContainsPoint', () => {
   });
 });
 
-describe('getBoundingSphereIntersectsBoundingSphere', () => {
-  it('returns true for overlapping spheres', () => {
-    const a = createBoundingSphere(0, 0, 0, 2);
-    const b = createBoundingSphere(3, 0, 0, 2);
-    expect(getBoundingSphereIntersectsBoundingSphere(a, b)).toBe(true);
-  });
-
-  it('returns true for touching spheres', () => {
-    const a = createBoundingSphere(0, 0, 0, 1);
-    const b = createBoundingSphere(2, 0, 0, 1);
-    expect(getBoundingSphereIntersectsBoundingSphere(a, b)).toBe(true);
-  });
-
-  it('returns false for separated spheres', () => {
-    const a = createBoundingSphere(0, 0, 0, 1);
-    const b = createBoundingSphere(5, 0, 0, 1);
-    expect(getBoundingSphereIntersectsBoundingSphere(a, b)).toBe(false);
-  });
-
-  it('returns false if either sphere is empty', () => {
-    const a = createBoundingSphere(0, 0, 0, 1);
-    const empty = createBoundingSphere(0, 0, 0, -1);
-    expect(getBoundingSphereIntersectsBoundingSphere(a, empty)).toBe(false);
-    expect(getBoundingSphereIntersectsBoundingSphere(empty, a)).toBe(false);
-  });
-});
-
 describe('getClosestPointOnBoundingSphere', () => {
   it('projects an outside point onto the surface', () => {
     const s = createBoundingSphere(0, 0, 0, 2);
@@ -146,6 +119,33 @@ describe('getClosestPointOnBoundingSphere', () => {
     const p = createVector3(6, 0, 0);
     getClosestPointOnBoundingSphere(p, s, p);
     expect(p.x).toBeCloseTo(3, 6);
+  });
+});
+
+describe('isBoundingSphereIntersectingBoundingSphere', () => {
+  it('returns true for overlapping spheres', () => {
+    const a = createBoundingSphere(0, 0, 0, 2);
+    const b = createBoundingSphere(3, 0, 0, 2);
+    expect(isBoundingSphereIntersectingBoundingSphere(a, b)).toBe(true);
+  });
+
+  it('returns true for touching spheres', () => {
+    const a = createBoundingSphere(0, 0, 0, 1);
+    const b = createBoundingSphere(2, 0, 0, 1);
+    expect(isBoundingSphereIntersectingBoundingSphere(a, b)).toBe(true);
+  });
+
+  it('returns false for separated spheres', () => {
+    const a = createBoundingSphere(0, 0, 0, 1);
+    const b = createBoundingSphere(5, 0, 0, 1);
+    expect(isBoundingSphereIntersectingBoundingSphere(a, b)).toBe(false);
+  });
+
+  it('returns false if either sphere is empty', () => {
+    const a = createBoundingSphere(0, 0, 0, 1);
+    const empty = createBoundingSphere(0, 0, 0, -1);
+    expect(isBoundingSphereIntersectingBoundingSphere(a, empty)).toBe(false);
+    expect(isBoundingSphereIntersectingBoundingSphere(empty, a)).toBe(false);
   });
 });
 

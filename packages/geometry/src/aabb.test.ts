@@ -13,7 +13,7 @@ import {
   getAabbSize,
   getClosestPointOnAabb,
   intersectAabb,
-  intersectsAabb,
+  isAabbIntersectingAabb,
   setAabb,
   setAabbFromPoints,
   setMatrix4Position,
@@ -227,23 +227,23 @@ describe('intersectAabb', () => {
   });
 });
 
-describe('intersectsAabb', () => {
+describe('isAabbIntersectingAabb', () => {
   it('returns true for overlapping boxes', () => {
     const a = createAabb(0, 0, 0, 2, 2, 2);
     const b = createAabb(1, 1, 1, 3, 3, 3);
-    expect(intersectsAabb(a, b)).toBe(true);
+    expect(isAabbIntersectingAabb(a, b)).toBe(true);
   });
 
   it('returns true for touching boxes (shared face)', () => {
     const a = createAabb(0, 0, 0, 1, 1, 1);
     const b = createAabb(1, 0, 0, 2, 1, 1);
-    expect(intersectsAabb(a, b)).toBe(true);
+    expect(isAabbIntersectingAabb(a, b)).toBe(true);
   });
 
   it('returns false for separated boxes', () => {
     const a = createAabb(0, 0, 0, 1, 1, 1);
     const b = createAabb(5, 5, 5, 6, 6, 6);
-    expect(intersectsAabb(a, b)).toBe(false);
+    expect(isAabbIntersectingAabb(a, b)).toBe(false);
   });
 });
 
