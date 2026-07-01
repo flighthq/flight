@@ -18,7 +18,7 @@ The package is a clean, complete realization of _exactly the slice it owns_: fou
 
 - Quartet + `getQuadBatchRuntime`.
 - Typed-array instance storage: `ids: Uint16Array`, `transforms: Float32Array`, `instanceCount`, `transformType` (`'vector2'` | `'matrix3x2'`), per-quad `materialData`.
-- Capacity management: `getQuadBatchCapacity`, `getQuadTransformStride`, `reserveQuadBatch` (geometric growth), `resizeQuadBatch` (doubling growth).
+- Capacity management: `getQuadBatchCapacity`, `getQuadBatchTransformStride`, `reserveQuadBatch` (geometric growth), `resizeQuadBatch` (doubling growth).
 - `computeQuadBatchLocalBoundsRectangle` — correct per-instance union for both translation-only and full affine (3x2) instances.
 - `hitTestQuadBatchPoint` / `hitTestQuadBatchPointXY` — returns the topmost-by-iteration instance index (or -1), affine-aware (note: AABB of the transformed quad, not exact polygon containment).
 - `setQuadBatchLocalBoundsRectangle` — cached/override bounds with `invalidateNodeLocalBounds`.
