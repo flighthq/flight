@@ -1,5 +1,5 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { cloneMatrix, createVector2, equalsMatrix, setMatrix } from '@flighthq/geometry';
+import { cloneMatrix, createMatrix, createVector2, equalsMatrix, multiplyMatrix, setMatrix } from '@flighthq/geometry';
 import { addNodeChild, createNode } from '@flighthq/node';
 import type { HasTransform2D, HasTransform2DRuntime, Matrix, Node, NodeRuntime } from '@flighthq/types';
 
@@ -241,6 +241,141 @@ describe('getNodeWorldTransformMatrix', () => {
   it('returns local transform', () => {
     const transform = getNodeWorldTransformMatrix(node);
     expect(transform).equals((getEntityRuntime(node) as HasTransform2DRuntime).worldTransform2D);
+  });
+});
+
+describe('skew', () => {
+  const DEG_TO_RAD = Math.PI / 180;
+
+  it('produces the same matrix with skewX=0 and skewY=0 as without skew', () => {
+    const withSkew = createTestNode();
+    withSkew.rotation = 30;
+    withSkew.scaleX = 2;
+    withSkew.scaleY = 3;
+    withSkew.skewX = 0;
+    withSkew.skewY = 0;
+    invalidateNodeLocalTransform(withSkew);
+
+    const withoutSkew = createTestNode();
+    withoutSkew.rotation = 30;
+    withoutSkew.scaleX = 2;
+    withoutSkew.scaleY = 3;
+    invalidateNodeLocalTransform(withoutSkew);
+
+    const mSkew = getNodeLocalTransformMatrix(withSkew);
+    const mNoSkew = getNodeLocalTransformMatrix(withoutSkew);
+    expect(mSkew.a).toBeCloseTo(mNoSkew.a);
+    expect(mSkew.b).toBeCloseTo(mNoSkew.b);
+    expect(mSkew.c).toBeCloseTo(mNoSkew.c);
+    expect(mSkew.d).toBeCloseTo(mNoSkew.d);
+    expect(mSkew.tx).toBeCloseTo(mNoSkew.tx);
+    expect(mSkew.ty).toBeCloseTo(mNoSkew.ty);
+  });
+
+  it('applies isolated skewX to c and d cells without affecting a and b', () => {
+    node.skewX = 45;
+    node.skewY = 0;
+    node.scaleX = 1;
+    node.scaleY = 1;
+    node.rotation = 0;
+    invalidateNodeLocalTransform(node);
+
+    const m = getNodeLocalTransformMatrix(node);
+    const radX = 45 * DEG_TO_RAD;
+    expect(m.a).toBeCloseTo(1);
+    expect(m.b).toBeCloseTo(0);
+    expect(m.c).toBeCloseTo(-Math.sin(radX));
+    expect(m.d).toBeCloseTo(Math.cos(radX));
+  });
+
+  it('applies isolated skewY to a and b cells without affecting c and d', () => {
+    node.skewX = 0;
+    node.skewY = 30;
+    node.scaleX = 1;
+    node.scaleY = 1;
+    node.rotation = 0;
+    invalidateNodeLocalTransform(node);
+
+    const m = getNodeLocalTransformMatrix(node);
+    const radY = 30 * DEG_TO_RAD;
+    expect(m.a).toBeCloseTo(Math.cos(radY));
+    expect(m.b).toBeCloseTo(Math.sin(radY));
+    expect(m.c).toBeCloseTo(0);
+    expect(m.d).toBeCloseTo(1);
+  });
+
+  it('computes all four matrix cells with combined skew and rotation', () => {
+    node.rotation = 45;
+    node.skewX = 15;
+    node.skewY = 20;
+    node.scaleX = 1;
+    node.scaleY = 1;
+    invalidateNodeLocalTransform(node);
+
+    const m = getNodeLocalTransformMatrix(node);
+    const radY = (45 + 20) * DEG_TO_RAD;
+    const radX = (45 + 15) * DEG_TO_RAD;
+    expect(m.a).toBeCloseTo(Math.cos(radY));
+    expect(m.b).toBeCloseTo(Math.sin(radY));
+    expect(m.c).toBeCloseTo(-Math.sin(radX));
+    expect(m.d).toBeCloseTo(Math.cos(radX));
+  });
+
+  it('propagates skew through world transform', () => {
+    const parent = createTestNode();
+    parent.skewX = 10;
+    parent.skewY = 20;
+    parent.scaleX = 2;
+    parent.scaleY = 1;
+    invalidateNodeLocalTransform(parent);
+
+    const child = createTestNode();
+    child.x = 50;
+    child.scaleX = 1;
+    child.scaleY = 1;
+    invalidateNodeLocalTransform(child);
+
+    addNodeChild(parent, child);
+
+    const parentLocal = getNodeLocalTransformMatrix(parent);
+    const childLocal = getNodeLocalTransformMatrix(child);
+    const expected = createMatrix();
+    multiplyMatrix(expected, parentLocal, childLocal);
+
+    const world = getNodeWorldTransformMatrix(child);
+    expect(world.a).toBeCloseTo(expected.a);
+    expect(world.b).toBeCloseTo(expected.b);
+    expect(world.c).toBeCloseTo(expected.c);
+    expect(world.d).toBeCloseTo(expected.d);
+    expect(world.tx).toBeCloseTo(expected.tx);
+    expect(world.ty).toBeCloseTo(expected.ty);
+  });
+
+  it('computes correct tx/ty when both pivot and skew are nonzero', () => {
+    node.skewX = 30;
+    node.skewY = 45;
+    node.scaleX = 2;
+    node.scaleY = 3;
+    node.pivotX = 10;
+    node.pivotY = 20;
+    node.x = 100;
+    node.y = 50;
+    node.rotation = 0;
+    invalidateNodeLocalTransform(node);
+
+    const m = getNodeLocalTransformMatrix(node);
+    const radY = 45 * DEG_TO_RAD;
+    const radX = 30 * DEG_TO_RAD;
+    const a = Math.cos(radY) * 2;
+    const b = Math.sin(radY) * 2;
+    const c = -Math.sin(radX) * 3;
+    const d = Math.cos(radX) * 3;
+    expect(m.a).toBeCloseTo(a);
+    expect(m.b).toBeCloseTo(b);
+    expect(m.c).toBeCloseTo(c);
+    expect(m.d).toBeCloseTo(d);
+    expect(m.tx).toBeCloseTo(100 - (a * 10 + c * 20));
+    expect(m.ty).toBeCloseTo(50 - (b * 10 + d * 20));
   });
 });
 

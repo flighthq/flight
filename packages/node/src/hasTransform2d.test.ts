@@ -37,6 +37,8 @@ describe('initTransform2DTrait', () => {
     expect(node.rotation).toStrictEqual(0);
     expect(node.scaleX).toStrictEqual(1);
     expect(node.scaleY).toStrictEqual(1);
+    expect(node.skewX).toStrictEqual(0);
+    expect(node.skewY).toStrictEqual(0);
     expect(node.x).toStrictEqual(0);
     expect(node.y).toStrictEqual(0);
   });
@@ -45,16 +47,20 @@ describe('initTransform2DTrait', () => {
     const base = {
       scaleX: 2,
       scaleY: 3,
+      skewX: 15,
+      skewY: 30,
       rotation: 45,
       x: 100,
       y: 200,
     };
     initTransform2DTrait(node, base);
-    expect(base.scaleX).toStrictEqual(base.scaleX);
-    expect(base.scaleY).toStrictEqual(base.scaleY);
-    expect(base.rotation).toStrictEqual(base.rotation);
-    expect(base.x).toStrictEqual(base.x);
-    expect(base.y).toStrictEqual(base.y);
+    expect(node.scaleX).toStrictEqual(base.scaleX);
+    expect(node.scaleY).toStrictEqual(base.scaleY);
+    expect(node.skewX).toStrictEqual(base.skewX);
+    expect(node.skewY).toStrictEqual(base.skewY);
+    expect(node.rotation).toStrictEqual(base.rotation);
+    expect(node.x).toStrictEqual(base.x);
+    expect(node.y).toStrictEqual(base.y);
   });
 });
 
