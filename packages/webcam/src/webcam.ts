@@ -97,11 +97,6 @@ export function getWebcamBackend(): WebcamBackend {
   return _backend;
 }
 
-// Picks an existing image from the photo library. Resolves null when cancelled or unavailable.
-export function pickWebcamImage(options?: Readonly<WebcamCaptureOptions>): Promise<WebcamPhoto | null> {
-  return getWebcamBackend().capture({ ...options, source: 'photos' });
-}
-
 // Records a video from the device camera. Resolves null when cancelled, denied, or unavailable.
 export function recordWebcamVideo(options?: Readonly<WebcamCaptureOptions>): Promise<WebcamVideo | null> {
   return getWebcamBackend().captureVideo({ ...options, source: 'camera' });
@@ -110,6 +105,11 @@ export function recordWebcamVideo(options?: Readonly<WebcamCaptureOptions>): Pro
 // Requests camera access permission. Resolves false when denied or when the host cannot prompt.
 export function requestWebcamPermission(): Promise<boolean> {
   return getWebcamBackend().requestPermission();
+}
+
+// Picks an existing image from the photo library. Resolves null when cancelled or unavailable.
+export function selectWebcamImage(options?: Readonly<WebcamCaptureOptions>): Promise<WebcamPhoto | null> {
+  return getWebcamBackend().capture({ ...options, source: 'photos' });
 }
 
 // Installs a native host camera backend; pass null to fall back to the web default.

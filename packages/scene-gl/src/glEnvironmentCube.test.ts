@@ -1,6 +1,6 @@
 import type { Environment } from '@flighthq/types';
 
-import { ensureGlEnvironmentSourceCube, glCubeFaceTarget } from './glEnvironmentCube';
+import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
 import { makeGlSceneState } from './glSceneTestHelper';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` capture (jsdom has no real
@@ -15,10 +15,10 @@ describe('ensureGlEnvironmentSourceCube', () => {
   });
 });
 
-describe('glCubeFaceTarget', () => {
+describe('getGlCubeFaceTarget', () => {
   it('maps face index onto TEXTURE_CUBE_MAP_POSITIVE_X + face', () => {
     const gl = { TEXTURE_CUBE_MAP_POSITIVE_X: 0x8515 } as WebGL2RenderingContext;
-    expect(glCubeFaceTarget(gl, 0)).toBe(0x8515);
-    expect(glCubeFaceTarget(gl, 5)).toBe(0x851a);
+    expect(getGlCubeFaceTarget(gl, 0)).toBe(0x8515);
+    expect(getGlCubeFaceTarget(gl, 5)).toBe(0x851a);
   });
 });

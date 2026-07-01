@@ -23,7 +23,7 @@ export function ensureGlEnvironmentSourceCube(
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
   for (let face = 0; face < 6; face++) {
     gl.texImage2D(
-      glCubeFaceTarget(gl, face),
+      getGlCubeFaceTarget(gl, face),
       0,
       gl.RGBA,
       gl.RGBA,
@@ -44,7 +44,7 @@ export function ensureGlEnvironmentSourceCube(
 
 // The cubemap face target in CubeTexture.faces order (+X, -X, +Y, -Y, +Z, -Z), which is exactly
 // gl.TEXTURE_CUBE_MAP_POSITIVE_X + face. Face loops call this rather than hardcoding the GL enum math.
-export function glCubeFaceTarget(gl: WebGL2RenderingContext, face: number): number {
+export function getGlCubeFaceTarget(gl: WebGL2RenderingContext, face: number): number {
   return gl.TEXTURE_CUBE_MAP_POSITIVE_X + face;
 }
 

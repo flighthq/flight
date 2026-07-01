@@ -2,11 +2,11 @@ import type { NodeAny } from '@flighthq/types';
 
 import { hitTestGraphLocalBounds } from './hitTests';
 
-export function defaultBitmapHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+export function defaultBitmapHitTestPointHandler(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultDisplayObjectHitTestPoint(
+export function defaultDisplayObjectHitTestPointHandler(
   _source: NodeAny,
   _x: number,
   _y: number,
@@ -15,41 +15,71 @@ export function defaultDisplayObjectHitTestPoint(
   return false;
 }
 
-export function defaultHtmlViewHitTestPoint(_source: NodeAny, _x: number, _y: number, _shapeFlag: boolean): boolean {
+export function defaultHtmlViewHitTestPointHandler(
+  _source: NodeAny,
+  _x: number,
+  _y: number,
+  _shapeFlag: boolean,
+): boolean {
   // HtmlView elements handle pointer events through the browser — not the canvas interaction system.
   return false;
 }
 
-export function defaultMovieClipHitTestPoint(_source: NodeAny, _x: number, _y: number, _shapeFlag: boolean): boolean {
+export function defaultMovieClipHitTestPointHandler(
+  _source: NodeAny,
+  _x: number,
+  _y: number,
+  _shapeFlag: boolean,
+): boolean {
   // Containers have no self hit area — findGraphHitTarget traverses children separately.
   return false;
 }
 
-export function defaultRenderViewHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+export function defaultRenderViewHitTestPointHandler(
+  source: NodeAny,
+  x: number,
+  y: number,
+  _shapeFlag: boolean,
+): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultRichTextHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+export function defaultRichTextHitTestPointHandler(
+  source: NodeAny,
+  x: number,
+  y: number,
+  _shapeFlag: boolean,
+): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultShapeHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+export function defaultShapeHitTestPointHandler(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultStageHitTestPoint(_source: NodeAny, _x: number, _y: number, _shapeFlag: boolean): boolean {
+export function defaultStageHitTestPointHandler(
+  _source: NodeAny,
+  _x: number,
+  _y: number,
+  _shapeFlag: boolean,
+): boolean {
   // Containers have no self hit area — findGraphHitTarget traverses children separately.
   return false;
 }
 
-export function defaultTextHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+export function defaultTextHitTestPointHandler(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultTextInputHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+export function defaultTextInputHitTestPointHandler(
+  source: NodeAny,
+  x: number,
+  y: number,
+  _shapeFlag: boolean,
+): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultVideoHitTestPoint(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
+export function defaultVideoHitTestPointHandler(source: NodeAny, x: number, y: number, _shapeFlag: boolean): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }
