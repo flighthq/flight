@@ -1,11 +1,17 @@
 {
   "flight:canvas": {
-    "sha256": "5658f04369cfeec6d5c262c87765a13eeca301ba0178282b72fd8806e265d8ec"
+    "sha256": "f3bfd26072704d602dc5c045ae35bfe164e3500cc1ce3a68c83dc188a7c9e641"
   },
   "flight:dom": {
-    "sha256": "dc7b868cea411fbb83170b1faed4483a149997c986a9df2a2b34c0388b9c86eb"
+    "sha256": "71e948e0a1ea8eaa8df1e0f227dcce86f93168aadd15c02cb3bfa7b5bf4db7a8"
   },
   "flight:webgl": {
-    "sha256": "585f6beceba2c635194f677d05e02fbf9194f0918f94379a9de343798245f972"
+    "sha256": "1f8fd383abe8dbc8ba49f7f2e1b01dc8508b12583f3fe969ff347e5cf71251d7"
+  },
+  "flight:webgpu": {
+    "sha256": "a4f2105ecdefec94c5fe749c1dc5f2fb9dd74b9832cba0afcd3434f38c0380d0"
+  },
+  "openfl:webgl": {
+    "sha256": "89302cb9875987cc188a315eb7d41a5321c0ec17f9524741682827ab8f1eeef7"
   }
 }
