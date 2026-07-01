@@ -318,6 +318,8 @@ describe('inverseMatrix', () => {
     expect(result.b).toBeCloseTo(0);
     expect(result.c).toBeCloseTo(0);
     expect(result.d).toBeCloseTo(1);
+    expect(result.tx).toBeCloseTo(0);
+    expect(result.ty).toBeCloseTo(0);
   });
 
   it('supports out === source', () => {
