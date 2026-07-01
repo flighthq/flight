@@ -4,7 +4,7 @@ import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flight
 import { QuadBatchKind } from '@flighthq/types';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';
 
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 import {
   createGlVelocityTarget,
   defaultGlDisplayObjectVelocityWriter,
@@ -18,7 +18,7 @@ import {
 
 describe('createGlVelocityTarget', () => {
   it('allocates an rgba16f target at the requested size', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     expect(target.format).toBe('rgba16f');
     expect(target.width).toBe(128);
@@ -38,7 +38,7 @@ describe('defaultGlParticleEmitterVelocityWriter', () => {
   });
 
   it('emits per-particle velocity for an emitter with a velocities array without throwing', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
     const atlas = { image: null, regions: [region] } as TextureAtlas;
@@ -65,7 +65,7 @@ describe('defaultGlQuadBatchVelocityWriter', () => {
   });
 
   it('emits per-instance velocity for a batch with an instanceVelocities array without throwing', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
     const atlas = { image: null, regions: [region] } as TextureAtlas;
@@ -90,7 +90,7 @@ describe('defaultGlQuadBatchVelocityWriter', () => {
   });
 
   it('falls back to coarse batch velocity when no instanceVelocities array is present', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
     const atlas = { image: null, regions: [region] } as TextureAtlas;
@@ -115,14 +115,14 @@ describe('drawGlVelocityQuad', () => {
 
 describe('getGlVelocityWriter', () => {
   it('returns null for an unregistered kind', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     expect(getGlVelocityWriter(state, 'unregistered')).toBeNull();
   });
 });
 
 describe('registerGlVelocityWriter', () => {
   it('registers a writer dispatched by kind', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const root = createDisplayObject();
     registerGlVelocityWriter(state, root.kind, defaultGlDisplayObjectVelocityWriter);
     expect(getGlVelocityWriter(state, root.kind)).toBe(defaultGlDisplayObjectVelocityWriter);
@@ -131,7 +131,7 @@ describe('registerGlVelocityWriter', () => {
 
 describe('renderGlVelocity', () => {
   it('dispatches the registered writer for a moving node without throwing', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const root = createDisplayObject();
     registerGlVelocityWriter(state, root.kind, defaultGlDisplayObjectVelocityWriter);
@@ -144,7 +144,7 @@ describe('renderGlVelocity', () => {
   });
 
   it('runs without throwing when no writer is registered', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);
     const root = createDisplayObject();
     const field = createVelocityField();

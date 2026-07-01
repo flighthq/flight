@@ -18,7 +18,7 @@ import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
-  uploadWgpuPbrMaterialUniform,
+  writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
 } from './standardPbrWgpuMeshMaterialRenderer';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -71,7 +71,7 @@ export const specularGlossinessPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRend
     const out = getWgpuPbrMaterialScratch();
     writeWgpuPbrStandardBlock(out, standard, specGloss !== null ? specGloss.alphaCutoff : 0.5);
     out.fill(0, 16);
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
 
     beginWgpuMeshDraw(state, pipeline);
     pass.setBindGroup(2, binding.bindGroup);

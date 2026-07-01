@@ -2,7 +2,7 @@ import type { RenderProxy2D } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 import { defaultGlTilemapRenderer } from './glTilemap';
 
 function makeAtlas() {
@@ -54,7 +54,7 @@ describe('defaultGlTilemapRenderer', () => {
 
 describe('defaultGlTilemapRenderer.submit', () => {
   it('returns early without drawing when tileset is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tileset: null }));
     flushGlSpriteBatch(state);
@@ -62,7 +62,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   });
 
   it('returns early without drawing when atlas is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tileset: makeTileset(null) }));
     flushGlSpriteBatch(state);
@@ -70,7 +70,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   });
 
   it('returns early without drawing when atlas.image is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(
       state,
@@ -81,7 +81,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   });
 
   it('returns early without drawing when atlas.image.source is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(
       state,
@@ -92,7 +92,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   });
 
   it('returns early without drawing when columns is 0', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ columns: 0 }));
     flushGlSpriteBatch(state);
@@ -100,7 +100,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   });
 
   it('returns early without drawing when rows is 0', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ rows: 0 }));
     flushGlSpriteBatch(state);
@@ -108,7 +108,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   });
 
   it('draws all valid tiles in a single instanced call', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode());
     flushGlSpriteBatch(state);
@@ -117,7 +117,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   });
 
   it('excludes out-of-range tile ids from the instanced draw count', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     registerDefaultGlMaterial(state);
     defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
     flushGlSpriteBatch(state);

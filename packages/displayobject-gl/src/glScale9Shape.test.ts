@@ -9,13 +9,13 @@ import {
   drawGlScale9ShapeMask,
   remapGlScale9Commands,
 } from './glScale9Shape';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 
 describe('createGlScale9ShapeData', () => {
   it('creates renderer data with a Gl texture', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const shape = createScale9Shape(grid);
 
     const data = createGlScale9ShapeData(state, shape);
@@ -34,7 +34,7 @@ describe('defaultGlScale9ShapeRenderer', () => {
 
 describe('destroyGlScale9ShapeData', () => {
   it('deletes the texture it owns', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const data = createGlScale9ShapeData(state, createScale9Shape(grid))!;
     destroyGlScale9ShapeData(state, data);
     expect(gl.deleteTexture).toHaveBeenCalled();
@@ -43,7 +43,7 @@ describe('destroyGlScale9ShapeData', () => {
 
 describe('drawGlScale9Shape', () => {
   it('returns early when commands are empty', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);
 
@@ -53,7 +53,7 @@ describe('drawGlScale9Shape', () => {
   });
 
   it('returns early when rendererData is null', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000);
     appendShapeRectangle(shape, 0, 0, 100, 100);
@@ -67,7 +67,7 @@ describe('drawGlScale9Shape', () => {
 
 describe('drawGlScale9ShapeMask', () => {
   it('uses the same draw path as normal Scale9 rendering', () => {
-    const { state, gl } = makeGlState();
+    const { state, gl } = createGlState();
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);
 

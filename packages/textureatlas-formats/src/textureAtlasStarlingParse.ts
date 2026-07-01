@@ -1,7 +1,6 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas';
 import type { TextureAtlas } from '@flighthq/types';
-
-import { parseXmlDocument } from './xmlParse';
+import { parseXmlDocument } from '@flighthq/xml';
 
 export interface TextureAtlasStarlingParseOptions {
   /**

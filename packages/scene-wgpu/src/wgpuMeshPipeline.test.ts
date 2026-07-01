@@ -12,7 +12,7 @@ import {
   ensureWgpuPlaceholderTextureView,
   ensureWgpuSceneLayouts,
   ensureWgpuScenePipeline,
-  hasWgpuMaterialTexture,
+  isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   WGPU_MESH_PRELUDE_WGSL,
   writeWgpuDrawUniform,
@@ -140,12 +140,12 @@ describe('ensureWgpuScenePipeline', () => {
   });
 });
 
-describe('hasWgpuMaterialTexture', () => {
+describe('isWgpuTextureReady', () => {
   it('is true only when the texture carries an uploadable image source', () => {
-    expect(hasWgpuMaterialTexture(null)).toBe(false);
-    expect(hasWgpuMaterialTexture({ image: null } as unknown as Texture)).toBe(false);
-    expect(hasWgpuMaterialTexture({ image: { source: null } } as unknown as Texture)).toBe(false);
-    expect(hasWgpuMaterialTexture({ image: { source: {} } } as unknown as Texture)).toBe(true);
+    expect(isWgpuTextureReady(null)).toBe(false);
+    expect(isWgpuTextureReady({ image: null } as unknown as Texture)).toBe(false);
+    expect(isWgpuTextureReady({ image: { source: null } } as unknown as Texture)).toBe(false);
+    expect(isWgpuTextureReady({ image: { source: {} } } as unknown as Texture)).toBe(true);
   });
 });
 

@@ -20,7 +20,7 @@ import {
   getQuadBatchInstanceTransform,
   getQuadBatchRuntime,
   getQuadBatchSignals,
-  getQuadTransformStride,
+  getQuadBatchTransformStride,
   hitTestQuadBatchPoint,
   hitTestQuadBatchPointExact,
   hitTestQuadBatchPointExactXY,
@@ -456,13 +456,13 @@ describe('getQuadBatchSignals', () => {
   });
 });
 
-describe('getQuadTransformStride', () => {
+describe('getQuadBatchTransformStride', () => {
   it('returns 2 if transform type is vector2', () => {
-    expect(getQuadTransformStride('vector2')).toBe(2);
+    expect(getQuadBatchTransformStride('vector2')).toBe(2);
   });
 
   it('returns 2 if transform type is vector2', () => {
-    expect(getQuadTransformStride('matrix3x2')).toBe(6);
+    expect(getQuadBatchTransformStride('matrix3x2')).toBe(6);
   });
 });
 

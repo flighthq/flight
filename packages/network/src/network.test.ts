@@ -7,6 +7,7 @@ import {
   createNetworkStatus,
   createWebNetworkBackend,
   detachNetwork,
+  detectNetworkReachability,
   disposeNetwork,
   getNetworkBackend,
   getNetworkStatus,
@@ -14,7 +15,6 @@ import {
   isNetworkMetered,
   isNetworkOnline,
   isNetworkSaveDataEnabled,
-  probeNetworkReachability,
   setNetworkBackend,
 } from './network';
 
@@ -198,6 +198,36 @@ describe('detachNetwork', () => {
   });
 });
 
+describe('detectNetworkReachability', () => {
+  it('returns a sentinel when fetch is unavailable (SSR/jsdom guard)', async () => {
+    // The web backend's detectReachability returns a sentinel in jsdom where fetch is absent or HEAD
+    // requests fail. We install a backend without detectReachability to test the fallback path.
+    setNetworkBackend(fakeBackend());
+    const out: NetworkReachability = { latency: 0, reachable: true };
+    // fetch is undefined in vitest/jsdom by default — expect sentinel
+    const result = await detectNetworkReachability({ url: 'https://example.com' }, out);
+    expect(result).toBe(out);
+    // In jsdom fetch may not exist or may fail; either way we get reachable=false or a live result
+    expect(typeof result.reachable).toBe('boolean');
+  });
+
+  it('uses the backend detectReachability when available', async () => {
+    const probeBackend: NetworkBackend = {
+      ...fakeBackend(),
+      async detectReachability(_opts, out) {
+        out.reachable = true;
+        out.latency = 42;
+        return out;
+      },
+    };
+    setNetworkBackend(probeBackend);
+    const out: NetworkReachability = { latency: 0, reachable: false };
+    const result = await detectNetworkReachability({ url: 'https://example.com' }, out);
+    expect(result.reachable).toBe(true);
+    expect(result.latency).toBe(42);
+  });
+});
+
 describe('disposeNetwork', () => {
   it('detaches the subscription', () => {
     const backend = fakeBackend();
@@ -307,36 +337,6 @@ describe('isNetworkSaveDataEnabled', () => {
   it('returns true when saveData is on', () => {
     setNetworkBackend(fakeBackend({ saveData: true }));
     expect(isNetworkSaveDataEnabled()).toBe(true);
-  });
-});
-
-describe('probeNetworkReachability', () => {
-  it('returns a sentinel when fetch is unavailable (SSR/jsdom guard)', async () => {
-    // The web backend's probeReachability returns a sentinel in jsdom where fetch is absent or HEAD
-    // requests fail. We install a backend without probeReachability to test the fallback path.
-    setNetworkBackend(fakeBackend());
-    const out: NetworkReachability = { latency: 0, reachable: true };
-    // fetch is undefined in vitest/jsdom by default — expect sentinel
-    const result = await probeNetworkReachability({ url: 'https://example.com' }, out);
-    expect(result).toBe(out);
-    // In jsdom fetch may not exist or may fail; either way we get reachable=false or a live result
-    expect(typeof result.reachable).toBe('boolean');
-  });
-
-  it('uses the backend probeReachability when available', async () => {
-    const probeBackend: NetworkBackend = {
-      ...fakeBackend(),
-      async probeReachability(_opts, out) {
-        out.reachable = true;
-        out.latency = 42;
-        return out;
-      },
-    };
-    setNetworkBackend(probeBackend);
-    const out: NetworkReachability = { latency: 0, reachable: false };
-    const result = await probeNetworkReachability({ url: 'https://example.com' }, out);
-    expect(result.reachable).toBe(true);
-    expect(result.latency).toBe(42);
   });
 });
 

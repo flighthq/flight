@@ -16,12 +16,7 @@ import { PhongMaterialKind } from '@flighthq/types';
 import type { WgpuClassicDefineKey } from './wgpuClassicPrelude';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import {
-  beginWgpuMeshDraw,
-  drawWgpuMeshSubset,
-  hasWgpuMaterialTexture,
-  writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
 
 // The built-in classic Phong forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // PhongMaterialKind) — the WGSL mirror of phongGlMeshMaterialRenderer. Lambert diffuse plus a
@@ -88,9 +83,9 @@ function defineKeyForMaterial(material: Readonly<PhongMaterial> | null): WgpuCla
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasDiffuseMap: material !== null && hasWgpuMaterialTexture(material.diffuseMap),
-    hasNormalMap: material !== null && hasWgpuMaterialTexture(material.normalMap),
-    hasSpecularMap: material !== null && hasWgpuMaterialTexture(material.specularMap),
+    hasDiffuseMap: material !== null && isWgpuTextureReady(material.diffuseMap),
+    hasNormalMap: material !== null && isWgpuTextureReady(material.normalMap),
+    hasSpecularMap: material !== null && isWgpuTextureReady(material.specularMap),
     lightingModel: 'phong',
   };
 }

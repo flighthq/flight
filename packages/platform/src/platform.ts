@@ -7,6 +7,7 @@ import type {
   PlatformRuntime,
 } from '@flighthq/types';
 import {
+  detectEndianness,
   parseUserAgentArch,
   parseUserAgentEngine,
   parseUserAgentEngineVersion,
@@ -15,7 +16,6 @@ import {
   parseUserAgentPointerWidth,
   parseUserAgentRuntime,
   parseUserAgentVersion,
-  probeEndianness,
 } from '@flighthq/useragent';
 
 // Compares two dotted version strings numerically, segment by segment. Returns -1, 0, or 1.
@@ -159,7 +159,7 @@ function getWebPlatformInfo(out: PlatformInfo): PlatformInfo {
   );
   out.engine = parseUserAgentEngine(ua);
   out.engineVersion = parseUserAgentEngineVersion(ua, out.engine);
-  out.endianness = probeEndianness();
+  out.endianness = detectEndianness();
   out.pointerWidth = parseUserAgentPointerWidth(out.arch);
   // osBuild, distro, distroVersion are native-only; web always returns ''.
   out.osBuild = '';

@@ -687,7 +687,7 @@ export function gradientGlowSurface(
  * moves the one-time instantiation off the first hot-path call. Synchronous;
  * the module bytes are embedded, so no file read or network fetch occurs.
  */
-export function initSurfaceRs(): void {
+export function initSurfaceWasm(): void {
   ensureSurfaceRs();
 }
 

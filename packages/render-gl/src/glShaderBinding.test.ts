@@ -9,7 +9,7 @@ import {
   resolveGlShader,
   setGlShader,
 } from './glShaderBinding';
-import { makeGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper';
 
 function makeShader() {
   return { locations: {} as never, program: {} as never, bind: vi.fn() };
@@ -17,19 +17,19 @@ function makeShader() {
 
 describe('getGlMaterialShader', () => {
   it('returns null when no material shader is registered for the kind', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     expect(getGlMaterialShader(state, 'Tint' as Kind)).toBeNull();
   });
 
   it('returns the shader registered for the kind', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const shader = makeShader();
     registerGlMaterialShader(state, 'Tint' as Kind, shader);
     expect(getGlMaterialShader(state, 'Tint' as Kind)).toBe(shader);
   });
 
   it('returns null for a kind other than the one registered', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     registerGlMaterialShader(state, 'Tint' as Kind, makeShader());
     expect(getGlMaterialShader(state, 'ColorMatrix' as Kind)).toBeNull();
   });
@@ -37,7 +37,7 @@ describe('getGlMaterialShader', () => {
 
 describe('getGlShader', () => {
   it('returns the shader bound to a render node', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const node = {} as DisplayObject;
     const shader = makeShader();
     setGlShader(state, node, shader);
@@ -46,7 +46,7 @@ describe('getGlShader', () => {
   });
 
   it('returns undefined for a render node with no binding', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
     expect(getGlShader(renderProxy)).toBeUndefined();
   });
@@ -54,14 +54,14 @@ describe('getGlShader', () => {
 
 describe('registerGlMaterialShader', () => {
   it('makes the shader retrievable by its material kind', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const shader = makeShader();
     registerGlMaterialShader(state, 'Tint' as Kind, shader);
     expect(getGlMaterialShader(state, 'Tint' as Kind)).toBe(shader);
   });
 
   it('overwrites a previous registration for the same kind', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const first = makeShader();
     const second = makeShader();
     registerGlMaterialShader(state, 'Tint' as Kind, first);
@@ -70,7 +70,7 @@ describe('registerGlMaterialShader', () => {
   });
 
   it('makes resolveGlShader return the material shader for a matching node', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const shader = makeShader();
     registerGlMaterialShader(state, 'Tint' as Kind, shader);
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
@@ -79,8 +79,8 @@ describe('registerGlMaterialShader', () => {
   });
 
   it('keeps registrations isolated per render state', () => {
-    const { state: a } = makeGlState();
-    const { state: b } = makeGlState();
+    const { state: a } = createGlState();
+    const { state: b } = createGlState();
     registerGlMaterialShader(a, 'Tint' as Kind, makeShader());
     expect(getGlMaterialShader(b, 'Tint' as Kind)).toBeNull();
   });
@@ -88,13 +88,13 @@ describe('registerGlMaterialShader', () => {
 
 describe('resolveGlShader', () => {
   it('returns the default bitmap shader when no binding is set', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
     expect(resolveGlShader(state, renderProxy)).toBe(getGlRenderStateRuntime(state).defaultBitmapShader);
   });
 
   it('returns the bound shader when shader support is enabled', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const node = {} as DisplayObject;
     const shader = makeShader();
     setGlShader(state, node, shader);
@@ -103,7 +103,7 @@ describe('resolveGlShader', () => {
   });
 
   it('falls back to the default shader when no binding resolver is installed', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const renderProxy = getOrCreateRenderProxy2D(state, {} as DisplayObject);
     // No binding was made, so the resolver is unset — the per-node lookup is skipped.
     expect(resolveGlShader(state, renderProxy)).toBe(getGlRenderStateRuntime(state).defaultBitmapShader);
@@ -112,7 +112,7 @@ describe('resolveGlShader', () => {
 
 describe('setGlShader', () => {
   it('stores a shader keyed by the per-state render node', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const node = {} as DisplayObject;
     const shader = makeShader();
     setGlShader(state, node, shader);
@@ -121,7 +121,7 @@ describe('setGlShader', () => {
   });
 
   it('installs the per-node shader binding resolver', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     expect(runtime.webglShaderBindingResolver).toBeUndefined();
     setGlShader(state, {} as DisplayObject, makeShader());
@@ -129,7 +129,7 @@ describe('setGlShader', () => {
   });
 
   it('clears the binding when passed null', () => {
-    const { state } = makeGlState();
+    const { state } = createGlState();
     const node = {} as DisplayObject;
     setGlShader(state, node, makeShader());
     setGlShader(state, node, null);
@@ -138,8 +138,8 @@ describe('setGlShader', () => {
   });
 
   it('does not leak a binding across render states', () => {
-    const { state: a } = makeGlState();
-    const { state: b } = makeGlState();
+    const { state: a } = createGlState();
+    const { state: b } = createGlState();
     const node = {} as DisplayObject;
     const shader = makeShader();
     setGlShader(a, node, shader);

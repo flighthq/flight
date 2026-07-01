@@ -2,7 +2,7 @@ import type { GlRenderState } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { resolveGlLitLocations } from './glLitProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 import type { GlPbrDefineKey } from './glPbrPrelude';
 import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
 
@@ -52,7 +52,7 @@ export interface GlPbrProgram extends GlLitProgram {
 export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<GlPbrDefineKey>): GlPbrProgram {
   const vertexSource = getGlPbrVertexSourceForKey(key);
   const fragmentSource = getGlPbrFragmentSourceForKey(key);
-  const program = linkGlProgram(gl, vertexSource, fragmentSource);
+  const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
     ...resolveGlLitLocations(gl, program),
     program,

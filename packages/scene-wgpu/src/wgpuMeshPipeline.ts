@@ -193,7 +193,7 @@ export function ensureWgpuScenePipeline<T extends WgpuMeshPipeline>(
 // this to decide the `has*Map` define flag — the textured pipeline variant compiles only when the map
 // can actually be sampled, so a null/data-only texture renders the untextured path (placeholder bound).
 // Mirrors the `map !== null && map.image !== null && map.image.source !== null` guard in the GL renderers.
-export function hasWgpuMaterialTexture(texture: Readonly<Texture> | null): boolean {
+export function isWgpuTextureReady(texture: Readonly<Texture> | null): boolean {
   return texture !== null && texture.image !== null && texture.image.source !== null;
 }
 

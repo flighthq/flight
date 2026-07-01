@@ -1,5 +1,21 @@
 import type { PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime } from '@flighthq/types';
 
+// Probe host CPU byte order via a DataView write-then-read.
+// Overwhelmingly 'little' on all modern hardware (x86/x64/arm/arm64/wasm).
+// Returns 'unknown' if ArrayBuffer is unavailable.
+export function detectEndianness(): PlatformEndianness {
+  try {
+    const buf = new ArrayBuffer(2);
+    new Uint16Array(buf)[0] = 0x0102;
+    const bytes = new Uint8Array(buf);
+    if (bytes[0] === 0x01) return 'big';
+    if (bytes[0] === 0x02) return 'little';
+  } catch {
+    // ArrayBuffer unavailable — treat as unknown.
+  }
+  return 'unknown';
+}
+
 // Parse a browser user-agent string into the canonical CPU architecture token.
 // Canonical tokens: 'x64', 'arm64', 'x86', 'arm', 'riscv64', 'mips64', 'mips'. Returns '' when undetectable.
 // Note: arm64/aarch64 must be tested before arm to avoid false-positive partial matches.
@@ -148,20 +164,4 @@ export function parseUserAgentVersion(ua: string, name: PlatformName): string {
     default:
       return '';
   }
-}
-
-// Probe host CPU byte order via a DataView write-then-read.
-// Overwhelmingly 'little' on all modern hardware (x86/x64/arm/arm64/wasm).
-// Returns 'unknown' if ArrayBuffer is unavailable.
-export function probeEndianness(): PlatformEndianness {
-  try {
-    const buf = new ArrayBuffer(2);
-    new Uint16Array(buf)[0] = 0x0102;
-    const bytes = new Uint8Array(buf);
-    if (bytes[0] === 0x01) return 'big';
-    if (bytes[0] === 0x02) return 'little';
-  } catch {
-    // ArrayBuffer unavailable — treat as unknown.
-  }
-  return 'unknown';
 }

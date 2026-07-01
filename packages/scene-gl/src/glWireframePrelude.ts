@@ -1,7 +1,7 @@
 import type { GlRenderState } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
 // the model + view-projection matrices and outputs a single flat LINE color. It has no lighting and
@@ -18,7 +18,7 @@ export interface GlWireframeProgram extends GlMeshProgram {
 // Compiles the wireframe shader, links it, and resolves its uniform locations. Pure GL work — no
 // caching — used by ensureGlWireframeProgram.
 export function compileGlWireframeProgram(gl: WebGL2RenderingContext): GlWireframeProgram {
-  const program = linkGlProgram(gl, getGlWireframeVertexSource(), getGlWireframeFragmentSource());
+  const program = compileGlProgram(gl, getGlWireframeVertexSource(), getGlWireframeFragmentSource());
   return {
     locColor: gl.getUniformLocation(program, 'u_color'),
     locModel: gl.getUniformLocation(program, 'u_model'),

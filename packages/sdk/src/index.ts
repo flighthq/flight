@@ -93,3 +93,4 @@ export * from '@flighthq/useragent';
 export * from '@flighthq/velocity';
 export * from '@flighthq/video';
 export * from '@flighthq/webcam';
+export * from '@flighthq/xml';

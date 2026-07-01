@@ -17,7 +17,7 @@ import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
-  uploadWgpuPbrMaterialUniform,
+  writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
 } from './standardPbrWgpuMeshMaterialRenderer';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -65,7 +65,7 @@ export const sheenPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
       out[22] = _colorScratch[2];
       out[23] = sheen.sheenRoughness;
     }
-    uploadWgpuPbrMaterialUniform(state, binding);
+    writeWgpuPbrMaterialUniform(state, binding);
 
     beginWgpuMeshDraw(state, pipeline);
     pass.setBindGroup(2, binding.bindGroup);

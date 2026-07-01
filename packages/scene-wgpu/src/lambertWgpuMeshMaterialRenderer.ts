@@ -16,12 +16,7 @@ import { LambertMaterialKind } from '@flighthq/types';
 import type { WgpuClassicDefineKey } from './wgpuClassicPrelude';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import {
-  beginWgpuMeshDraw,
-  drawWgpuMeshSubset,
-  hasWgpuMaterialTexture,
-  writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
 
 // The built-in classic Lambert forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // LambertMaterialKind) — the WGSL mirror of lambertGlMeshMaterialRenderer. Diffuse-only Lambertian
@@ -87,7 +82,7 @@ function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): WgpuC
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    hasDiffuseMap: material !== null && hasWgpuMaterialTexture(material.diffuseMap),
+    hasDiffuseMap: material !== null && isWgpuTextureReady(material.diffuseMap),
     hasNormalMap: false,
     hasSpecularMap: false,
     lightingModel: 'lambert',

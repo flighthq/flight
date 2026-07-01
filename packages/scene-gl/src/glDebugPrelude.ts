@@ -2,7 +2,7 @@ import { bindGlTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
-import { ensureGlSceneProgram, linkGlProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 
 // The shared Gl debug prelude: the GLSL 300 es vertex + fragment shader for the lighting-INDEPENDENT
 // debug/utility pass materials (Depth, Normal). One source string is specialized per material at
@@ -81,7 +81,7 @@ export function buildGlDebugDefineKey(key: Readonly<GlDebugDefineKey>): string {
 // Compiles the debug shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlDebugProgram.
 export function compileGlDebugProgram(gl: WebGL2RenderingContext, key: Readonly<GlDebugDefineKey>): GlDebugProgram {
-  const program = linkGlProgram(gl, getGlDebugVertexSourceForKey(key), getGlDebugFragmentSourceForKey(key));
+  const program = compileGlProgram(gl, getGlDebugVertexSourceForKey(key), getGlDebugFragmentSourceForKey(key));
   return {
     locFar: gl.getUniformLocation(program, 'u_far'),
     locModel: gl.getUniformLocation(program, 'u_model'),

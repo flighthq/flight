@@ -13,4 +13,3 @@ export * from './starlingSerialize';
 export * from './texturePackerParse';
 export * from './texturePackerSchema';
 export * from './texturePackerSerialize';
-export * from './xmlParse';

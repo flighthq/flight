@@ -139,7 +139,7 @@ pub fn compact_quad_batch(arena: &mut DisplayObjectArena, target: NodeId) {
     if data.instance_count == 0 {
         return;
     }
-    let stride = get_quad_transform_stride(data.transform_type);
+    let stride = get_quad_batch_transform_stride(data.transform_type);
     let mut write = 0usize;
     for read in 0..data.instance_count as usize {
         if data.ids[read] == 0xffff {
@@ -348,7 +348,7 @@ pub fn get_quad_batch_capacity(arena: &DisplayObjectArena, source: NodeId) -> u3
         return 0;
     };
     let data = &meta.data;
-    let stride = get_quad_transform_stride(data.transform_type);
+    let stride = get_quad_batch_transform_stride(data.transform_type);
     let transform_capacity = (data.transforms.len() / stride) as u32;
     transform_capacity.min(data.ids.len() as u32)
 }
@@ -443,11 +443,11 @@ pub fn get_quad_batch_signals(
 }
 
 // ---------------------------------------------------------------------------
-// get_quad_transform_stride
+// get_quad_batch_transform_stride
 // ---------------------------------------------------------------------------
 
 /// Returns the number of floats per instance for the given transform type.
-pub fn get_quad_transform_stride(transform_type: QuadTransformType) -> usize {
+pub fn get_quad_batch_transform_stride(transform_type: QuadTransformType) -> usize {
     match transform_type {
         QuadTransformType::Vector2 => 2,
         QuadTransformType::Matrix3x2 => 6,
@@ -661,7 +661,7 @@ pub fn iterate_quad_batch_instances<F: FnMut(u32, u16, &[f32])>(
         return;
     };
     let data = &meta.data;
-    let stride = get_quad_transform_stride(data.transform_type);
+    let stride = get_quad_batch_transform_stride(data.transform_type);
     for i in 0..data.instance_count as usize {
         let id = data.ids.get(i).copied().unwrap_or(0);
         let start = i * stride;
@@ -734,7 +734,7 @@ pub fn reserve_quad_batch(arena: &mut DisplayObjectArena, target: NodeId, capaci
     let Some(meta) = get_quad_batch_meta_mut(arena, target) else {
         return;
     };
-    let stride = get_quad_transform_stride(meta.data.transform_type);
+    let stride = get_quad_batch_transform_stride(meta.data.transform_type);
     let cap = capacity as usize;
     meta.data.ids.resize(cap, 0);
     meta.data.transforms.resize(cap * stride, 0.0);
@@ -851,7 +851,7 @@ pub fn set_quad_batch_instance_range(
     if count == 0 || start_index + count > data.instance_count {
         return;
     }
-    let stride = get_quad_transform_stride(data.transform_type);
+    let stride = get_quad_batch_transform_stride(data.transform_type);
     let dst = start_index as usize * stride;
     let len = count as usize * stride;
     for k in 0..len {
@@ -1085,16 +1085,22 @@ mod tests {
         assert_eq!(out.height, 4.0);
     }
 
-    // get_quad_transform_stride
+    // get_quad_batch_transform_stride
 
     #[test]
-    fn get_quad_transform_stride_vector2_is_2() {
-        assert_eq!(get_quad_transform_stride(QuadTransformType::Vector2), 2);
+    fn get_quad_batch_transform_stride_vector2_is_2() {
+        assert_eq!(
+            get_quad_batch_transform_stride(QuadTransformType::Vector2),
+            2
+        );
     }
 
     #[test]
-    fn get_quad_transform_stride_matrix3x2_is_6() {
-        assert_eq!(get_quad_transform_stride(QuadTransformType::Matrix3x2), 6);
+    fn get_quad_batch_transform_stride_matrix3x2_is_6() {
+        assert_eq!(
+            get_quad_batch_transform_stride(QuadTransformType::Matrix3x2),
+            6
+        );
     }
 
     // hit_test_quad_batch_point / hit_test_quad_batch_point_xy
