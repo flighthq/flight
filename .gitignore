@@ -195,3 +195,5 @@ packages/*/src/wasm/*_bg.wasm.d.ts
 # generated review/audit reports (ephemeral; ingested into packages/, then discarded)
 /reports/
 /tools/agents/docs/reviews/
+
+.quimby
