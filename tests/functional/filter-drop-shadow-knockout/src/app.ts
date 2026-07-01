@@ -7,7 +7,7 @@
 // The oracle checks knockout's defining behavior: the red shadow is present down-right outside the
 // square, and the square's own footprint is NOT the white source (knocked out).
 import { createDropShadowFilter } from '@flighthq/filters';
-import { getShadowFilterOffset } from '@flighthq/filters-css';
+import { getShadowFilterOffset } from '@flighthq/filters-math';
 import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
@@ -46,7 +46,7 @@ const filter = createDropShadowFilter({
 
 // Drop shadow writes the tinted blurred alpha mask at the source's own position. To complete the
 // effect, composite that mask at the shadow offset; with knockout: true, the source is omitted.
-const { dx, dy } = getShadowFilterOffset(filter);
+const { dx, dy } = getShadowFilterOffset(filter, { dx: 0, dy: 0 });
 const mask = new Uint8ClampedArray(TILE * TILE * 4);
 const blurBuffer = new Uint8ClampedArray(TILE * TILE * 4);
 applyDropShadowFilterToSurface(mask, blurBuffer, createSurfaceRegion(source), filter);

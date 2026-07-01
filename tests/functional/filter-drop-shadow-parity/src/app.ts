@@ -20,7 +20,8 @@
 // from ./render (the local barrel); the functional vite harness routes ./render to the active backend's
 // render.<renderer>.ts at runtime.
 import { createDropShadowFilter } from '@flighthq/filters';
-import { computeDropShadowFilterCss, getShadowFilterOffset } from '@flighthq/filters-css';
+import { computeDropShadowFilterCss } from '@flighthq/filters-css';
+import { getShadowFilterOffset } from '@flighthq/filters-math';
 import { applyDropShadowFilterToSurface } from '@flighthq/filters-surface';
 import type { Surface } from '@flighthq/sdk';
 import {
@@ -62,7 +63,7 @@ const filter = createDropShadowFilter({
   blurY: 4,
   strength: 1,
 });
-const { dx, dy } = getShadowFilterOffset(filter);
+const { dx, dy } = getShadowFilterOffset(filter, { dx: 0, dy: 0 });
 
 // Source: a centered opaque-white square on a fully transparent tile. The square's alpha is what the
 // shadow mask is shaped from.
