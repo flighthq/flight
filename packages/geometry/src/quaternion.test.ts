@@ -481,14 +481,10 @@ describe('setQuaternionLookRotation', () => {
     expectQuaternionClose(q1, q2.x, q2.y, q2.z, q2.w);
   });
 
-  // Documents the current (deterministic, X/Z-swapped) axis convention: +Z forward is NOT
-  // identity. This pins the behavior the JSDoc describes so a future convention change is a
-  // visible, intentional break rather than a silent drift.
-  it('+Z forward with +Y up is not identity under the current convention', () => {
+  it('+Z forward with +Y up yields identity', () => {
     const q = createQuaternion();
     setQuaternionLookRotation(q, createVector3(0, 0, 1), createVector3(0, 1, 0));
-    const isIdentity = Math.abs(q.x) < 1e-6 && Math.abs(q.y) < 1e-6 && Math.abs(q.z) < 1e-6 && Math.abs(q.w - 1) < 1e-6;
-    expect(isIdentity).toBe(false);
+    expectQuaternionClose(q, 0, 0, 0, 1);
   });
 });
 

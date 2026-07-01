@@ -46,21 +46,32 @@ _Proposed scope lines — confirm or redraw._
 - Rendering, GPU resource ownership, host/platform coupling.
 - Defining cross-package types inline — shared shapes live in `@flighthq/types`.
 
-**Undecided edges** (proposed → really Open directions): whether the **closest-point/distance** collision-support kit and ongoing ray-casting belong here or in a consumer (picking/physics) package; and whether **OBB / Capsule** are in scope at all (they need a `@flighthq/types` entry first).
+**Decided edges:**
+
+- **Collision math (ray intersection, closest-point/distance)** is in scope — pure value-math on geometry primitives with no graph identity. Consumers (`interaction`, physics) depend on geometry for these; geometry is the substrate.
+- **OBB and Capsule** are in scope as standard bounding-volume primitives. Both need a type entry in `@flighthq/types` first.
 
 ## Decisions
 
-None blessed yet.
+- **[2026-07-01] Geometry owns collision math.** Ray intersection, closest-point/distance, and bounding-volume predicates are pure value-math on geometry primitives — they belong here, not in a consumer package. Geometry is the math substrate; consumers (`@flighthq/interaction`, physics) depend on it. **Resolves open direction #1.**
+
+- **[2026-07-01] OBB and Capsule are in scope — build now.** Both are standard bounding-volume primitives that complete the canonical roster. Each needs a type entry in `@flighthq/types` (`Obb`/`ObbLike`, `Capsule`/`CapsuleLike`) first, then implementation in geometry. **Resolves open direction #2.**
+
+- **[2026-07-01] Intersection predicates use `is*Intersecting*`.** The canonical spelling for "do these two volumes overlap?" is `is[TypeA]Intersecting[TypeB]` — e.g. `isAabbIntersectingAabb`, `isBoundingSphereIntersectingBoundingSphere`, `isFrustumIntersectingAabb`, `isFrustumIntersectingSphere`. This follows the SDK's `is*` boolean-prefix convention. `intersectAabb` (no `s`, no `is` prefix) stays as the out-computing overlap-box operation. Renames: `intersectsAabb` → `isAabbIntersectingAabb`; `getBoundingSphereIntersectsBoundingSphere` → `isBoundingSphereIntersectingBoundingSphere`. `isFrustumIntersecting*` already follows the convention and stays. **Resolves open direction #3.**
+
+- **[2026-07-01] Standard quaternion look-rotation convention: +Z forward, +Y up = identity.** Fix `setQuaternionLookRotation` to use the standard convention (matching three.js, Unity, and most engines). The current X/Z-swapped axis convention is non-standard and undocumented. Also fix `getQuaternionEuler` to fully round-trip `setQuaternionFromEuler` for all six Euler orders — the get-side extraction bug is a correctness defect, not a convention choice. **Resolves open direction #4.**
+
+- **[2026-07-01] TS packages advance independently of Rust conformance.** A TS package can reach Gold and ship status without waiting for the Rust crate to mirror it 1:1. Rust conformance is tracked (in the conformance map) but is not a blocking gate for TS package status. **Resolves open direction #5.**
 
 ## Open directions
 
-Every candidate question the stub charter does not yet answer that the review had to assume, plus the structural forks that touch this package. These are for you to settle — an agent asks here rather than assuming.
+Remaining questions not yet settled by a Decision above.
 
-1. **Where is the boundary between `geometry` and picking/physics?** A `Ray3D` intersection suite now lives here. Does `geometry` own ray casting and the **closest-point/distance** collision-support kit (`getClosestPointOn{Aabb,BoundingSphere,Plane,Ray3D}`, `getClosestPointBetweenRay3Ds`) as the math substrate for `interaction`/physics, or does anything past pure value-math belong to a consumer package? The prior depth review deferred this; the ray suite already crossed the line, so it is now load-bearing.
-2. **OBB / Capsule — in or out of scope, and where does the type live?** Both are the obvious next bounding volumes; both need an `Obb`/`Capsule` entry in `@flighthq/types` first, making them a cross-package design decision rather than a within-package omission. A Boundary/Decision is needed before building.
-3. **The intersection-predicate naming convention.** The "do these two volumes overlap?" predicate is currently spelled three ways: `intersectsAabb`, `getBoundingSphereIntersectsBoundingSphere`, and `isFrustumIntersecting{Aabb,Sphere}`. Settle one canonical spelling (the SDK boolean rule favors an `is*`/`has*` prefix, e.g. `isAabbIntersectingAabb`, leaving `intersectAabb` as the out-computing overlap-box op) so the next bounding volume does not invent a fourth. A small Decision here pays forward and is the main symmetry gap the review docks.
-4. **Quaternion convention contract.** What handedness / look-rotation convention does the SDK bless? Specifically: should `setQuaternionLookRotation` make "+Z forward, +Y up" identity (it currently uses an undocumented X/Z-swapped axis convention), and is `getQuaternionEuler` expected to round-trip `setQuaternionFromEuler` for **all** Euler orders (it currently only does for single-axis inputs — a real get-side extraction bug)? Fixing the extraction is autonomous once the target convention is chosen, but the _convention_ it should target is a charter-level Decision.
-5. **Rust conformance as a release gate** _(fork-adjacent: the conformance posture; applies beyond geometry)._ The crate lags the TS surface (`quaternion`, `aabb`, `boundingSphere`, `plane` and the pass-1/2 ops are unported). Is TS-package completeness allowed to land ahead of the `flighthq-geometry` mirror, or is 1:1 crate parity a blocking gate for a package's status to advance?
+1. ~~Where is the boundary between `geometry` and picking/physics?~~ **Resolved — see Decision [2026-07-01].**
+2. ~~OBB / Capsule — in or out of scope?~~ **Resolved — see Decision [2026-07-01].**
+3. ~~Intersection-predicate naming convention.~~ **Resolved — see Decision [2026-07-01].**
+4. ~~Quaternion convention contract.~~ **Resolved — see Decision [2026-07-01].**
+5. ~~Rust conformance as a release gate.~~ **Resolved — see Decision [2026-07-01].**
 6. **Wasm `-rs` mixing leaf** _(structural fork D — the Wasm mixing seam)._ `geometry` is named as a candidate value-typed, Wasm-mixable leaf (value-in/value-out math). Is a `geometry-rs` NPM drop-in a direction worth committing to, and does that obligation shape the API seam?
 7. **Closed-union exception is settled, but noted** _(structural fork B — closed union vs. open registry)._ `EulerOrder` is a mathematically fixed six-member set inside a tight conversion loop — the closed-system exception to the registry default, correctly a closed string union here. Recorded so a later pass does not "fix" it into a registry.
 8. **Package Map line is stale.** The codebase-map geometry entry ("rectangles, vectors, matrices, typed-array capacity helpers, and pools") predates quaternion, the AABB/sphere/plane/frustum culling set, and `Ray3D`. Candidate revision: widen it to "…matrices, quaternion, bounding volumes (AABB/sphere/plane/frustum), and a Ray3D intersection primitive…". (Cross-doc edit — surface, do not act autonomously.)

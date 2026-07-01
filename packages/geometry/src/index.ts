@@ -1,5 +1,6 @@
 export * from './aabb';
 export * from './boundingSphere';
+export * from './capsule';
 export * from './frustum';
 export * from './matrix';
 export * from './matrix3';
@@ -7,6 +8,7 @@ export * from './matrix3Pool';
 export * from './matrix4';
 export * from './matrix4Pool';
 export * from './matrixPool';
+export * from './obb';
 export * from './plane';
 export * from './quaternion';
 export * from './quaternionPool';
