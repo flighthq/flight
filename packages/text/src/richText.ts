@@ -6,18 +6,18 @@ import {
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
 import { createSignal } from '@flighthq/signals';
 import {
+  computeRichTextBottomScrollV,
+  computeRichTextCharIndexAtPoint,
   computeRichTextContent,
+  computeRichTextLineCount,
+  computeRichTextLineMetrics,
+  computeRichTextMaxScrollH,
+  computeRichTextMaxScrollV,
+  computeRichTextTextHeight,
+  computeRichTextTextWidth,
   computeTextBoundsRectangle,
-  getRichTextBottomScrollV,
-  getRichTextCharIndexAtPoint,
   getRichTextContent,
-  getRichTextLineCount,
-  getRichTextLineMetrics,
   getRichTextLinkAtPoint,
-  getRichTextMaxScrollH,
-  getRichTextMaxScrollV,
-  getRichTextTextHeight,
-  getRichTextTextWidth,
   mergeTextFormat,
 } from '@flighthq/textlayout';
 import type {
@@ -191,18 +191,18 @@ export function enableTextFieldSignals(source: RichText): TextFieldSignals {
   return (runtime.textFieldSignals ??= createTextFieldSignals());
 }
 
-export function getRichTextBottomScrollVValue(source: Readonly<RichText>): number {
+export function getRichTextBottomScrollV(source: Readonly<RichText>): number {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return 1;
-  return getRichTextBottomScrollV(source.data, layout);
+  return computeRichTextBottomScrollV(source.data, layout);
 }
 
-export function getRichTextCharIndexAtPointValue(source: Readonly<RichText>, x: number, y: number): number {
+export function getRichTextCharIndexAtPoint(source: Readonly<RichText>, x: number, y: number): number {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return -1;
-  return getRichTextCharIndexAtPoint(source.data.text, layout, x, y);
+  return computeRichTextCharIndexAtPoint(source.data.text, layout, x, y);
 }
 
 export function getRichTextDefaultTextFormat(source: Readonly<RichText>): Readonly<TextFormat> {
@@ -262,35 +262,35 @@ export function getRichTextLength(source: Readonly<RichText>): number {
   return source.data.text.length;
 }
 
-export function getRichTextLineCountValue(source: Readonly<RichText>): number {
+export function getRichTextLineCount(source: Readonly<RichText>): number {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return 0;
-  return getRichTextLineCount(layout);
+  return computeRichTextLineCount(layout);
 }
 
-export function getRichTextLineMetricsValue(
+export function getRichTextLineMetrics(
   source: Readonly<RichText>,
   lineIndex: number,
 ): Readonly<TextLineMetrics> | null {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return null;
-  return getRichTextLineMetrics(layout, lineIndex);
+  return computeRichTextLineMetrics(layout, lineIndex);
 }
 
-export function getRichTextMaxScrollHValue(source: Readonly<RichText>): number {
+export function getRichTextMaxScrollH(source: Readonly<RichText>): number {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return 0;
-  return getRichTextMaxScrollH(source.data, layout);
+  return computeRichTextMaxScrollH(source.data, layout);
 }
 
-export function getRichTextMaxScrollVValue(source: Readonly<RichText>): number {
+export function getRichTextMaxScrollV(source: Readonly<RichText>): number {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return 1;
-  return getRichTextMaxScrollV(source.data, layout);
+  return computeRichTextMaxScrollV(source.data, layout);
 }
 
 // The character a field masks its text with, or null when not masking. Password state lives on the
@@ -309,18 +309,18 @@ export function getRichTextString(source: Readonly<RichText>): string {
   return source.data.text;
 }
 
-export function getRichTextTextHeightValue(source: Readonly<RichText>): number {
+export function getRichTextTextHeight(source: Readonly<RichText>): number {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return 0;
-  return getRichTextTextHeight(layout);
+  return computeRichTextTextHeight(layout);
 }
 
-export function getRichTextTextWidthValue(source: Readonly<RichText>): number {
+export function getRichTextTextWidth(source: Readonly<RichText>): number {
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return 0;
-  return getRichTextTextWidth(layout);
+  return computeRichTextTextWidth(layout);
 }
 
 export function getTextFieldSignals(source: Readonly<RichText>): TextFieldSignals | null {
@@ -485,7 +485,7 @@ export function setRichTextMultiline(source: RichText, value: boolean): void {
 }
 
 export function setRichTextScrollH(source: RichText, value: number, layout?: Readonly<TextLayoutResult>): void {
-  const max = layout != null ? getRichTextMaxScrollHFromLayout(source.data, layout) : Infinity;
+  const max = layout != null ? computeRichTextMaxScrollHFromLayout(source.data, layout) : Infinity;
   const clamped = Math.max(0, Math.min(max, Math.round(value)));
   if (source.data.scrollH === clamped) return;
   const previousScrollH = source.data.scrollH;
@@ -496,7 +496,7 @@ export function setRichTextScrollH(source: RichText, value: number, layout?: Rea
 }
 
 export function setRichTextScrollV(source: RichText, value: number, layout?: Readonly<TextLayoutResult>): void {
-  const max = layout != null ? getRichTextMaxScrollVFromLayout(source.data, layout) : Infinity;
+  const max = layout != null ? computeRichTextMaxScrollVFromLayout(source.data, layout) : Infinity;
   const clamped = Math.max(1, Math.min(max, Math.round(value)));
   if (source.data.scrollV === clamped) return;
   const previousScrollH = source.data.scrollH;
@@ -555,12 +555,12 @@ function invalidateRichTextContent(source: RichText): void {
   if (source.data.autoSize !== 'none') invalidateNodeLocalBounds(source);
 }
 
-function getRichTextMaxScrollHFromLayout(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
+function computeRichTextMaxScrollHFromLayout(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
   const fieldW = data.autoSize === 'none' || data.wordWrap ? data.width : layout.textWidth + 4;
   return Math.max(0, Math.ceil(layout.textWidth - Math.max(0, fieldW - 4)));
 }
 
-function getRichTextMaxScrollVFromLayout(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
+function computeRichTextMaxScrollVFromLayout(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
   if (layout.numLines <= 1) return 1;
   const fieldH = data.autoSize === 'none' ? data.height : layout.textHeight + 4;
   const visibleH = Math.max(0, fieldH - 4);

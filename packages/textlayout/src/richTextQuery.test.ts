@@ -1,13 +1,13 @@
 import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/types';
 
 import {
+  computeRichTextCharIndexAtPoint,
+  computeRichTextLineMetrics,
   getRichTextCharBoundaries,
-  getRichTextCharIndexAtPoint,
   getRichTextFirstCharInParagraph,
   getRichTextLineIndexAtPoint,
   getRichTextLineIndexOfChar,
   getRichTextLineLength,
-  getRichTextLineMetrics,
   getRichTextLineOffset,
   getRichTextLineText,
   getRichTextLinkAtPoint,
@@ -59,6 +59,30 @@ function createLayout(): TextLayoutResult {
   };
 }
 
+describe('computeRichTextCharIndexAtPoint', () => {
+  it('returns the index at a point within a group', () => {
+    expect(computeRichTextCharIndexAtPoint('abcdefg', createLayout(), 25, 5)).toBe(2);
+  });
+
+  it('selects the closest line by y distance', () => {
+    expect(computeRichTextCharIndexAtPoint('abcdefg', createLayout(), 5, 100)).toBe(7);
+  });
+});
+
+describe('computeRichTextLineMetrics', () => {
+  it('returns metrics for a valid line', () => {
+    const metrics = computeRichTextLineMetrics(createLayout(), 0);
+    expect(metrics).not.toBeNull();
+    expect(metrics!.ascent).toBe(10);
+    expect(metrics!.descent).toBe(2);
+    expect(metrics!.width).toBe(30);
+  });
+
+  it('returns null for a non-existent line', () => {
+    expect(computeRichTextLineMetrics(createLayout(), 5)).toBeNull();
+  });
+});
+
 describe('getRichTextCharBoundaries', () => {
   it('fills out with the bounding box of the character', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
@@ -73,16 +97,6 @@ describe('getRichTextCharBoundaries', () => {
   it('returns false for an out-of-range index', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
     expect(getRichTextCharBoundaries(out as never, '', createLayout(), 99)).toBe(false);
-  });
-});
-
-describe('getRichTextCharIndexAtPoint', () => {
-  it('returns the index at a point within a group', () => {
-    expect(getRichTextCharIndexAtPoint('abcdefg', createLayout(), 25, 5)).toBe(2);
-  });
-
-  it('selects the closest line by y distance', () => {
-    expect(getRichTextCharIndexAtPoint('abcdefg', createLayout(), 5, 100)).toBe(7);
   });
 });
 
@@ -124,20 +138,6 @@ describe('getRichTextLineLength', () => {
 
   it('returns 0 for a non-existent line', () => {
     expect(getRichTextLineLength(createLayout(), 5)).toBe(0);
-  });
-});
-
-describe('getRichTextLineMetrics', () => {
-  it('returns metrics for a valid line', () => {
-    const metrics = getRichTextLineMetrics(createLayout(), 0);
-    expect(metrics).not.toBeNull();
-    expect(metrics!.ascent).toBe(10);
-    expect(metrics!.descent).toBe(2);
-    expect(metrics!.width).toBe(30);
-  });
-
-  it('returns null for a non-existent line', () => {
-    expect(getRichTextLineMetrics(createLayout(), 5)).toBeNull();
   });
 });
 

@@ -9,35 +9,10 @@ import type {
 import { TEXT_LAYOUT_GUTTER } from './textLayout';
 
 /**
- * @param _text Unused — character indices are already encoded in the layout groups. Kept for
- *   backward compatibility; will be removed in a future breaking release.
- */
-export function getRichTextCharBoundaries(
-  out: Rectangle,
-  _text: string,
-  layout: Readonly<TextLayoutResult>,
-  charIndex: number,
-): boolean {
-  const group = getGroupContainingIndex(layout, charIndex);
-  if (group === null) return false;
-
-  let x = group.offsetX;
-  const limit = Math.min(charIndex - group.startIndex, group.positions.length);
-  for (let i = 0; i < limit; i++) x += group.positions[i] ?? 0;
-
-  const charWidth = group.positions[charIndex - group.startIndex] ?? 0;
-  out.x = x;
-  out.y = group.offsetY;
-  out.width = charWidth;
-  out.height = group.height;
-  return true;
-}
-
-/**
  * @param _text Unused — hit-testing is performed against layout group geometry. Kept for
  *   backward compatibility; will be removed in a future breaking release.
  */
-export function getRichTextCharIndexAtPoint(
+export function computeRichTextCharIndexAtPoint(
   _text: string,
   layout: Readonly<TextLayoutResult>,
   x: number,
@@ -88,6 +63,63 @@ export function getRichTextCharIndexAtPoint(
   return lineEnd > 0 ? lineEnd : lineStart;
 }
 
+export function computeRichTextLineMetrics(
+  layout: Readonly<TextLayoutResult>,
+  lineIndex: number,
+): TextLineMetrics | null {
+  let ascent = 0;
+  let descent = 0;
+  let leading = 0;
+  let x = Infinity;
+  let right = 0;
+  let found = false;
+
+  for (const group of layout.groups) {
+    if (group.lineIndex !== lineIndex) continue;
+    found = true;
+    ascent = Math.max(ascent, group.ascent);
+    descent = Math.max(descent, group.descent);
+    leading = Math.max(leading, group.leading);
+    x = Math.min(x, group.offsetX);
+    right = Math.max(right, group.offsetX + group.width);
+  }
+
+  if (!found) return null;
+  return {
+    ascent,
+    descent,
+    height: layout.lineHeights[lineIndex] ?? ascent + descent + leading,
+    leading,
+    width: right - x,
+    x: x === Infinity ? 0 : x,
+  };
+}
+
+/**
+ * @param _text Unused — character indices are already encoded in the layout groups. Kept for
+ *   backward compatibility; will be removed in a future breaking release.
+ */
+export function getRichTextCharBoundaries(
+  out: Rectangle,
+  _text: string,
+  layout: Readonly<TextLayoutResult>,
+  charIndex: number,
+): boolean {
+  const group = getGroupContainingIndex(layout, charIndex);
+  if (group === null) return false;
+
+  let x = group.offsetX;
+  const limit = Math.min(charIndex - group.startIndex, group.positions.length);
+  for (let i = 0; i < limit; i++) x += group.positions[i] ?? 0;
+
+  const charWidth = group.positions[charIndex - group.startIndex] ?? 0;
+  out.x = x;
+  out.y = group.offsetY;
+  out.width = charWidth;
+  out.height = group.height;
+  return true;
+}
+
 export function getRichTextFirstCharInParagraph(text: string, charIndex: number): number {
   const clamped = Math.max(0, Math.min(text.length, charIndex));
   for (let i = clamped - 1; i >= 0; i--) {
@@ -125,35 +157,6 @@ export function getRichTextLineLength(layout: Readonly<TextLayoutResult>, lineIn
     end = Math.max(end, group.endIndex);
   }
   return start === Infinity ? 0 : end - start;
-}
-
-export function getRichTextLineMetrics(layout: Readonly<TextLayoutResult>, lineIndex: number): TextLineMetrics | null {
-  let ascent = 0;
-  let descent = 0;
-  let leading = 0;
-  let x = Infinity;
-  let right = 0;
-  let found = false;
-
-  for (const group of layout.groups) {
-    if (group.lineIndex !== lineIndex) continue;
-    found = true;
-    ascent = Math.max(ascent, group.ascent);
-    descent = Math.max(descent, group.descent);
-    leading = Math.max(leading, group.leading);
-    x = Math.min(x, group.offsetX);
-    right = Math.max(right, group.offsetX + group.width);
-  }
-
-  if (!found) return null;
-  return {
-    ascent,
-    descent,
-    height: layout.lineHeights[lineIndex] ?? ascent + descent + leading,
-    leading,
-    width: right - x,
-    x: x === Infinity ? 0 : x,
-  };
 }
 
 export function getRichTextLineOffset(layout: Readonly<TextLayoutResult>, lineIndex: number): number {

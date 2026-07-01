@@ -204,21 +204,23 @@ export function negateVector2(out: Vector2Like, source: Readonly<Vector2Like>): 
 }
 
 /**
- * Writes a point representing this vector scaled to a given length.
+ * Converts a Vector2Like object to a unit vector by dividing both elements
+ * (x, y) by the length of the vector.
  *
- * The direction of the vector is preserved. If the original vector has zero length,
- * the returned point will also be (0, 0).
- */
-export function normalizeVector2(out: Vector2Like, source: Readonly<Vector2Like>, newLength: number): void {
-  const currentLength = getVector2Length(source);
-  if (currentLength === 0) {
+ * Returns the original length.
+ **/
+export function normalizeVector2(out: Vector2Like, source: Readonly<Vector2Like>): number {
+  const l = getVector2Length(source);
+
+  if (l !== 0) {
+    out.x = source.x / l;
+    out.y = source.y / l;
+  } else {
     out.x = 0;
     out.y = 0;
-  } else {
-    const scale = newLength / currentLength;
-    out.x = source.x * scale;
-    out.y = source.y * scale;
   }
+
+  return l;
 }
 
 export function offsetVector2(out: Vector2Like, source: Readonly<Vector2Like>, dx: number, dy: number): void {
@@ -251,6 +253,18 @@ export function reflectVector2(out: Vector2Like, incident: Readonly<Vector2Like>
 export function scaleVector2(out: Vector2Like, source: Readonly<Vector2Like>, scalar: number): void {
   out.x = source.x * scalar;
   out.y = source.y * scalar;
+}
+
+export function scaleVector2ToLength(out: Vector2Like, source: Readonly<Vector2Like>, length: number): void {
+  const currentLength = getVector2Length(source);
+  if (currentLength === 0) {
+    out.x = 0;
+    out.y = 0;
+  } else {
+    const scale = length / currentLength;
+    out.x = source.x * scale;
+    out.y = source.y * scale;
+  }
 }
 
 export function setVector2(out: Vector2Like, x: number, y: number): void {

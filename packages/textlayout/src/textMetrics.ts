@@ -5,7 +5,7 @@ export function createTextMetrics(): TextMetrics {
 }
 
 // Fills `out` with the measured content size from a computed layout (the glyph extent, ceil'd to whole
-// pixels to match getRichTextTextWidth/Height). Pure read — call after the layout is current, e.g. via
+// pixels to match computeRichTextTextWidth/Height). Pure read — call after the layout is current, e.g. via
 // ensureRichTextLayout.
 export function getTextMetrics(out: TextMetrics, layout: Readonly<TextLayoutResult>): void {
   out.width = Math.ceil(layout.textWidth);
