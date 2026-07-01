@@ -11,7 +11,7 @@
 ## Clean
 
 - `particleEmitter.ts` — names the ParticleEmitter object (createParticleEmitter, reserveParticleEmitter, computeParticleEmitterLocalBoundsRectangle, getParticleEmitterCapacity).
-- `quadBatch.ts` — names the QuadBatch object (createQuadBatch, reserveQuadBatch, resizeQuadBatch, hitTestQuadBatchPoint, getQuadTransformStride). Multiple functions over one domain — not a single-function file.
+- `quadBatch.ts` — names the QuadBatch object (createQuadBatch, reserveQuadBatch, resizeQuadBatch, hitTestQuadBatchPoint, getQuadBatchTransformStride). Multiple functions over one domain — not a single-function file.
 - `sprite.ts` — names the Sprite object (createSprite, computeSpriteLocalBoundsRectangle, getSpriteRuntime).
 - `tilemap.ts` — names the Tilemap object (createTilemap, getTilemapTile, setTilemapTile, fillTilemapTiles, resizeTilemap).
 - `index.ts` — thin re-export barrel (`export *` over the four domain files); a legitimate barrel, not a dumping ground.
