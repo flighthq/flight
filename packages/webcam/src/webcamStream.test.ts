@@ -48,7 +48,8 @@ describe('createWebcamStreamEntity', () => {
     });
     const rt = getWebcamStreamRuntime(stream);
     expect(rt).not.toBeNull();
-    // mediaStream is a null placeholder; the caller overwrites it before use.
+    // mediaStream starts null; the caller attaches a live stream before use.
+    expect(rt?.mediaStream).toBeNull();
     expect(rt?.videoElement).toBeNull();
   });
 });
