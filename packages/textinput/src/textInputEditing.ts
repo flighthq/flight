@@ -244,14 +244,20 @@ export function handleTextInputKeyboard(
     case 'deleteWordForward':
       deleteTextInputWordForward(source);
       return true;
+    case 'documentEnd':
+      moveTextInputCaret(source, source.data.text.length, data.shiftKey);
+      return true;
+    case 'documentStart':
+      moveTextInputCaret(source, 0, data.shiftKey);
+      return true;
     case 'down':
       moveTextInputCaretDown(source, options?.layout, data.shiftKey);
       return true;
     case 'end':
-      moveTextInputCaret(source, source.data.text.length, data.shiftKey);
+      moveTextInputCaretToLineEnd(source, options?.layout, data.shiftKey);
       return true;
     case 'home':
-      moveTextInputCaret(source, 0, data.shiftKey);
+      moveTextInputCaretToLineStart(source, options?.layout, data.shiftKey);
       return true;
     case 'left':
       moveTextInputCaret(source, getTextInputCaretIndex(source) - 1, data.shiftKey);
@@ -661,6 +667,9 @@ function getKeyboardCommand(data: Readonly<KeyboardEventData>): KeyboardCommand 
     // Word-delete: Ctrl+Backspace / Ctrl+Delete.
     if (data.keyCode === KeyCode.BACKSPACE || data.key === 'Backspace') return 'deleteWordBackward';
     if (data.keyCode === KeyCode.DELETE || data.key === 'Delete') return 'deleteWordForward';
+    // Document-level Home/End: Ctrl+Home / Ctrl+End (Windows/Linux), Cmd+Home / Cmd+End (macOS).
+    if (data.keyCode === KeyCode.HOME || data.key === 'Home') return 'documentStart';
+    if (data.keyCode === KeyCode.END || data.key === 'End') return 'documentEnd';
     return 'none';
   }
   // Alt+Left / Alt+Right: word motion on macOS.
@@ -844,6 +853,8 @@ type KeyboardCommand =
   | 'delete'
   | 'deleteWordBackward'
   | 'deleteWordForward'
+  | 'documentEnd'
+  | 'documentStart'
   | 'down'
   | 'end'
   | 'home'
