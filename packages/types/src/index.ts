@@ -301,6 +301,7 @@ export * from './RichText';
 export * from './RichTextContent';
 export * from './RichTextStyleSheet';
 export * from './Sampler';
+export * from './ScalarRemap';
 export * from './Scale9Mapper';
 export * from './Scale9Shape';
 export * from './ScanlinesEffect';

@@ -46,7 +46,10 @@ function updateTween<T extends object>(tween: Tween<T>, deltaTime: number): void
       tween.complete = true;
       emitSignal(tween.onComplete);
     } else {
-      if (tween.reflect) tween.reverse = !tween.reverse;
+      if (tween.reflect) {
+        tween.reverse = !tween.reverse;
+        emitSignal(tween.onYoyo);
+      }
       tween.elapsed = tween.delay;
       if (tween.repeat > 0) tween.repeat--;
       emitSignal(tween.onRepeat);
