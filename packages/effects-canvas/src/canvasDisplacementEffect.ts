@@ -2,7 +2,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, DisplacementEffect }
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Displacement / heat-haze (PASSTHROUGH): a per-pixel uv warp has no 2D draw-op equivalent. Shader-only.
+// Displacement / heat-haze (PASSTHROUGH): a per-pixel uv warp. No CSS filter equivalent, but expressible
+// per-pixel via getImageData/putImageData; not yet implemented — passthrough for now.
 export function applyDisplacementEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

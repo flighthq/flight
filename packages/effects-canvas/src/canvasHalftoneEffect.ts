@@ -2,8 +2,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, HalftoneEffect } fro
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Halftone (PASSTHROUGH): a rotated dot grid carved by per-pixel luminance has no 2D draw-op path.
-// Shader-only.
+// Halftone (PASSTHROUGH): a rotated dot grid carved by per-pixel luminance. No CSS filter equivalent,
+// but expressible per-pixel via getImageData/putImageData; not yet implemented — passthrough for now.
 export function applyHalftoneEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, FxaaEffect } from '@
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// FXAA (PASSTHROUGH): luminance edge detection + directional blend is per-pixel neighbor sampling with
-// no CSS/draw-op equivalent. Shader-only.
+// FXAA (PASSTHROUGH): luminance edge detection + directional blend is per-pixel neighbor sampling. No
+// CSS filter equivalent, but expressible per-pixel via getImageData/putImageData; not yet implemented —
+// passthrough for now.
 export function applyFxaaEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

@@ -3,6 +3,17 @@ import type { GlRenderState, MeshGeometry, VertexAttribute } from '@flighthq/typ
 import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
+// Frees the GL objects owned by a mesh upload — the VAO and the vertex/index buffers. The upload
+// must not be used after this call. The upload cache is a WeakMap keyed by the geometry entity, so
+// its entry falls away on its own once the geometry is GC'd; this frees the GPU resources now rather
+// than waiting for context loss. Deleting an already-deleted GL object is a silent no-op.
+export function destroyGlMeshUpload(state: GlRenderState, upload: Readonly<GlMeshUpload>): void {
+  const gl = state.gl;
+  gl.deleteVertexArray(upload.vao);
+  gl.deleteBuffer(upload.vertexBuffer);
+  if (upload.indexBuffer !== null) gl.deleteBuffer(upload.indexBuffer);
+}
+
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into a VAO for this
 // GlRenderState, caching the result keyed by the geometry entity (the per-state parallel of
 // MeshGeometryRuntime.webglData). Re-uploads when geometry.version moves past the cached version,

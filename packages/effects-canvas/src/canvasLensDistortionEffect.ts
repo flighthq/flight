@@ -2,8 +2,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, LensDistortionEffect
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Lens distortion (PASSTHROUGH): a radial uv remap (barrel/pincushion) has no 2D draw-op equivalent.
-// Shader-only.
+// Lens distortion (PASSTHROUGH): a radial uv remap (barrel/pincushion). No CSS filter equivalent, but
+// expressible per-pixel via getImageData/putImageData; not yet implemented — passthrough for now.
 export function applyLensDistortionEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

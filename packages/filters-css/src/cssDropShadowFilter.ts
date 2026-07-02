@@ -1,6 +1,8 @@
 import { getShadowFilterOffset } from '@flighthq/filters-math';
 import type { DropShadowFilter } from '@flighthq/types';
 
+import { cssRgbaFromColor } from './cssColor';
+
 /**
  * Computes the CSS `filter` string for a drop shadow filter, or `null` when the
  * filter has no CSS equivalent. A knockout shadow or an anisotropic blur
@@ -16,12 +18,5 @@ export function computeDropShadowFilterCss(filter: DropShadowFilter): string | n
   // @flighthq/filters-math; do not re-derive it here.
   const offset = { dx: 0, dy: 0 };
   getShadowFilterOffset(filter, offset);
-  return `drop-shadow(${offset.dx}px ${offset.dy}px ${blurX}px ${rgbaFromInt(filter.color ?? 0, filter.alpha ?? 1)})`;
-}
-
-function rgbaFromInt(color: number, alpha: number): string {
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
-  return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+  return `drop-shadow(${offset.dx}px ${offset.dy}px ${blurX}px ${cssRgbaFromColor(filter.color ?? 0, filter.alpha ?? 1)})`;
 }

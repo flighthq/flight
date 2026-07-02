@@ -23,6 +23,16 @@ export interface GlWireframeUpload {
 // issues its gl.LINES draw immediately after. A subset's triangle range [indexOffset, +indexCount)
 // maps to the line range [indexOffset * 2, +indexCount * 2) (each triangle index yields two line
 // indices), so the renderer draws a sub-range of this buffer.
+// Frees the GL objects owned by a wireframe upload — the VAO and the line-index buffer. It does NOT
+// delete the vertex buffer: that is the shared triangle upload's buffer (see ensureGlWireframeUpload),
+// freed by destroyGlMeshUpload for that geometry, not here. Deleting an already-deleted GL object is
+// a silent no-op.
+export function destroyGlWireframeUpload(state: GlRenderState, upload: Readonly<GlWireframeUpload>): void {
+  const gl = state.gl;
+  gl.deleteVertexArray(upload.vao);
+  gl.deleteBuffer(upload.lineIndexBuffer);
+}
+
 export function ensureGlWireframeUpload(state: GlRenderState, geometry: Readonly<MeshGeometry>): GlWireframeUpload {
   const gl = state.gl;
   const meshUpload = ensureGlMeshUpload(state, geometry);

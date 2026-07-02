@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, SsrEffect } from '@f
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// SSR (PASSTHROUGH): screen-space reflections ray-march against depth using view-space normals; neither
-// buffer exists on Canvas 2D. Shader-only / depth-only.
+// SSR (PASSTHROUGH): screen-space reflections ray-march against depth using view-space normals.
+// Genuinely unsupportable on Canvas 2D: needs a depth buffer plus scene reprojection the 2D context does
+// not expose. Passthrough.
 export function applySsrEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

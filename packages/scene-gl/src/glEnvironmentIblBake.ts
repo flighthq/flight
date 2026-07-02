@@ -48,6 +48,23 @@ export function bakeEnvironmentIbl(state: GlRenderState, environment: Readonly<E
   };
 }
 
+// Frees the IBL bake shader programs cached for `state` — the irradiance / prefilter / BRDF pass
+// programs and each one's fullscreen-quad VAO + vertex buffer. These are module-local (keyed by
+// state), so they cannot be reached from the scene runtime; destroyGlSceneRuntime calls this to fold
+// them into the one-call teardown. A no-op when no bake has run for the state. The baked result
+// textures (runtime.ibl) are freed separately by destroyGlSceneRuntime.
+export function destroyGlBakePrograms(state: GlRenderState): void {
+  const byState = _bakePrograms.get(state);
+  if (byState === undefined) return;
+  const gl = state.gl;
+  for (const baked of byState.values()) {
+    gl.deleteProgram(baked.program);
+    gl.deleteVertexArray(baked.vao);
+    gl.deleteBuffer(baked.buffer);
+  }
+  _bakePrograms.delete(state);
+}
+
 function bakeGlIrradiance(state: GlRenderState, fbo: WebGLFramebuffer, sourceCube: WebGLTexture): WebGLTexture {
   const gl = state.gl;
   const cube = createGlBakeCube(gl, IRRADIANCE_SIZE, false);
@@ -155,6 +172,7 @@ function bindGlBakeSourceCube(gl: WebGL2RenderingContext, program: GlBakeProgram
 }
 
 interface GlBakeProgram {
+  buffer: WebGLBuffer; // the fullscreen-quad vertex buffer bound in the vao; owned here so teardown can free it
   locEnvCube: WebGLUniformLocation | null;
   locFaceForward: WebGLUniformLocation | null;
   locFaceRight: WebGLUniformLocation | null;
@@ -185,6 +203,7 @@ function ensureGlBakeProgram(state: GlRenderState, key: string, fragment: string
   gl.bindVertexArray(null);
 
   baked = {
+    buffer,
     locEnvCube: gl.getUniformLocation(program, 'u_envCube'),
     locFaceForward: gl.getUniformLocation(program, 'u_faceForward'),
     locFaceRight: gl.getUniformLocation(program, 'u_faceRight'),

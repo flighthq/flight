@@ -1,8 +1,62 @@
-import type { GlRenderStateRuntime } from '@flighthq/types';
+import type { GlRenderStateRuntime, GlRenderTarget, Matrix4 } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import { getGlSceneRuntime } from './glSceneRuntime';
+import type { GlMeshProgram } from './glMeshProgram';
+import type { GlSceneIbl } from './glSceneRuntime';
+import { destroyGlSceneRuntime, getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
+
+describe('destroyGlSceneRuntime', () => {
+  it('is a safe no-op when the state never allocated a scene runtime', () => {
+    const { state, gl } = makeGlSceneState();
+    destroyGlSceneRuntime(state);
+    expect(gl.calls.some((c) => c.name.startsWith('delete'))).toBe(false);
+  });
+
+  it('frees the cached programs, the IBL set, the environment cube, and the shadow target, then clears the slots', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = getGlSceneRuntime(state);
+
+    scene.programCache.set('a', { program: {} as WebGLProgram } as GlMeshProgram);
+    scene.programCache.set('b', { program: {} as WebGLProgram } as GlMeshProgram);
+    scene.activeMeshProgram = scene.programCache.get('a')!;
+    scene.ibl = {
+      brdfLut: {} as WebGLTexture,
+      intensity: 1,
+      irradianceCube: {} as WebGLTexture,
+      prefilteredCube: {} as WebGLTexture,
+      prefilteredMipCount: 5,
+    } satisfies GlSceneIbl;
+    scene.iblBakeFramebuffer = {} as WebGLFramebuffer;
+    scene.environmentSourceCube = {} as WebGLTexture;
+    const depthTexture = {} as WebGLTexture;
+    scene.shadowTarget = {
+      colorRenderbuffers: [],
+      depthStencilRenderbuffer: null,
+      depthTexture,
+      framebuffer: {} as WebGLFramebuffer,
+      resolveFramebuffer: null,
+      textures: [],
+    } as unknown as GlRenderTarget;
+    scene.shadow = { matrix: {} as Matrix4, texture: depthTexture };
+
+    destroyGlSceneRuntime(state);
+
+    expect(gl.calls.filter((c) => c.name === 'deleteProgram').length).toBe(2);
+    // 3 IBL textures + the environment source cube + the shadow depth texture (owned by the target).
+    expect(gl.calls.filter((c) => c.name === 'deleteTexture').length).toBe(5);
+    // The IBL bake framebuffer + the shadow target's framebuffer.
+    expect(gl.calls.filter((c) => c.name === 'deleteFramebuffer').length).toBe(2);
+
+    expect(scene.programCache.size).toBe(0);
+    expect(scene.activeMeshProgram).toBeNull();
+    expect(scene.ibl).toBeNull();
+    expect(scene.iblBakeFramebuffer).toBeNull();
+    expect(scene.environmentSourceCube).toBeNull();
+    expect(scene.shadowTarget).toBeNull();
+    expect(scene.shadow).toBeNull();
+  });
+});
 
 describe('getGlSceneRuntime', () => {
   it('lazily allocates one runtime per state and returns the same instance', () => {

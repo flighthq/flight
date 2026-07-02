@@ -2,8 +2,9 @@ import type { CameraMotionBlurEffect, CanvasRenderEffectRunner, CanvasRenderTarg
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Camera motion blur (PASSTHROUGH): a zoom smear accumulating taps toward screen center is a per-pixel
-// multi-tap gather with no 2D draw-op path. Shader-only.
+// Camera motion blur (PASSTHROUGH): a zoom smear accumulating taps toward screen center.
+// Genuinely unsupportable on Canvas 2D: needs camera velocity/depth reprojection the 2D context does not
+// expose. Passthrough.
 export function applyCameraMotionBlurEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

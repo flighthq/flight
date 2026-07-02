@@ -8,6 +8,7 @@ import type { GlMeshProgram } from './glMeshProgram';
 import {
   beginGlMeshDraw,
   compileGlProgram,
+  destroyGlMeshProgram,
   drawGlMeshSubset,
   ensureGlSceneProgram,
   setGlMeshCameraPosition,
@@ -60,6 +61,17 @@ describe('compileGlProgram', () => {
   it('throws on a program link failure', () => {
     const gl = makeFakeGl2({ linkOk: false });
     expect(() => compileGlProgram(gl, 'v', 'f')).toThrow(/link error/);
+  });
+});
+
+describe('destroyGlMeshProgram', () => {
+  it('deletes the linked GL program', () => {
+    const { state, gl } = makeGlSceneState();
+    const program = makeProgram();
+    destroyGlMeshProgram(state, program);
+    const deletes = gl.calls.filter((c) => c.name === 'deleteProgram');
+    expect(deletes.length).toBe(1);
+    expect(deletes[0].args[0]).toBe(program.program);
   });
 });
 

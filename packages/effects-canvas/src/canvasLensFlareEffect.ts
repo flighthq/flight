@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, LensFlareEffect } fr
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Lens flare (PASSTHROUGH): a bright-pass-driven ghost/halo accumulation along the optical axis needs
-// HDR bright sampling and per-fragment marching. Shader-only / HDR-only.
+// Lens flare (PASSTHROUGH): a bright-pass-driven ghost/halo accumulation along the optical axis. No CSS
+// filter equivalent, but expressible per-pixel via getImageData/putImageData; not yet implemented —
+// passthrough for now. (Operates on already-clamped 8-bit input, so the bright-pass is approximate.)
 export function applyLensFlareEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

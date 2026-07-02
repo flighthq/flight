@@ -139,4 +139,27 @@ describe('innerShadowSurface', () => {
     expect(out[1 * 4 + 2]).toBe(0);
     expect(out[1 * 4 + 3]).toBe(170);
   });
+
+  it('gathers the shadow toward one edge when given a directional offset', () => {
+    // A 3-px-wide filled bar (px 1..3) inside a 5-px row; px 0 and 4 are exterior.
+    const source = createSurface(5, 1);
+    for (let px = 1; px <= 3; px++) source.data[px * 4 + 3] = 255;
+    const alphaAt = (offsetX: number): number[] => {
+      const out = new Uint8ClampedArray(5 * 4);
+      const scratch = new Uint8ClampedArray(5 * 4);
+      innerShadowSurface(out, scratch, region(source), { offsetX, radiusX: 1, radiusY: 0 });
+      return [out[1 * 4 + 3], out[2 * 4 + 3], out[3 * 4 + 3]];
+    };
+    // Zero offset rings the boundary evenly: the two interior edges match.
+    const centered = alphaAt(0);
+    expect(centered[0]).toBe(centered[2]);
+    // A positive offset pulls the exterior in from the left, so the shadow gathers on the left edge.
+    const shifted = alphaAt(2);
+    expect(shifted[0]).toBeGreaterThan(shifted[2]);
+    // The opposite offset mirrors it.
+    const mirrored = alphaAt(-2);
+    expect(mirrored[2]).toBeGreaterThan(mirrored[0]);
+    expect(mirrored[0]).toBe(shifted[2]);
+    expect(mirrored[2]).toBe(shifted[0]);
+  });
 });

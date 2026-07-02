@@ -1,4 +1,4 @@
-import { applyConvolutionFilterToGl } from './glConvolutionFilter';
+import { applyConvolutionFilterToGl, MAX_CONVOLUTION_FILTER_GL_KERNEL_SIZE } from './glConvolutionFilter';
 import { makeFilterState, makeRenderTarget } from './glTestHelper';
 
 describe('applyConvolutionFilterToGl', () => {
@@ -34,5 +34,11 @@ describe('applyConvolutionFilterToGl', () => {
         matrixY: 0,
       }),
     ).toThrow();
+  });
+});
+
+describe('MAX_CONVOLUTION_FILTER_GL_KERNEL_SIZE', () => {
+  it('is the 7x7 weight cap enforced by the shader uniform array', () => {
+    expect(MAX_CONVOLUTION_FILTER_GL_KERNEL_SIZE).toBe(49);
   });
 });

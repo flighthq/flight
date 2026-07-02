@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, WhiteBalanceEffect }
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// White balance (PASSTHROUGH): a per-channel temperature/tint shift has no CSS filter equivalent (only
-// the coarse colorGrade hue approximation exists). Shader-only here.
+// White balance (PASSTHROUGH): a per-channel temperature/tint shift (only the coarse colorGrade hue
+// approximation exists as CSS). No CSS filter equivalent for the full effect, but expressible per-pixel
+// via getImageData/putImageData; not yet implemented — passthrough for now.
 export function applyWhiteBalanceEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

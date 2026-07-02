@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, ChannelMixerEffect }
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Channel mixer (PASSTHROUGH): an arbitrary 3x4 RGB->RGB matrix per pixel has no CSS filter equivalent;
-// CSS has no programmable color matrix on a 2D context. Shader-only.
+// Channel mixer (PASSTHROUGH): an arbitrary 3x4 RGB->RGB matrix applied per pixel. No CSS filter
+// equivalent, but expressible per-pixel via getImageData/putImageData; not yet implemented — passthrough
+// for now.
 export function applyChannelMixerEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

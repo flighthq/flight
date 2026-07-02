@@ -1,4 +1,4 @@
-import { applyMedianFilterToGl } from './glMedianFilter';
+import { applyMedianFilterToGl, MAX_MEDIAN_FILTER_GL_RADIUS } from './glMedianFilter';
 import { makeFilterState, makeRenderTarget } from './glTestHelper';
 
 describe('applyMedianFilterToGl', () => {
@@ -20,5 +20,11 @@ describe('applyMedianFilterToGl', () => {
   it('clamps radius above 2', () => {
     const { state } = makeFilterState();
     expect(() => applyMedianFilterToGl(state, makeRenderTarget(), makeRenderTarget(), { radius: 5 })).not.toThrow();
+  });
+});
+
+describe('MAX_MEDIAN_FILTER_GL_RADIUS', () => {
+  it('is the radius-2 (5x5) cap enforced by the shader sort array', () => {
+    expect(MAX_MEDIAN_FILTER_GL_RADIUS).toBe(2);
   });
 });

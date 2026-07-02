@@ -32,7 +32,7 @@ describe('applyDropShadowFilterToGl', () => {
     ).not.toThrow();
   });
 
-  it('does nothing when knockout is true', () => {
+  it('composites the shadow alone when knockout is true', () => {
     const { state } = makeFilterState();
     expect(() =>
       applyDropShadowFilterToGl(state, makeRenderTarget(), makeRenderTarget(), makeScratch(), {

@@ -1,8 +1,34 @@
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 
-import { ensureGlMeshUpload, hasGlMeshGeometryUv1 } from './glMeshUpload';
+import { destroyGlMeshUpload, ensureGlMeshUpload, hasGlMeshGeometryUv1 } from './glMeshUpload';
+import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
+
+describe('destroyGlMeshUpload', () => {
+  it('deletes the VAO and the vertex + index buffers of an indexed upload', () => {
+    const { state, gl } = makeGlSceneState();
+    const upload = ensureGlMeshUpload(state, createBoxMeshGeometry());
+    destroyGlMeshUpload(state, upload);
+    expect(gl.calls.filter((c) => c.name === 'deleteVertexArray').length).toBe(1);
+    expect(gl.calls.filter((c) => c.name === 'deleteBuffer').length).toBe(2);
+  });
+
+  it('skips the index buffer when the upload is non-indexed', () => {
+    const { state, gl } = makeGlSceneState();
+    const upload: GlMeshUpload = {
+      indexBuffer: null,
+      indexCount: 0,
+      indexType: gl.UNSIGNED_SHORT,
+      vao: {} as WebGLVertexArrayObject,
+      version: 0,
+      vertexBuffer: {} as WebGLBuffer,
+    };
+    destroyGlMeshUpload(state, upload);
+    expect(gl.calls.filter((c) => c.name === 'deleteVertexArray').length).toBe(1);
+    expect(gl.calls.filter((c) => c.name === 'deleteBuffer').length).toBe(1);
+  });
+});
 
 describe('ensureGlMeshUpload', () => {
   it('uploads vertex + index buffers into a VAO and reports the indexed draw shape', () => {

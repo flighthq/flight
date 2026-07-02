@@ -63,6 +63,14 @@ export function compileGlProgram(
   return program;
 }
 
+// Frees the linked GL program backing a mesh-material family program. The program object must not be
+// used after this call. Deleting an already-deleted GL program is a silent no-op, so destroying a
+// program that a sibling render state still aliases is safe. Frees only the shader — the caller drops
+// the program from its cache separately (see destroyGlSceneRuntime, which does both).
+export function destroyGlMeshProgram(state: GlRenderState, program: Readonly<GlMeshProgram>): void {
+  state.gl.deleteProgram(program.program);
+}
+
 // The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from
 // the proxy, lazily uploads the geometry's GPU buffers (cached by geometry.version), and issues the
 // indexed (or array) draw over the proxy's subset range. Families call this from draw() after bind()

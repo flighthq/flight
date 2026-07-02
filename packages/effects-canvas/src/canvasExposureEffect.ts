@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, ExposureEffect } fro
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Exposure (PASSTHROUGH): scaling linear color by 2^stops needs HDR headroom (values above 1.0) that an
-// 8-bit Canvas 2D context cannot hold. Shader-only / HDR-only.
+// Exposure (PASSTHROUGH): scaling color by 2^stops. No CSS filter equivalent, but expressible per-pixel
+// via getImageData/putImageData; not yet implemented — passthrough for now. (Operates on already-clamped
+// 8-bit input, with no HDR headroom above 1.0, so the result is approximate.)
 export function applyExposureEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

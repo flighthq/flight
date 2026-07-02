@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, SmaaEffect } from '@
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// SMAA (PASSTHROUGH): edge-aware blend weights against lookup textures are per-pixel shader work with
-// no 2D draw-op path. Shader-only.
+// SMAA (PASSTHROUGH): edge-aware blend weights against lookup textures are per-pixel neighbor work. No
+// CSS filter equivalent, but expressible per-pixel via getImageData/putImageData; not yet implemented —
+// passthrough for now.
 export function applySmaaEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

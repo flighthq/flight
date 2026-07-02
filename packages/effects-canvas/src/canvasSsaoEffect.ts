@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, SsaoEffect } from '@
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// SSAO (PASSTHROUGH): ambient occlusion reconstructs view-space position/normals from a depth buffer
-// and accumulates a sampling kernel — none of which exists on Canvas 2D. Shader-only / depth-only.
+// SSAO (PASSTHROUGH): ambient occlusion reconstructs view-space position/normals and accumulates a
+// sampling kernel. Genuinely unsupportable on Canvas 2D: needs a depth/normal G-buffer the 2D context
+// does not expose. Passthrough.
 export function applySsaoEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

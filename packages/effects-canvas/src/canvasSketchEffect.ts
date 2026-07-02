@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, SketchEffect } from 
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Sketch (PASSTHROUGH): luminance edge detection inverted into pencil strokes is a per-pixel
-// neighbor-sampling shader with no 2D draw-op path. Shader-only.
+// Sketch (PASSTHROUGH): luminance edge detection inverted into pencil strokes is per-pixel neighbor
+// sampling. No CSS filter equivalent, but expressible per-pixel via getImageData/putImageData; not yet
+// implemented — passthrough for now.
 export function applySketchEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
