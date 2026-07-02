@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/path'
 crate: flighthq-path
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -10,54 +10,70 @@ status: ./status.md
 
 # path — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
-
 ## What it is
 
-`@flighthq/path` is the vector-path geometry primitive: the construction of 2D outline paths (the move/line/quadratic/cubic verb set, plus the higher-level primitives that expand into it — ellipse/circle/rect/round-rect/arc/SVG-arc/polygon/polyline) and the conversion of those outlines into renderer-consumable forms (flattened polyline contours, ear-clipped fill meshes, pooled typed meshes), alongside measurement (length, point/tangent at distance, signed area, orientation, segment evaluation), analysis (true bezier-extrema bounds, winding-rule point containment), and transformation (affine transform, translate, reverse, stroke-to-outline with joins/caps/dashing).
+`@flighthq/path` is the **vector-path geometry kernel**: the construction of 2D outline paths (the move/line/quadratic/cubic verb set, plus higher-level primitives that expand into it — ellipse/circle/rect/round-rect/arc/SVG-arc/polygon/polyline), conversion to renderer-consumable forms (flattened polyline contours, ear-clipped fill meshes, pooled typed meshes), measurement and analysis (length, point/tangent at distance, signed area, orientation, true bezier-extrema bounds, winding-rule point containment, segment evaluation), and transformation (affine transform, translate, reverse, stroke-to-outline with joins/caps/dashing).
 
-It is a **value-typed leaf**: plain `Path` data in, plain contours/meshes/scalars out, allocation confined to `create*`/`clone*`/`acquire*`, math/eval/transform writing to out-params. It owns the _shape_, not the _pixels_ — rendering, GPU upload, and stencil/cover orchestration belong to the `displayobject-<backend>` renderers downstream. Its primary in-SDK consumer is `@flighthq/clip` (which builds clip regions from `Path`), and it sits beside `@flighthq/geometry` (its only non-types dependency) and `@flighthq/math`. The Flash `GraphicsPath` command vocabulary is the verb model; the SVG path _string_ is a textual format it does not yet parse or serialize.
+It is a **value-typed leaf**: plain `Path` data in, plain contours/meshes/scalars out. It owns the _shape_, not the _pixels_. Its primary in-SDK consumers are `@flighthq/clip` (builds clip regions from `Path`), `@flighthq/shape` (uses path as its geometry kernel — curve constants, flattening), and `@flighthq/interaction` (uses `containsPathPoint` for shape-accurate picking). Dependencies: `@flighthq/types` only.
 
-## North star (proposed)
+Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to `displayobject-<backend>`. Boolean path operations (union/intersect/difference/XOR) belong in the `@flighthq/path-boolean` neighbor. Path-string codecs (SVG `d` attribute parse/serialize) belong in `@flighthq/path-formats`.
 
-_Proposed from the review + the SDK design constraints and structural forks — edit or reject._
+## North star
 
-- **A pure value-typed leaf.** Plain `Path` in, plain contours / meshes / scalars out. No runtime identity, no scene-graph participation, no hidden state. This is what makes `path` a near-zero-copy Wasm-mixable leaf (fork D / Mixing) and a prime first Rust↔TS conformance target — keep it that way.
-- **The verb set is bedrock; higher primitives expand into it.** Arcs, ellipses, round-rects, and SVG endpoint-arcs all lower to the small move/line/quadratic/cubic verb vocabulary, so no `ARC` (or other) verb leaks to downstream consumers. The closed `PathCommand` union is the _correct_ call here (fork B's "tight loop within a closed system" exception): it is a fixed bedrock verb set, not a growing family.
-- **Explicit allocation, alias-safe math.** `create*`/`clone*`/`acquire*` allocate; flatten / tessellate / measure / transform write into out-params or pooled meshes and stay safe when `out` aliases an input. Per-frame work stays off the allocator via the mesh pool.
-- **Industry-canonical capability and naming.** Hold to the mature-path-library bar (Skia / Cairo / paper.js): full unabbreviated `Path` in every export, `get*`/`has*`/`is*` accessors, sentinel returns for expected failure. Completeness is judged against what a real path library offers.
-- **Conformance-grade determinism.** Behavior is deterministic and headlessly fingerprint-able so the Rust `flighthq-path` crate can be checked 1:1 against this TS source.
+1. **A pure value-typed leaf.** Plain `Path` in, plain contours / meshes / scalars out. No runtime identity, no scene-graph participation, no hidden state. This is what makes `path` a near-zero-copy Wasm-mixable leaf and a prime first Rust↔TS conformance target.
+2. **The verb set is bedrock; higher primitives expand into it.** Arcs, ellipses, round-rects, and SVG endpoint-arcs all lower to the small move/line/quadratic/cubic verb vocabulary. No `ARC` or other verb leaks to downstream consumers. The closed `PathCommand` union is the correct tight-loop exception to fork B — a fixed bedrock verb set, not a growing family.
+3. **Explicit allocation, alias-safe math.** `create*`/`clone*`/`acquire*` allocate; flatten/tessellate/measure/transform write into out-params or pooled meshes and stay safe when `out` aliases an input.
+4. **Industry-canonical capability and naming.** Hold to the mature-path-library bar (Skia / Cairo / paper.js): full unabbreviated `Path` in every export, `get*`/`has*`/`is*` accessors, sentinel returns for expected failure.
+5. **Conformance-grade determinism.** Behavior is deterministic and headlessly fingerprint-able so the Rust `flighthq-path` crate can be checked 1:1 against this TS source.
 
-## Boundaries (proposed)
+## Boundaries
 
-_Proposed in-scope / non-goals — confirm, and especially settle the neighbor-package questions below._
+**In scope:**
 
-**In scope (today):** path construction (verbs + primitives + arcs), conversion (flatten, ear-clip tessellate, typed mesh, mesh pool), measurement/analysis (length, point/tangent at distance, signed area, orientation, true bezier-extrema bounds, winding-rule containment, segment evaluators), transformation (affine transform, translate, reverse, stroke-to-outline with joins/caps/dashing), and the segment visitor (`forEachPathSegment`).
+- Path construction (verbs + primitives + arcs + SVG-arc).
+- Conversion (flatten, ear-clip tessellate, typed-array mesh, mesh pool).
+- Measurement and analysis (length, point/tangent at distance, signed area, orientation, true bezier-extrema bounds, winding-rule containment, segment evaluation).
+- Transformation (affine, translate, reverse).
+- Stroke-to-outline expansion (joins/caps/dashing) — producing a fillable outline path from a centerline + style.
+- Path editing/simplification: `simplifyPath` (Douglas-Peucker decimation), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath`, `offsetPath` (outset/inset).
+- Multiple tessellation strategies: simple (current `tessellatePath` for convex/simple polygons) and holes-aware (earcut + winding for compound shapes).
 
-**Out of scope (proposed non-goals — open to revision):**
+**Non-goals:**
 
-- **Rendering / GPU upload / stencil-then-cover orchestration** — owned by `displayobject-<backend>`.
-- **The SVG DOM / SVG document model** — `path` is geometry, not a markup parser.
-- **Color, paint, and material** — `path` produces fillable outlines/meshes; paint is the renderer's.
-
-**Undecided boundary lines (these are the real questions — see Open directions):** boolean ops, SVG path-string round-trip, holes-aware triangulation, and a full `PathMeasure` surface each sit on a boundary the charter has not yet drawn. The structural-forks triad suggests `@flighthq/path-formats` (SVG codec) and `@flighthq/path-boolean` neighbors as the natural homes, but neither is blessed.
+- Rendering / GPU upload / stencil-then-cover orchestration (→ `displayobject-<backend>`).
+- Boolean path operations — union/intersect/difference/XOR (→ `@flighthq/path-boolean`).
+- SVG path-string parse/serialize (→ `@flighthq/path-formats`).
+- The SVG DOM / SVG document model.
+- Color, paint, and material — path produces fillable outlines/meshes; paint is the renderer's.
 
 ## Decisions
 
-None blessed yet.
+- **[2026-07-02] Boolean ops belong in `@flighthq/path-boolean` neighbor.** Union/intersect/difference/XOR (Vatti/Martinez-Rueda polygon clipping) are a separate `-boolean` neighbor package so the heavy algorithm weight stays off the core geometry bundle. Clip's `*Exact` functions consume this same kernel. The name `path-boolean` is the precise term — the operations ARE boolean algebra on 2D regions.
+
+  **Why:** A user who only needs to flatten a curve shouldn't pay for polygon clipping in their bundle. The algorithm is genuinely heavy and independently testable. Same `-suffix` neighbor pattern as `particles-formats`, `spritesheet-formats`.
+
+- **[2026-07-02] SVG path-string codec belongs in `@flighthq/path-formats`.** `parseSvgPathData`/`serializeSvgPathData` are pure string parsing (no DOM APIs). The `-formats` neighbor pattern applies. If SVG grows to a full document importer, that becomes a separate `@flighthq/svg`; the path-string codec alone is small and fits in `-formats`.
+
+  **Why:** Same triad pattern as other `-formats` packages. Keeps regex/string-parsing weight off the geometry core.
+
+- **[2026-07-02] `StrokeStyle` promoted to `@flighthq/types`.** Currently defined inline in `strokePath.ts`. As a pure input descriptor that renderers, shape, and higher layers may also author, it belongs in the header layer. Move to `@flighthq/types`.
+
+  **Why:** Types should always live in types. `StrokeStyle` is a cross-package descriptor — shape records stroke style, path expands it, renderers consume it.
+
+- **[2026-07-02] Path editing/simplification is in scope.** `simplifyPath` (Douglas-Peucker point reduction), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath` (dash a path without full stroke expansion), and `offsetPath` (inset/outset by distance) are standard path-library primitives and belong in this package.
+
+  **Why:** These are canonical operations every mature path library provides (Skia, Cairo, paper.js). They are value-in/value-out, no cross-package coupling, and natural extensions of the existing surface.
+
+- **[2026-07-02] Multiple tessellation strategies coexist.** Keep `tessellatePath` as the simple, fast, no-holes direct-fill route. Add a second function (e.g. `tessellatePathFilled` or `tessellatePathComplex`) that handles holes via earcut hole-stitching + winding. The caller picks which they need — simple shapes get the cheap path, compound/donut shapes get the correct one.
+
+  **Why:** The simple tessellator shouldn't grow complex to handle holes. Two strategies, explicitly chosen, matches the conservative/exact stratification pattern from clip.
 
 ## Open directions
 
-Every candidate question the stub charter does not yet answer. Each needs a bless-or-defer before it has a home to be settled in.
+1. **PathMeasure shape.** Whether to add a stateful cached measure entity (amortized, enabling text-on-path and length-driven animation) vs. keeping the current pure re-flattening distance queries. The current pure functions are correct but re-flatten on every call. A `PathMeasure` entity would cache the flattened representation and amortize repeated queries. Needs discussion — affects the API shape for text-on-path, animation, and closest-point queries.
 
-1. **Boolean path operations** (`unionPaths`/`intersectPaths`/`differencePaths`/`xorPaths`, Vatti / Martínez-Rueda) — the single largest capability gap. In-package, a `@flighthq/path-boolean` neighbor (the status's lean — keeps the algorithm weight off the geometry bundle), or out of scope? Passes the bedrock/upstream-oracle test (Skia `SkPathOps`, paper.js boolean exist as separately-factored work).
-2. **SVG path-string parse/serialize** (`parseSvgPathData`/`serializeSvgPathData`) — a `@flighthq/path-formats` neighbor (the triad `-formats` layer), an in-package pair, or owned by a future `svg` importer? The data model and SVG-arc math are already here; only the string codec is missing. Passes the triad plurality guard only if a second textual path format is foreseen — otherwise a single in-package pair may be the honest call.
-3. **Holes-aware / robust triangulation** — does `tessellatePath` stay a simple-polygon direct-fill route (holes handled by the renderer's stencil-then-cover path), or grow earcut hole-stitching, `path.winding` honoring, and a self-intersection-robust fallback (constrained-Delaunay / monotone)? This is a cross-package contract question with the `render-*` / `displayobject-<backend>` owners.
-4. **`PathMeasure` shape** — a stateful cached measure entity (amortized, enabling text-on-path and length-driven animation) vs. the current pure re-flattening distance queries, plus the missing surface: `getPathContourLengths`, per-subpath measure, closest-point (`getPathNearestPoint`), curvature.
-5. **`StrokeStyle` home** — promote the input descriptor (currently inline in `strokePath.ts`) into `@flighthq/types` as a header-layer type a renderer or higher layer can also author, or keep it inline? (Contract-fit nit today: crosses no package boundary yet.)
-6. **Stroke semantics** — adopt global dash-phase continuity across subpaths and inner/outer stroke alignment (the SVG / Skia / PDF semantic), or bless the current per-subpath, center-only behavior as the intended scope?
-7. **Path editing / simplification surface** — is `simplifyPath` (Douglas–Peucker), `fitPathCurves` (polyline→bezier), first-class `offsetPath` (outset/inset), and a standalone `dashPath` in scope, or deferred?
-8. **Boundary statement** — fix the one-paragraph "what is explicitly _not_ `path`'s job" (rendering, GPU upload orchestration, the SVG DOM). Settling this would resolve 1–7 by precedent.
-9. **Rust parity** — `flighthq-path` does not yet mirror the recent additions; `path` is the prime first conformance target (value-typed leaf, deterministic, headlessly fingerprint-able). Sequence it.
-10. **Package Map entry** — the live codebase-map Package Map does not list `@flighthq/path` at all, though `@flighthq/types`'s `Path.ts` and `@flighthq/clip` both reference it. A missing-line fix, sited near `clip` (its primary consumer) and `geometry`. (Admin-doc gap surfaced by the review.)
-11. **Internal decode-duplication refactor** — the same `PathCommand` stride-decode is re-implemented across ~8 files; `forEachPathSegment` centralizes it but most internal walkers do not use it. An internal refactor (not an API fork) — confirm whether to consolidate.
+2. **Stroke dash-phase semantics.** Flash's `Graphics.lineStyle` resets per `moveTo` — each subpath is independent. SVG/Skia/Cairo/PDF continue the dash pattern globally across subpaths. The current code matches Flash (per-subpath reset). Whether to adopt the SVG/Skia global semantic, keep Flash behavior, or make it configurable via `StrokeStyle` (`dashContinuity: 'perSubpath' | 'global'`). Inner/outer stroke alignment (vs. center-only) is also unsettled.
+
+3. **Package description update.** The current description ("Vector path geometry: curve flattening and tessellation of GraphicsPath outlines") understates the package — it's now construction + conversion + measurement + analysis + transformation + stroking. Should be updated to reflect the full surface.
+
+4. **Rust `flighthq-path` crate.** Prime first conformance target (value-typed leaf, deterministic, headlessly fingerprint-able). Not yet mirrored. Sequenced after TS surface stabilizes.
