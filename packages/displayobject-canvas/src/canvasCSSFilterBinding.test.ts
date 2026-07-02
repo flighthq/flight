@@ -2,7 +2,7 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render';
 import type { DisplayObject } from '@flighthq/types';
 
 import {
-  enableCanvasCssFilterSupport,
+  enableCanvasCssFilter,
   getCanvasCssFilter,
   resolveCanvasCssFilter,
   setCanvasCssFilter,
@@ -16,11 +16,11 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-describe('enableCanvasCssFilterSupport', () => {
+describe('enableCanvasCssFilter', () => {
   it('installs the CSS filter resolver', () => {
     const state = makeState();
     expect(state.canvasCssFilterResolver).toBeNull();
-    enableCanvasCssFilterSupport(state);
+    enableCanvasCssFilter(state);
     expect(state.canvasCssFilterResolver).toBe(resolveCanvasCssFilter);
   });
 });

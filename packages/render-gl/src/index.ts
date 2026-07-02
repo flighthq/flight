@@ -9,5 +9,4 @@ export * from './glRenderTarget';
 export * from './glRenderTargetPool';
 export * from './glShader';
 export * from './glShaderBinding';
-export { createGlState } from './glTestHelper';
 export type { GlRenderTarget } from '@flighthq/types';

@@ -1,6 +1,9 @@
-import { bindWgpuTexture } from '@flighthq/render-wgpu';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { getActiveWgpuPipeline, writeWgpuQuadUniforms } from '@flighthq/render-wgpu';
+import {
+  bindWgpuTexture,
+  getWgpuRenderStateRuntime,
+  submitWgpuQuadDraw,
+  writeWgpuQuadUniforms,
+} from '@flighthq/render-wgpu';
 import type { BlendMode, WgpuBitmapShader, WgpuRenderState } from '@flighthq/types';
 
 // The color transform shader is the same WGSL as the bitmap shader since color transform
@@ -32,13 +35,7 @@ export function drawWgpuColorTransformBitmap(
   state.applyBlendMode?.(state, renderProxy.blendMode);
   const textureEntry = bindWgpuTexture(state, imageSource);
   const uniformOffset = writeWgpuQuadUniforms(state, renderProxy, null, x0, y0, x1, y1, u0, v0, u1, v1);
-  const pipeline = getActiveWgpuPipeline(state);
-
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
-  pass.setBindGroup(1, textureEntry.bindGroup);
-  if (runtime.currentMaskDepth > 0) pass.setStencilReference(runtime.currentMaskDepth);
-  pass.draw(6);
+  submitWgpuQuadDraw(state, uniformOffset, textureEntry.bindGroup);
 }
 
 export function registerWgpuColorTransformShader(state: WgpuRenderState): void {

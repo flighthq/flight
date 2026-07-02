@@ -6,7 +6,7 @@ import type { RenderState, RenderStateRuntime } from './RenderState';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
-  // Optional CSS-filter resolver. Installed by enableCanvasCssFilterSupport; null (and tree-shaken)
+  // Optional CSS-filter resolver. Installed by enableCanvasCssFilter; null (and tree-shaken)
   // until then, keeping the binding lookup and its module out of filter-free bundles.
   canvasCssFilterResolver: ((state: CanvasRenderState, renderProxy: RenderProxy2D) => string | null) | null;
   readonly canvas: HTMLCanvasElement;

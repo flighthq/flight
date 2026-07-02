@@ -11,11 +11,11 @@ const _cssFilterBindings = new WeakMap<RenderProxy2D, string>();
 /**
  * Enables CSS filter support for the render state by installing the resolver the
  * draw loop consults. Bindings made via setCanvasCssFilter only apply once this is
- * called — mirroring enableCanvasBlendModeSupport and the other opt-ins. Because
+ * called — mirroring enableCanvasBlendMode and the other opt-ins. Because
  * the draw loop reaches the resolver only through this field, filter-free states
  * leave it null and the binding module tree-shakes away entirely.
  */
-export function enableCanvasCssFilterSupport(state: CanvasRenderState): void {
+export function enableCanvasCssFilter(state: CanvasRenderState): void {
   state.canvasCssFilterResolver = resolveCanvasCssFilter;
 }
 
@@ -25,7 +25,7 @@ export function getCanvasCssFilter(renderProxy: RenderProxy2D): string | undefin
 
 /**
  * Returns the CSS filter to draw renderProxy with, or null when none is bound.
- * Installed as state.canvasCssFilterResolver by enableCanvasCssFilterSupport.
+ * Installed as state.canvasCssFilterResolver by enableCanvasCssFilter.
  */
 export function resolveCanvasCssFilter(_state: CanvasRenderState, renderProxy: RenderProxy2D): string | null {
   return _cssFilterBindings.get(renderProxy) ?? null;

@@ -46,7 +46,7 @@ export function drawDomTextInputOverlay(_state: DomRenderState, renderProxy: Ren
 
   if (input.focused && getTextInputSelectionBeginIndex(source) === getTextInputSelectionEndIndex(source)) {
     getTextInputCaretRectangle(caretRectangle, source, layout);
-    html += `<div data-input-overlay style="position:absolute;left:${caretRectangle.x - scrollXOffset}px;top:${caretRectangle.y - scrollYOffset}px;width:${CARET_WIDTH}px;height:${caretRectangle.height}px;background:${CARET_COLOR};animation:flight-caret-blink 1s step-end infinite;pointer-events:none;"></div>`;
+    html += `<div data-input-overlay style="position:absolute;left:${caretRectangle.x - scrollXOffset}px;top:${caretRectangle.y - scrollYOffset}px;width:${input.caretWidth}px;height:${caretRectangle.height}px;background:${computeRgbHexString(input.caretColor)};animation:flight-caret-blink 1s step-end infinite;pointer-events:none;"></div>`;
   }
 
   for (const el of data.div.querySelectorAll('[data-input-overlay]')) el.remove();
@@ -71,7 +71,5 @@ function injectCaretBlinkKeyframes(): void {
   document.head.appendChild(style);
 }
 
-const CARET_COLOR = '#000000';
-const CARET_WIDTH = 1;
 const caretRectangle = { height: 0, lineIndex: 0, width: 0, x: 0, y: 0 };
 const selectionRectangles: TextSelectionRectangle[] = [];

@@ -28,6 +28,7 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types';
 
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
 export type WgpuRichTextOverlay = (
@@ -52,12 +53,13 @@ interface WgpuRichTextData {
 }
 
 export function createWgpuRichTextData(_state: RenderState, _source: Renderable): RendererData {
-  return { entry: null, h: 0, w: 0 } as unknown as RendererData;
+  return createWgpuRendererData<WgpuRichTextData>({ entry: null, h: 0, w: 0 });
 }
 
 // Destroys the GPU texture this rich text node owns when it is torn down via disposeDisplayObjectRender.
 export function destroyWgpuRichTextData(_state: RenderState, data: RendererData): void {
-  const richData = data as unknown as WgpuRichTextData;
+  const richData = getWgpuRendererData<WgpuRichTextData>(data);
+  if (richData === null) return;
   richData.entry?.texture.destroy();
 }
 
@@ -118,8 +120,8 @@ export function drawWgpuRichTextWithOverlay(
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
 
-  if (renderProxy.rendererData === null) return;
-  const richData = renderProxy.rendererData as unknown as WgpuRichTextData;
+  const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
+  if (richData === null) return;
   const pw = _offscreenCanvas!.width;
   const ph = _offscreenCanvas!.height;
   let entry = richData.entry;

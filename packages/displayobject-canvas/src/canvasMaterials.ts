@@ -8,10 +8,10 @@ import { getCanvasRenderStateRuntime } from './canvasRenderState';
 // mode degrades to normal ('source-over') compositing.
 const CANVAS_BLEND_MODE: Record<BlendMode, GlobalCompositeOperation | null> = {
   [BlendMode.Add]: 'lighter',
-  [BlendMode.Alpha]: null,
+  [BlendMode.Alpha]: 'destination-in',
   [BlendMode.Darken]: 'darken',
   [BlendMode.Difference]: 'difference',
-  [BlendMode.Erase]: null,
+  [BlendMode.Erase]: 'destination-out',
   [BlendMode.Hardlight]: 'hard-light',
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: 'source-over',
@@ -31,6 +31,6 @@ export function applyCanvasBlendMode(state: CanvasRenderState, value: BlendMode 
   state.context.globalCompositeOperation = (value !== null ? CANVAS_BLEND_MODE[value] : null) ?? 'source-over';
 }
 
-export function enableCanvasBlendModeSupport(state: CanvasRenderState): void {
+export function enableCanvasBlendMode(state: CanvasRenderState): void {
   state.applyBlendMode = applyCanvasBlendMode;
 }

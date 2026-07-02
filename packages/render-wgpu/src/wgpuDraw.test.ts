@@ -12,6 +12,7 @@ import {
   drawWgpuQuadWithTransform,
   enableWgpuBlendModeSupport,
   getWgpuRenderProxyColorTransform,
+  submitWgpuQuadDraw,
   updateWgpuTextureEntry,
   warmWgpuPipelines,
 } from './wgpuDraw';
@@ -126,6 +127,28 @@ describe('getWgpuRenderProxyColorTransform', () => {
     const colorTransform = { redMultiplier: 0.5 };
     const node = { material: { kind: ColorTransformMaterialKind }, materialData: colorTransform } as never;
     expect(getWgpuRenderProxyColorTransform(node)).toBe(colorTransform);
+  });
+});
+
+describe('submitWgpuQuadDraw', () => {
+  it('does not throw when render pass is open', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const entry = bindWgpuTexture(state, canvas);
+    expect(() => submitWgpuQuadDraw(state, 0, entry.bindGroup)).not.toThrow();
+    submitWgpuRenderPass(state);
+  });
+
+  it('is a no-op when render pass is null', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const entry = bindWgpuTexture(state, canvas);
+    expect(() => submitWgpuQuadDraw(state, 0, entry.bindGroup)).not.toThrow();
   });
 });
 

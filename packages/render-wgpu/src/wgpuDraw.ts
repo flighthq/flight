@@ -157,15 +157,7 @@ export function drawWgpuQuad(
     u1,
     v1,
   );
-  const pipeline = getActiveWgpuPipeline(state);
-
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
-  pass.setBindGroup(1, textureEntry.bindGroup);
-  if (runtime.currentMaskDepth > 0) {
-    pass.setStencilReference(runtime.currentMaskDepth);
-  }
-  pass.draw(6);
+  submitWgpuQuadDraw(state, uniformOffset, textureEntry.bindGroup);
 }
 
 export function drawWgpuQuadWithTransform(
@@ -183,68 +175,22 @@ export function drawWgpuQuadWithTransform(
   v1: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const pass = runtime.renderPass;
-  if (pass === null) return;
+  if (runtime.renderPass === null) return;
 
-  const byteOffset = runtime.uniformOffset;
-  const floatBase = byteOffset >> 2;
-  const { uniformData, uniformDataU32, matrixArray } = runtime;
-
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
-  const iw = 2 / viewport.width;
-  const ih = 2 / viewport.height;
-  matrixArray[0] = transform.a * iw;
-  matrixArray[1] = -transform.b * ih;
-  matrixArray[2] = 0;
-  matrixArray[3] = transform.c * iw;
-  matrixArray[4] = -transform.d * ih;
-  matrixArray[5] = 0;
-  matrixArray[6] = transform.tx * iw - 1;
-  matrixArray[7] = -transform.ty * ih + 1;
-  matrixArray[8] = 1;
-
-  uniformData[floatBase + 0] = matrixArray[0];
-  uniformData[floatBase + 1] = matrixArray[1];
-  uniformData[floatBase + 2] = matrixArray[2];
-  uniformData[floatBase + 3] = 0;
-  uniformData[floatBase + 4] = matrixArray[3];
-  uniformData[floatBase + 5] = matrixArray[4];
-  uniformData[floatBase + 6] = matrixArray[5];
-  uniformData[floatBase + 7] = 0;
-  uniformData[floatBase + 8] = matrixArray[6];
-  uniformData[floatBase + 9] = matrixArray[7];
-  uniformData[floatBase + 10] = matrixArray[8];
-  uniformData[floatBase + 11] = 0;
-  uniformData[floatBase + 12] = renderProxy.alpha;
-  const ct = getWgpuRenderProxyColorTransform(renderProxy);
-  uniformDataU32[floatBase + 13] = ct !== null ? 1 : 0;
-  uniformData[floatBase + 14] = 0;
-  uniformData[floatBase + 15] = 0;
-  uniformData[floatBase + 16] = ct?.redMultiplier ?? 1;
-  uniformData[floatBase + 17] = ct?.greenMultiplier ?? 1;
-  uniformData[floatBase + 18] = ct?.blueMultiplier ?? 1;
-  uniformData[floatBase + 19] = ct?.alphaMultiplier ?? 1;
-  uniformData[floatBase + 20] = (ct?.redOffset ?? 0) / 255;
-  uniformData[floatBase + 21] = (ct?.greenOffset ?? 0) / 255;
-  uniformData[floatBase + 22] = (ct?.blueOffset ?? 0) / 255;
-  uniformData[floatBase + 23] = (ct?.alphaOffset ?? 0) / 255;
-  uniformData[floatBase + 24] = x0;
-  uniformData[floatBase + 25] = y0;
-  uniformData[floatBase + 26] = x1;
-  uniformData[floatBase + 27] = y1;
-  uniformData[floatBase + 28] = u0;
-  uniformData[floatBase + 29] = v0;
-  uniformData[floatBase + 30] = u1;
-  uniformData[floatBase + 31] = v1;
-
-  runtime.uniformOffset += runtime.uniformStride;
-
-  const pipeline = getActiveWgpuPipeline(state);
-  pass.setPipeline(pipeline);
-  pass.setBindGroup(0, runtime.uniformBindGroup, [byteOffset]);
-  pass.setBindGroup(1, textureEntry.bindGroup);
-  if (runtime.currentMaskDepth > 0) pass.setStencilReference(runtime.currentMaskDepth);
-  pass.draw(6);
+  const uniformOffset = writeWgpuQuadUniforms(
+    state,
+    { alpha: renderProxy.alpha, transform2D: transform },
+    getWgpuRenderProxyColorTransform(renderProxy),
+    x0,
+    y0,
+    x1,
+    y1,
+    u0,
+    v0,
+    u1,
+    v1,
+  );
+  submitWgpuQuadDraw(state, uniformOffset, textureEntry.bindGroup);
 }
 
 export function enableWgpuBlendModeSupport(state: WgpuRenderState): void {
@@ -264,6 +210,22 @@ export function getWgpuRenderProxyColorTransform(renderProxy: Readonly<RenderPro
     return renderProxy.materialData as ColorTransform | null;
   }
   return null;
+}
+
+export function submitWgpuQuadDraw(
+  state: WgpuRenderState,
+  uniformOffset: number,
+  textureBindGroup: GPUBindGroup,
+): void {
+  const runtime = getWgpuRenderStateRuntime(state);
+  const pass = runtime.renderPass;
+  if (pass === null) return;
+  const pipeline = getActiveWgpuPipeline(state);
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, runtime.uniformBindGroup, [uniformOffset]);
+  pass.setBindGroup(1, textureBindGroup);
+  if (runtime.currentMaskDepth > 0) pass.setStencilReference(runtime.currentMaskDepth);
+  pass.draw(6);
 }
 
 export function updateWgpuTextureEntry(

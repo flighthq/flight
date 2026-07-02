@@ -12,7 +12,7 @@ import {
   createCanvasRenderState,
   createMatrix,
   defaultCanvasBitmapRenderer,
-  enableCanvasCssFilterSupport,
+  enableCanvasCssFilter,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
@@ -38,7 +38,7 @@ export function createParityTarget(width: number, height: number, background: nu
 
   registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
   // The native glow is a CSS filter bound per node; the resolver must be installed to honor it.
-  enableCanvasCssFilterSupport(state);
+  enableCanvasCssFilter(state);
 
   registerFunctionalTarget({
     kind: 'canvas',

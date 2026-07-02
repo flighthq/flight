@@ -19,6 +19,7 @@ import type {
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import {
   ensureWgpuQuadBatchResources,
   packWgpuSpriteBatchMaterialInstance,
@@ -44,7 +45,7 @@ function createWgpuTextLabelData(_state: RenderState, _source: Renderable): Rend
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return {
+  return createWgpuRendererData<WgpuTextLabelData>({
     canvas,
     ctx,
     lastContentId: -1,
@@ -53,13 +54,15 @@ function createWgpuTextLabelData(_state: RenderState, _source: Renderable): Rend
     logH: 0,
     lastPW: 0,
     lastPH: 0,
-  } as unknown as RendererData;
+  });
 }
 
 // Destroy the GPU texture the batch uploaded for this text node's canvas when it is torn down.
 function destroyWgpuTextLabelData(state: WgpuRenderState, data: RendererData): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const { canvas } = data as unknown as WgpuTextLabelData;
+  const textLabelData = getWgpuRendererData<WgpuTextLabelData>(data);
+  if (textLabelData === null) return;
+  const { canvas } = textLabelData;
   const entry = runtime.textureCache.get(canvas);
   if (entry !== undefined) {
     entry.texture.destroy();
@@ -80,7 +83,8 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  const textData = renderProxy.rendererData as unknown as WgpuTextLabelData;
+  const textData = getWgpuRendererData<WgpuTextLabelData>(renderProxy.rendererData);
+  if (textData === null) return;
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
