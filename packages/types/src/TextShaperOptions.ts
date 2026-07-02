@@ -1,8 +1,8 @@
 import type { FontVariation } from './FontVariation';
-import type { TextDirectionKind } from './TextDirectionKind';
+import type { TextDirection } from './TextDirection';
 import type { TextFeature } from './TextFeature';
 export interface TextShaperOptions {
-  readonly direction?: TextDirectionKind;
+  readonly direction?: TextDirection;
   readonly features?: readonly TextFeature[];
   readonly language?: string;
   readonly script?: string;

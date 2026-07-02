@@ -33,7 +33,7 @@ export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParam
     multiline = false,
     autoSize = 'none',
     border = false,
-    direction = 'ltr',
+    direction = 'LeftToRight',
     justification = 'interWord',
     maxLines = -1,
     truncationCharacter = '…',
@@ -595,11 +595,11 @@ function applyAlignment(
     // Resolve direction-relative aliases.
     const resolved =
       align === 'start'
-        ? direction === 'rtl'
+        ? direction === 'RightToLeft'
           ? 'right'
           : 'left'
         : align === 'end'
-          ? direction === 'rtl'
+          ? direction === 'RightToLeft'
             ? 'left'
             : 'right'
           : align;

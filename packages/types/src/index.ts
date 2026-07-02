@@ -385,7 +385,6 @@ export * from './SurfaceResizeMode';
 export * from './TaaEffect';
 export * from './TextAutoSize';
 export * from './TextDirection';
-export * from './TextDirectionKind';
 export * from './TextFeature';
 export * from './TextFieldSignals';
 export * from './TextFormat';
