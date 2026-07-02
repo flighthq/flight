@@ -100,13 +100,6 @@ export function disposeStatusBar(bar: StatusBar): void {
   detachStatusBar(bar);
 }
 
-// Enables status bar signals for use with attachStatusBar/detachStatusBar. This is a no-op for
-// the import itself; it documents the explicit opt-in point for the signal infrastructure.
-export function enableStatusBarSignals(): void {
-  // Signals are always available via @flighthq/signals; this function is the explicit opt-in
-  // marker callers use to document intent, and a hook point for future setup if needed.
-}
-
 // The active status bar backend, or a lazily-created web default. There is always a backend.
 export function getStatusBarBackend(): StatusBarBackend {
   if (_backend === null) _backend = createWebStatusBarBackend();
