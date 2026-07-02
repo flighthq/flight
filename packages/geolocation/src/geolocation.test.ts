@@ -6,7 +6,7 @@ import type {
 } from '@flighthq/types';
 
 import {
-  clearGeoWatch,
+  clearGeolocationWatch,
   createGeoPosition,
   createWebGeolocationBackend,
   getCurrentGeoPosition,
@@ -17,7 +17,7 @@ import {
   onGeolocationPermissionChange,
   requestGeolocationPermission,
   setGeolocationBackend,
-  watchGeoPosition,
+  watchGeolocationPosition,
 } from './geolocation';
 
 function fakeBackend(): GeolocationBackend & { cleared: number[]; lastWatch: number } {
@@ -60,15 +60,15 @@ function fakeBackend(): GeolocationBackend & { cleared: number[]; lastWatch: num
 
 afterEach(() => setGeolocationBackend(null));
 
-describe('clearGeoWatch', () => {
+describe('clearGeolocationWatch', () => {
   it('does not throw on the web backend in jsdom', () => {
-    expect(() => clearGeoWatch(0)).not.toThrow();
+    expect(() => clearGeolocationWatch(0)).not.toThrow();
   });
 
   it('forwards the id to the active backend', () => {
     const backend = fakeBackend();
     setGeolocationBackend(backend);
-    clearGeoWatch(7);
+    clearGeolocationWatch(7);
     expect(backend.cleared).toEqual([7]);
   });
 });
@@ -116,6 +116,38 @@ describe('createWebGeolocationBackend', () => {
     const unsubscribe = backend.subscribePermission(() => {});
     expect(typeof unsubscribe).toBe('function');
     expect(() => unsubscribe()).not.toThrow();
+  });
+
+  it('reads a host-provided floorLevel from coords', async () => {
+    const original = Object.getOwnPropertyDescriptor(navigator, 'geolocation');
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(success: (position: unknown) => void) {
+          success({
+            coords: {
+              accuracy: 5,
+              altitude: null,
+              altitudeAccuracy: null,
+              floorLevel: 3,
+              heading: null,
+              latitude: 1,
+              longitude: 2,
+              speed: null,
+            },
+            timestamp: 123,
+          });
+        },
+      },
+    });
+    try {
+      const backend = createWebGeolocationBackend();
+      const position = await backend.getCurrentPosition({});
+      expect(position?.floorLevel).toBe(3);
+    } finally {
+      if (original !== undefined) Object.defineProperty(navigator, 'geolocation', original);
+      else delete (navigator as { geolocation?: unknown }).geolocation;
+    }
   });
 });
 
@@ -223,11 +255,11 @@ describe('setGeolocationBackend', () => {
   });
 });
 
-describe('watchGeoPosition', () => {
+describe('watchGeolocationPosition', () => {
   it('delivers positions and returns a watch id', () => {
     setGeolocationBackend(fakeBackend());
     let seen = 0;
-    const id = watchGeoPosition((position) => {
+    const id = watchGeolocationPosition((position) => {
       seen = position.latitude;
     });
     expect(id).toBe(1);
@@ -237,7 +269,7 @@ describe('watchGeoPosition', () => {
   it('delivers error reasons when onError is provided', () => {
     setGeolocationBackend(fakeBackend());
     const errors: GeolocationErrorReason[] = [];
-    watchGeoPosition(
+    watchGeolocationPosition(
       () => {},
       {},
       (reason) => errors.push(reason),
@@ -246,6 +278,6 @@ describe('watchGeoPosition', () => {
   });
 
   it('returns -1 from the web backend when watching is unavailable', () => {
-    expect(watchGeoPosition(() => {})).toBe(-1);
+    expect(watchGeolocationPosition(() => {})).toBe(-1);
   });
 });
