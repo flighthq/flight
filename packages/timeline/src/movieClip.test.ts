@@ -6,6 +6,7 @@ import {
   createMovieClip,
   createMovieClipData,
   createMovieClipRuntime,
+  disposeMovieClipSignals,
   enableMovieClipSignals,
   getMovieClipCurrentFrame,
   getMovieClipCurrentLabel,
@@ -88,6 +89,41 @@ describe('createMovieClipRuntime', () => {
     const runtime = createMovieClipRuntime();
     expect(runtime).not.toBeNull();
     expect(runtime.movieClipSignals).toBeNull();
+  });
+});
+
+describe('disposeMovieClipSignals', () => {
+  it('clears movieClipSignals to null on the runtime', () => {
+    const clip = createMovieClip();
+    setMovieClipSource(clip, createTimelineSource({ totalFrames: 3 }));
+    enableMovieClipSignals(clip);
+    expect(getMovieClipSignals(clip)).not.toBeNull();
+    disposeMovieClipSignals(clip);
+    expect(getMovieClipSignals(clip)).toBeNull();
+  });
+
+  it('clears the underlying timeline signals', () => {
+    const clip = createMovieClip();
+    setMovieClipSource(clip, createTimelineSource({ totalFrames: 3 }));
+    enableMovieClipSignals(clip);
+    expect(clip.data.timeline!.signals).not.toBeNull();
+    disposeMovieClipSignals(clip);
+    expect(clip.data.timeline!.signals).toBeNull();
+  });
+
+  it('is idempotent — no-op when signals are already null', () => {
+    const clip = createMovieClip();
+    expect(() => disposeMovieClipSignals(clip)).not.toThrow();
+  });
+
+  it('allows enableMovieClipSignals to re-arm after dispose', () => {
+    const clip = createMovieClip();
+    setMovieClipSource(clip, createTimelineSource({ totalFrames: 3 }));
+    const first = enableMovieClipSignals(clip);
+    disposeMovieClipSignals(clip);
+    const second = enableMovieClipSignals(clip);
+    expect(second).not.toBe(first);
+    expect(getMovieClipSignals(clip)).toBe(second);
   });
 });
 

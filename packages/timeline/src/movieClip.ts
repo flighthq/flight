@@ -18,6 +18,7 @@ import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types';
 import {
   addTimelineFrameScript,
   createTimeline,
+  disposeTimelineSignals,
   enableTimelineSignals,
   getTimelineCurrentLabel,
   getTimelineFrameScript,
@@ -52,6 +53,12 @@ export function createMovieClipRuntime(): MovieClipRuntime {
   const out = createDisplayObjectRuntime() as MovieClipRuntime;
   out.movieClipSignals = null;
   return out;
+}
+
+export function disposeMovieClipSignals(clip: MovieClip): void {
+  const runtime = clip[EntityRuntimeKey] as MovieClipRuntime;
+  if (clip.data.timeline !== null) disposeTimelineSignals(clip.data.timeline);
+  runtime.movieClipSignals = null;
 }
 
 // Allocates a MovieClipSignals group on the clip and arms per-frame signal emission. Idempotent —

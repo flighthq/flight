@@ -46,6 +46,10 @@ export function createTimelineSource(obj: {
   };
 }
 
+export function disposeTimelineSignals(timeline: Timeline): void {
+  timeline.signals = null;
+}
+
 // Allocates a TimelineSignals group on the timeline and arms per-frame signal emission in
 // updateTimeline and seekTimeline. Idempotent — returns the same group on subsequent calls.
 export function enableTimelineSignals(timeline: Timeline): TimelineSignals {
