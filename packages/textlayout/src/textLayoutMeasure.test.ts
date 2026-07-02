@@ -1,4 +1,4 @@
-import { setTextShaperBackend, shapeText } from '@flighthq/textshaper';
+import { measureText, setTextShaperBackend } from '@flighthq/textshaper';
 
 import { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure';
 
@@ -14,7 +14,7 @@ describe('getTextLayoutMeasureProvider', () => {
 
   it('falls back to the textshaper seam when a backend is registered', () => {
     setTextShaperBackend({ measureText: (text) => text.length });
-    expect(getTextLayoutMeasureProvider()).toBe(shapeText);
+    expect(getTextLayoutMeasureProvider()).toBe(measureText);
   });
 
   it('prefers an explicitly set provider over the shaper backend', () => {

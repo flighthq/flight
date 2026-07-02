@@ -70,7 +70,7 @@ export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParam
   writeLineMetrics(out, out.groups);
 
   // Alignment shifts require knowing per-line widths first.
-  applyAlignment(out.groups, width, out.lineWidths, direction, justification, _paragraphLastLines);
+  applyAlignment(out.groups, width, out.lineWidths, direction, justification, _paragraphLastLines, text);
 
   // autoSize is intentionally not applied here — callers (scene graph /
   // renderer) own the node's width/height and apply the result themselves.
@@ -586,6 +586,7 @@ function applyAlignment(
   direction: TextDirection,
   justification: TextJustification,
   paragraphLastLines: ReadonlySet<number>,
+  text: string,
 ): void {
   for (const g of groups) {
     const lineW = lineWidths[g.lineIndex];
@@ -618,7 +619,7 @@ function applyAlignment(
   // Inter-word justification pass: for each line where align === 'justify',
   // distribute residual width across inter-word spaces. The last line of each
   // paragraph (tracked in paragraphLastLines) is left-aligned per CSS standard.
-  justifyLines(groups, containerWidth, lineWidths, justification, paragraphLastLines);
+  justifyLines(groups, containerWidth, lineWidths, justification, paragraphLastLines, text);
 }
 
 function justifyLines(
@@ -627,16 +628,15 @@ function justifyLines(
   lineWidths: number[],
   justification: TextJustification,
   paragraphLastLines: ReadonlySet<number>,
+  text: string,
 ): void {
   if (justification === 'none') return;
 
   const lineCount = lineWidths.length;
 
   for (let li = 0; li < lineCount; li++) {
-    // Skip the final line of each paragraph — it is left-aligned per CSS standard.
     if (paragraphLastLines.has(li)) continue;
 
-    // Gather all groups on this line that have align==='justify'.
     const lineGroups: TextLayoutGroup[] = [];
     for (const g of groups) {
       if (g.lineIndex === li && g.format.align === 'justify') lineGroups.push(g);
@@ -648,18 +648,49 @@ function justifyLines(
     const residual = available - lineW;
     if (residual <= 0) continue;
 
-    // Count inter-word gaps: each group boundary on the same line represents
-    // at least one space between words (trailing spaces are already trimmed on wrap).
-    const spaceCount = Math.max(0, lineGroups.length - 1);
-    if (spaceCount === 0) continue;
+    if (justification === 'interCharacter') {
+      let charCount = 0;
+      for (const g of lineGroups) charCount += g.positions.length;
+      const gapCount = Math.max(0, charCount - 1);
+      if (gapCount === 0) continue;
+      const extraPerGap = residual / gapCount;
+      let accumulated = 0;
+      const lastGroup = lineGroups[lineGroups.length - 1];
+      for (const g of lineGroups) {
+        g.offsetX += accumulated;
+        let groupExtra = 0;
+        const lastPos = g === lastGroup ? g.positions.length - 1 : g.positions.length;
+        for (let ci = 0; ci < lastPos; ci++) {
+          g.positions[ci] += extraPerGap;
+          accumulated += extraPerGap;
+          groupExtra += extraPerGap;
+        }
+        g.width += groupExtra;
+      }
+    } else {
+      // interWord: count actual space characters across all groups on the line.
+      let spaceCount = 0;
+      for (const g of lineGroups) {
+        for (let ci = 0; ci < g.positions.length; ci++) {
+          if (text.charCodeAt(g.startIndex + ci) === 0x20) spaceCount++;
+        }
+      }
+      if (spaceCount === 0) continue;
 
-    const extraPerSpace = residual / spaceCount;
-
-    // Shift each group rightward by the cumulative extra space.
-    let accumulated = 0;
-    for (let i = 0; i < lineGroups.length; i++) {
-      lineGroups[i].offsetX += accumulated;
-      if (i < lineGroups.length - 1) accumulated += extraPerSpace;
+      const extraPerSpace = residual / spaceCount;
+      let accumulated = 0;
+      for (const g of lineGroups) {
+        g.offsetX += accumulated;
+        let groupExtra = 0;
+        for (let ci = 0; ci < g.positions.length; ci++) {
+          if (text.charCodeAt(g.startIndex + ci) === 0x20) {
+            g.positions[ci] += extraPerSpace;
+            accumulated += extraPerSpace;
+            groupExtra += extraPerSpace;
+          }
+        }
+        g.width += groupExtra;
+      }
     }
   }
 }

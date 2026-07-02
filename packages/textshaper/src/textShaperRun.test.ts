@@ -339,6 +339,20 @@ describe('shapeTextRunInto', () => {
     expect(out.script).toBe('Latn');
   });
 
+  it('forwards options to the backend', () => {
+    let capturedOptions: unknown;
+    setTextShaperBackend({
+      measureText: () => 0,
+      shapeRun: (_t, _f, opts) => {
+        capturedOptions = opts;
+        return { ..._testRun, glyphs: [..._testGlyphs] };
+      },
+    });
+    const out = createShapedRun();
+    shapeTextRunInto('x', {}, out, { direction: 'RightToLeft', script: 'Arab' });
+    expect(capturedOptions).toMatchObject({ direction: 'RightToLeft', script: 'Arab' });
+  });
+
   it('retains the existing glyphs array reference', () => {
     setTextShaperBackend(_makeFullBackend());
     const out = createShapedRun();

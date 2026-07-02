@@ -482,6 +482,37 @@ describe('computeTextLayout — justify alignment', () => {
   });
 });
 
+describe('computeTextLayout — justify single-format', () => {
+  it('expands space character advances on a wrapped mid-paragraph line', () => {
+    // "aa bb cc" with fixedMeasure (10px/char) and narrow width forces word-wrap.
+    // Line 0 is mid-paragraph → justified. Space chars should get extra advance.
+    // This was broken when justification counted group boundaries instead of space chars.
+    const text = 'aa bb cc';
+    const result = doLayout({
+      text,
+      formatRanges: [createTextFormatRange({ size: 16, align: 'justify' }, 0, text.length)],
+      width: 80,
+      height: 200,
+      measure: fixedMeasure,
+      multiline: true,
+      wordWrap: true,
+    });
+    expect(result.numLines).toBeGreaterThanOrEqual(2);
+    const line0Groups = result.groups.filter((g) => g.lineIndex === 0);
+    // Verify at least one group contains a space char whose advance exceeds the
+    // natural 10px width — proof that interWord justification distributed space.
+    let foundExpandedSpace = false;
+    for (const g of line0Groups) {
+      for (let ci = 0; ci < g.positions.length; ci++) {
+        if (text.charCodeAt(g.startIndex + ci) === 0x20 && g.positions[ci] > 10) {
+          foundExpandedSpace = true;
+        }
+      }
+    }
+    expect(foundExpandedSpace).toBe(true);
+  });
+});
+
 describe('computeTextLayout — kerning flag', () => {
   it('skips pair-measurement when kerning is false', () => {
     // With a measure that returns 5 per char, pair "ab" should return 10.

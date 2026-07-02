@@ -1,6 +1,6 @@
 import type { TextShaperBackend } from '@flighthq/types';
 
-import { getTextShaperBackend, setTextShaperBackend, shapeText } from './textShaper';
+import { getTextShaperBackend, measureText, setTextShaperBackend } from './textShaper';
 
 afterEach(() => {
   setTextShaperBackend(null);
@@ -9,6 +9,17 @@ afterEach(() => {
 describe('getTextShaperBackend', () => {
   it('returns null before a backend is set', () => {
     expect(getTextShaperBackend()).toBeNull();
+  });
+});
+
+describe('measureText', () => {
+  it('returns -1 when no backend is registered', () => {
+    expect(measureText('hello', {})).toBe(-1);
+  });
+
+  it('delegates to the active backend', () => {
+    setTextShaperBackend({ measureText: (text) => text.length * 7 });
+    expect(measureText('abc', {})).toBe(21);
   });
 });
 
@@ -27,16 +38,5 @@ describe('setTextShaperBackend', () => {
     setTextShaperBackend(first);
     setTextShaperBackend(second);
     expect(getTextShaperBackend()).toBe(second);
-  });
-});
-
-describe('shapeText', () => {
-  it('returns -1 when no backend is registered', () => {
-    expect(shapeText('hello', {})).toBe(-1);
-  });
-
-  it('delegates to the active backend', () => {
-    setTextShaperBackend({ measureText: (text) => text.length * 7 });
-    expect(shapeText('abc', {})).toBe(21);
   });
 });
