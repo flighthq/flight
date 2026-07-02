@@ -13,9 +13,11 @@ export function inRange(value: number, min: number, max: number): boolean {
 
 /** Clamp `value` to `[0, 1]`. Equivalent to `clamp(value, 0, 1)`.
  *
- *  Named `saturate` after the GPU HLSL/GLSL convention. Safe in hot loops,
+ *  Named `saturate` after the GPU HLSL/GLSL convention. Follows GPU semantics:
+ *  NaN returns 0 (unlike `clamp`, which propagates NaN). Safe in hot loops,
  *  no allocation.
  */
 export function saturate(value: number): number {
+  if (value !== value) return 0;
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }

@@ -1,7 +1,5 @@
 import type { RandomSource } from '@flighthq/types';
 
-export type { RandomSource };
-
 /** Return a random boolean with the given `probability` of being `true`.
  *
  *  `probability` is clamped to `[0, 1]`; `0.5` is a fair coin flip.

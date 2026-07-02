@@ -40,7 +40,7 @@ export function nextPowerOfTwo(n: number): number {
  */
 export function previousPowerOfTwo(n: number): number {
   if (n <= 1) return 1;
-  // Clear all bits below the highest set bit.
+  // Fill all bits below the highest set bit, then shift right by 1.
   n = n | 0;
   n |= n >> 1;
   n |= n >> 2;

@@ -55,4 +55,7 @@ describe('saturate', () => {
   it('leaves 1 unchanged', () => {
     expect(saturate(1)).toBe(1);
   });
+  it('returns 0 for NaN (GPU semantics)', () => {
+    expect(saturate(NaN)).toBe(0);
+  });
 });
