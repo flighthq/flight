@@ -25,7 +25,7 @@ const examplesDir = join(projectRoot, 'examples');
 // Examples with no meaningful rendered output to gate for not-blankness — they produce sound, not
 // pixels. They still get the Tier 1 error gate (a thrown/console error fails capture --fail-on-error);
 // only the not-blank/fingerprint verification is skipped. Keyed by example name (all renderers).
-const VERIFY_SKIP = new Set<string>(['playingsound']);
+const VERIFY_SKIP = new Set<string>([]);
 
 function entryWithLogCapture(name: string, render: string): string {
   // The shared in-page render verifier (also used by the functional harness). Reused here so examples

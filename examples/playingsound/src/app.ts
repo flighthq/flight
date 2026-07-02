@@ -33,7 +33,7 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const background = createShape();
-background.alpha = 0.1;
+background.alpha = 1;
 addNodeChild(root, background);
 
 const sound = await loadAudioResourceFromUrls(audioContext, [{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
