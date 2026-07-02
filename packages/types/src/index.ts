@@ -27,6 +27,7 @@ export * from './BevelFilter';
 export * from './Billboard';
 export * from './Bitmap';
 export * from './BitmapFilter';
+export * from './BitmapFilterMargin';
 export * from './BlendMode';
 export * from './BlinnPhongMaterial';
 export * from './BloomEffect';
