@@ -41,6 +41,7 @@
     "@flighthq/shell": "*",
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
+    "@flighthq/storage": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*",
     "@flighthq/updater": "*"
@@ -48,6 +49,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Electron host backend: registers Electron main-process implementations of Flight's window/app/dialog/clipboard/menu/tray/shortcut/screen/power/notification/shell/protocol/updater/ipc seams",
+  "description": "Electron host backend: registers Electron main-process implementations of Flight's window/app/dialog/clipboard/menu/tray/shortcut/screen/power/notification/shell/protocol/updater/ipc/storage seams",
   "sideEffects": false
 }
