@@ -4,8 +4,6 @@ import type { Node, Renderable, RenderProxy2D, RenderProxyAdapter, RenderState }
 import { installRenderAdaptHook, updateRenderProxyRenderer } from './renderProxy';
 import { getRenderStateRuntime } from './renderState';
 
-let _installed = false;
-
 export function applyRenderProxyAdapter(
   state: RenderState,
   source: Renderable,
@@ -32,9 +30,8 @@ export function setRenderProxyAdapter(
   source: Renderable,
   adapter: RenderProxyAdapter | null,
 ): void {
-  if (!_installed) {
-    installRenderAdaptHook(applyRenderProxyAdapter);
-    _installed = true;
+  if (getRenderStateRuntime(state).renderAdaptHook !== applyRenderProxyAdapter) {
+    installRenderAdaptHook(state, applyRenderProxyAdapter);
   }
   const runtime = getRenderStateRuntime(state);
   if (adapter === null) {
