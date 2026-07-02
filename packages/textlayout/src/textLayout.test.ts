@@ -562,7 +562,7 @@ describe('computeTextLayout — start/end alignment', () => {
       width: 100,
       height: 100,
       measure: fixedMeasure,
-      direction: 'ltr',
+      direction: 'LeftToRight',
     });
     expect(ltrResult.groups[0].offsetX).toBe(TEXT_LAYOUT_GUTTER); // left-aligned = GUTTER
   });
@@ -575,7 +575,7 @@ describe('computeTextLayout — start/end alignment', () => {
       width: 100,
       height: 100,
       measure: fixedMeasure,
-      direction: 'ltr',
+      direction: 'LeftToRight',
     });
     // Right-aligned: shift = 100 - 20 - 2*2 = 76, so offsetX = 2 + 76 = 78
     expect(ltrResult.groups[0].offsetX).toBeGreaterThan(TEXT_LAYOUT_GUTTER);
@@ -589,7 +589,7 @@ describe('computeTextLayout — start/end alignment', () => {
       width: 100,
       height: 100,
       measure: fixedMeasure,
-      direction: 'rtl',
+      direction: 'RightToLeft',
     });
     // RTL start = right alignment, so offsetX should be > GUTTER.
     expect(rtlResult.groups[0].offsetX).toBeGreaterThan(TEXT_LAYOUT_GUTTER);

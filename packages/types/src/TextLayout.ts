@@ -25,7 +25,7 @@ export interface TextLayoutGroup {
 export interface TextLayoutParams {
   autoSize?: TextAutoSize;
   border?: boolean;
-  // Base writing direction; resolves the 'start'/'end' alignment aliases. Defaults to 'ltr'.
+  // Base writing direction; resolves the 'start'/'end' alignment aliases. Defaults to 'LeftToRight'.
   direction?: TextDirection;
   formatRanges: readonly TextFormatRange[];
   height: number;

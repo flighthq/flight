@@ -1,6 +1,7 @@
 import type { FontMetrics } from './FontMetrics';
 import type { GlyphExtents } from './GlyphExtents';
 import type { ShapedRun } from './ShapedRun';
+import type { TextDirection } from './TextDirection';
 import type { TextFormat } from './TextFormat';
 import type { TextMeasureFunction } from './TextLayout';
 
@@ -18,7 +19,7 @@ import type { TextMeasureFunction } from './TextLayout';
 
 // Options passed to TextShaperBackend.shapeRun for run-level shaping hints.
 export interface ShapeRunOptions {
-  direction?: 'LeftToRight' | 'RightToLeft';
+  direction?: TextDirection;
   script?: string;
 }
 
