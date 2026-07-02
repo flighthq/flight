@@ -83,6 +83,27 @@ describe('resizeSurface', () => {
     expect(out.data[8]).toBe(0); // outside the dest sub-region
   });
 
+  it("edgeMode 'wrap' wraps boundary interpolation", () => {
+    // 2px source [black, white]. With wrap, the right boundary wraps to the left.
+    const source = createSurface(2, 1);
+    source.data.set([0, 0, 0, 255], 0);
+    source.data.set([200, 200, 200, 255], 4);
+    const outClamp = createSurface(4, 1);
+    resizeSurface(region(outClamp), region(source), { mode: 'bilinear', edgeMode: 'clamp' });
+    const outWrap = createSurface(4, 1);
+    resizeSurface(region(outWrap), region(source), { mode: 'bilinear', edgeMode: 'wrap' });
+    // The rightmost pixel should differ: clamp repeats edge, wrap uses the other side.
+    expect(outClamp.data[12]).not.toBe(outWrap.data[12]);
+  });
+
+  it("edgeMode 'transparent' fades boundary pixels to transparent", () => {
+    const source = createSurface(2, 1, 0xff0000ff);
+    const out = createSurface(4, 1);
+    resizeSurface(region(out), region(source), { mode: 'bilinear', edgeMode: 'transparent' });
+    // The rightmost pixel samples partially out-of-bounds → alpha drops
+    expect(out.data[12 + 3]).toBeLessThan(255);
+  });
+
   it('is a no-op when a dimension is zero', () => {
     const source = createSurface(2, 2, 0xffffffff);
     const out = createSurface(0, 0);

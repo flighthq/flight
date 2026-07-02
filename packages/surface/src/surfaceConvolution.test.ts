@@ -27,22 +27,6 @@ describe('convolveSurface', () => {
     expect(out[0]).toBe(20);
   });
 
-  it("'fill' edge mode fills out-of-range samples with fillColor", () => {
-    const source = createSurface(1, 1, 0x000000ff);
-    const out = new Uint8ClampedArray(4);
-    convolveSurface(out, region(source), {
-      edge: 'fill',
-      fillColor: 0xff0000ff,
-      divisor: 1,
-      matrix: [1, 0, 0],
-      matrixX: 3,
-      matrixY: 1,
-      preserveAlpha: false,
-    });
-    expect(out[0]).toBe(0xff);
-    expect(out[3]).toBe(0xff);
-  });
-
   it("'clamp' edge mode (default) repeats the nearest edge pixel", () => {
     // 1px source, 3-wide kernel: all three samples hit the single source pixel
     const source = createSurface(1, 1, 0x606060ff);
@@ -55,6 +39,43 @@ describe('convolveSurface', () => {
       preserveAlpha: false,
     });
     expect(out[0]).toBe(0x60);
+  });
+
+  it("'mirror' edge mode reflects at boundaries", () => {
+    // 3px source [10, 20, 30]. 5-wide kernel [1, 0, 0, 0, 0] picks 2 positions left.
+    // For px=0, offsetX=2: rawSampleX = 0 + 0 + 0 - 2 = -2.
+    // mirror(-2, 3) reflects to x=1 (value 20), while clamp(-2) gives x=0 (value 10).
+    const source = createSurface(3, 1);
+    source.data[0] = 10;
+    source.data[4] = 20;
+    source.data[8] = 30;
+    const out = new Uint8ClampedArray(3 * 4);
+    convolveSurface(out, region(source), {
+      edge: 'mirror',
+      matrix: [1, 0, 0, 0, 0],
+      matrixX: 5,
+      matrixY: 1,
+      divisor: 1,
+      preserveAlpha: false,
+    });
+    expect(out[0]).toBe(20);
+  });
+
+  it("'transparent' edge mode treats out-of-bounds as transparent black", () => {
+    // 1px source (opaque black), 3-wide kernel [1, 0, 0] — leftmost sample
+    // is out of bounds and contributes transparent black (all zeros).
+    const source = createSurface(1, 1, 0x000000ff);
+    const out = new Uint8ClampedArray(4);
+    convolveSurface(out, region(source), {
+      edge: 'transparent',
+      divisor: 1,
+      matrix: [1, 0, 0],
+      matrixX: 3,
+      matrixY: 1,
+      preserveAlpha: false,
+    });
+    expect(out[0]).toBe(0);
+    expect(out[3]).toBe(0);
   });
 
   it("'wrap' edge mode tiles the source toroidally", () => {

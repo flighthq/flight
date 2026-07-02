@@ -1,8 +1,9 @@
 import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
+import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
 
 export interface SurfaceResizeOptions {
   mode?: SurfaceResizeMode;
+  edgeMode?: SurfaceEdgeMode;
   /**
    * When true, pre-multiplies alpha before interpolation and unpremultiplies
    * after. This prevents the dark-halo bleed that bilinear and bicubic sampling
@@ -18,6 +19,9 @@ export interface SurfaceResizeOptions {
  *   - `'bilinear'` (default): smooth, interpolates four surrounding pixels
  *   - `'bicubic'`: high quality, Catmull-Rom interpolation over 4×4 neighbourhood
  *
+ * `edgeMode` controls how boundary interpolation handles out-of-bounds
+ * coordinates (default `'clamp'`).
+ *
  * Set `premultiplied: true` to avoid dark-halo bleed at transparent edges.
  *
  * `dest` must not alias `source` — output pixels read arbitrary source positions.
@@ -29,6 +33,7 @@ export function resizeSurface(
 ): void {
   const opts: Readonly<SurfaceResizeOptions> = typeof options === 'string' ? { mode: options } : options;
   const mode = opts.mode ?? 'bilinear';
+  const edgeMode = opts.edgeMode ?? 'clamp';
   const premultiplied = opts.premultiplied ?? false;
 
   const sw = source.width;
@@ -84,21 +89,19 @@ export function resizeSurface(
           let sum = 0;
           for (let m = -1; m <= 2; m++) {
             const wy = catmullRomWeight(ty - m);
-            const sy = source.y + Math.max(0, Math.min(sh - 1, y1 + m));
+            const ry = resolveResizeEdge(y1 + m, sh, edgeMode);
             for (let n = -1; n <= 2; n++) {
               const wx = catmullRomWeight(tx - n);
-              const sx = source.x + Math.max(0, Math.min(sw - 1, x1 + n));
+              const rx = resolveResizeEdge(x1 + n, sw, edgeMode);
+              if (rx === null || ry === null) continue;
+              const sy = source.y + ry;
+              const sx = source.x + rx;
               const si = (sy * sStride + sx) * 4;
               const v = premultiplied && c < 3 ? (sd[si + c] * sd[si + 3]) / 255 : sd[si + c];
               sum += v * wy * wx;
             }
           }
-          if (premultiplied && c < 3) {
-            // defer unpremultiply until alpha is written
-            dd[di + c] = Math.max(0, Math.min(255, Math.round(sum)));
-          } else {
-            dd[di + c] = Math.max(0, Math.min(255, Math.round(sum)));
-          }
+          dd[di + c] = Math.max(0, Math.min(255, Math.round(sum)));
         }
         if (premultiplied) {
           const a = dd[di + 3];
@@ -124,31 +127,31 @@ export function resizeSurface(
     const fy = (dy + 0.5) * scaleY - 0.5;
     const y0 = Math.floor(fy);
     const ty = fy - y0;
-    const y0c = source.y + Math.max(0, Math.min(sh - 1, y0));
-    const y1c = source.y + Math.max(0, Math.min(sh - 1, y0 + 1));
+    const ry0 = resolveResizeEdge(y0, sh, edgeMode);
+    const ry1 = resolveResizeEdge(y0 + 1, sh, edgeMode);
     for (let dx = 0; dx < dw; dx++) {
       const ox = dest.x + dx;
       if (ox < 0 || ox >= dStride) continue;
       const fx = (dx + 0.5) * scaleX - 0.5;
       const x0 = Math.floor(fx);
       const tx = fx - x0;
-      const x0c = source.x + Math.max(0, Math.min(sw - 1, x0));
-      const x1c = source.x + Math.max(0, Math.min(sw - 1, x0 + 1));
-      const i00 = (y0c * sStride + x0c) * 4;
-      const i10 = (y0c * sStride + x1c) * 4;
-      const i01 = (y1c * sStride + x0c) * 4;
-      const i11 = (y1c * sStride + x1c) * 4;
+      const rx0 = resolveResizeEdge(x0, sw, edgeMode);
+      const rx1 = resolveResizeEdge(x0 + 1, sw, edgeMode);
       const di = (oy * dStride + ox) * 4;
+      const i00 = rx0 !== null && ry0 !== null ? ((source.y + ry0) * sStride + source.x + rx0) * 4 : -1;
+      const i10 = rx1 !== null && ry0 !== null ? ((source.y + ry0) * sStride + source.x + rx1) * 4 : -1;
+      const i01 = rx0 !== null && ry1 !== null ? ((source.y + ry1) * sStride + source.x + rx0) * 4 : -1;
+      const i11 = rx1 !== null && ry1 !== null ? ((source.y + ry1) * sStride + source.x + rx1) * 4 : -1;
       for (let c = 0; c < 4; c++) {
-        let v00 = sd[i00 + c];
-        let v10 = sd[i10 + c];
-        let v01 = sd[i01 + c];
-        let v11 = sd[i11 + c];
+        let v00 = i00 >= 0 ? sd[i00 + c] : 0;
+        let v10 = i10 >= 0 ? sd[i10 + c] : 0;
+        let v01 = i01 >= 0 ? sd[i01 + c] : 0;
+        let v11 = i11 >= 0 ? sd[i11 + c] : 0;
         if (premultiplied && c < 3) {
-          v00 = (v00 * sd[i00 + 3]) / 255;
-          v10 = (v10 * sd[i10 + 3]) / 255;
-          v01 = (v01 * sd[i01 + 3]) / 255;
-          v11 = (v11 * sd[i11 + 3]) / 255;
+          v00 = i00 >= 0 ? (v00 * sd[i00 + 3]) / 255 : 0;
+          v10 = i10 >= 0 ? (v10 * sd[i10 + 3]) / 255 : 0;
+          v01 = i01 >= 0 ? (v01 * sd[i01 + 3]) / 255 : 0;
+          v11 = i11 >= 0 ? (v11 * sd[i11 + 3]) / 255 : 0;
         }
         const top = v00 * (1 - tx) + v10 * tx;
         const bottom = v01 * (1 - tx) + v11 * tx;
@@ -171,10 +174,26 @@ export function resizeSurface(
   invalidateImageResource(dest.surface);
 }
 
-// Catmull-Rom weight for distance t (|t| in [0, 2]).
 function catmullRomWeight(t: number): number {
   const a = Math.abs(t);
   if (a >= 2) return 0;
   if (a >= 1) return -0.5 * a * a * a + 2.5 * a * a - 4 * a + 2;
   return 1.5 * a * a * a - 2.5 * a * a + 1;
+}
+
+function resolveResizeEdge(v: number, size: number, mode: SurfaceEdgeMode): number | null {
+  if (v >= 0 && v < size) return v;
+  switch (mode) {
+    case 'clamp':
+      return Math.max(0, Math.min(size - 1, v));
+    case 'wrap':
+      return ((v % size) + size) % size;
+    case 'mirror': {
+      const period = 2 * size;
+      const wrapped = ((v % period) + period) % period;
+      return wrapped < size ? wrapped : period - 1 - wrapped;
+    }
+    default:
+      return null;
+  }
 }

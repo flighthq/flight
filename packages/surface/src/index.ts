@@ -46,6 +46,7 @@ export type {
   PixelOrder,
   RectangleLike,
   Surface,
+  SurfaceEdgeMode,
   SurfaceFingerprint,
   SurfaceHistogram,
   SurfaceMismatch,

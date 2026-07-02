@@ -1,4 +1,4 @@
-import type { SurfaceRegion } from '@flighthq/types';
+import type { SurfaceEdgeMode, SurfaceRegion } from '@flighthq/types';
 
 export type SurfaceDisplacementMapMode = 'clamp' | 'color' | 'ignore' | 'wrap';
 
@@ -18,6 +18,12 @@ export interface SurfaceDisplacementMapOptions {
   scaleY?: number;
   /** How to handle sample positions that fall outside the source region. Default 'wrap'. */
   mode?: SurfaceDisplacementMapMode;
+  /**
+   * Standard edge mode — when set, overrides `mode` for standard edge behaviours.
+   * Use for API consistency with other surface geometric ops. Default undefined
+   * (falls back to `mode`).
+   */
+  edgeMode?: SurfaceEdgeMode;
   /** Packed 0xRRGGBBAA fill used when `mode` is 'color'. Default 0. */
   fillColor?: number;
 }
@@ -31,9 +37,12 @@ export interface SurfaceDisplacementMapOptions {
  *   dy = (mapValueY / 255 - 0.5) * scaleY
  *
  * A map value of 128 is approximately neutral (< 0.2px shift). Sampling uses
- * bilinear interpolation. `mode` controls sample positions outside the source
- * region: 'wrap' tiles, 'clamp' holds the edge, 'ignore' leaves the undisplaced
- * source pixel, and 'color' fills with `fillColor`.
+ * bilinear interpolation.
+ *
+ * When `edgeMode` is set, it controls out-of-bounds behaviour using the standard
+ * `SurfaceEdgeMode` values (`'clamp'`, `'wrap'`, `'mirror'`, `'transparent'`).
+ * Otherwise `mode` is used: `'wrap'` tiles, `'clamp'` holds the edge, `'ignore'`
+ * keeps the undisplaced source pixel, and `'color'` fills with `fillColor`.
  *
  * `out` must be at least `source.width * source.height * 4` bytes and must NOT
  * alias `source.surface.data` — output pixels read arbitrary source positions.
@@ -50,6 +59,7 @@ export function displaceSurface(
   const componentY = options.componentY ?? 1;
   const scaleX = options.scaleX ?? 0;
   const scaleY = options.scaleY ?? 0;
+  const edgeMode = options.edgeMode;
   const mode = options.mode ?? 'wrap';
   const fillColor = options.fillColor ?? 0;
   const fillR = (fillColor >>> 24) & 0xff;
@@ -62,7 +72,6 @@ export function displaceSurface(
       const di = (py * w + px) * 4;
       const mapVx = sampleMapChannel(map, px, py, componentX);
       const mapVy = sampleMapChannel(map, px, py, componentY);
-      // Symmetric: value 0 → -0.5×scale, value 128 ≈ 0, value 255 → +0.5×scale
       const rawSampleX = px + (mapVx / 255 - 0.5) * scaleX;
       const rawSampleY = py + (mapVy / 255 - 0.5) * scaleY;
 
@@ -70,7 +79,19 @@ export function displaceSurface(
       let sampleY = rawSampleY;
 
       if (rawSampleX < 0 || rawSampleX >= w || rawSampleY < 0 || rawSampleY >= h) {
-        if (mode === 'wrap') {
+        if (edgeMode !== undefined) {
+          const rx = resolveDisplacementEdge(rawSampleX, w, edgeMode);
+          const ry = resolveDisplacementEdge(rawSampleY, h, edgeMode);
+          if (rx === null || ry === null) {
+            out[di] = 0;
+            out[di + 1] = 0;
+            out[di + 2] = 0;
+            out[di + 3] = 0;
+            continue;
+          }
+          sampleX = rx;
+          sampleY = ry;
+        } else if (mode === 'wrap') {
           sampleX = ((rawSampleX % w) + w) % w;
           sampleY = ((rawSampleY % h) + h) % h;
         } else if (mode === 'clamp') {
@@ -88,7 +109,6 @@ export function displaceSurface(
         }
       }
 
-      // Bilinear sample from source at (sampleX, sampleY).
       const x0 = Math.floor(sampleX);
       const y0 = Math.floor(sampleY);
       const tx = sampleX - x0;
@@ -121,7 +141,23 @@ export function displaceSurface(
   }
 }
 
-// A map sample outside the map's bounds returns 128 (neutral — no displacement).
+function resolveDisplacementEdge(v: number, size: number, mode: SurfaceEdgeMode): number | null {
+  if (v >= 0 && v < size) return v;
+  switch (mode) {
+    case 'clamp':
+      return Math.max(0, Math.min(size - 1, v));
+    case 'wrap':
+      return ((v % size) + size) % size;
+    case 'mirror': {
+      const period = 2 * size;
+      const wrapped = ((v % period) + period) % period;
+      return wrapped < size ? wrapped : period - 1 - wrapped;
+    }
+    default:
+      return null;
+  }
+}
+
 function sampleMapChannel(map: Readonly<SurfaceRegion>, px: number, py: number, component: number): number {
   const mx = map.x + px;
   const my = map.y + py;

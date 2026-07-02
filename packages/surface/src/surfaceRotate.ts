@@ -1,11 +1,14 @@
 import { invalidateImageResource } from '@flighthq/image';
-import type { SurfaceRegion } from '@flighthq/types';
+import type { SurfaceEdgeMode, SurfaceRegion, SurfaceResizeMode } from '@flighthq/types';
+
+import { transformSurface } from './surfaceAffine';
 
 /**
  * Rotates the `source` region by `angle` radians into the `dest` region, around
  * a pivot point in source coordinates. `pivotX` and `pivotY` default to the
- * source region centre. Uses bilinear sampling; out-of-bounds source positions
- * are written as transparent black.
+ * source region centre. `edgeMode` controls out-of-bounds source positions
+ * (default `'clamp'`). `sampleMode` controls interpolation quality (default
+ * `'bilinear'`).
  *
  * `dest` must not alias `source`.
  */
@@ -15,60 +18,16 @@ export function rotateSurface(
   angle: number,
   pivotX: number = (source.width - 1) / 2,
   pivotY: number = (source.height - 1) / 2,
+  edgeMode: SurfaceEdgeMode = 'clamp',
+  sampleMode: SurfaceResizeMode = 'bilinear',
 ): void {
   const cosA = Math.cos(-angle);
   const sinA = Math.sin(-angle);
-  const sw = source.width;
-  const sh = source.height;
-  const dw = dest.width;
-  const dh = dest.height;
-  const sd = source.surface.data;
-  const dd = dest.surface.data;
-  const sStride = source.surface.width;
-  const dStride = dest.surface.width;
-  const destPivotX = (dw - 1) / 2;
-  const destPivotY = (dh - 1) / 2;
-
-  for (let dy = 0; dy < dh; dy++) {
-    const oy = dest.y + dy;
-    if (oy < 0 || oy >= dest.surface.height) continue;
-    const ry = dy - destPivotY;
-    for (let dx = 0; dx < dw; dx++) {
-      const ox = dest.x + dx;
-      if (ox < 0 || ox >= dStride) continue;
-      const rx = dx - destPivotX;
-      const sx = cosA * rx - sinA * ry + pivotX;
-      const sy = sinA * rx + cosA * ry + pivotY;
-      const di = (oy * dStride + ox) * 4;
-
-      if (sx < -0.5 || sx > sw - 0.5 || sy < -0.5 || sy > sh - 0.5) {
-        dd[di] = 0;
-        dd[di + 1] = 0;
-        dd[di + 2] = 0;
-        dd[di + 3] = 0;
-        continue;
-      }
-
-      const x0 = Math.floor(sx);
-      const y0 = Math.floor(sy);
-      const tx = sx - x0;
-      const ty = sy - y0;
-      const x0c = source.x + Math.max(0, Math.min(sw - 1, x0));
-      const x1c = source.x + Math.max(0, Math.min(sw - 1, x0 + 1));
-      const y0c = source.y + Math.max(0, Math.min(sh - 1, y0));
-      const y1c = source.y + Math.max(0, Math.min(sh - 1, y0 + 1));
-      const i00 = (y0c * sStride + x0c) * 4;
-      const i10 = (y0c * sStride + x1c) * 4;
-      const i01 = (y1c * sStride + x0c) * 4;
-      const i11 = (y1c * sStride + x1c) * 4;
-      for (let c = 0; c < 4; c++) {
-        const top = sd[i00 + c] * (1 - tx) + sd[i10 + c] * tx;
-        const bottom = sd[i01 + c] * (1 - tx) + sd[i11 + c] * tx;
-        dd[di + c] = Math.round(top * (1 - ty) + bottom * ty);
-      }
-    }
-  }
-  invalidateImageResource(dest.surface);
+  const destPivotX = (dest.width - 1) / 2;
+  const destPivotY = (dest.height - 1) / 2;
+  const e = pivotX - cosA * destPivotX + sinA * destPivotY;
+  const f = pivotY - sinA * destPivotX - cosA * destPivotY;
+  transformSurface(dest, source, [cosA, sinA, -sinA, cosA, e, f], edgeMode, sampleMode);
 }
 
 /**

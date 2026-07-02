@@ -1,16 +1,9 @@
-import type { SurfaceRegion } from '@flighthq/types';
-
-export type SurfaceConvolutionEdge = 'clamp' | 'fill' | 'wrap';
+import type { SurfaceEdgeMode, SurfaceRegion } from '@flighthq/types';
 
 export interface SurfaceConvolutionOptions {
   bias?: number;
   /** How to handle kernel samples outside the surface. Default 'clamp'. */
-  edge?: SurfaceConvolutionEdge;
-  /**
-   * Packed 0xRRGGBBAA fill color used when `edge` is 'fill'. Default 0 (transparent black).
-   * @deprecated Use `edge: 'fill'` and `fillColor` instead of the old `clamp`/`color` pair.
-   */
-  fillColor?: number;
+  edge?: SurfaceEdgeMode;
   divisor?: number;
   matrix: ReadonlyArray<number>;
   matrixX: number;
@@ -28,8 +21,9 @@ export interface SurfaceConvolutionOptions {
  *
  * Edge modes:
  *   - `'clamp'` (default): repeat the nearest edge pixel
- *   - `'fill'`: use `fillColor` for out-of-bounds samples
+ *   - `'transparent'`: treat out-of-bounds samples as transparent black
  *   - `'wrap'`: tile the surface toroidally
+ *   - `'mirror'`: reflect the image at boundaries
  */
 export function convolveSurface(
   out: Uint8ClampedArray,
@@ -45,16 +39,11 @@ export function convolveSurface(
   const bias = options.bias ?? 0;
   const edge = options.edge ?? 'clamp';
   const preserveAlpha = options.preserveAlpha ?? true;
-  const fillColor = options.fillColor ?? 0;
   const offsetX = Math.floor(matrixX / 2);
   const offsetY = Math.floor(matrixY / 2);
   const surfaceWidth = source.surface.width;
   const surfaceHeight = source.surface.height;
   const data = source.surface.data;
-  const fillR = (fillColor >>> 24) & 0xff;
-  const fillG = (fillColor >> 16) & 0xff;
-  const fillB = (fillColor >> 8) & 0xff;
-  const fillA = fillColor & 0xff;
 
   for (let py = 0; py < source.height; py++) {
     for (let px = 0; px < source.width; px++) {
@@ -70,20 +59,17 @@ export function convolveSurface(
           const weight = matrix[weight_row_start + kx];
           let sampleX: number;
           let sampleY: number;
-          let outOfBounds = false;
 
           if (rawSampleY < 0 || rawSampleY >= surfaceHeight || rawSampleX < 0 || rawSampleX >= surfaceWidth) {
-            if (edge === 'fill') {
-              r += fillR * weight;
-              g += fillG * weight;
-              b += fillB * weight;
-              a += fillA * weight;
+            if (edge === 'transparent') {
               continue;
             } else if (edge === 'wrap') {
               sampleX = ((rawSampleX % surfaceWidth) + surfaceWidth) % surfaceWidth;
               sampleY = ((rawSampleY % surfaceHeight) + surfaceHeight) % surfaceHeight;
+            } else if (edge === 'mirror') {
+              sampleX = resolveConvolutionMirror(rawSampleX, surfaceWidth);
+              sampleY = resolveConvolutionMirror(rawSampleY, surfaceHeight);
             } else {
-              // clamp
               sampleX = rawSampleX < 0 ? 0 : rawSampleX >= surfaceWidth ? surfaceWidth - 1 : rawSampleX;
               sampleY = rawSampleY < 0 ? 0 : rawSampleY >= surfaceHeight ? surfaceHeight - 1 : rawSampleY;
             }
@@ -92,13 +78,11 @@ export function convolveSurface(
             sampleY = rawSampleY;
           }
 
-          if (!outOfBounds) {
-            const i = (sampleY * surfaceWidth + sampleX) * 4;
-            r += data[i] * weight;
-            g += data[i + 1] * weight;
-            b += data[i + 2] * weight;
-            a += data[i + 3] * weight;
-          }
+          const i = (sampleY * surfaceWidth + sampleX) * 4;
+          r += data[i] * weight;
+          g += data[i + 1] * weight;
+          b += data[i + 2] * weight;
+          a += data[i + 3] * weight;
         }
       }
       const di = (py * source.width + px) * 4;
@@ -126,4 +110,10 @@ function getConvolutionDivisor(matrix: ReadonlyArray<number>, length: number): n
     sum += matrix[i];
   }
   return sum === 0 ? 1 : sum;
+}
+
+function resolveConvolutionMirror(v: number, size: number): number {
+  const period = 2 * size;
+  const wrapped = ((v % period) + period) % period;
+  return wrapped < size ? wrapped : period - 1 - wrapped;
 }
