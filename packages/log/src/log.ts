@@ -26,10 +26,6 @@ import { LogLevel } from '@flighthq/types';
 //                and additionally prints a human console line for levels at or above the
 //                configured threshold.
 
-// ---------------------------------------------------------------------------
-// Emit side — multi-sink fan-out + level-gated emit
-// ---------------------------------------------------------------------------
-
 // Listener side. Adds a sink to the fan-out list. No-op if already present.
 export function addLogSink(sink: LogSink): void {
   if (_sinks.includes(sink)) return;
@@ -610,10 +606,6 @@ export function startLogTimer(label: string, channel: string | null = null): Log
   return { label, channel, startedAt: _timestamp() };
 }
 
-// ---------------------------------------------------------------------------
-// Opaque tokens
-// ---------------------------------------------------------------------------
-
 // Opaque token returned by createBufferedLogSink.
 export interface BufferedLogSink {
   readonly sink: LogSink;
@@ -635,10 +627,6 @@ export interface MemoryLogSink {
 export interface RateLimitedLogSink {
   readonly sink: LogSink;
 }
-
-// ---------------------------------------------------------------------------
-// Internals
-// ---------------------------------------------------------------------------
 
 interface BufferedLogSinkState {
   buf: LogEntry[];

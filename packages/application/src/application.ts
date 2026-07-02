@@ -209,7 +209,6 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
 
   // Persist loop state so pauseApplicationLoop/resumeApplicationLoop can mutate lastTime.
   const loopState: LoopState = {
-    accumulated: 0,
     fixedAccumulator: 0,
     fpsBuffer: [],
     fpsHead: 0,
@@ -356,7 +355,7 @@ export function unregisterApplicationWindow(app: Application, win: ApplicationWi
 // binding map). attach/detach/dispose track cleanup closures internally so callers hold nothing.
 const _applicationObservers = new WeakMap<Application, Map<symbol, () => void>>();
 
-// Per-app loop state (lastTime, accumulated, etc.) for pause/resume continuity.
+// Per-app loop state for pause/resume continuity.
 const _applicationLoopState = new WeakMap<Application, LoopState>();
 
 // Per-win lifecycle observer key so each window gets its own observer slot.
@@ -370,7 +369,6 @@ const ROLLING_FPS_WINDOW = 60;
 let _loopBackend: LoopBackend | null = null;
 
 interface LoopState {
-  accumulated: number;
   fixedAccumulator: number;
   fpsBuffer: number[];
   fpsHead: number;
