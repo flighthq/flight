@@ -34,6 +34,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/shape": "*",
     "@flighthq/sprite": "*",
     "typescript": "^5.3.0"
   },

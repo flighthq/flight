@@ -13,11 +13,13 @@
     { "path": "../textureatlas" },
     { "path": "../tileset" },
     { "path": "../geometry" },
+    { "path": "../node" },
     { "path": "../materials" },
     { "path": "../render" },
     { "path": "../displayobject" },
     { "path": "../text" },
     { "path": "../shape" },
+    { "path": "../sprite" },
     { "path": "../textinput" },
     { "path": "../textlayout" },
     { "path": "../types" }

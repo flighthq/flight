@@ -33,6 +33,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/entity": "*",
     "typescript": "^5.3.0"
   },
   "description": "Display object tree for composited 2D rendering: bitmaps, shapes, text, masks, blend modes",

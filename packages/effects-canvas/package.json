@@ -27,10 +27,11 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/displayobject-canvas": "*",
     "@flighthq/effects": "*",
     "@flighthq/filters": "*",
     "@flighthq/filters-canvas": "*",
-    "@flighthq/displayobject-canvas": "*",
+    "@flighthq/geometry": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
