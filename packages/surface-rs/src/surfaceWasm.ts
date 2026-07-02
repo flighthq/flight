@@ -3,7 +3,6 @@ import type {
   SurfaceBevelOptions,
   SurfaceBevelType,
   SurfaceBoxBlurOptions,
-  SurfaceConvolutionEdge,
   SurfaceConvolutionOptions,
   SurfaceDisplacementMapMode,
   SurfaceDisplacementMapOptions,
@@ -22,6 +21,7 @@ import type {
   PixelOrder,
   RectangleLike,
   Surface,
+  SurfaceEdgeMode,
   SurfaceHistogram,
   SurfaceRegion,
   SurfaceResizeMode,
@@ -367,7 +367,7 @@ export function convolveSurface(
     options.matrixY,
     options.bias ?? 0,
     SURFACE_CONVOLUTION_EDGE[options.edge ?? 'clamp'],
-    (options.fillColor ?? 0) >>> 0,
+    0,
     options.divisor ?? 0,
     options.preserveAlpha ?? true,
   );
@@ -961,8 +961,13 @@ const SCRATCH_RECT = new Float64Array(4);
 
 // Mirrors `surface_bevel_type_from_u8`: Both=0, Inner=1, Outer=2.
 const SURFACE_BEVEL_TYPE: Readonly<Record<SurfaceBevelType, number>> = { both: 0, inner: 1, outer: 2 };
-// Mirrors `surface_convolution_edge_from_u8`: Clamp=0, Fill=1, Wrap=2.
-const SURFACE_CONVOLUTION_EDGE: Readonly<Record<SurfaceConvolutionEdge, number>> = { clamp: 0, fill: 1, wrap: 2 };
+// Mirrors `surface_edge_mode_from_u8`: Clamp=0, Transparent=1, Wrap=2, Mirror=3.
+const SURFACE_CONVOLUTION_EDGE: Readonly<Record<SurfaceEdgeMode, number>> = {
+  clamp: 0,
+  transparent: 1,
+  wrap: 2,
+  mirror: 3,
+};
 // Mirrors `surface_displacement_mode_from_u8`: Clamp=0, Color=1, Ignore=2, Wrap=3.
 const SURFACE_DISPLACEMENT_MODE: Readonly<Record<SurfaceDisplacementMapMode, number>> = {
   clamp: 0,

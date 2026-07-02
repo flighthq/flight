@@ -89,6 +89,40 @@ describe('displaceSurface', () => {
     expect(out[2 * 4 + 3]).toBe(255);
   });
 
+  it("edgeMode 'clamp' clamps out-of-range samples to the edge", () => {
+    const source = rgbStrip();
+    const map = createSurface(3, 1);
+    map.data[0] = 255;
+    map.data[4] = 255;
+    map.data[8] = 255;
+    const out = new Uint8ClampedArray(3 * 4);
+    displaceSurface(out, region(source), {
+      map: region(map),
+      componentX: 0,
+      scaleX: 2,
+      scaleY: 0,
+      edgeMode: 'clamp',
+    });
+    // px2 displaces to x=3 (oob) → clamped to x=2 (blue)
+    expect(out[8 + 2]).toBe(255);
+  });
+
+  it("edgeMode 'transparent' fills out-of-range samples with transparent black", () => {
+    const source = rgbStrip();
+    const map = createSurface(3, 1);
+    map.data.fill(255);
+    const out = new Uint8ClampedArray(3 * 4);
+    displaceSurface(out, region(source), {
+      map: region(map),
+      scaleX: 4,
+      scaleY: 0,
+      edgeMode: 'transparent',
+    });
+    // px2 displaces to x=4 (oob) → transparent black
+    expect(out[2 * 4 + 0]).toBe(0);
+    expect(out[2 * 4 + 3]).toBe(0);
+  });
+
   it('samples through the source region offset', () => {
     // 4px [red, green, blue, white]; zero displacement over region (1,0,2,1) copies
     // source pixels 1 and 2 (green, blue), proving the offset is applied.

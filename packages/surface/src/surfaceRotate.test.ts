@@ -42,13 +42,42 @@ describe('rotateSurface', () => {
     expect(out.data[0]).toBeGreaterThan(out.data[4]); // B-side (brighter) on left
   });
 
-  it('writes transparent black for out-of-bounds positions', () => {
+  it('clamp edge mode (default) repeats edge pixels for out-of-bounds', () => {
     const source = createSurface(1, 1, 0xff0000ff);
     const out = createSurface(5, 5);
     rotateSurface(region(out), region(source), 0);
+    // With clamp, all pixels map to the single source pixel
+    expect(out.data[(0 * 5 + 0) * 4 + 3]).toBe(0xff);
+    expect(out.data[(2 * 5 + 2) * 4 + 3]).toBe(0xff);
+  });
+
+  it('transparent edge mode writes transparent black for out-of-bounds', () => {
+    const source = createSurface(1, 1, 0xff0000ff);
+    const out = createSurface(5, 5);
+    rotateSurface(region(out), region(source), 0, undefined, undefined, 'transparent');
     // Only center pixel maps back to source; corners are out of bounds
     expect(out.data[(0 * 5 + 0) * 4 + 3]).toBe(0);
     expect(out.data[(2 * 5 + 2) * 4 + 3]).toBe(0xff);
+  });
+
+  it('wrap edge mode tiles the source', () => {
+    const source = createSurface(2, 2, 0xff0000ff);
+    const out = createSurface(4, 4);
+    rotateSurface(region(out), region(source), 0, undefined, undefined, 'wrap');
+    // All pixels should be opaque red (wraps the 2x2 source)
+    expect(out.data[3]).toBe(0xff);
+    expect(out.data[(3 * 4 + 3) * 4 + 3]).toBe(0xff);
+  });
+
+  it('nearest sample mode uses nearest-neighbor interpolation', () => {
+    const source = createSurface(2, 1);
+    source.data.set([0, 0, 0, 255], 0);
+    source.data.set([200, 200, 200, 255], 4);
+    const out = createSurface(2, 1);
+    rotateSurface(region(out), region(source), 0, undefined, undefined, 'clamp', 'nearest');
+    // Nearest should produce exact pixel values, no blending
+    expect(out.data[0]).toBe(0);
+    expect(out.data[4]).toBe(200);
   });
 });
 

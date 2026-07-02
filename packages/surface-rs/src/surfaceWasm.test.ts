@@ -1,6 +1,7 @@
-import type { SurfaceBevelType, SurfaceConvolutionEdge, SurfaceDisplacementMapMode } from '@flighthq/surface';
+import type { SurfaceBevelType, SurfaceDisplacementMapMode } from '@flighthq/surface';
 import { createSurface, createSurfaceRegion } from '@flighthq/surface';
 import * as reference from '@flighthq/surface';
+import type { SurfaceEdgeMode } from '@flighthq/types';
 import type {
   ColorTransformLike,
   PixelOrder,
@@ -1172,9 +1173,8 @@ describe('wasm discriminant map cardinality', () => {
     }
   });
 
-  it('SURFACE_CONVOLUTION_EDGE has 3 entries matching SurfaceConvolutionEdge — output matches reference per variant', () => {
-    // Rust: SurfaceConvolutionEdge — Clamp=0, Fill=1, Wrap=2 (3 variants, repr(u8) 0..2)
-    const edges: SurfaceConvolutionEdge[] = ['clamp', 'fill', 'wrap'];
+  it('SURFACE_CONVOLUTION_EDGE has entries matching SurfaceEdgeMode — output matches reference per variant', () => {
+    const edges: SurfaceEdgeMode[] = ['clamp', 'transparent', 'wrap'];
     expect(edges).toHaveLength(3);
     const source = paintSurface(4, 4);
     const matrix = [0, -1, 0, -1, 5, -1, 0, -1, 0];
