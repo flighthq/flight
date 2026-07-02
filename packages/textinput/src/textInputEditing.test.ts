@@ -460,6 +460,44 @@ describe('handleTextInputKeyboard', () => {
     expect(getTextInputCaretIndex(text)).toBe(0);
   });
 
+  it('Home moves to the start of the current line (line-relative)', () => {
+    const text = createInput({ multiline: true, text: 'abcdefg' });
+    setTextInputSelection(text, 6, 6);
+    handleTextInputKeyboard(text, createKeyboardData({ key: 'Home', keyCode: KeyCode.HOME }), {
+      layout: createLayout(),
+    });
+    // Caret is on line 1 (indices 3–7); Home lands on that line's start, not document start.
+    expect(getTextInputCaretIndex(text)).toBe(3);
+  });
+
+  it('End moves to the end of the current line (line-relative)', () => {
+    const text = createInput({ multiline: true, text: 'abcdefg' });
+    setTextInputSelection(text, 1, 1);
+    handleTextInputKeyboard(text, createKeyboardData({ key: 'End', keyCode: KeyCode.END }), {
+      layout: createLayout(),
+    });
+    // Caret is on line 0 (indices 0–3); End lands on that line's end, not document end.
+    expect(getTextInputCaretIndex(text)).toBe(3);
+  });
+
+  it('Ctrl+Home moves to document start', () => {
+    const text = createInput({ multiline: true, text: 'abcdefg' });
+    setTextInputSelection(text, 6, 6);
+    handleTextInputKeyboard(text, createKeyboardData({ ctrlKey: true, key: 'Home', keyCode: KeyCode.HOME }), {
+      layout: createLayout(),
+    });
+    expect(getTextInputCaretIndex(text)).toBe(0);
+  });
+
+  it('Ctrl+End moves to document end', () => {
+    const text = createInput({ multiline: true, text: 'abcdefg' });
+    setTextInputSelection(text, 1, 1);
+    handleTextInputKeyboard(text, createKeyboardData({ ctrlKey: true, key: 'End', keyCode: KeyCode.END }), {
+      layout: createLayout(),
+    });
+    expect(getTextInputCaretIndex(text)).toBe(7);
+  });
+
   it('invokes onCopy callback for copy command', () => {
     const text = createInput({ text: 'hello' });
     setTextInputSelection(text, 0, 5);
