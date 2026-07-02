@@ -4,6 +4,7 @@ import {
   addTimelineFrameScript,
   createTimeline,
   createTimelineSource,
+  disposeTimelineSignals,
   enableTimelineSignals,
   findTimelineLabel,
   getTimelineCurrentLabel,
@@ -127,6 +128,31 @@ describe('createTimelineSource', () => {
     expect(s.labels).toEqual([{ name: 'a', frame: 2 }]);
     s.constructFrame({} as unknown as DisplayObject, 2);
     expect(seen).toEqual([2]);
+  });
+});
+
+describe('disposeTimelineSignals', () => {
+  it('clears timeline.signals to null', () => {
+    const t = make();
+    enableTimelineSignals(t);
+    expect(t.signals).not.toBeNull();
+    disposeTimelineSignals(t);
+    expect(t.signals).toBeNull();
+  });
+
+  it('is idempotent — no-op when signals are already null', () => {
+    const t = make();
+    expect(() => disposeTimelineSignals(t)).not.toThrow();
+    expect(t.signals).toBeNull();
+  });
+
+  it('allows enableTimelineSignals to re-arm after dispose', () => {
+    const t = make();
+    const first = enableTimelineSignals(t);
+    disposeTimelineSignals(t);
+    const second = enableTimelineSignals(t);
+    expect(second).not.toBe(first);
+    expect(t.signals).toBe(second);
   });
 });
 
