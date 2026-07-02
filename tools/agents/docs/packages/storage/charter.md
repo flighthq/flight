@@ -1,7 +1,8 @@
 ---
 package: '@flighthq/storage'
 crate: flighthq-storage
-lastDirection: null
+draft: false
+lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -9,26 +10,17 @@ status: ./status.md
 
 # storage — Charter
 
-> Durable vision and core values for `@flighthq/storage`. You author this (via an agent transcribing your direction); it is the rubric `review.md` and `assessment.md` are judged against. No status here — that lives in the review. See ../CONTRACT.md.
+See [platform integration shared principles](../platform-integration.md) for the suite-wide decisions.
 
 ## What it is
 
-Synchronous persistent key/value storage (a `localStorage`-shaped capability over a swappable web/native backend), part of the platform-integration suite.
-
-_(Seeded from the prior depth review; replace with the intent in your own framing.)_
-
-## North star
-
-_TODO — the durable principles that define "good" for this package; the bar it is held to._
-
-## Boundaries
-
-_TODO — in scope / explicitly NOT in scope (non-goals)._
+Synchronous persistent key/value storage over a swappable web/native `StorageBackend`, part of the platform-integration suite. The broadest API surface in the OS/device group (39 exports): namespacing, typed scalar accessors (string, number, boolean), JSON serialization, schema migrations, and quota reporting. The web default wraps `localStorage`; native hosts replace via `setStorageBackend`. All reads/writes are synchronous and side-effect-free at import.
 
 ## Decisions
 
-_Append-only, dated, blessed rulings. None recorded yet._
+- **[2026-07-02] Signal opt-in convention applies.** Per the shared principles, signals (if any) should use `enable*Signals` gates rather than eager allocation. No package-specific exceptions.
 
 ## Open directions
 
-_Gestured-at but undecided; where an agent asks rather than assumes. None recorded yet._
+- Whether an async storage path (IndexedDB, OPFS, native file-KV) belongs as a second backend method or a separate package.
+- Migration strategy complexity vs the current schema-version approach.

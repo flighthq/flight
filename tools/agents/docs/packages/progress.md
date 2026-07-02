@@ -136,43 +136,45 @@ Track which packages have had a direction session, what was dispatched, and what
 
 ## Platform integration suite
 
-| Package      | State | Last visited | Note |
-| ------------ | ----- | ------------ | ---- |
-| platform     | —     |              |      |
-| screen       | —     |              |      |
-| device       | —     |              |      |
-| storage      | —     |              |      |
-| network      | —     |              |      |
-| power        | —     |              |      |
-| lifecycle    | —     |              |      |
-| keyboard     | —     |              |      |
-| sensors      | —     |              |      |
-| clipboard    | —     |              |      |
-| dialog       | —     |              |      |
-| filesystem   | —     |              |      |
-| notification | —     |              |      |
-| shell        | —     |              |      |
-| menu         | —     |              |      |
-| tray         | —     |              |      |
-| shortcut     | —     |              |      |
-| share        | —     |              |      |
-| haptics      | —     |              |      |
-| geolocation  | —     |              |      |
-| webcam       | —     |              |      |
-| statusbar    | —     |              |      |
-| useragent    | —     |              |      |
+Batch charter blessing 2026-07-02. Shared principles: [platform-integration.md](platform-integration.md).
+
+| Package | State | Last visited | Note |
+| --- | --- | --- | --- |
+| platform | direction | 2026-07-02 | Scope ceiling confirmed. No sweep work. |
+| screen | direction | 2026-07-02 | `getScreenNearestRect` is a TODO (implement actual nearest logic). Remove divider comments in test. |
+| device | direction | 2026-07-02 | Evaluate `detectDesktopUa` refactor to use useragent (not forced DRY). |
+| storage | direction | 2026-07-02 | Signal opt-in convention applies. No package-specific sweep work. |
+| network | direction | 2026-07-02 | Fix: `detectNetworkReachability` fresh backend per call, `anyAbortSignal` listener leak. |
+| power | direction | 2026-07-02 | Add `enablePowerSignals` opt-in — currently eagerly allocates 10 signals. |
+| lifecycle | direction | 2026-07-02 | Highest suite score (58). No sweep work. |
+| keyboard | direction | 2026-07-02 | `transition.height` frozen at 0 — latent bug, document for native hosts. |
+| sensors | direction | 2026-07-02 | Fix dead ternary at line 742. Fusion math placement open. |
+| clipboard | direction | 2026-07-02 | Fix `ClipboardFormat` constant usage (hardcoded MIME strings). |
+| dialog | direction | 2026-07-02 | Fix `buildFileSystemAccessTypes` empty-accept edge case. |
+| filesystem | direction | 2026-07-02 | Path utils stay. Dialog dep accepted. No sweep work. |
+| notification | direction | 2026-07-02 | Extract shared backend primitive (backlog — too large for sweep). |
+| shell | direction | 2026-07-02 | Rename `openExternalUrl` → `openShellExternalUrl`. |
+| menu | direction | 2026-07-02 | No sweep work. Functional test + accelerator dispatch are larger tasks. |
+| tray | direction | 2026-07-02 | Fix `getTrayIconBounds` return type → `RectangleLike`. |
+| shortcut | direction | 2026-07-02 | Remove dead `'Enter'` display entry. |
+| share | direction | 2026-07-02 | Remove dead `_signalSubscriptions` map. |
+| haptics | direction | 2026-07-02 | Fix `triggerHapticImpact` default intensity. |
+| geolocation | direction | 2026-07-02 | Fix `floorLevel` bug. Rename `Geo*` → `Geolocation*`. |
+| webcam | direction | 2026-07-02 | Fix `null as any` cast. Package is unfinished (not blocked). |
+| statusbar | direction | 2026-07-02 | Make `enableStatusBarSignals` actually gate signal cost. |
+| useragent | direction | 2026-07-02 | At scope ceiling (12 exports, 95 tests). Pure parsing, no backend. |
 
 ## App / process
 
-| Package  | State | Last visited | Note |
-| -------- | ----- | ------------ | ---- |
-| app      | —     |              |      |
-| protocol | —     |              |      |
-| updater  | —     |              |      |
-| ipc      | —     |              |      |
+| Package | State | Last visited | Note |
+| --- | --- | --- | --- |
+| app | direction | 2026-07-02 | Keep both app/application names. 42 exports = scope ceiling. |
+| protocol | direction | 2026-07-02 | Fix type error (`unknown` → `string \| number \| boolean`). |
+| updater | direction | 2026-07-02 | Squirrel is current target. No sweep work. |
+| ipc | direction | 2026-07-02 | Fix test fixture method mismatches. `senderId`/`reply()` are backend-dependent. |
 
 ## Host backends
 
-| Package       | State | Last visited | Note |
-| ------------- | ----- | ------------ | ---- |
-| host-electron | —     |              |      |
+| Package | State | Last visited | Note |
+| --- | --- | --- | --- |
+| host-electron | direction | 2026-07-02 | Fix missing `@flighthq/storage` dep. Not a `*Backend` itself — provides backends. No Rust crate. |
