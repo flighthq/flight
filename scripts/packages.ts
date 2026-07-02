@@ -51,6 +51,10 @@ interface TsConfigBuild {
   references?: { path: string }[];
 }
 
+interface PackageTsConfig {
+  references?: { path: string }[];
+}
+
 interface CheckError {
   label: string;
   detail?: string;
@@ -161,6 +165,55 @@ function getSourceFiles(dir: string): string[] {
     }
   }
   return files;
+}
+
+function getAllTsFiles(dir: string): { source: string[]; test: string[] } {
+  if (!existsSync(dir)) return { source: [], test: [] };
+
+  const source: string[] = [];
+  const test: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const sub = getAllTsFiles(path);
+      source.push(...sub.source);
+      test.push(...sub.test);
+    } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+      if (entry.name.endsWith('.test.ts') || entry.name.endsWith('.spec.ts')) {
+        test.push(path);
+      } else {
+        source.push(path);
+      }
+    }
+  }
+  return { source, test };
+}
+
+function scanFlightImports(files: string[]): Set<string> {
+  const imports = new Set<string>();
+  for (const filePath of files) {
+    const sourceFile = ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
+    for (const statement of sourceFile.statements) {
+      let specifier: string | undefined;
+      if (
+        ts.isImportDeclaration(statement) &&
+        statement.moduleSpecifier &&
+        ts.isStringLiteral(statement.moduleSpecifier)
+      ) {
+        specifier = statement.moduleSpecifier.text;
+      } else if (
+        ts.isExportDeclaration(statement) &&
+        statement.moduleSpecifier &&
+        ts.isStringLiteral(statement.moduleSpecifier)
+      ) {
+        specifier = statement.moduleSpecifier.text;
+      }
+      if (specifier?.startsWith('@flighthq/')) {
+        imports.add(specifier);
+      }
+    }
+  }
+  return imports;
 }
 
 function skipOuterExpressions(expression: ts.Expression): ts.Expression {
@@ -325,6 +378,60 @@ for (const pkgDir of packageDirs) {
   if (pkg.types) packageTargets.add(pkg.types);
   collectPackageTargetPaths(pkg.exports, packageTargets);
   checkPackageTargetPaths(errors, pkgDir, packageTargets);
+
+  // --- import → dependency wiring ---
+
+  const srcDir = join(pkgDir, 'src');
+  const { source: srcFiles, test: testFiles } = getAllTsFiles(srcDir);
+  const sourceImports = scanFlightImports(srcFiles);
+  const testImports = scanFlightImports(testFiles);
+
+  const prodDeps = new Set<string>(
+    [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {})].filter((d) =>
+      d.startsWith('@flighthq/'),
+    ),
+  );
+  const allFlightDeps = new Set<string>(Object.keys(allDeps).filter((d) => d.startsWith('@flighthq/')));
+
+  for (const imp of [...sourceImports].sort()) {
+    if (imp === name) continue;
+    check(errors, `${imp} in dependencies`, prodDeps.has(imp), `source imports ${imp} but it is not in dependencies`);
+  }
+
+  for (const imp of [...testImports].sort()) {
+    if (imp === name || sourceImports.has(imp)) continue;
+    check(
+      errors,
+      `${imp} in devDependencies`,
+      allFlightDeps.has(imp),
+      `test imports ${imp} but it is not in any dependency field`,
+    );
+  }
+
+  // --- dependency ↔ tsconfig reference sync ---
+
+  const pkgTsConfig = readJson<PackageTsConfig>(join(pkgDir, 'tsconfig.json'));
+  const tsconfigRefs = new Set((pkgTsConfig?.references ?? []).map((r) => r.path.replace(/^\.\.\//, '')));
+
+  for (const dep of [...allFlightDeps].sort()) {
+    const depName = dep.replace('@flighthq/', '');
+    check(
+      errors,
+      `tsconfig references ${depName}`,
+      tsconfigRefs.has(depName),
+      `${dep} is a dependency but ../${depName} is not in tsconfig.json references`,
+    );
+  }
+
+  for (const ref of [...tsconfigRefs].sort()) {
+    const dep = `@flighthq/${ref}`;
+    check(
+      errors,
+      `${dep} backs tsconfig reference`,
+      allFlightDeps.has(dep),
+      `tsconfig.json references ../${ref} but ${dep} is not a dependency`,
+    );
+  }
 
   results.push({ name, errors });
 }
