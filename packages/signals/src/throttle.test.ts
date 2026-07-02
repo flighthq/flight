@@ -1,10 +1,5 @@
 import { createSignal } from './signal';
-import {
-  connectSignalAtFrameRate,
-  connectSignalAtRate,
-  connectSignalDebounced,
-  connectSignalThrottled,
-} from './throttle';
+import { connectSignalAtFrameRate, connectSignalDebounced, connectSignalThrottled } from './throttle';
 
 describe('connectSignalAtFrameRate', () => {
   it('fires the slot only when accumulated delta reaches the period', () => {
@@ -35,12 +30,6 @@ describe('connectSignalAtFrameRate', () => {
     detach();
     source.emit(200);
     expect(fired).toBe(0);
-  });
-});
-
-describe('connectSignalAtRate', () => {
-  it('is an alias for connectSignalAtFrameRate', () => {
-    expect(connectSignalAtRate).toBe(connectSignalAtFrameRate);
   });
 });
 
