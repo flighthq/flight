@@ -95,6 +95,10 @@ export function createWebSoftKeyboardBackend(): SoftKeyboardBackend {
     },
     subscribe(listener) {
       if (typeof window === 'undefined') return () => {};
+      // transition.height stays 0 on web: this backend fires the 'did' phase only, where consumers
+      // read the settled geometry from getInfo(); the will-phase target height that transition.height
+      // is meant to carry is animation metadata the web viewport APIs never expose. Native hosts that
+      // emit a real 'will' phase must populate transition.height with the incoming keyboard height.
       const transition: SoftKeyboardTransition = { durationSeconds: 0, height: 0 };
       const fire = () => listener('did', transition);
       // Use Chromium VirtualKeyboard API when available for geometry.
