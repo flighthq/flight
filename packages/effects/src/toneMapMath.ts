@@ -3,6 +3,9 @@
 // or RGB value (per-channel application is the caller's responsibility). All matrix functions write
 // into caller-provided arrays. All functions are alias-safe.
 
+import type { AgxToneMapOptions } from '@flighthq/types';
+import type { FilmicToneMapOptions } from '@flighthq/types';
+
 // Narkowicz ACES filmic approximation — a fast sigmoid fit to the full ACES RRT+ODT.
 // Reference: Narkowicz 2015, "ACES Filmic Tone Mapping Curve".
 export function computeAcesToneMap(x: number): number {
@@ -16,15 +19,12 @@ export function computeAcesToneMap(x: number): number {
 
 // AgX tone map — a modern open-domain operator designed for accuracy over the sRGB gamut.
 // Reference: Sobotka 2022 / Filament AgX. Operates on a single channel; apply per-channel.
-export function computeAgxToneMap(x: number): number {
-  // Simple piecewise AgX-shaped sigmoid (approximate).
-  // More accurate version requires the full matrix + per-channel curve; this is the scalar sigmoid.
-  const min_ev = -12.47393;
-  const max_ev = 4.026069;
+export function computeAgxToneMap(x: number, options?: Readonly<AgxToneMapOptions>): number {
+  const min_ev = options?.minEv ?? -12.47393;
+  const max_ev = options?.maxEv ?? 4.026069;
   const val = Math.max(1e-10, x);
   const log = Math.max(min_ev, Math.min(max_ev, Math.log2(val)));
   const normalized = (log - min_ev) / (max_ev - min_ev);
-  // Apply AgX contrast S-curve (6th-degree polynomial fit).
   return agxDefaultContrastApprox(normalized);
 }
 
@@ -36,14 +36,13 @@ export function computeExposureScale(exposure: number): number {
 
 // Lottes 2016 filmic operator ("Advanced Techniques and Optimization of VDB Volume").
 // A smooth S-curve with adjustable shoulder and contrast.
-export function computeFilmicToneMap(x: number): number {
-  // Simplified GT operator (Uchimura 2017 approximation commonly called "filmic" in engines).
-  const maxBrightness = 1.0;
-  const contrast = 1.0;
-  const linearStart = 0.22;
-  const linearLength = 0.4;
-  const blackTighten = 1.33;
-  const pedestal = 0.0;
+export function computeFilmicToneMap(x: number, options?: Readonly<FilmicToneMapOptions>): number {
+  const maxBrightness = options?.maxBrightness ?? 1.0;
+  const contrast = options?.contrast ?? 1.0;
+  const linearStart = options?.linearStart ?? 0.22;
+  const linearLength = options?.linearLength ?? 0.4;
+  const blackTighten = options?.blackTighten ?? 1.33;
+  const pedestal = options?.pedestal ?? 0.0;
   const l0 = ((maxBrightness - linearStart) * linearLength) / contrast;
   const L0 = linearStart - linearStart / contrast;
   const L1 = linearStart + (1.0 - linearStart) / contrast;

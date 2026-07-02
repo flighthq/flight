@@ -35,6 +35,15 @@ describe('computeAgxToneMap', () => {
   it('increases monotonically in the normal range', () => {
     expect(computeAgxToneMap(1)).toBeGreaterThan(computeAgxToneMap(0.5));
   });
+  it('matches default when options is undefined', () => {
+    expect(computeAgxToneMap(0.5)).toBeCloseTo(computeAgxToneMap(0.5, undefined), 10);
+    expect(computeAgxToneMap(0.5)).toBeCloseTo(computeAgxToneMap(0.5, {}), 10);
+  });
+  it('custom EV range shifts the output', () => {
+    const defaultVal = computeAgxToneMap(0.5);
+    const narrow = computeAgxToneMap(0.5, { minEv: -6, maxEv: 2 });
+    expect(narrow).not.toBeCloseTo(defaultVal, 2);
+  });
 });
 
 describe('computeExposureScale', () => {
@@ -56,6 +65,20 @@ describe('computeFilmicToneMap', () => {
   });
   it('output increases with input in the linear range', () => {
     expect(computeFilmicToneMap(0.5)).toBeGreaterThan(computeFilmicToneMap(0.1));
+  });
+  it('matches default when options is undefined', () => {
+    expect(computeFilmicToneMap(0.5)).toBeCloseTo(computeFilmicToneMap(0.5, undefined), 10);
+    expect(computeFilmicToneMap(0.5)).toBeCloseTo(computeFilmicToneMap(0.5, {}), 10);
+  });
+  it('higher contrast steepens the curve', () => {
+    const defaultVal = computeFilmicToneMap(0.5);
+    const highContrast = computeFilmicToneMap(0.5, { contrast: 2.0 });
+    expect(highContrast).not.toBeCloseTo(defaultVal, 2);
+  });
+  it('pedestal lifts the black level', () => {
+    const noPedestal = computeFilmicToneMap(0.01);
+    const withPedestal = computeFilmicToneMap(0.01, { pedestal: 0.05 });
+    expect(withPedestal).toBeGreaterThan(noPedestal);
   });
 });
 
