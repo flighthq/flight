@@ -76,11 +76,6 @@ export function createWebShareBackend(): ShareBackend {
 // Stops delivery to `signals` and forgets its subscription. Safe to call when not attached.
 export function detachShareSignals(signals: ShareSignals): void {
   _signalListeners.delete(signals);
-  const unsubscribe = _signalSubscriptions.get(signals);
-  if (unsubscribe !== undefined) {
-    unsubscribe();
-    _signalSubscriptions.delete(signals);
-  }
 }
 
 // Releases `signals` for garbage collection by detaching its subscription. The signals remain plain
@@ -170,9 +165,6 @@ export function shareUrl(url: string, options?: Readonly<ShareOptions>): Promise
 let _backend: ShareBackend | null = null;
 // Maps signals groups that have been attached via attachShareSignals.
 const _signalListeners = new Map<ShareSignals, true>();
-// Maps signals groups to their unsubscribe functions (currently unused by the web backend, reserved
-// for future backends that provide a subscribe/unsubscribe stream).
-const _signalSubscriptions = new Map<ShareSignals, () => void>();
 
 // Converts a ShareContent (with portable ShareFile descriptors) to the navigator.share data shape,
 // converting ShareFile data URLs to DOM File objects at the web boundary.
