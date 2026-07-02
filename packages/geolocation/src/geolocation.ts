@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types';
 
 // Cancels an active position watch. No-op when the id is unknown or the backend lacks watching.
-export function clearGeoWatch(id: number): void {
+export function clearGeolocationWatch(id: number): void {
   getGeolocationBackend().clearWatch(id);
 }
 
@@ -190,9 +190,9 @@ export function setGeolocationBackend(backend: GeolocationBackend | null): void 
 }
 
 // Starts a position watch, invoking handler on each update. Returns the watch id, or -1 when
-// watching is unavailable. Pair with clearGeoWatch.
+// watching is unavailable. Pair with clearGeolocationWatch.
 // Pass onError to receive ongoing failure reasons (e.g., permission revoked mid-watch).
-export function watchGeoPosition(
+export function watchGeolocationPosition(
   handler: (position: Readonly<GeoPosition>) => void,
   options?: Readonly<GeolocationRequestOptions>,
   onError?: (reason: GeolocationErrorReason) => void,
@@ -215,7 +215,9 @@ function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): GeoPosit
     accuracy: coords.accuracy,
     altitude: coords.altitude ?? 0,
     altitudeAccuracy: coords.altitudeAccuracy ?? 0,
-    floorLevel: 0,
+    // floorLevel is non-standard: absent from the W3C GeolocationCoordinates type, but some hosts
+    // (indoor-positioning platforms) populate it. Read it when present rather than forcing 0.
+    floorLevel: (coords as { floorLevel?: number }).floorLevel ?? 0,
     heading: coords.heading ?? 0,
     latitude: coords.latitude,
     longitude: coords.longitude,
