@@ -5,6 +5,7 @@ import type { Matrix } from './Matrix';
 import type { Renderable } from './Renderable';
 import type { Renderer } from './Renderer';
 import type { RenderProxy } from './RenderProxy';
+import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
 
 /**
@@ -40,6 +41,7 @@ export interface RenderState extends Entity {
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
   currentFrameId: number;
+  renderAdaptHook: ((state: RenderState, source: Renderable, data: RenderProxy2D) => void) | null;
   renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
   renderProxyMap: WeakMap<Renderable, RenderProxy>;
   rendererMap: Map<Kind, Renderer>;

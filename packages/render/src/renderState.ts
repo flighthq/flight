@@ -29,6 +29,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
 export function createRenderStateRuntime(): RenderStateRuntime {
   const runtime = createEntityRuntime() as RenderStateRuntime;
   runtime.currentFrameId = 0;
+  runtime.renderAdaptHook = null;
   runtime.renderProxyAdapterMap = new WeakMap();
   runtime.renderProxyMap = new WeakMap();
   runtime.rendererMap = new Map();
