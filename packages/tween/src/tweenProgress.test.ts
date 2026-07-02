@@ -118,6 +118,26 @@ describe('seekTween', () => {
     seekTween(tween, 500);
     expect(updates).toBe(1);
   });
+  it('fires onComplete when seeking to exact end (delay + duration)', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t, delay: 200 });
+    let fired = 0;
+    connectSignal(tween.onComplete, () => fired++);
+    seekTween(tween, 1200);
+    expect(fired).toBe(1);
+    expect(tween.complete).toBe(true);
+  });
+  it('does not fire onComplete when seeking just before the end', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t, delay: 200 });
+    let fired = 0;
+    connectSignal(tween.onComplete, () => fired++);
+    seekTween(tween, 1199.999);
+    expect(fired).toBe(0);
+    expect(tween.complete).toBe(false);
+  });
   it('is alias-safe: out === input does not produce wrong values', () => {
     // The tween's target is both the input (start values are read from it) and the output.
     // initializeTween reads `target.x` then we write to `target.x`.
@@ -153,6 +173,16 @@ describe('setTweenProgress', () => {
     const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
     setTweenProgress(tween, 2);
     expect(target.x).toBe(100);
+    expect(tween.complete).toBe(true);
+  });
+  it('fires onComplete when setting progress to 1', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
+    let fired = 0;
+    connectSignal(tween.onComplete, () => fired++);
+    setTweenProgress(tween, 1);
+    expect(fired).toBe(1);
     expect(tween.complete).toBe(true);
   });
   it('is alias-safe: multiple sequential calls produce consistent results', () => {

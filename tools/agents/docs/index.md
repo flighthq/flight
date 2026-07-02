@@ -197,7 +197,7 @@ Rendering: `@flighthq/render` (registration, render state/queue, update pipeline
 
 Resources: `@flighthq/image`, `@flighthq/font`, `@flighthq/video`, `@flighthq/audio`, `@flighthq/textureatlas`, `@flighthq/tileset`, `@flighthq/loader` (batch queue).
 
-Animation/simulation: `@flighthq/spritesheet` (sprite-based animation), `@flighthq/particles` (emitter simulation — spawn, lifetime, forces, colliders, curves), `@flighthq/particles-formats` (Particle Designer / Spine / Unity Shuriken import-export), `@flighthq/timeline` (MovieClip-style keyframes), `@flighthq/timeline-spritesheet`, `@flighthq/tween`, `@flighthq/easing`.
+Animation/simulation: `@flighthq/spritesheet` (sprite-based animation), `@flighthq/particles` (emitter simulation — spawn, lifetime, forces, colliders, curves), `@flighthq/particles-formats` (Particle Designer / Spine / Unity Shuriken import-export), `@flighthq/timeline` (MovieClip-style keyframes), `@flighthq/timeline-spritesheet`, `@flighthq/tween`, `@flighthq/easing` (timing curves: Penner/CSS/shader families, combinators, parametric factories, piecewise splicing, LUT sampling, numerical derivative).
 
 Input/text: `@flighthq/input` (raw → normalized input), `@flighthq/textinput` (user editing), `@flighthq/textlayout` (renderer-agnostic glyph layout), `@flighthq/text-shaping` _(designed, not yet built)_ (shaper seam — `registerTextShaper` over a swappable `TextShaper` backend).
 

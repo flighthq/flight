@@ -1,4 +1,4 @@
-import { easeSmootherstep, easeSmoothstep } from './easeSmoothstep';
+import { easeSmootherstep, easeSmoothstep, easeSmoothstepRange } from './easeSmoothstep';
 
 describe('easeSmootherstep', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {
@@ -45,6 +45,32 @@ describe('easeSmoothstep', () => {
       const value = easeSmoothstep(i / 20);
       expect(value).toBeGreaterThanOrEqual(prev);
       prev = value;
+    }
+  });
+});
+
+describe('easeSmoothstepRange', () => {
+  it('returns 0 at edge0 and 1 at edge1', () => {
+    const fn = easeSmoothstepRange(10, 20);
+    expect(fn(10)).toBe(0);
+    expect(fn(20)).toBe(1);
+  });
+
+  it('clamps below edge0 to 0 and above edge1 to 1', () => {
+    const fn = easeSmoothstepRange(10, 20);
+    expect(fn(5)).toBe(0);
+    expect(fn(25)).toBe(1);
+  });
+
+  it('applies smoothstep at the midpoint', () => {
+    const fn = easeSmoothstepRange(0, 100);
+    expect(fn(50)).toBeCloseTo(0.5);
+  });
+
+  it('matches easeSmoothstep when range is [0, 1]', () => {
+    const fn = easeSmoothstepRange(0, 1);
+    for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+      expect(fn(t)).toBeCloseTo(easeSmoothstep(t));
     }
   });
 });

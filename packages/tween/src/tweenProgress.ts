@@ -37,9 +37,11 @@ export function restartTween(tween: Tween<any>, includeDelay = true): void {
   tween.elapsed = includeDelay ? 0 : tween.delay;
 }
 
+// Seeking to the exact end (delay + duration) marks the tween complete and
+// fires onComplete. Seeking to any earlier time does not.
 /**
- * Jump the tween to an absolute elapsed time in seconds and immediately apply the resulting
- * property values to the target. The `timeSeconds` is measured from the start of the tween
+ * Jump the tween to an absolute elapsed time and immediately apply the resulting
+ * property values to the target. The time is measured from the start of the tween
  * (before any delay). Clamps to 0..delay+duration.
  *
  * This is alias-safe: all input values are read before any writes occur.
@@ -73,6 +75,7 @@ export function seekTween(tween: Tween<any>, timeSeconds: number): void {
   }
 }
 
+// Setting progress to exactly 1 marks the tween complete and fires onComplete.
 /**
  * Set the normalized progress of a tween to a value in 0..1 and immediately apply
  * the resulting property values to the target. Safe to call before the delay has elapsed.

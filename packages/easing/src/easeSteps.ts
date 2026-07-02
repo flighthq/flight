@@ -1,13 +1,12 @@
 import type { EasingFunction, StepPosition } from '@flighthq/types';
 
-// Returns a stepped easing function with `count` equal steps over [0,1],
-// matching CSS `steps(count, <step-position>)` semantics. The position selects
-// where the jumps fall relative to the interval:
-//   jumpStart - a jump at the start; the first interval already outputs 1/count.
-//   jumpEnd   - a jump at the end (default); output holds at 0 over the first interval.
-//   jumpNone  - no jump at either edge; output spans the closed range 0..1 with count-1 jumps.
-//   jumpBoth  - a jump at both edges; interior intervals span 1/(count+1)..count/(count+1).
-// Implements the canonical CSS Easing Level 1 step algorithm.
+// Returns a stepped easing function that quantizes [0,1] into `count` equal
+// intervals, jumping at the position(s) selected by `position`:
+//   jumpStart - jump at t=0; the first interval already outputs 1/count.
+//   jumpEnd   - jump at t=1 (default); output stays 0 over the first interval.
+//   jumpNone  - no jump at either edge; output spans 0..1 with count-1 interior jumps.
+//   jumpBoth  - jump at both edges; count+1 levels from 0 to 1 inclusive.
+// Follows the CSS Easing Level 1 step algorithm.
 //
 // Sharp edge: easeSteps(1, 'jumpNone') has jumps = count - 1 = 0, so the returned
 // function divides by zero and yields NaN. This mirrors the CSS spec, which forbids
