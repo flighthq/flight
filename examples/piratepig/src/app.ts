@@ -7,7 +7,6 @@ import {
   connectSignal,
   createApplication,
   createApplicationWindow,
-  createAudioResourceFromUrls,
   createBitmap,
   createDisplayObject,
   createInputManager,
@@ -30,12 +29,14 @@ import { applyBackgroundBlur, container, render, scale, setSize } from './render
 
 // ── Assets ─────────────────────────────────────────────────────────────────
 
+const audioContext = new AudioContext();
+
 const [bgImage, footerImage, logoImage, font, theme, ...tileImages] = await Promise.all([
   loadImageResourceFromUrl('assets/images/background_tile.png'),
   loadImageResourceFromUrl('assets/images/center_bottom.png'),
   loadImageResourceFromUrl('assets/images/logo.png'),
   loadFontFromUrl('assets/fonts/FreebooterUpdated.ttf', 'FreebooterUpdated'),
-  loadAudioResourceFromUrls([{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
+  loadAudioResourceFromUrls(audioContext, [{ url: 'assets/sounds/theme.ogg' }, { url: 'assets/sounds/theme.mp3' }]),
   loadImageResourceFromUrl('assets/images/game_bear.png'),
   loadImageResourceFromUrl('assets/images/game_bunny_02.png'),
   loadImageResourceFromUrl('assets/images/game_carrot.png'),
@@ -44,12 +45,7 @@ const [bgImage, footerImage, logoImage, font, theme, ...tileImages] = await Prom
   loadImageResourceFromUrl('assets/images/game_piratePig.png'),
 ]);
 
-const sounds = [
-  theme,
-  createAudioResourceFromUrls([{ url: 'assets/sounds/sound3.ogg' }, { url: 'assets/sounds/sound3.mp3' }]),
-  createAudioResourceFromUrls([{ url: 'assets/sounds/sound4.ogg' }, { url: 'assets/sounds/sound4.mp3' }]),
-  createAudioResourceFromUrls([{ url: 'assets/sounds/sound5.ogg' }, { url: 'assets/sounds/sound5.mp3' }]),
-];
+const sounds = [theme];
 
 // ── Scene ──────────────────────────────────────────────────────────────────
 
@@ -71,7 +67,7 @@ footer.data.smoothing = true;
 addNodeChild(root, footer);
 
 const interactionManager = createInteractionManager(root);
-const game = new PiratePigGame(manager, interactionManager, tileImages, logoImage, font.name, sounds, {
+const game = new PiratePigGame(audioContext, manager, interactionManager, tileImages, logoImage, font.name, sounds, {
   coordScale: scale,
   cursorElement: container,
 });

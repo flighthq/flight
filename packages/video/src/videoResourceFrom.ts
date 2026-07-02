@@ -1,20 +1,7 @@
 import type { VideoResource, VideoResourceUrl } from '@flighthq/types';
 
+import { inferVideoType } from './videoFormat';
 import { createVideoResource } from './videoResource';
-
-export function createVideoResourceFromUrl(url: string): VideoResource {
-  const element = document.createElement('video');
-  element.preload = 'auto';
-  element.src = url;
-  return createVideoResource(element);
-}
-
-export function createVideoResourceFromUrls(sources: VideoResourceUrl[]): VideoResource {
-  const probe = document.createElement('video');
-  const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferVideoType(url) ?? '') !== '');
-  if (selected === undefined) return createVideoResource();
-  return createVideoResourceFromUrl(selected.url);
-}
 
 export function loadVideoResourceFromUrl(url: string, signal?: AbortSignal): Promise<VideoResource> {
   if (signal?.aborted) return Promise.reject(signal.reason);
@@ -57,22 +44,4 @@ export function loadVideoResourceFromUrls(sources: VideoResourceUrl[], signal?: 
   const selected = sources.find(({ url, type }) => probe.canPlayType(type ?? inferVideoType(url) ?? '') !== '');
   if (selected === undefined) return Promise.resolve(createVideoResource());
   return loadVideoResourceFromUrl(selected.url, signal);
-}
-
-function inferVideoType(url: string): string | null {
-  const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
-  switch (ext) {
-    case 'mp4':
-    case 'm4v':
-      return 'video/mp4';
-    case 'webm':
-      return 'video/webm';
-    case 'ogv':
-    case 'ogg':
-      return 'video/ogg';
-    case 'mov':
-      return 'video/quicktime';
-    default:
-      return null;
-  }
 }

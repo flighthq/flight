@@ -1,34 +1,18 @@
 import type { FontResource, FontUrl } from '@flighthq/types';
 
-function inferFontFormat(url: string): string | null {
-  const ext = url.split('?')[0].split('.').pop()?.toLowerCase();
-  switch (ext) {
-    case 'woff':
-      return 'woff';
-    case 'woff2':
-      return 'woff2';
-    case 'ttf':
-      return 'truetype';
-    case 'otf':
-      return 'opentype';
-    case 'eot':
-      return 'embedded-opentype';
-    case 'svg':
-      return 'svg';
-    default:
-      return null;
-  }
-}
+import { inferFontFormat } from './fontFormat';
 
-export async function loadFontResourceFromArrayBuffer(out: FontResource, buffer: ArrayBuffer): Promise<FontResource> {
-  const face = new FontFace(out.family, buffer);
+export async function loadFontResourceFromBytes(out: FontResource, bytes: Uint8Array): Promise<FontResource> {
+  const face = new FontFace(
+    out.family,
+    (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+  );
   await face.load();
   document.fonts.add(face);
   out.face = face;
   return out;
 }
 
-// Waits for a font already registered via CSS @font-face or document.fonts.add().
 export async function loadFontResourceFromName(out: FontResource): Promise<FontResource> {
   const faces = await document.fonts.load(`1em '${out.family}'`);
   if (faces.length > 0) out.face = faces[0];
@@ -43,7 +27,6 @@ export async function loadFontResourceFromUrl(out: FontResource, url: string): P
   return out;
 }
 
-// Loads from multiple URL sources with format hints; the browser picks the best format.
 export async function loadFontResourceFromUrls(out: FontResource, sources: FontUrl[]): Promise<FontResource> {
   const src = sources
     .map(({ url, format }) => {

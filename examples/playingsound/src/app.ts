@@ -26,6 +26,7 @@ import {
 
 import { container, render, scale, setSize } from './render';
 
+const audioContext = new AudioContext();
 const manager = createTweenManager({ defaultEase: easeOutQuadratic });
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -35,7 +36,7 @@ const background = createShape();
 background.alpha = 0.1;
 addNodeChild(root, background);
 
-const sound = await loadAudioResourceFromUrls([{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
+const sound = await loadAudioResourceFromUrls(audioContext, [{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
 
 let channel: AudioChannel | null = null;
 let playing = false;
@@ -65,7 +66,7 @@ function play(fadeIn = 3000): void {
     channel = null;
   }
 
-  const nextChannel = playAudioResource(sound, { currentTime: position, gain: fadeIn <= 0 ? 1 : 0 });
+  const nextChannel = playAudioResource(audioContext, sound, { currentTime: position, gain: fadeIn <= 0 ? 1 : 0 });
   if (nextChannel === null) return;
 
   channel = nextChannel;

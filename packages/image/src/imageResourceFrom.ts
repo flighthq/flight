@@ -37,9 +37,9 @@ export function createImageResourceFromImageElement(img: HTMLImageElement): Imag
   });
 }
 
-export function detectImageMimeType(buffer: ArrayBuffer): string | null {
-  if (buffer.byteLength < 4) return null;
-  const b = new Uint8Array(buffer, 0, Math.min(16, buffer.byteLength));
+export function detectImageMimeType(data: ArrayBuffer | Uint8Array): string | null {
+  const b = data instanceof Uint8Array ? data : new Uint8Array(data);
+  if (b.byteLength < 4) return null;
 
   // PNG: 89 50 4E 47 0D 0A 1A 0A
   if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
@@ -52,7 +52,7 @@ export function detectImageMimeType(buffer: ArrayBuffer): string | null {
 
   // WebP: RIFF....WEBP (bytes 0-3 and 8-11)
   if (
-    buffer.byteLength >= 12 &&
+    b.byteLength >= 12 &&
     b[0] === 0x52 &&
     b[1] === 0x49 &&
     b[2] === 0x46 &&
@@ -79,18 +79,6 @@ export function isImageResourceSameOrigin(url: string): boolean {
   }
 }
 
-export async function loadImageResourceFromArrayBuffer(
-  buffer: ArrayBuffer,
-  mimeType?: string,
-  signal?: AbortSignal,
-): Promise<ImageResource> {
-  const type = mimeType ?? detectImageMimeType(buffer);
-  if (type === null) {
-    throw new Error('Unable to determine image type from ArrayBuffer');
-  }
-  return loadImageResourceFromBlob(new Blob([buffer], { type }), signal);
-}
-
 export async function loadImageResourceFromBase64(
   base64: string,
   mimeType: string,
@@ -106,6 +94,19 @@ export async function loadImageResourceFromBlob(blob: Blob, signal?: AbortSignal
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+export async function loadImageResourceFromBytes(
+  bytes: Uint8Array,
+  mimeType?: string,
+  signal?: AbortSignal,
+): Promise<ImageResource> {
+  const type = mimeType ?? detectImageMimeType(bytes);
+  if (type === null) {
+    throw new Error('Unable to determine image type from bytes');
+  }
+  const buf = (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  return loadImageResourceFromBlob(new Blob([buf], { type }), signal);
 }
 
 export async function loadImageResourceFromUrl(

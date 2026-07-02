@@ -1,4 +1,3 @@
-import { getAudioContext } from '@flighthq/audio';
 import type { AudioBus, AudioBusOptions, AudioChannel, AudioMixer, AudioMixerOptions } from '@flighthq/types';
 
 import { connectAudioChannelToNode } from './audioChannel';
@@ -33,8 +32,7 @@ export function createAudioBus(options?: Readonly<AudioBusOptions>): AudioBus {
   };
 }
 
-export function createAudioMixer(options?: Readonly<AudioMixerOptions>): AudioMixer {
-  const context = getAudioContext();
+export function createAudioMixer(context: AudioContext, options?: Readonly<AudioMixerOptions>): AudioMixer {
   const masterGainNode = context.createGain();
   masterGainNode.gain.value = options?.masterGain ?? 1;
   masterGainNode.connect(context.destination);

@@ -1,4 +1,3 @@
-import { getAudioContext } from '@flighthq/audio';
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type { AudioChannel, AudioPlayOptions, AudioResource } from '@flighthq/types';
 
@@ -57,10 +56,13 @@ export function pauseAudioChannel(channel: AudioChannel): void {
   stopActiveNode(channel, false);
 }
 
-export function playAudioResource(source: AudioResource, options?: Readonly<AudioPlayOptions>): AudioChannel | null {
+export function playAudioResource(
+  context: AudioContext,
+  source: AudioResource,
+  options?: Readonly<AudioPlayOptions>,
+): AudioChannel | null {
   if (source.buffer === null) return null;
 
-  const context = getAudioContext();
   const channel: AudioChannel = {
     currentTime: options?.currentTime ?? 0,
     gain: options?.gain ?? 1,

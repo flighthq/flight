@@ -4,9 +4,9 @@ import { createTextureAtlas } from '@flighthq/textureatlas';
 import {
   createTilesetFromAtlas,
   createTilesetFromImageResource,
-  loadTilesetFromArrayBuffer,
   loadTilesetFromBase64,
   loadTilesetFromBlob,
+  loadTilesetFromBytes,
   loadTilesetFromUrl,
 } from './tilesetFrom';
 
@@ -88,23 +88,6 @@ describe('createTilesetFromImageResource', () => {
   });
 });
 
-describe('loadTilesetFromArrayBuffer', () => {
-  it('resolves to a Tileset with tileWidth and tileHeight set', async () => {
-    const buf = new ArrayBuffer(16);
-    new Uint8Array(buf).set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const tileset = await loadTilesetFromArrayBuffer(buf, 32, 16);
-
-    expect(tileset.tileWidth).toBe(32);
-    expect(tileset.tileHeight).toBe(16);
-    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
-  });
-
-  it('throws when mime type cannot be detected', async () => {
-    const buf = new ArrayBuffer(16);
-    await expect(loadTilesetFromArrayBuffer(buf, 32, 32)).rejects.toThrow('Unable to determine image type');
-  });
-});
-
 describe('loadTilesetFromBase64', () => {
   it('resolves to a Tileset with the correct tile dimensions', async () => {
     const tileset = await loadTilesetFromBase64('abc123', 'image/png', 16, 16);
@@ -119,6 +102,22 @@ describe('loadTilesetFromBlob', () => {
     const blob = new Blob([], { type: 'image/png' });
     const tileset = await loadTilesetFromBlob(blob, 32, 32);
     expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+  });
+});
+
+describe('loadTilesetFromBytes', () => {
+  it('resolves to a Tileset with tileWidth and tileHeight set', async () => {
+    const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const tileset = await loadTilesetFromBytes(bytes, 32, 16);
+
+    expect(tileset.tileWidth).toBe(32);
+    expect(tileset.tileHeight).toBe(16);
+    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+  });
+
+  it('throws when mime type cannot be detected', async () => {
+    const bytes = new Uint8Array(16);
+    await expect(loadTilesetFromBytes(bytes, 32, 32)).rejects.toThrow('Unable to determine image type');
   });
 });
 
