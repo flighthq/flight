@@ -1,28 +1,9 @@
-import type { Path } from '@flighthq/types';
+import type { Path, StrokeStyle } from '@flighthq/types';
 import { PathCommand } from '@flighthq/types';
 
 import { appendPathClose } from './path';
 
-/**
- * Stroke style options for `strokePath`. All fields are optional with sensible defaults.
- *
- * - `width`: stroke width in path units (default 1).
- * - `join`: how consecutive segments are joined — 'miter' (default), 'round', or 'bevel'.
- * - `cap`: how open contour endpoints are drawn — 'butt' (default), 'round', or 'square'.
- * - `miterLimit`: the maximum ratio of miter-length to half-width; beyond this, a miter join
- *   degrades to a bevel (default 4). Only applies when join='miter'.
- * - `dash`: optional array of [on, off, on, off, ...] lengths for a dashed stroke. Omit or pass
- *   an empty array for a solid stroke.
- * - `dashOffset`: offset into the dash pattern at which to start (default 0).
- */
-export interface StrokeStyle {
-  cap?: 'butt' | 'round' | 'square';
-  dash?: number[];
-  dashOffset?: number;
-  join?: 'bevel' | 'miter' | 'round';
-  miterLimit?: number;
-  width?: number;
-}
+export type { StrokeStyle } from '@flighthq/types';
 
 // Converts the centerline `path` into a fillable outline `Path` by offsetting both sides by
 // half the stroke width, joining corners per `style.join`, and capping open endpoints per

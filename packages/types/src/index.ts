@@ -373,6 +373,7 @@ export * from './StatusBar';
 export * from './StepPosition';
 export * from './StopTweenOptions';
 export * from './Storage';
+export * from './StrokeStyle';
 export * from './SubsurfacePbrMaterial';
 export * from './Surface';
 export * from './SurfaceEdgeMode';

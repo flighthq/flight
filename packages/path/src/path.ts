@@ -322,51 +322,13 @@ function appendArcCubics(
   }
 }
 
-// Returns the last anchor point written into the path, by scanning the command stream.
-// Returns null if the path is empty.
-function getPathLastPoint(path: Readonly<Path>): [number, number] | null {
-  const commands = path.commands;
+// Every point-producing command (MOVE_TO, LINE_TO, CURVE_TO, CUBIC_CURVE_TO, and their
+// WIDE variants) stores its anchor as the last two values pushed to `data[]`. CLOSE and
+// NO_OP push no data. So the last anchor is always at the tail of the data array — O(1).
+export function getPathLastPoint(path: Readonly<Path>): [number, number] | null {
   const data = path.data;
-  if (commands.length === 0) return null;
-  let dataIdx = 0;
-  let lastX = 0;
-  let lastY = 0;
-  let hasPoint = false;
-  for (let ci = 0; ci < commands.length; ci++) {
-    const cmd = commands[ci];
-    if (cmd === PathCommand.MOVE_TO) {
-      lastX = data[dataIdx];
-      lastY = data[dataIdx + 1];
-      hasPoint = true;
-      dataIdx += 2;
-    } else if (cmd === PathCommand.LINE_TO) {
-      lastX = data[dataIdx];
-      lastY = data[dataIdx + 1];
-      hasPoint = true;
-      dataIdx += 2;
-    } else if (cmd === PathCommand.WIDE_MOVE_TO) {
-      lastX = data[dataIdx + 2];
-      lastY = data[dataIdx + 3];
-      hasPoint = true;
-      dataIdx += 4;
-    } else if (cmd === PathCommand.WIDE_LINE_TO) {
-      lastX = data[dataIdx + 2];
-      lastY = data[dataIdx + 3];
-      hasPoint = true;
-      dataIdx += 4;
-    } else if (cmd === PathCommand.CURVE_TO) {
-      lastX = data[dataIdx + 2];
-      lastY = data[dataIdx + 3];
-      hasPoint = true;
-      dataIdx += 4;
-    } else if (cmd === PathCommand.CUBIC_CURVE_TO) {
-      lastX = data[dataIdx + 4];
-      lastY = data[dataIdx + 5];
-      hasPoint = true;
-      dataIdx += 6;
-    }
-  }
-  return hasPoint ? [lastX, lastY] : null;
+  if (data.length < 2) return null;
+  return [data[data.length - 2], data[data.length - 1]];
 }
 
 // Normalizes corner radii for a rounded rectangle, clamping each corner radius to at most half the

@@ -15,6 +15,7 @@ import {
   appendPathRectangle,
   appendPathRoundRectangle,
   createPath,
+  getPathLastPoint,
 } from './path';
 
 describe('appendPathArc', () => {
@@ -296,5 +297,80 @@ describe('createPath', () => {
 
   it('accepts an evenOdd winding', () => {
     expect(createPath('evenOdd').winding).toStrictEqual('evenOdd');
+  });
+});
+
+describe('getPathLastPoint', () => {
+  it('returns null for an empty path', () => {
+    expect(getPathLastPoint(createPath())).toBeNull();
+  });
+
+  it('returns the point after appendPathMoveTo', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 10, 20);
+    expect(getPathLastPoint(path)).toStrictEqual([10, 20]);
+  });
+
+  it('returns the point after appendPathLineTo', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 30, 40);
+    expect(getPathLastPoint(path)).toStrictEqual([30, 40]);
+  });
+
+  it('returns the anchor after appendPathCurveTo', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathCurveTo(path, 5, 5, 50, 60);
+    expect(getPathLastPoint(path)).toStrictEqual([50, 60]);
+  });
+
+  it('returns the anchor after appendPathCubicCurveTo', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathCubicCurveTo(path, 1, 2, 3, 4, 70, 80);
+    expect(getPathLastPoint(path)).toStrictEqual([70, 80]);
+  });
+
+  it('returns the last anchor after appendPathClose', () => {
+    const path = createPath();
+    appendPathMoveTo(path, 10, 20);
+    appendPathLineTo(path, 30, 40);
+    appendPathClose(path);
+    expect(getPathLastPoint(path)).toStrictEqual([30, 40]);
+  });
+
+  it('returns the last point after appendPathRectangle', () => {
+    const path = createPath();
+    appendPathRectangle(path, 10, 20, 100, 50);
+    expect(getPathLastPoint(path)).toStrictEqual([10, 70]);
+  });
+
+  it('returns the endpoint after appendPathArc', () => {
+    const path = createPath();
+    appendPathArc(path, 0, 0, 100, 0, Math.PI / 2);
+    const last = getPathLastPoint(path)!;
+    expect(last[0]).toBeCloseTo(0, 1);
+    expect(last[1]).toBeCloseTo(100, 1);
+  });
+
+  it('returns the endpoint after appendPathCircle', () => {
+    const path = createPath();
+    appendPathCircle(path, 10, 20, 30);
+    const last = getPathLastPoint(path)!;
+    expect(last[0]).toBeCloseTo(40);
+    expect(last[1]).toBeCloseTo(20);
+  });
+
+  it('returns the last point after appendPathPolygon', () => {
+    const path = createPath();
+    appendPathPolygon(path, [0, 0, 100, 0, 100, 100]);
+    expect(getPathLastPoint(path)).toStrictEqual([100, 100]);
+  });
+
+  it('returns the last point after appendPathPolyline', () => {
+    const path = createPath();
+    appendPathPolyline(path, [0, 0, 50, 60, 70, 80]);
+    expect(getPathLastPoint(path)).toStrictEqual([70, 80]);
   });
 });
