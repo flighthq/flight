@@ -153,7 +153,7 @@ Batch charter blessing 2026-07-02. Shared principles: [platform-integration.md](
 | dialog | direction | 2026-07-02 | Fix `buildFileSystemAccessTypes` empty-accept edge case. |
 | filesystem | direction | 2026-07-02 | Path utils stay. Dialog dep accepted. No sweep work. |
 | notification | direction | 2026-07-02 | Extract shared backend primitive (backlog — too large for sweep). |
-| shell | direction | 2026-07-02 | Rename `openExternalUrl` → `openShellExternalUrl`. |
+| shell | direction | 2026-07-02 | Rename `openShellExternalUrl` → `openShellExternalUrl`. |
 | menu | direction | 2026-07-02 | No sweep work. Functional test + accelerator dispatch are larger tasks. |
 | tray | direction | 2026-07-02 | Fix `getTrayIconBounds` return type → `RectangleLike`. |
 | shortcut | direction | 2026-07-02 | Remove dead `'Enter'` display entry. |

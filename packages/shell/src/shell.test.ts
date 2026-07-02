@@ -6,7 +6,7 @@ import {
   isShellUrlAllowed,
   moveItemsToTrash,
   moveItemToTrash,
-  openExternalUrl,
+  openShellExternalUrl,
   openShellPath,
   openShellPathResult,
   readShellShortcutLink,
@@ -159,18 +159,18 @@ describe('moveItemToTrash', () => {
   });
 });
 
-describe('openExternalUrl', () => {
+describe('openShellExternalUrl', () => {
   it('opens via the active backend', async () => {
     const backend = fakeBackend();
     setShellBackend(backend);
-    expect(await openExternalUrl('https://example.com')).toBe(true);
+    expect(await openShellExternalUrl('https://example.com')).toBe(true);
     expect(backend.opened).toBe('https://example.com');
   });
 
   it('forwards the activate option to the backend', async () => {
     const backend = fakeBackend();
     setShellBackend(backend);
-    await openExternalUrl('https://example.com', { activate: true });
+    await openShellExternalUrl('https://example.com', { activate: true });
     expect(backend.lastOptions).toEqual({ activate: true });
   });
 
@@ -178,7 +178,7 @@ describe('openExternalUrl', () => {
     const backend = fakeBackend();
     setShellBackend(backend);
     setShellUrlSchemeAllowlist(['https']);
-    expect(await openExternalUrl('file:///etc/passwd')).toBe(false);
+    expect(await openShellExternalUrl('file:///etc/passwd')).toBe(false);
     expect(backend.opened).toBe('');
   });
 
@@ -186,7 +186,7 @@ describe('openExternalUrl', () => {
     const backend = fakeBackend();
     setShellBackend(backend);
     setShellUrlSchemeAllowlist(['https', 'mailto']);
-    expect(await openExternalUrl('https://example.com')).toBe(true);
+    expect(await openShellExternalUrl('https://example.com')).toBe(true);
     expect(backend.opened).toBe('https://example.com');
   });
 });

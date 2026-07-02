@@ -738,7 +738,7 @@ async function getWebSensorsPermissionState(
 
   // Map our sensor names to W3C Permissions API names.
   const permissionName =
-    sensor === 'magnetometer' ? 'magnetometer' : sensor === 'orientation' ? 'accelerometer' : 'accelerometer';
+    sensor === 'magnetometer' ? 'magnetometer' : sensor === 'orientation' ? 'gyroscope' : 'accelerometer';
 
   if (typeof navigator !== 'undefined' && navigator.permissions) {
     try {

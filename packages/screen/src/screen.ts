@@ -595,10 +595,33 @@ export function getScreenNearestPoint(point: Readonly<Vector2Like>, out: ScreenI
   return out;
 }
 
-// Returns the screen whose bounds contain `rect` by largest overlap, falling back to nearest by
-// center distance. This is Electron's getDisplayMatching behavior.
 export function getScreenNearestRect(rect: Readonly<RectangleLike>, out: ScreenInfo): ScreenInfo {
-  return getScreenContainingRect(rect, out);
+  const screens: ScreenInfo[] = [];
+  getScreens(screens);
+  if (screens.length === 0) {
+    fillDefaultScreenInfo(out);
+    return out;
+  }
+
+  const cx = rect.x + rect.width / 2;
+  const cy = rect.y + rect.height / 2;
+  let bestScreen = screens[0];
+  let bestDist = Infinity;
+
+  for (const screen of screens) {
+    const scx = screen.x + screen.width / 2;
+    const scy = screen.y + screen.height / 2;
+    const dx = cx - scx;
+    const dy = cy - scy;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestScreen = screen;
+    }
+  }
+
+  copyScreenInfo(bestScreen, out);
+  return out;
 }
 
 // Fills `out` with every attached display and returns it. out.length is set to the screen count;

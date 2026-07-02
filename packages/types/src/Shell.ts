@@ -20,7 +20,7 @@ export interface ShellBackend {
   ): Promise<boolean>;
 }
 
-// Options for openExternalUrl. activate raises the opened application to the foreground (macOS);
+// Options for openShellExternalUrl. activate raises the opened application to the foreground (macOS);
 // it has no web equivalent and is ignored by the web backend.
 export interface ShellOpenExternalOptions {
   activate?: boolean;

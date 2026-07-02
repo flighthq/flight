@@ -1,4 +1,5 @@
 import type { MenuItemTemplate } from './Menu';
+import type { RectangleLike } from './Rectangle';
 import type { Vector2Like } from './Vector2';
 
 // Tray icon seam. Free functions in @flighthq/tray delegate to the active TrayBackend (web default or
@@ -12,14 +13,6 @@ export type TrayEventType =
   | 'doubleClick'
   | 'dropFiles'
   | 'rightClick';
-
-// Screen geometry of a tray icon (x/y/width/height). Returned by getBounds and carried on click events.
-export interface TrayIconBounds {
-  height: number;
-  width: number;
-  x: number;
-  y: number;
-}
 
 export interface TrayIconOptions {
   icon?: string;
@@ -56,7 +49,7 @@ export interface TrayCapabilities {
 // platform does not report them; dropFiles/dropText are populated only for drop events.
 export interface TrayEventData {
   altKey: boolean;
-  bounds: Readonly<TrayIconBounds> | null;
+  bounds: Readonly<RectangleLike> | null;
   ctrlKey: boolean;
   dropFiles: readonly string[] | null;
   dropText: string | null;
@@ -75,7 +68,7 @@ export interface TrayBackend {
   create(options: Readonly<TrayIconOptions>): number;
   destroy(id: number): void;
   displayBalloon(id: number, options: Readonly<TrayBalloonOptions>): void;
-  getBounds(id: number): Readonly<TrayIconBounds> | null;
+  getBounds(id: number): Readonly<RectangleLike> | null;
   getCapabilities(): Readonly<TrayCapabilities>;
   getTitle(id: number): string;
   getTooltip(id: number): string;

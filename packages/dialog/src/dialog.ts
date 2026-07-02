@@ -143,12 +143,11 @@ function buildFileSystemAccessTypes(
   filters: OpenFileDialogOptions['filters'],
 ): { accept: Record<string, string[]>; description: string }[] | undefined {
   if (filters === undefined || filters.length === 0) return undefined;
-  return filters.map((filter) => {
+  const types: { accept: Record<string, string[]>; description: string }[] = [];
+  for (const filter of filters) {
     const accept: Record<string, string[]> = {};
     const extensions = filter.extensions.filter((e) => e !== '*').map((e) => (e.startsWith('.') ? e : `.${e}`));
     if (extensions.length > 0) {
-      // File System Access API requires a MIME type key; use application/octet-stream as the catch-all
-      // when no MIME types are specified for this filter group.
       const mime = filter.mimeTypes && filter.mimeTypes.length > 0 ? filter.mimeTypes[0] : 'application/octet-stream';
       accept[mime] = extensions;
     }
@@ -157,8 +156,10 @@ function buildFileSystemAccessTypes(
         if (!accept[mime]) accept[mime] = extensions;
       }
     }
-    return { accept, description: filter.name };
-  });
+    if (Object.keys(accept).length === 0) continue;
+    types.push({ accept, description: filter.name });
+  }
+  return types.length > 0 ? types : undefined;
 }
 
 // Builds the accept attribute value for a legacy <input type=file>.
