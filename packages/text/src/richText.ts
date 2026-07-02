@@ -202,7 +202,7 @@ export function getRichTextCharIndexAtPoint(source: Readonly<RichText>, x: numbe
   ensureTextLayout(source);
   const layout = getTextLayout(source);
   if (layout === null) return -1;
-  return computeRichTextCharIndexAtPoint(source.data.text, layout, x, y);
+  return computeRichTextCharIndexAtPoint(layout, x, y);
 }
 
 export function getRichTextDefaultTextFormat(source: Readonly<RichText>): Readonly<TextFormat> {
