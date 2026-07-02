@@ -41,9 +41,7 @@ Where it ends and a neighbor begins: the loader is the **scheduler**, not the **
 
 ## Decisions
 
-- **[2026-07-02] Missing types must be rebuilt.** The review (38/100) found 6 types imported from `@flighthq/types` that were never committed — likely lost work from another agent. These must be written to make the package compile. This is a blocking prerequisite.
-
-  **Why:** The package cannot compile without its types. The self-reported 92/100 was contradicted by the review.
+- **[2026-07-02] ~~Missing types~~ — false alarm.** Types were already present and correctly defined in `@flighthq/types`. The depth review was based on stale state. No action needed.
 
 - **[2026-07-02] Byte progress must be built, not cut.** `report.bytes` is always 0 and `onBytesProgress` is never called — structurally dead. The feature should be finished (requiring a factory signature change to inject byte reporting), not removed.
 
@@ -71,10 +69,8 @@ Where it ends and a neighbor begins: the loader is the **scheduler**, not the **
 
 3. **Byte progress factory signature.** Finishing byte progress requires the factory to accept a byte-reporting callback or context object. The current `() => Promise<T>` signature cannot report bytes. Shape of the extension (overload? options object? wrapper type?) needs design.
 
-4. **Missing types scope.** Which of the 6 missing types need to be written from scratch vs reconstructed from the source that imports them? `ResourceLoadItem`, `ResourceLoaderOptions`, `ResourceLoadHandle`, `ResourceLoadReport`, `ResourceLoader`, and the signal types.
+4. **Unknown-key sentinel.** `getResourceLoadItemStatus(loader, key)` returns `'pending'` for unknown keys. Should return `null` or gain an `'unknown'` status.
 
-5. **Unknown-key sentinel.** `getResourceLoadItemStatus(loader, key)` returns `'pending'` for unknown keys. Should return `null` or gain an `'unknown'` status.
+5. **Aggregated error surface.** Add a `ResourceLoadError[]` / failure summary on completion, or is filtering reports by status sufficient?
 
-6. **Aggregated error surface.** Add a `ResourceLoadError[]` / failure summary on completion, or is filtering reports by status sufficient?
-
-7. **Package Map update.** Current entry is `@flighthq/loader (batch queue)`. Expand.
+6. **Package Map update.** Current entry is `@flighthq/loader (batch queue)`. Expand.

@@ -39,9 +39,7 @@ status: ./status.md
 
 ## Decisions
 
-- **[2026-07-02] Missing types must be rebuilt.** 7 types imported from `@flighthq/types` were never committed: `LogContext`, `LogDataProvider`, `LogFormatter`, `LogSignals`, `LogSpan`, `LogTimer`, `LogTransportBackend`. Likely lost agent work. Blocking prerequisite.
-
-  **Why:** The package cannot compile without its types.
+- **[2026-07-02] ~~Missing types~~ — false alarm.** Types were already present and correctly defined in `@flighthq/types`. The depth review was based on stale state. No action needed.
 
 - **[2026-07-02] The 61-export single file should decompose.** Natural candidates: core log engine, sinks, formatters, timing/spans. The file is too large for one module.
 
