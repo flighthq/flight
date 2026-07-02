@@ -28,12 +28,13 @@
   },
   "dependencies": {
     "@flighthq/displayobject": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/node": "*",
     "@flighthq/image": "*",
+    "@flighthq/node": "*",
+    "@flighthq/signals": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/tileset": "*",
-    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

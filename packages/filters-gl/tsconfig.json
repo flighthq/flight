@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../filters-math" }, { "path": "../render-gl" }, { "path": "../types" }],
+  "references": [
+    { "path": "../filters-math" },
+    { "path": "../render-gl" },
+    { "path": "../surface" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }

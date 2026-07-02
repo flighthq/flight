@@ -29,13 +29,13 @@
   "dependencies": {
     "@flighthq/animation": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/materials": "*",
-    "@flighthq/mesh": "*",
     "typescript": "^5.3.0"
   },
   "description": "3D scene graph and spatial node hierarchy",

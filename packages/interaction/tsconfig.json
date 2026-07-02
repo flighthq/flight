@@ -10,9 +10,10 @@
   },
   "references": [
     { "path": "../geometry" },
-    { "path": "../materials" },
     { "path": "../node" },
     { "path": "../displayobject" },
+    { "path": "../shape" },
+    { "path": "../signals" },
     { "path": "../sprite" },
     { "path": "../types" }
   ],

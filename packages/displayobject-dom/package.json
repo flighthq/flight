@@ -41,6 +41,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/image": "*",
     "typescript": "^5.3.0"
   },
   "description": "DOM renderer implementation",

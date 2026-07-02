@@ -30,6 +30,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/math": "*",
     "@flighthq/node": "*",
+    "@flighthq/signals": "*",
     "@flighthq/sprite": "*",
     "@flighthq/types": "*"
   },
