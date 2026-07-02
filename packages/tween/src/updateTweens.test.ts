@@ -203,6 +203,39 @@ describe('updateTweens', () => {
     expect(target.x).toBe(0);
   });
 
+  it('emits onYoyo on direction flip with reflect', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t, repeat: 1, reflect: true });
+    let yoyos = 0;
+    connectSignal(tween.onYoyo, () => yoyos++);
+    updateTweens(manager, 1000);
+    expect(yoyos).toBe(1);
+  });
+
+  it('does not emit onYoyo without reflect', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t, repeat: 1 });
+    let yoyos = 0;
+    connectSignal(tween.onYoyo, () => yoyos++);
+    updateTweens(manager, 1000);
+    updateTweens(manager, 1000);
+    expect(yoyos).toBe(0);
+  });
+
+  it('emits onYoyo each reflect cycle', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t, repeat: 3, reflect: true });
+    let yoyos = 0;
+    connectSignal(tween.onYoyo, () => yoyos++);
+    updateTweens(manager, 1000);
+    updateTweens(manager, 1000);
+    updateTweens(manager, 1000);
+    expect(yoyos).toBe(3);
+  });
+
   it('repeat: -1 loops indefinitely without ever completing', () => {
     const manager = createTweenManager();
     const target = { x: 0 };

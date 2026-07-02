@@ -126,6 +126,7 @@ function makeTween<T extends object>(
     onComplete: createSignal(),
     onRepeat: createSignal(),
     onUpdate: createSignal(),
+    onYoyo: createSignal(),
     paused: false,
     properties,
     propertyMap,
