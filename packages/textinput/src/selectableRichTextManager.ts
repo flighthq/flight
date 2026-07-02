@@ -57,9 +57,7 @@ export function dispatchSelectableRichTextPointerDown(
     }
     return;
   }
-  const content = runtime.richTextContent;
-  const text = content?.text ?? target.data.text;
-  const index = computeRichTextCharIndexAtPoint(text, layout, x, y);
+  const index = computeRichTextCharIndexAtPoint(layout, x, y);
   if (extend) {
     runtime.selectionEndIndex = index;
   } else {
@@ -74,9 +72,7 @@ export function dispatchSelectableRichTextPointerMove(manager: SelectableRichTex
   const runtime = getMutableRuntime(target);
   const layout = runtime.textLayout;
   if (layout === null) return;
-  const content = runtime.richTextContent;
-  const text = content?.text ?? target.data.text;
-  runtime.selectionEndIndex = computeRichTextCharIndexAtPoint(text, layout, x, y);
+  runtime.selectionEndIndex = computeRichTextCharIndexAtPoint(layout, x, y);
 }
 
 export function dispatchSelectableRichTextWheel(manager: SelectableRichTextManager, deltaLines: number): void {
