@@ -1,5 +1,5 @@
 import { connectSignal } from '@flighthq/signals';
-import type { InputPointerData } from '@flighthq/types';
+import type { InputGamepadButtonData, InputPointerData } from '@flighthq/types';
 import { GamepadAxisKind, GamepadButtonKind, KeyCode, KeyModifier } from '@flighthq/types';
 
 import {
@@ -934,7 +934,7 @@ describe('pollGamepadInput', () => {
     vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
 
     let received: { button: number; gamepad: number } | null = null;
-    connectSignal(manager.onGamepadButtonDown, (data) => {
+    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
       received = { button: data.button, gamepad: data.gamepad };
     });
 
@@ -948,7 +948,7 @@ describe('pollGamepadInput', () => {
     vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
 
     let receivedTimeStamp = -1;
-    connectSignal(manager.onGamepadButtonDown, (data) => {
+    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
       receivedTimeStamp = data.timeStamp;
     });
 

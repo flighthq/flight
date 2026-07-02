@@ -52,7 +52,7 @@ export function getFontMetricsInto(format: Readonly<TextFormat>, out: FontMetric
 export function getFontUnitScale(format: Readonly<TextFormat>): number {
   const metrics = getFontMetrics(format);
   if (metrics === null) return -1;
-  const size = (format as { size?: number }).size ?? 12;
+  const size = format.size ?? 12;
   return size / metrics.unitsPerEm;
 }
 
@@ -64,7 +64,7 @@ export function getGlyphExtents(glyphId: number, _format: Readonly<TextFormat>):
 
 export function getGlyphExtentsBatch(
   glyphIds: ReadonlyArray<number>,
-  format: Readonly<TextFormat>,
+  _format: Readonly<TextFormat>,
   out: GlyphExtents[],
 ): number {
   const backend = getTextShaperBackend();
@@ -82,8 +82,8 @@ export function getGlyphExtentsBatch(
   return resolved;
 }
 
-export function getGlyphExtentsInto(glyphId: number, format: Readonly<TextFormat>, out: GlyphExtents): boolean {
-  const extents = getGlyphExtents(glyphId, format);
+export function getGlyphExtentsInto(glyphId: number, _format: Readonly<TextFormat>, out: GlyphExtents): boolean {
+  const extents = getGlyphExtents(glyphId, _format);
   if (extents === null) return false;
   out.height = extents.height;
   out.width = extents.width;
@@ -110,10 +110,15 @@ export function shapeTextRun(text: string, format: Readonly<TextFormat>, options
   return backend.shapeRun(text, format, options);
 }
 
-export function shapeTextRunInto(text: string, format: Readonly<TextFormat>, out: ShapedRun): boolean {
+export function shapeTextRunInto(
+  text: string,
+  format: Readonly<TextFormat>,
+  out: ShapedRun,
+  options?: ShapeRunOptions,
+): boolean {
   const backend = getTextShaperBackend();
   if (backend === null || !backend.shapeRun) return false;
-  const result = backend.shapeRun(text, format);
+  const result = backend.shapeRun(text, format, options);
   const glyphs = out.glyphs;
   out.advanceWidth = result.advanceWidth;
   out.direction = result.direction;
