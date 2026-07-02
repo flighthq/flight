@@ -1,55 +1,42 @@
 ---
 package: '@flighthq/shape'
-updated: 2026-06-24
+updated: 2026-07-02
 basedOn: ./review.md
 ---
 
 # shape — Assessment
 
-Sorted from `review.md` (score `solid — 84`). The prior `reviews/depth/shape.md` / `reviews/maturation/depth/shape.md` roadmap no longer exists in the tree (the review confirms it was already absorbed and superseded), so `review.md` is the sole evidence. The charter is still a stub — North star, Boundaries, and Decisions are all `TODO` — so most of "what good means here" is an open design question, which keeps `Recommended` deliberately small: the genuinely sweep-safe items are the two false in-source doc claims and a couple of degenerate-input policies. Every structural fork the review raises (fork B closed-switch-vs-registry, scale-9 feature-vs-field, stroke-geometry ownership, the `shape-formats` neighbor, the `@flighthq/path` flatten seam) is a charter decision or crosses a package boundary, so it is routed to the charter's Open directions, not into `Recommended`.
+Sorted from the depth review (solid, 78/100), the builder's as-claimed expansion (partially landed — command vocabulary and hit-test builtins present, but cubic extrema, per-span stroke bounds, and shapeGraphicsData are absent in the live tree), and the direction session (2026-07-02). Five decisions blessed. The command vocabulary is broad (43 exports, 92 tests). The key correctness gaps are: cubic bounds using control-point hull, global stroke expansion, drawTriangles unhandled in bounds/fill, and drawPath winding hardcoded.
 
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/shape`, no cross-package coupling, no breaking change, no open design decision.
+Sweep-safe correctness fixes and the missing typed round-trip — all within `@flighthq/shape`, no open design decision.
 
-- **Fix the false `forEachShapeCommand` allocation doc.** The header comment claims "Does not allocate; the record object is reused across calls (do not hold a reference between calls)," but `shapeGraphicsData.ts` allocates a fresh `{ key, args }` record _and_ a fresh `commands.slice(...)` args array every call (and `getShapeGraphicsData`'s own inline comment already contradicts it). Correct the comment to state it allocates per call (and drop the now-meaningless "do not hold a reference" warning). A pure in-source doc fix — no signature change. — review.md (Contract & docs fit, defect 1).
-
-- **Remove/replace the meaningless `getShapeBounds` aliasing comment.** The comment says "`out` may alias the shape if needed (the shape is read-only here)," but `out: Rectangle` and `source: Shape` are different types that cannot alias — boilerplate copied from a true alias-safe function. Remove it or replace it with the real invariant (bounds is computed into `out` with no reads of `out`). In-source comment fix only. — review.md (Contract & docs fit, defect 2).
-
-- **Define and document a degenerate-input policy for the append helpers (within current behavior).** The status's own live concerns name two concrete cases already in the code: `appendShapePolygon` silently skips a trailing odd coordinate (`k < points.length - 1`, step 2), and `appendShapeArcTo` has a near-anti-parallel bisector edge case. These are within-package and need no design ruling — pin the behavior down (document the silent-skip as intentional or guard it; document/clamp the bisector degeneracy) and add a colocated test for each so the policy is enforced, not incidental. Broader degenerate cases (zero/negative radius, NaN/Infinity, self-intersecting fills) can fold into the same policy as their behavior is decided. — review.md (Gaps: "Robustness unspecified"; Notes for status verification).
+- **Exact cubic bezier extrema in `computeShapeLocalBoundsRectangle`.** Replace the control-point hull for `cubicCurveTo` (and `drawPath` `CUBIC_CURVE_TO`) with derivative-root solving (the quadratic-in-t roots of the cubic derivative per axis), matching the existing quadratic-extrema treatment. Pure correctness fix.
+- **Per-span stroke-aware bounds.** Track active `strokeWidth` per fill/stroke span and apply `strokeHalf` at each point inside `expand()`, so two segments of different thickness each get their own expansion. Currently uses global last-style expansion at the end.
+- **Handle `drawTriangles` in bounds and fill.** Bounds: vertex sweep in `computeShapeLocalBoundsRectangle`. Fill: `hasNonSolidShapeFill` should treat `drawTriangles` with `uvtData` as non-solid. `getShapeFillRegions` should ignore drawTriangles entries (they are render-only commands in the fill path).
+- **Honor `drawPath` winding in `getShapeFillRegions`.** Stop hardcoding `winding: 'nonZero'`; carry the per-`drawPath` `PathWinding` into the emitted `ShapeFillRegion.path.winding`. Default pen-path fills to `'nonZero'` explicitly.
+- **Remove the meaningless `getShapeBounds` aliasing comment.** `out: Rectangle` and `source: Readonly<Shape>` cannot alias — the comment is boilerplate from a true alias-safe function. Remove it.
+- **Typed readback/round-trip: `shapeGraphicsData.ts`.** New file with three functions:
+  - `getShapeGraphicsData(source: Readonly<Shape>): readonly ShapeGraphicsRecord[]` — typed decoder over the flat buffer.
+  - `forEachShapeCommand(source: Readonly<Shape>, visitor: (record: Readonly<ShapeGraphicsRecord>) => void): void` — typed walk. Decide whether to allocate per call or reuse a scratch record (document the contract either way).
+  - `appendShapeGraphicsData(shape: Shape, records: readonly Readonly<ShapeGraphicsRecord>[]): void` — typed write/replay.
+  - Requires `ShapeGraphicsRecord` discriminated union in `@flighthq/types` (keyed by `ShapeCommandKey` over the existing `ShapeCommandRegistry`).
+- **Add `@flighthq/path` as a dependency.** Per Decision #4, shape should depend on path. Centralize the KAPPA constant and any shared curve seam rather than re-deriving locally.
 
 ## Backlog
 
-Parked: needs a charter decision, crosses a package boundary, belongs to another doc's owner, or is larger than a sweep. Each carries why.
+Parked — each with the reason it is not sweep-safe.
 
-- **Scale-9 distortion behavior** (`computeScale9ShapeLocalBoundsRectangle` + command rewriting under the grid). Today `Scale9Shape` stores a grid but nothing stretches anything. **Parked:** the charter names scale-9 as identity while the code provides only storage — whether shape _owns_ the distortion or it belongs to the renderers/a neighbor is an Open direction (routed below), not a sweep.
-
-- **Stroke outline geometry + stroke hit-testing** (caps/joints/miter as geometry; hit a thin stroked line with no fill). **Parked:** ownership is an open design fork — stroke-to-outline may be a `@flighthq/path` concern shape only references. Routed to Open directions.
-
-- **Fork B: open the bounds/fill command dispatch into a registry (or bless the closed switch).** `computeShapeLocalBoundsRectangle`, `getShapeFillRegions`, and `hasNonSolidShapeFill` use a closed `switch(key)` while hit-testing uses an open registry — the package's clearest fork-fit drift. Per [structural fork B](../structural-forks.md#b-closed-union-vs-open-registry-decided-with-nuance) the default is a registry, but the family is small and stable so the closed switch is a defensible "tight loop in a closed system" exception. **Parked:** this is exactly an API-shape design decision the charter must record — not sweep-safe. Routed to Open directions.
-
-- **`@flighthq/shape-formats` neighbor + stable JSON serialization** (`serialize*`/`parse*`, a versioned `ShapeCommandJson` schema). **Parked:** cross-package (new triad cell) and needs a schema decision coordinated with the types-layout owner; correctly deferred under the triad/plurality guard. Routed to Open directions.
-
-- **Shared flattening/tolerance seam + `@flighthq/path` dependency.** Bounds, fill, and hit-test each re-derive curve math with their own constants (KAPPA, arc α, analytic extrema). **Parked:** cross-package — centralizing tolerance implies a `path` dependency, a boundary decision. Routed to Open directions.
-
-- **Typed-array / pooled hot buffer variant** (replace or supplement the `unknown[]` command buffer; `acquire*/release*` for `ShapeFillRegion`). **Parked:** larger than a sweep and affects the Rust `flighthq-shape` mirror's representation — a representation decision, Gold-tier. Routed to Open directions (buffer representation).
-
-- **Split `ShapeGraphicsRecord` / hit-test command types out of `ShapeCommand.ts`** (one-concept- per-file: `ShapeGraphicsRecord.ts` / `ShapeHitTestCommand.ts`). **Parked:** the file lives in `@flighthq/types`; this is a candidate revision for the types-layout owner, not within `shape`.
-
-- **Graphics parity holes** — `beginShaderFill`/`lineShaderStyle`, `drawQuads`/`drawTiles`. **Parked:** `drawQuads`/`drawTiles` overlap `@flighthq/sprite` (cross-package); shader fills depend on the materials/shader seam. Out of a within-package sweep.
+- **Scale-9 distortion behavior.** _Parked — design unsettled._ Whether shape owns command rewriting under `scale9Grid` is Open direction #1.
+- **`@flighthq/shape-formats` neighbor package.** _Parked — new package._ Blessed (Decision #3), but the JSON schema, SVG export surface, and the `-formats` scope need design. Cross-package.
+- **Stroke hit-testing.** _Parked — cross-package._ Composes shape (style data) + path (stroke outline expansion) + interaction (hit dispatch). Per Decision #2, stroke-to-geometry is path's concern.
+- **Robustness policy.** _Parked — design unsettled._ Open direction #3.
+- **Flatten-consistency refactor.** _Parked — cross-package._ Centralizing curve constants and flattening tolerance across bounds/fill/hit-test passes. The path dependency (Decision #4) unblocks this but the refactor scope is larger than a sweep.
+- **`ShapeGraphicsRecord` / hit-test types split from `ShapeCommand.ts`.** _Parked — types-layout owner._ One-concept-per-file candidate revision in `@flighthq/types`.
+- **Graphics parity holes.** _Parked — cross-package._ `beginShaderFill`/`lineShaderStyle` (needs materials seam), `drawQuads`/`drawTiles` (overlap with sprite).
+- **Rust `flighthq-shape` crate.** _Parked — cross-worktree._ Open direction #4.
 
 ## Approved
 
-_None. Approval is the user's verbal gate; this section is frozen only on explicit approval._
-
-## Notes for the charter's Open directions
-
-Surfaced for an explicit direction conversation (do not edit the charter here). The review already enumerates these as candidate Open directions; the assessment confirms they are the design forks that keep the bulk of the backlog parked:
-
-1. **North star** — confirm the durable bar (likely: exact analytic measurement / no flattening for bounds, a closed stable buffer format, tessellation delegated to `@flighthq/path`).
-2. **Fork B for bounds/fill** — bless the closed `switch` as the intentional tight-loop exception, or commit to a uniform command registry across bounds/fill/hit-test (resolve the hit-test/bounds asymmetry).
-3. **Scale-9: feature or field** — does `shape` own scale-9 distortion (command rewriting + `computeScale9ShapeLocalBoundsRectangle`) or only storage?
-4. **Stroke geometry ownership** — does `shape` produce/hit-test stroke outlines, or is that a `@flighthq/path` concern it references?
-5. **`shape-formats` neighbor** — approve/deny the JSON serialization neighbor and its versioned schema (coordinate with the types-layout owner).
-6. **Flatten-consistency / `@flighthq/path` dependency** — centralize curve-flattening tolerance and the KAPPA/arc-α constants in a shared seam? (cross-package)
-7. **Buffer representation** — keep `unknown[]`, or add a typed-array/pooled hot variant (affects the Rust mirror).
+- [2026-07-02 · picked] Correctness sweep: exact cubic bounds, per-span stroke bounds, drawTriangles in bounds/fill, honor drawPath winding, remove getShapeBounds aliasing comment, typed readback/round-trip (shapeGraphicsData.ts + ShapeGraphicsRecord type), add path dependency
