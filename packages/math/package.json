@@ -32,6 +32,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "General math utilities: seeded random and power-of-two rounding",
+  "description": "Scalar numeric utilities — interpolation, clamping, angles, rounding, randomness, hashing, statistics, and number theory",
   "sideEffects": false
 }

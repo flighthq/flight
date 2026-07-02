@@ -53,7 +53,8 @@ export function isOdd(n: number): boolean {
 /** Return the least common multiple of `a` and `b`.
  *
  *  Operates on the absolute values of the inputs. Throws when both `a` and
- *  `b` are `0` (see `gcd`).
+ *  `b` are `0` (see `gcd`). For very large inputs, the result may exceed
+ *  `Number.MAX_SAFE_INTEGER` and lose precision.
  */
 export function lcm(a: number, b: number): number {
   const g = gcd(a, b);
