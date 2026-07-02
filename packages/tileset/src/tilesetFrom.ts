@@ -1,7 +1,7 @@
 import {
-  loadImageResourceFromArrayBuffer,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
+  loadImageResourceFromBytes,
   loadImageResourceFromUrl,
 } from '@flighthq/image';
 import { createTextureAtlas } from '@flighthq/textureatlas';
@@ -39,20 +39,6 @@ export function createTilesetFromImageResource(
   return createTilesetFromAtlas(createTextureAtlas({ image: resource }), tileWidth, tileHeight, margin, spacing);
 }
 
-export async function loadTilesetFromArrayBuffer(
-  buffer: ArrayBuffer,
-  tileWidth: number,
-  tileHeight: number,
-  mimeType?: string,
-  signal?: AbortSignal,
-): Promise<Tileset> {
-  return createTilesetFromImageResource(
-    await loadImageResourceFromArrayBuffer(buffer, mimeType, signal),
-    tileWidth,
-    tileHeight,
-  );
-}
-
 export async function loadTilesetFromBase64(
   base64: string,
   mimeType: string,
@@ -74,6 +60,20 @@ export async function loadTilesetFromBlob(
   signal?: AbortSignal,
 ): Promise<Tileset> {
   return createTilesetFromImageResource(await loadImageResourceFromBlob(blob, signal), tileWidth, tileHeight);
+}
+
+export async function loadTilesetFromBytes(
+  bytes: Uint8Array,
+  tileWidth: number,
+  tileHeight: number,
+  mimeType?: string,
+  signal?: AbortSignal,
+): Promise<Tileset> {
+  return createTilesetFromImageResource(
+    await loadImageResourceFromBytes(bytes, mimeType, signal),
+    tileWidth,
+    tileHeight,
+  );
 }
 
 export async function loadTilesetFromUrl(

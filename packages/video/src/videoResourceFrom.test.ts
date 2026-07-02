@@ -1,23 +1,4 @@
-import {
-  createVideoResourceFromUrl,
-  createVideoResourceFromUrls,
-  loadVideoResourceFromUrl,
-  loadVideoResourceFromUrls,
-} from './videoResourceFrom';
-
-describe('createVideoResourceFromUrl', () => {
-  it('returns a VideoResource with a non-null element', () => {
-    const resource = createVideoResourceFromUrl('test.mp4');
-    expect(resource.element).not.toBeNull();
-  });
-});
-
-describe('createVideoResourceFromUrls', () => {
-  it('returns a VideoResource with null element when sources is empty', () => {
-    const resource = createVideoResourceFromUrls([]);
-    expect(resource.element).toBeNull();
-  });
-});
+import { loadVideoResourceFromUrl, loadVideoResourceFromUrls } from './videoResourceFrom';
 
 describe('loadVideoResourceFromUrl', () => {
   it('returns a Promise', () => {
@@ -48,8 +29,6 @@ describe('loadVideoResourceFromUrls', () => {
   });
 
   it('resolves to a null-element resource when no source passes canPlayType in jsdom', async () => {
-    // jsdom does not implement canPlayType — it returns '' for all sources,
-    // so no source is selected and the loader resolves with a null-element resource.
     const resource = await loadVideoResourceFromUrls([{ url: 'test.mp4' }]);
     expect(resource.element).toBeNull();
   });

@@ -4,9 +4,9 @@ import {
   createImageResourceFromImageElement,
   detectImageMimeType,
   isImageResourceSameOrigin,
-  loadImageResourceFromArrayBuffer,
   loadImageResourceFromBase64,
   loadImageResourceFromBlob,
+  loadImageResourceFromBytes,
   loadImageResourceFromUrl,
 } from './imageResourceFrom';
 
@@ -161,34 +161,6 @@ describe('isImageResourceSameOrigin', () => {
   });
 });
 
-describe('loadImageResourceFromArrayBuffer', () => {
-  it('throws when mime type cannot be detected and none is provided', async () => {
-    const buf = new ArrayBuffer(16);
-    new Uint8Array(buf).set([0x00, 0x01, 0x02, 0x03]);
-    await expect(loadImageResourceFromArrayBuffer(buf)).rejects.toThrow('Unable to determine image type');
-  });
-
-  it('uses the provided mimeType and bypasses detection', async () => {
-    const buf = new ArrayBuffer(16);
-    const resource = await loadImageResourceFromArrayBuffer(buf, 'image/png');
-    expect(resource.source).toBeInstanceOf(HTMLImageElement);
-  });
-
-  it('detects PNG and resolves', async () => {
-    const buf = new ArrayBuffer(16);
-    new Uint8Array(buf).set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const resource = await loadImageResourceFromArrayBuffer(buf);
-    expect(resource.source).toBeInstanceOf(HTMLImageElement);
-  });
-
-  it('detects JPEG and resolves', async () => {
-    const buf = new ArrayBuffer(16);
-    new Uint8Array(buf).set([0xff, 0xd8, 0xff, 0xe0]);
-    const resource = await loadImageResourceFromArrayBuffer(buf);
-    expect(resource.source).toBeInstanceOf(HTMLImageElement);
-  });
-});
-
 describe('loadImageResourceFromBase64', () => {
   it('resolves to an ImageResource', async () => {
     const resource = await loadImageResourceFromBase64('abc123', 'image/png');
@@ -223,6 +195,31 @@ describe('loadImageResourceFromBlob', () => {
     const blob = new Blob([], { type: 'image/png' });
     await expect(loadImageResourceFromBlob(blob)).rejects.toThrow('load failed');
     expect(revokeSpy).toHaveBeenCalledOnce();
+  });
+});
+
+describe('loadImageResourceFromBytes', () => {
+  it('throws when mime type cannot be detected and none is provided', async () => {
+    const bytes = new Uint8Array([0x00, 0x01, 0x02, 0x03]);
+    await expect(loadImageResourceFromBytes(bytes)).rejects.toThrow('Unable to determine image type');
+  });
+
+  it('uses the provided mimeType and bypasses detection', async () => {
+    const bytes = new Uint8Array(16);
+    const resource = await loadImageResourceFromBytes(bytes, 'image/png');
+    expect(resource.source).toBeInstanceOf(HTMLImageElement);
+  });
+
+  it('detects PNG and resolves', async () => {
+    const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const resource = await loadImageResourceFromBytes(bytes);
+    expect(resource.source).toBeInstanceOf(HTMLImageElement);
+  });
+
+  it('detects JPEG and resolves', async () => {
+    const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const resource = await loadImageResourceFromBytes(bytes);
+    expect(resource.source).toBeInstanceOf(HTMLImageElement);
   });
 });
 

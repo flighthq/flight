@@ -1,6 +1,6 @@
 import { createFontResource } from './fontResource';
 import {
-  loadFontResourceFromArrayBuffer,
+  loadFontResourceFromBytes,
   loadFontResourceFromName,
   loadFontResourceFromUrl,
   loadFontResourceFromUrls,
@@ -30,10 +30,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('loadFontResourceFromArrayBuffer', () => {
+describe('loadFontResourceFromBytes', () => {
   it('loads the face and attaches it to the resource', async () => {
     const resource = createFontResource('TestFont');
-    const result = await loadFontResourceFromArrayBuffer(resource, new ArrayBuffer(8));
+    const result = await loadFontResourceFromBytes(resource, new Uint8Array(8));
     expect(result).toBe(resource);
     expect(resource.face).toBe(mockFace);
     expect(mockFace.load).toHaveBeenCalledOnce();

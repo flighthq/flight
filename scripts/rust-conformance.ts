@@ -231,7 +231,6 @@ const WEB_PACKAGES = new Set([
 // are web-relocated for the same reason as the host suite.
 function isDomBoundFunction(fn: string): boolean {
   if (/From(DOM|Canvas|ImageBitmap|ImageElement|Blob|Base64|Name)/.test(fn)) return true;
-  if (/^getAudioContext$/.test(fn)) return true;
   if (/(ImageResourceSource|ImageResourceSameOrigin)/.test(fn)) return true;
   if (/^createSurfaceFromCanvas$/.test(fn)) return true;
   if (/^connectInputToTextInput$/.test(fn)) return true;

@@ -54,11 +54,13 @@ export class PiratePigGame {
   private tiles: (Tile | null)[][];
   private usedTiles: Tile[] = [];
   private tileImages: ImageResource[];
+  private audioContext: AudioContext;
   private sounds: AudioResource[];
   private manager: TweenManager;
   private needToCheckMatches: boolean = false;
 
   constructor(
+    audioContext: AudioContext,
     manager: TweenManager,
     interactionManager: InteractionManager<DisplayObject>,
     tileImages: ImageResource[],
@@ -67,6 +69,7 @@ export class PiratePigGame {
     sounds: AudioResource[],
     interactionOptions?: TileInteractionOptions,
   ) {
+    this.audioContext = audioContext;
     this.manager = manager;
     this.interaction = interactionManager;
     this.interactionOptions = interactionOptions;
@@ -117,7 +120,7 @@ export class PiratePigGame {
       }
     }
 
-    playAudioResource(this.sounds[0]);
+    playAudioResource(this.audioContext, this.sounds[0]);
     this.needToCheckMatches = true;
   }
 
@@ -248,9 +251,9 @@ export class PiratePigGame {
         if (run.length >= 3) {
           if (accumulateScore) {
             const n = run.length;
-            if (n > 4) playAudioResource(this.sounds[3]);
-            else if (n > 3) playAudioResource(this.sounds[2]);
-            else playAudioResource(this.sounds[1]);
+            if (n > 4) playAudioResource(this.audioContext, this.sounds[3]);
+            else if (n > 3) playAudioResource(this.audioContext, this.sounds[2]);
+            else playAudioResource(this.audioContext, this.sounds[1]);
             this.currentScore += Math.round(Math.pow(n - 1, 2) * 50);
           }
           for (const t of run) matched.push(t);
