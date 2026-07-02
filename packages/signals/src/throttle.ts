@@ -49,12 +49,6 @@ export function connectSignalAtFrameRate(
 }
 
 /**
- * @deprecated Renamed to `connectSignalAtFrameRate`. Will be removed in a
- * future release.
- */
-export const connectSignalAtRate = connectSignalAtFrameRate;
-
-/**
  * Connects a slot to a signal with debounce semantics: the slot fires only
  * after the signal has been quiet for `delayMs` milliseconds. Each emission
  * resets the timer. Returns a cleanup function.
