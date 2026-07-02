@@ -1,7 +1,7 @@
 ﻿import { computeRgbHexString } from '@flighthq/materials';
-import { computeTextFormatFontString } from '@flighthq/render';
 import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl';
 import { resolveGlShader } from '@flighthq/render-gl';
+import { computeTextFormatFontString } from '@flighthq/text';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
   computeRichTextContent,

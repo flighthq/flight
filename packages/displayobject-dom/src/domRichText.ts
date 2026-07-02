@@ -1,6 +1,6 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import { computeRgbHexString } from '@flighthq/materials';
-import { computeTextFormatFontString } from '@flighthq/render';
+import { computeTextFormatFontString } from '@flighthq/text';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
   computeRichTextContent,
