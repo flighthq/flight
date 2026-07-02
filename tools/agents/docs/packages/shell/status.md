@@ -14,7 +14,7 @@ Executed the sweep-safe items from `assessment.md › Recommended` that fall str
 
 Done:
 
-- **URL-safety security note on `openExternalUrl`.** Extended the source doc-comment to spell out the attacker-controlled-URL footgun (a non-http(s) scheme launching a local app / protocol handler) and to point at `setShellUrlSchemeAllowlist` and `isShellUrlAllowed` as the gate. Prose-only; no signature or behavior change. `packages/shell/src/shell.ts`.
+- **URL-safety security note on `openShellExternalUrl`.** Extended the source doc-comment to spell out the attacker-controlled-URL footgun (a non-http(s) scheme launching a local app / protocol handler) and to point at `setShellUrlSchemeAllowlist` and `isShellUrlAllowed` as the gate. Prose-only; no signature or behavior change. `packages/shell/src/shell.ts`.
 
 Verification: `npm run test --workspace=packages/shell` — 32 tests pass.
 
@@ -33,7 +33,7 @@ Parked:
 
 ### New types in `@flighthq/types` (`packages/types/src/Shell.ts`)
 
-- `ShellOpenExternalOptions` — `{ activate?: boolean }`. Controls macOS foreground raise when opening a URL. Added as an optional second parameter to `ShellBackend.openExternal` and `openExternalUrl`.
+- `ShellOpenExternalOptions` — `{ activate?: boolean }`. Controls macOS foreground raise when opening a URL. Added as an optional second parameter to `ShellBackend.openExternal` and `openShellExternalUrl`.
 - `ShellOpenPathOptions` — `{ workingDirectory?: string; application?: string; arguments?: readonly string[] }`. Covers Electron's open-with, macOS `open -a`, and working directory control. Added to `ShellBackend.openPath` / `openPathResult` and `openShellPath` / `openShellPathResult`.
 - `ShellShortcutLink` — full Windows `.lnk` descriptor: `target`, `args`, `description`, `cwd`, `icon`, `iconIndex`, `appUserModelId`.
 - `ShellShortcutWriteOperation` — `'create' | 'replace' | 'update'`. Write mode for `writeShellShortcutLink`.
@@ -43,7 +43,7 @@ Parked:
 
 - `isShellUrlAllowed(url): boolean` — new. Checks a URL against the active scheme allowlist; false when the URL cannot be parsed.
 - `moveItemsToTrash(paths: readonly string[]): Promise<readonly boolean[]>` — new. Batch trash with per-path results. Web returns `[]` sentinel.
-- `openExternalUrl(url, options?)` — updated. Now accepts `ShellOpenExternalOptions`; consults the allowlist before calling the backend (returns `false` immediately for blocked schemes).
+- `openShellExternalUrl(url, options?)` — updated. Now accepts `ShellOpenExternalOptions`; consults the allowlist before calling the backend (returns `false` immediately for blocked schemes).
 - `openShellPath(path, options?)` — updated. Now accepts `ShellOpenPathOptions`.
 - `openShellPathResult(path, options?): Promise<string>` — new. Returns `''` on success or an OS error message on failure. Web returns `'unavailable on web'`. Mirrors Electron's `openPath` string convention.
 - `readShellShortcutLink(shortcutPath): Promise<ShellShortcutLink | null>` — new. Windows `.lnk` read; null on non-Windows, web, or missing file.
@@ -66,7 +66,7 @@ Parked:
 
 ### Naming-consistency decision (design item — surface to user)
 
-The exported API mixes `openExternalUrl` / `showItemInFolder` / `moveItemToTrash` (Electron-canonical, no domain prefix) with `openShellPath` / `shellBeep` / `getShellBackend` (domain-prefixed). The maturation roadmap calls this out as a deliberate pre-release decision. Recommendation: keep the Electron-canonical names for the four highest-frequency operations (they are immediately recognizable to Electron developers — a large migration pool) and retain the `shell*` prefix only for functions without a well-known Electron peer (`shellBeep`, `getShellBackend`, `setShellBackend`). This is a design call that should be recorded explicitly before Gold; not acted on autonomously.
+The exported API mixes `openShellExternalUrl` / `showItemInFolder` / `moveItemToTrash` (Electron-canonical, no domain prefix) with `openShellPath` / `shellBeep` / `getShellBackend` (domain-prefixed). The maturation roadmap calls this out as a deliberate pre-release decision. Recommendation: keep the Electron-canonical names for the four highest-frequency operations (they are immediately recognizable to Electron developers — a large migration pool) and retain the `shell*` prefix only for functions without a well-known Electron peer (`shellBeep`, `getShellBackend`, `setShellBackend`). This is a design call that should be recorded explicitly before Gold; not acted on autonomously.
 
 ### `getFileIcon` (design item — cross-package)
 

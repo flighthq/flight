@@ -33,9 +33,6 @@ import {
   screenToDipRect,
   setScreenBackend,
 } from './screen';
-
-// --- helpers ---
-
 function makeScreenInfo(overrides: Partial<ScreenInfo> = {}): ScreenInfo {
   return { ...createScreenInfo(), ...overrides };
 }
@@ -83,9 +80,6 @@ function fakeBackend(screens: Partial<ScreenInfo>[]): ScreenBackend & {
 }
 
 afterEach(() => setScreenBackend(null));
-
-// --- attachScreenSignals ---
-
 describe('attachScreenSignals', () => {
   it('fans out ScreenAdded to onScreenAdded signal', () => {
     const backend = fakeBackend([{ width: 1920, height: 1080 }]);
@@ -137,9 +131,6 @@ describe('attachScreenSignals', () => {
     detachScreenSignals(signals);
   });
 });
-
-// --- createScreenInfo ---
-
 describe('createScreenInfo', () => {
   it('allocates with scaleFactor 1 and isPrimary false', () => {
     const info = createScreenInfo();
@@ -169,9 +160,6 @@ describe('createScreenInfo', () => {
     expect(info.orientation).toBe('Landscape');
   });
 });
-
-// --- createScreenMode ---
-
 describe('createScreenMode', () => {
   it('allocates with sentinel fields', () => {
     const mode = createScreenMode();
@@ -182,9 +170,6 @@ describe('createScreenMode', () => {
     expect(mode.pixelFormat).toBe('');
   });
 });
-
-// --- createScreenSignals ---
-
 describe('createScreenSignals', () => {
   it('allocates inert signals', () => {
     const signals = createScreenSignals();
@@ -193,9 +178,6 @@ describe('createScreenSignals', () => {
     expect(signals.onScreenMetricsChanged).toBeDefined();
   });
 });
-
-// --- createWebScreenBackend ---
-
 describe('createWebScreenBackend', () => {
   it('returns a backend whose reads fill out without throwing', () => {
     const backend = createWebScreenBackend();
@@ -382,9 +364,6 @@ describe('createWebScreenBackend', () => {
     expect(out.refreshRate).toBe(120);
   });
 });
-
-// --- detachScreenSignals ---
-
 describe('detachScreenSignals', () => {
   it('stops delivery after detach', () => {
     const backend = fakeBackend([{}]);
@@ -404,9 +383,6 @@ describe('detachScreenSignals', () => {
     expect(() => detachScreenSignals(signals)).not.toThrow();
   });
 });
-
-// --- dipToScreenPoint ---
-
 describe('dipToScreenPoint', () => {
   it('converts DIP to physical pixels', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
@@ -432,9 +408,6 @@ describe('dipToScreenPoint', () => {
     expect(point.y).toBe(30);
   });
 });
-
-// --- dipToScreenRect ---
-
 describe('dipToScreenRect', () => {
   it('scales and offsets the rect', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
@@ -456,9 +429,6 @@ describe('dipToScreenRect', () => {
     expect(rect.height).toBe(60);
   });
 });
-
-// --- disposeScreenSignals ---
-
 describe('disposeScreenSignals', () => {
   it('stops delivery and is safe to call multiple times', () => {
     const backend = fakeBackend([{}]);
@@ -469,9 +439,6 @@ describe('disposeScreenSignals', () => {
     expect(() => disposeScreenSignals(signals)).not.toThrow();
   });
 });
-
-// --- enableScreenSignals ---
-
 describe('enableScreenSignals', () => {
   it('returns a ScreenSignals group with inert signals', () => {
     const signals = enableScreenSignals();
@@ -480,9 +447,6 @@ describe('enableScreenSignals', () => {
     expect(signals.onScreenRemoved).toBeDefined();
   });
 });
-
-// --- getScreenBounds ---
-
 describe('getPrimaryScreen', () => {
   it('fills and returns the passed out object', () => {
     setScreenBackend(fakeBackend([{ width: 1920, isPrimary: true }]));
@@ -492,9 +456,6 @@ describe('getPrimaryScreen', () => {
     expect(out.isPrimary).toBe(true);
   });
 });
-
-// --- getScreenById ---
-
 describe('getScreenBackend', () => {
   it('falls back to a web backend', () => {
     expect(getScreenBackend()).not.toBeNull();
@@ -506,9 +467,6 @@ describe('getScreenBackend', () => {
     expect(getScreenBackend()).toBe(backend);
   });
 });
-
-// --- getScreenContainingRect ---
-
 describe('getScreenBounds', () => {
   it('fills out with screen x/y/width/height', () => {
     const screen = makeScreenInfo({ x: 10, y: 20, width: 1920, height: 1080 });
@@ -521,9 +479,6 @@ describe('getScreenBounds', () => {
     expect(out.height).toBe(1080);
   });
 });
-
-// --- getScreenCursorPosition ---
-
 describe('getScreenById', () => {
   it('returns the screen with matching id', () => {
     setScreenBackend(fakeBackend([{ width: 1920 }, { width: 2560 }]));
@@ -539,9 +494,6 @@ describe('getScreenById', () => {
     expect(getScreenById(99, out)).toBeNull();
   });
 });
-
-// --- getScreenCursorScreen ---
-
 describe('getScreenContainingRect', () => {
   it('returns the screen with the most overlap', () => {
     setScreenBackend(
@@ -569,9 +521,6 @@ describe('getScreenContainingRect', () => {
     expect(out.id).toBe(1);
   });
 });
-
-// --- getScreenCurrentMode ---
-
 describe('getScreenCurrentMode', () => {
   it('derives a mode from the screen fields', () => {
     const screen = makeScreenInfo({ width: 2560, height: 1440, refreshRate: 144, colorDepth: 32 });
@@ -584,9 +533,6 @@ describe('getScreenCurrentMode', () => {
     expect(out.colorDepth).toBe(32);
   });
 });
-
-// --- getScreenDetailPermission ---
-
 describe('getScreenCursorPosition', () => {
   it('returns a point using the backend getCursorPosition', () => {
     setScreenBackend(fakeBackend([{}]));
@@ -606,9 +552,6 @@ describe('getScreenCursorPosition', () => {
     expect(typeof out.y).toBe('number');
   });
 });
-
-// --- getScreenModes ---
-
 describe('getScreenCursorScreen', () => {
   it('returns the screen nearest to the cursor position', () => {
     const backend = fakeBackend([
@@ -627,9 +570,6 @@ describe('getScreenCursorScreen', () => {
     expect(out.id).toBe(1);
   });
 });
-
-// --- getScreenNearestPoint ---
-
 describe('getScreenDetailPermission', () => {
   it('returns a valid permission state string without throwing', async () => {
     const state = await getScreenDetailPermission();
@@ -642,9 +582,6 @@ describe('getScreenDetailPermission', () => {
     expect(state).toBe('prompt');
   });
 });
-
-// --- getScreenNearestRect ---
-
 describe('getScreenModes', () => {
   it('calls getModes on the backend when available', () => {
     const modes: ScreenMode[] = [{ width: 1920, height: 1080, refreshRate: 60, colorDepth: 32, pixelFormat: '' }];
@@ -673,9 +610,6 @@ describe('getScreenModes', () => {
     expect(out[0].width).toBe(3840);
   });
 });
-
-// --- getScreenWorkArea ---
-
 describe('getScreenNearestPoint', () => {
   it('returns the screen that contains the point', () => {
     setScreenBackend(
@@ -702,9 +636,6 @@ describe('getScreenNearestPoint', () => {
     expect(out.id).toBe(1);
   });
 });
-
-// --- getPrimaryScreen ---
-
 describe('getScreenNearestRect', () => {
   it('delegates to getScreenContainingRect', () => {
     setScreenBackend(
@@ -718,9 +649,6 @@ describe('getScreenNearestRect', () => {
     expect(out.id).toBe(1);
   });
 });
-
-// --- getScreenBackend ---
-
 describe('getScreens', () => {
   it('fills the out array to the screen count and returns it', () => {
     setScreenBackend(fakeBackend([{ width: 1920 }, { width: 2560 }, { width: 3840 }]));
@@ -731,9 +659,6 @@ describe('getScreens', () => {
     expect(out[0].isPrimary).toBe(true);
   });
 });
-
-// --- getScreens ---
-
 describe('getScreenWorkArea', () => {
   it('fills out with screen x/y/workWidth/workHeight', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, workWidth: 1920, workHeight: 1040 });
@@ -744,9 +669,6 @@ describe('getScreenWorkArea', () => {
     expect(out.height).toBe(1040);
   });
 });
-
-// --- onScreenChange ---
-
 describe('onScreenChange', () => {
   it('delivers change events to the listener and unsubscribes', () => {
     const backend = fakeBackend([{}]);
@@ -761,9 +683,6 @@ describe('onScreenChange', () => {
     expect(events).toHaveLength(1);
   });
 });
-
-// --- onScreenDetailPermissionChange ---
-
 describe('onScreenDetailPermissionChange', () => {
   it('returns a no-op unsubscribe when the Permissions API is unavailable', () => {
     const hadPermissions = 'permissions' in navigator;
@@ -809,17 +728,11 @@ describe('onScreenDetailPermissionChange', () => {
     }
   });
 });
-
-// --- refreshScreens ---
-
 describe('refreshScreens', () => {
   it('is callable without throwing', () => {
     expect(() => refreshScreens()).not.toThrow();
   });
 });
-
-// --- requestScreenDetails ---
-
 describe('requestScreenDetails', () => {
   it('returns false in jsdom where getScreenDetails is unavailable', async () => {
     const result = await requestScreenDetails();
@@ -918,9 +831,6 @@ describe('requestScreenDetails', () => {
     }
   });
 });
-
-// --- screenToDipPoint ---
-
 describe('screenToDipPoint', () => {
   it('converts physical pixels to DIP', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
@@ -957,9 +867,6 @@ describe('screenToDipPoint', () => {
     expect(recovered.y).toBeCloseTo(original.y);
   });
 });
-
-// --- screenToDipRect ---
-
 describe('screenToDipRect', () => {
   it('scales the rect back to DIP', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
@@ -994,9 +901,6 @@ describe('screenToDipRect', () => {
     expect(recovered.height).toBeCloseTo(original.height);
   });
 });
-
-// --- setScreenBackend ---
-
 describe('setScreenBackend', () => {
   it('clears back to the web fallback when passed null', () => {
     setScreenBackend(fakeBackend([{}]));

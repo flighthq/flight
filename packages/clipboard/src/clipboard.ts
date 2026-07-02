@@ -1,5 +1,6 @@
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type { ClipboardBackend, ClipboardBookmark, ClipboardWatch, ClipboardWriteItem } from '@flighthq/types';
+import { ClipboardFormatBookmark, ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types';
 
 // Attaches `watch` to the active backend's change subscription. Emits watch.onChange on each
 // clipboard change. Idempotent: a prior subscription is torn down first.
@@ -128,10 +129,10 @@ export function createWebClipboardBackend(): ClipboardBackend {
       }
     },
     async readHtml() {
-      return this.readFormat('text/html');
+      return this.readFormat(ClipboardFormatHtml);
     },
     async writeHtml(html) {
-      return this.writeFormat('text/html', html);
+      return this.writeFormat(ClipboardFormatHtml, html);
     },
     async hasText() {
       return (await this.readText()).length > 0;
@@ -169,10 +170,10 @@ export function createWebClipboardBackend(): ClipboardBackend {
       return (await this.readImage()).length > 0;
     },
     async readRTF() {
-      return this.readFormat('text/rtf');
+      return this.readFormat(ClipboardFormatRtf);
     },
     async writeRTF(rtf) {
-      return this.writeFormat('text/rtf', rtf);
+      return this.writeFormat(ClipboardFormatRtf, rtf);
     },
     // The web platform exposes no clipboard bookmark format; a native host is required to read one.
     async readBookmark() {
@@ -246,7 +247,7 @@ export function getClipboardFormats(): Promise<readonly string[]> {
 
 // True when the clipboard currently holds a bookmark. Returns false when access is denied.
 export function hasClipboardBookmark(): Promise<boolean> {
-  return getClipboardBackend().hasFormat('text/x-moz-url');
+  return getClipboardBackend().hasFormat(ClipboardFormatBookmark);
 }
 
 // True when the given MIME/format string is currently present on the clipboard.
@@ -256,7 +257,7 @@ export function hasClipboardFormat(format: string): Promise<boolean> {
 
 // True when the clipboard currently holds HTML content. Returns false when access is denied.
 export function hasClipboardHtml(): Promise<boolean> {
-  return getClipboardBackend().hasFormat('text/html');
+  return getClipboardBackend().hasFormat(ClipboardFormatHtml);
 }
 
 // True when the clipboard currently holds an image. Returns false when access is denied.
@@ -266,7 +267,7 @@ export function hasClipboardImage(): Promise<boolean> {
 
 // True when the clipboard currently holds RTF content. Returns false when access is denied.
 export function hasClipboardRTF(): Promise<boolean> {
-  return getClipboardBackend().hasFormat('text/rtf');
+  return getClipboardBackend().hasFormat(ClipboardFormatRtf);
 }
 
 // True when the clipboard currently holds non-empty text. Returns false when access is denied.

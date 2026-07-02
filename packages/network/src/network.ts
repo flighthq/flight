@@ -144,7 +144,8 @@ export async function detectNetworkReachability(
     return backend.detectReachability(options, out);
   }
   // Fallback: use the web backend's implementation directly
-  const webBackend = createWebNetworkBackend();
+  if (_cachedWebBackend === null) _cachedWebBackend = createWebNetworkBackend();
+  const webBackend = _cachedWebBackend;
   if (webBackend.detectReachability !== undefined) {
     return webBackend.detectReachability(options, out);
   }
@@ -225,9 +226,13 @@ function anyAbortSignal(a: AbortSignal, b: AbortSignal): AbortSignal {
     return (AbortSignal as unknown as { any: (signals: AbortSignal[]) => AbortSignal }).any([a, b]);
   }
   const controller = new AbortController();
-  const abort = () => controller.abort();
-  a.addEventListener('abort', abort, { once: true });
-  b.addEventListener('abort', abort, { once: true });
+  const onAbort = () => {
+    controller.abort();
+    a.removeEventListener('abort', onAbort);
+    b.removeEventListener('abort', onAbort);
+  };
+  a.addEventListener('abort', onAbort, { once: true });
+  b.addEventListener('abort', onAbort, { once: true });
   return controller.signal;
 }
 
@@ -259,3 +264,5 @@ function mapWebConnectionType(type: string | undefined): NetworkConnectionType {
       return 'unknown';
   }
 }
+
+let _cachedWebBackend: NetworkBackend | null = null;

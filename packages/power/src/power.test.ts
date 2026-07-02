@@ -9,6 +9,7 @@ import {
   createWebPowerBackend,
   detachPower,
   disposePower,
+  enablePowerSignals,
   getPowerBackend,
   getPowerBatteryHealth,
   getPowerIdlePollingIntervalMs,
@@ -425,6 +426,22 @@ describe('disposePower', () => {
       disposePower(power);
       disposePower(power);
     }).not.toThrow();
+  });
+});
+
+describe('enablePowerSignals', () => {
+  it('returns a Power entity with all signals defined', () => {
+    const power = enablePowerSignals();
+    expect(power.onChange).toBeDefined();
+    expect(power.onCharging).toBeDefined();
+    expect(power.onDischarging).toBeDefined();
+    expect(power.onIdleStateChange).toBeDefined();
+    expect(power.onLockScreen).toBeDefined();
+    expect(power.onLowPowerModeChange).toBeDefined();
+    expect(power.onResume).toBeDefined();
+    expect(power.onSuspend).toBeDefined();
+    expect(power.onThermalStateChange).toBeDefined();
+    expect(power.onUnlockScreen).toBeDefined();
   });
 });
 

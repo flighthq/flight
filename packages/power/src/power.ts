@@ -279,7 +279,10 @@ export function disposePower(power: Power): void {
   detachPower(power);
 }
 
-// The active power backend, or a lazily-created web default. There is always a backend.
+export function enablePowerSignals(): Power {
+  return createPower();
+}
+
 export function getPowerBackend(): PowerBackend {
   if (_backend === null) _backend = createWebPowerBackend();
   return _backend;

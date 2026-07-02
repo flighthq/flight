@@ -62,7 +62,7 @@ export function getShellBackend(): ShellBackend {
 }
 
 // True when url is allowed by the active URL-scheme allowlist. When no allowlist is set, all URLs
-// are allowed. Used internally by openExternalUrl; also exported for callers that need the check.
+// are allowed. Used internally by openShellExternalUrl; also exported for callers that need the check.
 export function isShellUrlAllowed(url: string): boolean {
   if (_urlSchemeAllowlist === null) return true;
   try {
@@ -90,7 +90,7 @@ export function moveItemToTrash(path: string): Promise<boolean> {
 // footgun — a non-http(s) scheme can launch a local application or protocol handler. When the url may
 // be untrusted, constrain the accepted schemes with setShellUrlSchemeAllowlist (e.g. ['https',
 // 'mailto']); isShellUrlAllowed exposes the same check for a caller that wants to gate the URL itself.
-export function openExternalUrl(url: string, options?: Readonly<ShellOpenExternalOptions>): Promise<boolean> {
+export function openShellExternalUrl(url: string, options?: Readonly<ShellOpenExternalOptions>): Promise<boolean> {
   if (!isShellUrlAllowed(url)) return Promise.resolve(false);
   return getShellBackend().openExternal(url, options);
 }
@@ -118,8 +118,8 @@ export function setShellBackend(backend: ShellBackend | null): void {
   _backend = backend;
 }
 
-// Sets the URL-scheme allowlist consulted by openExternalUrl. Pass null to allow all schemes
-// (default behavior). When a non-null list is set, openExternalUrl returns false for any URL whose
+// Sets the URL-scheme allowlist consulted by openShellExternalUrl. Pass null to allow all schemes
+// (default behavior). When a non-null list is set, openShellExternalUrl returns false for any URL whose
 // scheme is not in the list. Example: setShellUrlSchemeAllowlist(['https', 'mailto']).
 // This closes the classic openExternal security footgun with attacker-controlled URLs.
 export function setShellUrlSchemeAllowlist(schemes: readonly string[] | null): void {
@@ -138,7 +138,7 @@ export function showItemInFolder(path: string): Promise<boolean> {
 
 // Creates a Windows .lnk shell shortcut at shortcutPath pointing to link. Returns false on
 // non-Windows platforms and on the web. operation defaults to 'create'.
-// IMPORTANT: URL safety — only use openExternalUrl for user-facing link opening; do not pass
+// IMPORTANT: URL safety — only use openShellExternalUrl for user-facing link opening; do not pass
 // attacker-controlled paths to writeShellShortcutLink without validation.
 export function writeShellShortcutLink(
   shortcutPath: string,
