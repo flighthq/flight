@@ -1,31 +1,36 @@
 ---
 package: '@flighthq/types'
-updated: 2026-06-25
+updated: 2026-07-02
 basedOn: ./review.md
 ---
 
 # types — Assessment
 
-Reasoned over [`./review.md`](./review.md) (merge-gate review of the `integration-b2824e3d8` delta vs the approved `origin/main` floor `eb73c3d74`). Recommended is sweep-safe, within-package, non-design work only; everything cross-package, design-deciding, or larger is Backlog; design forks route to the charter's Open directions. Approved is the user's verbal gate and stays empty.
+Sorted from `review.md` (solid, 89/100), the depth review (solid, 82/100), and the direction session (2026-07-02). Six Decisions blessed. The package is the SDK's header layer — pure type declarations with no runtime logic. Approved work is within-types contract fixes and one cross-package consolidation that starts here.
 
-## Recommended (sweep-safe, within-package)
+## Recommended
 
-- **Resolve the `Notification` id/tag seam gap.** The delta's `updateNotification(id, …)` keys on an `id` that the typed `NotificationBackend`/`NotificationRequest` seam never exposes (`notify` returns `Promise<boolean>`, identity elsewhere is `tag`). Make the seam internally consistent. The minimal, within-`types` form is to key the new method on `tag` (`updateNotification(tag: string, …)`), matching `subscribe*` and `NotificationRequest.tag`. _Caveat:_ if the intended model is the impl's id-based one, this becomes a Backlog item (it then touches `notify`'s return type and `@flighthq/notification`) — see Backlog. — review.md §6
-- **Share a `TextDirection` alias.** `'LeftToRight' | 'RightToLeft'` is repeated inline in `ShapedRun` and `ShapeRunOptions`. Extract a single `TextDirection` type and reference it from both. Pure within-`types` factoring, no consumer change (structural). — review.md "Soft findings"
-- **Document `glyphCount` on `ShapedRun`.** Add a one-line durable comment stating why `glyphCount` coexists with `glyphs.length` (over-allocated result buffer), or drop it if it is always `glyphs.length`. — review.md "Soft findings"
+Strictly sweep-safe: within `@flighthq/types`, no open design decision.
 
-## Backlog (parked)
+- **Lift the notification seam to `id`.** `notify` should return the host-assigned `id` (not `Promise<boolean>`). `updateNotification` and `cancelNotification` key on `id`. Add `id` to the callback payloads in `subscribeClick`/`subscribeAction`. Remove `tag` as the identity key (it can stay as an optional grouping field on `NotificationRequest` if needed, but identity is `id`). Per Decision #6.
+- **Remove the "should become open" note from ParticleForce/ParticleCollider.** The note is outdated — these are intentionally closed for performance (Decision #4). Replace with a rationale comment: hot per-particle per-frame dispatch, closed by design.
+- **Fix DOM/Dom casing.** `DOMRenderOptions` → `DomRenderOptions`, `DOMStageRectangle` → `DomStageRectangle`. The spec calls for PascalCase acronyms (`Dom`), and `DomRenderState` already uses the correct form. Rename the types and their filenames.
+- **Extract `TextDirection` alias.** `'LeftToRight' | 'RightToLeft'` is inline in both `ShapedRun.direction` and `ShapeRunOptions.direction`. Extract to a shared `TextDirection` type in its own file, reference from both.
+- **Document `glyphCount` on `ShapedRun`.** Add a one-line comment explaining why `glyphCount` coexists with `glyphs.length` (over-allocated result buffer), or drop it if it is always `glyphs.length`.
 
-- **Lift the notification seam to an id-based model** — _why parked:_ if `updateNotification` truly needs a host-assigned handle (the `@flighthq/notification` impl already mints a Flight `id`), the correct fix reshapes `notify` to return that id and adds `id` to `NotificationRequest`, which crosses the package boundary into `@flighthq/notification` and changes a return type. That is a design decision, not a sweep. Route to the user / a notification-seam session.
-- **Unify domain region types on a shared `RectangleLike`/`Region2D`** — _why parked:_ `RenderViewport2D` joins a standing family of identically-shaped region types (`SurfaceRegion`, `TextSelectionRectangle`, `TextureAtlasRegion`, `Screen`, …). Consolidating them is an SDK-wide naming/structure decision touching many consumers, not a within-`types` sweep, and may be intentional (domain-named regions read better at the callsite). Charter/Open-directions material.
+## Backlog
+
+Parked — each with the reason it is not sweep-safe.
+
+- **Rectangle consolidation sweep.** _Parked — cross-package._ Per Decision #3: `RenderViewport2D` (in `render`), `SurfaceRegion` (in `surface`), `TextSelectionRectangle` (in `text`) should become `Rectangle` or `RectangleLike` at their callsites. `TextureAtlasRegion` should `extends Rectangle` (it adds fields). Starts in types (delete/alias the duplicate types) but touches consumer packages. Needs a coordinated builder sweep.
+- **Type-level assertion tests.** _Parked — large scope, welcome but not mandated._ Per Decision #2: `expectTypeOf` tests for structural invariants (`*Like` strips runtime, quartets assignable, `kind` narrows, `EntityWithoutRuntime` behaves). Add opportunistically, not as blanket coverage. The builder's existing `Bitmap.test.ts` and `Signal.test.ts` are the model.
+- **Signal conformance divergence documentation.** _Parked — Rust worktree._ Per Decision #5: record the `Signal<T>` generic shape divergence (TS: function-type parameterized; Rust: payload-parameterized) in the conformance map. Not a types-package change.
+- **Self-containment assertion.** _Parked — tooling._ Charter Open direction #4. A within-package check that every import resolves locally, enforcing the "no implementation leaks" promise. Needs design (part of `packages:check` or standalone).
 
 ## Approved
 
-_None. Approval is the user's verbal gate; nothing is moved here without it._
-
-## Notes for the charter's Open directions
-
-- **Author the charter.** `@flighthq/types` — the SDK's most load-bearing package — still has a stub charter (What it is / North star / Boundaries / Decisions all `TODO`). Every finding above is judged against the codebase-map fallback, not blessed intent. Capturing the header-layer North star (full SDK API navigable and pinnable from `@flighthq/types` alone, mechanically enforced) is the highest-leverage open item and predates this delta.
-- **Notification identity model.** Decide whether the system-notification seam is keyed by user-supplied `tag` or a host-assigned `id`, and make the whole seam (`notify` return, `subscribe*`, `update*`) speak one vocabulary. The delta surfaced this; it wants a blessed ruling.
-- **Region-type policy.** Whether identically-shaped screen/region rects (`RenderViewport2D`, `SurfaceRegion`, `TextSelectionRectangle`, `TextureAtlasRegion`, …) stay domain-named or consolidate onto a shared `RectangleLike`/`Region2D`.
-- **Text-direction / bidi vocabulary.** Whether `TextDirection` becomes a shared header type used across the shaping and layout seams (and how it relates to any future bidi level model).
+- [2026-07-02 · picked] Lift notification seam to `id` — charter Decision #6, review §6 FAIL
+- [2026-07-02 · picked] Remove "should become open" note from ParticleForce/ParticleCollider — charter Decision #4
+- [2026-07-02 · picked] Fix DOM/Dom casing (`DOMRenderOptions` → `DomRenderOptions`, `DOMStageRectangle` → `DomStageRectangle`) — depth review naming note
+- [2026-07-02 · picked] Extract `TextDirection` alias — review soft finding
+- [2026-07-02 · picked] Document `glyphCount` on `ShapedRun` — review soft finding
