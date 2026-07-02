@@ -32,7 +32,7 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const background = createShape();
-background.alpha = 1;
+background.alpha = 0.1;
 addNodeChild(root, background);
 
 let audioContext: AudioContext | null = null;
