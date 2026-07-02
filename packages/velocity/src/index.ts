@@ -1,4 +1,3 @@
-export { contributeAffineVelocity, getVelocitySampleAt } from './affineVelocity';
 export { contributeTransformVelocity } from './transformVelocity';
 export {
   addVelocity,
@@ -20,3 +19,4 @@ export {
   suppressVelocity,
   zeroVelocity,
 } from './velocityField';
+export { getVelocitySampleAt } from './velocitySample';
