@@ -1,4 +1,5 @@
 import type { FontResource } from './FontResource';
+import type { TextDirection } from './TextDirection';
 
 export interface ShapedGlyph {
   cluster: number;
@@ -11,8 +12,9 @@ export interface ShapedGlyph {
 
 export interface ShapedRun {
   advanceWidth: number;
-  direction: 'LeftToRight' | 'RightToLeft';
+  direction: TextDirection;
   font: FontResource | null;
+  // Valid glyph count; glyphs may be over-allocated as a reusable buffer.
   glyphCount: number;
   glyphs: ShapedGlyph[];
   script: string;
