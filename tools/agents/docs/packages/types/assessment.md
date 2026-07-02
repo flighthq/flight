@@ -12,9 +12,9 @@ Sorted from `review.md` (solid, 89/100), the depth review (solid, 82/100), and t
 
 Strictly sweep-safe: within `@flighthq/types`, no open design decision.
 
-- **Lift the notification seam to `id`.** `notify` should return the host-assigned `id` (not `Promise<boolean>`). `updateNotification` and `cancelNotification` key on `id`. Add `id` to the callback payloads in `subscribeClick`/`subscribeAction`. Remove `tag` as the identity key (it can stay as an optional grouping field on `NotificationRequest` if needed, but identity is `id`). Per Decision #6.
+- ~~**Lift the notification seam to `id`.**~~ _Already done._ `notify` returns `Promise<string>` (the id), all subscribers use `id`. The seam is consistent. Per Decision #6 — verified landed.
 - **Remove the "should become open" note from ParticleForce/ParticleCollider.** The note is outdated — these are intentionally closed for performance (Decision #4). Replace with a rationale comment: hot per-particle per-frame dispatch, closed by design.
-- **Fix DOM/Dom casing.** `DOMRenderOptions` → `DomRenderOptions`, `DOMStageRectangle` → `DomStageRectangle`. The spec calls for PascalCase acronyms (`Dom`), and `DomRenderState` already uses the correct form. Rename the types and their filenames.
+- ~~**Fix DOM/Dom casing.**~~ _Already done._ Files are `DomRenderOptions.ts`, `DomStageRectangle.ts`. Consistent `Dom` PascalCase throughout.
 - **Extract `TextDirection` alias.** `'LeftToRight' | 'RightToLeft'` is inline in both `ShapedRun.direction` and `ShapeRunOptions.direction`. Extract to a shared `TextDirection` type in its own file, reference from both.
 - **Document `glyphCount` on `ShapedRun`.** Add a one-line comment explaining why `glyphCount` coexists with `glyphs.length` (over-allocated result buffer), or drop it if it is always `glyphs.length`.
 
@@ -29,8 +29,8 @@ Parked — each with the reason it is not sweep-safe.
 
 ## Approved
 
-- [2026-07-02 · picked] Lift notification seam to `id` — charter Decision #6, review §6 FAIL
+- [2026-07-02 · picked] Lift notification seam to `id` — charter Decision #6. **Already landed** — verified `notify` returns `Promise<string>`, subscribers use `id`.
 - [2026-07-02 · picked] Remove "should become open" note from ParticleForce/ParticleCollider — charter Decision #4
-- [2026-07-02 · picked] Fix DOM/Dom casing (`DOMRenderOptions` → `DomRenderOptions`, `DOMStageRectangle` → `DomStageRectangle`) — depth review naming note
+- [2026-07-02 · picked] Fix DOM/Dom casing — depth review naming note. **Already landed** — files already use `Dom` PascalCase.
 - [2026-07-02 · picked] Extract `TextDirection` alias — review soft finding
 - [2026-07-02 · picked] Document `glyphCount` on `ShapedRun` — review soft finding
