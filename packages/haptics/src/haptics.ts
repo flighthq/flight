@@ -86,7 +86,9 @@ export function setHapticsBackend(backend: HapticsBackend | null): void {
 // Triggers a physical impact at the given style, with optional continuous intensity (0..1).
 // Intensity defaults to 1 when omitted. Returns false when haptics are unavailable.
 export function triggerHapticImpact(style: HapticImpactStyle, intensity?: number): boolean {
-  return getHapticsBackend().impact(style, intensity);
+  // Resolve the documented default here so every backend receives a concrete intensity; a native
+  // backend must not have to reinterpret `undefined` as full strength on its own.
+  return getHapticsBackend().impact(style, intensity ?? 1);
 }
 
 // Triggers a semantic notification cue ('success' | 'warning' | 'error').
