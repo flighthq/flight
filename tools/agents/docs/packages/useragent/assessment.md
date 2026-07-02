@@ -1,15 +1,17 @@
-# lifecycle — Assessment
+# useragent — Assessment
 
 See [charter](./charter.md) for blessed direction.
 
+No sweep work. At scope ceiling.
+
 ## Recommended
 
-No sweep-safe items. Highest suite score (58). SSR-safe.
+_None._
 
 ## Approved
 
-None.
+_None._
 
 ## Backlog
 
-None.
+_None._
