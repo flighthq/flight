@@ -8,16 +8,7 @@ import type {
 
 import { TEXT_LAYOUT_GUTTER } from './textLayout';
 
-/**
- * @param _text Unused — hit-testing is performed against layout group geometry. Kept for
- *   backward compatibility; will be removed in a future breaking release.
- */
-export function computeRichTextCharIndexAtPoint(
-  _text: string,
-  layout: Readonly<TextLayoutResult>,
-  x: number,
-  y: number,
-): number {
+export function computeRichTextCharIndexAtPoint(layout: Readonly<TextLayoutResult>, x: number, y: number): number {
   if (layout.groups.length === 0) return 0;
 
   let closestLineIndex = 0;
@@ -95,13 +86,8 @@ export function computeRichTextLineMetrics(
   };
 }
 
-/**
- * @param _text Unused — character indices are already encoded in the layout groups. Kept for
- *   backward compatibility; will be removed in a future breaking release.
- */
 export function getRichTextCharBoundaries(
   out: Rectangle,
-  _text: string,
   layout: Readonly<TextLayoutResult>,
   charIndex: number,
 ): boolean {

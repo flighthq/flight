@@ -61,11 +61,11 @@ function createLayout(): TextLayoutResult {
 
 describe('computeRichTextCharIndexAtPoint', () => {
   it('returns the index at a point within a group', () => {
-    expect(computeRichTextCharIndexAtPoint('abcdefg', createLayout(), 25, 5)).toBe(2);
+    expect(computeRichTextCharIndexAtPoint(createLayout(), 25, 5)).toBe(2);
   });
 
   it('selects the closest line by y distance', () => {
-    expect(computeRichTextCharIndexAtPoint('abcdefg', createLayout(), 5, 100)).toBe(7);
+    expect(computeRichTextCharIndexAtPoint(createLayout(), 5, 100)).toBe(7);
   });
 });
 
@@ -86,7 +86,7 @@ describe('computeRichTextLineMetrics', () => {
 describe('getRichTextCharBoundaries', () => {
   it('fills out with the bounding box of the character', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    const found = getRichTextCharBoundaries(out as never, 'abcdefg', createLayout(), 1);
+    const found = getRichTextCharBoundaries(out as never, createLayout(), 1);
     expect(found).toBe(true);
     expect(out.x).toBe(10);
     expect(out.y).toBe(2);
@@ -96,7 +96,7 @@ describe('getRichTextCharBoundaries', () => {
 
   it('returns false for an out-of-range index', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    expect(getRichTextCharBoundaries(out as never, '', createLayout(), 99)).toBe(false);
+    expect(getRichTextCharBoundaries(out as never, createLayout(), 99)).toBe(false);
   });
 });
 
