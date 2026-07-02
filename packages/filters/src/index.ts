@@ -16,7 +16,6 @@ export {
   isPixelateFilter,
   isSharpenFilter,
 } from './bitmapFilterGuards';
-export type { BitmapFilterMargin } from './bitmapFilterMargin';
 export { getBitmapFilterMargin } from './bitmapFilterMargin';
 export {
   cloneBitmapFilter,
@@ -97,6 +96,7 @@ export { createSharpenFilter } from './sharpenFilter';
 export type {
   BevelFilter,
   BitmapFilter,
+  BitmapFilterMargin,
   BlurFilter,
   ColorMatrixFilter,
   ConvolutionFilter,
