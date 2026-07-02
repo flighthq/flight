@@ -92,6 +92,8 @@ for (let i = 0; i < referenceData.length; i += 4) {
   }
   referenceData[i + 3] = Math.round(outA * 255);
 }
+// Flatten alpha to 255 so the reference matches the alpha:false canvas readback.
+for (let i = 3; i < referenceData.length; i += 4) referenceData[i] = 255;
 const referenceSurface = createSurface(TILE, TILE);
 referenceSurface.data.set(referenceData);
 

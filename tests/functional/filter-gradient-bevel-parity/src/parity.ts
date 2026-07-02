@@ -21,7 +21,7 @@ export interface NativeGradientBevelSpec {
   // The source image whose ALPHA edges the native bevel reads (same pixels the reference filtered).
   source: ImageResource;
   // The gradient-bevel descriptor — colors/ratios/alphas/angle/distance/blur/strength/bevelType.
-  filter: Readonly<Omit<GradientBevelFilter, 'type'>>;
+  filter: Readonly<Omit<GradientBevelFilter, 'kind'>>;
   // Top-left of the native tile in logical (CSS-pixel) scene coordinates.
   x: number;
   y: number;
