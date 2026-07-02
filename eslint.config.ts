@@ -37,6 +37,7 @@ export default [
       // lint. Without this, every present bundle floods `npm run check` with thousands
       // of errors from the captured trees.
       'incoming/**',
+      'tools/agents/**',
     ],
   },
   {
