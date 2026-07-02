@@ -13,7 +13,6 @@ import type { ClipRegion } from '@flighthq/types';
 
 import { registerRenderer } from './renderer';
 import {
-  beginRenderProxyUpdate,
   createRenderProxy,
   createRenderProxy2D,
   disposeDisplayObjectRender,
@@ -44,15 +43,6 @@ function makeRenderer() {
 function makeClipRegion(): ClipRegion {
   return { contours: null, rect: createRectangle(0, 0, 10, 10), winding: 'nonZero', version: 0 };
 }
-
-describe('beginRenderProxyUpdate', () => {
-  it('is a no-op and does not throw', () => {
-    const state = createRenderState();
-    const source = createDisplayObject();
-    const data = createRenderProxy2D(state, source);
-    expect(() => beginRenderProxyUpdate(source, data)).not.toThrow();
-  });
-});
 
 describe('createRenderProxy', () => {
   it('initializes default values', () => {
@@ -251,7 +241,15 @@ describe('getRenderProxy2D', () => {
 
 describe('installRenderAdaptHook', () => {
   it('does not throw when installing a hook', () => {
-    expect(() => installRenderAdaptHook(vi.fn())).not.toThrow();
+    const state = createRenderState();
+    expect(() => installRenderAdaptHook(state, vi.fn())).not.toThrow();
+  });
+
+  it('writes the hook to the render state runtime', () => {
+    const state = createRenderState();
+    const hook = vi.fn();
+    installRenderAdaptHook(state, hook);
+    expect(getRenderStateRuntime(state).renderAdaptHook).toBe(hook);
   });
 });
 

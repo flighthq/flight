@@ -25,8 +25,6 @@ import { getRenderStateRuntime } from './renderState';
 import { updateRenderProxy2DTransform } from './renderTransform2d';
 
 type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) => void;
-let _adaptHook: AdaptHook | null = null;
-export function beginRenderProxyUpdate(_source: Renderable, _data: RenderProxy): void {}
 
 // Per-node update callback for the render walks. Receives the source node and its render node plus
 // the parent's render node; composes the trait update* steps (appearance, transform, material, clip).
@@ -117,8 +115,8 @@ export function getRenderProxy2D(state: RenderState, source: Renderable): Render
   return getRenderStateRuntime(state).renderProxyMap.get(source) as RenderProxy2D | undefined;
 }
 
-export function installRenderAdaptHook(fn: AdaptHook): void {
-  _adaptHook = fn;
+export function installRenderAdaptHook(state: RenderState, fn: AdaptHook): void {
+  getRenderStateRuntime(state).renderAdaptHook = fn;
 }
 
 export function isRenderProxyDirty(
@@ -180,7 +178,7 @@ export function updateRenderProxy2D(
   updateNodeClip(state, source, data, parentData);
   // Record the content revision we synced at, so a later content-only change re-dirties the node.
   data.lastLocalContentId = getNodeLocalContentRevision(source as Node);
-  _adaptHook?.(state, source, data);
+  getRenderStateRuntime(state).renderAdaptHook?.(state, source, data);
 }
 
 export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy): void {
