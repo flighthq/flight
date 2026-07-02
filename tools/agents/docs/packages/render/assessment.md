@@ -1,36 +1,39 @@
 ---
 package: '@flighthq/render'
-updated: 2026-06-25
+updated: 2026-07-02
 basedOn: ./review.md
 ---
 
 # render — Assessment
 
-> Recommendation layer over [review.md](./review.md). Scoped to the **integration-b2824e3d8 delta** judged against the approved baseline `origin/main` (`eb73c3d74`). Sorts the review's findings into within-package sweep-safe fixes, parked work, and the user's approval gate. Design forks and cross-package items route to the charter's Open directions, not into Recommended.
+Sorted from `review.md` and the direction session (2026-07-02). Six Decisions blessed. Approved items below are the sweep-safe work dispatchable to a builder now.
 
-## Recommended (sweep-safe, within-package)
+## Recommended
 
-These are mechanical, contained to `packages/render/src/renderViewport.ts(.test)`, and do not require a design decision:
+Strictly sweep-safe: within `@flighthq/render` (and cross-package for the font-string move, which is blessed), no unresolved design decision.
 
-1. **Replace the bare `Rectangle` literal cast with `createRectangle()`.** `b2824e3d8:packages/render/src/renderViewport.ts:57` — `{ x: 0, y: 0, width: 0, height: 0 } as Rectangle` violates the entity-construction rule (`Rectangle extends Entity`). Swap to `createRectangle()`. Trivial, no behavior change.
+- **Delete `beginRenderProxyUpdate`.** Exported no-op (`{}`), no callers outside its declaration. Pure API debt removal.
+- **Collapse `updateDisplayObjectRenderTransform` into `updateRenderProxy2DTransform`.** Thin alias, no external callers. Remove the wrapper, keep the canonical name.
+- **Convert `installRenderAdaptHook` from global to per-state.** Move `_adaptHook` from module-level to a slot on `RenderStateRuntime`. Update `installRenderAdaptHook(state, fn)` to take a state parameter. Update `renderProxyAdapter.ts` (`_installed` flag → per-state install). Multiple render states coexist independently.
+- **Fix `computeRenderProxyWorldBounds` to use real world bounds.** Replace the local-x/y-with-zero-size stub with a call to `getNodeWorldBoundsRectangle` from `@flighthq/node`. Account for the render transform when comparing against the viewport (the viewport is in screen/device coordinates). Use the node's cached, revision-gated world bounds — do not recompute in the hot loop. Fix the edge-inclusivity comment to match the code (inclusive on all edges). Replace the bare `Rectangle` literal cast with `createRectangle()`. Replace the `'pivotX' in source` duck-type sniff with proper type narrowing via `Spatial2DNode`.
+- **Move `computeTextFormatFontString` to `@flighthq/text`.** Cross-package, blessed by Decision #3. ~14 import sites across `displayobject-canvas`, `displayobject-dom`, `displayobject-gl`, `displayobject-wgpu`, `textshaper-canvas`.
 
-2. **Reconcile the edge-inclusivity comment with the code.** The header comment (`:30-33`) says "exclusive-right/bottom," but `:47` is inclusive on all four edges. Either fix the comment to "inclusive on all edges" (matches the code and the status.md design note) or change the overlap test to match the comment. Pick one; do not ship the contradiction.
+## Backlog
 
-3. **Add tests that distinguish position from world-bounds.** Current tests (`renderViewport.test.ts`) only use origin/zero-size objects, so they cannot fail if the bounds are wrong. Add at least one case with a moved + scaled (and ideally nested/parented) object whose true world AABB differs from its local `x/y`, asserting the cull decision against the _real_ bounds. This test is what turns finding #1 below from invisible into caught.
+Parked — each with the reason it is not sweep-safe.
 
-## Backlog (parked — each with why)
-
-1. **Fix `computeRenderProxyWorldBounds` to compute real world bounds.** It writes local `x/y` with zero size instead of reading `getNodeWorldBoundsRectangle` (`@flighthq/node`). _Parked from Recommended_ because the correct fix touches the trait-resolution model (does the function take a `Spatial2DNode` and read the runtime world-bounds rectangle, or keep the `unknown` + duck-type seam?) and intersects charter Open direction #8 (the conservative-cull-via-sentinel-vs-throw question). It is a correctness fix, not a sweep — it needs the bounds-resolution boundary ruled first. This is the gating defect for merge; see the dispatch brief.
-
-2. **Replace the `'pivotX' in source` duck-type trait sniff.** `:6-8` keys spatial-ness off one field name. _Parked_ because the right replacement depends on #1's resolution: if the function reads bounds through a `Spatial2DNode` runtime accessor, the predicate problem evaporates; solving it in isolation would be throwaway work.
-
-3. **Re-baseline the package's `review.md`/`status.md` to the merged artifact.** The bundle's `status.md` and the prior `review.md` (86/100, `solid`) credit a driver/queue/blend-stack/parity-suite that are not in `base` or `head`. _Parked_ as a docs-hygiene task for the ingest pass that lands the real driver work, not for this delta's worker — but the integration owner should know the continuity log overstates what merged.
+- **Shared draw driver (`drawRenderProxy`/`submitRenderProxy`/`flushRenderBatch`/`registerRenderBatchFlush`).** Charter Decision #1 blessed this. Medium effort, needs `RenderBatchKey`/`RenderDrawContext`/`RenderStateStats` types in `@flighthq/types` first. The keystone item — should land before `displayobject-gl`/`displayobject-wgpu` leaf renderers are built. Separate dispatch.
+- **Blend save/restore stack.** `pushRenderBlendState`/`popRenderBlendState` for nested blend groups. Additive, in-package, but couples with the driver (the driver push/pops across clip/group boundaries). Land after the driver.
+- **`getRenderStateStats` snapshot.** When the driver lands, the stats should return a true snapshot (copy), not a narrowed live reference. Depends on the driver types existing.
+- **`drawRenderQueue(state, queue)` variant.** Drives draws from a pre-sorted `RenderQueue` rather than re-walking the graph. Natural extension of the driver + queue. Land after the driver.
+- **Render-pass / render-graph.** Charter Decision #2 blessed this as in-scope. Needs its own design pass — must reconcile with `render-gl`/`render-wgpu` target pools. Gold-tier.
+- **3D prepare extensions.** Point/spot lights, shadow-caster collection, material sort, instancing, LOD. Gated on `scene`/`lighting`/`mesh` roadmap — do not build unilaterally.
+- **`flighthq-render` Rust crate.** Large, separate workstream. Follows TS driver/queue settling.
 
 ## Approved
 
-_None. Approval is the user's verbal gate; this layer only proposes. Nothing here is blessed until the user says so in a direction session._
-
-## Notes for the charter's Open directions
-
-- **Open direction #8 (the user's contract-fit gate) now has a concrete instance to rule.** The delta's `computeRenderProxyWorldBounds` chose to _fabricate_ zero-size bounds rather than read `getNodeWorldBoundsRectangle` or probe it via a sentinel. The charter should decide: (a) does 2D viewport-cull bounds resolution live in `render` reading the `node` world-bounds runtime, and (b) is the conservative-keep path a sentinel-returning probe or a fabricated default? Until ruled, this primitive cannot be honestly named.
-- **Charter/status scope drift.** The draft charter (lines 19, 30–31, 62, 74) describes `drawRenderProxy`, `RenderQueue`, the blend stack, and `flushRenderBatch` as resident; this integration head carries none of them. When the direction session runs, confirm whether those landed on a different branch or are still as-claimed, so the charter's "What it is" matches a real artifact.
+- [2026-07-02 · blanket "feel free to … prepare instructions for builder"] Delete `beginRenderProxyUpdate` (no-op) — charter Decision #6
+- [2026-07-02 · blanket] Collapse `updateDisplayObjectRenderTransform` alias — charter Decision #6
+- [2026-07-02 · blanket] Convert adapt hook from global to per-state — charter Decision #6
+- [2026-07-02 · picked] Fix `computeRenderProxyWorldBounds` to use real world bounds, cache-aware, render-transform-aware — charter Decision #5
+- [2026-07-02 · picked] Move `computeTextFormatFontString` to `@flighthq/text` — charter Decision #3
