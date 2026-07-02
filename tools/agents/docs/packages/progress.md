@@ -28,7 +28,7 @@ Track which packages have had a direction session, what was dispatched, and what
 | --- | --- | --- | --- |
 | displayobject | dispatched | 2026-07-01 | Reversed prior drop of `sourceRectangle` on Bitmap. Blessed charter decisions: drop cacheAsBitmap/scrollRect/opaqueBackground, Loader, lifecycle signals, traversal wrappers, pixelSnapping. Builder2 parcel: stale-reference cleanup + textlayout dep removal. |
 | text | direction | 2026-07-02 | 4 decisions blessed: entity layer identity, programmatic mutation on text / interactive on textinput, \*Value suffix dropped, pre-release no-backward-compat rule. Builder landed most depth-review work (setters, read accessors, signals, insert/replace). Open: signal ownership (text vs textinput), text-formats neighbor, package rename. 1 approved item (textlayout \_text param removal). |
-| sprite | — |  |  |
+| sprite | direction | 2026-07-02 | 5 decisions blessed: compact sentinel is user-facing API, ParticleEmitter signals intentionally absent, transformType no-guard for perf, Vector2Like for all {x,y} out-params, Int32Array for tile flags. Builder parcel: 3 items (signals dep, Vector2Like swap, named sentinel constant). |
 | clip | — |  |  |
 | interaction | — |  |  |
 | shape | — |  |  |
