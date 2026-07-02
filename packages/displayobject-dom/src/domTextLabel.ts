@@ -1,6 +1,6 @@
 ﻿import { createEntity } from '@flighthq/entity';
 import { computeRgbHexString } from '@flighthq/materials';
-import { computeTextFormatFontString } from '@flighthq/render';
+import { computeTextFormatFontString } from '@flighthq/text';
 import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
