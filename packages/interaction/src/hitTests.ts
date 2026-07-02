@@ -68,6 +68,11 @@ export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Trai
  * Evaluates the node to see if it or any of its descendants register a hit at
  * the given world-space coordinates.
  *
+ * Traverses self first, then children in natural (back-to-front) order — the opposite of
+ * `findGraphHitTarget` which tests children in reverse order (front-to-back) to find the
+ * deepest topmost hit. This function answers "does anything hit?" rather than "which specific
+ * node is hit?", so traversal order does not affect the boolean result.
+ *
  * Hit behavior for a given node kind must be registered via `registerHitTest`.
  * Unregistered kinds are skipped for self-hit but children are still tested.
  *
