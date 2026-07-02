@@ -5,6 +5,7 @@ import {
   addAudioBusToMixer,
   createAudioBus,
   createAudioMixer,
+  destroyAudioMixer,
   fadeAudioBusGain,
   getAudioMixerActiveChannels,
   pauseAllAudioMixerChannels,
@@ -19,9 +20,12 @@ import {
   unrouteAudioChannelFromMixerBus,
 } from './audioMixer';
 
+const createdSourceNodes: MockAudioBufferSourceNode[] = [];
+
 class MockStereoPannerNode {
   pan = { value: 0 };
   connect(): void {}
+  disconnect(): void {}
 }
 
 class MockAudioBufferSourceNode {
@@ -30,9 +34,12 @@ class MockAudioBufferSourceNode {
   loopStart = 0;
   onended: (() => void) | null = null;
   playbackRate = { value: 1 };
+  stopCount = 0;
   connect(): void {}
   start(): void {}
-  stop(): void {}
+  stop(): void {
+    this.stopCount++;
+  }
 }
 
 class MockGainNode {
@@ -51,7 +58,9 @@ class MockAudioContext {
   destination = {};
   state = 'running';
   createBufferSource(): AudioBufferSourceNode {
-    return new MockAudioBufferSourceNode() as unknown as AudioBufferSourceNode;
+    const node = new MockAudioBufferSourceNode();
+    createdSourceNodes.push(node);
+    return node as unknown as AudioBufferSourceNode;
   }
   createGain(): GainNode {
     return new MockGainNode() as unknown as GainNode;
@@ -117,6 +126,20 @@ describe('createAudioMixer', () => {
   });
 });
 
+describe('destroyAudioMixer', () => {
+  it('stops routed channels, clears the active set, and is safe to call twice', () => {
+    const mixer = createAudioMixer(ctx);
+    const bus = createAudioBus();
+    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    expect(channel).not.toBeNull();
+    routeAudioChannelToMixerBus(mixer, channel!, bus);
+    destroyAudioMixer(mixer);
+    expect(channel!.state).toBe('stopped');
+    expect(getAudioMixerActiveChannels(mixer)).toHaveLength(0);
+    expect(() => destroyAudioMixer(mixer)).not.toThrow();
+  });
+});
+
 describe('fadeAudioBusGain', () => {
   it('updates bus gain immediately when no audio context time has passed', () => {
     const mixer = createAudioMixer(ctx);
@@ -151,7 +174,8 @@ describe('getAudioMixerActiveChannels', () => {
 });
 
 describe('pauseAllAudioMixerChannels', () => {
-  it('marks playing channels as paused', () => {
+  it('stops the source node and marks playing channels as paused', () => {
+    createdSourceNodes.length = 0;
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
     const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
@@ -159,11 +183,13 @@ describe('pauseAllAudioMixerChannels', () => {
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     pauseAllAudioMixerChannels(mixer);
     expect(channel!.state).toBe('paused');
+    expect(createdSourceNodes[0]?.stopCount).toBeGreaterThan(0);
   });
 });
 
 describe('resumeAllAudioMixerChannels', () => {
-  it('marks paused channels as playing', () => {
+  it('restarts the source node and marks paused channels as playing', () => {
+    createdSourceNodes.length = 0;
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
     const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
@@ -172,6 +198,8 @@ describe('resumeAllAudioMixerChannels', () => {
     pauseAllAudioMixerChannels(mixer);
     resumeAllAudioMixerChannels(mixer);
     expect(channel!.state).toBe('playing');
+    // A fresh source node is created on resume (the paused one was stopped and discarded).
+    expect(createdSourceNodes.length).toBeGreaterThan(1);
   });
 });
 

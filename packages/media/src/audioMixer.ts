@@ -1,6 +1,6 @@
 import type { AudioBus, AudioBusOptions, AudioChannel, AudioMixer, AudioMixerOptions } from '@flighthq/types';
 
-import { connectAudioChannelToNode } from './audioChannel';
+import { connectAudioChannelToNode, pauseAudioChannel, resumeAudioChannel, stopAudioChannel } from './audioChannel';
 
 export function addAudioBusToMixer(mixer: Readonly<AudioMixer>, bus: AudioBus): void {
   const runtime = mixerRuntimes.get(mixer);
@@ -52,6 +52,23 @@ export function createAudioMixer(context: AudioContext, options?: Readonly<Audio
   return mixer;
 }
 
+export function destroyAudioMixer(mixer: Readonly<AudioMixer>): void {
+  const runtime = mixerRuntimes.get(mixer);
+  if (runtime === undefined) return;
+  // Stop every routed channel and reset its transport state.
+  for (const channel of runtime.activeChannels) stopAudioChannel(channel);
+  runtime.activeChannels.clear();
+  // Tear down the Web Audio graph: bus panners, bus gains, then the master gain.
+  for (const pannerNode of runtime.busOutputNodes.values()) pannerNode.disconnect();
+  for (const bus of runtime.busGainNodes.keys()) unregisterBusFromReverseMap(bus, runtime);
+  for (const gainNode of runtime.busGainNodes.values()) gainNode.disconnect();
+  runtime.masterGainNode.disconnect();
+  runtime.busGainNodes.clear();
+  runtime.busOutputNodes.clear();
+  runtime.buses.clear();
+  mixerRuntimes.delete(mixer);
+}
+
 export function fadeAudioBusGain(
   mixer: Readonly<AudioMixer>,
   bus: AudioBus,
@@ -80,16 +97,19 @@ export function getAudioMixerActiveChannels(mixer: Readonly<AudioMixer>): readon
 export function pauseAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
+  // Actually stop each source node (not just flip the flag) so audio halts on pause.
   for (const channel of runtime.activeChannels) {
-    if (channel.state === 'playing') channel.state = 'paused';
+    if (channel.state === 'playing') pauseAudioChannel(channel);
   }
 }
 
 export function resumeAllAudioMixerChannels(mixer: Readonly<AudioMixer>): void {
   const runtime = mixerRuntimes.get(mixer);
   if (runtime === undefined) return;
+  // Restart the source node for channels this mixer paused; bus routing survives the restart
+  // because the channel's destination node is preserved across stop/start.
   for (const channel of runtime.activeChannels) {
-    if (channel.state === 'paused') channel.state = 'playing';
+    if (channel.state === 'paused') resumeAudioChannel(channel);
   }
 }
 
@@ -194,6 +214,15 @@ function registerBusInReverseMap(bus: AudioBus, runtime: AudioMixerRuntime): voi
     busToMixerRuntimes.set(bus, runtimes);
   }
   runtimes.add(runtime);
+}
+
+// Drop a runtime from a bus's reverse-map entry, deleting the entry entirely once no runtime
+// references the bus. This keeps busToMixerRuntimes bounded as mixers are destroyed.
+function unregisterBusFromReverseMap(bus: AudioBus, runtime: AudioMixerRuntime): void {
+  const runtimes = busToMixerRuntimes.get(bus);
+  if (runtimes === undefined) return;
+  runtimes.delete(runtime);
+  if (runtimes.size === 0) busToMixerRuntimes.delete(bus);
 }
 
 function updateBusGainNode(bus: AudioBus): void {
