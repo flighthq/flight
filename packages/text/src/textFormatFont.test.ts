@@ -1,4 +1,4 @@
-import { computeTextFormatFontString } from './renderTextFormat';
+import { computeTextFormatFontString } from './textFormatFont';
 
 describe('computeTextFormatFontString', () => {
   it('returns a CSS font string from format properties', () => {

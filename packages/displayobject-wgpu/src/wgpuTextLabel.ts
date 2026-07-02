@@ -1,9 +1,9 @@
 import { computeRgbHexString } from '@flighthq/materials';
 import { getNodeLocalContentRevision } from '@flighthq/node';
-import { computeTextFormatFontString } from '@flighthq/render';
 import { updateWgpuTextureEntry } from '@flighthq/render-wgpu';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { computeTextFormatFontString } from '@flighthq/text';
 import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {

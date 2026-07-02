@@ -1,7 +1,7 @@
 import { computeRgbHexString } from '@flighthq/materials';
-import { computeTextFormatFontString } from '@flighthq/render';
 import { createWgpuTextureEntry, drawWgpuQuad, updateWgpuTextureEntry } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { computeTextFormatFontString } from '@flighthq/text';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
   computeRichTextContent,

@@ -1,8 +1,8 @@
 import { computeRgbHexString } from '@flighthq/materials';
 import { getNodeLocalContentRevision } from '@flighthq/node';
-import { computeTextFormatFontString } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+import { computeTextFormatFontString } from '@flighthq/text';
 import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {

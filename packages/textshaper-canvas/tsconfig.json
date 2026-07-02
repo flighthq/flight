@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../render" }, { "path": "../textshaper" }, { "path": "../types" }],
+  "references": [{ "path": "../text" }, { "path": "../textshaper" }, { "path": "../types" }],
   "include": ["src"]
 }

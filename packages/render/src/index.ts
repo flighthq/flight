@@ -8,7 +8,6 @@ export * from './renderProxyAdapter';
 export * from './renderQueue';
 export * from './renderState';
 export * from './renderTarget';
-export * from './renderTextFormat';
 export * from './renderTransform2d';
 export * from './renderViewport';
 export * from './sceneRender';

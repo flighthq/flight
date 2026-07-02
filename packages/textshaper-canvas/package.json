@@ -27,7 +27,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/render": "*",
+    "@flighthq/text": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/types": "*"
   },

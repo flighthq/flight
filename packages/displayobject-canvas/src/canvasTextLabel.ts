@@ -1,6 +1,6 @@
 ﻿import { computeRgbHexString } from '@flighthq/materials';
-import { computeTextFormatFontString, noopRendererData } from '@flighthq/render';
-import { getTextLabelRuntime } from '@flighthq/text';
+import { noopRendererData } from '@flighthq/render';
+import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
   CanvasRenderState,

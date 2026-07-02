@@ -1,4 +1,4 @@
-import { computeTextFormatFontString } from '@flighthq/render';
+import { computeTextFormatFontString } from '@flighthq/text';
 import type { FontMetrics, TextFormat, TextShaperBackend } from '@flighthq/types';
 
 // Clears the advance cache on a backend returned by createCanvasTextShaperBackend. Call this after
