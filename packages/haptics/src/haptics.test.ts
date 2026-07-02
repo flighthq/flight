@@ -220,12 +220,12 @@ describe('setHapticsBackend', () => {
 });
 
 describe('triggerHapticImpact', () => {
-  it('forwards style to the active backend', () => {
+  it('forwards style to the active backend and defaults intensity to 1', () => {
     const backend = fakeBackend();
     setHapticsBackend(backend);
     expect(triggerHapticImpact('medium')).toBe(true);
     expect(backend.style).toBe('medium');
-    expect(backend.styleIntensity).toBeUndefined();
+    expect(backend.styleIntensity).toBe(1);
   });
 
   it('forwards intensity to the backend', () => {
