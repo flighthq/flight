@@ -3,7 +3,7 @@ import type { BokehDepthOfFieldEffect, CanvasRenderEffectRunner, CanvasRenderTar
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
 // Bokeh depth-of-field (PASSTHROUGH): a per-pixel circle-of-confusion blur driven by a depth buffer.
-// Canvas 2D has no depth attachment and no per-pixel variable blur. Shader-only / depth-only.
+// Genuinely unsupportable on Canvas 2D: needs a depth G-buffer the 2D context does not expose. Passthrough.
 export function applyBokehDepthOfFieldEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

@@ -3,7 +3,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, TiltShiftEffect } fr
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
 // Tilt-shift (PASSTHROUGH): a focus band with blur ramping outside it needs per-pixel variable blur the
-// uniform CSS blur() cannot express. Shader-only.
+// uniform CSS blur() cannot express. Expressible per-pixel via getImageData/putImageData; not yet
+// implemented — passthrough for now.
 export function applyTiltShiftEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

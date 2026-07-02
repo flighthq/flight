@@ -34,6 +34,14 @@ export interface SurfaceInnerShadowOptions extends SurfaceShadowBlurOptions {
   color?: number;
   /** Overall intensity multiplier applied to the shadow alpha. Default 1. */
   intensity?: number;
+  /**
+   * Pixel offset of the shadow inside the shape, from the filter's angle+distance (dx = cos(angle) *
+   * distance, dy = sin(angle) * distance; see getShadowFilterOffset). The inverted-alpha field is
+   * sampled shifted by (offsetX, offsetY) before the blur, so the shadow lands off-center against the
+   * boundary — the Photoshop/OpenFL inner-shadow construction. Default 0 (shadow centered on the edge).
+   */
+  offsetX?: number;
+  offsetY?: number;
 }
 
 /**
@@ -111,13 +119,16 @@ export function innerGlowSurface(
   source: Readonly<SurfaceRegion>,
   options: Readonly<SurfaceInnerGlowOptions> = {},
 ): void {
-  applyInnerEffect(out, scratch, source, options.color ?? 0xff0000ff, options);
+  // Inner glow hugs the boundary symmetrically, so no directional offset (0, 0).
+  applyInnerEffect(out, scratch, source, options.color ?? 0xff0000ff, options, 0, 0);
 }
 
 /**
  * Produces the inner shadow mask for a shadow that hugs the inside of the
- * source's alpha boundary, writing into `out`. Identical to `innerGlowSurface`
- * except for the default color (opaque black).
+ * source's alpha boundary, writing into `out`. Like `innerGlowSurface` but with
+ * an opaque-black default color and a directional `offsetX`/`offsetY`: the
+ * inverted-alpha field is sampled shifted by the offset before blurring, so the
+ * shadow gathers toward one edge instead of ringing the boundary evenly.
  *
  * To complete the effect, composite `out` over the original source.
  *
@@ -133,7 +144,15 @@ export function innerShadowSurface(
   source: Readonly<SurfaceRegion>,
   options: Readonly<SurfaceInnerShadowOptions> = {},
 ): void {
-  applyInnerEffect(out, scratch, source, options.color ?? 0x000000ff, options);
+  applyInnerEffect(
+    out,
+    scratch,
+    source,
+    options.color ?? 0x000000ff,
+    options,
+    options.offsetX ?? 0,
+    options.offsetY ?? 0,
+  );
 }
 
 function applyBlurPasses(
@@ -176,19 +195,24 @@ function applyInnerEffect(
   source: Readonly<SurfaceRegion>,
   color: number,
   options: Readonly<SurfaceShadowBlurOptions & { intensity?: number }>,
+  offsetX: number,
+  offsetY: number,
 ): void {
   const w = source.width;
   const h = source.height;
 
   // Step 1: write the inverted source alpha into out (rgb 0). High outside the
   // shape, low inside — so the blur bleeds the exterior inward across the edge.
+  // The field is sampled shifted by (offsetX, offsetY): a nonzero offset pulls the
+  // exterior in from one side, so the blurred shadow gathers against the opposite
+  // edge (the inner-shadow direction). Zero offset rings the boundary evenly (glow).
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
       const di = (py * w + px) * 4;
       out[di] = 0;
       out[di + 1] = 0;
       out[di + 2] = 0;
-      out[di + 3] = 255 - readSourceAlpha(source, px, py);
+      out[di + 3] = 255 - readSourceAlpha(source, px - offsetX, py - offsetY);
     }
   }
 

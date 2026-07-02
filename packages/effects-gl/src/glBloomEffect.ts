@@ -1,4 +1,4 @@
-import { computeBloomBlurRadius } from '@flighthq/effects';
+import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects';
 import { applyGaussianBlurFilterToGl } from '@flighthq/filters-gl';
 import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl';
 import type {
@@ -21,8 +21,8 @@ export function applyBloomEffectToGl(
   pool: GlRenderTargetPool,
   effect: Readonly<BloomEffect>,
 ): void {
-  const threshold = effect.threshold ?? 0.8;
-  const intensity = effect.intensity ?? 1;
+  const threshold = computeBloomThreshold(effect);
+  const intensity = computeBloomIntensity(effect);
   const radius = computeBloomBlurRadius(effect);
   const descriptor = { width: source.width, height: source.height, format: source.format };
 

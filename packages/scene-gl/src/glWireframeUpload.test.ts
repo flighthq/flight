@@ -1,7 +1,22 @@
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 
 import { makeGlSceneState } from './glSceneTestHelper';
-import { ensureGlWireframeUpload } from './glWireframeUpload';
+import { destroyGlWireframeUpload, ensureGlWireframeUpload } from './glWireframeUpload';
+
+describe('destroyGlWireframeUpload', () => {
+  it('deletes the VAO and the line-index buffer, but not the shared vertex buffer', () => {
+    const { state, gl } = makeGlSceneState();
+    const upload = ensureGlWireframeUpload(state, createBoxMeshGeometry());
+    const deletesBefore = gl.calls.filter((c) => c.name === 'deleteBuffer').length;
+    destroyGlWireframeUpload(state, upload);
+    // Exactly the line-index buffer is freed here; the interleaved vertex buffer belongs to the
+    // triangle mesh upload and is freed by destroyGlMeshUpload for that geometry.
+    expect(gl.calls.filter((c) => c.name === 'deleteBuffer').length).toBe(deletesBefore + 1);
+    expect(gl.calls.filter((c) => c.name === 'deleteVertexArray').length).toBe(1);
+    const deletedBuffer = gl.calls.find((c) => c.name === 'deleteBuffer');
+    expect(deletedBuffer!.args[0]).toBe(upload.lineIndexBuffer);
+  });
+});
 
 describe('ensureGlWireframeUpload', () => {
   it('builds a line-index VAO and uploads the derived line buffer', () => {

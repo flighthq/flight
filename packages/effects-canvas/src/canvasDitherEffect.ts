@@ -2,8 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, DitherEffect } from 
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Dither (PASSTHROUGH): ordered-Bayer quantization is per-pixel threshold math with no CSS/draw-op
-// equivalent. Shader-only.
+// Dither (PASSTHROUGH): ordered-Bayer quantization is per-pixel threshold math. No CSS filter
+// equivalent, but expressible per-pixel via getImageData/putImageData; not yet implemented — passthrough
+// for now.
 export function applyDitherEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

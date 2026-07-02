@@ -1,4 +1,4 @@
-import { computeBloomBlurRadius } from '@flighthq/effects';
+import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects';
 import type { WgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
 import {
   applyGaussianBlurFilterToWgpu,
@@ -21,7 +21,7 @@ import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 // composite back. The multi-pass reference recipe — it acquires intermediate targets from the pool and
 // releases them, branches, and reuses a filter, which is what makes it an effect and not a filter.
 // The Wgpu mirror of effects-gl's applyBloomEffectToGl; identical parameters come from the
-// shared computeBloomBlurRadius.
+// shared computeBloomThreshold / computeBloomIntensity / computeBloomBlurRadius.
 export function applyBloomEffectToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuRenderTarget>,
@@ -29,8 +29,8 @@ export function applyBloomEffectToWgpu(
   pool: WgpuRenderTargetPool,
   effect: Readonly<BloomEffect>,
 ): void {
-  const threshold = effect.threshold ?? 0.8;
-  const intensity = effect.intensity ?? 1;
+  const threshold = computeBloomThreshold(effect);
+  const intensity = computeBloomIntensity(effect);
   const radius = computeBloomBlurRadius(effect);
   const descriptor = { width: source.width, height: source.height, format: source.format };
 

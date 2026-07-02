@@ -85,9 +85,11 @@ export function drawCanvasImageDataPass(
   dstCtx.restore();
 }
 
-// Copies `source` into `dest` unchanged. The Canvas realization of an effect that has no reasonable
-// Canvas 2D path (shader-only): the pipeline stage is preserved so the registry stays populated for
-// parity, but the image is untouched.
+// Copies `source` into `dest` unchanged. The Canvas realization for effects not carried out on Canvas 2D
+// — either genuinely unsupportable here (they need a depth/normal, velocity, or temporal-history buffer the
+// 2D context does not expose) or expressible per-pixel via getImageData/putImageData but not yet
+// implemented. Either way the pipeline stage is preserved so the registry stays populated for parity, but
+// the image is untouched.
 export function passthroughCanvasEffectPass(
   dest: Readonly<CanvasRenderTarget>,
   source: Readonly<CanvasRenderTarget>,

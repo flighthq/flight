@@ -2,7 +2,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, LookupTableGradeEffe
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// LUT grade (PASSTHROUGH): sampling a 3D LUT cube per pixel has no CSS filter equivalent. Shader-only.
+// LUT grade (PASSTHROUGH): sampling a 3D LUT cube per pixel. No CSS filter equivalent, but expressible
+// per-pixel via getImageData/putImageData; not yet implemented — passthrough for now.
 export function applyLookupTableGradeEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

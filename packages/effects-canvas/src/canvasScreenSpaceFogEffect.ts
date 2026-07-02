@@ -2,8 +2,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, ScreenSpaceFogEffect
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Screen-space fog (PASSTHROUGH): exponential fog by per-pixel depth needs a sampleable depth buffer
-// Canvas 2D does not write. Shader-only / depth-only.
+// Screen-space fog (PASSTHROUGH): exponential fog attenuated by per-pixel scene depth.
+// Genuinely unsupportable on Canvas 2D: needs a depth buffer the 2D context does not expose. Passthrough.
 export function applyScreenSpaceFogEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

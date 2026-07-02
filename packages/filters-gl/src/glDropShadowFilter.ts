@@ -15,7 +15,8 @@ import { applyGlTintPass } from './glTintShader';
  * (tint mask, blurred shadow, and the blur's ping-pong temp). The filter
  * allocates nothing itself.
  *
- * `knockout` is not yet supported by the Gl path.
+ * `knockout` and `hideObject` both composite the shadow alone, omitting the
+ * source object from the output.
  */
 export function applyDropShadowFilterToGl(
   state: GlRenderState,
@@ -24,8 +25,6 @@ export function applyDropShadowFilterToGl(
   scratch: GlRenderTarget[],
   filter: Readonly<Omit<DropShadowFilter, 'kind'>>,
 ): void {
-  if (filter.knockout) return;
-
   const angle = ((filter.angle ?? 45) * Math.PI) / 180;
   const distance = filter.distance ?? 4;
   const dx = Math.cos(angle) * distance;
@@ -35,6 +34,7 @@ export function applyDropShadowFilterToGl(
   const strength = filter.strength ?? 1;
   const quality = Math.max(1, Math.round(filter.quality ?? 1));
   const hideObject = filter.hideObject ?? false;
+  const knockout = filter.knockout ?? false;
 
   const tintStrength = Math.min(1, strength);
   const shadowPasses = Math.max(1, Math.floor(strength));
@@ -53,7 +53,7 @@ export function applyDropShadowFilterToGl(
     applyGlBlitOffsetPass(state, blurred, dest, dx, dy);
   }
 
-  if (!hideObject) {
+  if (!hideObject && !knockout) {
     applyGlBlitPass(state, source, dest);
   }
 }

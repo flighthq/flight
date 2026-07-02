@@ -2,8 +2,10 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, ToneMapEffect } from
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Tone map (PASSTHROUGH): tone-mapping operators compress HDR linear light to displayable range; the
-// source on Canvas 2D is already clamped 8-bit sRgb with no HDR to compress. Shader-only / HDR-only.
+// Tone map (PASSTHROUGH): tone-mapping operators compress HDR linear light to displayable range. No CSS
+// filter equivalent, but expressible per-pixel via getImageData/putImageData; not yet implemented —
+// passthrough for now. (The Canvas source is already clamped 8-bit with little HDR to compress, so the
+// result is approximate.)
 export function applyToneMapEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

@@ -3,8 +3,14 @@ import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/rend
 import type { ConvolutionFilter } from '@flighthq/types';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types';
 
-// Max supported kernel: 7×7. Use the surface path for larger kernels.
-const MAX_KERNEL = 49;
+/**
+ * Maximum number of convolution kernel weights the WebGL path supports (a 7×7
+ * kernel). The cap is the fixed uniform-array size in the fragment shader;
+ * larger kernels must use `applyConvolutionFilterToSurface`.
+ */
+export const MAX_CONVOLUTION_FILTER_GL_KERNEL_SIZE = 49;
+
+const MAX_KERNEL = MAX_CONVOLUTION_FILTER_GL_KERNEL_SIZE;
 
 const CONVOLUTION_FRAGMENT_SRC = `#version 300 es
 precision mediump float;

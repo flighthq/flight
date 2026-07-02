@@ -2,8 +2,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, PosterizeEffect } fr
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// Posterize (PASSTHROUGH): per-channel quantization to discrete levels has no CSS filter equivalent.
-// Shader-only.
+// Posterize (PASSTHROUGH): per-channel quantization to discrete levels. No CSS filter equivalent, but
+// expressible per-pixel via getImageData/putImageData; not yet implemented — passthrough for now.
 export function applyPosterizeEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

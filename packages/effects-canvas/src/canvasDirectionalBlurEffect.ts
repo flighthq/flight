@@ -3,7 +3,8 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, DirectionalBlurEffec
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
 // Directional blur (PASSTHROUGH): accumulating taps stepped along an angle is a per-pixel multi-tap
-// gather with no 2D draw-op path. Shader-only.
+// gather. No CSS filter equivalent, but expressible per-pixel via getImageData/putImageData; not yet
+// implemented — passthrough for now.
 export function applyDirectionalBlurEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,

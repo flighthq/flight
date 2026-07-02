@@ -3,9 +3,14 @@ import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/rend
 import type { MedianFilter } from '@flighthq/types';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types';
 
-// Supports radius up to 2 (5×5 = 25 samples). For larger radii use the
-// surface path. Sorts per-channel independently using insertion sort.
-const MAX_RADIUS = 2;
+/**
+ * Largest median-filter radius the WebGL path supports (radius 2 → a 5×5, 25-sample
+ * window). The cap is the fixed sort-array size in the fragment shader; larger radii
+ * must use `applyMedianFilterToSurface`. Sorts per-channel with insertion sort.
+ */
+export const MAX_MEDIAN_FILTER_GL_RADIUS = 2;
+
+const MAX_RADIUS = MAX_MEDIAN_FILTER_GL_RADIUS;
 const MAX_SAMPLES = (MAX_RADIUS * 2 + 1) * (MAX_RADIUS * 2 + 1); // 25
 
 const MEDIAN_FRAGMENT_SRC = `#version 300 es

@@ -1,3 +1,4 @@
+import { destroyGlRenderTarget } from '@flighthq/render-gl';
 import type {
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -9,6 +10,7 @@ import type {
 } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
+import { destroyGlBakePrograms } from './glEnvironmentIblBake';
 import type { GlMeshProgram } from './glMeshProgram';
 
 // The active directional shadow for this state, set by drawGlSceneShadowMap and read by the lit bind
@@ -81,6 +83,53 @@ export interface GlMeshUpload {
   vao: WebGLVertexArrayObject;
   version: number;
   vertexBuffer: WebGLBuffer;
+}
+
+// Frees every state-scoped GPU resource scene-gl created for `state`: all cached mesh-material and PBR
+// programs, the IBL set (irradiance / prefiltered / BRDF textures + the bake framebuffer), the source
+// environment cubemap, the IBL bake shader programs, and the directional shadow map (its depth texture
+// is owned by shadowTarget, so destroying the target frees it — the shadow alias is cleared without a
+// double delete). The runtime object itself is GC-managed and left cleared, safe to repopulate lazily.
+//
+// Per-geometry mesh and wireframe uploads are NOT reached here: their caches are keyed by geometry in
+// WeakMaps that cannot be iterated. Free those with destroyGlMeshUpload / destroyGlWireframeUpload when
+// a geometry is torn down, or let GL context loss reclaim them. A no-op when no scene runtime exists.
+// Deleting an already-deleted GL object is a silent no-op, so this is safe to call more than once.
+export function destroyGlSceneRuntime(state: GlRenderState): void {
+  const scene = sceneRuntimes.get(state);
+  if (scene === undefined) return;
+  const gl = state.gl;
+
+  for (const program of scene.programCache.values()) gl.deleteProgram(program.program);
+  scene.programCache.clear();
+  scene.activeMeshProgram = null;
+
+  if (scene.ibl !== null) {
+    gl.deleteTexture(scene.ibl.brdfLut);
+    gl.deleteTexture(scene.ibl.irradianceCube);
+    gl.deleteTexture(scene.ibl.prefilteredCube);
+    scene.ibl = null;
+  }
+  if (scene.iblBakeFramebuffer !== null) {
+    gl.deleteFramebuffer(scene.iblBakeFramebuffer);
+    scene.iblBakeFramebuffer = null;
+  }
+  if (scene.environmentSourceCube !== null) {
+    gl.deleteTexture(scene.environmentSourceCube);
+    scene.environmentSourceCube = null;
+  }
+  destroyGlBakePrograms(state);
+
+  if (scene.shadowTarget !== null) {
+    destroyGlRenderTarget(state, scene.shadowTarget);
+    scene.shadowTarget = null;
+  }
+  scene.shadow = null;
+
+  scene.blendedDrawList.length = 0;
+  scene.opaqueDrawList.length = 0;
+  scene.blendedPool.length = 0;
+  scene.opaquePool.length = 0;
 }
 
 // Resolves scene-gl's private runtime for a GlRenderState, allocating it (and wiring the header

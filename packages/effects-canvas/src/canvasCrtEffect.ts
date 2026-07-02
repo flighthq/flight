@@ -2,9 +2,9 @@ import type { CanvasRenderEffectRunner, CanvasRenderTarget, CrtEffect } from '@f
 
 import { passthroughCanvasEffectPass } from './canvasEffectCompositing';
 
-// CRT (PASSTHROUGH): barrel distortion + channel split + scanlines + vignette as one shader; the
-// distortion and channel split have no 2D draw-op path. Shader-only. (Scanlines alone is realized
-// separately by applyScanlinesEffectToCanvas.)
+// CRT (PASSTHROUGH): barrel distortion + channel split + scanlines + vignette as one pass. No CSS filter
+// equivalent, but expressible per-pixel via getImageData/putImageData; not yet implemented — passthrough
+// for now. (Scanlines alone is realized separately by applyScanlinesEffectToCanvas.)
 export function applyCrtEffectToCanvas(
   source: Readonly<CanvasRenderTarget>,
   dest: Readonly<CanvasRenderTarget>,
