@@ -11,6 +11,7 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types';
 
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
 // Per-node GPU texture entry the current video frame is uploaded into. Held on the node's
@@ -22,12 +23,13 @@ interface WgpuVideoData {
 }
 
 export function createWgpuVideoData(_state: RenderState, _source: Renderable): RendererData {
-  return { entry: null, h: 0, w: 0 } as unknown as RendererData;
+  return createWgpuRendererData<WgpuVideoData>({ entry: null, h: 0, w: 0 });
 }
 
 // Destroys the GPU texture this video node owns when it is torn down via disposeDisplayObjectRender.
 export function destroyWgpuVideoData(_state: RenderState, data: RendererData): void {
-  const videoData = data as unknown as WgpuVideoData;
+  const videoData = getWgpuRendererData<WgpuVideoData>(data);
+  if (videoData === null) return;
   videoData.entry?.texture.destroy();
 }
 
@@ -46,8 +48,8 @@ export function drawWgpuVideo(state: WgpuRenderState, renderProxy: RenderProxy2D
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
 
-  if (renderProxy.rendererData === null) return;
-  const videoData = renderProxy.rendererData as unknown as WgpuVideoData;
+  const videoData = getWgpuRendererData<WgpuVideoData>(renderProxy.rendererData);
+  if (videoData === null) return;
   let entry = videoData.entry;
   if (entry === null || videoData.w !== vw || videoData.h !== vh) {
     entry?.texture.destroy();

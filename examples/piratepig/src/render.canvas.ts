@@ -8,7 +8,7 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
-  enableCanvasCssFilterSupport,
+  enableCanvasCssFilter,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -36,7 +36,7 @@ registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-enableCanvasCssFilterSupport(state);
+enableCanvasCssFilter(state);
 export const scale = pixelRatio;
 
 export function setSize(w: number, h: number): void {

@@ -302,49 +302,19 @@ export function writeWgpuMatrixOnlyUniforms(
   u1: number,
   v1: number,
 ): number {
-  const runtime = getWgpuRenderStateRuntime(state);
-  const byteOffset = runtime.uniformOffset;
-  const floatBase = byteOffset >> 2;
-  const { uniformData, uniformDataU32, matrixArray } = runtime;
-
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
-  setWgpuMatrixFromTransform(matrixArray, transform, viewport);
-
-  uniformData[floatBase + 0] = matrixArray[0];
-  uniformData[floatBase + 1] = matrixArray[1];
-  uniformData[floatBase + 2] = matrixArray[2];
-  uniformData[floatBase + 3] = 0;
-  uniformData[floatBase + 4] = matrixArray[3];
-  uniformData[floatBase + 5] = matrixArray[4];
-  uniformData[floatBase + 6] = matrixArray[5];
-  uniformData[floatBase + 7] = 0;
-  uniformData[floatBase + 8] = matrixArray[6];
-  uniformData[floatBase + 9] = matrixArray[7];
-  uniformData[floatBase + 10] = matrixArray[8];
-  uniformData[floatBase + 11] = 0;
-  uniformData[floatBase + 12] = renderProxy.alpha;
-  uniformDataU32[floatBase + 13] = 0;
-  uniformData[floatBase + 14] = 0;
-  uniformData[floatBase + 15] = 0;
-  uniformData[floatBase + 16] = 1;
-  uniformData[floatBase + 17] = 1;
-  uniformData[floatBase + 18] = 1;
-  uniformData[floatBase + 19] = 1;
-  uniformData[floatBase + 20] = 0;
-  uniformData[floatBase + 21] = 0;
-  uniformData[floatBase + 22] = 0;
-  uniformData[floatBase + 23] = 0;
-  uniformData[floatBase + 24] = x0;
-  uniformData[floatBase + 25] = y0;
-  uniformData[floatBase + 26] = x1;
-  uniformData[floatBase + 27] = y1;
-  uniformData[floatBase + 28] = u0;
-  uniformData[floatBase + 29] = v0;
-  uniformData[floatBase + 30] = u1;
-  uniformData[floatBase + 31] = v1;
-
-  runtime.uniformOffset += runtime.uniformStride;
-  return byteOffset;
+  return writeWgpuQuadUniforms(
+    state,
+    { alpha: renderProxy.alpha, transform2D: transform },
+    null,
+    x0,
+    y0,
+    x1,
+    y1,
+    u0,
+    v0,
+    u1,
+    v1,
+  );
 }
 
 // Writes the standard uniforms (matrix + alpha + color transform + quad coords) into

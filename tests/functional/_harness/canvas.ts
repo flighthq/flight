@@ -14,8 +14,8 @@ import {
   defaultCanvasTextLabelRenderer,
   defaultCanvasTilemapRenderer,
   defaultCanvasVideoRenderer,
-  enableCanvasBlendModeSupport,
-  enableCanvasClipSupport,
+  enableCanvasBlendMode,
+  enableCanvasClip,
   enableCanvasRenderCache,
   prepareDisplayObjectRender,
   QuadBatchKind,
@@ -78,9 +78,9 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     }
   }
 
-  if (options.clip) enableCanvasClipSupport(state);
+  if (options.clip) enableCanvasClip(state);
   if (options.cache) enableCanvasRenderCache(state);
-  if (options.blend) enableCanvasBlendModeSupport(state);
+  if (options.blend) enableCanvasBlendMode(state);
 
   return registerFunctionalTarget({
     kind: 'canvas',

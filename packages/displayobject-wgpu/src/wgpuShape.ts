@@ -17,6 +17,7 @@ import type {
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import type { WgpuShapeMesh } from './wgpuShapeMesh';
 import { drawWgpuShapeMeshes } from './wgpuShapeMesh';
 import {
@@ -44,7 +45,7 @@ function createWgpuShapeData(_state: RenderState, _source: Renderable): Renderer
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return {
+  return createWgpuRendererData<WgpuShapeData>({
     canvas,
     ctx,
     lastContentId: -1,
@@ -60,14 +61,15 @@ function createWgpuShapeData(_state: RenderState, _source: Renderable): Renderer
       uniformBuffer: null,
       bindGroup: null,
     },
-  } as unknown as RendererData;
+  });
 }
 
 // Destroy the GPU texture the batch uploaded for this shape's canvas, plus the mesh path's per-shape
 // vertex/index/uniform buffers, when the shape is torn down.
 function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const shapeData = data as unknown as WgpuShapeData;
+  const shapeData = getWgpuRendererData<WgpuShapeData>(data);
+  if (shapeData === null) return;
   const { canvas } = shapeData;
   const entry = runtime.textureCache.get(canvas);
   if (entry !== undefined) {
@@ -98,7 +100,8 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   // the canvas-raster path for gradient/bitmap fills and strokes (getShapeFillRegions returns null).
   const regions = getShapeFillRegions(commands);
   if (regions !== null && regions.length > 0) {
-    const meshData = renderProxy.rendererData as unknown as WgpuShapeData;
+    const meshData = getWgpuRendererData<WgpuShapeData>(renderProxy.rendererData);
+    if (meshData === null) return;
     if (meshData.meshVersion !== version) {
       meshData.meshes = regions.map((region) => {
         const mesh = tessellatePath(region.path);
@@ -119,7 +122,8 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  const shapeData = renderProxy.rendererData as unknown as WgpuShapeData;
+  const shapeData = getWgpuRendererData<WgpuShapeData>(renderProxy.rendererData);
+  if (shapeData === null) return;
   const bounds = getNodeLocalBoundsRectangle(source);
   const w = Math.ceil(bounds.width);
   const h = Math.ceil(bounds.height);

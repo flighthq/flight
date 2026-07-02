@@ -3,7 +3,7 @@ import { addNodeChild } from '@flighthq/node';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender, registerRenderer } from '@flighthq/render';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { enableCanvasCssFilterSupport, setCanvasCssFilter } from './canvasCSSFilterBinding';
+import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding';
 import {
   defaultCanvasDisplayObjectRenderer,
   drawCanvasDisplayObject,
@@ -105,7 +105,7 @@ describe('renderCanvasDisplayObject', () => {
       }),
     };
     registerRenderer(state, DisplayObjectKind, renderer);
-    enableCanvasCssFilterSupport(state);
+    enableCanvasCssFilter(state);
     setCanvasCssFilter(state, obj, 'blur(3px)');
     prepareDisplayObjectRender(state, obj);
 

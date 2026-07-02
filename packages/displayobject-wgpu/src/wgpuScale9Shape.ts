@@ -13,6 +13,7 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types';
 
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
 import { drawWgpuShape } from './wgpuShape';
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
@@ -37,7 +38,7 @@ export function createWgpuScale9ShapeData(_state: RenderState, _source: Renderab
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return {
+  return createWgpuRendererData<WgpuScale9ShapeData>({
     canvas,
     ctx,
     lastH: 0,
@@ -46,12 +47,13 @@ export function createWgpuScale9ShapeData(_state: RenderState, _source: Renderab
     lastContentId: -1,
     lastW: 0,
     entry: null,
-  } as unknown as RendererData;
+  });
 }
 
 // Scale9 owns its texture directly (created lazily on first draw), so destroy it on teardown.
 export function destroyWgpuScale9ShapeData(_state: RenderState, data: RendererData): void {
-  const shapeData = data as unknown as WgpuScale9ShapeData;
+  const shapeData = getWgpuRendererData<WgpuScale9ShapeData>(data);
+  if (shapeData === null) return;
   shapeData.entry?.texture.destroy();
 }
 
@@ -73,7 +75,8 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     return;
   }
 
-  const shapeData = renderProxy.rendererData as unknown as WgpuScale9ShapeData;
+  const shapeData = getWgpuRendererData<WgpuScale9ShapeData>(renderProxy.rendererData);
+  if (shapeData === null) return;
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;

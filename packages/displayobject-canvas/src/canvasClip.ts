@@ -11,7 +11,7 @@ import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle
 // Masks RETIRED — a former mask is a path ClipRegion. Canvas realizes both clip forms with the native
 // context clip (rect path or contour path), so push/pop is a uniform ctx.save()/ctx.restore() bracket
 // and pop needs no per-form dispatch.
-export function enableCanvasClipSupport(state: CanvasRenderState): void {
+export function enableCanvasClip(state: CanvasRenderState): void {
   state.displayObjectClipHooks = canvasClipHooks;
 }
 
