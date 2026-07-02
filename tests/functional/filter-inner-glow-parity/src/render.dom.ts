@@ -49,7 +49,7 @@ export function createParityTarget(width: number, height: number, background: nu
     width,
     height,
     scale: 1,
-    applyNativeGlow(_node: Bitmap, _filter: Readonly<Omit<InnerGlowFilter, 'type'>>): void {},
+    applyNativeGlow(_node: Bitmap, _filter: Readonly<Omit<InnerGlowFilter, 'kind'>>): void {},
     render(root: DisplayObject): void {
       renderParity(state, root);
     },
