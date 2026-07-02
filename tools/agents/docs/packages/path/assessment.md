@@ -1,57 +1,57 @@
 ---
 package: '@flighthq/path'
-updated: 2026-06-24
+updated: 2026-07-02
 basedOn: ./review.md
 ---
 
 # path — Assessment
 
-> Recommendation layer. Sorts the gaps in `review.md` and the (now-absorbed) maturation roadmap into sweep-safe `Recommended` vs. parked `Backlog`. `Approved` is empty — approval is the user's verbal gate. Design forks and cross-package items are routed to the charter's Open directions, not into `Recommended`.
->
-> **Absorbs** `reviews/maturation/depth/path.md` (the Bronze/Silver/Gold roadmap). Nearly the entire Bronze and Silver tier has since **landed** (close/copy/clone/transform/bounds/primitives/segment iteration/typed-array output/stroking/measurement/hit-testing/arcs/reverse/polygon/curve-eval — all verified present in the review). Only the Gold tier and a few internal refinements remain; the roadmap is spent and may be removed.
+Sorted from the depth review (88/100), the builder's landed expansion (42 exports, 144 tests — verified present), and the direction session (2026-07-02). Five decisions blessed. The package is already strong — a mature value-typed geometry kernel with construction, flattening, tessellation, measurement, analysis, transformation, stroking, and hit-testing. The sweep items are internal quality (O(1) pen cache, deduplicated walkers) plus additive measurement/editing functions that are canonical for a mature path library.
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/path`, no cross-package coupling, no breaking change, no open design decision. A blanket "do all recommended" can safely bless this set.
+Sweep-safe: within `@flighthq/path`, no cross-package coupling, no breaking change, no open design decision.
 
-1. **Cache the pen position so `getPathLastPoint` is O(1).** `appendPathArcTo` rescans the whole command stream on each call to find the current pen position — quadratic for arc-heavy programmatic building. Track the last point on the runtime/build state instead of re-deriving it. Pure internal perf fix; no API or output change. — review.md#gaps (`getPathLastPoint is O(n)`)
+1. **Cache the pen position so `getPathLastPoint` is O(1).** `appendPathArcTo` rescans the whole command stream on each call to find the current pen position — quadratic for arc-heavy programmatic building. Track the last point on the runtime/build state instead of re-deriving it. Pure internal perf fix; no API or output change.
 
-2. **Route the internal command walkers through `forEachPathSegment`.** The verb/stride decode is re-implemented across ~8 files (`getPathBounds`, `transformPath`, `containsPathPoint`, `strokePath`'s decode, `walkPathSegment`, `getPathLastPoint`, flatten). `forEachPathSegment` was introduced partly to centralize this but most internal walkers do not use it. Collapsing the duplicate decoders is an internal refactor with no API change. (Keep the tight stride-walk loops where fork B's closed-union exception applies; this is about removing _duplication_, not changing dispatch.) — review.md#structural-forks-fit
+2. **Route the internal command walkers through `forEachPathSegment`.** The verb/stride decode is re-implemented across ~8 files. Collapsing the duplicate decoders is an internal refactor with no API change. Keep tight stride-walk loops where fork B's closed-union exception applies; this is about removing _duplication_, not changing dispatch.
 
-3. **Expose `dashPath` independently of `strokePath`.** The dash-pattern split already exists inside `strokePath`; surfacing it as a standalone function (polyline/path → dashed sub-paths) is purely additive — no decision, no new dependency. — review.md#gaps (`Path editing/simplification`)
+3. **Expose `dashPath` independently of `strokePath`.** The dash-pattern split already exists inside `strokePath`; surfacing it as a standalone function (polyline/path → dashed sub-paths) is purely additive.
 
-4. **Add `getPathContourLengths`.** Per-contour arc lengths over the existing flatten pass. Additive measurement function; reuses the cumulative-length machinery already present for `getPathLength`. — review.md#gaps (`Full PathMeasure surface`)
+4. **Add `getPathContourLengths`.** Per-contour arc lengths over the existing flatten pass. Additive measurement function; reuses the cumulative-length machinery already present for `getPathLength`.
 
-5. **Add `getPathNearestPoint` (closest-point-on-path).** Additive pure query over flattened segments, out-param into `Vector2Like`, consistent with the existing `*AtDistance` family. No design fork — it is one more analytic function on the current pure-re-flatten model. — review.md#gaps (`Full PathMeasure surface`)
+5. **Add `getPathNearestPoint` (closest-point-on-path).** Additive pure query over flattened segments, out-param into `Vector2Like`, consistent with the existing `*AtDistance` family.
 
-6. **Add `simplifyPath` (Douglas–Peucker decimation).** Flattened-contour decimation to a tolerance, out-param `Path`, alias-safe. Self-contained, dependency-free, within-package. — review.md#gaps (`Path editing/simplification`)
+6. **Add `simplifyPath` (Douglas-Peucker decimation).** Flattened-contour decimation to a tolerance, out-param `Path`, alias-safe. Self-contained, dependency-free, within-package.
 
-7. **Add `fitPathCurves` (Schneider polyline → bezier fitting).** Re-curves a flattened/scanned outline. Additive, within-package; larger than items 4–6 but carries no design decision and no cross-package coupling. — review.md#gaps (`Path editing/simplification`)
+7. **Add `fitPathCurves` (Schneider polyline → bezier fitting).** Re-curves a flattened/scanned outline. Additive, within-package; larger than items 4–6 but carries no design decision and no cross-package coupling.
+
+8. **Add `offsetPath` (inset/outset by distance).** Related to stroke expansion but produces one side, not both. Standard path-library primitive (Skia, Cairo, paper.js all provide this). Additive, within-package.
+
+9. **Promote `StrokeStyle` to `@flighthq/types`.** Per Decision #3 in the charter — types should always live in types. Move the interface from `strokePath.ts` to the header layer. Cross-package coordination, but explicitly blessed as a decision.
 
 ## Backlog
 
-Parked: cross-package coordination, larger scope, or waiting on an Open direction. Reason given per item. The first seven also feed the charter's **Open directions** (noted for the charter; not edited here).
+Parked — each with the reason it is not sweep-safe.
 
-- **Boolean / path-overlay ops** (`unionPaths`/`intersectPaths`/`differencePaths`/`xorPaths`). The single largest capability gap, but a **design fork**: the review and roadmap both lean toward a `@flighthq/path-boolean` neighbor package (keeps Vatti/Martínez-Rueda weight off the geometry core). New-package + bedrock-test decision → Open direction, not a sweep. — review.md#candidate-open-directions (1)
+- **Boolean / path-overlay ops** (`unionPaths`/`intersectPaths`/`differencePaths`/`xorPaths`). _Parked — new package._ Blessed (Decision #1): belongs in `@flighthq/path-boolean` neighbor. New-package creation + Vatti/Martínez-Rueda implementation.
 
-- **SVG path-string parse / serialize** (`parseSvgPathData`/`serializeSvgPathData`). Arc math is already present; only the string codec is missing. But the _home_ is a design fork — a `@flighthq/path-formats` triad cell (passes the plurality guard only if a second textual path format is foreseen), in-package, or owned by a future `svg` importer. → Open direction. — review.md#candidate-open-directions (2)
+- **SVG path-string parse / serialize** (`parseSvgPathData`/`serializeSvgPathData`). _Parked — new package._ Blessed (Decision #2): belongs in `@flighthq/path-formats`. Pure string parsing, no DOM.
 
-- **Holes-aware / robust triangulation** in `tessellatePath`. Cross-package contract question with the `render-*` owners (does the direct-fill route grow earcut hole-stitching + winding honoring, or do holes stay the renderer's stencil-then-cover job?). Not sweep-safe. — review.md#candidate-open-directions (3)
+- **Holes-aware tessellation.** _Parked — larger scope._ Blessed (Decision #5): a second function alongside the simple `tessellatePath`. Earcut + winding hole-stitching is a significant implementation, not a sweep item.
 
-- **Self-intersection robustness in tessellate** (constrained-Delaunay / monotone fallback replacing the `if (!clipped) break` bail). Research-grade and changes `tessellatePath` behavior/output — larger scope than a sweep, and entangled with the holes-aware decision above. — review.md#gaps (`Self-intersection robustness`)
+- **Self-intersection robustness in tessellate** (constrained-Delaunay / monotone fallback). Research-grade, changes `tessellatePath` behavior/output. Entangled with the holes-aware tessellation above.
 
-- **`PathMeasure` shape** — a stateful cached measure entity vs. the current pure re-flattening functions. A design decision (affects amortization for text-on-path / length-driven animation) that governs whether items 4–5 above stay free functions or fold into an entity. → Open direction. — review.md#candidate-open-directions (4)
+- **PathMeasure shape.** _Parked — open direction._ Whether to add a stateful cached measure entity (amortized for text-on-path, animation) vs. keeping the current pure re-flattening functions. Open direction #1 in the charter.
 
-- **Promote `StrokeStyle` to `@flighthq/types`.** Currently defined inline in `strokePath.ts`. As a pure input descriptor a renderer or higher layer may also author, it belongs in the header layer — but it crosses a package boundary, so it is coordination, not a sweep. → Open direction. — review.md#contract--docs-fit (a) / candidate-open-directions (5)
+- **Stroke dash-phase semantics.** _Parked — open direction._ Per-subpath (Flash) vs. global (SVG/Skia) vs. configurable. Inner/outer stroke alignment also unsettled. Open direction #2 in the charter.
 
-- **Stroke semantics** — global dash-phase continuity across subpaths (SVG/Skia/PDF) and inner/outer stroke alignment vs. blessing the current per-subpath, center-only behavior. The tests _pin_ the current behavior, so changing it is a deliberate decision, not a sweep. → Open direction. — review.md#candidate-open-directions (6)
+- **Package description update.** The current description understates the package. Should reflect construction + conversion + measurement + analysis + transformation + stroking. Open direction #3 in the charter.
 
-- **Rust parity for `flighthq-path`.** The Bronze/Silver/Gold additions are not yet mirrored in the crate. A prime first conformance target (value-typed leaf, deterministic, headlessly fingerprint-able), but it is cross-worktree coordination, not within-package TS work. — review.md#gaps (`Rust parity`)
+- **Codebase-map Package Map entry.** `path` is missing from the Package Map in `index.md` despite being a core dependency of `clip`, `shape`, and `interaction`. Docs/admin fix outside the package source.
 
-- **Add a `@flighthq/path` entry to the codebase-map Package Map.** The live map lists `clip` and `math` but not `path`, despite `types`/`Path.ts` referencing it and `clip` consuming `Path`. A docs/admin fix outside the package source — surfaced for the map maintainer, not a code sweep. — review.md#contract--docs-fit (b.1)
-
-- **Author the charter's North star / Boundaries.** `lastDirection: null`; a one-paragraph Boundaries statement (what is explicitly _not_ path's job — rendering, GPU-upload orchestration, the SVG DOM) would settle the boolean-ops / formats / `PathMeasure` / stroke-semantics forks by precedent. Charter authoring is the user's gate, not an assessment action. — review.md#contract--docs-fit (b.2) / candidate-open-directions (7)
+- **Rust `flighthq-path` crate.** _Parked — cross-worktree._ Prime first conformance target (value-typed leaf, deterministic, headlessly fingerprint-able). Open direction #4 in the charter.
 
 ## Approved
 
-_Frozen on the user's verbal approval only. None yet._
+- [2026-07-02 · picked] Sweep items 1–9: pen position cache, walker dedup, standalone dashPath, getPathContourLengths, getPathNearestPoint, simplifyPath, fitPathCurves, offsetPath, StrokeStyle promotion to types

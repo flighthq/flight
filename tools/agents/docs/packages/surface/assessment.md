@@ -1,39 +1,39 @@
 ---
 package: '@flighthq/surface'
-updated: 2026-06-25
+updated: 2026-07-02
 basedOn: ./review.md
 ---
 
-# surface — Assessment (merge gate: integration-b2824e3d8)
+# surface — Assessment
 
-Sorted from `review.md` (merge-gate score `solid — 72`, base `origin/main eb73c3d74`, evidence `integration-b2824e3d8` delta). This assessment covers only the incoming delta (`surfaceNoise` + `surfaceWarp`). The noise half is clean; the warp half carries the two blocking defects. `Recommended` holds only sweep-safe, within-`@flighthq/surface`, non-design-decision items. The edge-mode-types reconciliation and every structural fork are routed to the charter's Open directions. The actual merge-blocking directives (which require an out-of-package type addition) live in the dispatch brief at `outgoing/integration/surface.md`, not here — `assessment.md` is the within-package recommendation layer.
+Sorted from the depth review (88/100 — "clearest AAA package"), verified against the live tree (40 source files, 40 test files, 312 tests, 97 exports), and the direction session (2026-07-02). Seven charter decisions blessed — most significantly the unified sampling contract (all geometric/sampling ops accept explicit `SurfaceEdgeMode` + `SurfaceResizeMode`) and the `SurfaceConvolutionEdge` → `SurfaceEdgeMode` consolidation.
+
+The package is mature and well-tested. The major remaining work is the sampling contract unification (touching ~6 geometric ops) and the edge-mode type consolidation.
 
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/surface`, no cross-package coupling, no breaking change, no open design decision.
+Sweep-safe: within `@flighthq/surface` and `@flighthq/types`, no open design decision beyond what the charter has blessed.
 
-- **Wire `surfaceWarp.ts` into the barrel — once it compiles.** `src/index.ts` has no `export * from './surfaceWarp'` (byte-identical base↔head), so `warpSurface`/`warpSurfaceQuad` are unreachable from the package root and emit no `dist/surfaceWarp.d.ts`. Add the one line alphabetically between `export * from './surfaceTransform';` and the trailing type block. **Blocked on** the `SurfaceEdgeMode` type fix (cross-package, see Backlog) — wiring a barrel line to a file that does not typecheck only changes the failure mode. Do both together. — review.md (Blocking defect 2).
+1. **Collapse `SurfaceConvolutionEdge` into `SurfaceEdgeMode`.** Per charter Decision #1. Remove the local `SurfaceConvolutionEdge` type from `surfaceConvolution.ts`. Change convolution's `edge` parameter to accept `SurfaceEdgeMode` from `@flighthq/types`. Map `'fill'` → `'transparent'` semantics. Add `'mirror'` support to convolution (reflect the image at boundaries — standard in image processing). Update tests.
 
-- **Noise delta is approvable as-is.** `fillSurfaceTurbulence`, the `stitch`/`channelOptions` parameters on `fillSurfacePerlinNoise`, and the `SURFACE_NOISE_CHANNEL_*` constants are correctly decomposed (turbulence is a sibling primitive, not a `fractalNoise` flag), fully tested, and contract-clean. No within-package change needed beyond re-capturing any perlin-output fingerprint baselines that the new default channel-mask behavior shifts. — review.md (Clean in the delta; Minor).
+2. **Add `SurfaceEdgeMode` parameter to geometric ops missing it.** Per charter Decision #2. Add explicit `SurfaceEdgeMode` to: `resizeSurface` (has `SurfaceResizeMode` but not edge mode), `rotateSurface`, `transformSurface`, `displaceSurface`. Match the contract `warpSurface`/`warpSurfaceQuad` already have. Default to `'clamp'` for backwards-compatible behavior.
+
+3. **Add `SurfaceResizeMode` parameter to geometric ops missing it.** Per charter Decision #2. Add explicit interpolation mode to: `rotateSurface`, `transformSurface`. Match warp's contract. Default to `'bilinear'`.
+
+4. **Update Package Map description for surface.** Per charter Decision #6. The current description understates a 97-export package. Update to reflect the full scope (lifecycle, pixel access, compositing, geometric transforms, blur/sharpen, filters, color manipulation, alpha/channel/format, fill/generate, analysis, fingerprinting).
 
 ## Backlog
 
-Parked: needs a charter decision, crosses a package boundary, belongs to another doc's owner, or is larger than a sweep. Each carries why.
+Parked — each with the reason it is not sweep-safe.
 
-- **Add `SurfaceEdgeMode` to `@flighthq/types` (unblocks warp).** `surfaceWarp.ts:2` imports `SurfaceEdgeMode` from `@flighthq/types`, where it does not exist on this base — a hard package-wide `tsc -b` failure. The fix is a type addition in the `@flighthq/types` package (`'clamp' | 'mirror' | 'transparent' | 'wrap'`). **Parked from Recommended:** it is a _cross-package_ change (touches `@flighthq/types`, not `@flighthq/surface`), so it is out of a within-package sweep — but it is the gating must-fix and is written as an imperative directive in `outgoing/integration/surface.md`. — review.md (Blocking defect 1).
+- **Additional noise types (Simplex, Worley).** _Parked — open direction._ Architecture supports them; deciding whether to build now is a scope call. Charter Open direction #3.
 
-- **Reconcile `SurfaceEdgeMode` with `SurfaceConvolutionEdge`.** `surfaceConvolution.ts` already defines `SurfaceConvolutionEdge = 'clamp' | 'fill' | 'wrap'`; warp wants `'clamp' | 'mirror' | 'transparent' | 'wrap'` (`'transparent'` and `'fill'` are the same intent under two names). When `SurfaceEdgeMode` lands in `@flighthq/types`, decide whether `surfaceConvolution` should consume it too and collapse the two spellings. **Parked:** cross-package (types + convolution callsite) and a naming/design call the charter should settle, not an autonomous sweep. — review.md (Should-fix 3).
+- **Wide-gamut / higher bit depth.** _Parked — Gold-tier._ Float32 surfaces for HDR workflows. Charter Open direction #4.
 
-- **Rust `warp.rs` mirror.** If TS warp ships (barrel + type fix), the 1:1 conformance goal needs a paired `flighthq-surface::warp` (`warp_surface`/`warp_surface_quad`). **Parked:** Rust crate work, separate environment/owner; bundle with the TS warp landing. — review.md (TS↔Rust mirror, implied by the conformance map).
+- **`surface-formats` neighbor.** _Parked — new package._ Format-specific encode/decode (TIFF, EXR, HDR, TGA). Charter Open direction #5.
+
+- **Rust `flighthq-surface` crate.** _Parked — global posture._ The primary wasm-mixing target. Deterministic, headlessly fingerprintable.
 
 ## Approved
 
-_None. Approval is the user's verbal gate; this assessment only proposes. Items move here, with a dated provenance stamp, only after the user blesses them._
-
-## Notes for the charter's Open directions
-
-The delta surfaces direction questions the stub charter (North star / Boundaries / Decisions all `TODO`) should settle:
-
-- **Edge-mode model.** Is there one canonical `SurfaceEdgeMode` in `@flighthq/types` that every geometric/sampling op (warp, convolution, future resize/rotate unification) shares, or do ops keep local edge vocabularies? The warp delta forces this question by importing a type that should have been the shared one.
-- **Noise breadth as a North-star target.** Turbulence + stitch + channel-options closes most of the OpenFL `perlinNoise` parity gap; the charter can now state whether Simplex/Worley/offsets are in-scope frontier or out.
-- **Warp/affine sampling unification.** Warp introduces nearest/bilinear/bicubic + edge modes; older `resizeSurface`/`rotateSurface` still use implicit border handling. Whether cross-op border consistency is a goal worth the churn is a decision, not a sweep.
+- [2026-07-02 · picked] Sweep items 1–4: SurfaceConvolutionEdge consolidation, SurfaceEdgeMode on geometric ops, SurfaceResizeMode on geometric ops, Package Map description update

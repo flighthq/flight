@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/filters'
 crate: flighthq-filters
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -10,58 +10,78 @@ status: ./status.md
 
 # filters — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
-
 ## What it is
 
-The backend-independent definition layer for the OpenFL/Flash family of bitmap filters. It owns the plain-data **descriptors** — one `create*` per kind (blur, glow inner/outer, bevel, drop/inner shadow, color matrix, convolution, displacement map, gradient glow/bevel, plus the surface-effect set: median, pixelate, sharpen) — and the **backend-independent math and metadata** every filter backend shares: the kind catalog + narrowing guards, the clone/equals/normalize/serialize/validate spine, the color-matrix preset library, the convolution-kernel builders with separability metadata, the blur sigma↔box-radius math and quality→passes bridge, and descriptor-side bounds expansion (`getBitmapFilterMargin`, `getShadowFilterOffset`).
+`@flighthq/filters` is the **backend-independent definition layer** for bitmap filters — plain-data descriptors (one `create*` per kind), backend-independent math and metadata: kind catalog + guards, clone/equals/normalize/serialize/validate spine, color-matrix preset library (18 artistic presets), convolution-kernel builders with separability, quality-to-passes bridge, and bounds expansion (`getBitmapFilterMargin`). Blur sigma/radius math and shadow offset math live in `@flighthq/filters-math`, a shared leaf package that exists because backend packages need the same math but can't depend on `filters`.
 
-Where it ends: it does **not** rasterize. The actual per-substrate pixel work lives in the `filters-canvas` / `filters-css` / `filters-gl` / `filters-wgpu` / `filters-surface` backends, which consume these descriptors. The line with `materials` (color transforms) and with `surface` / `filters-surface` (the exact LUT path the approximate color-matrix presets defer to) is one of the open questions below.
+It does not rasterize — pixel work lives in five `filters-*` backend packages: `filters-gl` (14 kinds, WebGL 2), `filters-wgpu` (14 kinds, WebGPU), `filters-surface` (14 kinds, CPU pixel ops), `filters-canvas` (3 kinds, Canvas2D), `filters-css` (3 kinds, CSS).
 
-A filter here is a plain data descriptor applied by an explicit per-backend function — never an OpenFL-style `BitmapFilter` instance assigned to `displayObject.filters` that a runtime quietly applies.
+Filters are genuinely separate from effects. Effects (`@flighthq/effects`) is a layer above — post-processing render pipeline passes (bloom, tone-mapping, SSAO, motion blur). An effect may compose filters internally (e.g., bloom uses blur), but the type hierarchies (`BitmapFilter` vs `RenderEffect`), application models (per-display-object vs render pipeline), and package dependencies are distinct.
 
-## North star (proposed)
+## North star
 
-_Proposed durable principles, inferred from the design and the SDK-wide forks. Edit or strike before blessing._
+1. **Descriptors are plain data; backends do the pixels.** Every filter is a tree-shakable value with no backend coupling and no hidden runtime behavior.
+2. **Open contract, user-extensible.** `BitmapFilter` is an open interface (`kind: Kind`). Users can define custom filter kinds with vendor prefixes. Utility functions (margin, clone, normalize, validate) dispatch through a **registry**, not a closed switch — custom kinds register their own handlers and tree-shake identically to built-ins.
+3. **One canonical home for filter math and defaults.** Sigma↔radius, color-matrix presets, convolution kernels, separability, normalization defaults, and bounds margins are derived once here so the five backends stop re-deriving them.
+4. **Color-matrix presets are affine approximations.** The 18 presets use the standard GPU-friendly 4x5 matrix. Exact LUT-based color grading is a different primitive that belongs in effects (`lutMath.ts`).
+5. **Pure, alias-safe, sentinel-returning.** Math functions are side-effect-free; out-param functions read inputs to locals before writing; expected failures return sentinels, throws for API misuse only.
+6. **Wasm-mixable leaf.** Value-in / value-out descriptors and math — a candidate for single-crate Rust→wasm drop-in.
 
-- **Descriptors are plain data; backends do the pixels.** Every filter is a tree-shakable value with no backend coupling and no hidden runtime behavior. The package's job is to define and reason about filters, not to draw them.
-- **One canonical home for filter math and defaults.** Sigma↔radius, color-matrix presets, convolution kernels, separability, normalization defaults, and bounds margins are derived once here so the five backends stop re-deriving them. `@flighthq/types`-first: every kind constant and interface lives in the header; this package re-exports and implements against them.
-- **Cover the full OpenFL/Lime filter feature set, in Flight's shape.** Aim for AAA descriptor completeness — the parameter set a developer expects from a mature bitmap-filter library — without mirroring OpenFL's class hierarchy or property-setter ergonomics.
-- **Pure, alias-safe, sentinel-returning.** Math functions are side-effect-free; out-param functions read inputs to locals before writing; expected failures return sentinels (`null` / `false`), and throws are reserved for genuine API misuse.
-- **A clean Wasm-mixable leaf.** Value-in / value-out descriptors and math keep this crate a candidate for a single-crate Rust→wasm drop-in (fork D), so the seam should stay plain data.
+## Boundaries
 
-## Boundaries (proposed)
+**In scope:**
 
-_Proposed scope lines, drawn from the review and neighbors. Edit before blessing._
+- Filter descriptor constructors: 15 `create*Filter` factories (14 concrete kinds + general).
+- Per-kind type guards: `isBitmapFilter` + 14 `is*Filter`.
+- Registry-based utility dispatch: `getBitmapFilterMargin`, `cloneBitmapFilter`, `normalizeBitmapFilter`, `isValidBitmapFilter` — open to custom kinds via registration.
+- Color-matrix math: 18 preset builders, concat/multiply, apply-to-color.
+- Convolution-kernel builders: gaussian, box-blur, sharpen, edge-detect, emboss, laplacian, outline + separability/normalization.
+- Serialization: `toBitmapFilterData` / `fromBitmapFilterData` / `enumerateBitmapFilterKinds`.
+- Validation: `isValidBitmapFilter`, `isValidBitmapFilterList`, `clampFilterQuality`, `clampFilterStrength`.
+- Default constants: `DEFAULT_FILTER_*`.
 
-In scope:
+**Non-goals:**
 
-- Filter descriptor constructors and the kind catalog + guards.
-- Clone / equals / normalize / serialize / validate over filters and filter lists.
-- Backend-independent filter math: blur sigma/radius/quality, color-matrix presets and ops, convolution kernels + separability, bounds margins and shadow offsets.
-- Canonical default constants (`DEFAULT_FILTER_*`) the backends adopt instead of re-deriving.
-
-Non-goals (today):
-
-- Any rasterization or GPU/Canvas/CSS pixel work — owned by the `filters-*` backends.
-- Import/export of vendor filter blobs (OpenFL/SWF/Lottie) — a future `filters-formats` neighbor, deferred until there is a plurality of formats (triad plurality guard).
-- Color-transform / shader material concerns owned by `materials`.
-- The exact LUT form of approximate presets — currently deferred downstream to `filters-surface`.
+- Pixel rasterization — `filters-gl` / `filters-wgpu` / `filters-surface` / `filters-canvas` / `filters-css`.
+- Blur sigma/radius math — `@flighthq/filters-math` (shared leaf; exists for dependency direction reasons).
+- Post-processing effects — `@flighthq/effects` (layer above; may compose filters).
+- LUT-based color grading — `@flighthq/effects` (`lutMath`).
+- Vendor-blob import/export — future `filters-formats` neighbor, deferred under plurality guard.
 
 ## Decisions
 
-None blessed yet.
+- **[2026-07-02] Registry, not closed union, for utility dispatch.** `getBitmapFilterMargin`, `cloneBitmapFilter`, `normalizeBitmapFilter`, `isValidBitmapFilter` currently have closed `switch(kind)` that silently break for custom kinds. Migrate to a registry: built-in 14 kinds register their own handlers, custom kinds do the same. Unused kinds tree-shake out.
+
+  **Why:** `BitmapFilter` is already an open contract in types. Users must be able to add new filter kinds. With 14 kinds and growing, the closed switches contradict the open type and have passed the fork-B threshold.
+
+- **[2026-07-02] `BitmapFilterMargin` → `@flighthq/types`.** Move the margin type from `filters` to the header layer. It's consumed by renderers — cross-package descriptor types belong in types.
+
+  **Why:** Types go in types.
+
+- **[2026-07-02] `filters-math` is the correct decomposition.** It exists because backend packages need blur math but can't depend on `filters` (wrong dependency direction). Not over-decomposition — solves a real dependency problem.
+
+  **Why:** `filters-gl`, `filters-canvas`, etc. all need sigma/radius conversions. They depend on `filters-math`, not on `filters`.
+
+- **[2026-07-02] Effects and filters are genuinely separate domains.** Effects is a layer above. An effect may compose filters (e.g., bloom uses blur). The type hierarchies, application models, and dependencies are distinct.
+
+  **Why:** Per-display-object bitmap filters and render-pipeline post-processing passes are different execution models that share vocabulary.
+
+- **[2026-07-02] Color-matrix presets stay as affine approximations.** Exact LUT-based grading belongs in effects. No seam needed in filters.
+
+  **Why:** The 4x5 matrix is GPU-friendly and composable. LUT grading is a 3D texture lookup — a different primitive in the post-processing pipeline.
+
+- **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
 
 ## Open directions
 
-_Every candidate question from the review, plus the structural forks that touch this package. These are where an agent asks rather than assumes._
+1. **Registry migration scope.** Which utility functions get registries? The clear set: `getBitmapFilterMargin`, `cloneBitmapFilter`, `normalizeBitmapFilter`, `isValidBitmapFilter`. Does serialization (`toBitmapFilterData`/`fromBitmapFilterData`) also need one? Do the backends' apply functions register through a shared dispatch?
 
-1. **Identity / boundary line.** Bless or trim the grown identity: is this "descriptors + shared blur math" (the original seed) or, as the code has chosen, "the backend-independent filter _math and metadata_ library" (color-matrix presets, kernel builders, separability, bounds geometry)? Where exactly is the line with `materials` (color transforms) and with `surface` / `filters-surface` (the LUT path the approximate presets defer to)?
-2. **Registry vs closed union for kind dispatch (fork B).** Three dispatch functions (`normalizeBitmapFilter`, `getBitmapFilterMargin`, `isValidBitmapFilter`) branch on hardcoded kind string literals while the rest of the package migrated onto the `*Kind` constants. Should these dispatch through an open registry keyed by `*Kind` (so vendor-prefixed custom filters can normalize / margin / validate), or is the built-in set closed by design and a closed `switch` acceptable? Either way the cases should reference the constants, not literals. Per fork B the default is a registry, with the closed-union exception reserved for a tight loop in a closed system. This is the clearest thing standing between `solid` and `authoritative`.
-3. **Approximate presets — bless the lossy form, or require the exact LUT seam?** `createColorBalanceColorMatrix` (three-band model collapsed to a uniform offset) and `createLevelsColorMatrix` (linear-midpoint gamma approximation) cannot be exact as a 4×5 affine matrix and point at a nonexistent LUT path. Decide whether the package ships an exact-form API (a `*ColorLut` builder, or a typed handoff to `filters-surface`) or stays affine-only with the LUT living entirely downstream.
-4. **`enableBitmapFilterSignals` and the `@flighthq/signals` dependency.** Live filter-stack mutation notification is parked pending an intentional dependency decision. Signals is "effectively always present" per the codebase map, so cost is low — record whether this is in scope for this package.
-5. **Backend de-duplication ownership.** `normalizeBitmapFilter` + the `DEFAULT_FILTER_*` constants are the seam to remove ~150 lines of duplicated defaulting across `filters-canvas/css/gl/wgpu/surface`. This is cross-package work — surface it as a coordinated change, not an autonomous one; the charter should note filters as the owner of canonical defaults.
-6. **Constructor throw policy.** `createColorMatrixFilter` throws on a wrong-length matrix while `fromBitmapFilterData` and the validators return sentinels. Settle whether `create*` filters validate-and-throw (API misuse) or validate-and-sentinel, so the constructor family is symmetric.
-7. **Functional / visual coverage.** Presets have numerical golden tests but no cross-backend render scene confirming, e.g., that `createSepiaColorMatrix` looks like sepia through a real backend. Decide whether a `functional-test` scene is in scope for this package or owned by the backends.
-8. **`filters-formats` neighbor (triad).** A vendor-blob import/export cell (OpenFL/SWF/Lottie) is deferred under the plurality guard. Note when a concrete format lands so the cell can be created deliberately rather than pre-emptively.
-9. **Package Map line is understated.** `tools/agents/docs/index.md` still describes filters as just "blur, glow, bevel, drop-shadow, color-matrix, and convolution filters as plain data descriptors" — omitting the preset library, kernel builders, serialization/validation spine, and `getBitmapFilterMargin`. Candidate Map revision once the identity line is blessed.
+2. **Bevel margin distance offset.** The margin calculation for bevel filters may omit the distance offset. Verify and fix.
+
+3. **Backend defaulting de-duplication.** Each backend has its own "fallback to default parameters" logic. A shared defaulting function in `filters` could reduce ~150 lines of duplication. Cross-package coordination.
+
+4. **Constructor throw policy.** `createColorMatrixFilter` throws on wrong-length matrix; `fromBitmapFilterData` and validators return sentinels. Settle whether `create*` filters are throw-on-misuse or sentinel, so the family is symmetric.
+
+5. **Package Map update.** The codebase map's description understates the package (omits presets, kernels, serialization, validation, margin). Update once the identity is blessed.
+
+6. **`enableBitmapFilterSignals`.** Live filter-stack mutation notification. Low priority; would add a signals dependency.
