@@ -7,7 +7,6 @@ import {
   createWebStatusBarBackend,
   detachStatusBar,
   disposeStatusBar,
-  enableStatusBarSignals,
   getStatusBarBackend,
   getStatusBarHeight,
   getStatusBarInfo,
@@ -208,12 +207,6 @@ describe('disposeStatusBar', () => {
     };
     (backend as ReturnType<typeof fakeBackend>)._emit();
     expect(emitCount).toBe(0);
-  });
-});
-
-describe('enableStatusBarSignals', () => {
-  it('is callable without throwing', () => {
-    expect(() => enableStatusBarSignals()).not.toThrow();
   });
 });
 
