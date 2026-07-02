@@ -1,4 +1,4 @@
-import type { Path, ShapeFillRegion } from '@flighthq/types';
+import type { Path, PathWinding, ShapeFillRegion } from '@flighthq/types';
 import { PathCommand } from '@flighthq/types';
 
 // Resolves a Shape's drawing-command stream into solid-fill regions for the GPU fill path: each
@@ -16,6 +16,7 @@ export function getShapeFillRegions(commands: readonly unknown[]): ShapeFillRegi
   let path: Path | null = null;
   let color = 0;
   let alpha = 1;
+  let winding: PathWinding = 'nonZero';
   let startX = 0;
   let startY = 0;
 
@@ -31,7 +32,8 @@ export function getShapeFillRegions(commands: readonly unknown[]): ShapeFillRegi
         if (path !== null && path.commands.length > 0) regions.push({ path, color, alpha });
         color = commands[a] as number;
         alpha = commands[a + 1] as number;
-        path = { commands: [], data: [], winding: 'nonZero' };
+        winding = 'nonZero';
+        path = { commands: [], data: [], winding };
         break;
       }
       case 'endFill': {
@@ -119,6 +121,8 @@ export function getShapeFillRegions(commands: readonly unknown[]): ShapeFillRegi
       }
       case 'drawPath': {
         if (path === null) break;
+        const pathWinding = commands[a + 2] as PathWinding | undefined;
+        if (pathWinding !== undefined) path.winding = pathWinding;
         appendRawPath(path, commands[a] as readonly number[], commands[a + 1] as readonly number[]);
         break;
       }
@@ -146,6 +150,9 @@ export function hasNonSolidShapeFill(commands: readonly unknown[]): boolean {
       name === 'lineGradientStyle' ||
       name === 'lineBitmapStyle'
     ) {
+      return true;
+    }
+    if (name === 'drawTriangles' && commands[i + 2 + 2] !== null) {
       return true;
     }
     i += 2 + argCount;
