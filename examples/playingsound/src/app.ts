@@ -1,4 +1,4 @@
-import type { AudioChannel } from '@flighthq/sdk';
+import type { AudioChannel, AudioResource } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -26,7 +26,6 @@ import {
 
 import { container, render, scale, setSize } from './render';
 
-const audioContext = new AudioContext();
 const manager = createTweenManager({ defaultEase: easeOutQuadratic });
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -36,11 +35,23 @@ const background = createShape();
 background.alpha = 1;
 addNodeChild(root, background);
 
-const sound = await loadAudioResourceFromUrls(audioContext, [{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]);
-
+let audioContext: AudioContext | null = null;
+let sound: AudioResource | null = null;
 let channel: AudioChannel | null = null;
 let playing = false;
 let position = 0;
+
+function ensureAudioContext(): AudioContext {
+  if (audioContext === null) audioContext = new AudioContext();
+  return audioContext;
+}
+
+loadAudioResourceFromUrls(ensureAudioContext(), [{ url: 'assets/stars.ogg' }, { url: 'assets/stars.mp3' }]).then(
+  (resource: AudioResource) => {
+    sound = resource;
+  },
+  () => {},
+);
 
 function pause(fadeOut = 1200): void {
   if (!playing || channel === null) return;
@@ -61,12 +72,17 @@ function pause(fadeOut = 1200): void {
 }
 
 function play(fadeIn = 3000): void {
+  if (sound === null) return;
+
   if (channel !== null) {
     stopAudioChannel(channel);
     channel = null;
   }
 
-  const nextChannel = playAudioResource(audioContext, sound, { currentTime: position, gain: fadeIn <= 0 ? 1 : 0 });
+  const nextChannel = playAudioResource(ensureAudioContext(), sound, {
+    currentTime: position,
+    gain: fadeIn <= 0 ? 1 : 0,
+  });
   if (nextChannel === null) return;
 
   channel = nextChannel;
@@ -115,7 +131,7 @@ connectSignal(input.onPointerDown, () => {
 play();
 
 const app = createApplication();
-connectSignal(app.onUpdate, (delta) => {
+connectSignal(app.onUpdate, (delta: number) => {
   if (channel !== null && channel.state === 'playing') {
     channel.currentTime += delta;
   }
