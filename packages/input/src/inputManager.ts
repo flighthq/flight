@@ -3,11 +3,13 @@ import type {
   AttachInputOptions,
   GamepadAxisKind,
   GamepadButtonKind,
+  GamepadMappingKind,
   InputGamepadAxisData,
   InputGamepadButtonData,
   InputGamepadConnectData,
   InputKeyboardData,
   InputKeyRepeatOptions,
+  InputKeyRepeatTimer,
   InputManager,
   InputPointerData,
   InputSignals,
@@ -389,10 +391,7 @@ export function connectInputStateToInputManager(state: InputState, manager: Inpu
  * timer.stop();
  * ```
  */
-export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOptions>): {
-  start: (callback: () => void) => void;
-  stop: () => void;
-} {
+export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOptions>): InputKeyRepeatTimer {
   let delayId = 0;
   let intervalId = 0;
 
@@ -538,7 +537,7 @@ export function getCoalescedInputPointerEvents(
  * standard gamepad mapping, or `null` if `mapping` is not `'standard'` or
  * `index` is out of the standard range.
  */
-export function getGamepadAxisName(mapping: string, index: number): GamepadAxisKind | null {
+export function getGamepadAxisName(mapping: GamepadMappingKind, index: number): GamepadAxisKind | null {
   if (mapping !== 'standard') return null;
   return _standardAxisNames[index] ?? null;
 }
@@ -548,7 +547,7 @@ export function getGamepadAxisName(mapping: string, index: number): GamepadAxisK
  * standard gamepad mapping, or `null` if `mapping` is not `'standard'` or
  * `index` is out of the standard range.
  */
-export function getGamepadButtonName(mapping: string, index: number): GamepadButtonKind | null {
+export function getGamepadButtonName(mapping: GamepadMappingKind, index: number): GamepadButtonKind | null {
   if (mapping !== 'standard') return null;
   return _standardButtonNames[index] ?? null;
 }

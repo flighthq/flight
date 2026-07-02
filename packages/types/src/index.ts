@@ -165,6 +165,7 @@ export * from './InnerShadowFilter';
 export * from './InputGamepadData';
 export * from './InputKeyboardData';
 export * from './InputKeyRepeatOptions';
+export * from './InputKeyRepeatTimer';
 export * from './InputManager';
 export * from './InputPointerData';
 export * from './InputSignals';
