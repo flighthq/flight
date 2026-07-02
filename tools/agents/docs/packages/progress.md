@@ -16,9 +16,9 @@ Track which packages have had a direction session, what was dispatched, and what
 | Package | State | Last visited | Note |
 | --- | --- | --- | --- |
 | types | — |  |  |
-| entity | — |  |  |
+| entity | direction | 2026-07-02 | 4 decisions blessed: never-an-ECS, getEntityRuntime asserting fast path, unchecked binding cast intentional, drop "node" from pkg description. Open: guard mode alignment review. Package is feature-complete (92/100). |
 | geometry | dispatched | 2026-07-01 | Blessed all 5 open directions: collision math stays, OBB/Capsule in scope, `is*Intersecting*` naming, standard quaternion convention, TS advances independently of Rust. Builder2 parcel: renames + quaternion fix + OBB/Capsule. |
-| math | — |  |  |
+| math | direction | 2026-07-02 | 6 decisions blessed: noise in math, randomColor in math, saturate GPU NaN semantics, particles adopt math exports, as-needed growth model, pkg description update. Approved: 6 sweep items (doc fixes + saturate NaN impl + description + order check). |
 | node | landed | 2026-07-02 | 7 decisions blessed: trait boundary, 3D raw-matrix, 3D bounds on node, signals hierarchy-only, skewX/skewY, reparentNode = world-preserving, serialization = new package. Skew + reparentNode code landed. |
 | signals | direction | 2026-07-02 | 4 decisions blessed: sync-only boundary, void slot contract, no weak connections, hard-rename policy. Approved: delete 2 deprecated aliases. Open: throttle/debounce home (time pkg?), dispatch-during-dispatch safety (tombstone). |
 
