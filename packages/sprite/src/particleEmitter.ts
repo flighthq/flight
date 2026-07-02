@@ -14,6 +14,7 @@ import type {
   ParticleEmitterData,
   ParticleEmitterRuntime,
   Rectangle,
+  Vector2Like,
 } from '@flighthq/types';
 import { ParticleEmitterKind } from '@flighthq/types';
 
@@ -21,6 +22,9 @@ import { ParticleEmitterKind } from '@flighthq/types';
 const PARTICLE_TRANSFORM_STRIDE = 4; // [x, y, rotation, scale] per particle
 const PARTICLE_COLOR_STRIDE = 3; // [r, g, b] per particle
 const PARTICLE_VELOCITY_STRIDE = 2; // [vx, vy] per particle
+
+// Uint16Array sentinel marking a logically deleted slot in a particle emitter.
+export const PARTICLE_EMITTER_DELETED_ID = 0xffff;
 
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
   const runtime = getDisplayObjectRuntime(source as DisplayObject) as ParticleEmitterRuntime;
@@ -103,7 +107,7 @@ export function compactParticleEmitter(target: ParticleEmitter): void {
   if (data.particleCount === 0) return;
   let write = 0;
   for (let read = 0; read < data.particleCount; read++) {
-    if (data.ids[read] === 0xffff) continue; // sentinel for "deleted" slots
+    if (data.ids[read] === PARTICLE_EMITTER_DELETED_ID) continue;
     if (write !== read) {
       data.ids[write] = data.ids[read];
       const tt = write * PARTICLE_TRANSFORM_STRIDE;
@@ -245,7 +249,7 @@ export function getParticleEmitterParticleId(source: Readonly<ParticleEmitter>, 
  * Returns false and writes nothing when `index` is out of range.
  */
 export function getParticleEmitterParticleVelocity(
-  out: { x: number; y: number },
+  out: Vector2Like,
   source: Readonly<ParticleEmitter>,
   index: number,
 ): boolean {

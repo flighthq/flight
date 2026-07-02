@@ -26,6 +26,7 @@ import {
   hitTestQuadBatchPointExactXY,
   hitTestQuadBatchPointXY,
   iterateQuadBatchInstances,
+  QUAD_BATCH_DELETED_ID,
   removeQuadBatchInstance,
   reserveQuadBatch,
   resizeQuadBatch,
@@ -130,7 +131,7 @@ describe('compactQuadBatch', () => {
     appendQuadBatchInstance(qb, 10, 1, 1);
     appendQuadBatchInstance(qb, 11, 2, 2);
     appendQuadBatchInstance(qb, 12, 3, 3);
-    qb.data.ids[1] = 0xffff; // mark the middle entry deleted
+    qb.data.ids[1] = QUAD_BATCH_DELETED_ID;
     compactQuadBatch(qb);
     expect(qb.data.instanceCount).toBe(2);
     expect(getQuadBatchInstanceId(qb, 0)).toBe(10);

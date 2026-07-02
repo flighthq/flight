@@ -25,6 +25,9 @@ import { QuadBatchKind } from '@flighthq/types';
 const QUAD_VECTOR2_STRIDE = 2;
 const QUAD_MATRIX3X2_STRIDE = 6;
 
+// Uint16Array sentinel marking a logically deleted slot in a quad batch.
+export const QUAD_BATCH_DELETED_ID = 0xffff;
+
 /**
  * Appends a new instance at the end of `target` using vector2 (translation-only) transform,
  * auto-growing capacity via `resizeQuadBatch`. Returns the new instance index.
@@ -98,7 +101,7 @@ export function compactQuadBatch(target: QuadBatch): void {
   const stride = getQuadBatchTransformStride(data.transformType);
   let write = 0;
   for (let read = 0; read < data.instanceCount; read++) {
-    if (data.ids[read] === 0xffff) continue; // sentinel for "deleted" slots (Uint16Array max)
+    if (data.ids[read] === QUAD_BATCH_DELETED_ID) continue;
     if (write !== read) {
       data.ids[write] = data.ids[read];
       const dst = write * stride;
