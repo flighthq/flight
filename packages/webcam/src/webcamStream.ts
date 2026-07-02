@@ -4,7 +4,8 @@ import { EntityRuntimeKey } from '@flighthq/types';
 
 export interface WebcamStreamRuntime extends EntityRuntime {
   binding: null;
-  mediaStream: MediaStream;
+  // null until the caller attaches a live stream; a freshly-created entity has no MediaStream yet.
+  mediaStream: MediaStream | null;
   videoElement: HTMLVideoElement | null;
 }
 
@@ -29,13 +30,12 @@ export function createWebcamStreamEntity(data: {
     id: data.id,
     width: data.width,
   });
-  // Initialize with a null placeholder; the caller must overwrite rt.mediaStream immediately.
-  // Using null cast rather than new MediaStream() to avoid depending on MediaStream in environments
-  // that lack it (jsdom without the media API). The runtime is always populated before use.
+  // Initialize with null; the caller overwrites rt.mediaStream once a live stream is acquired. Using
+  // null (not new MediaStream()) avoids depending on MediaStream in environments that lack it (jsdom
+  // without the media API).
   const rt: WebcamStreamRuntime = {
     binding: null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mediaStream: null as any,
+    mediaStream: null,
     videoElement: null,
   };
   stream[EntityRuntimeKey] = rt;
