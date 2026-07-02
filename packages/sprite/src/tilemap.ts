@@ -110,12 +110,7 @@ export function getTilemapColumnAtX(source: Readonly<Tilemap>, x: number): numbe
  * Returns false when the tileset is null or the point is outside the tilemap bounds.
  * On a false return, `out` is not modified.
  */
-export function getTilemapColumnRowAtPoint(
-  out: { x: number; y: number },
-  source: Readonly<Tilemap>,
-  x: number,
-  y: number,
-): boolean {
+export function getTilemapColumnRowAtPoint(out: Vector2Like, source: Readonly<Tilemap>, x: number, y: number): boolean {
   const col = getTilemapColumnAtX(source, x);
   const row = getTilemapRowAtY(source, y);
   if (col < 0 || row < 0) return false;

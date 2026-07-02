@@ -17,6 +17,7 @@ import {
   getParticleEmitterParticleId,
   getParticleEmitterParticleVelocity,
   getParticleEmitterRuntime,
+  PARTICLE_EMITTER_DELETED_ID,
   removeParticleEmitterParticle,
   reserveParticleEmitter,
   setParticleEmitterLocalBoundsRectangle,
@@ -125,7 +126,7 @@ describe('compactParticleEmitter', () => {
     appendParticleEmitterParticle(emitter, 11, 2, 2, 0, 1);
     appendParticleEmitterParticle(emitter, 12, 3, 3, 0, 1);
     // Mark the middle entry as deleted with the Uint16Array sentinel.
-    emitter.data.ids[1] = 0xffff;
+    emitter.data.ids[1] = PARTICLE_EMITTER_DELETED_ID;
     compactParticleEmitter(emitter);
     expect(emitter.data.particleCount).toBe(2);
     expect(getParticleEmitterParticleId(emitter, 0)).toBe(10);

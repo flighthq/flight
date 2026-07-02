@@ -30,6 +30,7 @@
     "@flighthq/displayobject": "*",
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
