@@ -91,8 +91,8 @@ export function assertRender(frame: Readonly<Surface>): void {
     blurY: 4,
     strength: 1,
   });
-  if (f.type !== 'innerShadow') {
-    throw new Error(`[filter-inner-shadow] expected an innerShadow filter, got #${String(f.type)}`);
+  if (f.kind !== 'InnerShadowFilter') {
+    throw new Error(`[filter-inner-shadow] expected an InnerShadowFilter, got '${String(f.kind)}'`);
   }
 
   const s = frame.width / width; // device-pixel scale (canvas may be width × devicePixelRatio)

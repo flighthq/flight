@@ -127,9 +127,9 @@ function compositeNativeDropShadow(state: GlRenderState, spec: Readonly<NativeDr
   renderSourceIntoTarget(state, sourceBitmap, sourceTarget);
 
   // The real Gl drop shadow: tint the source, box-blur it, blit it at the angle/distance offset, then
-  // blit the source on top — the full composite lands in destTarget. The filter type field is dropped to
-  // match the Omit<DropShadowFilter, 'type'> parameter shape.
-  const { type: _type, ...filterParams } = spec.filter; // eslint-disable-line
+  // blit the source on top — the full composite lands in destTarget. The filter kind field is dropped to
+  // match the Omit<DropShadowFilter, 'kind'> parameter shape.
+  const { kind: _kind, ...filterParams } = spec.filter; // eslint-disable-line
   applyDropShadowFilterToGl(state, sourceTarget, destTarget, [maskTarget, blurredTarget, blurTempTarget], filterParams);
 
   // The shadow passes leave a target's framebuffer bound and a tile-sized viewport — they do not restore

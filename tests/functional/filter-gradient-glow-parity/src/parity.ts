@@ -19,7 +19,7 @@ export interface NativeGradientGlowSpec {
   // The source image to glow natively (the same pixels the reference tile glowed on the CPU).
   source: ImageResource;
   // The filter descriptor, identical to the one the surface reference used.
-  filter: Readonly<Omit<GradientGlowFilter, 'type'>>;
+  filter: Readonly<Omit<GradientGlowFilter, 'kind'>>;
   // Top-left of the native tile in logical (CSS-pixel) scene coordinates.
   x: number;
   y: number;

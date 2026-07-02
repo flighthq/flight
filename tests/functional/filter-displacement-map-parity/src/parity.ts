@@ -23,7 +23,7 @@ export interface NativeDisplacementSpec {
   // The displacement-map image (drives the per-pixel UV offset; channels selected by componentX/Y).
   map: ImageResource;
   // The filter descriptor (mode, componentX/Y, scaleX/Y) — same instance the surface reference used.
-  filter: Readonly<Omit<DisplacementMapFilter, 'type'>>;
+  filter: Readonly<Omit<DisplacementMapFilter, 'kind'>>;
   // Top-left of the native tile in logical (CSS-pixel) scene coordinates.
   x: number;
   y: number;

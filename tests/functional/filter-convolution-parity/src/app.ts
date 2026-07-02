@@ -134,7 +134,7 @@ export function assertRender(frame: Readonly<Surface>): void {
 
   // 2) Not blank: the square's edge is a high-contrast transition the kernel lights up bright. A blank tile
   // (background only) or a fully-zeroed result would fail this.
-  const edge = maxChannel(getSurfacePixelRgb(nativeTile, SQUARE_MAX, TILE / 2));
+  const edge = maxChannel(getSurfacePixelRgb(nativeTile, SQUARE_MAX - 1, TILE / 2));
   if (edge <= 120) {
     throw new Error(`[filter-convolution-parity:${render()}] native edge should detect bright (>120), got ${edge}`);
   }

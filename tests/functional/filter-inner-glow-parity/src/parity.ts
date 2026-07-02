@@ -20,7 +20,7 @@ export interface NativeGlowSpec {
   // The source image to glow natively (the same pixels the reference tile glowed on the CPU).
   source: ImageResource;
   // The inner-glow descriptor — same config the CPU reference used.
-  filter: Readonly<Omit<InnerGlowFilter, 'type'>>;
+  filter: Readonly<Omit<InnerGlowFilter, 'kind'>>;
   // Top-left of the native tile in logical (CSS-pixel) scene coordinates.
   x: number;
   y: number;
@@ -36,7 +36,7 @@ export interface ParityTarget {
   scale: number;
   // Non-Gl backends have no native inner-glow path; this is a no-op there (the native tile is the
   // surface reference, drawn directly in app.ts). No-op on Gl too — kept for contract symmetry.
-  applyNativeGlow(node: Bitmap, filter: Readonly<Omit<InnerGlowFilter, 'type'>>): void;
+  applyNativeGlow(node: Bitmap, filter: Readonly<Omit<InnerGlowFilter, 'kind'>>): void;
   // Shader backends (Gl): run the offscreen multi-pass inner glow and composite it at the native tile.
   // No-op on DOM/Canvas. Called after applyNativeGlow, immediately before/around render().
   drawNativeGlow?(spec: Readonly<NativeGlowSpec>): void;

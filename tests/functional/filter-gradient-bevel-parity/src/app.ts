@@ -88,6 +88,10 @@ for (let i = 0; i < referenceData.length; i += 4) {
   referenceData[i + 2] = mask[i + 2] * ma + referenceData[i + 2] * inv;
   referenceData[i + 3] = mask[i + 3] + referenceData[i + 3] * inv;
 }
+// Flatten alpha to 255 so the reference matches the alpha:false canvas readback. The canvas composites
+// transparent pixels over the opaque background, producing A=255; without this getSurfaceMismatch counts
+// every transparent pixel as mismatched.
+for (let i = 3; i < referenceData.length; i += 4) referenceData[i] = 255;
 const referenceSurface = createSurface(TILE, TILE);
 referenceSurface.data.set(referenceData);
 

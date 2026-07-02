@@ -108,8 +108,8 @@ const EMPTY_X = SQUARE_MIN - 12; // outside the up-left, no shadow there
 const EMPTY_Y = SQUARE_MIN - 12;
 
 export function assertRender(frame: Readonly<Surface>): void {
-  if (filter.type !== 'dropShadow') {
-    throw new Error('[filter-drop-shadow] expected a dropShadow filter');
+  if (filter.kind !== 'DropShadowFilter') {
+    throw new Error('[filter-drop-shadow] expected a DropShadowFilter');
   }
   const s = frame.width / width; // device-pixel scale (canvas may be width × devicePixelRatio)
 

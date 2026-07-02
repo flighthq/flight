@@ -13,6 +13,7 @@ import { createScene } from '@flighthq/scene';
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
+  configureDirectionalShadowCamera,
   createAabb,
   createAmbientLight,
   createCamera,
@@ -28,7 +29,6 @@ import {
   getSurfacePixelLuminance,
   setCameraViewMatrix4FromLookAt,
   setSceneNodePosition,
-  setupDirectionalShadowCamera,
 } from '@flighthq/sdk';
 
 import { height, render, scale, width } from './render';
@@ -73,7 +73,7 @@ const shadowCamera = createCamera({
   near: 0.1,
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
-setupDirectionalShadowCamera(shadowCamera, direction, sceneBounds);
+configureDirectionalShadowCamera(shadowCamera, direction, sceneBounds);
 
 render(scene, camera, lights, shadowCamera);
 

@@ -83,7 +83,7 @@ export function createParityTarget(width: number, height: number, background: nu
     height,
     scale: pixelRatio,
     // No CSS-filter path on Gl — the glow is the GPU shader pass below.
-    applyNativeGlow(_node: Bitmap, _filter: Readonly<Omit<InnerGlowFilter, 'type'>>): void {},
+    applyNativeGlow(_node: Bitmap, _filter: Readonly<Omit<InnerGlowFilter, 'kind'>>): void {},
     drawNativeGlow(spec: Readonly<NativeGlowSpec>): void {
       pending.push({ ...spec });
     },

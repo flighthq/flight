@@ -103,8 +103,8 @@ const BOTTOM_RIGHT_X = INSET + SQUARE - EDGE; // ramp end (blue) edge
 const BOTTOM_RIGHT_Y = INSET + SQUARE - EDGE;
 
 export function assertRender(frame: Readonly<Surface>): void {
-  if (filter.type !== 'gradientBevel') {
-    throw new Error(`[filter-gradient-bevel] expected a gradientBevel filter, got '${String(filter.type)}'`);
+  if (filter.kind !== 'GradientBevelFilter') {
+    throw new Error(`[filter-gradient-bevel] expected a GradientBevelFilter, got '${String(filter.kind)}'`);
   }
   if (!Array.isArray(filter.colors) || filter.colors.length === 0) {
     throw new Error('[filter-gradient-bevel] gradient bevel filter is missing its colors ramp');

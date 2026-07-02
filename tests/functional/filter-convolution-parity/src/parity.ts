@@ -20,7 +20,7 @@ export interface NativeConvolutionSpec {
   // The source image to filter natively (the same pixels the reference tile filtered on the CPU).
   source: ImageResource;
   // The convolution kernel — MUST match the kernel used for the surface reference, or parity fails.
-  filter: Readonly<Omit<ConvolutionFilter, 'type'>>;
+  filter: Readonly<Omit<ConvolutionFilter, 'kind'>>;
   // Top-left of the native tile in logical (CSS-pixel) scene coordinates.
   x: number;
   y: number;
