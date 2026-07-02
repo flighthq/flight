@@ -4,14 +4,6 @@ import type { HasTransform2D, Node, RenderProxy2D, RenderState } from '@flighthq
 
 import { getRenderStateRuntime } from './renderState';
 
-export function updateDisplayObjectRenderTransform(
-  state: RenderState,
-  data: RenderProxy2D,
-  parentData?: RenderProxy2D,
-): boolean {
-  return updateRenderProxy2DTransform(state, data, parentData);
-}
-
 export function updateRenderProxy2DTransform(
   state: RenderState,
   data: RenderProxy2D,

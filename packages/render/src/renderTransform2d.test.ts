@@ -1,45 +1,8 @@
 import { createDisplayObject } from '@flighthq/displayobject';
-import { invalidateNodeLocalTransform } from '@flighthq/node';
 
 import { createRenderProxy2D } from './renderProxy';
 import { createRenderState, getRenderStateRuntime } from './renderState';
-import { updateDisplayObjectRenderTransform, updateRenderProxy2DTransform } from './renderTransform2d';
-
-describe('updateDisplayObjectRenderTransform', () => {
-  it('returns true and bakes transform on first call', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    const data = createRenderProxy2D(state, obj);
-    expect(updateDisplayObjectRenderTransform(state, data)).toBe(true);
-  });
-
-  it('returns false when local transform is unchanged', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    const data = createRenderProxy2D(state, obj);
-    updateDisplayObjectRenderTransform(state, data);
-    expect(updateDisplayObjectRenderTransform(state, data)).toBe(false);
-  });
-
-  it('returns true after transform changes', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    const data = createRenderProxy2D(state, obj);
-    updateDisplayObjectRenderTransform(state, data);
-    obj.x = 10;
-    invalidateNodeLocalTransform(obj);
-    expect(updateDisplayObjectRenderTransform(state, data)).toBe(true);
-  });
-
-  it('sets transformFrameId to currentFrameId when dirty', () => {
-    const state = createRenderState();
-    getRenderStateRuntime(state).currentFrameId = 3;
-    const obj = createDisplayObject();
-    const data = createRenderProxy2D(state, obj);
-    updateDisplayObjectRenderTransform(state, data);
-    expect(data.transformFrameId).toBe(3);
-  });
-});
+import { updateRenderProxy2DTransform } from './renderTransform2d';
 
 describe('updateRenderProxy2DTransform', () => {
   it('returns true and updates transform on first call', () => {
