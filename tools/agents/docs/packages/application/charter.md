@@ -42,9 +42,7 @@ Application is an entry-point package that helps orchestrate windowing, input, a
 
 ## Decisions
 
-- **[2026-07-02] Missing types must be rebuilt.** `LoopBackend`, `ApplicationLoopOptions`, expanded `Application` interface fields, and 3 `WindowBackend` methods were never committed to `@flighthq/types`. Likely lost agent work. Blocking prerequisite.
-
-  **Why:** The package cannot compile without its types.
+- **[2026-07-02] ~~Missing types~~ — false alarm.** Types were already present and correctly defined in `@flighthq/types`. The depth review was based on stale state. No action needed.
 
 - **[2026-07-02] Remove dead `LoopState.accumulated`.** Assessment-recommended cleanup.
 

@@ -15,6 +15,7 @@ status: ./status.md
 `@flighthq/font` is the **font resource lifecycle manager** — create, load, and reference fonts via the browser `FontFace` / `document.fonts` API. 10 exports across 4 source files. Dependencies: `entity`, `types`. Extracted from the old `@flighthq/resources`.
 
 Two parallel APIs that do identical loading work but return different types:
+
 - **`Font`** (entity) — a string handle. `{ name }` extending `Entity`. The text system references fonts by family name; this is what it consumes.
 - **`FontResource`** (plain object) — `{ family, face: FontFace | null }`. Holds the actual `FontFace` object for lower-level access (metrics, variation axes).
 

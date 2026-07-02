@@ -45,7 +45,7 @@ Effects and filters are genuinely separate domains. Filters (`@flighthq/filters`
 
 ## Decisions
 
-- **[2026-07-02] Effects owns intents + math; backends own pixels.** Recipe math stays in effects permanently. Same dependency direction as filters: effects owns the contract and recipe, effects-* backends consume it. Inverting the dependency direction would mean big switch statements or closed dispatch in render-adjacent code.
+- **[2026-07-02] Effects owns intents + math; backends own pixels.** Recipe math stays in effects permanently. Same dependency direction as filters: effects owns the contract and recipe, effects-\* backends consume it. Inverting the dependency direction would mean big switch statements or closed dispatch in render-adjacent code.
 
   **Why:** The math is substrate-agnostic — every backend derives identical parameters from the same functions. Centralizing it here prevents N backends from re-deriving the same math and drifting.
 
