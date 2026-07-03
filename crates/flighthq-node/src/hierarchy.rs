@@ -89,6 +89,17 @@ pub fn add_node_child_at(
     }
 }
 
+/// Appends multiple children to `target` in order.
+pub fn add_node_children(
+    arena: &mut NodeArena<HierarchyNode>,
+    target: NodeId,
+    children: &[NodeId],
+) {
+    for &child in children {
+        add_node_child(arena, target, child);
+    }
+}
+
 /// Returns `true` if `child` is `source` or a descendant of `source`.
 pub fn contains_node_child(
     arena: &NodeArena<HierarchyNode>,

@@ -29,3 +29,17 @@ pub use texture_atlas_libgdx_parse::parse_texture_atlas_libgdx;
 pub use texture_atlas_packer_parse::parse_texture_atlas_packer;
 pub use texture_atlas_starling_parse::parse_texture_atlas_starling;
 pub use xml_parse::{XmlElement, parse_xml_attributes, parse_xml_document};
+
+mod detect;
+pub use detect::detect_texture_atlas_format;
+
+pub use texture_atlas_aseprite_parse::{
+    parse_texture_atlas_aseprite as parse_texture_atlas_aseprite_json,
+    parse_texture_atlas_aseprite_document,
+};
+pub use texture_atlas_libgdx_parse::parse_texture_atlas_libgdx as parse_texture_atlas_libgdx_atlas;
+pub use texture_atlas_packer_parse::{
+    parse_texture_atlas_packer as parse_texture_atlas_packer_json,
+    parse_texture_atlas_packer_document,
+};
+pub use texture_atlas_starling_parse::parse_texture_atlas_starling as parse_texture_atlas_starling_xml;

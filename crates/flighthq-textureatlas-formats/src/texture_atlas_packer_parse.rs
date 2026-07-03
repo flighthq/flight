@@ -9,6 +9,16 @@ use flighthq_types::{TextureAtlas, TextureAtlasRegionLike};
 
 use crate::json::{JsonValue, parse_json};
 
+/// Parses an already-parsed TexturePacker JSON document into a populated [`TextureAtlas`].
+pub fn parse_texture_atlas_packer_document(
+    doc: &JsonValue,
+    strip_path_prefix: bool,
+) -> Result<TextureAtlas, String> {
+    let mut atlas = flighthq_textureatlas::create_texture_atlas(None, vec![]);
+    parse_packer_frames(doc, &mut atlas, strip_path_prefix)?;
+    Ok(atlas)
+}
+
 /// Parses a TexturePacker JSON string and returns a populated [`TextureAtlas`].
 ///
 /// Supports both the JSON-hash and JSON-array frame shapes. When
@@ -20,29 +30,33 @@ pub fn parse_texture_atlas_packer(
     strip_path_prefix: bool,
 ) -> Result<TextureAtlas, String> {
     let doc = parse_json(json)?;
-    let mut atlas = flighthq_textureatlas::create_texture_atlas(None, vec![]);
+    parse_texture_atlas_packer_document(&doc, strip_path_prefix)
+}
 
+fn parse_packer_frames(
+    doc: &JsonValue,
+    atlas: &mut TextureAtlas,
+    strip_path_prefix: bool,
+) -> Result<(), String> {
     let frames = doc.get("frames").ok_or("missing frames key")?;
 
     if let Some(arr) = frames.as_array() {
-        // Array format: each entry carries a filename field.
         for entry in arr {
             let filename = entry
                 .get("filename")
                 .and_then(JsonValue::as_text)
                 .ok_or("array frame missing filename")?;
-            apply_packer_frame(&mut atlas, filename, entry, strip_path_prefix)?;
+            apply_packer_frame(atlas, filename, entry, strip_path_prefix)?;
         }
     } else if let Some(obj) = frames.as_object() {
-        // Hash format: object key is the frame name.
         for (name, entry) in obj {
-            apply_packer_frame(&mut atlas, name, entry, strip_path_prefix)?;
+            apply_packer_frame(atlas, name, entry, strip_path_prefix)?;
         }
     } else {
         return Err("frames must be an object or array".to_string());
     }
 
-    Ok(atlas)
+    Ok(())
 }
 
 fn apply_packer_frame(
