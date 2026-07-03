@@ -18,5 +18,5 @@
     "tests/setup/**/*.ts",
     "scripts/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist", ".claude"]
+  "exclude": ["node_modules", "dist", ".claude", "examples/runners"]
 }
