@@ -278,7 +278,7 @@ export interface ElectronBrowserWindow {
   id: number;
   // Content loading — not used by the window backend itself, but the escape hatch a host app needs
   // to put a page into the window (returned via getElectronBrowserWindow).
-  loadUrl(url: string): Promise<void>;
+  loadURL(url: string): Promise<void>;
   loadFile(filePath: string): Promise<void>;
   setTitle(title: string): void;
   getTitle(): string;
