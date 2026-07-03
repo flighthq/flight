@@ -21,6 +21,6 @@ npm run examples:native
 
 The equivalent explicit development commands are `dev:examples`, `dev:examples:web`, `dev:examples:electron`, `dev:examples:wasm`, and `dev:examples:native`.
 
-There are currently 17 TypeScript examples and one Rust example. `drawingshapes` is the only example available in every runner: TypeScript in web and Electron, and the shared Rust implementation through Wasm in web/Electron and winit natively. `examples:wasm` opens that Rust/Wasm cell directly.
+There are currently 17 TypeScript examples and 17 Rust examples. Each example is available in TypeScript through the web and Electron runners, and as a host-neutral Rust implementation through Wasm in web/Electron and winit natively. `examples:wasm` opens the Rust/Wasm cell directly.
 
 The current Wasm adapter draws through browser Canvas2D; moving that adapter to Flight's WebGPU renderer requires a Rust browser graphics host and does not change the example crate.

@@ -1,5 +1,6 @@
 //! Host-neutral Rust implementation of the `drawingshapes` example.
 
+use example_common::{ExamplePrimitive, ExampleScene, polygon};
 use flighthq_displayobject::{DisplayObjectArena, get_display_object_local_content_revision};
 use flighthq_shape::{
     append_shape_begin_fill, append_shape_circle, append_shape_ellipse, append_shape_end_fill,
@@ -14,36 +15,7 @@ pub const WIDTH: u32 = 800;
 pub const HEIGHT: u32 = 400;
 pub const BACKGROUND: u32 = 0xff_ff_ff_ff;
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum DrawingPrimitive {
-    Rectangle {
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
-    },
-    Circle {
-        x: f32,
-        y: f32,
-        radius: f32,
-    },
-    Ellipse {
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
-    },
-    RoundRectangle {
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
-        radius: f32,
-    },
-    Polygon {
-        points: Vec<(f32, f32)>,
-    },
-}
+pub type DrawingPrimitive = ExamplePrimitive;
 
 /// Backend-neutral geometry consumed by native now and a browser/Wasm host later.
 pub struct DrawingShapes {
@@ -66,6 +38,14 @@ pub fn create_drawing_shapes() -> DrawingShapes {
         regions: get_shape_fill_regions(&arena, shape).unwrap_or_default(),
         content_revision: get_display_object_local_content_revision(&arena, shape),
     }
+}
+
+pub fn create_scene() -> ExampleScene {
+    ExampleScene::new(ID, TITLE)
+        .with_size(WIDTH, HEIGHT)
+        .with_background(BACKGROUND)
+        .with_fill(0x24_af_c4_ff)
+        .with_primitives(drawing_primitives())
 }
 
 pub fn drawing_primitives() -> Vec<DrawingPrimitive> {
@@ -150,18 +130,6 @@ fn quadratic_stroke(
     DrawingPrimitive::Polygon { points: left }
 }
 
-fn polygon(x: f32, y: f32, radius: f32, sides: u32) -> DrawingPrimitive {
-    let step = std::f32::consts::TAU / sides as f32;
-    let start = std::f32::consts::FRAC_PI_2;
-    let points = (0..sides)
-        .map(|index| {
-            let angle = start + step * index as f32;
-            (angle.cos() * radius + x, -angle.sin() * radius + y)
-        })
-        .collect();
-    DrawingPrimitive::Polygon { points }
-}
-
 fn append_primitive(
     arena: &mut DisplayObjectArena,
     shape: flighthq_node::NodeId,
@@ -209,6 +177,7 @@ fn append_primitive(
             }
             append_shape_line_to(arena, shape, start_x, start_y);
         }
+        DrawingPrimitive::Text { .. } => {}
     }
 }
 

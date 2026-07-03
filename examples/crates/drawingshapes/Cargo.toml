@@ -6,6 +6,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
+example-common = { path = "../common" }
 flighthq-displayobject = { workspace = true }
 flighthq-node = { workspace = true }
 flighthq-shape = { workspace = true }

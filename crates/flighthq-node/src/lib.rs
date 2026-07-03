@@ -86,9 +86,8 @@ pub use spatial2d::{
     Spatial2DArena, Spatial2DNode, add_spatial2d_child, add_spatial2d_child_at,
     contains_spatial2d_child, detach_spatial2d_node, get_spatial2d_alpha, get_spatial2d_blend_mode,
     get_spatial2d_child_at, get_spatial2d_child_count, get_spatial2d_parent, get_spatial2d_root,
-    get_spatial2d_visible, remove_spatial2d_child, reparent_spatial2d_node, set_spatial2d_alpha,
-    set_spatial2d_blend_mode, set_spatial2d_transform, set_spatial2d_visible,
-    swap_spatial2d_children,
+    get_spatial2d_visible, remove_spatial2d_child, set_spatial2d_alpha, set_spatial2d_blend_mode,
+    set_spatial2d_transform, set_spatial2d_visible, swap_spatial2d_children,
 };
 
 // scene

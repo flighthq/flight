@@ -8,7 +8,25 @@ import { workspacePackages } from '../../../scripts/workspaces';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu', 'wasm'] as const;
 type Renderer = (typeof RENDERERS)[number];
-const WASM_EXAMPLES = new Set(['drawingshapes']);
+const WASM_EXAMPLES = new Set([
+  'addinganimation',
+  'addingtext',
+  'animatedsprite',
+  'batchloading',
+  'bunnymark',
+  'comparebitmapdata',
+  'displayingabitmap',
+  'drawingshapes',
+  'nyancat',
+  'piratepig',
+  'playingsound',
+  'playingvideo',
+  'renderview',
+  'sparktrail',
+  'textmetrics',
+  'tweenexample',
+  'usingtilemap',
+]);
 
 interface Example {
   name: string;
