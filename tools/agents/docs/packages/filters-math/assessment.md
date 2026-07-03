@@ -1,10 +1,10 @@
-# clock — Assessment
+# filters-math — Assessment
 
 See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-No sweep-safe items (package does not exist yet).
+No items (needs depth review first).
 
 ## Approved
 
@@ -12,4 +12,4 @@ None.
 
 ## Backlog
 
-- Full package creation.
+- Depth review needed.

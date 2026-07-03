@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/filters-surface'
 crate: flighthq-filters-surface
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md

@@ -21,7 +21,7 @@ Track which packages have had a direction session, what was dispatched, and what
 | math | direction | 2026-07-02 | 6 decisions blessed: noise in math, randomColor in math, saturate GPU NaN semantics, particles adopt math exports, as-needed growth model, pkg description update. Approved: 6 sweep items (doc fixes + saturate NaN impl + description + order check). |
 | node | landed | 2026-07-02 | 7 decisions blessed: trait boundary, 3D raw-matrix, 3D bounds on node, signals hierarchy-only, skewX/skewY, reparentNode = world-preserving, serialization = new package. Skew + reparentNode code landed. |
 | signals | direction | 2026-07-02 | 4 decisions blessed: sync-only boundary, void slot contract, no weak connections, hard-rename policy. Approved: delete 2 deprecated aliases. Open: throttle/debounce home (time pkg?), dispatch-during-dispatch safety (tombstone). |
-| clock | — | 2026-07-02 | New package, blessed during tween session. Shared time primitive — hierarchical clocking. Awaiting direction session. Referenced by: tween, spritesheet, timeline. |
+| clock | direction | 2026-07-03 | Approved for creation. Blocking tween/spritesheet/timeline. |
 
 ## Scene graph — display objects
 
@@ -30,7 +30,7 @@ Track which packages have had a direction session, what was dispatched, and what
 | displayobject | dispatched | 2026-07-01 | Reversed prior drop of `sourceRectangle` on Bitmap. Blessed charter decisions: drop cacheAsBitmap/scrollRect/opaqueBackground, Loader, lifecycle signals, traversal wrappers, pixelSnapping. Builder2 parcel: stale-reference cleanup + textlayout dep removal. |
 | text | direction | 2026-07-02 | 4 decisions blessed: entity layer identity, programmatic mutation on text / interactive on textinput, \*Value suffix dropped, pre-release no-backward-compat rule. Builder landed most depth-review work (setters, read accessors, signals, insert/replace). Open: signal ownership (text vs textinput), text-formats neighbor, package rename. 1 approved item (textlayout \_text param removal). |
 | sprite | direction | 2026-07-02 | 5 decisions blessed: compact sentinel is user-facing API, ParticleEmitter signals intentionally absent, transformType no-guard for perf, Vector2Like for all {x,y} out-params, Int32Array for tile flags. Builder parcel: 3 items (signals dep, Vector2Like swap, named sentinel constant). |
-| movieclip | — | 2026-07-02 | New package, blessed during timeline session. Display-object composition layer wrapping timeline. Awaiting direction session. Source in timeline/movieClip.ts. |
+| movieclip | direction | 2026-07-03 | Approved for extraction from timeline. |
 | clip | direction | 2026-07-02 | 4 decisions blessed: two API paths (conservative default / `*Exact` suffix), Float32Array contours in scope, winding conversion belongs in path, boundaries confirmed. No sweep-safe items — all remaining work cross-package (Float32Array migration, exact polygon kernel, functional test, Rust crate). |
 | interaction | dispatched | 2026-07-02 | 6 decisions blessed: gestures separate package, DisplayObject typing for overlap, `*Handler` suffix intentional, clip-aware picking in scope, shapeFlag stays with honest fallback, broadphase is interaction's opt-in. Prior builder work lost — tiers 1–3 re-queued: registerDefaultHitTestPoints, spatial queries, overlap, HitTestResult + detailed hit, gating, hitArea, suppressTouchHover, shape-accurate picking, tilemap/quad-batch sub-index, clip-aware picking. |
 | shape | dispatched | 2026-07-02 | 5 decisions blessed: closed switch is tight-loop exception (fork B), stroke geometry → path, shape-formats neighbor approved, path dependency needed, keep unknown[] buffer. Approved: exact cubic bounds, per-span stroke bounds, drawTriangles in bounds/fill, honor drawPath winding, remove aliasing comment, typed round-trip (shapeGraphicsData), add path dep. |
@@ -39,45 +39,45 @@ Track which packages have had a direction session, what was dispatched, and what
 
 | Package   | State | Last visited | Note                      |
 | --------- | ----- | ------------ | ------------------------- |
-| scene     | —     |              | 52/100, early stage       |
-| mesh      | —     |              |                           |
-| lighting  | —     |              |                           |
-| texture   | —     |              |                           |
-| camera    | —     |              |                           |
-| skeleton  | —     |              | Thin, undocumented in map |
-| picking   | —     |              | Thin, undocumented in map |
-| animation | —     |              | Undocumented in map       |
-| materials | —     |              |                           |
+| scene | direction | 2026-07-03 | Keep standalone. BVH in scope. Sweep: dead ternaries, literal casts in raycaster. |
+| mesh | direction | 2026-07-03 | mesh-formats NOT separate (scene-formats covers). Sweep: copy-paste doc comments. |
+| lighting | direction | 2026-07-03 | Shadow expansion + forward-budget in scope. Sweep: non-re-entrant scratch. |
+| texture | direction | 2026-07-03 | CubeFace constants → types (blocking bug). Remove unused resources dep. |
+| camera | direction | 2026-07-03 | Reversed-Z in scope. Investigate ortho depth (may be load-bearing). |
+| skeleton | direction | 2026-07-03 | Keep standalone, develop more. Add clone/dispose/equals. |
+| picking | direction | 2026-07-03 | Composition layer over scene+camera. Use raycastSceneNode internally. |
+| animation | direction | 2026-07-03 | Keep standalone. Blending/crossfade/events/state machine in scope. |
+| materials | direction | 2026-07-03 | Identity broader than 3D. Color types → types. equalsMaterial ref comparison intentional. |
 
 ## Rendering — core + backends
 
 | Package | State | Last visited | Note |
 | --- | --- | --- | --- |
 | render | direction | 2026-07-02 | 6 decisions blessed: shared draw driver, render-graph in scope, font-string → text, 3D prepare boundary (render composes / lighting defines), viewport culling = real world bounds, housekeeping sweep. Builder parcel: delete no-op + alias, per-state adapt hook, fix viewport culling, move computeTextFormatFontString. |
-| render-gl | — |  |  |
-| render-wgpu | — |  |  |
-| displayobject-canvas | — |  |  |
-| displayobject-dom | — |  |  |
-| displayobject-gl | — |  |  |
-| displayobject-wgpu | — |  |  |
-| scene-gl | — |  |  |
-| scene-wgpu | — |  |  |
+| render-gl | direction | 2026-07-02 | Remove `makeGlState` from barrel. Backlog: context-loss, device-caps, texture abstraction. |
+| render-wgpu | direction | 2026-07-02 | Wire `setScissorRect`, collapse duplicated quad-draw paths. Backlog: blend modes, MSAA, device-loss. |
+| displayobject-canvas | direction | 2026-07-02 | Map Alpha→destination-in, Erase→destination-out. Unify naming. `crate: null`. |
+| displayobject-dom | direction | 2026-07-02 | Source caret color/width from text format. `crate: null`. |
+| displayobject-gl | direction | 2026-07-02 | Tighten `remapGlScale9Commands` signature. |
+| displayobject-wgpu | direction | 2026-07-02 | Tidy RendererData casts behind typed helper. |
+| scene-gl | direction | 2026-07-02 | Add `destroy*` for GPU resources. |
+| scene-wgpu | direction | 2026-07-02 | No sweep items. Backlog: multi-light, shadows, IBL, transparency. |
 
 ## Filters / effects
 
 | Package | State | Last visited | Note |
 | --- | --- | --- | --- |
 | filters | direction | 2026-07-02 | 6 decisions blessed: registry not closed union for utility dispatch, BitmapFilterMargin → types, filters-math correct decomposition, effects/filters separate domains, color-matrix presets stay affine, TS-leads Rust-follows. Approved: 2 items (BitmapFilterMargin → types, Package Map update). Open: registry migration scope, bevel margin, backend de-duplication, constructor throw policy. |
-| filters-canvas | — |  |  |
-| filters-css | — |  |  |
-| filters-gl | — |  |  |
-| filters-math | — |  |  |
-| filters-surface | — |  |  |
-| filters-wgpu | — |  |  |
+| filters-canvas | direction | 2026-07-02 | No sweep items. Backlog: implement pixel-buffer path. `crate: null`. |
+| filters-css | direction | 2026-07-02 | De-duplicate `rgbaFromInt`. `crate: null`. |
+| filters-gl | direction | 2026-07-02 | Implement knockout on drop shadow, export cap constants. |
+| filters-math | direction | 2026-07-02 | New directory. Backlog: depth review needed. |
+| filters-surface | direction | 2026-07-02 | Fix inner shadow angle/distance bug (correctness). |
+| filters-wgpu | direction | 2026-07-02 | Parameter-coverage audit (preserveAlpha/edge modes vs GL). |
 | effects | direction | 2026-07-02 | 8 decisions blessed: effects owns intents+math (same dep direction as filters), per-kind handler registration on pipeline state (dissolving central tables — renderer-registration pattern, tree-shakes naturally), effects owns interpolation via registered field-role metadata (fixes packed-color corruption), enabled/intensity backends must honor (tracked obligation), serialization deferred to SDK-wide story, catalog keeps growing, Package Map entry, TS-leads. Approved: 2 items (FilmicToneMapOptions/AgxToneMapOptions, Package Map entry). Open: registration migration scope/handler shape, ColorGrade vs LiftGammaGain, AutoExposure vs EyeAdaptation, backend math migration. |
-| effects-canvas | — |  |  |
-| effects-gl | — |  |  |
-| effects-wgpu | — |  |  |
+| effects-canvas | direction | 2026-07-02 | Correct false "shader-only" comments. `crate: null`. |
+| effects-gl | direction | 2026-07-02 | Drop unused `@flighthq/filters` dep, fix bloom to use shared math. |
+| effects-wgpu | direction | 2026-07-02 | Fix gradient-ramp teardown. |
 
 ## Resources
 
@@ -91,12 +91,12 @@ Track which packages have had a direction session, what was dispatched, and what
 | textureatlas-formats | direction | 2026-07-02 | Covered in textureatlas session. Remove xml re-exports, add detectTextureAtlasFormat, Cocos plist parser backlogged. |
 | tileset | direction | 2026-07-02 | 4 decisions blessed: Uint8Array rename, near scope ceiling, tileset-formats blessed as neighbor (Tiled TSX primary target), TS-leads. Approved: 2 items (Uint8Array rename, Package Map). |
 | loader | direction | 2026-07-02 | 6 decisions blessed: rebuild missing types (lost work), byte progress must be built, decompose 657-line monolith, AbortSignal for TS cancellation, configurable fail policy, TS-leads. Approved: 4 items (rebuild types, extend interface, remove false comment, Package Map). Review was reject/38 — blocking type issues. |
-| scene-formats | — |  |  |
-| spritesheet-formats | — |  |  |
-| particles-formats | — |  |  |
+| scene-formats | direction | 2026-07-03 | Expand glTF + target USD/OBJ. mesh-formats NOT separate. |
+| spritesheet-formats | direction | 2026-07-03 | Unify dispatch to registry-only. Update description. |
+| particles-formats | direction | 2026-07-03 | Unify dispatch to registry-only. PhaserParticleFormatKind ghost. Update description. |
 | surface | direction | 2026-07-02 | 7 decisions blessed: unify SurfaceEdgeMode as single edge-mode type (collapse SurfaceConvolutionEdge), unified sampling contract for all geometric ops (explicit edge mode + interpolation mode), noise architecture supports additional types, room for both CPU pixel ops and GPU-parity software rendering, wasm-mixing awareness standing context, Package Map update, TS-leads. Approved: 4 items (SurfaceConvolutionEdge consolidation, SurfaceEdgeMode on geometric ops, SurfaceResizeMode on geometric ops, Package Map update). |
 | surface-rs | — |  |  |
-| image-codec | — | 2026-07-02 | New package, blessed during image session. DOM-free decode/encode seam with per-format registries. Awaiting direction session. Breadth review spec at reviews/maturation/breadth/image-codec.md. |
+| image-codec | direction | 2026-07-03 | Approved for creation. DOM-free decode/encode seam. |
 | resource-formats | — |  | Redirect verdict → `textureatlas-formats` |
 
 ## Animation / simulation
@@ -105,15 +105,15 @@ Track which packages have had a direction session, what was dispatched, and what
 | --- | --- | --- | --- |
 | spritesheet | dispatched | 2026-07-02 | 8 decisions blessed: SpritesheetData → types, frame events in scope, repeatCount replaces loop boolean, bitmap binding in spritesheet, pivot/rotation is player's job, validation stays (tree-shakes), clock integration, TS-leads Rust-follows. Approved: 4 items (seek fix, seek tests, data types migration, loop→repeatCount). Open: frame event design, gotoAndStop, loader integration, clock dependency. |
 | particles | direction | 2026-07-02 | 8 decisions blessed: sim/node split (particles = pure sim, particle-emitter = display wrapper), closed unions left for now, sort-key in sim, object-pool secondary tier, sub-emitters in scope (backlogged), spawn shape type alignment, GPU seam don't-close-the-door, TS-leads Rust-follows. 5 recommended items (spawnOffset status, field order, deterministic test, edge doc, shape type fix). Open: particle-emitter shape, sub-emitter design, collision response, path/polygon shapes. |
-| particle-emitter | — | 2026-07-02 | New package, blessed during particles session. Display-object wrapper for particle sim. Awaiting direction session. Source in particles/updateParticleEmitter.ts + emitParticleBurst.ts. |
+| particle-emitter | direction | 2026-07-03 | Approved for extraction from particles. |
 | timeline | dispatched | 2026-07-02 | 8 decisions blessed: timeline/movieclip split (pure engine vs display-object layer), MovieClipSignals separate interface, dependency direction (movieclip→timeline+types), createSpritesheetTimelineSource→movieclip, timeline-spritesheet absorbed into movieclip, updateTimeline non-recursive, clock integration, TS-leads Rust-follows. Approved: 3 items (disposeTimelineSignals, setMovieClipSource dead branch, frame-skip contract comment). Open: signal payloads, updateMovieClip recursion, frame-skip policy, play ranges/reverse/speed, MovieClipSignals shape. |
 | tween | dispatched | 2026-07-02 | 6 decisions blessed: interpolator seam (open registry, perf-first), retire createColorTween for generic, tween signals fundamental (exempt from enable\*), tween owns single-object sequencing, @flighthq/clock blessed as shared time primitive, TS-leads Rust-follows. Approved: 4 items (onYoyo, time docs, seekTween pin, onComplete doc fix). Open: defaultManager, clock design, shared sequencing primitive, tween-formats, perf pass. |
 | easing | direction | 2026-07-02 | 5 decisions blessed: normalized spring in easing / unbounded in tween, output-range combinators stay, -formats gated on consumer, TS-leads Rust-follows, Readonly<> callable exception. Approved: 3 polish items (easeStep doc, ScalarRemap type, pkg description). Open: physics taxonomy, pkg description update, easeSmoothstepRange type, perf/determinism gate. |
 | velocity | direction | 2026-07-02 | 5 decisions blessed: remove duplicate contributeAffineVelocity, WeakMap stays, tighten getVelocitySampleAt matrix type, add Package Map entry, TS-leads Rust-follows. Approved: 3 items (remove duplicate, type tightening, Package Map entry). Open: broader velocity role, 3D velocity, transform-trait hardening. |
 | path | dispatched | 2026-07-02 | 5 decisions blessed: path-boolean neighbor, path-formats neighbor, StrokeStyle → types, path editing in scope, multiple tessellation strategies. Approved: 9 items (pen cache, walker dedup, dashPath, contour lengths, nearest point, simplifyPath, fitPathCurves, offsetPath, StrokeStyle promotion). Open: PathMeasure shape, stroke dash-phase semantics, pkg description, Rust crate. |
-| path-boolean | — | 2026-07-02 | New package, blessed during path session. CSG boolean ops on 2D paths. Awaiting direction session. |
-| path-formats | — | 2026-07-02 | New package, blessed during path session. Path serialization (SVG path data, etc.). Awaiting direction session. |
-| shape-formats | — | 2026-07-02 | New package, blessed during shape session. Shape serialization formats. Awaiting direction session. |
+| path-boolean | direction | 2026-07-03 | Approved for creation. Name is open direction (path-ops? path-combine? path-csg?). |
+| path-formats | direction | 2026-07-03 | Approved for creation. SVG path data primary target. |
+| shape-formats | direction | 2026-07-03 | Approved for creation. |
 
 ## Input / text
 

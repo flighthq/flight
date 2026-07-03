@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/textshaper-canvas'
 crate: null
-lastDirection: null
+lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md

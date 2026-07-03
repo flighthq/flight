@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/lighting'
 crate: flighthq-lighting
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-03
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md

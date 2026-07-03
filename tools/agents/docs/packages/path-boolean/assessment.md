@@ -1,21 +1,16 @@
----
-package: '@flighthq/path-boolean'
-updated: 2026-07-02
-basedOn: ./charter.md
----
-
 # path-boolean — Assessment
 
-New package, pre-direction. No source exists yet.
+See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-_None._
-
-## Backlog
-
-_None._
+No sweep-safe items (package does not exist yet).
 
 ## Approved
 
-_None._
+None.
+
+## Backlog
+
+- Full package creation.
+- Naming decision.

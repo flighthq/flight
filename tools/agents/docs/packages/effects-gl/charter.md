@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/effects-gl'
 crate: flighthq-effects-gl
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md

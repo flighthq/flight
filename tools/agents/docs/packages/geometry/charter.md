@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/geometry'
 crate: flighthq-geometry
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-01
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
