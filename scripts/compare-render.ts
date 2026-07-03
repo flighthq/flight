@@ -85,7 +85,7 @@ const root = process.cwd();
 
 // Entries excluded from fingerprint verification entirely — they produce no meaningful rendered
 // pixels (audio-only, etc.) and intentionally skip the in-page verifier (VERIFY_SKIP in
-// tools/examples/vite.config.ts). They still get the Tier 1/2/4 error gate via --fail-on-error.
+// examples/runners/web/vite.config.ts). They still get the Tier 1/2/4 error gate via --fail-on-error.
 const FINGERPRINT_SKIP = new Set<string>(['playingsound']);
 
 // Entries excluded from the cross-backend parity check. A string value skips all pairs; an array

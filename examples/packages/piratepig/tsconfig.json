@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "references": [
+    { "path": "../../../packages/filters" },
+    { "path": "../../../packages/filters-css" },
+    { "path": "../../../packages/filters-gl" },
+    { "path": "../../../packages/filters-wgpu" },
+    { "path": "../../../packages/sdk" }
+  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

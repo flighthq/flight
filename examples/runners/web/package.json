@@ -1,0 +1,18 @@
+{
+  "name": "@flighthq/examples",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "npm run wasm && tsx ../../../scripts/download-all-assets.ts",
+    "dev": "vite --config vite.config.ts",
+    "prebuild": "npm run wasm && tsx ../../../scripts/download-all-assets.ts",
+    "build": "vite build --config vite.config.ts",
+    "preview": "vite preview --config vite.config.ts",
+    "test": "tsc -p tsconfig.json --noEmit",
+    "wasm": "tsx ../../../scripts/run-wasm-pack.ts build ../wasm --release --target web --out-dir ../web/src/wasm --out-name drawingshapes"
+  },
+  "devDependencies": {
+    "vite": "*"
+  }
+}

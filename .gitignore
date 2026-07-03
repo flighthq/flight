@@ -182,6 +182,9 @@ packages/*/src/wasm/package.json
 !packages/*/src/wasm/*.d.ts
 packages/*/src/wasm/*_bg.wasm.d.ts
 
+# Generated Rust example Wasm adapter consumed by the web and Electron runners.
+examples/runners/web/src/wasm/
+
 # get:worktree incoming review bundles
 /incoming/
 

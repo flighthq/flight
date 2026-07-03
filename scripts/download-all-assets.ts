@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { type Asset, downloadAssets } from './download-assets';
 
 const projectRoot = resolve(fileURLToPath(import.meta.url), '../..');
-const examplesDir = join(projectRoot, 'examples');
+const examplesDir = join(projectRoot, 'examples', 'packages');
 
 const examples = readdirSync(examplesDir, { withFileTypes: true })
   .filter((d) => d.isDirectory())
