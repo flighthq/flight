@@ -295,7 +295,8 @@ describe('ensureNodeWorldBoundsRectangle', () => {
     ensureNodeWorldBoundsRectangle(object);
     const cache = cloneRectangle(runtime.worldBoundsRectangle!);
     const localBounds = getNodeLocalBoundsRectangle(object) as Rectangle;
-    localBounds.width = 10; // hack;
+    // write the cached rectangle directly (bypassing invalidation) so the scaled recalculation is observable
+    localBounds.width = 10;
     object.scaleX = 2;
     invalidateNodeLocalTransform(object);
     ensureNodeWorldBoundsRectangle(object);
@@ -323,10 +324,11 @@ describe('ensureNodeWorldBoundsRectangle', () => {
     addNodeChild(parent, child);
     const runtime = getEntityRuntime(child);
     ensureNodeWorldBoundsRectangle(child);
+    // write the cached rectangles directly (bypassing invalidation) so the scaled recalculation is observable
     const localBounds = getNodeLocalBoundsRectangle(child) as Rectangle;
-    localBounds.width = 10; // hack;
+    localBounds.width = 10;
     const worldBounds = getNodeWorldBoundsRectangle(child) as Rectangle;
-    worldBounds.width = 10; // hack
+    worldBounds.width = 10;
     const cache = cloneRectangle(runtime.worldBoundsRectangle!);
     parent.scaleX = 2;
     invalidateNodeLocalTransform(parent);

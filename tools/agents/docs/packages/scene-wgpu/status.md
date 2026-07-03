@@ -8,6 +8,12 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-03 — inline TODO relocation (lint sweep)
+
+`no-warning-comments` is now enforced over `packages/*/src` (see `eslint.config.ts`); inline TODO markers move here per the Source Style convention.
+
+- [2026-07-03] Relocated inline TODO from `src/transmissionVolumePbrWgpuMeshMaterialRenderer.ts:47`: "TODO Phase 5: replace the alpha/tint approximation with a refracted background sample (opaque-scene color capture) plus Beer-Lambert volume absorption using thickness/attenuationDistance/ior." The surrounding doc comment still describes the current approximation; only the work-item line moved here.
+
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
 Swept the assessment's `## Recommended` section. It contained exactly one sweep-safe item.

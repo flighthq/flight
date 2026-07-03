@@ -15,6 +15,7 @@ import {
 import type { Matrix4, SceneNode } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
+import type { SceneNodeRuntime } from './sceneNode';
 import {
   createSceneNode,
   createSceneNodeRuntime,
@@ -22,7 +23,6 @@ import {
   getSceneNodeRuntime,
   getSceneNodeSignals,
   SceneNodeKind,
-  type SceneNodeRuntime,
 } from './sceneNode';
 
 function createTransformNode(): SceneNode {

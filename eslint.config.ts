@@ -158,6 +158,22 @@ export default [
   },
 
   {
+    // Package source: enforce two Source Style conventions from the codebase map.
+    // - `import type { Foo }` must be its own top-level `import type` line, never an inline
+    //   `import { type Foo, bar }` specifier.
+    // - Transient TODO/FIXME/HACK/XXX notes must not live inline in code; their home is the
+    //   package's status.md continuity log (tools/agents/docs/packages/<pkg>/status.md).
+    // Both rules deliberately include colocated *.test.ts files: the only test-file hits found
+    // when the rules were introduced were a few low-value `// hack` markers (rewritten as
+    // descriptive comments), so tests carry the same discipline as source without noise.
+    files: ['packages/*/src/**/*.{ts,tsx}'],
+    rules: {
+      'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+      'no-warning-comments': ['error', { terms: ['todo', 'fixme', 'hack', 'xxx'], location: 'anywhere' }],
+    },
+  },
+
+  {
     // apps, examples, tools, and tests are allowed to import from the engine barrel
     files: ['apps/**/*.{ts,tsx}', 'examples/**/*.{ts,tsx}', 'tools/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
     rules: {

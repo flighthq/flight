@@ -7,17 +7,17 @@ import {
   getNodeParent,
   getNodeRuntime,
 } from '@flighthq/node';
-import {
-  BlendMode,
-  type DisplayObject,
-  type HasBoundsRectangle,
-  type HasTransform2D,
-  type Node,
-  type Renderable,
-  type RenderProxy,
-  type RenderProxy2D,
-  type RenderState,
+import type {
+  DisplayObject,
+  HasBoundsRectangle,
+  HasTransform2D,
+  Node,
+  Renderable,
+  RenderProxy,
+  RenderProxy2D,
+  RenderState,
 } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyMaterial } from './renderMaterial';

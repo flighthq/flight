@@ -8,6 +8,10 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-03 — inline warning-comment cleanup (lint sweep)
+
+`no-warning-comments` is now enforced over `packages/*/src` (see `eslint.config.ts`). Three `// hack` markers in `src/boundsRectangle.test.ts` (lines 298/327/329) were rewritten in place as descriptive comments — the tests write cached bounds rectangles directly (bypassing invalidation) so the scaled recalculation is observable. Nothing transient to track; behavior unchanged.
+
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
 Executed the sweep-safe items from `assessment.md` → `## Recommended`.

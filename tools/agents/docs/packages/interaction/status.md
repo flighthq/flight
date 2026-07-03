@@ -8,6 +8,13 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-03 — inline TODO relocation (lint sweep)
+
+`no-warning-comments` is now enforced over `packages/*/src` (see `eslint.config.ts`); inline TODO markers move here per the Source Style convention.
+
+- [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:11` (in `defaultQuadBatchHitTestPointHandler`): bare `// TODO` — the handler currently falls back to `defaultSpriteHitTestPointHandler` (graph local-bounds test); a real per-quad hit test is still pending.
+- [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:20` (in `defaultTilemapHitTestPointHandler`): bare `// TODO` — same fallback; a real per-tile hit test is still pending.
+
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
 Executed the sweep-safe items from `assessment.md › Recommended` that are strictly within `packages/interaction/`. Tests: `npm run test --workspace=packages/interaction` → 85 passed.
