@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/render-gl'
 crate: flighthq-render-gl
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-02
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md

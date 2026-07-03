@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/filters-canvas'
 crate: null
-lastDirection: null
-draft: true
+lastDirection: 2026-07-02
+draft: false
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md

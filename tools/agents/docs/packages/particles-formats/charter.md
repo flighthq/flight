@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/particles-formats'
 crate: flighthq-particles-formats
-draft: true
-lastDirection: null
+draft: false
+lastDirection: 2026-07-03
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
