@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "api": "tsx ./scripts/api.ts",
+    "api:check": "tsx ./scripts/api.ts --check",
     "api:json": "tsx ./scripts/api.ts --json",
     "assign:worktree": "tsx ./scripts/assign.ts",
     "build": "tsc -b tsconfig.build.json",
@@ -45,7 +46,7 @@
     "capture:site:baseline": "tsx ./scripts/capture.ts --tool=site --update-baseline",
     "capture:site:check": "tsx ./scripts/capture.ts --tool=site --fail-on-changed",
     "capture:site:watch": "tsx ./scripts/watch-capture.ts --tool=site",
-    "check": "npm run packages:check && npm run typecheck && npm run lint && npm run format:check && npm run order:check && npm run exports:check",
+    "check": "npm run packages:check && npm run typecheck && npm run lint && npm run format:check && npm run order:check && npm run exports:check && npm run api:check",
     "check:rust": "npm run check:rust:core",
     "check:rust:all": "npm run lint:rust:all && npm run format:rust:check",
     "check:rust:core": "npm run lint:rust:core && npm run format:rust:check",

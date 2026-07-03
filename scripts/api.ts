@@ -283,6 +283,7 @@ function findMatchingParen(source: string, openIndex: number): number {
 
 interface ParsedArgs {
   json: boolean;
+  check: boolean;
   noColor: boolean;
   packageFilters: string[];
   functionFilters: string[];
@@ -293,6 +294,7 @@ interface ParsedArgs {
 function parseArgs(args: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     json: false,
+    check: false,
     noColor: false,
     packageFilters: [],
     functionFilters: [],
@@ -305,6 +307,8 @@ function parseArgs(args: string[]): ParsedArgs {
     const arg = args[i];
     if (arg === '--json') {
       parsed.json = true;
+    } else if (arg === '--check') {
+      parsed.check = true;
     } else if (arg === '--no-color') {
       parsed.noColor = true;
     } else if (arg === '--help' || arg === '-h') {
@@ -352,7 +356,7 @@ function parseArgs(args: string[]): ParsedArgs {
 }
 
 function printUsage(): void {
-  console.log('Usage: npm run api [--] [filters...] [--json] [--no-color]');
+  console.log('Usage: npm run api [--] [filters...] [--json] [--check] [--no-color]');
   console.log('');
   console.log('Filter examples:');
   console.log('  npm run api application               # show @flighthq/application package');
@@ -364,6 +368,7 @@ function printUsage(): void {
   console.log('');
   console.log('Options:');
   console.log('  --json        output API data as JSON');
+  console.log('  --check       fail on duplicate exported names and accessor-prefix violations');
   console.log('  --no-color    disable colorized output');
   console.log('  --package     only include matching package names');
   console.log('  --function    only include matching exported functions');
@@ -417,6 +422,171 @@ function filterApi(packages: ApiPackage[], options: ParsedArgs): ApiPackage[] {
     .filter((pkg): pkg is ApiPackage => pkg !== null);
 }
 
+// Packages allowed to export the same function names as each other. A drop-in
+// pair is a deliberate mirror: @flighthq/surface-rs is the Rust surface crate
+// compiled to wasm and shimmed to @flighthq/surface's exported signatures (the
+// "mixing" seam), so an app swaps implementations without call-site changes.
+// Identical names across such a pair are the point, not a collision.
+const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [['@flighthq/surface', '@flighthq/surface-rs']];
+
+// Ratchet allowlist for accessor-prefix violations that predate the check.
+// Entries are '<package> <functionName>'. Existing entries are tolerated so
+// the check can land without renames; new violations fail. Shrink this list —
+// never grow it.
+const ACCESSOR_ALLOWLIST: ReadonlySet<string> = new Set<string>([
+  // get* returning void, delivering results through a visitor callback rather
+  // than a return value or an out parameter.
+  '@flighthq/input getCoalescedInputPointerEvents',
+]);
+
+interface ApiCheckIssue {
+  message: string;
+  rule: 'accessor' | 'duplicate';
+}
+
+function collectAccessorIssues(packages: readonly ApiPackage[]): ApiCheckIssue[] {
+  const issues: ApiCheckIssue[] = [];
+
+  for (const pkg of packages) {
+    for (const fn of pkg.functions) {
+      if (ACCESSOR_ALLOWLIST.has(`${pkg.name} ${fn.name}`)) continue;
+
+      if (/^(?:is|has)[A-Z0-9]/.test(fn.name)) {
+        for (const signature of fn.signatures) {
+          const returnType = getSignatureReturnType(signature);
+          if (returnType !== null && !isBooleanShapedType(returnType)) {
+            issues.push({
+              message: `${pkg.name} ${fn.name} is named like a boolean accessor but returns ${returnType}`,
+              rule: 'accessor',
+            });
+            break;
+          }
+        }
+      }
+
+      if (/^get[A-Z0-9]/.test(fn.name)) {
+        for (const signature of fn.signatures) {
+          const returnType = getSignatureReturnType(signature);
+          // A void get* is fine when it writes through the documented
+          // out-parameter convention (a parameter named `out` or `target`);
+          // a void get* with no out parameter returns nothing to anyone.
+          if (returnType === 'void' && !hasOutParameter(signature)) {
+            issues.push({
+              message: `${pkg.name} ${fn.name} is named like a getter but returns void without an out parameter`,
+              rule: 'accessor',
+            });
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
+function collectDuplicateNameIssues(packages: readonly ApiPackage[]): ApiCheckIssue[] {
+  const packagesByFunctionName = new Map<string, string[]>();
+
+  for (const pkg of packages) {
+    for (const fn of pkg.functions) {
+      const owners = packagesByFunctionName.get(fn.name);
+      if (owners === undefined) packagesByFunctionName.set(fn.name, [pkg.name]);
+      else owners.push(pkg.name);
+    }
+  }
+
+  const issues: ApiCheckIssue[] = [];
+  for (const [name, owners] of packagesByFunctionName) {
+    if (owners.length < 2) continue;
+    if (DROP_IN_PACKAGES.some((group) => owners.every((owner) => group.includes(owner)))) continue;
+    issues.push({
+      message: `${name} is exported by ${owners.join(' and ')} — exported function names must be globally unique`,
+      rule: 'duplicate',
+    });
+  }
+
+  return issues;
+}
+
+// Extracts the printed return type from a formatted signature, or null when
+// the text cannot be parsed precisely (the check skips it rather than guess).
+function getSignatureReturnType(signature: string): string | null {
+  let angleDepth = 0;
+
+  for (let i = 0; i < signature.length; i++) {
+    const ch = signature[i];
+    if (ch === '<') angleDepth++;
+    else if (ch === '>' && signature[i - 1] !== '=' && angleDepth > 0) angleDepth--;
+    else if (ch === '(' && angleDepth === 0) {
+      const close = findMatchingParen(signature, i);
+      if (close === -1 || signature.slice(close, close + 3) !== '): ') return null;
+      return signature.slice(close + 3).trim();
+    }
+  }
+
+  return null;
+}
+
+// Reports whether the printed parameter list contains a parameter named `out`
+// or `target` — the SDK's mutable-output convention for void get* functions.
+function hasOutParameter(signature: string): boolean {
+  let angleDepth = 0;
+
+  for (let i = 0; i < signature.length; i++) {
+    const ch = signature[i];
+    if (ch === '<') angleDepth++;
+    else if (ch === '>' && signature[i - 1] !== '=' && angleDepth > 0) angleDepth--;
+    else if (ch === '(' && angleDepth === 0) {
+      const close = findMatchingParen(signature, i);
+      if (close === -1) return false;
+      return splitTopLevel(signature.slice(i + 1, close), ',').some((param) =>
+        // `out`, prefixed outs (`outA`, `outBounds`), or `target`.
+        /^(?:out[A-Za-z0-9]*|target)\??$/.test(param.trim().split(':')[0].trim()),
+      );
+    }
+  }
+
+  return false;
+}
+
+// boolean-shaped: `boolean`, a union whose every member is boolean-shaped, a
+// type predicate (`value is Foo` — boolean at runtime; the canonical guard
+// pattern), or a Promise of a boolean-shaped type (async backend accessors).
+// Matches printed signature text pragmatically rather than resolving types.
+function isBooleanShapedType(returnType: string): boolean {
+  return splitTopLevel(returnType, '|').every((part) => {
+    const trimmed = part.trim();
+    if (trimmed === 'boolean') return true;
+    if (/^[\w$]+ is\s/.test(trimmed)) return true;
+    const promised = /^Promise<(.+)>$/.exec(trimmed);
+    return promised !== null && isBooleanShapedType(promised[1].trim());
+  });
+}
+
+function runApiCheck(packages: readonly ApiPackage[]): never {
+  const issues = [...collectDuplicateNameIssues(packages), ...collectAccessorIssues(packages)];
+  const functionCount = packages.reduce((sum, pkg) => sum + pkg.functions.length, 0);
+
+  if (issues.length === 0) {
+    console.log(
+      `${colors.green('OK')} ${colors.bold(`API names valid`)} ${colors.dim(
+        `(${functionCount} exported functions across ${packages.length} packages)`,
+      )}`,
+    );
+    process.exit(0);
+  }
+
+  console.log(
+    `${colors.yellow('!')} ${colors.bold(`${issues.length} API issue${issues.length === 1 ? '' : 's'} found`)}\n`,
+  );
+  for (const issue of issues) {
+    console.log(`  ${colors.yellow('!')} ${colors.dim(`[${issue.rule}]`)} ${colors.white(issue.message)}`);
+  }
+  console.log('');
+  process.exit(1);
+}
+
 const asJson = options.json;
 
 if (options.help) {
@@ -428,6 +598,12 @@ const project = new Project({
   tsConfigFilePath: join(root, 'tsconfig.base.json'),
   skipAddingFilesFromTsConfig: true,
 });
+
+if (options.check) {
+  // The check gates the whole tree: filters are ignored so a filtered
+  // invocation can never green-light a duplicate hiding elsewhere.
+  runApiCheck(topoSort(findPackages()).map((pkg) => collectPackageApi(project, pkg)));
+}
 
 const api = filterApi(
   topoSort(findPackages()).map((pkg) => collectPackageApi(project, pkg)),
