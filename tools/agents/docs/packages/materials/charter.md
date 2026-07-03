@@ -10,7 +10,6 @@ status: ./status.md
 
 # materials — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -24,7 +23,7 @@ It ends where **shading** begins: it produces and compares descriptors and color
 
 _(Seeded from the prior depth review; replace with the intent in your own framing.)_
 
-## North star (proposed)
+## North star
 
 _Proposed durable principles inferred from the design and the structural forks. Confirm, edit, or move any of these to Open directions before they are treated as the rubric._
 
@@ -34,11 +33,11 @@ _Proposed durable principles inferred from the design and the structural forks. 
 - **AAA descriptor coverage; the clone/copy/equals/validate quartet is complete and generic.** Every material kind participates uniformly in structural clone, in-place copy, equality, and clamping — no kind is a second-class citizen, and the round-trip law (`equals(clone(m), m)`) holds for every kind.
 - **Descriptor-vs-math line is deliberate, not accidental.** Where the package draws the line between "material data" and "shading math" is a stated boundary the renderers depend on — not an unstated gap. (Which side IBL/BRDF lands on is an Open direction below, not a settled principle.)
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed scope lines, drawn from the review and neighbors. Confirm before relying on them._
 
-**In scope (proposed):**
+**In scope:**
 
 - Color-transform algebra (OpenFL parity) and its GPU-upload path.
 - Packed-color utilities and the bidirectional sRGB↔linear seam.
@@ -55,7 +54,11 @@ _Proposed scope lines, drawn from the review and neighbors. Confirm before relyi
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-03 — Materials identity is broader than "3D."** Materials are texture-render alterations regardless of dimension. ColorTransform stays. Why: ColorTransform is a material operation.
+- **2026-07-03 — `LinearColor`/`HslColor`/`HsvColor` move to `@flighthq/types`.** Why: cross-package types belong in the header layer.
+- **2026-07-03 — `equalsMaterial` reference comparison on `standard` sub-block is intentional.** Two material instances break a batch; reference equality is the batching signal.
+- **2026-07-03 — OKLab/OKLCH perceptual color tier in scope.**
+- **2026-07-03 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

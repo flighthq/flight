@@ -10,7 +10,6 @@ status: ./status.md
 
 # filters-surface — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -20,7 +19,7 @@ Beyond the 1:1 per-descriptor adapters (blur, color-matrix, convolution, displac
 
 Where it ends: it does **not** re-implement image processing — the heavy per-pixel work lives in `@flighthq/surface`; this package is the thin descriptor→kernel orchestration seam. It does not own the filter descriptors themselves (`@flighthq/filters`), the shared angle/distance→offset math (now `getShadowFilterOffset` in `@flighthq/filters`), or scene-graph integration — it is a leaf the render pipeline calls.
 
-## North star (proposed)
+## North star
 
 _These are inferred from the design and the SDK-wide forks, not yet blessed. Edit freely._
 
@@ -30,14 +29,14 @@ _These are inferred from the design and the SDK-wide forks, not yet blessed. Edi
 4. **Backend symmetry with `filters-gl`/`filters-canvas`.** This is one of several interchangeable backends over a shared descriptor set; its compositing roles, bounds expansion, and list semantics should agree with the other backends' answers rather than diverge per-substrate.
 5. **Rust conformance.** `flighthq-filters-surface` is a 1:1 conformance target (it is also a value-typed Wasm-mixable leaf); the TS surface is authoritative and the Rust crate must follow it.
 
-## Boundaries (proposed)
+## Boundaries
 
-**In scope (proposed):**
+**In scope:**
 
 - One CPU adapter per `@flighthq/filters` descriptor, into a `Uint8ClampedArray`/`SurfaceRegion`.
 - Backend-side compositing (role ordering, knockout/hideObject), per-kind bounds expansion, ordered filter-list dispatch, and the scratch-buffer pool that serves them.
 
-**Non-goals (proposed):**
+**Non-goals:**
 
 - Re-implementing image-processing kernels — those live in `@flighthq/surface`.
 - Owning the filter descriptors or their shared descriptor-level math (`@flighthq/filters`).
@@ -46,7 +45,7 @@ _These are inferred from the design and the SDK-wide forks, not yet blessed. Edi
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

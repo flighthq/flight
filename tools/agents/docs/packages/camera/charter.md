@@ -10,7 +10,6 @@ status: ./status.md
 
 # camera — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -18,7 +17,7 @@ status: ./status.md
 
 The package owns camera **descriptors and composition**; it delegates all matrix, frustum, ray, and plane math to `@flighthq/geometry`, and defines its shared types (`Camera`, `Projection`, `Ray3D`, `Plane`, `Frustum`, `BoundingSphere`) in `@flighthq/types`. It ends where two neighbors begin: **photo / device capture** is `@flighthq/webcam` (not this package, despite the shared word "camera"), and **camera control** — orbit / fly / first-person rigs — is a future `@flighthq/camera-controller` neighbor, not here. Within the 3D family it sits beside `scene` / `mesh` / `lighting` / `texture` as the view-and-projection half of the pipeline.
 
-## North star (proposed)
+## North star
 
 _Durable principles inferred from the design and the SDK-wide forks. Edit to your framing; nothing here is blessed._
 
@@ -28,7 +27,7 @@ _Durable principles inferred from the design and the SDK-wide forks. Edit to you
 - **Explicit allocation, alias-safe out-params, sentinels on failure.** `create*` is the only allocator; every derive-into function reads all inputs before writing `out` and is alias-safe; non-invertible / behind-camera / parallel cases return `false`/sentinel, never throw.
 - **1:1 conformance with `flighthq-camera`.** The Rust crate is a drop-in mirror; the TS surface is the authoritative spec the crate conforms to.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Drawn from the review and neighbor packages. Edit freely._
 
@@ -51,7 +50,10 @@ _Drawn from the review and neighbor packages. Edit freely._
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-03 — Investigate `getCameraLinearDepth` ortho path before changing.** May be load-bearing for effects packages. Do not blind-fix.
+- **2026-07-03 — Reversed-Z / infinite-far perspective in scope.**
+- **2026-07-03 — Off-axis/asymmetric projection (stereo/VR/portals) in scope.**
+- **2026-07-03 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

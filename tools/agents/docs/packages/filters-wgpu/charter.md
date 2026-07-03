@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # filters-wgpu — Charter
 
@@ -16,7 +15,7 @@ status: ./status.md
 
 The WebGPU (WGSL) shader backend for the SDK's bitmap-filter effects — the GPU executor that turns the plain `@flighthq/filters` data descriptors into multi-pass WGSL render passes over `WgpuRenderTarget`s. It is one cell in the `<subject>-<backend>` filter family (`filters-surface` / `filters-gl` / `filters-css` / `filters-canvas` / `filters-wgpu`): it owns _how a filter runs on WebGPU_, not _what filters exist_ (that vocabulary lives in `@flighthq/filters` and `@flighthq/types`). Its exported surface is one `apply<Filter>FilterToWgpu` per canonical descriptor plus the fullscreen-pass pipeline primitives (`createWgpuFilterPipeline` / dual / triple + `drawWgpu*Pass`), the gradient-ramp texture family, and `getWgpuFilterScratchCount` as the caller's allocation oracle. It ends where the render loop begins: descriptor→backend dispatch is deliberately _not_ here.
 
-## North star (proposed)
+## North star
 
 _Inferred from the design and the SDK-wide forks — edit to your own framing._
 
@@ -26,7 +25,7 @@ _Inferred from the design and the SDK-wide forks — edit to your own framing._
 - **Deterministic GPU-resource teardown.** GPU resources held against a state are freed with `destroy*` (not `dispose*`), and device-loss recovery is a first-class, idempotent path — caches evict and pipelines rebuild rather than leak.
 - **Correctness is measured, not asserted by reading WGSL.** The bar is cross-backend pixel agreement with the software/GL reference, not unit "does-not-throw" shape checks alone. _(Proposed — see Open directions 3.)_
 
-## Boundaries (proposed)
+## Boundaries
 
 In scope:
 
@@ -34,7 +33,7 @@ In scope:
 - The public custom-shader seam: the 1/2/3-input fullscreen-pass pipeline primitives, blit/tint/clip helpers, gradient-ramp textures, and the scratch-count oracle.
 - WebGPU-specific resource lifecycle: pipeline caches, uniform buffers, gradient-ramp `GPUTexture`s, and their device-loss eviction/teardown.
 
-Non-goals (proposed):
+Non-goals:
 
 - **Defining or extending the filter vocabulary** — new filter kinds, levels/curves/threshold/gradient-map adjustment filters, etc. begin in `@flighthq/filters` + `@flighthq/types`, not here.
 - **Descriptor→backend dispatch** — the `dispatchBitmapFilterToWgpu` kind-switch belongs in `render-wgpu` so the dispatch table stays co-located with the render loop. _(Proposed — see Open directions 2.)_
@@ -43,7 +42,7 @@ Non-goals (proposed):
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

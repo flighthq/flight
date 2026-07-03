@@ -10,7 +10,6 @@ status: ./status.md
 
 # effects-gl — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -18,7 +17,7 @@ WebGL 2 backend for screen-space post-process effects — the GPU runner layer t
 
 It is the GL sibling of `effects-wgpu` and `effects-canvas`: same effect descriptor types (owned by `@flighthq/types`), same six-band taxonomy, same intent — the only difference is the substrate it rasterizes against. It ends where `@flighthq/effects` begins (substrate-agnostic effect _intent_ and shared parameter math) and where `render-gl` begins (the GL state, targets, fullscreen program plumbing, and any retained G-buffer/history infrastructure). `effects-gl` owns the _shader recipe per effect_ and the _post-process pipeline_ — not the descriptors, not the GPU core.
 
-## North star (proposed)
+## North star
 
 _Proposed from the package design + the SDK-wide forks; edit or reject in review._
 
@@ -28,7 +27,7 @@ _Proposed from the package design + the SDK-wide forks; edit or reject in review
 4. **Names tell the truth about what runs.** A runner named for a canonical algorithm should run that algorithm; an honest stand-in pending a missing seam should be visibly marked as such. (Open: how — see Open directions.)
 5. **Symmetric with its sibling backends.** The taxonomy, registrar shape, and kind enumeration stay aligned with `effects-wgpu`/`effects-canvas` so a scene authored against the effect descriptors renders the same set of effects on any backend.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed; edit in review._
 
@@ -49,7 +48,7 @@ _Proposed; edit in review._
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

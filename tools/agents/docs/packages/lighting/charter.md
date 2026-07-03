@@ -10,7 +10,6 @@ status: ./status.md
 
 # lighting — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -20,7 +19,7 @@ It is explicitly **a descriptor + analysis package, not a shading or solving pac
 
 Part of the in-scope 3D pipeline (structural fork G, decided 2026-06-24) alongside `scene`, `mesh`, `camera`, `texture`, and `materials`.
 
-## North star (proposed)
+## North star
 
 1. **Descriptors and value analysis only — never a solver.** Every export is a plain entity, a value-level accessor/mutator over one, or cheap analysis math (influence bounds, luminance, sphere-overlap culling). The moment a function would evaluate per-fragment attenuation, pack a GPU light buffer, or run a shading pass, it has left this package. This is the boundary the whole package is judged against.
 
@@ -32,7 +31,7 @@ Part of the in-scope 3D pipeline (structural fork G, decided 2026-06-24) alongsi
 
 5. **Strictly additive to a 2D bundle.** As a 3D package, `lighting` must never move a 2D example's `npm run size` baseline; nothing here may reach into the 2D path (fork G's binding constraint).
 
-## Boundaries (proposed)
+## Boundaries
 
 **In scope**
 
@@ -52,7 +51,10 @@ Part of the in-scope 3D pipeline (structural fork G, decided 2026-06-24) alongsi
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-03 — Shadow descriptor expansion in scope.** shadowMapSize, near/far, strength, CSM cascades.
+- **2026-07-03 — Forward-budget selection in scope.** Priority, layerMask, selectForwardLights.
+- **2026-07-03 — Light-probe / SH irradiance descriptor in scope.**
+- **2026-07-03 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

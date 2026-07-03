@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # displayobject — Charter
 
@@ -18,7 +17,7 @@ status: ./status.md
 
 Where it **ends** and a neighbor begins is the package's defining edge, and the source comment is explicit about it: hierarchy / display-list mechanics and transforms/bounds live in `@flighthq/node`; vector shapes in `@flighthq/shape`; text display objects in `@flighthq/text`; sprite/tilemap in `@flighthq/sprite`; clip-region producers in `@flighthq/clip`; filters/effects in `@flighthq/filters`; hit testing in `@flighthq/interaction`; and the actual drawing in `@flighthq/render` plus the `displayobject-<backend>` leaves. This package holds the **entities and their source data**, not their graph participation or their rendering.
 
-## North star (proposed)
+## North star
 
 _Inferred from the design and the structural forks; edit freely. These describe what "good" looks like for this package — they are proposals, not blessed rulings._
 
@@ -28,18 +27,18 @@ _Inferred from the design and the structural forks; edit freely. These describe 
 4. **Correct teardown and opt-in cost.** `dispose*` detaches and releases to GC (nothing here owns a GPU/native resource to `destroy*`); signal groups cost nothing until an `enable*` is called.
 5. **OpenFL feature parity, Flight API shape.** Aim to cover the display-object surface OpenFL/Lime offer (the full `Stage` field set, `Loader`, the compositing hints) while expressing each as plain data + free functions rather than stateful runtime objects.
 
-## Boundaries (proposed)
+## Boundaries
 
 _In scope vs. non-goals, drawn from the review and the neighbor map. Proposals — confirm or redraw._
 
-**In scope (proposed):**
+**In scope:**
 
 - The base `DisplayObject` / `DisplayContainer` entity and trait-init sequence.
 - The composited leaf surfaces: `Bitmap`, `Stage`, `Video`, `Loader`, `RenderView`, `HtmlView`.
 - Compositing-hint _data_: `cacheAsBitmap`(`Matrix`), `scrollRect`, `opaqueBackground`, `clip`, `material` — as settable fields that invalidate, regardless of which backend later honors them.
 - Stage-locating helpers and the lifecycle/loader signal _definitions_ + `enable*` opt-ins.
 
-**Non-goals (proposed):**
+**Non-goals:**
 
 - Hierarchy / display-list mechanics, transforms, and bounds math — `@flighthq/node`.
 - Vector shapes (`Shape`/`MorphShape`), sprite/tilemap, and text display objects — `@flighthq/shape`, `@flighthq/sprite`, `@flighthq/text`.

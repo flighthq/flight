@@ -95,7 +95,7 @@ Track which packages have had a direction session, what was dispatched, and what
 | spritesheet-formats | direction | 2026-07-03 | Unify dispatch to registry-only. Update description. |
 | particles-formats | direction | 2026-07-03 | Unify dispatch to registry-only. PhaserParticleFormatKind ghost. Update description. |
 | surface | direction | 2026-07-02 | 7 decisions blessed: unify SurfaceEdgeMode as single edge-mode type (collapse SurfaceConvolutionEdge), unified sampling contract for all geometric ops (explicit edge mode + interpolation mode), noise architecture supports additional types, room for both CPU pixel ops and GPU-parity software rendering, wasm-mixing awareness standing context, Package Map update, TS-leads. Approved: 4 items (SurfaceConvolutionEdge consolidation, SurfaceEdgeMode on geometric ops, SurfaceResizeMode on geometric ops, Package Map update). |
-| surface-rs | — |  |  |
+| surface-rs | direction | 2026-07-03 | Pure shadow posture confirmed. Bridge where perf value added. filters-surface-rs approved as neighbor. |
 | image-codec | direction | 2026-07-03 | Approved for creation. DOM-free decode/encode seam. |
 | resource-formats | — |  | Redirect verdict → `textureatlas-formats` |
 

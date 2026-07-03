@@ -10,13 +10,12 @@ status: ./status.md
 
 # filters-css — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
 `@flighthq/filters-css` is the **CSS/SVG emitter tier of the filter system** — the per-backend cell that translates Flight's plain-data `BitmapFilter` descriptors (defined in `@flighthq/types`) into the strings a DOM renderer applies: native CSS `filter` shorthands (`blur()`, `drop-shadow()`, `grayscale()`, `hue-rotate()`, …) where the descriptor maps cleanly, and SVG `<filter>` data-URIs (`url("data:image/svg+xml,…")`) where only SVG's `fe*` primitive graph can express the effect (inner shadow/glow, bevel, convolution, general color matrices). It is one of the `filters-<backend>` siblings (`filters-canvas`, `filters-gl`, `filters-surface`, `filters-wgpu`) that descend from `@flighthq/filters`, the data-descriptor package. It owns _translation_, not _application_: it produces strings and returns `null` for anything CSS/SVG cannot express; the consuming renderer (`render-dom`) is responsible for assigning the result. Where it ends and `@flighthq/filters` begins: `filters` holds the descriptor types and shared math (the out-param `getShadowFilterOffset`); `filters-css` holds the CSS/SVG string emitters. It has no Rust crate (`crate: null`) — the Canvas/DOM substrate is host-web-only.
 
-## North star (proposed)
+## North star
 
 _Inferred from the design + the SDK forks — edit or reject in review._
 
@@ -25,7 +24,7 @@ _Inferred from the design + the SDK forks — edit or reject in review._
 3. **Pure string builders, SSR-safe, side-effect-free.** No DOM, no global state, `sideEffects: false`. The SVG path is plain string assembly with a stable, documented byte contract (URL-encoded `%23`, single-quote attributes, no base64) so output is cache-stable.
 4. **Stay tree-shakable behind a thin barrel.** A user importing one emitter pays for one emitter; the aggregator that pulls in every emitter is an opt-in convenience, not the only door.
 
-## Boundaries (proposed)
+## Boundaries
 
 _In scope_
 
@@ -33,7 +32,7 @@ _In scope_
 - The shared CSS color helper (`rgbaFromColorInt`) and the SVG `fe*` primitive builders.
 - The allocating `getShadowFilterOffset` convenience consumed by functional tests (pending the naming-collision decision in Open directions).
 
-_Non-goals (proposed)_
+_Non-goals_
 
 - **Applying** filters to DOM nodes — that is `render-dom`'s job; this package only produces strings.
 - A Rust crate — the substrate is host-web-only (`crate: null`, locked by CONTRACT).
@@ -41,7 +40,7 @@ _Non-goals (proposed)_
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — TS-leads. `crate: null` (browser-API-bound).**
 
 ## Open directions
 

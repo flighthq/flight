@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # mesh — Charter
 
@@ -20,12 +19,11 @@ Where it ends vs a neighbor:
 
 - The renderable **`Mesh` node** (`MeshKind`, geometry + per-subset materials, scene-graph participation) lives in `scene`, not here. `mesh` owns the source data; `scene` owns the node's graph participation — the clean side of structural-forks fork A, which this package already respects (`types/Mesh.ts` is separate from `types/MeshGeometry.ts`).
 - Generic vector/matrix/AABB/bounding-sphere math lives in `geometry`; `mesh` consumes `Matrix4`/`Aabb`/`BoundingSphere` from there rather than redefining them.
-- File parsers that _produce_ `MeshGeometry` (OBJ/STL/PLY/glTF-primitive) belong in a prospective `mesh-formats` neighbor (the subject-triad `-formats` layer), not in this package.
+- File parsers that _produce_ `MeshGeometry` (OBJ/STL/PLY/glTF-primitive) belong in `scene-formats`, not in this package. (Decision 2026-07-03: mesh-formats is NOT a separate package — mesh file formats inherently carry scene structure.)
 - All public types live in `@flighthq/types` (`MeshGeometry.ts`); this package is the implementation against that header.
 
-## North star (proposed)
+## North star
 
-_Inferred from the design and the forks; edit or promote into Decisions once blessed._
 
 1. **A pure value-in/value-out geometry library.** `MeshGeometry` is plain data (typed vertex/index arrays + a layout + subsets + cached bounds); operations are free functions with explicit allocation (`create*`/`clone*`/`merge*`/`convert*` allocate; `compute*`/`transform*Into` write into `out`). No hidden runtime behavior, no graph coupling — this is what makes `mesh` the ideal first **Wasm-mixable** conformance leaf (structural-forks fork D).
 2. **AAA CPU geometry completeness, mirroring three.js `BufferGeometry`.** The primitive family, the index pipeline (weld/de-index), normal/tangent/bounds computation, UV unwrapping, subset management, and layout conversion are the canonical surface a mesh-geometry library is expected to carry. A gap here is unfinished work, not a design choice.
@@ -33,9 +31,8 @@ _Inferred from the design and the forks; edit or promote into Decisions once ble
 4. **Alias-safe, out-parameter math.** Compute/transform functions read all inputs into locals before writing, so `out` may alias an input. This discipline is real and tested today and is load-bearing for the C/C++ port and hot-loop reuse.
 5. **Types-first, single-root, side-effect-free.** The full shape is navigable from `@flighthq/types` alone; the barrel is a thin re-export; the package declares `sideEffects: false` and depends only on `types` + `geometry`.
 
-## Boundaries (proposed)
+## Boundaries
 
-_Drawn from the review and neighbors; edit before blessing._
 
 **In scope**
 
@@ -52,23 +49,24 @@ _Drawn from the review and neighbors; edit before blessing._
 **Non-goals**
 
 - The renderable `Mesh` scene-graph node and its rendering → `scene` / `scene-gl` / `scene-wgpu`.
-- File-format parsing → a prospective `mesh-formats` neighbor.
+- File-format parsing → `scene-formats` (mesh-formats is not a separate package).
 - Generic vector/matrix/AABB/sphere math → `geometry`.
 - Materials, lighting, textures → their own 3D-family packages.
 - GPU upload/draw — `mesh` only provides the buffers and the branded upload slots.
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-03 — mesh-formats is NOT a separate package.** Scene-formats covers mesh file formats since they carry scene structure. Why: OBJ/glTF/etc. inherently include hierarchy, materials, transforms.
+- **2026-07-03 — Reserved channel accessors (uv1/color0/joints0/weights0) in scope.** Package stays geometry-only, pure value types.
+- **2026-07-03 — TS-leads, Rust conforms later.**
 
 ## Open directions
 
-Every question below is unsettled — an agent **asks** here rather than assuming. The charter is a seed stub, so the review fell back to the codebase-map AAA standard; each silence is surfaced for you to settle.
 
 1. **Builder argument shape (deferred API fork).** All 17 builders take positional numeric args (matching three.js). For 4–6-knob builders (capsule, cylinder, torus-knot, polyhedron) an options object is more self-documenting and extensible. Pre-release is the moment to settle this in one sweep — but it is a deliberate API fork, not a sweep-safe cleanup.
 2. **Index-pipeline ownership & flat-shading correctness.** Are `computeMeshGeometryIndices` (weld) and `expandMeshGeometryIndices` (de-index) in-package? The current `computeMeshGeometryFlatNormals` is last-write-wins on shared vertices and explicitly defers true per-face shading to the missing de-index — is that an acceptable interim or a correctness debt to close before scene-backend use?
 3. **Mesh simplification / LOD home.** In-package (`simplifyMeshGeometry`) or a dedicated neighbor (`@flighthq/mesh-simplify`)? Fork G's 3D build-out makes this live, and `types/LodMesh.ts` already exists — implying a decision was gestured at but not recorded.
-4. **`mesh-formats` triad split (structural-forks B / the subject triad).** Spawn `@flighthq/mesh-formats` (OBJ/STL/PLY/glTF-primitive → geometry)? Multiple formats clear the plurality guard; the sub-question is the glTF document-parse vs. per-primitive-mapping boundary (loader/resources owns the document). `convertMeshGeometryLayout` was built to underpin this, but no consumer exists yet.
+4. ~~**`mesh-formats` triad split.**~~ Resolved 2026-07-03: mesh-formats is NOT a separate package. Mesh file formats (OBJ/STL/PLY/glTF-primitive) inherently carry scene structure, so they belong in `scene-formats`.
 5. **Reserved-channel activation & skinning data home (structural-forks fork A).** `uv1`, `color0`, `joints0`, `weights0` are declared semantics in `@flighthq/types` but have no accessors — the header advertises capability the package does not expose. When accessors land, the morph-target / skinning _data model_ must be agreed with whatever owns runtime deformation before baking shapes into `@flighthq/types`.
 6. **Quantization seam.** The non-float `VertexFormat` members (`unorm8x4`/`uint8x4`/`uint16x4`) are modeled but `convertMeshGeometryLayout` only copies float32. Is octahedral-encoded quantization (Gold) in scope here, paired with the conversion path?
 7. **Rust `flighthq-mesh` as a first mixable conformance target (structural-forks fork D).** The builders are pure math and an ideal value-in/value-out fingerprint target — is porting `mesh` an early conformance priority, and how are weld/dedup float-rounding tolerances recorded in the divergence map?

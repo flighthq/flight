@@ -10,7 +10,6 @@ status: ./status.md
 
 # displayobject-wgpu — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -18,7 +17,7 @@ The WebGPU per-subject leaf-renderer set for 2D display objects: the GPU backend
 
 It owns the wgpu side of: instanced sprite batching, tessellated-mesh shape rendering, scissor + stencil clipping, off-screen render-cache targets, color-transform materials, a per-state velocity-writer registry, a text-input overlay seam, and a per-frame stats surface. It does **not** own the GPU device/surface/shader plumbing (that is `render-wgpu`), the backend-agnostic update pipeline and registration core (`render`), or the shape-command IR (shared from `displayobject-canvas` and re-exported under `defaultWgpu*` aliases).
 
-## North star (proposed)
+## North star
 
 _Proposed from the design + the structural forks. Edit or reject in review._
 
@@ -28,7 +27,7 @@ _Proposed from the design + the structural forks. Edit or reject in review._
 - **Side-effect-free, single-root, opt-in.** `"sideEffects": false`, one `.` export, no top-level `registerRenderer`; all registration and subsystem enablement is a function the caller invokes by name. A 2D wgpu app pulls in only the kinds it registers.
 - **Conformance to the TS spec, then Rust parity.** The TS package is the authoritative shape; `flighthq-displayobject-wgpu` conforms to it. (Order of TS-first vs. co-evolution is an open direction below.)
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed scope lines, drawn from the review and neighbors. Confirm in review._
 
@@ -49,7 +48,9 @@ Non-goals (owned elsewhere):
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — WGPU may lead; parity is the goal, not lockstep.**
+- **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

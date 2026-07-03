@@ -10,7 +10,6 @@ status: ./status.md
 
 # render-wgpu — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -18,7 +17,7 @@ status: ./status.md
 
 It is **not** a per-subject renderer. It draws no display objects, sprites, scenes, or filters on its own; those live in the `<subject>-wgpu` leaves (`displayobject-wgpu`, `scene-wgpu`, `filters-wgpu`/`effects-wgpu`) that register against `@flighthq/render` and call into this core. The seam between "subject-agnostic GPU plumbing" (here) and "per-subject draw" (the leaf) is the central boundary this package has to hold — and it is exactly the boundary the review flags as still blurred (scissor, fullscreen-pass, and shader-registry primitives ship here but are wired by the leaves).
 
-## North star (proposed)
+## North star
 
 1. **Subject-agnostic GPU plumbing, nothing more.** This package is named by its _technology_ (WebGPU), not its subject. It should compose with any subject's leaf renderer without ever importing a subject package. A runtime dependency on `displayobject` (or any node/graph package) is a layering inversion: the leaves depend on the core, never the reverse.
 2. **`render-gl` is the sibling reference.** The two GPU cores should stay symmetric in shape and naming — `registerWgpuBitmapShader` mirrors `registerGlBitmapShader`, the pipeline/blend/warm surfaces line up — so a reader who knows one knows the other and a per-subject leaf can target both through parallel seams.
@@ -26,7 +25,7 @@ It is **not** a per-subject renderer. It draws no display objects, sprites, scen
 4. **Opt-in cost, tree-shaken by default.** No top-level registration or side effects; signals, timestamp queries, and every effect gate behind `enable*`/`register*`/`create*`. A scene that does not use a capability does not pay for it (`sideEffects: false`, signal groups tree-shaken when unused).
 5. **The conformance/readback path is first-class.** Frame capture into a `@flighthq/surface` buffer is the screenshot/conformance instrument, and the Rust `flighthq-render-wgpu` crate is the parity target. Surfaces, formats, and the captured pixel layout should map cleanly across the TS↔Rust seam.
 
-## Boundaries (proposed)
+## Boundaries
 
 **In scope:**
 
@@ -44,7 +43,10 @@ It is **not** a per-subject renderer. It draws no display objects, sprites, scen
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — WGPU may lead; parity is the goal, not lockstep.**
+- **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
+- **2026-07-02 — Context/device loss: detect and signal minimum.**
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

@@ -10,7 +10,6 @@ status: ./status.md
 
 # displayobject-dom — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -20,7 +19,7 @@ It is one of several interchangeable backends. Where `displayobject-canvas` rast
 
 It ends where the node graph and the render core begin: it owns DOM element creation, placement, styling, and reconciliation, but not the display-list walk's transform/alpha/visibility propagation (that is `@flighthq/render`'s update pass) nor the node data itself (that is the display-object packages). Its neighbor `displayobject-canvas` is reused internally for the canvas-backed escape hatch (shape/bitmap rasterization into a `<canvas>` element).
 
-## North star (proposed)
+## North star
 
 _Proposed, not blessed — edit or reject in review._
 
@@ -34,7 +33,7 @@ _Proposed, not blessed — edit or reject in review._
 
 5. **Element ownership lives in the render loop, not the draw functions.** Placement and reconciliation are centralized (`setDomRendererElement`, `reconcileDomContainer`, the ping-pong order lists), so each leaf draw function styles its element and never decides where it sits in the tree. This boundary keeps the reconciler the single authority over DOM structure.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed, not blessed — edit or reject in review._
 
@@ -46,7 +45,7 @@ _Proposed, not blessed — edit or reject in review._
 - The canvas-overlay text-input caret path (configurable caret color/width).
 - Reconciling the live display list against the document each frame.
 
-**Out of scope (proposed):**
+**Out of scope:**
 
 - **No Rust port.** Intentional — the DOM substrate does not exist in the Rust box.
 - **Not the render core.** Transform/alpha/visibility propagation and the update pass belong to `@flighthq/render`; this package consumes the prepared render nodes.
@@ -55,7 +54,9 @@ _Proposed, not blessed — edit or reject in review._
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — DOM sprite rendering formally out of scope (batching meaningless in DOM).**
+- **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
+- **2026-07-02 — TS-leads. `crate: null` (browser-API-bound).**
 
 ## Open directions
 
