@@ -23,38 +23,61 @@ Applied to every built-unblessed and recommended entry — full definition in [s
 
 Plus the triad **plurality guard**: a `-formats`/`-backend` cell only when the subject has ≥2 formats/backends.
 
-## Built-unblessed — verdicts (from bundle `builder-67dc46d64`)
+## Built-unblessed — verdicts (from bundle `builder-67dc46d64`) — ✅ all executed
 
 | Package | Verdict | Resolution |
 | --- | --- | --- |
-| `device-formats` | **rejected** — blood-from-a-stone: split a subject with no plurality, misnamed (`-formats` on a UA string), duplicate `parseUserAgentArch` export | collapse into **`useragent`** |
-| `platform-formats` | **rejected** — the other half of the same UA parser | collapse into **`useragent`** |
-| `resource-formats` | **redirect** — individually plausible (real atlas formats, has a `registerTextureAtlasFormat` registry) but duplicates `spritesheet-formats`; the duplication is a _symptom_ of `TextureAtlas` being mis-homed in `resources` | becomes **`textureatlas-formats`**, _after_ `textureatlas` is extracted from `resources` |
+| `device-formats` | **rejected** — blood-from-a-stone: split a subject with no plurality, misnamed (`-formats` on a UA string), duplicate `parseUserAgentArch` export | ✅ collapsed into **`useragent`** |
+| `platform-formats` | **rejected** — the other half of the same UA parser | ✅ collapsed into **`useragent`** |
+| `resource-formats` | **redirect** — individually plausible (real atlas formats, has a `registerTextureAtlasFormat` registry) but duplicates `spritesheet-formats`; the duplication is a _symptom_ of `TextureAtlas` being mis-homed in `resources` | ✅ became **`textureatlas-formats`** after `textureatlas` was extracted from `resources`; cell scaffolded 2026-07-03 (the spent `resource-formats` cell was removed) |
 
-## Standing decomposition directions
+## Standing decomposition directions — ✅ both executed (2026-07)
 
-- **`useragent`** _(new primitive)_ — pure UA-string → identity-tokens value-leaf, depends only on `types`, used by the _web backends_ of `device` and `platform` (UA parsing is a web-backend concern; native reads the OS). Wasm-mixable (fork D).
-- **`resources` → dissolve into per-subject triads.** It fuses the data-primitive layer of six subjects. Target shape: `image` / `audio` / `video` / `font` (each a triad as plurality warrants — the upstream-library oracle says all four are real subjects: `image`/`symphonia`/codecs/`ttf-parser`) plus `textureatlas` / `tileset` (source-data over an image, feeding `sprite`). A planned cross-package reconciliation that gathers the scattered layers — `media` (audio/video playback), `surface` (image ops), `texture` (GPU upload), `text-shaping` (font consumer) — into their subject homes. Not an immediate rip; the reconciliation is its own effort.
+- **`useragent`** — ✅ built (package + Rust crate): pure UA-string → identity-tokens value-leaf, depends only on `types`, used by the _web backends_ of `device` and `platform` (UA parsing is a web-backend concern; native reads the OS). Wasm-mixable (fork D). Depth review 2026-07-03: partial 42 — two unmerged parser families, browser-product axis missing.
+- **`resources` → dissolve into per-subject triads.** ✅ Fully executed: `resources` is gone; `image` / `audio` / `video` / `font` / `textureatlas` / `tileset` all exist as packages. The follow-on reconciliation (gathering `media` playback, `surface` ops, `texture` GPU upload, text-shaping's font consumption into their subject homes) remains open — and the 2026-07-03 depth reviews show the new subject homes landed correct but thin (`audio` 18, `video` 15, `font` 33, `tileset` 25, `textureatlas` 45): the dissolution created the right cells, not yet mature ones. Per-package next moves: [`TODO.md`](TODO.md).
 
-## Recommended candidates (triaged 2026-06-24)
+## Landed candidates (recommended → built, as of 2026-07-03)
 
-The 46 net-new proposals from the breadth pass (specs under `reviews/maturation/breadth/`), run through the bedrock test. These remain **recommended**, not blessed — the verdicts below are the recommendation, the bless is yours. Most are well-founded, and **~a third are precisely the `-formats`/`-backend` triad layers the subject-triad predicts** — strong confirmation of the pattern. Verdicts: **bedrock** (a real subject/layer), **align** (bedrock but rename to the convention), **discuss** (boundary/scope needs a call).
+Eight June candidates are now real: `animation`, `skeleton`, `picking` (3D build-out), `gltf` (landed as **`scene-formats`**, a glTF import proving-slice), `font` and `audio`-the-subject (from the `resources` dissolution), `displayobject-skia` (Rust-only crate), and the `audio`-mixer candidate (folded into **`media`** — bus graph, per-bus gain/pan/mute/routing; the naming collision below is thereby resolved). Each has a blessed cell under `packages/` with its review in `<name>/review.md`.
+
+**Chartered, not yet built** — seven cells carry a blessed charter with no code behind them, the ready-to-build queue: `clock`, `image-codec`, `movieclip`, `particle-emitter`, `path-boolean`, `path-formats`, `shape-formats`. (This list is computed live in [`TODO.md`](TODO.md).)
+
+## Build queue — recommended order (2026-07-03)
+
+The remaining candidates ranked by how many stakeholder perspectives demand them and how severely their absence was rated. One line each; verdicts are in the tables below (candidate specs were part of the June report generation — regenerate on demand; see index.md).
+
+1. `net` + `socket` — HTTP and WebSocket transport seam (URLLoader/URLRequest home); the largest single coverage hole, #1 for two perspectives.
+2. `textshaper-harfbuzz` — full-glyph GSUB/GPOS shaper backend (rustybuzz on Rust); unblocked now the shaper seam is glyph-bearing; the text-typography bottleneck.
+3. `assets` — id-keyed asset library over loader/resources: dedup, refcount, eviction, manifests, preload-by-group; the asset-pipeline keystone.
+4. `collision` + `spatial` — overlap/swept tests + broadphase; game-2d's #1 category.
+5. `camera2d` — follow/deadzone, zoom, worldToScreen, parallax, cull bounds; game-2d's single biggest hole.
+6. `shadow` + `environment` — shadow-map pass + PCF seam; skybox + IBL bake; the top 3D blockers, sequenced by 3d-pipeline-architecture.md.
+7. `accessibility` — role/label/focus tree over a backend (DOM ARIA first); category-level omission.
+8. Scene serialization — **needs the naming/scope call first** (see the `scene-format` row below).
+9. Then: `instancing` / `postprocess` / `compute-wgpu` (3D remainder; `render-graph` needs its own design pass), `host-capacitor` / `host-tauri`, `textbidi` / `textsegment` / `text-markup`, `texture-formats` / `atlas-packer` / `tilemap-formats`, `spring` / `motion-path`, `gamestate` / `permission` / `intl`.
+10. Opportunistic: `mediasession`, `biometrics`, `purchase`, `calendar`, `contacts`, `devtools`, `testing`.
+
+Design calls to settle before building the affected entries: the glyph-atlas seam (`font-atlas`/`text-gpu` — design once), scene serialization naming, `render-graph`'s reshaping of `render`, the 2D-skeletal question (`skeleton` landed 3D-shaped), and the `animation`/`skeleton`/`tween`/`timeline` boundary (anchor: the `clock` charter).
+
+## Recommended candidates (triaged 2026-06-24; landed entries struck 2026-07-03)
+
+The 46 net-new proposals from the breadth pass (specs under `reviews/maturation/breadth/`), run through the bedrock test. These remain **recommended**, not blessed — the verdicts below are the recommendation, the bless is yours. Most are well-founded, and **~a third are precisely the `-formats`/`-backend` triad layers the subject-triad predicts** — strong confirmation of the pattern. Verdicts: **bedrock** (a real subject/layer), **align** (bedrock but rename to the convention), **discuss** (boundary/scope needs a call). Prioritized sequencing of what remains: the [Build queue](#build-queue--recommended-order-2026-07-03) above.
 
 ### Triad layers — the pattern predicts these
 
 | Candidate             | Subject · layer               | Verdict                                     |
 | --------------------- | ----------------------------- | ------------------------------------------- |
-| `image-codec`         | image · `-formats`            | **align** → `image-formats`                 |
+| `image-codec`         | image · `-formats`            | **align** → `image-formats` (charter blessed, unbuilt) |
 | `texture-formats`     | texture · `-formats`          | bedrock                                     |
-| `tilemap-formats`     | tileset/tilemap · `-formats`  | bedrock (needs `tileset` extracted)         |
-| `scene-format`        | scene · `-formats`            | **align** → `scene-formats`                 |
-| `gltf`                | scene/mesh · model `-formats` | bedrock (or generalize → `model-formats`)   |
+| `tilemap-formats`     | tileset/tilemap · `-formats`  | bedrock (`tileset` precondition ✅ satisfied) |
+| `scene-format`        | scene · `-formats`            | **discuss** — still open: the aligned name `scene-formats` is now taken by the glTF importer; native save/load + versioned migration needs either a fold-in or a distinct name |
+| `gltf`                | scene/mesh · model `-formats` | ✅ landed as `scene-formats`                 |
 | `text-markup`         | text · markup `-formats`      | bedrock                                     |
 | `textbidi`            | text · itemize layer          | bedrock (upstream: `unicode-bidi`)          |
 | `textsegment`         | text · itemize layer          | bedrock (upstream: `unicode-segmentation`)  |
-| `textshaper-harfbuzz` | textshaper · `-backend`       | bedrock (already planned)                   |
+| `textshaper-harfbuzz` | textshaper · `-backend`       | bedrock (already planned; unblocked — the shaper seam is now glyph-bearing) |
 | `compute-wgpu`        | gpu · compute `-backend`      | bedrock                                     |
-| `font`                | font · primitive              | bedrock (the font subject from `resources`) |
+| `font`                | font · primitive              | ✅ landed (partial 33 — needs matching/fallback/variable axes) |
 
 ### Platform-suite capabilities (clean cells, like clipboard/dialog)
 

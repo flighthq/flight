@@ -4,7 +4,7 @@ This tree holds the **durable, per-package source of truth** that survives acros
 
 The design principle, mirrored from the codebase's own architecture (`packages:check` is strict about package _shape_ and silent about package _contents_): **mechanism guards the seams; agents are free inside the prose.** Validation and generation touch only the front matter and the append-only ledgers. The body of every file is unconstrained — that freedom is the whole point of giving each layer its own file.
 
-**Path convention:** paths here and in the per-package files are relative to `tools/agents/docs/` (e.g. `reviews/depth/<name>.md`, `packages/<name>/`). The one exception is **`incoming/`**, which lives at the **repository root** — it is gitignored host output, not committed docs.
+**Path convention:** paths here and in the per-package files are relative to `tools/agents/docs/` (e.g. `packages/<name>/`). The one exception is **`incoming/`**, which lives at the **repository root** — it is gitignored host output, not committed docs.
 
 ## The four artifacts
 
@@ -45,7 +45,7 @@ Only `charter.md` is authored from _your_ direction; the other three are produce
                                                   design ruling is promoted ▲ into charter.md › Decisions
 ```
 
-1. **Survey** — a review agent ingests the `status.md`, the package source and tests, and the prior `reviews/depth/<name>.md`, and writes `review.md`: present capabilities, gaps, and where reality contradicts the charter. The evidence comes from **either** the live worktree **or** an incoming bundle (see [Ingesting incoming bundles](#ingesting-incoming-bundles)). Judged **against the charter** (see the rubric rule below).
+1. **Survey** — a review agent ingests the `status.md`, the package source and tests, and writes `review.md`: present capabilities, gaps, and where reality contradicts the charter. The evidence comes from **either** the live worktree **or** an incoming bundle (see [Ingesting incoming bundles](#ingesting-incoming-bundles)). Judged **against the charter** (see the rubric rule below).
 2. **Assess** — an assessment agent turns the review into `assessment.md`, sorting work into **`Recommended`** (the actionable, sweep-safe shortlist) and **`Backlog`** (parked candidates). Anything that needs a real decision — cross-package work, an API-shape fork — does **not** go in `Recommended`; it is surfaced into the charter's **Open directions** for an explicit conversation.
 3. **Approve** — you approve verbally, often coarsely ("do all recommended"). The agent **freezes** the named set into `assessment.md › Approved`, stamped and attributed (see the approval gate).
 4. **Execute** — a developer does the approved work and appends a `status.md` entry.
@@ -64,21 +64,11 @@ Every `Approved` entry carries a **provenance stamp** — date plus whether it w
 
 `review.md` and `assessment.md` are judged **against `charter.md`**, not against a generic ideal. Where the charter is still a stub (no vision captured yet), the review **falls back** to the codebase-map standard (AAA completeness, the OpenFL/Lime feature target, the design constraints) and **flags the silence**: anything the charter does not yet speak to that the reviewer had to assume becomes a candidate **Open direction** for you to settle. The thin-charter case is not a failure mode — it is how the architecture surfaces the questions that turn a stub charter into a real one.
 
-## Relationship to the existing `reviews/` tree — all of it is ephemeral
+## Prior pipelines (removed)
 
-The `reviews/` tree (depth, breadth, maturation, alignment) is a single point-in-time **generation** — a staging area of reports, not durable structure. The test: anything a skill generated and can regenerate is a _report_, not a source of truth. **The only durable structure is `packages/`** — the cells plus [`register.md`](register.md), [`structural-forks.md`](structural-forks.md), and the candidate track. Every report **migrates** into that structure and is then spent, exactly as an `incoming/` bundle is staged, ingested, and discarded:
+The `reviews/` tree (depth, breadth, maturation, alignment) and the `tools/agents/proposals/` pipeline were point-in-time staging areas whose findings have been migrated into this `packages/` structure — per-package cells, [`register.md`](register.md), [`structural-forks.md`](structural-forks.md), and [`TODO.md`](TODO.md). Both were removed from the repository on 2026-07-03; their content is recoverable from git history. **The only durable structure is `packages/`.**
 
-| Report                                   | Migrates into                                       | Then    |
-| ---------------------------------------- | --------------------------------------------------- | ------- |
-| `reviews/depth/<pkg>`                    | `packages/<pkg>/review.md`                          | removed |
-| `reviews/maturation/depth/<pkg>`         | `packages/<pkg>/assessment.md`                      | removed |
-| `reviews/maturation/breadth/<candidate>` | the register's candidate track                      | removed |
-| `reviews/breadth/<perspective>`          | register candidates + `structural-forks.md` (scope) | removed |
-| `reviews/alignment/<dim>/<pkg>`          | `packages/<pkg>/review.md` (contract-fit)           | removed |
-
-So **`maturation/` dissolves entirely** (no residue), and even the cross-cutting reports (`breadth`/`alignment`) are not permanent — their findings migrate into the register, the forks, and the cells, after which they are regenerated on demand rather than hand-maintained. The end-state is `packages/` (durable) **+** ephemeral generated reports (a `reports/` staging area, or on-demand regeneration); `reviews/` and `maturation/` are gone. The flat worker `status/` drop is the inbound twin — filled each pass, spent into `packages/<pkg>/status.md` on ingest.
-
-**Current state: mid-migration** (1 of 86 cells authored), so the reports still carry the load and stay put until ingested — deleting any early just destroys the working material. The cross-package views (weakest-first table, verdict distribution) become **generated indices** over the cells' front matter, not a hand-maintained tree.
+Every cell carries a charter and assessment, every built package's cell carries a review (only the 7 chartered-unbuilt candidates have none yet). The generated cross-package view is [`TODO.md`](TODO.md) (via `todo.mjs`) — the one-file index of actionable work (chartered-unbuilt packages, the register's ranked candidate queue, and every assessment's `Recommended` items, weakest-first). **Agents looking for work start at `TODO.md`** and read only the named cell for detail.
 
 ## Ingesting incoming bundles
 
@@ -102,7 +92,9 @@ So future worker passes know exactly where to read and write — settling the ea
 
 This mirrors the `get:worktree` philosophy: the worker produces raw output; the host transforms it into the durable shape. It also keeps a misbehaving worker from ever clobbering a charter.
 
-### Dispatching guidance outward — the `assignments/` inbox (being built)
+### Dispatching guidance outward — the `assignments/` inbox
+
+Brief authoring is the **`package-dispatch`** skill (`.claude/skills/package-dispatch/SKILL.md`): every brief carries the frozen `Approved` scope, a numeric target delta (current verdict/score → expected), an **Acceptance** section (checkable definition-of-done + exact verify commands), stop-and-ask boundaries, and the reporting contract the ingest review verifies claims against. A brief missing any of these is not ready to dispatch — this is the guard against buying a 95% package and receiving 10%.
 
 `get:worktree` only moves work _inward_ (worker → reviewer). The outbound half is **dispatch**: a review session shapes a blessed workplan and deposits each worker's slice into its worktree. It is a _deposit of guidance_, not the reverse of import — one review session fans out to **many** workers, each receiving only its own slice.
 
@@ -137,6 +129,8 @@ A worker reads `charter.md` (rubric) + its `assignments/<pkg>.md` (the task) bef
     register.md                 ← every package's decomposition state (blessed/built-unblessed/recommended)
     scaffold.mjs                ← idempotent generator: creates each package folder + stubs
     distribute-status.mjs       ← ingest move: bundle worker reports → cell status.md (+ new cells)
+    todo.mjs                    ← generates TODO.md from cell front matter + assessments + register
+    TODO.md                     ← generated one-file index of actionable work (do not edit by hand)
     <name>/
       charter.md                ← durable, you-sourced (seeded from the prior review's domain line)
       status.md                 ← handoff log (distributed here on ingest)
@@ -150,6 +144,5 @@ A worker reads `charter.md` (rubric) + its `assignments/<pkg>.md` (the task) bef
 
 Per the staged plan (mechanize what is load-bearing, defer the rest):
 
-- **Built now:** the folder structure + `charter.md`/`status.md` stubs (`scaffold.mjs`), the artifact contract ([`CONTRACT.md`](CONTRACT.md)), the **`get:worktree`** host command that pulls another worktree's work into an `incoming/` bundle, and the **`package-review`** skill that ingests (from the live tree or a bundle) and reasons.
-- **Next:** the `package-assess` and `package-approve` skills (the stage transitions are _skills_ — markdown procedures an agent follows with judgment — not rigid scripts), and the **`assign:worktree`** host command + the worker-side `assignments/` ingest skill (the outbound twin of `get:worktree`).
-- **Then, when the format settles:** a `docs:packages:check` that validates front matter, folder presence, the append-only ledgers, and the provenance stamp; plus an index generator over the front matter. These touch only the envelope — never the prose.
+- **Built now:** the folder structure + `charter.md`/`status.md` stubs (`scaffold.mjs`), the artifact contract ([`CONTRACT.md`](CONTRACT.md)), the **`get:worktree`** / **`assign:worktree`** host commands (work in, guidance out), the stage-transition skills (**`package-review`**, **`package-assess`**, **`package-direction`**, **`package-dispatch`**), and the generated views: **`TODO.md`** (the work index) with its **Liveness** section (which stage each stale cell needs next — direction / review / re-review / assess — plus the open-question load per charter), both from `todo.mjs`.
+- **Then, when the format settles:** a `docs:packages:check` that validates front matter, folder presence, the append-only ledgers, and the provenance stamp. These touch only the envelope — never the prose.
