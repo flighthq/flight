@@ -13,7 +13,9 @@ import { shapeTextRun } from './textShaperRun';
 // The base direction from `options.direction` is used when no strong bidi character is found.
 export function itemizeText(
   text: string,
-  format: Readonly<TextFormat>,
+  // Itemization splits on Unicode script/bidi properties alone and does not consult the font; the
+  // parameter is kept for call-site symmetry with shapeTextRuns (both take text, format, options).
+  _format: Readonly<TextFormat>,
   options?: Readonly<TextShaperOptions>,
 ): readonly TextItem[] {
   if (text.length === 0) return [];
