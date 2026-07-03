@@ -120,7 +120,7 @@ pub fn get_mesh_geometry_vertex_count(geometry: &MeshGeometry) -> u32 {
     vertex_count_from_layout(&geometry.vertices, &geometry.layout)
 }
 
-fn vertex_count_from_layout(vertices: &[f32], layout: &VertexAttributeLayout) -> u32 {
+pub(crate) fn vertex_count_from_layout(vertices: &[f32], layout: &VertexAttributeLayout) -> u32 {
     let floats_per_vertex = layout.stride / 4;
     if floats_per_vertex == 0 {
         return 0;
@@ -144,7 +144,7 @@ fn promote_indices(source: MeshIndices, vertex_count: u32) -> MeshIndices {
     }
 }
 
-const UINT16_INDEX_CEILING: u32 = 65535;
+pub(crate) const UINT16_INDEX_CEILING: u32 = 65535;
 
 #[cfg(test)]
 mod tests {
