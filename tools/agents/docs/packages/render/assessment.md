@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/render'
-updated: 2026-07-02
+updated: 2026-07-03
 basedOn: ./review.md
 ---
 
@@ -17,6 +17,8 @@ Strictly sweep-safe: within `@flighthq/render` (and cross-package for the font-s
 - **Convert `installRenderAdaptHook` from global to per-state.** Move `_adaptHook` from module-level to a slot on `RenderStateRuntime`. Update `installRenderAdaptHook(state, fn)` to take a state parameter. Update `renderProxyAdapter.ts` (`_installed` flag → per-state install). Multiple render states coexist independently.
 - **Fix `computeRenderProxyWorldBounds` to use real world bounds.** Replace the local-x/y-with-zero-size stub with a call to `getNodeWorldBoundsRectangle` from `@flighthq/node`. Account for the render transform when comparing against the viewport (the viewport is in screen/device coordinates). Use the node's cached, revision-gated world bounds — do not recompute in the hot loop. Fix the edge-inclusivity comment to match the code (inclusive on all edges). Replace the bare `Rectangle` literal cast with `createRectangle()`. Replace the `'pivotX' in source` duck-type sniff with proper type narrowing via `Spatial2DNode`.
 - **Move `computeTextFormatFontString` to `@flighthq/text`.** Cross-package, blessed by Decision #3. ~14 import sites across `displayobject-canvas`, `displayobject-dom`, `displayobject-gl`, `displayobject-wgpu`, `textshaper-canvas`.
+
+- **Add `enableRenderGuards(state)` and `explainRenderState(state, root)` (sibling guard/explain modules).** Chartered by the 2026-07-03 Decision. Three warn-once checks: unregistered kind at the `renderProxy.ts` `rendererMap` lookup; draw-before-prepare via `currentFrameId`; clip data present while the clip hook slot is null. Emission via `@flighthq/log` `logOnce`, channel `'render'`; messages name the invariant and the exact fixing call. `explainRenderState` returns plain data; add `formatRenderStateExplanation`. `areRenderGuardsEnabled(state)` mirror. No new imports in core modules — only the sibling modules import log. Fire/silent test pair per guard via `createMemoryLogSink`.
 
 ## Backlog
 
@@ -37,3 +39,4 @@ Parked — each with the reason it is not sweep-safe.
 - [2026-07-02 · blanket] Convert adapt hook from global to per-state — charter Decision #6
 - [2026-07-02 · picked] Fix `computeRenderProxyWorldBounds` to use real world bounds, cache-aware, render-transform-aware — charter Decision #5
 - [2026-07-02 · picked] Move `computeTextFormatFontString` to `@flighthq/text` — charter Decision #3
+- [2026-07-03 · charter session] Guard/explain sibling modules (`enableRenderGuards`, `explainRenderState`) — charter Decision 2026-07-03 (diagnostics)

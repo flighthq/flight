@@ -272,6 +272,7 @@ Design calls to settle before building the affected entries: the glyph-atlas sea
 - Convert `installRenderAdaptHook` from global to per-state
 - Fix `computeRenderProxyWorldBounds` to use real world bounds
 - Move `computeTextFormatFontString` to `@flighthq/text`
+- Add `enableRenderGuards(state)` and `explainRenderState(state, root)` (sibling guard/explain modules)
 
 ### spritesheet-formats (partial 58)
 
@@ -571,6 +572,7 @@ Design calls to settle before building the affected entries: the glyph-atlas sea
 - Document `setQuaternionLookRotation`'s axis convention in JSDoc
 - Numerical / edge-case hardening
 - Batch / performance pass
+- Add `enableGeometryPoolGuards()` (guarded pool mode)
 
 ### sdk (solid 90)
 
@@ -584,6 +586,7 @@ Design calls to settle before building the affected entries: the glyph-atlas sea
 ### entity (solid 92)
 
 - Drop "node" from `package.json` description
+- Migrate `guards.ts` warnings to `@flighthq/log`
 
 ### easing (authoritative 96)
 

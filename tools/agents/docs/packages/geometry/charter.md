@@ -2,7 +2,7 @@
 package: '@flighthq/geometry'
 crate: flighthq-geometry
 draft: false
-lastDirection: 2026-07-01
+lastDirection: 2026-07-03
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -61,6 +61,10 @@ _Proposed scope lines — confirm or redraw._
 - **[2026-07-01] Standard quaternion look-rotation convention: +Z forward, +Y up = identity.** Fix `setQuaternionLookRotation` to use the standard convention (matching three.js, Unity, and most engines). The current X/Z-swapped axis convention is non-standard and undocumented. Also fix `getQuaternionEuler` to fully round-trip `setQuaternionFromEuler` for all six Euler orders — the get-side extraction bug is a correctness defect, not a convention choice. **Resolves open direction #4.**
 
 - **[2026-07-01] TS packages advance independently of Rust conformance.** A TS package can reach Gold and ship status without waiting for the Rust crate to mirror it 1:1. Rust conformance is tracked (in the conformance map) but is not a blocking gate for TS package status. **Resolves open direction #5.**
+
+- **[2026-07-03] Guarded pool mode is chartered: `enableGeometryPoolGuards()`.** Opt-in, module-scoped, in a sibling module. When enabled, every pool `release*` checks membership and warns once on a double release (`logOnce`, channel `'geometry'`) — the corruption-shaped misuse: a double-released object is handed out twice later, aliased across owners. A leaked `acquire*` stays unguarded (it just GCs; the pairing rule remains a documented bracket). Core pool hot paths gain no branches when guards are off — attachment is via the pool's internal slot. Full convention: [diagnostics](../../conventions/diagnostics.md). **User-blessed 2026-07-03.**
+
+  **Why:** double-release corrupts silently at a distance — the failure appears frames later on an unrelated matrix, which is the hardest shape for an agent to trace back. It is the highest-value pool guard and the only one that cannot be caught by reading the callsite.
 
 ## Open directions
 

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/entity'
-updated: 2026-07-02
+updated: 2026-07-03
 basedOn: ./review.md
 ---
 
@@ -13,6 +13,8 @@ Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). 
 Strictly sweep-safe: within `@flighthq/entity`, no cross-package coupling, no design decision.
 
 - **Drop "node" from `package.json` description.** Change `"Core entity/node/runtime data model and binding system"` to `"Core entity/runtime data model and binding system"`. Decision #4.
+
+- **Migrate `guards.ts` warnings to `@flighthq/log`.** Chartered by the 2026-07-03 Decision. Replace both `console.warn` calls with `logOnce(key, LogLevel.Warn, data, 'entity')`; drop the `[entity]` prefix (the channel carries it); message convention per the diagnostics doc; the entity goes in the structured data record. Keep the enable/are pair unchanged. Update tests to assert via `createMemoryLogSink`. Adds a workspace dependency `entity → log` (guard module only).
 
 ## Backlog
 
@@ -27,3 +29,4 @@ Parked — each with the reason it is not sweep-safe.
 ## Approved
 
 - [2026-07-02 · picked] Drop "node" from `package.json` description — charter Decision #4
+- [2026-07-03 · charter session] Migrate entity guard warnings to `@flighthq/log` — charter Decision 2026-07-03 (diagnostics)

@@ -2,7 +2,7 @@
 package: '@flighthq/entity'
 crate: flighthq-entity
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-03
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -59,9 +59,13 @@ The package owns exactly the entity↔runtime↔binding triad — construction (
 
   **Why:** This package owns no node concept. The description should match the actual scope.
 
+- **[2026-07-03] Guard mode stays; warn-and-allow is the ceiling; emission migrates to `@flighthq/log`.** The opt-in `Proxy`-based guards are affirmed as the intended smoke alarm — warn on misuse, never alter behavior, no strict/throw mode (throwing would change control flow between dev and prod and violate the sentinel rule). `guards.ts` predates the logger; its ad-hoc `[entity]` `console.warn` prefix becomes channel `'entity'`, each warn becomes `logOnce` with structured data (the entity in the data record, not interpolated), and messages follow the diagnostics message convention. The `enableEntityRuntimeGuards`/`areEntityRuntimeGuardsEnabled` surface is unchanged. Pre-release, no consumers — no compatibility concern. Full convention: [diagnostics](../../conventions/diagnostics.md). **User-blessed 2026-07-03. Resolves Open direction #1.**
+
+  **Why:** log-routed warnings are deduped by construction (`logOnce`), silenceable per channel, assertable in tests via `createMemoryLogSink` instead of console spies, and land in the capture tooling's `logs.jsonl` — turning warnings into an agent sensor. This makes `entity` the first load-bearing consumer of `@flighthq/log`, which is currently imported by zero packages. The guard shape proven here (`enable*Guards`, sibling module, tree-shakable) is now the SDK-wide convention.
+
 ## Open directions
 
-1. **Guard mode posture.** `createGuardedEntity`/`createGuardedEntityRuntime` use `Proxy` to warn on raw slot writes via `console.warn`. The implementation is opt-in (`enableEntityRuntimeGuards()`) and tree-shakable. However, the `Proxy`-based approach and its alignment with the SDK's plain-data / free-function / C-portable tenets needs review. Is warn-and-allow the intended ceiling (a smoke alarm by design), or should a different mechanism be considered? Should guard mode exist at all, or does it add complexity to a package whose identity is "minimal bedrock"? _(Was Open direction #4.)_
+1. **Guard mode posture.** `createGuardedEntity`/`createGuardedEntityRuntime` use `Proxy` to warn on raw slot writes via `console.warn`. The implementation is opt-in (`enableEntityRuntimeGuards()`) and tree-shakable. However, the `Proxy`-based approach and its alignment with the SDK's plain-data / free-function / C-portable tenets needs review. Is warn-and-allow the intended ceiling (a smoke alarm by design), or should a different mechanism be considered? Should guard mode exist at all, or does it add complexity to a package whose identity is "minimal bedrock"? _(Was Open direction #4.)_ **Resolved — see Decision [2026-07-03]:** guard mode stays, warn-and-allow is the ceiling, emission migrates to `@flighthq/log`.
 
 2. **`stripEntityRuntime` has no consumer.** It is the canonical serialization-strip path, ready and tested, but no scene serializer exists to call it. The versioned-migration model in `types-layout.md` is unbuilt. Keeping the function is fine (it's tested and tree-shakable), but the consumer lives in a future serialization package. _(Was Open direction #6.)_
 

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/geometry'
-updated: 2026-06-24
+updated: 2026-07-03
 basedOn: ./review.md
 ---
 
@@ -20,6 +20,8 @@ Strictly sweep-safe: within `@flighthq/geometry`, no cross-package type, no brea
 - **Document `setQuaternionLookRotation`'s axis convention in JSDoc.** Its body swaps X/Z (`fz = forward.x; fx = forward.z`), so "look along +Z, +Y up" is not identity — deterministic but undocumented. _Documenting the existing behavior_ is sweep-safe; **changing** the convention is the routed Open direction. State the current convention precisely so callers can rely on it. (review.md#gaps.)
 - **Numerical / edge-case hardening.** Add explicit handling + tests for degenerate input that the current guards do not cover: `setQuaternionFromUnitVectors` antiparallel case, gimbal at ±90° in Euler conversions, singular-matrix inverse returning a documented sentinel/identity. Add property-based round-trip tests (compose∘decompose, inverse∘transform = identity, quat↔matrix round-trip). Within-package, no new surface. (roadmap Gold.)
 - **Batch / performance pass.** Add `applyMatrix4ToVector3Array(out, source, count, matrix)`-style batch transforms for vertex buffers, and confirm hot transforms/multiplies stay allocation-free and alias-safe under fuzz. Additive, within-package; verify tree-shaking with `npm run size` after. (roadmap Gold.)
+
+- **Add `enableGeometryPoolGuards()` (guarded pool mode).** Chartered by the 2026-07-03 Decision. Membership check on `release*` warns once per key on double release via `logOnce`, channel `'geometry'`; `areGeometryPoolGuardsEnabled()` mirror; zero branches in unguarded hot paths; fire/silent test pair via `createMemoryLogSink`. Adds a workspace dependency `geometry → log` (guard module only).
 
 ## Backlog
 
@@ -50,3 +52,4 @@ Carried from review.md#candidate-open-directions for the user to settle (this sk
 ### Roadmap absorption
 
 `reviews/maturation/depth/geometry.md` is now fully absorbed into this assessment (its Bronze/Silver and the Ray3D slice of Gold already landed; the residue is sorted above). It is one-time seed and can be removed.
+- [2026-07-03 · charter session] Guarded pool mode (`enableGeometryPoolGuards`) — charter Decision 2026-07-03 (diagnostics)
