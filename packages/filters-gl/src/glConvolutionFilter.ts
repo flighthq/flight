@@ -52,9 +52,12 @@ void main() {
   sum += u_bias / 255.0;
   sum = clamp(sum, 0.0, 1.0);
   if (u_preserveAlpha) {
-    float origAlpha = texture(u_texture, v_texCoord).a;
-    vec3 straightRGB = (sum.a > 0.0) ? clamp(sum.rgb / sum.a, 0.0, 1.0) : vec3(0.0);
-    sum = vec4(straightRGB * origAlpha, origAlpha);
+    // preserveAlpha keeps the convolved color and restores the source alpha, exactly like the CPU
+    // reference (convolveSurface copies the center pixel's original alpha). The earlier unpremultiply
+    // by sum.a was wrong: a zero-sum kernel (e.g. edge-detect) drives the convolved alpha to 0, which
+    // zeroed the color everywhere. Overriding only .a leaves the color channels as the non-preserve
+    // branch produces them.
+    sum.a = texture(u_texture, v_texCoord).a;
   }
   fragColor = sum;
 }`;

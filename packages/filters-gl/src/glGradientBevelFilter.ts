@@ -78,10 +78,12 @@ export function applyGradientBevelFilterToGl(
   applyGlTintPass(state, source, s0, 0xffffff, 1, Math.min(1, strength));
   applyBoxBlurFilterToGl(state, s0, s1, s2, { blurX: filter.blurX ?? 4, blurY: filter.blurY ?? 4, passes: quality });
 
-  // Encode bevel value from blurred alpha offset samples → s0
+  // Encode bevel value from blurred alpha offset samples → s0.
+  // The Y offset is negated because render targets are bottom-left origin (V-flipped vs image space),
+  // so an image-space downward light direction maps to a negative texel-V offset — matching glBevelFilter.
   const dx = Math.cos(angle) * distance;
   const dy = Math.sin(angle) * distance;
-  applyBevelEncodePass(state, s1, s0, dx / s1.width, dy / s1.height);
+  applyBevelEncodePass(state, s1, s0, dx / s1.width, -dy / s1.height);
 
   // Build gradient ramp, apply to encoded bevel value clipped to source alpha → s1
   const ramp = createGlGradientRampTexture(gl, filter.colors, filter.alphas, filter.ratios);
