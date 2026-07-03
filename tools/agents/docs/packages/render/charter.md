@@ -2,7 +2,7 @@
 package: '@flighthq/render'
 crate: flighthq-render
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-07-03
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -72,11 +72,15 @@ Where it ends: the concrete per-backend draw loops, batching, target pools, and 
 
   **Why:** (a) An exported function with an empty body is API debt — it promises a hook that does nothing. (b) Two public names for one behavior adds surface with no value; the user-facing prepare pass calls `updateRenderProxy2D`, not this alias. (c) A global adapt hook violates the "no shared top-level mutable state" rule and means only one adapter can be installed process-wide.
 
+- **[2026-07-03] The guard layer is chartered: core exposes seams, never messages.** `render` gains sibling guard/explain modules: `enableRenderGuards(state)` — warn-once on (a) a kind with no registered renderer (the `rendererMap` lookup in `renderProxy.ts`), (b) draw-before-prepare (one `currentFrameId` comparison at draw entry), (c) feature data present while its hook slot is null (clip is the verified instance: prepare computes `clipDepth`, the screen ignores it) — and `explainRenderState(state, root)`, a pure query returning plain data (unregistered kinds under root, proxyless nodes, the prepare/draw frame relation, orphaned feature data), with a `formatRenderStateExplanation` companion for humans. Emission via `@flighthq/log` `logOnce`, channel `'render'`; messages follow the convention `<function>: <invariant broken> — <the exact exported call that fixes it>`. Core stays message-free — only the sibling modules import log, so guards shed when unimported. Full convention: [diagnostics](../../conventions/diagnostics.md). **User-blessed 2026-07-03. Partially resolves Open direction #2** (the warn/explain seam; the counters/GPU-timer half remains open).
+
+  **Why:** every canonical misuse of the render pipeline converges on a silent blank frame, and agents — the SDK's primary users — cannot glance at the screen; their sensors are return values, logs, and pixels-via-capture. The seams already exist (`rendererMap`, `renderProxyMap`, `currentFrameId`); the guard layer is the missing twin of greppable functions: greppable failures. Routed through log, warnings land in the capture tooling's `logs.jsonl` and become an agent sensor rather than console noise.
+
 ## Open directions
 
 1. **Retained queue as the driver's input.** `RenderQueue` exists (`buildRenderQueue`/`sortRenderQueue`) but `drawRenderProxy` re-walks the graph instead of consuming the sorted queue. A `drawRenderQueue(state, queue)` variant that drives draws from the pre-sorted queue is the natural next step — it would decouple sort order from traversal order. Settle after the driver lands.
 
-2. **Diagnostics bar.** Counters exist conceptually but not as an exported seam. Full `RenderStats` (per-format/triangle/vertex counts), GPU-timer hooks, and `enableRenderProxySignals` debug capture — how much belongs in the core vs backends? Silver-tier.
+2. **Diagnostics bar.** Counters exist conceptually but not as an exported seam. Full `RenderStats` (per-format/triangle/vertex counts), GPU-timer hooks, and `enableRenderProxySignals` debug capture — how much belongs in the core vs backends? Silver-tier. _(Partially resolved — the warn/explain seam is chartered by Decision [2026-07-03]; the counters/GPU-timer half remains open.)_
 
 3. **Render-pass / render-graph implementation.** In scope (Decision #2) but not yet designed. The render-pass descriptor must reconcile with what `render-gl` and `render-wgpu` already do for begin/end-target. The frame graph (transient-target aliasing, compile/execute) is Gold-tier. Needs its own design pass.
 
