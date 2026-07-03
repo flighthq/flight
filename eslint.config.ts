@@ -75,11 +75,13 @@ export default [
       // Imports
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      // `/wasm/surface` covers the generated, git-ignored wasm-bindgen output
-      // (glue + embedded bytes) imported by the -rs shims. It is baked by
-      // `npm run wasm` (Rust), so it may be absent when linting; keep lint a
-      // pure-JS concern that does not require the native bake to have run.
-      'import/no-unresolved': ['error', { ignore: ['virtual:.*', '/wasm/surface'] }],
+      // `/wasm/` covers all generated, git-ignored wasm-bindgen output
+      // (glue + embedded bytes) imported by the -rs shims and the examples
+      // runner. Baked by `npm run wasm` (Rust), so it may be absent when
+      // linting; keep lint a pure-JS concern that does not require the
+      // native bake to have run. `electron-vite` is a runner-only dev tool
+      // whose dependency is not hoisted to the workspace root.
+      'import/no-unresolved': ['error', { ignore: ['virtual:.*', '/wasm/', 'electron-vite'] }],
       'import/no-relative-parent-imports': 'error',
       'no-restricted-imports': [
         'error',
