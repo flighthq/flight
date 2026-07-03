@@ -37,6 +37,7 @@ These are not clock-charter decisions yet — they are the decisions in other pa
 - **[2026-07-02 · tween charter]** `@flighthq/clock` blessed as shared time primitive. Hierarchical clocking (child clocks inherit parent scale). Tween, timeline, spritesheet player, and signal throttle/debounce all consume it.
 - **[2026-07-02 · spritesheet charter]** Clock integration — spritesheet player adopts `@flighthq/clock` once it exists.
 - **[2026-07-02 · timeline charter]** Clock integration — timeline adopts `@flighthq/clock` once it exists.
+- **[2026-07-03 · capture charter]** The capture harness's deterministic clock pinning (fixed time-step per animation frame; capture assessment › Approved) is a natural clock consumer — design the pin so it can sit behind the clock seam once this package exists.
 
 ## Open directions
 
