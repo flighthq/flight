@@ -5,6 +5,7 @@ import {
   createCanvasRenderState,
   createMatrix,
   defaultCanvasBitmapRenderer,
+  defaultCanvasParticleEmitterRenderer,
   defaultCanvasQuadBatchRenderer,
   defaultCanvasRichTextRenderer,
   defaultCanvasScale9ShapeRenderer,
@@ -17,6 +18,7 @@ import {
   enableCanvasBlendMode,
   enableCanvasClip,
   enableCanvasRenderCache,
+  ParticleEmitterKind,
   prepareDisplayObjectRender,
   QuadBatchKind,
   registerCanvasShapeCommands,
@@ -65,6 +67,8 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
       registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
     } else if (kind === SpriteKind) {
       registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
+    } else if (kind === ParticleEmitterKind) {
+      registerRenderer(state, ParticleEmitterKind, defaultCanvasParticleEmitterRenderer);
     } else if (kind === QuadBatchKind) {
       registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
     } else if (kind === TilemapKind) {

@@ -1,9 +1,8 @@
 {
-  "name": "functional-test-particle-emitter",
+  "name": "functional-test-particle-emitter-color",
   "private": true,
   "type": "module",
   "renderers": [
-    "canvas",
     "webgl",
     "webgpu"
   ],

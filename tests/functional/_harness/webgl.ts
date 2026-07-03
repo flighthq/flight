@@ -5,6 +5,7 @@ import {
   createGlRenderState,
   createMatrix,
   defaultGlBitmapRenderer,
+  defaultGlParticleEmitterRenderer,
   defaultGlQuadBatchRenderer,
   defaultGlRichTextRenderer,
   defaultGlScale9ShapeRenderer,
@@ -17,6 +18,7 @@ import {
   enableGlBlendModeSupport,
   enableGlClipSupport,
   enableGlRenderCache,
+  ParticleEmitterKind,
   prepareDisplayObjectRender,
   QuadBatchKind,
   registerDefaultGlMaterial,
@@ -69,6 +71,8 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
       registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
     } else if (kind === SpriteKind) {
       registerRenderer(state, SpriteKind, defaultGlSpriteRenderer);
+    } else if (kind === ParticleEmitterKind) {
+      registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);
     } else if (kind === QuadBatchKind) {
       registerRenderer(state, QuadBatchKind, defaultGlQuadBatchRenderer);
     } else if (kind === TilemapKind) {
