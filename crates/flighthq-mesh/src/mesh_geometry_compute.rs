@@ -11,7 +11,7 @@
 //! at the call site (the algorithm already reads every input into a scratch
 //! buffer before writing, so the result is identical).
 
-use flighthq_types::{Aabb, MeshGeometry};
+use flighthq_types::{Aabb, BoundingSphere, MeshGeometry};
 
 // Canonical interleaved PBR record float offsets within one vertex
 // (stride = 48 bytes / 12 floats): position[0..2], normal[3..5],
@@ -20,6 +20,81 @@ const NORMAL_OFFSET: usize = 3;
 const POSITION_OFFSET: usize = 0;
 const TANGENT_OFFSET: usize = 6;
 const UV0_OFFSET: usize = 10;
+
+/// Writes the bounding sphere of all vertex positions into `out`. Uses the
+/// AABB midpoint as the center (fast, not minimal) and the max distance from
+/// that center as the radius. An empty vertex stream yields center = (0,0,0)
+/// and a negative radius (empty convention). The radius is always
+/// non-negative when at least one vertex is present.
+pub fn compute_mesh_geometry_bounding_sphere(out: &mut BoundingSphere, geometry: &MeshGeometry) {
+    let vertices = &geometry.vertices;
+    let floats_per_vertex = (geometry.layout.stride / 4) as usize;
+    let vertex_count = if floats_per_vertex > 0 {
+        vertices.len() / floats_per_vertex
+    } else {
+        0
+    };
+
+    if vertex_count == 0 {
+        out.center.x = 0.0;
+        out.center.y = 0.0;
+        out.center.z = 0.0;
+        out.radius = -1.0;
+        return;
+    }
+
+    let mut min_x = f32::INFINITY;
+    let mut min_y = f32::INFINITY;
+    let mut min_z = f32::INFINITY;
+    let mut max_x = f32::NEG_INFINITY;
+    let mut max_y = f32::NEG_INFINITY;
+    let mut max_z = f32::NEG_INFINITY;
+    for i in 0..vertex_count {
+        let base = i * floats_per_vertex + POSITION_OFFSET;
+        let px = vertices[base];
+        let py = vertices[base + 1];
+        let pz = vertices[base + 2];
+        if px < min_x {
+            min_x = px;
+        }
+        if py < min_y {
+            min_y = py;
+        }
+        if pz < min_z {
+            min_z = pz;
+        }
+        if px > max_x {
+            max_x = px;
+        }
+        if py > max_y {
+            max_y = py;
+        }
+        if pz > max_z {
+            max_z = pz;
+        }
+    }
+
+    let cx = (min_x + max_x) * 0.5;
+    let cy = (min_y + max_y) * 0.5;
+    let cz = (min_z + max_z) * 0.5;
+
+    let mut radius_sq = 0.0f32;
+    for i in 0..vertex_count {
+        let base = i * floats_per_vertex + POSITION_OFFSET;
+        let dx = vertices[base] - cx;
+        let dy = vertices[base + 1] - cy;
+        let dz = vertices[base + 2] - cz;
+        let d_sq = dx * dx + dy * dy + dz * dz;
+        if d_sq > radius_sq {
+            radius_sq = d_sq;
+        }
+    }
+
+    out.center.x = cx;
+    out.center.y = cy;
+    out.center.z = cz;
+    out.radius = radius_sq.sqrt();
+}
 
 /// Writes the tight axis-aligned bounding box of all vertex positions into `out`.
 /// An empty vertex stream yields an empty box (min = +inf, max = -inf). Reads all
@@ -72,6 +147,88 @@ pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
     out.max.x = max_x;
     out.max.y = max_y;
     out.max.z = max_z;
+}
+
+/// Recomputes per-face (flat) normals and writes them into the normal slot of
+/// `out.vertices`. Each triangle's face normal (CCW front-face, right-handed
+/// cross product) is assigned to all three of its corner vertices. When
+/// multiple triangles share a vertex the last triangle to write wins — for
+/// truly flat shading callers should de-index first with
+/// `expand_mesh_geometry_indices`. For non-indexed geometry the in-place
+/// result is exact: each group of three vertices belongs to exactly one
+/// triangle.
+///
+/// For the TS in-place case (`out === geometry`), pass a clone of the
+/// geometry as `geometry`: the algorithm only reads positions before writing
+/// the normal slot.
+pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &MeshGeometry) {
+    let src_verts = &geometry.vertices;
+    let floats_per_vertex = (geometry.layout.stride / 4) as usize;
+    let index_count = match &geometry.indices {
+        Some(indices) => index_len(indices),
+        None => {
+            if floats_per_vertex > 0 {
+                src_verts.len() / floats_per_vertex
+            } else {
+                0
+            }
+        }
+    };
+
+    let mut t = 0;
+    while t + 2 < index_count {
+        let (i0, i1, i2) = triangle_indices(geometry, t);
+
+        let p0 = i0 * floats_per_vertex + POSITION_OFFSET;
+        let p1 = i1 * floats_per_vertex + POSITION_OFFSET;
+        let p2 = i2 * floats_per_vertex + POSITION_OFFSET;
+
+        // Read positions into locals before any write (alias-safe when
+        // out === geometry via a cloned source).
+        let x0 = src_verts[p0];
+        let y0 = src_verts[p0 + 1];
+        let z0 = src_verts[p0 + 2];
+        let x1 = src_verts[p1];
+        let y1 = src_verts[p1 + 1];
+        let z1 = src_verts[p1 + 2];
+        let x2 = src_verts[p2];
+        let y2 = src_verts[p2 + 1];
+        let z2 = src_verts[p2 + 2];
+
+        let ex1 = x1 - x0;
+        let ey1 = y1 - y0;
+        let ez1 = z1 - z0;
+        let ex2 = x2 - x0;
+        let ey2 = y2 - y0;
+        let ez2 = z2 - z0;
+        let mut nx = ey1 * ez2 - ez1 * ey2;
+        let mut ny = ez1 * ex2 - ex1 * ez2;
+        let mut nz = ex1 * ey2 - ey1 * ex2;
+        let len = (nx * nx + ny * ny + nz * nz).sqrt();
+        if len > 0.0 {
+            nx /= len;
+            ny /= len;
+            nz /= len;
+        }
+
+        let dst_verts = &mut out.vertices;
+        let n0 = i0 * floats_per_vertex + NORMAL_OFFSET;
+        let n1 = i1 * floats_per_vertex + NORMAL_OFFSET;
+        let n2 = i2 * floats_per_vertex + NORMAL_OFFSET;
+        dst_verts[n0] = nx;
+        dst_verts[n0 + 1] = ny;
+        dst_verts[n0 + 2] = nz;
+        dst_verts[n1] = nx;
+        dst_verts[n1 + 1] = ny;
+        dst_verts[n1 + 2] = nz;
+        dst_verts[n2] = nx;
+        dst_verts[n2 + 1] = ny;
+        dst_verts[n2 + 2] = nz;
+
+        t += 3;
+    }
+
+    out.version += 1;
 }
 
 /// Recomputes per-vertex smooth normals by area-weighted accumulation of triangle
@@ -342,6 +499,36 @@ mod tests {
         })
     }
 
+    mod compute_mesh_geometry_bounding_sphere {
+        use super::*;
+        use flighthq_types::BoundingSphere;
+
+        #[test]
+        fn writes_the_aabb_midpoint_center_and_max_distance_radius() {
+            let geometry = make_triangle();
+            let mut out = BoundingSphere::default();
+            compute_mesh_geometry_bounding_sphere(&mut out, &geometry);
+            assert!((out.center.x - 0.5).abs() < 1e-5);
+            assert!((out.center.y - 0.5).abs() < 1e-5);
+            assert!(out.radius > 0.0);
+        }
+
+        #[test]
+        fn yields_a_negative_radius_for_an_empty_vertex_stream() {
+            let geometry = create_mesh_geometry(MeshGeometryOptions {
+                indices: None,
+                layout: canonical_layout(),
+                subsets: None,
+                topology: None,
+                vertices: Vec::new(),
+            });
+            let mut out = BoundingSphere::default();
+            compute_mesh_geometry_bounding_sphere(&mut out, &geometry);
+            assert_eq!(out.center.x, 0.0);
+            assert_eq!(out.radius, -1.0);
+        }
+    }
+
     mod compute_mesh_geometry_bounds {
         use super::*;
 
@@ -393,6 +580,32 @@ mod tests {
             compute_mesh_geometry_bounds(&mut out, &geometry);
             assert_eq!(out.min.x, f32::INFINITY);
             assert_eq!(out.max.x, f32::NEG_INFINITY);
+        }
+    }
+
+    mod compute_mesh_geometry_flat_normals {
+        use super::*;
+
+        #[test]
+        fn writes_the_unit_face_normal_to_all_three_corners() {
+            let mut geometry = make_triangle();
+            let source = geometry.clone();
+            compute_mesh_geometry_flat_normals(&mut geometry, &source);
+            for i in 0..3 {
+                let b = i * 12 + 3;
+                assert!((geometry.vertices[b] - 0.0).abs() < 1e-5);
+                assert!((geometry.vertices[b + 1] - 0.0).abs() < 1e-5);
+                assert!((geometry.vertices[b + 2] - 1.0).abs() < 1e-5);
+            }
+            assert_eq!(geometry.version, 1);
+        }
+
+        #[test]
+        fn writes_into_a_distinct_out_geometry() {
+            let source = make_triangle();
+            let mut out = make_triangle();
+            compute_mesh_geometry_flat_normals(&mut out, &source);
+            assert!((out.vertices[5] - 1.0).abs() < 1e-5);
         }
     }
 
