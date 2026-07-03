@@ -539,10 +539,6 @@ export function flipSurfaceVertical(dest: Readonly<SurfaceRegion>, source: Reado
   runRegionPair(flip_surface_vertical_wasm, dest, source);
 }
 
-// `visited` matches the `@flighthq/surface` signature (a caller-provided scratch
-// buffer the JS implementation uses to track filled pixels). The wasm backend
-// manages its own visited set internally, so the argument is accepted for
-// drop-in signature parity but not forwarded across the boundary.
 export function floodFillSurface(out: Surface, x: number, y: number, color: number): void {
   ensureSurfaceRs();
   flood_fill_surface_wasm(asUint8(out.data), out.width, out.height, x, y, color >>> 0);
