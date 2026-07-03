@@ -4,7 +4,7 @@ use flighthq_types::SurfaceRegion;
 
 /// Rotates the `source` region by `angle` radians into the `dest` region,
 /// around a pivot point in source coordinates. Uses bilinear sampling;
-/// out-of-bounds source positions are written as transparent black.
+/// out-of-bounds source positions are clamped to the source region edge.
 ///
 /// `dest` must not alias `source`.
 pub fn rotate_surface(
@@ -48,14 +48,6 @@ pub fn rotate_surface(
             let sx = cos_a * rx - sin_a * ry + pivot_x;
             let sy = sin_a * rx + cos_a * ry + pivot_y;
             let di = ((oy * d_stride + ox) * 4) as usize;
-
-            if sx < -0.5 || sx > sw as f64 - 0.5 || sy < -0.5 || sy > sh as f64 - 0.5 {
-                dd[di] = 0;
-                dd[di + 1] = 0;
-                dd[di + 2] = 0;
-                dd[di + 3] = 0;
-                continue;
-            }
 
             let x0 = sx.floor() as i64;
             let y0 = sy.floor() as i64;

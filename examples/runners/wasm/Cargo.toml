@@ -9,7 +9,24 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
+example-addinganimation = { path = "../../crates/addinganimation" }
+example-addingtext = { path = "../../crates/addingtext" }
+example-animatedsprite = { path = "../../crates/animatedsprite" }
+example-batchloading = { path = "../../crates/batchloading" }
+example-bunnymark = { path = "../../crates/bunnymark" }
+example-common = { path = "../../crates/common" }
+example-comparebitmapdata = { path = "../../crates/comparebitmapdata" }
+example-displayingabitmap = { path = "../../crates/displayingabitmap" }
 example-drawingshapes = { path = "../../crates/drawingshapes" }
+example-nyancat = { path = "../../crates/nyancat" }
+example-piratepig = { path = "../../crates/piratepig" }
+example-playingsound = { path = "../../crates/playingsound" }
+example-playingvideo = { path = "../../crates/playingvideo" }
+example-renderview = { path = "../../crates/renderview" }
+example-sparktrail = { path = "../../crates/sparktrail" }
+example-textmetrics = { path = "../../crates/textmetrics" }
+example-tweenexample = { path = "../../crates/tweenexample" }
+example-usingtilemap = { path = "../../crates/usingtilemap" }
 wasm-bindgen = "0.2"
 
 [dependencies.web-sys]

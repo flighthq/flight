@@ -445,13 +445,130 @@ dependencies = [
 ]
 
 [[package]]
+name = "example-addinganimation"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-addingtext"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-animatedsprite"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-batchloading"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-bunnymark"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-common"
+version = "0.1.0"
+
+[[package]]
+name = "example-comparebitmapdata"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-displayingabitmap"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
 name = "example-drawingshapes"
 version = "0.1.0"
 dependencies = [
+ "example-common",
  "flighthq-displayobject",
  "flighthq-node",
  "flighthq-shape",
  "flighthq-types",
+]
+
+[[package]]
+name = "example-nyancat"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-piratepig"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-playingsound"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-playingvideo"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-renderview"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-sparktrail"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-textmetrics"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-tweenexample"
+version = "0.1.0"
+dependencies = [
+ "example-common",
+]
+
+[[package]]
+name = "example-usingtilemap"
+version = "0.1.0"
+dependencies = [
+ "example-common",
 ]
 
 [[package]]
@@ -483,10 +600,30 @@ dependencies = [
 name = "flight-examples-native"
 version = "0.1.0"
 dependencies = [
+ "example-addinganimation",
+ "example-addingtext",
+ "example-animatedsprite",
+ "example-batchloading",
+ "example-bunnymark",
+ "example-common",
+ "example-comparebitmapdata",
+ "example-displayingabitmap",
  "example-drawingshapes",
+ "example-nyancat",
+ "example-piratepig",
+ "example-playingsound",
+ "example-playingvideo",
+ "example-renderview",
+ "example-sparktrail",
+ "example-textmetrics",
+ "example-tweenexample",
+ "example-usingtilemap",
+ "flighthq-displayobject",
  "flighthq-displayobject-wgpu",
  "flighthq-host-winit",
+ "flighthq-node",
  "flighthq-render",
+ "flighthq-shape",
  "flighthq-types",
 ]
 
@@ -494,7 +631,24 @@ dependencies = [
 name = "flight-examples-wasm"
 version = "0.1.0"
 dependencies = [
+ "example-addinganimation",
+ "example-addingtext",
+ "example-animatedsprite",
+ "example-batchloading",
+ "example-bunnymark",
+ "example-common",
+ "example-comparebitmapdata",
+ "example-displayingabitmap",
  "example-drawingshapes",
+ "example-nyancat",
+ "example-piratepig",
+ "example-playingsound",
+ "example-playingvideo",
+ "example-renderview",
+ "example-sparktrail",
+ "example-textmetrics",
+ "example-tweenexample",
+ "example-usingtilemap",
  "wasm-bindgen",
  "web-sys",
 ]
