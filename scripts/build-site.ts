@@ -40,7 +40,7 @@ const siteDir = join(root, 'tools', 'site');
 // Order matters only for readability: the root tool is listed first. Subpaths never collide.
 const TOOLS: readonly SiteTool[] = [
   { name: 'landing', dir: 'apps/site/landing', dest: '.' },
-  { name: 'examples', dir: 'tools/examples', dest: 'examples' },
+  { name: 'examples', dir: 'examples/runners/web', dest: 'examples' },
   { name: 'functional', dir: 'tools/functional', dest: 'tests' },
   { name: 'reference', dir: 'tools/reference', dest: 'reference' },
 ];

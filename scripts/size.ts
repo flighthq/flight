@@ -25,7 +25,7 @@ if (options.help) {
 }
 
 const root = resolve(__dirname, '..');
-const examplesDir = resolve(root, 'examples');
+const examplesDir = resolve(root, 'examples', 'packages');
 const baselineFile = resolve(root, 'tests', 'size', 'size.baseline.json');
 const updateBaseline = process.env.UPDATE_BASELINE === '1';
 const report = options.report ?? (options.outputPath ? 'json' : null);

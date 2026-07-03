@@ -17,7 +17,7 @@ import { getBaselineField, setBaselineField } from './baseline-store.js';
 // Types
 // ---------------------------------------------------------------------------
 
-export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
+export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu', 'wasm'] as const;
 export type Tool = 'examples' | 'functional' | 'reference' | 'site';
 
 // The root npm script that starts each tool's dev server, used in the manual-start tip.
@@ -245,15 +245,17 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
       .filter((e) => e.renderers.length > 0);
   }
 
-  const dir = tool === 'examples' ? join(root, 'examples') : join(root, 'tests', 'functional');
+  const dir = tool === 'examples' ? join(root, 'examples', 'packages') : join(root, 'tests', 'functional');
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'package.json')))
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(({ name }) => {
       const testDir = join(dir, name);
-      const customRenderers = (RENDERERS as readonly string[]).filter((r) =>
-        existsSync(join(testDir, `src/render.${r}.ts`)),
+      const customRenderers = (RENDERERS as readonly string[]).filter(
+        (r) =>
+          existsSync(join(testDir, `src/render.${r}.ts`)) ||
+          (tool === 'examples' && r === 'wasm' && existsSync(join(root, 'examples', 'crates', name, 'Cargo.toml'))),
       );
       if (customRenderers.length > 0) return { name, renderers: customRenderers };
       if (tool === 'functional' && existsSync(join(testDir, 'src', 'app.ts'))) {
@@ -345,12 +347,14 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
 
   // The site tool is assembled by build:site into tools/site/ (not a per-workspace dist/).
   const isSite = tool === 'site';
-  const distDir = isSite ? join(root, 'tools', 'site') : join(root, 'tools', tool, 'dist');
+  const toolDir = tool === 'examples' ? join(root, 'examples', 'runners', 'web') : join(root, 'tools', tool);
+  const distDir = isSite ? join(root, 'tools', 'site') : join(toolDir, 'dist');
 
   if (!existsSync(distDir) || forceBuild) {
     console.log(`Building ${isSite ? 'site' : `tools/${tool}`}…`);
     const npmExecPath = process.env['npm_execpath'];
-    const args = isSite ? ['run', 'build:site'] : ['run', 'build', `--workspace=tools/${tool}`];
+    const workspace = tool === 'examples' ? '@flighthq/examples' : `tools/${tool}`;
+    const args = isSite ? ['run', 'build:site'] : ['run', 'build', `--workspace=${workspace}`];
     const result = npmExecPath
       ? spawnSync(process.execPath, [npmExecPath, ...args], {
           cwd: root,
@@ -388,6 +392,7 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
     '.ttf': 'font/ttf',
     '.utf8': 'text/plain; charset=utf-8',
     '.wav': 'audio/wav',
+    '.wasm': 'application/wasm',
     '.webp': 'image/webp',
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',

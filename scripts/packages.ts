@@ -530,7 +530,7 @@ const barrelSyncErrors = checkSdkBarrelSync();
 
 // --- check each example ---
 
-const examplesDir = join(root, 'examples');
+const examplesDir = join(root, 'examples', 'packages');
 
 const exampleDirs = readdirSync(examplesDir, { withFileTypes: true })
   .filter((e) => e.isDirectory())
@@ -569,7 +569,7 @@ for (const exampleDir of exampleDirs) {
     check(
       errors,
       'tsconfig.json extends base',
-      exampleTsConfig?.extends === '../../tsconfig.base.json',
+      exampleTsConfig?.extends === '../../../tsconfig.base.json',
       `got ${JSON.stringify(exampleTsConfig?.extends)}`,
     );
 
@@ -578,7 +578,7 @@ for (const exampleDir of exampleDirs) {
 
     for (const dep of flightDeps) {
       const pkgName = dep.replace('@flighthq/', '');
-      const expectedRef = `../../packages/${pkgName}`;
+      const expectedRef = `../../../packages/${pkgName}`;
       check(errors, `tsconfig.json references ${pkgName}`, refs.has(expectedRef));
     }
   }

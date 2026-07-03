@@ -1,0 +1,15 @@
+[package]
+name = "example-drawingshapes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+flighthq-displayobject = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-shape = { workspace = true }
+flighthq-types = { workspace = true }
+
+[lints]
+workspace = true

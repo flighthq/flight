@@ -445,6 +445,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "example-drawingshapes"
+version = "0.1.0"
+dependencies = [
+ "flighthq-displayobject",
+ "flighthq-node",
+ "flighthq-shape",
+ "flighthq-types",
+]
+
+[[package]]
 name = "fdeflate"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -467,6 +477,26 @@ checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+]
+
+[[package]]
+name = "flight-examples-native"
+version = "0.1.0"
+dependencies = [
+ "example-drawingshapes",
+ "flighthq-displayobject-wgpu",
+ "flighthq-host-winit",
+ "flighthq-render",
+ "flighthq-types",
+]
+
+[[package]]
+name = "flight-examples-wasm"
+version = "0.1.0"
+dependencies = [
+ "example-drawingshapes",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
