@@ -1,7 +1,7 @@
 ---
 name: package-review
 description: >-
-  Survey one Flight package and write its review.md — the independent observation layer of the per-package knowledge tree under tools/agents/docs/packages/<name>/. Reads evidence from EITHER the live worktree OR an incoming bundle under incoming/<worktree>-<sha>/, ingests the status.md, source and tests, and the prior reviews/depth/<name>.md, and reasons against the package's charter.md and the contract (falling back to the codebase-map AAA standard where the charter is silent). Surfaces both how well the package lives up to the contract and where the contract/admin docs themselves need revising. Use when asked to "review a package", "survey <package>", "review the incoming bundle", "ingest the status docs", or to (re)generate review.md before assessment/approval. Read tools/agents/docs/packages/index.md first.
+  Survey one Flight package and write its review.md — the independent observation layer of the per-package knowledge tree under tools/agents/docs/packages/<name>/. Reads evidence from EITHER the live worktree OR an incoming bundle under incoming/<worktree>-<sha>/, ingests the status.md, source and tests, and reasons against the package's charter.md and the contract (falling back to the codebase-map AAA standard where the charter is silent). Surfaces both how well the package lives up to the contract and where the contract/admin docs themselves need revising. Use when asked to "review a package", "survey <package>", "review the incoming bundle", "ingest the status docs", or to (re)generate review.md before assessment/approval. Read tools/agents/docs/packages/index.md first.
 ---
 
 # Package Review
@@ -24,8 +24,7 @@ Read all of these before writing a word:
 1. **`tools/agents/docs/packages/<name>/charter.md`** — the rubric. The vision, North star, Boundaries, Decisions, and Open directions. This is what you judge the package _against_.
 2. **the status doc** — `tools/agents/docs/packages/<name>/status.md` (live) or `head/tools/agents/docs/status/<name>.md` (bundle). The developer handoff: what was just changed, what is in-flight, what to watch. A primary signal, not gospel — verify its claims against the source.
 3. **the source** — `packages/<name>/src/` (live) or `incoming/<worktree>-<sha>/head/packages/<name>/` (bundle), plus colocated `*.test.ts`. Ground every claim here.
-4. **`tools/agents/docs/reviews/depth/<name>.md`** — the prior point-in-time depth review. Absorb it as a starting point; supersede it. Note where reality has moved since it was written.
-5. **`tools/agents/docs/packages/CONTRACT.md`** and **`index.md`** — the artifact contract and architecture. You judge the package against the charter _and_ against these.
+4. **`tools/agents/docs/packages/CONTRACT.md`** and **`index.md`** — the artifact contract and architecture. You judge the package against the charter _and_ against these.
 
 ## The rubric rule
 

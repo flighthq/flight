@@ -95,8 +95,6 @@
     "order:fix": "tsx ./scripts/order.ts --fix",
     "packages:check": "tsx ./scripts/packages.ts",
     "packages:check:json": "tsx ./scripts/packages.ts --json",
-    "proposals:index": "tsx ./scripts/proposals-index.ts",
-    "proposals:seed": "tsx ./scripts/seed-proposals.ts",
     "rust:conformance": "tsx ./scripts/rust-conformance.ts",
     "rust:conformance:json": "tsx ./scripts/rust-conformance.ts --json",
     "precommit": "lint-staged",
