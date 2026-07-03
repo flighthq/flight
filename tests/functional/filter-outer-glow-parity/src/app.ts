@@ -57,7 +57,11 @@ const GLOW_ALPHA = 1;
 
 const WIDTH = 800;
 const HEIGHT = 600;
-const BACKGROUND = 0xff000000;
+// Opaque black in the SDK's packed-RGBA convention (0xRRGGBBAA). The source tile is transparent
+// around the glow, so the background shows through the native tile's transparent regions; it must be
+// opaque or those pixels read back alpha 0 on WebGPU (which honors premultiplied alpha) and diverge
+// from the alpha-255-flattened reference. 0xff000000 (ARGB) would be red-with-alpha-0 — the wrong value.
+const BACKGROUND = 0x000000ff;
 
 function glowFilter() {
   return createOuterGlowFilter({
