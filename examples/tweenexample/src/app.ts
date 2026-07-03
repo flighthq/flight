@@ -25,7 +25,7 @@ const MIN_RADIUS = 25;
 const MAX_RADIUS = 60;
 const MIN_DURATION = 1500;
 const MAX_DURATION = 6000;
-const MAX_CREATION_DELAY = 10000;
+const MAX_START_DELAY = 10000;
 
 const manager = createTweenManager();
 const root = createDisplayObject();
@@ -41,7 +41,7 @@ function animateCircle(circle: ReturnType<typeof createShape>): void {
   connectSignal(tween.onUpdate, () => invalidateNodeRender(circle));
 }
 
-function createCircle(): void {
+function createCircle(): ReturnType<typeof createShape> {
   const radius = MIN_RADIUS + Math.random() * (MAX_RADIUS - MIN_RADIUS);
   const circle = createShape();
 
@@ -54,13 +54,18 @@ function createCircle(): void {
   circle.y = Math.random() * STAGE_HEIGHT;
 
   addNodeChildAt(root, circle, 0);
-  animateCircle(circle);
+  return circle;
 }
 
+// Populate the whole field synchronously so the scene is never empty, then stagger only when each
+// circle *starts* drifting. The loop's first tick delivers a zero delta (see startApplicationLoop),
+// so no timer has advanced by the first rendered frame; deferring node creation to timer.onComplete
+// would leave that frame — and any single-frame capture of it — blank.
 for (let i = 0; i < CIRCLE_COUNT; i++) {
-  const delay = Math.random() * MAX_CREATION_DELAY;
+  const circle = createCircle();
+  const delay = Math.random() * MAX_START_DELAY;
   const timer = createTweenTimer(manager, delay);
-  connectSignal(timer.onComplete, createCircle);
+  connectSignal(timer.onComplete, () => animateCircle(circle));
 }
 
 const app = createApplication();
