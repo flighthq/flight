@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # effects-canvas — Charter
 
@@ -18,7 +17,7 @@ The Canvas 2D member of the `effects-<backend>` family: the Canvas 2D realizatio
 
 Where it ends: `@flighthq/effects` owns the renderer-agnostic descriptors and the effect taxonomy; `effects-canvas` owns only how those descriptors are _realized on a Canvas 2D context_ — `ctx.filter` CSS strings, draw-op compositing, multi-draw accumulation, and per-pixel `getImageData`/`putImageData` passes. It does not define effect kinds, and it has no Rust crate (`crate: null`): the Rust port supplies Canvas-2D-equivalent CPU effects through `flighthq-effects-skia` (tiny-skia), not a Canvas emulator.
 
-## North star (proposed)
+## North star
 
 - **Realize every effect the substrate can express; be honest where it cannot.** Canvas 2D has no depth/velocity/history buffers and no HDR headroom. The bar is a genuine implementation for every effect Canvas can do (34 today), an explicitly `approximate` tier where the result is plausible but LDR-limited (exposure, tone-map), and a documented passthrough — with its specific missing input named in-comment — for the rest. No silent no-ops, no "shader-only" hand-waving.
 - **Discoverability over surprise.** A consumer must be able to learn, before rendering, that a given effect will do nothing on Canvas. `getCanvasRenderEffectSupport` and the support map exist so passthrough is a queryable fact, not a silent surprise.
@@ -26,7 +25,7 @@ Where it ends: `@flighthq/effects` owns the renderer-agnostic descriptors and th
 - **Mirror the sibling backends.** Naming, registrar structure, and the support/runner split should be symmetric with `effects-gl`/`effects-wgpu` so the three backends read as one family and a reader who knows one knows all three (`hasCanvasRenderEffectRunner` mirrors `hasGlRenderEffectRunner`, the empty `registerScreenSpace*` mirrors the GL/WGPU no-op, etc.).
 - **Explicit allocation and alias-safety in the pixel path.** Pooled render targets through paired `acquire`/`release` brackets; per-pixel passes that read a source copy before writing (`applySharpen`'s `orig`), so source/dest aliasing is always safe.
 
-## Boundaries (proposed)
+## Boundaries
 
 **In scope:**
 
@@ -43,7 +42,7 @@ Where it ends: `@flighthq/effects` owns the renderer-agnostic descriptors and th
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — TS-leads. `crate: null` (browser-API-bound).**
 
 ## Open directions
 

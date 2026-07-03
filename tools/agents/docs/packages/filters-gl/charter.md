@@ -10,7 +10,6 @@ status: ./status.md
 
 # filters-gl — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -25,7 +24,7 @@ Where it ends and a neighbor begins:
 - The sibling backends `filters-canvas` / `filters-css` / `filters-surface` cover the same descriptor set on their substrates; `filters-gl` is the WebGL 2 member of that family, with `filters-wgpu` as its GPU sibling.
 - **Orchestration and scratch-target allocation belong to the caller.** `filters-gl` allocates nothing; the caller passes scratch targets and consults the `get*FilterGlScratchCount` helpers to size them.
 
-## North star (proposed)
+## North star
 
 _Proposed durable principles inferred from the design and the SDK forks. Confirm or revise before blessing._
 
@@ -35,7 +34,7 @@ _Proposed durable principles inferred from the design and the SDK forks. Confirm
 - **Globally self-identifying names with a clean backend infix.** The `…ToGl` / `Gl…` infix cleanly separates this backend from its canvas/surface/wgpu siblings while keeping full, unabbreviated type words.
 - **Teardown vocabulary means what it says.** `dispose`/`destroy`/`clear` semantics are stated honestly: a name must not promise determinism the implementation does not provide (see Open directions on `clearGlFilterProgramCache`).
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed in-scope / non-goals, drawn from the review and the neighbor packages. Confirm before blessing._
 
@@ -54,7 +53,7 @@ Non-goals (explicit):
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

@@ -10,7 +10,6 @@ status: ./status.md
 
 # render-gl — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -18,7 +17,7 @@ status: ./status.md
 
 It sits **above** raw `WebGL2RenderingContext` and **below** the per-subject leaf renderers. The backend-agnostic `@flighthq/render` core (registration, render queue, update pipeline, draw contracts) is its peer abstraction; `displayobject-gl` (and a future `scene-gl`) are its consumers — the leaf renderers that draw bitmaps, shapes, sprites, text, and tilemaps over this core's primitives. The line: render-gl is where leaf renderers stop reaching into `gl` directly and call a `Gl`-prefixed core function instead. Anything subject-specific (instanced batch layout, particle sim upload, per-glyph text shaping) belongs in a leaf, not here.
 
-## North star (proposed)
+## North star
 
 _Proposed, not blessed. Inferred from the design + the structural forks; confirm or revise in review._
 
@@ -28,7 +27,7 @@ _Proposed, not blessed. Inferred from the design + the structural forks; confirm
 - **Types-first, sentinel-honest, tree-shakable.** Cross-package types land in `@flighthq/types` before use; expected failures return sentinels (`null` + log, `false`, `-1`) rather than throw; opt-in surfaces (instrumentation, signals) stay out of a minimal bitmap bundle.
 - **A faithful peer to `render-wgpu` and the Rust `flighthq-render-gl`.** Color convention, sRGB policy, and the present/draw seam stay aligned across backends and across the TS↔Rust port — a unilateral GL-only choice that breaks cross-backend or conformance parity is a regression.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed, not blessed. Drawn from the review and neighboring packages; confirm in review._
 
@@ -37,7 +36,7 @@ In scope:
 - Render state + context handle, render targets + pool, textures/samplers, shader compile + material/shader registries, cached pipeline state, fullscreen passes, immediate quad, GPU readback, capabilities/extensions, context-loss detection, opt-in instrumentation.
 - The device primitives leaves build on: (candidate) UBO / sampler-object helpers, blit/copy, compressed-texture upload, pixel-store control — the GPU plumbing tier, regardless of which subject consumes it.
 
-Non-goals (proposed):
+Non-goals:
 
 - **Per-subject draw paths.** Instanced batch layout, particle upload, tilemap/text leaf shaders — these live in `displayobject-gl` / `scene-gl`, not here.
 - **A Canvas2D or DOM renderer.** Different substrate; not this package's concern.
@@ -45,7 +44,10 @@ Non-goals (proposed):
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — Canvas-raster fallback accepted; GPU options long-term.**
+- **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
+- **2026-07-02 — Context/device loss: detect and signal minimum.**
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

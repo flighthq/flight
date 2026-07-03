@@ -10,7 +10,6 @@ status: ./status.md
 
 # geometry — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -18,7 +17,7 @@ status: ./status.md
 
 It is **pure value-math**: free functions over plain data, alias-safe `out`-parameters, sentinel returns, no graph identity, no rendering, no host coupling. Where a neighbor begins: the moment a value gains scene-graph participation it belongs to `@flighthq/node`/`@flighthq/displayobject`/ `@flighthq/scene`, not here; the shared types it operates on (`Ray3DLike`, `FrustumLike`, `EulerOrder`, `BoundingSphereLike`, …) are homed in `@flighthq/types`, not defined inline. How far past pure value-math `geometry` reaches — ray casting, closest-point/distance — is itself live (see Open directions).
 
-## North star (proposed)
+## North star
 
 _Proposed, not blessed — edit or move any of these to Open directions if they overreach._
 
@@ -28,11 +27,11 @@ _Proposed, not blessed — edit or move any of these to Open directions if they 
 - **Correct, conventional math.** A canonical math library is held to _authoritative_ standard: round-trips hold, conventions are documented, and a blessed handedness/axis convention is applied consistently. (The review flags two live correctness defects against this bar — see Open directions #4.)
 - **A faithful Rust mirror.** `flighthq-geometry` is a value-typed leaf and the conformance goal is 1:1; the TS surface and the Rust crate are meant to track each other. Whether crate parity gates a package's status is itself open (see Open directions #5).
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed scope lines — confirm or redraw._
 
-**In scope (proposed):**
+**In scope:**
 
 - Vector / matrix / quaternion algebra across the full dimension ladder.
 - 2D `Rectangle` (OpenFL-grade) and 3D bounding volumes (AABB, sphere, plane, frustum).
@@ -40,7 +39,7 @@ _Proposed scope lines — confirm or redraw._
 - Float32Array / GPU-buffer packing bridges for vectors and all matrix tiers.
 - Typed-array capacity helpers and per-type object pools.
 
-**Non-goals (proposed):**
+**Non-goals:**
 
 - Scene-graph participation, transforms-on-nodes, bounds invalidation — owned by `@flighthq/node` and the display/scene packages.
 - Rendering, GPU resource ownership, host/platform coupling.

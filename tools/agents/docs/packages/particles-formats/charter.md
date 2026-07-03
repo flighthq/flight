@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # particles-formats — Charter
 
@@ -20,7 +19,7 @@ Where it ends: it does **not** own the emitter data shape (that is `@flighthq/pa
 
 As shipped in `builder-67dc46d64`, it carries six formats (Particle Designer plist, Spine 4.x JSON, Unity Shuriken JSON, libGDX `.p`, Starling PEX XML, Pixi v3/v4/v5 JSON), with full round-trip on five and parse-only on Pixi, unified detection/dispatch, a (currently unused) open codec registry, and 279 colocated tests.
 
-## North star (proposed)
+## North star
 
 _Proposed, not blessed — edit or move any of these to Open directions before confirming._
 
@@ -30,7 +29,7 @@ _Proposed, not blessed — edit or move any of these to Open directions before c
 - **The config is the single target; this layer tracks it.** `ParticleEmitterConfig` is the contract. When the parent config gains a field that a format already carries, forwarding it is this layer's job — the codec is only as faithful as the field it maps to, and stale "not supported" warnings against a now-richer config are bugs, not boundaries.
 - **Registry-by-default dispatch.** A growing format family (fork B) is dispatched through the open codec registry with built-ins registered via an opt-in `register*`, not a hardcoded closed `if` chain — keeping the package `sideEffects: false` and the format set extensible by users.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed, not blessed._
 
@@ -41,7 +40,7 @@ _Proposed, not blessed._
 - The `warnings[]` fidelity-reporting channel.
 - Mapping every `ParticleEmitterConfig` field a format can express, in both directions.
 
-**Non-goals (proposed):**
+**Non-goals:**
 
 - Defining the emitter data shape — that is `@flighthq/particles` / `@flighthq/types`.
 - Simulating, rendering, scheduling, or participating in the scene graph — the sim-backend / `sprite` layers.
@@ -51,7 +50,10 @@ _Proposed, not blessed._
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-03 — Unify dispatch to registry-only.** Built-in codecs self-register via import. Why: hardcoded switch + unused registry is confusing, defeats tree-shaking.
+- **2026-07-03 — PhaserParticleFormatKind: implement or remove.** Ghost kind with no implementation.
+- **2026-07-03 — Package description needs update (ships 6 formats, names 3).**
+- **2026-07-03 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

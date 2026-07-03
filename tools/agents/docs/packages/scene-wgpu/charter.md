@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # scene-wgpu — Charter
 
@@ -18,7 +17,7 @@ The WebGPU (WGSL) backend renderer for the 3D scene/mesh subject family — the 
 
 It is the `scene-<backend>` leaf in the render layering: it sits over the `render-wgpu` core (state, targets, GPU plumbing) and the backend-agnostic `render` core (registration, queue, update pipeline), consumes types defined in `@flighthq/types` and packed in `@flighthq/render`, and renders the 3D subject `scene` / `mesh` / `lighting` / `texture` / `camera` produce. It ends where the GPU plumbing begins (`render-wgpu`) and where the deliberate twin `scene-gl` (WebGL/GLSL) covers the other GPU backend — the two are designed to mirror each other.
 
-## North star (proposed)
+## North star
 
 - **A faithful per-backend leaf, not a renderer kitchen.** scene-wgpu translates an already-prepared scene into WGSL draw calls; it does not own the scene graph, the update pass, GPU device/target lifecycle, or post-processing/tonemap/resolve. Frame-finishing belongs to the effect pipeline above it. The package's job is correct, complete material translation for one backend.
 - **Material depth is the package's center of gravity.** The shader catalogue is where this package is already close to authoritative; glTF-tier PBR fidelity (correct GGX/Smith/Fresnel, the standard maps, the KHR extension lobes) and a clean classic/NPR/debug family split are the bar to hold and extend.
@@ -26,15 +25,15 @@ It is the `scene-<backend>` leaf in the render layering: it sits over the `rende
 - **Twin discipline with scene-gl.** scene-wgpu and scene-gl are deliberate twins. Cross-cutting lighting/shadow/IBL concerns are designed once in `@flighthq/types` and mirrored across both backends, so one backend's capabilities do not silently outrun the other's.
 - **Greppable, types-first, allocation-explicit.** Full unabbreviated type words with the `Wgpu` infix for globally-unique exports; the compile/cache/key/source verb split; `out`-param writers; header types land in `@flighthq/types` before the backend consumes them; draw scratch is per-state runtime, not a module singleton.
 
-## Boundaries (proposed)
+## Boundaries
 
-**In scope (proposed):**
+**In scope:**
 
 - WGSL translation and draw submission for the mesh-material catalogue (PBR uber-shader + extensions, classic, NPR, debug families).
 - The per-backend plumbing a leaf renderer owns: pipeline/define-key caches, per-geometry upload caches with version invalidation, Frame/Draw/Material bind-group layouts, the transparent pass (blend pipeline variant + back-to-front sort).
 - Consuming the shared forward-lighting / shadow / IBL **types** defined in `@flighthq/types` and the packers in `@flighthq/render`.
 
-**Non-goals (proposed):**
+**Non-goals:**
 
 - The scene graph, the prepare/update pass, and GPU device/target/surface lifecycle (owned by `scene`, `render`, and `render-wgpu` respectively).
 - Post-processing, tonemap, MSAA resolve — the effect pipeline finishes the frame; this package does not produce a finished frame alone.
@@ -43,7 +42,10 @@ It is the `scene-<backend>` leaf in the render layering: it sits over the `rende
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — WGPU may lead; parity is the goal, not lockstep.**
+- **2026-07-02 — G-buffer infrastructure (depth + velocity) in scope.**
+- **2026-07-02 — Multi-light: MAX count with runtime guard.**
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

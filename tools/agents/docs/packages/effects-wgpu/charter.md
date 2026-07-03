@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # effects-wgpu — Charter
 
@@ -23,7 +22,7 @@ status: ./status.md
 
 Where it ends: it does **not** own the effect descriptors or their math (that is `effects`), and it is one of a family of interchangeable backends alongside `effects-gl` (its structural twin), `effects-canvas`, and the agnostic core. The "same agnostic `RenderEffect[]` drives every backend through its registry" claim holds: `effects-wgpu` and `effects-gl` ship the same 44 runners over identical kind keys and band groupings.
 
-## North star (proposed)
+## North star
 
 _Proposed from the design + structural forks; not blessed. The open questions that would harden or overturn these live in Open directions below._
 
@@ -33,16 +32,16 @@ _Proposed from the design + structural forks; not blessed. The open questions th
 4. **Real recipes, not stubs.** A registered runner is the genuine algorithm (or a documented, honest fallback), not a no-op. The flagship recipes (mip-chain bloom, analytical-area SMAA) set the bar.
 5. **Conformance-ready value seam.** WGSL bodies are plain string constants and the package consumes only data-shaped inputs, keeping it on the path to a Rust mirror and cross-backend parity once the pipeline shape settles.
 
-## Boundaries (proposed)
+## Boundaries
 
-**In scope (proposed).**
+**In scope.**
 
 - WGSL runners for the agnostic effect descriptors, one per kind, registered through the bands.
 - The wgpu effect registry, ping-pong pipeline orchestration, and compiled-pipeline cache.
 - HDR target-format selection where wgpu can lead (e.g. `rgba16float`).
 - Multi-pass recipe orchestration internal to a single effect (bloom mip chain, SMAA three passes).
 
-**Non-goals (proposed).**
+**Non-goals.**
 
 - Defining effect descriptors or their math (owned by `effects` / `@flighthq/types`).
 - The GL, Canvas, or any non-wgpu backend (siblings).
@@ -51,7 +50,7 @@ _Proposed from the design + structural forks; not blessed. The open questions th
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

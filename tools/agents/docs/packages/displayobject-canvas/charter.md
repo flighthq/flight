@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # displayobject-canvas — Charter
 
@@ -18,7 +17,7 @@ status: ./status.md
 
 It ends where the backend-agnostic core (`@flighthq/render`) ends: `render` owns registration, the render state/queue, the update pipeline, and the draw contract; `displayobject-canvas` owns only the Canvas-specific realization of that contract. It is a sibling to `displayobject-dom` (DOM-element backend) and `displayobject-gl`/`-wgpu`/`-skia` (GPU and portable-software backends): same subject, different substrate. Per the Rust map it is **host-web-only** — there is no `flighthq-displayobject-canvas` crate, because the Canvas 2D substrate does not exist in the Rust box; software-render parity there is `displayobject-skia`.
 
-## North star (proposed)
+## North star
 
 - **Faithful immediate-mode realization of the display-object draw contract.** The package's job is to turn an already-prepared render node into Canvas 2D draw calls with the OpenFL/Lime fidelity a user expects — sourceRect, smoothing, blend mode, alpha, scale-9, masking — never to re-implement the scene graph, the update pass, or registration that `render` already owns.
 - **Open where the domain is open, closed where it is finite.** Genuinely-extensible axes (shape commands, materials) are open string-keyed registries; genuinely-closed finite enums on a hot path (the `BlendMode` → `globalCompositeOperation` table) stay closed records. The package draws the open/closed line by what the axis actually is, per fork B.
@@ -26,7 +25,7 @@ It ends where the backend-agnostic core (`@flighthq/render`) ends: `render` owns
 - **Types live in `@flighthq/types` first.** Cross-package draw-state shape (e.g. `CanvasShapeDrawState`, `strokeScaleMode`) belongs in the header layer so custom registered commands can read and write it — not as module-local fields.
 - **Verb and naming discipline.** Full unabbreviated `Canvas` + operated-on-type names; `destroy*` for freeing a non-GC compositor backing store, `release*` reserved for cache-slot brackets, sentinels (`null`/no-op) for expected-absent input, throws only for misuse.
 
-## Boundaries (proposed)
+## Boundaries
 
 In scope:
 
@@ -34,7 +33,7 @@ In scope:
 - The Canvas shape-command spine and its open registry; the Canvas material seam and its registry.
 - Canvas blend-mode mapping, clipping/masking, offscreen render targets, render caching, and the CSS-filter binding.
 
-Non-goals (proposed):
+Non-goals:
 
 - Registration, render state/queue, the update pipeline, or the draw contract itself — those are `@flighthq/render`.
 - The display-object node types and their data — those are `@flighthq/displayobject` / `@flighthq/shape` / `@flighthq/text`.
@@ -43,7 +42,10 @@ Non-goals (proposed):
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — Real canvas backend, implement filters where possible (not just CSS shim).**
+- **2026-07-02 — Canvas-raster fallback accepted for GPU backends.**
+- **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
+- **2026-07-02 — TS-leads. `crate: null` (browser-API-bound).**
 
 ## Open directions
 

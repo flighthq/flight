@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # filters-canvas — Charter
 
@@ -22,7 +21,7 @@ The package is exactly **leaf realizers plus a bridge**: one `apply*FilterToCanv
 
 _(Seeded from the prior depth review; replace with the intent in your own framing.)_
 
-## North star (proposed)
+## North star
 
 _Proposed from the design observed in review.md + the structural forks. Edit or reject in review._
 
@@ -32,7 +31,7 @@ _Proposed from the design observed in review.md + the structural forks. Edit or 
 - **Stamped, single alpha/color convention at the bridge.** The `ImageData`↔`Surface` bridge stamps `alphaType: 'straight'` / `format: 'rgba8unorm'` explicitly and round-trips losslessly — matching the SDK rule (straight alpha, sRGB pass-through, premultiply only on GPU upload).
 - **Sentinels on the realization seam.** An unknown kind, a missing source dimension, or degenerate input is a sentinel (`false` / `0` / early `return true`) that cues a fall to another backend — never a throw. Throws are reserved for genuine API misuse.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed; confirm the line in review._
 
@@ -51,11 +50,11 @@ _Proposed; confirm the line in review._
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — Real canvas backend, implement where possible (not just CSS shim).**
+- **2026-07-02 — TS-leads. `crate: null` (browser-API-bound).**
 
 ## Open directions
 
-Every question below is unsettled until you rule on it. Items 1–6 are the candidate directions surfaced by the review under charter silence; the trailing items are SDK-wide structural forks that touch this package.
 
 1. **Is "the backends agree" a charter obligation, and is a functional-test scene the proof?** The status doc treats cross-backend visual parity (Canvas ≈ `filters-surface` CPU ≈ GPU within tolerance) as the package's real correctness claim, but it is asserted by delegation, not demonstrated — jsdom unit tests mock the context and structurally cannot reach a pixel. If parity is in scope, the missing functional-test scene becomes actionable; if not, the bar is "wires the right kernel."
 2. **CSS fast-path vs pixel path — blessed perf tier or expedient?** Is the CSS `ctx.filter` path a permanent first tier, or is the pixel path canonical and CSS merely a measured optimization? (A third `globalCompositeOperation` tier was considered and dropped.)

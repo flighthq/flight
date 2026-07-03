@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # displayobject-gl — Charter
 
@@ -18,7 +17,7 @@ The WebGL2 leaf-renderer suite for the 2D display-object family — the per-subj
 
 It sits one layer above `render-gl` (the subject-agnostic GPU plumbing — state, targets, shaders, draw, surface) and is a sibling to the other `displayobject-<backend>` leaves (`displayobject-canvas`, `displayobject-dom`, the planned `displayobject-skia`). The data/region layers it consumes — clip regions, velocity data, particle simulation, shape fill regions — live in neighbor packages (`@flighthq/clip`, `@flighthq/velocity`, `@flighthq/particles`, `@flighthq/path`); this package owns only the GL rasterization side of those seams. It ends where a draw call ends: scene-graph traversal, transform/alpha propagation, and the update pipeline belong to `render`/`render-gl`, not here.
 
-## North star (proposed)
+## North star
 
 _Proposed from the review + the structural forks; not blessed. Each is a candidate the user should confirm, sharpen, or reject — open questions about the durable bar are in Open directions._
 
@@ -27,7 +26,7 @@ _Proposed from the review + the structural forks; not blessed. Each is a candida
 - **GPU resources are explicitly owned and freed.** `destroy*` frees textures/FBOs deterministically; `register*`/`enable*` are opt-in with no module-top-level side effects; allocation in hot loops is avoided (scratch arrays, not per-frame `new`).
 - **Full, unabbreviated, `gl`-prefixed, self-identifying names**, one colocated `*.test.ts` per source file. The package is held to the codebase-map AAA bar and currently meets it on naming and test depth.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed; the contested lines are restated as questions in Open directions._
 
@@ -47,7 +46,9 @@ _Proposed; the contested lines are restated as questions in Open directions._
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — Canvas-raster fallback accepted; GPU options long-term.**
+- **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

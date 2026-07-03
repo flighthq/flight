@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # spritesheet-formats — Charter
 
@@ -18,7 +17,7 @@ The format-interop layer for sprite atlases: it maps third-party atlas / sprites
 
 Today it ships five text-based formats with full parse↔serialize round-trips (Texture Packer JSON, Aseprite JSON, Starling/Sparrow XML, libGDX/Spine `.atlas`, Cocos2d-x plist), a descriptor-free grid slicer, a shared XML parser spine, a lazy registry with auto-detection, and a tolerant diagnostics path — 169 tests across 14 files.
 
-## North star (proposed)
+## North star
 
 _(Proposed — inferred from the design and the SDK-wide forks; edit before blessing.)_
 
@@ -28,7 +27,7 @@ _(Proposed — inferred from the design and the SDK-wide forks; edit before bles
 - **Tolerant by default.** Real-world atlas files are messy. Parsing returns best-effort data plus structured diagnostics rather than throwing on the first malformed field; `null` is reserved for the expected "unrecognized format" failure.
 - **Honest, unabbreviated names that match the source format.** Field and type names mirror the external format's real vocabulary so a Rust porter or contributor reading the schema is not misled (the libGDX `orig`/`origSize` inversion is the standing counter-example to fix).
 
-## Boundaries (proposed)
+## Boundaries
 
 _(Proposed — edit before blessing.)_
 
@@ -48,7 +47,9 @@ _(Proposed — edit before blessing.)_
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-03 — Unify dispatch to registry-only.** Built-in formats self-register via import. Why: matches the tree-shaking discipline.
+- **2026-07-03 — Package description needs update (ships 5 formats).**
+- **2026-07-03 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

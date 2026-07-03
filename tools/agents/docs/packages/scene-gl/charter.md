@@ -10,7 +10,6 @@ status: ./status.md
 
 # scene-gl — Charter
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 ## What it is
 
@@ -18,7 +17,7 @@ WebGL2 forward renderer for the 3D scene graph — the per-subject leaf renderer
 
 It ends where the substrate begins: `render-gl` owns GPU plumbing (state, targets, fullscreen/surface, the GL context), `render` owns the backend-agnostic update pipeline and `prepareSceneRender`, and `@flighthq/types` owns every cross-package type (`Material`, `MeshSubset`, `SceneLights`, `GlMeshMaterialRenderer`). scene-gl is the GL leaf that binds those together into a forward draw. Its peer is `scene-wgpu` — the same subject over a different backend core. It is **not** the 3D scene graph itself (that is `scene`), nor the data primitives (`mesh`, `texture`, `lighting`, `camera`).
 
-## North star (proposed)
+## North star
 
 _Proposed principles inferred from the design + the structural forks. Confirm or rewrite before these become the rubric._
 
@@ -28,7 +27,7 @@ _Proposed principles inferred from the design + the structural forks. Confirm or
 - **Per-state runtime, no module singletons.** Registry, program cache, geometry-upload `WeakMap`, and draw lists live on `GlSceneRuntime` reached through the opaque header slot, allocated lazily on first use. Two render states never share mutable draw state.
 - **Linear HDR out, tonemap owned downstream.** The forward pass writes linear radiance into the rgba16f scene target; exposure/tonemap is a downstream concern, keeping this package's output a clean physically-linear signal.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed scope lines drawn from the review and neighbors. Confirm before treating as fixed._
 
@@ -50,7 +49,10 @@ Open at the boundary (see Open directions): the multi-light model, IBL/shadow/sk
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-02 — G-buffer infrastructure (depth + velocity) in scope.**
+- **2026-07-02 — Multi-light: MAX count with runtime guard.**
+- **2026-07-02 — No umbrella registerAll — maximum tree-shaking.**
+- **2026-07-02 — TS-leads, Rust conforms later.**
 
 ## Open directions
 

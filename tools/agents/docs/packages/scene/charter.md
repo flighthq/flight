@@ -8,7 +8,6 @@ assessment: ./assessment.md
 status: ./status.md
 ---
 
-> **DRAFT — unblessed.** First-pass generated charter; edit in personal review. Nothing here is blessed until you confirm.
 
 # scene — Charter
 
@@ -26,7 +25,7 @@ Where it ends and a neighbor begins:
 
 It is the 3D family's spatial substrate — the spine that `scene-gl`/`scene-wgpu`, and future 3D features (lighting, environment, instancing draw, picking, skeleton/animation), compose against.
 
-## North star (proposed)
+## North star
 
 _Proposed durable principles, inferred from the realized design + the structural forks. Edit or demote any of these to Open directions — they are a draft, not blessed._
 
@@ -40,7 +39,7 @@ _Proposed durable principles, inferred from the realized design + the structural
 
 5. **Sentinels over throws; presence-based discrimination.** Expected failures return `null`/`-1`/`false` (`findSceneNodeWhere`, `raycastSceneNodeFirst`, `selectLodMeshLevel`, `setInstancedMesh*`); throws are reserved for programmer error. Node kinds are discriminated by structural presence (`isMesh` keys on `geometry`), staying robust across custom kinds.
 
-## Boundaries (proposed)
+## Boundaries
 
 _Proposed scope lines from the review + neighbors. The bar itself (minimal graph vs. three.js/Babylon-class) is Open direction 1 — these boundaries assume the realized surface, not a final ceiling._
 
@@ -64,7 +63,9 @@ _Proposed scope lines from the review + neighbors. The bar itself (minimal graph
 
 ## Decisions
 
-None blessed yet.
+- **2026-07-03 — Keep standalone.** Skeleton, picking, animation remain separate packages. Why: each has significant room to grow.
+- **2026-07-03 — Spatial acceleration (BVH/octree) in scope.** For culling and raycasting.
+- **2026-07-03 — TS-leads, Rust conforms later.**
 
 ## Open directions
 
