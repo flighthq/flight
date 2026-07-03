@@ -8,7 +8,6 @@ export function defaultQuadBatchHitTestPointHandler(
   y: number,
   shapeFlag: boolean,
 ): boolean {
-  // TODO
   return defaultSpriteHitTestPointHandler(source, x, y, shapeFlag);
 }
 
@@ -17,6 +16,5 @@ export function defaultSpriteHitTestPointHandler(source: NodeAny, x: number, y: 
 }
 
 export function defaultTilemapHitTestPointHandler(source: NodeAny, x: number, y: number, shapeFlag: boolean): boolean {
-  // TODO
   return defaultSpriteHitTestPointHandler(source, x, y, shapeFlag);
 }

@@ -1,5 +1,6 @@
 import { createMatrix } from '@flighthq/geometry';
-import { BlendMode, EntityRuntimeKey, type RenderState } from '@flighthq/types';
+import type { RenderState } from '@flighthq/types';
+import { BlendMode, EntityRuntimeKey } from '@flighthq/types';
 
 import { createRenderState, createRenderStateRuntime, getRenderStateRuntime } from './renderState';
 

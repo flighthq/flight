@@ -34,9 +34,6 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // bind composes the material's `standard` block through the shared bindGlPbrStandardBlock and uploads
 // the transmission factor + linear-decoded attenuationColor. The transmission/thickness maps are
 // reserved but not yet sampled. See registerTransmissionVolumePbrGlMaterial.
-//
-// TODO Phase 5: replace the alpha/tint approximation with a refracted background sample (opaque-scene
-// color capture) plus Beer-Lambert volume absorption using thickness/attenuationDistance/ior.
 export const transmissionVolumePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,

@@ -43,9 +43,6 @@ import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
 // attenuationColor into the one MaterialBlock uniform and binds it at group(2). The transmission/
 // thickness maps are reserved but NOT sampled on wgpu yet (maps deferred). See
 // registerTransmissionVolumePbrWgpuMaterial.
-//
-// TODO Phase 5: replace the alpha/tint approximation with a refracted background sample (opaque-scene
-// color capture) plus Beer-Lambert volume absorption using thickness/attenuationDistance/ior.
 export const transmissionVolumePbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
   bind(
     state: WgpuRenderState,

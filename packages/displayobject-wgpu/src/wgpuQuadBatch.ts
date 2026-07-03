@@ -4,13 +4,13 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { QuadBatch, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
+import type { WgpuQuadBatchResources } from './wgpuSpriteBatch';
 import {
   ensureWgpuQuadBatchResources,
   getWgpuQuadBatchPipeline,
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
   SPRITE_INSTANCE_FLOATS,
-  type WgpuQuadBatchResources,
 } from './wgpuSpriteBatch';
 
 export type { WgpuQuadBatchResources };
