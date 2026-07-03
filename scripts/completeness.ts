@@ -53,12 +53,13 @@ const missing = results.filter((result) => result.missingTestFile);
 const partial = results.filter((result) => !result.missingTestFile && result.uncovered.length > 0);
 const full = results.filter((result) => !result.missingTestFile && result.uncovered.length === 0);
 const total = results.length;
+const passed = missing.length === 0 && partial.length === 0;
 
 if (jsonMode) {
   console.log(
     JSON.stringify(
       {
-        passed: missing.length === 0 && partial.length === 0,
+        passed,
         summary: { total, full: full.length, partial: partial.length, missing: missing.length },
         missing: missing.map((r) => ({ file: r.file.rel, exports: r.exports })),
         partial: partial.map((r) => ({
@@ -72,7 +73,7 @@ if (jsonMode) {
       2,
     ),
   );
-  process.exit(0);
+  process.exit(passed ? 0 : 1);
 }
 
 if (missing.length > 0) {
@@ -104,6 +105,43 @@ console.log(
   `  ${pc.dim('No tests:        ')} ${pc.red(missing.length.toString())} ${pc.dim(`(${pct(missing.length, total)}%)`)}`,
 );
 
+console.log('');
+if (passed) {
+  console.log(pc.green(`✓ every exported function has a colocated test (${total} files)`));
+  process.exit(0);
+} else {
+  const gapCount = missing.length + partial.length;
+  console.log(pc.red(`✗ ${gapCount} file${gapCount === 1 ? '' : 's'} with missing or partial test coverage`));
+  process.exit(1);
+}
+
+function collectSourceFiles(srcDir: string, dir: string, out: SourceFile[]): void {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const absPath = join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      // Skip generated, git-ignored wasm-bindgen output (the `src/wasm` dir of
+      // the -rs packages); it is not hand-authored source, mirroring the eslint
+      // ignore `**/src/wasm/**`.
+      if (entry.name === 'wasm' && dir === srcDir) continue;
+      collectSourceFiles(srcDir, absPath, out);
+      continue;
+    }
+
+    if (!entry.isFile()) continue;
+    const name = entry.name;
+    if (!name.endsWith('.ts') || name.endsWith('.test.ts') || name.endsWith('.d.ts')) continue;
+    if (name === 'index.ts' || name === 'internal.ts') continue;
+    if (name.toLowerCase().endsWith('testhelper.ts')) continue;
+
+    out.push({
+      absPath,
+      rel: relative(root, absPath).replaceAll('\\', '/'),
+      testPath: absPath.replace(/\.ts$/, '.test.ts'),
+    });
+  }
+}
+
 function findSourceFiles(): SourceFile[] {
   const results: SourceFile[] = [];
 
@@ -111,22 +149,7 @@ function findSourceFiles(): SourceFile[] {
     if (!packageEntry.isDirectory()) continue;
     const srcDir = join(packagesDir, packageEntry.name, 'src');
     if (!existsSync(srcDir)) continue;
-
-    for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
-      if (!entry.isFile()) continue;
-      const name = entry.name;
-      if (!name.endsWith('.ts')) continue;
-      if (name.endsWith('.test.ts')) continue;
-      if (name === 'index.ts' || name === 'internal.ts') continue;
-      if (name.toLowerCase().endsWith('testhelper.ts')) continue;
-
-      const absPath = join(srcDir, name);
-      results.push({
-        absPath,
-        rel: relative(root, absPath).replaceAll('\\', '/'),
-        testPath: absPath.replace(/\.ts$/, '.test.ts'),
-      });
-    }
+    collectSourceFiles(srcDir, srcDir, results);
   }
 
   return results.sort((a, b) => a.rel.localeCompare(b.rel));
@@ -137,7 +160,7 @@ function formatNames(names: string[], color: (value: string) => string): string 
   const suffix =
     shown.length === names.length
       ? ''
-      : `${pc.dim(', ')}${pc.dim(`+${names.length - shown.length} more`)} ${pc.dim('(run npm run coverage -- --verbose)')}`;
+      : `${pc.dim(', ')}${pc.dim(`+${names.length - shown.length} more`)} ${pc.dim('(run npm run exports:check -- --verbose)')}`;
   return `${shown.map((name) => color(name)).join(pc.dim(', '))}${suffix}`;
 }
 
