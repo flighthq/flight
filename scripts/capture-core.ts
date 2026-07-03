@@ -342,29 +342,33 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
 // always rebuild (e.g. for baseline captures that must be authoritative).
 export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild?: boolean }): Promise<Server> {
   const { tool, root, forceBuild = false } = opts;
-  const distDir = join(root, 'tools', tool, 'dist');
+
+  // The site tool is assembled by build:site into tools/site/ (not a per-workspace dist/).
+  const isSite = tool === 'site';
+  const distDir = isSite ? join(root, 'tools', 'site') : join(root, 'tools', tool, 'dist');
 
   if (!existsSync(distDir) || forceBuild) {
-    console.log(`Building tools/${tool}…`);
+    console.log(`Building ${isSite ? 'site' : `tools/${tool}`}…`);
     const npmExecPath = process.env['npm_execpath'];
+    const args = isSite ? ['run', 'build:site'] : ['run', 'build', `--workspace=tools/${tool}`];
     const result = npmExecPath
-      ? spawnSync(process.execPath, [npmExecPath, 'run', 'build', `--workspace=tools/${tool}`], {
+      ? spawnSync(process.execPath, [npmExecPath, ...args], {
           cwd: root,
           stdio: 'inherit',
         })
-      : spawnSync('npm', ['run', 'build', `--workspace=tools/${tool}`], {
+      : spawnSync('npm', args, {
           cwd: root,
           stdio: 'inherit',
           shell: true,
         });
     if (result.status !== 0) {
-      return Promise.reject(new Error(`Build failed for tools/${tool}. Run "npm run build:${tool}" to debug.`));
+      return Promise.reject(new Error(`Build failed. Run "npm run build:${isSite ? 'site' : tool}" to debug.`));
     }
   }
 
   if (!existsSync(distDir)) {
     return Promise.reject(
-      new Error(`No build found at tools/${tool}/dist after build. Run "npm run build:${tool}" to debug.`),
+      new Error(`No build found at ${distDir} after build. Run "npm run build:${isSite ? 'site' : tool}" to debug.`),
     );
   }
 
