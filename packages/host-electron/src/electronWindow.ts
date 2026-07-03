@@ -349,7 +349,7 @@ export function getApplicationWindowForElectronId(id: number): ApplicationWindow
 
 // The Electron BrowserWindow backing a Flight window opened via openWindow, or null if not (yet)
 // opened. The escape hatch a host app needs to do Electron-specific things the seam doesn't cover —
-// most importantly loadFile/loadUrl to put content in the window. Host-adapter-only by design.
+// most importantly loadFile/loadURL to put content in the window. Host-adapter-only by design.
 export function getElectronBrowserWindow(win: Readonly<ApplicationWindow>): ElectronBrowserWindow | null {
   return _windows.get(win as ApplicationWindow) ?? null;
 }
