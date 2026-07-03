@@ -83,6 +83,11 @@ const parityTolerance = parseFloat(arg('parity-tolerance', '15'));
 
 const root = process.cwd();
 
+// Entries excluded from fingerprint verification entirely — they produce no meaningful rendered
+// pixels (audio-only, etc.) and intentionally skip the in-page verifier (VERIFY_SKIP in
+// tools/examples/vite.config.ts). They still get the Tier 1/2/4 error gate via --fail-on-error.
+const FINGERPRINT_SKIP = new Set<string>(['playingsound']);
+
 // Entries excluded from the cross-backend parity check. A string value skips all pairs; an array
 // of backend names excludes those backends from the pair matrix (remaining backends still compare).
 // Examples: 'effect-foo' skips parity entirely; ['canvas'] excludes canvas so only webgl·webgpu is
@@ -241,6 +246,11 @@ async function main(): Promise<void> {
         formatStatusLine(tone, label, labelWidth, message);
       const detailLine = (glyph: string, label: string, message: string, paint: (s: string) => string): string =>
         formatDetailLine(glyph, label, labelWidth, message, paint);
+
+      if (FINGERPRINT_SKIP.has(entry.name)) {
+        skipped += renderers.length;
+        continue;
+      }
 
       for (const renderer of renderers) {
         if (isAborted()) break;
