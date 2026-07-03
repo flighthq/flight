@@ -13,34 +13,41 @@ use flighthq_types::{TextureAtlas, TextureAtlasRegionLike};
 
 use crate::json::{JsonValue, parse_json};
 
+/// Parses an already-parsed Aseprite JSON document into a populated [`TextureAtlas`].
+pub fn parse_texture_atlas_aseprite_document(doc: &JsonValue) -> Result<TextureAtlas, String> {
+    let mut atlas = flighthq_textureatlas::create_texture_atlas(None, vec![]);
+    parse_aseprite_frames(doc, &mut atlas)?;
+    Ok(atlas)
+}
+
 /// Parses an Aseprite JSON string and returns a populated [`TextureAtlas`].
 ///
 /// Supports both the JSON-hash and JSON-array frame shapes.
 pub fn parse_texture_atlas_aseprite(json: &str) -> Result<TextureAtlas, String> {
     let doc = parse_json(json)?;
-    let mut atlas = flighthq_textureatlas::create_texture_atlas(None, vec![]);
+    parse_texture_atlas_aseprite_document(&doc)
+}
 
+fn parse_aseprite_frames(doc: &JsonValue, atlas: &mut TextureAtlas) -> Result<(), String> {
     let frames = doc.get("frames").ok_or("missing frames key")?;
 
     if let Some(arr) = frames.as_array() {
-        // Array format: each entry carries a filename field.
         for entry in arr {
             let filename = entry
                 .get("filename")
                 .and_then(JsonValue::as_text)
                 .ok_or("array frame missing filename")?;
-            apply_aseprite_frame(&mut atlas, filename, entry)?;
+            apply_aseprite_frame(atlas, filename, entry)?;
         }
     } else if let Some(obj) = frames.as_object() {
-        // Hash format: object key is the frame name.
         for (name, entry) in obj {
-            apply_aseprite_frame(&mut atlas, name, entry)?;
+            apply_aseprite_frame(atlas, name, entry)?;
         }
     } else {
         return Err("frames must be an object or array".to_string());
     }
 
-    Ok(atlas)
+    Ok(())
 }
 
 fn apply_aseprite_frame(

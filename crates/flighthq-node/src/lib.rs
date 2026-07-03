@@ -26,6 +26,8 @@ pub mod spatial2d;
 pub mod traits;
 pub mod transform2d;
 pub mod transform3d;
+pub mod traversal;
+pub mod viewport;
 
 // ---------------------------------------------------------------------------
 // Re-exports — public surface at the crate root
@@ -39,11 +41,11 @@ pub use invalidation::{DIRTY_SENTINEL, is_dirty, next_revision};
 
 // hierarchy
 pub use hierarchy::{
-    HierarchyNode, add_node_child, add_node_child_at, contains_node_child, detach_node,
-    get_node_child_at, get_node_child_by_name, get_node_child_count, get_node_child_index,
-    get_node_children, get_node_depth, get_node_parent, get_node_root, remove_node_child,
-    remove_node_child_at, remove_node_children, set_node_child_index, swap_node_children,
-    swap_node_children_at,
+    HierarchyNode, add_node_child, add_node_child_at, add_node_children, contains_node_child,
+    detach_node, get_node_child_at, get_node_child_by_name, get_node_child_count,
+    get_node_child_index, get_node_children, get_node_depth, get_node_parent, get_node_root,
+    remove_node_child, remove_node_child_at, remove_node_children, set_node_child_index,
+    swap_node_children, swap_node_children_at,
 };
 
 // appearance
@@ -84,8 +86,9 @@ pub use spatial2d::{
     Spatial2DArena, Spatial2DNode, add_spatial2d_child, add_spatial2d_child_at,
     contains_spatial2d_child, detach_spatial2d_node, get_spatial2d_alpha, get_spatial2d_blend_mode,
     get_spatial2d_child_at, get_spatial2d_child_count, get_spatial2d_parent, get_spatial2d_root,
-    get_spatial2d_visible, remove_spatial2d_child, set_spatial2d_alpha, set_spatial2d_blend_mode,
-    set_spatial2d_transform, set_spatial2d_visible, swap_spatial2d_children,
+    get_spatial2d_visible, remove_spatial2d_child, reparent_spatial2d_node, set_spatial2d_alpha,
+    set_spatial2d_blend_mode, set_spatial2d_transform, set_spatial2d_visible,
+    swap_spatial2d_children,
 };
 
 // scene
@@ -130,6 +133,20 @@ pub use traits::{
     init_bounds_rectangle_runtime_trait, init_bounds_rectangle_trait, init_clip_trait,
     init_material_trait, init_transform2d_runtime_trait, init_transform2d_trait,
     init_transform3d_runtime_trait, init_transform3d_trait,
+};
+
+// traversal
+pub use traversal::{
+    find_node, find_node_by_name, for_each_node_ancestor, for_each_node_child,
+    for_each_node_descendant, get_node_ancestors, get_node_common_ancestor, get_node_next_sibling,
+    get_node_previous_sibling, is_node_ancestor_of, replace_node_child, walk_node_descendants,
+};
+
+// viewport
+pub use viewport::{
+    Viewport, ViewportAlign, ViewportScaleMode, compute_viewport_align_x, compute_viewport_align_y,
+    compute_viewport_fill_scale, compute_viewport_fit_scale, compute_viewport_render_transform,
+    create_viewport,
 };
 
 // ---------------------------------------------------------------------------
