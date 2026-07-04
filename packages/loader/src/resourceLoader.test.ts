@@ -153,30 +153,19 @@ describe('bandwidth throttle (maxBytesPerSecond)', () => {
 describe('bytes progress', () => {
   it('records bytes in ResourceLoadReport when factory calls onBytesProgress', async () => {
     const loader = createResourceLoader();
-    let progressCallback: ((loaded: number, total: number) => void) | undefined;
 
     const handle = queueResourceLoad(loader, {
       key: 'file',
       load: () => Promise.resolve('data'),
       onBytesProgress: (loaded, total) => {
-        if (progressCallback) progressCallback(loaded, total);
+        void loaded;
+        void total;
       },
     });
 
-    // Simulate the factory calling onBytesProgress externally via the descriptor callback
-    // Since the factory is sync here, we need to manually set bytes on the entry.
-    // The onBytesProgress callback approach is: the factory calls descriptor.onBytesProgress
-    // during its load function. We simulate this by invoking the callback before resolution.
-    let capturedOnBytes: ((loaded: number, total: number) => void) | undefined;
     const handle2 = queueResourceLoad(loader, {
       key: 'streaming',
-      load: async (_signal) => {
-        if (capturedOnBytes) {
-          capturedOnBytes(512, 1024);
-          capturedOnBytes(1024, 1024);
-        }
-        return 'streamed-data';
-      },
+      load: async (_signal) => 'streamed-data',
       onBytesProgress: (loaded, total) => {
         void loaded;
         void total;

@@ -331,6 +331,7 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
 
     const scan = (chunk: Buffer): void => {
       output += chunk.toString();
+      // eslint-disable-next-line no-control-regex -- ESC (0x1b) is required to strip ANSI color codes
       const clean = output.replace(/\x1b\[[0-9;]*m/g, '');
       const match = clean.match(/localhost:(\d+)/);
       if (match && !done) {

@@ -704,7 +704,7 @@ function main() {
       `- **GPU-backend** (${breakdown.gpuBackend}): validated functionally by flighthq-functional, not unit tests`,
     );
     console.log(
-      `- **web-relocated** (${breakdown.webRelocated}): createWeb*/\*Backend/DOM wiring in flighthq-host-web, browser-validated`,
+      `- **web-relocated** (${breakdown.webRelocated}): createWeb*/*Backend/DOM wiring in flighthq-host-web, browser-validated`,
     );
     console.log(`- **real-core** (${breakdown.realCore}): genuine native-core logic gaps\n`);
     if (!gapsOnly) {

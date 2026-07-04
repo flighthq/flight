@@ -51,10 +51,10 @@ describe('createStage', () => {
       },
     };
     const obj = createStage(base);
-    base.data = base.data!;
-    expect(obj.data.color).toStrictEqual(base.data.color);
-    expect(obj.data.stageHeight).toStrictEqual(base.data.stageHeight);
-    expect(obj.data.stageWidth).toStrictEqual(base.data.stageWidth);
+    const data = base.data!;
+    expect(obj.data.color).toStrictEqual(data.color);
+    expect(obj.data.stageHeight).toStrictEqual(data.stageHeight);
+    expect(obj.data.stageWidth).toStrictEqual(data.stageWidth);
   });
 
   it('returns a new object for better hidden-class performance', () => {
