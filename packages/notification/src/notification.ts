@@ -98,7 +98,7 @@ export function createServiceWorkerNotificationBackend(
         timestamp: request.timestamp,
         vibrate: request.vibrate ? [...request.vibrate] : undefined,
         // Store the Flight id in data so SW click handlers can forward it back.
-        data: { ...((request.data as object | null) ?? {}), notificationId: id },
+        data: { ...(request.data as object | null), notificationId: id },
         actions: request.actions?.map((a) => ({ action: a.id, title: a.title, icon: a.icon })),
       } as NotificationOptions);
       _fire(_showListeners, id);

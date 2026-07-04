@@ -569,7 +569,7 @@ function _parseDetailed(input: string): _Parsed | AcceleratorParseError {
 
 // Splits input into tokens using '+' or '-' as separator. Filters out empty tokens from split.
 function _splitTokens(input: string): string[] {
-  return input.split(/[+\-]/).filter((t) => t.length > 0);
+  return input.split(/[+-]/).filter((t) => t.length > 0);
 }
 
 // Builds the normalized Accelerator string from a _Parsed result.

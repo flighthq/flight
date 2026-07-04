@@ -1,4 +1,4 @@
-import * as sdk from '../src/index';
+import * as sdk from './index';
 
 describe('package exports', () => {
   describe('application domain', () => {
