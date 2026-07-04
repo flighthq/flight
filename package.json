@@ -179,6 +179,7 @@
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "lint-staged": "^16.4.0",
+    "oxc-parser": "0.138.0",
     "oxfmt": "0.57.0",
     "oxlint": "1.72.0",
     "picocolors": "^1.1.1",
