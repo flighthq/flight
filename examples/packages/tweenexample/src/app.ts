@@ -12,7 +12,7 @@ import {
   createTweenTimer,
   easeOutQuadratic,
   invalidateNodeRender,
-  startApplicationLoop,
+  stepApplicationLoop,
   updateTweens,
 } from '@flighthq/sdk';
 
@@ -26,6 +26,7 @@ const MAX_RADIUS = 60;
 const MIN_DURATION = 1500;
 const MAX_DURATION = 6000;
 const MAX_START_DELAY = 10000;
+const FRAME_DELTA = 1000 / 60;
 
 const manager = createTweenManager();
 const root = createDisplayObject();
@@ -58,9 +59,9 @@ function createCircle(): ReturnType<typeof createShape> {
 }
 
 // Populate the whole field synchronously so the scene is never empty, then stagger only when each
-// circle *starts* drifting. The loop's first tick delivers a zero delta (see startApplicationLoop),
-// so no timer has advanced by the first rendered frame; deferring node creation to timer.onComplete
-// would leave that frame — and any single-frame capture of it — blank.
+// circle *starts* drifting. The loop's first tick deliberately delivers a zero delta, so no timer has
+// advanced by the first rendered frame; deferring node creation to timer.onComplete would leave that
+// frame — and any single-frame capture of it — blank.
 for (let i = 0; i < CIRCLE_COUNT; i++) {
   const circle = createCircle();
   const delay = Math.random() * MAX_START_DELAY;
@@ -73,4 +74,13 @@ connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
   render(root);
 });
-startApplicationLoop(app);
+
+let frame = 0;
+
+function enterFrame(): void {
+  stepApplicationLoop(app, frame === 0 ? 0 : FRAME_DELTA);
+  frame++;
+  requestAnimationFrame(enterFrame);
+}
+
+requestAnimationFrame(enterFrame);
