@@ -2,10 +2,18 @@
 // CI (.github/workflows/tests.yml) runs the full build and the complete suite; this hook
 // only runs what the push is likely to have affected, so it stays fast as the repo grows.
 //
-//   1. typecheck            — always; incremental, catches cross-package type breakage
-//   2. vitest --changed     — graph-aware: a leaf change runs a few tests, a core change
-//                             reruns everything that imports it
-//   3. cargo test -p <crate> — only the crates whose files changed in this push
+//   1. typecheck             — always; incremental, catches cross-package type breakage
+//   2. vitest --project=<pkg> — only the affected packages: the ones whose source changed
+//                               plus everything that (transitively) depends on them
+//   3. cargo test -p <crate>  — only the crates whose files changed in this push
+//
+// Why --project scoping, not `vitest --changed` alone: the root workspace declares ~100
+// projects, and vitest loads every project's config before it can decide what to run — a
+// fixed cost near two minutes that grows with the package count and is paid even when nothing
+// matches. Naming the affected projects up front makes vitest load only those configs; a leaf
+// edit resolves in seconds. We compute the affected set from the package dependency graph
+// (see computeAffectedProjects) rather than leaning on vitest's git integration, so the scope
+// is explicit and a correct superset of the module graph.
 //
 // <base> is what the push is measured against. In the hook, git hands us on stdin the sha
 // the remote already has (see readPushBase) — the exact "what am I newly pushing" boundary,
@@ -14,16 +22,86 @@
 // broader than "what changed" is CI's job, not this hook's.
 //
 // Escape hatches: FAST_PUSH=1 skips the vitest step entirely (typecheck + cargo still run).
-// Editing a core package (see CORE_PACKAGES) legitimately fans out to the whole downstream
-// suite — we make that wait visible rather than silent, and point at FAST_PUSH.
+// A change to a widely-imported package legitimately fans out to most of the graph; when the
+// affected count crosses WIDE_FANOUT_PROJECTS we make that slow wait visible and point at
+// FAST_PUSH, rather than letting it look hung.
 
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import pc from 'picocolors';
 
-// Packages nearly everything imports: a change here expands "what changed" to ~the whole SDK.
-const CORE_PACKAGES = ['entity', 'geometry', 'math', 'node', 'signals', 'types'];
+import { workspacePackages } from './workspaces';
+
+// Above this many affected projects, the run is inherently slow (vitest reloads a config per
+// project); warn and surface FAST_PUSH so the wait reads as expected, not stuck.
+const WIDE_FANOUT_PROJECTS = 25;
+
+// Pure re-export barrels: nearly every package is a (transitive) dependency, so they land in the
+// affected set for almost any change, and loading one pulls the whole module graph through vite
+// (~16s for @flighthq/sdk alone). Their tests only assert that re-exports exist — a broken one is
+// already a typecheck failure (step 1), and CI runs the surface test in full. So we skip them as
+// *dependents*; if the barrel itself is the edited package, it still runs.
+const SKIP_AS_DEPENDENT = new Set(['@flighthq/sdk']);
+
+const rootDir = path.resolve(__dirname, '..');
+
+// Every workspace package's name, its repo-relative directory, and the @flighthq/* packages it
+// depends on. Built once per run from package.json manifests (cheap — a few ms of small reads).
+const packages = workspacePackages.map(({ name, dir }) => {
+  const manifest = JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
+  const deps = [
+    ...Object.keys(manifest.dependencies ?? {}),
+    ...Object.keys(manifest.devDependencies ?? {}),
+    ...Object.keys(manifest.peerDependencies ?? {}),
+  ].filter((dep) => dep.startsWith('@flighthq/'));
+  return { name, relDir: path.relative(rootDir, dir), deps };
+});
+
+// The packages whose tests could be affected by `changedFiles`: the packages those files belong
+// to, plus the transitive closure of packages that depend on them (a test can only break from a
+// change it imports, and package.json deps are a correct superset of what a package's tests
+// import). Returns @flighthq/* package names. Empty means "nothing mapped" — the caller falls back
+// to a full run so a graph miss never silently skips tests.
+function computeAffectedProjects(changedFiles: readonly string[]): string[] {
+  const dependents = new Map<string, string[]>();
+  for (const pkg of packages) {
+    for (const dep of pkg.deps) {
+      (dependents.get(dep) ?? dependents.set(dep, []).get(dep)!).push(pkg.name);
+    }
+  }
+
+  const seed = new Set<string>();
+  for (const file of changedFiles) {
+    // Longest matching directory wins, so a file in a nested package maps to that package, not its parent.
+    let owner: (typeof packages)[number] | null = null;
+    for (const pkg of packages) {
+      if (
+        (file === pkg.relDir || file.startsWith(`${pkg.relDir}/`)) &&
+        (!owner || pkg.relDir.length > owner.relDir.length)
+      ) {
+        owner = pkg;
+      }
+    }
+    if (owner) seed.add(owner.name);
+  }
+
+  const affected = new Set(seed);
+  const queue = [...affected];
+  while (queue.length > 0) {
+    const name = queue.shift()!;
+    for (const dependent of dependents.get(name) ?? []) {
+      if (!affected.has(dependent)) {
+        affected.add(dependent);
+        queue.push(dependent); // keep traversing through skipped barrels so their dependents are still reached
+      }
+    }
+  }
+
+  // Drop barrels reached only as a dependent; a barrel you edited directly stays in via `seed`.
+  return [...affected].filter((name) => seed.has(name) || !SKIP_AS_DEPENDENT.has(name));
+}
 
 function capture(cmd: string): string | null {
   try {
@@ -80,7 +158,11 @@ if (!base) {
 }
 
 const changed = (capture(`git diff --name-only ${base}...HEAD`) ?? '').split('\n').filter(Boolean);
-const hasTypeScriptChange = changed.some((file) => file.endsWith('.ts') || file.endsWith('.tsx'));
+// Only package source (packages/<name>/src/**) sits in a colocated test's module graph, so only
+// those changes can flip a vitest result — and `vitest --changed` can't see out-of-graph edits
+// anyway. A push touching only scripts/, tools/, docs, or config skips vitest's multi-second
+// workspace startup entirely (it would just print "No test files found"); CI still runs everything.
+const affectsPackageTests = changed.some((file) => /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file));
 const changedCrates = [
   ...new Set(
     changed.map((file) => /^crates\/([^/]+)\//.exec(file)?.[1]).filter((crate): crate is string => Boolean(crate)),
@@ -90,25 +172,41 @@ const changedCrates = [
   // `cargo test -p <gone-crate>` errors with "package ID specification did not match any packages".
 ].filter((crate) => existsSync(`crates/${crate}/Cargo.toml`));
 
-const changedCorePackages = CORE_PACKAGES.filter((pkg) => changed.some((file) => file.startsWith(`packages/${pkg}/`)));
-
 console.log(pc.cyan(`pre-push: ${changed.length} file(s) changed vs ${base}`));
 
 if (process.env.FAST_PUSH === '1') {
   console.log(
     pc.yellow('pre-push: FAST_PUSH=1 — skipping vitest (typecheck + cargo still run); CI covers the full suite.'),
   );
-} else if (hasTypeScriptChange) {
-  if (changedCorePackages.length > 0) {
-    console.log(
-      pc.yellow(
-        `pre-push: core package(s) changed (${changedCorePackages.join(', ')}) — running the full downstream suite, which is slow. Set FAST_PUSH=1 to skip and let CI cover it.`,
-      ),
-    );
+} else if (affectsPackageTests) {
+  const affected = computeAffectedProjects(changed);
+  if (affected.length === 0) {
+    // A package source file changed but mapped to no known package (unexpected) — don't silently
+    // skip its tests; fall back to the full changed-scoped run.
+    console.log(pc.dim('pre-push: could not map changed source to a package — running the full changed set'));
+    run(`npx vitest run --changed ${base}`);
+  } else {
+    if (affected.length > WIDE_FANOUT_PROJECTS) {
+      console.log(
+        pc.yellow(
+          `pre-push: ${affected.length} package(s) affected — a widely-imported package changed, so this is slower. Set FAST_PUSH=1 to skip and let CI cover it.`,
+        ),
+      );
+    } else {
+      console.log(
+        pc.cyan(
+          `pre-push: ${affected.length} package(s) affected — ${affected.map((n) => n.replace('@flighthq/', '')).join(', ')}`,
+        ),
+      );
+    }
+    // Scope by path (vitest positional filters) rather than --project: the master config groups all
+    // packages into a couple of env-shared projects, so per-package project names no longer exist.
+    const relDirByName = new Map(packages.map((pkg) => [pkg.name, pkg.relDir]));
+    const pathFilters = affected.map((name) => `${relDirByName.get(name)}/src/`);
+    run(`npx vitest run ${pathFilters.join(' ')}`);
   }
-  run(`npx vitest run --changed ${base} --project='!size'`);
 } else {
-  console.log(pc.dim('pre-push: no TypeScript changes — skipping vitest'));
+  console.log(pc.dim('pre-push: no package source changed — skipping vitest'));
 }
 
 if (changedCrates.length > 0) {

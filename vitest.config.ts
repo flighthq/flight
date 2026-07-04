@@ -1,20 +1,36 @@
-import path from 'path';
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import { workspacePackages } from './scripts/workspaces';
 import baseConfig from './vitest.config.base.js';
 
-const rootDir = path.resolve(__dirname);
-
-const packageProjects = workspacePackages.map((p) => p.dir);
-
-const testProjects = ['tests/size'].map((p) => path.join(rootDir, p));
+// One master config for the full run: every package's tests share a single jsdom environment per
+// worker (isolate:false) instead of one environment per file — the full suite's cost is per-file
+// environment setup, not test logic, so reuse is a ~15× speedup. Each package keeps its own
+// vitest.config.ts for standalone runs; this config does not recurse into them.
+//
+// Every test file is hermetic under a shared module registry: mocks are scoped per-file (vi.doMock
+// + dynamic import of the subject, unmocked in afterAll — never top-level hoisted vi.mock, which
+// leaks across files) and globals are restored via unstubGlobals. That lets the whole suite run as
+// one non-isolated group, with no isolated exception list.
+const commonExclude = ['**/.claude/**', '**/node_modules/**', '**/surfaceWasm.test.ts'];
 
 export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      projects: [...packageProjects, ...testProjects],
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'flight',
+            environment: 'jsdom',
+            isolate: false,
+            unstubGlobals: true,
+            include: ['packages/**/src/**/*.test.ts'],
+            exclude: [...commonExclude],
+            passWithNoTests: true,
+          },
+        },
+      ],
     },
   }),
 );

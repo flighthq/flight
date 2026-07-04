@@ -5,29 +5,39 @@ import { createTextLabel } from '@flighthq/text';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
+import { scopeModuleMocks } from './moduleMockTestHelper';
 import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
-import { defaultWgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel';
+import type * as WgpuTextLabelModule from './wgpuTextLabel';
 
-vi.mock('@flighthq/textlayout', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    computeTextLayout: vi.fn((result: { groups: object[] }) => {
-      result.groups.push({
-        offsetX: 0,
-        offsetY: 0,
-        width: 50,
-        ascent: 12,
-        descent: 4,
-        format: {},
-        startIndex: 0,
-        endIndex: 5,
-      });
-    }),
-  };
-});
+// @flighthq/textlayout.computeTextLayout is stubbed to emit one deterministic glyph group.
+// scopeModuleMocks scopes the stub to this file (registry reset before the mock applies, unmock +
+// reset after), so under a shared (isolate:false) worker it never leaks into the real text-layout
+// consumers (text package) — and a sibling that pre-evaluated ./wgpuTextLabel still picks up the stub.
+let defaultWgpuTextLabelRenderer: typeof WgpuTextLabelModule.defaultWgpuTextLabelRenderer;
+let drawWgpuTextLabel: typeof WgpuTextLabelModule.drawWgpuTextLabel;
 
-beforeAll(() => {
+scopeModuleMocks(['@flighthq/textlayout']);
+
+beforeAll(async () => {
+  vi.doMock('@flighthq/textlayout', async (importOriginal) => {
+    const actual = (await importOriginal()) as Record<string, unknown>;
+    return {
+      ...actual,
+      computeTextLayout: vi.fn((result: { groups: object[] }) => {
+        result.groups.push({
+          offsetX: 0,
+          offsetY: 0,
+          width: 50,
+          ascent: 12,
+          descent: 4,
+          format: {},
+          startIndex: 0,
+          endIndex: 5,
+        });
+      }),
+    };
+  });
+  ({ defaultWgpuTextLabelRenderer, drawWgpuTextLabel } = await import('./wgpuTextLabel'));
   installWgpuMock();
 });
 

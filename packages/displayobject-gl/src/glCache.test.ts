@@ -1,65 +1,96 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render';
-import type * as GlRenderTargetModule from '@flighthq/render-gl';
-import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { destroyGlRenderTarget, drawGlRenderTargetResult } from '@flighthq/render-gl';
+import type * as GlRenderGlModule from '@flighthq/render-gl';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import {
-  createGlCacheState,
-  defaultGlRenderCacheRenderer,
-  enableGlRenderCache,
-  ensureGlRenderCacheTarget,
-  getGlRenderCacheTarget,
-  refreshGlRenderCache,
-  releaseGlRenderCache,
-} from './glCache';
+import type * as GlCacheModule from './glCache';
 import type * as GlDisplayObjectModule from './glDisplayObject';
-import { renderGlDisplayObject } from './glDisplayObject';
 import type * as GlSpriteBatchModule from './glSpriteBatch';
-import { flushGlSpriteBatch } from './glSpriteBatch';
+import { scopeModuleMocks } from './moduleMockTestHelper';
 
-vi.mock('./glSpriteBatch', async (importOriginal) => {
-  const actual = await importOriginal<typeof GlSpriteBatchModule>();
-  return { ...actual, flushGlSpriteBatch: vi.fn() };
-});
+// The GL render-target lifecycle (@flighthq/render-gl) and the two local collaborators
+// ./glSpriteBatch and ./glDisplayObject are stubbed so cache orchestration can be unit-tested
+// without a real GL pipeline: createGlRenderTarget returns a plain descriptor, and the composite,
+// batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
+// The mocks are scoped to this file's dynamic import of ./glCache and unmocked in afterAll, so under
+// a shared (isolate:false) worker they never leak into the real render-gl / displayobject-gl
+// consumers. The mocked functions are read back from the same dynamic imports so the handles the
+// assertions observe are the exact vi.fn instances the cache module calls.
+let createGlCacheState: typeof GlCacheModule.createGlCacheState;
+let defaultGlRenderCacheRenderer: typeof GlCacheModule.defaultGlRenderCacheRenderer;
+let enableGlRenderCache: typeof GlCacheModule.enableGlRenderCache;
+let ensureGlRenderCacheTarget: typeof GlCacheModule.ensureGlRenderCacheTarget;
+let getGlRenderCacheTarget: typeof GlCacheModule.getGlRenderCacheTarget;
+let refreshGlRenderCache: typeof GlCacheModule.refreshGlRenderCache;
+let releaseGlRenderCache: typeof GlCacheModule.releaseGlRenderCache;
+let createGlRenderStateRuntime: typeof GlRenderGlModule.createGlRenderStateRuntime;
+let getGlRenderStateRuntime: typeof GlRenderGlModule.getGlRenderStateRuntime;
+let destroyGlRenderTarget: typeof GlRenderGlModule.destroyGlRenderTarget;
+let drawGlRenderTargetResult: typeof GlRenderGlModule.drawGlRenderTargetResult;
+let renderGlDisplayObject: typeof GlDisplayObjectModule.renderGlDisplayObject;
+let flushGlSpriteBatch: typeof GlSpriteBatchModule.flushGlSpriteBatch;
 
-vi.mock('@flighthq/render-gl', async (importOriginal) => {
-  const actual = await importOriginal<typeof GlRenderTargetModule>();
-  return {
-    ...actual,
-    beginGlRenderTarget: vi.fn(),
-    createGlRenderTarget: vi.fn((_state: unknown, descriptor: { width: number; height: number }): GlRenderTarget => {
-      const texture = {} as WebGLTexture;
-      return {
-        framebuffer: {} as WebGLFramebuffer,
-        resolveFramebuffer: null,
-        texture,
-        textures: [texture],
-        depthTexture: null,
-        colorRenderbuffers: [],
-        depthStencilRenderbuffer: null,
-        format: 'rgba8',
-        sampleCount: 1,
-        width: descriptor.width,
-        height: descriptor.height,
-      };
-    }),
-    destroyGlRenderTarget: vi.fn(),
-    drawGlRenderTargetResult: vi.fn(),
-    endGlRenderTarget: vi.fn(),
-    resizeGlRenderTarget: vi.fn((_state: unknown, target: GlRenderTarget, width: number, height: number) => {
-      target.width = width;
-      target.height = height;
-    }),
-  };
-});
+// EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
+// registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
+// level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
+// subject even though the subject re-imports @flighthq/render under the reset.
+scopeModuleMocks(['./glSpriteBatch', '@flighthq/render-gl', './glDisplayObject']);
 
-vi.mock('./glDisplayObject', async (importOriginal) => {
-  const actual = await importOriginal<typeof GlDisplayObjectModule>();
-  return { ...actual, renderGlDisplayObject: vi.fn() };
+beforeAll(async () => {
+  vi.doMock('./glSpriteBatch', async (importOriginal) => {
+    const actual = await importOriginal<typeof GlSpriteBatchModule>();
+    return { ...actual, flushGlSpriteBatch: vi.fn() };
+  });
+  vi.doMock('@flighthq/render-gl', async (importOriginal) => {
+    const actual = await importOriginal<typeof GlRenderGlModule>();
+    return {
+      ...actual,
+      beginGlRenderTarget: vi.fn(),
+      createGlRenderTarget: vi.fn((_state: unknown, descriptor: { width: number; height: number }): GlRenderTarget => {
+        const texture = {} as WebGLTexture;
+        return {
+          framebuffer: {} as WebGLFramebuffer,
+          resolveFramebuffer: null,
+          texture,
+          textures: [texture],
+          depthTexture: null,
+          colorRenderbuffers: [],
+          depthStencilRenderbuffer: null,
+          format: 'rgba8',
+          sampleCount: 1,
+          width: descriptor.width,
+          height: descriptor.height,
+        };
+      }),
+      destroyGlRenderTarget: vi.fn(),
+      drawGlRenderTargetResult: vi.fn(),
+      endGlRenderTarget: vi.fn(),
+      resizeGlRenderTarget: vi.fn((_state: unknown, target: GlRenderTarget, width: number, height: number) => {
+        target.width = width;
+        target.height = height;
+      }),
+    };
+  });
+  vi.doMock('./glDisplayObject', async (importOriginal) => {
+    const actual = await importOriginal<typeof GlDisplayObjectModule>();
+    return { ...actual, renderGlDisplayObject: vi.fn() };
+  });
+
+  ({ createGlRenderStateRuntime, getGlRenderStateRuntime, destroyGlRenderTarget, drawGlRenderTargetResult } =
+    await import('@flighthq/render-gl'));
+  ({ flushGlSpriteBatch } = await import('./glSpriteBatch'));
+  ({ renderGlDisplayObject } = await import('./glDisplayObject'));
+  ({
+    createGlCacheState,
+    defaultGlRenderCacheRenderer,
+    enableGlRenderCache,
+    ensureGlRenderCacheTarget,
+    getGlRenderCacheTarget,
+    refreshGlRenderCache,
+    releaseGlRenderCache,
+  } = await import('./glCache'));
 });
 
 function fakeScreen(options = {}): GlRenderState {

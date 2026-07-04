@@ -132,6 +132,11 @@ export function installWgpuMock(): void {
     requestAdapter: () => Promise.resolve(makeAdapter()),
   } as unknown as GPU;
 
+  // A shared (isolate:false) worker may reach this helper with no navigator present; defineProperty
+  // on a missing navigator throws, so ensure one exists before attaching the mock GPU.
+  if (globalThis.navigator == null) {
+    Object.defineProperty(globalThis, 'navigator', { value: {}, configurable: true, writable: true });
+  }
   Object.defineProperty(globalThis.navigator, 'gpu', {
     value: gpu,
     configurable: true,
