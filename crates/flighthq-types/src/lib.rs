@@ -234,7 +234,7 @@ pub use misc::{
     SurfaceHistogram, SurfaceMismatch, SurfaceRegion, SurfaceResizeMode, TaaEffect,
     ThresholdOperation, TiltShiftEffect, ToneMapEffect, ToneMapOperator, Velocity2D, VelocityField,
     VelocitySample, VignetteEffect, WhiteBalanceEffect, WindowBounds, WindowOptions, path_command,
-    scene_node_kind, world_node_kind,
+    scene_node_kind,
 };
 
 // network

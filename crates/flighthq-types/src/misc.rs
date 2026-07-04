@@ -534,12 +534,6 @@ pub fn scene_node_kind() -> KindId {
     *ID.get_or_init(KindId::new)
 }
 
-/// Deprecated alias — use `scene_node_kind()`.
-#[deprecated(since = "0.0.0", note = "renamed to scene_node_kind")]
-pub fn world_node_kind() -> KindId {
-    scene_node_kind()
-}
-
 // ---------------------------------------------------------------------------
 // RenderEffect (post-processing effects)
 // ---------------------------------------------------------------------------
