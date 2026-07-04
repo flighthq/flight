@@ -195,11 +195,11 @@
   "lint-staged": {
     "packages/*/src/**/*.ts": "tsx ./scripts/order.ts --fix",
     "**/*.{ts,tsx}": [
-      "oxlint --fix --max-warnings=0",
-      "oxfmt --write"
+      "oxlint --fix --max-warnings=0 --no-error-on-unmatched-pattern",
+      "oxfmt --write --no-error-on-unmatched-pattern"
     ],
     "**/*.rs": "rustfmt --edition 2024",
-    "**/*.{json,md}": "oxfmt --write"
+    "**/*.{json,md}": "oxfmt --write --no-error-on-unmatched-pattern"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^6.0.3",
