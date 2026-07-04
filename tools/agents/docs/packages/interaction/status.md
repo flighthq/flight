@@ -10,7 +10,7 @@ by: ingest:builder-67dc46d64
 
 ## 2026-07-03 — inline TODO relocation (lint sweep)
 
-`no-warning-comments` is now enforced over `packages/*/src` (see `eslint.config.ts`); inline TODO markers move here per the Source Style convention.
+`no-warning-comments` is now enforced over `packages/*/src` (see `.oxlintrc.json`); inline TODO markers move here per the Source Style convention.
 
 - [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:11` (in `defaultQuadBatchHitTestPointHandler`): bare `// TODO` — the handler currently falls back to `defaultSpriteHitTestPointHandler` (graph local-bounds test); a real per-quad hit test is still pending.
 - [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:20` (in `defaultTilemapHitTestPointHandler`): bare `// TODO` — same fallback; a real per-tile hit test is still pending.
