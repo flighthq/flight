@@ -51,6 +51,7 @@ import {
   installAbortHandler,
   isBrowserClosedError,
   launchBrowser,
+  rendererMatchesFilter,
   resolveServer,
   resolveStaticServer,
   routeSegment,
@@ -245,7 +246,7 @@ async function processEntry(
     const renderer = i === -1 ? r : r.slice(i + 1);
     if (renderer === 'dom') return false;
     if (lib !== null && lib !== 'flight') return false;
-    return rendererFilter.length === 0 || rendererFilter.includes(r);
+    return rendererMatchesFilter(r, rendererFilter);
   });
 
   const labelWidth = Math.max(6, ...renderers.map((r) => r.length));

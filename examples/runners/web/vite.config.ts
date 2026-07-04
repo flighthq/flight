@@ -8,6 +8,7 @@ import { workspacePackages } from '../../../scripts/workspaces';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu', 'wasm'] as const;
 type Renderer = (typeof RENDERERS)[number];
+const includeWasmExamples = process.env.FLIGHT_EXAMPLES_WASM === '1';
 const WASM_EXAMPLES = new Set([
   'addinganimation',
   'addingtext',
@@ -47,15 +48,30 @@ const examplesDir = join(projectRoot, 'examples', 'packages');
 const VERIFY_SKIP = new Set<string>(['playingsound']);
 
 function entryWithLogCapture(name: string, render: string): string {
+  const verifyPath = join(projectRoot, 'tests', 'functional', '_harness', 'verify.ts');
   if (render === 'wasm') {
     const loaderPath = join(__dirname, 'src', 'wasm-loader.ts');
-    return `const { mountWasmExample } = await import(${JSON.stringify(loaderPath)}); await mountWasmExample(${JSON.stringify(name)});`;
+    const lines = [
+      `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
+      `setLogSink(createConsoleCaptureSink());`,
+      `const { mountWasmExample } = await import(${JSON.stringify(loaderPath)});`,
+      `await mountWasmExample(${JSON.stringify(name)});`,
+    ];
+    if (!VERIFY_SKIP.has(name)) {
+      lines.push(
+        `if (window['__flightCapture'] && window['__flightCaptureVerify'] !== false) {`,
+        `  await new Promise((resolve) => { let n = 0; const poll = () => (window['__captureFramesReached'] || ++n > 140) ? resolve() : setTimeout(poll, 15); poll(); });`,
+        `  const { runRenderVerification } = await import(${JSON.stringify(verifyPath)});`,
+        `  await runRenderVerification({}, 'wasm');`,
+        `}`,
+      );
+    }
+    return lines.join('\n');
   }
   // The shared in-page render verifier (also used by the functional harness). Reused here so examples
   // get the same not-blank / error / fingerprint checks with no per-example code. It is dynamically
   // imported and run ONLY under capture mode (window.__flightCapture, set by the verify harness), so
   // it never executes — and its chunk never loads — in the deployed gallery a visitor browses.
-  const verifyPath = join(projectRoot, 'tests', 'functional', '_harness', 'verify.ts');
   // Path-singleton of the example's render module: app.ts imports './render', which resolveId rewrites
   // to this same absolute file, so importing it here yields the identical exported render state.
   const renderPath = join(examplesDir, name, 'src', `render.${render}.ts`);
@@ -72,7 +88,7 @@ function entryWithLogCapture(name: string, render: string): string {
     // capture here — between importing the render module and running the app — captures every frame. The
     // gallery example itself carries no capture concern; this runs in capture mode only.
     lines.push(
-      `if (window['__flightCapture']) {`,
+      `if (window['__flightCapture'] && window['__flightCaptureVerify'] !== false) {`,
       `  const { registerWgpuFunctionalTarget } = await import(${JSON.stringify(verifyPath)});`,
       `  const __render = await import(${JSON.stringify(renderPath)});`,
       `  registerWgpuFunctionalTarget(__render.state, __render.scale);`,
@@ -82,7 +98,7 @@ function entryWithLogCapture(name: string, render: string): string {
   lines.push(`const __example = await import('___app___${name}:${render}');`);
   if (!VERIFY_SKIP.has(name)) {
     lines.push(
-      `if (window['__flightCapture']) {`,
+      `if (window['__flightCapture'] && window['__flightCaptureVerify'] !== false) {`,
       // Many examples render in a requestAnimationFrame loop, so the canvas is blank right after the
       // module resolves. Wait for the first frame to draw — the --frames halt flags __captureFramesReached
       // once it has — polling via setTimeout (rAF is halted by then), capped so one-shot renders proceed.
@@ -102,7 +118,9 @@ function discoverExamples(): Example[] {
     .map(({ name }) => ({
       name,
       renderers: RENDERERS.filter(
-        (r) => (r === 'wasm' && WASM_EXAMPLES.has(name)) || existsSync(join(examplesDir, name, `src/render.${r}.ts`)),
+        (r) =>
+          (r === 'wasm' && includeWasmExamples && WASM_EXAMPLES.has(name)) ||
+          existsSync(join(examplesDir, name, `src/render.${r}.ts`)),
       ),
     }))
     .filter((e) => e.renderers.length > 0);

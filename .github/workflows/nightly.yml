@@ -51,6 +51,11 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
       # Matches tests.yml's Rust job: bundled SDL3 (flighthq-host-sdl → sdl3-sys) needs the
       # X11/Wayland dev headers at cmake-configure time or the workspace build fails.
       - name: Install SDL build dependencies
@@ -62,3 +67,6 @@ jobs:
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev wayland-protocols
       - run: npm run check:rust:all
       - run: npm run test:rust:all
+      - run: npm run install:rust
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:examples:wasm

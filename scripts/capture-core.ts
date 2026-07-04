@@ -18,6 +18,7 @@ import { getBaselineField, setBaselineField } from './baseline-store.js';
 // ---------------------------------------------------------------------------
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu', 'wasm'] as const;
+const WEB_RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 export type Tool = 'examples' | 'functional' | 'reference' | 'site';
 
 // The root npm script that starts each tool's dev server, used in the manual-start tip.
@@ -32,6 +33,12 @@ const DEV_SCRIPT: Record<Tool, string> = {
 // segment. Colon-free ids (canvas, webgl, …) pass through unchanged.
 export function routeSegment(renderer: string): string {
   return renderer.replace(':', '-');
+}
+
+export function rendererMatchesFilter(renderer: string, filter: readonly string[]): boolean {
+  if (filter.length === 0) return true;
+  const backend = renderer.includes(':') ? renderer.slice(renderer.indexOf(':') + 1) : renderer;
+  return filter.includes(renderer) || filter.includes(backend);
 }
 
 // A backend the environment cannot provide or sustain: WebGPU with no adapter/device, or a software
@@ -221,7 +228,7 @@ function referenceColumns(testDir: string): string[] {
     if (existsSync(join(srcDir, 'app.ts'))) {
       const pkgPath = join(testDir, lib, 'package.json');
       const pkg = existsSync(pkgPath) ? (JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<string, unknown>) : {};
-      const renderers = (pkg.renderers as string[] | undefined) ?? [...RENDERERS];
+      const renderers = (pkg.renderers as string[] | undefined) ?? [...WEB_RENDERERS];
       columns.push(...renderers.map((r) => `${lib}:${r}`));
     }
   }
@@ -281,7 +288,7 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
     return Promise.resolve({ url, kill: () => {} });
   }
 
-  const toolDir = join(root, 'tools', tool);
+  const toolDir = tool === 'examples' ? join(root, 'examples', 'runners', 'web') : join(root, 'tools', tool);
   const viteJs = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
   const configPath = join(toolDir, 'vite.config.ts');
 
@@ -432,7 +439,7 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
 // Browser
 // ---------------------------------------------------------------------------
 
-export async function launchBrowser(options: { captureFrames?: number } = {}) {
+export async function launchBrowser(options: { captureFrames?: number; verify?: boolean } = {}) {
   // Headless Chromium exposes navigator.gpu but withholds a Wgpu adapter on a software-only,
   // "untrusted" config unless --enable-unsafe-webgpu is set; with it, Dawn falls back to the
   // SwiftShader Vulkan ICD bundled inside Playwright's Chromium (no host GPU / driver needed).
@@ -460,54 +467,64 @@ export async function launchBrowser(options: { captureFrames?: number } = {}) {
   // for the screenshot. N=1 is the robust common case (frame 1 always completes before the screenshot,
   // with no settle-timing race).
   const captureFrames = options.captureFrames ?? 0;
-  await context.addInitScript((frames: number) => {
-    const flags = window as unknown as { __flightCapture?: boolean; __captureFramesReached?: boolean };
-    flags.__flightCapture = true;
+  const verify = options.verify ?? true;
+  await context.addInitScript(
+    (args: { frames: number; verify: boolean }) => {
+      const flags = window as unknown as {
+        __captureFramesReached?: boolean;
+        __flightCapture?: boolean;
+        __flightCaptureVerify?: boolean;
+      };
+      const { frames, verify } = args;
+      flags.__flightCapture = true;
+      flags.__flightCaptureVerify = verify;
 
-    // Inline mulberry32 — the exact algorithm of the SDK's createRandomSource (@flighthq/math). It is
-    // copied (not imported) on purpose: addInitScript is serialized and injected before any module
-    // loads, and the SDK function's *built* source references bundler helpers (e.g. __name) that do
-    // not exist in this bare page context, so injecting its source breaks. Keep this in sync with that
-    // one function — it is the only duplicate, and it is trivial and frozen.
-    let seed = 0x9e3779b9 >>> 0;
-    Math.random = () => {
-      seed = (seed + 0x6d2b79f5) | 0;
-      let r = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
-      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-    };
+      // Inline mulberry32 — the exact algorithm of the SDK's createRandomSource (@flighthq/math). It is
+      // copied (not imported) on purpose: addInitScript is serialized and injected before any module
+      // loads, and the SDK function's *built* source references bundler helpers (e.g. __name) that do
+      // not exist in this bare page context, so injecting its source breaks. Keep this in sync with that
+      // one function — it is the only duplicate, and it is trivial and frozen.
+      let seed = 0x9e3779b9 >>> 0;
+      Math.random = () => {
+        seed = (seed + 0x6d2b79f5) | 0;
+        let r = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+      };
 
-    if (frames < 1) return;
-    flags.__captureFramesReached = false;
+      if (frames < 1) return;
+      flags.__captureFramesReached = false;
 
-    // Force preserveDrawingBuffer so the halted Gl frame survives in the buffer for the screenshot
-    // (the default clears it once composited, which would shoot blank once the loop stops).
-    const realGetContext = HTMLCanvasElement.prototype.getContext as (
-      this: HTMLCanvasElement,
-      type: string,
-      attrs?: Record<string, unknown>,
-    ) => RenderingContext | null;
-    HTMLCanvasElement.prototype.getContext = function (
-      this: HTMLCanvasElement,
-      type: string,
-      attrs?: Record<string, unknown>,
-    ) {
-      if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
-        return realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: true });
-      }
-      return realGetContext.call(this, type, attrs);
-    } as typeof HTMLCanvasElement.prototype.getContext;
+      // Force preserveDrawingBuffer so the halted Gl frame survives in the buffer for the screenshot
+      // (the default clears it once composited, which would shoot blank once the loop stops).
+      const realGetContext = HTMLCanvasElement.prototype.getContext as (
+        this: HTMLCanvasElement,
+        type: string,
+        attrs?: Record<string, unknown>,
+      ) => RenderingContext | null;
+      HTMLCanvasElement.prototype.getContext = function (
+        this: HTMLCanvasElement,
+        type: string,
+        attrs?: Record<string, unknown>,
+      ) {
+        if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+          return realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: true });
+        }
+        return realGetContext.call(this, type, attrs);
+      } as typeof HTMLCanvasElement.prototype.getContext;
 
-    let count = 0;
-    const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-    window.requestAnimationFrame = (callback: FrameRequestCallback): number =>
-      realRequestAnimationFrame((time) => {
-        if (count >= frames) return; // halt: scene stops advancing on frame N
-        count++;
-        if (count >= frames) flags.__captureFramesReached = true;
-        callback(time);
-      });
-  }, captureFrames);
+      let count = 0;
+      const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = (callback: FrameRequestCallback): number =>
+        realRequestAnimationFrame((time) => {
+          if (count >= frames) return; // halt: scene stops advancing on frame N
+          count++;
+          if (count >= frames) flags.__captureFramesReached = true;
+          callback(time);
+        });
+    },
+    { frames: captureFrames, verify },
+  );
 
   return { browser, context };
 }
@@ -810,8 +827,7 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
 
   const jobs: Array<{ entry: Entry; renderer: string }> = [];
   for (const entry of entries) {
-    const renderers =
-      rendererFilter.length > 0 ? entry.renderers.filter((r) => rendererFilter.includes(r)) : entry.renderers;
+    const renderers = entry.renderers.filter((r) => rendererMatchesFilter(r, rendererFilter));
     for (const renderer of renderers) {
       jobs.push({ entry, renderer });
     }
