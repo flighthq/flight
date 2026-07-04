@@ -6,25 +6,38 @@ import { BatchFormat } from '@flighthq/types';
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
 import { flushGlSpriteBatch } from './glSpriteBatch';
 import { createGlState } from './glTestHelper';
-import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
+import type * as GlTextLabelModule from './glTextLabel';
+import { scopeModuleMocks } from './moduleMockTestHelper';
 
-vi.mock('@flighthq/textlayout', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    computeTextLayout: vi.fn((result: { groups: object[] }) => {
-      result.groups.push({
-        offsetX: 0,
-        offsetY: 0,
-        width: 50,
-        ascent: 12,
-        descent: 4,
-        format: {},
-        startIndex: 0,
-        endIndex: 5,
-      });
-    }),
-  };
+// @flighthq/textlayout.computeTextLayout is stubbed to emit one deterministic glyph group.
+// scopeModuleMocks scopes the stub to this file (registry reset before the mock applies, unmock +
+// reset after), so under a shared (isolate:false) worker it never leaks into the real text-layout
+// consumers (text package) — and a sibling that pre-evaluated ./glTextLabel still picks up the stub.
+let defaultGlTextLabelRenderer: typeof GlTextLabelModule.defaultGlTextLabelRenderer;
+let drawGlTextLabel: typeof GlTextLabelModule.drawGlTextLabel;
+
+scopeModuleMocks(['@flighthq/textlayout']);
+
+beforeAll(async () => {
+  vi.doMock('@flighthq/textlayout', async (importOriginal) => {
+    const actual = (await importOriginal()) as Record<string, unknown>;
+    return {
+      ...actual,
+      computeTextLayout: vi.fn((result: { groups: object[] }) => {
+        result.groups.push({
+          offsetX: 0,
+          offsetY: 0,
+          width: 50,
+          ascent: 12,
+          descent: 4,
+          format: {},
+          startIndex: 0,
+          endIndex: 5,
+        });
+      }),
+    };
+  });
+  ({ defaultGlTextLabelRenderer, drawGlTextLabel } = await import('./glTextLabel'));
 });
 
 function makeTextData() {

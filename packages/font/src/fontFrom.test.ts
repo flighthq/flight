@@ -4,12 +4,24 @@ class MockFontFace {
   load = vi.fn().mockResolvedValue(undefined);
 }
 
-beforeAll(() => {
+// Re-applied per test (not once) and torn down, so under a shared (isolate:false) worker with
+// unstubGlobals the FontFace stub survives every test and the document.fonts patch never leaks out.
+let originalFonts: PropertyDescriptor | undefined;
+beforeEach(() => {
   vi.stubGlobal('FontFace', MockFontFace);
+  originalFonts = Object.getOwnPropertyDescriptor(document, 'fonts');
   Object.defineProperty(document, 'fonts', {
     value: { add: vi.fn(), load: vi.fn().mockResolvedValue([]) },
     configurable: true,
   });
+});
+
+afterEach(() => {
+  if (originalFonts) {
+    Object.defineProperty(document, 'fonts', originalFonts);
+  } else {
+    delete (document as unknown as { fonts?: unknown }).fonts;
+  }
 });
 
 describe('loadFontFromBytes', () => {

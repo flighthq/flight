@@ -1,18 +1,31 @@
+import type * as FlightNodeModule from '@flighthq/node';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
+import { scopeModuleMocks } from './moduleMockTestHelper';
 import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
-import { defaultWgpuShapeRenderer, drawWgpuShape } from './wgpuShape';
+import type * as WgpuShapeModule from './wgpuShape';
 
-vi.mock('@flighthq/node', () => ({
-  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-  getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
-}));
+// @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawWgpuShape
+// with lightweight fake proxies, so the two queries are stubbed. scopeModuleMocks scopes the stub to
+// this file (registry reset before the mock applies, unmock + reset after), so under a shared
+// (isolate:false) worker it never leaks into the many real consumers of these functions (node,
+// interaction, shape, text) — and a sibling that pre-evaluated ./wgpuShape still picks up the stub.
+let defaultWgpuShapeRenderer: typeof WgpuShapeModule.defaultWgpuShapeRenderer;
+let drawWgpuShape: typeof WgpuShapeModule.drawWgpuShape;
 
-beforeAll(() => {
+scopeModuleMocks(['@flighthq/node']);
+
+beforeAll(async () => {
+  vi.doMock('@flighthq/node', async (importOriginal) => ({
+    ...(await importOriginal<typeof FlightNodeModule>()),
+    getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+    getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
+  }));
+  ({ defaultWgpuShapeRenderer, drawWgpuShape } = await import('./wgpuShape'));
   installWgpuMock();
 });
 

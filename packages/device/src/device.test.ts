@@ -210,6 +210,9 @@ describe('createWebDeviceBackend', () => {
     } finally {
       if (original !== undefined) {
         Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: original });
+      } else {
+        // jsdom has no deviceMemory; delete the injected one so it does not leak into a shared worker.
+        delete (navigator as unknown as Record<string, unknown>)['deviceMemory'];
       }
     }
   });

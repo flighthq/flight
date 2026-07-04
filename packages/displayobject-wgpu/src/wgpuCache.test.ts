@@ -1,61 +1,92 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render';
-import type * as WgpuRenderTargetModule from '@flighthq/render-wgpu';
-import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { destroyWgpuRenderTarget, drawWgpuRenderTargetResult } from '@flighthq/render-wgpu';
+import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
-import {
-  createWgpuCacheState,
-  defaultWgpuRenderCacheRenderer,
-  enableWgpuRenderCache,
-  ensureWgpuRenderCacheTarget,
-  getWgpuRenderCacheTarget,
-  refreshWgpuRenderCache,
-  releaseWgpuRenderCache,
-} from './wgpuCache';
+import { scopeModuleMocks } from './moduleMockTestHelper';
+import type * as WgpuCacheModule from './wgpuCache';
 import type * as WgpuDisplayObjectModule from './wgpuDisplayObject';
-import { renderWgpuDisplayObject } from './wgpuDisplayObject';
 import type * as WgpuSpriteBatchModule from './wgpuSpriteBatch';
-import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
-vi.mock('./wgpuSpriteBatch', async (importOriginal) => {
-  const actual = await importOriginal<typeof WgpuSpriteBatchModule>();
-  return { ...actual, flushWgpuSpriteBatch: vi.fn() };
-});
+// The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
+// ./wgpuSpriteBatch and ./wgpuDisplayObject are stubbed so cache orchestration can be unit-tested
+// without a real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite,
+// batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
+// The mocks are scoped to this file's dynamic import of ./wgpuCache and unmocked in afterAll, so
+// under a shared (isolate:false) worker they never leak into the real render-wgpu / displayobject-
+// wgpu consumers. The mocked functions are read back from the same dynamic imports so the handles
+// the assertions observe are the exact vi.fn instances the cache module calls.
+let createWgpuCacheState: typeof WgpuCacheModule.createWgpuCacheState;
+let defaultWgpuRenderCacheRenderer: typeof WgpuCacheModule.defaultWgpuRenderCacheRenderer;
+let enableWgpuRenderCache: typeof WgpuCacheModule.enableWgpuRenderCache;
+let ensureWgpuRenderCacheTarget: typeof WgpuCacheModule.ensureWgpuRenderCacheTarget;
+let getWgpuRenderCacheTarget: typeof WgpuCacheModule.getWgpuRenderCacheTarget;
+let refreshWgpuRenderCache: typeof WgpuCacheModule.refreshWgpuRenderCache;
+let releaseWgpuRenderCache: typeof WgpuCacheModule.releaseWgpuRenderCache;
+let createWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.createWgpuRenderStateRuntime;
+let getWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.getWgpuRenderStateRuntime;
+let destroyWgpuRenderTarget: typeof WgpuRenderWgpuModule.destroyWgpuRenderTarget;
+let drawWgpuRenderTargetResult: typeof WgpuRenderWgpuModule.drawWgpuRenderTargetResult;
+let renderWgpuDisplayObject: typeof WgpuDisplayObjectModule.renderWgpuDisplayObject;
+let flushWgpuSpriteBatch: typeof WgpuSpriteBatchModule.flushWgpuSpriteBatch;
 
-vi.mock('@flighthq/render-wgpu', async (importOriginal) => {
-  const actual = await importOriginal<typeof WgpuRenderTargetModule>();
-  return {
-    ...actual,
-    beginWgpuRenderTarget: vi.fn(),
-    createWgpuRenderTarget: vi.fn(
-      (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
-        bindGroup: {} as GPUBindGroup,
-        depthStencilTexture: {} as GPUTexture,
-        depthStencilView: {} as GPUTextureView,
-        texture: {} as GPUTexture,
-        view: {} as GPUTextureView,
-        format: 'bgra8unorm',
-        width,
-        height,
+// EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
+// registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
+// level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
+// subject even though the subject re-imports @flighthq/render under the reset.
+scopeModuleMocks(['./wgpuSpriteBatch', '@flighthq/render-wgpu', './wgpuDisplayObject']);
+
+beforeAll(async () => {
+  vi.doMock('./wgpuSpriteBatch', async (importOriginal) => {
+    const actual = await importOriginal<typeof WgpuSpriteBatchModule>();
+    return { ...actual, flushWgpuSpriteBatch: vi.fn() };
+  });
+  vi.doMock('@flighthq/render-wgpu', async (importOriginal) => {
+    const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
+    return {
+      ...actual,
+      beginWgpuRenderTarget: vi.fn(),
+      createWgpuRenderTarget: vi.fn(
+        (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
+          bindGroup: {} as GPUBindGroup,
+          depthStencilTexture: {} as GPUTexture,
+          depthStencilView: {} as GPUTextureView,
+          texture: {} as GPUTexture,
+          view: {} as GPUTextureView,
+          format: 'bgra8unorm',
+          width,
+          height,
+        }),
+      ),
+      destroyWgpuRenderTarget: vi.fn(),
+      drawWgpuRenderTargetResult: vi.fn(),
+      endWgpuRenderTarget: vi.fn(),
+      resizeWgpuRenderTarget: vi.fn((_state: unknown, target: WgpuRenderTarget, width: number, height: number) => {
+        target.width = width;
+        target.height = height;
       }),
-    ),
-    destroyWgpuRenderTarget: vi.fn(),
-    drawWgpuRenderTargetResult: vi.fn(),
-    endWgpuRenderTarget: vi.fn(),
-    resizeWgpuRenderTarget: vi.fn((_state: unknown, target: WgpuRenderTarget, width: number, height: number) => {
-      target.width = width;
-      target.height = height;
-    }),
-  };
-});
+    };
+  });
+  vi.doMock('./wgpuDisplayObject', async (importOriginal) => {
+    const actual = await importOriginal<typeof WgpuDisplayObjectModule>();
+    return { ...actual, renderWgpuDisplayObject: vi.fn() };
+  });
 
-vi.mock('./wgpuDisplayObject', async (importOriginal) => {
-  const actual = await importOriginal<typeof WgpuDisplayObjectModule>();
-  return { ...actual, renderWgpuDisplayObject: vi.fn() };
+  ({ createWgpuRenderStateRuntime, getWgpuRenderStateRuntime, destroyWgpuRenderTarget, drawWgpuRenderTargetResult } =
+    await import('@flighthq/render-wgpu'));
+  ({ flushWgpuSpriteBatch } = await import('./wgpuSpriteBatch'));
+  ({ renderWgpuDisplayObject } = await import('./wgpuDisplayObject'));
+  ({
+    createWgpuCacheState,
+    defaultWgpuRenderCacheRenderer,
+    enableWgpuRenderCache,
+    ensureWgpuRenderCacheTarget,
+    getWgpuRenderCacheTarget,
+    refreshWgpuRenderCache,
+    releaseWgpuRenderCache,
+  } = await import('./wgpuCache'));
 });
 
 function fakeScreen(options = {}): WgpuRenderState {

@@ -1,16 +1,32 @@
+import type * as FlightNodeModule from '@flighthq/node';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { RenderProxy2D } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import { registerDefaultGlMaterial } from './glDefaultMaterial';
-import { defaultGlShapeRenderer, drawGlShape } from './glShape';
+import type * as GlShapeModule from './glShape';
 import { flushGlSpriteBatch } from './glSpriteBatch';
 import { createGlState } from './glTestHelper';
+import { scopeModuleMocks } from './moduleMockTestHelper';
 
-vi.mock('@flighthq/node', () => ({
-  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-  getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
-}));
+// @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawGlShape
+// with lightweight fake proxies, so the two queries are stubbed. scopeModuleMocks scopes the stub to
+// this file (registry reset before the mock applies, unmock + reset after), so under a shared
+// (isolate:false) worker it never leaks into the many real consumers of these functions (node,
+// interaction, shape, text) — and a sibling that pre-evaluated ./glShape still picks up the stub.
+let defaultGlShapeRenderer: typeof GlShapeModule.defaultGlShapeRenderer;
+let drawGlShape: typeof GlShapeModule.drawGlShape;
+
+scopeModuleMocks(['@flighthq/node']);
+
+beforeAll(async () => {
+  vi.doMock('@flighthq/node', async (importOriginal) => ({
+    ...(await importOriginal<typeof FlightNodeModule>()),
+    getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+    getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
+  }));
+  ({ defaultGlShapeRenderer, drawGlShape } = await import('./glShape'));
+});
 
 function makeShapeData() {
   const canvas = document.createElement('canvas');
