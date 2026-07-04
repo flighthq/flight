@@ -42,6 +42,9 @@ jobs:
               - '!**/*.md'
               - '!tools/agents/docs/**'
               - '!crates/**'
+              - '!examples/crates/**'
+              - '!examples/runners/native/**'
+              - '!examples/runners/wasm/**'
               - '!Cargo.toml'
               - '!Cargo.lock'
               - '!rust-toolchain.toml'
@@ -50,8 +53,17 @@ jobs:
               - 'crates/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
+              - 'examples/crates/**'
+              - 'examples/runners/native/**'
+              - 'examples/runners/wasm/**'
+              - 'examples/runners/web/package.json'
+              - 'examples/runners/web/src/wasm-loader.ts'
+              - 'examples/runners/web/vite.config.ts'
               - 'rust-toolchain.toml'
               - 'clippy.toml'
+              - 'scripts/install-rust.ts'
+              - 'scripts/resolve-wasm-pack.ts'
+              - 'scripts/run-wasm-pack.ts'
               - '.github/workflows/tests.yml'
             # The `extras` tier (native-dep crates — see scripts/cargo-tier.ts) only needs its slow
             # apt + SDL build when its own sources or the shared Cargo/toolchain inputs change. A
@@ -95,6 +107,30 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
+
+  harness-build:
+    name: Harness build · ${{ matrix.label }}
+    needs: build-check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: functional
+            check: build:functional
+          - label: examples
+            check: build:examples
+          - label: reference
+            check: build:reference
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run ${{ matrix.check }}
 
   test:
     name: TypeScript tests · ${{ matrix.label }}
@@ -200,9 +236,16 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      # npm ships with the runner's Node and these scripts only shell cargo, so no `npm ci` is needed.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
       - run: npm run check:rust:core
       - run: npm run test:rust:core
+      - run: npm run install:rust
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:examples:wasm
 
   rust-extras:
     # The EXTRAS tier — native-dep crates (flighthq-host-sdl) — gated tighter than rust-core via the
@@ -221,6 +264,11 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
       - name: Install SDL build dependencies
         run: |
           sudo apt-get update

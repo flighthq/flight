@@ -30,6 +30,8 @@
 //   --fail-on-error              Exit 1 if any entry's page logged an error / page error — including a
 //                                render-verification failure from the functional harness (not-blank /
 //                                oracle). The render smoke gate. Pair with --frames=1 for a stable frame.
+//   --no-verify                  Disable in-page render verification while still capturing and failing
+//                                page errors. Used for compile/load smoke checks such as Rust/Wasm.
 //
 // Output per entry:
 //   {out}/{tool}/{name}/{renderer}/screenshot.png
@@ -50,6 +52,7 @@ import {
   installAbortHandler,
   isBrowserClosedError,
   launchBrowser,
+  rendererMatchesFilter,
   resolveServer,
   resolveStaticServer,
 } from './capture-core.js';
@@ -81,6 +84,7 @@ const captureFrames =
 const updateBaseline = argv.includes('--update-baseline');
 const failOnChanged = argv.includes('--fail-on-changed');
 const failOnError = argv.includes('--fail-on-error');
+const verify = !argv.includes('--no-verify');
 // --dev opts into the Vite dev server; static is the default.
 const useDev = argv.includes('--dev');
 // --build forces a rebuild even when dist already exists.
@@ -124,7 +128,7 @@ async function main(): Promise<void> {
 
   if (!externalUrl) console.log(`Ready at ${server.url}\n`);
 
-  const { browser, context } = await launchBrowser({ captureFrames });
+  const { browser, context } = await launchBrowser({ captureFrames, verify });
   const isAborted = installAbortHandler();
 
   let captured = 0;
@@ -158,8 +162,7 @@ async function main(): Promise<void> {
         // A progress header: a dimmed [N/M] counter then the entry name in bold. captureEntry prints the
         // per-renderer ✓/⊘/✗ detail lines below it.
         console.log(`${pc.dim(`[${entryIndex + 1}/${entries.length}]`)} ${pc.bold(entry.name)}`);
-        const renderers =
-          rendererFilter.length > 0 ? entry.renderers.filter((r) => rendererFilter.includes(r)) : entry.renderers;
+        const renderers = entry.renderers.filter((r) => rendererMatchesFilter(r, rendererFilter));
 
         const result = await captureEntry({
           context,
