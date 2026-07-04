@@ -10,27 +10,18 @@ import baseConfig from './vitest.config.base.js';
 // Every test file is hermetic under a shared module registry: mocks are scoped per-file (vi.doMock
 // + dynamic import of the subject, unmocked in afterAll — never top-level hoisted vi.mock, which
 // leaks across files) and globals are restored via unstubGlobals. That lets the whole suite run as
-// one non-isolated group, with no isolated exception list.
-const commonExclude = ['**/.claude/**', '**/node_modules/**', '**/surfaceWasm.test.ts'];
-
+// one non-isolated group, with no isolated exception list — so this is a single flat project, not a
+// `projects` array.
 export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      projects: [
-        {
-          extends: true,
-          test: {
-            name: 'flight',
-            environment: 'jsdom',
-            isolate: false,
-            unstubGlobals: true,
-            include: ['packages/**/src/**/*.test.ts'],
-            exclude: [...commonExclude],
-            passWithNoTests: true,
-          },
-        },
-      ],
+      environment: 'jsdom',
+      isolate: false,
+      unstubGlobals: true,
+      include: ['packages/**/src/**/*.test.ts'],
+      exclude: ['**/.claude/**', '**/node_modules/**', '**/surfaceWasm.test.ts'],
+      passWithNoTests: true,
     },
   }),
 );
