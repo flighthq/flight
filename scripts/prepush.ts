@@ -29,6 +29,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
@@ -45,6 +46,7 @@ const WIDE_FANOUT_PROJECTS = 25;
 // *dependents*; if the barrel itself is the edited package, it still runs.
 const SKIP_AS_DEPENDENT = new Set(['@flighthq/sdk']);
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
 // Every workspace package's name, its repo-relative directory, and the @flighthq/* packages it
