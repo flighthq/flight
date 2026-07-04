@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "semi": true,
   "singleQuote": true,
   "trailingComma": "all",
@@ -10,5 +11,7 @@
   "endOfLine": "lf",
   "bracketSameLine": true,
   "proseWrap": "never",
-  "embeddedLanguageFormatting": "auto"
+  "embeddedLanguageFormatting": "auto",
+  "sortPackageJson": false,
+  "ignorePatterns": ["OVERVIEW.md", "**/src/wasm/", "tools/agents/", "**/*.toml"]
 }
