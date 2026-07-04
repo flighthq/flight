@@ -2,34 +2,64 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { parseSync } from 'oxc-parser';
 import pc from 'picocolors';
-import * as ts from 'typescript';
 
 interface OrderIssue {
-  actual: string[];
-  expected: string[];
-  label: string;
+  labels: string[];
   path: string;
+}
+
+// One import statement plus its attached leading comments, tagged with its group and original
+// position for grouping and stable sorting.
+interface ImportBlock {
+  group: number;
+  index: number;
+  source: string;
+  text: string;
+}
+
+// A parsed top-level statement node from oxc-parser's ESTree output. Only the fields this script
+// reads are modeled; every node carries numeric `start`/`end` source offsets.
+interface Node {
+  type: string;
+  start: number;
+  end: number;
+  [key: string]: unknown;
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-const packagesDir = join(root, 'packages');
 const checkMode = process.argv.includes('--check');
 const fixMode = process.argv.includes('--fix');
 const jsonMode = process.argv.includes('--json');
-const verboseMode = process.argv.includes('--verbose');
 const pathFilters = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
 
-// ---- fix mode ---------------------------------------------------------------
+// Directory names skipped everywhere during the file walk. Mirrors the oxlint/oxfmt ignore set so
+// the two tools agree on what counts as hand-authored source.
+const IGNORED_DIRS = new Set([
+  'node_modules',
+  'dist',
+  'build',
+  'coverage',
+  'target',
+  '.git',
+  '.idea',
+  '.vscode',
+  '.claude',
+  '.quimby',
+  'worktrees',
+  'incoming',
+  'docs',
+]);
 
 if (fixMode) {
   let fixedCount = 0;
 
-  for (const path of getPackageSourceFiles()) {
+  for (const path of getOrderableFiles()) {
     const sourceText = readFileSync(path, 'utf-8');
-    const fixed = getFixedText(path, sourceText);
-    if (fixed !== null) {
+    const { text: fixed } = applyConcerns(path, sourceText);
+    if (fixed !== sourceText) {
       writeFileSync(path, fixed, 'utf-8');
       fixedCount++;
       console.log(`${pc.green('✓')} ${pc.white(relative(root, path).replaceAll('\\', '/'))}`);
@@ -37,7 +67,7 @@ if (fixMode) {
   }
 
   if (fixedCount === 0) {
-    console.log(`${pc.green('OK')} ${pc.bold('Source and test order valid')}`);
+    console.log(`${pc.green('OK')} ${pc.bold('Source and import order valid')}`);
   } else {
     console.log(`\n${pc.green('✓')} ${pc.bold(`Fixed ${fixedCount} file${fixedCount === 1 ? '' : 's'}`)}`);
   }
@@ -45,23 +75,13 @@ if (fixMode) {
   process.exit(0);
 }
 
-// ---- check / report mode ----------------------------------------------------
-
 const issues: OrderIssue[] = [];
 
-for (const path of getPackageSourceFiles()) {
-  const sourceFile = ts.createSourceFile(path, readFileSync(path, 'utf-8'), ts.ScriptTarget.Latest, true);
-
-  if (path.endsWith('.test.ts')) {
-    const issue = getOrderIssue(path, 'describe blocks should be alphabetized', getDescribeNames(sourceFile));
-    if (issue) issues.push(issue);
-  } else {
-    const issue = getOrderIssue(
-      path,
-      'exported functions should be alphabetized',
-      getExportedFunctionNames(sourceFile),
-    );
-    if (issue) issues.push(issue);
+for (const path of getOrderableFiles()) {
+  const sourceText = readFileSync(path, 'utf-8');
+  const { text: fixed, labels } = applyConcerns(path, sourceText);
+  if (fixed !== sourceText) {
+    issues.push({ labels, path: relative(root, path).replaceAll('\\', '/') });
   }
 }
 
@@ -71,284 +91,274 @@ if (jsonMode) {
 }
 
 if (issues.length === 0) {
-  console.log(`${pc.green('OK')} ${pc.bold('Source and test order valid')}`);
+  console.log(`${pc.green('OK')} ${pc.bold('Source and import order valid')}`);
   process.exit(0);
 }
 
-const sourceCount = issues.filter((issue) => !issue.path.endsWith('.test.ts')).length;
-const testCount = issues.length - sourceCount;
-const verboseHint = verboseMode ? '' : pc.dim(' (run npm run order -- --verbose for full lists)');
-console.log(
-  `${pc.yellow('!')} ${pc.bold(`${issues.length} order issue${issues.length === 1 ? '' : 's'} found`)}${verboseHint}`,
-);
-console.log(
-  `${pc.dim('  source files:')} ${pc.white(sourceCount.toString())} ${pc.dim('test files:')} ${pc.white(testCount.toString())}\n`,
-);
-for (const issue of issues) printIssue(issue);
+console.log(`${pc.yellow('!')} ${pc.bold(`${issues.length} order issue${issues.length === 1 ? '' : 's'} found`)}\n`);
+for (const issue of issues) {
+  console.log(`  ${pc.yellow('!')} ${pc.white(issue.path)} ${pc.dim(issue.labels.join(', '))}`);
+}
+console.log('');
 process.exit(checkMode ? 1 : 0);
 
-// ---- fix helpers ------------------------------------------------------------
+// Applies every ordering concern that fits `filePath` in sequence: import sorting runs on all
+// orderable files; exported-function and describe-block alphabetization run only on package source.
+// Returns the rewritten text plus a label for each concern that changed something.
+function applyConcerns(filePath: string, sourceText: string): { labels: string[]; text: string } {
+  const labels: string[] = [];
+  let text = sourceText;
 
-/**
- * Returns the fixed source text with sortable blocks reordered, or null if
- * the file is already in order (no write needed).
- *
- * Each sortable "block" is the statement itself plus any comment lines that
- * immediately precede it without a blank line in between. Blank lines between
- * blocks are treated as separators and stay in their original positions.
- */
-function getFixedText(filePath: string, sourceText: string): string | null {
-  const isTest = filePath.endsWith('.test.ts');
-  const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true);
-  const nodes = isTest ? getDescribeStatements(sourceFile) : getExportedFunctionStatements(sourceFile);
-
-  if (nodes.length < 2) return null;
-
-  const names = nodes.map((n) => getStatementSortKey(n, isTest));
-  const sortedNames = [...names].sort((a, b) => a.localeCompare(b));
-  if (names.every((n, i) => n === sortedNames[i])) return null;
-
-  // For each sortable statement, compute the start of its "block" — the point
-  // after the last blank line before the statement. Comments between that point
-  // and the statement are "attached" and move with it.
-  const blocks = nodes.map((node) => ({
-    start: getBlockStart(sourceText, node),
-    end: node.getEnd(),
-    name: getStatementSortKey(node, isTest),
-  }));
-
-  const sortedBlocks = [...blocks].sort((a, b) => a.name.localeCompare(b.name));
-
-  // Reassemble: walk through blocks in their original positions, substituting
-  // each slot's content with the corresponding sorted block's text. The text
-  // between consecutive block ends/starts (separators) is preserved unchanged.
-  let result = '';
-  let pos = 0;
-
-  for (let i = 0; i < blocks.length; i++) {
-    result += sourceText.slice(pos, blocks[i].start); // separator / prefix
-    result += sourceText.slice(sortedBlocks[i].start, sortedBlocks[i].end); // sorted content
-    pos = blocks[i].end;
+  const sortedImports = sortImports(filePath, text);
+  if (sortedImports !== text) {
+    labels.push('imports');
+    text = sortedImports;
   }
 
-  result += sourceText.slice(pos); // trailing content after last block
-  return result;
-}
-
-/**
- * Returns the position in sourceText where the "moveable content" of this
- * node begins — i.e., the start of attached comment lines, or the node's own
- * start if no comments are attached.
- *
- * A comment is "attached" when there is no blank line (empty or
- * whitespace-only line) between it and the node. A blank line breaks the
- * attachment, keeping the comment as part of the preceding separator instead.
- */
-function getBlockStart(sourceText: string, node: ts.Node): number {
-  const fullStart = node.getFullStart();
-  const nodeStart = node.getStart();
-
-  if (fullStart >= nodeStart) return fullStart;
-
-  const trivia = sourceText.slice(fullStart, nodeStart);
-
-  // Split into lines. Exclude the trailing empty string produced by a
-  // final newline, since that represents the end of the last comment line
-  // rather than a standalone blank line.
-  const lines = trivia.split('\n');
-  const effectiveEnd = trivia.endsWith('\n') ? lines.length - 1 : lines.length;
-
-  // Find the index of the last blank (empty / whitespace-only) line in the
-  // effective range. Everything after it is "attached" to this node.
-  let lastBlankIdx = -1;
-  for (let i = 0; i < effectiveEnd; i++) {
-    if (lines[i].trim() === '') lastBlankIdx = i;
-  }
-
-  if (lastBlankIdx === -1) {
-    // No blank lines — all trivia is attached to this node.
-    return fullStart;
-  }
-
-  // Compute the character offset of the line immediately following the last
-  // blank line. That is where the attached content begins.
-  let offset = 0;
-  for (let i = 0; i <= lastBlankIdx; i++) {
-    offset += lines[i].length + 1; // +1 for the \n that ended this line
-  }
-  return fullStart + offset;
-}
-
-/** Nodes for top-level describe(...) calls. */
-function getDescribeStatements(sourceFile: ts.SourceFile): ts.Statement[] {
-  return sourceFile.statements.filter((s) => {
-    if (!ts.isExpressionStatement(s)) return false;
-    const expr = s.expression;
-    return (
-      ts.isCallExpression(expr) &&
-      ts.isIdentifier(expr.expression) &&
-      expr.expression.text === 'describe' &&
-      expr.arguments.length > 0 &&
-      ts.isStringLiteralLike(expr.arguments[0])
-    );
-  });
-}
-
-/** Nodes for top-level exported function / const-arrow declarations. */
-function getExportedFunctionStatements(sourceFile: ts.SourceFile): ts.Statement[] {
-  return sourceFile.statements.filter((s) => {
-    const modifiers = ts.canHaveModifiers(s) ? ts.getModifiers(s) : undefined;
-    if (!modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) return false;
-
-    if (ts.isFunctionDeclaration(s) && s.name) return true;
-
-    if (ts.isVariableStatement(s)) {
-      return s.declarationList.declarations.some(
-        (d) =>
-          ts.isIdentifier(d.name) &&
-          d.initializer &&
-          (ts.isArrowFunction(d.initializer) || ts.isFunctionExpression(d.initializer)),
-      );
-    }
-
-    return false;
-  });
-}
-
-/** The sort key for a sortable statement. */
-function getStatementSortKey(node: ts.Statement, isTest: boolean): string {
-  if (isTest && ts.isExpressionStatement(node)) {
-    const expr = node.expression as ts.CallExpression;
-    return (expr.arguments[0] as ts.StringLiteralLike).text;
-  }
-
-  if (ts.isFunctionDeclaration(node)) return node.name!.text;
-
-  if (ts.isVariableStatement(node)) {
-    const decl = node.declarationList.declarations[0];
-    return (decl.name as ts.Identifier).text;
-  }
-
-  return '';
-}
-
-// ---- report helpers ---------------------------------------------------------
-
-function formatNames(names: string[], color: (value: string) => string): string {
-  return names.map((name) => color(name)).join(pc.dim(', '));
-}
-
-function getDescribeNames(sourceFile: ts.SourceFile): string[] {
-  const names: string[] = [];
-
-  for (const statement of sourceFile.statements) {
-    if (!ts.isExpressionStatement(statement)) continue;
-    const expression = statement.expression;
-    if (
-      ts.isCallExpression(expression) &&
-      ts.isIdentifier(expression.expression) &&
-      expression.expression.text === 'describe'
-    ) {
-      const [firstArg] = expression.arguments;
-      if (firstArg && ts.isStringLiteralLike(firstArg)) names.push(firstArg.text);
-    }
-  }
-
-  return names;
-}
-
-function getExportedFunctionNames(sourceFile: ts.SourceFile): string[] {
-  const names: string[] = [];
-
-  for (const statement of sourceFile.statements) {
-    const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined;
-    const exported = modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false;
-    if (!exported) continue;
-
-    if (ts.isFunctionDeclaration(statement) && statement.name) {
-      names.push(statement.name.text);
-      continue;
-    }
-
-    if (ts.isVariableStatement(statement)) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (!ts.isIdentifier(declaration.name)) continue;
-        const initializer = declaration.initializer;
-        if (initializer && (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer))) {
-          names.push(declaration.name.text);
-        }
+  if (isPackageSource(filePath)) {
+    if (filePath.endsWith('.test.ts') || filePath.endsWith('.test.tsx')) {
+      const sorted = sortStatements(filePath, text, 'describe');
+      if (sorted !== text) {
+        labels.push('describe blocks');
+        text = sorted;
+      }
+    } else {
+      const sorted = sortStatements(filePath, text, 'export');
+      if (sorted !== text) {
+        labels.push('exported functions');
+        text = sorted;
       }
     }
   }
 
-  return names;
+  return { labels, text };
 }
 
-function getFirstMismatch(issue: OrderIssue): string {
-  const index = issue.actual.findIndex((name, i) => name !== issue.expected[i]);
-  if (index === -1) return '';
+// Position where a node's attached leading comments begin: walk the trivia between `fullStart` (the
+// end of the previous statement) and `nodeStart`. A blank line breaks the attachment, keeping the
+// comment as part of the preceding separator rather than moving it with the node.
+function getBlockStart(sourceText: string, fullStart: number, nodeStart: number): number {
+  if (fullStart >= nodeStart) return nodeStart;
 
-  const actual = issue.actual[index];
-  const expected = issue.expected[index];
-  return `${pc.dim('first mismatch:')} ${pc.white(actual)} ${pc.dim('should be')} ${pc.cyan(expected)}`;
+  const trivia = sourceText.slice(fullStart, nodeStart);
+  const lines = trivia.split('\n');
+  const effectiveEnd = trivia.endsWith('\n') ? lines.length - 1 : lines.length;
+
+  let lastBlankIdx = -1;
+  for (let i = 0; i < effectiveEnd; i++) {
+    if (lines[i].trim() === '') lastBlankIdx = i;
+  }
+  if (lastBlankIdx === -1) return fullStart;
+
+  let offset = 0;
+  for (let i = 0; i <= lastBlankIdx; i++) offset += lines[i].length + 1;
+  return fullStart + offset;
 }
 
-function getOrderIssue(path: string, label: string, names: string[]): OrderIssue | null {
-  if (names.length < 2) return null;
-
-  const expected = [...names].sort((a, b) => a.localeCompare(b));
-  const ok = names.every((name, i) => name === expected[i]);
-  if (ok) return null;
-
-  return {
-    actual: names,
-    expected,
-    label,
-    path: relative(root, path).replaceAll('\\', '/'),
-  };
+// The import group a source string belongs to, in output order: `node:` builtins, then packages,
+// then other absolute specifiers, then relative imports. Matches the codebase's established grouping.
+function getImportGroup(source: string): number {
+  if (source.startsWith('node:')) return 0;
+  if (source.startsWith('.')) return 3;
+  if (/^@?\w/.test(source)) return 1;
+  return 2;
 }
 
-function getPackageSourceFiles(): string[] {
-  const files: string[] = [];
+// The alphabetization key for a sortable export or describe statement.
+function getStatementSortKey(node: Node): string {
+  if (node.type === 'ExpressionStatement') {
+    const call = node.expression as Node;
+    const args = call.arguments as Node[];
+    return (args[0].value as string) ?? '';
+  }
+  const declaration = node.declaration as Node;
+  if (declaration.type === 'FunctionDeclaration') return (declaration.id as Node).name as string;
+  const declarator = (declaration.declarations as Node[])[0];
+  return (declarator.id as Node).name as string;
+}
 
-  for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    files.push(...getSourceFiles(join(packagesDir, entry.name, 'src')));
+// Top-level `describe('name', …)` calls.
+function isDescribeStatement(node: Node): boolean {
+  if (node.type !== 'ExpressionStatement') return false;
+  const expr = node.expression as Node;
+  if (expr.type !== 'CallExpression') return false;
+  const callee = expr.callee as Node;
+  const args = expr.arguments as Node[];
+  return callee.type === 'Identifier' && callee.name === 'describe' && args.length > 0 && isStringLiteral(args[0]);
+}
+
+// Top-level `export function …` or `export const … = () => …` / `= function …` declarations.
+function isExportedFunctionStatement(node: Node): boolean {
+  if (node.type !== 'ExportNamedDeclaration' || !node.declaration) return false;
+  const declaration = node.declaration as Node;
+  if (declaration.type === 'FunctionDeclaration' && declaration.id) return true;
+  if (declaration.type === 'VariableDeclaration') {
+    return (declaration.declarations as Node[]).some((d) => {
+      const id = d.id as Node;
+      const init = d.init as Node | null;
+      return (
+        id.type === 'Identifier' &&
+        init != null &&
+        (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression')
+      );
+    });
+  }
+  return false;
+}
+
+function isStringLiteral(node: Node): boolean {
+  return node.type === 'Literal' && typeof node.value === 'string';
+}
+
+// Reorders the file's import statements into canonical group order. Each maximal run of consecutive
+// imports is sorted independently; within a run, imports are grouped (see getImportGroup) and sorted
+// by source, with one blank line between groups and none within. Comments attached directly above an
+// import (no blank line between) travel with it. Returns the input unchanged if nothing moves or the
+// file cannot be parsed cleanly.
+function sortImports(filePath: string, sourceText: string): string {
+  const body = parseTopLevel(filePath, sourceText);
+  if (body === null) return sourceText;
+
+  const runs: Array<[number, number]> = [];
+  for (let i = 0; i < body.length; ) {
+    if (body[i].type === 'ImportDeclaration') {
+      let j = i;
+      while (j + 1 < body.length && body[j + 1].type === 'ImportDeclaration') j++;
+      runs.push([i, j]);
+      i = j + 1;
+    } else i++;
   }
 
-  if (pathFilters.length === 0) return files;
-  return files.filter((f) =>
-    pathFilters.some((filter) => f.replaceAll('\\', '/').includes(filter.replaceAll('\\', '/'))),
-  );
-}
+  let text = sourceText;
+  // Rewrite runs from last to first so earlier source offsets stay valid.
+  for (const [a, b] of runs.reverse()) {
+    if (b === a) continue;
+    const imports = body.slice(a, b + 1);
+    const runFullStart = a === 0 ? 0 : body[a - 1].end;
+    const runStart = getBlockStart(sourceText, runFullStart, imports[0].start);
+    const runEnd = imports[imports.length - 1].end;
 
-function getSourceFiles(dir: string): string[] {
-  if (!existsSync(dir)) return [];
+    const blocks: ImportBlock[] = imports.map((imp, k) => {
+      const raw =
+        k === 0
+          ? sourceText.slice(runStart, imp.end)
+          : stripLeadingBlankLines(sourceText.slice(imports[k - 1].end, imp.end));
+      const source = (imp.source as Node).value as string;
+      return { group: getImportGroup(source), index: k, source, text: raw };
+    });
 
-  const files: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      // Skip generated, git-ignored wasm-bindgen output (the `src/wasm` dir of
-      // the -rs packages); it is not hand-authored source, mirroring the oxlint
-      // ignore `**/src/wasm/**`.
-      if (entry.name === 'wasm' && dir.replaceAll('\\', '/').endsWith('/src')) continue;
-      files.push(...getSourceFiles(path));
-    } else if (entry.isFile() && entry.name.endsWith('.ts')) {
-      files.push(path);
+    const buckets: ImportBlock[][] = [[], [], [], []];
+    for (const block of blocks) buckets[block.group].push(block);
+    for (const bucket of buckets) bucket.sort((x, y) => x.source.localeCompare(y.source) || x.index - y.index);
+
+    const rebuilt = buckets
+      .filter((bucket) => bucket.length > 0)
+      .map((bucket) => bucket.map((block) => block.text).join('\n'))
+      .join('\n\n');
+
+    if (rebuilt !== sourceText.slice(runStart, runEnd)) {
+      text = text.slice(0, runStart) + rebuilt + text.slice(runEnd);
     }
   }
-  return files;
+  return text;
 }
 
-function printIssue(issue: OrderIssue): void {
-  console.log(`  ${pc.yellow('!')} ${pc.white(issue.path)} ${pc.dim(issue.label)}`);
-  console.log(`    ${getFirstMismatch(issue)}`);
+// Alphabetizes either exported-function statements or top-level describe blocks, preserving the
+// separators (blank lines, interleaved non-sortable statements) between them. Each sortable
+// statement moves together with the comment lines attached directly above it.
+function sortStatements(filePath: string, sourceText: string, kind: 'describe' | 'export'): string {
+  const body = parseTopLevel(filePath, sourceText);
+  if (body === null) return sourceText;
 
-  if (verboseMode) {
-    console.log(`    ${pc.dim('actual:  ')} ${formatNames(issue.actual, pc.white)}`);
-    console.log(`    ${pc.dim('expected:')} ${formatNames(issue.expected, pc.cyan)}`);
+  const fullStartOf = new Map<Node, number>();
+  let prevEnd = 0;
+  for (const statement of body) {
+    fullStartOf.set(statement, prevEnd);
+    prevEnd = statement.end;
   }
 
-  console.log('');
+  const matches = kind === 'describe' ? isDescribeStatement : isExportedFunctionStatement;
+  const nodes = body.filter(matches);
+  if (nodes.length < 2) return sourceText;
+
+  const names = nodes.map(getStatementSortKey);
+  const sortedNames = [...names].sort((a, b) => a.localeCompare(b));
+  if (names.every((name, i) => name === sortedNames[i])) return sourceText;
+
+  const blocks = nodes.map((node) => ({
+    start: getBlockStart(sourceText, fullStartOf.get(node)!, node.start),
+    end: node.end,
+    name: getStatementSortKey(node),
+  }));
+  const sortedBlocks = [...blocks].sort((a, b) => a.name.localeCompare(b.name));
+
+  let result = '';
+  let pos = 0;
+  for (let i = 0; i < blocks.length; i++) {
+    result += sourceText.slice(pos, blocks[i].start);
+    result += sourceText.slice(sortedBlocks[i].start, sortedBlocks[i].end);
+    pos = blocks[i].end;
+  }
+  result += sourceText.slice(pos);
+  return result;
+}
+
+function stripLeadingBlankLines(text: string): string {
+  const lines = text.split('\n');
+  let i = 0;
+  while (i < lines.length && lines[i].trim() === '') i++;
+  return lines.slice(i).join('\n');
+}
+
+// Parses a file's top-level statement list with oxc-parser. Returns null when the file has parse
+// errors, so the caller leaves an unparseable file untouched rather than risk corrupting it.
+function parseTopLevel(filePath: string, sourceText: string): Node[] | null {
+  const lang = filePath.endsWith('.tsx') ? 'tsx' : 'ts';
+  const { program, errors } = parseSync(filePath, sourceText, { sourceType: 'module', lang });
+  if (errors.length > 0) return null;
+  return (program.body as unknown as Node[]) ?? null;
+}
+
+// True when a path lives under a top-level `packages/<name>/src/` directory — the scope for
+// exported-function and describe-block ordering. Anchored at the repo root so the workspace's other
+// `packages/` trees (for example `examples/packages/*`) are import-sorted but not export-ordered.
+function isPackageSource(path: string): boolean {
+  return /^packages\/[^/]+\/src\//.test(relative(root, path).replaceAll('\\', '/'));
+}
+
+// Every orderable `.ts`/`.tsx` file: the whole repository minus the ignored directories and the
+// generated / reference trees that neither oxlint nor oxfmt touches.
+function getOrderableFiles(): string[] {
+  const files: string[] = [];
+  walk(root, files);
+  const filtered = pathFilters.length === 0 ? files : files.filter((f) => matchesFilter(f));
+  return filtered.sort();
+}
+
+function matchesFilter(path: string): boolean {
+  const normalized = path.replaceAll('\\', '/');
+  return pathFilters.some((filter) => normalized.includes(filter.replaceAll('\\', '/')));
+}
+
+function walk(dir: string, out: string[]): void {
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    const normalized = path.replaceAll('\\', '/');
+
+    if (entry.isDirectory()) {
+      if (IGNORED_DIRS.has(entry.name)) continue;
+      // Generated wasm-bindgen output and the OpenFL reference tree are not hand-authored and are
+      // ignored by oxlint/oxfmt; keep them out of ordering too.
+      if (entry.name === 'wasm' && normalized.endsWith('/src/wasm')) continue;
+      if (normalized.endsWith('/tests/reference')) continue;
+      if (normalized.endsWith('/tools/agents')) continue;
+      walk(path, out);
+      continue;
+    }
+
+    if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+      out.push(path);
+    }
+  }
 }
