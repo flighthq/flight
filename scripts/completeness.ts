@@ -121,7 +121,7 @@ function collectSourceFiles(srcDir: string, dir: string, out: SourceFile[]): voi
 
     if (entry.isDirectory()) {
       // Skip generated, git-ignored wasm-bindgen output (the `src/wasm` dir of
-      // the -rs packages); it is not hand-authored source, mirroring the eslint
+      // the -rs packages); it is not hand-authored source, mirroring the oxlint
       // ignore `**/src/wasm/**`.
       if (entry.name === 'wasm' && dir === srcDir) continue;
       collectSourceFiles(srcDir, absPath, out);

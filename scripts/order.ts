@@ -330,7 +330,7 @@ function getSourceFiles(dir: string): string[] {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
       // Skip generated, git-ignored wasm-bindgen output (the `src/wasm` dir of
-      // the -rs packages); it is not hand-authored source, mirroring the eslint
+      // the -rs packages); it is not hand-authored source, mirroring the oxlint
       // ignore `**/src/wasm/**`.
       if (entry.name === 'wasm' && dir.replaceAll('\\', '/').endsWith('/src')) continue;
       files.push(...getSourceFiles(path));
