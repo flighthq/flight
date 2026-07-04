@@ -1,0 +1,63 @@
+hosts:
+  remote:
+    type: ssh
+    host: remote
+
+runtimeProfiles:
+  remote-claude:
+    runtime: sbx
+    entrypoint: claude
+    requiredTools:
+      - claude
+  remote-codex:
+    runtime: sbx
+    entrypoint: codex
+    requiredTools:
+      - codex
+
+roles:
+  review:
+    runtimeProfile: remote-claude
+    tmux: true
+  review2:
+    runtimeProfile: remote-codex
+    tmux: true
+  builder:
+    runtimeProfile: remote-claude
+    tmux: true
+  builder2:
+    runtimeProfile: remote-claude
+    tmux: true
+  builder3:
+    runtimeProfile: remote-codex
+    tmux: true
+  integration:
+    runtimeProfile: remote-claude
+    tmux: true
+
+layouts:
+  remote:
+    expr: ((review | review2):50 | (builder | builder2 | builder3 | integration):50):70 / ($ $):30
+
+recipes:
+  remote:
+    layout: remote
+    agents:
+      review:
+        role: review
+        hostAlias: remote
+      review2:
+        role: review2
+        hostAlias: remote
+      builder:
+        role: builder
+        hostAlias: remote
+      builder2:
+        role: builder2
+        hostAlias: remote
+      builder3:
+        role: builder3
+        hostAlias: remote
+      integration:
+        role: integration
+        hostAlias: remote
