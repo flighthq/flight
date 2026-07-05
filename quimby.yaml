@@ -4,60 +4,53 @@ hosts:
     host: remote
 
 runtimeProfiles:
-  remote-claude:
+  claude-sbx:
     runtime: sbx
     entrypoint: claude
     requiredTools:
       - claude
-  remote-codex:
+  codex-sbx:
     runtime: sbx
     entrypoint: codex
     requiredTools:
       - codex
 
+defaults:
+  runtimeProfile: claude-sbx
+  tmux: true
+  hostAlias: remote
+
 roles:
-  review:
-    runtimeProfile: remote-claude
-    tmux: true
-  review2:
-    runtimeProfile: remote-codex
-    tmux: true
-  builder:
-    runtimeProfile: remote-claude
-    tmux: true
-  builder2:
-    runtimeProfile: remote-claude
-    tmux: true
-  builder3:
-    runtimeProfile: remote-codex
-    tmux: true
-  integration:
-    runtimeProfile: remote-claude
-    tmux: true
+  review: {}
+  builder: {}
+  integration: {}
+
+services:
+  serve: quimby serve
 
 layouts:
-  remote:
-    expr: ((review | review2):50 | (builder | builder2 | builder3 | integration):50):70 / ($ $):30
+  default:
+    expr: ((review review2 review3) | (builder builder2 builder3 integration)):80 / (host $serve):20
 
-recipes:
-  remote:
-    layout: remote
+default: default
+
+presets:
+  default:
+    layout: default
     agents:
       review:
         role: review
-        hostAlias: remote
       review2:
-        role: review2
-        hostAlias: remote
+        role: review
+      review3:
+        role: review
+        runtimeProfile: codex-sbx
       builder:
         role: builder
-        hostAlias: remote
       builder2:
-        role: builder2
-        hostAlias: remote
+        role: builder
       builder3:
-        role: builder3
-        hostAlias: remote
+        role: builder
+        runtimeProfile: codex-sbx
       integration:
         role: integration
-        hostAlias: remote
