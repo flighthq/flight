@@ -12,7 +12,7 @@ name: CI
 #
 # Nightly (nightly.yml) runs what does NOT belong on the PR path — full coverage thresholds,
 # API-surface generation, and an UNCONDITIONAL Rust run that nets the drift this path-filtered
-# Rust gate cannot see (stable-toolchain changes, breakage outside crates/).
+# Rust gate cannot see (stable-toolchain changes, breakage outside the filtered Rust/wasm surface).
 
 on:
   pull_request:
@@ -34,7 +34,8 @@ jobs:
         with:
           # `typescript` is an all-except filter (catch-all, then exclude docs and the Rust-only
           # paths) so a newly added TS file type still triggers the TS legs by default. `rust` is
-          # an explicit allow-list; the nightly unconditional run is the net for anything it misses.
+          # an explicit allow-list for Rust plus wasm-backed release packages; the nightly
+          # unconditional run is the net for anything it misses.
           # The workflow file itself is in both so a CI change re-validates both areas.
           filters: |
             typescript:
@@ -59,11 +60,16 @@ jobs:
               - 'examples/runners/web/package.json'
               - 'examples/runners/web/src/wasm-loader.ts'
               - 'examples/runners/web/vite.config.ts'
+              - 'packages/*-rs/**'
               - 'rust-toolchain.toml'
               - 'clippy.toml'
+              - 'scripts/build-wasm.ts'
+              - 'scripts/check-wasm-contract.ts'
               - 'scripts/install-rust.ts'
               - 'scripts/resolve-wasm-pack.ts'
               - 'scripts/run-wasm-pack.ts'
+              - 'scripts/test-wasm.ts'
+              - '.github/workflows/nightly.yml'
               - '.github/workflows/tests.yml'
             # The `extras` tier (native-dep crates — see scripts/cargo-tier.ts) only needs its slow
             # apt + SDL build when its own sources or the shared Cargo/toolchain inputs change. A
@@ -75,6 +81,7 @@ jobs:
               - 'Cargo.lock'
               - 'rust-toolchain.toml'
               - 'clippy.toml'
+              - '.github/workflows/nightly.yml'
               - '.github/workflows/tests.yml'
 
   build-check:
@@ -244,8 +251,10 @@ jobs:
       - run: npm run check:rust:core
       - run: npm run test:rust:core
       - run: npm run install:rust
+      - run: npm run test:wasm
+      - run: npm run check:wasm
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:examples:wasm
+      - run: npm run test:examples:rust-wasm
 
   rust-extras:
     # The EXTRAS tier — native-dep crates (flighthq-host-sdl) — gated tighter than rust-core via the
