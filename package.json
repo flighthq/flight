@@ -191,7 +191,7 @@
     "test:smoke": "npm run test:functional:smoke && npm run test:examples:smoke && npm run test:reference:smoke",
     "test:smoke:wasm": "npm run test:examples:smoke:wasm",
     "test:unit": "npm run test --workspace='packages/**' --if-present",
-    "test:unit:wasm": "npm run build:wasm && npm run test --workspace='packages/*-rs' --if-present",
+    "test:unit:wasm": "npm run build:wasm && tsx ./scripts/test-wasm.ts",
     "test:wasm": "npm run test:unit:wasm && npm run test:examples:wasm",
     "typecheck": "tsc -b --noEmit"
   },
