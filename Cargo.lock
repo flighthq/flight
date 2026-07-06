@@ -630,9 +630,16 @@ dependencies = [
  "example-textmetrics",
  "example-tweenexample",
  "example-usingtilemap",
+ "flighthq-displayobject",
  "flighthq-displayobject-wgpu",
  "flighthq-host-winit",
+ "flighthq-image",
+ "flighthq-input",
+ "flighthq-node",
  "flighthq-render",
+ "flighthq-signals",
+ "flighthq-sprite",
+ "flighthq-textureatlas",
  "flighthq-types",
 ]
 
