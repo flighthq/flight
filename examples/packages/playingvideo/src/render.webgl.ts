@@ -1,11 +1,9 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createGlRenderState,
-  defaultGlShapeCommands,
   defaultGlVideoRenderer,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
   renderGlDisplayObject,
@@ -29,7 +27,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x000000ff,
 });
 registerRenderer(state, VideoKind, defaultGlVideoRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 

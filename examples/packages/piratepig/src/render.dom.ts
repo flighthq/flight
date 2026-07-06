@@ -4,7 +4,9 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
   createDomRenderState,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawRectangle,
+  defaultCanvasEndFill,
   defaultDomBitmapRenderer,
   defaultDomShapeRenderer,
   defaultDomTextLabelRenderer,
@@ -29,7 +31,7 @@ export const state = createDomRenderState(container, {
 registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
 enableDomCssFilterSupport(state);
 export const scale = 1;
 

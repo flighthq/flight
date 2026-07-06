@@ -2,7 +2,8 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWgpuRenderState,
   defaultWgpuRichTextRenderer,
-  defaultWgpuShapeCommands,
+  defaultWgpuBeginFill,
+  defaultWgpuDrawRectangle,
   defaultWgpuShapeRenderer,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
@@ -32,7 +33,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerWgpuShapeCommands([defaultWgpuBeginFill, defaultWgpuDrawRectangle]);
 registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 

@@ -3,7 +3,8 @@ import {
   BitmapKind,
   createCanvasRenderState,
   defaultCanvasBitmapRenderer,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawRectangle,
   defaultCanvasShapeRenderer,
   defaultCanvasVideoRenderer,
   prepareDisplayObjectRender,
@@ -30,7 +31,7 @@ export const state = createCanvasRenderState(canvas, {
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, VideoKind, defaultCanvasVideoRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
 
 export const scale = pixelRatio;
 
