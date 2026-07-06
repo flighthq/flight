@@ -2,7 +2,8 @@
 import {
   createGlRenderState,
   defaultGlRichTextRenderer,
-  defaultGlShapeCommands,
+  defaultGlBeginFill,
+  defaultGlDrawRectangle,
   defaultGlShapeRenderer,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
@@ -31,7 +32,7 @@ export const state = createGlRenderState(canvas, {
 });
 registerRenderer(state, RichTextKind, defaultGlRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeCommands([defaultGlBeginFill, defaultGlDrawRectangle]);
 registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 

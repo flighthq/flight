@@ -2,7 +2,8 @@
 import {
   createCanvasRenderState,
   defaultCanvasRichTextRenderer,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawRectangle,
   defaultCanvasShapeRenderer,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
@@ -30,7 +31,7 @@ export const state = createCanvasRenderState(canvas, {
 });
 registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

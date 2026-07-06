@@ -12,7 +12,9 @@ import {
   createWgpuRenderState,
   createWgpuRenderTarget,
   defaultWgpuBitmapRenderer,
-  defaultWgpuShapeCommands,
+  defaultWgpuBeginFill,
+  defaultWgpuDrawRectangle,
+  defaultWgpuEndFill,
   defaultWgpuShapeRenderer,
   defaultWgpuTextLabelRenderer,
   enableWgpuRenderCache,
@@ -55,7 +57,7 @@ export const state = await createWgpuRenderState(canvas, {
 registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
-registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerWgpuShapeCommands([defaultWgpuBeginFill, defaultWgpuDrawRectangle, defaultWgpuEndFill]);
 registerDefaultWgpuMaterial(state);
 enableWgpuRenderCache(state);
 export const scale = pixelRatio;
