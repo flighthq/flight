@@ -11,12 +11,18 @@ export type BaselineField = 'fingerprint' | 'sha256';
 type ColumnBaseline = Partial<Record<BaselineField, string>>;
 type TestBaseline = Record<string, ColumnBaseline>;
 
-// Per-subject baseline root. Suites promoted to top-level map here; the rest still live under tests/
-// until they are promoted too.
-const BASELINE_ROOTS: Record<string, string> = { functional: 'functional', reference: 'reference' };
+// Per-subject baseline root: baselines colocate with their suite (functional/reference/examples are
+// top-level; the landing site lives under apps/site/landing). One JSON file per test under the root's
+// baselines/ dir.
+const BASELINE_ROOTS: Record<string, string> = {
+  functional: 'functional',
+  reference: 'reference',
+  examples: 'examples',
+  site: 'apps/site/landing',
+};
 
 export function baselinePath(root: string, subject: string, name: string): string {
-  const base = BASELINE_ROOTS[subject] ?? join('tests', subject);
+  const base = BASELINE_ROOTS[subject] ?? subject;
   return join(root, base, 'baselines', `${name}.json`);
 }
 
