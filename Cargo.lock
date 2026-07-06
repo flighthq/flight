@@ -995,6 +995,7 @@ name = "flighthq-filters-gl"
 version = "0.1.0"
 dependencies = [
  "flighthq-filters",
+ "flighthq-filters-math",
  "flighthq-render-gl",
  "glow 0.14.2",
 ]

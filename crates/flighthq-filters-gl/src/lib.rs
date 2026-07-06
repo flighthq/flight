@@ -22,11 +22,14 @@ pub mod inner_shadow_filter;
 pub mod median_filter;
 pub mod outer_glow_filter;
 pub mod pixelate_filter;
+pub mod scratch_count;
 pub mod sharpen_filter;
 pub mod tint_shader;
 
 pub use bevel_filter::apply_bevel_filter_to_gl;
-pub use blur_filter::{apply_box_blur_filter_to_gl, apply_gaussian_blur_filter_to_gl};
+pub use blur_filter::{
+    apply_blur_filter_to_gl, apply_box_blur_filter_to_gl, apply_gaussian_blur_filter_to_gl,
+};
 pub use color_matrix_filter::apply_color_matrix_filter_to_gl;
 pub use convolution_filter::apply_convolution_filter_to_gl;
 pub use displacement_map_filter::apply_displacement_map_filter_to_gl;
@@ -43,6 +46,15 @@ pub use inner_shadow_filter::apply_inner_shadow_filter_to_gl;
 pub use median_filter::apply_median_filter_to_gl;
 pub use outer_glow_filter::apply_outer_glow_filter_to_gl;
 pub use pixelate_filter::apply_pixelate_filter_to_gl;
+pub use scratch_count::{
+    get_bevel_filter_gl_scratch_count, get_color_matrix_filter_gl_scratch_count,
+    get_convolution_filter_gl_scratch_count, get_displacement_map_filter_gl_scratch_count,
+    get_drop_shadow_filter_gl_scratch_count, get_gradient_bevel_filter_gl_scratch_count,
+    get_gradient_glow_filter_gl_scratch_count, get_inner_glow_filter_gl_scratch_count,
+    get_inner_shadow_filter_gl_scratch_count, get_median_filter_gl_scratch_count,
+    get_outer_glow_filter_gl_scratch_count, get_pixelate_filter_gl_scratch_count,
+    get_sharpen_filter_gl_scratch_count,
+};
 pub use sharpen_filter::apply_sharpen_filter_to_gl;
 pub use tint_shader::{
     apply_gl_blit_offset_pass, apply_gl_blit_pass, apply_gl_invert_tint_pass, apply_gl_tint_pass,

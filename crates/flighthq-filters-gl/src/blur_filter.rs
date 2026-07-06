@@ -4,7 +4,8 @@
 //! by spread effects (glow, drop shadow). `apply_gaussian_blur_filter_to_gl` is
 //! a faithful single-pass Gaussian matching the CSS `blur()` path.
 
-use flighthq_filters::math::compute_box_blur_pass_radius;
+use flighthq_filters::BlurFilter;
+use flighthq_filters_math::compute_box_blur_pass_radius;
 use glow::HasContext;
 
 use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
@@ -59,6 +60,32 @@ void main() {
   fragColor = sum / weightSum;
 }";
 
+/// Applies a `BlurFilter` descriptor to `source`, writing to `dest`.
+///
+/// Dispatches to `apply_box_blur_filter_to_gl` with the descriptor's
+/// `blur_x` / `blur_y` (defaulting to 4.0 when unset, matching the TS
+/// reference) and a single box pass — the same `&BlurFilter` signature as the
+/// other `apply_*_filter_to_gl` functions in this crate. `temp` is a
+/// caller-provided ping-pong scratch target distinct from both `source` and
+/// `dest`.
+pub fn apply_blur_filter_to_gl(
+    state: &GlRenderState,
+    source: &GlRenderTarget,
+    dest: &GlRenderTarget,
+    temp: &GlRenderTarget,
+    filter: &BlurFilter,
+) {
+    apply_box_blur_filter_to_gl(
+        state,
+        source,
+        dest,
+        temp,
+        filter.blur_x.unwrap_or(4.0),
+        filter.blur_y.unwrap_or(4.0),
+        1,
+    );
+}
+
 /// Applies a separable box blur to `source`, writing to `dest`.
 ///
 /// `blur_x` / `blur_y` are the target Gaussian standard deviations; `passes`
@@ -81,8 +108,8 @@ pub fn apply_box_blur_filter_to_gl(
     let mut write: &GlRenderTarget = temp;
 
     for pass in 0..passes {
-        let radius_x = compute_box_blur_pass_radius(blur_x, passes, pass);
-        if radius_x > 0 {
+        let radius_x = compute_box_blur_pass_radius(blur_x as f64, passes, pass);
+        if radius_x > 0.0 {
             apply_box_blur_pass(state, program, read, write, radius_x as f32, 1.0, 0.0);
             read = write;
             write = if std::ptr::eq(write, temp) {
@@ -91,8 +118,8 @@ pub fn apply_box_blur_filter_to_gl(
                 temp
             };
         }
-        let radius_y = compute_box_blur_pass_radius(blur_y, passes, pass);
-        if radius_y > 0 {
+        let radius_y = compute_box_blur_pass_radius(blur_y as f64, passes, pass);
+        if radius_y > 0.0 {
             apply_box_blur_pass(state, program, read, write, radius_y as f32, 0.0, 1.0);
             read = write;
             write = if std::ptr::eq(write, temp) {
