@@ -1,4 +1,4 @@
-// Per-test committed baseline store: one JSON file per test at tests/<subject>/baselines/<name>.json,
+// Per-test committed baseline store: one JSON file per test at <subject-root>/baselines/<name>.json,
 // holding every column's values, e.g. { "canvas": { "fingerprint": "…", "sha256": "…" }, "flight:webgl": {…} }.
 // capture-core writes each column's `sha256` (screenshot hash); compare-render writes its `fingerprint`
 // (coarse render fingerprint). Both read-merge-write so they preserve each other's fields and the other
@@ -11,8 +11,13 @@ export type BaselineField = 'fingerprint' | 'sha256';
 type ColumnBaseline = Partial<Record<BaselineField, string>>;
 type TestBaseline = Record<string, ColumnBaseline>;
 
+// Per-subject baseline root. Suites promoted to top-level map here; the rest still live under tests/
+// until they are promoted too.
+const BASELINE_ROOTS: Record<string, string> = { functional: 'functional' };
+
 export function baselinePath(root: string, subject: string, name: string): string {
-  return join(root, 'tests', subject, 'baselines', `${name}.json`);
+  const base = BASELINE_ROOTS[subject] ?? join('tests', subject);
+  return join(root, base, 'baselines', `${name}.json`);
 }
 
 function readBaseline(path: string): TestBaseline {

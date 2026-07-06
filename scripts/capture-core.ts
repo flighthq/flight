@@ -252,7 +252,7 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
       .filter((e) => e.renderers.length > 0);
   }
 
-  const dir = tool === 'examples' ? join(root, 'examples', 'packages') : join(root, 'tests', 'functional');
+  const dir = tool === 'examples' ? join(root, 'examples', 'packages') : join(root, 'functional', 'packages');
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'package.json')))
