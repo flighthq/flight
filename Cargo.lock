@@ -455,6 +455,13 @@ name = "example-addinganimation"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-easing",
+ "flighthq-image",
+ "flighthq-node",
+ "flighthq-signals",
+ "flighthq-tween",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -462,6 +469,11 @@ name = "example-addingtext"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-font",
+ "flighthq-node",
+ "flighthq-text",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -469,6 +481,12 @@ name = "example-animatedsprite"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-image",
+ "flighthq-node",
+ "flighthq-sprite",
+ "flighthq-spritesheet",
+ "flighthq-textureatlas",
 ]
 
 [[package]]
@@ -507,6 +525,9 @@ name = "example-displayingabitmap"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-image",
+ "flighthq-node",
 ]
 
 [[package]]
