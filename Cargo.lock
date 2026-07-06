@@ -640,6 +640,7 @@ dependencies = [
  "flighthq-signals",
  "flighthq-sprite",
  "flighthq-textureatlas",
+ "flighthq-tileset",
  "flighthq-types",
 ]
 

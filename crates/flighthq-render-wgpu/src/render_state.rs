@@ -184,6 +184,7 @@ pub enum WgpuRendererSlot {
     QuadBatch,
     Shape,
     Sprite,
+    Tilemap,
 }
 
 /// Axis-aligned scissor rectangle in wgpu viewport coordinates.
