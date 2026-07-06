@@ -43,6 +43,7 @@ pub mod network;
 pub mod node;
 pub mod node_types;
 pub mod particle;
+pub mod pbr_extension_material;
 pub mod pbr_material;
 pub mod platform;
 pub mod play_mode;
@@ -257,6 +258,13 @@ pub use particle::{
     ParticleEmitterData, ParticleEmitterShape, ParticleEmitterState, ParticleForce,
     ParticleObjectsState, ParticleObjectsUpdateOptions, PlaneCollider, RectangleCollider,
     TurbulenceForce, VortexForce, WindForce, WorldTransform2D,
+};
+
+// pbr_extension_material
+pub use pbr_extension_material::{
+    AnisotropyPbrMaterial, ClearcoatPbrMaterial, IridescencePbrMaterial, SheenPbrMaterial,
+    SpecularGlossinessPbrMaterial, SpecularPbrMaterial, SubsurfacePbrMaterial,
+    TransmissionVolumePbrMaterial,
 };
 
 // pbr_material
