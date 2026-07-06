@@ -482,6 +482,12 @@ dependencies = [
 [[package]]
 name = "example-common"
 version = "0.1.0"
+dependencies = [
+ "flighthq-displayobject",
+ "flighthq-node",
+ "flighthq-shape",
+ "flighthq-types",
+]
 
 [[package]]
 name = "example-comparebitmapdata"
@@ -618,12 +624,9 @@ dependencies = [
  "example-textmetrics",
  "example-tweenexample",
  "example-usingtilemap",
- "flighthq-displayobject",
  "flighthq-displayobject-wgpu",
  "flighthq-host-winit",
- "flighthq-node",
  "flighthq-render",
- "flighthq-shape",
  "flighthq-types",
 ]
 
