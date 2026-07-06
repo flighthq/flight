@@ -118,8 +118,8 @@ fn overlap_rects_paint_last_child_on_top() {
 #[test]
 fn ts_baseline_fingerprint_ingests_and_self_compares_to_zero() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .join("tests/functional/baselines/effect-grayscale.json");
+        .join("../../..")
+        .join("functional/baselines/effect-grayscale.json");
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|_| panic!("TS baseline not found at {}", path.display()));
     let json: serde_json::Value = serde_json::from_str(&text).expect("TS baseline is valid JSON");
