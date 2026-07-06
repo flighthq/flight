@@ -1,163 +1,38 @@
-//! Backend-agnostic scene-graph build, shared by every Rust render target.
+//! Lowers a functional [`Scene`] to the shared harness graph.
 //!
-//! A [`Scene`] is plain data (rects + optional effect chain). Turning it into a
-//! drawable display-object graph — shape nodes, fill regions, per-node local
-//! transforms, and the prepared `RenderProxy2D` map — uses only
-//! `flighthq-shape` and `flighthq-render`, neither of which is backend-specific.
-//! Each render target (`wgpu`, `gl`, `skia`) then wraps the same
-//! [`SceneGraph`] in its own geometry type and walks it, so the three cells of
-//! the parity matrix render *the same graph*, differing only in the rasterizer.
+//! The backend-agnostic build (shape nodes, fill regions, prepared proxies) lives
+//! in `flighthq-harness`; this adapter only maps a `Scene`'s declarative form —
+//! axis rects then filled paths — onto the neutral [`HarnessShape`] currency the
+//! harness consumes, preserving node order (`STAGE_ID + 1 + index`, rects before
+//! paths) so committed fingerprints are unaffected.
 
-use std::collections::HashMap;
+use flighthq_harness::{HarnessShape, SceneGraph, ShapeCommand, build_scene_graph as build_graph};
 
-use flighthq_displayobject::{DisplayObjectArena, get_display_object_local_content_revision};
-use flighthq_render::{
-    RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
-    prepare_display_object_render,
-};
-use flighthq_shape::{
-    append_shape_begin_fill, append_shape_cubic_curve_to, append_shape_curve_to,
-    append_shape_end_fill, append_shape_line_to, append_shape_move_to, append_shape_rectangle,
-    create_shape, get_shape_fill_regions,
-};
-use flighthq_types::KindId;
-use flighthq_types::ShapeFillRegion;
-use flighthq_types::display::{display_object_kind, shape_kind};
-use flighthq_types::geometry::Matrix;
+use crate::scene::{Scene, local_transform_for_path, local_transform_for_rect};
 
-use crate::scene::{Scene, ShapeCommand, local_transform_for_path, local_transform_for_rect};
-
-/// The stage (root container) node id. Shape nodes start at `STAGE_ID + 1`.
-pub const STAGE_ID: u64 = 1;
-
-/// A scene reduced to the backend-agnostic graph every render target consumes:
-/// the id hierarchy, each node's kind, the prepared 2D render proxies, and each
-/// shape's fill regions. A backend wraps `regions` in its own geometry struct
-/// (`WgpuShapeGeometry` / `GlShapeGeometry` / `SkiaShapeGeometry`, all
-/// `{ regions: Vec<ShapeFillRegion>, .. }`) and walks via its
-/// `render_*_display_object`.
-pub struct SceneGraph {
-    pub stage_id: u64,
-    pub children: HashMap<u64, Vec<u64>>,
-    pub kinds: HashMap<u64, KindId>,
-    pub proxies: HashMap<u64, flighthq_types::RenderProxy2D>,
-    /// Per-shape fill regions and the source `content_revision` they were built
-    /// from (the wgpu geometry caches keyed on it).
-    pub regions: HashMap<u64, (Vec<ShapeFillRegion>, u32)>,
-}
-
-/// Builds the drawable graph for a scene: one shape node per [`RectFill`] under
-/// the stage container, with fill regions tessellated and the prepare pass run
-/// to publish each node's resolved transform/alpha/visibility into a
-/// `RenderProxy2D`. Pure CPU — no GPU device or render target — so it is shared
-/// by every backend and is safe to call from any thread.
+/// Builds the drawable graph for a functional scene: each rect becomes a
+/// rectangle-command shape and each path a command-list shape, both placed by
+/// their local origin/rotation transform, then handed to the shared harness
+/// builder.
 pub fn build_scene_graph(scene: &Scene) -> SceneGraph {
-    let mut shape_arena = DisplayObjectArena::default();
-    let mut kinds: HashMap<u64, KindId> = HashMap::new();
-    let mut children: HashMap<u64, Vec<u64>> = HashMap::new();
-    let mut parents: HashMap<u64, Option<u64>> = HashMap::new();
-    let mut regions: HashMap<u64, (Vec<ShapeFillRegion>, u32)> = HashMap::new();
-    let mut transforms: HashMap<u64, Matrix> = HashMap::new();
+    let mut shapes: Vec<HarnessShape> = Vec::with_capacity(scene.rects.len() + scene.paths.len());
 
-    kinds.insert(STAGE_ID, display_object_kind());
-    parents.insert(STAGE_ID, None);
-    let mut stage_children = Vec::new();
-
-    for (index, rect) in scene.rects.iter().enumerate() {
-        let id = STAGE_ID + 1 + index as u64;
-        let node = create_shape(&mut shape_arena);
-        append_shape_begin_fill(&mut shape_arena, node, rect.color, 1.0);
-        append_shape_rectangle(&mut shape_arena, node, rect.x, rect.y, rect.w, rect.h);
-        append_shape_end_fill(&mut shape_arena, node);
-        let content_revision = get_display_object_local_content_revision(&shape_arena, node);
-        let fill = get_shape_fill_regions(&shape_arena, node).expect("solid fill resolves");
-        regions.insert(id, (fill, content_revision));
-        transforms.insert(id, local_transform_for_rect(rect));
-        kinds.insert(id, shape_kind());
-        children.insert(id, vec![]);
-        parents.insert(id, Some(STAGE_ID));
-        stage_children.push(id);
+    for rect in scene.rects {
+        shapes.push(
+            HarnessShape::new(
+                rect.color,
+                vec![ShapeCommand::Rectangle(rect.x, rect.y, rect.w, rect.h)],
+            )
+            .with_transform(local_transform_for_rect(rect)),
+        );
     }
 
-    // Path shapes follow the rects, numbered after them, each a shape node whose
-    // fill regions the gl/wgpu/skia shape renderers draw — the same path drawing
-    // the TS shape scenes use, via the ported `flighthq-shape` command API.
-    for (index, path) in scene.paths.iter().enumerate() {
-        let id = STAGE_ID + 1 + scene.rects.len() as u64 + index as u64;
-        let node = create_shape(&mut shape_arena);
-        append_shape_begin_fill(&mut shape_arena, node, path.fill_color, 1.0);
-        for command in path.commands {
-            match *command {
-                ShapeCommand::MoveTo(x, y) => append_shape_move_to(&mut shape_arena, node, x, y),
-                ShapeCommand::LineTo(x, y) => append_shape_line_to(&mut shape_arena, node, x, y),
-                ShapeCommand::CurveTo(cx, cy, ax, ay) => {
-                    append_shape_curve_to(&mut shape_arena, node, cx, cy, ax, ay)
-                }
-                ShapeCommand::CubicCurveTo(c1x, c1y, c2x, c2y, ax, ay) => {
-                    append_shape_cubic_curve_to(&mut shape_arena, node, c1x, c1y, c2x, c2y, ax, ay)
-                }
-            }
-        }
-        append_shape_end_fill(&mut shape_arena, node);
-        let content_revision = get_display_object_local_content_revision(&shape_arena, node);
-        let fill = get_shape_fill_regions(&shape_arena, node).unwrap_or_default();
-        regions.insert(id, (fill, content_revision));
-        transforms.insert(id, local_transform_for_path(path));
-        kinds.insert(id, shape_kind());
-        children.insert(id, vec![]);
-        parents.insert(id, Some(STAGE_ID));
-        stage_children.push(id);
+    for path in scene.paths {
+        shapes.push(
+            HarnessShape::new(path.fill_color, path.commands.to_vec())
+                .with_transform(local_transform_for_path(path)),
+        );
     }
 
-    let all_ids: Vec<u64> = std::iter::once(STAGE_ID)
-        .chain(stage_children.iter().copied())
-        .collect();
-    children.insert(STAGE_ID, stage_children);
-
-    let mut store = RenderStateStore::new();
-    let render_id = create_render_state(&mut store, None);
-    let render_state = get_render_state(&store, render_id).clone();
-
-    let get_children = |id: u64| children.get(&id).cloned().unwrap_or_default();
-    let is_enabled = |_id: u64| true;
-    let get_parent = |id: u64| parents.get(&id).copied().flatten();
-    let get_revisions = |_id: u64| (1u32, 1u32, 1u32);
-    let get_kind = |id: u64| kinds.get(&id).copied().unwrap_or_default();
-    let get_local_transform = |id: u64| transforms.get(&id).copied().unwrap_or_default();
-    let get_alpha = |_id: u64| 1.0f32;
-    let get_visible = |_id: u64| true;
-    let get_blend = |_id: u64| None;
-    let get_clip = |_id: u64| false;
-
-    prepare_display_object_render(
-        &mut store,
-        render_id,
-        &render_state,
-        STAGE_ID,
-        &get_children,
-        &is_enabled,
-        &get_parent,
-        &get_revisions,
-        &get_kind,
-        &get_local_transform,
-        &get_alpha,
-        &get_visible,
-        &get_blend,
-        &get_clip,
-    );
-
-    let mut proxies: HashMap<u64, flighthq_types::RenderProxy2D> = HashMap::new();
-    for id in all_ids {
-        if let Some(proxy) = get_render_proxy_2d(&store, render_id, id) {
-            proxies.insert(id, proxy.clone());
-        }
-    }
-
-    SceneGraph {
-        stage_id: STAGE_ID,
-        children,
-        kinds,
-        proxies,
-        regions,
-    }
+    build_graph(&shapes)
 }

@@ -1039,20 +1039,16 @@ version = "0.1.0"
 dependencies = [
  "flighthq-capture",
  "flighthq-displayobject",
- "flighthq-displayobject-gl",
- "flighthq-displayobject-skia",
  "flighthq-displayobject-wgpu",
  "flighthq-effects",
  "flighthq-effects-wgpu",
+ "flighthq-harness",
  "flighthq-path",
  "flighthq-render",
- "flighthq-render-gl",
  "flighthq-render-wgpu",
  "flighthq-shape",
  "flighthq-surface",
  "flighthq-types",
- "glow 0.14.2",
- "khronos-egl",
  "serde_json",
  "wgpu",
 ]
@@ -1079,6 +1075,24 @@ version = "0.1.0"
 dependencies = [
  "flighthq-types",
  "serial_test",
+]
+
+[[package]]
+name = "flighthq-harness"
+version = "0.1.0"
+dependencies = [
+ "flighthq-displayobject",
+ "flighthq-displayobject-gl",
+ "flighthq-displayobject-skia",
+ "flighthq-displayobject-wgpu",
+ "flighthq-node",
+ "flighthq-render",
+ "flighthq-render-gl",
+ "flighthq-render-wgpu",
+ "flighthq-shape",
+ "flighthq-types",
+ "glow 0.14.2",
+ "khronos-egl",
 ]
 
 [[package]]
