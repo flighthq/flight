@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same full-frame liftGammaGain grade as render.webgl.ts: applies a warm lift and cool gain for a cinematic split-tone.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

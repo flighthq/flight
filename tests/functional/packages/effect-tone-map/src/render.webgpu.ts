@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same tone-map intent as render.webgl.ts. Unlike Canvas (passthrough),
 // tone mapping is real on Wgpu: bright HDR content rendered into an rgba16f target is compressed

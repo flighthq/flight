@@ -17,7 +17,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the MSAA reference scene. NOTE: sampleCount currently no-ops on the Wgpu
 // effect pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu

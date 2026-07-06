@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu taa: temporal, needs history + motion vectors; with neither here it is a PASSTHROUGH.
 const pixelRatio = window.devicePixelRatio || 1;

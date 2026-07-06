@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same full-frame lutGrade grade as render.webgl.ts: applies a 32^3 lookup-table grade at full strength.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

@@ -32,7 +32,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerFunctionalTarget } from '../../_harness/verify';
+import { registerFunctionalTarget } from '@ft/verify';
 import type { NativeBlurSpec, ParityTarget } from './parity';
 
 export async function createParityTarget(width: number, height: number, background: number): Promise<ParityTarget> {

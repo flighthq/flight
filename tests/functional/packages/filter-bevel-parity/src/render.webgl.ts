@@ -45,7 +45,7 @@ import {
   renderGlDisplayObject,
 } from '@flighthq/sdk';
 
-import { registerFunctionalTarget } from '../../_harness/verify';
+import { registerFunctionalTarget } from '@ft/verify';
 import type { NativeBevelSpec, ParityTarget } from './parity';
 
 export function createParityTarget(width: number, height: number, background: number): ParityTarget {

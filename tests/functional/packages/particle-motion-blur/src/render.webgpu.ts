@@ -24,7 +24,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for per-particle motion blur: the particle velocity writer rasterizes each
 // particle's own velocity into the G-buffer, which the motion-blur runner smears along — a radial star.
