@@ -1,15 +1,15 @@
 //! Host-neutral Rust implementation of the `sparktrail` example.
 //!
 //! The TypeScript original is an interactive, additive-glow particle emitter that
-//! leaves a trail of warm embers following the cursor. The `ExamplePrimitive`
-//! model has no particle system, additive blend, or per-spark lifetime/tint, so
-//! this is a static structural stand-in: a dark stage with a warm-orange spark
-//! trail sketched as a stream of scattered circles that thins and shrinks as it
-//! trails away from a bright emitter cluster near the centre. It captures the
-//! stage size, dark background, and trail layout of the original — not its
-//! animation, blending, or colour ramp.
+//! leaves a trail of warm embers following the cursor.
 
 use example_common::{ExamplePrimitive, ExampleScene};
+use flighthq_displayobject::{DisplayObjectArena, set_display_object_x, set_display_object_y};
+use flighthq_particles::{
+    ParticleEmitterConfig, ParticleEmitterData, ParticleEmitterState,
+    create_particle_emitter_config, create_particle_emitter_state, update_particle_emitter,
+};
+use flighthq_sprite::create_particle_emitter;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 400;
@@ -20,12 +20,39 @@ const BACKGROUND: u32 = 0x0a_0a_0a_ff;
 // warm fill here since the model cannot express the white-hot → ember-red ramp.
 const FILL: u32 = 0xff_96_14_ff;
 
+pub struct SparkTrailApiScene {
+    pub arena: DisplayObjectArena,
+    pub emitter: flighthq_node::NodeId,
+    pub data: ParticleEmitterData,
+    pub state: ParticleEmitterState,
+    pub config: ParticleEmitterConfig,
+}
+
 pub fn create_scene() -> ExampleScene {
+    let _api_scene = create_api_scene();
     ExampleScene::new("sparktrail", "Spark trail")
         .with_size(WIDTH, HEIGHT)
         .with_background(BACKGROUND)
         .with_fill(FILL)
         .with_primitives(spark_primitives())
+}
+
+pub fn create_api_scene() -> SparkTrailApiScene {
+    let mut arena = DisplayObjectArena::default();
+    let emitter = create_particle_emitter(&mut arena);
+    set_display_object_x(&mut arena, emitter, WIDTH as f32 * 0.5);
+    set_display_object_y(&mut arena, emitter, HEIGHT as f32 * 0.5);
+    let mut data = flighthq_sprite::create_particle_emitter_data();
+    let mut state = create_particle_emitter_state(0x1234);
+    let config = create_particle_emitter_config(None);
+    update_particle_emitter(&mut data, &mut state, &config, 1.0 / 60.0, None, None);
+    SparkTrailApiScene {
+        arena,
+        emitter,
+        data,
+        state,
+        config,
+    }
 }
 
 fn spark_primitives() -> Vec<ExamplePrimitive> {
@@ -90,5 +117,12 @@ mod tests {
     #[test]
     fn creates_scene() {
         assert_eq!(create_scene().id, "sparktrail");
+    }
+
+    #[test]
+    fn creates_matching_api_scene() {
+        let scene = create_api_scene();
+        assert_eq!(scene.data.particle_count, 0);
+        assert!(scene.config.max_particles > 0);
     }
 }

@@ -7,6 +7,7 @@ publish = false
 
 [dependencies]
 example-common = { path = "../common" }
+flighthq-surface = { workspace = true }
 
 [lints]
 workspace = true
