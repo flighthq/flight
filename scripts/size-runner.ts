@@ -138,7 +138,7 @@ export function formatSizeResult(
 export async function runSizeChecks({
   root = process.cwd(),
   examplesDir = resolve(root, 'examples', 'packages'),
-  baselineFile = resolve(root, 'tests', 'size', 'size.baseline.json'),
+  baselineFile = resolve(root, 'tools', 'size', 'size.baseline.json'),
   updateBaseline = false,
   exampleFilters = [],
   onResult,

@@ -46,7 +46,7 @@ const vitestBin = resolve(
   process.platform === 'win32' ? 'vitest.cmd' : 'vitest',
 );
 // The size test runs via its own config (it is no longer a project of the master vitest.config.ts).
-const sizeConfig = resolve(__dirname, '..', 'tests', 'size', 'vitest.config.ts');
+const sizeConfig = resolve(__dirname, '..', 'tools', 'size', 'vitest.config.ts');
 const command = [vitestBin, 'run', '--config', sizeConfig, ...options.forwardedArgs]
   .map((arg) => JSON.stringify(arg))
   .join(' ');
