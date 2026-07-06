@@ -3,6 +3,7 @@ import { dirname, extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import { resolveAssetTarget } from '../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../scripts/copy-dir';
 import { workspacePackages } from '../../scripts/workspaces';
 
@@ -21,9 +22,10 @@ const testsDir = join(projectRoot, 'functional');
 const packagesDir = join(testsDir, 'packages');
 // The shared render harness lives in tools/ (used by functional and reference alike).
 const harnessDir = join(projectRoot, 'tools/harness');
-// Suite render assets live in the top-level assets/ folder (the committed manifest + downloaded pool),
-// no longer colocated under the suite.
-const assetsDir = join(projectRoot, 'assets/functional');
+// Suite render assets: the committed manifest lives at assets/functional/, and the downloaded pool
+// resolves to the shared cache (.cache/assets/functional) — or, when the cache is disabled, back to
+// assets/functional/public/assets. resolveAssetTarget keeps this in lockstep with the downloader.
+const assetsPool = resolveAssetTarget(join(projectRoot, 'assets/functional')).outDir;
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -275,7 +277,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
         // identical files used across renderers and tests (including the shared manifest) are stored
         // exactly once. Safe to merge because asset file names are globally unique.
         const pool = join(outDir, 'test-assets');
-        const sources = [join(assetsDir, 'public'), ...buildTests.map((t) => join(packagesDir, t.name, 'public'))];
+        const sources = [assetsPool, ...buildTests.map((t) => join(packagesDir, t.name, 'public'))];
         for (const src of sources) {
           if (existsSync(src)) copyDirectoryContents(src, pool);
         }
@@ -318,7 +320,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
             const assetRel = assetParts.join('/');
             const candidates: string[] = [];
             candidates.push(join(packagesDir, name, 'public', assetRel));
-            candidates.push(join(assetsDir, 'public', assetRel));
+            candidates.push(join(assetsPool, assetRel));
 
             for (const candidate of candidates) {
               if (existsSync(candidate)) {
