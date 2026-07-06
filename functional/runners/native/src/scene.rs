@@ -259,6 +259,105 @@ pub fn scenes() -> Vec<Scene> {
             paths: &[],
             effects: no_scene_effects,
         },
+        Scene {
+            name: "displayobject-cache",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("displayobject-cache"),
+            hdr: false,
+            rects: RECTS_DISPLAYOBJECT_CACHE,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "displayobject-clip-contour",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("displayobject-clip-contour"),
+            hdr: false,
+            rects: &[],
+            paths: PATHS_DISPLAYOBJECT_CLIP_CONTOUR,
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "displayobject-clip-rect",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("displayobject-clip-rect"),
+            hdr: false,
+            rects: RECTS_DISPLAYOBJECT_CLIP_RECT,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "node-transform",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("node-transform"),
+            hdr: false,
+            rects: RECTS_NODE_TRANSFORM,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "node-visibility",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("node-visibility"),
+            hdr: false,
+            rects: RECTS_NODE_VISIBILITY,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "quadbatch-grid",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("quadbatch-grid"),
+            hdr: false,
+            rects: RECTS_QUADBATCH_GRID,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "quadbatch-matrix-transform",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("quadbatch-matrix-transform"),
+            hdr: false,
+            rects: RECTS_QUADBATCH_MATRIX_TRANSFORM,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "scale9-stretch",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("scale9-stretch"),
+            hdr: false,
+            rects: RECTS_SCALE9_STRETCH,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "shape-curves",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("shape-curves"),
+            hdr: false,
+            rects: &[],
+            paths: PATHS_SHAPE_CURVES,
+            effects: no_scene_effects,
+        },
     ];
     scenes.extend(effect_scenes());
     scenes
@@ -2611,6 +2710,64 @@ const SHAPE_FILL_SOLID_RECTS: &[RectFill] = &[
     axis_rect(0x00_ff_00_ff, 280.0, 280.0, 240.0, 240.0),
     axis_rect(0x00_00_ff_ff, 580.0, 120.0, 180.0, 180.0),
 ];
+
+const RECTS_DISPLAYOBJECT_CACHE: &[RectFill] = &[
+    axis_rect(0xdd22aaff, 200.0, 180.0, 160.0, 160.0),
+    axis_rect(0x33cc44ff, 440.0, 320.0, 160.0, 160.0),
+];
+
+const PATHS_DISPLAYOBJECT_CLIP_CONTOUR: &[ShapePath] = &[ShapePath {
+    fill_color: 0x00ccddff,
+    commands: &[
+        ShapeCommand::MoveTo(400.0, 150.0),
+        ShapeCommand::LineTo(550.0, 450.0),
+        ShapeCommand::LineTo(250.0, 450.0),
+        ShapeCommand::LineTo(400.0, 150.0),
+    ],
+    rotation_deg: 0.0,
+    origin_x: 0.0,
+    origin_y: 0.0,
+}];
+
+const RECTS_DISPLAYOBJECT_CLIP_RECT: &[RectFill] =
+    &[axis_rect(0xff8800ff, 200.0, 120.0, 160.0, 160.0)];
+
+const RECTS_NODE_TRANSFORM: &[RectFill] = &[rotated_rect(
+    0x3399ffff, -80.0, -80.0, 160.0, 160.0, 45.0, 400.0, 300.0,
+)];
+
+const RECTS_NODE_VISIBILITY: &[RectFill] = &[axis_rect(0xff0000ff, 120.0, 200.0, 200.0, 200.0)];
+
+const RECTS_QUADBATCH_GRID: &[RectFill] = &[
+    axis_rect(0x0000ffff, 150.0, 150.0, 48.0, 48.0),
+    axis_rect(0x0000ffff, 450.0, 150.0, 48.0, 48.0),
+    axis_rect(0x0000ffff, 150.0, 400.0, 48.0, 48.0),
+    axis_rect(0x0000ffff, 450.0, 400.0, 48.0, 48.0),
+];
+
+const RECTS_QUADBATCH_MATRIX_TRANSFORM: &[RectFill] = &[
+    rotated_rect(0xff0000ff, -30.0, -30.0, 60.0, 60.0, 45.0, 200.0, 200.0),
+    axis_rect(0xff0000ff, 500.0, 150.0, 120.0, 120.0),
+];
+
+const RECTS_SCALE9_STRETCH: &[RectFill] = &[
+    axis_rect(0x0000ffff, 120.0, 90.0, 480.0, 480.0),
+    axis_rect(0xffff00ff, 132.0, 102.0, 456.0, 456.0),
+];
+
+const PATHS_SHAPE_CURVES: &[ShapePath] = &[ShapePath {
+    fill_color: 0xff8800ff,
+    commands: &[
+        ShapeCommand::MoveTo(550.0, 300.0),
+        ShapeCommand::CubicCurveTo(550.0, 382.84271247, 482.84271247, 450.0, 400.0, 450.0),
+        ShapeCommand::CubicCurveTo(317.15728753, 450.0, 250.0, 382.84271247, 250.0, 300.0),
+        ShapeCommand::CubicCurveTo(250.0, 217.15728753, 317.15728753, 150.0, 400.0, 150.0),
+        ShapeCommand::CurveTo(449.705627482, 250.294372518, 550.0, 300.0),
+    ],
+    rotation_deg: 0.0,
+    origin_x: 0.0,
+    origin_y: 0.0,
+}];
 
 // The `overlap-rects` scene: three overlapping rects exercising draw order.
 const OVERLAP_RECTS: &[RectFill] = &[
