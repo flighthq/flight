@@ -34,10 +34,7 @@ pub use color_matrix_filter::apply_color_matrix_filter_to_gl;
 pub use convolution_filter::apply_convolution_filter_to_gl;
 pub use displacement_map_filter::apply_displacement_map_filter_to_gl;
 pub use drop_shadow_filter::apply_drop_shadow_filter_to_gl;
-pub use filter_pass::{
-    GlFullscreenProgram, clear_gl_filter_program_cache, clear_gl_render_target,
-    compile_gl_fullscreen_program, draw_gl_fullscreen_pass,
-};
+pub use filter_pass::{clear_gl_filter_program_cache, draw_gl_fullscreen_pass};
 pub use gradient_bevel_filter::apply_gradient_bevel_filter_to_gl;
 pub use gradient_glow_filter::apply_gradient_glow_filter_to_gl;
 pub use gradient_ramp::create_gl_gradient_ramp_texture;

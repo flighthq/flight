@@ -6,10 +6,11 @@
 //! for the blur ping-pong temp. This function allocates nothing itself.
 
 use flighthq_filters::SharpenFilter;
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
 use crate::blur_filter::apply_box_blur_filter_to_gl;
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::{GlRenderState, GlRenderTarget};
 
 // Unsharp mask: source0 = original (unit 0), source1 = blurred (unit 1).
