@@ -260,6 +260,28 @@ pub fn scenes() -> Vec<Scene> {
             effects: no_scene_effects,
         },
         Scene {
+            name: "node-alpha",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("node-alpha"),
+            hdr: false,
+            rects: RECTS_NODE_ALPHA,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "node-hierarchy",
+            width: 800,
+            height: 600,
+            background: 0x000000ff,
+            ts_baseline: Some("node-hierarchy"),
+            hdr: false,
+            rects: RECTS_NODE_HIERARCHY,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
             name: "displayobject-cache",
             width: 800,
             height: 600,
@@ -2710,6 +2732,13 @@ const SHAPE_FILL_SOLID_RECTS: &[RectFill] = &[
     axis_rect(0x00_ff_00_ff, 280.0, 280.0, 240.0, 240.0),
     axis_rect(0x00_00_ff_ff, 580.0, 120.0, 180.0, 180.0),
 ];
+
+const RECTS_NODE_ALPHA: &[RectFill] = &[
+    axis_rect(0x0000ffff, 250.0, 200.0, 200.0, 200.0),
+    axis_rect(0xff000080, 350.0, 300.0, 200.0, 200.0),
+];
+
+const RECTS_NODE_HIERARCHY: &[RectFill] = &[axis_rect(0x33cc6680, 320.0, 240.0, 120.0, 120.0)];
 
 const RECTS_DISPLAYOBJECT_CACHE: &[RectFill] = &[
     axis_rect(0xdd22aaff, 200.0, 180.0, 160.0, 160.0),
