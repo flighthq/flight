@@ -58,6 +58,29 @@ pub struct WgpuRenderTarget {
 }
 
 // ---------------------------------------------------------------------------
+// WgpuRenderStats
+// ---------------------------------------------------------------------------
+
+/// Per-frame GPU draw statistics for a `WgpuRenderState`, populated by the batch
+/// and draw paths. Mirrors the TS `WgpuRenderStats` interface.
+///
+/// The accumulator lives in the `render_stats` runtime slot, which starts as
+/// `None`. The TS port keeps it in a `WeakMap` keyed by state, so `record_*`
+/// calls made before the first `get_wgpu_render_stats` / `reset_wgpu_render_stats`
+/// are no-ops (the slot has not been initialised yet).
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+pub struct WgpuRenderStats {
+    /// Number of GPU draw calls issued this frame.
+    pub draw_call_count: u32,
+    /// Total sprite/quad/particle instances drawn this frame.
+    pub instance_count: u32,
+    /// Number of sprite-batch flushes triggered this frame.
+    pub batch_flush_count: u32,
+    /// Number of canvas-to-GPU texture uploads issued this frame.
+    pub texture_upload_count: u32,
+}
+
+// ---------------------------------------------------------------------------
 // WgpuRenderStateRuntime
 // ---------------------------------------------------------------------------
 
@@ -172,6 +195,11 @@ pub struct WgpuRenderStateRuntime {
     pub shape_fill_pipeline_cache: std::collections::HashMap<String, wgpu::RenderPipeline>,
     pub shape_fill_mesh_cache:
         std::collections::HashMap<u64, crate::runtime_types::WgpuShapeMeshCacheEntry>,
+
+    // Per-frame GPU draw statistics accumulator. `None` until the first
+    // `get_wgpu_render_stats` / `reset_wgpu_render_stats` initialises it, mirroring
+    // the TS WeakMap-keyed-by-state accumulator (so `record_*` before init is a no-op).
+    pub render_stats: Option<WgpuRenderStats>,
 }
 
 /// Identifies which built-in renderer handles a node kind. Mirrors
@@ -423,6 +451,8 @@ pub fn create_wgpu_render_state_runtime(
 
         shape_fill_pipeline_cache: std::collections::HashMap::new(),
         shape_fill_mesh_cache: std::collections::HashMap::new(),
+
+        render_stats: None,
     }
 }
 

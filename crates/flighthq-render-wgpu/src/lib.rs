@@ -50,8 +50,8 @@ pub use material_registry::{
     resolve_wgpu_material_renderer,
 };
 pub use render_state::{
-    WgpuClipForm, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime, WgpuRenderTarget,
-    WgpuRenderTargetStackEntry, WgpuRendererSlot, WgpuScissorRect, WgpuViewport,
+    WgpuClipForm, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime, WgpuRenderStats,
+    WgpuRenderTarget, WgpuRenderTargetStackEntry, WgpuRendererSlot, WgpuScissorRect, WgpuViewport,
     create_wgpu_render_state, create_wgpu_render_state_runtime, destroy_wgpu_render_state,
     get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut, is_wgpu_supported,
 };
