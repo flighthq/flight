@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use example_common::{ExamplePrimitive, ExampleScene};
-use flighthq_displayobject::{DisplayObjectArena, get_display_object_local_content_revision};
+use example_common::{ExampleScene, build_example_shape_regions};
 use flighthq_displayobject_wgpu::{
     WgpuShapeGeometry, register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
@@ -9,11 +8,6 @@ use flighthq_host_winit::{InputManager, WgpuRenderState, WinitAppConfig, run_win
 use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
     prepare_display_object_render,
-};
-use flighthq_shape::{
-    append_shape_begin_fill, append_shape_circle, append_shape_ellipse, append_shape_end_fill,
-    append_shape_line_to, append_shape_move_to, append_shape_rectangle,
-    append_shape_round_rectangle, create_shape, get_shape_fill_regions,
 };
 use flighthq_types::RenderProxy2D;
 use flighthq_types::display::{display_object_kind, shape_kind};
@@ -94,69 +88,10 @@ fn scene_for(id: &str) -> Option<ExampleScene> {
 }
 
 fn shape_geometry_for_scene(scene: &ExampleScene) -> WgpuShapeGeometry {
-    let mut arena = DisplayObjectArena::default();
-    let shape = create_shape(&mut arena);
-    append_shape_begin_fill(&mut arena, shape, scene.fill, 1.0);
-
-    for primitive in &scene.primitives {
-        append_primitive(&mut arena, shape, primitive);
-    }
-
-    append_shape_end_fill(&mut arena, shape);
+    let (regions, content_revision) = build_example_shape_regions(scene);
     WgpuShapeGeometry {
-        regions: get_shape_fill_regions(&arena, shape).unwrap_or_default(),
-        content_revision: get_display_object_local_content_revision(&arena, shape),
-    }
-}
-
-fn append_primitive(
-    arena: &mut DisplayObjectArena,
-    shape: flighthq_node::NodeId,
-    primitive: &ExamplePrimitive,
-) {
-    match primitive {
-        ExamplePrimitive::Rectangle {
-            x,
-            y,
-            width,
-            height,
-        } => append_shape_rectangle(arena, shape, *x, *y, *width, *height),
-        ExamplePrimitive::Circle { x, y, radius } => {
-            append_shape_circle(arena, shape, *x, *y, *radius)
-        }
-        ExamplePrimitive::Ellipse {
-            x,
-            y,
-            width,
-            height,
-        } => append_shape_ellipse(arena, shape, *x, *y, *width, *height),
-        ExamplePrimitive::RoundRectangle {
-            x,
-            y,
-            width,
-            height,
-            radius,
-        } => append_shape_round_rectangle(
-            arena,
-            shape,
-            *x,
-            *y,
-            *width,
-            *height,
-            radius * 2.0,
-            radius * 2.0,
-        ),
-        ExamplePrimitive::Polygon { points } => {
-            let Some(&(start_x, start_y)) = points.first() else {
-                return;
-            };
-            append_shape_move_to(arena, shape, start_x, start_y);
-            for &(x, y) in &points[1..] {
-                append_shape_line_to(arena, shape, x, y);
-            }
-            append_shape_line_to(arena, shape, start_x, start_y);
-        }
-        ExamplePrimitive::Text { .. } => {}
+        regions,
+        content_revision,
     }
 }
 
