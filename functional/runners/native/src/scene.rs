@@ -74,6 +74,11 @@ pub struct Scene {
     pub background: u32,
     pub ts_baseline: Option<&'static str>,
     pub rects: &'static [RectFill],
+    /// Filled shape paths beyond axis-aligned rects (curves, polygons, multi-point
+    /// fills), drawn as shape nodes alongside `rects`. Empty (`&[]`) for rect-only
+    /// scenes. Rendered via the ported display-object shape renderer, so it works
+    /// on every backend that draws shapes (gl, wgpu, skia).
+    pub paths: &'static [ShapePath],
     /// Builds the per-frame full-frame effect chain. Returns an empty list for a
     /// pure-shape scene (the default via [`no_scene_effects`]).
     pub effects: fn() -> Vec<RenderEffect>,
@@ -82,6 +87,37 @@ pub struct Scene {
     /// tone-map). The shape pass and present blit operate in HDR linear space so
     /// values above 1.0 survive into the effect, instead of clamping in `Rgba8`.
     pub hdr: bool,
+}
+
+/// One command in a filled shape path, mirroring the OpenFL/`flighthq-shape`
+/// drawing API. Coordinates are in the shape's local space (the same space as
+/// [`RectFill`]'s `x/y/w/h`), placed by the path's origin/rotation.
+#[derive(Copy, Clone, Debug)]
+pub enum ShapeCommand {
+    /// Start a new contour at `(x, y)`.
+    MoveTo(f32, f32),
+    /// Straight segment to `(x, y)`.
+    LineTo(f32, f32),
+    /// Quadratic curve through control `(cx, cy)` to anchor `(x, y)`.
+    CurveTo(f32, f32, f32, f32),
+    /// Cubic curve through controls `(c1x, c1y)`, `(c2x, c2y)` to anchor `(x, y)`.
+    CubicCurveTo(f32, f32, f32, f32, f32, f32),
+}
+
+/// A solid-filled shape path: a command list under one fill color, placed by a
+/// local origin/rotation exactly like [`RectFill`]. Built into a shape node whose
+/// fill regions the gl/wgpu/skia shape renderers draw. Gradient and stroke fills
+/// are follow-ups; this covers the solid-fill path scenes.
+#[derive(Copy, Clone, Debug)]
+pub struct ShapePath {
+    pub fill_color: u32,
+    pub commands: &'static [ShapeCommand],
+    /// Local rotation in degrees about the path origin (`0.0` for none).
+    pub rotation_deg: f32,
+    /// Path origin x in stage pixels (the local transform's translation).
+    pub origin_x: f32,
+    /// Path origin y in stage pixels.
+    pub origin_y: f32,
 }
 
 /// Builds an axis-aligned [`RectFill`] in stage-pixel coordinates (identity local
@@ -148,6 +184,26 @@ pub fn local_transform_for_rect(rect: &RectFill) -> Matrix {
     }
 }
 
+/// The local transform for a [`ShapePath`]: a rotation about its origin placed at
+/// `(origin_x, origin_y)`, identity when unrotated/unpositioned. Same convention
+/// as [`local_transform_for_rect`].
+pub fn local_transform_for_path(path: &ShapePath) -> Matrix {
+    if path.rotation_deg == 0.0 && path.origin_x == 0.0 && path.origin_y == 0.0 {
+        return Matrix::default();
+    }
+    let radians = path.rotation_deg.to_radians();
+    let cos = radians.cos();
+    let sin = radians.sin();
+    Matrix {
+        a: cos,
+        b: sin,
+        c: -sin,
+        d: cos,
+        tx: path.origin_x,
+        ty: path.origin_y,
+    }
+}
+
 /// The empty effect chain — a scene that renders shapes only, with no
 /// post-process pass.
 pub fn no_scene_effects() -> Vec<RenderEffect> {
@@ -167,6 +223,7 @@ pub fn scenes() -> Vec<Scene> {
             ts_baseline: None,
             hdr: false,
             rects: SOLID_RED_RECTS,
+            paths: &[],
             effects: no_scene_effects,
         },
         Scene {
@@ -177,6 +234,7 @@ pub fn scenes() -> Vec<Scene> {
             ts_baseline: None,
             hdr: false,
             rects: OVERLAP_RECTS,
+            paths: &[],
             effects: no_scene_effects,
         },
         Scene {
@@ -187,6 +245,18 @@ pub fn scenes() -> Vec<Scene> {
             ts_baseline: None,
             hdr: false,
             rects: QUADRANTS_RECTS,
+            paths: &[],
+            effects: no_scene_effects,
+        },
+        Scene {
+            name: "shape-fill-solid",
+            width: 800,
+            height: 600,
+            background: 0x00_00_00_ff,
+            ts_baseline: Some("shape-fill-solid"),
+            hdr: false,
+            rects: SHAPE_FILL_SOLID_RECTS,
+            paths: &[],
             effects: no_scene_effects,
         },
     ];
@@ -339,6 +409,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-grayscale"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Grayscale(
                     flighthq_effects::types::GrayscaleEffect {
@@ -355,6 +426,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-invert"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Invert(
                     flighthq_effects::types::InvertEffect {
@@ -371,6 +443,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-sepia"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Sepia(flighthq_effects::types::SepiaEffect {
                     intensity: Some(1.0),
@@ -385,6 +458,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-brightness-contrast"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::BrightnessContrast(
                     flighthq_effects::types::BrightnessContrastEffect {
@@ -402,6 +476,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-hue-saturation"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::HueSaturation(
                     flighthq_effects::types::HueSaturationEffect {
@@ -420,6 +495,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-posterize"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Posterize(
                     flighthq_effects::types::PosterizeEffect { levels: Some(4) },
@@ -434,6 +510,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-color-grade"),
             hdr: false,
             rects: COLOR_GRADE_SPREAD_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::ColorGrade(
                     flighthq_effects::types::ColorGradeEffect {
@@ -455,6 +532,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-channel-mixer"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::ChannelMixer(
                     flighthq_effects::types::ChannelMixerEffect {
@@ -471,6 +549,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-white-balance"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::WhiteBalance(
                     flighthq_effects::types::WhiteBalanceEffect {
@@ -491,6 +570,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-empty-passthrough"),
             hdr: false,
             rects: EMPTY_PASSTHROUGH_RECTS,
+            paths: &[],
             // A single no-op pass keeps the frame on the pipeline path (begin →
             // draw → present) instead of the pure-shape shortcut, exercising the
             // identity present blit the TS scene checks.
@@ -511,6 +591,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-film-grain"),
             hdr: false,
             rects: FILM_GRAIN_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::FilmGrain(
                     flighthq_effects::types::FilmGrainEffect {
@@ -534,6 +615,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-tone-map"),
             hdr: true,
             rects: TONE_MAP_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::ToneMap(
                     flighthq_effects::types::ToneMapEffect {
@@ -557,6 +639,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-exposure"),
             hdr: true,
             rects: EXPOSURE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Exposure(
                     flighthq_effects::types::ExposureEffect {
@@ -573,6 +656,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-bloom"),
             hdr: true,
             rects: BLOOM_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Bloom(flighthq_effects::types::BloomEffect {
                     threshold: Some(0.6),
@@ -590,6 +674,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-bokeh-dof"),
             hdr: false,
             rects: BOKEH_DOF_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::BokehDepthOfField(
                     flighthq_effects::types::BokehDepthOfFieldEffect {
@@ -608,6 +693,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-camera-motion-blur"),
             hdr: false,
             rects: CAMERA_MOTION_BLUR_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::CameraMotionBlur(
                     flighthq_effects::types::CameraMotionBlurEffect {
@@ -625,6 +711,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-chain"),
             hdr: true,
             rects: CHAIN_RECTS,
+            paths: &[],
             effects: || {
                 vec![
                     RenderEffect::Bloom(flighthq_effects::types::BloomEffect {
@@ -658,6 +745,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-chromatic-aberration"),
             hdr: false,
             rects: CHROMATIC_ABERRATION_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::ChromaticAberration(
                     flighthq_effects::types::ChromaticAberrationEffect {
@@ -675,6 +763,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-crt"),
             hdr: false,
             rects: CRT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Crt(flighthq_effects::types::CrtEffect {
                     curvature: Some(0.3),
@@ -692,6 +781,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-directional-blur"),
             hdr: false,
             rects: DIRECTIONAL_BLUR_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::DirectionalBlur(
                     flighthq_effects::types::DirectionalBlurEffect {
@@ -710,6 +800,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-displacement"),
             hdr: false,
             rects: DISPLACEMENT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Displacement(
                     flighthq_effects::types::DisplacementEffect {
@@ -728,6 +819,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-dither"),
             hdr: false,
             rects: DITHER_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Dither(
                     flighthq_effects::types::DitherEffect { levels: Some(4) },
@@ -742,6 +834,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-fxaa"),
             hdr: false,
             rects: FXAA_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Fxaa(flighthq_effects::types::FxaaEffect {
                     edge_threshold: Some(0.0312),
@@ -757,6 +850,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-glitch"),
             hdr: false,
             rects: GLITCH_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Glitch(
                     flighthq_effects::types::GlitchEffect {
@@ -776,6 +870,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-god-rays"),
             hdr: true,
             rects: GOD_RAYS_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::GodRays(
                     flighthq_effects::types::GodRaysEffect {
@@ -798,6 +893,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-halftone"),
             hdr: false,
             rects: HALFTONE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Halftone(
                     flighthq_effects::types::HalftoneEffect {
@@ -815,6 +911,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-kuwahara"),
             hdr: false,
             rects: KUWAHARA_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Kuwahara(
                     flighthq_effects::types::KuwaharaEffect { radius: Some(4) },
@@ -829,6 +926,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-lens-distortion"),
             hdr: false,
             rects: LENS_DISTORTION_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::LensDistortion(
                     flighthq_effects::types::LensDistortionEffect {
@@ -846,6 +944,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-lens-flare"),
             hdr: true,
             rects: LENS_FLARE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::LensFlare(
                     flighthq_effects::types::LensFlareEffect {
@@ -865,6 +964,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-lensdirt"),
             hdr: false,
             rects: LENSDIRT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::LensDirt(
                     flighthq_effects::types::LensDirtEffect {
@@ -883,6 +983,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-msaa-bloom"),
             hdr: true,
             rects: MSAA_BLOOM_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Bloom(flighthq_effects::types::BloomEffect {
                     threshold: Some(0.6),
@@ -900,6 +1001,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-lift-gamma-gain"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::LiftGammaGain(
                     flighthq_effects::types::LiftGammaGainEffect {
@@ -918,6 +1020,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-screen-space-fog"),
             hdr: false,
             rects: EXPOSURE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::ScreenSpaceFog(
                     flighthq_effects::types::ScreenSpaceFogEffect {
@@ -937,6 +1040,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-radial-blur"),
             hdr: false,
             rects: CAMERA_MOTION_BLUR_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::RadialBlur(
                     flighthq_effects::types::RadialBlurEffect {
@@ -956,6 +1060,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-sharpen"),
             hdr: false,
             rects: CRT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Sharpen(
                     flighthq_effects::types::SharpenEffect { amount: Some(1.5) },
@@ -970,6 +1075,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-smaa"),
             hdr: false,
             rects: EXPOSURE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Smaa(flighthq_effects::types::SmaaEffect {
                     threshold: Some(0.1),
@@ -984,6 +1090,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-pixelate"),
             hdr: false,
             rects: CRT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Pixelate(
                     flighthq_effects::types::PixelateEffect { size: Some(24.0) },
@@ -998,6 +1105,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-ssao"),
             hdr: false,
             rects: EXPOSURE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Ssao(flighthq_effects::types::SsaoEffect {
                     radius: Some(0.5),
@@ -1015,6 +1123,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-tilt-shift"),
             hdr: false,
             rects: BOKEH_DOF_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::TiltShift(
                     flighthq_effects::types::TiltShiftEffect {
@@ -1033,6 +1142,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-vignette"),
             hdr: false,
             rects: VIGNETTE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Vignette(
                     flighthq_effects::types::VignetteEffect {
@@ -1052,6 +1162,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-taa"),
             hdr: false,
             rects: EXPOSURE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Taa(flighthq_effects::types::TaaEffect {
                     feedback: Some(0.9),
@@ -1066,6 +1177,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-ssr"),
             hdr: false,
             rects: EXPOSURE_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Ssr(flighthq_effects::types::SsrEffect {
                     max_distance: Some(0.8),
@@ -1082,6 +1194,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-outline"),
             hdr: false,
             rects: CRT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Outline(
                     flighthq_effects::types::OutlineEffect {
@@ -1100,6 +1213,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-lut-grade"),
             hdr: false,
             rects: GRADE_GRID_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::LookupTableGrade(
                     flighthq_effects::types::LookupTableGradeEffect {
@@ -1117,6 +1231,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-sketch"),
             hdr: false,
             rects: CRT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Sketch(
                     flighthq_effects::types::SketchEffect {
@@ -1133,6 +1248,7 @@ fn effect_scenes() -> Vec<Scene> {
             ts_baseline: Some("effect-scanlines"),
             hdr: false,
             rects: CRT_RECTS,
+            paths: &[],
             effects: || {
                 vec![RenderEffect::Scanlines(
                     flighthq_effects::types::ScanlinesEffect {
@@ -2487,6 +2603,14 @@ const VIGNETTE_RECTS: &[RectFill] = &[axis_rect(
 
 // The `solid-red` scene: one 32x32 rect on a dark field.
 const SOLID_RED_RECTS: &[RectFill] = &[axis_rect(0xE0_30_30_ff, 16.0, 16.0, 32.0, 32.0)];
+
+// The `shape-fill-solid` scene: three solid-fill rectangles (red, green, blue) on
+// black, mirroring the TS scene 1:1 (0xRRGGBB → 0xRRGGBBff opaque).
+const SHAPE_FILL_SOLID_RECTS: &[RectFill] = &[
+    axis_rect(0xff_00_00_ff, 120.0, 120.0, 240.0, 240.0),
+    axis_rect(0x00_ff_00_ff, 280.0, 280.0, 240.0, 240.0),
+    axis_rect(0x00_00_ff_ff, 580.0, 120.0, 180.0, 180.0),
+];
 
 // The `overlap-rects` scene: three overlapping rects exercising draw order.
 const OVERLAP_RECTS: &[RectFill] = &[
