@@ -14,7 +14,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same sphere as render.webgl.ts. Wgpu state init is async.
 // renderWgpuBackground opens the command encoder + clears; the effect pipeline runs between

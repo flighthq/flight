@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same full-frame sepia grade as render.webgl.ts: applies a full sepia tone.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

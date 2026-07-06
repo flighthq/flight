@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu screenSpaceFog: depth-driven, but no depth buffer is bound here, so this is a color-only
 // fallback (flat fog tint) — same intent, no depth gradient.

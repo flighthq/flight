@@ -17,7 +17,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the empty-passthrough identity check. The scene renders through the effect
 // pipeline with an EMPTY effect list at sampleCount 1; begin -> render -> end with no stages must

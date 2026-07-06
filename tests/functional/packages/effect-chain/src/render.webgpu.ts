@@ -24,7 +24,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same three-stage chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The pipeline ping-pongs between offscreen targets so each registered runner reads

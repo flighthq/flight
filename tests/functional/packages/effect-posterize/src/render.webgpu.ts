@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same full-frame posterize grade as render.webgl.ts: quantizes each channel to 4 levels.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

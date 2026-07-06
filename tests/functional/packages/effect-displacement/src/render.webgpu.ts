@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column: hashed block tears + RGB channel separation in a single fullscreen WGSL pass.
 const pixelRatio = window.devicePixelRatio || 1;
