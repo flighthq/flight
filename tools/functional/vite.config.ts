@@ -22,10 +22,10 @@ const testsDir = join(projectRoot, 'functional');
 const packagesDir = join(testsDir, 'packages');
 // The shared render harness lives in tools/ (used by functional and reference alike).
 const harnessDir = join(projectRoot, 'tools/harness');
-// Suite render assets: the committed manifest lives at assets/functional/, and the downloaded pool
-// resolves to the shared cache (.cache/assets/functional) — or, when the cache is disabled, back to
-// assets/functional/public/assets. resolveAssetTarget keeps this in lockstep with the downloader.
-const assetsPool = resolveAssetTarget(join(projectRoot, 'assets/functional')).outDir;
+// Suite render assets: the manifest is colocated here (tools/functional/assets.manifest.json) and
+// the downloaded pool resolves to the shared cache (.cache/assets/functional) — or, when the cache
+// is disabled, to public/assets. resolveAssetTarget keeps this in lockstep with the downloader.
+const assetsPool = resolveAssetTarget(__dirname).outDir;
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',

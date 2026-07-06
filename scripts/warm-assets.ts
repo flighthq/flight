@@ -26,7 +26,7 @@ if (existsSync(examplesDir)) {
 }
 
 for (const suite of ['functional', 'reference']) {
-  const dir = join(projectRoot, 'assets', suite);
+  const dir = join(projectRoot, 'tools', suite);
   if (hasManifest(dir)) consumers.push(dir);
 }
 

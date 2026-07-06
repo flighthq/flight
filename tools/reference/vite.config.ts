@@ -17,10 +17,10 @@ interface ReferenceTest {
 
 const projectRoot = resolve(__dirname, '../..');
 const referenceDir = join(projectRoot, 'reference');
-// Suite render assets: the committed manifest lives at assets/reference/, and the downloaded pool
-// resolves to the shared cache (.cache/assets/reference) — or, when the cache is disabled, back to
-// assets/reference/public/assets. resolveAssetTarget keeps this in lockstep with the downloader.
-const assetsPool = resolveAssetTarget(join(projectRoot, 'assets/reference')).outDir;
+// Suite render assets: the manifest is colocated here (tools/reference/assets.manifest.json) and
+// the downloaded pool resolves to the shared cache (.cache/assets/reference) — or, when the cache
+// is disabled, to public/assets. resolveAssetTarget keeps this in lockstep with the downloader.
+const assetsPool = resolveAssetTarget(__dirname).outDir;
 // Flight reference impls reuse the shared render harness: the @ft/render targets, the per-backend
 // createFunctionalTarget, and the in-page render verifier all live there, so this tool depends on it.
 const harnessDir = join(projectRoot, 'tools/harness');
