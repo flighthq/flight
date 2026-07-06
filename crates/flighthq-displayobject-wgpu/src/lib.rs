@@ -75,7 +75,7 @@ pub use scale9_shape::{
 };
 pub use shape::{DefaultWgpuShapeRenderer, draw_wgpu_shape};
 pub use shape_mesh::{draw_wgpu_shape_fill, draw_wgpu_shape_meshes};
-pub use sprite::render_wgpu_sprite;
+pub use sprite::{WgpuSpriteSource, render_wgpu_sprite};
 pub use sprite_batch::{
     ensure_wgpu_quad_batch_resources, flush_wgpu_sprite_batch, get_wgpu_quad_batch_pipeline,
     get_wgpu_quad_batch_prelude_wgsl, pack_wgpu_sprite_batch_material_instance,
