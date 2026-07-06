@@ -31,7 +31,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../../../functional/_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 400, pixelRatio);
