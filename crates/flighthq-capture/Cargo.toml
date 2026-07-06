@@ -15,7 +15,7 @@ flighthq-render-wgpu = { workspace = true }
 flighthq-shape = { workspace = true }
 wgpu = { workspace = true }
 pollster = "0.3"
-image = { version = "0.25", default-features = false, features = ["png"] }
+image = { workspace = true }
 
 [dev-dependencies]
 # Tests and examples register and walk the relocated display-object wgpu renderer;

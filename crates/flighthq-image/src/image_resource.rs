@@ -182,14 +182,21 @@ pub fn load_image_resource_from_bytes(
 ) -> Result<ImageResource, Box<dyn std::error::Error + Send + Sync>> {
     // Mirror the TS contract: an undetectable type with no override is a hard
     // error before any decode is attempted.
-    let _type = match mime_type {
+    let mime_type = match mime_type {
         Some(t) => t,
         None => detect_image_mime_type(bytes).ok_or("Unable to determine image type from bytes")?,
     };
-    // TODO(wave-N): wire an image decoder backend (e.g. the `image` crate). The
-    // web port decodes via an HTMLImageElement; native decoding has no backend
-    // yet, so we cannot turn encoded bytes into pixel data and dimensions here.
-    Err("image decoding requires a decoder backend that is not yet wired".into())
+    let format = image_format_from_mime_type(mime_type)?;
+    let decoded = image::load_from_memory_with_format(bytes, format)?;
+    let rgba = decoded.into_rgba8();
+    let (width, height) = rgba.dimensions();
+    Ok(create_image_resource(
+        width,
+        height,
+        Some(rgba.into_raw()),
+        PixelFormat::Rgba8Unorm,
+        AlphaType::Straight,
+    ))
 }
 
 /// Decodes the bytes of an array buffer as an image.
@@ -224,6 +231,19 @@ pub fn load_image_resource_from_url(
     url: &str,
 ) -> Result<ImageResource, Box<dyn std::error::Error + Send + Sync>> {
     load_image_resource_from_path(std::path::Path::new(url))
+}
+
+fn image_format_from_mime_type(
+    mime_type: &str,
+) -> Result<image::ImageFormat, Box<dyn std::error::Error + Send + Sync>> {
+    match mime_type {
+        "image/png" => Ok(image::ImageFormat::Png),
+        "image/jpeg" => Ok(image::ImageFormat::Jpeg),
+        "image/gif" => Ok(image::ImageFormat::Gif),
+        "image/webp" => Ok(image::ImageFormat::WebP),
+        "image/bmp" => Ok(image::ImageFormat::Bmp),
+        other => Err(format!("Unsupported image MIME type: {other}").into()),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -394,13 +414,13 @@ mod tests {
     #[test]
     fn load_image_resource_from_array_buffer_bypasses_detection_with_mime() {
         // Mirrors TS "uses the provided mimeType and bypasses detection": with a
-        // mime override, detection is skipped — the decoder backend is the only
-        // remaining blocker on native.
+        // mime override, detection is skipped and the decoder reports the
+        // malformed image data.
         let buffer: &[u8] = &[0x00, 0x00, 0x00, 0x00];
         let result = load_image_resource_from_array_buffer(buffer, Some("image/png"));
         let err = result.unwrap_err().to_string();
         assert!(!err.contains("Unable to determine image type"));
-        assert!(err.contains("decoder backend"));
+        assert!(!err.contains("Unsupported image MIME type"));
     }
 
     #[test]
@@ -409,6 +429,18 @@ mod tests {
         let result = load_image_resource_from_bytes(bytes, None);
         let err = result.unwrap_err().to_string();
         assert!(err.contains("Unable to determine image type"));
+    }
+
+    #[test]
+    fn load_image_resource_from_path_decodes_png_to_rgba8() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../examples/packages/bunnymark/public/assets/wabbit_alpha.png");
+        let resource = load_image_resource_from_path(&path).expect("decode wabbit png");
+        assert_eq!(resource.width, 26);
+        assert_eq!(resource.height, 37);
+        assert_eq!(resource.format, PixelFormat::Rgba8Unorm);
+        assert_eq!(resource.alpha_type, AlphaType::Straight);
+        assert_eq!(resource.data.as_ref().map(Vec::len), Some(26 * 37 * 4));
     }
 
     #[test]
