@@ -1,14 +1,14 @@
 //! Host-neutral Rust approximation of the `bunnymark` example.
 //!
-//! The TypeScript original draws thousands of `wabbit_alpha.png` bitmap sprites
-//! through a texture atlas + quad batch: each "bunny" spawns at the top-left,
-//! falls under gravity, and bounces off the stage edges. `ExamplePrimitive` has
-//! no bitmap, texture-atlas, or quad-batch primitive, so a faithful pixel port is
-//! impossible here. This scene is the closest structural stand-in: a field of
-//! bunny-sized rectangles scattered across the same 550x400 stage and cream
-//! background, standing where the falling bunny sprites would be.
+//! The TypeScript original draws `wabbit_alpha.png` bitmap sprites through a
+//! texture atlas + quad batch: each "bunny" spawns at the top-left, falls under
+//! gravity, and bounces off the stage edges. The Rust/Wasm runner uses
+//! `ExampleSceneBehavior::BunnyMark` to render that browser behavior directly.
+//! Native still consumes `ExamplePrimitive`, so it gets a deterministic field of
+//! bunny-sized rectangles on the same 550x400 stage and cream background until
+//! native textured batching is wired.
 
-use example_common::{ExamplePrimitive, ExampleScene};
+use example_common::{ExamplePrimitive, ExampleScene, ExampleSceneBehavior};
 
 pub const ID: &str = "bunnymark";
 pub const TITLE: &str = "Bunnymark";
@@ -25,6 +25,12 @@ pub fn create_scene() -> ExampleScene {
         .with_size(WIDTH, HEIGHT)
         .with_background(BACKGROUND)
         .with_fill(0x88_86_84_ff)
+        .with_behavior(ExampleSceneBehavior::BunnyMark {
+            image_path: "assets/wabbit_alpha.png",
+            initial_count: 10,
+            add_count: 100,
+            gravity: 0.5,
+        })
         .with_primitives(bunny_primitives())
 }
 
@@ -60,6 +66,20 @@ mod tests {
 
     #[test]
     fn creates_scene() {
-        assert_eq!(create_scene().id, "bunnymark");
+        let scene = create_scene();
+        assert_eq!(scene.id, ID);
+        assert_eq!(scene.width, WIDTH);
+        assert_eq!(scene.height, HEIGHT);
+        assert_eq!(scene.background, BACKGROUND);
+        assert_eq!(scene.primitives.len(), BUNNY_COUNT as usize);
+        assert!(matches!(
+            scene.behavior,
+            ExampleSceneBehavior::BunnyMark {
+                image_path: "assets/wabbit_alpha.png",
+                initial_count: 10,
+                add_count: 100,
+                gravity: 0.5,
+            }
+        ));
     }
 }
