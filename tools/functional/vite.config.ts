@@ -16,6 +16,9 @@ interface FunctionalTest {
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'tests/functional');
+// Scenes live under packages/ (the TS tier, mirroring examples/packages); _harness/, public/, and
+// the asset manifest stay at the suite root. Scene-relative paths use packagesDir; infra uses testsDir.
+const packagesDir = join(testsDir, 'packages');
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -49,12 +52,12 @@ function routeSegment(renderer: string): string {
 }
 
 function discoverTests(): FunctionalTest[] {
-  if (!existsSync(testsDir)) return [];
-  return readdirSync(testsDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(testsDir, d.name, 'package.json')))
+  if (!existsSync(packagesDir)) return [];
+  return readdirSync(packagesDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(join(packagesDir, d.name, 'package.json')))
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(({ name }) => {
-      const testDir = join(testsDir, name);
+      const testDir = join(packagesDir, name);
       const customRenderers = RENDERERS.filter((r) => existsSync(join(testDir, `src/render.${r}.ts`))) as Renderer[];
       let renderers: string[];
       if (customRenderers.length > 0) {
@@ -156,7 +159,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 
         if (source.startsWith('___ft___')) {
           const [name, render] = splitFirst(source.slice('___ft___'.length), ':');
-          const appPath = join(testsDir, name, 'src', 'app.ts');
+          const appPath = join(packagesDir, name, 'src', 'app.ts');
           return appPath + '?render=' + render;
         }
 
@@ -262,7 +265,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
         // identical files used across renderers and tests (including the shared manifest) are stored
         // exactly once. Safe to merge because asset file names are globally unique.
         const pool = join(outDir, 'test-assets');
-        const sources = [join(testsDir, 'public'), ...buildTests.map((t) => join(testsDir, t.name, 'public'))];
+        const sources = [join(testsDir, 'public'), ...buildTests.map((t) => join(packagesDir, t.name, 'public'))];
         for (const src of sources) {
           if (existsSync(src)) copyDirectoryContents(src, pool);
         }
@@ -304,7 +307,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
             const candidates: string[] = [];
-            candidates.push(join(testsDir, name, 'public', assetRel));
+            candidates.push(join(packagesDir, name, 'public', assetRel));
             candidates.push(join(testsDir, 'public', assetRel));
 
             for (const candidate of candidates) {
