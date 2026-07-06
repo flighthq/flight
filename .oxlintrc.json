@@ -62,7 +62,13 @@
       }
     },
     {
-      "files": ["packages/api/**/*.{ts,tsx}", "tests/**", "**/vite*.config*.ts", "**/vitest*.config*.ts"],
+      "files": [
+        "packages/api/**/*.{ts,tsx}",
+        "tests/**",
+        "tools/size/**",
+        "**/vite*.config*.ts",
+        "**/vitest*.config*.ts"
+      ],
       "rules": {
         "import/no-relative-parent-imports": "off"
       }
