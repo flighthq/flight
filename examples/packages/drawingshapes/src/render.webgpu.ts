@@ -2,7 +2,15 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWgpuCanvasElement,
   createWgpuRenderState,
-  defaultWgpuShapeCommands,
+  defaultWgpuBeginFill,
+  defaultWgpuCurveTo,
+  defaultWgpuDrawCircle,
+  defaultWgpuDrawEllipse,
+  defaultWgpuDrawRectangle,
+  defaultWgpuDrawRoundRectangle,
+  defaultWgpuLineStyle,
+  defaultWgpuLineTo,
+  defaultWgpuMoveTo,
   defaultWgpuShapeRenderer,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
@@ -23,7 +31,17 @@ export const state = await createWgpuRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-registerWgpuShapeCommands(defaultWgpuShapeCommands);
+registerWgpuShapeCommands([
+  defaultWgpuBeginFill,
+  defaultWgpuCurveTo,
+  defaultWgpuDrawCircle,
+  defaultWgpuDrawEllipse,
+  defaultWgpuDrawRectangle,
+  defaultWgpuDrawRoundRectangle,
+  defaultWgpuLineStyle,
+  defaultWgpuLineTo,
+  defaultWgpuMoveTo,
+]);
 registerDefaultWgpuMaterial(state);
 export const scale = pixelRatio;
 

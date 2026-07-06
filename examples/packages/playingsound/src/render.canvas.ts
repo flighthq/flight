@@ -1,7 +1,8 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createCanvasRenderState,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawRectangle,
   defaultCanvasShapeRenderer,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
@@ -25,7 +26,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xeeddccff,
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {
