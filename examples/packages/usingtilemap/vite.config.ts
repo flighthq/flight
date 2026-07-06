@@ -1,10 +1,17 @@
 import { defineConfig, mergeConfig } from 'vite';
 
+import { createAssetServerPlugin } from '../../../scripts/asset-cache';
 import { createBaseConfig } from '../../../vite.config.base';
 
 export default defineConfig((env) => {
   return mergeConfig(createBaseConfig(env.mode), {
     root: __dirname,
+
+    // Serve this example's assets from the shared cache: /assets in dev, copied into dist on build.
+    // Drop this plugin and repoint the `assets` script at scripts/download-assets.ts to revert to
+    // the standard public/assets path — the example stays copy-paste-standalone either way.
+    plugins: [createAssetServerPlugin()],
+
     build: {
       target: 'esnext',
       minify: 'terser',
