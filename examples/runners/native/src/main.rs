@@ -5,15 +5,20 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use example_common::{ExampleScene, ExampleSceneBehavior, build_example_shape_regions};
 use flighthq_displayobject::{
-    DisplayObjectArena, add_display_object_child, create_stage, get_display_object_kind,
-    get_display_object_local_bounds_revision, get_display_object_local_content_revision,
-    get_display_object_visible, invalidate_display_object_local_content,
-    prepare_display_object_render as prepare_display_object_bounds, set_stage_color,
-    set_stage_size,
+    DisplayObjectArena, add_display_object_child, create_bitmap, create_display_object,
+    create_stage, get_bitmap_image, get_display_object_alpha, get_display_object_blend_mode,
+    get_display_object_children, get_display_object_kind, get_display_object_local_bounds_revision,
+    get_display_object_local_content_revision, get_display_object_parent,
+    get_display_object_rotation, get_display_object_scale_x, get_display_object_scale_y,
+    get_display_object_visible, get_display_object_x, get_display_object_y,
+    invalidate_display_object_local_content,
+    prepare_display_object_render as prepare_display_object_bounds, set_bitmap_image,
+    set_display_object_scale_x, set_display_object_scale_y, set_display_object_x,
+    set_display_object_y, set_stage_color, set_stage_size,
 };
 use flighthq_displayobject_wgpu::{
-    WgpuQuadBatchSource, WgpuShapeGeometry, register_wgpu_display_object_renderer,
-    render_wgpu_display_object,
+    WgpuBitmapTexture, WgpuQuadBatchSource, WgpuShapeGeometry, WgpuSpriteSource,
+    register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
 use flighthq_host_winit::{InputManager, WgpuRenderState, WinitAppConfig, run_winit_app};
 use flighthq_image::load_image_resource_from_url;
@@ -23,9 +28,10 @@ use flighthq_render::{
 };
 use flighthq_signals::{SignalConnectOptions, connect_signal};
 use flighthq_sprite::{
-    create_quad_batch, get_quad_batch_atlas, get_quad_batch_instance_count,
-    get_quad_batch_transform_stride, iterate_quad_batch_instances, resize_quad_batch,
-    set_quad_batch_atlas, set_quad_batch_instance,
+    create_quad_batch, create_sprite, get_quad_batch_atlas, get_quad_batch_instance_count,
+    get_quad_batch_transform_stride, get_sprite_atlas, get_sprite_region,
+    iterate_quad_batch_instances, resize_quad_batch, set_quad_batch_atlas, set_quad_batch_instance,
+    set_sprite_atlas, set_sprite_id,
 };
 use flighthq_textureatlas::{add_texture_atlas_region, create_texture_atlas};
 use flighthq_types::QuadTransformType;
@@ -49,6 +55,14 @@ fn main() {
     });
     if scene.id == example_bunnymark::ID {
         run_bunnymark(scene);
+        return;
+    }
+    if scene.id == "displayingabitmap" {
+        run_displaying_bitmap(scene);
+        return;
+    }
+    if scene.id == "renderview" {
+        run_render_view(scene);
         return;
     }
     run_static_scene(scene);
@@ -128,6 +142,273 @@ fn run_bunnymark(scene: ExampleScene) {
             state.draw(render_state);
         };
     run_winit_app(config, &mut setup, &mut update);
+}
+
+fn run_displaying_bitmap(scene: ExampleScene) {
+    let mut state = NativeDisplayScene::new(scene.width, scene.height, scene.background);
+    let image_url = resolve_native_asset_path_for("bunnymark", "assets/wabbit_alpha.png");
+    let image = load_image_resource_from_url(&image_url)
+        .unwrap_or_else(|err| panic!("load displayingabitmap image '{image_url}': {err}"));
+    let x = (scene.width as f32 - image.width as f32) / 2.0;
+    let y = (scene.height as f32 - image.height as f32) / 2.0;
+
+    let bitmap = create_bitmap(&mut state.arena);
+    set_bitmap_image(&mut state.arena, bitmap, Some(image));
+    set_display_object_x(&mut state.arena, bitmap, x);
+    set_display_object_y(&mut state.arena, bitmap, y);
+    add_display_object_child(&mut state.arena, state.root, bitmap);
+    state.refresh_ids();
+    run_native_display_scene(scene, state, false);
+}
+
+fn run_render_view(scene: ExampleScene) {
+    const TILE_SIZE: f32 = 32.0;
+    const SCALE: f32 = 4.0;
+
+    let mut state = NativeDisplayScene::new(scene.width, scene.height, scene.background);
+    let image_url = resolve_native_asset_path_for("renderview", "assets/tileset.png");
+    let image = load_image_resource_from_url(&image_url)
+        .unwrap_or_else(|err| panic!("load renderview image '{image_url}': {err}"));
+    let mut atlas = create_texture_atlas(Some(image), Vec::new());
+    add_texture_atlas_region(&mut atlas, 0.0, 0.0, TILE_SIZE, TILE_SIZE, None, None, None);
+
+    let sprite = create_sprite(&mut state.arena);
+    set_sprite_atlas(&mut state.arena, sprite, Some(atlas));
+    set_sprite_id(&mut state.arena, sprite, 0);
+    set_display_object_scale_x(&mut state.arena, sprite, SCALE);
+    set_display_object_scale_y(&mut state.arena, sprite, SCALE);
+    set_display_object_x(
+        &mut state.arena,
+        sprite,
+        (scene.width as f32 - TILE_SIZE * SCALE) / 2.0,
+    );
+    set_display_object_y(
+        &mut state.arena,
+        sprite,
+        (scene.height as f32 - TILE_SIZE * SCALE) / 2.0,
+    );
+    add_display_object_child(&mut state.arena, state.root, sprite);
+    state.refresh_ids();
+    run_native_display_scene(scene, state, true);
+}
+
+fn run_native_display_scene(
+    scene: ExampleScene,
+    mut display_scene: NativeDisplayScene,
+    nearest_neighbor: bool,
+) {
+    let mut config = WinitAppConfig {
+        title: format!("Flight Examples - {}", scene.title),
+        width: scene.width,
+        height: scene.height,
+        ..Default::default()
+    };
+    config.render_options.background_color = Some(scene.background);
+    config.render_options.image_smoothing_enabled = !nearest_neighbor;
+
+    let root_source_id = display_scene.root_source_id();
+    let mut setup = move |_state: &mut WgpuRenderState, _input: &mut InputManager| root_source_id;
+    let mut update = move |_dt: f32, state: &mut WgpuRenderState, _input: &mut InputManager| {
+        display_scene.draw(state);
+    };
+    run_winit_app(config, &mut setup, &mut update);
+}
+
+struct NativeDisplayScene {
+    arena: DisplayObjectArena,
+    root: flighthq_node::NodeId,
+    source_ids: HashMap<flighthq_node::NodeId, u64>,
+    nodes: HashMap<u64, flighthq_node::NodeId>,
+}
+
+impl NativeDisplayScene {
+    fn new(width: u32, height: u32, background: u32) -> Self {
+        let mut arena = DisplayObjectArena::default();
+        let root = create_display_object(&mut arena);
+        set_display_object_scale_x(&mut arena, root, 1.0);
+        set_display_object_scale_y(&mut arena, root, 1.0);
+
+        let stage = create_stage(&mut arena);
+        set_stage_size(&mut arena, stage, width as f32, height as f32);
+        set_stage_color(&mut arena, stage, Some(background));
+        add_display_object_child(&mut arena, stage, root);
+
+        let mut scene = Self {
+            arena,
+            root,
+            source_ids: HashMap::new(),
+            nodes: HashMap::new(),
+        };
+        scene.refresh_ids();
+        scene
+    }
+
+    fn refresh_ids(&mut self) {
+        self.source_ids.clear();
+        self.nodes.clear();
+        let mut next_id = 1;
+        for node in self.arena.keys() {
+            self.source_ids.insert(node, next_id);
+            self.nodes.insert(next_id, node);
+            next_id += 1;
+        }
+    }
+
+    fn root_source_id(&self) -> u64 {
+        self.id_for(self.root)
+    }
+
+    fn draw(&mut self, state: &mut WgpuRenderState) {
+        prepare_display_object_bounds(&mut self.arena, self.root);
+        let root_id = self.root_source_id();
+        let mut store = RenderStateStore::new();
+        let render_id = create_render_state(&mut store, None);
+        let render_state = get_render_state(&store, render_id).clone();
+        prepare_display_object_render(
+            &mut store,
+            render_id,
+            &render_state,
+            root_id,
+            &|id| self.children_for(id),
+            &|_| true,
+            &|id| self.parent_for(id),
+            &|id| self.revisions_for(id),
+            &|id| self.kind_for(id),
+            &|id| self.local_transform_for(id),
+            &|id| self.alpha_for(id),
+            &|id| self.visible_for(id),
+            &|id| self.blend_mode_for(id),
+            &|_| false,
+        );
+
+        let proxies: HashMap<u64, RenderProxy2D> = self
+            .nodes
+            .keys()
+            .filter_map(|id| {
+                get_render_proxy_2d(&store, render_id, *id)
+                    .cloned()
+                    .map(|proxy| (*id, proxy))
+            })
+            .collect();
+        render_wgpu_display_object(
+            state,
+            root_id,
+            &|id| self.children_for(id),
+            &|id| self.kind_for(id),
+            &|id| proxies.get(&id).cloned(),
+            &|_| None,
+            &|id| self.bitmap_source_for(id),
+            &|_| None,
+            &|id| self.sprite_source_for(id),
+            &|_| None,
+        );
+    }
+
+    fn id_for(&self, node: flighthq_node::NodeId) -> u64 {
+        *self
+            .source_ids
+            .get(&node)
+            .expect("node id assigned by refresh_ids")
+    }
+
+    fn node_for(&self, id: u64) -> Option<flighthq_node::NodeId> {
+        self.nodes.get(&id).copied()
+    }
+
+    fn children_for(&self, id: u64) -> Vec<u64> {
+        let Some(node) = self.node_for(id) else {
+            return Vec::new();
+        };
+        get_display_object_children(&self.arena, node)
+            .into_iter()
+            .map(|child| self.id_for(child))
+            .collect()
+    }
+
+    fn parent_for(&self, id: u64) -> Option<u64> {
+        let node = self.node_for(id)?;
+        get_display_object_parent(&self.arena, node).map(|parent| self.id_for(parent))
+    }
+
+    fn kind_for(&self, id: u64) -> flighthq_types::KindId {
+        self.node_for(id)
+            .map(|node| get_display_object_kind(&self.arena, node))
+            .unwrap_or_else(display_object_kind)
+    }
+
+    fn revisions_for(&self, id: u64) -> (u32, u32, u32) {
+        let Some(node) = self.node_for(id) else {
+            return (0, 0, 0);
+        };
+        (
+            get_display_object_local_bounds_revision(&self.arena, node),
+            1,
+            get_display_object_local_content_revision(&self.arena, node),
+        )
+    }
+
+    fn local_transform_for(&self, id: u64) -> Matrix {
+        let Some(node) = self.node_for(id) else {
+            return Matrix::default();
+        };
+        let rotation = get_display_object_rotation(&self.arena, node).to_radians();
+        let (sin, cos) = rotation.sin_cos();
+        let scale_x = get_display_object_scale_x(&self.arena, node);
+        let scale_y = get_display_object_scale_y(&self.arena, node);
+        Matrix {
+            a: cos * scale_x,
+            b: sin * scale_x,
+            c: -sin * scale_y,
+            d: cos * scale_y,
+            tx: get_display_object_x(&self.arena, node),
+            ty: get_display_object_y(&self.arena, node),
+        }
+    }
+
+    fn alpha_for(&self, id: u64) -> f32 {
+        self.node_for(id)
+            .map(|node| get_display_object_alpha(&self.arena, node))
+            .unwrap_or(1.0)
+    }
+
+    fn visible_for(&self, id: u64) -> bool {
+        self.node_for(id)
+            .map(|node| get_display_object_visible(&self.arena, node))
+            .unwrap_or(true)
+    }
+
+    fn blend_mode_for(&self, id: u64) -> Option<flighthq_types::BlendMode> {
+        self.node_for(id)
+            .and_then(|node| get_display_object_blend_mode(&self.arena, node))
+    }
+
+    fn bitmap_source_for(&self, id: u64) -> Option<WgpuBitmapTexture> {
+        let node = self.node_for(id)?;
+        let image = get_bitmap_image(&self.arena, node)?;
+        Some(WgpuBitmapTexture {
+            image_id: id,
+            version: image.version as u64,
+            pixels: image.data.clone()?,
+            width: image.width,
+            height: image.height,
+            draw_width: image.width as f32,
+            draw_height: image.height as f32,
+        })
+    }
+
+    fn sprite_source_for(&self, id: u64) -> Option<WgpuSpriteSource> {
+        let node = self.node_for(id)?;
+        let atlas = get_sprite_atlas(&self.arena, node)?;
+        let image = atlas.image.as_ref()?;
+        Some(WgpuSpriteSource {
+            image_id: id,
+            version: image.version as u64,
+            pixels: image.data.clone()?,
+            width: image.width,
+            height: image.height,
+            region: get_sprite_region(&self.arena, node)?.clone(),
+        })
+    }
 }
 
 const EXAMPLE_IDS: &[&str] = &[
@@ -353,6 +634,7 @@ impl BunnyMarkNativeState {
             &|_| None,
             &|id| self.quad_batch_source_for(id),
             &|_| None,
+            &|_| None,
         );
     }
 
@@ -431,11 +713,17 @@ fn next_random_seed(seed: &mut u32) -> f32 {
 }
 
 fn resolve_native_asset_path(image_path: &str) -> String {
+    resolve_native_asset_path_for("bunnymark", image_path)
+}
+
+fn resolve_native_asset_path_for(package: &str, image_path: &str) -> String {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let candidates = [
         PathBuf::from(image_path),
         manifest_dir
-            .join("../../packages/bunnymark/public")
+            .join("../../packages")
+            .join(package)
+            .join("public")
             .join(image_path),
     ];
     candidates
@@ -491,6 +779,7 @@ fn draw_scene(state: &mut WgpuRenderState, geometry: &WgpuShapeGeometry) {
                 content_revision: geometry.content_revision,
             })
         },
+        &|_| None,
         &|_| None,
         &|_| None,
         &|_| None,
