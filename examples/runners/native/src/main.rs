@@ -17,7 +17,7 @@ use flighthq_displayobject::{
     set_display_object_y, set_stage_color, set_stage_size,
 };
 use flighthq_displayobject_wgpu::{
-    WgpuBitmapTexture, WgpuQuadBatchSource, WgpuShapeGeometry, WgpuSpriteSource,
+    WgpuBitmapTexture, WgpuQuadBatchSource, WgpuShapeGeometry, WgpuSpriteSource, WgpuTilemapSource,
     register_wgpu_display_object_renderer, render_wgpu_display_object,
 };
 use flighthq_host_winit::{InputManager, WgpuRenderState, WinitAppConfig, run_winit_app};
@@ -28,12 +28,15 @@ use flighthq_render::{
 };
 use flighthq_signals::{SignalConnectOptions, connect_signal};
 use flighthq_sprite::{
-    create_quad_batch, create_sprite, get_quad_batch_atlas, get_quad_batch_instance_count,
-    get_quad_batch_transform_stride, get_sprite_atlas, get_sprite_region,
-    iterate_quad_batch_instances, resize_quad_batch, set_quad_batch_atlas, set_quad_batch_instance,
-    set_sprite_atlas, set_sprite_id,
+    create_quad_batch, create_sprite, create_tilemap, get_quad_batch_atlas,
+    get_quad_batch_instance_count, get_quad_batch_transform_stride, get_sprite_atlas,
+    get_sprite_region, get_tilemap_columns, get_tilemap_rows, get_tilemap_tile,
+    get_tilemap_tileset, iterate_quad_batch_instances, resize_quad_batch, set_quad_batch_atlas,
+    set_quad_batch_instance, set_sprite_atlas, set_sprite_id, set_tilemap_tile,
+    set_tilemap_tileset,
 };
 use flighthq_textureatlas::{add_texture_atlas_region, create_texture_atlas};
+use flighthq_tileset::load_tileset_from_url;
 use flighthq_types::QuadTransformType;
 use flighthq_types::RenderProxy2D;
 use flighthq_types::display::{display_object_kind, shape_kind};
@@ -63,6 +66,10 @@ fn main() {
     }
     if scene.id == "renderview" {
         run_render_view(scene);
+        return;
+    }
+    if scene.id == "usingtilemap" {
+        run_using_tilemap(scene);
         return;
     }
     run_static_scene(scene);
@@ -192,6 +199,43 @@ fn run_render_view(scene: ExampleScene) {
     run_native_display_scene(scene, state, true);
 }
 
+fn run_using_tilemap(scene: ExampleScene) {
+    const TILE_W: f32 = 32.0;
+    const TILE_H: f32 = 32.0;
+    const COLS: u32 = 8;
+    const ROWS: u32 = 8;
+    const SCALE: f32 = 2.0;
+    const PAD: f32 = 40.0;
+
+    let mut state = NativeDisplayScene::new(scene.width, scene.height, scene.background);
+    let tileset_url = resolve_native_asset_path_for("usingtilemap", "assets/tileset.png");
+    let tileset = load_tileset_from_url(&tileset_url, TILE_W, TILE_H)
+        .unwrap_or_else(|err| panic!("load usingtilemap tileset '{tileset_url}': {err}"));
+    let stride = tileset.columns;
+
+    let tilemap = create_tilemap(&mut state.arena);
+    flighthq_sprite::resize_tilemap(&mut state.arena, tilemap, COLS, ROWS);
+    set_tilemap_tileset(&mut state.arena, tilemap, Some(tileset));
+    set_display_object_scale_x(&mut state.arena, tilemap, SCALE);
+    set_display_object_scale_y(&mut state.arena, tilemap, SCALE);
+    set_display_object_x(&mut state.arena, tilemap, PAD);
+    set_display_object_y(&mut state.arena, tilemap, PAD);
+    for row in 0..ROWS {
+        for column in 0..COLS {
+            set_tilemap_tile(
+                &mut state.arena,
+                tilemap,
+                column,
+                row,
+                (row * stride) as i16,
+            );
+        }
+    }
+    add_display_object_child(&mut state.arena, state.root, tilemap);
+    state.refresh_ids();
+    run_native_display_scene(scene, state, true);
+}
+
 fn run_native_display_scene(
     scene: ExampleScene,
     mut display_scene: NativeDisplayScene,
@@ -300,6 +344,7 @@ impl NativeDisplayScene {
             &|id| self.bitmap_source_for(id),
             &|_| None,
             &|id| self.sprite_source_for(id),
+            &|id| self.tilemap_source_for(id),
             &|_| None,
         );
     }
@@ -407,6 +452,34 @@ impl NativeDisplayScene {
             width: image.width,
             height: image.height,
             region: get_sprite_region(&self.arena, node)?.clone(),
+        })
+    }
+
+    fn tilemap_source_for(&self, id: u64) -> Option<WgpuTilemapSource> {
+        let node = self.node_for(id)?;
+        let tileset = get_tilemap_tileset(&self.arena, node)?;
+        let atlas = tileset.atlas.as_ref()?;
+        let image = atlas.image.as_ref()?;
+        let columns = get_tilemap_columns(&self.arena, node);
+        let rows = get_tilemap_rows(&self.arena, node);
+        let mut tiles = Vec::with_capacity((columns * rows) as usize);
+        for row in 0..rows {
+            for column in 0..columns {
+                tiles.push(get_tilemap_tile(&self.arena, node, column, row));
+            }
+        }
+        Some(WgpuTilemapSource {
+            image_id: id,
+            version: image.version as u64,
+            pixels: image.data.clone()?,
+            width: image.width,
+            height: image.height,
+            atlas: atlas.clone(),
+            columns,
+            rows,
+            tile_width: tileset.tile_width,
+            tile_height: tileset.tile_height,
+            tiles,
         })
     }
 }
@@ -635,6 +708,7 @@ impl BunnyMarkNativeState {
             &|id| self.quad_batch_source_for(id),
             &|_| None,
             &|_| None,
+            &|_| None,
         );
     }
 
@@ -779,6 +853,7 @@ fn draw_scene(state: &mut WgpuRenderState, geometry: &WgpuShapeGeometry) {
                 content_revision: geometry.content_revision,
             })
         },
+        &|_| None,
         &|_| None,
         &|_| None,
         &|_| None,

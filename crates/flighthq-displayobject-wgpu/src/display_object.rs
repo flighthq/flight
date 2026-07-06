@@ -11,6 +11,7 @@ use crate::quad_batch::{WgpuQuadBatchSource, draw_wgpu_quad_batch};
 use crate::shape_mesh::draw_wgpu_shape_fill;
 use crate::sprite::{WgpuSpriteSource, render_wgpu_sprite};
 use crate::sprite_batch::flush_wgpu_sprite_batch;
+use crate::tilemap::{WgpuTilemapSource, draw_wgpu_tilemap};
 use flighthq_render_wgpu::{WgpuRenderState, WgpuRendererSlot};
 
 /// Default wgpu renderer for plain `DisplayObject` containers.
@@ -91,6 +92,7 @@ pub fn render_wgpu_display_object(
     get_bitmap_texture: &dyn Fn(u64) -> Option<WgpuBitmapTexture>,
     get_quad_batch_source: &dyn Fn(u64) -> Option<WgpuQuadBatchSource>,
     get_sprite_source: &dyn Fn(u64) -> Option<WgpuSpriteSource>,
+    get_tilemap_source: &dyn Fn(u64) -> Option<WgpuTilemapSource>,
     get_clip_rectangle: &dyn Fn(u64) -> Option<WgpuClipRectangle>,
 ) {
     let mut stack: Vec<WgpuWalkStep> = vec![WgpuWalkStep::Visit(root_id)];
@@ -161,6 +163,11 @@ pub fn render_wgpu_display_object(
                 WgpuRendererSlot::Sprite => {
                     if let Some(source) = get_sprite_source(current) {
                         render_wgpu_sprite(state, &source);
+                    }
+                }
+                WgpuRendererSlot::Tilemap => {
+                    if let Some(source) = get_tilemap_source(current) {
+                        draw_wgpu_tilemap(state, &source);
                     }
                 }
             }
