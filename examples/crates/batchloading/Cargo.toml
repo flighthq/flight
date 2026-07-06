@@ -7,6 +7,10 @@ publish = false
 
 [dependencies]
 example-common = { path = "../common" }
+flighthq-image = { workspace = true }
+flighthq-loader = { workspace = true }
+flighthq-signals = { workspace = true }
+flighthq-types = { workspace = true }
 
 [lints]
 workspace = true
