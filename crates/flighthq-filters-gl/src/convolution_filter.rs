@@ -4,9 +4,10 @@
 //! CPU surface path in `flighthq-filters`.
 
 use flighthq_filters::ConvolutionFilter;
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::{GlRenderState, GlRenderTarget};
 
 // Max supported kernel: 7×7. Use the surface path for larger kernels.

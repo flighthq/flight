@@ -4,9 +4,10 @@
 //! A single GPU pass — no scratch targets needed.
 
 use flighthq_filters::PixelateFilter;
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::{GlRenderState, GlRenderTarget};
 
 const PIXELATE_FRAGMENT_SRC: &str = "#version 300 es

@@ -2,9 +2,10 @@
 
 use flighthq_filters::DisplacementMapFilter;
 use flighthq_filters::DisplacementMapMode;
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::{GlRenderState, GlRenderTarget};
 
 // Samples the map (unit 1) to compute per-pixel UV displacement, then samples
