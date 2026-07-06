@@ -140,8 +140,8 @@ vite.config.ts.timestamp-*
 
 *.hx
 
-# Downloaded asset files
-.cache/
+# Downloaded asset files. The shared asset cache (.cache/) is already ignored above; these cover the
+# per-consumer off-mode fallbacks (public/assets) and the build pools.
 examples/**/assets
 tests/size/**/assets
 .test-assets
