@@ -52,56 +52,72 @@ pub fn get_gl_render_effect_runner(
     })
 }
 
+/// Returns `true` if a runner is registered for `effect_type` on `state`.
+///
+/// Use to validate an effect chain before dispatching — the pipeline silently
+/// skips unregistered kinds; check up front to apply your own policy (warn,
+/// throw, filter) rather than relying on silent no-ops.
+pub fn has_gl_render_effect_runner(state: &GlRenderState, effect_type: &str) -> bool {
+    let state_id = state as *const _ as usize;
+    REGISTRIES.with(|registries| {
+        registries
+            .borrow()
+            .get(&state_id)
+            .is_some_and(|registry| registry.contains_key(effect_type))
+    })
+}
+
 /// Returns the stable registry key for a [`RenderEffect`] variant.
 ///
-/// Mirrors the TS `effect.type` strings (`"fxaa"`, `"godRays"`, …) so the same
-/// agnostic effect list keys the GL and WGPU registries identically.
+/// Returns the canonical PascalCase effect kind (`effect.kind` in TS, e.g.
+/// `"FxaaEffect"`, `"GodRaysEffect"`) — the same string the render-effect
+/// registrars register under, so pipeline dispatch matches registration.
 pub fn gl_render_effect_type(effect: &RenderEffect) -> &'static str {
     match effect {
-        RenderEffect::Fxaa(_) => "fxaa",
-        RenderEffect::Smaa(_) => "smaa",
-        RenderEffect::Taa(_) => "taa",
-        RenderEffect::Bloom(_) => "bloom",
-        RenderEffect::Exposure(_) => "exposure",
-        RenderEffect::ToneMap(_) => "toneMap",
-        RenderEffect::BrightnessContrast(_) => "brightnessContrast",
-        RenderEffect::ChannelMixer(_) => "channelMixer",
-        RenderEffect::ColorGrade(_) => "colorGrade",
-        RenderEffect::Grayscale(_) => "grayscale",
-        RenderEffect::HueSaturation(_) => "hueSaturation",
-        RenderEffect::Invert(_) => "invert",
-        RenderEffect::LiftGammaGain(_) => "liftGammaGain",
-        RenderEffect::LookupTableGrade(_) => "lookupTableGrade",
-        RenderEffect::Posterize(_) => "posterize",
-        RenderEffect::Sepia(_) => "sepia",
-        RenderEffect::WhiteBalance(_) => "whiteBalance",
-        RenderEffect::BokehDepthOfField(_) => "bokehDepthOfField",
-        RenderEffect::ChromaticAberration(_) => "chromaticAberration",
-        RenderEffect::Displacement(_) => "displacement",
-        RenderEffect::LensDirt(_) => "lensDirt",
-        RenderEffect::LensDistortion(_) => "lensDistortion",
-        RenderEffect::LensFlare(_) => "lensFlare",
-        RenderEffect::TiltShift(_) => "tiltShift",
-        RenderEffect::Vignette(_) => "vignette",
-        RenderEffect::CameraMotionBlur(_) => "cameraMotionBlur",
-        RenderEffect::DirectionalBlur(_) => "directionalBlur",
-        RenderEffect::MotionBlur(_) => "motionBlur",
-        RenderEffect::RadialBlur(_) => "radialBlur",
-        RenderEffect::GodRays(_) => "godRays",
-        RenderEffect::ScreenSpaceFog(_) => "screenSpaceFog",
-        RenderEffect::Ssao(_) => "ssao",
-        RenderEffect::Ssr(_) => "ssr",
-        RenderEffect::Crt(_) => "crt",
-        RenderEffect::Dither(_) => "dither",
-        RenderEffect::FilmGrain(_) => "filmGrain",
-        RenderEffect::Glitch(_) => "glitch",
-        RenderEffect::Halftone(_) => "halftone",
-        RenderEffect::Kuwahara(_) => "kuwahara",
-        RenderEffect::Outline(_) => "outline",
-        RenderEffect::Pixelate(_) => "pixelate",
-        RenderEffect::Scanlines(_) => "scanlines",
-        RenderEffect::Sharpen(_) => "sharpen",
-        RenderEffect::Sketch(_) => "sketch",
+        RenderEffect::Fxaa(_) => "FxaaEffect",
+        RenderEffect::Smaa(_) => "SmaaEffect",
+        RenderEffect::Taa(_) => "TaaEffect",
+        RenderEffect::Bloom(_) => "BloomEffect",
+        RenderEffect::Exposure(_) => "ExposureEffect",
+        RenderEffect::ToneMap(_) => "ToneMapEffect",
+        RenderEffect::BrightnessContrast(_) => "BrightnessContrastEffect",
+        RenderEffect::ChannelMixer(_) => "ChannelMixerEffect",
+        RenderEffect::ColorGrade(_) => "ColorGradeEffect",
+        RenderEffect::Grayscale(_) => "GrayscaleEffect",
+        RenderEffect::HueSaturation(_) => "HueSaturationEffect",
+        RenderEffect::Invert(_) => "InvertEffect",
+        RenderEffect::LiftGammaGain(_) => "LiftGammaGainEffect",
+        RenderEffect::LookupTableGrade(_) => "LookupTableGradeEffect",
+        RenderEffect::Posterize(_) => "PosterizeEffect",
+        RenderEffect::Sepia(_) => "SepiaEffect",
+        RenderEffect::WhiteBalance(_) => "WhiteBalanceEffect",
+        RenderEffect::BokehDepthOfField(_) => "BokehDepthOfFieldEffect",
+        RenderEffect::ChromaticAberration(_) => "ChromaticAberrationEffect",
+        RenderEffect::Displacement(_) => "DisplacementEffect",
+        RenderEffect::LensDirt(_) => "LensDirtEffect",
+        RenderEffect::LensDistortion(_) => "LensDistortionEffect",
+        RenderEffect::LensFlare(_) => "LensFlareEffect",
+        RenderEffect::TiltShift(_) => "TiltShiftEffect",
+        RenderEffect::Vignette(_) => "VignetteEffect",
+        RenderEffect::CameraMotionBlur(_) => "CameraMotionBlurEffect",
+        RenderEffect::DirectionalBlur(_) => "DirectionalBlurEffect",
+        RenderEffect::MotionBlur(_) => "MotionBlurEffect",
+        RenderEffect::RadialBlur(_) => "RadialBlurEffect",
+        RenderEffect::GodRays(_) => "GodRaysEffect",
+        RenderEffect::ScreenSpaceFog(_) => "ScreenSpaceFogEffect",
+        RenderEffect::Ssao(_) => "SsaoEffect",
+        RenderEffect::Ssr(_) => "SsrEffect",
+        RenderEffect::Crt(_) => "CrtEffect",
+        RenderEffect::Dither(_) => "DitherEffect",
+        RenderEffect::FilmGrain(_) => "FilmGrainEffect",
+        RenderEffect::Glitch(_) => "GlitchEffect",
+        RenderEffect::Halftone(_) => "HalftoneEffect",
+        RenderEffect::Kuwahara(_) => "KuwaharaEffect",
+        RenderEffect::Outline(_) => "OutlineEffect",
+        RenderEffect::Pixelate(_) => "PixelateEffect",
+        RenderEffect::Scanlines(_) => "ScanlinesEffect",
+        RenderEffect::Sharpen(_) => "SharpenEffect",
+        RenderEffect::Sketch(_) => "SketchEffect",
     }
 }
 
@@ -138,22 +154,22 @@ mod tests {
     // gl_render_effect_type
 
     #[test]
-    fn gl_render_effect_type_maps_variants_to_ts_keys() {
+    fn gl_render_effect_type_returns_pascal_case_kind() {
         assert_eq!(
             gl_render_effect_type(&RenderEffect::Fxaa(FxaaEffect::default())),
-            "fxaa"
+            "FxaaEffect"
         );
         assert_eq!(
             gl_render_effect_type(&RenderEffect::Bloom(BloomEffect::default())),
-            "bloom"
+            "BloomEffect"
         );
         assert_eq!(
             gl_render_effect_type(&RenderEffect::GodRays(Default::default())),
-            "godRays"
+            "GodRaysEffect"
         );
         assert_eq!(
             gl_render_effect_type(&RenderEffect::ScreenSpaceFog(Default::default())),
-            "screenSpaceFog"
+            "ScreenSpaceFogEffect"
         );
     }
 }
