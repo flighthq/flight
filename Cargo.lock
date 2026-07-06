@@ -494,6 +494,10 @@ name = "example-batchloading"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-image",
+ "flighthq-loader",
+ "flighthq-signals",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -560,6 +564,17 @@ name = "example-piratepig"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-application",
+ "flighthq-audio",
+ "flighthq-displayobject",
+ "flighthq-font",
+ "flighthq-image",
+ "flighthq-input",
+ "flighthq-interaction",
+ "flighthq-media",
+ "flighthq-node",
+ "flighthq-tween",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -624,6 +639,13 @@ name = "example-textmetrics"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-application",
+ "flighthq-displayobject",
+ "flighthq-node",
+ "flighthq-shape",
+ "flighthq-text",
+ "flighthq-textlayout",
+ "flighthq-types",
 ]
 
 [[package]]
