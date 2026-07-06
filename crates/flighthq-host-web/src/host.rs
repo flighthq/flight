@@ -15,7 +15,7 @@ use flighthq_input::InputManager;
 use flighthq_render_wgpu::{
     WgpuRenderOptions, WgpuRenderState, create_wgpu_render_state, destroy_wgpu_render_state,
     register_default_wgpu_material, register_wgpu_color_transform_materials,
-    register_wgpu_display_object_renderer, register_wgpu_sprite_renderer, render_wgpu_background,
+    register_wgpu_display_object_renderer, register_wgpu_sprite_renderers, render_wgpu_background,
     set_wgpu_frame_target_view, submit_wgpu_render_pass,
 };
 use wasm_bindgen::JsCast;
@@ -127,7 +127,7 @@ pub async fn create_web_host(canvas_id: &str, options: &WebHostOptions) -> Optio
     let mut state = create_wgpu_render_state(device, queue, format, width, height, &render_options);
 
     register_wgpu_display_object_renderer(&mut state);
-    register_wgpu_sprite_renderer(&mut state);
+    register_wgpu_sprite_renderers(&mut state);
     register_default_wgpu_material(&mut state);
     register_wgpu_color_transform_materials(&mut state);
 

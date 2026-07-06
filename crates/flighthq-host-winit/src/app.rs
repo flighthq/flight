@@ -21,7 +21,7 @@ use std::time::Instant;
 
 use flighthq_displayobject_wgpu::{
     register_default_wgpu_material, register_wgpu_color_transform_materials,
-    register_wgpu_display_object_renderer, register_wgpu_sprite_renderer,
+    register_wgpu_display_object_renderer, register_wgpu_sprite_renderers,
 };
 use flighthq_input::{
     InputManager, create_input_manager, dispatch_keyboard_event, dispatch_pointer_down_event,
@@ -191,7 +191,7 @@ impl ApplicationHandler for HostWinitApp<'_> {
         // Renderer registration is opt-in and happens once, after the render
         // state exists — never at module top level.
         register_wgpu_display_object_renderer(&mut host.render_state);
-        register_wgpu_sprite_renderer(&mut host.render_state);
+        register_wgpu_sprite_renderers(&mut host.render_state);
         register_default_wgpu_material(&mut host.render_state);
         register_wgpu_color_transform_materials(&mut host.render_state);
 
