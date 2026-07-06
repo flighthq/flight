@@ -7,6 +7,11 @@ publish = false
 
 [dependencies]
 example-common = { path = "../common" }
+flighthq-displayobject = { workspace = true }
+flighthq-font = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-text = { workspace = true }
+flighthq-types = { workspace = true }
 
 [lints]
 workspace = true
