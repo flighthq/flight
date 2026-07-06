@@ -243,7 +243,7 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
   // Reference comparison tests: each holds library subdirs (openfl/, flight/) and contributes
   // `<library>:<renderer>` columns, the same discovery the reference tool serves.
   if (tool === 'reference') {
-    const refDir = join(root, 'tests', 'reference');
+    const refDir = join(root, 'reference');
     if (!existsSync(refDir)) return [];
     return readdirSync(refDir, { withFileTypes: true })
       .filter((d) => d.isDirectory() && d.name !== '_harness')
