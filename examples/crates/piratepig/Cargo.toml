@@ -7,6 +7,17 @@ publish = false
 
 [dependencies]
 example-common = { path = "../common" }
+flighthq-application = { workspace = true }
+flighthq-audio = { workspace = true }
+flighthq-displayobject = { workspace = true }
+flighthq-font = { workspace = true }
+flighthq-image = { workspace = true }
+flighthq-input = { workspace = true }
+flighthq-interaction = { workspace = true }
+flighthq-media = { workspace = true }
+flighthq-node = { workspace = true }
+flighthq-tween = { workspace = true }
+flighthq-types = { workspace = true }
 
 [lints]
 workspace = true
