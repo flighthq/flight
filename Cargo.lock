@@ -518,6 +518,7 @@ name = "example-comparebitmapdata"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-surface",
 ]
 
 [[package]]
@@ -546,6 +547,12 @@ name = "example-nyancat"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-image",
+ "flighthq-node",
+ "flighthq-spritesheet",
+ "flighthq-textureatlas",
+ "flighthq-timeline",
 ]
 
 [[package]]
@@ -560,6 +567,15 @@ name = "example-playingsound"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-application",
+ "flighthq-audio",
+ "flighthq-displayobject",
+ "flighthq-input",
+ "flighthq-media",
+ "flighthq-node",
+ "flighthq-shape",
+ "flighthq-tween",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -567,6 +583,15 @@ name = "example-playingvideo"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-application",
+ "flighthq-displayobject",
+ "flighthq-input",
+ "flighthq-media",
+ "flighthq-node",
+ "flighthq-shape",
+ "flighthq-text",
+ "flighthq-types",
+ "flighthq-video",
 ]
 
 [[package]]
@@ -574,6 +599,11 @@ name = "example-renderview"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-image",
+ "flighthq-node",
+ "flighthq-sprite",
+ "flighthq-textureatlas",
 ]
 
 [[package]]
@@ -581,6 +611,12 @@ name = "example-sparktrail"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-node",
+ "flighthq-particles",
+ "flighthq-sprite",
+ "flighthq-textureatlas",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -595,6 +631,13 @@ name = "example-tweenexample"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-easing",
+ "flighthq-node",
+ "flighthq-shape",
+ "flighthq-signals",
+ "flighthq-tween",
+ "flighthq-types",
 ]
 
 [[package]]
@@ -602,6 +645,10 @@ name = "example-usingtilemap"
 version = "0.1.0"
 dependencies = [
  "example-common",
+ "flighthq-displayobject",
+ "flighthq-node",
+ "flighthq-sprite",
+ "flighthq-tileset",
 ]
 
 [[package]]
