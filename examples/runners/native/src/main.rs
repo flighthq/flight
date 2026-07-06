@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use example_common::{ExampleScene, ExampleSceneBehavior, build_example_shape_regions};
+use example_common::{ExampleScene, ExampleSceneBehavior};
 use flighthq_displayobject::{
     DisplayObjectArena, add_display_object_child, create_bitmap, create_display_object,
     create_stage, get_bitmap_image, get_display_object_alpha, get_display_object_blend_mode,
@@ -17,8 +17,8 @@ use flighthq_displayobject::{
     set_display_object_y, set_stage_color, set_stage_size,
 };
 use flighthq_displayobject_wgpu::{
-    WgpuBitmapTexture, WgpuQuadBatchSource, WgpuShapeGeometry, WgpuSpriteSource, WgpuTilemapSource,
-    register_wgpu_display_object_renderer, render_wgpu_display_object,
+    WgpuBitmapTexture, WgpuQuadBatchSource, WgpuSpriteSource, WgpuTilemapSource,
+    render_wgpu_display_object,
 };
 use flighthq_host_winit::{InputManager, WgpuRenderState, WinitAppConfig, run_winit_app};
 use flighthq_image::load_image_resource_from_url;
@@ -39,12 +39,10 @@ use flighthq_textureatlas::{add_texture_atlas_region, create_texture_atlas};
 use flighthq_tileset::load_tileset_from_url;
 use flighthq_types::QuadTransformType;
 use flighthq_types::RenderProxy2D;
-use flighthq_types::display::{display_object_kind, shape_kind};
+use flighthq_types::display::display_object_kind;
 use flighthq_types::geometry::Matrix;
 use flighthq_types::input::InputPointerData;
 
-const STAGE_ID: u64 = 1;
-const SHAPE_ID: u64 = 2;
 const BUNNY_STAGE_ID: u64 = 1;
 const BUNNY_BATCH_ID: u64 = 2;
 
@@ -56,44 +54,15 @@ fn main() {
         let available = EXAMPLE_IDS.join(", ");
         panic!("unknown example '{requested}'. Available examples: {available}");
     });
-    if scene.id == example_bunnymark::ID {
-        run_bunnymark(scene);
-        return;
+    match scene.id {
+        example_bunnymark::ID => run_bunnymark(scene),
+        "displayingabitmap" => run_displaying_bitmap(scene),
+        "renderview" => run_render_view(scene),
+        "usingtilemap" => run_using_tilemap(scene),
+        unsupported => {
+            panic!("native example '{unsupported}' is not wired to the matching Rust API path yet")
+        }
     }
-    if scene.id == "displayingabitmap" {
-        run_displaying_bitmap(scene);
-        return;
-    }
-    if scene.id == "renderview" {
-        run_render_view(scene);
-        return;
-    }
-    if scene.id == "usingtilemap" {
-        run_using_tilemap(scene);
-        return;
-    }
-    run_static_scene(scene);
-}
-
-fn run_static_scene(scene: ExampleScene) {
-    let geometry = shape_geometry_for_scene(&scene);
-
-    let mut config = WinitAppConfig {
-        title: format!("Flight Examples - {}", scene.title),
-        width: scene.width,
-        height: scene.height,
-        ..Default::default()
-    };
-    config.render_options.background_color = Some(scene.background);
-
-    let mut setup = |state: &mut WgpuRenderState, _input: &mut InputManager| {
-        register_wgpu_display_object_renderer(state);
-        STAGE_ID
-    };
-    let mut update = move |_dt: f32, state: &mut WgpuRenderState, _input: &mut InputManager| {
-        draw_scene(state, &geometry);
-    };
-    run_winit_app(config, &mut setup, &mut update);
 }
 
 fn run_bunnymark(scene: ExampleScene) {
@@ -527,14 +496,6 @@ fn scene_for(id: &str) -> Option<ExampleScene> {
     }
 }
 
-fn shape_geometry_for_scene(scene: &ExampleScene) -> WgpuShapeGeometry {
-    let (regions, content_revision) = build_example_shape_regions(scene);
-    WgpuShapeGeometry {
-        regions,
-        content_revision,
-    }
-}
-
 struct Bunny {
     x: f32,
     y: f32,
@@ -806,57 +767,4 @@ fn resolve_native_asset_path_for(package: &str, image_path: &str) -> String {
         .unwrap_or_else(|| PathBuf::from(image_path))
         .to_string_lossy()
         .into_owned()
-}
-
-fn draw_scene(state: &mut WgpuRenderState, geometry: &WgpuShapeGeometry) {
-    let kinds = HashMap::from([(STAGE_ID, display_object_kind()), (SHAPE_ID, shape_kind())]);
-    let children = HashMap::from([(STAGE_ID, vec![SHAPE_ID]), (SHAPE_ID, vec![])]);
-    let parents = HashMap::from([(STAGE_ID, None), (SHAPE_ID, Some(STAGE_ID))]);
-
-    let mut store = RenderStateStore::new();
-    let render_id = create_render_state(&mut store, None);
-    let render_state = get_render_state(&store, render_id).clone();
-    prepare_display_object_render(
-        &mut store,
-        render_id,
-        &render_state,
-        STAGE_ID,
-        &|id| children.get(&id).cloned().unwrap_or_default(),
-        &|_| true,
-        &|id| parents.get(&id).copied().flatten(),
-        &|_| (1, 1, 1),
-        &|id| kinds.get(&id).copied().unwrap_or_default(),
-        &|_| Matrix::default(),
-        &|_| 1.0,
-        &|_| true,
-        &|_| None,
-        &|_| false,
-    );
-
-    let proxies: HashMap<u64, RenderProxy2D> = [STAGE_ID, SHAPE_ID]
-        .into_iter()
-        .filter_map(|id| {
-            get_render_proxy_2d(&store, render_id, id)
-                .cloned()
-                .map(|proxy| (id, proxy))
-        })
-        .collect();
-    render_wgpu_display_object(
-        state,
-        STAGE_ID,
-        &|id| children.get(&id).cloned().unwrap_or_default(),
-        &|id| kinds.get(&id).copied().unwrap_or_default(),
-        &|id| proxies.get(&id).cloned(),
-        &|id| {
-            (id == SHAPE_ID).then(|| WgpuShapeGeometry {
-                regions: geometry.regions.clone(),
-                content_revision: geometry.content_revision,
-            })
-        },
-        &|_| None,
-        &|_| None,
-        &|_| None,
-        &|_| None,
-        &|_| None,
-    );
 }
