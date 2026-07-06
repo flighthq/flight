@@ -144,6 +144,7 @@ fn main() {
                     &get_bitmap_texture,
                     &|_| None,
                     &|_| None,
+                    &|_| None,
                     &get_clip_rectangle,
                 );
             })

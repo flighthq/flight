@@ -85,7 +85,7 @@ pub use sprite_batch::{
 pub use sprite_renderer::{DefaultWgpuSpriteRenderer, register_wgpu_sprite_renderer};
 pub use text_input::{draw_wgpu_text_input_overlay, enable_wgpu_text_input};
 pub use text_label::{DefaultWgpuTextLabelRenderer, draw_wgpu_text_label};
-pub use tilemap::{DefaultWgpuTilemapRenderer, draw_wgpu_tilemap};
+pub use tilemap::{DefaultWgpuTilemapRenderer, WgpuTilemapSource, draw_wgpu_tilemap};
 pub use velocity::{
     DefaultWgpuDisplayObjectVelocityWriter, DefaultWgpuParticleEmitterVelocityWriter,
     DefaultWgpuQuadBatchVelocityWriter, create_wgpu_velocity_target, draw_wgpu_velocity_quad,
