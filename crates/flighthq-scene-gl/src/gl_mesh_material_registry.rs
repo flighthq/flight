@@ -22,6 +22,11 @@ use flighthq_render_gl::GlRenderState;
 use flighthq_types::camera::Camera;
 use flighthq_types::kind::KindId;
 use flighthq_types::material::{DefaultMaterialKind, Material};
+use flighthq_types::pbr_extension_material::{
+    AnisotropyPbrMaterial, ClearcoatPbrMaterial, IridescencePbrMaterial, SheenPbrMaterial,
+    SpecularGlossinessPbrMaterial, SpecularPbrMaterial, SubsurfacePbrMaterial,
+    TransmissionVolumePbrMaterial,
+};
 use flighthq_types::pbr_material::StandardPbrMaterial;
 use flighthq_types::scene_render::{SceneLightBlock, SceneRenderProxy};
 
@@ -78,10 +83,92 @@ pub trait MeshMaterial: Material {
     fn as_standard_pbr(&self) -> Option<&StandardPbrMaterial> {
         None
     }
+    /// The concrete Anisotropy (KHR_materials_anisotropy) material, or `None`.
+    fn as_anisotropy_pbr(&self) -> Option<&AnisotropyPbrMaterial> {
+        None
+    }
+    /// The concrete Clearcoat (KHR_materials_clearcoat) material, or `None`.
+    fn as_clearcoat_pbr(&self) -> Option<&ClearcoatPbrMaterial> {
+        None
+    }
+    /// The concrete Iridescence (KHR_materials_iridescence) material, or `None`.
+    fn as_iridescence_pbr(&self) -> Option<&IridescencePbrMaterial> {
+        None
+    }
+    /// The concrete Sheen (KHR_materials_sheen) material, or `None`.
+    fn as_sheen_pbr(&self) -> Option<&SheenPbrMaterial> {
+        None
+    }
+    /// The concrete SpecularGlossiness (legacy pbrSpecularGlossiness) material, or
+    /// `None`.
+    fn as_specular_glossiness_pbr(&self) -> Option<&SpecularGlossinessPbrMaterial> {
+        None
+    }
+    /// The concrete Specular (KHR_materials_specular) material, or `None`.
+    fn as_specular_pbr(&self) -> Option<&SpecularPbrMaterial> {
+        None
+    }
+    /// The concrete Subsurface (Flight extension) material, or `None`.
+    fn as_subsurface_pbr(&self) -> Option<&SubsurfacePbrMaterial> {
+        None
+    }
+    /// The concrete TransmissionVolume (KHR_materials_transmission + _volume)
+    /// material, or `None`.
+    fn as_transmission_volume_pbr(&self) -> Option<&TransmissionVolumePbrMaterial> {
+        None
+    }
 }
 
 impl MeshMaterial for StandardPbrMaterial {
     fn as_standard_pbr(&self) -> Option<&StandardPbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for AnisotropyPbrMaterial {
+    fn as_anisotropy_pbr(&self) -> Option<&AnisotropyPbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for ClearcoatPbrMaterial {
+    fn as_clearcoat_pbr(&self) -> Option<&ClearcoatPbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for IridescencePbrMaterial {
+    fn as_iridescence_pbr(&self) -> Option<&IridescencePbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for SheenPbrMaterial {
+    fn as_sheen_pbr(&self) -> Option<&SheenPbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for SpecularGlossinessPbrMaterial {
+    fn as_specular_glossiness_pbr(&self) -> Option<&SpecularGlossinessPbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for SpecularPbrMaterial {
+    fn as_specular_pbr(&self) -> Option<&SpecularPbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for SubsurfacePbrMaterial {
+    fn as_subsurface_pbr(&self) -> Option<&SubsurfacePbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for TransmissionVolumePbrMaterial {
+    fn as_transmission_volume_pbr(&self) -> Option<&TransmissionVolumePbrMaterial> {
         Some(self)
     }
 }

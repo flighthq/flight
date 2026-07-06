@@ -36,6 +36,7 @@ pub struct GlPbrProgram {
     pub loc_normal_scale: Option<glow::UniformLocation>,
     pub loc_emissive: Option<glow::UniformLocation>,
     pub loc_emissive_strength: Option<glow::UniformLocation>,
+    pub loc_occlusion_strength: Option<glow::UniformLocation>,
     pub loc_alpha_cutoff: Option<glow::UniformLocation>,
     pub loc_camera_position: Option<glow::UniformLocation>,
     pub loc_directional: Option<glow::UniformLocation>,
@@ -45,6 +46,32 @@ pub struct GlPbrProgram {
     pub loc_ambient_count: Option<glow::UniformLocation>,
     pub loc_base_color_map: Option<glow::UniformLocation>,
     pub loc_normal_map: Option<glow::UniformLocation>,
+    pub loc_metallic_roughness_map: Option<glow::UniformLocation>,
+    pub loc_occlusion_map: Option<glow::UniformLocation>,
+    pub loc_emissive_map: Option<glow::UniformLocation>,
+    // KHR_materials_specular
+    pub loc_specular: Option<glow::UniformLocation>,
+    pub loc_specular_color: Option<glow::UniformLocation>,
+    // KHR_materials_clearcoat
+    pub loc_clearcoat: Option<glow::UniformLocation>,
+    pub loc_clearcoat_roughness: Option<glow::UniformLocation>,
+    // KHR_materials_sheen
+    pub loc_sheen_color: Option<glow::UniformLocation>,
+    pub loc_sheen_roughness: Option<glow::UniformLocation>,
+    // KHR_materials_anisotropy
+    pub loc_anisotropy_strength: Option<glow::UniformLocation>,
+    pub loc_anisotropy_rotation: Option<glow::UniformLocation>,
+    // KHR_materials_iridescence
+    pub loc_iridescence: Option<glow::UniformLocation>,
+    pub loc_iridescence_ior: Option<glow::UniformLocation>,
+    pub loc_iridescence_thickness: Option<glow::UniformLocation>,
+    // Subsurface (Flight extension)
+    pub loc_subsurface: Option<glow::UniformLocation>,
+    pub loc_subsurface_color: Option<glow::UniformLocation>,
+    pub loc_thickness: Option<glow::UniformLocation>,
+    // KHR_materials_transmission + KHR_materials_volume
+    pub loc_transmission: Option<glow::UniformLocation>,
+    pub loc_attenuation_color: Option<glow::UniformLocation>,
 }
 
 /// Compiles the StandardPbr uber-shader for a define key, links it, and resolves
@@ -73,6 +100,7 @@ pub fn compile_gl_pbr_program(gl: &glow::Context, key: &GlPbrDefineKey) -> GlPbr
             loc_normal_scale: gl.get_uniform_location(program, "u_normalScale"),
             loc_emissive: gl.get_uniform_location(program, "u_emissive"),
             loc_emissive_strength: gl.get_uniform_location(program, "u_emissiveStrength"),
+            loc_occlusion_strength: gl.get_uniform_location(program, "u_occlusionStrength"),
             loc_alpha_cutoff: gl.get_uniform_location(program, "u_alphaCutoff"),
             loc_camera_position: gl.get_uniform_location(program, "u_cameraPosition"),
             loc_directional: gl.get_uniform_location(program, "u_directional"),
@@ -82,6 +110,25 @@ pub fn compile_gl_pbr_program(gl: &glow::Context, key: &GlPbrDefineKey) -> GlPbr
             loc_ambient_count: gl.get_uniform_location(program, "u_ambientCount"),
             loc_base_color_map: gl.get_uniform_location(program, "u_baseColorMap"),
             loc_normal_map: gl.get_uniform_location(program, "u_normalMap"),
+            loc_metallic_roughness_map: gl.get_uniform_location(program, "u_metallicRoughnessMap"),
+            loc_occlusion_map: gl.get_uniform_location(program, "u_occlusionMap"),
+            loc_emissive_map: gl.get_uniform_location(program, "u_emissiveMap"),
+            loc_specular: gl.get_uniform_location(program, "u_specular"),
+            loc_specular_color: gl.get_uniform_location(program, "u_specularColor"),
+            loc_clearcoat: gl.get_uniform_location(program, "u_clearcoat"),
+            loc_clearcoat_roughness: gl.get_uniform_location(program, "u_clearcoatRoughness"),
+            loc_sheen_color: gl.get_uniform_location(program, "u_sheenColor"),
+            loc_sheen_roughness: gl.get_uniform_location(program, "u_sheenRoughness"),
+            loc_anisotropy_strength: gl.get_uniform_location(program, "u_anisotropyStrength"),
+            loc_anisotropy_rotation: gl.get_uniform_location(program, "u_anisotropyRotation"),
+            loc_iridescence: gl.get_uniform_location(program, "u_iridescence"),
+            loc_iridescence_ior: gl.get_uniform_location(program, "u_iridescenceIor"),
+            loc_iridescence_thickness: gl.get_uniform_location(program, "u_iridescenceThickness"),
+            loc_subsurface: gl.get_uniform_location(program, "u_subsurface"),
+            loc_subsurface_color: gl.get_uniform_location(program, "u_subsurfaceColor"),
+            loc_thickness: gl.get_uniform_location(program, "u_thickness"),
+            loc_transmission: gl.get_uniform_location(program, "u_transmission"),
+            loc_attenuation_color: gl.get_uniform_location(program, "u_attenuationColor"),
         }
     }
 }
