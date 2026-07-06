@@ -66,6 +66,7 @@
         "packages/api/**/*.{ts,tsx}",
         "functional/**",
         "reference/**",
+        "tests/**",
         "tools/size/**",
         "**/vite*.config*.ts",
         "**/vitest*.config*.ts"
