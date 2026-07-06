@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "tsx ../../scripts/download-assets.ts ../../functional",
+    "predev": "tsx ../../scripts/download-assets.ts ../../assets/functional",
     "dev": "vite --config vite.config.ts",
-    "prebuild": "tsx ../../scripts/download-assets.ts ../../functional",
+    "prebuild": "tsx ../../scripts/download-assets.ts ../../assets/functional",
     "build": "vite build --config vite.config.ts",
     "preview": "vite preview --config vite.config.ts",
     "test": "tsc -p tsconfig.json --noEmit"
