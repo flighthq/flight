@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column. Wgpu has no depth G-buffer here, so the effect is color-only/uniform:
 // it applies a uniform bokeh blur across the frame rather than a depth-driven circle-of-confusion.

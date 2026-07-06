@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column. The directional smear is a color-only/uniform full-frame blur along the
 // configured angle (no depth/velocity G-buffer is involved).

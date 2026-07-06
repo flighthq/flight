@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same film-grain intent as render.webgl.ts: per-pixel noise over a flat
 // mid-gray fill, fixed seed for a deterministic capture. Wgpu render-state init is async; the effect

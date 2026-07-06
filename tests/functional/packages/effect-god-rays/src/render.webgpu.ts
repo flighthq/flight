@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for god rays. The HDR rgba16f scene target is radially sampled from the light
 // center; init is async so createWgpuRenderState is awaited.

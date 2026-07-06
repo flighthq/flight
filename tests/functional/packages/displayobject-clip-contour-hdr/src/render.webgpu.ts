@@ -21,7 +21,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // The contour clip's stencil pipeline runs inside the rgba16float scene target, so its color-target format
 // must match — this exercises the per-format clip-contour pipeline keying on Wgpu.

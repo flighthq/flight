@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same full-frame brightnessContrast grade as render.webgl.ts: lifts brightness and adds contrast across the whole frame.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

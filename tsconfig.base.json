@@ -75,6 +75,7 @@
       "@flighthq/network": ["./packages/network/src/index.ts"],
       "@flighthq/network/*": ["./packages/network/src/*"],
       "@ft/render": ["./tests/functional/_harness/render.ts"],
+      "@ft/verify": ["./tests/functional/_harness/verify.ts"],
       "@flighthq/application": ["./packages/application/src/index.ts"],
       "@flighthq/application/*": ["./packages/application/src/*"],
       "@flighthq/clip": ["./packages/clip/src/index.ts"],

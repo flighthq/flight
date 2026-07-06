@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same chromatic-aberration intent as render.webgl.ts. Unlike Canvas
 // (passthrough), chromatic aberration is a real effect on Wgpu: the R/G/B channels are sampled
