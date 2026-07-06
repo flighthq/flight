@@ -3,6 +3,7 @@ import { dirname, extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import { resolveAssetTarget } from '../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../scripts/copy-dir';
 import { workspacePackages } from '../../scripts/workspaces';
 
@@ -16,8 +17,10 @@ interface ReferenceTest {
 
 const projectRoot = resolve(__dirname, '../..');
 const referenceDir = join(projectRoot, 'reference');
-// Suite render assets live in the top-level assets/ folder, no longer colocated under the suite.
-const assetsDir = join(projectRoot, 'assets/reference');
+// Suite render assets: the committed manifest lives at assets/reference/, and the downloaded pool
+// resolves to the shared cache (.cache/assets/reference) — or, when the cache is disabled, back to
+// assets/reference/public/assets. resolveAssetTarget keeps this in lockstep with the downloader.
+const assetsPool = resolveAssetTarget(join(projectRoot, 'assets/reference')).outDir;
 // Flight reference impls reuse the shared render harness: the @ft/render targets, the per-backend
 // createFunctionalTarget, and the in-page render verifier all live there, so this tool depends on it.
 const harnessDir = join(projectRoot, 'tools/harness');
@@ -303,7 +306,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
         // One flat pool for all reference assets; every render page's <base href> points here. File
         // names are globally unique, so identical files across columns/tests are stored once.
         const pool = join(outDir, 'test-assets');
-        const sources = [join(assetsDir, 'public')];
+        const sources = [assetsPool];
         for (const test of tests) {
           const testDir = join(referenceDir, test.name);
           for (const lib of readdirSync(testDir, { withFileTypes: true }).filter((d) => d.isDirectory())) {
@@ -351,7 +354,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
             const candidates = [
               join(referenceDir, name, lib, 'public', assetRel),
               join(referenceDir, name, 'public', assetRel),
-              join(assetsDir, 'public', assetRel),
+              join(assetsPool, assetRel),
             ];
             for (const candidate of candidates) {
               if (existsSync(candidate)) {

@@ -2,15 +2,15 @@
   "assets": [
     {
       "path": "wabbit_alpha.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/wabbit_alpha.png"
+      "url": "https://github.com/flighthq/flight-assets/releases/download/v5/wabbit_alpha.png"
     },
     {
       "path": "tileset.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v2/tileset.png"
+      "url": "https://github.com/flighthq/flight-assets/releases/download/v5/tileset.png"
     },
     {
       "path": "nyancat.png",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v3/nyancat.png"
+      "url": "https://github.com/flighthq/flight-assets/releases/download/v5/nyancat.png"
     }
   ]
 }
