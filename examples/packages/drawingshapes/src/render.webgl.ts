@@ -2,7 +2,15 @@
 import {
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlShapeCommands,
+  defaultGlBeginFill,
+  defaultGlCurveTo,
+  defaultGlDrawCircle,
+  defaultGlDrawEllipse,
+  defaultGlDrawRectangle,
+  defaultGlDrawRoundRectangle,
+  defaultGlLineStyle,
+  defaultGlLineTo,
+  defaultGlMoveTo,
   defaultGlShapeRenderer,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
@@ -22,7 +30,17 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeCommands([
+  defaultGlBeginFill,
+  defaultGlCurveTo,
+  defaultGlDrawCircle,
+  defaultGlDrawEllipse,
+  defaultGlDrawRectangle,
+  defaultGlDrawRoundRectangle,
+  defaultGlLineStyle,
+  defaultGlLineTo,
+  defaultGlMoveTo,
+]);
 registerDefaultGlMaterial(state);
 export const scale = pixelRatio;
 

@@ -1,7 +1,8 @@
 ﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   createDomRenderState,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawRectangle,
   defaultDomRichTextRenderer,
   defaultDomShapeRenderer,
   prepareDisplayObjectRender,
@@ -27,7 +28,7 @@ export const state = createDomRenderState(element, {
 });
 registerRenderer(state, RichTextKind, defaultDomRichTextRenderer);
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle]);
 export const scale = 1;
 
 export function render(root: DisplayObject): void {

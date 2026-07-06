@@ -2,7 +2,15 @@
 import {
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasCurveTo,
+  defaultCanvasDrawCircle,
+  defaultCanvasDrawEllipse,
+  defaultCanvasDrawRectangle,
+  defaultCanvasDrawRoundRectangle,
+  defaultCanvasLineStyle,
+  defaultCanvasLineTo,
+  defaultCanvasMoveTo,
   defaultCanvasShapeRenderer,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
@@ -21,7 +29,17 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xffffffff,
 });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands([
+  defaultCanvasBeginFill,
+  defaultCanvasCurveTo,
+  defaultCanvasDrawCircle,
+  defaultCanvasDrawEllipse,
+  defaultCanvasDrawRectangle,
+  defaultCanvasDrawRoundRectangle,
+  defaultCanvasLineStyle,
+  defaultCanvasLineTo,
+  defaultCanvasMoveTo,
+]);
 export const scale = pixelRatio;
 
 export function render(root: DisplayObject): void {

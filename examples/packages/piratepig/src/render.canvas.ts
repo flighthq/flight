@@ -5,7 +5,9 @@ import {
   BitmapKind,
   createCanvasRenderState,
   defaultCanvasBitmapRenderer,
-  defaultCanvasShapeCommands,
+  defaultCanvasBeginFill,
+  defaultCanvasDrawRectangle,
+  defaultCanvasEndFill,
   defaultCanvasShapeRenderer,
   defaultCanvasTextLabelRenderer,
   enableCanvasCssFilter,
@@ -35,7 +37,7 @@ export const state = createCanvasRenderState(canvas, {
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
-registerCanvasShapeCommands(defaultCanvasShapeCommands);
+registerCanvasShapeCommands([defaultCanvasBeginFill, defaultCanvasDrawRectangle, defaultCanvasEndFill]);
 enableCanvasCssFilter(state);
 export const scale = pixelRatio;
 

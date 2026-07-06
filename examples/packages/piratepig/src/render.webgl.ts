@@ -11,7 +11,9 @@ import {
   createMatrix,
   createRenderCache,
   defaultGlBitmapRenderer,
-  defaultGlShapeCommands,
+  defaultGlBeginFill,
+  defaultGlDrawRectangle,
+  defaultGlEndFill,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
   destroyGlRenderTarget,
@@ -48,7 +50,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, BitmapKind, defaultGlBitmapRenderer);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
-registerGlShapeCommands(defaultGlShapeCommands);
+registerGlShapeCommands([defaultGlBeginFill, defaultGlDrawRectangle, defaultGlEndFill]);
 registerDefaultGlMaterial(state);
 enableGlRenderCache(state);
 export const scale = pixelRatio;
