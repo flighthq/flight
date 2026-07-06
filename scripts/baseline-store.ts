@@ -13,7 +13,7 @@ type TestBaseline = Record<string, ColumnBaseline>;
 
 // Per-subject baseline root. Suites promoted to top-level map here; the rest still live under tests/
 // until they are promoted too.
-const BASELINE_ROOTS: Record<string, string> = { functional: 'functional' };
+const BASELINE_ROOTS: Record<string, string> = { functional: 'functional', reference: 'reference' };
 
 export function baselinePath(root: string, subject: string, name: string): string {
   const base = BASELINE_ROOTS[subject] ?? join('tests', subject);

@@ -15,7 +15,7 @@ interface ReferenceTest {
 }
 
 const projectRoot = resolve(__dirname, '../..');
-const referenceDir = join(projectRoot, 'tests/reference');
+const referenceDir = join(projectRoot, 'reference');
 // Flight reference impls reuse the shared render harness: the @ft/render targets, the per-backend
 // createFunctionalTarget, and the in-page render verifier all live there, so this tool depends on it.
 const harnessDir = join(projectRoot, 'tools/harness');

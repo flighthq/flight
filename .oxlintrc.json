@@ -16,7 +16,7 @@
     "**/.claude/**",
     "**/.quimby/**",
     "**/worktrees/**",
-    "tests/reference/**",
+    "reference/**",
     "**/src/wasm/**",
     "**/docs/**",
     "incoming/**",
