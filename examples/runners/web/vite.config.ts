@@ -1,8 +1,9 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
-import { dirname, extname, join, resolve } from 'path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { dirname, extname, join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import { resolveAssetTarget } from '../../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../../scripts/copy-dir';
 import { workspacePackages } from '../../../scripts/workspaces';
 
@@ -48,7 +49,7 @@ const examplesDir = join(projectRoot, 'examples', 'packages');
 const VERIFY_SKIP = new Set<string>(['playingsound']);
 
 function entryWithLogCapture(name: string, render: string): string {
-  const verifyPath = join(projectRoot, 'tests', 'functional', '_harness', 'verify.ts');
+  const verifyPath = join(projectRoot, 'tools', 'harness', 'verify.ts');
   if (render === 'wasm') {
     const loaderPath = join(__dirname, 'src', 'wasm-loader.ts');
     const lines = [
@@ -136,6 +137,13 @@ const MIME: Record<string, string> = {
   '.mp3': 'audio/mpeg',
   '.wav': 'audio/wav',
   '.ogg': 'audio/ogg',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.ogv': 'video/ogg',
+  '.ttf': 'font/ttf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.utf8': 'text/plain; charset=utf-8',
   '.json': 'application/json',
 };
 
@@ -246,9 +254,11 @@ function examplesPlugin(examples: Example[]): Plugin[] {
                 '<html lang="en">',
                 '<head>',
                 '  <meta charset="UTF-8" />',
-                // Document-relative `assets/...` fetches resolve into the shared pool (see
-                // writeBundle). The script src below is base-absolute, so <base> never touches it.
-                `  <base href="${viteBase}example-assets/" />`,
+                // Document-relative `assets/...` fetches resolve into this example's own asset pool
+                // (see writeBundle) — a per-example base, not a shared one, so an example serves only
+                // what its own manifest declared. The script src below is base-absolute, so <base>
+                // never touches it.
+                `  <base href="${viteBase}example-assets/${example.name}/" />`,
                 '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
                 `  <title>${example.name} \xB7 ${render}</title>`,
                 '  <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { overflow: hidden; }</style>',
@@ -266,17 +276,17 @@ function examplesPlugin(examples: Example[]): Plugin[] {
       },
 
       writeBundle() {
-        // One flat pool for all example assets, shared by every renderer of every example. Example
-        // asset paths are globally unique by content, so merging the per-example public/ trees
-        // stores each file once (wabbit_alpha.png and tileset.png are each used by several examples)
-        // instead of copying every example's assets into all four {name}/{render}/ directories. Each
-        // built render page's <base href> points here (see generateBundle). Examples stay
-        // independently buildable: each keeps its own public/assets and loads document-relative
-        // `assets/...` paths; only the examples pools them across the gallery.
-        const pool = join(outDir, 'example-assets');
+        // One asset pool per example, matching the per-example <base href> above. Each example's
+        // downloaded cache (.cache/assets/<name>/, or its public/assets when the cache is disabled)
+        // is copied under example-assets/<name>/assets/, so a page resolves `assets/...` only within
+        // its own example. This mirrors the dev route below: an example serves exactly what its own
+        // manifest declared, so an under-declared manifest 404s here instead of being shadowed by a
+        // file another example happened to pull.
         for (const example of examples) {
-          const publicDir = join(examplesDir, example.name, 'public');
-          if (existsSync(publicDir)) copyDirectoryContents(publicDir, pool);
+          const src = resolveAssetTarget(join(examplesDir, example.name)).outDir;
+          if (existsSync(src)) {
+            copyDirectoryContents(src, join(outDir, 'example-assets', example.name, 'assets'));
+          }
         }
       },
     },
@@ -296,14 +306,19 @@ function examplesPlugin(examples: Example[]): Plugin[] {
           const example = examples.find((e) => e.name === name && (e.renderers as readonly string[]).includes(render));
           if (!example) return next();
 
-          // Asset request: /examples/{name}/{render}/{assetPath...}
+          // Asset request: /examples/{name}/{render}/{assetPath...}. App URLs are `assets/<rel>`; the
+          // cache stores the manifest's `<rel>` (assets/-less), so strip the serving prefix and index
+          // into this example's own pool. Per-example, so an under-declared manifest 404s instead of
+          // being shadowed by a file another example pulled — matching the built layout above.
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
-            const publicFile = join(examplesDir, name, 'public', assetRel);
-            if (existsSync(publicFile)) {
-              const mime = MIME[extname(publicFile)] ?? 'application/octet-stream';
+            const rel = assetRel.startsWith('assets/') ? assetRel.slice('assets/'.length) : assetRel;
+            const dir = resolveAssetTarget(join(examplesDir, name)).outDir;
+            const assetFile = join(dir, rel);
+            if (!relative(dir, assetFile).startsWith('..') && existsSync(assetFile) && statSync(assetFile).isFile()) {
+              const mime = MIME[extname(assetFile)] ?? 'application/octet-stream';
               res.setHeader('Content-Type', mime);
-              res.end(readFileSync(publicFile));
+              res.end(readFileSync(assetFile));
               return;
             }
             return next();

@@ -6,7 +6,7 @@
     "@flighthq/sdk": "*"
   },
   "scripts": {
-    "assets": "tsx ../../../scripts/download-assets.ts",
+    "assets": "tsx ../../../scripts/download-cached.ts",
     "predev": "npm run assets",
     "dev": "vite",
     "prebuild": "npm run assets",

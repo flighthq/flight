@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "tsx ../../../scripts/download-all-assets.ts",
+    "predev": "tsx ../../../scripts/warm-assets.ts",
     "dev": "vite --config vite.config.ts",
     "dev:wasm": "npm run wasm && cross-env FLIGHT_EXAMPLES_WASM=1 vite --config vite.config.ts --open '/#/drawingshapes/rust-wasm/canvas/'",
-    "prebuild": "tsx ../../../scripts/download-all-assets.ts",
+    "prebuild": "tsx ../../../scripts/warm-assets.ts",
     "build": "vite build --config vite.config.ts",
     "build:wasm": "npm run wasm && cross-env FLIGHT_EXAMPLES_WASM=1 vite build --config vite.config.ts",
     "preview": "vite preview --config vite.config.ts",
