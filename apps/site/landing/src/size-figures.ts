@@ -1,10 +1,10 @@
 // Deliberate build-time read of the committed size baseline (a canonical project artifact), so the
 // cross-directory import is intentional rather than an accidental coupling.
 // eslint-disable-next-line import/no-relative-parent-imports
-import baseline from '../../../../tests/size/size.baseline.json';
+import baseline from '../../../../tools/size/size.baseline.json';
 
 // Real gzip byte sizes, pulled at build time from the project's committed size baseline
-// (tests/size/size.baseline.json, written by `npm run size:baseline`). Reading the canonical figures
+// (tools/size/size.baseline.json, written by `npm run size:baseline`). Reading the canonical figures
 // here keeps the size story accurate and self-updating instead of hand-maintained. Build-time only.
 const sizes: Record<string, number> = baseline;
 
