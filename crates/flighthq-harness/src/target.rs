@@ -1,10 +1,10 @@
-//! The Rust render targets the functional matrix runs against.
+//! The Rust render targets the harness renders a scene graph through.
 //!
 //! These are the native cells of the [parity matrix](../../../tools/agents/docs/rust/parity.md):
-//! `rnat:wgpu`, `rnat:gl`, and `rnat:skia`. A run selects one or more targets and
-//! renders every scene through each, in parallel; the matrix is **sparse** — a
-//! cell that a target cannot render (no adapter/context, or an effect a backend
-//! does not yet apply) reports a clean status rather than failing the run.
+//! `rnat:wgpu`, `rnat:gl`, and `rnat:skia`. A caller selects one or more targets
+//! and renders the same [`SceneGraph`](crate::SceneGraph) through each; the
+//! matrix is **sparse** — a cell a target cannot render (no adapter/context)
+//! reports a clean status rather than failing the run.
 
 /// One Rust render target — a column of the native parity matrix.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -15,7 +15,7 @@ pub enum RenderTarget {
     Skia,
     /// `displayobject-gl` over `render-gl`/glow on a headless EGL context.
     Gl,
-    /// `displayobject-wgpu` over `render-wgpu`/wgpu via `flighthq-capture`.
+    /// `displayobject-wgpu` over `render-wgpu`/wgpu.
     Wgpu,
 }
 
@@ -34,7 +34,7 @@ impl RenderTarget {
     }
 
     /// Parses a target from its [`label`](Self::label); `None` for an unknown
-    /// name. Used by the runner's `--target <name>` selection.
+    /// name. Used by a runner's `--target <name>` selection.
     pub fn from_label(label: &str) -> Option<RenderTarget> {
         match label {
             "skia" => Some(RenderTarget::Skia),

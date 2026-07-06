@@ -18,14 +18,12 @@
 //! All paths return sentinels (`None`) rather than panicking when no wgpu
 //! adapter is present, so a GPU-less CI box degrades gracefully.
 
-mod render_gl;
-mod render_skia;
 mod scene;
 mod scene_graph;
-mod target;
 
 use std::path::{Path, PathBuf};
 
+use flighthq_harness::{render_scene_graph_to_rgba_gl, render_scene_graph_to_rgba_skia};
 use flighthq_surface::{
     compare_surface_fingerprints, create_surface_fingerprint, format_surface_fingerprint,
     parse_surface_fingerprint,
@@ -33,11 +31,13 @@ use flighthq_surface::{
 use flighthq_types::AlphaType;
 use flighthq_types::{ColorSpace, PixelFormat, Surface};
 
-pub use render_gl::render_scene_to_rgba_gl;
-pub use render_skia::render_scene_to_rgba_skia;
+// The backend-switch seam (`RenderTarget`), the backend-agnostic graph
+// (`SceneGraph`), and the shape-command vocabulary now live in the shared
+// `flighthq-harness` crate. Re-exported here so this crate's public API — and
+// the `Scene.paths` command lists — keep their names.
+pub use flighthq_harness::{RenderTarget, SceneGraph, ShapeCommand};
 pub use scene::{RectFill, Scene, render_scene_to_rgba, scenes};
-pub use scene_graph::{SceneGraph, build_scene_graph};
-pub use target::RenderTarget;
+pub use scene_graph::build_scene_graph;
 
 /// Renders a scene through a specific [`RenderTarget`] to tightly packed RGBA
 /// bytes, or `None` when that target is unavailable (no adapter/context) or does
@@ -49,6 +49,30 @@ pub fn render_scene_to_rgba_with(target: RenderTarget, scene: &Scene) -> Option<
         RenderTarget::Gl => render_scene_to_rgba_gl(scene),
         RenderTarget::Wgpu => render_scene_to_rgba(scene),
     }
+}
+
+/// Renders a scene through the software (skia) cell: builds the backend-agnostic
+/// graph and rasterizes it with tiny-skia. Returns `None` for a scene carrying an
+/// effect chain — the software cell has no CPU effect path yet, so it draws the
+/// shapes only or defers.
+pub fn render_scene_to_rgba_skia(scene: &Scene) -> Option<Vec<u8>> {
+    if !(scene.effects)().is_empty() {
+        return None;
+    }
+    let graph = build_scene_graph(scene);
+    render_scene_graph_to_rgba_skia(&graph, scene.width, scene.height, scene.background)
+}
+
+/// Renders a scene through the headless gl cell: builds the backend-agnostic
+/// graph and rasterizes it on a headless GLES 3.0 context. Returns `None` when no
+/// EGL/GL context is available (skipped cell) or the scene carries an effect
+/// chain the gl cell does not yet apply.
+pub fn render_scene_to_rgba_gl(scene: &Scene) -> Option<Vec<u8>> {
+    if !(scene.effects)().is_empty() {
+        return None;
+    }
+    let graph = build_scene_graph(scene);
+    render_scene_graph_to_rgba_gl(&graph, scene.width, scene.height, scene.background)
 }
 
 /// Grid resolution of the visual fingerprint. 16×16×3 cells, matching the TS
