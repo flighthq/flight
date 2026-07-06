@@ -38,10 +38,13 @@ pub mod shader_binding;
 pub use background::{render_gl_background, unpack_gl_rgba};
 pub use draw::{
     apply_gl_blend_mode, bind_gl_texture, composite_gl_cached_texture, create_gl_texture,
-    draw_gl_quad, enable_gl_blend_mode_support, gl_blend_factors, update_gl_texture,
-    use_gl_program,
+    draw_gl_quad, enable_gl_blend_mode_support, gl_blend_factors, set_gl_quad_matrix_from_offset,
+    update_gl_texture, use_gl_program,
 };
-pub use fullscreen_pass::draw_gl_fullscreen_pass;
+pub use fullscreen_pass::{
+    GlFullscreenProgram, clear_gl_render_target, compile_gl_fullscreen_program,
+    draw_gl_fullscreen_pass,
+};
 pub use material_registry::{
     GlMaterialRenderer, get_gl_material_renderer, register_gl_material_renderer,
     resolve_gl_material_renderer,
@@ -67,7 +70,8 @@ pub use render_target_pool::{
 pub use shader::{
     FRAGMENT_SRC, GlBitmapShader, GlShaderLocations, VERTEX_SRC, compile_default_gl_program,
     compile_gl_bitmap_program, create_default_gl_bitmap_shader, create_gl_bitmap_shader,
-    pack_gl_ndc_matrix, viewport_dimensions,
+    pack_gl_ndc_matrix, set_gl_attributes, set_gl_base_uniforms, set_gl_matrix_from_transform,
+    set_gl_matrix_from_values, viewport_dimensions,
 };
 pub use shader_binding::{
     get_gl_material_shader, get_gl_shader, register_gl_bitmap_shader, register_gl_material_shader,
