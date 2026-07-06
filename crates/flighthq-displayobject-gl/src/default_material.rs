@@ -36,7 +36,7 @@ impl GlMaterialRenderer for GlDefaultMaterialRenderer {
 
 /// Registers the default GL material renderer on `state` for the
 /// `DefaultMaterialKind`.
-pub fn register_gl_default_material(state: &mut GlRenderState) {
+pub fn register_default_gl_material(state: &mut GlRenderState) {
     register_gl_material_renderer(
         state,
         KindId::of::<DefaultMaterialKind>(),

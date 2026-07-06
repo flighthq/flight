@@ -12,7 +12,8 @@
 //!
 //! Registration is opt-in (no module-load side effects): a host calls
 //! [`register_gl_display_object_renderer`] and [`register_gl_sprite_renderer`]
-//! after `create_gl_render_state`.
+//! after `create_gl_render_state`, or [`register_gl_display_object_renderers`]
+//! for the combined seam.
 
 pub mod bitmap;
 pub mod cache;
@@ -48,8 +49,12 @@ pub use clip::{
     GlWindingRule, compute_gl_scissor_rect, enable_gl_clip_support, intersect_gl_scissor_rect,
     pop_gl_clip_contours, pop_gl_clip_rectangle, push_gl_clip_contours, push_gl_clip_rectangle,
 };
-pub use color_transform_material::draw_gl_color_transform_material;
-pub use default_material::{GlDefaultMaterialRenderer, register_gl_default_material};
+pub use color_transform_material::{
+    GlColorTransformMaterialRenderer, GlUniformColorTransformMaterialRenderer,
+    draw_gl_color_transform_material, register_gl_color_transform_material,
+    register_gl_uniform_color_transform_material,
+};
+pub use default_material::{GlDefaultMaterialRenderer, register_default_gl_material};
 pub use gl_display_object::{
     GlShapeGeometry, draw_gl_display_object, register_gl_display_object_renderer,
     render_gl_display_object,
@@ -62,18 +67,26 @@ pub use particle_emitter::{
     GlParticleRuntime, GlParticleShader, draw_gl_particle_emitter, ensure_gl_particle_shader,
 };
 pub use quad_batch::draw_gl_quad_batch;
-pub use rich_text::draw_gl_rich_text;
-pub use scale9_mapper::compute_gl_scale9_quads;
-pub use scale9_shape::draw_gl_scale9_shape;
+pub use rich_text::{
+    DefaultGlRichTextRenderer, GlRichTextData, GlRichTextOverlay, create_gl_rich_text_data,
+    destroy_gl_rich_text_data, draw_gl_rich_text, draw_gl_rich_text_with_overlay,
+    register_gl_text_input_overlay,
+};
+pub use scale9_mapper::build_gl_scale9_mapper;
+pub use scale9_shape::{
+    DefaultGlScale9ShapeRenderer, GlScale9ShapeData, create_gl_scale9_shape_data,
+    destroy_gl_scale9_shape_data, draw_gl_scale9_shape, draw_gl_scale9_shape_mask,
+    remap_gl_scale9_commands,
+};
 pub use shape::draw_gl_shape;
 pub use shape_fill::{
     destroy_gl_shape_fill_mesh_cache_entry, draw_gl_shape_fill, fold_gl_shape_fill_region_color,
     pack_gl_shape_fill_color,
 };
 pub use shape_mesh::{
-    GlShapeMesh, create_gl_shape_mesh, destroy_gl_shape_mesh, draw_gl_shape_mesh,
+    GlShapeMesh, create_gl_shape_mesh, destroy_gl_shape_mesh, draw_gl_shape_meshes,
 };
-pub use sprite::submit_gl_sprite;
+pub use sprite::render_gl_sprite;
 pub use sprite_batch::{
     bind_gl_quad_batch_base_attributes, ensure_gl_quad_batch_shader, flush_gl_sprite_batch,
     pack_gl_sprite_batch_material_instance, pack_gl_sprite_instance, prepare_gl_sprite_batch_write,
@@ -81,9 +94,26 @@ pub use sprite_batch::{
     use_gl_quad_batch_program,
 };
 pub use sprite_renderer::{register_gl_sprite_renderer, submit_gl_sprite_node};
-pub use text_input::draw_gl_text_input;
+pub use text_input::{draw_gl_text_input, draw_gl_text_input_overlay, enable_gl_text_input};
 pub use text_label::draw_gl_text_label;
 pub use tilemap::draw_gl_tilemap;
 pub use uniform_color_transform_material::draw_gl_uniform_color_transform_material;
-pub use velocity::draw_gl_velocity;
-pub use video::draw_gl_video;
+pub use velocity::{
+    GlVelocityWriter, create_gl_velocity_target, draw_gl_velocity, draw_gl_velocity_quad,
+    get_gl_velocity_writer, register_gl_velocity_writer, render_gl_velocity,
+};
+pub use video::{
+    DefaultGlVideoRenderer, GlVideoData, create_gl_video_data, destroy_gl_video_data, draw_gl_video,
+};
+
+use flighthq_render_gl::GlRenderState;
+
+/// Registers the standard GL display-object leaf renderers on `state` in one
+/// call: the display-object container/bitmap/shape renderer and the sprite-graph
+/// renderer. The umbrella mirrors the TS package's combined
+/// `registerGlDisplayObjectRenderers` seam; callers that need finer control call
+/// the individual `register_*` functions.
+pub fn register_gl_display_object_renderers(state: &mut GlRenderState) {
+    register_gl_display_object_renderer(state);
+    register_gl_sprite_renderer(state);
+}
