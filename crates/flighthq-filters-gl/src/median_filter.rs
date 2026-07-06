@@ -5,9 +5,10 @@
 //! A single GPU pass — no scratch targets needed.
 
 use flighthq_filters::MedianFilter;
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::{GlRenderState, GlRenderTarget};
 
 // Supports radius up to 2 (5×5 = 25 samples); larger radii use the surface path.

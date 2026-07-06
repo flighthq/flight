@@ -16,11 +16,10 @@
 //! before reuse to give clean replacement semantics.
 
 use flighthq_filters::InnerGlowFilter;
+use flighthq_render_gl::{GlFullscreenProgram, clear_gl_render_target};
 
 use crate::blur_filter::apply_box_blur_filter_to_gl;
-use crate::filter_pass::{
-    GlFullscreenProgram, clear_gl_render_target, draw_gl_fullscreen_pass, get_gl_filter_program,
-};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::tint_shader::{apply_gl_blit_pass, apply_gl_invert_tint_pass};
 use crate::{GlRenderState, GlRenderTarget};
 

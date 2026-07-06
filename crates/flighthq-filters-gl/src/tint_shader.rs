@@ -9,9 +9,10 @@
 //! Programs are cached per `GlRenderState` and retrieved via the corresponding
 //! `get_gl_*_shader` accessors.
 
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::{GlRenderState, GlRenderTarget};
 
 // Extracts the source alpha, tints it with a solid color, outputs premultiplied RGBA.

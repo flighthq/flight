@@ -6,9 +6,9 @@
 //! (tint mask, blurred glow, blur ping-pong temp). This function allocates nothing.
 
 use flighthq_filters::OuterGlowFilter;
+use flighthq_render_gl::clear_gl_render_target;
 
 use crate::blur_filter::apply_box_blur_filter_to_gl;
-use crate::filter_pass::clear_gl_render_target;
 use crate::tint_shader::{apply_gl_blit_pass, apply_gl_tint_pass};
 use crate::{GlRenderState, GlRenderTarget};
 
