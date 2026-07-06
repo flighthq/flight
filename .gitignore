@@ -141,6 +141,7 @@ vite.config.ts.timestamp-*
 *.hx
 
 # Downloaded asset files
+.cache/
 examples/**/assets
 tests/size/**/assets
 .test-assets
