@@ -7,6 +7,7 @@ use flighthq_types::{RenderProxy2D, ShapeFillRegion};
 
 use crate::bitmap::{WgpuBitmapTexture, draw_wgpu_bitmap, draw_wgpu_bitmap_texture};
 use crate::clip_rectangle::{WgpuClipRectangle, pop_wgpu_clip_rectangle, push_wgpu_clip_rectangle};
+use crate::quad_batch::{WgpuQuadBatchSource, draw_wgpu_quad_batch};
 use crate::shape_mesh::draw_wgpu_shape_fill;
 use crate::sprite::render_wgpu_sprite;
 use crate::sprite_batch::flush_wgpu_sprite_batch;
@@ -88,6 +89,7 @@ pub fn render_wgpu_display_object(
     get_render_proxy: &dyn Fn(u64) -> Option<RenderProxy2D>,
     get_shape_geometry: &dyn Fn(u64) -> Option<WgpuShapeGeometry>,
     get_bitmap_texture: &dyn Fn(u64) -> Option<WgpuBitmapTexture>,
+    get_quad_batch_source: &dyn Fn(u64) -> Option<WgpuQuadBatchSource>,
     get_clip_rectangle: &dyn Fn(u64) -> Option<WgpuClipRectangle>,
 ) {
     let mut stack: Vec<WgpuWalkStep> = vec![WgpuWalkStep::Visit(root_id)];
@@ -138,6 +140,11 @@ pub fn render_wgpu_display_object(
                         draw_wgpu_bitmap_texture(state, &texture);
                     } else {
                         draw_wgpu_bitmap(state, current);
+                    }
+                }
+                WgpuRendererSlot::QuadBatch => {
+                    if let Some(source) = get_quad_batch_source(current) {
+                        draw_wgpu_quad_batch(state, &source);
                     }
                 }
                 WgpuRendererSlot::Shape => {

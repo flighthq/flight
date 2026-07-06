@@ -1,6 +1,6 @@
 //! wgpu sprite renderer — submits `Sprite` nodes into the instanced sprite batch.
 
-use flighthq_types::display::sprite_kind;
+use flighthq_types::display::{quad_batch_kind, sprite_kind};
 
 use flighthq_render_wgpu::{WgpuRenderState, WgpuRendererSlot};
 
@@ -20,6 +20,10 @@ pub fn register_wgpu_sprite_renderer(state: &mut WgpuRenderState) {
         .runtime
         .renderers
         .insert(sprite_kind(), WgpuRendererSlot::Sprite);
+    state
+        .runtime
+        .renderers
+        .insert(quad_batch_kind(), WgpuRendererSlot::QuadBatch);
 }
 
 #[cfg(test)]

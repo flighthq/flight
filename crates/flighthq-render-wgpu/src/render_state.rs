@@ -181,6 +181,7 @@ pub struct WgpuRenderStateRuntime {
 pub enum WgpuRendererSlot {
     Container,
     Bitmap,
+    QuadBatch,
     Shape,
     Sprite,
 }
