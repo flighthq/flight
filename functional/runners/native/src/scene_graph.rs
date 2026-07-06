@@ -16,15 +16,16 @@ use flighthq_render::{
     prepare_display_object_render,
 };
 use flighthq_shape::{
-    append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle, create_shape,
-    get_shape_fill_regions,
+    append_shape_begin_fill, append_shape_cubic_curve_to, append_shape_curve_to,
+    append_shape_end_fill, append_shape_line_to, append_shape_move_to, append_shape_rectangle,
+    create_shape, get_shape_fill_regions,
 };
 use flighthq_types::KindId;
 use flighthq_types::ShapeFillRegion;
 use flighthq_types::display::{display_object_kind, shape_kind};
 use flighthq_types::geometry::Matrix;
 
-use crate::scene::{Scene, local_transform_for_rect};
+use crate::scene::{Scene, ShapeCommand, local_transform_for_path, local_transform_for_rect};
 
 /// The stage (root container) node id. Shape nodes start at `STAGE_ID + 1`.
 pub const STAGE_ID: u64 = 1;
@@ -77,6 +78,37 @@ pub fn build_scene_graph(scene: &Scene) -> SceneGraph {
         parents.insert(id, Some(STAGE_ID));
         stage_children.push(id);
     }
+
+    // Path shapes follow the rects, numbered after them, each a shape node whose
+    // fill regions the gl/wgpu/skia shape renderers draw — the same path drawing
+    // the TS shape scenes use, via the ported `flighthq-shape` command API.
+    for (index, path) in scene.paths.iter().enumerate() {
+        let id = STAGE_ID + 1 + scene.rects.len() as u64 + index as u64;
+        let node = create_shape(&mut shape_arena);
+        append_shape_begin_fill(&mut shape_arena, node, path.fill_color, 1.0);
+        for command in path.commands {
+            match *command {
+                ShapeCommand::MoveTo(x, y) => append_shape_move_to(&mut shape_arena, node, x, y),
+                ShapeCommand::LineTo(x, y) => append_shape_line_to(&mut shape_arena, node, x, y),
+                ShapeCommand::CurveTo(cx, cy, ax, ay) => {
+                    append_shape_curve_to(&mut shape_arena, node, cx, cy, ax, ay)
+                }
+                ShapeCommand::CubicCurveTo(c1x, c1y, c2x, c2y, ax, ay) => {
+                    append_shape_cubic_curve_to(&mut shape_arena, node, c1x, c1y, c2x, c2y, ax, ay)
+                }
+            }
+        }
+        append_shape_end_fill(&mut shape_arena, node);
+        let content_revision = get_display_object_local_content_revision(&shape_arena, node);
+        let fill = get_shape_fill_regions(&shape_arena, node).unwrap_or_default();
+        regions.insert(id, (fill, content_revision));
+        transforms.insert(id, local_transform_for_path(path));
+        kinds.insert(id, shape_kind());
+        children.insert(id, vec![]);
+        parents.insert(id, Some(STAGE_ID));
+        stage_children.push(id);
+    }
+
     let all_ids: Vec<u64> = std::iter::once(STAGE_ID)
         .chain(stage_children.iter().copied())
         .collect();
