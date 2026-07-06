@@ -20,16 +20,6 @@ const BUNNY_WIDTH: f32 = 26.0;
 const BUNNY_HEIGHT: f32 = 37.0;
 const BUNNY_COUNT: u32 = 120;
 
-pub const ID: &str = "bunnymark";
-pub const TITLE: &str = "Bunnymark";
-pub const WIDTH: u32 = 550;
-pub const HEIGHT: u32 = 400;
-pub const BACKGROUND: u32 = 0xee_dd_cc_ff;
-
-const BUNNY_WIDTH: f32 = 26.0;
-const BUNNY_HEIGHT: f32 = 37.0;
-const BUNNY_COUNT: u32 = 120;
-
 pub fn create_scene() -> ExampleScene {
     ExampleScene::new(ID, TITLE)
         .with_size(WIDTH, HEIGHT)
