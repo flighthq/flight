@@ -16,9 +16,11 @@ interface FunctionalTest {
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'tests/functional');
-// Scenes live under packages/ (the TS tier, mirroring examples/packages); _harness/, public/, and
-// the asset manifest stay at the suite root. Scene-relative paths use packagesDir; infra uses testsDir.
+// Scenes live under packages/ (the TS tier, mirroring examples/packages); public/ and the asset
+// manifest stay at the suite root. Scene-relative paths use packagesDir; infra uses testsDir.
 const packagesDir = join(testsDir, 'packages');
+// The shared render harness lives in tools/ (used by functional and reference alike).
+const harnessDir = join(projectRoot, 'tools/harness');
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -172,13 +174,13 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
             if (existsSync(customPath)) return customPath;
             return `\0virtual:ft-render:${renderer}`;
           }
-          return resolve(testsDir, '_harness/render.ts');
+          return resolve(harnessDir, 'render.ts');
         }
 
         // Depth-stable alias for the shared verify helper (scenes live under packages/, the harness
         // at the suite root); an alias keeps scene imports valid across scene/harness relocations.
         if (source === '@ft/verify') {
-          return resolve(testsDir, '_harness/verify.ts');
+          return resolve(harnessDir, 'verify.ts');
         }
 
         if (source === './render' && importer) {
@@ -199,7 +201,6 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 
         if (id.startsWith('\0virtual:ft-render:')) {
           const renderer = id.slice('\0virtual:ft-render:'.length);
-          const harnessDir = join(testsDir, '_harness');
           if (renderer === 'canvas') {
             return [
               `import { createCanvasTarget } from ${JSON.stringify(join(harnessDir, 'canvas.ts'))};`,
@@ -240,7 +241,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
             `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
             `setLogSink(createConsoleCaptureSink());`,
             `const __testModule = await import('___ft___${name}:${render}');`,
-            `const { runRenderVerification } = await import(${JSON.stringify(join(testsDir, '_harness', 'verify.ts'))});`,
+            `const { runRenderVerification } = await import(${JSON.stringify(join(harnessDir, 'verify.ts'))});`,
             `await runRenderVerification(__testModule, ${JSON.stringify(render)});`,
           ].join('\n');
         }
