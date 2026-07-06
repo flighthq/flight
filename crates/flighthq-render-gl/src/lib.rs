@@ -70,6 +70,6 @@ pub use shader::{
     pack_gl_ndc_matrix, viewport_dimensions,
 };
 pub use shader_binding::{
-    get_gl_material_shader, get_gl_shader, register_gl_material_shader, resolve_gl_shader,
-    set_gl_shader,
+    get_gl_material_shader, get_gl_shader, register_gl_bitmap_shader, register_gl_material_shader,
+    resolve_gl_shader, set_gl_shader,
 };
