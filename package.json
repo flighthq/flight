@@ -12,6 +12,7 @@
     "api": "tsx ./scripts/api.ts",
     "api:check": "tsx ./scripts/api.ts --check",
     "api:json": "tsx ./scripts/api.ts --json",
+    "assets": "tsx ./scripts/warm-assets.ts",
     "assign:worktree": "tsx ./scripts/assign.ts",
     "build": "tsc -b tsconfig.build.json",
     "build:check": "npm run packages:check && npm run typecheck",

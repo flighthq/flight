@@ -2,11 +2,11 @@
   "assets": [
     {
       "path": "stars.ogg",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v4/stars.ogg"
+      "url": "https://github.com/flighthq/flight-assets/releases/download/v5/stars.ogg"
     },
     {
       "path": "stars.mp3",
-      "url": "https://github.com/flighthq/example-assets/releases/download/v4/stars.mp3"
+      "url": "https://github.com/flighthq/flight-assets/releases/download/v5/stars.mp3"
     }
   ]
 }
