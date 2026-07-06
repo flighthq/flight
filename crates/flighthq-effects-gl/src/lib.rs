@@ -24,6 +24,7 @@ pub mod effect_program_cache;
 pub mod lens_effects;
 pub mod motion_effects;
 pub mod render_effect_pipeline;
+pub mod render_effect_registrar;
 pub mod render_effect_registry;
 pub mod stylization_effects;
 pub mod tone_effects;
@@ -89,10 +90,19 @@ pub use render_effect_pipeline::{
     set_gl_render_effect_velocity_texture,
 };
 
+// render_effect_registrar
+pub use render_effect_registrar::{
+    get_gl_render_effect_kinds, register_antialiasing_gl_render_effects,
+    register_bloom_gl_render_effects, register_blur_gl_render_effects,
+    register_color_gl_render_effects, register_color_grade_gl_render_effects,
+    register_default_gl_render_effects, register_screen_space_gl_render_effects,
+    register_standard_gl_render_effects, register_stylize_gl_render_effects,
+};
+
 // render_effect_registry
 pub use render_effect_registry::{
     GlRenderEffectContext, GlRenderEffectRunner, get_gl_render_effect_runner,
-    gl_render_effect_type, register_gl_render_effect,
+    gl_render_effect_type, has_gl_render_effect_runner, register_gl_render_effect,
 };
 
 // stylization_effects
