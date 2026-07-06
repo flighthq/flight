@@ -20,6 +20,13 @@ pub fn get_gl_shader(state: &GlRenderState, render_proxy_id: u64) -> Option<&GlB
     state.runtime.shader_bindings.get(&render_proxy_id)
 }
 
+/// Sets the state's default bitmap shader — the fallback `resolve_gl_shader`
+/// returns when a node has neither a per-node binding nor a material-kind shader.
+/// Ports TS `registerGlBitmapShader`.
+pub fn register_gl_bitmap_shader(state: &mut GlRenderState, shader: GlBitmapShader) {
+    state.runtime.default_bitmap_shader = Some(shader);
+}
+
 /// Registers a bitmap shader used for all nodes whose material has the given
 /// `kind`. The render path resolves shaders by material kind.
 pub fn register_gl_material_shader(
