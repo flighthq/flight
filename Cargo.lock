@@ -1023,6 +1023,7 @@ name = "flighthq-filters-wgpu"
 version = "0.1.0"
 dependencies = [
  "flighthq-filters",
+ "flighthq-filters-math",
  "flighthq-render-wgpu",
  "pollster",
  "wgpu",
