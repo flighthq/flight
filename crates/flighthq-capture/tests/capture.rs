@@ -179,6 +179,7 @@ fn capture_red_shape_on_background() {
                     &get_bitmap_texture,
                     &|_| None,
                     &|_| None,
+                    &|_| None,
                     &get_clip_rectangle,
                 );
             })
@@ -331,6 +332,7 @@ fn capture_bitmap_texture_pattern() {
                     &get_proxy,
                     &get_shape_geometry,
                     &get_bitmap_texture,
+                    &|_| None,
                     &|_| None,
                     &|_| None,
                     &get_clip_rectangle,
@@ -506,6 +508,7 @@ fn capture_clip_rectangle_bounds_shape() {
                     &get_proxy,
                     &get_shape_geometry,
                     &get_bitmap_texture,
+                    &|_| None,
                     &|_| None,
                     &|_| None,
                     &get_clip_rectangle,
