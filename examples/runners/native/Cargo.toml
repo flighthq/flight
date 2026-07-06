@@ -24,9 +24,16 @@ example-sparktrail = { path = "../../crates/sparktrail" }
 example-textmetrics = { path = "../../crates/textmetrics" }
 example-tweenexample = { path = "../../crates/tweenexample" }
 example-usingtilemap = { path = "../../crates/usingtilemap" }
+flighthq-displayobject = { workspace = true }
 flighthq-displayobject-wgpu = { workspace = true }
 flighthq-host-winit = { path = "../../../crates/flighthq-host-winit" }
+flighthq-image = { workspace = true }
+flighthq-input = { workspace = true }
+flighthq-node = { workspace = true }
 flighthq-render = { workspace = true }
+flighthq-signals = { workspace = true }
+flighthq-sprite = { workspace = true }
+flighthq-textureatlas = { workspace = true }
 flighthq-types = { workspace = true }
 
 [lints]

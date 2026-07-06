@@ -62,7 +62,7 @@ pub use display_object::{
 };
 pub use materials::{draw_wgpu_color_transform_bitmap, register_wgpu_color_transform_shader};
 pub use particle_emitter::{DefaultWgpuParticleEmitterRenderer, draw_wgpu_particle_emitter};
-pub use quad_batch::{DefaultWgpuQuadBatchRenderer, draw_wgpu_quad_batch};
+pub use quad_batch::{DefaultWgpuQuadBatchRenderer, WgpuQuadBatchSource, draw_wgpu_quad_batch};
 pub use rich_text::{
     DefaultWgpuRichTextRenderer, WgpuRichTextData, create_wgpu_rich_text_data,
     destroy_wgpu_rich_text_data, draw_wgpu_rich_text, draw_wgpu_rich_text_with_overlay,

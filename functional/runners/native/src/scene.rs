@@ -457,6 +457,7 @@ pub fn render_scene_to_rgba(scene: &Scene) -> Option<Vec<u8>> {
                         &get_proxy,
                         &get_shape_geometry,
                         &get_bitmap_texture,
+                        &|_| None,
                         &get_clip_rectangle,
                     );
                     // Nothing retained past the frame.
@@ -492,6 +493,7 @@ pub fn render_scene_to_rgba(scene: &Scene) -> Option<Vec<u8>> {
                     &get_proxy,
                     &get_shape_geometry,
                     &get_bitmap_texture,
+                    &|_| None,
                     &get_clip_rectangle,
                 );
                 end_wgpu_render_effect_pipeline(state, &mut pipeline, &effects);
