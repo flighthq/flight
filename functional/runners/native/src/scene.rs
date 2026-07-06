@@ -59,7 +59,7 @@ pub struct RectFill {
 /// A declarative functional scene: a sized stage, a background color, the
 /// rectangles to draw, an optional full-frame render-effect chain, and an
 /// optional mapping to a TS functional baseline stem (the
-/// `tests/functional/baselines/<stem>.json` file) when the Rust scene reproduces
+/// `functional/baselines/<stem>.json` file) when the Rust scene reproduces
 /// a TS scene.
 ///
 /// `effects` is a builder (not a slice) because `RenderEffect` carries owned
