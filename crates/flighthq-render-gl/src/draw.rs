@@ -4,7 +4,9 @@ use flighthq_types::blend::BlendMode;
 use glow::HasContext;
 
 use crate::render_state::{GlRenderState, bytemuck_f32};
-use crate::shader::{GlBitmapShader, set_gl_attributes};
+use crate::shader::{
+    GlBitmapShader, set_gl_attributes, set_gl_matrix_from_values, viewport_dimensions,
+};
 
 // Premultiplied-alpha normal compositing: source already premultiplied.
 const NORMAL_BLEND: (u32, u32) = (glow::ONE, glow::ONE_MINUS_SRC_ALPHA);
@@ -189,6 +191,39 @@ pub fn gl_blend_factors(blend_mode: Option<BlendMode>) -> (u32, u32) {
     }
 }
 
+/// Bakes an offset `(dx, dy)` into the translation of an affine transform, then
+/// uploads the resulting NDC matrix to the current shader.
+///
+/// The offset is applied through the transform's basis vectors — the effective
+/// translation is `(tx + a·dx + c·dy, ty + b·dx + d·dy)` — so it shifts the quad
+/// in the object's local space. Uses the current shader locations, scratch
+/// matrix, and active viewport tracked on `state`.
+#[allow(clippy::too_many_arguments)]
+pub fn set_gl_quad_matrix_from_offset(
+    state: &mut GlRenderState,
+    a: f32,
+    b: f32,
+    c: f32,
+    d: f32,
+    tx: f32,
+    ty: f32,
+    dx: f32,
+    dy: f32,
+) {
+    let (offset_tx, offset_ty) = bake_gl_offset_translation(a, b, c, d, tx, ty, dx, dy);
+    let (vw, vh) = viewport_dimensions(state);
+    let loc = state.runtime.shader_loc.clone();
+    let mut m = state.runtime.matrix_array;
+    if let Some(loc) = &loc {
+        unsafe {
+            set_gl_matrix_from_values(
+                &state.gl, loc, &mut m, a, b, c, d, offset_tx, offset_ty, vw, vh,
+            );
+        }
+    }
+    state.runtime.matrix_array = m;
+}
+
 /// Sets the current program from `shader`, or from `state`'s default bitmap
 /// shader when `shader` is `None`, skipping `glUseProgram` on redundant calls.
 pub fn use_gl_program(state: &mut GlRenderState, shader: Option<&GlBitmapShader>) {
@@ -284,6 +319,23 @@ pub fn composite_gl_cached_texture(
 // Internal helpers
 // ---------------------------------------------------------------------------
 
+/// Bakes a local-space offset `(dx, dy)` into an affine transform's translation,
+/// returning `(tx + a·dx + c·dy, ty + b·dx + d·dy)`. Pure CPU seam for
+/// `set_gl_quad_matrix_from_offset`.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn bake_gl_offset_translation(
+    a: f32,
+    b: f32,
+    c: f32,
+    d: f32,
+    tx: f32,
+    ty: f32,
+    dx: f32,
+    dy: f32,
+) -> (f32, f32) {
+    (tx + a * dx + c * dy, ty + b * dx + d * dy)
+}
+
 /// Packs four interleaved (x, y, u, v) corners into the 16-float quad vertex
 /// buffer in TL, TR, BR, BL order. Pure CPU seam.
 #[allow(clippy::too_many_arguments)]
@@ -319,6 +371,34 @@ pub(crate) fn pack_gl_quad_vertices(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shader::pack_gl_ndc_matrix;
+
+    // bake_gl_offset_translation
+
+    #[test]
+    fn bake_gl_offset_translation_applies_offset_through_identity() {
+        // Identity transform + offset (dx=10, dy=20): effective tx = 0 + 1*10 + 0*20 = 10.
+        let (tx, ty) = bake_gl_offset_translation(1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 20.0);
+        assert_eq!((tx, ty), (10.0, 20.0));
+    }
+
+    #[test]
+    fn bake_gl_offset_translation_applies_offset_through_transform_components() {
+        // Scale-2 transform with offset (dx=5, dy=0): effective tx = 0 + 2*5 + 0*0 = 10.
+        let (tx, _ty) = bake_gl_offset_translation(2.0, 0.0, 0.0, 2.0, 0.0, 0.0, 5.0, 0.0);
+        assert_eq!(tx, 10.0);
+    }
+
+    #[test]
+    fn bake_gl_offset_translation_feeds_ndc_matrix_translation() {
+        // Mirrors the TS setGlQuadMatrixFromOffset assertions at 200x100:
+        // identity + offset (10, 20) -> m[6] = -0.9, m[7] = 0.6.
+        let (tx, ty) = bake_gl_offset_translation(1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 10.0, 20.0);
+        let mut m = [0.0_f32; 9];
+        pack_gl_ndc_matrix(&mut m, 1.0, 0.0, 0.0, 1.0, tx, ty, 200, 100);
+        assert!((m[6] - (-0.9)).abs() < 1e-6, "m[6] = {}", m[6]);
+        assert!((m[7] - 0.6).abs() < 1e-6, "m[7] = {}", m[7]);
+    }
 
     // gl_blend_factors
 
