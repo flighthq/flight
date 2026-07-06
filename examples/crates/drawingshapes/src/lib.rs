@@ -50,6 +50,7 @@ pub fn create_drawing_shapes() -> DrawingShapes {
 }
 
 pub fn create_scene() -> ExampleScene {
+    let _api_scene = create_api_scene();
     ExampleScene::new(ID, TITLE)
         .with_size(WIDTH, HEIGHT)
         .with_background(BACKGROUND)
