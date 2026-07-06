@@ -25,11 +25,8 @@ example-textmetrics = { path = "../../crates/textmetrics" }
 example-tweenexample = { path = "../../crates/tweenexample" }
 example-usingtilemap = { path = "../../crates/usingtilemap" }
 flighthq-displayobject-wgpu = { workspace = true }
-flighthq-displayobject = { workspace = true }
 flighthq-host-winit = { path = "../../../crates/flighthq-host-winit" }
-flighthq-node = { workspace = true }
 flighthq-render = { workspace = true }
-flighthq-shape = { workspace = true }
 flighthq-types = { workspace = true }
 
 [lints]
