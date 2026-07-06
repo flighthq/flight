@@ -175,6 +175,12 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           return resolve(testsDir, '_harness/render.ts');
         }
 
+        // Depth-stable alias for the shared verify helper (scenes live under packages/, the harness
+        // at the suite root); an alias keeps scene imports valid across scene/harness relocations.
+        if (source === '@ft/verify') {
+          return resolve(testsDir, '_harness/verify.ts');
+        }
+
         if (source === './render' && importer) {
           const match = importer.match(/\?render=([^&]+)/);
           if (match) {

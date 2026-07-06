@@ -30,7 +30,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for per-object motion blur, the mirror of render.webgl.ts. A static screenshot has
 // no transform delta to derive motion from, so each shape is given an explicit screen-space velocity

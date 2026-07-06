@@ -20,7 +20,7 @@ import {
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 
-import { registerWgpuFunctionalTarget } from '../../_harness/verify';
+import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same bloom intent as render.webgl.ts. Wgpu render-state init is
 // async (createWgpuRenderState returns a Promise). The effect pipeline runs between
