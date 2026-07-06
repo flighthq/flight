@@ -4,7 +4,7 @@
 //! them two ways:
 //!
 //! - **Regression**: the fresh fingerprint must match a committed
-//!   `crates/flighthq-functional/baselines/<name>.fp` line within a tolerance
+//!   `tests/functional/runners/native/baselines/<name>.fp` line within a tolerance
 //!   (default `5.0`), catching gross visual drift in the Rust render path.
 //! - **Parity**: when a scene maps to a TS functional scene (`Scene.ts_baseline`
 //!   `Some`), the fresh fingerprint is compared to that scene's TS baseline
@@ -172,7 +172,7 @@ pub fn write_regression_baseline_with(target: RenderTarget, scene: &Scene) -> Op
 }
 
 /// The committed wgpu regression baseline path for a scene name:
-/// `crates/flighthq-functional/baselines/<name>.fp`.
+/// `tests/functional/runners/native/baselines/<name>.fp`.
 pub fn regression_baseline_path(name: &str) -> PathBuf {
     regression_baseline_path_with(RenderTarget::Wgpu, name)
 }
@@ -233,11 +233,11 @@ pub fn read_ts_baseline_fingerprint(stem: &str) -> Option<String> {
 
 /// The TS functional baseline path for a stem:
 /// `<repo>/tests/functional/baselines/<stem>.json`. Resolved relative to this
-/// crate's manifest (`crates/flighthq-functional`), two levels up to the repo
-/// root.
+/// crate's manifest (`tests/functional/runners/native`), four levels up to the
+/// repo root.
 pub fn ts_baseline_path(stem: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
+        .join("../../../..")
         .join("tests/functional/baselines")
         .join(format!("{stem}.json"))
 }
