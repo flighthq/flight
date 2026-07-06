@@ -45,12 +45,24 @@ pub enum ExamplePrimitive {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum ExampleSceneBehavior {
+    Static,
+    BunnyMark {
+        image_path: &'static str,
+        initial_count: usize,
+        add_count: usize,
+        gravity: f32,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ExampleScene {
     pub id: &'static str,
     pub title: &'static str,
     pub width: u32,
     pub height: u32,
     pub background: u32,
+    pub behavior: ExampleSceneBehavior,
     pub fill: u32,
     pub primitives: Vec<ExamplePrimitive>,
 }
@@ -63,6 +75,7 @@ impl ExampleScene {
             width: 800,
             height: 400,
             background: 0xff_ff_ff_ff,
+            behavior: ExampleSceneBehavior::Static,
             fill: 0x24_af_c4_ff,
             primitives: Vec::new(),
         }
@@ -76,6 +89,11 @@ impl ExampleScene {
 
     pub fn with_background(mut self, background: u32) -> Self {
         self.background = background;
+        self
+    }
+
+    pub fn with_behavior(mut self, behavior: ExampleSceneBehavior) -> Self {
+        self.behavior = behavior;
         self
     }
 
