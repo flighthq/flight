@@ -1,9 +1,10 @@
 //! Color-matrix GL filter pass.
 
 use flighthq_filters::ColorMatrixFilter;
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::{GlRenderState, GlRenderTarget};
 
 // 20-element matrix in OpenFL/Flash order: 4 rows × 5 columns. Offsets (column 5)

@@ -6,9 +6,10 @@
 
 use flighthq_filters::BlurFilter;
 use flighthq_filters_math::compute_box_blur_pass_radius;
+use flighthq_render_gl::GlFullscreenProgram;
 use glow::HasContext;
 
-use crate::filter_pass::{GlFullscreenProgram, draw_gl_fullscreen_pass, get_gl_filter_program};
+use crate::filter_pass::{draw_gl_fullscreen_pass, get_gl_filter_program};
 use crate::tint_shader::apply_gl_blit_pass;
 use crate::{GlRenderState, GlRenderTarget};
 
