@@ -155,7 +155,7 @@ async function main(): Promise<void> {
     tool === 'examples'
       ? `${root}/examples`
       : tool === 'functional'
-        ? `${root}/tests/functional`
+        ? `${root}/functional`
         : `${root}/apps/site/landing`;
 
   const watcher = chokidar.watch(watchDir, {

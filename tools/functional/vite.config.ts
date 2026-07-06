@@ -15,7 +15,7 @@ interface FunctionalTest {
 }
 
 const projectRoot = resolve(__dirname, '../..');
-const testsDir = join(projectRoot, 'tests/functional');
+const testsDir = join(projectRoot, 'functional');
 // Scenes live under packages/ (the TS tier, mirroring examples/packages); public/ and the asset
 // manifest stay at the suite root. Scene-relative paths use packagesDir; infra uses testsDir.
 const packagesDir = join(testsDir, 'packages');
