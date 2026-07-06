@@ -64,7 +64,8 @@
     {
       "files": [
         "packages/api/**/*.{ts,tsx}",
-        "tests/**",
+        "functional/**",
+        "reference/**",
         "tools/size/**",
         "**/vite*.config*.ts",
         "**/vitest*.config*.ts"
@@ -97,7 +98,13 @@
       }
     },
     {
-      "files": ["apps/**/*.{ts,tsx}", "examples/**/*.{ts,tsx}", "tools/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
+      "files": [
+        "apps/**/*.{ts,tsx}",
+        "examples/**/*.{ts,tsx}",
+        "tools/**/*.{ts,tsx}",
+        "functional/**/*.{ts,tsx}",
+        "reference/**/*.{ts,tsx}"
+      ],
       "rules": {
         "no-restricted-imports": "off"
       }
