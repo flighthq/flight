@@ -113,7 +113,7 @@ pub fn draw_wgpu_shape_fill(
 /// active render pass and the pipeline/bind groups the caller has already set.
 ///
 /// Each mesh binds its vertex and index buffers and issues an indexed draw,
-/// mirroring `draw_gl_shape_mesh` (which relies on the currently-bound program).
+/// mirroring `draw_gl_shape_meshes` (which relies on the currently-bound program).
 /// No-op when there is no active render pass. Prefer `draw_wgpu_shape_fill` for
 /// the cached, pipeline-managed path; this lower-level helper is for callers
 /// that own the pipeline/uniform binding themselves.
