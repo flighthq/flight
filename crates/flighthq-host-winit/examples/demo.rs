@@ -275,6 +275,7 @@ fn draw_demo_scene(
         &get_proxy,
         &get_shape_geometry,
         &get_bitmap_texture,
+        &|_| None,
         &get_clip_rectangle,
     );
 }

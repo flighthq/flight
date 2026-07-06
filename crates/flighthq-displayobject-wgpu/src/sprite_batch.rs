@@ -12,8 +12,8 @@ use flighthq_types::blend::BlendMode;
 
 use flighthq_render_wgpu::WgpuRenderState;
 use flighthq_render_wgpu::{
-    SPRITE_INSTANCE_FLOATS, WgpuQuadBatchResources, WgpuStencilMode, normal_wgpu_blend_state,
-    wgpu_blend_state,
+    SPRITE_INSTANCE_FLOATS, WgpuQuadBatchResources, WgpuStencilMode,
+    build_wgpu_render_target_bind_group, normal_wgpu_blend_state, wgpu_blend_state,
 };
 
 const SPRITE_INSTANCE_STRIDE: u64 = SPRITE_INSTANCE_FLOATS as u64 * 4;
@@ -165,8 +165,14 @@ pub fn flush_wgpu_sprite_batch(state: &mut WgpuRenderState) {
     }
 
     let blend_mode = state.runtime.sprite_batch.blend_mode;
+    let texture_key = state.runtime.sprite_batch.texture_key;
     let floats = state.runtime.sprite_batch.material_floats;
     reset_wgpu_sprite_batch(state);
+    let Some(texture) = state.runtime.texture_cache.get(&texture_key) else {
+        return;
+    };
+    let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    let texture_bind_group = build_wgpu_render_target_bind_group(state, &texture_view);
 
     ensure_wgpu_quad_batch_resources(state);
 
@@ -237,6 +243,7 @@ pub fn flush_wgpu_sprite_batch(state: &mut WgpuRenderState) {
     if let (Some(pipeline), Some(pass)) = (pipeline, runtime.render_pass.as_mut()) {
         pass.set_pipeline(pipeline);
         pass.set_bind_group(0, uniform_bind_group, &[uniform_offset]);
+        pass.set_bind_group(1, &texture_bind_group, &[]);
         pass.set_bind_group(2, &instance_bind_group, &[]);
         if let Some(material_bind_group) = material_bind_group.as_ref() {
             pass.set_bind_group(3, material_bind_group, &[]);
