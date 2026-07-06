@@ -24,6 +24,7 @@ pub mod background;
 pub mod draw;
 pub mod fullscreen_pass;
 pub mod material_registry;
+pub mod readback;
 pub mod render_state;
 pub mod render_target;
 pub mod render_target_pool;
@@ -45,6 +46,7 @@ pub use material_registry::{
     GlMaterialRenderer, get_gl_material_renderer, register_gl_material_renderer,
     resolve_gl_material_renderer,
 };
+pub use readback::{GlReadbackPixels, read_gl_render_target_pixels};
 pub use render_state::{
     GlClipForm, GlQuadBatchShader, GlRenderOptions, GlRenderState, GlRenderStateRuntime,
     GlRendererSlot, GlScissorRect, GlShapeFillMesh, GlShapeFillMeshCacheEntry, GlShapeFillProgram,
