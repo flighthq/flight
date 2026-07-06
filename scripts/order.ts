@@ -351,7 +351,7 @@ function walk(dir: string, out: string[]): void {
       // Generated wasm-bindgen output and the OpenFL reference tree are not hand-authored and are
       // ignored by oxlint/oxfmt; keep them out of ordering too.
       if (entry.name === 'wasm' && normalized.endsWith('/src/wasm')) continue;
-      if (normalized.endsWith('/tests/reference')) continue;
+      if (normalized.endsWith('/reference')) continue;
       if (normalized.endsWith('/tools/agents')) continue;
       walk(path, out);
       continue;
