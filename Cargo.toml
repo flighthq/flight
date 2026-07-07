@@ -54,6 +54,7 @@ flighthq-render-wgpu = { path = "crates/flighthq-render-wgpu" }
 flighthq-displayobject-gl = { path = "crates/flighthq-displayobject-gl" }
 flighthq-displayobject-wgpu = { path = "crates/flighthq-displayobject-wgpu" }
 flighthq-displayobject-skia = { path = "crates/flighthq-displayobject-skia" }
+flighthq-harness = { path = "crates/flighthq-harness" }
 flighthq-filters = { path = "crates/flighthq-filters" }
 flighthq-filters-gl = { path = "crates/flighthq-filters-gl" }
 flighthq-filters-math = { path = "crates/flighthq-filters-math" }

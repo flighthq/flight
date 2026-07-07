@@ -22,9 +22,10 @@ use flighthq_effects_wgpu::{
     create_wgpu_render_effect_pipeline, destroy_wgpu_render_effect_pipeline,
     end_wgpu_render_effect_pipeline, register_wgpu_render_effect, wgpu_render_effect_type,
 };
+use flighthq_harness::{SceneGraph, ShapeCommand};
 use flighthq_types::geometry::Matrix;
 
-use crate::scene_graph::{SceneGraph, build_scene_graph};
+use crate::scene_graph::build_scene_graph;
 
 /// One solid-color rectangle in a scene. `color` is a packed `0xRRGGBBAA` value,
 /// the codebase-wide color convention.
@@ -87,21 +88,6 @@ pub struct Scene {
     /// tone-map). The shape pass and present blit operate in HDR linear space so
     /// values above 1.0 survive into the effect, instead of clamping in `Rgba8`.
     pub hdr: bool,
-}
-
-/// One command in a filled shape path, mirroring the OpenFL/`flighthq-shape`
-/// drawing API. Coordinates are in the shape's local space (the same space as
-/// [`RectFill`]'s `x/y/w/h`), placed by the path's origin/rotation.
-#[derive(Copy, Clone, Debug)]
-pub enum ShapeCommand {
-    /// Start a new contour at `(x, y)`.
-    MoveTo(f32, f32),
-    /// Straight segment to `(x, y)`.
-    LineTo(f32, f32),
-    /// Quadratic curve through control `(cx, cy)` to anchor `(x, y)`.
-    CurveTo(f32, f32, f32, f32),
-    /// Cubic curve through controls `(c1x, c1y)`, `(c2x, c2y)` to anchor `(x, y)`.
-    CubicCurveTo(f32, f32, f32, f32, f32, f32),
 }
 
 /// A solid-filled shape path: a command list under one fill color, placed by a
@@ -458,6 +444,8 @@ pub fn render_scene_to_rgba(scene: &Scene) -> Option<Vec<u8>> {
                         &get_shape_geometry,
                         &get_bitmap_texture,
                         &|_| None,
+                        &|_| None,
+                        &|_| None,
                         &get_clip_rectangle,
                     );
                     // Nothing retained past the frame.
@@ -493,6 +481,8 @@ pub fn render_scene_to_rgba(scene: &Scene) -> Option<Vec<u8>> {
                     &get_proxy,
                     &get_shape_geometry,
                     &get_bitmap_texture,
+                    &|_| None,
+                    &|_| None,
                     &|_| None,
                     &get_clip_rectangle,
                 );
@@ -3214,7 +3204,11 @@ mod tests {
                 "{} has zero size",
                 scene.name
             );
-            assert!(!scene.rects.is_empty(), "{} has no rects", scene.name);
+            assert!(
+                !scene.rects.is_empty() || !scene.paths.is_empty(),
+                "{} has no drawable content (no rects or paths)",
+                scene.name
+            );
         }
     }
 
