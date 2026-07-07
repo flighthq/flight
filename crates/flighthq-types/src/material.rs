@@ -6,7 +6,12 @@ use crate::kind::KindId;
 /// A material identifies the rendering pipeline (`kind`) that the backend uses
 /// to draw nodes that carry it. Plain data only — no GPU handles, no function
 /// pointers — so a material round-trips through scene serialization.
-pub trait Material: Entity {
+///
+/// The `Any` supertrait lets a backend recover the concrete material from a
+/// stored `&dyn Material` (`(material as &dyn Any).downcast_ref::<T>()`), which
+/// is how each mesh-material renderer reads its own fields — the Rust stand-in
+/// for TS's structural `material as StandardPbrMaterial` cast.
+pub trait Material: Entity + std::any::Any {
     /// Shared registry key for the pipeline this material selects.
     fn kind(&self) -> KindId;
 }
@@ -138,5 +143,30 @@ impl Entity for UniformColorTransformMaterial {}
 impl Material for UniformColorTransformMaterial {
     fn kind(&self) -> KindId {
         self.kind
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::any::Any;
+
+    use super::*;
+
+    // The `Any` supertrait is the seam that lets a backend recover the concrete
+    // material from a `&dyn Material` — the Rust form of TS's `material as X`.
+    #[test]
+    fn material_downcasts_to_concrete_via_any() {
+        let material = UniformColorTransformMaterial {
+            kind: KindId::of::<UniformColorTransformMaterial>(),
+            color_transform: ColorTransform::default(),
+        };
+        let dynamic: &dyn Material = &material;
+        let concrete = (dynamic as &dyn Any).downcast_ref::<UniformColorTransformMaterial>();
+        assert!(concrete.is_some());
+        assert!(
+            (dynamic as &dyn Any)
+                .downcast_ref::<ColorTransformMaterial>()
+                .is_none()
+        );
     }
 }
