@@ -46,3 +46,21 @@ pub fn register_emissive_gl_material(scene: &mut GlSceneRuntime) {
         Box::new(EmissiveGlMeshMaterialRenderer),
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use flighthq_materials::unlit_materials::emissive_material_kind;
+
+    use crate::gl_mesh_material_registry::get_gl_mesh_material_renderer;
+    use crate::gl_scene_runtime::create_gl_scene_runtime;
+
+    // register_emissive_gl_material
+
+    #[test]
+    fn register_emissive_gl_material_registers_for_the_emissive_kind() {
+        let mut scene = create_gl_scene_runtime();
+        register_emissive_gl_material(&mut scene);
+        assert!(get_gl_mesh_material_renderer(&scene, emissive_material_kind()).is_some());
+    }
+}
