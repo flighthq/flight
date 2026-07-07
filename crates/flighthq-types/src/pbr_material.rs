@@ -41,6 +41,20 @@ pub trait SurfaceMaterial: Material {
     fn double_sided(&self) -> bool;
 }
 
+/// A structural [`SurfaceMaterial`]-like value carrying only the shared trailer
+/// (the `EntityWithoutRuntime<SurfaceMaterial>` analog, mirroring `MaterialLike`
+/// for the plain [`Material`] trait). Every 3D material constructor starts from
+/// this trailer at its defaults and extends it with its own maps and scalars.
+#[derive(Clone, Debug)]
+pub struct SurfaceMaterialLike {
+    pub kind: KindId,
+    pub alpha_cutoff: f32,
+    pub alpha_mode: MaterialAlphaMode,
+    pub alpha_type: AlphaType,
+    pub blend_mode: BlendMode,
+    pub double_sided: bool,
+}
+
 /// The metallic-roughness PBR field-block shared by [`StandardPbrMaterial`] and
 /// composed (not inherited) by every PBR-extension material as their `standard`
 /// block. Pure descriptor fields, no `kind` and no trailer. `base_color`/

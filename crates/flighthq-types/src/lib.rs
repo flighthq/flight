@@ -18,6 +18,7 @@ pub mod appearance;
 pub mod bitmap_filter_margin;
 pub mod blend;
 pub mod camera;
+pub mod classic_material;
 pub mod cube_face;
 pub mod display;
 pub mod entity;
@@ -70,6 +71,7 @@ pub mod texture;
 pub mod timeline_frame_event;
 pub mod timeline_signals;
 pub mod tray;
+pub mod unlit_material;
 pub mod updater;
 
 // ---------------------------------------------------------------------------
@@ -113,6 +115,9 @@ pub use blend::BlendMode;
 
 // camera
 pub use camera::{Camera, OrthographicProjection, PerspectiveProjection, Projection};
+
+// classic_material
+pub use classic_material::{BlinnPhongMaterial, LambertMaterial, PhongMaterial};
 
 // cube_face
 pub use cube_face::{
@@ -271,7 +276,8 @@ pub use pbr_extension_material::{
 // pbr_material
 pub use pbr_material::{
     MaterialAlphaMode, STANDARD_PBR_MATERIAL_KIND_NAME, StandardPbrMaterial,
-    StandardPbrMaterialProperties, SurfaceMaterial, standard_pbr_material_kind,
+    StandardPbrMaterialProperties, SurfaceMaterial, SurfaceMaterialLike,
+    standard_pbr_material_kind,
 };
 
 // play_mode
@@ -421,6 +427,12 @@ pub use timeline_signals::TimelineSignals;
 pub use tray::{
     TrayBackend, TrayBalloonIconType, TrayBalloonOptions, TrayCapabilities, TrayEventData,
     TrayEventType, TrayIconBounds, TrayIconOptions,
+};
+
+// unlit_material
+pub use unlit_material::{
+    DepthMaterial, EmissiveMaterial, MatcapMaterial, NormalMaterial, ToonMaterial, UnlitMaterial,
+    VertexColorMaterial, WireframeMaterial,
 };
 
 // updater
