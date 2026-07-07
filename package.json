@@ -6,7 +6,7 @@
     "packages/**",
     "examples/**",
     "tools/*",
-    "apps/site/*"
+    "site"
   ],
   "scripts": {
     "api": "tsx ./scripts/api.ts",
@@ -22,7 +22,7 @@
     "build:examples": "npm run build --workspace=@flighthq/examples",
     "build:examples:packages": "npm run build --workspace=examples/packages/**",
     "build:functional": "npm run build --workspace=tools/functional",
-    "build:landing": "npm run build --workspace=apps/site/landing",
+    "build:landing": "npm run build --workspace=site",
     "build:site": "tsx ./scripts/build-site.ts",
     "capture:baseline": "npm run capture:examples:baseline && npm run capture:functional:baseline && npm run capture:site:baseline",
     "capture:check": "npm run capture:examples:check && npm run capture:functional:check && npm run capture:site:check",
@@ -48,7 +48,7 @@
     "dev:examples:web": "npm run dev --workspace=@flighthq/examples",
     "dev:functional": "npm run dev --workspace=tools/functional",
     "dev:gallery": "npm run dev --workspace=tools/gallery",
-    "dev:landing": "npm run dev --workspace=apps/site/landing",
+    "dev:landing": "npm run dev --workspace=site",
     "electron-harness": "npm run dev:electron-harness",
     "electron:examples": "npm run examples:electron",
     "electron:gallery": "tsx ./scripts/electron-tool.ts gallery",
