@@ -1,8 +1,0 @@
-{
-  "name": "openfl-sample-bunnymark-flight",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

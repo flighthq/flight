@@ -423,11 +423,10 @@ function filterApi(packages: ApiPackage[], options: ParsedArgs): ApiPackage[] {
 }
 
 // Packages allowed to export the same function names as each other. A drop-in
-// pair is a deliberate mirror: @flighthq/surface-rs is the Rust surface crate
-// compiled to wasm and shimmed to @flighthq/surface's exported signatures (the
-// "mixing" seam), so an app swaps implementations without call-site changes.
-// Identical names across such a pair are the point, not a collision.
-const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [['@flighthq/surface', '@flighthq/surface-rs']];
+// pair is a deliberate mirror where identical names are the point, not a
+// collision. None exist in this repo today — the surface-rs/surface wasm mixing
+// pair now lives in the flight-rs repository.
+const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [];
 
 // Ratchet allowlist for accessor-prefix violations that predate the check.
 // Entries are '<package> <functionName>'. Existing entries are tolerated so

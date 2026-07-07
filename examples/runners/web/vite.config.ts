@@ -7,28 +7,8 @@ import { resolveAssetTarget } from '../../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../../scripts/copy-dir';
 import { workspacePackages } from '../../../scripts/workspaces';
 
-const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu', 'wasm'] as const;
+const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 type Renderer = (typeof RENDERERS)[number];
-const includeWasmExamples = process.env.FLIGHT_EXAMPLES_WASM === '1';
-const WASM_EXAMPLES = new Set([
-  'addinganimation',
-  'addingtext',
-  'animatedsprite',
-  'batchloading',
-  'bunnymark',
-  'comparebitmapdata',
-  'displayingabitmap',
-  'drawingshapes',
-  'nyancat',
-  'piratepig',
-  'playingsound',
-  'playingvideo',
-  'renderview',
-  'sparktrail',
-  'textmetrics',
-  'tweenexample',
-  'usingtilemap',
-]);
 
 interface Example {
   name: string;
@@ -50,25 +30,6 @@ const VERIFY_SKIP = new Set<string>(['playingsound']);
 
 function entryWithLogCapture(name: string, render: string): string {
   const verifyPath = join(projectRoot, 'tools', 'harness', 'verify.ts');
-  if (render === 'wasm') {
-    const loaderPath = join(__dirname, 'src', 'wasm-loader.ts');
-    const lines = [
-      `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
-      `setLogSink(createConsoleCaptureSink());`,
-      `const { mountWasmExample } = await import(${JSON.stringify(loaderPath)});`,
-      `await mountWasmExample(${JSON.stringify(name)});`,
-    ];
-    if (!VERIFY_SKIP.has(name)) {
-      lines.push(
-        `if (window['__flightCapture'] && window['__flightCaptureVerify'] !== false) {`,
-        `  await new Promise((resolve) => { let n = 0; const poll = () => (window['__captureFramesReached'] || ++n > 140) ? resolve() : setTimeout(poll, 15); poll(); });`,
-        `  const { runRenderVerification } = await import(${JSON.stringify(verifyPath)});`,
-        `  await runRenderVerification({}, 'wasm');`,
-        `}`,
-      );
-    }
-    return lines.join('\n');
-  }
   // The shared in-page render verifier (also used by the functional harness). Reused here so examples
   // get the same not-blank / error / fingerprint checks with no per-example code. It is dynamically
   // imported and run ONLY under capture mode (window.__flightCapture, set by the verify harness), so
@@ -118,11 +79,7 @@ function discoverExamples(): Example[] {
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(({ name }) => ({
       name,
-      renderers: RENDERERS.filter(
-        (r) =>
-          (r === 'wasm' && includeWasmExamples && WASM_EXAMPLES.has(name)) ||
-          existsSync(join(examplesDir, name, `src/render.${r}.ts`)),
-      ),
+      renderers: RENDERERS.filter((r) => existsSync(join(examplesDir, name, `src/render.${r}.ts`))),
     }))
     .filter((e) => e.renderers.length > 0);
 }

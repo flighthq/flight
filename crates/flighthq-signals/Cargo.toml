@@ -1,8 +1,0 @@
-[package]
-name = "flighthq-signals"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "Strictly-typed signals and slots for event dispatching"
-
-[dependencies]

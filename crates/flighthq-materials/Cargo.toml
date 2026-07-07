@@ -1,9 +1,0 @@
-[package]
-name = "flighthq-materials"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "Color transform and material utilities"
-
-[dependencies]
-flighthq-types = { workspace = true }

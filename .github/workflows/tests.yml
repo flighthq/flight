@@ -1,18 +1,13 @@
 name: CI
 
-# The per-commit gate for every PR and for pushes to main/develop. One workflow covers both
-# language toolchains: a `changes` job (dorny/paths-filter) decides which areas a change
-# actually touches, so a TypeScript-only PR skips the Rust build and a Rust-only PR skips the
-# TypeScript build/test/quality/size/render legs. Each area's jobs are gated with `if:` on
-# those outputs rather than a top-level `paths:` filter — so the workflow ALWAYS runs and
-# ALWAYS reports. A docs-only PR resolves to "every area skipped" (a fast success), and a
-# skipped `if:` job reports as success to branch protection, so these checks are safe to mark
-# required (unlike a whole-workflow path-skip, which never reports and leaves a required check
-# stuck "Expected — Waiting for status").
+# The per-commit gate for every PR and for pushes to main/develop. A `changes` job
+# (dorny/paths-filter) decides whether a change touches code at all, so a docs-only PR
+# resolves to "skipped" — a fast success that still reports to branch protection, so these
+# checks are safe to mark required (unlike a whole-workflow path-skip, which never reports
+# and leaves a required check stuck "Expected — Waiting for status").
 #
-# Nightly (nightly.yml) runs what does NOT belong on the PR path — full coverage thresholds,
-# API-surface generation, and an UNCONDITIONAL Rust run that nets the drift this path-filtered
-# Rust gate cannot see (stable-toolchain changes, breakage outside the filtered Rust/wasm surface).
+# Nightly (nightly.yml) runs what does NOT belong on the PR path: full coverage thresholds
+# and API-surface generation.
 
 on:
   pull_request:
@@ -24,70 +19,24 @@ jobs:
     name: Detect changed areas
     runs-on: ubuntu-latest
     outputs:
-      typescript: ${{ steps.filter.outputs.typescript }}
-      rust: ${{ steps.filter.outputs.rust }}
-      rust_extras: ${{ steps.filter.outputs.rust_extras }}
+      code: ${{ steps.filter.outputs.code }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          # `typescript` is an all-except filter (catch-all, then exclude docs and the Rust-only
-          # paths) so a newly added TS file type still triggers the TS legs by default. `rust` is
-          # an explicit allow-list for Rust plus wasm-backed release packages; the nightly
-          # unconditional run is the net for anything it misses.
-          # The workflow file itself is in both so a CI change re-validates both areas.
+          # All-except filter: a change triggers the code legs unless it only touches docs,
+          # so a newly added file type still triggers the legs by default.
           filters: |
-            typescript:
+            code:
               - '**'
               - '!**/*.md'
               - '!tools/agents/docs/**'
-              - '!crates/**'
-              - '!examples/crates/**'
-              - '!examples/runners/native/**'
-              - '!examples/runners/wasm/**'
-              - '!Cargo.toml'
-              - '!Cargo.lock'
-              - '!rust-toolchain.toml'
-              - '!clippy.toml'
-            rust:
-              - 'crates/**'
-              - 'Cargo.toml'
-              - 'Cargo.lock'
-              - 'examples/crates/**'
-              - 'examples/runners/native/**'
-              - 'examples/runners/wasm/**'
-              - 'examples/runners/web/package.json'
-              - 'examples/runners/web/src/wasm-loader.ts'
-              - 'examples/runners/web/vite.config.ts'
-              - 'packages/*-rs/**'
-              - 'rust-toolchain.toml'
-              - 'clippy.toml'
-              - 'scripts/build-wasm.ts'
-              - 'scripts/check-wasm-contract.ts'
-              - 'scripts/install-rust.ts'
-              - 'scripts/resolve-wasm-pack.ts'
-              - 'scripts/run-wasm-pack.ts'
-              - 'scripts/test-wasm.ts'
-              - '.github/workflows/nightly.yml'
-              - '.github/workflows/tests.yml'
-            # The `extras` tier (native-dep crates — see scripts/cargo-tier.ts) only needs its slow
-            # apt + SDL build when its own sources or the shared Cargo/toolchain inputs change. A
-            # core-crate change that transitively breaks an extra slips past this filter on the PR;
-            # nightly.yml runs the whole workspace (`:all`) unconditionally as the net for that.
-            rust_extras:
-              - 'crates/flighthq-host-sdl/**'
-              - 'Cargo.toml'
-              - 'Cargo.lock'
-              - 'rust-toolchain.toml'
-              - 'clippy.toml'
-              - '.github/workflows/nightly.yml'
-              - '.github/workflows/tests.yml'
 
   build-check:
     name: Build preflight
     needs: changes
-    if: ${{ needs.changes.outputs.typescript == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -100,7 +49,7 @@ jobs:
       - run: npm run build:check
 
   # build / test / quality / size / render all `needs: build-check`; when build-check is skipped
-  # (no TypeScript change) they skip with it, so the `typescript` gate only needs stating once.
+  # (docs-only change) they skip with it, so the `code` gate only needs stating once.
   build:
     name: Build & emit
     needs: build-check
@@ -127,8 +76,6 @@ jobs:
             check: build:functional
           - label: examples
             check: build:examples
-          - label: reference
-            check: build:reference
 
     steps:
       - uses: actions/checkout@v4
@@ -208,10 +155,6 @@ jobs:
             check: test:examples:smoke
           - label: examples · parity
             check: test:examples:parity
-          - label: reference · smoke
-            check: test:reference:smoke
-          - label: reference · parity
-            check: test:reference:parity
 
     steps:
       - uses: actions/checkout@v4
@@ -225,65 +168,3 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run ${{ matrix.check }}
-
-  rust-core:
-    # The fast per-PR Rust gate: the CORE tier (rustup toolchain only — no apt, no SDL/C build),
-    # path-filtered to crates/ (+ Cargo / toolchain / clippy config) by the `changes` job.
-    # `check:rust:core` = clippy (-D warnings) + rustfmt --check; `test:rust:core` = cargo test over
-    # the workspace minus the native-dep extras. The extras run in `rust-extras`; nightly.yml runs
-    # the whole workspace (`:all`) UNCONDITIONALLY as the drift net.
-    name: Rust core (rustup-only)
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check:rust:core
-      - run: npm run test:rust:core
-      - run: npm run install:rust
-      - run: npm run test:wasm
-      - run: npm run check:wasm
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:examples:rust-wasm
-
-  rust-extras:
-    # The EXTRAS tier — native-dep crates (flighthq-host-sdl) — gated tighter than rust-core via the
-    # `rust_extras` filter: it runs only when the extra's own sources or the shared Cargo/toolchain
-    # inputs change, so the common PR pays neither the apt install nor the SDL build. flighthq-host-sdl
-    # compiles bundled SDL3 from source via cmake, whose configure step fails without the X11/Wayland
-    # dev headers installed below. cmake/pkg-config are preinstalled on the runner but pinned for clarity.
-    name: Rust extras (native deps)
-    needs: changes
-    if: ${{ needs.changes.outputs.rust_extras == 'true' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - name: Install SDL build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            cmake pkg-config \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev \
-            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev wayland-protocols
-      - run: npm run check:rust:extras
-      - run: npm run test:rust:extras

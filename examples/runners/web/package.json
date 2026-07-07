@@ -6,13 +6,10 @@
   "scripts": {
     "predev": "tsx ../../../scripts/warm-assets.ts",
     "dev": "vite --config vite.config.ts",
-    "dev:wasm": "npm run wasm && cross-env FLIGHT_EXAMPLES_WASM=1 vite --config vite.config.ts --open '/#/drawingshapes/rust-wasm/canvas/'",
     "prebuild": "tsx ../../../scripts/warm-assets.ts",
     "build": "vite build --config vite.config.ts",
-    "build:wasm": "npm run wasm && cross-env FLIGHT_EXAMPLES_WASM=1 vite build --config vite.config.ts",
     "preview": "vite preview --config vite.config.ts",
-    "test": "tsc -p tsconfig.json --noEmit",
-    "wasm": "tsx ../../../scripts/run-wasm-pack.ts build ../wasm --release --target web --out-dir ../web/src/wasm --out-name drawingshapes"
+    "test": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "vite": "*"

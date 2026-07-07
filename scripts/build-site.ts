@@ -42,7 +42,6 @@ const TOOLS: readonly SiteTool[] = [
   { name: 'landing', dir: 'apps/site/landing', dest: '.' },
   { name: 'examples', dir: 'examples/runners/web', dest: 'examples' },
   { name: 'functional', dir: 'tools/functional', dest: 'tests' },
-  { name: 'reference', dir: 'tools/reference', dest: 'reference' },
 ];
 
 function baseFor(dest: string): string {
