@@ -727,10 +727,12 @@ dependencies = [
  "flighthq-input",
  "flighthq-node",
  "flighthq-render",
+ "flighthq-shape",
  "flighthq-signals",
  "flighthq-sprite",
+ "flighthq-spritesheet",
  "flighthq-textureatlas",
- "flighthq-tileset",
+ "flighthq-tween",
  "flighthq-types",
 ]
 

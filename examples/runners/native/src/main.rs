@@ -5,19 +5,19 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use example_common::{ExampleScene, ExampleSceneBehavior};
 use flighthq_displayobject::{
-    DisplayObjectArena, add_display_object_child, create_bitmap, create_display_object,
-    create_stage, get_bitmap_image, get_display_object_alpha, get_display_object_blend_mode,
-    get_display_object_children, get_display_object_kind, get_display_object_local_bounds_revision,
+    DisplayObjectArena, add_display_object_child, create_stage, get_bitmap_image,
+    get_display_object_alpha, get_display_object_blend_mode, get_display_object_children,
+    get_display_object_kind, get_display_object_local_bounds_revision,
     get_display_object_local_content_revision, get_display_object_parent,
     get_display_object_rotation, get_display_object_scale_x, get_display_object_scale_y,
     get_display_object_visible, get_display_object_x, get_display_object_y,
     invalidate_display_object_local_content,
-    prepare_display_object_render as prepare_display_object_bounds, set_bitmap_image,
+    prepare_display_object_render as prepare_display_object_bounds, set_display_object_alpha,
     set_display_object_scale_x, set_display_object_scale_y, set_display_object_x,
     set_display_object_y, set_stage_color, set_stage_size,
 };
 use flighthq_displayobject_wgpu::{
-    WgpuBitmapTexture, WgpuQuadBatchSource, WgpuSpriteSource, WgpuTilemapSource,
+    WgpuBitmapTexture, WgpuQuadBatchSource, WgpuShapeGeometry, WgpuSpriteSource, WgpuTilemapSource,
     render_wgpu_display_object,
 };
 use flighthq_host_winit::{InputManager, WgpuRenderState, WinitAppConfig, run_winit_app};
@@ -26,17 +26,19 @@ use flighthq_render::{
     RenderStateStore, create_render_state, get_render_proxy_2d, get_render_state,
     prepare_display_object_render,
 };
+use flighthq_shape::get_shape_fill_regions;
 use flighthq_signals::{SignalConnectOptions, connect_signal};
 use flighthq_sprite::{
-    create_quad_batch, create_sprite, create_tilemap, get_quad_batch_atlas,
-    get_quad_batch_instance_count, get_quad_batch_transform_stride, get_sprite_atlas,
-    get_sprite_region, get_tilemap_columns, get_tilemap_rows, get_tilemap_tile,
-    get_tilemap_tileset, iterate_quad_batch_instances, resize_quad_batch, set_quad_batch_atlas,
-    set_quad_batch_instance, set_sprite_atlas, set_sprite_id, set_tilemap_tile,
-    set_tilemap_tileset,
+    create_quad_batch, get_quad_batch_atlas, get_quad_batch_instance_count,
+    get_quad_batch_transform_stride, get_sprite_atlas, get_sprite_region, get_tilemap_columns,
+    get_tilemap_rows, get_tilemap_tile, get_tilemap_tileset, iterate_quad_batch_instances,
+    resize_quad_batch, set_quad_batch_atlas, set_quad_batch_instance, set_sprite_id,
+};
+use flighthq_spritesheet::spritesheet_player::{
+    get_spritesheet_player_frame, update_spritesheet_player,
 };
 use flighthq_textureatlas::{add_texture_atlas_region, create_texture_atlas};
-use flighthq_tileset::load_tileset_from_url;
+use flighthq_tween::update_tweens;
 use flighthq_types::QuadTransformType;
 use flighthq_types::RenderProxy2D;
 use flighthq_types::display::display_object_kind;
@@ -55,14 +57,90 @@ fn main() {
         panic!("unknown example '{requested}'. Available examples: {available}");
     });
     match scene.id {
+        "addinganimation" => run_adding_animation(scene),
+        "animatedsprite" => run_animated_sprite(scene),
         example_bunnymark::ID => run_bunnymark(scene),
         "displayingabitmap" => run_displaying_bitmap(scene),
+        "drawingshapes" => run_drawing_shapes(scene),
+        "playingsound" => run_playing_sound(scene),
         "renderview" => run_render_view(scene),
+        "tweenexample" => run_tween_example(scene),
         "usingtilemap" => run_using_tilemap(scene),
-        unsupported => {
-            panic!("native example '{unsupported}' is not wired to the matching Rust API path yet")
-        }
+        unsupported => panic!("{}", native_api_gap(unsupported)),
     }
+}
+
+fn run_adding_animation(scene: ExampleScene) {
+    let api = example_addinganimation::create_api_scene()
+        .unwrap_or_else(|err| panic!("addinganimation API scene: {err}"));
+    let mut manager = api.manager;
+    let target_id = api.target_id;
+    let container = api.container;
+    let display_scene = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.main,
+    );
+    run_native_display_scene_with_update(scene, display_scene, false, move |dt, display_scene| {
+        let applied = update_tweens(&mut manager, dt, &mut |target, keys| {
+            keys.iter()
+                .map(|key| {
+                    let value = if target == target_id {
+                        match key.as_str() {
+                            "alpha" => get_display_object_alpha(&display_scene.arena, container),
+                            "scaleX" => get_display_object_scale_x(&display_scene.arena, container),
+                            "scaleY" => get_display_object_scale_y(&display_scene.arena, container),
+                            _ => 0.0,
+                        }
+                    } else {
+                        0.0
+                    };
+                    (key.clone(), value)
+                })
+                .collect()
+        });
+        for (target, key, value) in applied {
+            if target == target_id {
+                match key.as_str() {
+                    "alpha" => set_display_object_alpha(&mut display_scene.arena, container, value),
+                    "scaleX" => {
+                        set_display_object_scale_x(&mut display_scene.arena, container, value)
+                    }
+                    "scaleY" => {
+                        set_display_object_scale_y(&mut display_scene.arena, container, value)
+                    }
+                    _ => {}
+                }
+            }
+        }
+    });
+}
+
+fn run_animated_sprite(scene: ExampleScene) {
+    let api = example_animatedsprite::create_api_scene()
+        .unwrap_or_else(|err| panic!("animatedsprite API scene: {err}"));
+    let mut players = api.players;
+    let sheet = api.sheet;
+    let sprites = api.sprites;
+    let display_scene = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.root,
+    );
+    run_native_display_scene_with_update(scene, display_scene, true, move |dt, display_scene| {
+        for (index, player) in players.iter_mut().enumerate() {
+            if update_spritesheet_player(player, dt * 1000.0)
+                && let Some(frame) = get_spritesheet_player_frame(player, &sheet)
+            {
+                set_sprite_id(&mut display_scene.arena, sprites[index], frame.id);
+                invalidate_display_object_local_content(&mut display_scene.arena, sprites[index]);
+            }
+        }
+    });
 }
 
 fn run_bunnymark(scene: ExampleScene) {
@@ -121,94 +199,124 @@ fn run_bunnymark(scene: ExampleScene) {
 }
 
 fn run_displaying_bitmap(scene: ExampleScene) {
-    let mut state = NativeDisplayScene::new(scene.width, scene.height, scene.background);
-    let image_url = resolve_native_asset_path_for("bunnymark", "assets/wabbit_alpha.png");
-    let image = load_image_resource_from_url(&image_url)
-        .unwrap_or_else(|err| panic!("load displayingabitmap image '{image_url}': {err}"));
-    let x = (scene.width as f32 - image.width as f32) / 2.0;
-    let y = (scene.height as f32 - image.height as f32) / 2.0;
-
-    let bitmap = create_bitmap(&mut state.arena);
-    set_bitmap_image(&mut state.arena, bitmap, Some(image));
-    set_display_object_x(&mut state.arena, bitmap, x);
-    set_display_object_y(&mut state.arena, bitmap, y);
-    add_display_object_child(&mut state.arena, state.root, bitmap);
-    state.refresh_ids();
+    let api = example_displayingabitmap::create_api_scene()
+        .unwrap_or_else(|err| panic!("displayingabitmap API scene: {err}"));
+    let state = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.root,
+    );
     run_native_display_scene(scene, state, false);
 }
 
 fn run_render_view(scene: ExampleScene) {
-    const TILE_SIZE: f32 = 32.0;
-    const SCALE: f32 = 4.0;
-
-    let mut state = NativeDisplayScene::new(scene.width, scene.height, scene.background);
-    let image_url = resolve_native_asset_path_for("renderview", "assets/tileset.png");
-    let image = load_image_resource_from_url(&image_url)
-        .unwrap_or_else(|err| panic!("load renderview image '{image_url}': {err}"));
-    let mut atlas = create_texture_atlas(Some(image), Vec::new());
-    add_texture_atlas_region(&mut atlas, 0.0, 0.0, TILE_SIZE, TILE_SIZE, None, None, None);
-
-    let sprite = create_sprite(&mut state.arena);
-    set_sprite_atlas(&mut state.arena, sprite, Some(atlas));
-    set_sprite_id(&mut state.arena, sprite, 0);
-    set_display_object_scale_x(&mut state.arena, sprite, SCALE);
-    set_display_object_scale_y(&mut state.arena, sprite, SCALE);
-    set_display_object_x(
-        &mut state.arena,
-        sprite,
-        (scene.width as f32 - TILE_SIZE * SCALE) / 2.0,
+    let api = example_renderview::create_api_scene()
+        .unwrap_or_else(|err| panic!("renderview API scene: {err}"));
+    let state = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.root,
     );
-    set_display_object_y(
-        &mut state.arena,
-        sprite,
-        (scene.height as f32 - TILE_SIZE * SCALE) / 2.0,
-    );
-    add_display_object_child(&mut state.arena, state.root, sprite);
-    state.refresh_ids();
     run_native_display_scene(scene, state, true);
 }
 
 fn run_using_tilemap(scene: ExampleScene) {
-    const TILE_W: f32 = 32.0;
-    const TILE_H: f32 = 32.0;
-    const COLS: u32 = 8;
-    const ROWS: u32 = 8;
-    const SCALE: f32 = 2.0;
-    const PAD: f32 = 40.0;
-
-    let mut state = NativeDisplayScene::new(scene.width, scene.height, scene.background);
-    let tileset_url = resolve_native_asset_path_for("usingtilemap", "assets/tileset.png");
-    let tileset = load_tileset_from_url(&tileset_url, TILE_W, TILE_H)
-        .unwrap_or_else(|err| panic!("load usingtilemap tileset '{tileset_url}': {err}"));
-    let stride = tileset.columns;
-
-    let tilemap = create_tilemap(&mut state.arena);
-    flighthq_sprite::resize_tilemap(&mut state.arena, tilemap, COLS, ROWS);
-    set_tilemap_tileset(&mut state.arena, tilemap, Some(tileset));
-    set_display_object_scale_x(&mut state.arena, tilemap, SCALE);
-    set_display_object_scale_y(&mut state.arena, tilemap, SCALE);
-    set_display_object_x(&mut state.arena, tilemap, PAD);
-    set_display_object_y(&mut state.arena, tilemap, PAD);
-    for row in 0..ROWS {
-        for column in 0..COLS {
-            set_tilemap_tile(
-                &mut state.arena,
-                tilemap,
-                column,
-                row,
-                (row * stride) as i16,
-            );
-        }
-    }
-    add_display_object_child(&mut state.arena, state.root, tilemap);
-    state.refresh_ids();
+    let api = example_usingtilemap::create_api_scene()
+        .unwrap_or_else(|err| panic!("usingtilemap API scene: {err}"));
+    let state = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.tilemap,
+    );
     run_native_display_scene(scene, state, true);
+}
+
+fn run_drawing_shapes(scene: ExampleScene) {
+    let api = example_drawingshapes::create_api_scene();
+    let state = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.root,
+    );
+    run_native_display_scene(scene, state, false);
+}
+
+fn run_playing_sound(scene: ExampleScene) {
+    let api = example_playingsound::create_api_scene()
+        .unwrap_or_else(|err| panic!("playingsound API scene: {err}"));
+    let state = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.root,
+    );
+    run_native_display_scene(scene, state, false);
+}
+
+fn run_tween_example(scene: ExampleScene) {
+    let api = example_tweenexample::create_api_scene();
+    let mut manager = api.manager;
+    let circles = api.circles;
+    let display_scene = NativeDisplayScene::from_arena(
+        scene.width,
+        scene.height,
+        scene.background,
+        api.arena,
+        api.root,
+    );
+    run_native_display_scene_with_update(scene, display_scene, false, move |dt, display_scene| {
+        let applied = update_tweens(&mut manager, dt, &mut |target, keys| {
+            keys.iter()
+                .map(|key| {
+                    let value = if target > 0 {
+                        let circle = circles[(target - 1) as usize];
+                        match key.as_str() {
+                            "x" => get_display_object_x(&display_scene.arena, circle),
+                            "y" => get_display_object_y(&display_scene.arena, circle),
+                            _ => 0.0,
+                        }
+                    } else {
+                        0.0
+                    };
+                    (key.clone(), value)
+                })
+                .collect()
+        });
+        for (target, key, value) in applied {
+            if target > 0 {
+                let circle = circles[(target - 1) as usize];
+                match key.as_str() {
+                    "x" => set_display_object_x(&mut display_scene.arena, circle, value),
+                    "y" => set_display_object_y(&mut display_scene.arena, circle, value),
+                    _ => {}
+                }
+            }
+        }
+    });
 }
 
 fn run_native_display_scene(
     scene: ExampleScene,
+    display_scene: NativeDisplayScene,
+    nearest_neighbor: bool,
+) {
+    run_native_display_scene_with_update(scene, display_scene, nearest_neighbor, |_, _| {});
+}
+
+fn run_native_display_scene_with_update(
+    scene: ExampleScene,
     mut display_scene: NativeDisplayScene,
     nearest_neighbor: bool,
+    mut update_scene: impl FnMut(f32, &mut NativeDisplayScene) + 'static,
 ) {
     let mut config = WinitAppConfig {
         title: format!("Flight Examples - {}", scene.title),
@@ -221,7 +329,8 @@ fn run_native_display_scene(
 
     let root_source_id = display_scene.root_source_id();
     let mut setup = move |_state: &mut WgpuRenderState, _input: &mut InputManager| root_source_id;
-    let mut update = move |_dt: f32, state: &mut WgpuRenderState, _input: &mut InputManager| {
+    let mut update = move |dt: f32, state: &mut WgpuRenderState, _input: &mut InputManager| {
+        update_scene(dt, &mut display_scene);
         display_scene.draw(state);
     };
     run_winit_app(config, &mut setup, &mut update);
@@ -235,17 +344,13 @@ struct NativeDisplayScene {
 }
 
 impl NativeDisplayScene {
-    fn new(width: u32, height: u32, background: u32) -> Self {
-        let mut arena = DisplayObjectArena::default();
-        let root = create_display_object(&mut arena);
-        set_display_object_scale_x(&mut arena, root, 1.0);
-        set_display_object_scale_y(&mut arena, root, 1.0);
-
-        let stage = create_stage(&mut arena);
-        set_stage_size(&mut arena, stage, width as f32, height as f32);
-        set_stage_color(&mut arena, stage, Some(background));
-        add_display_object_child(&mut arena, stage, root);
-
+    fn from_arena(
+        _width: u32,
+        _height: u32,
+        _background: u32,
+        arena: DisplayObjectArena,
+        root: flighthq_node::NodeId,
+    ) -> Self {
         let mut scene = Self {
             arena,
             root,
@@ -309,7 +414,7 @@ impl NativeDisplayScene {
             &|id| self.children_for(id),
             &|id| self.kind_for(id),
             &|id| proxies.get(&id).cloned(),
-            &|_| None,
+            &|id| self.shape_geometry_for(id),
             &|id| self.bitmap_source_for(id),
             &|_| None,
             &|id| self.sprite_source_for(id),
@@ -410,6 +515,14 @@ impl NativeDisplayScene {
         })
     }
 
+    fn shape_geometry_for(&self, id: u64) -> Option<WgpuShapeGeometry> {
+        let node = self.node_for(id)?;
+        Some(WgpuShapeGeometry {
+            regions: get_shape_fill_regions(&self.arena, node)?,
+            content_revision: get_display_object_local_content_revision(&self.arena, node),
+        })
+    }
+
     fn sprite_source_for(&self, id: u64) -> Option<WgpuSpriteSource> {
         let node = self.node_for(id)?;
         let atlas = get_sprite_atlas(&self.arena, node)?;
@@ -451,6 +564,37 @@ impl NativeDisplayScene {
             tiles,
         })
     }
+}
+
+fn native_api_gap(id: &str) -> String {
+    let gap = match id {
+        "addingtext" => {
+            "TextLabel is still a value object in flighthq-text rather than a DisplayObjectArena node with a WGPU render dispatch slot"
+        }
+        "batchloading" => {
+            "the TS sample is a DOM resource-loader UI; Rust has loader APIs, but there is no matching native UI/display-object API path for the example controls"
+        }
+        "comparebitmapdata" => {
+            "Surface comparison APIs exist, but Surface is not exposed as a Bitmap/ImageResource display-object source for native WGPU rendering"
+        }
+        "nyancat" => {
+            "MovieClip/timeline APIs exist, but MovieClip is not exposed through the Rust display-object arena and WGPU renderer dispatch path"
+        }
+        "piratepig" => {
+            "the Rust APIs cover parts of loading, interaction, tweening, bitmap, font, and audio, but the PiratePig game object/UI composition is not ported as public Rust display-object APIs"
+        }
+        "playingvideo" => {
+            "Video APIs exist and the crate has WGPU video helpers, but video_kind is not registered in the public WGPU display-object dispatch path"
+        }
+        "sparktrail" => {
+            "ParticleEmitter APIs exist, but particle_emitter_kind is not registered in the public WGPU display-object dispatch path"
+        }
+        "textmetrics" => {
+            "RichText/text layout APIs exist, but RichText is not a DisplayObjectArena node with a WGPU render dispatch slot"
+        }
+        _ => "no matching Rust example API path is declared for this example",
+    };
+    format!("native example '{id}' cannot run through the TS-equivalent Rust API path: {gap}")
 }
 
 const EXAMPLE_IDS: &[&str] = &[

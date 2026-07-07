@@ -1,7 +1,10 @@
 //! Host-neutral Rust implementation of the `drawingshapes` example.
 
 use example_common::{ExamplePrimitive, ExampleScene, polygon};
-use flighthq_displayobject::{DisplayObjectArena, get_display_object_local_content_revision};
+use flighthq_displayobject::{
+    DisplayObjectArena, add_display_object_child, create_display_object,
+    get_display_object_local_content_revision,
+};
 use flighthq_shape::{
     append_shape_begin_fill, append_shape_circle, append_shape_ellipse, append_shape_end_fill,
     append_shape_line_to, append_shape_move_to, append_shape_rectangle,
@@ -21,6 +24,12 @@ pub type DrawingPrimitive = ExamplePrimitive;
 pub struct DrawingShapes {
     pub regions: Vec<ShapeFillRegion>,
     pub content_revision: u32,
+}
+
+pub struct DrawingShapesApiScene {
+    pub arena: DisplayObjectArena,
+    pub root: flighthq_node::NodeId,
+    pub shape: flighthq_node::NodeId,
 }
 
 pub fn create_drawing_shapes() -> DrawingShapes {
@@ -46,6 +55,22 @@ pub fn create_scene() -> ExampleScene {
         .with_background(BACKGROUND)
         .with_fill(0x24_af_c4_ff)
         .with_primitives(drawing_primitives())
+}
+
+pub fn create_api_scene() -> DrawingShapesApiScene {
+    let mut arena = DisplayObjectArena::default();
+    let root = create_display_object(&mut arena);
+    let shape = create_shape(&mut arena);
+    append_shape_begin_fill(&mut arena, shape, 0x24_af_c4_ff, 1.0);
+
+    for primitive in drawing_primitives() {
+        append_primitive(&mut arena, shape, &primitive);
+    }
+
+    append_shape_end_fill(&mut arena, shape);
+    add_display_object_child(&mut arena, root, shape);
+
+    DrawingShapesApiScene { arena, root, shape }
 }
 
 pub fn drawing_primitives() -> Vec<DrawingPrimitive> {
@@ -190,5 +215,19 @@ mod tests {
         let scene = create_drawing_shapes();
         assert!(!scene.regions.is_empty());
         assert!(scene.content_revision > 0);
+    }
+
+    #[test]
+    fn creates_matching_api_scene() {
+        let scene = create_api_scene();
+        assert_eq!(
+            flighthq_displayobject::get_display_object_children(&scene.arena, scene.root),
+            vec![scene.shape]
+        );
+        assert!(
+            !get_shape_fill_regions(&scene.arena, scene.shape)
+                .expect("solid fill regions")
+                .is_empty()
+        );
     }
 }
