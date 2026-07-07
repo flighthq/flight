@@ -7,6 +7,8 @@ use std::sync::Arc;
 
 use flighthq_types::{KindId, RenderProxy2D, RenderProxyAdapter, RenderState, Renderer};
 
+use crate::scene_render::PreparedScene;
+
 // ---------------------------------------------------------------------------
 // RenderStateId
 // ---------------------------------------------------------------------------
@@ -37,6 +39,11 @@ pub struct RenderStateRuntime {
     pub renderer_map_id: u64,
     /// Scratch stack for the iterative tree-walk; reused each frame.
     pub temp_stack: Vec<u64>,
+    /// Per-state scratch for the 3D scene prepare pass (`prepare_scene_render`):
+    /// the reused visible-mesh list, culling frustum, and world-bounds scratch.
+    /// `None` until the first `prepare_scene_render` call allocates it. This is
+    /// the runtime slot mirroring the TS `WeakMap<RenderState, PreparedScene>`.
+    pub(crate) prepared_scene: Option<PreparedScene>,
 }
 
 impl RenderStateRuntime {
@@ -49,6 +56,7 @@ impl RenderStateRuntime {
             renderer_map: HashMap::new(),
             renderer_map_id: 0,
             temp_stack: Vec::new(),
+            prepared_scene: None,
         }
     }
 }
