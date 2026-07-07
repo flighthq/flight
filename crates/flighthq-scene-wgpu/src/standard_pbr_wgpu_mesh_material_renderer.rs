@@ -275,13 +275,11 @@ fn write_wgpu_pbr_standard_block(
 /// Downcasts a bound `&dyn Material` to the concrete `StandardPbrMaterial` by kind.
 /// Returns `None` for any other material (or the default-kind fallback).
 ///
-/// TS↔Rust divergence: TS casts `material as StandardPbrMaterial`. Rust has no
-/// `Any` on `Material`, so the renderer resolves the concrete factors only when
-/// the kind matches the StandardPbr kind; otherwise it packs the neutral defaults.
-/// // TODO(align): downcast through a `MaterialData`/`Any` seam once the header
-/// exposes one, so non-default StandardPbr-shaped materials resolve their fields.
-fn downcast_standard_pbr(_material: &dyn Material) -> Option<&StandardPbrMaterial> {
-    None
+/// Resolves the concrete `StandardPbrMaterial` from a stored `&dyn Material` via
+/// the `Material: Any` seam — the Rust form of TS's `material as StandardPbrMaterial`
+/// cast. Returns `None` (renderer packs neutral defaults) for any other material.
+fn downcast_standard_pbr(material: &dyn Material) -> Option<&StandardPbrMaterial> {
+    (material as &dyn core::any::Any).downcast_ref::<StandardPbrMaterial>()
 }
 
 /// Allocates (once per material kind) the Material uniform buffer + bind group and
