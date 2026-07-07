@@ -21,18 +21,25 @@
 //!   [`ensure_wgpu_pbr_pipeline`]),
 //! - the StandardPbr renderer `bind`/`draw` (reads `StandardPbrMaterial`, packs
 //!   the MaterialBlock with sRGB→linear, writes the Frame uniform + draw ring
-//!   slot, issues the indexed draw), and its registration.
+//!   slot, issues the indexed draw), and its registration,
+//! - the scene draw walk ([`draw_wgpu_scene`]) over the now-ported
+//!   `prepare_scene_render` / `SceneRenderList`: the opaque + blended two-pass
+//!   partition, the back-to-front blended sort, and the alias-safe
+//!   lift-and-reinsert contiguous-run binding (of both the renderer box and the
+//!   non-`Clone` mesh upload).
 //!
 //! The GPU bind/draw/upload/compile paths need a live `wgpu::Device`, so they are
 //! validated functionally (the parity matrix at the `wgpu` cell), not by unit name
 //! match — the same posture as `flighthq-render-wgpu`. The pure CPU logic (define
 //! keys, pipeline-cache key, MaterialBlock packing, color decode, alignment, the
-//! registry over the runtime) is assertion-tested.
+//! registry over the runtime, and the walk's normal matrix / blended comparator /
+//! subset-material resolution) is assertion-tested.
 //!
-//! Still a documented stub: [`draw_wgpu_scene`] — blocked on `prepare_scene_render`
-//! and the `Mesh` / `create_scene` scene graph (`flighthq-scene` exposes only
-//! `world_node`), which live in other crates a parallel agent may not add. The
-//! per-mesh machinery the walk would call is fully ported here.
+//! Two seams in the walk await header work (both isolated to a single function
+//! each, and both take the current scenes' `None`-material path unchanged):
+//! per-material blend routing needs a readable `alpha_mode` on a stored
+//! `dyn Material` (`is_blended_material` reports `false` until then), and the
+//! renderer's concrete per-material field upload needs a `Material` downcast seam.
 //!
 //! Registration is opt-in (no module-load side effects).
 
@@ -55,6 +62,7 @@ pub use standard_pbr_wgpu_mesh_material_renderer::{
 pub use wgpu_mesh_material_registry::{
     WgpuMeshMaterialRenderer, get_wgpu_mesh_material_renderer,
     register_wgpu_mesh_material_renderer, resolve_wgpu_mesh_material_renderer,
+    resolve_wgpu_mesh_material_renderer_key,
 };
 pub use wgpu_mesh_upload::{align_to_4, ensure_wgpu_mesh_upload};
 pub use wgpu_pbr_pipeline_cache::{
