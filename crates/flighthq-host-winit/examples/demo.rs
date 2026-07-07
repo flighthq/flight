@@ -276,6 +276,8 @@ fn draw_demo_scene(
         &get_shape_geometry,
         &get_bitmap_texture,
         &|_| None,
+        &|_| None,
+        &|_| None,
         &get_clip_rectangle,
     );
 }
