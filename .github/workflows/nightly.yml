@@ -1,13 +1,8 @@
 name: Nightly quality
 
 # Per-PR CI (tests.yml) already gates the TypeScript build/test/quality/size and render
-# smoke/parity legs, plus a path-filtered Rust check+test, on every PR — so nightly does NOT
-# repeat them. Nightly holds only work that does not belong on the PR path: full coverage
-# thresholds, API-surface generation, and an UNCONDITIONAL Rust run. Because the per-PR Rust
-# gate is path-filtered to the Rust/wasm surface, this run is the net that catches
-# stable-toolchain drift and breakage outside that filter. It mirrors the per-PR Rust steps
-# (same SDL build deps, same check:rust:all + test:rust:all — the whole-workspace variants
-# that include the native-dep extras) so a failure here reproduces with the same commands as a PR.
+# smoke/parity legs on every PR — so nightly does NOT repeat them. Nightly holds only work
+# that does not belong on the PR path: full coverage thresholds and API-surface generation.
 on:
   schedule:
     - cron: '0 4 * * *'
@@ -40,35 +35,3 @@ jobs:
       - run: npm ci
       - run: npm run api
       - run: npm run api:json
-
-  rust:
-    name: Rust full run
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      # Matches tests.yml's Rust job: bundled SDL3 (flighthq-host-sdl → sdl3-sys) needs the
-      # X11/Wayland dev headers at cmake-configure time or the workspace build fails.
-      - name: Install SDL build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            cmake pkg-config \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev \
-            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libgl1-mesa-dev wayland-protocols
-      - run: npm run check:rust:all
-      - run: npm run test:rust:all
-      - run: npm run install:rust
-      - run: npm run test:wasm
-      - run: npm run check:wasm
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:examples:rust-wasm

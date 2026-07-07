@@ -1,19 +1,15 @@
 import { examples } from 'virtual:examples-examples';
 
-type Implementation = 'typescript' | 'rust-wasm';
 type Renderer = 'dom' | 'canvas' | 'webgl' | 'webgpu';
 
-const ALL_IMPLEMENTATIONS: Implementation[] = ['typescript', 'rust-wasm'];
 const ALL_RENDERERS: Renderer[] = ['dom', 'canvas', 'webgl', 'webgpu'];
 const STORAGE_KEY = 'examples-selected';
 const FADE_MS = 250;
 
 let exampleIndex = 0;
-let implementation: Implementation = 'typescript';
 let renderer: Renderer = 'canvas';
 
 const sidebar = document.getElementById('sidebar')!;
-const implementationBar = document.getElementById('implementation-bar')!;
 const rendererBar = document.getElementById('renderer-bar')!;
 const previewWrap = document.getElementById('preview-wrap')!;
 
@@ -25,14 +21,7 @@ function currentExample() {
 }
 
 function hasRenderer(r: Renderer): boolean {
-  if (implementation === 'rust-wasm') return r === 'canvas' && currentExample().renderers.includes('wasm');
   return (currentExample().renderers as string[]).includes(r);
-}
-
-function hasImplementation(value: Implementation): boolean {
-  return value === 'typescript'
-    ? currentExample().renderers.some((value) => value !== 'wasm')
-    : currentExample().renderers.includes('wasm');
 }
 
 function availableRenderers(): Renderer[] {
@@ -42,10 +31,6 @@ function availableRenderers(): Renderer[] {
 function resolveRenderer(preferred: Renderer): Renderer {
   if (hasRenderer(preferred)) return preferred;
   return availableRenderers()[0] ?? 'canvas';
-}
-
-function resolveImplementation(preferred: Implementation): Implementation {
-  return hasImplementation(preferred) ? preferred : 'typescript';
 }
 
 function buildSidebar(): void {
@@ -71,20 +56,6 @@ function buildRendererBar(): void {
     btn.disabled = !available;
     if (available) btn.addEventListener('click', () => selectRenderer(r));
     rendererBar.appendChild(btn);
-  });
-}
-
-function buildImplementationBar(): void {
-  implementationBar.innerHTML = '';
-  ALL_IMPLEMENTATIONS.forEach((value) => {
-    const available = hasImplementation(value);
-    const btn = document.createElement('button');
-    btn.className =
-      'implementation-btn' + (value === implementation ? ' selected' : '') + (available ? '' : ' unavailable');
-    btn.textContent = value === 'rust-wasm' ? 'rust/wasm' : value;
-    btn.disabled = !available;
-    if (available) btn.addEventListener('click', () => selectImplementation(value));
-    implementationBar.appendChild(btn);
   });
 }
 
@@ -151,41 +122,22 @@ function navigateTo(url: string): void {
 }
 
 function updateUrl(): void {
-  history.replaceState(
-    {
-      exampleIndex,
-      implementation,
-      renderer,
-    },
-    '',
-    `#${hashForCurrent()}`,
-  );
+  history.replaceState({ exampleIndex, renderer }, '', `#${hashForCurrent()}`);
 }
 
 function hashForCurrent(): string {
-  return `/${currentExample().name}/${implementation}/${renderer}/`;
+  return `/${currentExample().name}/${renderer}/`;
 }
 
 function showCurrent(): void {
   buildSidebar();
-  buildImplementationBar();
   buildRendererBar();
   sessionStorage.setItem(STORAGE_KEY, hashForCurrent());
-  const route = implementation === 'rust-wasm' ? 'wasm' : renderer;
-  navigateTo(`${import.meta.env.BASE_URL}examples/${currentExample().name}/${route}/`);
+  navigateTo(`${import.meta.env.BASE_URL}examples/${currentExample().name}/${renderer}/`);
 }
 
 function selectExample(i: number): void {
   exampleIndex = Math.max(0, Math.min(examples.length - 1, i));
-  implementation = resolveImplementation(implementation);
-  renderer = resolveRenderer(renderer);
-  showCurrent();
-  updateUrl();
-}
-
-function selectImplementation(value: Implementation): void {
-  if (!hasImplementation(value)) return;
-  implementation = value;
   renderer = resolveRenderer(renderer);
   showCurrent();
   updateUrl();
@@ -198,37 +150,21 @@ function selectRenderer(r: Renderer): void {
   updateUrl();
 }
 
-function stateFromHash(hash: string): {
-  exampleIndex: number;
-  implementation: Implementation;
-  renderer: Renderer;
-} | null {
+function stateFromHash(hash: string): { exampleIndex: number; renderer: Renderer } | null {
   const parts = hash.replace(/^\//, '').split('/');
-
   const name = parts[0];
-  const implementationPart = parts[1] as Implementation | undefined;
-  const rendererPart = parts[2] as Renderer | undefined;
-
+  const rendererPart = parts[1] as Renderer | undefined;
   if (!name) return null;
 
   const i = examples.findIndex((e) => e.name === name);
   if (i < 0) return null;
 
   const ex = examples[i];
-  const legacyRenderer = parts[1] as Renderer | undefined;
-  const resolvedImplementation: Implementation =
-    (implementationPart === 'rust-wasm' || parts[1] === 'wasm') && ex.renderers.includes('wasm')
-      ? 'rust-wasm'
-      : 'typescript';
-  const candidates =
-    resolvedImplementation === 'rust-wasm'
-      ? (['canvas'] as Renderer[])
-      : ALL_RENDERERS.filter((value) => ex.renderers.includes(value));
-  const requestedRenderer = rendererPart ?? legacyRenderer;
+  const candidates = ALL_RENDERERS.filter((value) => ex.renderers.includes(value));
   const resolvedRenderer =
-    requestedRenderer && candidates.includes(requestedRenderer) ? requestedRenderer : (candidates[0] ?? 'canvas');
+    rendererPart && candidates.includes(rendererPart) ? rendererPart : (candidates[0] ?? 'canvas');
 
-  return { exampleIndex: i, implementation: resolvedImplementation, renderer: resolvedRenderer };
+  return { exampleIndex: i, renderer: resolvedRenderer };
 }
 
 document.addEventListener('keydown', (e) => {
@@ -257,7 +193,6 @@ document.addEventListener('keydown', (e) => {
     } else {
       // Last renderer of this example — advance to next example (wrap around).
       exampleIndex = (exampleIndex + 1) % examples.length;
-      implementation = resolveImplementation(implementation);
       renderer = resolveRenderer(renderer);
       showCurrent();
       updateUrl();
@@ -268,10 +203,8 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('hashchange', () => {
   const state = stateFromHash(location.hash.slice(1));
   if (!state) return;
-  if (state.exampleIndex === exampleIndex && state.implementation === implementation && state.renderer === renderer)
-    return;
+  if (state.exampleIndex === exampleIndex && state.renderer === renderer) return;
   exampleIndex = state.exampleIndex;
-  implementation = state.implementation;
   renderer = state.renderer;
   showCurrent();
 });
@@ -285,11 +218,10 @@ const initState = (() => {
     const fromSaved = stateFromHash(saved);
     if (fromSaved) return fromSaved;
   }
-  return { exampleIndex: 0, implementation: 'typescript' as Implementation, renderer: 'canvas' as Renderer };
+  return { exampleIndex: 0, renderer: 'canvas' as Renderer };
 })();
 
 exampleIndex = initState.exampleIndex;
-implementation = initState.implementation;
 renderer = initState.renderer;
 showCurrent();
 

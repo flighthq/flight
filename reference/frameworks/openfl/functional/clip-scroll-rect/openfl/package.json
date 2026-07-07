@@ -1,8 +1,0 @@
-{
-  "name": "openfl-functional-clip-scroll-rect-openfl",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "openfl": "^9.3.2"
-  }
-}

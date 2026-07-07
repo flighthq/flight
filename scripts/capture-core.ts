@@ -17,19 +17,17 @@ import { getBaselineField, setBaselineField } from './baseline-store.js';
 // Types
 // ---------------------------------------------------------------------------
 
-export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu', 'wasm'] as const;
-const WEB_RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-export type Tool = 'examples' | 'functional' | 'reference' | 'site';
+export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
+export type Tool = 'examples' | 'functional' | 'site';
 
 // The root npm script that starts each tool's dev server, used in the manual-start tip.
 const DEV_SCRIPT: Record<Tool, string> = {
   examples: 'dev:examples',
   functional: 'dev:functional',
-  reference: 'dev:reference',
   site: 'dev:landing',
 };
 
-// A column id may carry a `<library>:<renderer>` colon (the reference tool); map it to a URL/dir-safe
+// A column id may carry a `<library>:<renderer>` colon; map it to a URL/dir-safe
 // segment. Colon-free ids (canvas, webgl, …) pass through unchanged.
 export function routeSegment(renderer: string): string {
   return renderer.replace(':', '-');
@@ -199,84 +197,10 @@ export interface CaptureEntryOptions {
 // Discovery
 // ---------------------------------------------------------------------------
 
-// Columns of a reference test, mirroring tools/reference/vite.config's discovery: each library subdir
-// contributes `<lib>:<r>` from app.<r>.ts (explicit), render.<r>.ts (custom), or a bare app.ts (default
-// backends); reference libraries lead, `flight` last.
-function referenceColumns(testDir: string): string[] {
-  const libs = readdirSync(testDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name);
-  const ordered = [...libs.filter((l) => l !== 'flight').sort(), ...(libs.includes('flight') ? ['flight'] : [])];
-  const columns: string[] = [];
-  for (const lib of ordered) {
-    const srcDir = join(testDir, lib, 'src');
-    if (!existsSync(srcDir)) continue;
-    const files = readdirSync(srcDir);
-    const appR = files
-      .map((f) => /^app\.([a-z0-9]+)\.ts$/.exec(f))
-      .filter((m): m is RegExpExecArray => m !== null)
-      .map((m) => m[1]);
-    if (appR.length > 0) {
-      columns.push(...appR.sort().map((r) => `${lib}:${r}`));
-      continue;
-    }
-    const customR = (RENDERERS as readonly string[]).filter((r) => existsSync(join(srcDir, `render.${r}.ts`)));
-    if (customR.length > 0) {
-      columns.push(...customR.map((r) => `${lib}:${r}`));
-      continue;
-    }
-    if (existsSync(join(srcDir, 'app.ts'))) {
-      const pkgPath = join(testDir, lib, 'package.json');
-      const pkg = existsSync(pkgPath) ? (JSON.parse(readFileSync(pkgPath, 'utf8')) as Record<string, unknown>) : {};
-      const renderers = (pkg.renderers as string[] | undefined) ?? [...WEB_RENDERERS];
-      columns.push(...renderers.map((r) => `${lib}:${r}`));
-    }
-  }
-  return columns;
-}
-
-function discoverReferenceEntries(root: string): Entry[] {
-  const frameworksDir = join(root, 'reference', 'frameworks');
-  if (!existsSync(frameworksDir)) return [];
-  const entries: Entry[] = [];
-  const frameworks = readdirSync(frameworksDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  for (const framework of frameworks) {
-    const frameworkDir = join(frameworksDir, framework.name);
-    const corpora = readdirSync(frameworkDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && d.name !== 'harness')
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    for (const corpus of corpora) {
-      const corpusDir = join(frameworkDir, corpus.name);
-      const cases = readdirSync(corpusDir, { withFileTypes: true })
-        .filter((d) => d.isDirectory())
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      for (const testCase of cases) {
-        const name = `${framework.name}/${corpus.name}/${testCase.name}`;
-        const renderers = referenceColumns(join(corpusDir, testCase.name));
-        if (renderers.length > 0) entries.push({ name, renderers });
-      }
-    }
-  }
-
-  return entries;
-}
-
 export function discoverEntries(tool: Tool, root: string): Entry[] {
   // The landing page is a single document rendered with Flight (one Gl canvas), with no
   // per-name or per-renderer routing, so it presents as one fixed entry.
   if (tool === 'site') return [{ name: 'landing', renderers: ['webgl'] }];
-
-  // Reference comparison tests: each framework/corpus/case holds implementation subdirs
-  // (openfl/, flight/, …) and contributes `<library>:<renderer>` columns, the same discovery the
-  // reference tool serves.
-  if (tool === 'reference') {
-    return discoverReferenceEntries(root);
-  }
 
   const dir = tool === 'examples' ? join(root, 'examples', 'packages') : join(root, 'functional', 'packages');
   if (!existsSync(dir)) return [];
@@ -285,10 +209,8 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(({ name }) => {
       const testDir = join(dir, name);
-      const customRenderers = (RENDERERS as readonly string[]).filter(
-        (r) =>
-          existsSync(join(testDir, `src/render.${r}.ts`)) ||
-          (tool === 'examples' && r === 'wasm' && existsSync(join(root, 'examples', 'crates', name, 'Cargo.toml'))),
+      const customRenderers = (RENDERERS as readonly string[]).filter((r) =>
+        existsSync(join(testDir, `src/render.${r}.ts`)),
       );
       if (customRenderers.length > 0) return { name, renderers: customRenderers };
       if (tool === 'functional' && existsSync(join(testDir, 'src', 'app.ts'))) {
@@ -594,7 +516,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     const urlPath =
       tool === 'examples'
         ? `examples/${entry.name}/${routeSegment(renderer)}/`
-        : tool === 'functional' || tool === 'reference'
+        : tool === 'functional'
           ? `tests/${entry.name}/${routeSegment(renderer)}/`
           : ''; // landing: the single page is served at the server root
 

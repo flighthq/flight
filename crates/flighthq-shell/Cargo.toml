@@ -1,9 +1,0 @@
-[package]
-name = "flighthq-shell"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "OS shell integration over a swappable web/native backend: open external URLs and paths, reveal items in the file manager, move to trash, beep"
-
-[dependencies]
-flighthq-types = { workspace = true }

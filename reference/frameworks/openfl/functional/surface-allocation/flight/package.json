@@ -1,8 +1,0 @@
-{
-  "name": "openfl-functional-surface-allocation-flight",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

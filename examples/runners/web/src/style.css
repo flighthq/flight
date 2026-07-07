@@ -90,7 +90,6 @@ body {
   transition: opacity 250ms ease;
 }
 
-#implementation-bar,
 #renderer-bar {
   position: absolute;
   bottom: 16px;
@@ -107,7 +106,6 @@ body {
   z-index: 10;
 }
 
-.implementation-btn,
 .renderer-btn {
   padding: 4px 14px;
   background: none;
@@ -124,25 +122,18 @@ body {
     color 0.1s;
 }
 
-.implementation-btn:hover:not(.unavailable),
 .renderer-btn:hover:not(.unavailable) {
   background: rgba(255, 255, 255, 0.07);
   color: #bbb;
 }
 
-.implementation-btn.selected,
 .renderer-btn.selected {
   background: rgba(61, 127, 255, 0.18);
   border-color: rgba(61, 127, 255, 0.35);
   color: #7ab8ff;
 }
 
-.implementation-btn.unavailable,
 .renderer-btn.unavailable {
   color: #2a2a2a;
   cursor: default;
-}
-
-#implementation-bar {
-  bottom: 56px;
 }

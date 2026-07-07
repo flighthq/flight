@@ -1,8 +1,0 @@
-{
-  "name": "openfl-functional-blur-flight",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

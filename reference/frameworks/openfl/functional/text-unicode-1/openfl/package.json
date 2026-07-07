@@ -1,8 +1,0 @@
-{
-  "name": "openfl-functional-text-unicode-1-openfl",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "openfl": "^9.3.2"
-  }
-}

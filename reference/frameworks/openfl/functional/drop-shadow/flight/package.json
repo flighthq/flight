@@ -1,8 +1,0 @@
-{
-  "name": "openfl-functional-drop-shadow-flight",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

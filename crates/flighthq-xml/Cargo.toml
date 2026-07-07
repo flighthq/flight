@@ -1,9 +1,0 @@
-[package]
-name = "flighthq-xml"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "Pull-style XML parser for atlas and plist file formats"
-
-[lints]
-workspace = true

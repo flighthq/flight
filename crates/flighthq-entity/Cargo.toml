@@ -1,9 +1,0 @@
-[package]
-name = "flighthq-entity"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "Core entity/node/runtime data model and binding system"
-
-[dependencies]
-flighthq-types = { workspace = true }

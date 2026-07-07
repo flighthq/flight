@@ -1,9 +1,0 @@
-{
-  "name": "openfl-sample-textmetrics-flight",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*",
-    "@flighthq/textlayout": "*"
-  }
-}

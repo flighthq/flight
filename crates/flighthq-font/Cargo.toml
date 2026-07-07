@@ -1,9 +1,0 @@
-[package]
-name = "flighthq-font"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "Font and font-resource types and constructors"
-
-[dependencies]
-flighthq-types = { workspace = true }

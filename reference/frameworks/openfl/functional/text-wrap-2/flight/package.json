@@ -1,8 +1,0 @@
-{
-  "name": "openfl-functional-text-wrap-2-flight",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

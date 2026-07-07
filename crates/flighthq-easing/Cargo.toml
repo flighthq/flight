@@ -1,9 +1,0 @@
-[package]
-name = "flighthq-easing"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "Easing functions for animation"
-
-[dependencies]
-flighthq-types = { workspace = true }

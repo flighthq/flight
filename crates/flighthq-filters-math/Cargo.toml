@@ -1,9 +1,0 @@
-[package]
-name = "flighthq-filters-math"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-description = "Blur math and shadow offset helpers for bitmap filter backends"
-
-[dependencies]
-flighthq-types = { workspace = true }

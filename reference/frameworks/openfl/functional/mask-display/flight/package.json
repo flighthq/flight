@@ -1,8 +1,0 @@
-{
-  "name": "openfl-functional-mask-display-flight",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}
