@@ -18,6 +18,7 @@ pub mod appearance;
 pub mod bitmap_filter_margin;
 pub mod blend;
 pub mod camera;
+pub mod classic_material;
 pub mod cube_face;
 pub mod display;
 pub mod entity;
@@ -70,6 +71,7 @@ pub mod texture;
 pub mod timeline_frame_event;
 pub mod timeline_signals;
 pub mod tray;
+pub mod unlit_material;
 pub mod updater;
 
 // ---------------------------------------------------------------------------
@@ -114,6 +116,9 @@ pub use blend::BlendMode;
 // camera
 pub use camera::{Camera, OrthographicProjection, PerspectiveProjection, Projection};
 
+// classic_material
+pub use classic_material::{BlinnPhongMaterial, LambertMaterial, PhongMaterial};
+
 // cube_face
 pub use cube_face::{
     CUBE_FACE_NEGATIVE_X, CUBE_FACE_NEGATIVE_Y, CUBE_FACE_NEGATIVE_Z, CUBE_FACE_POSITIVE_X,
@@ -130,9 +135,9 @@ pub use lighting::{
 
 // mesh
 pub use mesh::{
-    MESH_KIND_NAME, MeshGeometry, MeshGeometryGlData, MeshGeometryRuntime, MeshGeometryWgpuData,
-    MeshIndices, MeshSubset, PrimitiveTopology, VertexAttribute, VertexAttributeLayout,
-    VertexFormat, VertexSemantic,
+    MESH_KIND_NAME, Mesh, MeshGeometry, MeshGeometryGlData, MeshGeometryRuntime,
+    MeshGeometryWgpuData, MeshIndices, MeshSubset, PrimitiveTopology, VertexAttribute,
+    VertexAttributeLayout, VertexFormat, VertexSemantic,
 };
 
 // texture
@@ -171,7 +176,8 @@ pub use glyph_extents::GlyphExtents;
 
 // geometry
 pub use geometry::{
-    Aabb, BoundingSphere, Matrix, Matrix3, Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Plane,
+    Aabb, BoundingSphere, Capsule, CapsuleLike, EulerOrder, Frustum, FrustumLike, Matrix, Matrix3,
+    Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Obb, ObbLike, Plane, Quaternion, QuaternionLike,
     Ray3D, Rectangle, RectangleLike, Vector2, Vector2Like, Vector3, Vector3Like, Vector4,
     Vector4Like,
 };
@@ -270,7 +276,8 @@ pub use pbr_extension_material::{
 // pbr_material
 pub use pbr_material::{
     MaterialAlphaMode, STANDARD_PBR_MATERIAL_KIND_NAME, StandardPbrMaterial,
-    StandardPbrMaterialProperties, SurfaceMaterial, standard_pbr_material_kind,
+    StandardPbrMaterialProperties, SurfaceMaterial, SurfaceMaterialLike,
+    standard_pbr_material_kind,
 };
 
 // play_mode
@@ -420,6 +427,12 @@ pub use timeline_signals::TimelineSignals;
 pub use tray::{
     TrayBackend, TrayBalloonIconType, TrayBalloonOptions, TrayCapabilities, TrayEventData,
     TrayEventType, TrayIconBounds, TrayIconOptions,
+};
+
+// unlit_material
+pub use unlit_material::{
+    DepthMaterial, EmissiveMaterial, MatcapMaterial, NormalMaterial, ToonMaterial, UnlitMaterial,
+    VertexColorMaterial, WireframeMaterial,
 };
 
 // updater

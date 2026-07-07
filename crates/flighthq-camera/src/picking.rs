@@ -36,10 +36,10 @@ pub fn get_camera_screen_to_world_ray(
     let ny = ndc_y;
 
     // Unproject near-plane point (nx, ny, -1, 1)
-    let mut near_x = m[0] * nx + m[4] * ny + m[8] * -1.0 + m[12];
-    let mut near_y = m[1] * nx + m[5] * ny + m[9] * -1.0 + m[13];
-    let mut near_z = m[2] * nx + m[6] * ny + m[10] * -1.0 + m[14];
-    let near_w = m[3] * nx + m[7] * ny + m[11] * -1.0 + m[15];
+    let mut near_x = m[0] * nx + m[4] * ny + -m[8] + m[12];
+    let mut near_y = m[1] * nx + m[5] * ny + -m[9] + m[13];
+    let mut near_z = m[2] * nx + m[6] * ny + -m[10] + m[14];
+    let near_w = m[3] * nx + m[7] * ny + -m[11] + m[15];
     if near_w != 0.0 {
         let inv_w = 1.0 / near_w;
         near_x *= inv_w;

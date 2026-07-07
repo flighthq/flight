@@ -5,11 +5,17 @@
 //! object pool for acquire/release bracket allocation.
 
 pub mod aabb;
+pub mod bounding_sphere;
+pub mod capsule;
+pub mod frustum;
 pub mod matrix;
 pub mod matrix3;
 pub mod matrix4;
+pub mod obb;
+pub mod plane;
 pub mod pool;
 pub mod pools;
+pub mod quaternion;
 pub mod ray3d;
 pub mod rectangle;
 pub mod typedarray;
@@ -25,6 +31,26 @@ pub use aabb::{
     get_aabb_center, get_aabb_contains_point, get_aabb_extents, get_aabb_size,
     get_closest_point_on_aabb, intersect_aabb, intersects_aabb, set_aabb, set_aabb_from_points,
     transform_aabb_by_matrix4, union_aabb,
+};
+
+// bounding_sphere
+pub use bounding_sphere::{
+    clone_bounding_sphere, copy_bounding_sphere, create_bounding_sphere,
+    get_bounding_sphere_contains_point, get_closest_point_on_bounding_sphere,
+    is_bounding_sphere_intersecting_bounding_sphere, merge_bounding_sphere, set_bounding_sphere,
+    set_bounding_sphere_from_aabb, transform_bounding_sphere_by_matrix4,
+};
+
+// capsule
+pub use capsule::{
+    create_capsule, get_closest_point_on_capsule, intersect_ray3d_capsule,
+    is_capsule_intersecting_capsule, is_capsule_intersecting_sphere, set_capsule,
+};
+
+// frustum
+pub use frustum::{
+    create_frustum, get_frustum_corners, is_frustum_containing_point, is_frustum_intersecting_aabb,
+    is_frustum_intersecting_sphere, set_frustum_from_matrix4,
 };
 
 // matrix
@@ -67,6 +93,19 @@ pub use matrix4::{
     set_perspective_matrix4, translate_matrix4, transpose_matrix4,
 };
 
+// obb
+pub use obb::{
+    create_obb, get_closest_point_on_obb, intersect_ray3d_obb, is_obb_intersecting_aabb,
+    is_obb_intersecting_obb, set_obb, transform_obb_by_matrix4,
+};
+
+// plane
+pub use plane::{
+    clone_plane, copy_plane, create_plane, get_closest_point_on_plane, get_plane_coplanar_point,
+    get_plane_signed_distance_to_point, normalize_plane, project_vector3_onto_plane, set_plane,
+    set_plane_from_normal_and_point, set_plane_from_points,
+};
+
 // pool
 pub use pool::Pool;
 
@@ -79,6 +118,16 @@ pub use pools::{
     clear_rectangle_pool, clear_vector2_pool, clear_vector3_pool, clear_vector4_pool,
     release_matrix, release_matrix3, release_matrix4, release_rectangle, release_vector2,
     release_vector3, release_vector4,
+};
+
+// quaternion
+pub use quaternion::{
+    clone_quaternion, conjugate_quaternion, copy_quaternion, create_quaternion, equals_quaternion,
+    get_quaternion_angle_between, get_quaternion_dot, get_quaternion_euler, inverse_quaternion,
+    multiply_quaternion, normalize_quaternion, rotate_vector3_by_quaternion,
+    set_quaternion_from_axis_angle, set_quaternion_from_euler, set_quaternion_from_matrix4,
+    set_quaternion_from_unit_vectors, set_quaternion_identity, set_quaternion_look_rotation,
+    slerp_quaternion,
 };
 
 // ray3d

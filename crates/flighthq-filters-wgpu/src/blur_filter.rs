@@ -1,6 +1,7 @@
 //! Box-blur and Gaussian-blur wgpu filter passes.
 
-use flighthq_filters::math::compute_box_blur_pass_radius;
+use flighthq_filters::BlurFilter;
+use flighthq_filters_math::compute_box_blur_pass_radius;
 use flighthq_render_wgpu::{WgpuRenderState, WgpuRenderTarget};
 
 use crate::filter_pass::{
@@ -63,6 +64,33 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   return sum / weightSum;
 }"#;
 
+/// Applies a `BlurFilter` descriptor to `source`, writing to `dest`.
+///
+/// Selects the Gaussian path — a faithful, sigma-exact blur matching the CSS
+/// and surface references — as the default. `temp` is a ping-pong scratch
+/// target distinct from both `source` and `dest`. Use
+/// `apply_box_blur_filter_to_wgpu` directly when the cheaper multi-pass box
+/// approximation is preferred (e.g. for soft spreads in glow and shadow
+/// effects). Absent `blur_x` / `blur_y` default to 4.0.
+pub fn apply_blur_filter_to_wgpu(
+    state: &mut WgpuRenderState,
+    filter_state: &mut WgpuFilterState,
+    source: &WgpuRenderTarget,
+    dest: &WgpuRenderTarget,
+    temp: &WgpuRenderTarget,
+    filter: &BlurFilter,
+) {
+    apply_gaussian_blur_filter_to_wgpu(
+        state,
+        filter_state,
+        source,
+        dest,
+        temp,
+        filter.blur_x.unwrap_or(4.0),
+        filter.blur_y.unwrap_or(4.0),
+    );
+}
+
 /// Applies a separable box blur to `source`, writing to `dest`.
 ///
 /// `blur_x` / `blur_y` are the target Gaussian standard deviations; `passes`
@@ -88,8 +116,8 @@ pub fn apply_box_blur_filter_to_wgpu(
     let mut write: &WgpuRenderTarget = temp;
 
     for pass in 0..passes {
-        let radius_x = compute_box_blur_pass_radius(blur_x, passes, pass);
-        if radius_x > 0 {
+        let radius_x = compute_box_blur_pass_radius(blur_x as f64, passes, pass);
+        if radius_x > 0.0 {
             apply_box_blur_pass(state, filter_state, read, write, radius_x as f32, 1.0, 0.0);
             read = write;
             write = if std::ptr::eq(write, temp) {
@@ -98,8 +126,8 @@ pub fn apply_box_blur_filter_to_wgpu(
                 temp
             };
         }
-        let radius_y = compute_box_blur_pass_radius(blur_y, passes, pass);
-        if radius_y > 0 {
+        let radius_y = compute_box_blur_pass_radius(blur_y as f64, passes, pass);
+        if radius_y > 0.0 {
             apply_box_blur_pass(state, filter_state, read, write, radius_y as f32, 0.0, 1.0);
             read = write;
             write = if std::ptr::eq(write, temp) {

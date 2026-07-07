@@ -20,6 +20,7 @@
 
 use flighthq_render_gl::GlRenderState;
 use flighthq_types::camera::Camera;
+use flighthq_types::classic_material::{BlinnPhongMaterial, LambertMaterial, PhongMaterial};
 use flighthq_types::kind::KindId;
 use flighthq_types::material::{DefaultMaterialKind, Material};
 use flighthq_types::pbr_extension_material::{
@@ -29,6 +30,10 @@ use flighthq_types::pbr_extension_material::{
 };
 use flighthq_types::pbr_material::StandardPbrMaterial;
 use flighthq_types::scene_render::{SceneLightBlock, SceneRenderProxy};
+use flighthq_types::unlit_material::{
+    DepthMaterial, EmissiveMaterial, MatcapMaterial, NormalMaterial, ToonMaterial, UnlitMaterial,
+    VertexColorMaterial, WireframeMaterial,
+};
 
 use crate::gl_scene_runtime::{GlMeshUpload, GlSceneRuntime};
 
@@ -117,6 +122,50 @@ pub trait MeshMaterial: Material {
     fn as_transmission_volume_pbr(&self) -> Option<&TransmissionVolumePbrMaterial> {
         None
     }
+    /// The concrete classic BlinnPhong material, or `None`.
+    fn as_blinn_phong(&self) -> Option<&BlinnPhongMaterial> {
+        None
+    }
+    /// The concrete pass-infrastructure Depth material, or `None`.
+    fn as_depth(&self) -> Option<&DepthMaterial> {
+        None
+    }
+    /// The concrete Emissive material, or `None`.
+    fn as_emissive(&self) -> Option<&EmissiveMaterial> {
+        None
+    }
+    /// The concrete classic Lambert material, or `None`.
+    fn as_lambert(&self) -> Option<&LambertMaterial> {
+        None
+    }
+    /// The concrete Matcap (material-capture) material, or `None`.
+    fn as_matcap(&self) -> Option<&MatcapMaterial> {
+        None
+    }
+    /// The concrete pass-infrastructure Normal material, or `None`.
+    fn as_normal(&self) -> Option<&NormalMaterial> {
+        None
+    }
+    /// The concrete classic Phong material, or `None`.
+    fn as_phong(&self) -> Option<&PhongMaterial> {
+        None
+    }
+    /// The concrete Toon (cel-shading) material, or `None`.
+    fn as_toon(&self) -> Option<&ToonMaterial> {
+        None
+    }
+    /// The concrete Unlit flat-color material, or `None`.
+    fn as_unlit(&self) -> Option<&UnlitMaterial> {
+        None
+    }
+    /// The concrete VertexColor material, or `None`.
+    fn as_vertex_color(&self) -> Option<&VertexColorMaterial> {
+        None
+    }
+    /// The concrete Wireframe material, or `None`.
+    fn as_wireframe(&self) -> Option<&WireframeMaterial> {
+        None
+    }
 }
 
 impl MeshMaterial for StandardPbrMaterial {
@@ -173,6 +222,72 @@ impl MeshMaterial for TransmissionVolumePbrMaterial {
     }
 }
 
+impl MeshMaterial for BlinnPhongMaterial {
+    fn as_blinn_phong(&self) -> Option<&BlinnPhongMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for DepthMaterial {
+    fn as_depth(&self) -> Option<&DepthMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for EmissiveMaterial {
+    fn as_emissive(&self) -> Option<&EmissiveMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for LambertMaterial {
+    fn as_lambert(&self) -> Option<&LambertMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for MatcapMaterial {
+    fn as_matcap(&self) -> Option<&MatcapMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for NormalMaterial {
+    fn as_normal(&self) -> Option<&NormalMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for PhongMaterial {
+    fn as_phong(&self) -> Option<&PhongMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for ToonMaterial {
+    fn as_toon(&self) -> Option<&ToonMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for UnlitMaterial {
+    fn as_unlit(&self) -> Option<&UnlitMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for VertexColorMaterial {
+    fn as_vertex_color(&self) -> Option<&VertexColorMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for WireframeMaterial {
+    fn as_wireframe(&self) -> Option<&WireframeMaterial> {
+        Some(self)
+    }
+}
+
 /// Returns the 3D mesh-material renderer registered for a kind on this scene
 /// runtime, or `None`.
 pub fn get_gl_mesh_material_renderer(
@@ -213,6 +328,32 @@ pub fn resolve_gl_mesh_material_renderer(
         .material_registry
         .get(&KindId::of::<DefaultMaterialKind>())
         .map(|r| r.as_ref())
+}
+
+/// Resolves a mesh subset's material to the registry KEY that
+/// [`resolve_gl_mesh_material_renderer`] would resolve against: the material's own
+/// kind when registered, else `DefaultMaterialKind` when registered, else `None`.
+///
+/// `draw_gl_scene` needs the key (not just the `&dyn` renderer) so it can lift the
+/// boxed renderer out of the registry to invoke its `&mut GlSceneRuntime` `bind`/
+/// `draw` (the borrow checker forbids holding a `&dyn` borrowed from the same
+/// runtime the call mutates — see the take-and-reinsert idiom in the draw walk).
+/// The key doubles as the contiguous-run identity: two subsets share one bind iff
+/// they resolve to the same key.
+pub fn resolve_gl_mesh_material_renderer_key(
+    scene: &GlSceneRuntime,
+    material_kind: Option<KindId>,
+) -> Option<KindId> {
+    if let Some(kind) = material_kind
+        && scene.material_registry.contains_key(&kind)
+    {
+        return Some(kind);
+    }
+    let default = KindId::of::<DefaultMaterialKind>();
+    scene
+        .material_registry
+        .contains_key(&default)
+        .then_some(default)
 }
 
 #[cfg(test)]
@@ -259,6 +400,18 @@ mod tests {
         assert_eq!(dynamic.kind(), standard_pbr_material_kind());
     }
 
+    #[test]
+    fn mesh_material_downcasts_a_base_lambert_material() {
+        // A base (non-PBR) material resolves through its own accessor and reports
+        // `None` for the PBR accessors, so a base renderer reads only its concrete
+        // fields.
+        let material =
+            flighthq_materials::classic_materials::create_lambert_material(&Default::default());
+        let dynamic: &dyn MeshMaterial = &material;
+        assert!(dynamic.as_lambert().is_some());
+        assert!(dynamic.as_standard_pbr().is_none());
+    }
+
     // get_gl_mesh_material_renderer
 
     #[test]
@@ -303,5 +456,40 @@ mod tests {
         struct Other;
         assert!(resolve_gl_mesh_material_renderer(&scene, Some(KindId::of::<Other>())).is_some());
         assert!(resolve_gl_mesh_material_renderer(&scene, None).is_some());
+    }
+
+    // resolve_gl_mesh_material_renderer_key
+
+    #[test]
+    fn resolve_gl_mesh_material_renderer_key_returns_none_without_a_registration() {
+        let scene = create_gl_scene_runtime();
+        assert!(resolve_gl_mesh_material_renderer_key(&scene, None).is_none());
+        assert!(resolve_gl_mesh_material_renderer_key(&scene, Some(test_kind())).is_none());
+    }
+
+    #[test]
+    fn resolve_gl_mesh_material_renderer_key_returns_the_material_kind_when_registered() {
+        let mut scene = create_gl_scene_runtime();
+        register_gl_mesh_material_renderer(&mut scene, test_kind(), Box::new(TestRenderer));
+        assert_eq!(
+            resolve_gl_mesh_material_renderer_key(&scene, Some(test_kind())),
+            Some(test_kind())
+        );
+    }
+
+    #[test]
+    fn resolve_gl_mesh_material_renderer_key_falls_back_to_the_default_material_kind() {
+        let mut scene = create_gl_scene_runtime();
+        let default = KindId::of::<DefaultMaterialKind>();
+        register_gl_mesh_material_renderer(&mut scene, default, Box::new(TestRenderer));
+        struct Other;
+        assert_eq!(
+            resolve_gl_mesh_material_renderer_key(&scene, Some(KindId::of::<Other>())),
+            Some(default)
+        );
+        assert_eq!(
+            resolve_gl_mesh_material_renderer_key(&scene, None),
+            Some(default)
+        );
     }
 }

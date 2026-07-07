@@ -188,9 +188,9 @@ mod tests {
             assert_eq!(converted.vertices[2], 3.0);
             // Normal (absent in source) is zero-filled.
             assert_eq!(converted.vertices[3], 0.0);
-            // Uv0 copied at its new offset (40).
-            assert_eq!(converted.vertices[40], 0.5);
-            assert_eq!(converted.vertices[41], 0.25);
+            // Uv0 copied at its new float offset (byte offset 40 / 4 = float 10).
+            assert_eq!(converted.vertices[10], 0.5);
+            assert_eq!(converted.vertices[11], 0.25);
             assert_eq!(converted.version, 0);
             assert!(converted.bounds.is_none());
         }

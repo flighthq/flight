@@ -15,7 +15,6 @@ use flighthq_types::geometry::{Matrix4Like, Vector3Like};
 use flighthq_types::scene_render::SceneRenderProxy;
 use glow::HasContext;
 
-use crate::gl_mesh_upload::ensure_gl_mesh_upload;
 use crate::gl_scene_runtime::{GlMeshUpload, GlSceneRuntime};
 
 /// The minimal handoff every mesh-material family shares. `bind` compiles and
@@ -88,31 +87,36 @@ pub fn destroy_gl_mesh_program(state: &mut GlRenderState, program: &GlMeshProgra
     }
 }
 
-/// The shared per-draw tail: uploads model + normal matrices, ensures geometry
-/// upload, and issues the indexed (or array) draw.
+/// The shared per-draw tail for every triangle mesh-material family: sets the
+/// per-draw model + normal matrices on the family's active base program (stored by
+/// [`begin_gl_mesh_draw`]) and issues the indexed (or array) draw over the proxy's
+/// subset. A no-op when no base program is active (bind was skipped). The 3D analog
+/// of [`draw_gl_pbr_mesh_subset`](crate::draw_gl_pbr_mesh_subset): the lobe uniforms
+/// differ at `bind`, but the geometry draw is identical. Ports the shared TS
+/// `drawGlMeshSubset`.
+///
+/// TS↔Rust divergence: TS passes `program` + `geometry` explicitly and looks the
+/// upload up internally; the Rust seam reads the active base program back off the
+/// scene runtime (as [`draw_gl_pbr_mesh_subset`] does) and takes the already-ensured
+/// `upload` the draw walk resolved, so the trait `draw` signature is uniform across
+/// every family.
 pub fn draw_gl_mesh_subset(
     state: &mut GlRenderState,
     scene: &mut GlSceneRuntime,
-    program: &GlMeshProgram,
     proxy: &SceneRenderProxy,
-    geometry_id: u64,
+    upload: &GlMeshUpload,
 ) {
+    let Some(program) = scene.active_mesh_program.clone() else {
+        return;
+    };
     let gl = &state.gl;
+    let subset = proxy.subset;
     unsafe {
         gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &proxy.world_matrix.m);
         if let Some(loc) = &program.loc_normal_matrix {
             gl.uniform_matrix_3_f32_slice(Some(loc), false, &proxy.normal_matrix.m);
         }
-    }
 
-    let upload = scene
-        .upload_cache
-        .entry(geometry_id)
-        .or_insert_with(GlMeshUpload::default);
-    let subset = proxy.subset;
-
-    let gl = &state.gl;
-    unsafe {
         if upload.index_buffer.is_some() {
             let element_size = if upload.index_type == glow::UNSIGNED_INT {
                 4

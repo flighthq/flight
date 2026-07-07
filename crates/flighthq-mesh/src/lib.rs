@@ -12,6 +12,12 @@ pub mod mesh_geometry;
 pub mod mesh_geometry_attributes;
 pub mod mesh_geometry_builders;
 pub mod mesh_geometry_compute;
+pub mod mesh_geometry_index;
+pub mod mesh_geometry_layout;
+pub mod mesh_geometry_operations;
+pub mod mesh_geometry_subset;
+pub mod mesh_geometry_transforms;
+pub mod mesh_geometry_uvs;
 
 pub use mesh_geometry::{
     MeshGeometryKindId, MeshGeometryOptions, clone_mesh_geometry, create_mesh_geometry,
@@ -28,4 +34,22 @@ pub use mesh_geometry_builders::{
 };
 pub use mesh_geometry_compute::{
     compute_mesh_geometry_bounds, compute_mesh_geometry_normals, compute_mesh_geometry_tangents,
+};
+pub use mesh_geometry_index::{
+    compute_mesh_geometry_wireframe_indices, expand_mesh_geometry_indices,
+};
+pub use mesh_geometry_layout::{canonical_mesh_geometry_layout, convert_mesh_geometry_layout};
+pub use mesh_geometry_operations::{
+    MeshGeometryFromAttributesOptions, create_mesh_geometry_from_attributes, merge_mesh_geometries,
+    validate_mesh_geometry,
+};
+pub use mesh_geometry_subset::{
+    add_mesh_geometry_subset, get_mesh_geometry_subset_triangle_count, set_mesh_geometry_subsets,
+};
+pub use mesh_geometry_transforms::{
+    center_mesh_geometry, scale_mesh_geometry, transform_mesh_geometry,
+    transform_mesh_geometry_into, translate_mesh_geometry,
+};
+pub use mesh_geometry_uvs::{
+    offset_mesh_geometry_uvs, scale_mesh_geometry_uvs, wrap_mesh_geometry_uvs,
 };

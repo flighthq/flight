@@ -201,7 +201,7 @@ pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool {
     if floats_per_vertex == 0 {
         return false;
     }
-    if geometry.vertices.len() % floats_per_vertex != 0 {
+    if !geometry.vertices.len().is_multiple_of(floats_per_vertex) {
         return false;
     }
     let vertex_count = geometry.vertices.len() / floats_per_vertex;

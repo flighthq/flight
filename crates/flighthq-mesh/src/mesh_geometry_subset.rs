@@ -29,13 +29,7 @@ pub fn get_mesh_geometry_subset_triangle_count(geometry: &MeshGeometry, subset_i
     };
     match geometry.topology {
         PrimitiveTopology::TriangleList => subset.index_count / 3,
-        PrimitiveTopology::TriangleStrip => {
-            if subset.index_count >= 2 {
-                subset.index_count - 2
-            } else {
-                0
-            }
-        }
+        PrimitiveTopology::TriangleStrip => subset.index_count.saturating_sub(2),
         _ => 0,
     }
 }

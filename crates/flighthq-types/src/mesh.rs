@@ -11,8 +11,11 @@
 //! `color0` are reserved semantics for a later skinning and vertex-color pass.
 //! Index data auto-promotes `u16` -> `u32` past 65k vertices.
 
+use std::sync::Arc;
+
 use crate::entity::{Entity, EntityRuntime};
 use crate::geometry::Aabb;
+use crate::material::Material;
 
 /// The role an attribute plays, independent of its numeric format. Renderers
 /// bind by semantic.
@@ -140,3 +143,93 @@ impl EntityRuntime for MeshGeometryRuntime {
 ///
 /// [`KindId`]: crate::kind::KindId
 pub const MESH_KIND_NAME: &str = "Mesh";
+
+/// A renderable 3D leaf node's mesh payload: the [`MeshGeometry`] to draw plus
+/// one positional `materials` slot per geometry subset. Subset `i` is drawn
+/// with `materials[i]`; a slot that is `None`, or a subset index past the end of
+/// `materials`, resolves to the default material at draw time. The owning scene
+/// node's world transform is the model matrix for every subset.
+///
+/// Ports the TS `Mesh` interface (`packages/types/src/Mesh.ts`), which extends
+/// `SceneNode`. The Rust scene graph is a slotmap arena rather than an object
+/// hierarchy, so a scene node carries this payload optionally (as an
+/// `Option<Mesh>` slot) rather than through interface inheritance;
+/// `flighthq_scene::is_mesh` is true exactly when the slot is present. Geometry
+/// and materials are shared by reference (`Arc`), not copied — matching the TS
+/// "stored by reference" contract, so several meshes can share one geometry or
+/// material without duplicating the CPU data.
+#[derive(Clone)]
+pub struct Mesh {
+    pub geometry: Arc<MeshGeometry>,
+    pub materials: Vec<Option<Arc<dyn Material>>>,
+}
+
+// `dyn Material` is not `Debug`, so the derive is replaced with a manual impl
+// that reports the geometry and the material-slot count rather than each
+// material.
+impl std::fmt::Debug for Mesh {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Mesh")
+            .field("geometry", &self.geometry)
+            .field("material_slots", &self.materials.len())
+            .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::kind::KindId;
+
+    #[derive(Debug)]
+    struct TestMaterial;
+    impl Entity for TestMaterial {}
+    impl Material for TestMaterial {
+        fn kind(&self) -> KindId {
+            KindId::of::<TestMaterial>()
+        }
+    }
+
+    fn empty_geometry() -> MeshGeometry {
+        MeshGeometry {
+            bounds: None,
+            indices: None,
+            layout: VertexAttributeLayout {
+                attributes: vec![VertexAttribute {
+                    byte_offset: 0,
+                    format: VertexFormat::Float32x3,
+                    semantic: VertexSemantic::Position,
+                }],
+                stride: 12,
+            },
+            subsets: vec![MeshSubset {
+                index_count: 3,
+                index_offset: 0,
+            }],
+            topology: PrimitiveTopology::TriangleList,
+            version: 0,
+            vertices: vec![0.0; 9],
+        }
+    }
+
+    #[test]
+    fn mesh_shares_geometry_by_reference() {
+        let geometry = Arc::new(empty_geometry());
+        let mesh = Mesh {
+            geometry: Arc::clone(&geometry),
+            materials: vec![Some(Arc::new(TestMaterial))],
+        };
+        assert!(Arc::ptr_eq(&mesh.geometry, &geometry));
+        assert_eq!(mesh.materials.len(), 1);
+        assert!(mesh.materials[0].is_some());
+    }
+
+    #[test]
+    fn mesh_accepts_a_none_material_slot() {
+        let mesh = Mesh {
+            geometry: Arc::new(empty_geometry()),
+            materials: vec![None],
+        };
+        assert!(mesh.materials[0].is_none());
+    }
+}

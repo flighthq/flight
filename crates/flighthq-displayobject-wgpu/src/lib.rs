@@ -8,7 +8,7 @@
 //! writing the runtime slots the core defines.
 //!
 //! Registration is opt-in: call `register_wgpu_display_object_renderer` and
-//! `register_wgpu_sprite_renderer` after `create_wgpu_render_state` to enable the
+//! `register_wgpu_sprite_renderers` after `create_wgpu_render_state` to enable the
 //! standard pipelines. No side effects occur at module load.
 
 pub mod bitmap;
@@ -22,6 +22,8 @@ pub mod display_object;
 pub mod materials;
 pub mod particle_emitter;
 pub mod quad_batch;
+pub mod render_stats;
+pub mod renderer_data;
 pub mod rich_text;
 pub mod scale9_mapper;
 pub mod scale9_shape;
@@ -63,6 +65,11 @@ pub use display_object::{
 pub use materials::{draw_wgpu_color_transform_bitmap, register_wgpu_color_transform_shader};
 pub use particle_emitter::{DefaultWgpuParticleEmitterRenderer, draw_wgpu_particle_emitter};
 pub use quad_batch::{DefaultWgpuQuadBatchRenderer, WgpuQuadBatchSource, draw_wgpu_quad_batch};
+pub use render_stats::{
+    get_wgpu_render_stats, record_wgpu_batch_flush, record_wgpu_texture_upload,
+    reset_wgpu_render_stats,
+};
+pub use renderer_data::{create_wgpu_renderer_data, get_wgpu_renderer_data};
 pub use rich_text::{
     DefaultWgpuRichTextRenderer, WgpuRichTextData, create_wgpu_rich_text_data,
     destroy_wgpu_rich_text_data, draw_wgpu_rich_text, draw_wgpu_rich_text_with_overlay,
@@ -82,7 +89,7 @@ pub use sprite_batch::{
     pack_wgpu_sprite_instance, prepare_wgpu_sprite_batch_write,
     reset_wgpu_sprite_batch_buffer_pool, submit_wgpu_node_atlas_quad, submit_wgpu_sprite_instance,
 };
-pub use sprite_renderer::{DefaultWgpuSpriteRenderer, register_wgpu_sprite_renderer};
+pub use sprite_renderer::{DefaultWgpuSpriteRenderer, register_wgpu_sprite_renderers};
 pub use text_input::{draw_wgpu_text_input_overlay, enable_wgpu_text_input};
 pub use text_label::{DefaultWgpuTextLabelRenderer, draw_wgpu_text_label};
 pub use tilemap::{DefaultWgpuTilemapRenderer, WgpuTilemapSource, draw_wgpu_tilemap};
@@ -103,5 +110,5 @@ use flighthq_render_wgpu::WgpuRenderState;
 /// callers that need finer control call the individual `register_*` functions.
 pub fn register_wgpu_display_object_renderers(state: &mut WgpuRenderState) {
     register_wgpu_display_object_renderer(state);
-    register_wgpu_sprite_renderer(state);
+    register_wgpu_sprite_renderers(state);
 }

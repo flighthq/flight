@@ -38,11 +38,14 @@ pub mod inner_shadow_filter;
 pub mod median_filter;
 pub mod outer_glow_filter;
 pub mod pixelate_filter;
+pub mod scratch_count;
 pub mod sharpen_filter;
 pub mod tint_shader;
 
 pub use bevel_filter::apply_bevel_filter_to_wgpu;
-pub use blur_filter::{apply_box_blur_filter_to_wgpu, apply_gaussian_blur_filter_to_wgpu};
+pub use blur_filter::{
+    apply_blur_filter_to_wgpu, apply_box_blur_filter_to_wgpu, apply_gaussian_blur_filter_to_wgpu,
+};
 pub use color_matrix_filter::apply_color_matrix_filter_to_wgpu;
 pub use convolution_filter::apply_convolution_filter_to_wgpu;
 pub use displacement_map_filter::apply_displacement_map_filter_to_wgpu;
@@ -62,6 +65,7 @@ pub use inner_shadow_filter::apply_inner_shadow_filter_to_wgpu;
 pub use median_filter::apply_median_filter_to_wgpu;
 pub use outer_glow_filter::apply_outer_glow_filter_to_wgpu;
 pub use pixelate_filter::apply_pixelate_filter_to_wgpu;
+pub use scratch_count::get_wgpu_filter_scratch_count;
 pub use sharpen_filter::apply_sharpen_filter_to_wgpu;
 pub use tint_shader::{
     apply_wgpu_blit_offset_pass, apply_wgpu_blit_pass, apply_wgpu_inner_clip_pass,

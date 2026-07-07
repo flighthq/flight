@@ -25,6 +25,7 @@ pub mod effect_program_cache;
 pub mod lens_effects;
 pub mod motion_effects;
 pub mod render_effect_pipeline;
+pub mod render_effect_registrar;
 pub mod render_effect_registry;
 pub mod stylization_effects;
 #[cfg(test)]
@@ -97,10 +98,18 @@ pub use render_effect_pipeline::{
     set_wgpu_render_effect_velocity_texture,
 };
 
+// render_effect_registrar
+pub use render_effect_registrar::{
+    register_antialiasing_wgpu_render_effects, register_bloom_wgpu_render_effects,
+    register_blur_wgpu_render_effects, register_color_wgpu_render_effects,
+    register_screen_space_wgpu_render_effects, register_standard_wgpu_render_effects,
+    register_stylize_wgpu_render_effects,
+};
 // render_effect_registry
 pub use render_effect_registry::{
     WgpuRenderEffectContext, WgpuRenderEffectRunner, clear_wgpu_render_effect_registry,
-    get_wgpu_render_effect_runner, register_wgpu_render_effect, wgpu_render_effect_type,
+    get_wgpu_render_effect_runner, has_wgpu_render_effect_runner, register_wgpu_render_effect,
+    wgpu_render_effect_type,
 };
 
 // stylization_effects

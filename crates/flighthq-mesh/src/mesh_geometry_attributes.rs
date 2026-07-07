@@ -27,13 +27,7 @@ pub fn get_mesh_geometry_triangle_count(geometry: &MeshGeometry) -> u32 {
     };
     match geometry.topology {
         PrimitiveTopology::TriangleList => index_count / 3,
-        PrimitiveTopology::TriangleStrip => {
-            if index_count >= 3 {
-                index_count - 2
-            } else {
-                0
-            }
-        }
+        PrimitiveTopology::TriangleStrip if index_count >= 3 => index_count - 2,
         _ => 0,
     }
 }

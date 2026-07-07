@@ -137,9 +137,50 @@ pub fn create_wgpu_texture(
     })
 }
 
+/// Allocates a texture + view + bind-group bundle and uploads `data` into it.
+///
+/// The wgpu analogue of the TS `createWgpuTextureEntry`. The TS reference copies
+/// from a DOM canvas; the Rust path uploads from a premultiplied RGBA8 byte
+/// slice (matching `create_wgpu_texture` / `update_wgpu_texture`). The returned
+/// `WgpuTextureEntry` owns its texture and can be re-uploaded via
+/// `update_wgpu_texture_entry`.
+pub fn create_wgpu_texture_entry(
+    state: &WgpuRenderState,
+    width: u32,
+    height: u32,
+    data: &[u8],
+) -> WgpuTextureEntry {
+    let w = width.max(1);
+    let h = height.max(1);
+    let texture = create_wgpu_texture(state, w, h, wgpu::TextureFormat::Rgba8Unorm);
+    update_wgpu_texture(state, &texture, data, w, h);
+    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    let bind_group = build_wgpu_render_target_bind_group(state, &view);
+    WgpuTextureEntry {
+        texture,
+        view,
+        bind_group,
+    }
+}
+
 /// Issues a `draw(0..6)` for a textured quad, using the uniforms previously
 /// written at `uniform_offset`. No-op when there is no active render pass.
+///
+/// Retained for the existing leaf call sites; delegates to the TS-named
+/// `submit_wgpu_quad_draw`, which carries the dispatch body.
 pub fn draw_wgpu_quad(
+    state: &mut WgpuRenderState,
+    uniform_offset: u32,
+    bind_group: &wgpu::BindGroup,
+) {
+    submit_wgpu_quad_draw(state, uniform_offset, bind_group);
+}
+
+/// Selects the active pipeline and records the uniform + texture bind groups and
+/// a `draw(0..6)` against the open render pass, using the uniforms previously
+/// written at `uniform_offset`. No-op when there is no active render pass. Ports
+/// the TS `submitWgpuQuadDraw`.
+pub fn submit_wgpu_quad_draw(
     state: &mut WgpuRenderState,
     uniform_offset: u32,
     bind_group: &wgpu::BindGroup,
@@ -243,6 +284,27 @@ pub fn update_wgpu_texture(
             depth_or_array_layers: 1,
         },
     );
+}
+
+/// Re-uploads `data` into an existing `WgpuTextureEntry`'s texture. Ports the TS
+/// `updateWgpuTextureEntry` (which copies from a canvas); the Rust path uploads
+/// from a premultiplied RGBA8 byte slice.
+pub fn update_wgpu_texture_entry(
+    state: &WgpuRenderState,
+    entry: &WgpuTextureEntry,
+    data: &[u8],
+    width: u32,
+    height: u32,
+) {
+    update_wgpu_texture(state, &entry.texture, data, width, height);
+}
+
+/// An owned texture + view + bind-group bundle, allocated by
+/// `create_wgpu_texture_entry`. The Rust analogue of the TS `WgpuTextureEntry`.
+pub struct WgpuTextureEntry {
+    pub texture: wgpu::Texture,
+    pub view: wgpu::TextureView,
+    pub bind_group: wgpu::BindGroup,
 }
 
 /// Minimal texture + view + bind-group bundle for draw calls.
