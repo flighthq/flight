@@ -1394,7 +1394,13 @@ dependencies = [
 name = "flighthq-render"
 version = "0.1.0"
 dependencies = [
+ "flighthq-camera",
  "flighthq-geometry",
+ "flighthq-lighting",
+ "flighthq-materials",
+ "flighthq-mesh",
+ "flighthq-node",
+ "flighthq-scene",
  "flighthq-signals",
  "flighthq-types",
 ]
