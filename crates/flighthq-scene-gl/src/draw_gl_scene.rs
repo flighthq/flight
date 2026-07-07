@@ -62,6 +62,12 @@ use flighthq_types::geometry::{Matrix3, Matrix3Like, Matrix4, Matrix4Like};
 use flighthq_types::kind::KindId;
 use flighthq_types::material::Material;
 use flighthq_types::mesh::{MeshGeometry, MeshSubset};
+use flighthq_types::pbr_extension_material::{
+    AnisotropyPbrMaterial, ClearcoatPbrMaterial, IridescencePbrMaterial, SheenPbrMaterial,
+    SpecularGlossinessPbrMaterial, SpecularPbrMaterial, SubsurfacePbrMaterial,
+    TransmissionVolumePbrMaterial,
+};
+use flighthq_types::pbr_material::StandardPbrMaterial;
 use flighthq_types::scene_render::{SceneLightBlock, SceneLights, SceneRenderProxy};
 use glow::HasContext;
 
@@ -155,19 +161,22 @@ pub fn draw_gl_scene(
                 continue;
             };
 
+            let material_id = material
+                .as_ref()
+                .map(|value| Arc::as_ptr(value) as *const () as usize);
+            let blended = is_blended_material(material.as_deref());
             let entry = SceneDrawEntry {
                 clip_w,
                 geometry: Arc::clone(&geometry),
                 geometry_id,
-                material_id: material
-                    .as_ref()
-                    .map(|value| Arc::as_ptr(value) as *const () as usize),
+                material,
+                material_id,
                 renderer_key,
                 subset: *subset,
                 world_matrix: world_matrix.clone(),
             };
 
-            if is_blended_material(material.as_deref()) {
+            if blended {
                 blended_draw_list.push(entry);
             } else {
                 opaque_draw_list.push(entry);
@@ -245,7 +254,13 @@ fn draw_gl_scene_pass(
         let material_changed = bound_material_id != Some(entry.material_id);
         if renderer_changed || material_changed {
             if let Some(renderer) = held.as_ref() {
-                renderer.bind(state, scene_runtime, widen_mesh_material(), lights, camera);
+                renderer.bind(
+                    state,
+                    scene_runtime,
+                    widen_mesh_material(entry.material.as_deref()),
+                    lights,
+                    camera,
+                );
             }
             bound_material_id = Some(entry.material_id);
         }
@@ -353,9 +368,41 @@ fn set_matrix3_normal_from_matrix4(out: &mut Matrix3Like, source: &Matrix4Like) 
 /// upcast, so a stored `Arc<dyn Material>` cannot be widened to `&dyn MeshMaterial`
 /// from this crate. Every current scene uses `None` (default) material slots, which
 /// take exactly this path, so the walk passes `None` — the renderer's untextured
-/// defaults, matching the TS `DEFAULT_MATERIAL` fallback. Real per-material field
-/// upload awaits a header downcast seam; only this function changes when it lands.
-fn widen_mesh_material() -> Option<&'static dyn MeshMaterial> {
+/// Widens a stored `&dyn Material` to the `&dyn MeshMaterial` a renderer's `bind`
+/// consumes, by downcasting through the `Material: Any` seam to each concrete
+/// mesh-material type (the Rust form of TS's structural `material as X` cast).
+/// Returns `None` for the absent/default material or a non-mesh material, which
+/// the renderer draws with its untextured defaults (the TS `DEFAULT_MATERIAL`
+/// fallback).
+fn widen_mesh_material(material: Option<&dyn Material>) -> Option<&dyn MeshMaterial> {
+    let any = material? as &dyn core::any::Any;
+    if let Some(m) = any.downcast_ref::<StandardPbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<SpecularPbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<SpecularGlossinessPbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<AnisotropyPbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<ClearcoatPbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<IridescencePbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<SheenPbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<SubsurfacePbrMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<TransmissionVolumePbrMaterial>() {
+        return Some(m);
+    }
     None
 }
 
@@ -369,6 +416,7 @@ struct SceneDrawEntry {
     clip_w: f32,
     geometry: Arc<MeshGeometry>,
     geometry_id: u64,
+    material: Option<Arc<dyn Material>>,
     material_id: Option<usize>,
     renderer_key: KindId,
     subset: MeshSubset,
@@ -481,7 +529,15 @@ mod tests {
     // widen_mesh_material
 
     #[test]
-    fn widen_mesh_material_returns_none_until_the_material_downcast_seam_lands() {
-        assert!(widen_mesh_material().is_none());
+    fn widen_mesh_material_downcasts_a_standard_pbr_material() {
+        // A stored StandardPbrMaterial widens to the &dyn MeshMaterial a renderer
+        // consumes (via the Material: Any seam).
+        let pbr = StandardPbrMaterial {
+            kind: KindId::of::<StandardPbrMaterial>(),
+            ..Default::default()
+        };
+        let dynamic: &dyn Material = &pbr;
+        assert!(widen_mesh_material(Some(dynamic)).is_some());
+        assert!(widen_mesh_material(None).is_none());
     }
 }
