@@ -15,8 +15,7 @@ use flighthq_types::camera::{Camera, Projection};
 use flighthq_types::geometry::{Matrix4Like, Vector3Like};
 use flighthq_types::scene_render::{SceneLightBlock, SceneRenderProxy};
 
-use crate::wgpu_mesh_upload::ensure_wgpu_mesh_upload;
-use crate::wgpu_scene_runtime::WgpuSceneRuntime;
+use crate::wgpu_scene_runtime::{WgpuMeshUpload, WgpuSceneRuntime};
 
 /// A compiled mesh-material pipeline plus the material bind-group layout its
 /// group(2) targets. Frame and Draw layouts are shared on the runtime.
@@ -26,10 +25,13 @@ pub struct WgpuMeshPipeline {
 }
 
 /// The shared group(0)/group(1) bind-group layouts every family pipeline uses.
-/// Created once per state.
-pub struct WgpuSceneLayouts {
-    pub draw_bind_group_layout: wgpu::BindGroupLayout,
-    pub frame_bind_group_layout: wgpu::BindGroupLayout,
+/// Created once per state and borrowed from the scene runtime (`wgpu`'s
+/// `BindGroupLayout` is not `Clone`, so this holds references rather than owning
+/// copies — a Rust-port divergence from the TS `WgpuSceneLayouts`, which holds the
+/// layout handles by value).
+pub struct WgpuSceneLayouts<'a> {
+    pub draw_bind_group_layout: &'a wgpu::BindGroupLayout,
+    pub frame_bind_group_layout: &'a wgpu::BindGroupLayout,
 }
 
 /// Sets the family's pipeline active for the bind-to-draw handoff, binds it,
@@ -72,8 +74,8 @@ pub fn create_wgpu_mesh_pipeline(
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("flight-wgpu-mesh-pipeline-layout"),
         bind_group_layouts: &[
-            &layouts.frame_bind_group_layout,
-            &layouts.draw_bind_group_layout,
+            layouts.frame_bind_group_layout,
+            layouts.draw_bind_group_layout,
             &options.material_bind_group_layout,
         ],
         push_constant_ranges: &[],
@@ -128,54 +130,80 @@ pub fn create_wgpu_mesh_pipeline(
     }
 }
 
-/// The shared per-draw tail for every mesh-material family: ring-allocates +
-/// writes the Draw uniform (world + normal matrix) for the proxy, lazily
-/// uploads the geometry, binds the dynamic-offset Draw group at group(1) +
-/// vertex/index buffers, and issues the indexed draw. Mirrors scene-gl's
-/// `drawGlMeshSubset`.
-pub fn draw_wgpu_mesh_subset(
+/// The shared per-draw tail for every base (non-PBR) mesh-material family, over
+/// the pre-resolved `upload` the draw walk hands the renderer's `draw`. Reads the
+/// active base pipeline from [`WgpuSceneRuntime::mesh_pipeline_cache`] (keyed by
+/// `active_pipeline_key`) and the active material bind group (keyed by
+/// `active_material_key`), both set by the family's `bind`; sets the pipeline +
+/// Frame(0) + Draw(1, dynamic offset) + Material(2) groups, binds the vertex/index
+/// buffers, and issues the indexed draw over `proxy.subset`.
+///
+/// TS↔Rust divergence: TS splits the pass setup between `bind` (pipeline + Frame +
+/// Material via `beginWgpuMeshDraw` + `setBindGroup(2)`) and `draw` (Draw group +
+/// buffers via `drawWgpuMeshSubset`, which re-resolves the upload from the cache).
+/// The Rust draw seam already receives the resolved `upload` (the walk lifted it
+/// out of the cache), and the borrow model favours re-setting every group in one
+/// place — so this mirrors the proven `draw_standard_pbr_wgpu_mesh` shape rather
+/// than the TS bind/draw split. `draw_wgpu_mesh_subset` (the direct TS-shaped
+/// mirror, which re-resolves the upload) is retained for API parity.
+pub fn draw_wgpu_mesh_material_subset(
     state: &mut WgpuRenderState,
     scene: &mut WgpuSceneRuntime,
     proxy: &SceneRenderProxy,
-    geometry_id: u64,
-    geometry: &flighthq_types::mesh::MeshGeometry,
+    upload: &WgpuMeshUpload,
 ) {
+    let Some(cache_key) = scene.active_pipeline_key.clone() else {
+        return;
+    };
+    if !scene.mesh_pipeline_cache.contains_key(&cache_key) {
+        return;
+    }
     let subset = proxy.subset;
     if subset.index_count == 0 {
         return;
     }
-
-    let upload = ensure_wgpu_mesh_upload(state, scene, geometry_id, geometry);
-    let Some(upload) = upload else {
+    if upload.index_buffer.is_none() {
         return;
-    };
-    let Some(index_buffer) = upload.index_buffer.as_ref() else {
-        return;
-    };
+    }
 
-    let draw_bind_group = write_wgpu_draw_uniform(state, scene, proxy);
+    // Ring-allocate + write the Draw uniform (world + normal matrix) and ensure the
+    // shared dynamic-offset Draw bind group; the returned borrow is dropped here so
+    // the immutable reads below can reborrow the runtime.
+    write_wgpu_draw_uniform(state, scene, proxy);
+    let byte_offset = scene.pending_draw_offset;
 
-    let dynamic_offset = scene.pending_draw_offset as u32;
-
+    let active_material_key = scene.active_material_key;
+    let pipeline = &scene.mesh_pipeline_cache[&cache_key];
     let Some(pass) = state.runtime.render_pass.as_mut() else {
         return;
     };
-
-    if let Some(dbg) = draw_bind_group {
-        pass.set_bind_group(1, dbg, &[dynamic_offset]);
+    pass.set_pipeline(&pipeline.pipeline);
+    if let Some(frame_bind_group) = scene.frame_bind_group.as_ref() {
+        pass.set_bind_group(0, frame_bind_group, &[]);
     }
-    pass.set_vertex_buffer(0, upload.vertex_buffer.slice(..));
-    pass.set_index_buffer(index_buffer.slice(..), upload.index_format);
-    let end = subset.index_offset + subset.index_count;
-    pass.draw_indexed(subset.index_offset..end, 0, 0..1);
+    if let Some(draw_bind_group) = scene.draw_bind_group.as_ref() {
+        pass.set_bind_group(1, draw_bind_group, &[byte_offset as u32]);
+    }
+    if let Some(material_bind_group) = active_material_key
+        .and_then(|key| scene.material_bind_groups.get(&key))
+        .map(|binding| &binding.bind_group)
+    {
+        pass.set_bind_group(2, material_bind_group, &[]);
+    }
+    if let Some(index_buffer) = upload.index_buffer.as_ref() {
+        pass.set_vertex_buffer(0, upload.vertex_buffer.slice(..));
+        pass.set_index_buffer(index_buffer.slice(..), upload.index_format);
+        let end = subset.index_offset + subset.index_count;
+        pass.draw_indexed(subset.index_offset..end, 0, 0..1);
+    }
 }
 
 /// Resolves the shared Frame bind group, creating it from the shared Frame
 /// layout + Frame buffer on first use. Mirrors TS `ensureWgpuFrameBindGroup`.
-pub fn ensure_wgpu_frame_bind_group(
+pub fn ensure_wgpu_frame_bind_group<'a>(
     state: &WgpuRenderState,
-    scene: &mut WgpuSceneRuntime,
-) -> &wgpu::BindGroup {
+    scene: &'a mut WgpuSceneRuntime,
+) -> &'a wgpu::BindGroup {
     if scene.frame_buffer.is_none() {
         let buffer = state.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("flight-wgpu-frame-uniform"),
@@ -205,10 +233,10 @@ pub fn ensure_wgpu_frame_bind_group(
 
 /// Lazily creates the 1x1 opaque-white placeholder texture view. Mirrors TS
 /// `ensureWgpuPlaceholderTextureView`.
-pub fn ensure_wgpu_placeholder_texture_view(
+pub fn ensure_wgpu_placeholder_texture_view<'a>(
     state: &WgpuRenderState,
-    scene: &mut WgpuSceneRuntime,
-) -> &wgpu::TextureView {
+    scene: &'a mut WgpuSceneRuntime,
+) -> &'a wgpu::TextureView {
     if scene.placeholder_view.is_none() {
         let texture = state.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("flight-wgpu-placeholder"),
@@ -252,10 +280,10 @@ pub fn ensure_wgpu_placeholder_texture_view(
 
 /// Resolves the shared group(0) Frame + group(1) Draw bind-group layouts,
 /// creating them once per state. Mirrors TS `ensureWgpuSceneLayouts`.
-pub fn ensure_wgpu_scene_layouts(
+pub fn ensure_wgpu_scene_layouts<'a>(
     state: &WgpuRenderState,
-    scene: &mut WgpuSceneRuntime,
-) -> WgpuSceneLayouts {
+    scene: &'a mut WgpuSceneRuntime,
+) -> WgpuSceneLayouts<'a> {
     if scene.frame_bind_group_layout.is_none() || scene.draw_bind_group_layout.is_none() {
         let device = &state.device;
         scene.frame_bind_group_layout = Some(device.create_bind_group_layout(
@@ -290,19 +318,19 @@ pub fn ensure_wgpu_scene_layouts(
         ));
     }
     WgpuSceneLayouts {
-        draw_bind_group_layout: scene.draw_bind_group_layout.as_ref().unwrap().clone(),
-        frame_bind_group_layout: scene.frame_bind_group_layout.as_ref().unwrap().clone(),
+        draw_bind_group_layout: scene.draw_bind_group_layout.as_ref().unwrap(),
+        frame_bind_group_layout: scene.frame_bind_group_layout.as_ref().unwrap(),
     }
 }
 
 /// Resolves a compiled pipeline for a string cache key, compiling it via the
 /// factory on first use and caching it on the scene runtime. Mirrors TS
 /// `ensureWgpuScenePipeline`.
-pub fn ensure_wgpu_scene_pipeline<F>(
-    scene: &mut WgpuSceneRuntime,
+pub fn ensure_wgpu_scene_pipeline<'a, F>(
+    scene: &'a mut WgpuSceneRuntime,
     key: &str,
     compile: F,
-) -> &WgpuMeshPipeline
+) -> &'a WgpuMeshPipeline
 where
     F: FnOnce() -> WgpuMeshPipeline,
 {
@@ -319,8 +347,23 @@ pub fn is_wgpu_texture_ready(_texture: Option<&()>) -> bool {
     false
 }
 
+/// Decodes a packed `0xRRGGBBAA` sRGB-albedo color to linear RGBA as `f32`, over
+/// [`flighthq_materials::unpack_color_to_linear`] (which writes `f64`). The base
+/// material families upload their surface colors as `f32` uniform lanes, so this
+/// is the one decode seam every base renderer routes its packed color through.
+pub fn unpack_color_to_linear_f32(color: u32) -> [f32; 4] {
+    let mut linear = [0.0f64; 4];
+    flighthq_materials::unpack_color_to_linear(&mut linear, color);
+    [
+        linear[0] as f32,
+        linear[1] as f32,
+        linear[2] as f32,
+        linear[3] as f32,
+    ]
+}
+
 /// Allocates a draw slot from the ring buffer, writes the Draw uniform (world
-/// + normal matrix), records the byte offset, and returns the shared
+/// matrix and normal matrix), records the byte offset, and returns the shared
 /// dynamic-offset Draw bind group. Mirrors TS `writeWgpuDrawUniform`.
 pub fn write_wgpu_draw_uniform<'a>(
     state: &mut WgpuRenderState,
@@ -490,8 +533,8 @@ fn srgbToLinear(c : vec3f) -> vec3f {
 }
 "#;
 
-/// Frame uniform: viewProjection(64) + cameraPosition(16) + lightDirection(16)
-/// + directionalRadiance(16) + ambientRadiance(16) + view(64) = 192 bytes / 48
+/// Frame uniform: viewProjection(64), cameraPosition(16), lightDirection(16),
+/// directionalRadiance(16), ambientRadiance(16), view(64) = 192 bytes / 48
 /// floats.
 pub const FRAME_UNIFORM_BYTES: u64 = 192;
 const FRAME_UNIFORM_FLOATS: usize = (FRAME_UNIFORM_BYTES / 4) as usize;

@@ -7,7 +7,7 @@ use flighthq_render_wgpu::WgpuRenderState;
 
 use crate::wgpu_mesh_pipeline::{
     CreateWgpuMeshPipelineOptions, WGPU_MESH_PRELUDE_WGSL, WgpuMeshPipeline,
-    create_wgpu_mesh_pipeline, ensure_wgpu_placeholder_texture_view, ensure_wgpu_scene_pipeline,
+    create_wgpu_mesh_pipeline, ensure_wgpu_placeholder_texture_view,
 };
 use crate::wgpu_scene_runtime::{WgpuMaterialBinding, WgpuSceneRuntime};
 
@@ -33,18 +33,31 @@ pub struct WgpuClassicDefineKey {
     pub lighting_model: WgpuClassicLightingModel,
 }
 
-/// Ensures the classic Material bind group and rewrites its uniform. Mirrors TS
-/// `bindWgpuClassicSurface`.
+/// Ensures (once per material kind) the classic Material bind group — a uniform
+/// buffer + the shared sampler + the placeholder diffuse/specular/normal textures
+/// — and rewrites its uniform with this surface's linear diffuse + specular colors,
+/// shininess, and alpha cutoff. Stores the binding in
+/// [`WgpuSceneRuntime::material_bind_groups`] keyed by `material_key`; the family's
+/// `draw` sets it at group(2) via `active_material_key`.
+///
+/// TS↔Rust divergence: TS `bindWgpuClassicSurface` takes the `pipeline` (for its
+/// material layout) + the map textures and returns the bind group. The Rust threaded
+/// runtime keys the binding by kind and the borrow model forbids passing a
+/// `&pipeline` borrowed from `scene` alongside `&mut scene`, so this takes the
+/// `cache_key` and looks the layout up internally (mirroring
+/// `ensure_wgpu_pbr_material_bind_group`); maps are deferred on wgpu, so the map
+/// arguments are dropped and every texture slot binds the shared placeholder.
+#[allow(clippy::too_many_arguments)]
 pub fn bind_wgpu_classic_surface(
     state: &WgpuRenderState,
     scene: &mut WgpuSceneRuntime,
-    pipeline: &WgpuClassicPipeline,
+    cache_key: &str,
     material_key: flighthq_types::kind::KindId,
     diffuse: &[f32; 4],
     specular: &[f32; 4],
     shininess: f32,
     alpha_cutoff: f32,
-) -> &wgpu::BindGroup {
+) {
     if !scene.material_bind_groups.contains_key(&material_key) {
         let buffer = state.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("flight-wgpu-classic-material-uniform"),
@@ -52,33 +65,40 @@ pub fn bind_wgpu_classic_surface(
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let placeholder = ensure_wgpu_placeholder_texture_view(state, scene);
-        let bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("flight-wgpu-classic-material-bind-group"),
-            layout: &pipeline.material_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&state.runtime.linear_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(placeholder),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(placeholder),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::TextureView(placeholder),
-                },
-            ],
-        });
+        ensure_wgpu_placeholder_texture_view(state, scene);
+        let bind_group = {
+            let layout = &scene.mesh_pipeline_cache[cache_key].material_bind_group_layout;
+            let placeholder = scene
+                .placeholder_view
+                .as_ref()
+                .expect("placeholder view ensured before material bind group");
+            state.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("flight-wgpu-classic-material-bind-group"),
+                layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&state.runtime.linear_sampler),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(placeholder),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: wgpu::BindingResource::TextureView(placeholder),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 4,
+                        resource: wgpu::BindingResource::TextureView(placeholder),
+                    },
+                ],
+            })
+        };
         scene
             .material_bind_groups
             .insert(material_key, WgpuMaterialBinding { bind_group, buffer });
@@ -102,7 +122,6 @@ pub fn bind_wgpu_classic_surface(
     state
         .queue
         .write_buffer(&binding.buffer, 0, f32_slice_bytes(&scratch));
-    &binding.bind_group
 }
 
 /// A short, stable string identity for a classic define key.
@@ -201,13 +220,17 @@ pub fn compile_wgpu_classic_pipeline(
     )
 }
 
-/// Resolves the classic pipeline. Mirrors TS `ensureWgpuClassicPipeline`.
-pub fn ensure_wgpu_classic_pipeline<'a>(
+/// Resolves the classic pipeline for a define key + color format, compiling and
+/// caching it on first use, and returns its `mesh_pipeline_cache` key. Mirrors TS
+/// `ensureWgpuClassicPipeline` (which returns the pipeline; the Rust port returns
+/// the string key so the caller can record it as `active_pipeline_key` without
+/// holding a borrow of the non-`Clone` pipeline, matching `standard_pbr`).
+pub fn ensure_wgpu_classic_pipeline(
     state: &mut WgpuRenderState,
-    scene: &'a mut WgpuSceneRuntime,
+    scene: &mut WgpuSceneRuntime,
     key: &WgpuClassicDefineKey,
     format: wgpu::TextureFormat,
-) -> &'a WgpuClassicPipeline {
+) -> String {
     let cache_key = format!("classic:{format:?}|{}", build_wgpu_classic_define_key(key));
     if !scene.mesh_pipeline_cache.contains_key(&cache_key) {
         let pipeline = compile_wgpu_classic_pipeline(state, scene, key, format);
@@ -215,7 +238,7 @@ pub fn ensure_wgpu_classic_pipeline<'a>(
             .mesh_pipeline_cache
             .insert(cache_key.clone(), pipeline);
     }
-    &scene.mesh_pipeline_cache[&cache_key]
+    cache_key
 }
 
 /// The full WGSL module source for a define key.
