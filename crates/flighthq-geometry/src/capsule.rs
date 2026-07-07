@@ -156,13 +156,13 @@ pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &CapsuleLike) -> f32 {
             let sqrt_d = disc.sqrt();
             let t1 = (-qb - sqrt_d) / qa;
             let s1 = (aoab + t1 * dab) * inv_ab2;
-            if t1 >= 0.0 && s1 >= 0.0 && s1 <= 1.0 {
+            if t1 >= 0.0 && (0.0..=1.0).contains(&s1) {
                 t_best = t1;
             } else if t1 < 0.0 {
                 let t2 = (-qb + sqrt_d) / qa;
                 if t2 >= 0.0 {
                     let s0 = aoab * inv_ab2;
-                    if s0 >= 0.0 && s0 <= 1.0 {
+                    if (0.0..=1.0).contains(&s0) {
                         return 0.0;
                     }
                 }

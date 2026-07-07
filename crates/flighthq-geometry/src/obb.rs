@@ -558,7 +558,10 @@ mod tests {
     fn get_closest_point_on_obb_alias_safe() {
         let obb = identity_obb(1.0, 1.0, 1.0);
         let mut p = pt(3.0, 4.0, 5.0);
-        get_closest_point_on_obb(&mut p, &obb, &p);
+        // Rust's borrow checker forbids a literal `&mut p, &p` alias, so snapshot the
+        // input; this still exercises writing the output over a value derived from it.
+        let src = p;
+        get_closest_point_on_obb(&mut p, &obb, &src);
         assert!((p.x - 1.0).abs() < 1e-5);
         assert!((p.y - 1.0).abs() < 1e-5);
         assert!((p.z - 1.0).abs() < 1e-5);
@@ -727,7 +730,9 @@ mod tests {
             orientation_w: 1.0,
         };
         let m = Matrix4Like::default();
-        transform_obb_by_matrix4(&mut obb, &obb, &m);
+        // Snapshot the input: Rust forbids a literal `&mut obb, &obb` alias.
+        let src = obb;
+        transform_obb_by_matrix4(&mut obb, &src, &m);
         assert!((obb.center_x - 1.0).abs() < 1e-4);
         assert!((obb.center_y - 2.0).abs() < 1e-4);
         assert!((obb.center_z - 3.0).abs() < 1e-4);
