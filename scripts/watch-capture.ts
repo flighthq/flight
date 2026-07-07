@@ -152,11 +152,7 @@ async function main(): Promise<void> {
   const debounce = new Map<string, ReturnType<typeof setTimeout>>();
 
   const watchDir =
-    tool === 'examples'
-      ? `${root}/examples`
-      : tool === 'functional'
-        ? `${root}/functional`
-        : `${root}/apps/site/landing`;
+    tool === 'examples' ? `${root}/examples` : tool === 'functional' ? `${root}/functional` : `${root}/site`;
 
   const watcher = chokidar.watch(watchDir, {
     ignored: /(node_modules|dist|\.git)/,

@@ -95,7 +95,7 @@
       }
     },
     {
-      "files": ["apps/**/*.{ts,tsx}", "examples/**/*.{ts,tsx}", "tools/**/*.{ts,tsx}", "functional/**/*.{ts,tsx}"],
+      "files": ["site/**/*.{ts,tsx}", "examples/**/*.{ts,tsx}", "tools/**/*.{ts,tsx}", "functional/**/*.{ts,tsx}"],
       "rules": {
         "no-restricted-imports": "off"
       }
