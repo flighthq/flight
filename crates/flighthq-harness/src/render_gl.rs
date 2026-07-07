@@ -1,5 +1,5 @@
-//! The `rnat:gl` cell: render a scene through `displayobject-gl` (glow) on a
-//! headless GLES 3.0 context.
+//! The `rnat:gl` cell: render a scene graph through `displayobject-gl` (glow) on
+//! a headless GLES 3.0 context.
 //!
 //! `render-gl`'s shaders are `#version 300 es`, so this opens an OpenGL ES 3.0
 //! context via EGL — surfaceless where the driver supports it, falling back to
@@ -9,10 +9,8 @@
 //! into an off-screen RGBA8 framebuffer object; the read-back rows are flipped
 //! from GL's bottom-left origin to the top-left origin the other cells use.
 //!
-//! Full-frame effects are not yet wired here (they would run through
-//! `effects-gl`); like the software cell, a scene that carries an effect chain
-//! returns `None` so the matrix reports a clean "unsupported" cell instead of an
-//! ungraded frame.
+//! Full-frame effects are not wired here (they would run through `effects-gl`);
+//! like the software cell, this draws the shapes only.
 
 use flighthq_displayobject_gl::{
     GlShapeGeometry, register_gl_display_object_renderer, render_gl_display_object,
@@ -21,8 +19,7 @@ use flighthq_render_gl::{GlRenderOptions, create_gl_render_state, render_gl_back
 use glow::HasContext;
 use khronos_egl as egl;
 
-use crate::scene::Scene;
-use crate::scene_graph::{SceneGraph, build_scene_graph};
+use crate::scene_graph::SceneGraph;
 
 /// `EGL_PLATFORM_SURFACELESS_MESA` — the surfaceless platform for headless Mesa,
 /// preferred when available so no window-system surface is needed.
@@ -32,16 +29,17 @@ const OPENGL_ES3_BIT: egl::Int = 0x0040;
 
 type EglInstance = egl::DynamicInstance<egl::EGL1_5>;
 
-/// Renders a scene to tightly packed straight-alpha RGBA bytes (`w*h*4`,
-/// top-left origin) via a headless GLES 3.0 context and `displayobject-gl`.
-/// Returns `None` when no EGL/GL context can be created (the cell is skipped) or
-/// when the scene carries an effect chain the gl cell does not yet apply.
-pub fn render_scene_to_rgba_gl(scene: &Scene) -> Option<Vec<u8>> {
-    // Effects would run through effects-gl; not wired into this cell yet.
-    if !(scene.effects)().is_empty() {
-        return None;
-    }
-    if scene.width == 0 || scene.height == 0 {
+/// Renders a prepared scene graph to tightly packed straight-alpha RGBA bytes
+/// (`width*height*4`, top-left origin) via a headless GLES 3.0 context and
+/// `displayobject-gl`. Returns `None` when no EGL/GL context can be created (the
+/// cell is skipped) or when `width`/`height` is zero.
+pub fn render_scene_graph_to_rgba_gl(
+    graph: &SceneGraph,
+    width: u32,
+    height: u32,
+    background: u32,
+) -> Option<Vec<u8>> {
+    if width == 0 || height == 0 {
         return None;
     }
 
@@ -49,43 +47,35 @@ pub fn render_scene_to_rgba_gl(scene: &Scene) -> Option<Vec<u8>> {
     // owned by the render state are freed while the EGL context is still current,
     // then the EGL context itself is released.
     let (_egl, gl) = EglContext::create()?;
-    let SceneGraph {
-        stage_id,
-        children,
-        kinds,
-        proxies,
-        regions,
-    } = build_scene_graph(scene);
 
     let mut state = create_gl_render_state(
         gl,
         &GlRenderOptions {
-            background_color: Some(scene.background),
+            background_color: Some(background),
             ..GlRenderOptions::default()
         },
     );
 
     // The shape-fill NDC projection reads the state's default viewport; without
     // it the dimensions collapse to 1x1 and every shape covers the whole frame.
-    state.runtime.default_viewport_width = scene.width;
-    state.runtime.default_viewport_height = scene.height;
+    state.runtime.default_viewport_width = width;
+    state.runtime.default_viewport_height = height;
 
     // Off-screen RGBA8 framebuffer the scene renders into; read back after draw.
-    let (fbo, color_tex) = create_offscreen_fbo(&state.gl, scene.width, scene.height)?;
+    let (fbo, color_tex) = create_offscreen_fbo(&state.gl, width, height)?;
     unsafe {
-        state
-            .gl
-            .viewport(0, 0, scene.width as i32, scene.height as i32);
+        state.gl.viewport(0, 0, width as i32, height as i32);
     }
 
     register_gl_display_object_renderer(&mut state);
     render_gl_background(&mut state);
 
-    let get_children = |id: u64| children.get(&id).cloned().unwrap_or_default();
-    let get_kind = |id: u64| kinds.get(&id).copied().unwrap_or_default();
-    let get_proxy = |id: u64| proxies.get(&id).cloned();
+    let get_children = |id: u64| graph.children.get(&id).cloned().unwrap_or_default();
+    let get_kind = |id: u64| graph.kinds.get(&id).copied().unwrap_or_default();
+    let get_proxy = |id: u64| graph.proxies.get(&id).cloned();
     let get_shape_geometry = |id: u64| {
-        regions
+        graph
+            .regions
             .get(&id)
             .map(|(regions, content_revision)| GlShapeGeometry {
                 regions: regions.clone(),
@@ -95,14 +85,14 @@ pub fn render_scene_to_rgba_gl(scene: &Scene) -> Option<Vec<u8>> {
 
     render_gl_display_object(
         &mut state,
-        stage_id,
+        graph.stage_id,
         &get_children,
         &get_kind,
         &get_proxy,
         &get_shape_geometry,
     );
 
-    let pixels = read_fbo_rgba(&state.gl, scene.width, scene.height);
+    let pixels = read_fbo_rgba(&state.gl, width, height);
 
     unsafe {
         state.gl.delete_framebuffer(fbo);
@@ -193,8 +183,8 @@ fn read_fbo_rgba(gl: &glow::Context, width: u32, height: u32) -> Vec<u8> {
 /// A current headless GLES 3.0 EGL context. Held for the render's duration and
 /// torn down on drop; the loaded `glow::Context` is returned alongside it (and
 /// moved into the render state) so the state can own GL while this guard owns the
-/// EGL handles. One context per call keeps the path thread-safe under the
-/// parallel runner — each worker thread makes its own context current.
+/// EGL handles. One context per call keeps the path thread-safe under a parallel
+/// runner — each worker thread makes its own context current.
 struct EglContext {
     egl: EglInstance,
     display: egl::Display,
@@ -212,7 +202,7 @@ impl EglContext {
         // Prefer the surfaceless platform explicitly; where the core 1.5
         // `eglGetPlatformDisplay` rejects it (`BadParameter`), fall back to
         // `eglGetDisplay(DEFAULT_DISPLAY)`, which Mesa routes to the surfaceless
-        // platform when `EGL_PLATFORM=surfaceless` is set (see `ensure_egl_platform`).
+        // platform when `EGL_PLATFORM=surfaceless` is set.
         let display = unsafe {
             egl.get_platform_display(
                 PLATFORM_SURFACELESS_MESA,
