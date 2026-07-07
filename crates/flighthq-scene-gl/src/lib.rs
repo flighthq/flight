@@ -28,8 +28,17 @@
 //!     the base-color/normal texture binds, and the indexed draw. (`unpack_color_to_linear`
 //!     is ported locally — see the gap note below — until `flighthq-materials`
 //!     promotes it.)
-//!   - `draw_gl_scene` — COMPILING STUB; needs the unported `prepare_scene_render`
-//!     / `SceneRenderList` / scene-graph `Mesh` / `SceneLights` contract.
+//!   - `draw_gl_scene` — full port of the walk over the now-ported
+//!     `prepare_scene_render` / `SceneRenderList`: the opaque + blended two-pass
+//!     partition, the back-to-front blended sort, and the alias-safe
+//!     lift-and-reinsert contiguous-run binding. The pure helpers (the normal
+//!     matrix, the blended comparator, subset material resolution) are
+//!     assertion-tested; the live-GL bind/draw path is validated functionally.
+//!     Two seams await header work (both isolated to a single function each, and
+//!     both take the current scenes' `None`-material path unchanged): concrete
+//!     per-material field upload needs a `Material` downcast to `MeshMaterial`,
+//!     and per-material blend routing needs a readable `alpha_mode` — a stored
+//!     `dyn Material` exposes neither today.
 //!
 //! Registration is opt-in (no module-load side effects).
 
@@ -116,6 +125,7 @@ pub use gl_matcap_prelude::{
 pub use gl_mesh_material_registry::{
     GlMeshMaterialRenderer, MeshMaterial, get_gl_mesh_material_renderer,
     register_gl_mesh_material_renderer, resolve_gl_mesh_material_renderer,
+    resolve_gl_mesh_material_renderer_key,
 };
 pub use gl_mesh_program::{
     GlMeshProgram, begin_gl_mesh_draw, compile_gl_program, destroy_gl_mesh_program,

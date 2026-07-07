@@ -43,7 +43,7 @@ use crate::gl_wireframe_prelude::GlWireframeProgram;
 /// `index_*` shape fields are portable and used by the draw path; the handles are
 /// `Option` so the upload struct can be constructed and cache-tested without a GL
 /// device, mirroring `flighthq-render-gl`'s no-device registry tests.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct GlMeshUpload {
     pub index_buffer: Option<glow::Buffer>,
     pub index_count: u32,

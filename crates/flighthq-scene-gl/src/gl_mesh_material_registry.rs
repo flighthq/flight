@@ -215,6 +215,32 @@ pub fn resolve_gl_mesh_material_renderer(
         .map(|r| r.as_ref())
 }
 
+/// Resolves a mesh subset's material to the registry KEY that
+/// [`resolve_gl_mesh_material_renderer`] would resolve against: the material's own
+/// kind when registered, else `DefaultMaterialKind` when registered, else `None`.
+///
+/// `draw_gl_scene` needs the key (not just the `&dyn` renderer) so it can lift the
+/// boxed renderer out of the registry to invoke its `&mut GlSceneRuntime` `bind`/
+/// `draw` (the borrow checker forbids holding a `&dyn` borrowed from the same
+/// runtime the call mutates — see the take-and-reinsert idiom in the draw walk).
+/// The key doubles as the contiguous-run identity: two subsets share one bind iff
+/// they resolve to the same key.
+pub fn resolve_gl_mesh_material_renderer_key(
+    scene: &GlSceneRuntime,
+    material_kind: Option<KindId>,
+) -> Option<KindId> {
+    if let Some(kind) = material_kind
+        && scene.material_registry.contains_key(&kind)
+    {
+        return Some(kind);
+    }
+    let default = KindId::of::<DefaultMaterialKind>();
+    scene
+        .material_registry
+        .contains_key(&default)
+        .then_some(default)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -303,5 +329,40 @@ mod tests {
         struct Other;
         assert!(resolve_gl_mesh_material_renderer(&scene, Some(KindId::of::<Other>())).is_some());
         assert!(resolve_gl_mesh_material_renderer(&scene, None).is_some());
+    }
+
+    // resolve_gl_mesh_material_renderer_key
+
+    #[test]
+    fn resolve_gl_mesh_material_renderer_key_returns_none_without_a_registration() {
+        let scene = create_gl_scene_runtime();
+        assert!(resolve_gl_mesh_material_renderer_key(&scene, None).is_none());
+        assert!(resolve_gl_mesh_material_renderer_key(&scene, Some(test_kind())).is_none());
+    }
+
+    #[test]
+    fn resolve_gl_mesh_material_renderer_key_returns_the_material_kind_when_registered() {
+        let mut scene = create_gl_scene_runtime();
+        register_gl_mesh_material_renderer(&mut scene, test_kind(), Box::new(TestRenderer));
+        assert_eq!(
+            resolve_gl_mesh_material_renderer_key(&scene, Some(test_kind())),
+            Some(test_kind())
+        );
+    }
+
+    #[test]
+    fn resolve_gl_mesh_material_renderer_key_falls_back_to_the_default_material_kind() {
+        let mut scene = create_gl_scene_runtime();
+        let default = KindId::of::<DefaultMaterialKind>();
+        register_gl_mesh_material_renderer(&mut scene, default, Box::new(TestRenderer));
+        struct Other;
+        assert_eq!(
+            resolve_gl_mesh_material_renderer_key(&scene, Some(KindId::of::<Other>())),
+            Some(default)
+        );
+        assert_eq!(
+            resolve_gl_mesh_material_renderer_key(&scene, None),
+            Some(default)
+        );
     }
 }
