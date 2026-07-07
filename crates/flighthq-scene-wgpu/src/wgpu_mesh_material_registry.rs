@@ -80,6 +80,33 @@ pub fn register_wgpu_mesh_material_renderer(
     scene.material_registry.insert(kind, renderer);
 }
 
+/// Resolves a mesh subset's material kind to the registry key of its 3D
+/// renderer: the material's own kind when registered, else `DefaultMaterialKind`
+/// when registered, else `None`. The by-key form of
+/// [`resolve_wgpu_mesh_material_renderer`], used by `draw_wgpu_scene` so it can
+/// lift the boxed renderer out of the runtime by key (the alias-safe
+/// contiguous-run bind), which a returned `&dyn` borrow of the runtime would
+/// forbid. The WGSL mirror of scene-gl's `resolve_gl_mesh_material_renderer_key`.
+///
+/// TS↔Rust divergence: the TS `resolve` takes the resolved `Material` and reads
+/// `material.kind`; the Rust port takes the kind directly since `draw_wgpu_scene`
+/// already has the resolved material's kind in hand.
+pub fn resolve_wgpu_mesh_material_renderer_key(
+    scene: &WgpuSceneRuntime,
+    material_kind: Option<KindId>,
+) -> Option<KindId> {
+    if let Some(kind) = material_kind
+        && scene.material_registry.contains_key(&kind)
+    {
+        return Some(kind);
+    }
+    let default = KindId::of::<DefaultMaterialKind>();
+    scene
+        .material_registry
+        .contains_key(&default)
+        .then_some(default)
+}
+
 /// Resolves a mesh subset's material to its registered 3D renderer: by the
 /// material's kind, else the renderer registered for `DefaultMaterialKind`, else
 /// `None`. `draw_wgpu_scene` skips a subset whose material resolves to `None` (no
@@ -215,5 +242,40 @@ mod tests {
         };
         assert!(resolve_over(&scene, Some(&material)).is_some());
         assert!(resolve_over(&scene, None).is_some());
+    }
+
+    // resolve_wgpu_mesh_material_renderer_key
+
+    #[test]
+    fn resolve_wgpu_mesh_material_renderer_key_returns_none_without_a_registration() {
+        let scene = create_wgpu_scene_runtime();
+        assert!(resolve_wgpu_mesh_material_renderer_key(&scene, None).is_none());
+        assert!(resolve_wgpu_mesh_material_renderer_key(&scene, Some(test_kind())).is_none());
+    }
+
+    #[test]
+    fn resolve_wgpu_mesh_material_renderer_key_returns_the_material_kind_when_registered() {
+        let mut scene = create_wgpu_scene_runtime();
+        register_into(&mut scene, test_kind());
+        assert_eq!(
+            resolve_wgpu_mesh_material_renderer_key(&scene, Some(test_kind())),
+            Some(test_kind())
+        );
+    }
+
+    #[test]
+    fn resolve_wgpu_mesh_material_renderer_key_falls_back_to_the_default_material_kind() {
+        let mut scene = create_wgpu_scene_runtime();
+        let default = KindId::of::<DefaultMaterialKind>();
+        register_into(&mut scene, default);
+        struct Other;
+        assert_eq!(
+            resolve_wgpu_mesh_material_renderer_key(&scene, Some(KindId::of::<Other>())),
+            Some(default)
+        );
+        assert_eq!(
+            resolve_wgpu_mesh_material_renderer_key(&scene, None),
+            Some(default)
+        );
     }
 }
