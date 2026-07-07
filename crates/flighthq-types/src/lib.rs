@@ -130,9 +130,9 @@ pub use lighting::{
 
 // mesh
 pub use mesh::{
-    MESH_KIND_NAME, MeshGeometry, MeshGeometryGlData, MeshGeometryRuntime, MeshGeometryWgpuData,
-    MeshIndices, MeshSubset, PrimitiveTopology, VertexAttribute, VertexAttributeLayout,
-    VertexFormat, VertexSemantic,
+    MESH_KIND_NAME, Mesh, MeshGeometry, MeshGeometryGlData, MeshGeometryRuntime,
+    MeshGeometryWgpuData, MeshIndices, MeshSubset, PrimitiveTopology, VertexAttribute,
+    VertexAttributeLayout, VertexFormat, VertexSemantic,
 };
 
 // texture
