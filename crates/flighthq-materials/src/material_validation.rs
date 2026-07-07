@@ -36,7 +36,7 @@ pub fn clamp_standard_pbr_material_properties(
 /// `[0, 1]`; values outside this range are invalid. Returns `false` for
 /// `NaN`, infinite, and out-of-range values. Does not panic.
 pub fn is_valid_material_clearcoat(value: f32) -> bool {
-    value.is_finite() && value >= 0.0 && value <= 1.0
+    value.is_finite() && (0.0..=1.0).contains(&value)
 }
 
 /// Returns `true` when `value` is a physically-valid IOR (index of
@@ -46,7 +46,7 @@ pub fn is_valid_material_clearcoat(value: f32) -> bool {
 /// IOR ≥ 1). Returns `false` for `NaN`, infinite, and out-of-range values.
 /// Does not panic.
 pub fn is_valid_material_ior(value: f32) -> bool {
-    value.is_finite() && value >= MIN_MATERIAL_IOR && value <= MAX_MATERIAL_IOR
+    value.is_finite() && (MIN_MATERIAL_IOR..=MAX_MATERIAL_IOR).contains(&value)
 }
 
 /// Returns `true` when `value` is a valid iridescence-layer thickness in
@@ -62,7 +62,7 @@ pub fn is_valid_material_iridescence_thickness(value: f32) -> bool {
 /// parameters that represent a fractional blend or strength factor. Returns
 /// `false` for `NaN`, infinite, and out-of-range values. Does not panic.
 pub fn is_valid_material_weight(value: f32) -> bool {
-    value.is_finite() && value >= 0.0 && value <= 1.0
+    value.is_finite() && (0.0..=1.0).contains(&value)
 }
 
 /// Minimum IOR value physically meaningful for a real material. Below this
