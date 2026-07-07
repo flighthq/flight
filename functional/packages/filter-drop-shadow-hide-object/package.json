@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-filter-drop-shadow-hide-object",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

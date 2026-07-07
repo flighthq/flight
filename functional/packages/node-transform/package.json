@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-node-transform",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

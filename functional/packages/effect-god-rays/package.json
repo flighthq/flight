@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-effect-god-rays",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

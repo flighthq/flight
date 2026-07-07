@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-filter-gradient-glow-parity",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

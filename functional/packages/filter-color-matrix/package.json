@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-filter-color-matrix",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

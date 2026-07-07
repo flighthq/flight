@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-displayobject-clip-contour-hdr",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

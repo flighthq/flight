@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-bitmap-transparent-compositing",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

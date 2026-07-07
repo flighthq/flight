@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-material-transmission-volume",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-filter-pixelate-parity",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

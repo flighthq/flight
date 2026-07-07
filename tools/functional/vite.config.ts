@@ -1,26 +1,20 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
-import { dirname, extname, join, resolve } from 'path';
+import { existsSync, readFileSync } from 'fs';
+import { extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
 import { resolveAssetTarget } from '../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../scripts/copy-dir';
+import { discoverFunctionalScenes, functionalSceneFile } from '../../scripts/functional-scenes';
+import type { FunctionalScene } from '../../scripts/functional-scenes';
 import { workspacePackages } from '../../scripts/workspaces';
-
-const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-type Renderer = (typeof RENDERERS)[number];
-
-interface FunctionalTest {
-  name: string;
-  renderers: string[];
-}
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'functional');
-// Scenes live under packages/ (the TS tier, mirroring examples/packages); public/ and the asset
-// manifest stay at the suite root. Scene-relative paths use packagesDir; infra uses testsDir.
-const packagesDir = join(testsDir, 'packages');
-// The shared render harness lives in tools/ (used by functional and reference alike).
+// Scenes are flat files under functional/scenes/: <name>.ts (backend-agnostic) or
+// <name>.<backend>.ts (self-contained backend-specific target). See scripts/functional-scenes.ts.
+const scenesDir = join(testsDir, 'scenes');
+// The shared render harness lives in tools/ (createFunctionalTarget, verify, per-backend factories).
 const harnessDir = join(projectRoot, 'tools/harness');
 // Suite render assets: the manifest is colocated here (tools/functional/assets.manifest.json) and
 // the downloaded pool resolves to the shared cache (.cache/assets/functional) — or, when the cache
@@ -50,41 +44,28 @@ function splitFirst(str: string, sep: string): [string, string] {
   return [str.slice(0, i), str.slice(i + sep.length)];
 }
 
-// A renderer id is the logical key (`canvas`, `webgl`, `webgpu`). Should an id ever carry a colon
-// (not safe as a URL or directory segment), this maps it to a hyphenated route segment; colon-free
-// ids pass through unchanged. The id is never reconstructed from the segment; callers that need the
-// id carry it alongside.
-function routeSegment(renderer: string): string {
-  return renderer.replace(':', '-');
+function discoverTests(): FunctionalScene[] {
+  return discoverFunctionalScenes(scenesDir);
 }
 
-function discoverTests(): FunctionalTest[] {
-  if (!existsSync(packagesDir)) return [];
-  return readdirSync(packagesDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(packagesDir, d.name, 'package.json')))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name }) => {
-      const testDir = join(packagesDir, name);
-      const customRenderers = RENDERERS.filter((r) => existsSync(join(testDir, `src/render.${r}.ts`))) as Renderer[];
-      let renderers: string[];
-      if (customRenderers.length > 0) {
-        renderers = customRenderers;
-      } else if (existsSync(join(testDir, 'src', 'app.ts'))) {
-        const pkg = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf8')) as Record<string, unknown>;
-        renderers = (pkg.renderers as string[] | undefined) ?? ['dom', 'canvas', 'webgl', 'webgpu'];
-      } else {
-        renderers = [];
-      }
-      return { name, renderers };
-    })
-    .filter((t) => t.renderers.length > 0);
+// The per-cell entry: install the log-capture sink, declare the backend the page renders (a
+// backend-agnostic scene reads window.__ftBackend to pick its target; a backend-specific scene
+// ignores it), dynamically import the scene so both run before its module-init, then verify.
+function entryModule(name: string, backend: string): string {
+  const scenePath = functionalSceneFile(scenesDir, name, backend);
+  return [
+    `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
+    `setLogSink(createConsoleCaptureSink());`,
+    `window.__ftBackend = ${JSON.stringify(backend)};`,
+    `const __testModule = await import(${JSON.stringify(scenePath)});`,
+    `const { runRenderVerification } = await import(${JSON.stringify(join(harnessDir, 'verify.ts'))});`,
+    `await runRenderVerification(__testModule, ${JSON.stringify(backend)});`,
+  ].join('\n');
 }
 
 // assetBase points at one global pool (test-assets/) shared by every renderer of every test.
 // Functional assets have globally unique names and are loaded through a shared manifest, so a
-// single flat pool has no collisions and stores each file once. The script src is absolute and ES
-// module imports resolve against the module URL, so neither is affected by <base>; only
-// document-relative asset fetches are redirected into the pool, which is the intent.
+// single flat pool has no collisions and stores each file once.
 function buildEntryHtml(name: string, render: string, scriptSrc: string, assetBase: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -110,10 +91,8 @@ function buildEntryHtml(name: string, render: string, scriptSrc: string, assetBa
 </html>`;
 }
 
-function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
-  // routeSegment maps each renderer id to a URL/filesystem-safe path segment for emitted files and
-  // routes; the id stays intact as the renderer's logical key.
-  const buildTests: FunctionalTest[] = tests;
+function functionalTestsPlugin(tests: FunctionalScene[]): Plugin[] {
+  const buildTests: FunctionalScene[] = tests;
 
   let viteBase = '/';
   let outDir = resolve(__dirname, 'dist');
@@ -131,7 +110,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
         };
         for (const test of buildTests) {
           for (const render of test.renderers) {
-            input[`tests/${test.name}/${routeSegment(render)}/index`] = `virtual:ft-entry:${test.name}:${render}`;
+            input[`tests/${test.name}/${render}/index`] = `virtual:ft-entry:${test.name}:${render}`;
           }
         }
 
@@ -144,7 +123,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
                   const id = chunk.facadeModuleId;
                   if (id?.startsWith('\0virtual:ft-entry:')) {
                     const [name, render] = splitFirst(id.slice('\0virtual:ft-entry:'.length), ':');
-                    return `tests/${name}/${routeSegment(render)}/index.js`;
+                    return `tests/${name}/${render}/index.js`;
                   }
                   return 'assets/[name]-[hash].js';
                 },
@@ -159,96 +138,26 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
         outDir = resolve(config.root, config.build.outDir);
       },
 
-      resolveId(source, importer) {
+      resolveId(source) {
         if (source === 'virtual:functional-test-list') return '\0virtual:functional-test-list';
-
         if (source.startsWith('virtual:ft-entry:')) return '\0' + source;
 
-        if (source.startsWith('___ft___')) {
-          const [name, render] = splitFirst(source.slice('___ft___'.length), ':');
-          const appPath = join(packagesDir, name, 'src', 'app.ts');
-          return appPath + '?render=' + render;
-        }
-
-        if (source === '@ft/render' && importer) {
-          const match = importer.match(/\?render=([^&]+)/);
-          if (match) {
-            const renderer = match[1];
-            const testSrcDir = dirname(importer.split('?')[0]);
-            const customPath = resolve(testSrcDir, `render.${renderer}.ts`);
-            if (existsSync(customPath)) return customPath;
-            return `\0virtual:ft-render:${renderer}`;
-          }
-          return resolve(harnessDir, 'render.ts');
-        }
-
-        // Depth-stable alias for the shared verify helper (scenes live under packages/, the harness
-        // at the suite root); an alias keeps scene imports valid across scene/harness relocations.
-        if (source === '@ft/verify') {
-          return resolve(harnessDir, 'verify.ts');
-        }
-
-        if (source === './render' && importer) {
-          const match = importer.match(/\?render=([^&]+)/);
-          if (match) {
-            const render = match[1];
-            return resolve(dirname(importer.split('?')[0]), `render.${render}.ts`);
-          }
-        }
+        // The harness seams resolve to their real modules — no per-backend build-time redirect. The
+        // backend is chosen at runtime via window.__ftBackend (set by the entry above).
+        if (source === '@ft/render') return resolve(harnessDir, 'render.ts');
+        if (source === '@ft/verify') return resolve(harnessDir, 'verify.ts');
       },
 
       load(id) {
         if (id === '\0virtual:functional-test-list') {
-          // Re-scan on each load so a newly added test folder appears after an HMR reload, not only
-          // after a server restart. The captured `tests` is still used for the build input map.
+          // Re-scan on each load so a newly added scene appears after an HMR reload, not only after a
+          // server restart. The captured `tests` is still used for the build input map.
           return `export const tests = ${JSON.stringify(discoverTests())};`;
-        }
-
-        if (id.startsWith('\0virtual:ft-render:')) {
-          const renderer = id.slice('\0virtual:ft-render:'.length);
-          if (renderer === 'canvas') {
-            return [
-              `import { createCanvasTarget } from ${JSON.stringify(join(harnessDir, 'canvas.ts'))};`,
-              `export async function createFunctionalTarget(opts) { return createCanvasTarget(opts); }`,
-            ].join('\n');
-          }
-          if (renderer === 'webgl') {
-            return [
-              `import { createGlTarget } from ${JSON.stringify(join(harnessDir, 'webgl.ts'))};`,
-              `export async function createFunctionalTarget(opts) { return createGlTarget(opts); }`,
-            ].join('\n');
-          }
-          if (renderer === 'dom') {
-            return [
-              `import { createDomTarget } from ${JSON.stringify(join(harnessDir, 'dom.ts'))};`,
-              `export async function createFunctionalTarget(opts) { return createDomTarget(opts); }`,
-            ].join('\n');
-          }
-          if (renderer === 'webgpu') {
-            return [
-              `import { createWgpuTarget } from ${JSON.stringify(join(harnessDir, 'webgpu.ts'))};`,
-              `export const createFunctionalTarget = createWgpuTarget;`,
-            ].join('\n');
-          }
-          return null;
         }
 
         if (id.startsWith('\0virtual:ft-entry:')) {
           const [name, render] = splitFirst(id.slice('\0virtual:ft-entry:'.length), ':');
-
-          // The harness is the listener app: install the console-capture sink, then dynamically
-          // import the flight test (dynamic so setLogSink runs before the test's module-init
-          // logs). The test itself only imports the lightweight emit helpers. Once the test module
-          // has finished rendering (its top-level await resolves), run the in-page verifier so a
-          // blank or wrong render fails as a page error — turning "the page loaded" into "the
-          // renderer actually drew". The test module may export assertRender / minCoverage.
-          return [
-            `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
-            `setLogSink(createConsoleCaptureSink());`,
-            `const __testModule = await import('___ft___${name}:${render}');`,
-            `const { runRenderVerification } = await import(${JSON.stringify(join(harnessDir, 'verify.ts'))});`,
-            `await runRenderVerification(__testModule, ${JSON.stringify(render)});`,
-          ].join('\n');
+          return entryModule(name, render);
         }
       },
 
@@ -265,7 +174,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 
             this.emitFile({
               type: 'asset',
-              fileName: `tests/${test.name}/${routeSegment(render)}/index.html`,
+              fileName: `tests/${test.name}/${render}/index.html`,
               source: buildEntryHtml(test.name, render, `${viteBase}${chunk.fileName}`, `${viteBase}test-assets/`),
             });
           }
@@ -273,14 +182,11 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
       },
 
       writeBundle() {
-        // One flat pool for all functional assets. Every render page's <base href> points here, so
-        // identical files used across renderers and tests (including the shared manifest) are stored
-        // exactly once. Safe to merge because asset file names are globally unique.
+        // One flat pool for all functional assets: every render page's <base href> points here, so
+        // files shared across renderers (including the manifest) are stored once. Names are globally
+        // unique, so a flat merge is collision-free.
         const pool = join(outDir, 'test-assets');
-        const sources = [assetsPool, ...buildTests.map((t) => join(packagesDir, t.name, 'public'))];
-        for (const src of sources) {
-          if (existsSync(src)) copyDirectoryContents(src, pool);
-        }
+        if (existsSync(assetsPool)) copyDirectoryContents(assetsPool, pool);
       },
     },
 
@@ -288,17 +194,18 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
       name: 'functional-tests:routes',
 
       configureServer(server) {
-        // Re-scan when a test folder is added or removed so new tests appear without a server restart.
+        // Re-scan when a scene file is added or removed so new scenes appear without a server restart.
         const refreshTestList = (): void => {
           const mod = server.moduleGraph.getModuleById('\0virtual:functional-test-list');
           if (mod) server.moduleGraph.invalidateModule(mod);
           server.ws.send({ type: 'full-reload' });
         };
-        server.watcher.add(testsDir);
-        server.watcher.on('addDir', refreshTestList);
-        server.watcher.on('unlinkDir', refreshTestList);
+        server.watcher.add(scenesDir);
         server.watcher.on('add', (file) => {
-          if (file.endsWith('app.ts') || file.endsWith('package.json')) refreshTestList();
+          if (file.endsWith('.ts')) refreshTestList();
+        });
+        server.watcher.on('unlink', (file) => {
+          if (file.endsWith('.ts')) refreshTestList();
         });
 
         server.middlewares.use((req, res, next) => {
@@ -306,29 +213,20 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
           const parts = urlPath.split('/').filter(Boolean);
 
           if (parts[0] !== 'tests' || parts.length < 3) return next();
-          const [, name, segment, ...assetParts] = parts;
+          const [, name, render, ...assetParts] = parts;
 
-          // The URL carries the safe route segment; recover the renderer id (with any colon) for the virtual entry module below. Routes match dev and build.
-          // Re-scan so a folder added since startup resolves without a restart.
-          const test = discoverTests().find(
-            (t) => t.name === name && t.renderers.some((r) => routeSegment(r) === segment),
-          );
+          // Re-scan so a scene added since startup resolves without a restart.
+          const test = discoverTests().find((t) => t.name === name && t.renderers.includes(render));
           if (!test) return next();
-          const render = test.renderers.find((r) => routeSegment(r) === segment)!;
 
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
-            const candidates: string[] = [];
-            candidates.push(join(packagesDir, name, 'public', assetRel));
-            candidates.push(join(assetsPool, assetRel));
-
-            for (const candidate of candidates) {
-              if (existsSync(candidate)) {
-                const mime = MIME[extname(candidate)] ?? 'application/octet-stream';
-                res.setHeader('Content-Type', mime);
-                res.end(readFileSync(candidate));
-                return;
-              }
+            const candidate = join(assetsPool, assetRel);
+            if (existsSync(candidate)) {
+              const mime = MIME[extname(candidate)] ?? 'application/octet-stream';
+              res.setHeader('Content-Type', mime);
+              res.end(readFileSync(candidate));
+              return;
             }
             return next();
           }
@@ -385,7 +283,7 @@ function functionalTestsPlugin(tests: FunctionalTest[]): Plugin[] {
 export default defineConfig(() => {
   const tests = discoverTests();
 
-  // `@flighthq/log` resolves automatically via the workspace-package aliases above.
+  // `@flighthq/log` resolves automatically via the workspace-package aliases below.
   const alias: Record<string, string> = {
     ...Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, pkg.dir + '/src'])),
   };
@@ -402,9 +300,8 @@ export default defineConfig(() => {
     },
 
     optimizeDeps: {
-      // Serve the workspace @flighthq/* packages as live source (they are aliased to each package's
-      // src/ above), never pre-bundled into .vite/deps. Pre-bundling (include) caches them, which both
-      // breaks HMR and lets a stale cache silently run old code — a real capture-correctness hazard.
+      // Serve the workspace @flighthq/* packages as live source (aliased to each package's src/),
+      // never pre-bundled — pre-bundling caches them, which breaks HMR and can silently run old code.
       exclude: workspacePackages.map((p) => p.name),
     },
 

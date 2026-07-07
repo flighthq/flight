@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-material-matcap",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-text-align-center",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-effect-chain",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

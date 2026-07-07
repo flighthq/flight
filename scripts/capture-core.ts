@@ -12,6 +12,7 @@ import { extname, join, relative, resolve } from 'path';
 import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baseline-store.js';
+import { discoverFunctionalScenes } from './functional-scenes.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -202,7 +203,11 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
   // per-name or per-renderer routing, so it presents as one fixed entry.
   if (tool === 'site') return [{ name: 'landing', renderers: ['webgl'] }];
 
-  const dir = tool === 'examples' ? join(root, 'examples', 'packages') : join(root, 'functional', 'packages');
+  // Functional scenes are flat files under functional/scenes/; the shared discovery is the single
+  // source of truth (also used by tools/functional/vite.config.ts).
+  if (tool === 'functional') return discoverFunctionalScenes(join(root, 'functional', 'scenes'));
+
+  const dir = join(root, 'examples', 'packages');
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'package.json')))
@@ -212,14 +217,7 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
       const customRenderers = (RENDERERS as readonly string[]).filter((r) =>
         existsSync(join(testDir, `src/render.${r}.ts`)),
       );
-      if (customRenderers.length > 0) return { name, renderers: customRenderers };
-      if (tool === 'functional' && existsSync(join(testDir, 'src', 'app.ts'))) {
-        const pkg = JSON.parse(readFileSync(join(testDir, 'package.json'), 'utf8')) as Record<string, unknown>;
-        // Matches the vite harness default (tools/functional/vite.config.ts): app.ts tests run on every
-        // backend, webgpu included (the harness routes createFunctionalTarget → createWgpuTarget).
-        return { name, renderers: (pkg.renderers as string[] | undefined) ?? ['canvas', 'dom', 'webgl', 'webgpu'] };
-      }
-      return { name, renderers: [] };
+      return { name, renderers: customRenderers };
     })
     .filter((e) => e.renderers.length > 0);
 }
