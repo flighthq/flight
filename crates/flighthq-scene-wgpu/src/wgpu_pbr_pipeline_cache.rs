@@ -273,8 +273,8 @@ mod tests {
 
             assert_ne!(a, b);
             assert_ne!(a, c);
-            assert!(a.ends_with("----"));
-            assert!(c.ends_with("-d--"));
+            assert!(a.ends_with("-------:-------"));
+            assert!(c.ends_with("-d-----:-------"));
             assert_eq!(
                 a,
                 build_wgpu_pbr_pipeline_cache_key(wgpu::TextureFormat::Rgba16Float, &neutral)
