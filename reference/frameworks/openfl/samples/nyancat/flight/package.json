@@ -1,0 +1,8 @@
+{
+  "name": "openfl-sample-nyancat-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

@@ -16,7 +16,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the MSAA reference scene. NOTE: sampleCount currently no-ops on the Wgpu

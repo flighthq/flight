@@ -1,0 +1,8 @@
+{
+  "name": "openfl-sample-usingtilemap-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

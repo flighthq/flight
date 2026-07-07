@@ -1,0 +1,9 @@
+{
+  "name": "openfl-sample-sparktrail-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/particles": "*",
+    "@flighthq/sdk": "*"
+  }
+}

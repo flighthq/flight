@@ -235,21 +235,47 @@ function referenceColumns(testDir: string): string[] {
   return columns;
 }
 
+function discoverReferenceEntries(root: string): Entry[] {
+  const frameworksDir = join(root, 'reference', 'frameworks');
+  if (!existsSync(frameworksDir)) return [];
+  const entries: Entry[] = [];
+  const frameworks = readdirSync(frameworksDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  for (const framework of frameworks) {
+    const frameworkDir = join(frameworksDir, framework.name);
+    const corpora = readdirSync(frameworkDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== 'harness')
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    for (const corpus of corpora) {
+      const corpusDir = join(frameworkDir, corpus.name);
+      const cases = readdirSync(corpusDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      for (const testCase of cases) {
+        const name = `${framework.name}/${corpus.name}/${testCase.name}`;
+        const renderers = referenceColumns(join(corpusDir, testCase.name));
+        if (renderers.length > 0) entries.push({ name, renderers });
+      }
+    }
+  }
+
+  return entries;
+}
+
 export function discoverEntries(tool: Tool, root: string): Entry[] {
   // The landing page is a single document rendered with Flight (one Gl canvas), with no
   // per-name or per-renderer routing, so it presents as one fixed entry.
   if (tool === 'site') return [{ name: 'landing', renderers: ['webgl'] }];
 
-  // Reference comparison tests: each holds library subdirs (openfl/, flight/) and contributes
-  // `<library>:<renderer>` columns, the same discovery the reference tool serves.
+  // Reference comparison tests: each framework/corpus/case holds implementation subdirs
+  // (openfl/, flight/, …) and contributes `<library>:<renderer>` columns, the same discovery the
+  // reference tool serves.
   if (tool === 'reference') {
-    const refDir = join(root, 'reference');
-    if (!existsSync(refDir)) return [];
-    return readdirSync(refDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && d.name !== '_harness')
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(({ name }) => ({ name, renderers: referenceColumns(join(refDir, name)) }))
-      .filter((e) => e.renderers.length > 0);
+    return discoverReferenceEntries(root);
   }
 
   const dir = tool === 'examples' ? join(root, 'examples', 'packages') : join(root, 'functional', 'packages');

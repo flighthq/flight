@@ -1,0 +1,11 @@
+{
+  "name": "openfl-sample-comparebitmapdata-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/surface": "*"
+  },
+  "renderers": [
+    "canvas"
+  ]
+}

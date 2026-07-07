@@ -1,0 +1,8 @@
+{
+  "name": "openfl-sample-displayingabitmap-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

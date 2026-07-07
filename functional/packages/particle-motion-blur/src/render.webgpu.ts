@@ -23,7 +23,6 @@ import {
   setWgpuRenderEffectVelocityTexture,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for per-particle motion blur: the particle velocity writer rasterizes each

@@ -20,7 +20,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // The contour clip's stencil pipeline runs inside the rgba16float scene target, so its color-target format
