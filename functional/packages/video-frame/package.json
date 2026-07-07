@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-video-frame",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

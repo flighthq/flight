@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-effect-msaa-bloom",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

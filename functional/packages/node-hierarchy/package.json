@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-node-hierarchy",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

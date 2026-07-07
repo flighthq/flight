@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-filter-drop-shadow-parity",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

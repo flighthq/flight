@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-text-underline",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-bitmap-source-rect",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

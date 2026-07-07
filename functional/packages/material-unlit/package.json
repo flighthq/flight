@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-material-unlit",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

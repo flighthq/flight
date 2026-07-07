@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-material-subsurface",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}

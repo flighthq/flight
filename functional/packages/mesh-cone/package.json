@@ -1,8 +1,0 @@
-{
-  "name": "functional-test-mesh-cone",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@flighthq/sdk": "*"
-  }
-}
