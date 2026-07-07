@@ -14,7 +14,7 @@
 
 use flighthq_geometry::multiply_matrix4;
 use flighthq_node::{NodeArena, NodeId, get_node_parent};
-use flighthq_types::{KindId, Matrix4, Matrix4Like, NodeSignals};
+use flighthq_types::{KindId, Matrix4, Matrix4Like, Mesh, NodeSignals};
 
 // ---------------------------------------------------------------------------
 // SceneNode
@@ -35,6 +35,9 @@ pub struct SceneNode {
     /// Signals emitted on child-list changes. `None` until
     /// [`enable_scene_node_signals`] is called.
     pub(crate) signals: Option<Box<NodeSignals>>,
+    /// Mesh payload. `Some` makes this node a drawable Mesh leaf (see
+    /// [`crate::mesh::is_mesh`]); `None` is a transform-only group node.
+    pub mesh: Option<Mesh>,
 }
 
 impl Default for SceneNode {
@@ -45,6 +48,7 @@ impl Default for SceneNode {
             name: None,
             world_matrix: None,
             signals: None,
+            mesh: None,
         }
     }
 }
@@ -80,6 +84,7 @@ pub fn create_scene_node(arena: &mut SceneArena, name: Option<String>) -> NodeId
         name,
         world_matrix: None,
         signals: None,
+        mesh: None,
     })
 }
 
