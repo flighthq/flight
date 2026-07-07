@@ -20,6 +20,7 @@
 
 use flighthq_render_gl::GlRenderState;
 use flighthq_types::camera::Camera;
+use flighthq_types::classic_material::{BlinnPhongMaterial, LambertMaterial, PhongMaterial};
 use flighthq_types::kind::KindId;
 use flighthq_types::material::{DefaultMaterialKind, Material};
 use flighthq_types::pbr_extension_material::{
@@ -29,6 +30,10 @@ use flighthq_types::pbr_extension_material::{
 };
 use flighthq_types::pbr_material::StandardPbrMaterial;
 use flighthq_types::scene_render::{SceneLightBlock, SceneRenderProxy};
+use flighthq_types::unlit_material::{
+    DepthMaterial, EmissiveMaterial, MatcapMaterial, NormalMaterial, ToonMaterial, UnlitMaterial,
+    VertexColorMaterial, WireframeMaterial,
+};
 
 use crate::gl_scene_runtime::{GlMeshUpload, GlSceneRuntime};
 
@@ -117,6 +122,50 @@ pub trait MeshMaterial: Material {
     fn as_transmission_volume_pbr(&self) -> Option<&TransmissionVolumePbrMaterial> {
         None
     }
+    /// The concrete classic BlinnPhong material, or `None`.
+    fn as_blinn_phong(&self) -> Option<&BlinnPhongMaterial> {
+        None
+    }
+    /// The concrete pass-infrastructure Depth material, or `None`.
+    fn as_depth(&self) -> Option<&DepthMaterial> {
+        None
+    }
+    /// The concrete Emissive material, or `None`.
+    fn as_emissive(&self) -> Option<&EmissiveMaterial> {
+        None
+    }
+    /// The concrete classic Lambert material, or `None`.
+    fn as_lambert(&self) -> Option<&LambertMaterial> {
+        None
+    }
+    /// The concrete Matcap (material-capture) material, or `None`.
+    fn as_matcap(&self) -> Option<&MatcapMaterial> {
+        None
+    }
+    /// The concrete pass-infrastructure Normal material, or `None`.
+    fn as_normal(&self) -> Option<&NormalMaterial> {
+        None
+    }
+    /// The concrete classic Phong material, or `None`.
+    fn as_phong(&self) -> Option<&PhongMaterial> {
+        None
+    }
+    /// The concrete Toon (cel-shading) material, or `None`.
+    fn as_toon(&self) -> Option<&ToonMaterial> {
+        None
+    }
+    /// The concrete Unlit flat-color material, or `None`.
+    fn as_unlit(&self) -> Option<&UnlitMaterial> {
+        None
+    }
+    /// The concrete VertexColor material, or `None`.
+    fn as_vertex_color(&self) -> Option<&VertexColorMaterial> {
+        None
+    }
+    /// The concrete Wireframe material, or `None`.
+    fn as_wireframe(&self) -> Option<&WireframeMaterial> {
+        None
+    }
 }
 
 impl MeshMaterial for StandardPbrMaterial {
@@ -169,6 +218,72 @@ impl MeshMaterial for SubsurfacePbrMaterial {
 
 impl MeshMaterial for TransmissionVolumePbrMaterial {
     fn as_transmission_volume_pbr(&self) -> Option<&TransmissionVolumePbrMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for BlinnPhongMaterial {
+    fn as_blinn_phong(&self) -> Option<&BlinnPhongMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for DepthMaterial {
+    fn as_depth(&self) -> Option<&DepthMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for EmissiveMaterial {
+    fn as_emissive(&self) -> Option<&EmissiveMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for LambertMaterial {
+    fn as_lambert(&self) -> Option<&LambertMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for MatcapMaterial {
+    fn as_matcap(&self) -> Option<&MatcapMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for NormalMaterial {
+    fn as_normal(&self) -> Option<&NormalMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for PhongMaterial {
+    fn as_phong(&self) -> Option<&PhongMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for ToonMaterial {
+    fn as_toon(&self) -> Option<&ToonMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for UnlitMaterial {
+    fn as_unlit(&self) -> Option<&UnlitMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for VertexColorMaterial {
+    fn as_vertex_color(&self) -> Option<&VertexColorMaterial> {
+        Some(self)
+    }
+}
+
+impl MeshMaterial for WireframeMaterial {
+    fn as_wireframe(&self) -> Option<&WireframeMaterial> {
         Some(self)
     }
 }
@@ -283,6 +398,18 @@ mod tests {
         let dynamic: &dyn MeshMaterial = &material;
         assert!(dynamic.as_standard_pbr().is_some());
         assert_eq!(dynamic.kind(), standard_pbr_material_kind());
+    }
+
+    #[test]
+    fn mesh_material_downcasts_a_base_lambert_material() {
+        // A base (non-PBR) material resolves through its own accessor and reports
+        // `None` for the PBR accessors, so a base renderer reads only its concrete
+        // fields.
+        let material =
+            flighthq_materials::classic_materials::create_lambert_material(&Default::default());
+        let dynamic: &dyn MeshMaterial = &material;
+        assert!(dynamic.as_lambert().is_some());
+        assert!(dynamic.as_standard_pbr().is_none());
     }
 
     // get_gl_mesh_material_renderer
