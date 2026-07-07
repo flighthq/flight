@@ -29,6 +29,7 @@ use std::collections::HashMap;
 use flighthq_types::kind::KindId;
 
 use crate::wgpu_mesh_material_registry::WgpuMeshMaterialRenderer;
+use crate::wgpu_mesh_pipeline::WgpuMeshPipeline;
 use crate::wgpu_pbr_pipeline_cache::WgpuPbrPipeline;
 
 /// scene-wgpu's per-state private runtime. One is created per `WgpuRenderState`
@@ -46,8 +47,17 @@ pub struct WgpuSceneRuntime {
     /// The reused Draw bind group (group(1)) wiring the render-state ring buffer
     /// at a dynamic offset. Allocated once for the active pipeline's draw layout.
     pub draw_bind_group: Option<wgpu::BindGroup>,
+    /// The shared group(1) Draw bind-group layout (per-draw world + normal matrix,
+    /// dynamic offset). Created once by the base mesh-pipeline path
+    /// ([`ensure_wgpu_scene_layouts`](crate::wgpu_mesh_pipeline::ensure_wgpu_scene_layouts))
+    /// and reused by every base-material family pipeline.
+    pub draw_bind_group_layout: Option<wgpu::BindGroupLayout>,
     /// The reused Frame bind group (group(0)) wiring [`Self::frame_buffer`].
     pub frame_bind_group: Option<wgpu::BindGroup>,
+    /// The shared group(0) Frame bind-group layout (camera + packed light block).
+    /// Created once by the base mesh-pipeline path and reused by every base-material
+    /// family pipeline.
+    pub frame_bind_group_layout: Option<wgpu::BindGroupLayout>,
     /// The shared Frame uniform buffer (camera + packed light block), re-written
     /// each `bind`.
     pub frame_buffer: Option<wgpu::Buffer>,
@@ -58,6 +68,12 @@ pub struct WgpuSceneRuntime {
     /// The 3D mesh-material renderer registry, keyed by material kind. Distinct
     /// from the 2D `material_renderer_map` on `WgpuRenderStateRuntime`.
     pub material_registry: HashMap<KindId, Box<dyn WgpuMeshMaterialRenderer>>,
+    /// Compiled base (non-PBR) mesh-material pipeline variants, keyed by a string
+    /// namespaced by family + define key + color format (for example
+    /// `classic:Bgra8Unorm|l----`). Distinct from the StandardPbr
+    /// [`Self::pipeline_cache`]; the base families (classic/unlit/toon/matcap/debug/
+    /// wireframe) route their pipelines through here.
+    pub mesh_pipeline_cache: HashMap<String, WgpuMeshPipeline>,
     /// The ring-buffer byte offset the active Draw bind group is wired at; the
     /// renderer's `draw` advances and re-points it per draw.
     pub pending_draw_offset: u64,
@@ -113,7 +129,10 @@ mod tests {
         let runtime = create_wgpu_scene_runtime();
         assert!(runtime.material_registry.is_empty());
         assert!(runtime.material_bind_groups.is_empty());
+        assert!(runtime.mesh_pipeline_cache.is_empty());
         assert!(runtime.pipeline_cache.is_empty());
+        assert!(runtime.frame_bind_group_layout.is_none());
+        assert!(runtime.draw_bind_group_layout.is_none());
         assert!(runtime.upload_cache.is_empty());
         assert!(runtime.active_pipeline_key.is_none());
         assert!(runtime.frame_buffer.is_none());
