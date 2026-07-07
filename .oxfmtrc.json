@@ -13,5 +13,5 @@
   "proseWrap": "never",
   "embeddedLanguageFormatting": "auto",
   "sortPackageJson": false,
-  "ignorePatterns": ["OVERVIEW.md", "**/src/wasm/", "tools/agents/", "**/*.toml"]
+  "ignorePatterns": ["OVERVIEW.md", "agents/", "**/*.toml"]
 }

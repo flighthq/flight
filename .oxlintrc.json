@@ -18,7 +18,7 @@
     "**/worktrees/**",
     "**/docs/**",
     "incoming/**",
-    "tools/agents/**"
+    "agents/**"
   ],
   "rules": {
     "no-console": "warn",

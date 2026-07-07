@@ -1,1 +1,1 @@
-tools/agents/docs/index.md
+agents/index.md

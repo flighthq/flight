@@ -191,15 +191,15 @@ examples/runners/web/src/wasm/
 
 # assign:worktree outbound staging + worker assignment inbox (ephemeral host-transmitted guidance)
 /outgoing/
-/tools/agents/docs/assignments/
+/agents/assignments/
 
 # flat worker status drop (distributed into packages/<name>/status.md on ingest; not committed)
-/tools/agents/docs/status/
+/agents/status/
 
 # generated review/audit reports (ephemeral; ingested into packages/, then discarded)
 /reports/
-/tools/agents/docs/reviews/
+/agents/reviews/
 # retired proposal pipeline (June 2026; superseded by packages/ assessments + TODO.md)
-/tools/agents/proposals/
+/agents/proposals/
 
 .quimby

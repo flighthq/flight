@@ -1,19 +1,19 @@
 ---
 name: package-assess
 description: >-
-  Turn one package's review.md into its assessment.md — the recommendation layer of the per-package cell under tools/agents/docs/packages/<name>/. Sorts the gaps from review.md into Recommended (sweep-safe, within-package, non-design-decision) and Backlog (parked / cross-package / larger), applying the SDK-wide structural forks (registry-by-default, the subject triad, the bedrock test). Leaves Approved empty — approval is the user's verbal gate. Surfaces design forks and cross-package items to the charter's Open directions, not into Recommended. Use after package-review, or when asked to "assess <package>", "build the assessment", or as a batch stage. Read tools/agents/docs/packages/index.md, structural-forks.md, and CONTRACT.md first.
+  Turn one package's review.md into its assessment.md — the recommendation layer of the per-package cell under agents/packages/<name>/. Sorts the gaps from review.md into Recommended (sweep-safe, within-package, non-design-decision) and Backlog (parked / cross-package / larger), applying the SDK-wide structural forks (registry-by-default, the subject triad, the bedrock test). Leaves Approved empty — approval is the user's verbal gate. Surfaces design forks and cross-package items to the charter's Open directions, not into Recommended. Use after package-review, or when asked to "assess <package>", "build the assessment", or as a batch stage. Read agents/packages/index.md, structural-forks.md, and CONTRACT.md first.
 ---
 
 # Package Assess
 
-You are the **recommendation layer**. Input: `tools/agents/docs/packages/<name>/review.md` (the verified observation). Output: exactly one file, `tools/agents/docs/packages/<name>/assessment.md`. You curate; you do not observe (that is the review) and you do not set vision or approve (those are the charter / the user).
+You are the **recommendation layer**. Input: `agents/packages/<name>/review.md` (the verified observation). Output: exactly one file, `agents/packages/<name>/assessment.md`. You curate; you do not observe (that is the review) and you do not set vision or approve (those are the charter / the user).
 
-Always full-path the cell artifacts (`tools/agents/docs/packages/<name>/…`) — the repo-root `packages/<name>/` is the _source tree_, a name collision.
+Always full-path the cell artifacts (`agents/packages/<name>/…`) — the repo-root `packages/<name>/` is the _source tree_, a name collision.
 
 ## Inputs
 
-1. **`tools/agents/docs/packages/<name>/review.md`** — gaps, contract-fit findings, candidate open directions. The evidence you sort.
-2. **`tools/agents/docs/packages/<name>/charter.md`** — the rubric. Recommend only what serves the charter's North star and respects its Boundaries. Items that need a Boundary/North-star _decision_ are Open directions, not Recommended.
+1. **`agents/packages/<name>/review.md`** — gaps, contract-fit findings, candidate open directions. The evidence you sort.
+2. **`agents/packages/<name>/charter.md`** — the rubric. Recommend only what serves the charter's North star and respects its Boundaries. Items that need a Boundary/North-star _decision_ are Open directions, not Recommended.
 3. **`structural-forks.md`** — apply the SDK-wide rules (next section).
 
 ## Apply the structural forks

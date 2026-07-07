@@ -9,13 +9,13 @@
 //            missing. Writes a Bronze/Silver/Gold spec of what that package would represent.
 //
 // PREREQUISITE: run `breadth-and-depth-review` first — this workflow reads the docs it produced
-// under <root>/tools/agents/docs/reviews/{depth,breadth}/. The MISSING list below was harvested from
+// under <root>/agents/reviews/{depth,breadth}/. The MISSING list below was harvested from
 // those breadth reviews' "Missing or too-thin packages" sections (pure enrichments of existing
 // packages were dropped — Pass 1 already covers them).
 //
 // Output (each agent writes its own file):
-//   <root>/tools/agents/docs/reviews/maturation/depth/<pkg>.md
-//   <root>/tools/agents/docs/reviews/maturation/breadth/<name>.md
+//   <root>/agents/reviews/maturation/depth/<pkg>.md
+//   <root>/agents/reviews/maturation/breadth/<name>.md
 // Returns { depth[], breadth[] } summaries; build maturation/index.md from those after the run.
 //
 // HOW TO RUN
@@ -26,7 +26,7 @@
 //   • args.root      — absolute worktree root (per-checkout override).
 //   • args.packages  — package short-names for Pass 1 (regen list: see breadth-and-depth-review.js).
 //   • args.missing   — Pass-2 specs, each { name, scope, by }. Re-harvest after a new review run:
-//       for f in tools/agents/docs/reviews/breadth/*.md; do
+//       for f in agents/reviews/breadth/*.md; do
 //         awk '/^## Missing or too-thin packages/{f=1;next}/^## /{f=0}f' "$f"; done
 //   • Retune the TIERS / CONVENTIONS strings or the depth/breadth prompt templates and doc sections.
 //
@@ -47,7 +47,7 @@ export const meta = {
 };
 
 const ROOT = (args && args.root) || '/home/joshua/Development/flight/worktrees/review';
-const REVIEWS = ROOT + '/tools/agents/docs/reviews';
+const REVIEWS = ROOT + '/agents/reviews';
 const OUT_DEPTH = REVIEWS + '/maturation/depth';
 const OUT_BREADTH = REVIEWS + '/maturation/breadth';
 
@@ -449,7 +449,7 @@ function depthMatPrompt(name) {
       ' && npm run api ' +
       name +
       '`).',
-    '3. The Package Map entry in ' + ROOT + '/tools/agents/docs/index.md for intended scope.',
+    '3. The Package Map entry in ' + ROOT + '/agents/index.md for intended scope.',
     '',
     'Task: lay out how to mature this package across three tiers.',
     TIERS,
@@ -474,7 +474,7 @@ function breadthMatPrompt(p) {
     'Inputs for context:',
     '1. The Package Map + architecture + design rules in ' +
       ROOT +
-      '/tools/agents/docs/index.md (and rust/index.md for the Rust mirror).',
+      '/agents/index.md (and rust/index.md for the Rust mirror).',
     '2. The breadth reviews under ' + REVIEWS + '/breadth/ from the requesting perspectives, for the rationale.',
     '3. Spot-check neighboring existing packages (e.g. similar -formats or backend-seam packages) for the house style; you may run `cd ' +
       ROOT +

@@ -31,7 +31,7 @@ jobs:
             code:
               - '**'
               - '!**/*.md'
-              - '!tools/agents/docs/**'
+              - '!agents/**'
 
   build-check:
     name: Build preflight

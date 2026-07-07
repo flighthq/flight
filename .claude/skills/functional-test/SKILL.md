@@ -96,4 +96,4 @@ Logs land in `logs.jsonl` after capture; the harness installs the capture sink b
 4. When correct, set the baseline: `npm run capture:functional:baseline -- --filter={testName}`.
 5. Commit `tools/baselines/functional/{testName}/` (the `baseline.sha256` hash files; screenshots are gitignored).
 
-The headless pass/fail gate that CI runs for these tests is `npm run test:functional` (its `smoke` / `parity` / `regression` legs) — your new test is discovered automatically. See `tools/agents/docs/conventions/npm-scripts.md` for that vocabulary, and the `visual-capture` skill for capture/watch detail.
+The headless pass/fail gate that CI runs for these tests is `npm run test:functional` (its `smoke` / `parity` / `regression` legs) — your new test is discovered automatically. See `agents/conventions/npm-scripts.md` for that vocabulary, and the `visual-capture` skill for capture/watch detail.
