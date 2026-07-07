@@ -58,6 +58,7 @@ use flighthq_render::{RenderStateId, RenderStateStore, prepare_scene_render};
 use flighthq_render_gl::GlRenderState;
 use flighthq_scene::{SceneArena, get_scene_node_world_matrix};
 use flighthq_types::camera::Camera;
+use flighthq_types::classic_material::{BlinnPhongMaterial, LambertMaterial, PhongMaterial};
 use flighthq_types::geometry::{Matrix3, Matrix3Like, Matrix4, Matrix4Like};
 use flighthq_types::kind::KindId;
 use flighthq_types::material::Material;
@@ -69,6 +70,10 @@ use flighthq_types::pbr_extension_material::{
 };
 use flighthq_types::pbr_material::StandardPbrMaterial;
 use flighthq_types::scene_render::{SceneLightBlock, SceneLights, SceneRenderProxy};
+use flighthq_types::unlit_material::{
+    DepthMaterial, EmissiveMaterial, MatcapMaterial, NormalMaterial, ToonMaterial, UnlitMaterial,
+    VertexColorMaterial, WireframeMaterial,
+};
 use glow::HasContext;
 
 use crate::gl_mesh_material_registry::GlMeshMaterialRenderer;
@@ -403,6 +408,39 @@ fn widen_mesh_material(material: Option<&dyn Material>) -> Option<&dyn MeshMater
     if let Some(m) = any.downcast_ref::<TransmissionVolumePbrMaterial>() {
         return Some(m);
     }
+    if let Some(m) = any.downcast_ref::<LambertMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<BlinnPhongMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<PhongMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<ToonMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<MatcapMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<NormalMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<DepthMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<WireframeMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<EmissiveMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<UnlitMaterial>() {
+        return Some(m);
+    }
+    if let Some(m) = any.downcast_ref::<VertexColorMaterial>() {
+        return Some(m);
+    }
     None
 }
 
@@ -539,5 +577,17 @@ mod tests {
         let dynamic: &dyn Material = &pbr;
         assert!(widen_mesh_material(Some(dynamic)).is_some());
         assert!(widen_mesh_material(None).is_none());
+    }
+
+    #[test]
+    fn widen_mesh_material_downcasts_a_base_unlit_material() {
+        // A stored base (non-PBR) material also widens to the &dyn MeshMaterial a
+        // renderer consumes, and reaches its concrete accessor through the widened
+        // handle (the base half of the downcast chain).
+        let unlit = flighthq_materials::unlit_materials::create_unlit_material(&Default::default());
+        let dynamic: &dyn Material = &unlit;
+        let widened = widen_mesh_material(Some(dynamic));
+        assert!(widened.is_some());
+        assert!(widened.unwrap().as_unlit().is_some());
     }
 }
