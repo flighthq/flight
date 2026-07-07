@@ -10,13 +10,16 @@ import { workspacePackages } from '../../scripts/workspaces';
 const BACKENDS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 
 interface ReferenceTest {
+  // Slash-qualified row id: `<framework>/<corpus>/<case>`.
   name: string;
+  dir: string;
   // Column ids of the form `<library>:<renderer>` (e.g. openfl:webgl, flight:canvas).
   renderers: string[];
 }
 
 const projectRoot = resolve(__dirname, '../..');
 const referenceDir = join(projectRoot, 'reference');
+const referenceFrameworksDir = join(referenceDir, 'frameworks');
 // Suite render assets: the manifest is colocated here (tools/reference/assets.manifest.json) and
 // the downloaded pool resolves to the shared cache (.cache/assets/reference) — or, when the cache
 // is disabled, to public/assets. resolveAssetTarget keeps this in lockstep with the downloader.
@@ -33,13 +36,16 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
   '.mp3': 'audio/mpeg',
+  '.mp4': 'video/mp4',
   '.wav': 'audio/wav',
   '.ogg': 'audio/ogg',
+  '.ogv': 'video/ogg',
   '.json': 'application/json',
   '.ttf': 'font/ttf',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.utf8': 'text/plain; charset=utf-8',
+  '.webm': 'video/webm',
 };
 
 function splitFirst(str: string, sep: string): [string, string] {
@@ -53,6 +59,17 @@ function splitFirst(str: string, sep: string): [string, string] {
 // from the segment.
 function routeSegment(column: string): string {
   return column.replace(':', '-');
+}
+
+function decodeModuleName(name: string): string {
+  return name
+    .split('~')
+    .map((part) => decodeURIComponent(part))
+    .join('/');
+}
+
+function encodeModuleName(name: string): string {
+  return name.split('/').map(encodeURIComponent).join('~');
 }
 
 // Columns contributed by one library subdir of a reference test, discovered by filename:
@@ -86,20 +103,45 @@ function orderLibraries(libs: string[]): string[] {
 }
 
 function discoverTests(): ReferenceTest[] {
-  if (!existsSync(referenceDir)) return [];
-  return readdirSync(referenceDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && d.name !== '_harness')
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name }) => {
-      const testDir = join(referenceDir, name);
-      const libs = orderLibraries(
-        readdirSync(testDir, { withFileTypes: true })
-          .filter((d) => d.isDirectory())
-          .map((d) => d.name),
-      );
-      return { name, renderers: libs.flatMap((lib) => libraryColumns(testDir, lib)) };
-    })
-    .filter((t) => t.renderers.length > 0);
+  if (!existsSync(referenceFrameworksDir)) return [];
+  const tests: ReferenceTest[] = [];
+  const frameworks = readdirSync(referenceFrameworksDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  for (const framework of frameworks) {
+    const frameworkDir = join(referenceFrameworksDir, framework.name);
+    const corpora = readdirSync(frameworkDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== 'harness')
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    for (const corpus of corpora) {
+      const corpusDir = join(frameworkDir, corpus.name);
+      const cases = readdirSync(corpusDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      for (const testCase of cases) {
+        const testDir = join(corpusDir, testCase.name);
+        const libs = orderLibraries(
+          readdirSync(testDir, { withFileTypes: true })
+            .filter((d) => d.isDirectory())
+            .map((d) => d.name),
+        );
+        tests.push({
+          name: `${framework.name}/${corpus.name}/${testCase.name}`,
+          dir: testDir,
+          renderers: libs.flatMap((lib) => libraryColumns(testDir, lib)),
+        });
+      }
+    }
+  }
+
+  return tests.filter((t) => t.renderers.length > 0);
+}
+
+function testDirForName(name: string): string {
+  return join(referenceFrameworksDir, ...name.split('/'));
 }
 
 // The module imported for a column's rendered page. An openfl `app.<r>.ts` and a bare `render.<r>.ts`
@@ -107,7 +149,7 @@ function discoverTests(): ReferenceTest[] {
 // indirection so it carries `?render=<r>` and its `@ft/render` / `./render` imports resolve per backend.
 function entryModuleSource(name: string, column: string): string | null {
   const [lib, r] = splitFirst(column, ':');
-  const srcDir = join(referenceDir, name, lib, 'src');
+  const srcDir = join(testDirForName(name), lib, 'src');
   if (existsSync(join(srcDir, `app.${r}.ts`))) return join(srcDir, `app.${r}.ts`);
   if (existsSync(join(srcDir, 'app.ts'))) return `___ref___${name}:${lib}:${r}`;
   if (existsSync(join(srcDir, `render.${r}.ts`))) return join(srcDir, `render.${r}.ts`);
@@ -149,6 +191,7 @@ function buildEntryHtml(name: string, column: string, scriptSrc: string, assetBa
   <meta charset="UTF-8" />
   <base href="${assetBase}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
   <title>${name} · ${column}</title>
   <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: sans-serif; font-size: 16px; overflow: hidden; }</style>
   <script>
@@ -181,7 +224,8 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
         const input: Record<string, string> = { main: resolve(__dirname, 'index.html') };
         for (const test of tests) {
           for (const column of test.renderers) {
-            input[`tests/${test.name}/${routeSegment(column)}/index`] = `virtual:ref-entry:${test.name}:${column}`;
+            input[`tests/${test.name}/${routeSegment(column)}/index`] =
+              `virtual:ref-entry:${encodeModuleName(test.name)}:${column}`;
           }
         }
         return {
@@ -192,7 +236,8 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
                 entryFileNames(chunk) {
                   const id = chunk.facadeModuleId;
                   if (id?.startsWith('\0virtual:ref-entry:')) {
-                    const [name, column] = splitFirst(id.slice('\0virtual:ref-entry:'.length), ':');
+                    const [nameKey, column] = splitFirst(id.slice('\0virtual:ref-entry:'.length), ':');
+                    const name = decodeModuleName(nameKey);
                     return `tests/${name}/${routeSegment(column)}/index.js`;
                   }
                   return 'assets/[name]-[hash].js';
@@ -215,7 +260,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
         if (source.startsWith('___ref___')) {
           const [name, libRest] = splitFirst(source.slice('___ref___'.length), ':');
           const [lib, render] = splitFirst(libRest, ':');
-          return join(referenceDir, name, lib, 'src', 'app.ts') + '?render=' + render;
+          return join(testDirForName(name), lib, 'src', 'app.ts') + '?render=' + render;
         }
 
         if (source === '@ft/render' && importer) {
@@ -254,7 +299,8 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
         }
 
         if (id.startsWith('\0virtual:ref-entry:')) {
-          const [name, column] = splitFirst(id.slice('\0virtual:ref-entry:'.length), ':');
+          const [nameKey, column] = splitFirst(id.slice('\0virtual:ref-entry:'.length), ':');
+          const name = decodeModuleName(nameKey);
           const moduleSrc = entryModuleSource(name, column);
           if (!moduleSrc) return null;
           const [lib, renderer] = splitFirst(column, ':');
@@ -272,7 +318,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
             return [
               ...head,
               `const __testModule = await import(${JSON.stringify(moduleSrc)});`,
-              `if (window['__flightCapture']) {`,
+              `if (window['__flightCapture'] && window['__flightCaptureVerify'] !== false) {`,
               `  const { runRenderVerification } = await import(${JSON.stringify(join(harnessDir, 'verify.ts'))});`,
               `  await runRenderVerification(__testModule, ${JSON.stringify(renderer)});`,
               `}`,
@@ -287,7 +333,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
       generateBundle(_, bundle) {
         for (const test of tests) {
           for (const column of test.renderers) {
-            const entryId = `\0virtual:ref-entry:${test.name}:${column}`;
+            const entryId = `\0virtual:ref-entry:${encodeModuleName(test.name)}:${column}`;
             const chunk = Object.values(bundle).find(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (c) => c.type === 'chunk' && (c as any).facadeModuleId === entryId,
@@ -308,14 +354,16 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
         const pool = join(outDir, 'test-assets');
         const sources = [assetsPool];
         for (const test of tests) {
-          const testDir = join(referenceDir, test.name);
-          for (const lib of readdirSync(testDir, { withFileTypes: true }).filter((d) => d.isDirectory())) {
-            sources.push(join(testDir, lib.name, 'public'));
+          for (const lib of readdirSync(test.dir, { withFileTypes: true }).filter((d) => d.isDirectory())) {
+            sources.push(join(test.dir, lib.name, 'public'));
           }
-          sources.push(join(testDir, 'public'));
+          sources.push(join(test.dir, 'public'));
         }
         for (const src of sources) {
-          if (existsSync(src)) copyDirectoryContents(src, pool);
+          if (existsSync(src)) {
+            copyDirectoryContents(src, pool);
+            copyDirectoryContents(src, join(pool, 'assets'));
+          }
         }
       },
     },
@@ -340,21 +388,33 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
           const urlPath = (req.url ?? '/').split('?')[0];
           const parts = urlPath.split('/').filter(Boolean);
           if (parts[0] !== 'tests' || parts.length < 3) return next();
-          const [, name, segment, ...assetParts] = parts;
 
-          const test = discoverTests().find(
-            (t) => t.name === name && t.renderers.some((r) => routeSegment(r) === segment),
-          );
+          let test: ReferenceTest | undefined;
+          let column = '';
+          let assetParts: string[] = [];
+          for (let i = 2; i < parts.length; i++) {
+            const name = parts.slice(1, i).join('/');
+            const segment = parts[i];
+            const candidate = discoverTests().find(
+              (t) => t.name === name && t.renderers.some((r) => routeSegment(r) === segment),
+            );
+            if (!candidate) continue;
+            test = candidate;
+            column = candidate.renderers.find((r) => routeSegment(r) === segment)!;
+            assetParts = parts.slice(i + 1);
+            break;
+          }
           if (!test) return next();
-          const column = test.renderers.find((r) => routeSegment(r) === segment)!;
           const [lib] = splitFirst(column, ':');
+          const name = test.name;
 
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
             const candidates = [
-              join(referenceDir, name, lib, 'public', assetRel),
-              join(referenceDir, name, 'public', assetRel),
+              join(test.dir, lib, 'public', assetRel),
+              join(test.dir, 'public', assetRel),
               join(assetsPool, assetRel),
+              assetRel.startsWith('assets/') ? join(assetsPool, assetRel.slice('assets/'.length)) : '',
             ];
             for (const candidate of candidates) {
               if (existsSync(candidate)) {
@@ -371,6 +431,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
   <title>${name} · ${column}</title>
   <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: sans-serif; font-size: 16px; overflow: hidden; }</style>
   <script>
@@ -402,7 +463,7 @@ function referenceTestsPlugin(tests: ReferenceTest[]): Plugin[] {
 <body>
   <div id="app"></div>
   <script type="module" src="/@vite/client"></script>
-  <script type="module" src="/@id/__x00__virtual:ref-entry:${name}:${column}"></script>
+  <script type="module" src="/@id/__x00__virtual:ref-entry:${encodeModuleName(name)}:${column}"></script>
 </body>
 </html>`;
           res.setHeader('Content-Type', 'text/html; charset=utf-8');

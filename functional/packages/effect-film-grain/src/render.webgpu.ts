@@ -19,7 +19,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same film-grain intent as render.webgl.ts: per-pixel noise over a flat

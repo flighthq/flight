@@ -19,7 +19,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu SMAA: single-pass approximation antialiasing the full frame's jagged edges.

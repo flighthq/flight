@@ -19,7 +19,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same full-frame hueSaturation grade as render.webgl.ts: rotates hue 90 degrees and boosts saturation.

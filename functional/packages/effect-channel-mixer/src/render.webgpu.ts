@@ -19,7 +19,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same full-frame channelMixer grade as render.webgl.ts: rotates the RGB channels (R<-B, G<-R, B<-G) via a 3x4 row-major mix matrix.

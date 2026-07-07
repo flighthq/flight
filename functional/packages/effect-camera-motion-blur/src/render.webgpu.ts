@@ -19,7 +19,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column. Wgpu has no velocity G-buffer here, so the effect is color-only/uniform:

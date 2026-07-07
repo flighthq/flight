@@ -45,8 +45,8 @@ import {
   renderGlBackground,
   renderGlDisplayObject,
 } from '@flighthq/sdk';
-
 import { registerFunctionalTarget } from '@ft/verify';
+
 import type { NativeInnerShadowSpec, ParityTarget } from './parity';
 
 export function createParityTarget(width: number, height: number, background: number): ParityTarget {

@@ -1,0 +1,8 @@
+{
+  "name": "openfl-sample-addinganimation-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  }
+}

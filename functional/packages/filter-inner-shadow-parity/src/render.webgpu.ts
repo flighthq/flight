@@ -27,8 +27,8 @@ import {
   renderWgpuDisplayObject,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerFunctionalTarget } from '@ft/verify';
+
 import type { NativeInnerShadowSpec, ParityTarget } from './parity';
 
 export async function createParityTarget(width: number, height: number, background: number): Promise<ParityTarget> {

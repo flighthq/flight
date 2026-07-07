@@ -1,0 +1,11 @@
+{
+  "name": "openfl-sample-batchloading-flight",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/sdk": "*"
+  },
+  "renderers": [
+    "canvas"
+  ]
+}

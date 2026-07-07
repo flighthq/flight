@@ -13,7 +13,6 @@ import {
   renderWgpuBackground,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same forward-lit sphere as render.webgl.ts. Wgpu state init is async.

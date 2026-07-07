@@ -29,7 +29,6 @@ import {
   ShapeKind,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for per-object motion blur, the mirror of render.webgl.ts. A static screenshot has
