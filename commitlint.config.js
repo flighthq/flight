@@ -1,6 +1,6 @@
 // Commit-message rules for the Flight monorepo, enforced by the husky
 // `.husky/commit-msg` hook (`commitlint --edit`). The authoritative spec for
-// these rules is tools/agents/docs/conventions/commits.md — keep them in sync.
+// these rules is agents/conventions/commits.md — keep them in sync.
 //
 // Format: `type(scope): subject` (Conventional Commits).
 //   - type  = WHAT KIND of change, from the closed set below.

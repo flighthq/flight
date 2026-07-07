@@ -61,7 +61,7 @@ The test: **remove the folder — is the bare filename self-describing?**
 
 TS `@flighthq/<name>` is authoritative; Rust `flighthq-<name>` conforms.
 
-- Package→crate name identity unless in the documented rename/divergence map (`tools/agents/docs/rust/conformance.md`, `scripts/rust-conformance.ts`).
+- Package→crate name identity unless in the documented rename/divergence map (`agents/rust/conformance.md`, `scripts/rust-conformance.ts`).
 - Function names map 1:1 camelCase→snake_case with the full type word preserved; flag missing/extra/abbreviated ports.
 - File basenames track too (`transform2D.ts` ↔ `transform2d.rs`).
 - `out`/sentinel/teardown conventions carry across (`&mut`, `Option`, `dispose_`/`destroy_`…).

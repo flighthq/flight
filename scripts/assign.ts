@@ -9,7 +9,7 @@
  * agents, each in its own worktree. The reviewer agent lives in a sandbox and must never write across
  * a worktree boundary, so it only *stages* briefs in its own tree under `outgoing/<target>/`. This
  * command runs on the host — where the sibling worktrees are reachable — and *deposits* one target's
- * staged slice into that worktree's `tools/agents/docs/assignments/` inbox (the inbound twin of the
+ * staged slice into that worktree's `agents/assignments/` inbox (the inbound twin of the
  * flat `status/` outbound tray). The per-target staging directory is the routing: a worker only ever
  * sees its own assignments, never another's.
  *
@@ -89,7 +89,7 @@ const inbox = path.join(args.target, INBOX_REL);
 // Sanity-check the destination is a Flight worktree before depositing, so a wrong path fails loudly
 // instead of scattering files into an unrelated directory.
 if (!fs.existsSync(path.join(args.target, 'tools', 'agents', 'docs'))) {
-  console.error(`Not a Flight worktree (no tools/agents/docs): ${args.target}`);
+  console.error(`Not a Flight worktree (no agents): ${args.target}`);
   process.exit(1);
 }
 

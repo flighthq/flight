@@ -18,10 +18,10 @@
 // the gates miss.
 //
 // Output (each agent writes its own file):
-//   <root>/tools/agents/docs/reviews/alignment/api/<pkg>.md        + api/_consistency.md
-//   <root>/tools/agents/docs/reviews/alignment/filenames/<pkg>.md  + filenames/_global.md
-//   <root>/tools/agents/docs/reviews/alignment/deps/<pkg>.md       + deps/_graph.md
-//   <root>/tools/agents/docs/reviews/alignment/ts-rust/<pkg>.md    + ts-rust/_divergence.md
+//   <root>/agents/reviews/alignment/api/<pkg>.md        + api/_consistency.md
+//   <root>/agents/reviews/alignment/filenames/<pkg>.md  + filenames/_global.md
+//   <root>/agents/reviews/alignment/deps/<pkg>.md       + deps/_graph.md
+//   <root>/agents/reviews/alignment/ts-rust/<pkg>.md    + ts-rust/_divergence.md
 // Returns { findings[] } summaries; build alignment/index.md from those after the run.
 //
 // COST: all four dimensions ≈ (86×3 + 78 + 4 synthesis) ≈ 340 agents. Scope down with:
@@ -51,7 +51,7 @@ export const meta = {
 };
 
 const ROOT = (args && args.root) || '/home/joshua/Development/flight/worktrees/review';
-const OUT = ROOT + '/tools/agents/docs/reviews/alignment';
+const OUT = ROOT + '/agents/reviews/alignment';
 
 const DEFAULT_PACKAGES = [
   'application',
@@ -216,7 +216,7 @@ const DEPS_CHECKLIST =
 
 const TSRUST_CHECKLIST =
   'TS↔Rust alignment checklist (TS @flighthq/<name> is upstream/authoritative; Rust flighthq-<name> conforms). Run `npm run rust:conformance` first; this review adds the judgment the script cannot see:\n' +
-  '- Package→crate name is identity (@flighthq/<name> → flighthq-<name>) unless the pair is in the documented rename/divergence map (tools/agents/docs/rust/conformance.md + scripts/rust-conformance.ts). Flag undocumented name divergence.\n' +
+  '- Package→crate name is identity (@flighthq/<name> → flighthq-<name>) unless the pair is in the documented rename/divergence map (agents/rust/conformance.md + scripts/rust-conformance.ts). Flag undocumented name divergence.\n' +
   '- Exported function names map 1:1 with camelCase→snake_case and the FULL type word preserved (getDisplayObjectBounds → get_display_object_bounds). Flag missing ports, renamed-without-reason, abbreviated, or extra Rust functions not present upstream.\n' +
   '- File names track too (nice-to-have): TS transform2D.ts ↔ Rust transform2d.rs; same domain/object basename. Flag files whose Rust basename does not track its TS counterpart.\n' +
   '- Out-param / sentinel / teardown-verb conventions carry across (out → &mut, null → Option, dispose_/destroy_/acquire_/release_ preserved).\n' +
@@ -244,7 +244,7 @@ function perPackagePrompt(dim, name) {
     '` for the compact exported signatures. ' +
     'The authoritative conventions are in ' +
     ROOT +
-    '/tools/agents/docs/index.md (and rust/index.md, rust/conformance.md for ts-rust). ';
+    '/agents/index.md (and rust/index.md, rust/conformance.md for ts-rust). ';
   if (dim === 'api') {
     return (
       'AUDIT the EXPORTED API of @flighthq/' +
@@ -343,7 +343,7 @@ function rsPackagePrompt(rs) {
     ').\n\n' +
     'A `-rs` package must be SUBSTITUTABLE for its base at the package seam (see the Mixing section of ' +
     ROOT +
-    '/tools/agents/docs/rust/index.md): it must export the SAME public API — identical function names AND signatures — as the base. This is the single most important conformance target, because a drop-in that drifts from its base is silently broken for every consumer.\n\n' +
+    '/agents/rust/index.md): it must export the SAME public API — identical function names AND signatures — as the base. This is the single most important conformance target, because a drop-in that drifts from its base is silently broken for every consumer.\n\n' +
     'Run `cd ' +
     ROOT +
     ' && npm run mixing:conformance` (the machine gate that diffs the two signature sets) and read its output; then add the judgment it cannot see.\n\n' +
@@ -382,7 +382,7 @@ function synthesisPrompt(dim) {
       ROOT +
       ' && npm run api:json` (all exported signatures at once) and the conventions in ' +
       ROOT +
-      '/tools/agents/docs/index.md, look for inconsistencies that are only visible GLOBALLY: the same concept named with different verbs across packages (create vs make; copy vs set vs assign), allocation-verb inconsistency, get*/has*/is* drift, out-param ordering that differs between packages, and globally-colliding exported names from package roots.\n\n' +
+      '/agents/index.md, look for inconsistencies that are only visible GLOBALLY: the same concept named with different verbs across packages (create vs make; copy vs set vs assign), allocation-verb inconsistency, get*/has*/is* drift, out-param ordering that differs between packages, and globally-colliding exported names from package roots.\n\n' +
       API_CHECKLIST +
       '\n\nWrite Markdown to EXACTLY ' +
       OUT +
@@ -415,7 +415,7 @@ function synthesisPrompt(dim) {
   return (
     'TS↔Rust DIVERGENCE-MAP audit. Compare the actual package set vs crate set against the documented divergence map (' +
     ROOT +
-    '/tools/agents/docs/rust/conformance.md and scripts/rust-conformance.ts).\n' +
+    '/agents/rust/conformance.md and scripts/rust-conformance.ts).\n' +
     'TS-only packages (should have NO crate): ' +
     TS_ONLY.join(', ') +
     '.\n' +

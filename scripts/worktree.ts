@@ -198,7 +198,7 @@ function packageBuckets(
     .filter(Boolean)
     .map((p) => p.replace(/^packages\//, ''));
   const statusDocs = new Set(
-    gitMaybe(target, ['ls-tree', '-r', '--name-only', tree, 'tools/agents/docs/status/'])
+    gitMaybe(target, ['ls-tree', '-r', '--name-only', tree, 'agents/status/'])
       .split('\n')
       .filter((p) => p.endsWith('.md'))
       .map((p) => path.basename(p, '.md')),
@@ -290,10 +290,10 @@ Base: ${base.ref} (${base.sha.slice(0, 9)}). Branch: ${branch}.${dirty ? ' Worki
 - \`committed.patch\` / \`working.patch\` — split the delta into committed vs not-yet-committed (source only).
 - \`base/\` vs \`head/\` — full source trees before and after, for reading unchanged neighbors in context.
 - \`MANIFEST.json\` › \`packages\` — per-package change counts + which have a status doc; the ingest index.
-- **Status docs:** \`head/tools/agents/docs/status/<pkg>.md\` are the worker's per-package handoffs.
+- **Status docs:** \`head/agents/status/<pkg>.md\` are the worker's per-package handoffs.
 - **API surface:** \`head/packages/<pkg>/dist/*.d.ts\` is the realized public API (declarations only).
 
-Review against the per-package charter and contract in \`head/tools/agents/docs/packages/<pkg>/\`.
+Review against the per-package charter and contract in \`head/agents/packages/<pkg>/\`.
 Findings should reference \`${headSha.slice(0, 9)}:<path>\` plus a quoted snippet (line numbers drift).
 `;
 fs.writeFileSync(path.join(bundleDir, 'README.md'), readme);

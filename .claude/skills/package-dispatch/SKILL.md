@@ -1,21 +1,21 @@
 ---
 name: package-dispatch
 description: >-
-  Turn blessed work into per-worker briefs staged under outgoing/<target-worktree>/<pkg>.md, ready for the host's `npm run assign:worktree <worktree>` to deposit into that worker's assignments/ inbox. Every brief carries the frozen scope (assessment.md › Approved items, verbatim), a target delta (current verdict/score → expected), an Acceptance section (checkable definition-of-done + the exact verify commands), stop-and-ask rules, and the reporting contract — so a worker's delivery is measurable against the promise on ingest, not taken on faith. Use when asked to "dispatch <package>", "brief the workers", "fan out the approved work", or after an approval session. Read tools/agents/docs/packages/index.md (the Dispatching section) and CONTRACT.md first.
+  Turn blessed work into per-worker briefs staged under outgoing/<target-worktree>/<pkg>.md, ready for the host's `npm run assign:worktree <worktree>` to deposit into that worker's assignments/ inbox. Every brief carries the frozen scope (assessment.md › Approved items, verbatim), a target delta (current verdict/score → expected), an Acceptance section (checkable definition-of-done + the exact verify commands), stop-and-ask rules, and the reporting contract — so a worker's delivery is measurable against the promise on ingest, not taken on faith. Use when asked to "dispatch <package>", "brief the workers", "fan out the approved work", or after an approval session. Read agents/packages/index.md (the Dispatching section) and CONTRACT.md first.
 ---
 
 # Package Dispatch
 
-You are the **dispatch stage** — the outbound half of the worker loop. Input: one or more packages whose `assessment.md › Approved` ledger has unexecuted items (or a session in which the user is blessing scope right now). Output: one brief per package, staged at `outgoing/<target-worktree>/<pkg>.md` (repo root, gitignored). The host then runs `npm run assign:worktree <worktree-path>`, which deposits the slice into that worktree's `tools/agents/docs/assignments/` inbox. You never write across a worktree boundary — staging is the entire job.
+You are the **dispatch stage** — the outbound half of the worker loop. Input: one or more packages whose `assessment.md › Approved` ledger has unexecuted items (or a session in which the user is blessing scope right now). Output: one brief per package, staged at `outgoing/<target-worktree>/<pkg>.md` (repo root, gitignored). The host then runs `npm run assign:worktree <worktree-path>`, which deposits the slice into that worktree's `agents/assignments/` inbox. You never write across a worktree boundary — staging is the entire job.
 
 The problem this stage exists to solve: **the buyer thinks they blessed a 95% package and the worker delivers 10%.** The defense is that every brief is a _contract_, not a wish: frozen scope, a numeric target, checkable acceptance, and a reporting format the ingest review can verify line-by-line. A brief missing any of these is not ready to dispatch.
 
 ## Inputs
 
-1. `tools/agents/docs/packages/<name>/assessment.md` — the **Approved** ledger is the only self-authorizing scope. `Recommended` items may be included **only** when the user blesses them in this session (freeze them into `Approved` first, per CONTRACT.md's provenance stamp — that is the approval gate, and dispatch never bypasses it).
-2. `tools/agents/docs/packages/<name>/charter.md` — the worker's rubric; the brief links it and must not contradict it.
-3. `tools/agents/docs/packages/<name>/review.md` — the current verdict/score, the "before" of the target delta.
-4. `tools/agents/docs/packages/TODO.md` — for lane-sizing context (what else is adjacent).
+1. `agents/packages/<name>/assessment.md` — the **Approved** ledger is the only self-authorizing scope. `Recommended` items may be included **only** when the user blesses them in this session (freeze them into `Approved` first, per CONTRACT.md's provenance stamp — that is the approval gate, and dispatch never bypasses it).
+2. `agents/packages/<name>/charter.md` — the worker's rubric; the brief links it and must not contradict it.
+3. `agents/packages/<name>/review.md` — the current verdict/score, the "before" of the target delta.
+4. `agents/packages/TODO.md` — for lane-sizing context (what else is adjacent).
 
 ## Brief anatomy (all sections required)
 
@@ -35,7 +35,7 @@ target: { from: '<verdict> <score>', to: '<verdict> ~<score>' }
 
 ## Rubric
 
-Read first: tools/agents/docs/packages/<name>/charter.md (vision, Boundaries, Decisions) and review.md (current state). The charter wins any conflict with this brief — stop and ask instead of guessing.
+Read first: agents/packages/<name>/charter.md (vision, Boundaries, Decisions) and review.md (current state). The charter wins any conflict with this brief — stop and ask instead of guessing.
 
 ## Acceptance (definition of done)
 
@@ -51,11 +51,11 @@ Read first: tools/agents/docs/packages/<name>/charter.md (vision, Boundaries, De
 
 - No edits outside `packages/<name>/` (+ its colocated tests, + `@flighthq/types` only where the Scope explicitly says so).
 - No renames, removals, or new packages beyond the Scope.
-- A blocker or a discovered design fork goes to `tools/agents/docs/status/_QUESTIONS.md` — do not resolve it unilaterally, do not silently skip the item.
+- A blocker or a discovered design fork goes to `agents/status/_QUESTIONS.md` — do not resolve it unilaterally, do not silently skip the item.
 
 ## Reporting contract
 
-Write `tools/agents/docs/status/<name>.md` (flat tray — never into the cell): per Scope item, `done | partial | skipped(reason) | blocked(question)`, with file/test evidence for each `done`, plus a self-score against the target delta. Claims are verified line-by-line on ingest; unverifiable claims count as undelivered.
+Write `agents/status/<name>.md` (flat tray — never into the cell): per Scope item, `done | partial | skipped(reason) | blocked(question)`, with file/test evidence for each `done`, plus a self-score against the target delta. Claims are verified line-by-line on ingest; unverifiable claims count as undelivered.
 ```
 
 ## Rules

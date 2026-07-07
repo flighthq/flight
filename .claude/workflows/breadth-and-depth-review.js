@@ -12,8 +12,8 @@
 // The two fleets are independent and run concurrently in a single parallel() barrier.
 //
 // Output (each agent writes its own file):
-//   <root>/tools/agents/docs/reviews/depth/<package>.md
-//   <root>/tools/agents/docs/reviews/breadth/<perspective-key>.md
+//   <root>/agents/reviews/depth/<package>.md
+//   <root>/agents/reviews/breadth/<perspective-key>.md
 // The workflow returns { depth[], breadth[] } summaries; write an index.md from those after the run.
 //
 // HOW TO RUN
@@ -43,8 +43,8 @@ export const meta = {
 };
 
 const ROOT = (args && args.root) || '/home/joshua/Development/flight/worktrees/review';
-const DEPTH_DIR = ROOT + '/tools/agents/docs/reviews/depth';
-const BREADTH_DIR = ROOT + '/tools/agents/docs/reviews/breadth';
+const DEPTH_DIR = ROOT + '/agents/reviews/depth';
+const BREADTH_DIR = ROOT + '/agents/reviews/breadth';
 
 const DEFAULT_PACKAGES = [
   'application',
@@ -214,7 +214,7 @@ function depthPrompt(name) {
       '` for a compact signature list).',
     '2. Read the relevant entry in ' +
       ROOT +
-      '/tools/agents/docs/index.md (Package Map) for the intended scope. Note the project rule: every package should reach "AAA completeness" — canonical, industry-recognized scope and naming for its domain.',
+      '/agents/index.md (Package Map) for the intended scope. Note the project rule: every package should reach "AAA completeness" — canonical, industry-recognized scope and naming for its domain.',
     '3. Independently derive the CANONICAL feature set a mature, industry-standard library in THIS domain is expected to provide, then compare what exists against that bar. Be concrete and domain-specific (name the specific functions/features that are present vs missing).',
     '',
     'Judge depth only (do NOT judge whether other packages exist — that is a separate breadth review). Account for the entity/runtime + free-function + tree-shakable style; missing-by-design is different from missing-by-omission, so call out which.',
@@ -239,7 +239,7 @@ function breadthPrompt(p) {
     'Method:',
     '1. Read the Package Map and architecture in ' +
       ROOT +
-      '/tools/agents/docs/index.md (it lists every package with a one-line description). This is your map of the 1000-foot view.',
+      '/agents/index.md (it lists every package with a one-line description). This is your map of the 1000-foot view.',
     '2. The full package list is: ' + PACKAGES.join(', ') + '.',
     '3. You may spot-check a few package roots with `cd ' +
       ROOT +
