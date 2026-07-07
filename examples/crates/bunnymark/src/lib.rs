@@ -2,11 +2,9 @@
 //!
 //! The TypeScript original draws `wabbit_alpha.png` bitmap sprites through a
 //! texture atlas + quad batch: each "bunny" spawns at the top-left, falls under
-//! gravity, and bounces off the stage edges. The Rust/Wasm runner uses
-//! `ExampleSceneBehavior::BunnyMark` to render that browser behavior directly.
-//! Native still consumes `ExamplePrimitive`, so it gets a deterministic field of
-//! bunny-sized rectangles on the same 550x400 stage and cream background until
-//! native textured batching is wired.
+//! gravity, and bounces off the stage edges. Runners that support the behavior
+//! render that path through the Rust image/atlas/quad-batch APIs; legacy static
+//! harnesses can still consume the deterministic bunny-sized rectangles.
 
 use example_common::{ExamplePrimitive, ExampleScene, ExampleSceneBehavior};
 
