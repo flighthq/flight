@@ -1023,6 +1023,7 @@ name = "flighthq-filters-wgpu"
 version = "0.1.0"
 dependencies = [
  "flighthq-filters",
+ "flighthq-filters-math",
  "flighthq-render-wgpu",
  "pollster",
  "wgpu",
@@ -1393,7 +1394,13 @@ dependencies = [
 name = "flighthq-render"
 version = "0.1.0"
 dependencies = [
+ "flighthq-camera",
  "flighthq-geometry",
+ "flighthq-lighting",
+ "flighthq-materials",
+ "flighthq-mesh",
+ "flighthq-node",
+ "flighthq-scene",
  "flighthq-signals",
  "flighthq-types",
 ]
@@ -1422,6 +1429,7 @@ version = "0.1.0"
 dependencies = [
  "flighthq-animation",
  "flighthq-geometry",
+ "flighthq-mesh",
  "flighthq-node",
  "flighthq-types",
 ]

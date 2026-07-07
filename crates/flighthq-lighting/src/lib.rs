@@ -11,9 +11,11 @@
 
 pub mod ambient_light;
 pub mod area_light;
+pub mod color_from_kelvin;
 pub mod directional_light;
 pub mod environment;
 pub mod hemisphere_light;
+pub mod light_analysis;
 pub mod point_light;
 pub mod spot_light;
 
@@ -21,6 +23,7 @@ pub use ambient_light::{
     AmbientLightOptions, clone_ambient_light, create_ambient_light, get_ambient_light_kind,
 };
 pub use area_light::{AreaLightOptions, clone_area_light, create_area_light, get_area_light_kind};
+pub use color_from_kelvin::create_color_from_kelvin;
 pub use directional_light::{
     DirectionalLightOptions, clone_directional_light, create_directional_light,
     get_directional_light_kind,
@@ -31,6 +34,10 @@ pub use environment::{
 pub use hemisphere_light::{
     HemisphereLightOptions, clone_hemisphere_light, create_hemisphere_light,
     get_hemisphere_light_kind,
+};
+pub use light_analysis::{
+    get_light_influence_bounds, get_light_luminance, has_light_influence_on_bounds,
+    is_light_shadow_casting,
 };
 pub use point_light::{
     PointLightOptions, clone_point_light, create_point_light, get_point_light_kind,

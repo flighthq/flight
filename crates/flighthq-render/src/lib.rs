@@ -24,6 +24,7 @@ pub mod render_state;
 pub mod render_target;
 pub mod render_viewport;
 pub mod renderer;
+pub mod scene_render;
 pub mod text_format;
 pub mod transform2d;
 
@@ -85,6 +86,9 @@ pub use renderer::{
     copy_all_renderers_from_render_state, copy_renderers_from_render_state, noop_renderer_data,
     register_renderer,
 };
+
+// scene_render
+pub use scene_render::{SceneRenderList, pack_scene_light_block, prepare_scene_render};
 
 // text_format
 pub use text_format::compute_text_format_font_string;

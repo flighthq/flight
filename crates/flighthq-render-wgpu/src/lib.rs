@@ -22,36 +22,47 @@
 //!
 //! All registration is opt-in: no side effects occur at module load.
 
+pub mod adapter_capabilities;
 pub mod background;
 pub mod draw;
 pub mod element;
+pub mod fullscreen_pass;
 pub mod material_registry;
 pub mod render_state;
 pub mod render_target;
 pub mod render_target_pool;
 pub mod runtime_types;
+pub mod scissor;
 pub mod shader;
 pub mod shader_binding;
+pub mod shader_registry;
 pub mod surface;
 
 // ---------------------------------------------------------------------------
 // Top-level re-exports — the public API surface.
 // ---------------------------------------------------------------------------
 
+pub use adapter_capabilities::{WgpuAdapterCapabilities, get_wgpu_adapter_capabilities};
 pub use background::{render_wgpu_background, set_wgpu_frame_target_view, submit_wgpu_render_pass};
 pub use draw::{
-    WgpuTextureInfo, apply_wgpu_blend_mode, bind_wgpu_texture, build_wgpu_render_target_bind_group,
-    composite_wgpu_cached_texture, create_wgpu_texture, draw_wgpu_quad,
-    draw_wgpu_quad_with_transform, enable_wgpu_blend_mode_support, update_wgpu_texture,
+    WgpuTextureEntry, WgpuTextureInfo, apply_wgpu_blend_mode, bind_wgpu_texture,
+    build_wgpu_render_target_bind_group, composite_wgpu_cached_texture, create_wgpu_texture,
+    create_wgpu_texture_entry, draw_wgpu_quad, draw_wgpu_quad_with_transform,
+    enable_wgpu_blend_mode_support, submit_wgpu_quad_draw, update_wgpu_texture,
+    update_wgpu_texture_entry,
 };
 pub use element::{WgpuCanvasElementSize, resolve_wgpu_canvas_element_size};
+pub use fullscreen_pass::{
+    WgpuFullscreenPipeline, WgpuFullscreenUniformSetter, create_wgpu_fullscreen_pipeline,
+    destroy_wgpu_fullscreen_pipeline, draw_wgpu_fullscreen_pass,
+};
 pub use material_registry::{
     WgpuMaterialRenderer, get_wgpu_material_renderer, register_wgpu_material_renderer,
     resolve_wgpu_material_renderer,
 };
 pub use render_state::{
-    WgpuClipForm, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime, WgpuRenderTarget,
-    WgpuRenderTargetStackEntry, WgpuRendererSlot, WgpuScissorRect, WgpuViewport,
+    WgpuClipForm, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime, WgpuRenderStats,
+    WgpuRenderTarget, WgpuRenderTargetStackEntry, WgpuRendererSlot, WgpuScissorRect, WgpuViewport,
     create_wgpu_render_state, create_wgpu_render_state_runtime, destroy_wgpu_render_state,
     get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut, is_wgpu_supported,
 };
@@ -67,6 +78,7 @@ pub use runtime_types::{
     SPRITE_INSTANCE_FLOATS, WgpuQuadBatchResources, WgpuRichTextOverlay, WgpuShapeMesh,
     WgpuShapeMeshCacheEntry, WgpuSpriteBatchRuntime, WgpuVelocityPipeline, WgpuVelocityWriter,
 };
+pub use scissor::{apply_wgpu_scissor_rect, pop_wgpu_scissor_rect, push_wgpu_scissor_rect};
 pub use shader::{
     UNIFORM_BYTE_SIZE, WgpuBindGroupLayouts, WgpuBitmapShader, WgpuStencilMode,
     build_wgpu_stencil_face_state, create_wgpu_bind_group_layouts, create_wgpu_pipeline_layout,
@@ -75,6 +87,7 @@ pub use shader::{
     write_wgpu_matrix_only_uniforms, write_wgpu_quad_uniforms,
 };
 pub use shader_binding::{get_wgpu_shader, resolve_wgpu_shader, set_wgpu_shader};
+pub use shader_registry::register_wgpu_bitmap_shader;
 pub use surface::{
     acquire_wgpu_frame_capture_texture, enable_wgpu_frame_capture, encode_wgpu_frame_capture,
 };

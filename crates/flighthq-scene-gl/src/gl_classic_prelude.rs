@@ -6,7 +6,7 @@ use flighthq_render_gl::GlRenderState;
 use glow::HasContext;
 
 use crate::gl_lit_program::{GlLitProgram, resolve_gl_lit_locations};
-use crate::gl_mesh_program::{GlMeshProgram, compile_gl_program, ensure_gl_scene_program};
+use crate::gl_mesh_program::{compile_gl_program, ensure_gl_scene_program};
 use crate::gl_scene_runtime::GlSceneRuntime;
 
 /// One classic shading model.
@@ -86,7 +86,7 @@ pub fn ensure_gl_classic_program(
     key: &GlClassicDefineKey,
 ) -> GlClassicProgram {
     let cache_key = format!("classic:{}", build_gl_classic_define_key(key));
-    let base = ensure_gl_scene_program(state, scene, &cache_key, |gl| {
+    let _base = ensure_gl_scene_program(state, scene, &cache_key, |gl| {
         let p = compile_gl_classic_program(gl, key);
         p.lit.base.clone()
     });

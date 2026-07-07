@@ -8,7 +8,7 @@ use flighthq_render_wgpu::WgpuRenderState;
 
 use crate::wgpu_mesh_pipeline::{
     CreateWgpuMeshPipelineOptions, WGPU_MESH_PRELUDE_WGSL, WgpuMeshPipeline,
-    create_wgpu_mesh_pipeline, ensure_wgpu_placeholder_texture_view, ensure_wgpu_scene_pipeline,
+    create_wgpu_mesh_pipeline, ensure_wgpu_placeholder_texture_view,
 };
 use crate::wgpu_scene_runtime::{WgpuMaterialBinding, WgpuSceneRuntime};
 
@@ -26,12 +26,12 @@ pub struct WgpuUnlitDefineKey {
 pub fn bind_wgpu_unlit_surface(
     state: &WgpuRenderState,
     scene: &mut WgpuSceneRuntime,
-    pipeline: &WgpuMeshPipeline,
+    cache_key: &str,
     material_key: flighthq_types::kind::KindId,
     color: &[f32; 4],
     intensity: f32,
     alpha_cutoff: f32,
-) -> &wgpu::BindGroup {
+) {
     if !scene.material_bind_groups.contains_key(&material_key) {
         let buffer = state.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("flight-wgpu-unlit-material-uniform"),
@@ -39,25 +39,32 @@ pub fn bind_wgpu_unlit_surface(
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let placeholder = ensure_wgpu_placeholder_texture_view(state, scene);
-        let bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("flight-wgpu-unlit-material-bind-group"),
-            layout: &pipeline.material_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: buffer.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&state.runtime.linear_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(placeholder),
-                },
-            ],
-        });
+        ensure_wgpu_placeholder_texture_view(state, scene);
+        let bind_group = {
+            let layout = &scene.mesh_pipeline_cache[cache_key].material_bind_group_layout;
+            let placeholder = scene
+                .placeholder_view
+                .as_ref()
+                .expect("placeholder view ensured before material bind group");
+            state.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("flight-wgpu-unlit-material-bind-group"),
+                layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&state.runtime.linear_sampler),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(placeholder),
+                    },
+                ],
+            })
+        };
         scene
             .material_bind_groups
             .insert(material_key, WgpuMaterialBinding { bind_group, buffer });
@@ -77,7 +84,6 @@ pub fn bind_wgpu_unlit_surface(
     state
         .queue
         .write_buffer(&binding.buffer, 0, f32_slice_bytes(&scratch));
-    &binding.bind_group
 }
 
 /// A short, stable string identity for an unlit define key.
@@ -148,14 +154,16 @@ pub fn compile_wgpu_unlit_pipeline(
     )
 }
 
-/// Resolves the unlit pipeline, compiling and caching on first use. Mirrors TS
-/// `ensureWgpuUnlitPipeline`.
-pub fn ensure_wgpu_unlit_pipeline<'a>(
+/// Resolves the unlit pipeline for a define key + color format, compiling and
+/// caching it on first use, and returns its `mesh_pipeline_cache` key. Mirrors TS
+/// `ensureWgpuUnlitPipeline` (which returns the pipeline; the Rust port returns the
+/// string key — see `ensure_wgpu_classic_pipeline`).
+pub fn ensure_wgpu_unlit_pipeline(
     state: &mut WgpuRenderState,
-    scene: &'a mut WgpuSceneRuntime,
+    scene: &mut WgpuSceneRuntime,
     key: &WgpuUnlitDefineKey,
     format: wgpu::TextureFormat,
-) -> &'a WgpuMeshPipeline {
+) -> String {
     let cache_key = format!("unlit:{format:?}|{}", build_wgpu_unlit_define_key(key));
     if !scene.mesh_pipeline_cache.contains_key(&cache_key) {
         let pipeline = compile_wgpu_unlit_pipeline(state, scene, key, format);
@@ -163,7 +171,7 @@ pub fn ensure_wgpu_unlit_pipeline<'a>(
             .mesh_pipeline_cache
             .insert(cache_key.clone(), pipeline);
     }
-    &scene.mesh_pipeline_cache[&cache_key]
+    cache_key
 }
 
 /// The full WGSL module source for a define key.

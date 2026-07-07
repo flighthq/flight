@@ -275,3 +275,145 @@ impl Default for Matrix4Like {
         Self { m }
     }
 }
+
+// ---------------------------------------------------------------------------
+// Quaternion
+// ---------------------------------------------------------------------------
+
+/// Unit quaternion `(x, y, z, w)` for 3D rotation. Handedness is pinned across
+/// the 3D suite: right-handed coordinates, CCW front-face, following the glTF /
+/// three.js convention.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct Quaternion {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
+}
+
+impl Entity for Quaternion {}
+
+/// A `Quaternion`-like value that may not carry full entity identity.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct QuaternionLike {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
+}
+
+/// The order in which per-axis rotations compose when converting between Euler
+/// angles and a quaternion or matrix. `XYZ` applies X first, then Y, then Z —
+/// the glTF / three.js intrinsic-rotation convention used across the 3D suite.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+pub enum EulerOrder {
+    #[default]
+    XYZ,
+    XZY,
+    YXZ,
+    YZX,
+    ZXY,
+    ZYX,
+}
+
+// ---------------------------------------------------------------------------
+// Frustum
+// ---------------------------------------------------------------------------
+
+/// A view frustum as its six bounding planes, each oriented with its normal
+/// pointing inward (toward the contained volume) so a point is inside when its
+/// signed distance to every plane is `>= 0`. Built from a view-projection
+/// `Matrix4` (`set_frustum_from_matrix4`) and tested against bounds
+/// (`is_frustum_intersecting_aabb`).
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct Frustum {
+    pub bottom: Plane,
+    pub far: Plane,
+    pub left: Plane,
+    pub near: Plane,
+    pub right: Plane,
+    pub top: Plane,
+}
+
+impl Entity for Frustum {}
+
+/// A `Frustum`-like value that may not carry full entity identity.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct FrustumLike {
+    pub bottom: Plane,
+    pub far: Plane,
+    pub left: Plane,
+    pub near: Plane,
+    pub right: Plane,
+    pub top: Plane,
+}
+
+// ---------------------------------------------------------------------------
+// Obb
+// ---------------------------------------------------------------------------
+
+/// Oriented bounding box: a center point, half-extents along the three local
+/// axes, and an orientation quaternion mapping local axes to world space. A
+/// half-extent of zero on any axis collapses that dimension to a slab or point.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct Obb {
+    pub center_x: f32,
+    pub center_y: f32,
+    pub center_z: f32,
+    pub half_extent_x: f32,
+    pub half_extent_y: f32,
+    pub half_extent_z: f32,
+    pub orientation_w: f32,
+    pub orientation_x: f32,
+    pub orientation_y: f32,
+    pub orientation_z: f32,
+}
+
+impl Entity for Obb {}
+
+/// An `Obb`-like value that may not carry full entity identity.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct ObbLike {
+    pub center_x: f32,
+    pub center_y: f32,
+    pub center_z: f32,
+    pub half_extent_x: f32,
+    pub half_extent_y: f32,
+    pub half_extent_z: f32,
+    pub orientation_w: f32,
+    pub orientation_x: f32,
+    pub orientation_y: f32,
+    pub orientation_z: f32,
+}
+
+// ---------------------------------------------------------------------------
+// Capsule
+// ---------------------------------------------------------------------------
+
+/// A capsule: the set of all points within `radius` of the line segment from
+/// `(start_x, start_y, start_z)` to `(end_x, end_y, end_z)`. A negative radius
+/// conventionally marks an empty capsule.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct Capsule {
+    pub end_x: f32,
+    pub end_y: f32,
+    pub end_z: f32,
+    pub radius: f32,
+    pub start_x: f32,
+    pub start_y: f32,
+    pub start_z: f32,
+}
+
+impl Entity for Capsule {}
+
+/// A `Capsule`-like value that may not carry full entity identity.
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct CapsuleLike {
+    pub end_x: f32,
+    pub end_y: f32,
+    pub end_z: f32,
+    pub radius: f32,
+    pub start_x: f32,
+    pub start_y: f32,
+    pub start_z: f32,
+}

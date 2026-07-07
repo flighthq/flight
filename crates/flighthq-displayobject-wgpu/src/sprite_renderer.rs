@@ -11,11 +11,12 @@ use flighthq_render_wgpu::{WgpuRenderState, WgpuRendererSlot};
 /// changes.
 pub struct DefaultWgpuSpriteRenderer;
 
-/// Registers wgpu sprite renderer on `state` for the `SpriteKind`.
+/// Registers the wgpu sprite-graph renderers on `state`: `SpriteKind`,
+/// `QuadBatchKind`, and `TilemapKind`.
 ///
 /// Call once after `create_wgpu_render_state` to enable atlas/sprite batch
 /// rendering.
-pub fn register_wgpu_sprite_renderer(state: &mut WgpuRenderState) {
+pub fn register_wgpu_sprite_renderers(state: &mut WgpuRenderState) {
     state
         .runtime
         .renderers
