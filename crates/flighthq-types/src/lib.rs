@@ -171,7 +171,8 @@ pub use glyph_extents::GlyphExtents;
 
 // geometry
 pub use geometry::{
-    Aabb, BoundingSphere, Matrix, Matrix3, Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Plane,
+    Aabb, BoundingSphere, Capsule, CapsuleLike, EulerOrder, Frustum, FrustumLike, Matrix, Matrix3,
+    Matrix3Like, Matrix4, Matrix4Like, MatrixLike, Obb, ObbLike, Plane, Quaternion, QuaternionLike,
     Ray3D, Rectangle, RectangleLike, Vector2, Vector2Like, Vector3, Vector3Like, Vector4,
     Vector4Like,
 };
