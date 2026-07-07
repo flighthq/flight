@@ -15,14 +15,14 @@ pub fn create_color_from_kelvin(kelvin: f32) -> u32 {
     let r = if temp <= 66.0 {
         255.0
     } else {
-        329.698_727_446 * (temp - 60.0).powf(-0.133_204_759_2)
+        329.698_73 * (temp - 60.0).powf(-0.133_204_76)
     };
 
     // Green channel.
     let g = if temp <= 66.0 {
-        99.470_802_586_1 * temp.ln() - 161.119_568_166_1
+        99.470_8 * temp.ln() - 161.119_57
     } else {
-        288.122_169_528_3 * (temp - 60.0).powf(-0.075_514_849_2)
+        288.122_16 * (temp - 60.0).powf(-0.075_514_846)
     };
 
     // Blue channel.
@@ -31,7 +31,7 @@ pub fn create_color_from_kelvin(kelvin: f32) -> u32 {
     } else if temp <= 19.0 {
         0.0
     } else {
-        138.517_731_223_1 * (temp - 10.0).ln() - 305.044_792_730_7
+        138.517_73 * (temp - 10.0).ln() - 305.044_8
     };
 
     let ri = r.round().clamp(0.0, 255.0) as u32;
