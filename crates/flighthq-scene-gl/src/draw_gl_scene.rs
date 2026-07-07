@@ -15,6 +15,7 @@
 //!     (`flighthq-scene` still exposes the old `world`/`WorldNode` graph).
 //!   - `SceneLights` and `StandardPbrMaterial` (`flighthq-types` /
 //!     `flighthq-materials`).
+//!
 //! Until those land, this function exposes the canonical seam and performs no
 //! draws. The per-subset bind/run loop, the alias-safe `boundRenderer`/
 //! `boundMaterial` tracking, and `setMatrix3NormalFromMatrix4` per mesh are the

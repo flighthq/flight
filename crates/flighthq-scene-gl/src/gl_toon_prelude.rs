@@ -6,7 +6,7 @@ use flighthq_render_gl::GlRenderState;
 use glow::HasContext;
 
 use crate::gl_lit_program::{GlLitProgram, resolve_gl_lit_locations};
-use crate::gl_mesh_program::{GlMeshProgram, compile_gl_program, ensure_gl_scene_program};
+use crate::gl_mesh_program::{compile_gl_program, ensure_gl_scene_program};
 use crate::gl_scene_runtime::GlSceneRuntime;
 
 /// Feature flags selecting a Toon variant.

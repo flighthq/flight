@@ -46,3 +46,21 @@ pub fn register_lambert_gl_material(scene: &mut GlSceneRuntime) {
         Box::new(LambertGlMeshMaterialRenderer),
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use flighthq_materials::classic_materials::lambert_material_kind;
+
+    use crate::gl_mesh_material_registry::get_gl_mesh_material_renderer;
+    use crate::gl_scene_runtime::create_gl_scene_runtime;
+
+    // register_lambert_gl_material
+
+    #[test]
+    fn register_lambert_gl_material_registers_for_the_lambert_kind() {
+        let mut scene = create_gl_scene_runtime();
+        register_lambert_gl_material(&mut scene);
+        assert!(get_gl_mesh_material_renderer(&scene, lambert_material_kind()).is_some());
+    }
+}

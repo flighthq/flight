@@ -23,8 +23,15 @@ use std::collections::HashMap;
 use flighthq_types::kind::KindId;
 use flighthq_types::{Matrix4, SceneLights};
 
+use crate::gl_classic_prelude::GlClassicProgram;
+use crate::gl_debug_prelude::GlDebugProgram;
+use crate::gl_matcap_prelude::GlMatcapProgram;
 use crate::gl_mesh_material_registry::GlMeshMaterialRenderer;
+use crate::gl_mesh_program::GlMeshProgram;
 use crate::gl_pbr_program_cache::GlPbrProgram;
+use crate::gl_toon_prelude::GlToonProgram;
+use crate::gl_unlit_prelude::GlUnlitProgram;
+use crate::gl_wireframe_prelude::GlWireframeProgram;
 
 /// The GPU upload of one `MeshGeometry` for one `GlRenderState`: a VAO binding the
 /// interleaved vertex buffer and index buffer, the element type/count for indexed
@@ -78,17 +85,35 @@ pub struct GlSceneIbl {
 /// owned by the caller (see the module-level divergence note).
 #[derive(Default)]
 pub struct GlSceneRuntime {
+    /// The bind()→draw() handoff: a family bind stores its selected base program
+    /// here and the draw tail reads it back. Mirrors the TS `activeMeshProgram`.
+    pub active_mesh_program: Option<GlMeshProgram>,
     pub active_pbr_program: Option<GlPbrProgram>,
+    /// Compiled classic (Lambert/Phong/BlinnPhong) programs, keyed by define key.
+    pub classic_program_cache: HashMap<String, GlClassicProgram>,
+    /// Compiled debug (Depth/Normal) programs, keyed by define key.
+    pub debug_program_cache: HashMap<String, GlDebugProgram>,
     /// Environment source cubemap GPU texture, shared between IBL bake and skybox draw.
     pub environment_source_cube: Option<glow::Texture>,
     /// Baked IBL state; `None` until `bake_environment_ibl` runs. Read by the lit bind.
     pub ibl: Option<GlSceneIbl>,
     /// Framebuffer for IBL bake passes.
     pub ibl_bake_framebuffer: Option<glow::Framebuffer>,
+    /// Compiled matcap programs, keyed by define key.
+    pub matcap_program_cache: HashMap<String, GlMatcapProgram>,
     pub material_registry: HashMap<KindId, Box<dyn GlMeshMaterialRenderer>>,
     pub pbr_program_cache: HashMap<String, GlPbrProgram>,
+    /// The shared mesh-material base-program cache (family + define key). Mirrors
+    /// the TS `programCache`; family caches above hold the full resolved programs.
+    pub program_cache: HashMap<String, GlMeshProgram>,
     /// Active shadow state; `None` until `draw_gl_scene_shadow_map` runs. Read by the lit bind.
     pub shadow: Option<GlSceneShadow>,
+    /// Compiled Toon programs, keyed by define key.
+    pub toon_program_cache: HashMap<String, GlToonProgram>,
+    /// Compiled unlit (Unlit/Emissive/VertexColor) programs, keyed by define key.
+    pub unlit_program_cache: HashMap<String, GlUnlitProgram>,
+    /// The compiled wireframe program (single key).
+    pub wireframe_program_cache: HashMap<String, GlWireframeProgram>,
     /// Geometry upload cache, keyed by a stable geometry identity (the geometry's
     /// arena/entity id). The TS port keys a `WeakMap` by the geometry entity; the
     /// Rust port keys by an explicit `u64` id the caller supplies.

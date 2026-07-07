@@ -4,7 +4,6 @@
 
 use flighthq_render_gl::GlRenderState;
 use flighthq_types::lighting::Environment;
-use glow::HasContext;
 
 use crate::gl_scene_runtime::GlSceneRuntime;
 
@@ -12,7 +11,7 @@ use crate::gl_scene_runtime::GlSceneRuntime;
 /// caching it on the scene runtime. Returns `None` when the environment has no
 /// complete cube.
 pub fn ensure_gl_environment_source_cube(
-    state: &mut GlRenderState,
+    _state: &mut GlRenderState,
     scene: &mut GlSceneRuntime,
     _environment: &Environment,
 ) -> Option<glow::Texture> {

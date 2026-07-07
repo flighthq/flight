@@ -15,8 +15,7 @@ use flighthq_types::geometry::{Matrix4Like, Vector3Like};
 use flighthq_types::scene_render::SceneRenderProxy;
 use glow::HasContext;
 
-use crate::gl_mesh_upload::ensure_gl_mesh_upload;
-use crate::gl_scene_runtime::{GlMeshUpload, GlSceneRuntime};
+use crate::gl_scene_runtime::GlSceneRuntime;
 
 /// The minimal handoff every mesh-material family shares. `bind` compiles and
 /// selects a family program (extending this base); `draw` reads it back to set
@@ -105,10 +104,7 @@ pub fn draw_gl_mesh_subset(
         }
     }
 
-    let upload = scene
-        .upload_cache
-        .entry(geometry_id)
-        .or_insert_with(GlMeshUpload::default);
+    let upload = scene.upload_cache.entry(geometry_id).or_default();
     let subset = proxy.subset;
 
     let gl = &state.gl;
