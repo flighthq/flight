@@ -43,17 +43,25 @@
 //!
 //! Registration is opt-in (no module-load side effects).
 
+pub mod anisotropy_pbr_wgpu_mesh_material_renderer;
 pub mod blinn_phong_wgpu_mesh_material_renderer;
+pub mod clearcoat_pbr_wgpu_mesh_material_renderer;
 pub mod depth_wgpu_mesh_material_renderer;
 pub mod draw_wgpu_scene;
 pub mod emissive_wgpu_mesh_material_renderer;
+pub mod iridescence_pbr_wgpu_mesh_material_renderer;
 pub mod lambert_wgpu_mesh_material_renderer;
 pub mod matcap_wgpu_mesh_material_renderer;
 pub mod normal_wgpu_mesh_material_renderer;
 pub mod phong_wgpu_mesh_material_renderer;
 pub mod register_standard_pbr_wgpu_material;
+pub mod sheen_pbr_wgpu_mesh_material_renderer;
+pub mod specular_glossiness_pbr_wgpu_mesh_material_renderer;
+pub mod specular_pbr_wgpu_mesh_material_renderer;
 pub mod standard_pbr_wgpu_mesh_material_renderer;
+pub mod subsurface_pbr_wgpu_mesh_material_renderer;
 pub mod toon_wgpu_mesh_material_renderer;
+pub mod transmission_volume_pbr_wgpu_mesh_material_renderer;
 pub mod unlit_wgpu_mesh_material_renderer;
 pub mod vertex_color_wgpu_mesh_material_renderer;
 pub mod wgpu_classic_prelude;
@@ -70,9 +78,17 @@ pub mod wgpu_unlit_prelude;
 pub mod wgpu_wireframe_prelude;
 pub mod wireframe_wgpu_mesh_material_renderer;
 
+pub use anisotropy_pbr_wgpu_mesh_material_renderer::{
+    AnisotropyPbrWgpuMeshMaterialRenderer, anisotropy_pbr_wgpu_mesh_material_renderer,
+    register_anisotropy_pbr_wgpu_material,
+};
 pub use blinn_phong_wgpu_mesh_material_renderer::{
     BlinnPhongWgpuMeshMaterialRenderer, blinn_phong_wgpu_mesh_material_renderer,
     register_blinn_phong_wgpu_material,
+};
+pub use clearcoat_pbr_wgpu_mesh_material_renderer::{
+    ClearcoatPbrWgpuMeshMaterialRenderer, clearcoat_pbr_wgpu_mesh_material_renderer,
+    register_clearcoat_pbr_wgpu_material,
 };
 pub use depth_wgpu_mesh_material_renderer::{
     DepthWgpuMeshMaterialRenderer, depth_wgpu_mesh_material_renderer, register_depth_wgpu_material,
@@ -81,6 +97,10 @@ pub use draw_wgpu_scene::draw_wgpu_scene;
 pub use emissive_wgpu_mesh_material_renderer::{
     EmissiveWgpuMeshMaterialRenderer, emissive_wgpu_mesh_material_renderer,
     register_emissive_wgpu_material,
+};
+pub use iridescence_pbr_wgpu_mesh_material_renderer::{
+    IridescencePbrWgpuMeshMaterialRenderer, iridescence_pbr_wgpu_mesh_material_renderer,
+    register_iridescence_pbr_wgpu_material,
 };
 pub use lambert_wgpu_mesh_material_renderer::{
     LambertWgpuMeshMaterialRenderer, lambert_wgpu_mesh_material_renderer,
@@ -98,13 +118,35 @@ pub use phong_wgpu_mesh_material_renderer::{
     PhongWgpuMeshMaterialRenderer, phong_wgpu_mesh_material_renderer, register_phong_wgpu_material,
 };
 pub use register_standard_pbr_wgpu_material::register_standard_pbr_wgpu_material;
+pub use sheen_pbr_wgpu_mesh_material_renderer::{
+    SheenPbrWgpuMeshMaterialRenderer, register_sheen_pbr_wgpu_material,
+    sheen_pbr_wgpu_mesh_material_renderer,
+};
+pub use specular_glossiness_pbr_wgpu_mesh_material_renderer::{
+    SpecularGlossinessPbrWgpuMeshMaterialRenderer, register_specular_glossiness_pbr_wgpu_material,
+    specular_glossiness_pbr_wgpu_mesh_material_renderer,
+};
+pub use specular_pbr_wgpu_mesh_material_renderer::{
+    SpecularPbrWgpuMeshMaterialRenderer, register_specular_pbr_wgpu_material,
+    specular_pbr_wgpu_mesh_material_renderer,
+};
 pub use standard_pbr_wgpu_mesh_material_renderer::{
-    DRAW_UNIFORM_BYTES, FRAME_UNIFORM_BYTES, MATERIAL_UNIFORM_BYTES,
-    StandardPbrWgpuMeshMaterialRenderer, WHITE_PIXEL, build_wgpu_pbr_standard_define_key,
-    draw_standard_pbr_wgpu_mesh, standard_pbr_wgpu_mesh_material_renderer,
+    DRAW_UNIFORM_BYTES, FRAME_UNIFORM_BYTES, MATERIAL_UNIFORM_BYTES, MATERIAL_UNIFORM_FLOATS,
+    StandardPbrWgpuMeshMaterialRenderer, WHITE_PIXEL, bind_wgpu_pbr_mesh_material,
+    build_wgpu_pbr_standard_define_key, draw_standard_pbr_wgpu_mesh,
+    standard_pbr_wgpu_mesh_material_renderer, unpack_color_to_linear,
+    write_wgpu_pbr_standard_block,
+};
+pub use subsurface_pbr_wgpu_mesh_material_renderer::{
+    SubsurfacePbrWgpuMeshMaterialRenderer, register_subsurface_pbr_wgpu_material,
+    subsurface_pbr_wgpu_mesh_material_renderer,
 };
 pub use toon_wgpu_mesh_material_renderer::{
     ToonWgpuMeshMaterialRenderer, register_toon_wgpu_material, toon_wgpu_mesh_material_renderer,
+};
+pub use transmission_volume_pbr_wgpu_mesh_material_renderer::{
+    TransmissionVolumePbrWgpuMeshMaterialRenderer, register_transmission_volume_pbr_wgpu_material,
+    transmission_volume_pbr_wgpu_mesh_material_renderer,
 };
 pub use unlit_wgpu_mesh_material_renderer::{
     UnlitWgpuMeshMaterialRenderer, register_unlit_wgpu_material, unlit_wgpu_mesh_material_renderer,

@@ -59,29 +59,16 @@ impl WgpuMeshMaterialRenderer for StandardPbrWgpuMeshMaterialRenderer {
         // default-kind fallback (`None`) packs the neutral untextured defaults.
         let pbr = material.and_then(downcast_standard_pbr);
 
-        let format = state.runtime.current_color_format.unwrap_or(state.format);
         let define_key = build_wgpu_pbr_standard_define_key(pbr);
-
-        // Compile/cache the pipeline variant and remember it by key (the pipeline
-        // is not `Clone`, so `draw` re-resolves it from the cache).
-        let cache_key = build_wgpu_pbr_pipeline_cache_key(format, &define_key);
-        ensure_wgpu_pbr_pipeline(state, scene, &define_key, format);
-        scene.active_pipeline_key = Some(cache_key.clone());
-
-        ensure_wgpu_placeholder_texture_view(state, scene);
-        write_wgpu_frame_uniform(state, scene, &cache_key, camera, lights);
-
         let alpha_cutoff = pbr.map_or(0.5, |m| m.alpha_cutoff);
+
+        // StandardPbr writes only the base block (floats 0..15); the extension
+        // factor slots (16..47) stay zero.
         let mut scratch = [0.0f32; MATERIAL_UNIFORM_FLOATS];
         write_wgpu_pbr_standard_block(&mut scratch, pbr.map(|m| &m.standard), alpha_cutoff);
 
         let key = material.map_or_else(standard_pbr_material_kind, |m| m.kind());
-        ensure_wgpu_pbr_material_bind_group(state, scene, &cache_key, key);
-        scene.active_material_key = Some(key);
-        let binding = &scene.material_bind_groups[&key];
-        state
-            .queue
-            .write_buffer(&binding.buffer, 0, f32_slice_bytes(&scratch));
+        bind_wgpu_pbr_mesh_material(state, scene, &define_key, key, &scratch, lights, camera);
     }
 
     fn draw(
@@ -111,8 +98,7 @@ pub fn build_wgpu_pbr_standard_define_key(
     WgpuPbrDefineKey {
         alpha_mask_enabled: material.is_some_and(|m| m.alpha_mode == MaterialAlphaMode::Mask),
         double_sided: material.is_some_and(|m| m.double_sided),
-        has_base_color_map: false,
-        has_normal_map: false,
+        ..Default::default()
     }
 }
 
@@ -207,23 +193,77 @@ pub const FRAME_UNIFORM_BYTES: u64 = 128;
 /// `minUniformBufferOffsetAlignment`.
 pub const DRAW_UNIFORM_BYTES: u64 = 112;
 
-/// Material uniform: baseColor vec4f (16) + emissive vec4f (16) + factors vec4f
-/// (16) + flags vec4f (16) = 64 bytes / 16 floats.
-pub const MATERIAL_UNIFORM_BYTES: u64 = 64;
+/// Material uniform: the 48-float MaterialBlock (192 bytes / 12 vec4f). The base
+/// StandardPbr block is the first 4 vec4 (baseColor, emissive, factors, flags);
+/// floats 16..47 are the extension-lobe factor slots (clearcoat, sheen,
+/// anisotropy, iridescence, specular, subsurface, thickness, transmission),
+/// filled by the extension renderers and zero for a plain StandardPbr material.
+/// Matches the WGSL `MaterialBlock` struct in `wgpu_pbr_prelude`.
+pub const MATERIAL_UNIFORM_BYTES: u64 = 192;
+
+/// The Material uniform float count (`MaterialBlock` = 48 floats / 192 bytes).
+/// The extension renderers write their factor slots (floats 16..47) into a
+/// scratch of this length before [`bind_wgpu_pbr_mesh_material`] uploads it.
+pub const MATERIAL_UNIFORM_FLOATS: usize = (MATERIAL_UNIFORM_BYTES / 4) as usize;
 
 /// Opaque-white 1x1 RGBA pixel for the placeholder map texture (untextured path).
 pub const WHITE_PIXEL: [u8; 4] = [255, 255, 255, 255];
 
-const MATERIAL_UNIFORM_FLOATS: usize = (MATERIAL_UNIFORM_BYTES / 4) as usize;
 const FRAME_UNIFORM_FLOATS: usize = (FRAME_UNIFORM_BYTES / 4) as usize;
 
-/// Packs the StandardPbr base block (16 floats) into `out`: baseColor.rgba
-/// (linear), emissive.rgb*strength, factors (metallic, roughness, normalScale,
-/// occlusionStrength), flags (alphaCutoff, _, _, _). baseColor/emissive are
-/// sRGB-packed and decoded to linear here so the shader stays in linear space. A
-/// `None` block uses neutral defaults (white, dielectric, fully rough). Mirrors TS
+/// The shared bind prologue every PBR mesh-material renderer runs after packing
+/// its MaterialBlock scratch (the base block in floats 0..15, plus its own
+/// extension factors in 16..47): resolves/compiles the pipeline variant for
+/// `define_key` + the current color format, records it as the scene's active
+/// pipeline, ensures the placeholder map texture, writes the shared Frame uniform
+/// (camera + light block), allocates (once per material kind) the Material
+/// uniform + bind group, records `material_kind` as the active material, and
+/// uploads the packed `scratch` into the material's uniform buffer.
+///
+/// StandardPbr calls this with the standard-only define key; each extension
+/// renderer sets its own extension flag on the key and fills its own factor slots
+/// in `scratch` before calling. Keeping the pipeline/frame/material orchestration
+/// in one place means the compiled variant and the bound resources never
+/// disagree. Mirrors the `beginWgpuMeshDraw` + `writeWgpuFrameUniform` +
+/// `ensureWgpuPbrMaterialBindGroup` + `writeWgpuPbrMaterialUniform` prologue every
+/// TS PBR renderer shares.
+pub fn bind_wgpu_pbr_mesh_material(
+    state: &mut WgpuRenderState,
+    scene: &mut WgpuSceneRuntime,
+    define_key: &WgpuPbrDefineKey,
+    material_kind: KindId,
+    scratch: &[f32],
+    lights: &SceneLightBlock,
+    camera: &Camera,
+) {
+    let format = state.runtime.current_color_format.unwrap_or(state.format);
+
+    // Compile/cache the pipeline variant and remember it by key (the pipeline is
+    // not `Clone`, so `draw` re-resolves it from the cache).
+    let cache_key = build_wgpu_pbr_pipeline_cache_key(format, define_key);
+    ensure_wgpu_pbr_pipeline(state, scene, define_key, format);
+    scene.active_pipeline_key = Some(cache_key.clone());
+
+    ensure_wgpu_placeholder_texture_view(state, scene);
+    write_wgpu_frame_uniform(state, scene, &cache_key, camera, lights);
+
+    ensure_wgpu_pbr_material_bind_group(state, scene, &cache_key, material_kind);
+    scene.active_material_key = Some(material_kind);
+    let binding = &scene.material_bind_groups[&material_kind];
+    state
+        .queue
+        .write_buffer(&binding.buffer, 0, f32_slice_bytes(scratch));
+}
+
+/// Packs the StandardPbr base block (the first 16 floats of the MaterialBlock)
+/// into `out`: baseColor.rgba (linear), emissive.rgb*strength, factors (metallic,
+/// roughness, normalScale, occlusionStrength), flags (alphaCutoff, _, _, _).
+/// baseColor/emissive are sRGB-packed and decoded to linear here so the shader
+/// stays in linear space. The extension factor slots (floats 16..47) are left to
+/// the caller (the extension packers) or zero for StandardPbr. A `None` block uses
+/// neutral defaults (white, dielectric, fully rough). Mirrors TS
 /// `writeWgpuPbrStandardBlock`.
-fn write_wgpu_pbr_standard_block(
+pub fn write_wgpu_pbr_standard_block(
     out: &mut [f32],
     standard: Option<&StandardPbrMaterialProperties>,
     alpha_cutoff: f32,
@@ -508,9 +548,10 @@ fn write_wgpu_frame_uniform(
 ///
 /// TS↔Rust divergence: `unpack_color_to_linear` is not yet ported to the Rust
 /// `flighthq-materials` crate (only `compute_rgb_hex_string` is), so the renderer
-/// carries this private decode inline. // TODO(align): switch to
-/// `flighthq_materials::unpack_color_to_linear` once it lands there.
-fn unpack_color_to_linear(color: u32) -> [f32; 4] {
+/// carries this decode inline. Shared with the extension renderers, which decode
+/// their own packed sRGB factor colors (specular / sheen / subsurface /
+/// attenuation) to linear the same way.
+pub fn unpack_color_to_linear(color: u32) -> [f32; 4] {
     [
         srgb_channel_to_linear(((color >> 24) & 0xff) as f32 / 255.0),
         srgb_channel_to_linear(((color >> 16) & 0xff) as f32 / 255.0),
@@ -588,9 +629,10 @@ mod tests {
             assert_eq!(FRAME_UNIFORM_BYTES / 4, 32);
             // Draw = world mat4 (64) + normal mat3 as 3 padded vec4 (48).
             assert_eq!(DRAW_UNIFORM_BYTES, 64 + 48);
-            // Material = 4 vec4 (baseColor, emissive, factors, flags).
-            assert_eq!(MATERIAL_UNIFORM_BYTES, 16 * 4);
-            assert_eq!(MATERIAL_UNIFORM_BYTES / 4, 16);
+            // Material = 12 vec4 (base block + 8 extension factor slots).
+            assert_eq!(MATERIAL_UNIFORM_BYTES, 16 * 12);
+            assert_eq!(MATERIAL_UNIFORM_BYTES / 4, 48);
+            assert_eq!(MATERIAL_UNIFORM_FLOATS, 48);
         }
 
         #[test]
