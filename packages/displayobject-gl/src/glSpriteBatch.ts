@@ -64,13 +64,25 @@ function compileSpriteBatchShader(gl: WebGL2RenderingContext): GlQuadBatchShader
   const vs = gl.createShader(gl.VERTEX_SHADER)!;
   gl.shaderSource(vs, QUAD_BATCH_VS);
   gl.compileShader(vs);
+  if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+    throw new Error(`Sprite-batch vertex shader compile error: ${gl.getShaderInfoLog(vs)}`);
+  }
   const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
   gl.shaderSource(fs, QUAD_BATCH_FS);
   gl.compileShader(fs);
+  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+    throw new Error(`Sprite-batch fragment shader compile error: ${gl.getShaderInfoLog(fs)}`);
+  }
   const program = gl.createProgram()!;
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
+  // Query LINK_STATUS before first use: it forces an async (KHR_parallel_shader_compile) link to finish,
+  // so the program is ready for the first draw instead of drawing nothing on a cold GPU, and surfaces a
+  // silent link failure as an error rather than a blank frame.
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(`Sprite-batch program link error: ${gl.getProgramInfoLog(program)}`);
+  }
   gl.deleteShader(vs);
   gl.deleteShader(fs);
   return {
