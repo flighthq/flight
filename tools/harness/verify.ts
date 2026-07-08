@@ -166,10 +166,48 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
 
   const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;
   if (coverage < minCoverage) {
-    throw new Error(`[verify:${render}] blank render — coverage ${coverage.toFixed(5)} below ${minCoverage}`);
+    // The surface read (via drawImage of the canvas for webgl) came back blank. Re-read the webgl frame
+    // straight from the default framebuffer with gl.readPixels — a path that does not depend on the
+    // browser compositing the canvas. If this coverage is high, the draw succeeded and the drawImage
+    // readback is the culprit (cold-context compositing); if it is also ~0, the draw produced nothing.
+    const target = (window as VerificationWindow).__ftTarget;
+    const direct = target?.kind === 'webgl' ? measureGlFramebufferCoverage(target.state.gl, target.state.canvas) : null;
+    const detail = direct === null ? '' : ` (gl.readPixels coverage ${direct.toFixed(5)})`;
+    throw new Error(`[verify:${render}] blank render — coverage ${coverage.toFixed(5)} below ${minCoverage}${detail}`);
   }
 
   await testModule.assertRender?.(surface);
+}
+
+// Diagnostic-only: measures non-background coverage by reading the webgl default framebuffer directly
+// with gl.readPixels (bottom-up), bypassing the drawImage/canvas-compositing path snapshotFunctionalRender
+// uses. Only called when the normal read already came back blank, to distinguish "the draw succeeded but
+// the compositing readback lost it" (high here) from "the draw produced nothing" (also ~0 here).
+function measureGlFramebufferCoverage(gl: WebGL2RenderingContext, canvas: Readonly<HTMLCanvasElement>): number {
+  const width = canvas.width;
+  const height = canvas.height;
+  const total = width * height;
+  if (total === 0) return 0;
+  gl.finish();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  const pixels = new Uint8Array(total * 4);
+  gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  const bgR = pixels[0];
+  const bgG = pixels[1];
+  const bgB = pixels[2];
+  const tolerance = BACKGROUND_CHANNEL_TOLERANCE;
+  let nonBackground = 0;
+  for (let i = 0; i < total; i++) {
+    const o = i * 4;
+    if (
+      Math.abs(pixels[o] - bgR) > tolerance ||
+      Math.abs(pixels[o + 1] - bgG) > tolerance ||
+      Math.abs(pixels[o + 2] - bgB) > tolerance
+    ) {
+      nonBackground++;
+    }
+  }
+  return nonBackground / total;
 }
 
 // Resolves after the browser has presented a frame: two rAFs — one to run the pending frame's callbacks
