@@ -1,3 +1,4 @@
+import { createGlProgram } from '@flighthq/render-gl';
 import { registerGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { ColorTransform, GlMaterialRenderer, GlRenderState, MaterialData } from '@flighthq/types';
@@ -64,24 +65,7 @@ function ensureGlColorTransformInstancedShader(state: GlRenderState): GlColorTra
   if (runtime.colorTransformInstancedShader) return runtime.colorTransformInstancedShader;
 
   const gl = state.gl;
-  const vs = gl.createShader(gl.VERTEX_SHADER)!;
-  gl.shaderSource(vs, CT_INSTANCED_VS);
-  gl.compileShader(vs);
-  const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-  gl.shaderSource(fs, CT_INSTANCED_FS);
-  gl.compileShader(fs);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  // Query LINK_STATUS before first use: forces an async (KHR_parallel_shader_compile) link to finish so
-  // the program is ready for the first draw rather than blanking on a cold GPU, and surfaces a silent
-  // link failure as an error.
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Color-transform material program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+  const program = createGlProgram(gl, CT_INSTANCED_VS, CT_INSTANCED_FS, 'Color-transform material');
 
   runtime.colorTransformInstancedShader = {
     program,

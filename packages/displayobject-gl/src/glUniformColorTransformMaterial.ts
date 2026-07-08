@@ -1,3 +1,4 @@
+import { createGlProgram } from '@flighthq/render-gl';
 import { registerGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { GlMaterialRenderer, GlRenderState, Material, UniformColorTransformMaterial } from '@flighthq/types';
@@ -32,24 +33,7 @@ function ensureGlUniformColorTransformShader(state: GlRenderState): GlUniformCol
   if (runtime.uniformColorTransformShader) return runtime.uniformColorTransformShader;
 
   const gl = state.gl;
-  const vs = gl.createShader(gl.VERTEX_SHADER)!;
-  gl.shaderSource(vs, QUAD_BATCH_VS);
-  gl.compileShader(vs);
-  const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-  gl.shaderSource(fs, UNIFORM_CT_FS);
-  gl.compileShader(fs);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  // Query LINK_STATUS before first use: forces an async (KHR_parallel_shader_compile) link to finish so
-  // the program is ready for the first draw rather than blanking on a cold GPU, and surfaces a silent
-  // link failure as an error.
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Uniform color-transform material program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+  const program = createGlProgram(gl, QUAD_BATCH_VS, UNIFORM_CT_FS, 'Uniform color-transform material');
 
   runtime.uniformColorTransformShader = {
     program,

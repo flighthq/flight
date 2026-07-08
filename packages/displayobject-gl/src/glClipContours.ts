@@ -1,3 +1,4 @@
+import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { GlRenderState, Matrix, PathWinding } from '@flighthq/types';
 
@@ -137,24 +138,8 @@ function ensureClipProgram(state: GlRenderState): void {
   });
 }
 
-function compileProgram(gl: WebGLRenderingContext, vertex: string, fragment: string): WebGLProgram {
-  const v = gl.createShader(gl.VERTEX_SHADER)!;
-  gl.shaderSource(v, vertex);
-  gl.compileShader(v);
-  const f = gl.createShader(gl.FRAGMENT_SHADER)!;
-  gl.shaderSource(f, fragment);
-  gl.compileShader(f);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, v);
-  gl.attachShader(program, f);
-  gl.linkProgram(program);
-  // Query LINK_STATUS before first use: forces an async (KHR_parallel_shader_compile) link to finish so
-  // the program is ready for the first draw rather than blanking on a cold GPU, and surfaces a silent
-  // link failure as an error.
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Clip-contours program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  return program;
+function compileProgram(gl: WebGL2RenderingContext, vertex: string, fragment: string): WebGLProgram {
+  return createGlProgram(gl, vertex, fragment, 'Clip-contours');
 }
 
 function uploadClipUniforms(state: GlRenderState, program: ClipProgram, m: Readonly<Matrix>): void {

@@ -6,6 +6,7 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldTransformMatrix,
 } from '@flighthq/node';
+import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createGlRenderTarget } from '@flighthq/render-gl';
 import type {
@@ -306,32 +307,12 @@ export function renderGlVelocity<Traits extends object>(
   gl.disableVertexAttribArray(program.locCorner);
 }
 
-function compileGlVelocityShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, src);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`Velocity shader compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
-}
-
 function ensureGlVelocityProgram(state: GlRenderState): GlVelocityProgram {
   let program = _velocityPrograms.get(state);
   if (program !== undefined) return program;
 
   const gl = state.gl;
-  const vs = compileGlVelocityShader(gl, gl.VERTEX_SHADER, VELOCITY_VERTEX_SRC);
-  const fs = compileGlVelocityShader(gl, gl.FRAGMENT_SHADER, VELOCITY_FRAGMENT_SRC);
-  const glProgram = gl.createProgram()!;
-  gl.attachShader(glProgram, vs);
-  gl.attachShader(glProgram, fs);
-  gl.linkProgram(glProgram);
-  if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
-    throw new Error(`Velocity program link error: ${gl.getProgramInfoLog(glProgram)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+  const glProgram = createGlProgram(gl, VELOCITY_VERTEX_SRC, VELOCITY_FRAGMENT_SRC, 'Velocity');
 
   const quadBuffer = gl.createBuffer()!;
   gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);

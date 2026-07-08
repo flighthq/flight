@@ -3,6 +3,7 @@ export * from './glDraw';
 export * from './glElement';
 export * from './glFullscreenPass';
 export * from './glMaterialRegistry';
+export * from './glProgram';
 export * from './glReadback';
 export * from './glRenderState';
 export * from './glRenderTarget';

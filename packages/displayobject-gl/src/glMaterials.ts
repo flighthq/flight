@@ -1,4 +1,5 @@
-﻿import { getGlRenderStateRuntime } from '@flighthq/render-gl';
+﻿import { createGlProgram } from '@flighthq/render-gl';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from '@flighthq/render-gl';
 import { registerGlMaterialShader } from '@flighthq/render-gl';
 import type {
@@ -40,28 +41,13 @@ export function registerGlColorTransformShader(state: GlRenderState): void {
   registerGlMaterialShader(state, UniformColorTransformMaterialKind, shader);
 }
 
-function compileShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, src);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`Shader compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
-}
-
 function compileGlColorTransformProgram(gl: WebGL2RenderingContext): GlShaderLocations {
-  const vs = compileShader(gl, gl.VERTEX_SHADER, COLOR_TRANSFORM_VERTEX_SRC);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, COLOR_TRANSFORM_FRAGMENT_SRC);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+  const program = createGlProgram(
+    gl,
+    COLOR_TRANSFORM_VERTEX_SRC,
+    COLOR_TRANSFORM_FRAGMENT_SRC,
+    'Color-transform bitmap',
+  );
   return {
     program,
     locPosition: gl.getAttribLocation(program, 'a_position'),
