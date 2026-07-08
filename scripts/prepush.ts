@@ -5,7 +5,6 @@
 //   1. typecheck              — always; incremental, catches cross-package type breakage
 //   2. vitest run --changed   — only when package source changed; vitest walks its own module
 //                               graph from <base> and reruns just the affected test files
-//   3. cargo test -p <crate>  — only the crates whose files changed in this push
 //
 // We let vitest derive the affected test set from its module graph (`--changed <base>`) rather than
 // computing it ourselves from the package dependency graph. The root vitest config is a single
@@ -22,7 +21,7 @@
 // changed" is CI's job, not this hook's.
 
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 import pc from 'picocolors';
 
@@ -86,14 +85,6 @@ const changed = (capture(`git diff --name-only ${base}...HEAD`) ?? '').split('\n
 // skips vitest's workspace startup entirely (it would just print "No test files found"); CI still
 // runs everything.
 const affectsPackageTests = changed.some((file) => /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file));
-const changedCrates = [
-  ...new Set(
-    changed.map((file) => /^crates\/([^/]+)\//.exec(file)?.[1]).filter((crate): crate is string => Boolean(crate)),
-  ),
-  // Drop crates that no longer exist on disk: a push that deletes/renames a crate (e.g. a refactor
-  // that splits one crate into several) still lists the removed crate's paths in the diff, but
-  // `cargo test -p <gone-crate>` errors with "package ID specification did not match any packages".
-].filter((crate) => existsSync(`crates/${crate}/Cargo.toml`));
 
 console.log(pc.cyan(`pre-push: ${changed.length} file(s) changed vs ${base}`));
 
@@ -101,10 +92,4 @@ if (affectsPackageTests) {
   run(`npx vitest run --changed ${base}`);
 } else {
   console.log(pc.dim('pre-push: no package source changed — skipping vitest'));
-}
-
-if (changedCrates.length > 0) {
-  run(`cargo test ${changedCrates.map((crate) => `-p ${crate}`).join(' ')}`);
-} else {
-  console.log(pc.dim('pre-push: no crate changes — skipping cargo test'));
 }

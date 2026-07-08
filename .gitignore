@@ -163,28 +163,6 @@ tools/site/
 # Workflows are .js — re-include them past the global *.js ignore above.
 !.claude/workflows/*.js
 
-# Rust
-/target/
-**/*.rs.bk
-*.pdb
-parity-report.json
-crates/*/pkg/
-
-# Generated wasm-bindgen output in any package's src/wasm (the `-rs` packages),
-# baked by `npm run build:wasm`. Overrides the global *.d.ts/*.js rules above so
-# the committed type *contracts* (the `.d.ts` "headers" that let the package
-# type-check with no Rust toolchain) are tracked, while the generated
-# *implementation* (glue, binary, wasm-side types, base64 bytes) stays ignored.
-# Generic by convention — a new `-rs` package needs no .gitignore edits.
-packages/*/src/wasm/*.wasm
-packages/*/src/wasm/*.ts
-packages/*/src/wasm/package.json
-!packages/*/src/wasm/*.d.ts
-packages/*/src/wasm/*_bg.wasm.d.ts
-
-# Generated Rust example Wasm adapter consumed by the web and Electron runners.
-examples/runners/web/src/wasm/
-
 # get:worktree incoming review bundles
 /incoming/
 
