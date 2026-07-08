@@ -1,5 +1,6 @@
 ﻿import type { GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types';
 
+import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';
 import type { GlBitmapShader, GlShaderLocations } from './glShaderTypes';
 
@@ -28,16 +29,6 @@ void main() {
   fragColor = color;
 }`;
 
-function compileShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, src);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`Shader compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
-}
-
 export function compileDefaultGlProgram(gl: WebGL2RenderingContext): GlShaderLocations {
   return compileGlBitmapProgram(gl);
 }
@@ -53,17 +44,7 @@ export function compileGlBitmapProgram(
   gl: WebGL2RenderingContext,
   fragmentSrc: string = FRAGMENT_SRC,
 ): GlShaderLocations {
-  const vs = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SRC);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+  const program = createGlProgram(gl, VERTEX_SRC, fragmentSrc, 'Bitmap');
   return {
     program,
     locPosition: gl.getAttribLocation(program, 'a_position'),

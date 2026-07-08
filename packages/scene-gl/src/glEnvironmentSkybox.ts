@@ -1,5 +1,6 @@
 import { getCameraInverseViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
+import { createGlProgram } from '@flighthq/render-gl';
 import type { Camera, Environment, GlRenderState, Matrix4 } from '@flighthq/types';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
@@ -79,28 +80,7 @@ function ensureGlSkybox(state: GlRenderState): GlSkybox {
 }
 
 function linkGlSkyboxProgram(gl: WebGL2RenderingContext): WebGLProgram {
-  const vs = compileGlSkyboxShader(gl, gl.VERTEX_SHADER, SKYBOX_VERTEX);
-  const fs = compileGlSkyboxShader(gl, gl.FRAGMENT_SHADER, SKYBOX_FRAGMENT);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`scene-gl skybox link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
-  return program;
-}
-
-function compileGlSkyboxShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`scene-gl skybox compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
+  return createGlProgram(gl, SKYBOX_VERTEX, SKYBOX_FRAGMENT, 'Skybox');
 }
 
 const _inverseViewProjection: Matrix4 = createMatrix4();

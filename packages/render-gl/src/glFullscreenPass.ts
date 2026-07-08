@@ -1,5 +1,6 @@
 import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types';
 
+import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';
 
 // The substrate-level fullscreen-pass primitive: draw a clip-space quad through a fragment shader,
@@ -33,17 +34,7 @@ export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget
 }
 
 export function compileGlFullscreenProgram(gl: WebGL2RenderingContext, fragmentSource: string): GlFullscreenProgram {
-  const vs = compileGlShader(gl, gl.VERTEX_SHADER, FULLSCREEN_VERTEX_SRC);
-  const fs = compileGlShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`Fullscreen program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+  const program = createGlProgram(gl, FULLSCREEN_VERTEX_SRC, fragmentSource, 'Fullscreen pass');
 
   const textures: WebGLUniformLocation[] = [];
   for (let i = 0; i < 8; i++) {
@@ -105,16 +96,6 @@ export function drawGlFullscreenPass(
 
   setUniforms(gl, program);
   drawGlFullscreenQuad(state, program);
-}
-
-function compileGlShader(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, src);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`Fullscreen shader compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
 }
 
 function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscreenProgram>): void {

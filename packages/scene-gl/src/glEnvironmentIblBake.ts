@@ -1,3 +1,4 @@
+import { createGlProgram } from '@flighthq/render-gl';
 import type { Environment, GlRenderState } from '@flighthq/types';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
@@ -223,28 +224,7 @@ function drawGlBakeQuad(state: GlRenderState, program: GlBakeProgram): void {
 }
 
 function linkGlBakeProgram(gl: WebGL2RenderingContext, fragment: string): WebGLProgram {
-  const vs = compileGlBakeShader(gl, gl.VERTEX_SHADER, BAKE_VERTEX);
-  const fs = compileGlBakeShader(gl, gl.FRAGMENT_SHADER, fragment);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`scene-gl IBL bake link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
-  return program;
-}
-
-function compileGlBakeShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`scene-gl IBL bake compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
+  return createGlProgram(gl, BAKE_VERTEX, fragment, 'IBL bake');
 }
 
 const IRRADIANCE_SIZE = 16;

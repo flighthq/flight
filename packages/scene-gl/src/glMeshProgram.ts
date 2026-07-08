@@ -1,5 +1,6 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
+import { createGlProgram } from '@flighthq/render-gl';
 import type { Camera, GlRenderState, MeshGeometry, SceneRenderProxy } from '@flighthq/types';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
@@ -49,18 +50,7 @@ export function compileGlProgram(
   vertexSource: string,
   fragmentSource: string,
 ): WebGLProgram {
-  const vertexShader = compileGlShader(gl, gl.VERTEX_SHADER, vertexSource);
-  const fragmentShader = compileGlShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-  gl.deleteShader(vertexShader);
-  gl.deleteShader(fragmentShader);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`scene-gl program link error: ${gl.getProgramInfoLog(program)}`);
-  }
-  return program;
+  return createGlProgram(gl, vertexSource, fragmentSource, 'Mesh');
 }
 
 // Frees the linked GL program backing a mesh-material family program. The program object must not be
@@ -140,16 +130,6 @@ export function setGlMeshViewProjection(
   const aspect = camera.projection.kind === 'perspective' ? camera.projection.aspect : 1;
   getCameraViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
   gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
-}
-
-function compileGlShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`scene-gl shader compile error: ${gl.getShaderInfoLog(shader)}`);
-  }
-  return shader;
 }
 
 const scratchViewProjection = createMatrix4();
