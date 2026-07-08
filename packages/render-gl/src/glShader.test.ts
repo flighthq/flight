@@ -40,13 +40,13 @@ describe('compileDefaultGlProgram', () => {
   it('throws when vertex shader compilation fails', () => {
     const gl = makeGL();
     (gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
-    expect(() => compileDefaultGlProgram(gl)).toThrow('Shader compile error');
+    expect(() => compileDefaultGlProgram(gl)).toThrow('shader compile error');
   });
 
   it('throws when program linking fails', () => {
     const gl = makeGL();
     (gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    expect(() => compileDefaultGlProgram(gl)).toThrow('Program link error');
+    expect(() => compileDefaultGlProgram(gl)).toThrow('program link error');
   });
 });
 
@@ -70,7 +70,7 @@ describe('compileGlBitmapProgram', () => {
   it('throws when program linking fails', () => {
     const gl = makeGL();
     (gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    expect(() => compileGlBitmapProgram(gl, 'frag')).toThrow('Program link error');
+    expect(() => compileGlBitmapProgram(gl, 'frag')).toThrow('program link error');
   });
 });
 

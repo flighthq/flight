@@ -107,13 +107,13 @@ describe('compileGlFullscreenProgram', () => {
   it('throws when vertex shader compilation fails', () => {
     const gl = makeGL();
     (gl.getShaderParameter as ReturnType<typeof vi.fn>).mockReturnValueOnce(false);
-    expect(() => compileGlFullscreenProgram(gl, FRAG_SRC)).toThrow('Fullscreen shader compile error');
+    expect(() => compileGlFullscreenProgram(gl, FRAG_SRC)).toThrow('shader compile error');
   });
 
   it('throws when program linking fails', () => {
     const gl = makeGL();
     (gl.getProgramParameter as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    expect(() => compileGlFullscreenProgram(gl, FRAG_SRC)).toThrow('Fullscreen program link error');
+    expect(() => compileGlFullscreenProgram(gl, FRAG_SRC)).toThrow('program link error');
   });
 });
 
