@@ -48,6 +48,10 @@ type VerificationWindow = typeof window & {
   // PNG data URL of the GPU-read-back frame, set for Wgpu so the capture harness can save it as the
   // screenshot (the browser cannot screenshot the un-presented Wgpu swapchain).
   __ftRenderImage?: string;
+  // The un-hijacked requestAnimationFrame, stashed by the capture harness's frame-halt init script (it
+  // overrides window.requestAnimationFrame to stop on a fixed frame). waitForPresentedFrame awaits this
+  // so the frame boundary is immune to the halt; absent outside capture, where the page rAF is normal.
+  __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
 };
 
 // Encodes a Surface to a PNG data URL via a 2D canvas (RGBA bytes → ImageData → toDataURL).
@@ -102,6 +106,12 @@ export async function snapshotFunctionalRender(): Promise<Surface | null> {
   if (target?.kind === 'webgpu') return createSurfaceFromWgpuRenderState(target.state);
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
+  // Force the GPU to complete every queued command before reading the drawing buffer back. Scenes draw
+  // synchronously at import with no frame boundary before this readback, so on a cold GPU the first
+  // webgl context's commands may not have finished — the readback would see a blank frame. finish()
+  // blocks the caller until they have. (Canvas/Wgpu don't need this: Canvas is CPU, Wgpu reads back
+  // through an awaited buffer copy.)
+  if (target?.kind === 'webgl') target.state.gl.finish();
   return createSurfaceFromImageSource(canvas, canvas.width, canvas.height);
 }
 
@@ -129,6 +139,13 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
     return;
   }
 
+  // Read the render only after a real presented frame. The scene has already drawn (synchronously at
+  // import, or in its own rAF), but reading here without waiting is a "frame 0" read — before the
+  // browser has presented — which on a cold GPU blanks the first webgl context. Waiting a frame (plus
+  // the gl.finish() in snapshotFunctionalRender) makes the readback reflect the drawn pixels regardless
+  // of GPU warm-up state.
+  await waitForPresentedFrame();
+
   const surface = await snapshotFunctionalRender();
   if (surface === null) return; // no canvas (e.g. Wgpu unavailable) — Tier 1 (page errors) gates it
 
@@ -153,6 +170,17 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
   }
 
   await testModule.assertRender?.(surface);
+}
+
+// Resolves after the browser has presented a frame: two rAFs — one to run the pending frame's callbacks
+// (the scene's draw), one to ensure that frame reached the compositor. Uses the capture harness's stashed
+// un-hijacked requestAnimationFrame when present so the wait survives the --frames halt (which stops
+// invoking callbacks past the halt frame); outside capture the page's own rAF is normal and used directly.
+function waitForPresentedFrame(): Promise<void> {
+  const raf = (window as VerificationWindow).__ftRealRequestAnimationFrame ?? window.requestAnimationFrame.bind(window);
+  return new Promise((resolve) => {
+    raf(() => raf(() => resolve()));
+  });
 }
 
 // Picks the largest canvas — the render target — ignoring small helper canvases (stats overlays, etc).

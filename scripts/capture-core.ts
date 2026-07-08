@@ -421,6 +421,7 @@ export async function launchBrowser(options: { captureFrames?: number; verify?: 
         __captureFramesReached?: boolean;
         __flightCapture?: boolean;
         __flightCaptureVerify?: boolean;
+        __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
       };
       const { frames, verify } = args;
       flags.__flightCapture = true;
@@ -462,6 +463,10 @@ export async function launchBrowser(options: { captureFrames?: number; verify?: 
 
       let count = 0;
       const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+      // Expose the un-hijacked rAF so the render verifier can await a genuine presented frame before it
+      // reads the canvas back. The override below stops invoking callbacks past the halt frame, so a
+      // verifier awaiting window.requestAnimationFrame could hang; it uses this stashed one instead.
+      flags.__ftRealRequestAnimationFrame = realRequestAnimationFrame;
       window.requestAnimationFrame = (callback: FrameRequestCallback): number =>
         realRequestAnimationFrame((time) => {
           if (count >= frames) return; // halt: scene stops advancing on frame N
