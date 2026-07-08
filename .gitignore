@@ -153,6 +153,10 @@ tools/site/
 # tests/<subject>/baselines/<name>.json — small tracked JSON keyed by column id, not PNGs.
 .artifacts/
 
+# Generic build-output dir guard (not Rust-specific — the repo is TS-only). Kept so a stray `target/`
+# from any tool never gets tracked or swept into a working-tree sync. Do not remove as "dead Rust".
+/target/
+
 # Guard against rogue compilation files
 *.map
 *.d.ts
