@@ -74,6 +74,12 @@ function ensureGlColorTransformInstancedShader(state: GlRenderState): GlColorTra
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
+  // Query LINK_STATUS before first use: forces an async (KHR_parallel_shader_compile) link to finish so
+  // the program is ready for the first draw rather than blanking on a cold GPU, and surfaces a silent
+  // link failure as an error.
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(`Color-transform material program link error: ${gl.getProgramInfoLog(program)}`);
+  }
   gl.deleteShader(vs);
   gl.deleteShader(fs);
 
