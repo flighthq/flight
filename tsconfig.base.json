@@ -104,6 +104,8 @@
       "@flighthq/font/*": ["./packages/font/src/*"],
       "@flighthq/image": ["./packages/image/src/index.ts"],
       "@flighthq/image/*": ["./packages/image/src/*"],
+      "@flighthq/image-codec": ["./packages/image-codec/src/index.ts"],
+      "@flighthq/image-codec/*": ["./packages/image-codec/src/*"],
       "@flighthq/video": ["./packages/video/src/index.ts"],
       "@flighthq/video/*": ["./packages/video/src/*"],
       "@flighthq/loader": ["./packages/loader/src/index.ts"],

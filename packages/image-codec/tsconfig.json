@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../entity" }, { "path": "../image-codec" }, { "path": "../types" }],
+  "references": [{ "path": "../types" }],
   "include": ["src"]
 }

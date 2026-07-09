@@ -32,6 +32,7 @@ export * from '@flighthq/geolocation';
 export * from '@flighthq/geometry';
 export * from '@flighthq/haptics';
 export * from '@flighthq/image';
+export * from '@flighthq/image-codec';
 export * from '@flighthq/input';
 export * from '@flighthq/interaction';
 export * from '@flighthq/ipc';
