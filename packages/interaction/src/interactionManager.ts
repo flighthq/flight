@@ -31,6 +31,21 @@ export function captureInteractionPointer<N extends NodeAny>(
   manager.pointerCaptures.set(pointerId, target);
 }
 
+/**
+ * Wires an input source's pointer/keyboard signals into an interaction manager, forwarding each
+ * event to the matching dispatch function.
+ *
+ * Coordinate space: the pointer coordinates on an `InputPointerData` from the DOM input backend are
+ * CSS pixels (see `attachPointerInput`), while hit testing runs in the scene's device-pixel space.
+ * `coordScale` bridges the two and is multiplied into every forwarded pointer coordinate; pass the
+ * canvas's backing-store scale — typically `window.devicePixelRatio`, matching how the renderer
+ * sizes its drawing buffer. The default `1` is correct only when the backing store is unscaled.
+ *
+ * This scales but does not translate: it assumes the pointer coordinates are already canvas-local
+ * (origin at the canvas's top-left). A backend delivering viewport-relative coordinates for a canvas
+ * not at the viewport origin must subtract the canvas bounding-rect offset per event before this
+ * point, since that offset moves with scroll and layout.
+ */
 export function connectInputToInteraction<N extends NodeAny>(
   input: InteractionInputSource,
   manager: InteractionManager<N>,

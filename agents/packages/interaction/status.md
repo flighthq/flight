@@ -8,6 +8,12 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-09 — pointer coordinate-space docs + potential mapping helper
+
+Documented the coordinate-space contract on `connectInputToInteraction` (JSDoc): forwarded pointer coordinates are CSS pixels from the DOM input backend, `coordScale` bridges into the scene's device-pixel space (pass `window.devicePixelRatio`), and the seam scales but does not translate — a canvas not at the viewport origin needs the bounding-rect offset subtracted per event upstream. Surfaced while reviewing flight-reference examples (`tictactoe`, `handlingmouseevents`) that mis-rendered on high-DPI because they took the default `coordScale = 1`. `piratepig` is the correct reference (passes `devicePixelRatio`).
+
+**Potential path (not built):** a DOM-coupled helper `mapDomPointerEventToElement(event, element, out)` returning element-local device pixels — i.e. `(clientX - rect.left) * devicePixelRatio` — would fold the two gotchas (per-event `getBoundingClientRect` + DPR) into one opt-in call next to `attachPointerInput`, since both are easy to get wrong independently. Deferred deliberately: it pulls DOM specifics into the input layer and Flight favors explicit caller-side mapping; the JSDoc is the minimum, the helper is the maximal convenience if demand appears. A cached scale/offset would be wrong — the rect moves with scroll/layout, so any helper must read per event.
+
 ## 2026-07-03 — inline TODO relocation (lint sweep)
 
 `no-warning-comments` is now enforced over `packages/*/src` (see `.oxlintrc.json`); inline TODO markers move here per the Source Style convention.
