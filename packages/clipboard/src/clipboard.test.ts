@@ -1,4 +1,11 @@
 import type { ClipboardBackend, ClipboardBookmark } from '@flighthq/types';
+import {
+  ClipboardFormatBookmark,
+  ClipboardFormatHtml,
+  ClipboardFormatImage,
+  ClipboardFormatRtf,
+  ClipboardFormatText,
+} from '@flighthq/types';
 
 import {
   attachClipboardWatch,
@@ -55,15 +62,15 @@ function fakeBackend(): ClipboardBackend & {
     formats: {},
     changeCount: 0,
     async readFormat(format) {
-      if (format === 'text/plain') return this.text;
-      if (format === 'text/html') return this.html;
-      if (format === 'text/rtf') return this.rtf;
+      if (format === ClipboardFormatText) return this.text;
+      if (format === ClipboardFormatHtml) return this.html;
+      if (format === ClipboardFormatRtf) return this.rtf;
       return this.formats[format] ?? '';
     },
     async writeFormat(format, data) {
-      if (format === 'text/plain') this.text = data;
-      else if (format === 'text/html') this.html = data;
-      else if (format === 'text/rtf') this.rtf = data;
+      if (format === ClipboardFormatText) this.text = data;
+      else if (format === ClipboardFormatHtml) this.html = data;
+      else if (format === ClipboardFormatRtf) this.rtf = data;
       else this.formats[format] = data;
       this.changeCount++;
       return true;
@@ -74,11 +81,11 @@ function fakeBackend(): ClipboardBackend & {
     },
     async getFormats() {
       const out: string[] = [];
-      if (this.text.length > 0) out.push('text/plain');
-      if (this.html.length > 0) out.push('text/html');
-      if (this.rtf.length > 0) out.push('text/rtf');
-      if (this.image.length > 0) out.push('image/png');
-      if (this.bookmark !== null) out.push('text/x-moz-url');
+      if (this.text.length > 0) out.push(ClipboardFormatText);
+      if (this.html.length > 0) out.push(ClipboardFormatHtml);
+      if (this.rtf.length > 0) out.push(ClipboardFormatRtf);
+      if (this.image.length > 0) out.push(ClipboardFormatImage);
+      if (this.bookmark !== null) out.push(ClipboardFormatBookmark);
       for (const k of Object.keys(this.formats)) out.push(k);
       return out;
     },
@@ -228,7 +235,7 @@ describe('createWebClipboardBackend', () => {
     const backend = createWebClipboardBackend();
     expect(typeof (await backend.readText())).toBe('string');
     expect(typeof (await backend.readHtml())).toBe('string');
-    expect(typeof (await backend.readFormat('text/plain'))).toBe('string');
+    expect(typeof (await backend.readFormat(ClipboardFormatText))).toBe('string');
   });
 
   it('getFormats returns an array without throwing', async () => {
@@ -317,7 +324,7 @@ describe('getClipboardFormats', () => {
     expect(await getClipboardFormats()).toEqual([]);
     await writeClipboardText('hi');
     const formats = await getClipboardFormats();
-    expect(formats).toContain('text/plain');
+    expect(formats).toContain(ClipboardFormatText);
   });
 
   it('returns [] from the web backend without throwing', async () => {
@@ -335,8 +342,8 @@ describe('hasClipboardBookmark', () => {
 
   it('returns true after a bookmark is written by the backend', async () => {
     const backend = fakeBackend();
-    // Simulate a backend that puts 'text/x-moz-url' in formats when a bookmark is written
-    backend.formats['text/x-moz-url'] = 'https://example.com\nFlight';
+    // Simulate a backend that puts ClipboardFormatBookmark in formats when a bookmark is written
+    backend.formats[ClipboardFormatBookmark] = 'https://example.com\nFlight';
     setClipboardBackend(backend);
     expect(await hasClipboardBookmark()).toBe(true);
   });
@@ -346,9 +353,9 @@ describe('hasClipboardFormat', () => {
   it('reflects whether a format is present', async () => {
     const backend = fakeBackend();
     setClipboardBackend(backend);
-    expect(await hasClipboardFormat('text/plain')).toBe(false);
+    expect(await hasClipboardFormat(ClipboardFormatText)).toBe(false);
     await writeClipboardText('x');
-    expect(await hasClipboardFormat('text/plain')).toBe(true);
+    expect(await hasClipboardFormat(ClipboardFormatText)).toBe(true);
   });
 });
 
@@ -402,22 +409,22 @@ describe('readClipboard', () => {
     setClipboardBackend(backend);
     await writeClipboardText('hello');
     await writeClipboardHtml('<b>hello</b>');
-    const result = await readClipboard(['text/plain', 'text/html']);
-    expect(result['text/plain']).toBe('hello');
-    expect(result['text/html']).toBe('<b>hello</b>');
+    const result = await readClipboard([ClipboardFormatText, ClipboardFormatHtml]);
+    expect(result[ClipboardFormatText]).toBe('hello');
+    expect(result[ClipboardFormatHtml]).toBe('<b>hello</b>');
   });
 
   it('omits formats that are not present', async () => {
     const backend = fakeBackend();
     setClipboardBackend(backend);
     await writeClipboardText('hi');
-    const result = await readClipboard(['text/plain', 'text/rtf']);
-    expect(result['text/plain']).toBe('hi');
-    expect(result['text/rtf']).toBeUndefined();
+    const result = await readClipboard([ClipboardFormatText, ClipboardFormatRtf]);
+    expect(result[ClipboardFormatText]).toBe('hi');
+    expect(result[ClipboardFormatRtf]).toBeUndefined();
   });
 
   it('returns {} from the web backend without throwing', async () => {
-    const result = await createWebClipboardBackend().readItems(['text/plain']);
+    const result = await createWebClipboardBackend().readItems([ClipboardFormatText]);
     expect(typeof result).toBe('object');
   });
 });
@@ -516,8 +523,8 @@ describe('writeClipboard', () => {
     setClipboardBackend(backend);
     expect(
       await writeClipboard([
-        { format: 'text/plain', data: 'hello' },
-        { format: 'text/html', data: '<b>hello</b>' },
+        { format: ClipboardFormatText, data: 'hello' },
+        { format: ClipboardFormatHtml, data: '<b>hello</b>' },
       ]),
     ).toBe(true);
     expect(backend.text).toBe('hello');
@@ -525,7 +532,7 @@ describe('writeClipboard', () => {
   });
 
   it('returns false from the web backend without throwing', async () => {
-    expect(await createWebClipboardBackend().writeItems([{ format: 'text/plain', data: 'x' }])).toBe(false);
+    expect(await createWebClipboardBackend().writeItems([{ format: ClipboardFormatText, data: 'x' }])).toBe(false);
   });
 });
 
