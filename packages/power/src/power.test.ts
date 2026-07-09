@@ -144,10 +144,11 @@ describe('attachPower', () => {
     const backend = fakeBackend();
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let changes = 0;
     let charging = 0;
-    connectSignal(power.onChange, () => changes++);
-    connectSignal(power.onCharging, () => charging++);
+    connectSignal(power.onChange!, () => changes++);
+    connectSignal(power.onCharging!, () => charging++);
     attachPower(power);
     backend.charging = true;
     backend.fire();
@@ -159,10 +160,11 @@ describe('attachPower', () => {
     const backend = fakeBackend();
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let suspends = 0;
     let resumes = 0;
-    connectSignal(power.onSuspend, () => suspends++);
-    connectSignal(power.onResume, () => resumes++);
+    connectSignal(power.onSuspend!, () => suspends++);
+    connectSignal(power.onResume!, () => resumes++);
     attachPower(power);
     backend.fireSuspend();
     backend.fireResume();
@@ -174,10 +176,11 @@ describe('attachPower', () => {
     const backend = fakeBackend();
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let locks = 0;
     let unlocks = 0;
-    connectSignal(power.onLockScreen, () => locks++);
-    connectSignal(power.onUnlockScreen, () => unlocks++);
+    connectSignal(power.onLockScreen!, () => locks++);
+    connectSignal(power.onUnlockScreen!, () => unlocks++);
     attachPower(power);
     backend.fireLockScreen();
     backend.fireUnlockScreen();
@@ -189,8 +192,9 @@ describe('attachPower', () => {
     const backend = fakeBackend();
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let lowPowerChanges = 0;
-    connectSignal(power.onLowPowerModeChange, () => lowPowerChanges++);
+    connectSignal(power.onLowPowerModeChange!, () => lowPowerChanges++);
     attachPower(power);
     backend.fireLowPowerModeChange();
     expect(lowPowerChanges).toBe(1);
@@ -200,8 +204,9 @@ describe('attachPower', () => {
     const backend = fakeBackend();
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let thermalChanges = 0;
-    connectSignal(power.onThermalStateChange, () => thermalChanges++);
+    connectSignal(power.onThermalStateChange!, () => thermalChanges++);
     attachPower(power);
     backend.fireThermalStateChange();
     expect(thermalChanges).toBe(1);
@@ -211,8 +216,9 @@ describe('attachPower', () => {
     const backend = fakeBackend();
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let changes = 0;
-    connectSignal(power.onChange, () => changes++);
+    connectSignal(power.onChange!, () => changes++);
     attachPower(power);
     attachPower(power);
     backend.fire();
@@ -226,8 +232,9 @@ describe('attachPower', () => {
     backend.getSystemIdleState = () => idleState as ReturnType<typeof backend.getSystemIdleState>;
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let idleChanges = 0;
-    connectSignal(power.onIdleStateChange, () => idleChanges++);
+    connectSignal(power.onIdleStateChange!, () => idleChanges++);
     setPowerIdlePollingIntervalMs(100);
     attachPower(power, 30);
     // Change state and advance timer.
@@ -247,13 +254,14 @@ describe('attachPower', () => {
     backend.getSystemIdleState = () => idleState as ReturnType<typeof backend.getSystemIdleState>;
     setPowerBackend(backend);
     const power = createPower();
-    // No listener connected.
+    enablePowerSignals(power);
+    // Signals enabled but no listener connected.
     setPowerIdlePollingIntervalMs(100);
     attachPower(power, 30);
     idleState = 'Idle';
     vi.advanceTimersByTime(200);
     // No signal has slots so no emission, no error.
-    expect(power.onIdleStateChange.data).toBeNull();
+    expect(power.onIdleStateChange!.data).toBeNull();
     disposePower(power);
     vi.useRealTimers();
     setPowerIdlePollingIntervalMs(5000);
@@ -270,7 +278,8 @@ describe('attachPower', () => {
     };
     setPowerBackend(backend);
     const power = createPower();
-    connectSignal(power.onIdleStateChange, () => {});
+    enablePowerSignals(power);
+    connectSignal(power.onIdleStateChange!, () => {});
     setPowerIdlePollingIntervalMs(100);
     attachPower(power, 30);
     vi.advanceTimersByTime(150);
@@ -286,18 +295,18 @@ describe('attachPower', () => {
 });
 
 describe('createPower', () => {
-  it('creates an entity with all signals defined', () => {
+  it('creates an entity with all signals left null until enabled', () => {
     const power = createPower();
-    expect(power.onChange).toBeDefined();
-    expect(power.onCharging).toBeDefined();
-    expect(power.onDischarging).toBeDefined();
-    expect(power.onIdleStateChange).toBeDefined();
-    expect(power.onLockScreen).toBeDefined();
-    expect(power.onLowPowerModeChange).toBeDefined();
-    expect(power.onResume).toBeDefined();
-    expect(power.onSuspend).toBeDefined();
-    expect(power.onThermalStateChange).toBeDefined();
-    expect(power.onUnlockScreen).toBeDefined();
+    expect(power.onChange).toBeNull();
+    expect(power.onCharging).toBeNull();
+    expect(power.onDischarging).toBeNull();
+    expect(power.onIdleStateChange).toBeNull();
+    expect(power.onLockScreen).toBeNull();
+    expect(power.onLowPowerModeChange).toBeNull();
+    expect(power.onResume).toBeNull();
+    expect(power.onSuspend).toBeNull();
+    expect(power.onThermalStateChange).toBeNull();
+    expect(power.onUnlockScreen).toBeNull();
   });
 });
 
@@ -397,8 +406,9 @@ describe('detachPower', () => {
     const backend = fakeBackend();
     setPowerBackend(backend);
     const power = createPower();
+    enablePowerSignals(power);
     let changes = 0;
-    connectSignal(power.onChange, () => changes++);
+    connectSignal(power.onChange!, () => changes++);
     attachPower(power);
     detachPower(power);
     backend.fire();
@@ -430,18 +440,35 @@ describe('disposePower', () => {
 });
 
 describe('enablePowerSignals', () => {
-  it('returns a Power entity with all signals defined', () => {
-    const power = enablePowerSignals();
-    expect(power.onChange).toBeDefined();
-    expect(power.onCharging).toBeDefined();
-    expect(power.onDischarging).toBeDefined();
-    expect(power.onIdleStateChange).toBeDefined();
-    expect(power.onLockScreen).toBeDefined();
-    expect(power.onLowPowerModeChange).toBeDefined();
-    expect(power.onResume).toBeDefined();
-    expect(power.onSuspend).toBeDefined();
-    expect(power.onThermalStateChange).toBeDefined();
-    expect(power.onUnlockScreen).toBeDefined();
+  it('allocates the null signals so callers can connect and receive emissions', () => {
+    const backend = fakeBackend();
+    setPowerBackend(backend);
+    const power = createPower();
+    expect(power.onChange).toBeNull();
+    enablePowerSignals(power);
+    expect(power.onChange).not.toBeNull();
+    expect(power.onCharging).not.toBeNull();
+    expect(power.onDischarging).not.toBeNull();
+    expect(power.onIdleStateChange).not.toBeNull();
+    expect(power.onLockScreen).not.toBeNull();
+    expect(power.onLowPowerModeChange).not.toBeNull();
+    expect(power.onResume).not.toBeNull();
+    expect(power.onSuspend).not.toBeNull();
+    expect(power.onThermalStateChange).not.toBeNull();
+    expect(power.onUnlockScreen).not.toBeNull();
+    let changes = 0;
+    connectSignal(power.onChange!, () => changes++);
+    attachPower(power);
+    backend.fire();
+    expect(changes).toBe(1);
+  });
+
+  it('is idempotent — a second call keeps the same signal objects', () => {
+    const power = createPower();
+    enablePowerSignals(power);
+    const signal = power.onChange;
+    enablePowerSignals(power);
+    expect(power.onChange).toBe(signal);
   });
 });
 
