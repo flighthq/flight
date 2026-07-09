@@ -80,12 +80,24 @@ describe('packSceneLightBlock', () => {
     expect(block.data[10]).toBeCloseTo(expected[2] * 0.5);
   });
 
-  it('bumps version on every pack', () => {
+  it('bumps version when the packed block changes', () => {
     const block = newLightBlock();
     packSceneLightBlock(block, emptyLights());
     const v = block.version;
-    packSceneLightBlock(block, emptyLights());
+    packSceneLightBlock(block, {
+      ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.5 }),
+      directional: null,
+    });
     expect(block.version).toBe(v + 1);
+  });
+
+  it('does not bump version when re-packed with identical lights', () => {
+    const block = newLightBlock();
+    const lights = { ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.5 }), directional: null };
+    packSceneLightBlock(block, lights);
+    const v = block.version;
+    packSceneLightBlock(block, lights);
+    expect(block.version).toBe(v);
   });
 
   it('decodes sRgb color to linear (a mid-gray channel is darker in linear)', () => {
