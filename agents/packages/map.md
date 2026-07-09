@@ -27,6 +27,7 @@ Run `npm run api <name>` to query exported function signatures directly.
 - `@flighthq/render`: renderer registration, render state/queue, render node data, update pipeline, transform/color propagation. Image render caching lives in the renderer packages (`imageRenderCache`, `canvasRenderCache`, `webglRenderCache`, `domRenderCache`), not in a standalone package.
 - `@flighthq/render-canvas`, `@flighthq/render-dom`, `@flighthq/render-webgl`: concrete renderers.
 - `@flighthq/filters`: blur, glow, bevel, drop-shadow, color-matrix, and convolution filters as plain data descriptors with explicit Canvas/CSS and multi-pass WebGL backends. Not OpenFL-style filter objects.
+- `@flighthq/filters-math`: shared, backend-agnostic filter math — shadow/bevel light-angle offsets, box-blur radius/sigma conversions, Gaussian kernel weights, the linear-sampling (bilinear-tap) blur optimization, and large-sigma downsample-level selection. Pure closed-form functions with `out` params, depended on by the filters intents package and every filter backend.
 - `@flighthq/filters-gl`: GPU leaf-shader set for WebGL 2 — one `apply*FilterToGl` per filter descriptor, shared `applyGlBlitPass`/`applyGlTintPass` compositing primitives, and `clearGlFilterProgramCache` for deterministic GPU-resource release. This package is a collection of leaf shaders, not a chain applier; orchestration and scratch-target allocation belong to the caller (see `get*FilterGlScratchCount` helpers). Kernels are bounded: convolution ≤ `GL_CONVOLUTION_MAX_KERNEL_SIZE × GL_CONVOLUTION_MAX_KERNEL_SIZE` (7×7), median ≤ `GL_MEDIAN_MAX_RADIUS` (2). A chain dispatcher (`applyFiltersToGl`) is out of scope here by the tree-shaking rule; if needed, it belongs in `render-gl` or a `filters-gl-chain` neighbor.
 - `@flighthq/materials`: the 3D material system — a full PBR material taxonomy (unlit, Blinn-Phong, metallic-roughness PBR with clearcoat/anisotropy/emissive/transmission, depth) plus color-transform. Built (the 20-material taxonomy, 922 tests); canonical design in [3d-materials-architecture.md](../3d-materials-architecture.md).
 - `@flighthq/surface`: pixel-level manipulation of `ImageSource` values — read from or generate image data. Not used internally by renderers; user-facing.
@@ -34,9 +35,9 @@ Run `npm run api <name>` to query exported function signatures directly.
 ## Resources
 
 - `@flighthq/image`: image resources — pixel sources, MIME detection, and constructors (from canvas/ImageBitmap/element, load from URL/ArrayBuffer/Base64/Blob).
-- `@flighthq/font`: font and font-resource types and constructors.
-- `@flighthq/video`: video resources and URL constructors.
-- `@flighthq/audio`: audio resources, URL constructors, and the shared audio context.
+- `@flighthq/font`: font and font-resource lifecycle — loaders (name/url/bytes), `document.fonts` load-status queries, magic-byte `detectFontFormat`, and `inferFontFormatFromUrl`.
+- `@flighthq/video`: `VideoResource` lifecycle at image parity — load options (crossOrigin/muted/playsInline/preload/readiness), url/blob/mediastream sources, dispose, inspection getters, MIME infer/detect, and codec negotiation.
+- `@flighthq/audio`: `AudioResource` lifecycle — the full loader matrix (url/bytes/blob/base64), sample-tier constructors, clone/dispose/predicates, buffer inspection getters, MIME infer/detect, and codec negotiation. (Playback channels + mixer/bus graph live in `@flighthq/media`.)
 - `@flighthq/textureatlas`: texture atlases — regions, UVs, and constructors over image resources (depends on `@flighthq/image`).
 - `@flighthq/tileset`: tilesets — uniform-grid texture atlases and constructors from images (depends on `@flighthq/textureatlas`).
 - `@flighthq/loader`: batch queue for loading multiple resources in sequence or parallel.
