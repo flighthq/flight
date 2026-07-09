@@ -79,6 +79,7 @@
     "@flighthq/particles-formats": "*",
     "@flighthq/picking": "*",
     "@flighthq/path": "*",
+    "@flighthq/path-boolean": "*",
     "@flighthq/path-formats": "*",
     "@flighthq/platform": "*",
     "@flighthq/power": "*",
