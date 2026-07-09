@@ -99,6 +99,7 @@
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
     "@flighthq/shape": "*",
+    "@flighthq/shape-formats": "*",
     "@flighthq/share": "*",
     "@flighthq/shell": "*",
     "@flighthq/shortcut": "*",

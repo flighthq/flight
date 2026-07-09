@@ -68,6 +68,7 @@ export * from '@flighthq/scene-wgpu';
 export * from '@flighthq/screen';
 export * from '@flighthq/sensors';
 export * from '@flighthq/shape';
+export * from '@flighthq/shape-formats';
 export * from '@flighthq/share';
 export * from '@flighthq/shell';
 export * from '@flighthq/shortcut';

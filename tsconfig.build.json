@@ -72,6 +72,7 @@
     { "path": "./packages/sdk" },
     { "path": "./packages/sensors" },
     { "path": "./packages/shape" },
+    { "path": "./packages/shape-formats" },
     { "path": "./packages/share" },
     { "path": "./packages/shell" },
     { "path": "./packages/shortcut" },

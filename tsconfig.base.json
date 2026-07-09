@@ -186,6 +186,8 @@
       "@flighthq/displayobject/*": ["./packages/displayobject/src/*"],
       "@flighthq/shape": ["./packages/shape/src/index.ts"],
       "@flighthq/shape/*": ["./packages/shape/src/*"],
+      "@flighthq/shape-formats": ["./packages/shape-formats/src/index.ts"],
+      "@flighthq/shape-formats/*": ["./packages/shape-formats/src/*"],
       "@flighthq/sprite": ["./packages/sprite/src/index.ts"],
       "@flighthq/sprite/*": ["./packages/sprite/src/*"],
       "@flighthq/scene": ["./packages/scene/src/index.ts"],
