@@ -63,6 +63,7 @@
     { "path": "./packages/audio" },
     { "path": "./packages/font" },
     { "path": "./packages/image" },
+    { "path": "./packages/image-codec" },
     { "path": "./packages/video" },
     { "path": "./packages/loader" },
     { "path": "./packages/screen" },
