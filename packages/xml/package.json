@@ -29,6 +29,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Lightweight pull-style XML parser: parseXmlDocument and parseXmlAttributes for atlas, plist, and sprite-sheet format files",
+  "description": "Lightweight tree-building (DOM-style) XML parser: parseXmlDocument builds an XmlElement tree, plus parseXmlAttributes and element query helpers, for atlas, plist, and sprite-sheet format files",
   "sideEffects": false
 }

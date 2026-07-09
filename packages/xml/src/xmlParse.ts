@@ -1,4 +1,4 @@
-// Pull-style XML parser sufficient for atlas and plist file formats.
+// Tree-building (DOM-style) XML parser sufficient for atlas and plist file formats.
 // Not a general-purpose XML parser, but handles namespaced/extra attributes and elements,
 // both double-quoted and single-quoted attribute values, XML entity escapes
 // (&amp; &lt; &gt; &quot; &apos; plus numeric references), XML comments (<!-- -->),
@@ -35,10 +35,11 @@ export function parseXmlDocument(xml: string): XmlElement | null {
   // Normalize: strip comments, process CDATA, normalize line endings
   let src = stripCdata(stripXmlComments(xml)).replace(/\r\n?/g, '\n');
 
-  // Strip XML declaration and DOCTYPE if present
+  // Strip XML declaration and DOCTYPE (including an internal subset `[ ... ]`,
+  // whose contents may hold `>` characters the flat `[^>]*` form would stop at).
   src = src
     .replace(/<\?[\s\S]*?\?>/g, '')
-    .replace(/<!DOCTYPE[^>]*>/gi, '')
+    .replace(/<!DOCTYPE[^>[]*(?:\[[\s\S]*?\][^>]*)?>/gi, '')
     .trim();
 
   return parseElement(src, { pos: 0 });
@@ -86,10 +87,21 @@ function parseElement(src: string, state: ParseState): XmlElement | null {
 
   skipWhitespace(src, state);
 
-  // Read attributes (everything up to '>' or '/')
+  // Read attributes up to the tag end. Track the active quote so a '>' inside a
+  // quoted attribute value (e.g. a TexturePacker/Starling value like "a>b") is
+  // treated as data rather than ending the tag.
   let attrsStr = '';
-  while (state.pos < src.length && src[state.pos] !== '>' && !(src[state.pos] === '/' && src[state.pos + 1] === '>')) {
-    attrsStr += src[state.pos];
+  let quote = '';
+  while (state.pos < src.length) {
+    const ch = src[state.pos];
+    if (quote) {
+      if (ch === quote) quote = '';
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === '>' || (ch === '/' && src[state.pos + 1] === '>')) {
+      break;
+    }
+    attrsStr += ch;
     state.pos++;
   }
 
