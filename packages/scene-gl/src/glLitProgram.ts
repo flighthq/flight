@@ -42,6 +42,10 @@ interface GlIblPlaceholders {
 
 const _iblPlaceholders = new WeakMap<GlRenderState, GlIblPlaceholders>();
 
+// The SceneLightBlock.version last uploaded into each program's light uniforms. Keyed by program
+// because default uniforms are per-program state; freed with the program when it is GC'd.
+const _uploadedLightVersion = new WeakMap<Readonly<GlLitProgram>, number>();
+
 // Uploads the packed light block to a lit program's standard light uniforms, then binds the active
 // directional shadow (set by drawGlSceneShadowMap on the scene runtime) or disables shadowing. The
 // block layout (std140) mirrors SceneLightBlock.data exactly: directional { direction.xyz @0, _pad,
@@ -54,12 +58,22 @@ export function bindGlMeshLightBlock(
   lights: Readonly<SceneLightBlock>,
 ): void {
   const gl = state.gl;
-  const data = lights.data;
-  gl.uniform4f(program.locDirectional, data[0], data[1], data[2], 0);
-  gl.uniform4f(program.locDirectionalRadiance, data[4], data[5], data[6], 0);
-  gl.uniform3f(program.locAmbientRadiance, data[8], data[9], data[10]);
-  gl.uniform1f(program.locDirectionalCount, lights.directionalCount);
-  gl.uniform1f(program.locAmbientCount, lights.ambientCount);
+
+  // The light uniforms are default (non-block) uniforms, which persist on the program object across
+  // useProgram switches and frames, so re-uploading an unchanged block is wasted work. packSceneLightBlock
+  // only advances `version` on an actual change, so skip the upload when this program already holds the
+  // current version. Tracked per program (not per state) because each program keeps its own uniform
+  // values — a version cached on one program says nothing about another. Shadow and IBL binds below are
+  // NOT gated: they carry per-frame texture binds that must run every draw regardless of the light block.
+  if (_uploadedLightVersion.get(program) !== lights.version) {
+    const data = lights.data;
+    gl.uniform4f(program.locDirectional, data[0], data[1], data[2], 0);
+    gl.uniform4f(program.locDirectionalRadiance, data[4], data[5], data[6], 0);
+    gl.uniform3f(program.locAmbientRadiance, data[8], data[9], data[10]);
+    gl.uniform1f(program.locDirectionalCount, lights.directionalCount);
+    gl.uniform1f(program.locAmbientCount, lights.ambientCount);
+    _uploadedLightVersion.set(program, lights.version);
+  }
 
   const runtime = getGlSceneRuntime(state);
 
