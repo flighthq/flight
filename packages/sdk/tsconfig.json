@@ -80,6 +80,7 @@
     { "path": "../screen" },
     { "path": "../sensors" },
     { "path": "../shape" },
+    { "path": "../shape-formats" },
     { "path": "../share" },
     { "path": "../shell" },
     { "path": "../shortcut" },
