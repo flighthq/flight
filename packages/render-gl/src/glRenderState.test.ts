@@ -1,8 +1,11 @@
+import { BlendMode } from '@flighthq/types';
+
 import {
   createGlRenderState,
   createGlRenderStateRuntime,
   destroyGlRenderState,
   getGlRenderStateRuntime,
+  invalidateGlRenderStateCache,
 } from './glRenderState';
 import { makeGL } from './glTestHelper';
 
@@ -151,5 +154,33 @@ describe('getGlRenderStateRuntime', () => {
     const { canvas } = makeCanvas();
     const state = createGlRenderState(canvas);
     expect(getGlRenderStateRuntime(state)).toBe(getGlRenderStateRuntime(state));
+  });
+});
+
+describe('invalidateGlRenderStateCache', () => {
+  it('nulls the cached GL binding slots so the next draw re-binds from scratch', () => {
+    const { canvas } = makeCanvas();
+    const state = createGlRenderState(canvas);
+    const runtime = getGlRenderStateRuntime(state);
+
+    // Simulate a full frame of render-gl activity plus a sibling renderer (scene-gl) binding raw GL
+    // state the cache never observed: the cache now points at bindings that are no longer current.
+    runtime.currentProgram = {} as WebGLProgram;
+    runtime.currentTexture = {} as WebGLTexture;
+    runtime.currentFramebuffer = {} as WebGLFramebuffer;
+    runtime.currentBlendMode = BlendMode.Add;
+    runtime.currentMaskDepth = 3;
+    runtime.currentScissorRect = { x: 0, y: 0, width: 1, height: 1 };
+    runtime.renderTargetViewport = { width: 4, height: 4 };
+
+    invalidateGlRenderStateCache(state);
+
+    expect(runtime.currentProgram).toBeNull();
+    expect(runtime.currentTexture).toBeNull();
+    expect(runtime.currentFramebuffer).toBeNull();
+    expect(runtime.currentBlendMode).toBeNull();
+    expect(runtime.currentMaskDepth).toBe(0);
+    expect(runtime.currentScissorRect).toBeNull();
+    expect(runtime.renderTargetViewport).toBeNull();
   });
 });

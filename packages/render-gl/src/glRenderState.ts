@@ -135,3 +135,26 @@ export function destroyGlRenderState(state: GlRenderState): void {
 export function getGlRenderStateRuntime(state: GlRenderState): GlRenderStateRuntime {
   return state[EntityRuntimeKey] as GlRenderStateRuntime;
 }
+
+// Discards render-gl's cached GL binding state (bound program, texture, framebuffer, blend mode,
+// scissor, viewport) so the next render-gl draw re-binds everything from scratch. render-gl's draw
+// paths skip redundant `useProgram`/`bindTexture`/`bindFramebuffer` calls by trusting these cached
+// slots, which is only sound while render-gl is the *sole* writer of GL state on the context.
+//
+// A sibling renderer that issues raw GL commands against the same context — scene-gl's mesh,
+// skybox, shadow, and IBL passes all call `gl.useProgram`/`gl.blendFunc`/`gl.bindFramebuffer`
+// directly — leaves those cached slots pointing at bindings that are no longer current. The next
+// render-gl operation (a 2D draw or the effect-pipeline present pass) then skips a bind it needed,
+// e.g. setting a uniform against a program that is not the one actually bound, which GL rejects with
+// `INVALID_OPERATION: uniform...: location is not from the associated program`. Any such guest
+// renderer must call this before returning control to render-gl.
+export function invalidateGlRenderStateCache(state: GlRenderState): void {
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.currentBlendMode = null;
+  runtime.currentFramebuffer = null;
+  runtime.currentMaskDepth = 0;
+  runtime.currentProgram = null;
+  runtime.currentScissorRect = null;
+  runtime.currentTexture = null;
+  runtime.renderTargetViewport = null;
+}
