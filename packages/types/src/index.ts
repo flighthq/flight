@@ -57,6 +57,8 @@ export * from './Clipboard';
 export * from './ClipboardFormat';
 export * from './ClipboardWatch';
 export * from './ClipRegion';
+export * from './Clock';
+export * from './ClockOptions';
 export * from './CollisionResponse';
 export * from './ColorBlindSimulationEffect';
 export * from './ColorGradeEffect';

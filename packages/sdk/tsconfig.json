@@ -15,6 +15,7 @@
     { "path": "../camera" },
     { "path": "../clip" },
     { "path": "../clipboard" },
+    { "path": "../clock" },
     { "path": "../device" },
     { "path": "../dialog" },
     { "path": "../displayobject" },
