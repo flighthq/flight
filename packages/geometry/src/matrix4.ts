@@ -1200,7 +1200,10 @@ export function setPerspectiveMatrix4(
   _out[12] = 0;
   _out[13] = 0;
   _out[14] = (-2 * zFar * zNear) / (zFar - zNear);
-  _out[15] = 1;
+  // Row-3 of a perspective matrix is (0, 0, -1, 0): m[11] = -1 routes -z_eye into clip w, and m[15]
+  // MUST be 0 so w = -z (not -z + w_in). A stray 1 here (identity leftover) makes w = -z + 1, which
+  // shrinks projected geometry toward the near plane.
+  _out[15] = 0;
 }
 
 /**
