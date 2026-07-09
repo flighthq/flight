@@ -1,12 +1,23 @@
 ---
 package: '@flighthq/render'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-09
+by: builder
 ---
 
 # render — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-09 — light-block version made honest (3D dirty-render groundwork)
+
+Landed the #1 half of a scene-render dirtiness review (the full 3D dirty short-circuit is now Recommended + Approved in `assessment.md`, gated on a node-side prerequisite in Backlog).
+
+**Done (committed + tests green):**
+
+- `packSceneLightBlock` (`sceneRender.ts`) now bumps `SceneLightBlock.version` **only when the packed data or counts actually change** — packs into a reused scratch, compares, commits on change. Previously it bumped every frame, which silently lied about the field's documented contract ("version bumps whenever data or the counts change so a backend can skip re-uploading an unchanged block") and defeated any version-keyed skip.
+- scene-gl `bindGlMeshLightBlock` (`glLitProgram.ts`) now honors that version: the five light uniforms upload only when the bound program's last-uploaded version differs, tracked per program in a `WeakMap<GlLitProgram, number>` (default uniforms are per-program state). Shadow/IBL binds stay unconditional — they carry per-frame texture binds.
+
+**Context surfaced during the review (not yet acted on):** `prepareSceneRender` ignores `state.sceneGraphSyncPolicy` entirely — it always re-walks/re-culls/rebuilds the `SceneRenderList`, with no `requiresInvalidation` analog of the 2D `isRenderProxyDirty` path. The only dirtiness respected in the scene path is the per-node world-transform revision cache in `@flighthq/node` (always-on, invalidation-based, not policy-gated). scene-wgpu bundles lights into the per-frame Frame uniform with the camera, so its light upload can't be version-skipped independently.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
