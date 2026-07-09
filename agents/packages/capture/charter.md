@@ -2,7 +2,7 @@
 package: '@flighthq/capture'
 crate: flighthq-capture
 draft: false
-lastDirection: 2026-07-03
+lastDirection: 2026-07-09
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -10,7 +10,7 @@ status: ./status.md
 
 # capture — Charter
 
-> **CHARTERED, NOT YET BUILT.** Blessed during the 2026-07-03 render-verification direction session. Today the capability lives in the tooling layer (`scripts/capture-core.ts`, `scripts/compare-render.ts`, `scripts/baseline-store.ts`) plus the fingerprint math in `@flighthq/surface`. The approved near-term work in [assessment.md](./assessment.md) executes against that tooling; the package extraction follows.
+> **CHARTERED; first build directed 2026-07-09 (standalone policy/format layer).** Blessed during the 2026-07-03 render-verification direction session. Today the capability lives in the tooling layer (`scripts/capture-core.ts`, `scripts/compare-render.ts`, `scripts/baseline-store.ts`) plus the fingerprint math in `@flighthq/surface`. The approved near-term work in [assessment.md](./assessment.md) executes against that tooling; the package extraction follows.
 
 ## What it is
 
@@ -45,6 +45,9 @@ _Append-only, dated, blessed rulings — frozen from the 2026-07-03 direction se
 - **[2026-07-03]** **Baseline values stay environment-agnostic.** Do not couple a baseline's value to environment identity (no environment stamps, no per-environment baseline files). Resilience comes from what is hashed/fingerprinted and how it is compared, not from environment bookkeeping.
 - **[2026-07-03]** **Package existence and sequence blessed:** TS `@flighthq/capture` first, then the Rust parity crate (`flighthq-capture`, wasm-capable), then the tools import the package.
 - **[2026-07-03]** **Test fonts are distributed via `flight-assets`.** Fonts needed for deterministic text rendering are added to the flight-assets release archive as needed, not committed to this repository and not taken from the host system.
+- **[2026-07-09] First-build scope = the pure policy/format layer; surface keeps the pixel math (resolves Open direction 6).** The package owns, as plain importable functions with no Playwright/Node I/O: the baseline record shape + serialize/parse (the `Record<column, { fingerprint?, sha256? }>` format, `format*`/`parse*` + field get/set — no `fs`), the tolerance comparison policy (`compareCaptureFingerprints` = parse two fingerprint strings via surface + `compareSurfaceFingerprints`; `evaluateCaptureRegression`/`evaluateCaptureParity` applying a tolerance → a pass/diff result), the default tolerances (regression 5, parity 15), and the tier vocabulary type (`regression` | `parity` | `smoke`). It **depends on `@flighthq/surface`** for the pixel math (`createSurfaceFingerprint`, `compareSurfaceFingerprints`, `parseSurfaceFingerprint` stay in surface) and does NOT re-export them (keeps `api:check`'s single-export rule). Playwright driving, dev servers, gallery, CI wiring, and the baseline file I/O stay in the tools.
+  **Why:** the blessed Boundaries put pixel math in surface and the comparison-policy + baseline format in capture; extracting only the pure layer makes the package importable-in-isolation and Rust/wasm-conformable, per the blessed sequence (TS package → Rust parity → tools adopt).
+- **[2026-07-09] Tool adoption is deferred to the blessed later step.** The first build ships the standalone package + tests; migrating `scripts/compare-render.ts` / `baseline-store.ts` / `verify.ts` to import it (removing their duplicated logic) follows the Rust parity crate, per the 2026-07-03 sequence — it is not part of this build (it touches the currently-green render tooling).
 
 ## Open directions
 
