@@ -59,6 +59,7 @@
     { "path": "../particles-formats" },
     { "path": "../picking" },
     { "path": "../path" },
+    { "path": "../path-boolean" },
     { "path": "../path-formats" },
     { "path": "../platform" },
     { "path": "../power" },

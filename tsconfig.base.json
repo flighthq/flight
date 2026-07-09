@@ -152,6 +152,8 @@
       "@flighthq/materials/*": ["./packages/materials/src/*"],
       "@flighthq/path": ["./packages/path/src/index.ts"],
       "@flighthq/path/*": ["./packages/path/src/*"],
+      "@flighthq/path-boolean": ["./packages/path-boolean/src/index.ts"],
+      "@flighthq/path-boolean/*": ["./packages/path-boolean/src/*"],
       "@flighthq/path-formats": ["./packages/path-formats/src/index.ts"],
       "@flighthq/path-formats/*": ["./packages/path-formats/src/*"],
       "@flighthq/particles": ["./packages/particles/src/index.ts"],
