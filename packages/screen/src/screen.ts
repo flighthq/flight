@@ -595,6 +595,12 @@ export function getScreenNearestPoint(point: Readonly<Vector2Like>, out: ScreenI
   return out;
 }
 
+// Returns the screen this rectangle is nearest to. A screen that fully contains the rectangle wins;
+// otherwise the screen whose center is closest to the rectangle's center (squared Euclidean distance,
+// used only for ordering). This lifts getScreenNearestPoint's contains-else-nearest rule from a point
+// to a rectangle, and complements getScreenContainingRect, which instead selects by largest overlap
+// area. The two diverge only when a rectangle straddles screens without being contained by any: this
+// picks by center proximity, getScreenContainingRect by overlap area.
 export function getScreenNearestRect(rect: Readonly<RectangleLike>, out: ScreenInfo): ScreenInfo {
   const screens: ScreenInfo[] = [];
   getScreens(screens);
@@ -603,6 +609,22 @@ export function getScreenNearestRect(rect: Readonly<RectangleLike>, out: ScreenI
     return out;
   }
 
+  // Prefer a screen that fully contains the rectangle, mirroring getScreenNearestPoint's containment
+  // preference. This beats center proximity: a rectangle wholly on one screen belongs to that screen
+  // even when a differently-sized neighbor's center happens to sit closer.
+  for (const screen of screens) {
+    if (
+      rect.x >= screen.x &&
+      rect.y >= screen.y &&
+      rect.x + rect.width <= screen.x + screen.width &&
+      rect.y + rect.height <= screen.y + screen.height
+    ) {
+      copyScreenInfo(screen, out);
+      return out;
+    }
+  }
+
+  // Fall back to the screen whose center is closest to the rectangle's center.
   const cx = rect.x + rect.width / 2;
   const cy = rect.y + rect.height / 2;
   let bestScreen = screens[0];
