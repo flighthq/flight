@@ -1,7 +1,43 @@
+import { createMatrix4, getMatrix4Element } from '@flighthq/geometry';
 import { createSceneNode, setSceneNodePosition } from '@flighthq/scene';
 import type { Skeleton } from '@flighthq/types';
 
-import { computeSkeletonJointMatrices, createSkeleton, setSkeletonBindPose } from './skeleton';
+import {
+  cloneSkeleton,
+  computeSkeletonJointMatrices,
+  createSkeleton,
+  disposeSkeleton,
+  equalsSkeleton,
+  getSkeletonJointIndexByName,
+  getSkeletonJointWorldMatrix,
+  getSkeletonJointWorldMatrixByName,
+  setSkeletonBindPose,
+  validateSkeleton,
+} from './skeleton';
+
+describe('cloneSkeleton', () => {
+  it('copies buffers and arrays into a new identity while sharing joint nodes', () => {
+    const joint = createSceneNode();
+    setSceneNodePosition(joint, 5, 0, 0);
+    const skeleton = createSkeleton([joint], undefined, ['root']);
+
+    const clone = cloneSkeleton(skeleton);
+
+    expect(clone).not.toBe(skeleton);
+    expect(clone.inverseBindMatrices).not.toBe(skeleton.inverseBindMatrices);
+    expect(clone.jointMatrices).not.toBe(skeleton.jointMatrices);
+    expect(clone.joints).not.toBe(skeleton.joints);
+    expect(clone.joints[0]).toBe(joint); // node shared by reference
+    expect(Array.from(clone.inverseBindMatrices)).toEqual(Array.from(skeleton.inverseBindMatrices));
+    expect(clone.names).toEqual(['root']);
+    expect(clone.names).not.toBe(skeleton.names);
+  });
+
+  it('preserves a null names field', () => {
+    const clone = cloneSkeleton(createSkeleton([createSceneNode()]));
+    expect(clone.names).toBeNull();
+  });
+});
 
 describe('computeSkeletonJointMatrices', () => {
   it('encodes the joint delta from its bind pose', () => {
@@ -95,6 +131,88 @@ describe('createSkeleton', () => {
   });
 });
 
+describe('disposeSkeleton', () => {
+  it('drops joint references and clears names', () => {
+    const skeleton = createSkeleton([createSceneNode(), createSceneNode()], undefined, ['a', 'b']);
+    disposeSkeleton(skeleton);
+    expect(skeleton.joints.length).toBe(0);
+    expect(skeleton.names).toBeNull();
+  });
+});
+
+describe('equalsSkeleton', () => {
+  it('is reflexive and compares clones as equal', () => {
+    const joint = createSceneNode();
+    setSceneNodePosition(joint, 2, 0, 0);
+    const skeleton = createSkeleton([joint], undefined, ['root']);
+    expect(equalsSkeleton(skeleton, skeleton)).toBe(true);
+    expect(equalsSkeleton(skeleton, cloneSkeleton(skeleton))).toBe(true);
+  });
+
+  it('differs on joint count, inverse-bind contents, and names', () => {
+    const j0 = createSceneNode();
+    setSceneNodePosition(j0, 1, 0, 0);
+    const a = createSkeleton([j0]);
+
+    const j1 = createSceneNode();
+    setSceneNodePosition(j1, 9, 0, 0);
+    const differentBind = createSkeleton([j1]);
+    expect(equalsSkeleton(a, differentBind)).toBe(false);
+
+    const extra = createSkeleton([createSceneNode(), createSceneNode()]);
+    expect(equalsSkeleton(a, extra)).toBe(false);
+
+    const named = createSkeleton([j0], a.inverseBindMatrices, ['root']);
+    const unnamed = createSkeleton([j0], a.inverseBindMatrices);
+    expect(equalsSkeleton(named, unnamed)).toBe(false);
+    expect(equalsSkeleton(named, createSkeleton([j0], a.inverseBindMatrices, ['other']))).toBe(false);
+  });
+});
+
+describe('getSkeletonJointIndexByName', () => {
+  it('returns the joint index or -1 when unnamed or missing', () => {
+    const skeleton = createSkeleton([createSceneNode(), createSceneNode()], undefined, ['hip', 'spine']);
+    expect(getSkeletonJointIndexByName(skeleton, 'spine')).toBe(1);
+    expect(getSkeletonJointIndexByName(skeleton, 'missing')).toBe(-1);
+    expect(getSkeletonJointIndexByName(createSkeleton([createSceneNode()]), 'hip')).toBe(-1);
+  });
+});
+
+describe('getSkeletonJointWorldMatrix', () => {
+  it('reads the joint world matrix into out and returns true', () => {
+    const joint = createSceneNode();
+    setSceneNodePosition(joint, 5, 3, 0);
+    const skeleton = createSkeleton([joint]);
+    const out = createMatrix4();
+
+    expect(getSkeletonJointWorldMatrix(out, skeleton, 0)).toBe(true);
+    expect(getMatrix4Element(out, 0, 3)).toBeCloseTo(5); // world translation x
+    expect(getMatrix4Element(out, 1, 3)).toBeCloseTo(3); // world translation y
+  });
+
+  it('returns false and leaves out untouched for an out-of-range index', () => {
+    const skeleton = createSkeleton([createSceneNode()]);
+    const out = createMatrix4();
+    expect(getSkeletonJointWorldMatrix(out, skeleton, 5)).toBe(false);
+    expect(getSkeletonJointWorldMatrix(out, skeleton, -1)).toBe(false);
+    expect(getMatrix4Element(out, 0, 3)).toBeCloseTo(0); // still identity
+  });
+});
+
+describe('getSkeletonJointWorldMatrixByName', () => {
+  it('resolves the joint by name and reads its world matrix', () => {
+    const hip = createSceneNode();
+    const hand = createSceneNode();
+    setSceneNodePosition(hand, 7, 0, 0);
+    const skeleton = createSkeleton([hip, hand], undefined, ['hip', 'hand']);
+    const out = createMatrix4();
+
+    expect(getSkeletonJointWorldMatrixByName(out, skeleton, 'hand')).toBe(true);
+    expect(getMatrix4Element(out, 0, 3)).toBeCloseTo(7);
+    expect(getSkeletonJointWorldMatrixByName(out, skeleton, 'missing')).toBe(false);
+  });
+});
+
 describe('setSkeletonBindPose', () => {
   it('rebinds so the current pose becomes the rest pose', () => {
     const joint = createSceneNode();
@@ -105,5 +223,23 @@ describe('setSkeletonBindPose', () => {
     computeSkeletonJointMatrices(skeleton);
 
     expect(skeleton.jointMatrices[12]).toBeCloseTo(0); // identity again
+  });
+});
+
+describe('validateSkeleton', () => {
+  it('returns null for a well-formed skeleton', () => {
+    expect(validateSkeleton(createSkeleton([createSceneNode(), createSceneNode()]))).toBeNull();
+  });
+
+  it('returns a diagnostic when inverseBindMatrices length does not match jointCount * 16', () => {
+    const skeleton = createSkeleton([createSceneNode(), createSceneNode()]);
+    skeleton.inverseBindMatrices = new Float32Array(16); // only one joint's worth for two joints
+
+    const diagnostic = validateSkeleton(skeleton);
+    expect(diagnostic).not.toBeNull();
+    expect(diagnostic!.jointCount).toBe(2);
+    expect(diagnostic!.expectedInverseBindMatricesLength).toBe(32);
+    expect(diagnostic!.inverseBindMatricesLength).toBe(16);
+    expect(diagnostic!.message).toContain('does not match');
   });
 });
