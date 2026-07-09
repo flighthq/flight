@@ -35,7 +35,7 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 - Measurement and analysis (length, point/tangent at distance, signed area, orientation, true bezier-extrema bounds, winding-rule containment, segment evaluation).
 - Transformation (affine, translate, reverse).
 - Stroke-to-outline expansion (joins/caps/dashing) — producing a fillable outline path from a centerline + style.
-- Path editing/simplification: `simplifyPath` (Douglas-Peucker decimation), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath`. (Polygon offsetting moved to `@flighthq/path-boolean` — see Decisions.)
+- Path editing: `decimatePath` (Douglas-Peucker point reduction), `cleanPath` (coincident/near-collinear vertex dedup), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath`. (Kernel-based editing — region offset, self-intersection resolution — lives in `@flighthq/path-boolean`; see Decisions.)
 - Multiple tessellation strategies: simple (current `tessellatePath` for convex/simple polygons) and holes-aware (earcut + winding for compound shapes).
 
 **Non-goals:**
@@ -60,9 +60,13 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 
   **Why:** Types should always live in types. `StrokeStyle` is a cross-package descriptor — shape records stroke style, path expands it, renderers consume it.
 
-- **[2026-07-02] Path editing/simplification is in scope.** `simplifyPath` (Douglas-Peucker point reduction), `fitPathCurves` (Schneider polyline→bezier fitting), and standalone `dashPath` (dash a path without full stroke expansion) are standard path-library primitives and belong in this package.
+- **[2026-07-02] Path editing/simplification is in scope.** `decimatePath` (Douglas-Peucker point reduction; originally named `simplifyPath`), `fitPathCurves` (Schneider polyline→bezier fitting), and standalone `dashPath` (dash a path without full stroke expansion) are standard path-library primitives and belong in this package.
 
   **Why:** These are canonical operations every mature path library provides (Skia, Cairo, paper.js). They are value-in/value-out, no cross-package coupling, and natural extensions of the existing surface.
+
+- **[2026-07-09] The kernel-dependency line divides `path` from `path-boolean`.** An operation lives in `@flighthq/path` iff it needs no boolean sweep kernel (flatten, transform, reverse, stroke, `decimatePath`, `cleanPath`, `fitPathCurves`, `dashPath`); anything requiring the arrangement/sweep (union/intersect/difference/xor, region `offsetPath`, self-intersection `simplifyPath`) lives in `@flighthq/path-boolean`. Naming follows: the canonical CSG verbs (`offsetPath`, `simplifyPath`) belong to path-boolean, and `path`'s kernel-free ops take precise names that don't claim them — hence Douglas-Peucker decimation is `decimatePath`, not `simplifyPath` (which in the Clipper/Skia sense means self-intersection resolution, a path-boolean op). `cleanPath` (vertex dedup) is kernel-free and lives here, not in path-boolean, so dedup never pulls the clipper into a bundle.
+
+  **Why:** the bundle invariant — a user who only flattens or decimates must not import polygon clipping — and honest vocabulary: "simplify" is overloaded, so the base package uses the unambiguous `decimatePath` and cedes the CSG "simplify" to the CSG package.
 
 - **[2026-07-09] Polygon offsetting reassigned to `@flighthq/path-boolean`.** The naive single-pass `offsetPath` that lived here (parallel edge-shift + miter join, no self-intersection cleanup) was **removed** — it produced self-intersecting, invalid geometry on any concave input or large distance, and offsetting is genuinely a CSG concern. The AAA offset now lives in `@flighthq/path-boolean` as `offsetPath(path, delta, options)` (all join/cap styles + miter limit + kernel self-union cleanup). Path keeps stroke-to-outline expansion (a different operation: centerline → both-sided fillable outline); it no longer offers a standalone region offset.
 

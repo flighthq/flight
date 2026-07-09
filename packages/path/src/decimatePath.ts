@@ -3,13 +3,15 @@ import { PathCommand } from '@flighthq/types';
 
 import { flattenPath } from './flattenPath';
 
-// Simplifies `source` by flattening curves and applying Douglas-Peucker decimation to each
-// contour, removing points that deviate less than `tolerance` from the simplified line. Writes
-// the result into `out`. Alias-safe: `out` may be the same object as `source`.
+// Decimates `source` by flattening curves and applying Douglas-Peucker point reduction to each
+// contour, removing points that deviate less than `tolerance` from the decimated line. Writes
+// the result into `out`. Alias-safe: `out` may be the same object as `source`. Topological
+// simplification (resolving self-intersections into a clean region) is `simplifyPath` in
+// `@flighthq/path-boolean` — a distinct, kernel-based operation.
 //
 // Curves are first flattened (using `flattenTolerance`), then the resulting polylines are
 // decimated. Closed contours that end at their start point remain closed in the output.
-export function simplifyPath(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance = 0.25): void {
+export function decimatePath(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance = 0.25): void {
   const contours = flattenPath(source, flattenTolerance);
   out.commands.length = 0;
   out.data.length = 0;

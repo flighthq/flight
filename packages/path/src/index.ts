@@ -14,7 +14,7 @@ export * from './getPathSignedArea';
 export * from './path';
 export * from './pathMeshPool';
 export * from './reversePath';
-export * from './simplifyPath';
+export * from './decimatePath';
 export * from './strokePath';
 export * from './tessellatePath';
 export * from './tessellatePathTyped';
