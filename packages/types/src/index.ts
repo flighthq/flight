@@ -25,6 +25,7 @@ export * from './BarrelDistortionEffect';
 export * from './BatchBarrier';
 export * from './BatchFormat';
 export * from './BevelFilter';
+export * from './BevelFilterOffsets';
 export * from './Billboard';
 export * from './Bitmap';
 export * from './BitmapFilter';
