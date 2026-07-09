@@ -58,6 +58,7 @@
     { "path": "../particles-formats" },
     { "path": "../picking" },
     { "path": "../path" },
+    { "path": "../path-formats" },
     { "path": "../platform" },
     { "path": "../power" },
     { "path": "../protocol" },

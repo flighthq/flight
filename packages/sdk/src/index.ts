@@ -52,6 +52,7 @@ export * from '@flighthq/notification';
 export * from '@flighthq/particles';
 export * from '@flighthq/particles-formats';
 export * from '@flighthq/path';
+export * from '@flighthq/path-formats';
 export * from '@flighthq/picking';
 export * from '@flighthq/platform';
 export * from '@flighthq/power';

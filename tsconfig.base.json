@@ -150,6 +150,8 @@
       "@flighthq/materials/*": ["./packages/materials/src/*"],
       "@flighthq/path": ["./packages/path/src/index.ts"],
       "@flighthq/path/*": ["./packages/path/src/*"],
+      "@flighthq/path-formats": ["./packages/path-formats/src/index.ts"],
+      "@flighthq/path-formats/*": ["./packages/path-formats/src/*"],
       "@flighthq/particles": ["./packages/particles/src/index.ts"],
       "@flighthq/particles/*": ["./packages/particles/src/*"],
       "@flighthq/picking": ["./packages/picking/src/index.ts"],

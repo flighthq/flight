@@ -53,6 +53,7 @@
     { "path": "./packages/particles-formats" },
     { "path": "./packages/picking" },
     { "path": "./packages/path" },
+    { "path": "./packages/path-formats" },
     { "path": "./packages/platform" },
     { "path": "./packages/power" },
     { "path": "./packages/protocol" },
