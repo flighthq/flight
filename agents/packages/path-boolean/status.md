@@ -18,4 +18,10 @@ Each phase: dispatched to a builder, reviewed for geometry correctness, gated (`
 
 ## State
 
-Phase A in progress.
+**Phase A — done** (`70e6b440`). Package scaffold + registration; `PathBooleanBackend` seam (`getPathBooleanBackend`/`setPathBooleanBackend`/`createDefaultPathBooleanBackend`); Martinez–Rueda default kernel (`createMartinezPathBooleanBackend`); `unionPaths`/`intersectPaths`/`differencePaths`/`xorPaths` + `booleanPaths`; both fill rules; flatten-then-boolean over `flattenPath`. 58 tests green (check + build + package tests). Types in `@flighthq/types`: `PathBooleanOperation`, `PathBooleanOptions` (defaults nonZero / tolerance 0.25), `PathBooleanBackend`, `PathBooleanContour`.
+
+Kernel design notes worth carrying: classification is a **separate static winding-sum pass** over the arrangement (not sweep-time parity), which is why coincident/overlapping edges classify correctly. `@flighthq/geometry` was **dropped** in favor of inline plain-number cross products (more C-portable, no unused dep) — keep it dropped unless a Phase-D robustness need forces vector-math reuse.
+
+**Phase D hardening targets flagged during Phase A** (correct on pixel-scale input; not yet adversarially hardened): absolute epsilons `VERTEX_SNAP=1e-7` / `INTERSECTION_EPS=1e-12` (magnitude-relative snapping wanted); perpendicular-offset classification sample `len·1e-4` for near-coincident edges; ray cast through a strict x-extremum vertex; `compareSegments` float-corner consistency; result winding currently always emitted nonZero. Fold these into the Phase-D fuzz-invariant pass.
+
+**Phase B — offsetting: in progress.**
