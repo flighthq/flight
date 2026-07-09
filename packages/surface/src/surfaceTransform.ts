@@ -149,7 +149,6 @@ export function scrollSurface(out: Surface, dx: number, dy: number): void {
   }
   _scrollScratch.set(out.data, 0);
 
-  out.data.fill(0);
   for (let py = 0; py < out.height; py++) {
     const srcY = (((py - dy) % out.height) + out.height) % out.height;
     for (let px = 0; px < out.width; px++) {
