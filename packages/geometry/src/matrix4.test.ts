@@ -1490,6 +1490,23 @@ describe('setPerspectiveMatrix4', () => {
     setPerspectiveMatrix4(m, 0.5, 1.6, 0.1, 1000);
     expect(m.m[11]).toBe(-1);
   });
+
+  it('sets m[15] to 0 so clip w is -z, not -z + w', () => {
+    const m = createMatrix4();
+    setPerspectiveMatrix4(m, 0.5, 1.6, 0.1, 1000);
+    expect(m.m[15]).toBe(0);
+  });
+
+  it('projects a point to clip w = -z_eye (the perspective divisor)', () => {
+    const m = createMatrix4();
+    setPerspectiveMatrix4(m, 0.5, 1.6, 0.1, 1000);
+    // w_clip for a point (x, y, z, 1) is row 3 of the matrix: m[3]*x + m[7]*y + m[11]*z + m[15]*1.
+    // With m[3]=m[7]=0, m[11]=-1, m[15]=0, a point 5 units in front of the camera (z_eye = -5) must
+    // divide by +5. A stray m[15]=1 would give 6, shrinking the projection.
+    const zEye = -5;
+    const wClip = m.m[3] * 2 + m.m[7] * 3 + m.m[11] * zEye + m.m[15] * 1;
+    expect(wClip).toBe(5);
+  });
 });
 
 describe('translateMatrix4', () => {
