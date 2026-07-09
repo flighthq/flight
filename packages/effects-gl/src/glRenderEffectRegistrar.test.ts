@@ -5,6 +5,7 @@ import {
   registerBlurGlRenderEffects,
   registerColorGlRenderEffects,
   registerColorGradeGlRenderEffects,
+  registerCustomShaderGlRenderEffect,
   registerDefaultGlRenderEffects,
   registerScreenSpaceGlRenderEffects,
   registerStandardGlRenderEffects,
@@ -110,6 +111,18 @@ describe('registerColorGradeGlRenderEffects', () => {
     registerColorGradeGlRenderEffects(state);
     expect(hasGlRenderEffectRunner(state, 'BrightnessContrastEffect')).toBe(true);
     expect(hasGlRenderEffectRunner(state, 'GrayscaleEffect')).toBe(true);
+  });
+});
+
+describe('registerCustomShaderGlRenderEffect', () => {
+  it('is a function', () => {
+    expect(typeof registerCustomShaderGlRenderEffect).toBe('function');
+  });
+
+  it('registers the CustomShaderEffect runner', () => {
+    const state = {} as never;
+    registerCustomShaderGlRenderEffect(state);
+    expect(hasGlRenderEffectRunner(state, 'CustomShaderEffect')).toBe(true);
   });
 });
 

@@ -8,6 +8,7 @@ import { defaultGlChannelMixerEffectRunner } from './glChannelMixerEffect';
 import { defaultGlChromaticAberrationEffectRunner } from './glChromaticAberrationEffect';
 import { defaultGlColorGradeEffectRunner } from './glColorGradeEffect';
 import { defaultGlCrtEffectRunner } from './glCrtEffect';
+import { defaultGlCustomShaderEffectRunner } from './glCustomShaderEffect';
 import { defaultGlDirectionalBlurEffectRunner } from './glDirectionalBlurEffect';
 import { defaultGlDisplacementEffectRunner } from './glDisplacementEffect';
 import { defaultGlDitherEffectRunner } from './glDitherEffect';
@@ -127,6 +128,15 @@ export function registerColorGradeGlRenderEffects(state: GlRenderState): void {
   registerColorGlRenderEffects(state);
 }
 
+// CustomShaderEffect: runs a user-authored fragment shader (registered with
+// registerGlCustomShaderSource) as a fullscreen pass. Not part of any fixed taxonomy band — it is the
+// escape hatch for effects the built-in set does not cover. registerDefaultGlRenderEffects includes
+// it, so a CustomShaderEffect naming an unregistered shaderKey passes the image through unchanged
+// rather than being silently skipped as an unregistered kind.
+export function registerCustomShaderGlRenderEffect(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'CustomShaderEffect', defaultGlCustomShaderEffectRunner);
+}
+
 // Registers all default effect runners, covering all six taxonomy bands. The opt-in "register the
 // standard set" entry for applications that want every effect available without cherry-picking.
 // Symmetric with Wgpu's registerStandardWgpuRenderEffects.
@@ -135,6 +145,7 @@ export function registerDefaultGlRenderEffects(state: GlRenderState): void {
   registerBloomGlRenderEffects(state);
   registerBlurGlRenderEffects(state);
   registerColorGlRenderEffects(state);
+  registerCustomShaderGlRenderEffect(state);
   registerScreenSpaceGlRenderEffects(state);
   registerStylizeGlRenderEffects(state);
 }
@@ -185,6 +196,7 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'ChromaticAberrationEffect',
   'ColorGradeEffect',
   'CrtEffect',
+  'CustomShaderEffect',
   'DirectionalBlurEffect',
   'DisplacementEffect',
   'DitherEffect',
