@@ -1,6 +1,7 @@
 import type { FontResource, FontUrl } from '@flighthq/types';
 
-import { inferFontFormat } from './fontFormat';
+import { inferFontFormatFromUrl } from './fontFormat';
+import { getFontShorthand } from './fontShorthand';
 
 export async function loadFontResourceFromBytes(out: FontResource, bytes: Uint8Array): Promise<FontResource> {
   const face = new FontFace(
@@ -14,7 +15,7 @@ export async function loadFontResourceFromBytes(out: FontResource, bytes: Uint8A
 }
 
 export async function loadFontResourceFromName(out: FontResource): Promise<FontResource> {
-  const faces = await document.fonts.load(`1em '${out.family}'`);
+  const faces = await document.fonts.load(getFontShorthand(out.family));
   if (faces.length > 0) out.face = faces[0];
   return out;
 }
@@ -30,7 +31,7 @@ export async function loadFontResourceFromUrl(out: FontResource, url: string): P
 export async function loadFontResourceFromUrls(out: FontResource, sources: FontUrl[]): Promise<FontResource> {
   const src = sources
     .map(({ url, format }) => {
-      const fmt = format ?? inferFontFormat(url);
+      const fmt = format ?? inferFontFormatFromUrl(url);
       return fmt !== null ? `url(${url}) format('${fmt}')` : `url(${url})`;
     })
     .join(', ');
