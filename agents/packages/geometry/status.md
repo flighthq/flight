@@ -8,6 +8,12 @@ by: builder
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-09 — setPerspectiveMatrix4 m[15] fix (correctness — was halving 3D size)
+
+`setPerspectiveMatrix4` set `_out[15] = 1` (an identity-matrix leftover) where a perspective matrix requires `0`. Row 3 must be `(0, 0, -1, 0)`: `m[11] = -1` routes `-z_eye` into clip `w`, and `m[15]` must be `0` so `w = -z`. With `m[15] = 1`, `w = -z + 1`, so everything divided by a too-large `w` and rendered smaller (≈half size at typical near distances). Reported by the flight-reference consumer (their three 3D samples), who patched it locally in their upstream cache — this is the real upstream fix. Changed `_out[15] = 1` → `0` with a durable comment; added tests asserting `m[15] === 0` and that a point at `z_eye = -5` yields clip `w = +5`. Unit suites green (matrix4 138, camera 62, render sceneRender).
+
+**Baseline impact (action needed elsewhere):** this changes what a perspective camera renders, so the committed **functional regression fingerprints for every perspective 3D scene are now stale** (mesh-\*, material-\*, env-\* — all except `camera-orthographic`, which uses an orthographic projection). Smoke and parity are unaffected (both backends shift consistently and still render non-blank). Regenerate the regression baselines on the canonical capture host with `npm run test:functional:regression:baseline` — deliberately NOT done here, since regression baselines are environment-coupled and a sandbox recapture could bake in this env's rasterization.
+
 ## 2026-07-09 — Matrix4 rotations flipped from degrees to radians (breaking, pre-release)
 
 `rotateMatrix4`, `appendRotationMatrix4`, and `prependRotationMatrix4` now take their angle in **radians**, not degrees. They were the lone degrees outlier in the package — a direct lift of OpenFL `Matrix3D.appendRotation` — while every other angle primitive here (`rotateMatrix`/`rotateMatrix3` `theta`, quaternion axis-angle/Euler, polar/vector-angle) is already radians. This matches the textbook AAA math-library convention (GLM, DirectXMath, three.js) and removes the `DEG_TO_RAD` multiply from the hot path.
