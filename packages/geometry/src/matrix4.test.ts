@@ -92,7 +92,7 @@ describe('appendRotationMatrix4', () => {
   it('rotates identity around Z axis by 90 degrees', () => {
     const m = createMatrix4();
 
-    appendRotationMatrix4(m, m, 90, Z_AXIS);
+    appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
     expect(m.m[0]).toBeCloseTo(0);
     expect(m.m[1]).toBeCloseTo(1);
@@ -104,7 +104,7 @@ describe('appendRotationMatrix4', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 10, 0, 0);
 
-    appendRotationMatrix4(m, m, 90, Z_AXIS);
+    appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
     expect(m.m[12]).toBe(10);
     expect(m.m[13]).toBe(0);
@@ -114,7 +114,7 @@ describe('appendRotationMatrix4', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 10, 0, 0);
 
-    appendRotationMatrix4(m, m, 90, Z_AXIS, { x: 5, y: 0, z: 0, w: 1 });
+    appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS, { x: 5, y: 0, z: 0, w: 1 });
 
     expect(m.m[12]).toBeCloseTo(5);
     expect(m.m[13]).toBeCloseTo(5);
@@ -124,8 +124,8 @@ describe('appendRotationMatrix4', () => {
     const a = createMatrix4();
     const b = createMatrix4();
 
-    appendRotationMatrix4(a, a, 45, Z_AXIS);
-    prependRotationMatrix4(b, b, 45, Z_AXIS);
+    appendRotationMatrix4(a, a, Math.PI / 4, Z_AXIS);
+    prependRotationMatrix4(b, b, Math.PI / 4, Z_AXIS);
 
     expect(equalsMatrix4(a, b)).toBe(true);
   });
@@ -673,7 +673,7 @@ describe('inverseMatrix4', () => {
 
   it('inverse of rotation-only matrix is its transpose', () => {
     const m = createMatrix4();
-    appendRotationMatrix4(m, m, 90, Z_AXIS);
+    appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
     const inv = createMatrix4();
     inverseMatrix4(inv, m);
@@ -687,7 +687,7 @@ describe('inverseMatrix4', () => {
   it('inverse of rotation + translation', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 5, 0, 0);
-    appendRotationMatrix4(m, m, 90, Z_AXIS);
+    appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
     const inv = createMatrix4();
     inverseMatrix4(inv, m);
@@ -701,7 +701,7 @@ describe('inverseMatrix4', () => {
   it('supports out === source', () => {
     const matrix = createMatrix4();
     translateMatrix4(matrix, matrix, 5, -3, 2);
-    appendRotationMatrix4(matrix, matrix, 30, Z_AXIS);
+    appendRotationMatrix4(matrix, matrix, Math.PI / 6, Z_AXIS);
     scaleMatrix4(matrix, matrix, 2, 3, 4);
     const expected = createMatrix4();
     inverseMatrix4(expected, matrix);
@@ -1018,7 +1018,7 @@ describe('prependRotationMatrix4', () => {
   it('rotates identity around Z axis', () => {
     const m = createMatrix4();
 
-    prependRotationMatrix4(m, m, 90, Z_AXIS);
+    prependRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
     expect(m.m[0]).toBeCloseTo(0);
     expect(m.m[1]).toBeCloseTo(1);
@@ -1028,7 +1028,7 @@ describe('prependRotationMatrix4', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 10, 0, 0);
 
-    prependRotationMatrix4(m, m, 90, Z_AXIS);
+    prependRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
     // (10, 0, 0) → (0, 10, 0)
     expect(m.m[12]).toBeCloseTo(0);
@@ -1112,8 +1112,8 @@ describe('rotateMatrix4', () => {
     const a = createMatrix4();
     const b = createMatrix4();
 
-    rotateMatrix4(a, a, Z_AXIS, 90);
-    appendRotationMatrix4(b, b, 90, Z_AXIS);
+    rotateMatrix4(a, a, Z_AXIS, Math.PI / 2);
+    appendRotationMatrix4(b, b, Math.PI / 2, Z_AXIS);
 
     expect(equalsMatrix4(a, b)).toBe(true);
   });
@@ -1122,7 +1122,7 @@ describe('rotateMatrix4', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 5, 0, 0);
 
-    rotateMatrix4(m, m, Z_AXIS, 90);
+    rotateMatrix4(m, m, Z_AXIS, Math.PI / 2);
 
     expect(m.m[12]).toBe(5);
     expect(m.m[13]).toBe(0);
@@ -1131,7 +1131,7 @@ describe('rotateMatrix4', () => {
   it('rotation around X does not affect X axis basis vector', () => {
     const m = createMatrix4();
 
-    appendRotationMatrix4(m, m, 90, X_AXIS);
+    appendRotationMatrix4(m, m, Math.PI / 2, X_AXIS);
 
     expect(m.m[0]).toBeCloseTo(1);
     expect(m.m[1]).toBeCloseTo(0);
@@ -1141,7 +1141,7 @@ describe('rotateMatrix4', () => {
   it('rotation around Y does not affect Y axis basis vector', () => {
     const m = createMatrix4();
 
-    appendRotationMatrix4(m, m, 90, Y_AXIS);
+    appendRotationMatrix4(m, m, Math.PI / 2, Y_AXIS);
 
     expect(m.m[4]).toBeCloseTo(0);
     expect(m.m[5]).toBeCloseTo(1);
@@ -1533,7 +1533,7 @@ describe('transposeMatrix4', () => {
 
   it('transpose of rotation matrix equals its inverse', () => {
     const m = createMatrix4();
-    appendRotationMatrix4(m, m, 90, Z_AXIS);
+    appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
     const t = createMatrix4();
     transposeMatrix4(t, m);

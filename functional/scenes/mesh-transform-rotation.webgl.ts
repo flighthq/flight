@@ -73,8 +73,9 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lig
 // extends vertically and no longer horizontally — a result only a correctly-applied Z rotation can produce.
 //
 // Camera is head-on (eye at (0,0,4), looking at the origin), so the X bar lies flat in the screen plane and
-// a Z rotation is an in-plane screen rotation. rotateMatrix4 takes DEGREES (rotateMatrix4(out, source, axis,
-// degrees)); the axis is world +Z = (0,0,1). 90° maps the bar's long X extent onto the screen's Y axis.
+// a Z rotation is an in-plane screen rotation. rotateMatrix4 takes RADIANS (rotateMatrix4(out, source, axis,
+// radians)); the axis is world +Z = (0,0,1). A quarter turn (π/2) maps the bar's long X extent onto the
+// screen's Y axis.
 //
 // app.ts is backend-agnostic; per-backend scene wiring lives in render.webgl.ts / render.webgpu.ts.
 
@@ -90,9 +91,9 @@ const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
 // THE FEATURE UNDER TEST: rotate the bar 90° about world +Z via its localMatrix. rotateMatrix4 is out-param
-// style and takes DEGREES — rotateMatrix4(out, source, axis, degrees) — applied in place to the identity.
+// style and takes RADIANS — rotateMatrix4(out, source, axis, radians) — applied in place to the identity.
 const zAxis = createVector3(0, 0, 1);
-rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, 90);
+rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, Math.PI / 2);
 
 // Head-on camera at (0,0,4): the X bar lies in the screen plane; a Z rotation rotates it within the screen.
 const camera = createCamera({
