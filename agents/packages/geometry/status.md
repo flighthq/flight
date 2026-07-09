@@ -1,12 +1,21 @@
 ---
 package: '@flighthq/geometry'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-09
+by: builder
 ---
 
 # geometry — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-09 — Matrix4 rotations flipped from degrees to radians (breaking, pre-release)
+
+`rotateMatrix4`, `appendRotationMatrix4`, and `prependRotationMatrix4` now take their angle in **radians**, not degrees. They were the lone degrees outlier in the package — a direct lift of OpenFL `Matrix3D.appendRotation` — while every other angle primitive here (`rotateMatrix`/`rotateMatrix3` `theta`, quaternion axis-angle/Euler, polar/vector-angle) is already radians. This matches the textbook AAA math-library convention (GLM, DirectXMath, three.js) and removes the `DEG_TO_RAD` multiply from the hot path.
+
+- `__getAxisRotation`'s internal `-degrees * DEG_TO_RAD` became `-radians` (handedness negation preserved); param renamed `degrees` → `radians`; JSDoc on all three functions states the unit and points to `DEG_TO_RAD` for callers holding a degree value.
+- Callers updated: the two `mesh-transform-rotation` functional scenes (`90` → `Math.PI / 2`; comments now say RADIANS — same 90° rotation, so render baselines are unaffected) and `matrix4.test.ts` (all degree literals → `Math.PI/2`, `/4`, `/6`; assertions unchanged since the geometry is identical). 135 matrix4 tests green.
+- The layer rule is now uniform and was recorded in `agents/index.md` Design Constraints: geometry = radians, authoring/scene-graph transform (`node.rotation`, display-object rotation) = degrees converted at the seam. The node/display-object degrees API is correct as-is and was **not** touched.
+- No Rust counterpart exists yet (`matrix4.rs` absent), so nothing to sync in the conformance map.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
