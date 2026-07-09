@@ -49,6 +49,7 @@ Run `npm run api <name>` to query exported function signatures directly.
 - `@flighthq/timeline`: MovieClip-style keyframe and timeline support.
 - `@flighthq/timeline-spritesheet`: timeline implementation backed by spritesheet animation internally.
 - `@flighthq/tween`: tween managers, tweens, and timers.
+- `@flighthq/clock`: hierarchical, pausable, scalable time primitive. A `Clock` tree driven by the app loop via `advanceClock(root, dtSeconds)`; child rate = product of ancestor scales, and a paused ancestor freezes its subtree. Consumers read scaled `deltaTime`/`elapsed` fields; opt-in `onTick` signal (via `enableClockSignals`) composes with the signal rate helpers. Depends only on `types` + `signals`.
 - `@flighthq/easing`: easing functions for use with tween or any animation system.
 
 ## Input and Text

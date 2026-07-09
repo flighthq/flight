@@ -33,6 +33,7 @@
     "@flighthq/camera": "*",
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",
+    "@flighthq/clock": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
     "@flighthq/displayobject": "*",
