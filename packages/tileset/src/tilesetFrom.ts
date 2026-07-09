@@ -44,12 +44,16 @@ export async function loadTilesetFromBase64(
   mimeType: string,
   tileWidth: number,
   tileHeight: number,
+  margin: number = 0,
+  spacing: number = 0,
   signal?: AbortSignal,
 ): Promise<Tileset> {
   return createTilesetFromImageResource(
     await loadImageResourceFromBase64(base64, mimeType, signal),
     tileWidth,
     tileHeight,
+    margin,
+    spacing,
   );
 }
 
@@ -57,15 +61,25 @@ export async function loadTilesetFromBlob(
   blob: Blob,
   tileWidth: number,
   tileHeight: number,
+  margin: number = 0,
+  spacing: number = 0,
   signal?: AbortSignal,
 ): Promise<Tileset> {
-  return createTilesetFromImageResource(await loadImageResourceFromBlob(blob, signal), tileWidth, tileHeight);
+  return createTilesetFromImageResource(
+    await loadImageResourceFromBlob(blob, signal),
+    tileWidth,
+    tileHeight,
+    margin,
+    spacing,
+  );
 }
 
 export async function loadTilesetFromBytes(
   bytes: Uint8Array,
   tileWidth: number,
   tileHeight: number,
+  margin: number = 0,
+  spacing: number = 0,
   mimeType?: string,
   signal?: AbortSignal,
 ): Promise<Tileset> {
@@ -73,6 +87,8 @@ export async function loadTilesetFromBytes(
     await loadImageResourceFromBytes(bytes, mimeType, signal),
     tileWidth,
     tileHeight,
+    margin,
+    spacing,
   );
 }
 
@@ -80,6 +96,8 @@ export async function loadTilesetFromUrl(
   url: string,
   tileWidth: number,
   tileHeight: number,
+  margin: number = 0,
+  spacing: number = 0,
   crossOrigin?: string,
   signal?: AbortSignal,
 ): Promise<Tileset> {
@@ -87,5 +105,7 @@ export async function loadTilesetFromUrl(
     await loadImageResourceFromUrl(url, crossOrigin, signal),
     tileWidth,
     tileHeight,
+    margin,
+    spacing,
   );
 }
