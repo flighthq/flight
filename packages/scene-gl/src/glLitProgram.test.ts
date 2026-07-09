@@ -58,6 +58,38 @@ describe('bindGlMeshLightBlock', () => {
     // directionalCount + ambientCount + shadowEnabled (0, no active shadow) + iblEnabled (0, no IBL).
     expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBe(4);
   });
+
+  it('skips the light uniform upload when the program already holds the block version', () => {
+    const gl = makeFakeGl2();
+    const program = makeLitProgram();
+    const state = makeState(gl);
+    const block = {
+      ambientCount: 1,
+      data: new Float32Array(12),
+      directionalCount: 1,
+      hemisphereCount: 0,
+      pointCount: 0,
+      spotCount: 0,
+      version: 7,
+    };
+    bindGlMeshLightBlock(state, program, block);
+    bindGlMeshLightBlock(state, program, block);
+    // Two binds, one program, one version: locDirectional/locDirectionalRadiance (uniform4f) and
+    // locAmbientRadiance (uniform3f) upload exactly once — only the light block is gated.
+    expect(gl.calls.filter((c) => c.name === 'uniform4f').length).toBe(2);
+    expect(gl.calls.filter((c) => c.name === 'uniform3f').length).toBe(1);
+  });
+
+  it('re-uploads the light uniforms when the block version changes', () => {
+    const gl = makeFakeGl2();
+    const program = makeLitProgram();
+    const state = makeState(gl);
+    const data = new Float32Array(12);
+    const block = { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0 };
+    bindGlMeshLightBlock(state, program, { ...block, version: 1 });
+    bindGlMeshLightBlock(state, program, { ...block, version: 2 });
+    expect(gl.calls.filter((c) => c.name === 'uniform4f').length).toBe(4);
+  });
 });
 
 describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
