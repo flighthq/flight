@@ -1,6 +1,7 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
 import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
+import { invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import type {
   Camera,
   GlMeshMaterialRenderer,
@@ -156,6 +157,12 @@ export function drawGlScene(
 
     gl.disable(gl.BLEND);
   }
+
+  // Mesh/skybox/shadow binds above issued raw gl.useProgram/blendFunc/bindFramebuffer calls that
+  // render-gl's own binding cache did not observe. Invalidate it so the next render-gl operation —
+  // typically the effect-pipeline present pass or a 2D display-list draw — re-binds from scratch
+  // instead of setting uniforms against a program that is no longer bound.
+  invalidateGlRenderStateCache(state);
 }
 
 // Returns true when a material's alphaMode is 'blend'. All other modes (opaque, mask, and unknown

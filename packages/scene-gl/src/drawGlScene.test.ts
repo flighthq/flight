@@ -4,6 +4,7 @@ import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createMesh, createScene } from '@flighthq/scene';
 import type { Camera, SceneLights } from '@flighthq/types';
 
@@ -43,6 +44,25 @@ describe('drawGlScene', () => {
     // Same material across both meshes: bound once, drawn twice.
     expect(gl.calls.filter((c) => c.name === 'useProgram').length).toBe(1);
     expect(gl.calls.filter((c) => c.name === 'drawElements').length).toBe(2);
+  });
+
+  it('invalidates render-gl binding cache after drawing so the present pass re-binds', () => {
+    const { state } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
+
+    // Stand in for render-gl having a program bound and cached before the scene draws. The mesh
+    // renderers bind their own programs with raw gl.useProgram, which render-gl's cache never sees;
+    // without the post-draw invalidation the stale program would survive and the effect-pipeline
+    // present pass would set uniforms against a program that is no longer bound (INVALID_OPERATION).
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.currentProgram = {} as WebGLProgram;
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(runtime.currentProgram).toBeNull();
   });
 
   it('does not draw a disabled mesh', () => {
