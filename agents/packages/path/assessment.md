@@ -22,7 +22,7 @@ Sweep-safe: within `@flighthq/path`, no cross-package coupling, no breaking chan
 
 5. **Add `getPathNearestPoint` (closest-point-on-path).** Additive pure query over flattened segments, out-param into `Vector2Like`, consistent with the existing `*AtDistance` family.
 
-6. **Add `simplifyPath` (Douglas-Peucker decimation).** Flattened-contour decimation to a tolerance, out-param `Path`, alias-safe. Self-contained, dependency-free, within-package.
+6. ~~**Add `simplifyPath` (Douglas-Peucker decimation).**~~ **Done** — ships as `decimatePath` (renamed 2026-07-09 so the CSG `simplifyPath` in `@flighthq/path-boolean`, which resolves self-intersections, owns the "simplify" verb). Flattened-contour decimation to a tolerance, out-param `Path`, alias-safe.
 
 7. **Add `fitPathCurves` (Schneider polyline → bezier fitting).** Re-curves a flattened/scanned outline. Additive, within-package; larger than items 4–6 but carries no design decision and no cross-package coupling.
 
