@@ -6,6 +6,7 @@ export * from './glChannelMixerEffect';
 export * from './glChromaticAberrationEffect';
 export * from './glColorGradeEffect';
 export * from './glCrtEffect';
+export * from './glCustomShaderEffect';
 export * from './glDirectionalBlurEffect';
 export * from './glDisplacementEffect';
 export * from './glDitherEffect';
