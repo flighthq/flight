@@ -1,6 +1,6 @@
 # Package TODO Index
 
-_Generated 2026-07-07 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md › Recommended` (the sweep-safe work queue), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
+_Generated 2026-07-09 by `node agents/packages/todo.mjs` — do not edit by hand. Sources: each cell's `review.md` (status/score), `assessment.md › Recommended` (the sweep-safe work queue), `charter.md` (chartered-unbuilt detection), and `register.md › Build queue`. Regenerate after assessments or the register change._
 
 One line per actionable item. For detail, read only the named package's cell: `agents/packages/<name>/assessment.md` (and its `charter.md` for the rules). `Recommended` items are pre-sorted as sweep-safe but **not yet approved**; check `assessment.md › Approved` for blessed work.
 
@@ -275,6 +275,7 @@ Design calls to settle before building the affected entries: the glyph-atlas sea
 - Fix `computeRenderProxyWorldBounds` to use real world bounds
 - Move `computeTextFormatFontString` to `@flighthq/text`
 - Add `enableRenderGuards(state)` and `explainRenderState(state, root)` (sibling guard/explain modules)
+- Honor `sceneGraphSyncPolicy` in `prepareSceneRender` — a 3D dirty short-circuit
 
 ### spritesheet-formats (partial 58)
 
@@ -601,6 +602,6 @@ Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). 
 
 - **Needs a direction session (charter stub or never directed):** `clock` · `movieclip` · `particle-emitter` · `path-boolean` · `path-formats` · `shape-formats` · `textshaper-canvas` · `textureatlas-formats` · `xml`
 - **Needs a first review (built, no review.md):** _none_
-- **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `tween (review 2026-06-24 < status 2026-06-25)`
+- **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `render (review 2026-06-25 < status 2026-07-09)` · `tween (review 2026-06-24 < status 2026-06-25)`
 - **Needs assess refresh (review newer than assessment):** _none_
 - **Open directions awaiting the user:** 513 across 103 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `filters-css` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `filters-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `filters-gl` (8) · `filters-surface` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `camera` (7) · `filters-wgpu` (7) · `render` (7) · `timeline` (7) · `capture` (6) · `effects-canvas` (6) · `filters` (6) · `image-codec` (6) · `loader` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
