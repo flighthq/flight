@@ -25,16 +25,19 @@ export function appendMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, o
  * Applies a world-space rotation to the current matrix.
  *
  * Rotation is applied after all transformations of source are completed.
+ *
+ * @param radians rotation angle in radians (the @flighthq/geometry convention — convert a
+ * designer-facing degree value with `DEG_TO_RAD` from `@flighthq/math`).
  **/
 export function appendRotationMatrix4(
   out: Matrix4Like,
   source: Readonly<Matrix4Like>,
-  degrees: number,
+  radians: number,
   axis: Readonly<Vector4Like>,
   pivotPoint?: Readonly<Vector4Like>,
 ): void {
   const m = acquireIdentityMatrix4();
-  __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
+  __getAxisRotation(m, axis.x, axis.y, axis.z, radians);
 
   if (pivotPoint !== undefined) {
     const p = pivotPoint;
@@ -761,16 +764,19 @@ export function prependMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, 
  *
  * This method first applies the translation (tx, ty, tz) and then applies all the transformations
  * (e.g., rotation, scaling, etc.) from the source matrix.
+ *
+ * @param radians rotation angle in radians (the @flighthq/geometry convention — convert a
+ * designer-facing degree value with `DEG_TO_RAD` from `@flighthq/math`).
  **/
 export function prependRotationMatrix4(
   out: Matrix4Like,
   source: Readonly<Matrix4Like>,
-  degrees: number,
+  radians: number,
   axis: Readonly<Vector4Like>,
   pivotPoint?: Readonly<Vector4Like>,
 ): void {
   const m = acquireIdentityMatrix4();
-  __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
+  __getAxisRotation(m, axis.x, axis.y, axis.z, radians);
 
   if (pivotPoint !== undefined) {
     const p = pivotPoint;
@@ -834,15 +840,18 @@ export function prependTranslationMatrix4(
  * Applies a local-space rotation relative to the matrix's existing orientation.
  *
  * Translation is preserved.
+ *
+ * @param radians rotation angle in radians (the @flighthq/geometry convention — convert a
+ * designer-facing degree value with `DEG_TO_RAD` from `@flighthq/math`).
  */
 export function rotateMatrix4(
   out: Matrix4Like,
   source: Readonly<Matrix4Like>,
   axis: Readonly<Vector3Like>,
-  degrees: number,
+  radians: number,
 ): void {
   const m = acquireIdentityMatrix4();
-  __getAxisRotation(m, axis.x, axis.y, axis.z, degrees);
+  __getAxisRotation(m, axis.x, axis.y, axis.z, radians);
   multiplyMatrix4(out, source, m);
   releaseMatrix4(m);
 }
@@ -1244,14 +1253,15 @@ export function writeMatrix4ToFloat32Array(out: Float32Array, offset: number, so
   out.set(source.m, offset);
 }
 
-function __getAxisRotation(out: Matrix4Like, x: number, y: number, z: number, degrees: number): void {
+function __getAxisRotation(out: Matrix4Like, x: number, y: number, z: number, radians: number): void {
   const _out = out.m;
   let ax = x,
     ay = y,
     az = z;
 
-  const DEG_TO_RAD = Math.PI / 180;
-  const rad = -degrees * DEG_TO_RAD;
+  // Negated to preserve the rotation handedness the degrees-based version produced; the caller's
+  // angle is already radians (the @flighthq/geometry math-layer convention), so no unit conversion.
+  const rad = -radians;
   const c = Math.cos(rad);
   const s = Math.sin(rad);
   const t = 1.0 - c;
