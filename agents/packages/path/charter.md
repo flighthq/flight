@@ -35,7 +35,7 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 - Measurement and analysis (length, point/tangent at distance, signed area, orientation, true bezier-extrema bounds, winding-rule containment, segment evaluation).
 - Transformation (affine, translate, reverse).
 - Stroke-to-outline expansion (joins/caps/dashing) — producing a fillable outline path from a centerline + style.
-- Path editing/simplification: `simplifyPath` (Douglas-Peucker decimation), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath`, `offsetPath` (outset/inset).
+- Path editing/simplification: `simplifyPath` (Douglas-Peucker decimation), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath`. (Polygon offsetting moved to `@flighthq/path-boolean` — see Decisions.)
 - Multiple tessellation strategies: simple (current `tessellatePath` for convex/simple polygons) and holes-aware (earcut + winding for compound shapes).
 
 **Non-goals:**
@@ -60,9 +60,13 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 
   **Why:** Types should always live in types. `StrokeStyle` is a cross-package descriptor — shape records stroke style, path expands it, renderers consume it.
 
-- **[2026-07-02] Path editing/simplification is in scope.** `simplifyPath` (Douglas-Peucker point reduction), `fitPathCurves` (Schneider polyline→bezier fitting), standalone `dashPath` (dash a path without full stroke expansion), and `offsetPath` (inset/outset by distance) are standard path-library primitives and belong in this package.
+- **[2026-07-02] Path editing/simplification is in scope.** `simplifyPath` (Douglas-Peucker point reduction), `fitPathCurves` (Schneider polyline→bezier fitting), and standalone `dashPath` (dash a path without full stroke expansion) are standard path-library primitives and belong in this package.
 
   **Why:** These are canonical operations every mature path library provides (Skia, Cairo, paper.js). They are value-in/value-out, no cross-package coupling, and natural extensions of the existing surface.
+
+- **[2026-07-09] Polygon offsetting reassigned to `@flighthq/path-boolean`.** The naive single-pass `offsetPath` that lived here (parallel edge-shift + miter join, no self-intersection cleanup) was **removed** — it produced self-intersecting, invalid geometry on any concave input or large distance, and offsetting is genuinely a CSG concern. The AAA offset now lives in `@flighthq/path-boolean` as `offsetPath(path, delta, options)` (all join/cap styles + miter limit + kernel self-union cleanup). Path keeps stroke-to-outline expansion (a different operation: centerline → both-sided fillable outline); it no longer offers a standalone region offset.
+
+  **Why:** A correct offset requires the boolean kernel to dissolve the self-overlap that offsetting a concave corner creates. That kernel is path-boolean's, so the operation belongs there — keeping a cleanup-free duplicate in path was a bug surface, not a cheaper primitive.
 
 - **[2026-07-02] Multiple tessellation strategies coexist.** Keep `tessellatePath` as the simple, fast, no-holes direct-fill route. Add a second function (e.g. `tessellatePathFilled` or `tessellatePathComplex`) that handles holes via earcut hole-stitching + winding. The caller picks which they need — simple shapes get the cheap path, compound/donut shapes get the correct one.
 

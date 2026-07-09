@@ -11,7 +11,6 @@ export * from './getPathNearestPoint';
 export * from './getPathPointAtDistance';
 export * from './getPathSegmentAtParameter';
 export * from './getPathSignedArea';
-export * from './offsetPath';
 export * from './path';
 export * from './pathMeshPool';
 export * from './reversePath';
