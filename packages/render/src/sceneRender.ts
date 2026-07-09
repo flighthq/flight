@@ -30,30 +30,43 @@ import type {
 
 // Packs the directional + ambient draw-arg lights into `out` (the GPU-ready light block), converting
 // each packed sRgb color to linear, premultiplied radiance (unpackColorToLinear(color) * intensity)
-// so the shader never sees sRgb. Sets the presence counts (0 or 1 each) and bumps `version` so a
-// backend can skip re-uploading an unchanged block. The float layout matches the shader's std140
-// light block: directional { direction.xyz, _pad, radiance.rgb, _pad } then ambient { radiance.rgb,
-// _pad }. An absent term leaves its slots zeroed.
+// so the shader never sees sRgb. Sets the presence counts (0 or 1 each). The float layout matches the
+// shader's std140 light block: directional { direction.xyz, _pad, radiance.rgb, _pad } then ambient
+// { radiance.rgb, _pad }. An absent term leaves its slots zeroed.
+//
+// `version` bumps only when the packed data or counts actually change from the previous pack — a
+// no-op re-pack of identical lights leaves it untouched. This is the SceneLightBlock contract a
+// backend keyed off `version` relies on to skip re-uploading an unchanged block across frames; a
+// blind per-frame bump would defeat that skip. Packs into a scratch, compares, then commits only on
+// change so an unchanged block is never dirtied.
 export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<SceneLights>): void {
-  const data = out.data;
-  data.fill(0);
+  scratchLightData.fill(0);
 
+  let directionalCount = 0;
   const directional = lights.directional;
   if (directional !== null) {
-    packDirectionalLight(data, directional);
-    out.directionalCount = 1;
-  } else {
-    out.directionalCount = 0;
+    packDirectionalLight(scratchLightData, directional);
+    directionalCount = 1;
   }
 
+  let ambientCount = 0;
   const ambient = lights.ambient;
   if (ambient !== null) {
-    packAmbientLight(data, ambient);
-    out.ambientCount = 1;
-  } else {
-    out.ambientCount = 0;
+    packAmbientLight(scratchLightData, ambient);
+    ambientCount = 1;
   }
 
+  if (
+    out.directionalCount === directionalCount &&
+    out.ambientCount === ambientCount &&
+    isFloat32ArrayEqual(out.data, scratchLightData)
+  ) {
+    return;
+  }
+
+  out.data.set(scratchLightData);
+  out.directionalCount = directionalCount;
+  out.ambientCount = ambientCount;
   out.version++;
 }
 
@@ -149,6 +162,14 @@ function ensurePreparedScene(state: RenderState): PreparedScene {
   return prepared;
 }
 
+function isFloat32ArrayEqual(a: Readonly<Float32Array>, b: Readonly<Float32Array>): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 function isMeshVisible(mesh: Readonly<Mesh>, frustum: Readonly<Frustum>, worldBounds: Aabb): boolean {
   const bounds = mesh.geometry.bounds;
   if (bounds === null) {
@@ -230,3 +251,7 @@ const preparedScenes = new WeakMap<RenderState, PreparedScene>();
 
 const scratchColor: LinearColor = [0, 0, 0, 0];
 const scratchProjection = createMatrix4();
+
+// Reused staging buffer for packSceneLightBlock's pack-then-compare: the new block is packed here and
+// committed to `out.data` only when it differs, so an unchanged block never bumps `version`.
+const scratchLightData = new Float32Array(LIGHT_BLOCK_FLOATS);
