@@ -3,6 +3,7 @@ export * from '@flighthq/app';
 export * from '@flighthq/application';
 export * from '@flighthq/audio';
 export * from '@flighthq/camera';
+export * from '@flighthq/capture';
 export * from '@flighthq/clip';
 export * from '@flighthq/clipboard';
 export * from '@flighthq/clock';

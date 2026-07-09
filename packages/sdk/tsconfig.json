@@ -13,6 +13,7 @@
     { "path": "../app" },
     { "path": "../application" },
     { "path": "../camera" },
+    { "path": "../capture" },
     { "path": "../clip" },
     { "path": "../clipboard" },
     { "path": "../clock" },

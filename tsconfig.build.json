@@ -7,6 +7,7 @@
     { "path": "./packages/camera" },
     { "path": "./packages/webcam" },
     { "path": "./packages/xml" },
+    { "path": "./packages/capture" },
     { "path": "./packages/clip" },
     { "path": "./packages/clipboard" },
     { "path": "./packages/clock" },
