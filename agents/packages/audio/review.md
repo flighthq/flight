@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/audio'
-status: stub
-score: 18
-updated: 2026-07-03
+status: solid
+score: 60
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -58,3 +58,7 @@ Treat this as the seed of the audio subject, not a finished data layer. Build ou
 5. **Decide the streaming-carrier boundary** with `@flighthq/media` (buffer vs media-element source) and record it; today the gap is invisible because neither package models it.
 
 The four functions present are well-made; the package is simply ~one-fifth of one sub-area of its domain.
+
+## 2026-07-09 — deepened
+
+AudioResource lifecycle to image parity — full loader matrix, sample-tier constructors, clone/dispose/predicates, buffer getters, MIME infer/detect, codec negotiation (commit fc5cd290). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.

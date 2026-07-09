@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/picking'
-status: partial
-score: 32
-updated: 2026-07-03
+status: solid
+score: 58
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -63,3 +63,7 @@ Grow this from one query into the query family, roughly in value order:
 6. **Design the ID-buffer seam** (substrate-agnostic ID assignment + readback, `picking-gl`/`picking-wgpu` executors) and region selection as follow-on packages/passes — surface to the user, since both cross package boundaries.
 
 The single function present is well above stub quality — layered correctly, alias-documented, honest about precision tier — but a picking library is measured by its query surface, and that surface is one cell wide.
+
+## 2026-07-09 — deepened
+
+pickSceneWithRay3D primitive, pickSceneAll, ScenePickOptions (predicate/maxDistance/cull), SceneHit face normals + triangleIndex, visibility skip (commit 155314a2). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.
