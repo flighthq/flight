@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/screen'
 status: partial
-score: 35
-updated: 2026-06-25
+score: 42
+updated: 2026-07-09
 ingested:
   - base=origin/main(eb73c3d74)
   - evidence=integration-b2824e3d8 delta
@@ -78,3 +78,7 @@ The ingested `status.md` (as-claimed, builder-67dc46d64) describes a 93/100 surf
 ## What "fit to merge" would require
 
 The delta becomes mergeable the moment its type-seam half is present in the same integration: the expanded 25-field `ScreenInfo`, `ScreenMode`, `ScreenColorSpace`, `ScreenOrientation`, `ScreenChangeKind`, `ScreenChangedMetrics`, `ScreenTouchSupport`, the payload-carrying `ScreenBackend` (`subscribe(listener: (event: Readonly<ScreenChangeEvent>) => void)` + required `getCursorPosition` + optional `getModes`), and the new `ScreenSignals` module — all exported from `@flighthq/types`. With those present and a clean `npm run check`, the design itself reaches the `solid` / near-Gold the prior pass aimed for. As integrated today, it does not build.
+
+## 2026-07-09 — refreshed
+
+getScreenNearestRect given real contains-else-nearest-by-center-distance semantics distinct from getScreenContainingRect (commit bd412dd6). Verified against source; a full re-review is due.

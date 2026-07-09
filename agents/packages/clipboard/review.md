@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/clipboard'
 status: partial
-score: 35
-updated: 2026-06-25
+score: 40
+updated: 2026-07-09
 ingested:
   - base=origin/main(eb73c3d74)
   - evidence=integration-b2824e3d8 delta
@@ -81,3 +81,7 @@ The package-side design is the right shape and should survive intact once the ty
 - The Package Map line in `index.md` still reads "system clipboard read/write (text, HTML)"; the delta covers HTML, image, RTF, bookmark, files, the generic MIME seam, atomic write, and change events. (Recommended in assessment, but **after** the merge is buildable — not a gate item.)
 - `package.json` `description` (`b2824e3d8:packages/clipboard/package.json:36`) likewise understates the surface.
 - The `ClipboardFormat` constants the status doc says were added are unused by the package's own code even in the builder's worktree (the `has*` paths hardcode `'text/x-moz-url'` / `'text/html'` / `'text/rtf'`); fold that into the same types-restore pass.
+
+## 2026-07-09 — refreshed
+
+test suite routed through ClipboardFormat constants (source already used them); verified stale-clean (commit b1e7bb81). Verified against source; a full re-review is due.

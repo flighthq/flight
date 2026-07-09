@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/xml'
 status: partial
-score: 35
-updated: 2026-07-03
+score: 45
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -53,3 +53,7 @@ Not counted against it: DTD validation, XPath, and XSD — out of scope even for
 ## Recommendation
 
 Decide the ceiling first; the code follows either way. If the intent is a minimal internal parser for atlas/plist formats, say so in the package description and charter, fix the two in-subset defects (`>` inside quoted attribute values; DOCTYPE internal-subset stripping), correct the "pull-style" description, and add the small query-helper layer (`getXmlElementChildByName` etc.) so consumers stop re-filtering `children` — that yields an honest, solid-for-its-scope utility. If the name is to be kept at face value, the growth path is: serializer (`serializeXmlDocument`), ordered mixed-content mode (opt-in child text nodes), positioned error reporting/validator, then namespace awareness — streaming can stay out of scope. Either way, move `XmlElement` to `@flighthq/types` or record the carve-out, since two format packages already depend on its shape.
+
+## 2026-07-09 — refreshed
+
+fixed >-in-quoted-attribute and DOCTYPE internal-subset parsing bugs; added element query helpers (getXmlElementChildByName/ChildrenByName/Attribute/AttributeNumber) (commit d1d2cd57). Verified against source; a full re-review is due.
