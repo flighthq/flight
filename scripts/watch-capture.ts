@@ -26,13 +26,18 @@
 //   3. Read tools/output/{tool}/{name}/{renderer}/logs.jsonl
 //   4. Optionally check status.json.capturedAt against your edit time for freshness
 
+import type { Entry, Tool } from '@flighthq/tool-capture';
+import {
+  captureEntry,
+  discoverEntries,
+  installAbortHandler,
+  launchBrowser,
+  resolveServer,
+} from '@flighthq/tool-capture';
 import type { Browser, BrowserContext } from '@playwright/test';
 import chokidar from 'chokidar';
 import { resolve, sep } from 'path';
 import pc from 'picocolors';
-
-import type { Entry, Tool } from './capture-core.js';
-import { captureEntry, discoverEntries, installAbortHandler, launchBrowser, resolveServer } from './capture-core.js';
 
 // ---------------------------------------------------------------------------
 // Arg parsing
