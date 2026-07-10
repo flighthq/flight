@@ -91,6 +91,7 @@
     { "path": "./packages/shortcut" },
     { "path": "./packages/signals" },
     { "path": "./packages/skeleton" },
+    { "path": "./packages/snapshot" },
     { "path": "./packages/socket" },
     { "path": "./packages/spatial" },
     { "path": "./packages/spring" },

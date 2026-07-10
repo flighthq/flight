@@ -118,6 +118,7 @@
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
     "@flighthq/skeleton": "*",
+    "@flighthq/snapshot": "*",
     "@flighthq/socket": "*",
     "@flighthq/spatial": "*",
     "@flighthq/spring": "*",
