@@ -1,4 +1,4 @@
-# particle-emitter — Assessment
+# particleemitter — Assessment
 
 See [charter](./charter.md) for blessed direction.
 
