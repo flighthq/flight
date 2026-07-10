@@ -1,0 +1,36 @@
+name: Release
+
+# Publishes the whole @flighthq/* package graph to npm when a version tag is pushed. Bump first with
+# `npm run version:packages <version>`, commit, then tag `v<version>` and push the tag:
+#   npm run version:packages 0.1.0 && git commit -am "release: 0.1.0" && git tag v0.1.0 && git push --tags
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm run build
+      - run: npm run release -- --no-build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Attaches build provenance to each package (public repo + id-token: write above).
+          NPM_CONFIG_PROVENANCE: 'true'
