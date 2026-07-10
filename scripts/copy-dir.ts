@@ -8,7 +8,7 @@ import { join } from 'node:path';
 // site-assembly copy, a static server, the browser). copyFileSync preserves the source mode
 // correctly on the same filesystem, so the tree is walked by hand instead. Existing files at the
 // destination are overwritten; destination directories are created as needed. This is the merge
-// primitive behind every pooled-asset directory in the build (examples, functional, build:site).
+// primitive behind every pooled-asset directory in the build (examples, functional).
 export function copyDirectoryContents(src: string, dst: string): void {
   mkdirSync(dst, { recursive: true });
   for (const entry of readdirSync(src, { withFileTypes: true })) {

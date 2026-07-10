@@ -12,12 +12,10 @@ type ColumnBaseline = Partial<Record<BaselineField, string>>;
 type TestBaseline = Record<string, ColumnBaseline>;
 
 // Per-subject baseline root: baselines colocate with their suite (functional/examples are
-// top-level; the landing site lives under site). One JSON file per test under the root's
-// baselines/ dir.
+// top-level). One JSON file per test under the root's baselines/ dir.
 const BASELINE_ROOTS: Record<string, string> = {
   functional: 'functional',
   examples: 'examples',
-  site: 'site',
 };
 
 export function baselinePath(root: string, subject: string, name: string): string {
