@@ -11,7 +11,7 @@ action : subject : modifier…
 ```
 
 - **action** — the verb: what you do. `build`, `test`, `dev`, `capture`, `size`, `order`, `lint`, …
-- **subject** — what it acts on, sitting _immediately_ after the action: a tool (`functional`, `examples`, `landing`), a layer (`unit`, `integration`, `api`), or a measured thing (`size`). The subject is the parity axis — `build:examples`, `test:examples`, and `dev:examples` all name the same subject under different actions.
+- **subject** — what it acts on, sitting _immediately_ after the action: a tool (`functional`, `examples`, `gallery`), a layer (`unit`, `integration`, `api`), or a measured thing (`size`). The subject is the parity axis — `build:examples`, `test:examples`, and `dev:examples` all name the same subject under different actions.
 - **modifier(s)** — narrow the action: a check (`smoke`, `parity`, `regression`), a mode (`baseline`, `watch`, `check`, `fix`), or a tolerance.
 
 **Never let a non-subject word take the subject slot.** `verify:render:examples` is wrong: `render` is fighting `examples` for the slot, and the write variant then stacks to `verify:render:examples:baseline`. When a distinction needs a new word, make it a **modifier after the subject** or a **different action** — not a second subject. (This is why the cross-backend render check is `test:*:parity`, a modifier, and the fingerprint comparison is the `test` action rather than a separate verb crowding the subject.)
@@ -54,6 +54,6 @@ Collapses over these leaves:
 | `test:functional:baseline` / `test:examples:baseline` | that subject's baseline write (its `:regression:baseline`) |
 | `test:regression:baseline` | both subjects' regression baseline writes |
 | `test:baseline` | every render-test baseline (today: `test:regression:baseline`) |
-| `functional` / `examples` / `landing` | the matching `dev:*` server |
+| `functional` / `examples` / `gallery` | the matching `dev:*` server |
 
 The mechanics behind these scripts live in `scripts/capture.ts` (smoke, via `--fail-on-error`) and `scripts/compare-render.ts` (parity = `--no-regression`, regression = `--no-parity`, write = `--update-fingerprints`).
