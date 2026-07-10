@@ -65,6 +65,7 @@ export * from '@flighthq/path';
 export * from '@flighthq/path-boolean';
 export * from '@flighthq/path-formats';
 export * from '@flighthq/picking';
+export * from '@flighthq/permission';
 export * from '@flighthq/platform';
 export * from '@flighthq/power';
 export * from '@flighthq/protocol';

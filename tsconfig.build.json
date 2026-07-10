@@ -64,6 +64,7 @@
     { "path": "./packages/path" },
     { "path": "./packages/path-boolean" },
     { "path": "./packages/path-formats" },
+    { "path": "./packages/permission" },
     { "path": "./packages/platform" },
     { "path": "./packages/power" },
     { "path": "./packages/protocol" },
