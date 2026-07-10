@@ -31,6 +31,7 @@
     "@flighthq/animation": "*",
     "@flighthq/app": "*",
     "@flighthq/application": "*",
+    "@flighthq/binpack": "*",
     "@flighthq/camera": "*",
     "@flighthq/camera2d": "*",
     "@flighthq/capture": "*",

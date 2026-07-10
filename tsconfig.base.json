@@ -86,6 +86,8 @@
       "@flighthq/application/*": ["./packages/application/src/*"],
       "@flighthq/capture": ["./packages/capture/src/index.ts"],
       "@flighthq/capture/*": ["./packages/capture/src/*"],
+      "@flighthq/binpack": ["./packages/binpack/src/index.ts"],
+      "@flighthq/binpack/*": ["./packages/binpack/src/*"],
       "@flighthq/clip": ["./packages/clip/src/index.ts"],
       "@flighthq/clip/*": ["./packages/clip/src/*"],
       "@flighthq/clock": ["./packages/clock/src/index.ts"],

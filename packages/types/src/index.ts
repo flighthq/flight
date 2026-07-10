@@ -31,6 +31,7 @@ export * from './BatchFormat';
 export * from './BevelFilter';
 export * from './BevelFilterOffsets';
 export * from './Billboard';
+export * from './BinPack';
 export * from './Bitmap';
 export * from './BitmapFilter';
 export * from './BitmapFilterMargin';
