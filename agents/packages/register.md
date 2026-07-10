@@ -42,22 +42,29 @@ Eight June candidates are now real: `animation`, `skeleton`, `picking` (3D build
 
 **Chartered, not yet built** — eight cells carry a blessed charter with no code behind them, the ready-to-build queue: `capture`, `clock`, `image-codec`, `movieclip`, `particleemitter`, `path-boolean`, `path-formats`, `shape-formats`. (This list is computed live in [`TODO.md`](TODO.md).)
 
-## Build queue — recommended order (2026-07-03)
+## Build queue — recommended order (regenerated 2026-07-10)
 
-The remaining candidates ranked by how many stakeholder perspectives demand them and how severely their absence was rated. One line each; verdicts are in the tables below (candidate specs were part of the June report generation — regenerate on demand; see index.md).
+Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is **built**: `net`, `socket`, `assets`, `collision`, `spatial`, `camera2d`, `accessibility`, plus the whole 2D-game / animation / `-formats` blocks (`flow`, `spring`, `motionpath`, `clock`, `intl`, `permissions`, `scene`, `picking`, `animation`, `skeleton`, `font`, `image-codec`, `texture-formats`, `tilemap-formats`, and the full text/glyph bitmap cluster `glyphatlas`/`bitmapfont`/`bitmapfont-formats`/`bitmaptext`). What genuinely remains, re-ranked by foundational-ness and unblocked-ness:
 
-1. `net` + `socket` — HTTP and WebSocket transport seam (URLLoader/URLRequest home); the largest single coverage hole, #1 for two perspectives.
-2. `textshaper-harfbuzz` — full-glyph GSUB/GPOS shaper backend (rustybuzz on Rust); unblocked now the shaper seam is glyph-bearing; the text-typography bottleneck.
-3. `assets` — id-keyed asset library over loader/resources: dedup, refcount, eviction, manifests, preload-by-group; the asset-pipeline keystone.
-4. `collision` + `spatial` — overlap/swept tests + broadphase; game-2d's #1 category.
-5. `camera2d` — follow/deadzone, zoom, worldToScreen, parallax, cull bounds; game-2d's single biggest hole.
-6. `shadow` + `environment` — shadow-map pass + PCF seam; skybox + IBL bake; the top 3D blockers, sequenced by 3d-pipeline-architecture.md.
-7. `accessibility` — role/label/focus tree over a backend (DOM ARIA first); category-level omission.
-8. Scene serialization — **needs the naming/scope call first** (see the `scene-format` row below).
-9. Then: `instancing` / `postprocess` / `compute-wgpu` (3D remainder; `render-graph` needs its own design pass), `host-capacitor` / `host-tauri`, `textbidi` / `textsegment` / `text-markup`, `texture-formats` / `atlas-packer` / `tilemap-formats`, `spring` / `motion-path`, `flow` / `permissions` / `intl`.
-10. Opportunistic: `mediasession`, `biometrics`, `purchase`, `calendar`, `contacts`, `devtools`, `testing`.
+1. **Text itemization + shaping cluster** — the typography bottleneck, now unblocked (the shaper seam is glyph-bearing and bitmap text just landed). `textsegment` (grapheme/word/line segmentation; upstream `unicode-segmentation`) and `textbidi` (bidi itemization; upstream `unicode-bidi`) are the itemize layers correct international layout sits on; `textshaper-harfbuzz` (GSUB/GPOS shaping — the TS backend seam + registrar is local, the heavy rustybuzz impl → `flight-rs` like `surface-rs`); `text-markup` (markup → rich-text `-formats`).
+2. **3D lighting build-out** — defers to [`render-architecture.md`](../render-architecture.md) / [`3d-materials-architecture.md`](../3d-materials-architecture.md) as authoritative; sequence core-lit → shadow → IBL. `shadow` (shadow-map pass + PCF seam), `environment` (skybox + IBL bake), `instancing` (GPU instancing). **`render-graph` needs its own design pass FIRST** (it reshapes `render`).
+3. **Host backends** — mechanical, mirror `host-electron`: `host-tauri`, `host-capacitor`.
+4. **Platform-suite opportunistic** — clean cells like clipboard/dialog: `mediasession`, `biometrics`, `purchase`, `calendar`, `contacts`.
+5. **Infra / tooling** — `devtools`, `testing`. The `tool-*` suite has begun (`tool-capture`); `testing`/`devtools` may land as `tool-*` cells rather than SDK packages.
+6. **`compute-wgpu`** — GPU compute backend (enables GPU particles/physics later).
 
-Design calls to settle before building the affected entries: the glyph-atlas seam (`font-atlas`/`text-gpu` — design once), scene serialization naming, `render-graph`'s reshaping of `render`, the 2D-skeletal question (`skeleton` landed 3D-shaped), and the `animation`/`skeleton`/`tween`/`timeline` boundary (anchor: the `clock` charter).
+Design calls to settle before building the affected entries:
+
+- **Scene serialization** — the aligned name `scene-formats` is taken by the glTF importer; native save/load + versioned migration needs a fold-in or a distinct name (`scene-save`? `scene-document`?).
+- **`render-graph`** — its own design pass (reshaping `render`) before shadow/lighting sequencing hardens.
+- **The `animation`/`skeleton`/`tween`/`timeline` boundary** — now that all four are built, revisit for overlap (anchor: the `clock` charter).
+
+Resolved / redundant — removed from the candidate set:
+
+- `postprocess` → **covered by the built `effects`** + `effects-gl`/`effects-wgpu`/`effects-canvas` (substrate-agnostic post-process descriptors + per-backend execution).
+- `atlas-packer` → **covered by the built `binpack`** (general 2D MaxRects packer under `textureatlas`/`tileset`).
+
+_(A full multi-perspective re-poll of severity/demand — the original June-report methodology — is available on request; this regeneration is the prune-and-rerank against actual built state.)_
 
 ## Recommended candidates (triaged 2026-06-24; landed entries struck 2026-07-03)
 
