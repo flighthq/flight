@@ -1,6 +1,7 @@
 ﻿export * from '@flighthq/animation';
 export * from '@flighthq/app';
 export * from '@flighthq/application';
+export * from '@flighthq/assets';
 export * from '@flighthq/audio';
 export * from '@flighthq/camera';
 export * from '@flighthq/capture';

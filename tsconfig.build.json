@@ -66,6 +66,7 @@
     { "path": "./packages/render-gl" },
     { "path": "./packages/render-wgpu" },
     { "path": "./packages/textureatlas-formats" },
+    { "path": "./packages/assets" },
     { "path": "./packages/audio" },
     { "path": "./packages/font" },
     { "path": "./packages/image" },
