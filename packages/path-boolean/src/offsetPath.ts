@@ -1,7 +1,7 @@
-import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flattenPath } from '@flighthq/path';
+import { flattenPath } from '@flighthq/path';
 import type { Path, PathOffsetEnd, PathOffsetJoin, PathOffsetOptions } from '@flighthq/types';
 
-import { getPathBooleanBackend } from './pathBooleanBackend';
+import { resolvePathRegions } from './resolvePathRegions';
 
 // Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`, deflate) by a signed
 // distance, returning a fresh polygon-outline `Path`. The input is flattened to polygon contours at the
@@ -47,9 +47,9 @@ export function offsetPath(path: Readonly<Path>, delta: number, options?: Readon
     }
   }
 
-  if (rawRings.length === 0) return createPath('nonZero');
-  const cleaned = getPathBooleanBackend().computePathBoolean(rawRings, EMPTY_CONTOURS, 'union', 'nonZero');
-  return buildOffsetOutlinePath(cleaned);
+  // Self-union the raw rings under non-zero fill to dissolve concave self-overlap, merge touching rings,
+  // and emit a clean, hole-correct outline (empty ring set → empty path).
+  return resolvePathRegions(rawRings, 'nonZero');
 }
 
 // Assembles one offset ring for a closed vertex loop by walking its vertices and emitting, at each, the
@@ -132,19 +132,6 @@ function buildOffsetRing(
     }
   }
   return ring;
-}
-
-// Rebuilds kernel result contours into a closed-ring path via the path builders. The offset result
-// always relies on non-zero fill (holes counter-wound to their outer ring), so the target is `nonZero`.
-function buildOffsetOutlinePath(contours: readonly (readonly number[])[]): Path {
-  const path = createPath('nonZero');
-  for (const ring of contours) {
-    if (ring.length < 6) continue;
-    appendPathMoveTo(path, ring[0], ring[1]);
-    for (let i = 2; i < ring.length; i += 2) appendPathLineTo(path, ring[i], ring[i + 1]);
-    appendPathClose(path);
-  }
-  return path;
 }
 
 // Emits the terminal cap of an open path at vertex (vx, vy), bridging the offset end of the incoming
@@ -340,8 +327,6 @@ const DEFAULT_ARC_TOLERANCE = 0.25;
 // Default miter length ceiling as a multiple of |delta|, the Clipper2 default: corners sharper than
 // ~60° fall back to a bevel.
 const DEFAULT_MITER_LIMIT = 2;
-
-const EMPTY_CONTOURS: readonly number[][] = [];
 
 const HALF_PI = Math.PI / 2;
 
