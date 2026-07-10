@@ -276,6 +276,7 @@ export * from './PathOffsetEnd';
 export * from './PathOffsetJoin';
 export * from './PathOffsetOptions';
 export * from './PathSegment';
+export * from './Permission';
 export * from './PhongMaterial';
 export * from './PixelateEffect';
 export * from './PixelateFilter';

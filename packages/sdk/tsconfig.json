@@ -70,6 +70,7 @@
     { "path": "../path" },
     { "path": "../path-boolean" },
     { "path": "../path-formats" },
+    { "path": "../permission" },
     { "path": "../platform" },
     { "path": "../power" },
     { "path": "../protocol" },

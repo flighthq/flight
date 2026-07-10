@@ -89,6 +89,7 @@
     "@flighthq/path": "*",
     "@flighthq/path-boolean": "*",
     "@flighthq/path-formats": "*",
+    "@flighthq/permission": "*",
     "@flighthq/platform": "*",
     "@flighthq/power": "*",
     "@flighthq/protocol": "*",

@@ -68,6 +68,8 @@
       "@flighthq/keyboard/*": ["./packages/keyboard/src/*"],
       "@flighthq/sensors": ["./packages/sensors/src/index.ts"],
       "@flighthq/sensors/*": ["./packages/sensors/src/*"],
+      "@flighthq/permission": ["./packages/permission/src/index.ts"],
+      "@flighthq/permission/*": ["./packages/permission/src/*"],
       "@flighthq/platform": ["./packages/platform/src/index.ts"],
       "@flighthq/platform/*": ["./packages/platform/src/*"],
       "@flighthq/useragent": ["./packages/useragent/src/index.ts"],
