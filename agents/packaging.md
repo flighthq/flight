@@ -16,7 +16,7 @@ The whole `@flighthq/*` graph publishes to public npm under **locked versioning*
 
 **The `"*"` → version pin.** `packages:check` enforces that internal `@flighthq/*` deps are `"*"` in source (the workspace-sibling marker; a real range would be fiction in a repo whose versions are a publish artifact, not a source fact). A published manifest must not carry `"*"` — a consumer of `@flighthq/sdk@0.1.0` whose deps say `"*"` would float them to `latest` and break when `0.2.0` ships. So `publish-packages.ts` rewrites each internal `"*"` to the exact sibling version in a **temporary** manifest edit, publishes, then restores `"*"` — the working tree stays `packages:check`-clean. This is the npm-native equivalent of pnpm's `workspace:*` protocol; do not commit pinned internal versions.
 
-Release flow: `npm run version:packages 0.1.1` → commit → `git tag v0.1.1` → `git push --tags`. Publishing requires the `@flighthq` npm scope and an `NPM_TOKEN` repo secret.
+Release flow: `npm run version:packages 0.1.1` → commit → `git tag 0.1.1` → `git push --tags` (bare numeric tags, no `v` prefix — the `release.yml` trigger and the release-asset names follow the tag). Publishing requires the `@flighthq` npm scope and an `NPM_TOKEN` repo secret.
 
 ## Package naming and axes
 
