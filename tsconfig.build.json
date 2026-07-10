@@ -4,6 +4,8 @@
     { "path": "./packages/animation" },
     { "path": "./packages/app" },
     { "path": "./packages/application" },
+    { "path": "./packages/bitmapfont" },
+    { "path": "./packages/bitmapfont-formats" },
     { "path": "./packages/camera" },
     { "path": "./packages/webcam" },
     { "path": "./packages/xml" },
