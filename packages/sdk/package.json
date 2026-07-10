@@ -112,6 +112,7 @@
     "@flighthq/signals": "*",
     "@flighthq/skeleton": "*",
     "@flighthq/socket": "*",
+    "@flighthq/spatial": "*",
     "@flighthq/sprite": "*",
     "@flighthq/spritesheet": "*",
     "@flighthq/spritesheet-formats": "*",
