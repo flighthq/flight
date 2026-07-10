@@ -1,7 +1,9 @@
 name: Release
 
-# Publishes the whole @flighthq/* package graph to npm when a version tag is pushed. Bump first with
-# `npm run version:packages <version>`, commit, then tag `v<version>` and push the tag:
+# On a version tag: publishes the whole @flighthq/* package graph to npm, then builds the examples
+# site at that tag (source == published at the release commit, so it faithfully demonstrates the
+# published SDK) and attaches it as a GitHub release asset the site repo serves at flighthq.ai/examples.
+# Bump first with `npm run version:packages <version>`, commit, then tag `v<version>` and push:
 #   npm run version:packages 0.1.0 && git commit -am "release: 0.1.0" && git tag v0.1.0 && git push --tags
 on:
   push:
@@ -9,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # create the GitHub release + upload the examples asset
   id-token: write # npm provenance
 
 concurrency:
@@ -18,7 +20,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish to npm
+    name: Publish to npm and attach examples bundle
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +31,25 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm ci
       - run: npm run build
-      - run: npm run release -- --no-build
+      - name: Publish packages to npm
+        run: npm run release -- --no-build
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           # Attaches build provenance to each package (public repo + id-token: write above).
           NPM_CONFIG_PROVENANCE: 'true'
+
+      # Examples site → GitHub release asset for the site repo's /examples route. Built at this tag,
+      # where the workspace source is exactly the SDK version just published.
+      - name: Build examples site
+        run: npm run build:examples
+        env:
+          VITE_BASE: /examples/
+      - name: Tarball examples dist (root-level, no wrapper dir)
+        run: tar -czf "examples-dist-${GITHUB_REF_NAME}.tgz" -C examples/runners/web/dist .
+      - name: Attach examples bundle to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" \
+            --title "${GITHUB_REF_NAME}" --generate-notes \
+          || gh release upload "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" --clobber
