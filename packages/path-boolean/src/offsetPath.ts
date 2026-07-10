@@ -19,37 +19,48 @@ export function offsetPath(path: Readonly<Path>, delta: number, options?: Readon
   const miterLimit = options?.miterLimit ?? DEFAULT_MITER_LIMIT;
   const arcTolerance = options?.arcTolerance ?? DEFAULT_ARC_TOLERANCE;
   const contours = flattenPath(path, options?.tolerance);
+  // Coincident-point tolerance, made relative to the input's coordinate extent so the same corners
+  // collapse whether the contour is in pixels or micrometres; falls back to a fixed absolute when the
+  // extent is degenerate. Squared to match the squared-distance comparisons it feeds.
+  const pointEpsSq = getContourPointEps(contours) ** 2;
 
   const rawRings: number[][] = [];
   for (const contour of contours) {
-    const closed = isClosedContour(contour);
-    const vertices = getCleanContourVertices(contour, closed);
+    const closed = isClosedContour(contour, pointEpsSq);
+    const vertices = getCleanContourVertices(contour, closed, pointEpsSq);
     if (closed) {
       // Fewer than three distinct vertices enclose no area to offset.
       if (vertices.length < 6) continue;
       const orientation = getRingOrientationSign(vertices);
       const ring = buildOffsetRing(vertices, delta * orientation, NO_CAPS, join, end, miterLimit, arcTolerance);
       if (ring.length < 6) continue;
-      // Drop a ring deflated past self-collapse. Such a ring either inverts (its winding flips) or folds
-      // back on itself so an inward offset fails to reduce the enclosed area — the global signature of
-      // collapse, since the per-corner geometry alone is indistinguishable from a valid deflation.
+      // Drop a ring deflated past self-collapse. Such a ring either fully inverts (its winding flips) or
+      // folds back so an inward offset fails to reduce the enclosed area — the global signature of a full
+      // collapse. (Partial self-overlap that stays same-signed is left for the positive-fill union below.)
       const offsetArea = getRingSignedArea(ring);
       const inverted = Math.sign(offsetArea) !== orientation;
       const notReduced = delta < 0 && Math.abs(offsetArea) >= Math.abs(getRingSignedArea(vertices));
-      if (!inverted && !notReduced) rawRings.push(ring);
+      if (inverted || notReduced) continue;
+      // Orient the surviving ring counter-clockwise (positive area) so the positive-fill self-union keeps
+      // it whatever the source winding was.
+      rawRings.push(offsetArea < 0 ? reverseVertexLoop(ring) : ring);
     } else {
       // Fewer than two distinct vertices form no segment to stroke.
       if (vertices.length < 4) continue;
       const caps = new Set<number>([0, vertices.length / 2 - 1]);
       const loop = getOpenContourLoop(vertices);
       const ring = buildOffsetRing(loop, Math.abs(delta), caps, join, end, miterLimit, arcTolerance);
-      if (ring.length >= 6) rawRings.push(ring);
+      // A stroked slab always bounds a positive-area band; orient it counter-clockwise so positive-fill
+      // union keeps it regardless of which way the doubled loop happened to wind.
+      if (ring.length >= 6) rawRings.push(getRingSignedArea(ring) < 0 ? reverseVertexLoop(ring) : ring);
     }
   }
 
-  // Self-union the raw rings under non-zero fill to dissolve concave self-overlap, merge touching rings,
-  // and emit a clean, hole-correct outline (empty ring set → empty path).
-  return resolvePathRegions(rawRings, 'nonZero');
+  // Self-union the raw rings under positive fill (Clipper's InflatePaths cleanup fill): where a concave
+  // corner's inner-miter emission overshoots on a feature narrower than 2·|delta|, it dissolves the
+  // negatively-wound self-overlap that non-zero fill would have kept; it also merges touching rings and
+  // emits a clean, hole-correct outline (empty ring set → empty path).
+  return resolvePathRegions(rawRings, 'positive');
 }
 
 // Assembles one offset ring for a closed vertex loop by walking its vertices and emitting, at each, the
@@ -199,8 +210,11 @@ function emitOffsetJoin(
   const turn = previousDirX * thisDirY - previousDirY * thisDirX;
   const convex = turn * signedDelta > 0;
   if (!convex) {
-    // Inner (overlap) corner: the outline follows where the two offset edges cross. Emitting that
-    // intersection keeps a plain convex offset simple; join style decorates only the convex side.
+    // Inner (overlap) corner: emit where the two offset edge lines cross — the inner miter point. For a
+    // mild corner this is the correct clean vertex; for a feature narrower than 2·|delta| it overshoots
+    // past the offset edges, and the resulting self-crossing spur is dissolved by the positive-fill
+    // self-union, which drops the negatively-wound overshoot region. Positive fill is what makes this
+    // robust where non-zero fill (which keeps the overshoot) could not.
     if (Math.abs(turn) > PARALLEL_EPS) {
       const advance = ((thisStartX - previousEndX) * thisDirY - (thisStartY - previousEndY) * thisDirX) / turn;
       ring.push(previousEndX + advance * previousDirX, previousEndY + advance * previousDirY);
@@ -232,7 +246,8 @@ function emitOffsetJoin(
 
 // Removes consecutive coincident points from a flattened contour and, for a closed contour, the closing
 // vertex that repeats the first, yielding a clean `[x0, y0, ...]` vertex loop with no zero-length edges.
-function getCleanContourVertices(contour: readonly number[], closed: boolean): number[] {
+// `pointEpsSq` is the squared coincidence tolerance (magnitude-relative, computed by the caller).
+function getCleanContourVertices(contour: readonly number[], closed: boolean, pointEpsSq: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < contour.length; i += 2) {
     const x = contour[i];
@@ -240,16 +255,37 @@ function getCleanContourVertices(contour: readonly number[], closed: boolean): n
     if (out.length >= 2) {
       const dx = x - out[out.length - 2];
       const dy = y - out[out.length - 1];
-      if (dx * dx + dy * dy <= POINT_EPS * POINT_EPS) continue;
+      if (dx * dx + dy * dy <= pointEpsSq) continue;
     }
     out.push(x, y);
   }
   if (closed && out.length >= 4) {
     const dx = out[0] - out[out.length - 2];
     const dy = out[1] - out[out.length - 1];
-    if (dx * dx + dy * dy <= POINT_EPS * POINT_EPS) out.length -= 2;
+    if (dx * dx + dy * dy <= pointEpsSq) out.length -= 2;
   }
   return out;
+}
+
+// The coincident-point tolerance for a contour set, scaled to the largest coordinate span across all
+// contours so it tracks the input magnitude; falls back to a fixed absolute for degenerate extent.
+function getContourPointEps(contours: readonly (readonly number[])[]): number {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const contour of contours) {
+    for (let i = 0; i < contour.length; i += 2) {
+      const x = contour[i];
+      const y = contour[i + 1];
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  const extent = Math.max(maxX - minX, maxY - minY);
+  return extent > 0 ? extent * POINT_EPS_RELATIVE : POINT_EPS;
 }
 
 // Builds the doubled vertex loop for an open contour: the forward vertices followed by the interior
@@ -291,13 +327,14 @@ function getShortSweep(startAngle: number, endAngle: number): number {
 
 // Whether a flattened contour is closed: it has at least three points and its last point coincides with
 // its first (the explicit closing vertex `flattenPath` appends on a CLOSE). An open polyline whose ends
-// happen to coincide is treated as closed — an acceptable inference at pixel scale.
-function isClosedContour(contour: readonly number[]): boolean {
+// happen to coincide is treated as closed — an acceptable inference at pixel scale. `pointEpsSq` is the
+// squared coincidence tolerance (magnitude-relative, computed by the caller).
+function isClosedContour(contour: readonly number[], pointEpsSq: number): boolean {
   const n = contour.length;
   if (n < 6) return false;
   const dx = contour[0] - contour[n - 2];
   const dy = contour[1] - contour[n - 1];
-  return dx * dx + dy * dy <= POINT_EPS * POINT_EPS;
+  return dx * dx + dy * dy <= pointEpsSq;
 }
 
 // Tessellates a circular arc about (cx, cy) of the given radius from `startAngle` sweeping by the signed
@@ -320,6 +357,21 @@ function pushOffsetArc(
   }
 }
 
+// Reverses a flat `[x0, y0, ...]` vertex loop in place-free fashion, flipping its winding while keeping
+// vertex 0 first, so a clockwise loop becomes counter-clockwise and vice versa.
+function reverseVertexLoop(vertices: readonly number[]): number[] {
+  const count = vertices.length / 2;
+  const out = new Array<number>(vertices.length);
+  out[0] = vertices[0];
+  out[1] = vertices[1];
+  for (let k = 1; k < count; k++) {
+    const source = count - k;
+    out[2 * k] = vertices[2 * source];
+    out[2 * k + 1] = vertices[2 * source + 1];
+  }
+  return out;
+}
+
 // Default maximum deviation between a round join/end arc and its true circle, in path units — a quarter
 // pixel, matching the flattener's default and sane for pixel-scale output.
 const DEFAULT_ARC_TOLERANCE = 0.25;
@@ -332,9 +384,13 @@ const HALF_PI = Math.PI / 2;
 
 const NO_CAPS: ReadonlySet<number> = new Set<number>();
 
-// Absolute epsilon for treating two points as coincident (closing-vertex and zero-length-edge removal).
-// Well below any realistic flatten tolerance; Phase D wants a magnitude-relative form.
+// Fallback absolute coincidence epsilon for degenerate zero-extent input, where the relative form has
+// nothing to scale against. Well below any realistic flatten tolerance.
 const POINT_EPS = 1e-9;
+
+// Relative coincidence factor: the point-merge tolerance is this fraction of the input's coordinate
+// extent, so corners collapse consistently whether the contour is in pixels or micrometres.
+const POINT_EPS_RELATIVE = 1e-9;
 
 // Below this cross-product magnitude the two offset edges are effectively parallel and a miter apex is
 // unstable, so the join degrades to a bevel.

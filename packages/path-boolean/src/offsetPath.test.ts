@@ -3,6 +3,7 @@ import type { Path } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { offsetPath } from './offsetPath';
+import { simplifyPath } from './simplifyPath';
 
 // Builds a polygon path from a flat [x0, y0, ...] vertex list, closed or left open.
 function polygonPath(vertices: readonly number[], closed: boolean): Path {
@@ -49,6 +50,11 @@ function pathVertexCount(path: Readonly<Path>): number {
   let count = 0;
   for (const ring of flattenPath(path)) count += ring.length / 2;
   return count;
+}
+
+// Number of contours in a path's flattened outline.
+function ringCount(path: Readonly<Path>): number {
+  return flattenPath(path).length;
 }
 
 const UNIT_SQUARE = [0, 0, 1, 0, 1, 1, 0, 1];
@@ -141,6 +147,41 @@ describe('offsetPath', () => {
     // A single closed ring survives the self-union (one move-to command), and the area grew from 3.
     expect(result.commands.filter((c) => c === 1).length).toBe(1);
     expect(pathArea(result)).toBeGreaterThan(3);
+  });
+
+  it('closes a concave slot narrower than 2·delta into a valid self-intersection-free outline', () => {
+    // A U-shape: a 10x10 square with a width-1 slot cut down from the top to y=3. Inflating by 1 advances
+    // each slot wall 1 unit inward; because the slot (width 1) is narrower than 2·delta (2), the two walls
+    // overlap and must dissolve. Positive-fill cleanup collapses the slot into a solid top with no
+    // self-crossing — the case non-zero fill's inner-miter emission could leave self-intersecting.
+    const uShape = [0, 0, 10, 0, 10, 10, 5.5, 10, 5.5, 3, 4.5, 3, 4.5, 10, 0, 10];
+    const result = offsetPath(polygonPath(uShape, true), 1);
+    expect(ringCount(result)).toBe(1);
+    const bounds = pathBounds(result);
+    expect(bounds.minX).toBeCloseTo(-1, 6);
+    expect(bounds.maxX).toBeCloseTo(11, 6);
+    expect(bounds.minY).toBeCloseTo(-1, 6);
+    expect(bounds.maxY).toBeCloseTo(11, 6);
+    // Validity: the outline is already simple, so simplifying it under non-zero fill changes neither its
+    // ring count nor its area. A self-intersecting outline would resolve to a different area here.
+    const simplified = simplifyPath(result, { fillRule: 'nonZero' });
+    expect(ringCount(simplified)).toBe(ringCount(result));
+    expect(pathArea(simplified)).toBeCloseTo(pathArea(result), 4);
+  });
+
+  it('offsets consistently across a 1e9 span of coordinate scales (magnitude-relative epsilons)', () => {
+    // The same L-shape offset by a proportional delta at three scales must land on the same relative
+    // outline: ring count fixed and area-relative-to-scale² invariant. The magnitude-relative point and
+    // vertex epsilons are what keep the result from degrading at very large or very small coordinates.
+    const lShape = (s: number): number[] => [0, 0, 2 * s, 0, 2 * s, 2 * s, s, 2 * s, s, s, 0, s];
+    const at = (s: number): Readonly<Path> => polygonPath(lShape(s), true);
+    const small = offsetPath(at(1e-3), 0.25e-3);
+    const mid = offsetPath(at(1), 0.25);
+    const large = offsetPath(at(1e6), 0.25e6);
+    expect(ringCount(small)).toBe(ringCount(mid));
+    expect(ringCount(large)).toBe(ringCount(mid));
+    expect(pathArea(small) / 1e-3 ** 2).toBeCloseTo(pathArea(mid), 4);
+    expect(pathArea(large) / (1e6 * 1e6)).toBeCloseTo(pathArea(mid), 4);
   });
 
   it('strokes an open path into a butt-capped rectangle', () => {
