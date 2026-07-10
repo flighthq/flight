@@ -22,7 +22,7 @@ Complete container coverage: **KTX2** (the modern Khronos container — header, 
 
 ## Boundaries
 
-- **Depends on `@flighthq/image-codec` (the MIME/byte seam + format vocabulary) + `@flighthq/types`.** No DOM, no GPU, no renderer.
+- **Depends on `@flighthq/types` only.** The container-format vocabulary (`TextureContainerFormat`) lives in the header, and the parsers sniff their own magic bytes locally, so no code-level `@flighthq/image-codec` use exists today — it was dropped from deps to keep them honest (mirrors the glyphatlas unused-dep cleanup). Folding `detectTextureContainer` into `image-codec`'s MIME/detect dispatcher is an Open direction, not a current dep. No DOM, no GPU, no renderer.
 - **Container parsing, not transcoding.** It identifies formats and locates level byte-ranges; it does **not** transcode Basis/UASTC → BCn/ASTC or decode BCn → RGBA (compute-heavy, Rust/wasm → `flight-rs`). A GL/WGPU backend uploads a natively-supported level directly; an unsupported one is routed to a transcoder the caller supplies.
 - **Read-first.** Parse is the priority; writing/repacking containers is a later open direction.
 
@@ -38,3 +38,6 @@ _Append-only, dated, blessed rulings._
 1. **Transcoder seam.** A `TextureTranscoderBackend` interface (implemented in `flight-rs` via wasm) that takes a Basis/UASTC level + a target GPU format and returns transcoded bytes — the bridge to the compute-heavy layer, defined here, implemented there.
 2. **PKM/PVR/ASTC raw containers** — the remaining mobile/embedded container formats.
 3. **Write/repack** — emit KTX2 from a level set (offline atlas/texture-array baking).
+4. **`image-codec` detect integration.** Register `detectTextureContainer` behind `image-codec`'s MIME/detect dispatcher so a single sniff routes image *and* GPU-container bytes — the moment a real code-level dep would earn its place.
+5. **Validate Basis offsets against a real `.basis` file.** The `basis_file_header`/`basis_slice_desc` field offsets are reconstructed from the spec, not confirmed against a real container — the highest-risk parse path.
+6. **Level index granularity.** `TextureContainerLevel` carries no explicit `(mip,layer,face)` triple; ordering is per-container-documented (KTX2 mip→layer→face, DDS layer→face→mip, Basis slice order). A cross-container index→face mapping helper would remove the need to know the source nesting.
