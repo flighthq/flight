@@ -208,7 +208,7 @@ Application: `@flighthq/application` (main loop — start/stop/pause/resume/step
 
 **Platform Integration Suite** — flat free functions over a swappable `*Backend`; web backend is always available, native hosts replace via `set*Backend`. Command capabilities: `get*Backend`/`set*Backend`/`createWeb*Backend`. Event capabilities: signal entity with `create*`/`attach*`/`detach*`/`dispose*`. Web backends return sentinels rather than throwing.
 
-OS/device: `@flighthq/platform` (OS identity), `@flighthq/screen` (displays), `@flighthq/device` (device info), `@flighthq/storage` (persistent KV), `@flighthq/network`, `@flighthq/power`, `@flighthq/lifecycle`, `@flighthq/keyboard`, `@flighthq/sensors`.
+OS/device: `@flighthq/platform` (OS identity), `@flighthq/screen` (displays), `@flighthq/device` (device info), `@flighthq/storage` (persistent KV), `@flighthq/net` (HTTP transport — URLLoader/URLRequest, distinct from `@flighthq/network` connectivity status), `@flighthq/network`, `@flighthq/power`, `@flighthq/lifecycle`, `@flighthq/keyboard`, `@flighthq/sensors`.
 
 UI/shell: `@flighthq/clipboard`, `@flighthq/dialog`, `@flighthq/filesystem`, `@flighthq/notification`, `@flighthq/shell`, `@flighthq/menu`, `@flighthq/tray`, `@flighthq/shortcut`, `@flighthq/share`, `@flighthq/haptics`, `@flighthq/geolocation`, `@flighthq/webcam`, `@flighthq/statusbar`.
 

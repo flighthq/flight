@@ -72,6 +72,8 @@
       "@flighthq/useragent/*": ["./packages/useragent/src/*"],
       "@flighthq/clipboard": ["./packages/clipboard/src/index.ts"],
       "@flighthq/clipboard/*": ["./packages/clipboard/src/*"],
+      "@flighthq/net": ["./packages/net/src/index.ts"],
+      "@flighthq/net/*": ["./packages/net/src/*"],
       "@flighthq/network": ["./packages/network/src/index.ts"],
       "@flighthq/network/*": ["./packages/network/src/*"],
       "@ft/render": ["./tools/harness/render.ts"],

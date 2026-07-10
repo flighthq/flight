@@ -48,6 +48,7 @@ export * from '@flighthq/media';
 export * from '@flighthq/menu';
 export * from '@flighthq/mesh';
 export * from '@flighthq/movieclip';
+export * from '@flighthq/net';
 export * from '@flighthq/network';
 export * from '@flighthq/node';
 export * from '@flighthq/notification';

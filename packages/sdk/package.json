@@ -73,6 +73,7 @@
     "@flighthq/menu": "*",
     "@flighthq/mesh": "*",
     "@flighthq/movieclip": "*",
+    "@flighthq/net": "*",
     "@flighthq/network": "*",
     "@flighthq/node": "*",
     "@flighthq/notification": "*",

@@ -48,6 +48,7 @@
     { "path": "./packages/menu" },
     { "path": "./packages/mesh" },
     { "path": "./packages/movieclip" },
+    { "path": "./packages/net" },
     { "path": "./packages/network" },
     { "path": "./packages/node" },
     { "path": "./packages/notification" },
