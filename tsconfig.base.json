@@ -110,6 +110,8 @@
       "@flighthq/audio/*": ["./packages/audio/src/*"],
       "@flighthq/font": ["./packages/font/src/index.ts"],
       "@flighthq/font/*": ["./packages/font/src/*"],
+      "@flighthq/gamestate": ["./packages/gamestate/src/index.ts"],
+      "@flighthq/gamestate/*": ["./packages/gamestate/src/*"],
       "@flighthq/image": ["./packages/image/src/index.ts"],
       "@flighthq/image/*": ["./packages/image/src/*"],
       "@flighthq/image-codec": ["./packages/image-codec/src/index.ts"],

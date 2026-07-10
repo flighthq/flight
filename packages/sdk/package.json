@@ -58,6 +58,7 @@
     "@flighthq/filters-math": "*",
     "@flighthq/filters-surface": "*",
     "@flighthq/filters-wgpu": "*",
+    "@flighthq/gamestate": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/haptics": "*",

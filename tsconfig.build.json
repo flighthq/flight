@@ -33,6 +33,7 @@
     { "path": "./packages/filters-math" },
     { "path": "./packages/filters-surface" },
     { "path": "./packages/filters-wgpu" },
+    { "path": "./packages/gamestate" },
     { "path": "./packages/geolocation" },
     { "path": "./packages/geometry" },
     { "path": "./packages/haptics" },
