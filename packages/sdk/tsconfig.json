@@ -65,8 +65,6 @@
     { "path": "../render-wgpu" },
     { "path": "../textureatlas-formats" },
     { "path": "../audio" },
-    { "path": "../bitmapfont" },
-    { "path": "../bitmapfont-formats" },
     { "path": "../font" },
     { "path": "../image" },
     { "path": "../video" },
