@@ -19,13 +19,12 @@ import { discoverFunctionalScenes } from './functional-scenes.js';
 // ---------------------------------------------------------------------------
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-export type Tool = 'examples' | 'functional' | 'site';
+export type Tool = 'examples' | 'functional';
 
 // The root npm script that starts each tool's dev server, used in the manual-start tip.
 const DEV_SCRIPT: Record<Tool, string> = {
   examples: 'dev:examples',
   functional: 'dev:functional',
-  site: 'dev:landing',
 };
 
 // A column id may carry a `<library>:<renderer>` colon; map it to a URL/dir-safe
@@ -199,10 +198,6 @@ export interface CaptureEntryOptions {
 // ---------------------------------------------------------------------------
 
 export function discoverEntries(tool: Tool, root: string): Entry[] {
-  // The landing page is a single document rendered with Flight (one Gl canvas), with no
-  // per-name or per-renderer routing, so it presents as one fixed entry.
-  if (tool === 'site') return [{ name: 'landing', renderers: ['webgl'] }];
-
   // Functional scenes are flat files under functional/scenes/; the shared discovery is the single
   // source of truth (also used by tools/functional/vite.config.ts).
   if (tool === 'functional') return discoverFunctionalScenes(join(root, 'functional', 'scenes'));
@@ -299,16 +294,14 @@ export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: st
 export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild?: boolean }): Promise<Server> {
   const { tool, root, forceBuild = false } = opts;
 
-  // The site tool is assembled by build:site into tools/site/ (not a per-workspace dist/).
-  const isSite = tool === 'site';
   const toolDir = tool === 'examples' ? join(root, 'examples', 'runners', 'web') : join(root, 'tools', tool);
-  const distDir = isSite ? join(root, 'tools', 'site') : join(toolDir, 'dist');
+  const distDir = join(toolDir, 'dist');
 
   if (!existsSync(distDir) || forceBuild) {
-    console.log(`Building ${isSite ? 'site' : `tools/${tool}`}…`);
+    console.log(`Building tools/${tool}…`);
     const npmExecPath = process.env['npm_execpath'];
     const workspace = tool === 'examples' ? '@flighthq/examples' : `tools/${tool}`;
-    const args = isSite ? ['run', 'build:site'] : ['run', 'build', `--workspace=${workspace}`];
+    const args = ['run', 'build', `--workspace=${workspace}`];
     const result = npmExecPath
       ? spawnSync(process.execPath, [npmExecPath, ...args], {
           cwd: root,
@@ -320,14 +313,12 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
           shell: true,
         });
     if (result.status !== 0) {
-      return Promise.reject(new Error(`Build failed. Run "npm run build:${isSite ? 'site' : tool}" to debug.`));
+      return Promise.reject(new Error(`Build failed. Run "npm run build:${tool}" to debug.`));
     }
   }
 
   if (!existsSync(distDir)) {
-    return Promise.reject(
-      new Error(`No build found at ${distDir} after build. Run "npm run build:${isSite ? 'site' : tool}" to debug.`),
-    );
+    return Promise.reject(new Error(`No build found at ${distDir} after build. Run "npm run build:${tool}" to debug.`));
   }
 
   const MIME: Record<string, string> = {
