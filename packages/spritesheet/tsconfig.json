@@ -9,10 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../displayobject" },
     { "path": "../entity" },
-    { "path": "../node" },
-    { "path": "../image" },
     { "path": "../textureatlas" },
     { "path": "../tileset" },
     { "path": "../geometry" },

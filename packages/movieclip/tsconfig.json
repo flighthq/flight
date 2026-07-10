@@ -9,12 +9,13 @@
     "sourceMap": true
   },
   "references": [
-    {
-      "path": "../signals"
-    },
-    {
-      "path": "../types"
-    }
+    { "path": "../displayobject" },
+    { "path": "../image" },
+    { "path": "../node" },
+    { "path": "../spritesheet" },
+    { "path": "../textureatlas" },
+    { "path": "../timeline" },
+    { "path": "../types" }
   ],
   "include": ["src"]
 }
