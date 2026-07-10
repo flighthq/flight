@@ -228,6 +228,7 @@ export * from './Mesh';
 export * from './MeshGeometry';
 export * from './MethodsOf';
 export * from './MotionBlurEffect';
+export * from './MotionPath';
 export * from './MouseButton';
 export * from './MouseWheelMode';
 export * from './MovieClip';

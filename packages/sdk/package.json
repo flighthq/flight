@@ -74,6 +74,7 @@
     "@flighthq/media": "*",
     "@flighthq/menu": "*",
     "@flighthq/mesh": "*",
+    "@flighthq/motionpath": "*",
     "@flighthq/movieclip": "*",
     "@flighthq/net": "*",
     "@flighthq/network": "*",
