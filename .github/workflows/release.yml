@@ -3,11 +3,12 @@ name: Release
 # On a version tag: publishes the whole @flighthq/* package graph to npm, then builds the examples
 # site at that tag (source == published at the release commit, so it faithfully demonstrates the
 # published SDK) and attaches it as a GitHub release asset the site repo serves at flighthq.ai/examples.
-# Bump first with `npm run version:packages <version>`, commit, then tag `v<version>` and push:
-#   npm run version:packages 0.1.0 && git commit -am "release: 0.1.0" && git tag v0.1.0 && git push --tags
+# Bump first with `npm run version:packages <version>`, commit, then tag `<version>` and push:
+#   npm run version:packages 0.1.0 && git commit -am "release: 0.1.0" && git tag 0.1.0 && git push --tags
 on:
   push:
-    tags: ['v*.*.*']
+    # Bare numeric version tags (no "v" prefix), e.g. 0.1.0. The release asset is named after the tag.
+    tags: ['[0-9]*.[0-9]*.[0-9]*']
   workflow_dispatch:
 
 permissions:
