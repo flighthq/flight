@@ -1,10 +1,16 @@
 import type { GlRenderState, GlRenderTarget, GlRenderTargetPool, RenderTargetDescriptor } from '@flighthq/types';
 
+import { clearGlRenderTarget } from './glFullscreenPass';
 import { createGlRenderTarget, destroyGlRenderTarget } from './glRenderTarget';
 
 // Lends reusable intermediate targets to multi-pass effect recipes. acquire/release are paired
 // brackets: every acquireGlRenderTarget must have a matching releaseGlRenderTarget. A released
 // target returns to the free list (its GPU storage is kept) rather than being destroyed.
+//
+// Acquired targets are handed back clean: a reused target is cleared before return so a non-covering
+// pass never composites onto a previous user's contents (a freshly created target is already zeroed by
+// the GL implementation). Clean surfaces are the default; skipping the clear would be an opt-in
+// optimization for provably-covering consumers, not the baseline behavior.
 
 export function acquireGlRenderTarget(
   state: GlRenderState,
@@ -25,6 +31,7 @@ export function acquireGlRenderTarget(
       candidate.sampleCount === sampleCount
     ) {
       pool.free.splice(i, 1);
+      clearGlRenderTarget(state, candidate);
       return candidate;
     }
   }
