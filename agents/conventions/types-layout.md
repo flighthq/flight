@@ -40,14 +40,27 @@ export const BitmapKind = 'Bitmap'; // type: 'Bitmap'
 
 This applies to the kind-identity system (`*Kind`, renderer/hierarchy registration). It does **not** apply to internal `Symbol()` uses that are never serialized and exist only for runtime privacy/uniqueness — runtime-slot keys, property-key brands (`EntityRuntimeKey`, `NodeTraitsKey`), and sentinels (`NullScene`) stay symbols.
 
-### Casing: values are lowercase, type-kinds are PascalCase
+### Casing: kind-like vocabularies are PascalCase
 
-Two string vocabularies, two cases, decided by whether a member names a **value** or a **type**:
+Every serialized kind/value string — a closed enum of alternatives (`align`, `CapsStyle`) *and* an open descriptor family (effects, materials, blend modes) — uses a **canonical PascalCase** value: `'Center'`, `'Round'`, `'StandardPbrMaterial'`, `'HardLight'`. The string is the registry key, the serialized form, and — decisive for the C/C++ port this codebase targets — a valid identifier that maps to the target's `enum` member with **no string↔identifier seam and no re-casing**. Not lowercase or kebab: kebab is not a C++ identifier (it would force exactly the mapping seam this model forbids), and C++ enum members are PascalCase whether a member names a "value" or a "type" — so the value/type casing split is a web/CSS-ism the C/C++ target does not want, and does not exist here.
 
-- **Values — a finite/enumerable set of alternatives for a property → lowercase.** `align: 'center'`, `blendMode: 'multiply'`, a `CapsStyle` of `'round'`, a `TextDirection` of `'leftToRight'`. The test is *could this conceivably be a fixed enum of alternatives?* — if so it is a value, even when it is technically open (e.g. blend modes dispatch through a registry and accept vendor kinds, but the built-in set is enumerable, so they are values → lowercase). Multi-word values use **camelCase** (`'hardLight'`, `'exactFit'`, `'interCharacter'`): the lowercase initial keeps values visually distinct from types, it reads at length (unlike `'hardlight'`/`'lefttoright'`), and it matches the AS3 string forms (`StageScaleMode.EXACT_FIT === 'exactFit'`). Not hyphenated — that is the CSS form; a backend adapter translates to it (e.g. canvas `globalCompositeOperation` `'hard-light'`).
-- **Type-kinds — a genuinely open-ended family where each member is a distinct descriptor type → PascalCase**, matching the type name (`'StandardPbrMaterial'`, `'BloomEffect'`, `'Bitmap'`).
+**Expose a user-facing family as a `const` namespace, not a TS `enum`:**
 
-**A registry is orthogonal to this split — its keys inherit the casing of whatever they name.** The effect/material/light registries key on *types* → PascalCase; a blend-mode registry keys on *values* → lowercase. "Being a registry" is not a third casing category; the key's nature decides. Vendor-prefixed custom members follow their category (`'acme.frostedGlass'`). Strings an external API defines keep that API's exact form (GPU/WebGPU terms like `'depth-stencil'`, MIME types) — this convention governs Flight's own vocabularies, not borrowed ones.
+```ts
+export const TextAlign = { Center: 'Center', Left: 'Left', Right: 'Right' } as const;
+export type TextAlign = (typeof TextAlign)[keyof typeof TextAlign];
+```
+
+The user writes `TextAlign.Center` — typed, autocompleted, typo = compile error, value **is** the canonical string. A `const` namespace beats `enum`: no reverse-map runtime object, the value is a plain string (no serialization seam), and it ports to a C++ `enum class` cleanly. (A `const` object does not tree-shake unused *values*, but the values are trivially small; the weight that tree-shakes is unused runner *code*, gated by opt-in `register*`.)
+
+**Open vs closed is orthogonal to casing** (see "Open contracts" above) — both use PascalCase values, and the choice is dispatch, decided by extensibility:
+
+- **Open** (users/other packages add variants — effects, materials, blend modes): `type X = string`, dispatched through a **registry**, runners tree-shaking via opt-in registration. No central `switch`.
+- **Closed** (finite, never extended — `TextFormatAlign`, `CapsStyle`): a `type X = 'Center' | 'Left' | …` **union** with `switch` dispatch — exhaustive, faster, simpler.
+
+**Serialization is the canonical string verbatim** — no seam on the default path. Accepting a foreign or looser casing (e.g. OpenFL's lowercase `'hardlight'`) is a lenient normalization at an explicit **import** boundary, built when an importer needs it, not baked into the round-trip.
+
+**Borrowed vocabularies keep their source form.** A string an external API owns — GPU/WebGPU terms (`'depth-stencil'`), MIME types, CSS values a backend adapter emits — stays in that API's casing; this convention governs Flight's own vocabularies. Third-party kinds namespace with a vendor prefix (`'acme.HardLight'`).
 
 ### Performance note (optional)
 
