@@ -12,6 +12,7 @@
     { "path": "./packages/binpack" },
     { "path": "./packages/bitmapfont" },
     { "path": "./packages/bitmapfont-formats" },
+    { "path": "./packages/bitmaptext" },
     { "path": "./packages/capture" },
     { "path": "./packages/clip" },
     { "path": "./packages/clipboard" },

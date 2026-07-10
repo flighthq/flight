@@ -36,6 +36,7 @@ export * from './Bitmap';
 export * from './BitmapFilter';
 export * from './BitmapFilterMargin';
 export * from './BitmapFont';
+export * from './BitmapText';
 export * from './BlendMode';
 export * from './BlinnPhongMaterial';
 export * from './BloomEffect';
