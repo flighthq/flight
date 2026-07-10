@@ -4,38 +4,51 @@ import { BlendMode } from '@flighthq/types';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlMatrixFromValues } from './glShader';
 
-type GlBlendFactor = 'ONE' | 'ONE_MINUS_SRC_ALPHA';
+type GlBlendFactor = 'DST_COLOR' | 'ONE' | 'ONE_MINUS_SRC_ALPHA' | 'ONE_MINUS_SRC_COLOR' | 'ZERO';
+type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MIN';
 
-const NORMAL_BLEND: readonly [GlBlendFactor, GlBlendFactor] = ['ONE', 'ONE_MINUS_SRC_ALPHA'];
+// A fixed-function realization of a blend-mode intent: the premultiplied-alpha
+// blendFunc factors plus the blend equation. `equation` is optional and defaults to
+// FUNC_ADD; a mode that omits it composites additively over its source/destination
+// factors. Darken/Lighten/Subtract need a non-additive equation (MIN/MAX/reverse
+// subtract), so it is carried here rather than assumed.
+interface GlBlendRealization {
+  readonly src: GlBlendFactor;
+  readonly dst: GlBlendFactor;
+  readonly equation?: GlBlendEquation;
+}
 
-// Auditable map from a blend-mode intent to the Gl fixed-function blendFunc factors
-// (premultiplied alpha) that realize it. `null` means there is no fixed-function
-// equivalent — such modes would need shader-based blending — so the intent degrades to
-// normal compositing.
-const WEBGL_BLEND_MODE: Record<BlendMode, readonly [GlBlendFactor, GlBlendFactor] | null> = {
-  [BlendMode.Add]: ['ONE', 'ONE'],
+const NORMAL_BLEND: GlBlendRealization = { src: 'ONE', dst: 'ONE_MINUS_SRC_ALPHA' };
+
+// Auditable map from a blend-mode intent to the Gl fixed-function realization. `null`
+// means there is no fixed-function equivalent — such modes (Overlay, HardLight,
+// Difference, Invert) need a shader pass — so the intent degrades to normal compositing.
+const WEBGL_BLEND_MODE: Record<string, GlBlendRealization | null> = {
+  [BlendMode.Add]: { src: 'ONE', dst: 'ONE' },
   [BlendMode.Alpha]: null,
-  [BlendMode.Darken]: null,
+  [BlendMode.Darken]: { src: 'ONE', dst: 'ONE', equation: 'MIN' },
   [BlendMode.Difference]: null,
-  [BlendMode.Erase]: null,
+  [BlendMode.Erase]: { src: 'ZERO', dst: 'ONE_MINUS_SRC_ALPHA' },
   [BlendMode.HardLight]: null,
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: NORMAL_BLEND,
-  [BlendMode.Lighten]: null,
-  [BlendMode.Multiply]: null,
+  [BlendMode.Lighten]: { src: 'ONE', dst: 'ONE', equation: 'MAX' },
+  [BlendMode.Multiply]: { src: 'DST_COLOR', dst: 'ZERO' },
   [BlendMode.Normal]: NORMAL_BLEND,
   [BlendMode.Overlay]: null,
-  [BlendMode.Screen]: null,
+  [BlendMode.Screen]: { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' },
   [BlendMode.Shader]: null,
-  [BlendMode.Subtract]: null,
+  [BlendMode.Subtract]: { src: 'ONE', dst: 'ONE', equation: 'FUNC_REVERSE_SUBTRACT' },
 };
 
 export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | null): void {
   const runtime = getGlRenderStateRuntime(state);
   if (blendMode === runtime.currentBlendMode) return;
   runtime.currentBlendMode = blendMode;
-  const [src, dst] = (blendMode !== null ? WEBGL_BLEND_MODE[blendMode] : null) ?? NORMAL_BLEND;
-  state.gl.blendFunc(state.gl[src], state.gl[dst]);
+  const gl = state.gl;
+  const realization = (blendMode !== null ? WEBGL_BLEND_MODE[blendMode] : null) ?? NORMAL_BLEND;
+  gl.blendEquation(gl[realization.equation ?? 'FUNC_ADD']);
+  gl.blendFunc(gl[realization.src], gl[realization.dst]);
 }
 
 export function bindGlTexture(state: GlRenderState, imageSource: CanvasImageSource): WebGLTexture {

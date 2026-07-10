@@ -36,9 +36,62 @@ describe('applyGlBlendMode', () => {
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
   });
 
-  it('falls back to normal blend for a mode with no fixed-function equivalent', () => {
+  it('sets (DST_COLOR, ZERO) for BlendMode.Multiply', () => {
     const { state, gl } = createGlState();
     applyGlBlendMode(state, BlendMode.Multiply);
+    const g = gl as unknown as { DST_COLOR: number; ZERO: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.DST_COLOR, g.ZERO);
+  });
+
+  it('sets (ONE, ONE_MINUS_SRC_COLOR) for BlendMode.Screen', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Screen);
+    const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_COLOR: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_COLOR);
+  });
+
+  it('sets the MIN blend equation with (ONE, ONE) for BlendMode.Darken', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Darken);
+    const g = gl as unknown as { ONE: number; MIN: number };
+    expect(gl.blendEquation).toHaveBeenCalledWith(g.MIN);
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
+  });
+
+  it('sets the MAX blend equation with (ONE, ONE) for BlendMode.Lighten', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Lighten);
+    const g = gl as unknown as { ONE: number; MAX: number };
+    expect(gl.blendEquation).toHaveBeenCalledWith(g.MAX);
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
+  });
+
+  it('sets the reverse-subtract equation with (ONE, ONE) for BlendMode.Subtract', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Subtract);
+    const g = gl as unknown as { ONE: number; FUNC_REVERSE_SUBTRACT: number };
+    expect(gl.blendEquation).toHaveBeenCalledWith(g.FUNC_REVERSE_SUBTRACT);
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
+  });
+
+  it('sets (ZERO, ONE_MINUS_SRC_ALPHA) for BlendMode.Erase', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Erase);
+    const g = gl as unknown as { ZERO: number; ONE_MINUS_SRC_ALPHA: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ZERO, g.ONE_MINUS_SRC_ALPHA);
+  });
+
+  it('resets the blend equation to FUNC_ADD for a mode that does not carry one', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Darken);
+    applyGlBlendMode(state, BlendMode.Normal);
+    const g = gl as unknown as { FUNC_ADD: number };
+    expect(gl.blendEquation).toHaveBeenLastCalledWith(g.FUNC_ADD);
+  });
+
+  it('falls back to normal blend for a mode with no fixed-function equivalent', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Overlay);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
