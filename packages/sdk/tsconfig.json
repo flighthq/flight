@@ -17,6 +17,7 @@
     { "path": "../binpack" },
     { "path": "../bitmapfont" },
     { "path": "../bitmapfont-formats" },
+    { "path": "../bitmaptext" },
     { "path": "../camera" },
     { "path": "../camera2d" },
     { "path": "../capture" },
