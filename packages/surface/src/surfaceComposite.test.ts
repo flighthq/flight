@@ -81,7 +81,7 @@ describe('compositeSurfacePixels', () => {
   it('hardlight blend mode is overlay with operands swapped', () => {
     const dest = createSurface(1, 1, 0xc80000ff); // RGBA: R=200
     const pixels = new Uint8ClampedArray([64, 0, 0, 255]);
-    compositeSurfacePixels(region(dest), pixels, BlendMode.Hardlight);
+    compositeSurfacePixels(region(dest), pixels, BlendMode.HardLight);
     expect(dest.data[0]).toBe(100); // 2 * 200 * 64 / 255
   });
 

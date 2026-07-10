@@ -10,7 +10,7 @@ const DOM_BLEND_MODE: Record<BlendMode, string | null> = {
   [BlendMode.Darken]: 'darken',
   [BlendMode.Difference]: 'difference',
   [BlendMode.Erase]: null,
-  [BlendMode.Hardlight]: 'hard-light',
+  [BlendMode.HardLight]: 'hard-light',
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: '',
   [BlendMode.Lighten]: 'lighten',
@@ -33,7 +33,7 @@ const DOM_BLEND_MODE_FIDELITY: Record<BlendMode, DomBlendModeFidelity> = {
   [BlendMode.Darken]: 'exact',
   [BlendMode.Difference]: 'exact',
   [BlendMode.Erase]: 'unsupported',
-  [BlendMode.Hardlight]: 'exact',
+  [BlendMode.HardLight]: 'exact',
   [BlendMode.Invert]: 'unsupported',
   [BlendMode.Layer]: 'exact', // normal compositing within a stacking context
   [BlendMode.Lighten]: 'exact',
