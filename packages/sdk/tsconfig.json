@@ -23,6 +23,7 @@
     { "path": "../clipboard" },
     { "path": "../clock" },
     { "path": "../collision" },
+    { "path": "../debug" },
     { "path": "../device" },
     { "path": "../dialog" },
     { "path": "../displayobject" },

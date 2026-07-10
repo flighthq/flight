@@ -14,6 +14,7 @@ export * from '@flighthq/clipboard';
 export * from '@flighthq/clock';
 export * from '@flighthq/collision';
 export * from '@flighthq/connectivity';
+export * from '@flighthq/debug';
 export * from '@flighthq/device';
 export * from '@flighthq/dialog';
 export * from '@flighthq/displayobject';

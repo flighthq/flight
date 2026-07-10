@@ -46,6 +46,8 @@
       "@flighthq/menu/*": ["./packages/menu/src/*"],
       "@flighthq/tray": ["./packages/tray/src/index.ts"],
       "@flighthq/tray/*": ["./packages/tray/src/*"],
+      "@flighthq/debug": ["./packages/debug/src/index.ts"],
+      "@flighthq/debug/*": ["./packages/debug/src/*"],
       "@flighthq/device": ["./packages/device/src/index.ts"],
       "@flighthq/device/*": ["./packages/device/src/*"],
       "@flighthq/statusbar": ["./packages/statusbar/src/index.ts"],
