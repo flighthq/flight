@@ -60,7 +60,7 @@ The user writes `TextAlign.Center` — typed, autocompleted, typo = compile erro
 
 **Serialization is the canonical string verbatim** — no seam on the default path. Accepting a foreign or looser casing (e.g. OpenFL's lowercase `'hardlight'`) is a lenient normalization at an explicit **import** boundary, built when an importer needs it, not baked into the round-trip.
 
-**Borrowed vocabularies keep their source form.** A string an external API owns — GPU/WebGPU terms (`'depth-stencil'`), MIME types, CSS values a backend adapter emits — stays in that API's casing; this convention governs Flight's own vocabularies. Third-party kinds namespace with a vendor prefix (`'acme.HardLight'`).
+**The test is enum type vs string value.** A Flight-modeled enumerable concept — one that would be a first-class `enum` in the C/C++ port and that each backend *interprets* (`BlendMode`, `TextAlign`) — is an **enum type → PascalCase**. A string shuttled verbatim to one external API (`VertexFormat` → WebGPU, `NotificationPermission` → the web platform, a MIME type), typed as a `'a' | 'b'` union only for convenience, is a **string value → keep the API's source form** (`'float32x2'`, `'granted'`), because Flight is passing that API's data through, not defining a concept. So a `'a' | 'b'` union alone does not make something a value-to-lowercase; ask whether Flight *owns the concept as an enum* (→ PascalCase) or is *relaying a foreign string* (→ source form). Third-party kinds namespace with a vendor prefix (`'acme.HardLight'`).
 
 ### Performance note (optional)
 
