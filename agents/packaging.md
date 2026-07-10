@@ -6,6 +6,18 @@ Packaging policy is enforced by `npm run packages:check`, not by memory or hand-
 - Compiled test outputs are excluded from published packages.
 - `prepack` cleans TypeScript build state, removes the package's `dist` via `clean:dist`, and rebuilds, so stale renamed files are never published.
 
+## Publishing to npm
+
+The whole `@flighthq/*` graph publishes to public npm under **locked versioning** — every package shares one version, so `@flighthq/sdk@X` implies its entire dependency graph at `X`. Two scripts and one workflow drive it:
+
+- `npm run version:packages <version>` — sets every `packages/*` manifest to one version (the locked bump). Run before tagging.
+- `npm run release` (`scripts/publish-packages.ts`) — builds the graph once, then publishes each package with `--access public --ignore-scripts`. Idempotent: a version already on the registry is skipped, so a re-run after a partial failure completes the set. `--dry-run` packs and reports without uploading; a bare name-substring arg limits to matching packages.
+- `.github/workflows/release.yml` — on a pushed `v*.*.*` tag, runs `npm ci && npm run build && npm run release`, authenticating with the `NPM_TOKEN` secret and attaching npm provenance.
+
+**The `"*"` → version pin.** `packages:check` enforces that internal `@flighthq/*` deps are `"*"` in source (the workspace-sibling marker; a real range would be fiction in a repo whose versions are a publish artifact, not a source fact). A published manifest must not carry `"*"` — a consumer of `@flighthq/sdk@0.1.0` whose deps say `"*"` would float them to `latest` and break when `0.2.0` ships. So `publish-packages.ts` rewrites each internal `"*"` to the exact sibling version in a **temporary** manifest edit, publishes, then restores `"*"` — the working tree stays `packages:check`-clean. This is the npm-native equivalent of pnpm's `workspace:*` protocol; do not commit pinned internal versions.
+
+Release flow: `npm run version:packages 0.1.1` → commit → `git tag v0.1.1` → `git push --tags`. Publishing requires the `@flighthq` npm scope and an `NPM_TOKEN` repo secret.
+
 ## Package naming and axes
 
 A package name is a subsystem, written as **one fused word** — even a two-word concept fuses, never taking an internal dash: `displayobject` (not `display-object`), `spritesheet`, `textinput`, `textlayout`, `textshaper`, `easing`, `loader`. The dash is reserved for **one axis of variation** — a derivative that depends on and specializes the base. There are two axes:
