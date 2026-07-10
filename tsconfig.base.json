@@ -166,6 +166,8 @@
       "@flighthq/textureatlas/*": ["./packages/textureatlas/src/*"],
       "@flighthq/tileset": ["./packages/tileset/src/index.ts"],
       "@flighthq/tileset/*": ["./packages/tileset/src/*"],
+      "@flighthq/tilemap-formats": ["./packages/tilemap-formats/src/index.ts"],
+      "@flighthq/tilemap-formats/*": ["./packages/tilemap-formats/src/*"],
       "@flighthq/input": ["./packages/input/src/index.ts"],
       "@flighthq/input/*": ["./packages/input/src/*"],
       "@flighthq/math": ["./packages/math/src/index.ts"],
