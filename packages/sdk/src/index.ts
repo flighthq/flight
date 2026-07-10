@@ -41,6 +41,7 @@ export * from '@flighthq/image';
 export * from '@flighthq/image-codec';
 export * from '@flighthq/input';
 export * from '@flighthq/interaction';
+export * from '@flighthq/intl';
 export * from '@flighthq/ipc';
 export * from '@flighthq/keyboard';
 export * from '@flighthq/lifecycle';

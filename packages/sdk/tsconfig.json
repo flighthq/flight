@@ -47,6 +47,7 @@
     { "path": "../haptics" },
     { "path": "../input" },
     { "path": "../interaction" },
+    { "path": "../intl" },
     { "path": "../ipc" },
     { "path": "../keyboard" },
     { "path": "../lifecycle" },

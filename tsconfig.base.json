@@ -160,6 +160,8 @@
       "@flighthq/math/*": ["./packages/math/src/*"],
       "@flighthq/interaction": ["./packages/interaction/src/index.ts"],
       "@flighthq/interaction/*": ["./packages/interaction/src/*"],
+      "@flighthq/intl": ["./packages/intl/src/index.ts"],
+      "@flighthq/intl/*": ["./packages/intl/src/*"],
       "@flighthq/log": ["./packages/log/src/index.ts"],
       "@flighthq/log/*": ["./packages/log/src/*"],
       "@flighthq/materials": ["./packages/materials/src/index.ts"],
