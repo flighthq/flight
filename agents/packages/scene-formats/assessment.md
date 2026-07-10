@@ -8,17 +8,12 @@ basedOn: ./review.md
 
 See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 review (stub, 18/100). The charter's priority Decision — expand glTF coverage, since partial support is not useful — makes most of the review's glTF build-out sweep-safe within-package work: the existing slice is well-shaped and grows rather than restructures. Parked items are those needing the `mesh` vertex-layout expansion, a cross-package seam, or a charter Open direction (export/serialize naming, USD scope, streaming).
 
-## Recommended
+_Items 1–4, 7, 9 of the original list landed 2026-07-09 (`771bf232`): GLB container parsing (`createSceneFromGlb`), `byteStride`/`normalized` accessor correctness, multi-primitive meshes, TANGENT import, validation/diagnostics (version check, no-throw sentinel on malformed JSON, non-triangle-`mode`/`extensionsRequired` warnings), and the `GltfDocument`-only barrel narrowing — plus a latent `decodeBase64` high-byte fix. Remaining:_
 
-1. GLB (`.glb`) container parsing — the 12-byte header + JSON/BIN chunk walk. The dominant distribution form; without it the importer fails on most real assets.
-2. `byteStride` de-striding and `normalized` integer attribute handling in `readAccessor` — silent-corruption correctness holes today (strided assets read garbage; normalized UBYTE/USHORT decode wrong).
-3. Multi-primitive meshes — import every `primitives[]` entry, not just `[0]`; multi-material meshes currently drop geometry silently.
-4. Import `TANGENT` into the existing canonical-layout slot when present (stop zero-filling), falling back to zero-fill otherwise.
-5. Core-spec materials/textures/samplers import — parse `materials`/`textures`/`images`/`samplers` and map metallic-roughness onto `@flighthq/materials` + `@flighthq/texture` (both exist and are the natural targets). The single largest visible-output gap: every import renders untextured.
-6. Animations import into the `@flighthq/animation` core — glTF channel/sampler/clip map straight onto `AnimationTrack`/`AnimationChannel`/`AnimationClip` with `SceneAnimationTarget` (the blessed 3D pipeline architecture calls this mapping out as non-speculative; the sampler is already glTF-conformant, and accessors slot in zero-copy).
-7. Validation and diagnostics: check `asset.version`; return a sentinel (with warning) on malformed JSON instead of a raw `JSON.parse` throw; warn on non-triangle primitive `mode`; warn when `extensionsRequired` names an unsupported extension.
-8. OBJ/MTL importer — charter Decision 2026-07-03 ("the home for all 3D file format parsing"); cheap, high value for test assets, and justifies the plural package name.
-9. Narrow the public schema surface — export `GltfDocument` from the barrel and keep the remaining `Gltf*` wire types internal (they are format-internal, not cross-package SDK types).
+1. Core-spec materials/textures/samplers import — parse `materials`/`textures`/`images`/`samplers` and map metallic-roughness onto `@flighthq/materials` + `@flighthq/texture`. The largest visible-output gap: every import renders untextured. **Cross-package — needs a direction for the material/texture mapping.**
+2. Animations import into the `@flighthq/animation` core — glTF channel/sampler/clip map onto `AnimationTrack`/`AnimationChannel`/`AnimationClip` with `SceneAnimationTarget`. **Cross-package — needs a direction.**
+3. OBJ/MTL importer — charter Decision 2026-07-03 ("the home for all 3D file format parsing"); cheap, high value for test assets. Within-package, sweep-safe.
+4. Sparse accessors + external `.bin`/image URI resolution — parked correctness gaps flagged during the 2026-07-09 pass.
 
 ## Backlog
 
