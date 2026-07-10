@@ -40,6 +40,15 @@ export const BitmapKind = 'Bitmap'; // type: 'Bitmap'
 
 This applies to the kind-identity system (`*Kind`, renderer/hierarchy registration). It does **not** apply to internal `Symbol()` uses that are never serialized and exist only for runtime privacy/uniqueness — runtime-slot keys, property-key brands (`EntityRuntimeKey`, `NodeTraitsKey`), and sentinels (`NullScene`) stay symbols.
 
+### Casing: values are lowercase, type-kinds are PascalCase
+
+Two string vocabularies, two cases, decided by whether a member names a **value** or a **type**:
+
+- **Values — a finite/enumerable set of alternatives for a property → lowercase.** `align: 'center'`, `blendMode: 'multiply'`, a `CapsStyle` of `'round'`, a `TextDirection` of `'leftToRight'`. The test is *could this conceivably be a fixed enum of alternatives?* — if so it is a value, even when it is technically open (e.g. blend modes dispatch through a registry and accept vendor kinds, but the built-in set is enumerable, so they are values → lowercase). Multi-word values use **camelCase** (`'hardLight'`, `'exactFit'`, `'interCharacter'`): the lowercase initial keeps values visually distinct from types, it reads at length (unlike `'hardlight'`/`'lefttoright'`), and it matches the AS3 string forms (`StageScaleMode.EXACT_FIT === 'exactFit'`). Not hyphenated — that is the CSS form; a backend adapter translates to it (e.g. canvas `globalCompositeOperation` `'hard-light'`).
+- **Type-kinds — a genuinely open-ended family where each member is a distinct descriptor type → PascalCase**, matching the type name (`'StandardPbrMaterial'`, `'BloomEffect'`, `'Bitmap'`).
+
+**A registry is orthogonal to this split — its keys inherit the casing of whatever they name.** The effect/material/light registries key on *types* → PascalCase; a blend-mode registry keys on *values* → lowercase. "Being a registry" is not a third casing category; the key's nature decides. Vendor-prefixed custom members follow their category (`'acme.frostedGlass'`). Strings an external API defines keep that API's exact form (GPU/WebGPU terms like `'depth-stencil'`, MIME types) — this convention governs Flight's own vocabularies, not borrowed ones.
+
 ### Performance note (optional)
 
 Dispatch is `Map.get(kind)` behind a registry-version cache (`rendererMapId`) — nanosecond-scale and not re-run per frame. If profiling ever shows string churn or hot-path `===` cost, canonicalize each kind string to the registry's single instance on load, so comparisons are pointer-equal and there is one instance per kind. That is a plain-data interning step, not the serialization seam we deliberately avoid.
