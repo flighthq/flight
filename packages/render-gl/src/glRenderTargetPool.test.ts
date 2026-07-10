@@ -49,6 +49,19 @@ describe('acquireGlRenderTarget', () => {
     const reused = acquireGlRenderTarget(state, pool, { width: 10.9, height: 0.4 });
     expect(reused).toBe(first);
   });
+
+  it('clears a reused target so it is handed back clean', () => {
+    const { state, gl } = createGlState();
+    const pool = createGlRenderTargetPool();
+    const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48 });
+    releaseGlRenderTarget(pool, first);
+
+    // Only the reuse path clears — spy after the first (fresh) acquire so we measure just the reuse.
+    const clearSpy = vi.spyOn(gl, 'clear');
+    const reused = acquireGlRenderTarget(state, pool, { width: 64, height: 48 });
+    expect(reused).toBe(first);
+    expect(clearSpy).toHaveBeenCalled();
+  });
 });
 
 describe('createGlRenderTargetPool', () => {
