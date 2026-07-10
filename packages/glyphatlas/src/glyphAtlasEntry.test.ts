@@ -34,6 +34,7 @@ describe('getGlyphAtlasEntry', () => {
     expect(entry.advance).toBe(12);
     expect(entry.bearingX).toBe(1);
     expect(entry.bearingY).toBe(10);
+    expect(entry.page).toBe(0); // The dynamic atlas is a single growing page.
   });
 
   it('places different glyphs in non-overlapping, in-bounds rects', () => {

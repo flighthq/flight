@@ -10,13 +10,13 @@ export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 
 // The QuadBatch-backed bitmap text display node. It lays out a string's glyphs from a `GlyphSource`
 // (per-glyph atlas rect, advance, bearing, kerning, line metrics) and emits one glyph quad per
-// visible glyph into a backing `@flighthq/sprite` QuadBatch — a single batched draw over the glyph
-// atlas texture. It is the composition-layer sibling of `MovieClip` (over a timeline) and
-// `ParticleEmitter` (over a particle sim): a display node assembled from lower primitives.
+// visible glyph into a backing `@flighthq/sprite` QuadBatch — one batched draw per glyph-atlas page.
+// It is the composition-layer sibling of `MovieClip` (over a timeline) and `ParticleEmitter` (over a
+// particle sim): a display node assembled from lower primitives.
 //
-// The node registers no GPU renderer. Its backing QuadBatch (on `BitmapTextRuntime.quadBatch`) is a
-// real child in the display hierarchy, so the existing QuadBatch renderer draws it — the same way a
-// `MovieClip` renders through its child display objects.
+// The node registers no GPU renderer. Its backing QuadBatches (on `BitmapTextRuntime.quadBatches`,
+// one per glyph-atlas page) are real children in the display hierarchy, so the existing QuadBatch
+// renderer draws them — the same way a `MovieClip` renders through its child display objects.
 export interface BitmapTextData extends DisplayObjectData {
   align: BitmapTextAlign;
   // Packed RGBA tint (`0xRRGGBBAA`) multiplied over the glyph pixels. `0xffffffff` (white) is the
@@ -41,10 +41,12 @@ export interface BitmapTextRuntime extends DisplayObjectRuntime {
   // Cached local bounds of the laid-out text, written by `updateBitmapText` and copied out by
   // `computeBitmapTextLocalBoundsRectangle`. Null before the first layout.
   localBoundsRectangle: Rectangle | null;
-  // The backing QuadBatch `updateBitmapText` fills — one quad per visible glyph, sampling the glyph
-  // atlas texture through the batch's own `TextureAtlas` (whose regions are the glyph rects). Added as
-  // this node's child so the standard QuadBatch renderer draws it. Null until `createBitmapText`.
-  quadBatch: QuadBatch | null;
+  // The backing QuadBatches `updateBitmapText` fills — one per glyph-atlas page, page-indexed. Each
+  // holds the quads of glyphs whose `GlyphEntry.page` matches its index, sampling that page's atlas
+  // image (from `getGlyphAtlasImage(page)`) through the batch's own `TextureAtlas` (whose regions are
+  // the page's glyph rects). All are this node's children so the standard QuadBatch renderer draws
+  // them. A single-page source yields exactly one batch (page 0). Empty until `createBitmapText`.
+  quadBatches: QuadBatch[];
 }
 
 export interface BitmapText extends DisplayObject {

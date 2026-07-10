@@ -12,6 +12,7 @@ export function createBitmapFont(data: Readonly<BitmapFontData>): BitmapFont {
       bearingX: glyph.bearingX,
       bearingY: glyph.bearingY,
       height: glyph.height,
+      page: 0, // Single-page for now — a multi-page font (N page images) is a documented follow-up.
       width: glyph.width,
       x: glyph.x,
       y: glyph.y,

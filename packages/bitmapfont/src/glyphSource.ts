@@ -8,6 +8,11 @@ import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from '
 // `getGlyphEntry` rasterizes on miss. A renderer holds either behind the one seam without knowing which.
 export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource {
   return {
+    getGlyphAtlasImage(page = 0) {
+      // The font's baked atlas is a single page (page 0); a multi-page font holding N page images is
+      // a documented follow-up. `font.atlas` is always present, but its `image` may be null.
+      return page === 0 ? font.atlas.image : null;
+    },
     getGlyphEntry(codepoint) {
       return getBitmapFontGlyph(font, codepoint);
     },

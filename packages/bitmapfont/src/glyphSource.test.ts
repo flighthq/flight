@@ -1,5 +1,5 @@
 import { createTextureAtlas } from '@flighthq/textureatlas';
-import type { BitmapFontData } from '@flighthq/types';
+import type { BitmapFontData, ImageResource } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapFont, getBitmapFontGlyph } from './bitmapFont';
@@ -11,10 +11,21 @@ describe('createGlyphSourceFromBitmapFont', () => {
     const source = createGlyphSourceFromBitmapFont(font);
 
     expect(source.getGlyphEntry(65)).toBe(getBitmapFontGlyph(font, 65));
+    expect(source.getGlyphEntry(65)!.page).toBe(0);
     expect(source.getGlyphEntry(0x1f600)).toBeNull();
     expect(source.getGlyphKerning(65, 86)).toBe(-2);
     expect(source.getGlyphKerning(86, 65)).toBe(0);
     expect(source.getGlyphMetrics()).toEqual({ ascent: 8, descent: 2, lineGap: 1 });
+  });
+
+  it('pairs page 0 with the font atlas image and has no other page', () => {
+    const image = {} as ImageResource;
+    const font = createBitmapFont({ ...sampleFontData(), atlas: createTextureAtlas({ image }) });
+    const source = createGlyphSourceFromBitmapFont(font);
+
+    expect(source.getGlyphAtlasImage(0)).toBe(image);
+    expect(source.getGlyphAtlasImage()).toBe(image);
+    expect(source.getGlyphAtlasImage(1)).toBeNull();
   });
 });
 
