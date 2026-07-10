@@ -107,6 +107,7 @@ export * from '@flighthq/textlayout';
 export * from '@flighthq/textshaper';
 export * from '@flighthq/textshaper-canvas';
 export * from '@flighthq/texture';
+export * from '@flighthq/texture-formats';
 export * from '@flighthq/textureatlas';
 export * from '@flighthq/textureatlas-formats';
 export * from '@flighthq/tileset';

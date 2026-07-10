@@ -160,6 +160,8 @@
       "@flighthq/mesh/*": ["./packages/mesh/src/*"],
       "@flighthq/texture": ["./packages/texture/src/index.ts"],
       "@flighthq/texture/*": ["./packages/texture/src/*"],
+      "@flighthq/texture-formats": ["./packages/texture-formats/src/index.ts"],
+      "@flighthq/texture-formats/*": ["./packages/texture-formats/src/*"],
       "@flighthq/textureatlas": ["./packages/textureatlas/src/index.ts"],
       "@flighthq/textureatlas/*": ["./packages/textureatlas/src/*"],
       "@flighthq/tileset": ["./packages/tileset/src/index.ts"],

@@ -119,6 +119,7 @@
     { "path": "../textshaper" },
     { "path": "../textshaper-canvas" },
     { "path": "../texture" },
+    { "path": "../texture-formats" },
     { "path": "../textureatlas" },
     { "path": "../tileset" },
     { "path": "../timeline" },

@@ -138,6 +138,7 @@
     "@flighthq/textshaper": "*",
     "@flighthq/textshaper-canvas": "*",
     "@flighthq/texture": "*",
+    "@flighthq/texture-formats": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/tileset": "*",
     "@flighthq/timeline": "*",
