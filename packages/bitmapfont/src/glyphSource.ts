@@ -9,9 +9,9 @@ import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from '
 export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource {
   return {
     getGlyphAtlasImage(page = 0) {
-      // The font's baked atlas is a single page (page 0); a multi-page font holding N page images is
-      // a documented follow-up. `font.atlas` is always present, but its `image` may be null.
-      return page === 0 ? font.atlas.image : null;
+      // Each page's atlas image, indexed by the glyph's `page`. An out-of-range page (or a page whose
+      // atlas carries no image yet) yields null — the renderer skips glyphs it cannot sample.
+      return font.pages[page]?.image ?? null;
     },
     getGlyphEntry(codepoint) {
       return getBitmapFontGlyph(font, codepoint);

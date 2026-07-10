@@ -92,7 +92,7 @@ function readJsonChar(raw: unknown): BitmapFontCharRecord | null {
   ) {
     return null;
   }
-  return { height, id, width, x, xadvance, xoffset, y, yoffset };
+  return { height, id, page: readJsonNumber(raw.page) ?? 0, width, x, xadvance, xoffset, y, yoffset };
 }
 
 // Reads the encoding from a `distanceField` block: `msdf`/`sdf` when its `fieldType` names one, else

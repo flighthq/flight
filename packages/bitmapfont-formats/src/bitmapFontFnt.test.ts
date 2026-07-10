@@ -1,9 +1,25 @@
-import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from '@flighthq/bitmapfont';
+import {
+  createGlyphSourceFromBitmapFont,
+  getBitmapFontGlyph,
+  getBitmapFontKerning,
+  getBitmapFontMetrics,
+  getBitmapFontPage,
+} from '@flighthq/bitmapfont';
 import { createTextureAtlas } from '@flighthq/textureatlas';
-import type { BitmapFontParseOptions, TextureAtlas } from '@flighthq/types';
+import type { BitmapFontParseOptions, ImageResource, TextureAtlas } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { formatBitmapFontFnt, parseBitmapFontFnt } from './bitmapFontFnt';
+
+const FNT_MULTIPAGE = [
+  'info face="Test" size=32 unicode=1',
+  'common lineHeight=32 base=26 scaleW=64 scaleH=64 pages=2 packed=0',
+  'page id=0 file="test_0.png"',
+  'page id=1 file="test_1.png"',
+  'chars count=2',
+  'char id=65 x=0 y=0 width=7 height=8 xoffset=1 yoffset=0 xadvance=9 page=0 chnl=15',
+  'char id=66 x=3 y=0 width=6 height=8 xoffset=0 yoffset=0 xadvance=8 page=1 chnl=15',
+].join('\n');
 
 const FNT_TEXT = [
   'info face="Test" size=32 bold=0 italic=0 unicode=1 padding=0,0,0,0 spacing=1,1',
@@ -43,7 +59,7 @@ describe('parseBitmapFontFnt', () => {
     const font = parseBitmapFontFnt(FNT_TEXT, { resolvePage: () => atlas });
     expect(font).not.toBeNull();
 
-    expect(font!.atlas).toBe(atlas);
+    expect(getBitmapFontPage(font!, 0)).toBe(atlas);
     expect(getBitmapFontGlyph(font!, 65)).toEqual({
       advance: 9,
       bearingX: 1,
@@ -78,6 +94,35 @@ describe('parseBitmapFontFnt', () => {
       },
     });
     expect(seen).toEqual([[0, 'test_0.png']]);
+  });
+
+  it('resolves every page of a multi-page font and routes each glyph to the right page image', () => {
+    const image0 = {} as ImageResource;
+    const image1 = {} as ImageResource;
+    const page0 = createTextureAtlas({ image: image0 });
+    const page1 = createTextureAtlas({ image: image1 });
+    const seen: Array<[number, string]> = [];
+    const font = parseBitmapFontFnt(FNT_MULTIPAGE, {
+      resolvePage: (id, file) => {
+        seen.push([id, file]);
+        return id === 0 ? page0 : page1;
+      },
+    });
+    expect(font).not.toBeNull();
+
+    expect(seen).toEqual([
+      [0, 'test_0.png'],
+      [1, 'test_1.png'],
+    ]);
+    expect(font!.pages).toEqual([page0, page1]);
+    expect(getBitmapFontPage(font!, 0)).toBe(page0);
+    expect(getBitmapFontPage(font!, 1)).toBe(page1);
+    expect(getBitmapFontGlyph(font!, 65)!.page).toBe(0);
+    expect(getBitmapFontGlyph(font!, 66)!.page).toBe(1);
+
+    const source = createGlyphSourceFromBitmapFont(font!);
+    expect(source.getGlyphAtlasImage(source.getGlyphEntry(65)!.page)).toBe(image0);
+    expect(source.getGlyphAtlasImage(source.getGlyphEntry(66)!.page)).toBe(image1);
   });
 
   it('returns null for malformed text without throwing', () => {

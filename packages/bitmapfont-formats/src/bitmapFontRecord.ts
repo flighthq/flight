@@ -6,14 +6,17 @@ import type {
   BitmapFontGlyphData,
   BitmapFontKerningData,
   BitmapFontParseOptions,
+  TextureAtlas,
 } from '@flighthq/types';
 
 // One parsed AngelCode/BMFont `char` record — the raw format fields, before the shared mapping onto a
 // `GlyphEntry`. `x`/`y`/`width`/`height` are the glyph's rectangle in the atlas page; `xoffset`/
-// `yoffset` are the pen-to-box bearing; `xadvance` is the pen advance.
+// `yoffset` are the pen-to-box bearing; `xadvance` is the pen advance; `page` is the atlas page image
+// the rectangle is cut from (default 0), indexing the record's `pages`.
 export interface BitmapFontCharRecord {
   height: number;
   id: number;
+  page: number;
   width: number;
   x: number;
   xadvance: number;
@@ -51,21 +54,47 @@ export interface BitmapFontRecord {
   pages: BitmapFontPageRecord[];
 }
 
-// Maps a parsed `BitmapFontRecord` onto a `BitmapFont` via `createBitmapFont`, resolving the atlas page
-// through `options.resolvePage`. The atlas is required: a `BitmapFont` carries a non-null atlas, so
-// when `resolvePage` is omitted, the record has no page, or the resolver returns `null` for the first
-// page, this returns the `null` sentinel and the parse fails as a whole. Each `char` becomes a glyph
-// (`xoffset`/`yoffset` → `bearingX`/`bearingY`, `xadvance` → `advance`); each `kerning` becomes a pair;
-// the line metrics derive from the BMFont `common` fields (`ascent` = `base`, `descent` =
-// `lineHeight - base`, `lineGap` = 0), which `formatBitmapFontFnt` inverts losslessly.
+// Maps a parsed `BitmapFontRecord` onto a `BitmapFont` via `createBitmapFont`, resolving every atlas
+// page the record declares through `options.resolvePage` (called once per page id). The resolved
+// atlases become the font's page-indexed `pages` (page id = index), and each `char`'s `page` carries
+// through to its glyph. Resolution rule: a page a glyph actually samples must resolve — if any
+// referenced page's atlas is `null` (including when `resolvePage` is omitted, so nothing resolves),
+// this returns the `null` sentinel and the parse fails as a whole; a declared-but-unreferenced page
+// that fails to resolve is tolerated and simply left absent. Each `char` becomes a glyph
+// (`xoffset`/`yoffset` → `bearingX`/`bearingY`, `xadvance` → `advance`, `page` → `page`); each
+// `kerning` becomes a pair; the line metrics derive from the BMFont `common` fields (`ascent` =
+// `base`, `descent` = `lineHeight - base`, `lineGap` = 0), which `formatBitmapFontFnt` inverts
+// losslessly.
 export function buildBitmapFontFromRecord(
   record: Readonly<BitmapFontRecord>,
   options?: Readonly<BitmapFontParseOptions>,
 ): BitmapFont | null {
-  const page = record.pages[0];
   const resolvePage = options?.resolvePage;
-  const atlas = page !== undefined && resolvePage !== undefined ? resolvePage(page.id, page.file) : null;
-  if (atlas === null) return null;
+  const resolved = new Map<number, TextureAtlas>();
+  let maxPageId = -1;
+  if (resolvePage !== undefined) {
+    for (const page of record.pages) {
+      const atlas = resolvePage(page.id, page.file);
+      if (atlas !== null) {
+        resolved.set(page.id, atlas);
+        if (page.id > maxPageId) maxPageId = page.id;
+      }
+    }
+  }
+
+  // Every page a glyph samples must have resolved; an unresolved referenced page collapses the parse.
+  for (const char of record.chars) {
+    if (!resolved.has(char.page)) return null;
+    if (char.page > maxPageId) maxPageId = char.page;
+  }
+
+  const pages: TextureAtlas[] = [];
+  for (let id = 0; id <= maxPageId; id++) {
+    const atlas = resolved.get(id);
+    // A hole only occurs for a declared-but-unreferenced page that failed to resolve; no glyph
+    // indexes it, so it is left absent (`getBitmapFontPage` reports null for that index).
+    if (atlas !== undefined) pages[id] = atlas;
+  }
 
   const glyphs: BitmapFontGlyphData[] = record.chars.map((char) => ({
     advance: char.xadvance,
@@ -73,6 +102,7 @@ export function buildBitmapFontFromRecord(
     bearingY: char.yoffset,
     codepoint: char.id,
     height: char.height,
+    page: char.page,
     width: char.width,
     x: char.x,
     y: char.y,
@@ -84,11 +114,11 @@ export function buildBitmapFontFromRecord(
   }));
 
   const data: BitmapFontData = {
-    atlas,
     encoding: record.encoding,
     glyphs,
     kerning,
     metrics: { ascent: record.base, descent: record.lineHeight - record.base, lineGap: 0 },
+    pages,
   };
   return createBitmapFont(data);
 }

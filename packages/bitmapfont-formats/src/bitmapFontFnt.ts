@@ -10,28 +10,32 @@ import type {
 } from './bitmapFontRecord';
 
 // Re-emits a `BitmapFont` as the classic AngelCode/BMFont text `.fnt` (`info`/`common`/`page`/`char`/
-// `kerning` lines of `key=value` pairs). Lossless for the fields the model carries — the glyph table,
-// kerning pairs, encoding, and line metrics all round-trip (`parseBitmapFontFnt` of this output rebuilds
-// an equivalent font). The page reference cannot round-trip to a filename: a `BitmapFont` holds a live
-// `TextureAtlas`, not the source page path, so the `page` line is emitted with an empty `file=""` and
-// the reader supplies the atlas again through its `resolvePage`. `info`/`common` beyond the line
+// `kerning` lines of `key=value` pairs). Lossless for the fields the model carries — the glyph table
+// (including each glyph's `page`), kerning pairs, encoding, and line metrics all round-trip
+// (`parseBitmapFontFnt` of this output rebuilds an equivalent font). A `page` line is emitted per
+// font page; the page references cannot round-trip to filenames: a `BitmapFont` holds live
+// `TextureAtlas` pages, not the source page paths, so each `page` line carries an empty `file=""` and
+// the reader supplies the atlases again through its `resolvePage`. `info`/`common` beyond the line
 // metrics (face, style, spacing, packing) are not part of the model and are emitted as neutral defaults.
 export function formatBitmapFontFnt(font: Readonly<BitmapFont>): string {
   const metrics = getBitmapFontMetrics(font);
   const lineHeight = metrics.ascent + metrics.descent + metrics.lineGap;
   const base = metrics.ascent;
-  const image = font.atlas.image;
-  const scaleW = image !== null ? image.width : 0;
-  const scaleH = image !== null ? image.height : 0;
+  const primaryImage = font.pages[0]?.image ?? null;
+  const scaleW = primaryImage !== null ? primaryImage.width : 0;
+  const scaleH = primaryImage !== null ? primaryImage.height : 0;
+  const pageCount = Math.max(font.pages.length, 1);
 
   const lines: string[] = [];
   lines.push(
     `info face="" size=${lineHeight} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=0,0 outline=0`,
   );
   lines.push(
-    `common lineHeight=${lineHeight} base=${base} scaleW=${scaleW} scaleH=${scaleH} pages=1 packed=0 alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0`,
+    `common lineHeight=${lineHeight} base=${base} scaleW=${scaleW} scaleH=${scaleH} pages=${pageCount} packed=0 alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0`,
   );
-  lines.push('page id=0 file=""');
+  for (let id = 0; id < pageCount; id++) {
+    lines.push(`page id=${id} file=""`);
+  }
 
   const codepoints = [...font.glyphs.keys()];
   lines.push(`chars count=${codepoints.length}`);
@@ -39,7 +43,7 @@ export function formatBitmapFontFnt(font: Readonly<BitmapFont>): string {
     const glyph = font.glyphs.get(codepoint) as GlyphEntry;
     lines.push(
       `char id=${codepoint} x=${glyph.x} y=${glyph.y} width=${glyph.width} height=${glyph.height} ` +
-        `xoffset=${glyph.bearingX} yoffset=${glyph.bearingY} xadvance=${glyph.advance} page=0 chnl=15`,
+        `xoffset=${glyph.bearingX} yoffset=${glyph.bearingY} xadvance=${glyph.advance} page=${glyph.page} chnl=15`,
     );
   }
 
@@ -135,7 +139,7 @@ function readFntChar(fields: Readonly<Record<string, string>>): BitmapFontCharRe
   ) {
     return null;
   }
-  return { height, id, width, x, xadvance, xoffset, y, yoffset };
+  return { height, id, page: readFntNumber(fields.page) ?? 0, width, x, xadvance, xoffset, y, yoffset };
 }
 
 function readFntKerning(fields: Readonly<Record<string, string>>): BitmapFontKerningRecord | null {

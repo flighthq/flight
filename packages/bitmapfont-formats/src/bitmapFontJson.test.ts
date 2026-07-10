@@ -1,4 +1,9 @@
-import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from '@flighthq/bitmapfont';
+import {
+  getBitmapFontGlyph,
+  getBitmapFontKerning,
+  getBitmapFontMetrics,
+  getBitmapFontPage,
+} from '@flighthq/bitmapfont';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import type { BitmapFont } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
@@ -46,7 +51,7 @@ describe('parseBitmapFontJson', () => {
     const font = parseBitmapFontJson(FNT_JSON, { resolvePage: () => atlas });
     expect(font).not.toBeNull();
 
-    expect(font!.atlas).toBe(atlas);
+    expect(getBitmapFontPage(font!, 0)).toBe(atlas);
     expect(getBitmapFontGlyph(font!, 65)).toEqual({
       advance: 9,
       bearingX: 1,
@@ -60,6 +65,27 @@ describe('parseBitmapFontJson', () => {
     expect(getBitmapFontGlyph(font!, 86)?.advance).toBe(8);
     expect(getBitmapFontKerning(font!, 65, 86)).toBe(-2);
     expect(getBitmapFontMetrics(font!)).toEqual({ ascent: 26, descent: 6, lineGap: 0 });
+  });
+
+  it('resolves both pages of a multi-page JSON export and routes each glyph to its page', () => {
+    const page0 = createTextureAtlas();
+    const page1 = createTextureAtlas();
+    const multiPage = JSON.stringify({
+      chars: [
+        { height: 8, id: 65, page: 0, width: 7, x: 0, xadvance: 9, xoffset: 1, y: 0, yoffset: 0 },
+        { height: 8, id: 66, page: 1, width: 6, x: 3, xadvance: 8, xoffset: 0, y: 0, yoffset: 0 },
+      ],
+      common: { base: 26, lineHeight: 32 },
+      kernings: [],
+      pages: ['test_0.png', 'test_1.png'],
+    });
+    const font = parseBitmapFontJson(multiPage, { resolvePage: (id) => (id === 0 ? page0 : page1) });
+    expect(font).not.toBeNull();
+
+    expect(font!.pages).toEqual([page0, page1]);
+    expect(getBitmapFontPage(font!, 1)).toBe(page1);
+    expect(getBitmapFontGlyph(font!, 65)!.page).toBe(0);
+    expect(getBitmapFontGlyph(font!, 66)!.page).toBe(1);
   });
 
   it('reads the sdf/msdf encoding from a distanceField block', () => {
