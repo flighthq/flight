@@ -15,6 +15,7 @@
     { "path": "../application" },
     { "path": "../assets" },
     { "path": "../binpack" },
+    { "path": "../bitmapfont" },
     { "path": "../camera" },
     { "path": "../camera2d" },
     { "path": "../capture" },
