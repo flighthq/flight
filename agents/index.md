@@ -218,4 +218,6 @@ App/process: `@flighthq/app` (identity, badge, dock), `@flighthq/protocol` (deep
 
 Host backends (`host-<runtime>` — not tree-shakable, not re-exported from `@flighthq/sdk`): `@flighthq/host-electron` (passes `electron` explicitly via `registerElectronBackends(electron)`; typed against a local `ElectronApi` interface).
 
+Tooling suite (`tool-*` — the dev/CI sibling of `host-*`: harness/build/test tooling packages, **not re-exported from `@flighthq/sdk`**, may depend on Node/Playwright, never in a browser bundle; opt-in **tooling primitives a harness composes**, while the project's specific harness wiring stays in `scripts/`/`tools/`). Excluded from the sdk barrel by `scripts/sdk-policy.ts`'s `isSdkBarrelExcludedPackage`. First member: `@flighthq/tool-capture` (drive an example/functional/site page → clean `screenshot.png` + `logs.jsonl` + `status.json`, with the hardened present-frame sync; consumes `@flighthq/capture` for compare/tier policy and `flight-reference` for baselines) — DRY'd across repos so `flight-reference`/`flight-rs`/main share one capture path instead of copied scripts.
+
 See [package map](packages/map.md) for full per-package detail and API surface.
