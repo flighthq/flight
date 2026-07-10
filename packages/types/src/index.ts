@@ -1,6 +1,7 @@
 export * from './Aabb';
 export * from './Accelerator';
 export * from './AcceleratorParseError';
+export * from './Accessibility';
 export * from './AccessibilityDescriptor';
 export * from './AgxToneMapOptions';
 export * from './AlphaType';

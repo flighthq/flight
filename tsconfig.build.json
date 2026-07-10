@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "./packages/accessibility" },
     { "path": "./packages/animation" },
     { "path": "./packages/app" },
     { "path": "./packages/application" },
