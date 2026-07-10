@@ -12,9 +12,9 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/particles` is the **CPU simulation core** for 2D particle effects — emitter state as typed-array SoA (plus a parallel object-pool path), spawn shapes, lifetime and appearance-over-lifetime curves, data-descriptor forces and colliders, deterministic via an injected `RandomSource`. It produces simulation buffers (and a sort order); it does not parse authoring formats (that's `particles-formats`) and it does not own the renderable display-object node (that's `particle-emitter`).
+`@flighthq/particles` is the **CPU simulation core** for 2D particle effects — emitter state as typed-array SoA (plus a parallel object-pool path), spawn shapes, lifetime and appearance-over-lifetime curves, data-descriptor forces and colliders, deterministic via an injected `RandomSource`. It produces simulation buffers (and a sort order); it does not parse authoring formats (that's `particles-formats`) and it does not own the renderable display-object node (that's `particleemitter`).
 
-The package is a **pure, headless value-leaf** — no scene-graph coupling, no display-object dependency. The current code violates this (2 files import from `sprite`/`node`) but the direction is clear: extract the display-object-specific wiring into `@flighthq/particle-emitter`, leaving particles as a clean simulation kernel. This is the same decomposition pattern as timeline/movieclip.
+The package is a **pure, headless value-leaf** — no scene-graph coupling, no display-object dependency. The current code violates this (2 files import from `sprite`/`node`) but the direction is clear: extract the display-object-specific wiring into `@flighthq/particleemitter`, leaving particles as a clean simulation kernel. This is the same decomposition pattern as timeline/movieclip.
 
 ## North star
 
@@ -41,14 +41,14 @@ The package is a **pure, headless value-leaf** — no scene-graph coupling, no d
 
 **Non-goals:**
 
-- Renderable display-object node — `@flighthq/particle-emitter` (wraps sim + drives display object).
+- Renderable display-object node — `@flighthq/particleemitter` (wraps sim + drives display object).
 - Authoring-format import/export — `@flighthq/particles-formats`.
 - Scalar/easing primitives — `@flighthq/math` / `@flighthq/easing`.
 - GPU/compute simulation — future backend seam; don't close the door, don't build it now.
 
 ## Decisions
 
-- **[2026-07-02] Sim/node split: particles is the pure sim, particle-emitter is the display-object wrapper.** The current code has `ParticleEmitter extends DisplayObject` and imports from `sprite`/`node` — this violates the pure-leaf charter. Extract the 2 files' display-object wiring into `@flighthq/particle-emitter` (open to its own package). Particles retains zero scene-graph coupling. Same decomposition pattern as timeline/movieclip.
+- **[2026-07-02] Sim/node split: particles is the pure sim, particleemitter is the display-object wrapper.** The current code has `ParticleEmitter extends DisplayObject` and imports from `sprite`/`node` — this violates the pure-leaf charter. Extract the 2 files' display-object wiring into `@flighthq/particleemitter` (open to its own package). Particles retains zero scene-graph coupling. Same decomposition pattern as timeline/movieclip.
 
   **Why:** The charter says "pure, headless value-leaf / first Rust mixing target" but the code is fused with the scene graph. The coupling is thin (2 files, 2 imports) — clean cut. A pure particles package is wasm-mixable; a fused one is not.
 
@@ -80,7 +80,7 @@ The package is a **pure, headless value-leaf** — no scene-graph coupling, no d
 
 ## Open directions
 
-1. **`particle-emitter` package shape.** The display-object wrapper that consumes the sim and drives a `ParticleEmitter` display object. Needs its own charter: what it wraps, how it bridges sim → display, whether it lives in its own package or in sprite (where it historically lived). Open to its own package.
+1. **`particleemitter` package shape.** The display-object wrapper that consumes the sim and drives a `ParticleEmitter` display object. Needs its own charter: what it wraps, how it bridges sim → display, whether it lives in its own package or in sprite (where it historically lived). Open to its own package.
 
 2. **Sub-emitter design.** On-death / on-collision spawning a child emitter. Needs payload widening (`onSpawn`/`onDeath` from `(x, y)` to `(x, y, vx, vy, index)`), a `'collision'` hook, and config-level child-emitter references. Breaking pre-release change — design before building.
 
