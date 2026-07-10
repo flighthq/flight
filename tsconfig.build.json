@@ -51,6 +51,7 @@
     { "path": "./packages/network" },
     { "path": "./packages/node" },
     { "path": "./packages/notification" },
+    { "path": "./packages/particleemitter" },
     { "path": "./packages/particles" },
     { "path": "./packages/particles-formats" },
     { "path": "./packages/picking" },

@@ -1,6 +1,6 @@
 {
-  "name": "@flighthq/particles",
-  "version": "0.1.0",
+  "name": "@flighthq/particleemitter",
+  "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,14 +27,16 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/displayobject": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/signals": "*",
+    "@flighthq/node": "*",
+    "@flighthq/particles": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/math": "*",
     "typescript": "^5.3.0"
   },
-  "description": "Particle system: emitter simulation and typed-array-backed particle primitives",
+  "description": "ParticleEmitter display-object composition layer over @flighthq/particles",
   "sideEffects": false
 }

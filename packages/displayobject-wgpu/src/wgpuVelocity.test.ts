@@ -1,7 +1,8 @@
 import { createDisplayObject } from '@flighthq/displayobject';
+import { createParticleEmitter, reserveParticleEmitter } from '@flighthq/particleemitter';
 import { renderWgpuBackground } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import { createParticleEmitter, createQuadBatch, getQuadBatchRuntime, reserveParticleEmitter } from '@flighthq/sprite';
+import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';

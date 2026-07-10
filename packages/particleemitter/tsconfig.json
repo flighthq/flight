@@ -9,18 +9,12 @@
     "sourceMap": true
   },
   "references": [
-    {
-      "path": "../geometry"
-    },
-    {
-      "path": "../math"
-    },
-    {
-      "path": "../signals"
-    },
-    {
-      "path": "../types"
-    }
+    { "path": "../displayobject" },
+    { "path": "../geometry" },
+    { "path": "../math" },
+    { "path": "../node" },
+    { "path": "../particles" },
+    { "path": "../types" }
   ],
   "include": ["src"]
 }

@@ -51,6 +51,7 @@ export * from '@flighthq/movieclip';
 export * from '@flighthq/network';
 export * from '@flighthq/node';
 export * from '@flighthq/notification';
+export * from '@flighthq/particleemitter';
 export * from '@flighthq/particles';
 export * from '@flighthq/particles-formats';
 export * from '@flighthq/path';

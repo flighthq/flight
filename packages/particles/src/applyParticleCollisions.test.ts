@@ -1,32 +1,32 @@
-import { createParticleEmitter } from '@flighthq/sprite';
-import type { TextureAtlas } from '@flighthq/types';
+import type { ParticleEmitter, ParticleEmitterData } from '@flighthq/types';
 
 import { applyParticleCollisions, applyParticleObjectCollisions } from './applyParticleCollisions';
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState } from './particleEmitterState';
+import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
 import { createParticleObjectsState } from './particleObjectsState';
-import { updateParticleEmitter } from './updateParticleEmitter';
 import type { ParticleObject } from './updateParticleObjects';
 
-function makeAtlas(): TextureAtlas {
-  return {
-    image: null,
-    regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
-  } as TextureAtlas;
+// Node-free SoA emitter fixture: applyParticleCollisions reads only `emitter.data`, so the display
+// node from @flighthq/particleemitter is not needed to unit-test the collision pass.
+function createEmitterFixture(capacity: number): ParticleEmitter {
+  const data: ParticleEmitterData = {
+    alphas: new Float32Array(capacity),
+    atlas: null,
+    colors: new Float32Array(capacity * 3),
+    ids: new Uint16Array(capacity),
+    particleCount: 0,
+    transforms: new Float32Array(capacity * 4),
+    velocities: new Float32Array(capacity * 2),
+    worldSpace: false,
+  };
+  return { data, x: 0, y: 0 } as unknown as ParticleEmitter;
 }
 
-// Spawn one particle, then place it at a known position with a known velocity.
+// One particle at a known position with a known velocity.
 function place(px: number, py: number, vx: number, vy: number) {
-  const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+  const emitter = createEmitterFixture(1);
   const state = createParticleEmitterState();
-  const config = createParticleEmitterConfig({
-    spawnRate: 1,
-    lifetimeMin: 100,
-    lifetimeMax: 100,
-    speedMin: 0,
-    speedMax: 0,
-  });
-  updateParticleEmitter(emitter, state, config, 1);
+  ensureParticleEmitterStateCapacity(state, 1, false);
+  emitter.data.particleCount = 1;
   emitter.data.transforms[0] = px;
   emitter.data.transforms[1] = py;
   state.velocities[0] = vx;
@@ -55,18 +55,6 @@ describe('applyParticleCollisions', () => {
   });
 
   describe('integration', () => {
-    it('settles a falling particle onto a floor over multiple frames', () => {
-      const { emitter, state } = place(0, 480, 0, 0);
-      const config = createParticleEmitterConfig({ spawnRate: 0, lifetimeMin: 100, lifetimeMax: 100, gravityY: 2000 });
-      const floor = [{ kind: 'PlaneCollider' as const, nx: 0, ny: -1, distance: -500 }];
-      for (let i = 0; i < 60; i++) {
-        updateParticleEmitter(emitter, state, config, 1 / 60);
-        applyParticleCollisions(emitter, state, floor);
-      }
-      expect(emitter.data.transforms[1]).toBeLessThanOrEqual(500 + 1e-3); // never falls through
-      expect(emitter.data.transforms[1]).toBeCloseTo(500, 0); // resting on the floor
-    });
-
     it('is a no-op with no colliders', () => {
       const { emitter, state } = place(0, 520, 0, 100);
       applyParticleCollisions(emitter, state, []);

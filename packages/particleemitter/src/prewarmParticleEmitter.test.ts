@@ -1,8 +1,7 @@
-import { createParticleEmitter } from '@flighthq/sprite';
+import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState } from './particleEmitterState';
+import { createParticleEmitter } from './particleEmitter';
 import { prewarmParticleEmitter } from './prewarmParticleEmitter';
 
 function makeAtlas(): TextureAtlas {

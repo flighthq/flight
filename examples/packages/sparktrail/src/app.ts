@@ -4,7 +4,6 @@ import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   particleColorCurveFromKeyframes,
-  updateParticleEmitter,
 } from '@flighthq/particles';
 import {
   addTextureAtlasRegion,
@@ -14,6 +13,7 @@ import {
   createTextureAtlas,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
+  updateParticleEmitter,
 } from '@flighthq/sdk';
 import Stats from 'stats.js';
 

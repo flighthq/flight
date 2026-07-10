@@ -1,33 +1,35 @@
-import { createParticleEmitter } from '@flighthq/sprite';
-import type { TextureAtlas } from '@flighthq/types';
+import type { ParticleEmitter, ParticleEmitterData } from '@flighthq/types';
 
 import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces';
 import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState } from './particleEmitterState';
+import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
 import { createParticleObjectsState } from './particleObjectsState';
-import { updateParticleEmitter } from './updateParticleEmitter';
 import type { ParticleObject } from './updateParticleObjects';
 import { updateParticleObjects } from './updateParticleObjects';
 
-function makeAtlas(): TextureAtlas {
-  return {
-    image: null,
-    regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
-  } as TextureAtlas;
+// Node-free SoA emitter fixture: applyParticleForces reads only `emitter.data`, so the display
+// node from @flighthq/particleemitter is not needed to unit-test the force pass. Keeping this
+// fixture local preserves particles as a pure sim leaf.
+function createEmitterFixture(capacity: number): ParticleEmitter {
+  const data: ParticleEmitterData = {
+    alphas: new Float32Array(capacity),
+    atlas: null,
+    colors: new Float32Array(capacity * 3),
+    ids: new Uint16Array(capacity),
+    particleCount: 0,
+    transforms: new Float32Array(capacity * 4),
+    velocities: new Float32Array(capacity * 2),
+    worldSpace: false,
+  };
+  return { data, x: 0, y: 0 } as unknown as ParticleEmitter;
 }
 
-// Spawn a single stationary particle at the origin and return its handles.
+// A single stationary particle at the origin with zeroed velocity state.
 function oneParticle() {
-  const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+  const emitter = createEmitterFixture(1);
   const state = createParticleEmitterState();
-  const config = createParticleEmitterConfig({
-    spawnRate: 1,
-    lifetimeMin: 100,
-    lifetimeMax: 100,
-    speedMin: 0,
-    speedMax: 0,
-  });
-  updateParticleEmitter(emitter, state, config, 1);
+  ensureParticleEmitterStateCapacity(state, 1, false);
+  emitter.data.particleCount = 1;
   return { emitter, state };
 }
 
@@ -116,24 +118,6 @@ describe('applyParticleForces', () => {
     applyParticleForces(emitter, state, [], 1);
     applyParticleForces(emitter, state, [{ kind: 'WindForce', x: 5, y: 0 }], 0);
     expect(state.velocities[0]).toBe(42); // unchanged by either no-op call
-  });
-
-  it('integrates with the core update so attractors curve trajectories', () => {
-    const { emitter, state } = oneParticle();
-    const config = createParticleEmitterConfig({
-      spawnRate: 0,
-      speedMin: 0,
-      speedMax: 0,
-      lifetimeMin: 100,
-      lifetimeMax: 100,
-    });
-    const forces = [{ kind: 'AttractorForce' as const, x: 100, y: 0, strength: 200 }];
-    const startX = emitter.data.transforms[0];
-    for (let i = 0; i < 10; i++) {
-      applyParticleForces(emitter, state, forces, 1 / 60);
-      updateParticleEmitter(emitter, state, config, 1 / 60);
-    }
-    expect(emitter.data.transforms[0]).toBeGreaterThan(startX); // drifted toward the attractor
   });
 });
 

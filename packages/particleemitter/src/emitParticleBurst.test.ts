@@ -1,10 +1,9 @@
 import { createRandomSource } from '@flighthq/math';
-import { createParticleEmitter } from '@flighthq/sprite';
+import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
 import { emitParticleBurst } from './emitParticleBurst';
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState } from './particleEmitterState';
+import { createParticleEmitter } from './particleEmitter';
 import { updateParticleEmitter } from './updateParticleEmitter';
 
 function makeAtlas(): TextureAtlas {
