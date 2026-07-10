@@ -47,7 +47,7 @@ export interface SocketSignals {
 
 // The backend→entity event sink. The backend calls these as its underlying transport fires; socket
 // supplies an implementation (createSocket) that updates the runtime's readyState and emits the
-// opt-in signals. Modeled on NetworkBackend.subscribe's listener, but split per event kind so the
+// opt-in signals. Modeled on ConnectivityBackend.subscribe's listener, but split per event kind so the
 // backend can carry each event's payload.
 export interface SocketEventSink {
   handleSocketOpen(): void;

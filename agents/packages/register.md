@@ -54,7 +54,7 @@ The remaining candidates ranked by how many stakeholder perspectives demand them
 6. `shadow` + `environment` — shadow-map pass + PCF seam; skybox + IBL bake; the top 3D blockers, sequenced by 3d-pipeline-architecture.md.
 7. `accessibility` — role/label/focus tree over a backend (DOM ARIA first); category-level omission.
 8. Scene serialization — **needs the naming/scope call first** (see the `scene-format` row below).
-9. Then: `instancing` / `postprocess` / `compute-wgpu` (3D remainder; `render-graph` needs its own design pass), `host-capacitor` / `host-tauri`, `textbidi` / `textsegment` / `text-markup`, `texture-formats` / `atlas-packer` / `tilemap-formats`, `spring` / `motion-path`, `gamestate` / `permission` / `intl`.
+9. Then: `instancing` / `postprocess` / `compute-wgpu` (3D remainder; `render-graph` needs its own design pass), `host-capacitor` / `host-tauri`, `textbidi` / `textsegment` / `text-markup`, `texture-formats` / `atlas-packer` / `tilemap-formats`, `spring` / `motion-path`, `flow` / `permissions` / `intl`.
 10. Opportunistic: `mediasession`, `biometrics`, `purchase`, `calendar`, `contacts`, `devtools`, `testing`.
 
 Design calls to settle before building the affected entries: the glyph-atlas seam (`font-atlas`/`text-gpu` — design once), scene serialization naming, `render-graph`'s reshaping of `render`, the 2D-skeletal question (`skeleton` landed 3D-shaped), and the `animation`/`skeleton`/`tween`/`timeline` boundary (anchor: the `clock` charter).
@@ -81,7 +81,7 @@ The 46 net-new proposals from the breadth pass (specs under `reviews/maturation/
 
 ### Platform-suite capabilities (clean cells, like clipboard/dialog)
 
-`biometrics`, `calendar`, `contacts`, `mediasession`, `permission`, `purchase` — all **bedrock**.
+`biometrics`, `calendar`, `contacts`, `mediasession`, `permissions`, `purchase` — all **bedrock**.
 
 ### 3D pipeline build-out — ✅ accepted: full 3D (2026-06-24)
 
@@ -96,7 +96,7 @@ The 2D↔3D boundary the binding constraint demands already has a home in `rende
 
 ### 2D game subjects
 
-`collision`, `spatial`, `camera2d`, `gamestate`, `clock`, `motion-path`, `spring` — **bedrock**. `clock` is the shared time-domain primitive under tween/timeline/spritesheet/particles (fork A); `motion-path` and `spring` coordinate with the animation family.
+`collision`, `spatial`, `camera2d`, `flow`, `clock`, `motion-path`, `spring` — **bedrock**. `clock` is the shared time-domain primitive under tween/timeline/spritesheet/particles (fork A); `motion-path` and `spring` coordinate with the animation family.
 
 ### Networking
 

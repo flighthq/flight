@@ -6,7 +6,7 @@ import type { Signal } from './Signal';
 // transport failures (DNS, network error, timeout, non-2xx) are surfaced as a NetResponse — a
 // sentinel status 0 for a failed transport, the real status for an HTTP error response — never a
 // rejected promise; only genuine programmer misuse throws. This is a command capability (request →
-// response), distinct from @flighthq/network connectivity status.
+// response), distinct from @flighthq/connectivity connectivity status.
 
 // HTTP request method. Open union: the well-known verbs plus any string, so a vendor or native host
 // can issue a custom method. The `(string & {})` arm preserves autocomplete for the known verbs

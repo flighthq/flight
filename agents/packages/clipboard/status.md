@@ -61,7 +61,7 @@ Silver (atomic write, files, change-event capability):
 - `createClipboardWatch()` — allocates a `ClipboardWatch` entity with an inert signal.
 - `attachClipboardWatch(watch)` — subscribes to backend change notifications and emits `watch.onChange`.
 - `detachClipboardWatch(watch)` — tears down the backend subscription. Safe when not attached.
-- `disposeClipboardWatch(watch)` — detaches and releases for GC. Mirrors the `@flighthq/network` pattern exactly.
+- `disposeClipboardWatch(watch)` — detaches and releases for GC. Mirrors the `@flighthq/connectivity` pattern exactly.
 
 ### Updated in @flighthq/host-electron
 

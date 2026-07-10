@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/net` is the **HTTP transport cell** of the platform-integration suite — the Flight home for what OpenFL/Lime expose as `URLLoader`/`URLRequest`: issue an HTTP(S) request, get a response. It is a *command* capability (request → response), not a connectivity-status reporter (that is `@flighthq/network`) and not an asset library (that is the planned `assets`, which composes over this + `loader`).
+`@flighthq/net` is the **HTTP transport cell** of the platform-integration suite — the Flight home for what OpenFL/Lime expose as `URLLoader`/`URLRequest`: issue an HTTP(S) request, get a response. It is a *command* capability (request → response), not a connectivity-status reporter (that is `@flighthq/connectivity`) and not an asset library (that is the planned `assets`, which composes over this + `loader`).
 
 Modeled as flat free functions over a swappable `NetBackend` with an always-available lazy web default (fetch), matching the suite's command-capability convention (`getNetBackend`/`setNetBackend`/`createWebNetBackend`). A native host (Electron/Tauri/Capacitor) swaps the backend for its own stack without changing caller code.
 
@@ -24,7 +24,7 @@ The complete, Flight-idiomatic HTTP transport: request descriptors as plain data
 
 - **Depends on `@flighthq/types` + `@flighthq/signals`** (progress is a signal) and, for the web backend, the DOM `fetch`/`AbortController`. No display, no renderer.
 - **Transport only.** It issues requests and returns responses. It does not cache, dedup, refcount, or batch — that is the `assets`/`loader` layer composing over it. It does not parse bodies beyond the requested response type (text/json/arraybuffer/blob).
-- **Not connectivity status.** Online/offline/link-quality is `@flighthq/network`. `net` assumes it is asked to make a request and reports transport-level success/failure.
+- **Not connectivity status.** Online/offline/link-quality is `@flighthq/connectivity`. `net` assumes it is asked to make a request and reports transport-level success/failure.
 - **HTTP(S) semantics only.** WebSocket/TCP is the sibling `@flighthq/socket`.
 
 ## Decisions

@@ -7,7 +7,7 @@ Governs how `@flighthq/types` (the header layer) is organized, and the kind-iden
 The unit of a `types` file is a _concept_, not a single type. A file is named (PascalCase) after one primary concept and holds that concept plus the satellites that exist only to serve it. Five shapes:
 
 - **Entity home** — an entity bundles a fixed quartet in one file: `Bitmap.ts` → `BitmapData`, `BitmapRuntime`, `Bitmap`, `BitmapKind` (plus `*Factory`, `*TraitsKey`). **Never split the quartet** — it is one concept. `Node.ts` / `Entity.ts` are the foundational version.
-- **Capability home** — one file per platform capability: its enums + options + the `*Backend` seam (`Dialog.ts`, `Platform.ts`, `Network.ts`).
+- **Capability home** — one file per platform capability: its enums + options + the `*Backend` seam (`Dialog.ts`, `Platform.ts`, `Connectivity.ts`).
 - **Base-contract home** — an open family's base interface lives in its own file (`Material.ts`, `RenderEffect.ts`, `BitmapFilter.ts`).
 - **Variant** — each concrete member of an open family is its own file, **1:1 with its impl files** (`BloomEffect.ts` ↔ `effects/bloomEffect.ts` ↔ `effects-gl/glBloomEffect.ts`).
 - **Standalone type** — an independent type referenced by others but standing alone (`HitTestFunction.ts`, `Texture.ts`, `Sampler.ts`).
