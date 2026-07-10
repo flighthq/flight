@@ -1,3 +1,5 @@
+import { BlendMode } from '@flighthq/types';
+
 import { renderGlBackground } from './glBackground';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { createGlState } from './glTestHelper';
@@ -30,7 +32,7 @@ describe('renderGlBackground', () => {
   it('resets currentBlendMode to null', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentBlendMode = 0;
+    runtime.currentBlendMode = BlendMode.Add;
     renderGlBackground(state);
     expect(runtime.currentBlendMode).toBeNull();
   });

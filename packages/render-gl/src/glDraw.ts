@@ -18,7 +18,7 @@ const WEBGL_BLEND_MODE: Record<BlendMode, readonly [GlBlendFactor, GlBlendFactor
   [BlendMode.Darken]: null,
   [BlendMode.Difference]: null,
   [BlendMode.Erase]: null,
-  [BlendMode.Hardlight]: null,
+  [BlendMode.HardLight]: null,
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: NORMAL_BLEND,
   [BlendMode.Lighten]: null,

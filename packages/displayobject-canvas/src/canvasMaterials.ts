@@ -12,7 +12,7 @@ const CANVAS_BLEND_MODE: Record<BlendMode, GlobalCompositeOperation | null> = {
   [BlendMode.Darken]: 'darken',
   [BlendMode.Difference]: 'difference',
   [BlendMode.Erase]: 'destination-out',
-  [BlendMode.Hardlight]: 'hard-light',
+  [BlendMode.HardLight]: 'hard-light',
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: 'source-over',
   [BlendMode.Lighten]: 'lighten',

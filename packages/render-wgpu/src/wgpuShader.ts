@@ -143,7 +143,7 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.Darken]: null,
   [BlendMode.Difference]: null,
   [BlendMode.Erase]: null,
-  [BlendMode.Hardlight]: null,
+  [BlendMode.HardLight]: null,
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: NORMAL_BLEND,
   [BlendMode.Lighten]: null,
