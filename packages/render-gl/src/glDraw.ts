@@ -1,52 +1,20 @@
-import type { GlBitmapShader, GlRenderState } from '@flighthq/types';
+import type { GlBitmapShader, GlBlendRealization, GlRenderState } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlMatrixFromValues } from './glShader';
 
-type GlBlendFactor = 'DST_COLOR' | 'ONE' | 'ONE_MINUS_SRC_ALPHA' | 'ONE_MINUS_SRC_COLOR' | 'ZERO';
-type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MIN';
-
-// A fixed-function realization of a blend-mode intent: the premultiplied-alpha
-// blendFunc factors plus the blend equation. `equation` is optional and defaults to
-// FUNC_ADD; a mode that omits it composites additively over its source/destination
-// factors. Darken/Lighten/Subtract need a non-additive equation (MIN/MAX/reverse
-// subtract), so it is carried here rather than assumed.
-interface GlBlendRealization {
-  readonly src: GlBlendFactor;
-  readonly dst: GlBlendFactor;
-  readonly equation?: GlBlendEquation;
-}
-
-const NORMAL_BLEND: GlBlendRealization = { src: 'ONE', dst: 'ONE_MINUS_SRC_ALPHA' };
-
-// Auditable map from a blend-mode intent to the Gl fixed-function realization. `null`
-// means there is no fixed-function equivalent — such modes (Overlay, HardLight,
-// Difference, Invert) need a shader pass — so the intent degrades to normal compositing.
-const WEBGL_BLEND_MODE: Record<string, GlBlendRealization | null> = {
-  [BlendMode.Add]: { src: 'ONE', dst: 'ONE' },
-  [BlendMode.Alpha]: null,
-  [BlendMode.Darken]: { src: 'ONE', dst: 'ONE', equation: 'MIN' },
-  [BlendMode.Difference]: null,
-  [BlendMode.Erase]: { src: 'ZERO', dst: 'ONE_MINUS_SRC_ALPHA' },
-  [BlendMode.HardLight]: null,
-  [BlendMode.Invert]: null,
-  [BlendMode.Layer]: NORMAL_BLEND,
-  [BlendMode.Lighten]: { src: 'ONE', dst: 'ONE', equation: 'MAX' },
-  [BlendMode.Multiply]: { src: 'DST_COLOR', dst: 'ZERO' },
-  [BlendMode.Normal]: NORMAL_BLEND,
-  [BlendMode.Overlay]: null,
-  [BlendMode.Screen]: { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' },
-  [BlendMode.Shader]: null,
-  [BlendMode.Subtract]: { src: 'ONE', dst: 'ONE', equation: 'FUNC_REVERSE_SUBTRACT' },
-};
-
+// Applies the blend mode's registered fixed-function realization to the GL context, skipping the
+// work when the mode is unchanged. A mode with no registered realization (an unregistered vendor
+// mode, or a built-in with no fixed-function equivalent such as Overlay) degrades to normal
+// premultiplied compositing. Register realizations with registerGlBlendMode /
+// registerDefaultGlBlendModes before drawing.
 export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | null): void {
   const runtime = getGlRenderStateRuntime(state);
   if (blendMode === runtime.currentBlendMode) return;
   runtime.currentBlendMode = blendMode;
   const gl = state.gl;
-  const realization = (blendMode !== null ? WEBGL_BLEND_MODE[blendMode] : null) ?? NORMAL_BLEND;
+  const realization = (blendMode !== null ? runtime.glBlendModeRegistry?.get(blendMode) : null) ?? NORMAL_BLEND;
   gl.blendEquation(gl[realization.equation ?? 'FUNC_ADD']);
   gl.blendFunc(gl[realization.src], gl[realization.dst]);
 }
@@ -133,7 +101,30 @@ export function drawGlQuad(
 }
 
 export function enableGlBlendModeSupport(state: GlRenderState): void {
+  registerDefaultGlBlendModes(state);
   state.applyBlendMode = applyGlBlendMode;
+}
+
+// Reports whether the render state has a fixed-function realization registered for the mode. A false
+// result means applyGlBlendMode would fall back to normal compositing for it — either an unregistered
+// vendor mode or a built-in (Overlay, HardLight, Difference, Invert) that needs a shader pass.
+export function isBlendModeSupported(state: GlRenderState, blendMode: BlendMode): boolean {
+  return getGlRenderStateRuntime(state).glBlendModeRegistry?.has(blendMode) ?? false;
+}
+
+// Registers the built-in fixed-function blend modes on the state. Overlay/HardLight/Difference/Invert
+// are intentionally omitted — they have no fixed-function equivalent and need a shader pass — so they
+// stay unregistered and fall back to normal compositing.
+export function registerDefaultGlBlendModes(state: GlRenderState): void {
+  for (const [mode, realization] of DEFAULT_GL_BLEND_MODES) registerGlBlendMode(state, mode, realization);
+}
+
+// Binds a fixed-function realization to a blend mode on this render state. Last-write-wins, so a
+// caller can override a built-in mode or add a vendor-prefixed one; the registry is created lazily on
+// first registration so a state that never enables blend support carries no map.
+export function registerGlBlendMode(state: GlRenderState, blendMode: BlendMode, realization: GlBlendRealization): void {
+  const runtime = getGlRenderStateRuntime(state);
+  (runtime.glBlendModeRegistry ??= new Map()).set(blendMode, realization);
 }
 
 export function setGlQuadMatrixFromOffset(
@@ -185,3 +176,20 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
     runtime.currentProgram = program;
   }
 }
+
+const NORMAL_BLEND: GlBlendRealization = { src: 'ONE', dst: 'ONE_MINUS_SRC_ALPHA' };
+
+// The built-in blend modes registerDefaultGlBlendModes installs, each with its fixed-function
+// realization. Overlay/HardLight/Difference/Invert are deliberately absent — they have no
+// fixed-function equivalent and need a shader pass.
+const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization])[] = [
+  [BlendMode.Add, { src: 'ONE', dst: 'ONE' }],
+  [BlendMode.Darken, { src: 'ONE', dst: 'ONE', equation: 'MIN' }],
+  [BlendMode.Erase, { src: 'ZERO', dst: 'ONE_MINUS_SRC_ALPHA' }],
+  [BlendMode.Layer, NORMAL_BLEND],
+  [BlendMode.Lighten, { src: 'ONE', dst: 'ONE', equation: 'MAX' }],
+  [BlendMode.Multiply, { src: 'DST_COLOR', dst: 'ZERO' }],
+  [BlendMode.Normal, NORMAL_BLEND],
+  [BlendMode.Screen, { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' }],
+  [BlendMode.Subtract, { src: 'ONE', dst: 'ONE', equation: 'FUNC_REVERSE_SUBTRACT' }],
+];

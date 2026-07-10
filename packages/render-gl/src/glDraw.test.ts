@@ -6,6 +6,9 @@ import {
   createGlTexture,
   drawGlQuad,
   enableGlBlendModeSupport,
+  isBlendModeSupported,
+  registerDefaultGlBlendModes,
+  registerGlBlendMode,
   setGlQuadMatrixFromOffset,
   updateGlTexture,
   useGlProgram,
@@ -17,6 +20,7 @@ import { createGlState } from './glTestHelper';
 describe('applyGlBlendMode', () => {
   it('does not call blendFunc when blend mode has not changed', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     getGlRenderStateRuntime(state).currentBlendMode = BlendMode.Normal;
     applyGlBlendMode(state, BlendMode.Normal);
     expect(gl.blendFunc).not.toHaveBeenCalled();
@@ -24,6 +28,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets normal blend (ONE, ONE_MINUS_SRC_ALPHA) for BlendMode.Normal', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Normal);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
@@ -31,6 +36,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets additive blend (ONE, ONE) for BlendMode.Add', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Add);
     const g = gl as unknown as { ONE: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
@@ -38,6 +44,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets (DST_COLOR, ZERO) for BlendMode.Multiply', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Multiply);
     const g = gl as unknown as { DST_COLOR: number; ZERO: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.DST_COLOR, g.ZERO);
@@ -45,6 +52,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets (ONE, ONE_MINUS_SRC_COLOR) for BlendMode.Screen', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Screen);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_COLOR: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_COLOR);
@@ -52,6 +60,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets the MIN blend equation with (ONE, ONE) for BlendMode.Darken', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Darken);
     const g = gl as unknown as { ONE: number; MIN: number };
     expect(gl.blendEquation).toHaveBeenCalledWith(g.MIN);
@@ -60,6 +69,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets the MAX blend equation with (ONE, ONE) for BlendMode.Lighten', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Lighten);
     const g = gl as unknown as { ONE: number; MAX: number };
     expect(gl.blendEquation).toHaveBeenCalledWith(g.MAX);
@@ -68,6 +78,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets the reverse-subtract equation with (ONE, ONE) for BlendMode.Subtract', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Subtract);
     const g = gl as unknown as { ONE: number; FUNC_REVERSE_SUBTRACT: number };
     expect(gl.blendEquation).toHaveBeenCalledWith(g.FUNC_REVERSE_SUBTRACT);
@@ -76,6 +87,7 @@ describe('applyGlBlendMode', () => {
 
   it('sets (ZERO, ONE_MINUS_SRC_ALPHA) for BlendMode.Erase', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Erase);
     const g = gl as unknown as { ZERO: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ZERO, g.ONE_MINUS_SRC_ALPHA);
@@ -83,27 +95,38 @@ describe('applyGlBlendMode', () => {
 
   it('resets the blend equation to FUNC_ADD for a mode that does not carry one', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Darken);
     applyGlBlendMode(state, BlendMode.Normal);
     const g = gl as unknown as { FUNC_ADD: number };
     expect(gl.blendEquation).toHaveBeenLastCalledWith(g.FUNC_ADD);
   });
 
-  it('falls back to normal blend for a mode with no fixed-function equivalent', () => {
+  it('falls back to normal blend for a mode with no registered realization', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Overlay);
+    const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
+  });
+
+  it('falls back to normal blend when no modes are registered at all', () => {
+    const { state, gl } = createGlState();
+    applyGlBlendMode(state, BlendMode.Multiply);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
 
   it('updates currentBlendMode after the change', () => {
     const { state } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Add);
     expect(getGlRenderStateRuntime(state).currentBlendMode).toBe(BlendMode.Add);
   });
 
   it('calls blendFunc again when mode switches', () => {
     const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Normal);
     applyGlBlendMode(state, BlendMode.Add);
     expect(gl.blendFunc).toHaveBeenCalledTimes(2);
@@ -294,6 +317,84 @@ describe('enableGlBlendModeSupport', () => {
     enableGlBlendModeSupport(state);
     state.applyBlendMode!(state, BlendMode.Add);
     expect(gl.blendFunc).toHaveBeenCalled();
+  });
+
+  it('registers the default blend modes', () => {
+    const { state } = createGlState();
+    enableGlBlendModeSupport(state);
+    expect(isBlendModeSupported(state, BlendMode.Multiply)).toBe(true);
+  });
+});
+
+describe('isBlendModeSupported', () => {
+  it('returns false when no modes are registered', () => {
+    const { state } = createGlState();
+    expect(isBlendModeSupported(state, BlendMode.Normal)).toBe(false);
+  });
+
+  it('returns true for a registered built-in mode', () => {
+    const { state } = createGlState();
+    registerDefaultGlBlendModes(state);
+    expect(isBlendModeSupported(state, BlendMode.Screen)).toBe(true);
+  });
+
+  it('returns false for a built-in with no fixed-function realization', () => {
+    const { state } = createGlState();
+    registerDefaultGlBlendModes(state);
+    expect(isBlendModeSupported(state, BlendMode.Overlay)).toBe(false);
+  });
+
+  it('returns true for a custom registered mode', () => {
+    const { state } = createGlState();
+    registerGlBlendMode(state, 'acme.Foo', { src: 'ONE', dst: 'ZERO' });
+    expect(isBlendModeSupported(state, 'acme.Foo')).toBe(true);
+  });
+});
+
+describe('registerDefaultGlBlendModes', () => {
+  it('registers the tier-1 fixed-function modes', () => {
+    const { state } = createGlState();
+    registerDefaultGlBlendModes(state);
+    for (const mode of [
+      BlendMode.Normal,
+      BlendMode.Layer,
+      BlendMode.Add,
+      BlendMode.Multiply,
+      BlendMode.Screen,
+      BlendMode.Darken,
+      BlendMode.Lighten,
+      BlendMode.Subtract,
+      BlendMode.Erase,
+    ]) {
+      expect(isBlendModeSupported(state, mode)).toBe(true);
+    }
+  });
+
+  it('does not register the shader-only modes', () => {
+    const { state } = createGlState();
+    registerDefaultGlBlendModes(state);
+    for (const mode of [BlendMode.Overlay, BlendMode.HardLight, BlendMode.Difference, BlendMode.Invert]) {
+      expect(isBlendModeSupported(state, mode)).toBe(false);
+    }
+  });
+});
+
+describe('registerGlBlendMode', () => {
+  it('makes a custom mode applied through gl.blendFunc', () => {
+    const { state, gl } = createGlState();
+    registerGlBlendMode(state, 'acme.Foo', { src: 'DST_COLOR', dst: 'ZERO' });
+    applyGlBlendMode(state, 'acme.Foo');
+    const g = gl as unknown as { DST_COLOR: number; ZERO: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.DST_COLOR, g.ZERO);
+  });
+
+  it('overrides a built-in mode last-write-wins', () => {
+    const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
+    registerGlBlendMode(state, BlendMode.Add, { src: 'ZERO', dst: 'ONE' });
+    applyGlBlendMode(state, BlendMode.Add);
+    const g = gl as unknown as { ONE: number; ZERO: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ZERO, g.ONE);
   });
 });
 
