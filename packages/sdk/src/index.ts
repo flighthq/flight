@@ -1,4 +1,5 @@
-﻿export * from '@flighthq/animation';
+﻿export * from '@flighthq/accessibility';
+export * from '@flighthq/animation';
 export * from '@flighthq/app';
 export * from '@flighthq/application';
 export * from '@flighthq/assets';

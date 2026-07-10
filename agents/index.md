@@ -212,7 +212,7 @@ Application: `@flighthq/application` (main loop — start/stop/pause/resume/step
 
 OS/device: `@flighthq/platform` (OS identity), `@flighthq/screen` (displays), `@flighthq/device` (device info), `@flighthq/storage` (persistent KV), `@flighthq/net` (HTTP transport — URLLoader/URLRequest, distinct from `@flighthq/network` connectivity status), `@flighthq/socket` (bidirectional persistent-connection transport — Socket/WebSocket, the long-lived sibling of `@flighthq/net`), `@flighthq/network`, `@flighthq/power`, `@flighthq/lifecycle`, `@flighthq/keyboard`, `@flighthq/sensors`.
 
-UI/shell: `@flighthq/clipboard`, `@flighthq/dialog`, `@flighthq/filesystem`, `@flighthq/notification`, `@flighthq/shell`, `@flighthq/menu`, `@flighthq/tray`, `@flighthq/shortcut`, `@flighthq/share`, `@flighthq/haptics`, `@flighthq/geolocation`, `@flighthq/webcam`, `@flighthq/statusbar`.
+UI/shell: `@flighthq/accessibility` (ARIA bridge — publishes a canvas UI's roles/labels/states/focus to assistive tech), `@flighthq/clipboard`, `@flighthq/dialog`, `@flighthq/filesystem`, `@flighthq/notification`, `@flighthq/shell`, `@flighthq/menu`, `@flighthq/tray`, `@flighthq/shortcut`, `@flighthq/share`, `@flighthq/haptics`, `@flighthq/geolocation`, `@flighthq/webcam`, `@flighthq/statusbar`.
 
 App/process: `@flighthq/app` (identity, badge, dock), `@flighthq/protocol` (deep links), `@flighthq/updater`, `@flighthq/ipc`.
 

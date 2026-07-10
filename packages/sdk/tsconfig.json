@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../accessibility" },
     { "path": "../animation" },
     { "path": "../app" },
     { "path": "../application" },
