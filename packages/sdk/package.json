@@ -33,6 +33,7 @@
     "@flighthq/application": "*",
     "@flighthq/binpack": "*",
     "@flighthq/bitmapfont": "*",
+    "@flighthq/bitmapfont-formats": "*",
     "@flighthq/camera": "*",
     "@flighthq/camera2d": "*",
     "@flighthq/capture": "*",
