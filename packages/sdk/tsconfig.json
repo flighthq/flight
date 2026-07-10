@@ -14,6 +14,7 @@
     { "path": "../application" },
     { "path": "../assets" },
     { "path": "../camera" },
+    { "path": "../camera2d" },
     { "path": "../capture" },
     { "path": "../clip" },
     { "path": "../clipboard" },
