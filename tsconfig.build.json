@@ -114,6 +114,7 @@
     { "path": "./packages/texture-formats" },
     { "path": "./packages/textureatlas" },
     { "path": "./packages/tileset" },
+    { "path": "./packages/tilemap-formats" },
     { "path": "./packages/timeline" },
     { "path": "./packages/tray" },
     { "path": "./packages/tween" },

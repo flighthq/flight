@@ -110,6 +110,7 @@ export * from '@flighthq/texture';
 export * from '@flighthq/texture-formats';
 export * from '@flighthq/textureatlas';
 export * from '@flighthq/textureatlas-formats';
+export * from '@flighthq/tilemap-formats';
 export * from '@flighthq/tileset';
 export * from '@flighthq/timeline';
 export * from '@flighthq/tray';

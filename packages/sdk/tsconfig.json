@@ -121,6 +121,7 @@
     { "path": "../texture" },
     { "path": "../texture-formats" },
     { "path": "../textureatlas" },
+    { "path": "../tilemap-formats" },
     { "path": "../tileset" },
     { "path": "../timeline" },
     { "path": "../tray" },

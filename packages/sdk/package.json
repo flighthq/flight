@@ -140,6 +140,7 @@
     "@flighthq/texture": "*",
     "@flighthq/texture-formats": "*",
     "@flighthq/textureatlas": "*",
+    "@flighthq/tilemap-formats": "*",
     "@flighthq/tileset": "*",
     "@flighthq/timeline": "*",
     "@flighthq/tray": "*",
