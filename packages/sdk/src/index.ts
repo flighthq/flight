@@ -6,6 +6,7 @@ export * from '@flighthq/assets';
 export * from '@flighthq/audio';
 export * from '@flighthq/binpack';
 export * from '@flighthq/bitmapfont';
+export * from '@flighthq/bitmapfont-formats';
 export * from '@flighthq/camera';
 export * from '@flighthq/camera2d';
 export * from '@flighthq/capture';

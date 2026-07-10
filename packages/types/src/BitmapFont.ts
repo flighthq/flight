@@ -55,3 +55,13 @@ export interface BitmapFontKerningData {
   left: number;
   right: number;
 }
+
+// Options for the `@flighthq/bitmapfont-formats` parsers (`parseBitmapFontFnt`/`parseBitmapFontXml`/
+// `parseBitmapFontJson`). A `.fnt`/XML/JSON description only names its atlas page image file(s); the
+// live `TextureAtlas` is a resource the codec does not load. `resolvePage` is the caller's seam that
+// maps a page's `(pageId, file)` to its atlas — the same reference-then-resolve pattern as
+// `@flighthq/shape-formats`' bitmap fills. When it is omitted, or returns `null` for the font's page,
+// the parser returns the `null` sentinel (a `BitmapFont` requires a non-null atlas).
+export interface BitmapFontParseOptions {
+  resolvePage?: (pageId: number, file: string) => TextureAtlas | null;
+}

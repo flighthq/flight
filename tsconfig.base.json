@@ -92,6 +92,8 @@
       "@flighthq/binpack/*": ["./packages/binpack/src/*"],
       "@flighthq/bitmapfont": ["./packages/bitmapfont/src/index.ts"],
       "@flighthq/bitmapfont/*": ["./packages/bitmapfont/src/*"],
+      "@flighthq/bitmapfont-formats": ["./packages/bitmapfont-formats/src/index.ts"],
+      "@flighthq/bitmapfont-formats/*": ["./packages/bitmapfont-formats/src/*"],
       "@flighthq/clip": ["./packages/clip/src/index.ts"],
       "@flighthq/clip/*": ["./packages/clip/src/*"],
       "@flighthq/clock": ["./packages/clock/src/index.ts"],
