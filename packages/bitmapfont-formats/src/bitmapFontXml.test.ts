@@ -32,6 +32,7 @@ describe('parseBitmapFontXml', () => {
       bearingX: 1,
       bearingY: 0,
       height: 8,
+      page: 0,
       width: 7,
       x: 0,
       y: 0,
