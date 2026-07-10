@@ -2,6 +2,7 @@ import { createMatrix } from '@flighthq/geometry';
 import {
   acquireGlRenderTarget,
   beginGlRenderTarget,
+  clearGlRenderTarget,
   createGlRenderTarget,
   createGlRenderTargetPool,
   destroyGlRenderTarget,
@@ -79,6 +80,10 @@ export function endGlRenderEffectPipeline(
     if (scratchA === null) scratchA = acquireGlRenderTarget(state, pipeline.pool, descriptor);
     if (scratchB === null) scratchB = acquireGlRenderTarget(state, pipeline.pool, descriptor);
     const dest = source === scratchA ? scratchB : scratchA;
+    // Hand every effect a clean destination. scratchA/scratchB ping-pong across the chain, so a target
+    // reused two passes later still holds an earlier effect's output; clearing here means a non-covering
+    // effect (one whose output has transparent regions) never composites onto that stale content.
+    clearGlRenderTarget(state, dest);
     // Depth/velocity always come from the original scene target, not the ping-ponged `source`.
     runner(
       {
