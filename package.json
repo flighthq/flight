@@ -83,6 +83,7 @@
     "preview:examples": "npm run build:examples && npm run preview --workspace=@flighthq/examples",
     "preview:functional": "npm run build:functional && npm run preview --workspace=tools/functional",
     "preview:site": "cross-env PAGES_BASE=/ npm run build:site && npx -y serve tools/site",
+    "release": "tsx ./scripts/publish-packages.ts",
     "review:snapshot": "tsx ./scripts/review-snapshot.ts",
     "sbx:whitelist": "sbx policy allow network cdn.playwright.dev,playwright.download.prss.microsoft.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com,static.crates.io,crates.io",
     "send:worktree": "tsx ./scripts/worktree.ts send",
@@ -112,7 +113,8 @@
     "test:size:baseline": "cross-env UPDATE_BASELINE=1 tsx ./scripts/test-size.ts",
     "test:smoke": "npm run test:functional:smoke && npm run test:examples:smoke",
     "test:unit": "npm run test --workspace='packages/**' --if-present",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "version:packages": "tsx ./scripts/version-packages.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
