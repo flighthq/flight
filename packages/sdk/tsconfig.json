@@ -12,6 +12,7 @@
     { "path": "../animation" },
     { "path": "../app" },
     { "path": "../application" },
+    { "path": "../assets" },
     { "path": "../camera" },
     { "path": "../capture" },
     { "path": "../clip" },

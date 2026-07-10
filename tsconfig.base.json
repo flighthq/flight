@@ -102,6 +102,8 @@
       "@flighthq/filters-wgpu/*": ["./packages/filters-wgpu/src/*"],
       "@flighthq/textureatlas-formats": ["./packages/textureatlas-formats/src/index.ts"],
       "@flighthq/textureatlas-formats/*": ["./packages/textureatlas-formats/src/*"],
+      "@flighthq/assets": ["./packages/assets/src/index.ts"],
+      "@flighthq/assets/*": ["./packages/assets/src/*"],
       "@flighthq/audio": ["./packages/audio/src/index.ts"],
       "@flighthq/audio/*": ["./packages/audio/src/*"],
       "@flighthq/font": ["./packages/font/src/index.ts"],

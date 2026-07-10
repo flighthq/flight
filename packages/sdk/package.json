@@ -91,6 +91,7 @@
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/textureatlas-formats": "*",
+    "@flighthq/assets": "*",
     "@flighthq/audio": "*",
     "@flighthq/font": "*",
     "@flighthq/image": "*",

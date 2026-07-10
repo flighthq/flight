@@ -19,6 +19,7 @@ export * from './Application';
 export * from './ApplicationLoopOptions';
 export * from './ApplicationWindow';
 export * from './AreaLight';
+export * from './Assets';
 export * from './AttractorForce';
 export * from './AudioBus';
 export * from './AudioResource';
