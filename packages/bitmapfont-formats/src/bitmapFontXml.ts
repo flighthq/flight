@@ -91,7 +91,17 @@ function readXmlChar(element: Readonly<XmlElement>): BitmapFontCharRecord | null
   ) {
     return null;
   }
-  return { height, id, width, x, xadvance, xoffset, y, yoffset };
+  return {
+    height,
+    id,
+    page: getXmlElementAttributeNumber(element, 'page') ?? 0,
+    width,
+    x,
+    xadvance,
+    xoffset,
+    y,
+    yoffset,
+  };
 }
 
 function readXmlKerning(element: Readonly<XmlElement>): BitmapFontKerningRecord | null {

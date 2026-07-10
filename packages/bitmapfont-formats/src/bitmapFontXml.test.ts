@@ -1,4 +1,9 @@
-import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from '@flighthq/bitmapfont';
+import {
+  getBitmapFontGlyph,
+  getBitmapFontKerning,
+  getBitmapFontMetrics,
+  getBitmapFontPage,
+} from '@flighthq/bitmapfont';
 import { createTextureAtlas } from '@flighthq/textureatlas';
 import { describe, expect, it } from 'vitest';
 
@@ -26,7 +31,7 @@ describe('parseBitmapFontXml', () => {
     const font = parseBitmapFontXml(FNT_XML, { resolvePage: () => atlas });
     expect(font).not.toBeNull();
 
-    expect(font!.atlas).toBe(atlas);
+    expect(getBitmapFontPage(font!, 0)).toBe(atlas);
     expect(getBitmapFontGlyph(font!, 65)).toEqual({
       advance: 9,
       bearingX: 1,

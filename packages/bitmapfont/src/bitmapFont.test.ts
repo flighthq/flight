@@ -4,10 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createBitmapFont,
-  getBitmapFontAtlas,
   getBitmapFontGlyph,
   getBitmapFontKerning,
   getBitmapFontMetrics,
+  getBitmapFontPage,
+  getBitmapFontPages,
 } from './bitmapFont';
 
 describe('createBitmapFont', () => {
@@ -32,14 +33,28 @@ describe('createBitmapFont', () => {
     expect(createBitmapFont(sampleFontData()).encoding).toBe('raster');
     expect(createBitmapFont({ ...sampleFontData(), encoding: 'msdf' }).encoding).toBe('msdf');
   });
-});
 
-describe('getBitmapFontAtlas', () => {
-  it('returns the same atlas reference passed to the constructor', () => {
-    const atlas = createTextureAtlas();
-    const font = createBitmapFont({ ...sampleFontData(), atlas });
+  it('assigns each glyph its declared page and defaults an omitted page to 0', () => {
+    const font = createBitmapFont({
+      ...sampleFontData(),
+      glyphs: [
+        { advance: 9, bearingX: 1, bearingY: 8, codepoint: 65, height: 8, page: 1, width: 7, x: 0, y: 0 },
+        { advance: 10, bearingX: 1, bearingY: 8, codepoint: 66, height: 8, width: 7, x: 8, y: 0 },
+      ],
+      pages: [createTextureAtlas(), createTextureAtlas()],
+    });
 
-    expect(getBitmapFontAtlas(font)).toBe(atlas);
+    expect(getBitmapFontGlyph(font, 65)!.page).toBe(1);
+    expect(getBitmapFontGlyph(font, 66)!.page).toBe(0);
+  });
+
+  it('clamps an out-of-range glyph page to 0 rather than dropping the glyph', () => {
+    const font = createBitmapFont({
+      ...sampleFontData(),
+      glyphs: [{ advance: 9, bearingX: 1, bearingY: 8, codepoint: 65, height: 8, page: 5, width: 7, x: 0, y: 0 }],
+    });
+
+    expect(getBitmapFontGlyph(font, 65)!.page).toBe(0);
   });
 });
 
@@ -75,9 +90,31 @@ describe('getBitmapFontMetrics', () => {
   });
 });
 
+describe('getBitmapFontPage', () => {
+  it('returns the page atlas by index and null when out of range', () => {
+    const page0 = createTextureAtlas();
+    const page1 = createTextureAtlas();
+    const font = createBitmapFont({ ...sampleFontData(), pages: [page0, page1] });
+
+    expect(getBitmapFontPage(font)).toBe(page0);
+    expect(getBitmapFontPage(font, 0)).toBe(page0);
+    expect(getBitmapFontPage(font, 1)).toBe(page1);
+    expect(getBitmapFontPage(font, 2)).toBeNull();
+  });
+});
+
+describe('getBitmapFontPages', () => {
+  it('returns the page-indexed atlas list', () => {
+    const page0 = createTextureAtlas();
+    const page1 = createTextureAtlas();
+    const font = createBitmapFont({ ...sampleFontData(), pages: [page0, page1] });
+
+    expect(getBitmapFontPages(font)).toEqual([page0, page1]);
+  });
+});
+
 function sampleFontData(): BitmapFontData {
   return {
-    atlas: createTextureAtlas(),
     glyphs: [
       { advance: 9, bearingX: 1, bearingY: 8, codepoint: 65, height: 8, width: 7, x: 0, y: 0 },
       { advance: 10, bearingX: 1, bearingY: 8, codepoint: 66, height: 8, width: 7, x: 8, y: 0 },
@@ -85,5 +122,6 @@ function sampleFontData(): BitmapFontData {
     ],
     kerning: [{ amount: -2, left: 65, right: 86 }],
     metrics: { ascent: 8, descent: 2, lineGap: 1 },
+    pages: [createTextureAtlas()],
   };
 }
