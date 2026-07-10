@@ -4,6 +4,7 @@ export * from '@flighthq/application';
 export * from '@flighthq/assets';
 export * from '@flighthq/audio';
 export * from '@flighthq/camera';
+export * from '@flighthq/camera2d';
 export * from '@flighthq/capture';
 export * from '@flighthq/clip';
 export * from '@flighthq/clipboard';

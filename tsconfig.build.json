@@ -5,6 +5,7 @@
     { "path": "./packages/app" },
     { "path": "./packages/application" },
     { "path": "./packages/camera" },
+    { "path": "./packages/camera2d" },
     { "path": "./packages/webcam" },
     { "path": "./packages/xml" },
     { "path": "./packages/capture" },

@@ -41,6 +41,7 @@ export * from './BokehDepthOfFieldEffect';
 export * from './BoundingSphere';
 export * from './BrightnessContrastEffect';
 export * from './Camera';
+export * from './Camera2D';
 export * from './CameraMotionBlurEffect';
 export * from './CanvasMaterialRenderer';
 export * from './CanvasMaterialState';

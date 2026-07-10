@@ -31,6 +31,7 @@
     "@flighthq/app": "*",
     "@flighthq/application": "*",
     "@flighthq/camera": "*",
+    "@flighthq/camera2d": "*",
     "@flighthq/capture": "*",
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",
