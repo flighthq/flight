@@ -95,6 +95,7 @@
     { "path": "../skeleton" },
     { "path": "../socket" },
     { "path": "../spatial" },
+    { "path": "../spring" },
     { "path": "../sprite" },
     { "path": "../spritesheet" },
     { "path": "../spritesheet-formats" },
