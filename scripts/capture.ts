@@ -1,10 +1,10 @@
-// One-shot screenshot and log capture for the examples, functional, or site tool.
+// One-shot screenshot and log capture for the examples or functional tool.
 //
 // Usage:
 //   tsx ./scripts/capture.ts [options]
 //
 // Options:
-//   --tool=examples|functional|site  Which server to use (default: examples)
+//   --tool=examples|functional   Which server to use (default: examples)
 //   --url=http://localhost:5173   Use a server that is already running (skips auto-start)
 //   --dev                        Use the Vite dev server instead of the pre-built dist. Slower;
 //                                suited for live-editing a single test (npm run dev:functional).
@@ -68,7 +68,7 @@ function arg(key: string, fallback: string): string {
   return hit ? hit.slice(key.length + 3) : fallback;
 }
 
-const tool = arg('tool', 'examples') as 'examples' | 'functional' | 'site';
+const tool = arg('tool', 'examples') as 'examples' | 'functional';
 const externalUrl = arg('url', '');
 const filter = arg('filter', '');
 const rendererFilter = arg('renderer', '').split(',').filter(Boolean);

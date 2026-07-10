@@ -59,9 +59,6 @@ const root = process.cwd();
 // ---------------------------------------------------------------------------
 
 function entryNameFromPath(filePath: string, tool: Tool): string | null {
-  // The landing tool is a single fixed entry, so any change under its directory maps to it.
-  if (tool === 'site') return 'landing';
-
   const parts = filePath.split(sep);
   const marker = tool === 'examples' ? 'examples' : 'functional';
   const idx = parts.lastIndexOf(marker);
