@@ -6,6 +6,8 @@ by: ingest:builder-67dc46d64
 
 # surface-rs — Status Log
 
+> **Spun out to `flight-rs` (2026-07-10).** The package and its `flighthq-surface-wasm` crate now live in the separate `flight-rs` repo; the entries below are the in-repo history before that move. No further local status entries — continue the log in `flight-rs`.
+
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
