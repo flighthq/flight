@@ -10,6 +10,7 @@
     { "path": "./packages/webcam" },
     { "path": "./packages/xml" },
     { "path": "./packages/binpack" },
+    { "path": "./packages/bitmapfont" },
     { "path": "./packages/capture" },
     { "path": "./packages/clip" },
     { "path": "./packages/clipboard" },
