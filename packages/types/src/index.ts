@@ -382,6 +382,7 @@ export * from './Skeleton';
 export * from './SkeletonValidationDiagnostic';
 export * from './SketchEffect';
 export * from './SmaaEffect';
+export * from './Snapshot';
 export * from './Socket';
 export * from './SoftKeyboardEasingKind';
 export * from './Spatial';

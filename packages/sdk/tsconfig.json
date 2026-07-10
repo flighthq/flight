@@ -99,6 +99,7 @@
     { "path": "../shortcut" },
     { "path": "../signals" },
     { "path": "../skeleton" },
+    { "path": "../snapshot" },
     { "path": "../socket" },
     { "path": "../spatial" },
     { "path": "../spring" },
