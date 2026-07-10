@@ -63,6 +63,7 @@
     "@flighthq/flow": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/glyphatlas": "*",
     "@flighthq/haptics": "*",
     "@flighthq/input": "*",
     "@flighthq/interaction": "*",

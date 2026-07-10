@@ -82,6 +82,7 @@
     { "path": "../textureatlas-formats" },
     { "path": "../audio" },
     { "path": "../font" },
+    { "path": "../glyphatlas" },
     { "path": "../image" },
     { "path": "../image-codec" },
     { "path": "../video" },

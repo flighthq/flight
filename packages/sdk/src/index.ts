@@ -38,6 +38,7 @@ export * from '@flighthq/flow';
 export * from '@flighthq/font';
 export * from '@flighthq/geolocation';
 export * from '@flighthq/geometry';
+export * from '@flighthq/glyphatlas';
 export * from '@flighthq/haptics';
 export * from '@flighthq/image';
 export * from '@flighthq/image-codec';
