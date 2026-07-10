@@ -55,6 +55,7 @@
     { "path": "../media" },
     { "path": "../menu" },
     { "path": "../mesh" },
+    { "path": "../motionpath" },
     { "path": "../movieclip" },
     { "path": "../net" },
     { "path": "../network" },
