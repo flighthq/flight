@@ -1,9 +1,9 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { createColorTransform, createUniformColorTransformMaterial } from '@flighthq/materials';
-import { invalidateNodeLocalBounds } from '@flighthq/node';
-import { appendQuadBatchInstance, clearQuadBatch } from '@flighthq/sprite';
-import { addTextureAtlasRegion } from '@flighthq/textureatlas';
+import { addNodeChild, invalidateNodeLocalBounds } from '@flighthq/node';
+import { appendQuadBatchInstance, clearQuadBatch, createQuadBatch } from '@flighthq/sprite';
+import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import type {
   BitmapText,
   BitmapTextData,
@@ -12,6 +12,7 @@ import type {
   GlyphSource,
   QuadBatch,
   Rectangle,
+  TextureAtlas,
 } from '@flighthq/types';
 
 // White (`0xRRGGBBAA` all-ones) leaves the backing batch material-free — the untinted path.
@@ -19,24 +20,31 @@ const BITMAP_TEXT_DEFAULT_COLOR = 0xffffffff;
 const CARRIAGE_RETURN = 0x0d;
 const SPACE = 0x20;
 
-// Lays out `bitmapText`'s current string and rewrites its backing QuadBatch: one quad per visible
-// glyph, positioned by the glyph source's advances and kerning, broken on explicit newlines and (when
-// `wrapWidth` is set) at word boundaries, stacked by the metric line advance, and aligned per line.
-// The batch's atlas regions are rebuilt from the encountered glyph rects each call, so a dynamic glyph
-// source whose rects shift between layouts stays correct. Missing glyphs (`getGlyphEntry` → null) are
-// omitted entirely — no quad and no advance — since a null entry carries no advance to honor.
+// Lays out `bitmapText`'s current string and rewrites its backing QuadBatches: one quad per visible
+// glyph, partitioned by the glyph's atlas page into one QuadBatch per page, positioned by the glyph
+// source's advances and kerning, broken on explicit newlines and (when `wrapWidth` is set) at word
+// boundaries, stacked by the metric line advance, and aligned per line. Each page batch's atlas image
+// is bound from `getGlyphAtlasImage(page)` and its regions rebuilt from that page's encountered glyph
+// rects each call, so a dynamic glyph source whose rects shift between layouts stays correct. A
+// single-page source produces exactly one batch (page 0). A page whose `getGlyphAtlasImage` returns
+// null cannot be sampled, so its glyphs are skipped. Missing glyphs (`getGlyphEntry` → null) are
+// omitted entirely — no quad and no advance — since a null entry carries no advance to honor. Bounds
+// span every drawn glyph across all pages.
 export function updateBitmapText(bitmapText: BitmapText): void {
   const data = bitmapText.data;
   const runtime = getDisplayObjectRuntime(bitmapText) as BitmapTextRuntime;
-  const quadBatch = runtime.quadBatch;
-  if (quadBatch === null) return;
-  const atlas = quadBatch.data.atlas;
-  clearQuadBatch(quadBatch);
-  if (atlas !== null) atlas.regions.length = 0;
-  applyBitmapTextColor(quadBatch, data.color);
   const bounds = ensureBoundsRectangle(runtime);
+
+  // Clear and recolor every existing page batch; pages with glyphs this layout are refilled below,
+  // pages that fall silent stay as empty children drawing nothing.
+  for (const quadBatch of runtime.quadBatches) {
+    clearQuadBatch(quadBatch);
+    if (quadBatch.data.atlas !== null) quadBatch.data.atlas.regions.length = 0;
+    applyBitmapTextColor(quadBatch, data.color);
+  }
+
   const glyphSource = data.glyphSource;
-  if (glyphSource === null || atlas === null || data.text.length === 0) {
+  if (glyphSource === null || data.text.length === 0) {
     setEmptyRectangle(bounds);
     invalidateNodeLocalBounds(bitmapText);
     return;
@@ -46,7 +54,7 @@ export function updateBitmapText(bitmapText: BitmapText): void {
   const lineAdvance = (metrics.ascent + metrics.descent + metrics.lineGap) * data.lineHeight;
   const lines = layoutBitmapTextLines(glyphSource, data);
   const refWidth = data.wrapWidth ?? maxLineWidth(lines);
-  const regionByCodepoint = new Map<number, number>();
+  const pages = new Map<number, BitmapTextPageBatch>();
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -69,15 +77,17 @@ export function updateBitmapText(bitmapText: BitmapText): void {
       const word = line.words[wi];
       for (const glyph of word.glyphs) {
         const entry = glyph.entry;
+        const page = ensureBitmapTextPageBatch(bitmapText, runtime, glyphSource, data.color, pages, entry.page);
+        if (page === null) continue;
         const quadX = penX + glyph.penWithinWord + entry.bearingX;
         const quadY = baselineY - entry.bearingY;
-        let regionId = regionByCodepoint.get(glyph.codepoint);
+        let regionId = page.regionByCodepoint.get(glyph.codepoint);
         if (regionId === undefined) {
-          addTextureAtlasRegion(atlas, entry.x, entry.y, entry.width, entry.height);
-          regionId = atlas.regions.length - 1;
-          regionByCodepoint.set(glyph.codepoint, regionId);
+          addTextureAtlasRegion(page.atlas, entry.x, entry.y, entry.width, entry.height);
+          regionId = page.atlas.regions.length - 1;
+          page.regionByCodepoint.set(glyph.codepoint, regionId);
         }
-        appendQuadBatchInstance(quadBatch, regionId, quadX, quadY);
+        appendQuadBatchInstance(page.quadBatch, regionId, quadX, quadY);
         if (quadX < minX) minX = quadX;
         if (quadY < minY) minY = quadY;
         if (quadX + entry.width > maxX) maxX = quadX + entry.width;
@@ -155,6 +165,39 @@ function buildBitmapTextWords(glyphSource: GlyphSource, paragraph: string, lette
   return tokens;
 }
 
+// Ensures a backing QuadBatch exists for glyph-atlas `page` (page-indexed in `runtime.quadBatches`,
+// growing and parenting fresh batches as needed) and binds it to that page's atlas image, returning
+// the per-layout page context (batch + atlas + region cache). Returns null when the page has no atlas
+// image to sample — its glyphs are then skipped. Newly grown gap pages get an empty batch bound to
+// their own image; the common single-page source touches only page 0 (created by `createBitmapText`).
+function ensureBitmapTextPageBatch(
+  bitmapText: BitmapText,
+  runtime: BitmapTextRuntime,
+  glyphSource: GlyphSource,
+  color: number,
+  pages: Map<number, BitmapTextPageBatch>,
+  page: number,
+): BitmapTextPageBatch | null {
+  const cached = pages.get(page);
+  if (cached !== undefined) return cached;
+
+  const image = glyphSource.getGlyphAtlasImage(page);
+  if (image === null) return null;
+
+  while (runtime.quadBatches.length <= page) {
+    const created = createQuadBatch({ data: { atlas: createTextureAtlas() } });
+    applyBitmapTextColor(created, color);
+    runtime.quadBatches.push(created);
+    addNodeChild(bitmapText, created);
+  }
+  const quadBatch = runtime.quadBatches[page];
+  const atlas = quadBatch.data.atlas!;
+  atlas.image = image;
+  const pageBatch: BitmapTextPageBatch = { atlas, quadBatch, regionByCodepoint: new Map() };
+  pages.set(page, pageBatch);
+  return pageBatch;
+}
+
 function ensureBoundsRectangle(runtime: BitmapTextRuntime): Rectangle {
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   return runtime.localBoundsRectangle;
@@ -211,6 +254,14 @@ interface BitmapTextGlyph {
   codepoint: number;
   entry: GlyphEntry;
   penWithinWord: number;
+}
+
+// One page's per-layout emit context: the backing QuadBatch for that glyph-atlas page, its
+// TextureAtlas (regions rebuilt this layout), and the codepoint→region-id cache scoped to that page.
+interface BitmapTextPageBatch {
+  atlas: TextureAtlas;
+  quadBatch: QuadBatch;
+  regionByCodepoint: Map<number, number>;
 }
 
 // One laid-out line: its words, the inter-word gap widths (`gaps[i]` sits between word i and i+1), the

@@ -14,7 +14,6 @@ import type {
   BitmapTextOptions,
   BitmapTextRuntime,
   GlyphSource,
-  ImageResource,
   MethodsOf,
   Node,
   QuadBatch,
@@ -40,16 +39,13 @@ export function computeBitmapTextLocalBoundsRectangle(out: Rectangle, source: Re
   copyRectangle(out, bounds);
 }
 
-// Allocates a BitmapText display node bound to `glyphSource` for layout and `image` for the glyph
-// pixels. The node owns a backing QuadBatch child whose `TextureAtlas` samples `image`; a
-// separately-supplied `image` is required because the `GlyphSource` seam exposes glyph geometry
-// (rects, advances, kerning, metrics) but not the atlas texture those rects index into. Call
-// `updateBitmapText` to lay out the current `text` into the batch.
-export function createBitmapText(
-  glyphSource: GlyphSource | null,
-  image: ImageResource | null,
-  options?: Readonly<BitmapTextOptions>,
-): BitmapText {
+// Allocates a BitmapText display node bound to `glyphSource` for both layout AND pixels. The
+// `GlyphSource` seam now pairs its glyph geometry (rects, advances, kerning, metrics) with the
+// backing atlas image(s) those rects sample (`getGlyphAtlasImage(page)`), so no separate image is
+// supplied. The node owns one backing QuadBatch child per glyph-atlas page; a single-page source
+// yields exactly one (page 0), created eagerly here. Call `updateBitmapText` to lay out the current
+// `text`, which sets each page batch's atlas image and grows the set for a multi-page source.
+export function createBitmapText(glyphSource: GlyphSource | null, options?: Readonly<BitmapTextOptions>): BitmapText {
   const bitmapText = createDisplayObjectGeneric(
     BitmapTextKind,
     undefined,
@@ -59,9 +55,9 @@ export function createBitmapText(
   const data = bitmapText.data;
   data.glyphSource = glyphSource;
   if (options !== undefined) applyBitmapTextOptions(data, options);
-  const quadBatch = createQuadBatch({ data: { atlas: createTextureAtlas({ image }) } });
+  const quadBatch = createQuadBatch({ data: { atlas: createTextureAtlas() } });
   const runtime = getDisplayObjectRuntime(bitmapText) as BitmapTextRuntime;
-  runtime.quadBatch = quadBatch;
+  runtime.quadBatches.push(quadBatch);
   addNodeChild(bitmapText, quadBatch);
   return bitmapText;
 }
@@ -81,7 +77,7 @@ export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): 
 export function createBitmapTextRuntime(): BitmapTextRuntime {
   const runtime = createDisplayObjectRuntime(defaultMethods) as BitmapTextRuntime;
   runtime.localBoundsRectangle = null;
-  runtime.quadBatch = null;
+  runtime.quadBatches = [];
   return runtime;
 }
 
@@ -93,16 +89,18 @@ export function getBitmapTextBounds(source: Readonly<BitmapText>): Rectangle {
   return out;
 }
 
-// The backing QuadBatch the node lays glyph quads into — the renderable child. Null before construction.
-export function getBitmapTextQuadBatch(source: Readonly<BitmapText>): QuadBatch | null {
-  return (getDisplayObjectRuntime(source) as BitmapTextRuntime).quadBatch;
+// The backing QuadBatches the node lays glyph quads into — the renderable children, one per
+// glyph-atlas page in page order. A single-page source yields exactly one; empty before construction.
+export function getBitmapTextQuadBatches(source: Readonly<BitmapText>): QuadBatch[] {
+  return (getDisplayObjectRuntime(source) as BitmapTextRuntime).quadBatches;
 }
 
-// Grows the backing QuadBatch to hold at least `glyphCapacity` glyph quads without reallocating during
-// layout. Optional — `updateBitmapText` auto-grows — but avoids incremental reallocation for large strings.
+// Grows each backing page QuadBatch to hold at least `glyphCapacity` glyph quads without reallocating
+// during layout. Optional — `updateBitmapText` auto-grows — but avoids incremental reallocation for
+// large strings. Reserving every page's batch over-allocates for multi-page text but never under-sizes.
 export function reserveBitmapText(target: BitmapText, glyphCapacity: number): void {
   const runtime = getDisplayObjectRuntime(target) as BitmapTextRuntime;
-  if (runtime.quadBatch !== null) reserveQuadBatch(runtime.quadBatch, glyphCapacity);
+  for (const quadBatch of runtime.quadBatches) reserveQuadBatch(quadBatch, glyphCapacity);
 }
 
 // The setters below mutate node data only; call `updateBitmapText` afterward to re-lay-out the batch.

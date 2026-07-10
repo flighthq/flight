@@ -1,15 +1,22 @@
+import type { ImageResource } from './ImageResource';
 import type { Surface } from './Surface';
 
 // The shared seam a text renderer consumes to draw glyphs, independent of how those glyphs are
 // produced. `@flighthq/glyphatlas` implements it dynamically (rasterize-on-miss into a growing
 // atlas); the planned `@flighthq/bitmapfont` implements it statically (a pre-baked atlas). A
 // renderer holds a `GlyphSource` and asks it for a glyph's atlas region + metrics without knowing
-// which implementation is behind it.
+// which implementation is behind it. The seam yields both the glyph geometry (`getGlyphEntry`) AND
+// the backing atlas image its rects sample (`getGlyphAtlasImage`), so a renderer needs nothing else:
+// it draws each glyph's rect from the same-page image, one page at a time.
 //
 // It is a small method object (not free functions) precisely because it is the runtime-swappable
 // boundary between the renderer and either implementation — the one place in the SDK where a bound
 // handle is the right shape. Adapt a `GlyphAtlas` into one with `createGlyphSourceFromGlyphAtlas`.
 export interface GlyphSource {
+  // The atlas image a same-page `getGlyphEntry` rect samples from — the pixels paired with the
+  // geometry seam. `page` selects which atlas image (default 0); returns null when the page does not
+  // exist. Single-page sources hold everything on page 0 and return null for any other page.
+  getGlyphAtlasImage(page?: number): ImageResource | null;
   // Returns the glyph's atlas region + metrics, ensuring it is rasterized and cached first. Returns
   // null when the glyph cannot be produced (no rasterizer, or a glyph larger than the whole atlas).
   getGlyphEntry(codepoint: number): GlyphEntry | null;
@@ -29,6 +36,9 @@ export interface GlyphEntry {
   bearingX: number;
   bearingY: number;
   height: number;
+  // Which atlas page/image this glyph's rect samples from — the index passed to
+  // `getGlyphAtlasImage`. 0 for single-page sources (a single-page atlas or a single-page font).
+  page: number;
   width: number;
   x: number;
   y: number;

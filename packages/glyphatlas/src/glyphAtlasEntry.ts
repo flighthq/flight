@@ -52,6 +52,7 @@ export function getGlyphAtlasEntry(atlas: Readonly<GlyphAtlas>, codepoint: numbe
     bearingX: bitmap.bearingX,
     bearingY: bitmap.bearingY,
     height: bitmap.height,
+    page: 0, // The dynamic atlas is one growing surface — a single page.
     width: bitmap.width,
     x: placement.x,
     y: placement.y,
