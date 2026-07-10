@@ -86,6 +86,8 @@
       "@flighthq/clip/*": ["./packages/clip/src/*"],
       "@flighthq/clock": ["./packages/clock/src/index.ts"],
       "@flighthq/clock/*": ["./packages/clock/src/*"],
+      "@flighthq/collision": ["./packages/collision/src/index.ts"],
+      "@flighthq/collision/*": ["./packages/collision/src/*"],
       "@flighthq/filters": ["./packages/filters/src/index.ts"],
       "@flighthq/filters/*": ["./packages/filters/src/*"],
       "@flighthq/filters-canvas": ["./packages/filters-canvas/src/index.ts"],

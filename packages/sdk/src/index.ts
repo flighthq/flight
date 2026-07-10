@@ -8,6 +8,7 @@ export * from '@flighthq/capture';
 export * from '@flighthq/clip';
 export * from '@flighthq/clipboard';
 export * from '@flighthq/clock';
+export * from '@flighthq/collision';
 export * from '@flighthq/device';
 export * from '@flighthq/dialog';
 export * from '@flighthq/displayobject';
