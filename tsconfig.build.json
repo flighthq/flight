@@ -85,6 +85,7 @@
     { "path": "./packages/signals" },
     { "path": "./packages/skeleton" },
     { "path": "./packages/socket" },
+    { "path": "./packages/spatial" },
     { "path": "./packages/sprite" },
     { "path": "./packages/spritesheet" },
     { "path": "./packages/spritesheet-formats" },

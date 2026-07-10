@@ -377,6 +377,7 @@ export * from './SketchEffect';
 export * from './SmaaEffect';
 export * from './Socket';
 export * from './SoftKeyboardEasingKind';
+export * from './Spatial';
 export * from './SpecularGlossinessPbrMaterial';
 export * from './SpecularPbrMaterial';
 export * from './SpotLight';

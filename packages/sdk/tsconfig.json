@@ -93,6 +93,7 @@
     { "path": "../signals" },
     { "path": "../skeleton" },
     { "path": "../socket" },
+    { "path": "../spatial" },
     { "path": "../sprite" },
     { "path": "../spritesheet" },
     { "path": "../spritesheet-formats" },
