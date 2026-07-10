@@ -85,6 +85,8 @@
     "@flighthq/render-wgpu": "*",
     "@flighthq/textureatlas-formats": "*",
     "@flighthq/audio": "*",
+    "@flighthq/bitmapfont": "*",
+    "@flighthq/bitmapfont-formats": "*",
     "@flighthq/font": "*",
     "@flighthq/image": "*",
     "@flighthq/video": "*",
