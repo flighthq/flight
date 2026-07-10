@@ -48,6 +48,25 @@ describe('computeTextLayout', () => {
       );
       expect(alignResult.groups[0].offsetX).toBeGreaterThan(noAlignOffsetX);
     });
+
+    // Guards the layout-with-real-width contract that the RichText renderers rely on: a single,
+    // non-wrapping line must center against the real field width, not a wrap-prevention sentinel.
+    // Passing a huge sentinel width (formerly 10000) shifted a short line ~4975px off-screen, so it
+    // rendered nothing. offsetX must stay inside the container.
+    it('centers a short single line against a real width when wordWrap is false', () => {
+      const text = 'hi'; // 20px wide, container = 200
+      const result = doLayout(
+        singleRangeParams(text, 200, {
+          formatRanges: [createTextFormatRange({ size: 16, align: 'center' }, 0, text.length)],
+          multiline: false,
+          wordWrap: false,
+        }),
+      );
+      // slack = 200 - 20 - 2*GUTTER = 176 → shift = 88 → offsetX = GUTTER + 88 = 90
+      const offsetX = result.groups[0].offsetX;
+      expect(offsetX).toBe(90);
+      expect(offsetX).toBeLessThan(200);
+    });
   });
 
   describe('empty input', () => {
