@@ -25,8 +25,8 @@ describe('applyDomBlendMode', () => {
     expect(el.style.mixBlendMode).toBe('difference');
   });
 
-  it('sets mixBlendMode to "hard-light" for BlendMode.Hardlight', () => {
-    applyDomBlendMode(el, BlendMode.Hardlight);
+  it('sets mixBlendMode to "hard-light" for BlendMode.HardLight', () => {
+    applyDomBlendMode(el, BlendMode.HardLight);
     expect(el.style.mixBlendMode).toBe('hard-light');
   });
 
