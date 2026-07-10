@@ -66,7 +66,7 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
   computeTextLayout(result, {
     text,
     formatRanges: content.formatRanges,
-    width: data.wordWrap ? data.width : 10000,
+    width: data.width,
     height: data.height,
     measure,
     multiline: data.multiline,
