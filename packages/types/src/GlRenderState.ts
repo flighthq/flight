@@ -13,6 +13,20 @@ export interface GlRenderState extends RenderState {
   readonly gl: WebGL2RenderingContext;
 }
 
+// A WebGL fixed-function realization of a blend-mode intent, registered per render state against a
+// BlendMode string. `src`/`dst` are the premultiplied-alpha blendFunc factors and `equation` is the
+// blend equation (defaulting to additive FUNC_ADD when omitted). The factor/equation members are
+// WebGL constant names resolved against the live context, keeping the descriptor plain data.
+export interface GlBlendRealization {
+  readonly src: GlBlendFactor;
+  readonly dst: GlBlendFactor;
+  readonly equation?: GlBlendEquation;
+}
+
+export type GlBlendFactor = 'DST_COLOR' | 'ONE' | 'ONE_MINUS_SRC_ALPHA' | 'ONE_MINUS_SRC_COLOR' | 'ZERO';
+
+export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MIN';
+
 // Package-private GPU state for a GlRenderState entity. Lives in the runtime tier (not on the
 // entity) so the public GlRenderState surface stays minimal; the render path resolves it each
 // frame via getGlRenderStateRuntime. Defined in @flighthq/types — the header layer — so
@@ -23,6 +37,12 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   currentBlendMode: BlendMode | null;
   currentProgram: WebGLProgram | null;
   currentTexture: WebGLTexture | null;
+
+  // Open per-state registry mapping a BlendMode to its fixed-function realization. Null until the
+  // first registration (registerGlBlendMode / registerDefaultGlBlendModes), so a state that never
+  // enables blend support carries no map. Last-write-wins, so a caller can override a built-in mode
+  // or add a vendor-prefixed one.
+  glBlendModeRegistry?: Map<BlendMode, GlBlendRealization> | null;
 
   colorTransformBitmapShader?: GlBitmapShader;
   defaultBitmapShader: GlBitmapShader;
