@@ -1,4 +1,9 @@
-import type { PathBooleanBackend, PathBooleanContour, PathBooleanOperation, PathWinding } from '@flighthq/types';
+import type {
+  PathBooleanBackend,
+  PathBooleanContour,
+  PathBooleanFillRule,
+  PathBooleanOperation,
+} from '@flighthq/types';
 
 // Builds the default boolean kernel: a from-scratch, floating-point Martinez–Rueda–Feito sweep-line.
 //
@@ -28,7 +33,7 @@ export function createMartinezPathBooleanBackend(): PathBooleanBackend {
       subject: readonly PathBooleanContour[],
       clip: readonly PathBooleanContour[],
       operation: PathBooleanOperation,
-      fillRule: PathWinding,
+      fillRule: PathBooleanFillRule,
     ): readonly PathBooleanContour[] {
       return computeMartinezBoolean(subject, clip, operation, fillRule);
     },
@@ -71,23 +76,38 @@ interface UniqueSegment {
   clipDelta: number;
 }
 
-// Grid snap for merging vertices that should coincide but differ in the last floating-point bits. Well
-// below any realistic flatten tolerance, so it only ever collapses numerical twins of one point.
-const VERTEX_SNAP = 1e-7;
+// Relative factor for the vertex-merge grid: two vertices collapse to one when they fall in the same
+// cell of a grid this fraction of the input's coordinate extent. Large enough to catch the last-bit
+// numerical twins a crossing computation produces (a few ulps of the extent), far below any real
+// feature separation, so it only ever fuses points that were meant to be identical. Made relative to
+// the coordinate magnitude (rather than a fixed absolute) so the same topology resolves whether the
+// polygon is expressed in pixels, metres, or micrometres.
+const VERTEX_SNAP_RELATIVE = 1e-9;
 
-// Relative tolerance for the intersection orientation tests, scaled by squared edge lengths so it
-// behaves consistently across coordinate magnitudes.
+// Fallback absolute snap for degenerate all-coincident input where the extent is zero; no segments
+// survive such input, so the exact value only guards the division in `snap`.
+const VERTEX_SNAP_FALLBACK = 1e-9;
+
+// Relative tolerance for the intersection orientation tests, scaled by squared edge lengths in each
+// comparison so it already behaves consistently across coordinate magnitudes.
 const INTERSECTION_EPS = 1e-12;
 
 let nextEventId = 0;
+
+// The active vertex-merge grid cell size for the boolean currently being computed, derived from the
+// input's coordinate extent at the top of `computeMartinezBoolean`. Module-scoped rather than threaded
+// through every `approxEqual`/`snap` call (the computation is synchronous and single-entrant, like
+// `nextEventId`); it is never read at import time, so importing the package stays side-effect-free.
+let vertexSnap = VERTEX_SNAP_FALLBACK;
 
 function computeMartinezBoolean(
   subject: readonly PathBooleanContour[],
   clip: readonly PathBooleanContour[],
   operation: PathBooleanOperation,
-  fillRule: PathWinding,
+  fillRule: PathBooleanFillRule,
 ): PathBooleanContour[] {
   nextEventId = 0;
+  vertexSnap = computeVertexSnap(subject, clip);
   const segments = buildArrangement(subject, clip);
   if (segments.length === 0) return [];
   const unique = mergeCoincidentSegments(segments);
@@ -422,7 +442,7 @@ function mergeCoincidentSegments(segments: readonly ArrangementSegment[]): Uniqu
 function classifySegments(
   unique: readonly UniqueSegment[],
   operation: PathBooleanOperation,
-  fillRule: PathWinding,
+  fillRule: PathBooleanFillRule,
 ): number[][] {
   const kept: number[][] = [];
   for (const seg of unique) {
@@ -482,9 +502,17 @@ function combine(operation: PathBooleanOperation, inSubject: boolean, inClip: bo
   }
 }
 
-function isInside(winding: number, fillRule: PathWinding): boolean {
-  if (fillRule === 'evenOdd') return (Math.abs(winding) & 1) === 1;
-  return winding !== 0;
+function isInside(winding: number, fillRule: PathBooleanFillRule): boolean {
+  switch (fillRule) {
+    case 'evenOdd':
+      return (Math.abs(winding) & 1) === 1;
+    case 'positive':
+      return winding > 0;
+    case 'negative':
+      return winding < 0;
+    default:
+      return winding !== 0;
+  }
 }
 
 // Stage 2c: chain the directed, fill-on-left edges into closed rings. At a vertex shared by several
@@ -497,11 +525,34 @@ function traceRings(edges: readonly number[][]): PathBooleanContour[] {
 }
 
 function approxEqual(a: number, b: number): boolean {
-  return Math.abs(a - b) <= VERTEX_SNAP;
+  return Math.abs(a - b) <= vertexSnap;
+}
+
+// Derives the vertex-merge grid size from the largest coordinate span across both operands, so the
+// snap tolerance tracks the input's magnitude. Zero/degenerate extent falls back to a fixed absolute.
+function computeVertexSnap(subject: readonly PathBooleanContour[], clip: readonly PathBooleanContour[]): number {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const contours of [subject, clip]) {
+    for (const contour of contours) {
+      for (let i = 0; i < contour.length; i += 2) {
+        const x = contour[i];
+        const y = contour[i + 1];
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  const extent = Math.max(maxX - minX, maxY - minY);
+  return extent > 0 ? extent * VERTEX_SNAP_RELATIVE : VERTEX_SNAP_FALLBACK;
 }
 
 function snap(v: number): number {
-  return Math.round(v / VERTEX_SNAP);
+  return Math.round(v / vertexSnap);
 }
 
 // Directed graph of the kept boundary edges. Each directed edge is consumed once; ring closure and

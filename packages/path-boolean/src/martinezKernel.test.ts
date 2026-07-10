@@ -1,4 +1,4 @@
-import type { PathBooleanContour, PathBooleanOperation, PathWinding } from '@flighthq/types';
+import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createMartinezPathBooleanBackend } from './martinezKernel';
@@ -76,7 +76,7 @@ function run(
   subject: readonly number[][],
   clip: readonly number[][],
   operation: PathBooleanOperation,
-  fillRule: PathWinding = 'nonZero',
+  fillRule: PathBooleanFillRule = 'nonZero',
 ): readonly PathBooleanContour[] {
   return createMartinezPathBooleanBackend().computePathBoolean(subject, clip, operation, fillRule);
 }
@@ -243,6 +243,47 @@ describe('createMartinezPathBooleanBackend', () => {
       expect(fillContains(result, 5, 1)).toBe(true); // lower lobe
       expect(fillContains(result, 5, 9)).toBe(true); // upper lobe
       expect(fillContains(result, 1, 5)).toBe(false); // between lobes, outside
+    });
+  });
+
+  describe('positive and negative fill rules', () => {
+    it('keeps a counter-clockwise (positively-wound) region under positive fill, drops it under negative', () => {
+      const ccw = square(0, 0, 10); // shoelace-positive winding
+      expect(netArea(run([ccw], [], 'union', 'positive'))).toBeCloseTo(100, 6);
+      expect(netArea(run([ccw], [], 'union', 'negative'))).toBeCloseTo(0, 6);
+    });
+
+    it('mirrors that for a clockwise (negatively-wound) region', () => {
+      const cw = [0, 0, 0, 10, 10, 10, 10, 0]; // reversed traversal, shoelace-negative winding
+      expect(netArea(run([cw], [], 'union', 'negative'))).toBeCloseTo(100, 6);
+      expect(netArea(run([cw], [], 'union', 'positive'))).toBeCloseTo(0, 6);
+    });
+
+    it('dissolves a same-wound self-overlap under positive fill (winding 2 stays filled)', () => {
+      // The offset-cleanup fill: two overlapping same-wound squares fill solid (area 175, one ring), the
+      // doubly-wound overlap kept rather than holed — this is why offsetPath resolves under positive.
+      const result = run([square(0, 0, 10), square(5, 5, 10)], [], 'union', 'positive');
+      expect(netArea(result)).toBeCloseTo(175, 6);
+      expect(result.length).toBe(1);
+      expect(fillContains(result, 7, 7)).toBe(true);
+    });
+  });
+
+  describe('scale invariance', () => {
+    it('resolves the same topology and scale-relative area across a 1e9 span of coordinate scales', () => {
+      // Two overlapping squares — a real interior crossing, the regime where the vertex-merge snap
+      // matters. Scaling the coordinates must not change the ring count nor the area-relative-to-scale²;
+      // the magnitude-relative snap is what makes the resolved topology invariant to coordinate scale.
+      const overlap = (s: number): number[][] => [square(0, 0, 10 * s), square(5 * s, 5 * s, 10 * s)];
+      const small = run(overlap(1e-3), [], 'union', 'nonZero');
+      const mid = run(overlap(1), [], 'union', 'nonZero');
+      const large = run(overlap(1e6), [], 'union', 'nonZero');
+      expect(small.length).toBe(mid.length);
+      expect(large.length).toBe(mid.length);
+      // Union of the two squares is one solid ring of area 175 at unit scale; area scales with s².
+      expect(netArea(mid)).toBeCloseTo(175, 6);
+      expect(netArea(small) / 1e-3 ** 2).toBeCloseTo(175, 4);
+      expect(netArea(large) / (1e6 * 1e6)).toBeCloseTo(175, 4);
     });
   });
 

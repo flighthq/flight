@@ -53,6 +53,25 @@ describe('cleanPath', () => {
     expect(out.data).toStrictEqual([0, 0, 10, 0, 10, 10, 0, 10]);
   });
 
+  it('keeps a non-collinear spike as a genuine feature', () => {
+    // A triangular spike whose tip (5, 20) sits 10 units off the y=10 top edge, between distinct,
+    // non-coincident neighbors (6, 10) and (4, 10). This is a real protrusion, not vertex noise, so
+    // cleanPath (a within-tolerance dedup, not an angle-based needle remover) preserves every vertex.
+    // Removing acute needles is a separate simplification concern, deliberately out of cleanPath's scope.
+    const source = createPath();
+    appendPathMoveTo(source, 0, 0);
+    appendPathLineTo(source, 10, 0);
+    appendPathLineTo(source, 10, 10);
+    appendPathLineTo(source, 6, 10);
+    appendPathLineTo(source, 5, 20);
+    appendPathLineTo(source, 4, 10);
+    appendPathLineTo(source, 0, 10);
+    appendPathClose(source);
+    const out = createPath();
+    cleanPath(source, 0.001, out);
+    expect(out.data).toStrictEqual([0, 0, 10, 0, 10, 10, 6, 10, 5, 20, 4, 10, 0, 10]);
+  });
+
   it('keeps a vertex whose deviation just exceeds tolerance', () => {
     const source = createPath();
     appendPathMoveTo(source, 0, 0);
