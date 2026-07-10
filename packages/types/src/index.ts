@@ -29,8 +29,6 @@ export * from './Billboard';
 export * from './Bitmap';
 export * from './BitmapFilter';
 export * from './BitmapFilterMargin';
-export * from './BitmapFont';
-export * from './BitmapGlyph';
 export * from './BlendMode';
 export * from './BlinnPhongMaterial';
 export * from './BloomEffect';
