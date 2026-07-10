@@ -22,7 +22,7 @@ The complete dynamic glyph cache: on-demand rasterization behind a swappable ras
 
 ## Boundaries
 
-- **Depends on `@flighthq/font` (metrics/resource) + `@flighthq/binpack` (atlas packing) + `@flighthq/surface` (the atlas bitmap + glyph blit) + `@flighthq/types`.** The rasterizer is a swappable backend (web = canvas); no direct DOM at import.
+- **Depends on `@flighthq/surface` (the atlas bitmap + glyph blit) + `@flighthq/geometry` (the dirty `Rectangle`) + `@flighthq/types`.** The rasterizer is a swappable backend (web = canvas); no direct DOM at import. (First build uses a self-contained **incremental shelf packer** for the hot per-glyph path — `@flighthq/binpack` is reserved for the deferred batch-bake/repack path, not a first-build dep — and derives line metrics from the requested font size as a placeholder; real metrics via `@flighthq/textshaper`'s `getFontMetrics` and kerning are a hardening item.)
 - **A glyph cache, not a text renderer or display object.** It produces an atlas + region/metrics lookup; laying out a string (`textlayout`) and drawing the quads (the `render-*` glyph-quad path / `BitmapText`) are the consumers. It holds no display node.
 - **Rasterization mechanism is backend-swappable.** The web backend rasterizes via an offscreen canvas; a native host supplies a FreeType-style rasterizer. The orchestration (cache / pack / evict / dirty-region / `GlyphSource`) is backend-independent and is the tested core.
 

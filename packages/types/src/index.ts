@@ -153,6 +153,7 @@ export * from './GlTextureFilterKind';
 export * from './GlTextureWrapKind';
 export * from './GlVelocityWriter';
 export * from './GlyphExtents';
+export * from './GlyphSource';
 export * from './GodRaysEffect';
 export * from './GradientBevelFilter';
 export * from './GradientGlowFilter';

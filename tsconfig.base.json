@@ -116,6 +116,8 @@
       "@flighthq/audio/*": ["./packages/audio/src/*"],
       "@flighthq/font": ["./packages/font/src/index.ts"],
       "@flighthq/font/*": ["./packages/font/src/*"],
+      "@flighthq/glyphatlas": ["./packages/glyphatlas/src/index.ts"],
+      "@flighthq/glyphatlas/*": ["./packages/glyphatlas/src/*"],
       "@flighthq/flow": ["./packages/flow/src/index.ts"],
       "@flighthq/flow/*": ["./packages/flow/src/*"],
       "@flighthq/image": ["./packages/image/src/index.ts"],
