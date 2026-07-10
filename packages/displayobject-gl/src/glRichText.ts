@@ -198,7 +198,7 @@ function layoutRichText(
   computeTextLayout(result, {
     text,
     formatRanges,
-    width: data.wordWrap ? data.width : 10000,
+    width: data.width,
     height: data.height,
     measure,
     multiline: data.multiline,
