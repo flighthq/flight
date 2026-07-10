@@ -124,6 +124,7 @@ export * from './ForceFalloff';
 export * from './FrameScript';
 export * from './Frustum';
 export * from './FxaaEffect';
+export * from './GameState';
 export * from './GamepadAxisKind';
 export * from './GamepadButtonKind';
 export * from './GamepadMappingKind';

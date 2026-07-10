@@ -32,6 +32,7 @@ export * from '@flighthq/filters-math';
 export * from '@flighthq/filters-surface';
 export * from '@flighthq/filters-wgpu';
 export * from '@flighthq/font';
+export * from '@flighthq/gamestate';
 export * from '@flighthq/geolocation';
 export * from '@flighthq/geometry';
 export * from '@flighthq/haptics';

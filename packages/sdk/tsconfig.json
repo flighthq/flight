@@ -40,6 +40,7 @@
     { "path": "../filters-math" },
     { "path": "../filters-surface" },
     { "path": "../filters-wgpu" },
+    { "path": "../gamestate" },
     { "path": "../geolocation" },
     { "path": "../geometry" },
     { "path": "../haptics" },
