@@ -114,6 +114,7 @@
     "@flighthq/skeleton": "*",
     "@flighthq/socket": "*",
     "@flighthq/spatial": "*",
+    "@flighthq/spring": "*",
     "@flighthq/sprite": "*",
     "@flighthq/spritesheet": "*",
     "@flighthq/spritesheet-formats": "*",

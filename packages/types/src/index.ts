@@ -382,6 +382,7 @@ export * from './Spatial';
 export * from './SpecularGlossinessPbrMaterial';
 export * from './SpecularPbrMaterial';
 export * from './SpotLight';
+export * from './Spring';
 export * from './Sprite';
 export * from './SpriteRenderer';
 export * from './Spritesheet';

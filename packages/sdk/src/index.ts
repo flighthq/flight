@@ -83,6 +83,7 @@ export * from '@flighthq/signals';
 export * from '@flighthq/skeleton';
 export * from '@flighthq/socket';
 export * from '@flighthq/spatial';
+export * from '@flighthq/spring';
 export * from '@flighthq/sprite';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/spritesheet-formats';

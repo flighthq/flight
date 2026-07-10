@@ -216,6 +216,8 @@
       "@flighthq/socket/*": ["./packages/socket/src/*"],
       "@flighthq/spatial": ["./packages/spatial/src/index.ts"],
       "@flighthq/spatial/*": ["./packages/spatial/src/*"],
+      "@flighthq/spring": ["./packages/spring/src/index.ts"],
+      "@flighthq/spring/*": ["./packages/spring/src/*"],
       "@flighthq/spritesheet": ["./packages/spritesheet/src/index.ts"],
       "@flighthq/spritesheet/*": ["./packages/spritesheet/src/*"],
       "@flighthq/spritesheet-formats": ["./packages/spritesheet-formats/src/index.ts"],
