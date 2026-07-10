@@ -1,5 +1,10 @@
 import { invalidateNodeLocalBounds } from '@flighthq/node';
-import { reserveParticleEmitter } from '@flighthq/sprite';
+import {
+  ensureParticleEmitterStateCapacity,
+  getParticleEmitterSignals,
+  sampleParticleColorCurve,
+  sampleParticleCurve,
+} from '@flighthq/particles';
 import type {
   ParticleEmitter,
   ParticleEmitterCallbacks,
@@ -8,13 +13,11 @@ import type {
   WorldTransform2D,
 } from '@flighthq/types';
 
-import { sampleParticleColorCurve, sampleParticleCurve } from './curve';
-import { getParticleEmitterSignals } from './particleEmitterSignals';
-import { ensureParticleEmitterStateCapacity } from './particleEmitterState';
+import { reserveParticleEmitter } from './particleEmitter';
 
 export type { ParticleEmitterCallbacks, WorldTransform2D };
 
-const PARTICLE_TRANSFORM_STRIDE = 4; // must match scene-sprite/particleEmitter.ts
+const PARTICLE_TRANSFORM_STRIDE = 4; // must match ./particleEmitter
 const TWO_PI = Math.PI * 2;
 
 /** True once a finite, non-looping emitter has finished emitting AND all of its

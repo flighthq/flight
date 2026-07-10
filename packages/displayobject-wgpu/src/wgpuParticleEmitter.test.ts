@@ -1,7 +1,7 @@
+import { createParticleEmitter } from '@flighthq/particleemitter';
 import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
-import { createParticleEmitter } from '@flighthq/sprite';
 
 import { defaultWgpuParticleEmitterRenderer, drawWgpuParticleEmitter } from './wgpuParticleEmitter';
 

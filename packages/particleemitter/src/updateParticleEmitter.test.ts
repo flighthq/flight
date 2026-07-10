@@ -1,9 +1,8 @@
 import { createRandomSource } from '@flighthq/math';
-import { createParticleEmitter, reserveParticleEmitter } from '@flighthq/sprite';
+import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState } from './particleEmitterState';
+import { createParticleEmitter, reserveParticleEmitter } from './particleEmitter';
 import { prewarmParticleEmitter } from './prewarmParticleEmitter';
 import { isParticleEmitterComplete, updateParticleEmitter } from './updateParticleEmitter';
 

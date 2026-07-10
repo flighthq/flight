@@ -1,6 +1,3 @@
-import { createParticleEmitter } from '@flighthq/sprite';
-import type { TextureAtlas } from '@flighthq/types';
-
 import {
   buildParticleColorCurve,
   buildParticleCurve,
@@ -13,16 +10,6 @@ import {
   sampleParticleColorCurve,
   sampleParticleCurve,
 } from './curve';
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState } from './particleEmitterState';
-import { updateParticleEmitter } from './updateParticleEmitter';
-
-function makeAtlas(): TextureAtlas {
-  return {
-    image: null,
-    regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
-  } as TextureAtlas;
-}
 
 describe('buildParticleColorCurve', () => {
   it('bakes an RGB function into an interleaved LUT', () => {
@@ -108,56 +95,6 @@ describe('lerpHsvInPlace', () => {
     expect(out[3]).toBeCloseTo(1); // red at t=0
     expect(out[4]).toBeCloseTo(0);
     expect(out[5]).toBeCloseTo(0);
-  });
-});
-
-describe('lifetime curves in updateParticleEmitter', () => {
-  function spawnOne(configOverrides: Parameters<typeof createParticleEmitterConfig>[0]) {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
-    const state = createParticleEmitterState();
-    const config = createParticleEmitterConfig({
-      spawnRate: 1,
-      lifetimeMin: 1,
-      lifetimeMax: 1,
-      speedMin: 0,
-      speedMax: 0,
-      ...configOverrides,
-    });
-    updateParticleEmitter(emitter, state, config, 1); // spawn one particle
-    return { emitter, state, config };
-  }
-
-  it('alphaCurve drives alpha non-linearly over lifetime', () => {
-    // A curve that is 1 at birth, dips to 0 at mid-life, back to 1 at death.
-    const { emitter, state, config } = spawnOne({ alphaCurve: [1, 0, 1] });
-    updateParticleEmitter(emitter, state, config, 0.5); // → mid-life
-    expect(emitter.data.alphas[0]).toBeCloseTo(0, 2);
-  });
-
-  it('colorCurve overrides the start/end gradient', () => {
-    // green at birth, red at death (interleaved RGB).
-    const { emitter, state, config } = spawnOne({
-      colorCurve: [0, 1, 0, 1, 0, 0],
-      colorStartR: 0.123, // would be used by the linear path; curve must win
-    });
-    updateParticleEmitter(emitter, state, config, 0.5);
-    expect(emitter.data.colors[0]).toBeCloseTo(0.5); // R halfway
-    expect(emitter.data.colors[1]).toBeCloseTo(0.5); // G halfway
-  });
-
-  it('scaleCurve multiplies the spawn scale', () => {
-    const { emitter, state, config } = spawnOne({
-      scaleMin: 2,
-      scaleMax: 2,
-      scaleCurve: [1, 0.5, 0], // shrink to nothing
-    });
-    updateParticleEmitter(emitter, state, config, 0.5); // mid-life → factor 0.5
-    expect(emitter.data.transforms[3]).toBeCloseTo(1, 2); // 2 * 0.5
-  });
-
-  it('sets curve-driven values at spawn time (t=0)', () => {
-    const { emitter } = spawnOne({ alphaCurve: [0.25, 1] });
-    expect(emitter.data.alphas[0]).toBeCloseTo(0.25, 2);
   });
 });
 

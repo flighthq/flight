@@ -76,6 +76,7 @@
     "@flighthq/network": "*",
     "@flighthq/node": "*",
     "@flighthq/notification": "*",
+    "@flighthq/particleemitter": "*",
     "@flighthq/particles": "*",
     "@flighthq/particles-formats": "*",
     "@flighthq/picking": "*",

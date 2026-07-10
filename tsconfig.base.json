@@ -156,6 +156,8 @@
       "@flighthq/path-boolean/*": ["./packages/path-boolean/src/*"],
       "@flighthq/path-formats": ["./packages/path-formats/src/index.ts"],
       "@flighthq/path-formats/*": ["./packages/path-formats/src/*"],
+      "@flighthq/particleemitter": ["./packages/particleemitter/src/index.ts"],
+      "@flighthq/particleemitter/*": ["./packages/particleemitter/src/*"],
       "@flighthq/particles": ["./packages/particles/src/index.ts"],
       "@flighthq/particles/*": ["./packages/particles/src/*"],
       "@flighthq/picking": ["./packages/picking/src/index.ts"],

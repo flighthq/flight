@@ -43,6 +43,7 @@
     "@flighthq/velocity": "*"
   },
   "devDependencies": {
+    "@flighthq/particleemitter": "*",
     "@flighthq/sprite": "*",
     "typescript": "^5.3.0"
   },
