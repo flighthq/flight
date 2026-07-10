@@ -179,7 +179,7 @@ export function writeSurfacePixels32(dest: Readonly<SurfaceRegion>, pixels: Read
 // rather than silently degrading to Normal mid-loop.
 function assertCompositeBlendMode(blendMode: BlendMode): void {
   if (blendMode === BlendMode.Alpha || blendMode === BlendMode.Shader) {
-    throw new Error(`BlendMode.${BlendMode[blendMode]} is not supported by surface compositing`);
+    throw new Error(`BlendMode.${blendMode} is not supported by surface compositing`);
   }
 }
 
@@ -204,7 +204,7 @@ function blendChannel(mode: BlendMode, cb: number, cs: number): number {
       return Math.abs(cb - cs);
     case BlendMode.Overlay:
       return cb < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
-    case BlendMode.Hardlight:
+    case BlendMode.HardLight:
       return cs < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
     case BlendMode.Invert:
       return 255 - cb;

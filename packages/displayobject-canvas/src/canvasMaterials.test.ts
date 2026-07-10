@@ -35,8 +35,8 @@ describe('applyCanvasBlendMode', () => {
     expect(state.context.globalCompositeOperation).toBe('difference');
   });
 
-  it('should set globalCompositeOperation to "hard-light" for BlendMode.Hardlight', () => {
-    applyCanvasBlendMode(state, BlendMode.Hardlight);
+  it('should set globalCompositeOperation to "hard-light" for BlendMode.HardLight', () => {
+    applyCanvasBlendMode(state, BlendMode.HardLight);
     expect(state.context.globalCompositeOperation).toBe('hard-light');
   });
 
