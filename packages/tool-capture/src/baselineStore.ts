@@ -1,11 +1,11 @@
 // Per-test committed baseline store: one JSON file per test at <subject-root>/baselines/<name>.json,
 // holding every column's values, e.g. { "canvas": { "fingerprint": "…", "sha256": "…" }, "flight:webgl": {…} }.
-// capture-core writes each column's `sha256` (screenshot hash); compare-render writes its `fingerprint`
+// captureEntry writes each column's `sha256` (screenshot hash); compare-render writes its `fingerprint`
 // (coarse render fingerprint). Both read-merge-write so they preserve each other's fields and the other
 // columns. Output is prettier-compatible (sorted keys, 2-space, trailing newline) so it never churns the
 // format gate. Replaces the old tools/baselines/<subject>/<name>/<renderer>/{fingerprint.txt,baseline.sha256}.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 export type BaselineField = 'fingerprint' | 'sha256';
 type ColumnBaseline = Partial<Record<BaselineField, string>>;
@@ -21,6 +21,30 @@ const BASELINE_ROOTS: Record<string, string> = {
 export function baselinePath(root: string, subject: string, name: string): string {
   const base = BASELINE_ROOTS[subject] ?? subject;
   return join(root, base, 'baselines', `${name}.json`);
+}
+
+export function getBaselineField(
+  root: string,
+  subject: string,
+  name: string,
+  column: string,
+  field: BaselineField,
+): string | null {
+  return readBaseline(baselinePath(root, subject, name))[column]?.[field] ?? null;
+}
+
+export function setBaselineField(
+  root: string,
+  subject: string,
+  name: string,
+  column: string,
+  field: BaselineField,
+  value: string,
+): void {
+  const path = baselinePath(root, subject, name);
+  const data = readBaseline(path);
+  (data[column] ??= {})[field] = value;
+  writeBaseline(path, data);
 }
 
 function readBaseline(path: string): TestBaseline {
@@ -47,26 +71,11 @@ function writeBaseline(path: string, data: TestBaseline): void {
   writeFileSync(path, JSON.stringify(sorted, null, 2) + '\n');
 }
 
-export function getBaselineField(
-  root: string,
-  subject: string,
-  name: string,
-  column: string,
-  field: BaselineField,
-): string | null {
-  return readBaseline(baselinePath(root, subject, name))[column]?.[field] ?? null;
-}
-
-export function setBaselineField(
-  root: string,
-  subject: string,
-  name: string,
-  column: string,
-  field: BaselineField,
-  value: string,
-): void {
-  const path = baselinePath(root, subject, name);
-  const data = readBaseline(path);
-  (data[column] ??= {})[field] = value;
-  writeBaseline(path, data);
-}
+// Per-subject baseline root: baselines colocate with their suite (functional/examples are
+// top-level; the landing site lives under site). One JSON file per test under the root's
+// baselines/ dir.
+const BASELINE_ROOTS: Record<string, string> = {
+  functional: 'functional',
+  examples: 'examples',
+  site: 'site',
+};

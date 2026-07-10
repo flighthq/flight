@@ -36,11 +36,7 @@
 // Baselines live at tests/{tool}/baselines/{name}.json (tracked), keyed by column id.
 
 import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface';
-import type { BrowserContext, Page } from '@playwright/test';
-import pc from 'picocolors';
-
-import { getBaselineField, setBaselineField } from './baseline-store.js';
-import type { DetailTone, Tool } from './capture-core.js';
+import type { DetailTone, Tool } from '@flighthq/tool-capture';
 import {
   BACKEND_UNAVAILABLE,
   discoverEntries,
@@ -48,6 +44,7 @@ import {
   formatStatusLine,
   formatSummaryCount,
   formatSummaryLine,
+  getBaselineField,
   installAbortHandler,
   isBrowserClosedError,
   launchBrowser,
@@ -55,7 +52,10 @@ import {
   resolveServer,
   resolveStaticServer,
   routeSegment,
-} from './capture-core.js';
+  setBaselineField,
+} from '@flighthq/tool-capture';
+import type { BrowserContext, Page } from '@playwright/test';
+import pc from 'picocolors';
 
 const argv = process.argv.slice(2);
 

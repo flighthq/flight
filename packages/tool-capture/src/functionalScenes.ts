@@ -1,5 +1,5 @@
 // Functional scene discovery — the single source of truth shared by the functional Vite harness
-// (tools/functional/vite.config.ts) and the capture pipeline (capture-core.ts).
+// (tools/functional/vite.config.ts) and the capture pipeline (discoverEntries).
 //
 // A scene is a file under functional/scenes/. Its filename encodes its backend set:
 //   <name>.ts               backend-agnostic — one file that runs on every default backend.
@@ -7,31 +7,15 @@
 // The backend a comparison groups by is the `<name>`; the set of backends a name runs on is simply
 // which files exist. There is no package.json and no renderers[] field: existence is the manifest.
 
-import { existsSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 export const FUNCTIONAL_BACKENDS = ['canvas', 'dom', 'webgl', 'webgpu'] as const;
 export type FunctionalBackend = (typeof FUNCTIONAL_BACKENDS)[number];
 
-// The backends a backend-agnostic (no-suffix) scene runs on, in capture order.
-const DEFAULT_BACKENDS: FunctionalBackend[] = ['dom', 'canvas', 'webgl', 'webgpu'];
-
 export interface FunctionalScene {
   name: string;
   renderers: string[];
-}
-
-function parseSceneFile(file: string): { name: string; backend: FunctionalBackend | null } | null {
-  if (!file.endsWith('.ts')) return null;
-  const stem = file.slice(0, -'.ts'.length);
-  const dot = stem.lastIndexOf('.');
-  if (dot !== -1) {
-    const suffix = stem.slice(dot + 1);
-    if ((FUNCTIONAL_BACKENDS as readonly string[]).includes(suffix)) {
-      return { name: stem.slice(0, dot), backend: suffix as FunctionalBackend };
-    }
-  }
-  return { name: stem, backend: null };
 }
 
 // Every scene grouped by name, each with the sorted backend set it runs on. A name is either
@@ -68,3 +52,19 @@ export function functionalSceneFile(scenesDir: string, name: string, backend: st
   const specific = join(scenesDir, `${name}.${backend}.ts`);
   return existsSync(specific) ? specific : join(scenesDir, `${name}.ts`);
 }
+
+function parseSceneFile(file: string): { name: string; backend: FunctionalBackend | null } | null {
+  if (!file.endsWith('.ts')) return null;
+  const stem = file.slice(0, -'.ts'.length);
+  const dot = stem.lastIndexOf('.');
+  if (dot !== -1) {
+    const suffix = stem.slice(dot + 1);
+    if ((FUNCTIONAL_BACKENDS as readonly string[]).includes(suffix)) {
+      return { name: stem.slice(0, dot), backend: suffix as FunctionalBackend };
+    }
+  }
+  return { name: stem, backend: null };
+}
+
+// The backends a backend-agnostic (no-suffix) scene runs on, in capture order.
+const DEFAULT_BACKENDS: FunctionalBackend[] = ['dom', 'canvas', 'webgl', 'webgpu'];

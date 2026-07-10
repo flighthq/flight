@@ -79,6 +79,12 @@
       }
     },
     {
+      "files": ["packages/tool-*/src/**/*.{ts,tsx}"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
       "files": ["**/*.test.{ts,tsx}"],
       "rules": {
         "typescript/no-explicit-any": "off",

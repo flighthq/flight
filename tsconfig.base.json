@@ -32,6 +32,8 @@
       "@flighthq/filesystem/*": ["./packages/filesystem/src/*"],
       "@flighthq/host-electron": ["./packages/host-electron/src/index.ts"],
       "@flighthq/host-electron/*": ["./packages/host-electron/src/*"],
+      "@flighthq/tool-capture": ["./packages/tool-capture/src/index.ts"],
+      "@flighthq/tool-capture/*": ["./packages/tool-capture/src/*"],
       "@flighthq/notification": ["./packages/notification/src/index.ts"],
       "@flighthq/notification/*": ["./packages/notification/src/*"],
       "@flighthq/shell": ["./packages/shell/src/index.ts"],

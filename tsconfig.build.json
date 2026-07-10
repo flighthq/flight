@@ -116,6 +116,7 @@
     { "path": "./packages/tileset" },
     { "path": "./packages/tilemap-formats" },
     { "path": "./packages/timeline" },
+    { "path": "./packages/tool-capture" },
     { "path": "./packages/tray" },
     { "path": "./packages/tween" },
     { "path": "./packages/easing" },
