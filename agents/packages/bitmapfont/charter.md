@@ -35,5 +35,5 @@ _Append-only, dated, blessed rulings._
 ## Open directions
 
 1. **SDF/MSDF generation + shader.** Field-atlas generation (or bake from `glyphatlas`'s SDF mode) and the crisp-scaling shader in `render-gl`/`render-wgpu`.
-2. **Multi-page fonts.** A bitmap font spanning several atlas pages (large CJK sets); glyph entries carry a page index.
+2. **Multi-page fonts (the seam is now page-aware — [2026-07-10]).** A bitmap font spanning several atlas pages (large CJK sets). The `GlyphSource` seam already carries this: `GlyphEntry.page` names each glyph's page and `getGlyphAtlasImage(page)` returns that page's image, and `@flighthq/bitmaptext` already draws one QuadBatch per page. `bitmapfont` is single-page for now (`createBitmapFont` stamps `page: 0`, `getGlyphAtlasImage(0)` returns `font.atlas.image`). The remaining producer work: hold N page images (an atlas per page or a page→image map) and let `@flighthq/bitmapfont-formats` populate each glyph's page from a multi-page `.fnt`.
 3. **Fallback chains.** Compose multiple `GlyphSource`s (a bitmap font + a `glyphatlas` fallback for missing glyphs) behind one seam.
