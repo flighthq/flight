@@ -35,6 +35,7 @@
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/clock": "*",
+    "@flighthq/collision": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
     "@flighthq/displayobject": "*",

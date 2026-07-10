@@ -18,6 +18,7 @@
     { "path": "../clip" },
     { "path": "../clipboard" },
     { "path": "../clock" },
+    { "path": "../collision" },
     { "path": "../device" },
     { "path": "../dialog" },
     { "path": "../displayobject" },

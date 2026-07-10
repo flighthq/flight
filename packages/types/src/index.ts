@@ -67,6 +67,7 @@ export * from './ClipboardWatch';
 export * from './ClipRegion';
 export * from './Clock';
 export * from './ClockOptions';
+export * from './Collision';
 export * from './CollisionResponse';
 export * from './ColorBlindSimulationEffect';
 export * from './ColorGradeEffect';
