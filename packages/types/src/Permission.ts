@@ -1,4 +1,4 @@
-// Permission seam. Free functions in @flighthq/permission delegate to the active PermissionBackend
+// Permission seam. Free functions in @flighthq/permissions delegate to the active PermissionBackend
 // (web default over navigator.permissions + each permission's concrete request path, or a native
 // host's). State reads and requests resolve to a three-state result and never throw — an absent API,
 // an unqueryable name, or a denied request is an expected-failure surface, not a programmer error.

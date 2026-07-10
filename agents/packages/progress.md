@@ -144,7 +144,7 @@ Batch charter blessing 2026-07-02. Shared principles: [platform-integration.md](
 | screen | direction | 2026-07-02 | `getScreenNearestRect` is a TODO (implement actual nearest logic). Remove divider comments in test. |
 | device | direction | 2026-07-02 | Evaluate `detectDesktopUa` refactor to use useragent (not forced DRY). |
 | storage | direction | 2026-07-02 | Signal opt-in convention applies. No package-specific sweep work. |
-| network | direction | 2026-07-02 | Fix: `detectNetworkReachability` fresh backend per call, `anyAbortSignal` listener leak. |
+| connectivity | direction | 2026-07-02 | Fix: `detectConnectivityReachability` fresh backend per call, `anyAbortSignal` listener leak. |
 | power | direction | 2026-07-02 | Add `enablePowerSignals` opt-in — currently eagerly allocates 10 signals. |
 | lifecycle | direction | 2026-07-02 | Highest suite score (58). No sweep work. |
 | keyboard | direction | 2026-07-02 | `transition.height` frozen at 0 — latent bug, document for native hosts. |
