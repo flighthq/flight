@@ -95,6 +95,7 @@ Host/OS integration so applications need no escape hatch out of the SDK. Each ca
 - `@flighthq/geolocation`: current position and position watches.
 - `@flighthq/webcam`: take photo / pick image.
 - `@flighthq/statusbar`: mobile status-bar style, visibility, color.
+- `@flighthq/net` (command): HTTP(S) transport — the URLLoader/URLRequest home. `sendNetRequest(request, options?)` over a swappable `NetBackend` (`getNetBackend`/`setNetBackend`/`createWebNetBackend`); plain-data `NetRequest`/`NetResponse`, `text`/`json`/`arraybuffer`/`blob` decode, timeout + `AbortSignal` cancellation, opt-in download-progress signal. Expected transport failures (network error, DNS, timeout) resolve to a sentinel `NetResponse` (status 0, ok false); a non-2xx is a normal response with the real status. Distinct from `@flighthq/network` connectivity status.
 - `@flighthq/network` (event): connectivity status and online/offline signals.
 - `@flighthq/power` (event): battery/charging status, low-power and keep-awake.
 - `@flighthq/lifecycle` (event): app active/inactive/background, resume/pause, back button.
