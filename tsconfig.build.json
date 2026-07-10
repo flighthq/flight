@@ -16,6 +16,7 @@
     { "path": "./packages/clipboard" },
     { "path": "./packages/clock" },
     { "path": "./packages/collision" },
+    { "path": "./packages/debug" },
     { "path": "./packages/device" },
     { "path": "./packages/dialog" },
     { "path": "./packages/displayobject" },

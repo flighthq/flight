@@ -86,6 +86,7 @@ export * from './CubeTexture';
 export * from './CurlNoiseForce';
 export * from './Cursor';
 export * from './CustomShaderEffect';
+export * from './Debug';
 export * from './DecodedImage';
 export * from './DepthMaterial';
 export * from './Device';
