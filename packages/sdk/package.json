@@ -65,6 +65,7 @@
     "@flighthq/haptics": "*",
     "@flighthq/input": "*",
     "@flighthq/interaction": "*",
+    "@flighthq/intl": "*",
     "@flighthq/ipc": "*",
     "@flighthq/keyboard": "*",
     "@flighthq/lifecycle": "*",
