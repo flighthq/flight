@@ -1,3 +1,4 @@
+export * from './cleanPath';
 export * from './containsPathPoint';
 export * from './copyPath';
 export * from './dashPath';
