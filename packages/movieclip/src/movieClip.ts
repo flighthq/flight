@@ -3,18 +3,6 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
 } from '@flighthq/displayobject';
-import type {
-  FrameScript,
-  MovieClip,
-  MovieClipData,
-  MovieClipRuntime,
-  MovieClipSignals,
-  PartialNode,
-  TimelineLabel,
-  TimelineSource,
-} from '@flighthq/types';
-import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types';
-
 import {
   addTimelineFrameScript,
   createTimeline,
@@ -30,7 +18,18 @@ import {
   removeTimelineFrameScript,
   stopTimeline,
   updateTimeline,
-} from './timeline';
+} from '@flighthq/timeline';
+import type {
+  FrameScript,
+  MovieClip,
+  MovieClipData,
+  MovieClipRuntime,
+  MovieClipSignals,
+  PartialNode,
+  TimelineLabel,
+  TimelineSource,
+} from '@flighthq/types';
+import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types';
 
 // The MovieClip display node lives here, with its playback engine — a MovieClip is a DisplayObject whose
 // content is driven by a timeline, so the node and the engine that constructs its frames are one feature.

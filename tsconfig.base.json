@@ -164,6 +164,8 @@
       "@flighthq/particles-formats/*": ["./packages/particles-formats/src/*"],
       "@flighthq/media": ["./packages/media/src/index.ts"],
       "@flighthq/media/*": ["./packages/media/src/*"],
+      "@flighthq/movieclip": ["./packages/movieclip/src/index.ts"],
+      "@flighthq/movieclip/*": ["./packages/movieclip/src/*"],
       "@flighthq/displayobject-canvas": ["./packages/displayobject-canvas/src/index.ts"],
       "@flighthq/displayobject-canvas/*": ["./packages/displayobject-canvas/src/*"],
       "@flighthq/displayobject-dom": ["./packages/displayobject-dom/src/index.ts"],

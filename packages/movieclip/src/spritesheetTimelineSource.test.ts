@@ -1,11 +1,9 @@
 import { createDisplayContainer, getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createImageResource } from '@flighthq/image';
+import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import type { DisplayObject } from '@flighthq/types';
 
-import { createSpritesheet } from './spritesheet';
-import { createSpritesheetAnimation } from './spritesheetAnimation';
-import { createSpritesheetFrame } from './spritesheetFrame';
 import { createSpritesheetTimelineSource } from './spritesheetTimelineSource';
 
 function makeSheet(frameCount: number) {
