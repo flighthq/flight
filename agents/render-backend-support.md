@@ -23,7 +23,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Text underline | ✓ | ✓ | ✓ | ✓ |  |
 | Text strikethrough | ✓ | ✓ | ✗ | ✗ | see gap #5 |
 | Text background / border box | ✓ | ✓ | ✓ | ✓ |  |
-| Text alignment (center/right) | ✓ | ✓ | ✓ | ✓ | but needs `multiline:true`+`wordWrap:true`, see gap #7 |
+| Text alignment (center/right) | ✓ | ✓ | ✓ | ✓ | single-line and multiline both render (gap #7 fixed) |
 | Sprite / QuadBatch / Tilemap | ✓ | ✗ | ✓ | ✓ | no DOM renderer for the atlas-batch primitives |
 | Scale9 (nine-slice) | ✓ | ✓ | ✓ | ✓ | dom needed a barrel fix (now exported) |
 | Video | ✓ | ✓ | ✓ | ✓ |  |
@@ -48,7 +48,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 4. **Per-instance ColorTransform tint is gl/wgpu only.** Only `registerGlColorTransformMaterial` / `registerWgpuColorTransformMaterials` exist; Canvas/DOM bitmap renderers have no color-transform material renderer, so a `materialData` ColorTransform draws untinted there. (`bitmap-color-transform` sidesteps this by tinting source pixels via `applySurfaceColorTransform`, which is cross-backend.)
 5. **Text strikethrough not drawn on gl/wgpu** (the gl/wgpu RichText renderers handle `underline` but not `strikethrough`). Test `text-strikethrough` scoped to canvas/dom.
 6. **Orthographic projection renders blank on wgpu** (perspective is fine). Almost certainly a clip-space z-range issue — WebGPU NDC z is `[0,1]` vs WebGL `[-1,1]`, and the ortho matrix is not remapped for it. Test `camera-orthographic` scoped to gl (its `render.webgpu.ts` removed).
-7. **Single-line RichText alignment renders nothing.** `align:'center'/'right'` produces no output unless `multiline:true` + `wordWrap:true` give the line a width box. Alignment itself is implemented (`textLayout.ts`).
+7. **~~Single-line RichText alignment renders nothing.~~ FIXED.** The gl/canvas RichText renderers passed a `10000` wrap-prevention sentinel as the layout width when `wordWrap` was false, so `applyAlignment` (`textLayout.ts`) centered the line against 10000 and shifted it ~4975px off-screen. Both renderers now pass `data.width` unconditionally (wrapping stays `wordWrap`-gated inside `computeTextLayout`), so single-line `align:'center'/'right'` renders correctly. (Number retained to keep gap #8–#10 references stable.)
 
 ## Feature gaps (not implemented at all — implement before testing)
 
