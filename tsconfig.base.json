@@ -206,6 +206,8 @@
       "@flighthq/signals/*": ["./packages/signals/src/*"],
       "@flighthq/skeleton": ["./packages/skeleton/src/index.ts"],
       "@flighthq/skeleton/*": ["./packages/skeleton/src/*"],
+      "@flighthq/socket": ["./packages/socket/src/index.ts"],
+      "@flighthq/socket/*": ["./packages/socket/src/*"],
       "@flighthq/spritesheet": ["./packages/spritesheet/src/index.ts"],
       "@flighthq/spritesheet/*": ["./packages/spritesheet/src/*"],
       "@flighthq/spritesheet-formats": ["./packages/spritesheet-formats/src/index.ts"],

@@ -109,6 +109,7 @@
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
     "@flighthq/skeleton": "*",
+    "@flighthq/socket": "*",
     "@flighthq/sprite": "*",
     "@flighthq/spritesheet": "*",
     "@flighthq/spritesheet-formats": "*",

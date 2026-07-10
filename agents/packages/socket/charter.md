@@ -22,7 +22,7 @@ The complete, Flight-idiomatic persistent-connection transport: connect to a URL
 
 ## Boundaries
 
-- **Depends on `@flighthq/types` + `@flighthq/signals` + `@flighthq/entity`** (the entity/runtime pair) and, for the web backend, the DOM `WebSocket`. No display, no renderer.
+- **Depends on `@flighthq/types` + `@flighthq/signals`** and, for the web backend, the DOM `WebSocket`. No display, no renderer. (Corrected 2026-07-10 from the drafted `+ @flighthq/entity`: the entity/runtime split is honored with a plain opaque `SocketRuntime` object in `@flighthq/types` — `@flighthq/entity`'s scene-graph binding machinery is never used by a transport, and pulling it in would add unused weight. Matches `net`/`network`.)
 - **Transport only.** It carries frames; it does not define application protocols, reconnection policy, heartbeats, or message framing above the socket — those compose over it (a later `socket-reconnect`/app layer).
 - **Not HTTP request/response.** One-shot fetch-style requests are `@flighthq/net`. `socket` is the persistent channel.
 - **Web backend = `WebSocket`.** Raw TCP/UDP is only available where a native `SocketBackend` supplies it; the web backend returns a sentinel for unsupported transports rather than throwing.
