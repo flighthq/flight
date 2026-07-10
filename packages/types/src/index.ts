@@ -373,6 +373,7 @@ export * from './Skeleton';
 export * from './SkeletonValidationDiagnostic';
 export * from './SketchEffect';
 export * from './SmaaEffect';
+export * from './Socket';
 export * from './SoftKeyboardEasingKind';
 export * from './SpecularGlossinessPbrMaterial';
 export * from './SpecularPbrMaterial';

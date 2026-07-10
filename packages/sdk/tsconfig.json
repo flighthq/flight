@@ -90,6 +90,7 @@
     { "path": "../shortcut" },
     { "path": "../signals" },
     { "path": "../skeleton" },
+    { "path": "../socket" },
     { "path": "../sprite" },
     { "path": "../spritesheet" },
     { "path": "../spritesheet-formats" },

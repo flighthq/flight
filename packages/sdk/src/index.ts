@@ -78,6 +78,7 @@ export * from '@flighthq/shell';
 export * from '@flighthq/shortcut';
 export * from '@flighthq/signals';
 export * from '@flighthq/skeleton';
+export * from '@flighthq/socket';
 export * from '@flighthq/sprite';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/spritesheet-formats';
