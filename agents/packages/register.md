@@ -8,6 +8,7 @@ The single index of every package and its decomposition state — the system ove
 - **built-unblessed** — code exists, no direction yet. Needs a bless / reject / absorb verdict.
 - **recommended** — a breadth-review candidate (a proposal). Never rendered as blessed.
 - **rejected** — verdict reached: should not exist as a package. Kept as the audit trail so it is not re-proposed.
+- **rust-intended** — designated for a **Rust/wasm implementation, built in `flight-rs`** (which treats this monorepo as upstream). This repo is the **naming + architecture authority**: the charter here fully specifies the name, seam, and intended contract as guidance the downstream Rust repo abides by; the code is built there, never scaffolded here. Marked by `rust: <repo>` charter front-matter (e.g. `rust: flight-rs`); `todo.mjs` routes it to the TODO's `Rust-intended` section and out of the local chartered-unbuilt queue. Distinct from **spun-out** (`spunOut:`), which is the *past-tense* case — code that once lived here and was moved out (`surface-rs`). Use `rust:` to designate a *new* Rust cell forward; use `spunOut:` to record one that departed. Rust cells are compute-heavy work that belongs in the Rust box (shapers, from-scratch Unicode-table backends, rasterizers) — the TS side owns only the swappable seam they register behind.
 
 ## Fields (the schema to mechanize later)
 

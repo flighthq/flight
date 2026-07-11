@@ -62,6 +62,7 @@ const cells = readdirSync(here, { withFileTypes: true })
 
 const chartered = [];
 const external = []; // charter kept here for reference, but the code was spun out to another repo
+const rustIntended = []; // `rust:` — designated for a Rust impl in the named repo (built there, named/scoped here)
 const reserved = []; // charter reserves the name/concept, but it is deliberately not to be built yet
 const deepen = [];
 // Liveness: per-cell staleness signals so the review loop knows which stage each cell needs next.
@@ -82,6 +83,13 @@ for (const name of cells) {
   // not actionable local work — keep it out of chartered-unbuilt, deepen, and liveness entirely.
   if (charterMeta.spunOut) {
     external.push({ name, repo: charterMeta.spunOut });
+    continue;
+  }
+  // A `rust:` cell is DESIGNATED for a Rust implementation in the named repo (e.g. flight-rs), which
+  // treats this repo as upstream: the name + intended contract are authored HERE as guidance, the
+  // code is built THERE. Never scaffold a TS package for it here; keep it out of chartered-unbuilt.
+  if (charterMeta.rust) {
+    rustIntended.push({ name, repo: charterMeta.rust, what: firstProseLine(charter, 'What it is') ?? '(rust cell)' });
     continue;
   }
   // A reserved cell holds a name/concept on purpose but must NOT be built yet — keep it out of the
@@ -164,6 +172,18 @@ if (external.length > 0) {
   }
   lines.push('');
 }
+if (rustIntended.length > 0) {
+  lines.push('## Rust-intended — designated for a Rust impl elsewhere (this repo names + scopes; built there)');
+  lines.push('');
+  lines.push(
+    'This repo is the upstream naming/architecture authority for these cells; the Rust implementation is built in the named repo (which treats this repo as upstream). The charter here fully specifies the intended contract — do NOT scaffold a TS package for it here.',
+  );
+  lines.push('');
+  for (const { name, repo, what } of rustIntended) {
+    lines.push(`- **\`${name}\`** → built in \`${repo}\` — ${what}`);
+  }
+  lines.push('');
+}
 if (reserved.length > 0) {
   lines.push('## Reserved — name/concept held, do NOT build yet');
   lines.push('');
@@ -221,5 +241,5 @@ lines.push('');
 
 writeFileSync(join(here, 'TODO.md'), `${lines.join('\n')}`);
 console.log(
-  `TODO.md: ${chartered.length} chartered-unbuilt, ${reserved.length} reserved, ${external.length} external (spun out), ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
+  `TODO.md: ${chartered.length} chartered-unbuilt, ${reserved.length} reserved, ${external.length} external (spun out), ${rustIntended.length} rust-intended, ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
 );
