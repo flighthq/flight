@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
-    "@flighthq/geometry": "*",
     "@flighthq/signals": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/tileset": "*",

@@ -10,7 +10,6 @@
   },
   "references": [
     { "path": "../effects" },
-    { "path": "../filters" },
     { "path": "../filters-wgpu" },
     { "path": "../geometry" },
     { "path": "../render-wgpu" },

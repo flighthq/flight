@@ -29,8 +29,6 @@
   "dependencies": {
     "@flighthq/displayobject-canvas": "*",
     "@flighthq/effects": "*",
-    "@flighthq/filters": "*",
-    "@flighthq/filters-canvas": "*",
     "@flighthq/geometry": "*",
     "@flighthq/types": "*"
   },
