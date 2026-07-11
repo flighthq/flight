@@ -24,6 +24,7 @@ import {
   ensureWgpuQuadBatchResources,
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
+  recordWgpuSpriteBatchColorTransform,
 } from './wgpuSpriteBatch';
 
 interface WgpuShapeData {
@@ -186,6 +187,7 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
   packWgpuSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordWgpuSpriteBatchColorTransform(state, renderProxy.colorTransform, startCount);
   runtime.spriteBatchCount++;
 }
 

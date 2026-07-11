@@ -1,16 +1,11 @@
-import type { StandardPbrMaterial, UniformColorTransformMaterial } from '@flighthq/types';
-import {
-  ColorTransformMaterialKind,
-  StandardPbrMaterialKind,
-  UniformColorTransformMaterialKind,
-} from '@flighthq/types';
+import type { StandardPbrMaterial } from '@flighthq/types';
+import { StandardPbrMaterialKind } from '@flighthq/types';
 
-import { createColorTransform } from './colorTransform';
-import { createColorTransformMaterial, createUniformColorTransformMaterial } from './colorTransformMaterial';
 import { cloneMaterial, copyMaterial, createMaterial, equalsMaterial } from './material';
 import { createStandardPbrMaterial } from './pbrMaterials';
 
 const TestMaterialKind = 'TestMaterial';
+const OtherMaterialKind = 'OtherMaterial';
 
 describe('cloneMaterial', () => {
   it('returns a new object with the same kind', () => {
@@ -26,16 +21,6 @@ describe('cloneMaterial', () => {
     expect(clonePbr.metallic).toBe(0.5);
     expect(clonePbr.roughness).toBe(0.25);
     expect(clone.kind).toBe(StandardPbrMaterialKind);
-  });
-  it('deep-clones the colorTransform of a UniformColorTransformMaterial', () => {
-    const ct = createColorTransform({ redMultiplier: 0.5 });
-    const original = createUniformColorTransformMaterial(ct);
-    const clone = cloneMaterial(original) as UniformColorTransformMaterial;
-    expect(clone.colorTransform).not.toBe(original.colorTransform);
-    expect(clone.colorTransform.redMultiplier).toBe(0.5);
-    // Mutating the clone does not affect the original.
-    clone.colorTransform.redMultiplier = 1;
-    expect(original.colorTransform.redMultiplier).toBe(0.5);
   });
   it('produces a clone that is structurally equal to the original', () => {
     const original = createStandardPbrMaterial({ metallic: 0.7 });
@@ -58,14 +43,6 @@ describe('copyMaterial', () => {
     copyMaterial(material, material);
     expect(material.metallic).toBe(0.5);
   });
-  it('deep-copies the colorTransform sub-entity', () => {
-    const ct = createColorTransform({ redMultiplier: 0.4 });
-    const source = createUniformColorTransformMaterial(ct);
-    const out = createUniformColorTransformMaterial();
-    copyMaterial(out, source);
-    expect(out.colorTransform).not.toBe(source.colorTransform);
-    expect(out.colorTransform.redMultiplier).toBe(0.4);
-  });
 });
 
 describe('createMaterial', () => {
@@ -82,16 +59,7 @@ describe('equalsMaterial', () => {
   });
 
   it('is false for different kinds', () => {
-    expect(equalsMaterial(createColorTransformMaterial(), createUniformColorTransformMaterial())).toBe(false);
-  });
-
-  it('compares the color transform of uniform color transform materials', () => {
-    const a = createUniformColorTransformMaterial(createColorTransform({ redMultiplier: 0.5 }));
-    const b = createUniformColorTransformMaterial(createColorTransform({ redMultiplier: 0.5 }));
-    const c = createUniformColorTransformMaterial(createColorTransform({ redMultiplier: 0.25 }));
-    expect(a.kind).toBe(UniformColorTransformMaterialKind);
-    expect(equalsMaterial(a, b)).toBe(true);
-    expect(equalsMaterial(a, c)).toBe(false);
+    expect(equalsMaterial(createMaterial(TestMaterialKind), createMaterial(OtherMaterialKind))).toBe(false);
   });
 
   it('compares scalar fields of standard PBR materials structurally', () => {
@@ -104,7 +72,6 @@ describe('equalsMaterial', () => {
   });
 
   it('treats same-kind materials without comparable fields as equal', () => {
-    expect(equalsMaterial(createColorTransformMaterial(), createColorTransformMaterial())).toBe(true);
-    expect(createColorTransformMaterial().kind).toBe(ColorTransformMaterialKind);
+    expect(equalsMaterial(createMaterial(TestMaterialKind), createMaterial(TestMaterialKind))).toBe(true);
   });
 });

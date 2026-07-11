@@ -1,4 +1,5 @@
 import type { BlendMode } from './BlendMode';
+import type { ColorTransform } from './ColorTransform';
 import type { Kind } from './Entity';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
@@ -44,7 +45,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // or add a vendor-prefixed one.
   glBlendModeRegistry?: Map<BlendMode, GlBlendRealization> | null;
 
-  colorTransformBitmapShader?: GlBitmapShader;
   defaultBitmapShader: GlBitmapShader;
   particleShader?: GlParticleShader;
   particleCornerBuffer?: WebGLBuffer;
@@ -83,6 +83,18 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   spriteBatchInstanceBuffer: WebGLBuffer | null;
   spriteBatchInstanceData: Float32Array;
   spriteBatchTexture: CanvasImageSource | null;
+  // Color-transform fold state for the active sprite batch. Orthogonal to the material and never a
+  // flush key, so tinted and untinted nodes with the same texture+blend share one batch. Mode 0 =
+  // no tint (lean base shader), 1 = one uniform tint for the whole batch (u_ctMult/u_ctOff), 2 =
+  // per-instance tints (a_ctMult/a_ctOff). A batch starts at 0, rises to 1 on the first tint, and
+  // promotes to 2 — back-filling already-written instances with the prior value/identity — when
+  // tints diverge, so attaching a tint only ever promotes a batch, never splits it.
+  // spriteBatchColorTransformData/Buffer hold the per-instance floats (8 per instance) for mode 2;
+  // spriteBatchUniformColorTransform holds the shared value for mode 1.
+  spriteBatchColorTransformMode: number;
+  spriteBatchUniformColorTransform: ColorTransform | null;
+  spriteBatchColorTransformData: Float32Array;
+  spriteBatchColorTransformBuffer: WebGLBuffer | null;
   // Per-clip unwind stack: the form of each pushed clip (scissor vs stencil contour) so popClip
   // un-installs the right gate.
   clipForms: ('rect' | 'contour')[];
@@ -146,9 +158,9 @@ export interface GlColorTransformInstancedShader {
   locTexture: WebGLUniformLocation;
 }
 
-// Per-batch color transform shader for UniformColorTransformMaterial — the base quad-batch layout
-// plus color-transform uniforms applied in the fragment shader. Lives with the color transform
-// materials, not the base shader, so the default pipeline carries no color-transform record.
+// Per-batch color transform shader — the base quad-batch layout plus color-transform uniforms
+// applied in the fragment shader. A distinct program from the lean base shader, selected only when a
+// whole batch shares one tint, so the default pipeline carries no color-transform record.
 export interface GlUniformColorTransformShader {
   program: WebGLProgram;
   locCorner: number;

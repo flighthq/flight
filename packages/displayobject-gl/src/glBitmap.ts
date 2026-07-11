@@ -10,7 +10,12 @@ import type {
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import { ensureGlQuadBatchShader, packGlSpriteBatchMaterialInstance, prepareGlSpriteBatchWrite } from './glSpriteBatch';
+import {
+  ensureGlQuadBatchShader,
+  packGlSpriteBatchMaterialInstance,
+  prepareGlSpriteBatchWrite,
+  recordGlSpriteBatchColorTransform,
+} from './glSpriteBatch';
 
 interface GlBitmapData {
   lastSrc: CanvasImageSource | null;
@@ -120,6 +125,7 @@ export function drawGlBitmap(state: GlRenderState, renderProxy: RenderProxy2D): 
   d[base + 11] = v1;
   d[base + 12] = renderProxy.alpha;
   packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordGlSpriteBatchColorTransform(state, renderProxy.colorTransform, startCount);
   runtime.spriteBatchCount++;
 }
 

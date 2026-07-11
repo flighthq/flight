@@ -11,6 +11,7 @@ import {
   flushWgpuSpriteBatch,
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
+  recordWgpuSpriteBatchColorTransform,
 } from './wgpuSpriteBatch';
 
 export function drawWgpuBitmap(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -87,6 +88,7 @@ export function drawWgpuBitmap(state: WgpuRenderState, renderProxy: RenderProxy2
   d[base + 11] = v1;
   d[base + 12] = renderProxy.alpha;
   packWgpuSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordWgpuSpriteBatchColorTransform(state, renderProxy.colorTransform, startCount);
   runtime.spriteBatchCount++;
 }
 

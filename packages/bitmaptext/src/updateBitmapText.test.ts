@@ -1,5 +1,4 @@
-import type { GlyphEntry, GlyphSource, ImageResource, UniformColorTransformMaterial } from '@flighthq/types';
-import { UniformColorTransformMaterialKind } from '@flighthq/types';
+import type { GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapText, getBitmapTextBounds, getBitmapTextQuadBatches, setBitmapTextColor } from './bitmapText';
@@ -183,17 +182,16 @@ describe('updateBitmapText', () => {
     expect(bounds.height).toBe(8);
   });
 
-  it('sets a tint material only for non-white colors', () => {
+  it('sets a whole-batch color-transform tint only for non-white colors', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
-    expect(getBitmapTextQuadBatches(text)[0]!.material).toBeNull();
+    expect(getBitmapTextQuadBatches(text)[0]!.colorTransform).toBeNull();
     setBitmapTextColor(text, 0xff0000ff);
     updateBitmapText(text);
-    const material = getBitmapTextQuadBatches(text)[0]!.material as UniformColorTransformMaterial | null;
-    expect(material).not.toBeNull();
-    expect(material!.kind).toBe(UniformColorTransformMaterialKind);
-    expect(material!.colorTransform.redMultiplier).toBe(1);
-    expect(material!.colorTransform.greenMultiplier).toBe(0);
+    const colorTransform = getBitmapTextQuadBatches(text)[0]!.colorTransform;
+    expect(colorTransform).not.toBeNull();
+    expect(colorTransform!.redMultiplier).toBe(1);
+    expect(colorTransform!.greenMultiplier).toBe(0);
   });
 
   it('produces exactly one batch bound to the page-0 image for a single-page source', () => {

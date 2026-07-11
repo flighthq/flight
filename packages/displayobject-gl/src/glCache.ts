@@ -65,7 +65,6 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   (cacheState as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
   (cacheState as { gl: WebGL2RenderingContext }).gl = screenState.gl;
   cacheRuntime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
-  cacheRuntime.colorTransformBitmapShader = screenRuntime.colorTransformBitmapShader;
   cacheRuntime.particleShader = screenRuntime.particleShader;
   cacheRuntime.particleCornerBuffer = screenRuntime.particleCornerBuffer;
   cacheRuntime.particleInstanceBuffer = screenRuntime.particleInstanceBuffer;

@@ -20,8 +20,8 @@ export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 export interface BitmapTextData extends DisplayObjectData {
   align: BitmapTextAlign;
   // Packed RGBA tint (`0xRRGGBBAA`) multiplied over the glyph pixels. `0xffffffff` (white) is the
-  // untinted default and leaves the backing batch material-free; any other value sets a
-  // UniformColorTransformMaterial on the batch (which needs a registered material renderer to show).
+  // untinted default and leaves the backing batch tint-free; any other value sets the batch's
+  // HasColorTransform trait, folded into the glyph draw as one whole-batch color-transform uniform.
   color: number;
   // The bound glyph source supplying per-glyph atlas rects, advances, kerning, and line metrics. A
   // live runtime binding (a method object), NOT serializable — a scene serialized with a BitmapText

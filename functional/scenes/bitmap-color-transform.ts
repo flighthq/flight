@@ -7,18 +7,16 @@
 // This is visual because a color transform's effect is per-pixel channel scaling — confirming it means
 // reading the rasterized output and seeing white become red.
 //
-// API note (investigated 2026-06-23): Flight has a node-attached ColorTransformMaterial
-// (packages/materials/src/colorTransformMaterial.ts → HasMaterial.material/materialData,
-// ColorTransformMaterialKind). However its material RENDERER is registered ONLY for the GL and WGPU
-// backends (registerGlColorTransformMaterial / wgpuColorTransformMaterial). The Canvas and DOM bitmap
-// renderers have no color-transform material renderer, so a node-attached ColorTransformMaterial
-// degrades to DefaultMaterialKind there (per packages/types/src/Material.ts) and would draw the bitmap
-// untinted — diverging across backends. Functional tests must agree byte-for-byte across Canvas/DOM/GL,
-// so this test applies the transform to the source PIXELS in JS via the genuine
-// `applySurfaceColorTransform` (the surface ColorTransform API) and a `createColorTransform` descriptor,
-// then blits the result. Every backend then draws identical bytes (the same pattern filter-pixelate
-// uses). The node-material path is the GPU-batched form of the same descriptor; it is exercised by the
-// GL/WGPU material unit tests, not here.
+// API note: Flight models a color transform as the node-level HasColorTransform trait
+// (packages/types/src/HasColorTransform.ts), an Adjustment folded directly into the GL/WGPU batch
+// draw (packages/displayobject-gl/src/glSpriteBatch.ts recordGlSpriteBatchColorTransform, and the
+// WGPU sibling). The Canvas and DOM bitmap renderers do not yet realize that trait, so a node-attached
+// color transform draws untinted there — diverging across backends. Functional tests must agree
+// byte-for-byte across Canvas/DOM/GL, so this test instead applies the transform to the source PIXELS
+// in JS via the genuine `applySurfaceColorTransform` (the surface ColorTransform API) and a
+// `createColorTransform` descriptor, then blits the result. Every backend then draws identical bytes
+// (the same pattern filter-pixelate uses). The node-trait fold is the GPU-batched form of the same
+// descriptor; it is exercised by the GL/WGPU sprite-batch unit tests, not here.
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

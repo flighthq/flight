@@ -81,7 +81,6 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.nearestSampler = screenRuntime.nearestSampler;
   cacheRuntime.textureCache = screenRuntime.textureCache;
   cacheRuntime.defaultBitmapShader = screenRuntime.defaultBitmapShader;
-  cacheRuntime.colorTransformBitmapShader = screenRuntime.colorTransformBitmapShader;
   cacheRuntime.particleInstanceBuffer = screenRuntime.particleInstanceBuffer;
   cacheRuntime.particleInstanceData = screenRuntime.particleInstanceData;
   cacheRuntime.particleInstanceCapacity = screenRuntime.particleInstanceCapacity;

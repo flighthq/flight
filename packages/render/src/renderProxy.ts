@@ -20,6 +20,7 @@ import type {
 import { BlendMode } from '@flighthq/types';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
+import { updateRenderProxyColorTransform } from './renderColorTransform';
 import { updateRenderProxyMaterial } from './renderMaterial';
 import { getRenderStateRuntime } from './renderState';
 import { updateRenderProxy2DTransform } from './renderTransform2d';
@@ -45,6 +46,7 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
     alpha: 1,
     appearanceFrameId: -1,
     blendMode: BlendMode.Normal,
+    colorTransform: null,
     material: null,
     materialData: null,
     lastAppearanceId: -1,
@@ -164,8 +166,8 @@ export function updateNodeClip(
   data.clipDepth = parentDepth + ((source as DisplayObject).clip != null ? 1 : 0);
 }
 
-// The one per-node update step for the 2D walk: appearance, transform, material, then the clip nesting
-// depth. Sprites and display objects share this single visitor.
+// The one per-node update step for the 2D walk: appearance, transform, material, color transform,
+// then the clip nesting depth. Sprites and display objects share this single visitor.
 export function updateRenderProxy2D(
   state: RenderState,
   source: Renderable,
@@ -175,6 +177,7 @@ export function updateRenderProxy2D(
   updateRenderProxyAppearance(state, data, parentData);
   updateRenderProxy2DTransform(state, data, parentData);
   updateRenderProxyMaterial(state, data, parentData);
+  updateRenderProxyColorTransform(state, data, parentData);
   updateNodeClip(state, source, data, parentData);
   // Record the content revision we synced at, so a later content-only change re-dirties the node.
   data.lastLocalContentId = getNodeLocalContentRevision(source as Node);
