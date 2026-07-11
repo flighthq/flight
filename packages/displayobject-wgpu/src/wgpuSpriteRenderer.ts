@@ -4,7 +4,11 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { RenderProxy2D, Sprite, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import { packWgpuSpriteBatchMaterialInstance, prepareWgpuSpriteBatchWrite } from './wgpuSpriteBatch';
+import {
+  packWgpuSpriteBatchMaterialInstance,
+  prepareWgpuSpriteBatchWrite,
+  recordWgpuSpriteBatchColorTransform,
+} from './wgpuSpriteBatch';
 
 function submitWgpuSpriteNode(state: WgpuRenderState, spriteNode: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
@@ -51,6 +55,7 @@ function submitWgpuSpriteNode(state: WgpuRenderState, spriteNode: RenderProxy2D)
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
   packWgpuSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
+  recordWgpuSpriteBatchColorTransform(state, spriteNode.colorTransform, instanceIndex);
   runtime.spriteBatchCount++;
 }
 

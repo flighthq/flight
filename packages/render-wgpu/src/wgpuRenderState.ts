@@ -129,6 +129,9 @@ export async function createWgpuRenderState(
   runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
   runtime.spriteBatchMaterialData = new Float32Array(8 * 256);
   runtime.spriteBatchTexture = null;
+  runtime.spriteBatchColorTransformMode = 0;
+  runtime.spriteBatchUniformColorTransform = null;
+  runtime.spriteBatchColorTransformData = new Float32Array(8 * 256);
   runtime.spriteBatchBufferPool = [];
   runtime.spriteBatchBufferCursor = 0;
 

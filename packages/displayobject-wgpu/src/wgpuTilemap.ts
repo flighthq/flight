@@ -1,12 +1,13 @@
 import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { RenderProxy2D, SpriteRenderer, Tilemap, WgpuRenderState } from '@flighthq/types';
+import type { ColorTransform, RenderProxy2D, SpriteRenderer, Tilemap, WgpuRenderState } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
 import {
   packWgpuSpriteBatchMaterialInstance,
   prepareWgpuSpriteBatchWrite,
+  recordWgpuSpriteBatchColorTransform,
   SPRITE_INSTANCE_FLOATS,
 } from './wgpuSpriteBatch';
 
@@ -29,7 +30,9 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = tilemapNode.materialData;
-  const perTileMaterialData = source.data.materialData;
+  // Per-tile color transforms, overriding the node-level tint for the tiles that carry one.
+  const perTileColorTransform = source.data.materialData;
+  const nodeColorTransform = tilemapNode.colorTransform;
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
     state,
@@ -79,8 +82,11 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
       instanceData[writeBase + 10] = (region.x + region.width) * iw;
       instanceData[writeBase + 11] = (region.y + region.height) * ih;
       instanceData[writeBase + 12] = alpha;
-      const md = perTileMaterialData?.[row * columns + col] ?? nodeMaterialData;
-      packWgpuSpriteBatchMaterialInstance(state, md, startCount + drawCount);
+      packWgpuSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+      // Per-tile tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
+      const colorTransform =
+        (perTileColorTransform?.[row * columns + col] as ColorTransform | null) ?? nodeColorTransform;
+      recordWgpuSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
       writeBase += INSTANCE_STRIDE_FLOATS;
       drawCount++;
     }

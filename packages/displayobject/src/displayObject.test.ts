@@ -16,6 +16,7 @@ import {
   getDisplayObjectRuntime,
   isDisplayObject,
   setDisplayObjectClip,
+  setDisplayObjectColorTransform,
 } from './displayObject';
 
 function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
@@ -157,6 +158,35 @@ describe('setDisplayObjectClip', () => {
       winding: 'nonZero',
       version: 0,
     });
+    expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
+  });
+});
+
+describe('setDisplayObjectColorTransform', () => {
+  let obj: DisplayObject;
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
+
+  it('defaults colorTransform to null on a fresh node', () => {
+    expect(obj.colorTransform).toBeNull();
+  });
+
+  it('sets colorTransform', () => {
+    const colorTransform = { redMultiplier: 0.5 } as never;
+    setDisplayObjectColorTransform(obj, colorTransform);
+    expect(obj.colorTransform).toBe(colorTransform);
+  });
+
+  it('accepts null', () => {
+    setDisplayObjectColorTransform(obj, { redMultiplier: 0.5 } as never);
+    setDisplayObjectColorTransform(obj, null);
+    expect(obj.colorTransform).toBeNull();
+  });
+
+  it('invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceId;
+    setDisplayObjectColorTransform(obj, { redMultiplier: 0.5 } as never);
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 });

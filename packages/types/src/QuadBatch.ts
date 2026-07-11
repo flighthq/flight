@@ -8,9 +8,10 @@ export interface QuadBatchData extends DisplayObjectData {
   atlas: TextureAtlas | null;
   ids: Uint16Array;
   instanceCount: number;
-  // Per-quad material data, indexed by quad. Null (or a null/absent element) falls back to the
-  // node-level HasMaterial.materialData, so the node's material applies uniformly. This is the
-  // per-quad equivalent of materialData — e.g. a ColorTransform per quad for ColorTransformMaterial.
+  // Per-quad color transform, indexed by quad (a ColorTransform value, typed through the shared
+  // MaterialData alias). Null (or a null/absent element) falls back to the node-level
+  // HasColorTransform trait, so a whole-batch tint stays one uniform; per-quad values that vary
+  // promote the batch to per-instance tints. Null array → no per-quad tints.
   materialData: (MaterialData | null)[] | null;
   transforms: Float32Array;
   transformType: QuadTransformType;

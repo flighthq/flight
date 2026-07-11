@@ -16,7 +16,12 @@ import { BatchFormat } from '@flighthq/types';
 
 import type { GlShapeMesh } from './glShapeMesh';
 import { drawGlShapeMeshes } from './glShapeMesh';
-import { ensureGlQuadBatchShader, packGlSpriteBatchMaterialInstance, prepareGlSpriteBatchWrite } from './glSpriteBatch';
+import {
+  ensureGlQuadBatchShader,
+  packGlSpriteBatchMaterialInstance,
+  prepareGlSpriteBatchWrite,
+  recordGlSpriteBatchColorTransform,
+} from './glSpriteBatch';
 
 // Renderer-private scratch state stored in the opaque RendererData slot. It is not an Entity (it
 // carries no EntityRuntimeKey), so the slot is read and written through the typed accessor pair
@@ -148,6 +153,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   d[base + 11] = 1;
   d[base + 12] = renderProxy.alpha;
   packGlSpriteBatchMaterialInstance(state, renderProxy.materialData, startCount);
+  recordGlSpriteBatchColorTransform(state, renderProxy.colorTransform, startCount);
   runtime.spriteBatchCount++;
 }
 

@@ -1,6 +1,6 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
-import { BlendMode, ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import {
@@ -113,20 +113,14 @@ describe('enableWgpuBlendModeSupport', () => {
 });
 
 describe('getWgpuRenderProxyColorTransform', () => {
-  it('returns null when the node has no material', () => {
-    expect(getWgpuRenderProxyColorTransform({ material: null } as never)).toBeNull();
+  it('returns null when the node has no color transform', () => {
+    expect(getWgpuRenderProxyColorTransform({} as never)).toBeNull();
+    expect(getWgpuRenderProxyColorTransform({ colorTransform: null } as never)).toBeNull();
   });
 
-  it('returns the value carried on a uniform color transform material', () => {
+  it('returns the resolved node-level color transform trait', () => {
     const colorTransform = { redMultiplier: 0.5 };
-    const node = { material: { kind: UniformColorTransformMaterialKind, colorTransform } } as never;
-    expect(getWgpuRenderProxyColorTransform(node)).toBe(colorTransform);
-  });
-
-  it('returns the per-node material data for a color transform material', () => {
-    const colorTransform = { redMultiplier: 0.5 };
-    const node = { material: { kind: ColorTransformMaterialKind }, materialData: colorTransform } as never;
-    expect(getWgpuRenderProxyColorTransform(node)).toBe(colorTransform);
+    expect(getWgpuRenderProxyColorTransform({ colorTransform } as never)).toBe(colorTransform);
   });
 });
 

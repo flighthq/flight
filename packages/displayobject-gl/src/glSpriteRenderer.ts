@@ -4,7 +4,12 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { GlRenderState, RenderProxy2D, Sprite, SpriteRenderer } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import { ensureGlQuadBatchShader, packGlSpriteBatchMaterialInstance, prepareGlSpriteBatchWrite } from './glSpriteBatch';
+import {
+  ensureGlQuadBatchShader,
+  packGlSpriteBatchMaterialInstance,
+  prepareGlSpriteBatchWrite,
+  recordGlSpriteBatchColorTransform,
+} from './glSpriteBatch';
 
 function submitGlSpriteNode(state: GlRenderState, spriteNode: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
@@ -51,6 +56,7 @@ function submitGlSpriteNode(state: GlRenderState, spriteNode: RenderProxy2D): vo
   d[base + 11] = (region.y + region.height) * ih;
   d[base + 12] = spriteNode.alpha;
   packGlSpriteBatchMaterialInstance(state, spriteNode.materialData, instanceIndex);
+  recordGlSpriteBatchColorTransform(state, spriteNode.colorTransform, instanceIndex);
   runtime.spriteBatchCount++;
 }
 

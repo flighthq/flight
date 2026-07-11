@@ -1,12 +1,12 @@
 import type {
   ColorTransform,
+  HasColorTransform,
   RenderProxy,
   RenderProxy2D,
-  UniformColorTransformMaterial,
   WgpuRenderState,
   WgpuTextureEntry,
 } from '@flighthq/types';
-import { BlendMode, ColorTransformMaterialKind, UniformColorTransformMaterialKind } from '@flighthq/types';
+import { BlendMode } from '@flighthq/types';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
@@ -197,19 +197,10 @@ export function enableWgpuBlendModeSupport(state: WgpuRenderState): void {
   state.applyBlendMode = applyWgpuBlendMode;
 }
 
-// Effective color transform for a render node from its material — the value on a
-// UniformColorTransformMaterial or the per-node materialData for a ColorTransformMaterial. Used by
-// the immediate (display-object) draw path; the batch path packs it per-instance instead.
+// Effective node-level color transform for a render node — the resolved HasColorTransform trait. Used
+// by the immediate (display-object) draw path; the batch path folds it per-instance instead.
 export function getWgpuRenderProxyColorTransform(renderProxy: Readonly<RenderProxy>): ColorTransform | null {
-  const material = renderProxy.material;
-  if (material === null) return null;
-  if (material.kind === UniformColorTransformMaterialKind) {
-    return (material as UniformColorTransformMaterial).colorTransform;
-  }
-  if (material.kind === ColorTransformMaterialKind) {
-    return renderProxy.materialData as ColorTransform | null;
-  }
-  return null;
+  return (renderProxy as Readonly<Partial<HasColorTransform>>).colorTransform ?? null;
 }
 
 export function submitWgpuQuadDraw(

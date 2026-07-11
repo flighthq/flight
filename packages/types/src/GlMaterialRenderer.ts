@@ -8,8 +8,7 @@ import type { Material, MaterialData } from './Material';
 // A material may use only per-batch uniforms (instanceFloatCount = 0, no packInstance), it
 // may extend the per-instance layout and populate it from its own sources (a random seed, a
 // time value), or it may extend the layout and read each node's traits to populate it. The
-// three cases share one interface; ColorTransformMaterial and UniformColorTransformMaterial
-// are the degenerate ends of it.
+// three cases share one interface.
 //
 // instanceFloatCount is the number of per-instance attribute floats this material appends to
 // the standard instance record. The material's attributes live in its own instance buffer

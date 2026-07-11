@@ -6,6 +6,7 @@ import {
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
   initClipTrait,
+  initColorTransformTrait,
   initMaterialTrait,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
@@ -13,6 +14,7 @@ import {
 } from '@flighthq/node';
 import type {
   ClipRegion,
+  ColorTransform,
   DisplayObject,
   DisplayObjectDataFactory,
   DisplayObjectRuntime,
@@ -45,6 +47,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
   initMaterialTrait(out, obj);
+  initColorTransformTrait(out, obj);
   initClipTrait(out, obj);
   return out;
 }
@@ -69,5 +72,13 @@ export function isDisplayObject(node: NodeAny): node is DisplayObject {
 
 export function setDisplayObjectClip(source: DisplayObject, value: ClipRegion | null): void {
   source.clip = value;
+  invalidateNodeAppearance(source);
+}
+
+// Sets (or clears with null) the node-level color transform folded into this object's draw. Null is
+// the untinted default. Invalidates appearance so the render walk re-resolves the value onto the
+// render node.
+export function setDisplayObjectColorTransform(source: DisplayObject, value: ColorTransform | null): void {
+  source.colorTransform = value;
   invalidateNodeAppearance(source);
 }

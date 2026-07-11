@@ -1,4 +1,5 @@
 import type { BlendMode } from './BlendMode';
+import type { ColorTransform } from './ColorTransform';
 import type { Kind } from './Entity';
 import type { Material } from './Material';
 import type { Matrix } from './Matrix';
@@ -62,8 +63,8 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   particleInstanceCapacity: number;
 
   // Universal sprite batch (cross-node batching for Sprite/QuadBatch/Tilemap). The flush key is the
-  // material (by reference); the resolved renderer appends its per-instance floats (e.g. color
-  // transform) into the single instance storage buffer.
+  // material (by reference); the resolved renderer appends its per-instance floats into the material
+  // storage buffer.
   spriteBatchBlendMode: BlendMode | null;
   spriteBatchMaterial: Material | null;
   spriteBatchMaterialRenderer: WgpuMaterialRenderer | null;
@@ -75,6 +76,18 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // no material concern.
   spriteBatchMaterialData: Float32Array;
   spriteBatchTexture: CanvasImageSource | null;
+  // Color-transform fold state for the active sprite batch. Orthogonal to the material and never a
+  // flush key, so tinted and untinted nodes with the same texture+blend share one batch. Mode 0 = no
+  // tint (base module), 2 = per-instance tints. A batch promotes to 2 when any member is tinted,
+  // back-filling untinted members with identity — attaching a tint only promotes a batch, never
+  // splits it. Wgpu realizes every tint through the per-instance storage buffer
+  // (spriteBatchColorTransformData, 8 floats per instance): a whole-batch tint is the same value on
+  // each instance; it has no separate hardware-uniform path (the GL u_ctMult path does).
+  // spriteBatchUniformColorTransform holds the shared value while a batch stays whole-batch uniform,
+  // deferring the per-instance fill until (and if) tints diverge.
+  spriteBatchColorTransformMode: number;
+  spriteBatchUniformColorTransform: ColorTransform | null;
+  spriteBatchColorTransformData: Float32Array;
   // Per-frame pool of GPU storage buffers, one slot claimed per flush. The batch records draws into
   // the canvas pass, but the pass is submitted once at end of frame, so every flush's draw reads its
   // buffers at submit time. Reusing a single buffer across flushes would leave them all reading the
@@ -161,9 +174,6 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
 
   // Saved render pass state for render target push/pop
   renderTargetStack: WgpuSavedPassState[];
-
-  // Color transform shader (lazily compiled)
-  colorTransformBitmapShader?: WgpuBitmapShader;
 }
 
 // A bound Wgpu bitmap shader: a render pipeline plus a bind hook that writes its per-draw uniforms.

@@ -21,8 +21,8 @@ export interface Material extends Entity {
 export type MaterialLike = EntityWithoutRuntime<Material>;
 
 // Per-node, material-specific data (the companion to HasMaterial.material). Plain serializable
-// data a material consumes per node — e.g. a per-instance color transform for ColorTransformMaterial.
-// Its concrete shape is defined by the material kind that reads it.
+// data a material consumes per node. Its concrete shape is defined by the material kind that reads
+// it.
 export type MaterialData = object;
 
 // Resolved when a node carries no material, or its material kind has no renderer on the

@@ -1,10 +1,15 @@
 import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
+import type { ColorTransform, GlRenderState, QuadBatch, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import { ensureGlQuadBatchShader, packGlSpriteBatchMaterialInstance, prepareGlSpriteBatchWrite } from './glSpriteBatch';
+import {
+  ensureGlQuadBatchShader,
+  packGlSpriteBatchMaterialInstance,
+  prepareGlSpriteBatchWrite,
+  recordGlSpriteBatchColorTransform,
+} from './glSpriteBatch';
 
 // Per-instance layout (13 floats = 52 bytes, world-space transforms + per-instance alpha):
 // [0-3]  a, b, c, d   — world-space 2D matrix
@@ -26,8 +31,10 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const material = quadBatch.material;
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
-  const perQuadMaterialData = data.materialData;
   const nodeMaterialData = quadBatch.materialData;
+  // Per-quad color transforms, overriding the node-level tint for the quads that carry one.
+  const perQuadColorTransform = data.materialData;
+  const nodeColorTransform = quadBatch.colorTransform;
   const startCount = runtime.spriteBatchCount;
   const base = prepareGlSpriteBatchWrite(
     state,
@@ -92,9 +99,10 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
     instanceData[writeBase + 10] = (region.x + region.width) * iw;
     instanceData[writeBase + 11] = (region.y + region.height) * ih;
     instanceData[writeBase + 12] = alpha;
-    // Per-quad value overrides the node-level default (null → identity in the material).
-    const md = perQuadMaterialData?.[i] ?? nodeMaterialData;
-    packGlSpriteBatchMaterialInstance(state, md, startCount + drawCount);
+    packGlSpriteBatchMaterialInstance(state, nodeMaterialData, startCount + drawCount);
+    // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
+    const colorTransform = (perQuadColorTransform?.[i] as ColorTransform | null) ?? nodeColorTransform;
+    recordGlSpriteBatchColorTransform(state, colorTransform, startCount + drawCount);
     writeBase += INSTANCE_FLOATS;
     drawCount++;
   }

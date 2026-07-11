@@ -70,6 +70,10 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: Partial<
   runtime.spriteBatchInstanceBuffer = null;
   runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
   runtime.spriteBatchTexture = null;
+  runtime.spriteBatchColorTransformMode = 0;
+  runtime.spriteBatchUniformColorTransform = null;
+  runtime.spriteBatchColorTransformData = new Float32Array(8 * 256);
+  runtime.spriteBatchColorTransformBuffer = null;
   runtime.textureCache = new WeakMap();
   runtime.quadVertexBuffer = quadVertexBuffer;
   runtime.quadIndexBuffer = quadIndexBuffer;
@@ -114,7 +118,6 @@ export function destroyGlRenderState(state: GlRenderState): void {
   const programs = new Set<WebGLProgram>();
   if (runtime.shaderLoc) programs.add(runtime.shaderLoc.program);
   if (runtime.defaultBitmapShader) programs.add(runtime.defaultBitmapShader.program);
-  if (runtime.colorTransformBitmapShader) programs.add(runtime.colorTransformBitmapShader.program);
   if (runtime.particleShader) programs.add(runtime.particleShader.program);
   if (runtime.quadBatchShader) programs.add(runtime.quadBatchShader.program);
   if (runtime.colorTransformInstancedShader) programs.add(runtime.colorTransformInstancedShader.program);
@@ -128,6 +131,7 @@ export function destroyGlRenderState(state: GlRenderState): void {
   if (runtime.quadBatchCornerBuffer) gl.deleteBuffer(runtime.quadBatchCornerBuffer);
   if (runtime.spriteBatchInstanceBuffer) gl.deleteBuffer(runtime.spriteBatchInstanceBuffer);
   if (runtime.spriteBatchMaterialBuffer) gl.deleteBuffer(runtime.spriteBatchMaterialBuffer);
+  if (runtime.spriteBatchColorTransformBuffer) gl.deleteBuffer(runtime.spriteBatchColorTransformBuffer);
 }
 
 // Resolves the package-private GPU runtime attached to a GlRenderState. Mutable by design: the

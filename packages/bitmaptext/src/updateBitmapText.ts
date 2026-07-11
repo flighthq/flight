@@ -1,6 +1,6 @@
 import { getDisplayObjectRuntime } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
-import { createColorTransform, createUniformColorTransformMaterial } from '@flighthq/materials';
+import { createColorTransform } from '@flighthq/materials';
 import { addNodeChild, invalidateNodeLocalBounds } from '@flighthq/node';
 import { appendQuadBatchInstance, clearQuadBatch, createQuadBatch } from '@flighthq/sprite';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
@@ -108,19 +108,20 @@ export function updateBitmapText(bitmapText: BitmapText): void {
   invalidateNodeLocalBounds(bitmapText);
 }
 
-// Sets (or clears) the backing batch's tint material from a packed-RGBA color. White clears it.
+// Sets (or clears) the backing batch's node-level color transform from a packed-RGBA color. White
+// clears it. Every glyph of the batch shares this one tint, so it folds into the glyph draw as a
+// single whole-batch color-transform uniform.
 function applyBitmapTextColor(quadBatch: QuadBatch, color: number): void {
   if (color === BITMAP_TEXT_DEFAULT_COLOR) {
-    quadBatch.material = null;
+    quadBatch.colorTransform = null;
     return;
   }
-  const colorTransform = createColorTransform({
+  quadBatch.colorTransform = createColorTransform({
     redMultiplier: ((color >>> 24) & 0xff) / 255,
     greenMultiplier: ((color >>> 16) & 0xff) / 255,
     blueMultiplier: ((color >>> 8) & 0xff) / 255,
     alphaMultiplier: (color & 0xff) / 255,
   });
-  quadBatch.material = createUniformColorTransformMaterial(colorTransform);
 }
 
 // Measures one paragraph (a newline-free run) into words separated by whitespace gaps. Intra-word
