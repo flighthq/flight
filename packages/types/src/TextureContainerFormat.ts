@@ -1,4 +1,4 @@
-// The GPU texture format carried by a texture container (KTX2 / DDS / Basis). This is the format the
+// The GPU texture format carried by a texture container (KTX2 / DDS / Basis / ATF). This is the format the
 // level byte ranges are already encoded in — what a GL/WGPU backend hands to `texImage2D` /
 // `copyExternalImageToTexture` as an internal format, or what a transcoder reads as its source. It is
 // deliberately distinct from `PixelFormat` (the 8-bit RGBA layout of a decoded `ImageResource`): a
@@ -48,6 +48,11 @@ export type TextureContainerFormat =
   | 'eacR11Snorm'
   | 'eacRg11'
   | 'eacRg11Snorm'
+  // PVRTC v1 (PowerVR, iOS) — keyed by bit rate and color channels
+  | 'pvrtc2bppRgb'
+  | 'pvrtc2bppRgba'
+  | 'pvrtc4bppRgb'
+  | 'pvrtc4bppRgba'
   // ASTC (LDR, keyed by block size)
   | 'astc4x4'
   | 'astc5x4'
