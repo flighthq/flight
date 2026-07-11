@@ -8,6 +8,21 @@ export function cloneBoundingSphere(source: Readonly<BoundingSphereLike>): Bound
 }
 
 /**
+ * Returns whether a point lies inside (or on the surface of) a bounding sphere. An empty
+ * sphere (negative radius) contains no points.
+ */
+export function containsBoundingSpherePoint(
+  sphere: Readonly<BoundingSphereLike>,
+  point: Readonly<Vector3Like>,
+): boolean {
+  if (sphere.radius < 0) return false;
+  const dx = point.x - sphere.center.x;
+  const dy = point.y - sphere.center.y;
+  const dz = point.z - sphere.center.z;
+  return dx * dx + dy * dy + dz * dz <= sphere.radius * sphere.radius;
+}
+
+/**
  * Copies the center and radius of a bounding sphere.
  *
  * Safe when `out` aliases `source`.
@@ -31,21 +46,6 @@ export function createBoundingSphere(
 ): BoundingSphere {
   const center = createVector3(centerX ?? 0, centerY ?? 0, centerZ ?? 0);
   return createEntity({ center: center, radius: radius ?? -1 });
-}
-
-/**
- * Returns whether a point lies inside (or on the surface of) a bounding sphere. An empty
- * sphere (negative radius) contains no points.
- */
-export function getBoundingSphereContainsPoint(
-  sphere: Readonly<BoundingSphereLike>,
-  point: Readonly<Vector3Like>,
-): boolean {
-  if (sphere.radius < 0) return false;
-  const dx = point.x - sphere.center.x;
-  const dy = point.y - sphere.center.y;
-  const dz = point.z - sphere.center.z;
-  return dx * dx + dy * dy + dz * dz <= sphere.radius * sphere.radius;
 }
 
 /**

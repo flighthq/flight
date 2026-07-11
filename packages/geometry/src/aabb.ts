@@ -8,6 +8,20 @@ export function cloneAabb(source: Readonly<AabbLike>): Aabb {
 }
 
 /**
+ * Returns whether a point lies inside (or on the boundary of) an axis-aligned bounding box.
+ */
+export function containsAabbPoint(aabb: Readonly<AabbLike>, point: Readonly<Vector3Like>): boolean {
+  return (
+    point.x >= aabb.min.x &&
+    point.x <= aabb.max.x &&
+    point.y >= aabb.min.y &&
+    point.y <= aabb.max.y &&
+    point.z >= aabb.min.z &&
+    point.z <= aabb.max.z
+  );
+}
+
+/**
  * Copies the min and max corners of an axis-aligned bounding box.
  *
  * Safe when `out` aliases `source`.
@@ -105,20 +119,6 @@ export function getAabbCenter(out: Vector3Like, aabb: Readonly<AabbLike>): void 
   out.x = (aabb.min.x + aabb.max.x) * 0.5;
   out.y = (aabb.min.y + aabb.max.y) * 0.5;
   out.z = (aabb.min.z + aabb.max.z) * 0.5;
-}
-
-/**
- * Returns whether a point lies inside (or on the boundary of) an axis-aligned bounding box.
- */
-export function getAabbContainsPoint(aabb: Readonly<AabbLike>, point: Readonly<Vector3Like>): boolean {
-  return (
-    point.x >= aabb.min.x &&
-    point.x <= aabb.max.x &&
-    point.y >= aabb.min.y &&
-    point.y <= aabb.max.y &&
-    point.z >= aabb.min.z &&
-    point.z <= aabb.max.z
-  );
 }
 
 /**
