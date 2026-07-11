@@ -42,12 +42,12 @@ describe('applyGlBlendMode', () => {
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
   });
 
-  it('sets (DST_COLOR, ZERO) for BlendMode.Multiply', () => {
+  it('sets (DST_COLOR, ONE_MINUS_SRC_ALPHA) for BlendMode.Multiply', () => {
     const { state, gl } = createGlState();
     registerDefaultGlBlendModes(state);
     applyGlBlendMode(state, BlendMode.Multiply);
-    const g = gl as unknown as { DST_COLOR: number; ZERO: number };
-    expect(gl.blendFunc).toHaveBeenCalledWith(g.DST_COLOR, g.ZERO);
+    const g = gl as unknown as { DST_COLOR: number; ONE_MINUS_SRC_ALPHA: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.DST_COLOR, g.ONE_MINUS_SRC_ALPHA);
   });
 
   it('sets (ONE, ONE_MINUS_SRC_COLOR) for BlendMode.Screen', () => {
