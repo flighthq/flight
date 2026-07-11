@@ -38,7 +38,7 @@ export function applyColorMatrixToColor(matrix: Readonly<number[]>, packedRgba: 
 
 /**
  * Composes `source` into `target` in place: `target = target × source` (applies source first,
- * then target). Matches OpenFL `ColorMatrixFilter.concat` semantics. Alias-safe: `source` may be
+ * then target). Matches OpenFL color-matrix `concat` semantics. Alias-safe: `source` may be
  * `target`.
  */
 export function concatColorMatrix(target: number[], source: Readonly<number[]>): void {

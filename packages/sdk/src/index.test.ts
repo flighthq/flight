@@ -1,6 +1,12 @@
 import * as sdk from './index';
 
 describe('package exports', () => {
+  describe('adjustments domain', () => {
+    it('exports createIdentityColorMatrix', () => {
+      expect(sdk.createIdentityColorMatrix).toBeTypeOf('function');
+    });
+  });
+
   describe('application domain', () => {
     it('exports createApplication', () => {
       expect(sdk.createApplication).toBeTypeOf('function');
@@ -32,12 +38,6 @@ describe('package exports', () => {
   describe('effects domain', () => {
     it('exports createBloomEffect', () => {
       expect(sdk.createBloomEffect).toBeTypeOf('function');
-    });
-  });
-
-  describe('filters domain', () => {
-    it('exports createBlurFilter', () => {
-      expect(sdk.createBlurFilter).toBeTypeOf('function');
     });
   });
 

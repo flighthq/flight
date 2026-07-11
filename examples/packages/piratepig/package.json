@@ -3,10 +3,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/filters": "*",
-    "@flighthq/filters-css": "*",
-    "@flighthq/filters-gl": "*",
-    "@flighthq/filters-wgpu": "*",
+    "@flighthq/effects-gl": "*",
+    "@flighthq/effects-wgpu": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

@@ -1,4 +1,4 @@
-import { applyGaussianBlurFilterToWgpu, clearWgpuFilterTarget } from '@flighthq/filters-wgpu';
+import { applyGaussianBlurToWgpu, clearWgpuEffectTarget } from '@flighthq/effects-wgpu';
 import type { DisplayObject, RenderCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/sdk';
 import {
   beginWgpuRenderTarget,
@@ -147,8 +147,8 @@ function bakeBackgroundBlur(): void {
   }
 
   beginWgpuRenderTarget(state, out, _identity);
-  clearWgpuFilterTarget(state, out);
-  applyGaussianBlurFilterToWgpu(state, src, out, _blurTemp, { blurX: 10, blurY: 10 });
+  clearWgpuEffectTarget(state, out);
+  applyGaussianBlurToWgpu(state, src, out, _blurTemp, { blurX: 10, blurY: 10 });
   endWgpuRenderTarget(state);
 }
 

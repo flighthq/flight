@@ -1,8 +1,7 @@
-﻿import { createBlurFilter } from '@flighthq/filters';
-import { computeBlurFilterCss } from '@flighthq/filters-css';
-import type { DisplayObject } from '@flighthq/sdk';
+﻿import type { DisplayObject } from '@flighthq/sdk';
 import {
   BitmapKind,
+  createBlurEffect,
   createCanvasRenderState,
   defaultCanvasBitmapRenderer,
   defaultCanvasBeginFill,
@@ -54,9 +53,12 @@ export function render(root: DisplayObject): void {
   renderCanvasDisplayObject(state, root);
 }
 
-// OpenFL: Background.filters = [new BlurFilter(10, 10)] — a CSS filter applied at draw. The
-// returned callback is a no-op: the filter re-applies on every draw, so resizes need no re-bake.
+// A BlurEffect on the score panel, realized as a CSS filter applied at draw. BlurEffect's blurX is
+// the Gaussian sigma in pixels, which CSS `blur(Xpx)` matches directly, so the string is built from
+// the descriptor (effects ships no CSS-emitter package). The returned callback is a no-op: the
+// filter re-applies on every draw, so resizes need no re-bake.
 export function applyBackgroundBlur(node: DisplayObject): () => void {
-  setCanvasCssFilter(state, node, computeBlurFilterCss(createBlurFilter({ blurX: 10, blurY: 10 })));
+  const blur = createBlurEffect({ blurX: 10, blurY: 10 });
+  setCanvasCssFilter(state, node, `blur(${blur.blurX ?? 0}px)`);
   return () => {};
 }
