@@ -5,10 +5,8 @@
     "rootDir": "./src"
   },
   "references": [
-    { "path": "../../../packages/filters" },
-    { "path": "../../../packages/filters-css" },
-    { "path": "../../../packages/filters-gl" },
-    { "path": "../../../packages/filters-wgpu" },
+    { "path": "../../../packages/effects-gl" },
+    { "path": "../../../packages/effects-wgpu" },
     { "path": "../../../packages/sdk" }
   ],
   "include": ["src/**/*"],

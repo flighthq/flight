@@ -14,7 +14,6 @@ export * from './domRichText';
 export * from './domScale9Shape';
 export * from './domShape';
 export * from './domStyle';
-export * from './domSvgFilter';
 export { escapeDomHtmlString } from './domTextHelpers';
 export * from './domTextInput';
 export * from './domTextLabel';

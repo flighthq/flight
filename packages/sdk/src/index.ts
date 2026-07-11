@@ -32,13 +32,6 @@ export * from '@flighthq/effects-gl';
 export * from '@flighthq/effects-wgpu';
 export * from '@flighthq/entity';
 export * from '@flighthq/filesystem';
-export * from '@flighthq/filters';
-export * from '@flighthq/filters-canvas';
-export * from '@flighthq/filters-css';
-export * from '@flighthq/filters-gl';
-export * from '@flighthq/filters-math';
-export * from '@flighthq/filters-surface';
-export * from '@flighthq/filters-wgpu';
 export * from '@flighthq/flow';
 export * from '@flighthq/font';
 export * from '@flighthq/geolocation';
@@ -128,48 +121,3 @@ export * from '@flighthq/velocity';
 export * from '@flighthq/video';
 export * from '@flighthq/webcam';
 export * from '@flighthq/xml';
-
-// Transitional: @flighthq/adjustments is the canonical home for the color-matrix fuse primitives,
-// but @flighthq/filters still ships a verbatim copy until it retires (see effect-adjustment-architecture.md,
-// migration step 4). Both star-export the same names, so these explicit re-exports resolve the barrel to
-// the adjustments copy. Remove this block once the filters* packages are deleted.
-export {
-  applyColorMatrixToColor,
-  COLOR_MATRIX_LENGTH,
-  concatColorMatrix,
-  createBrightnessColorMatrix,
-  createChannelMixerColorMatrix,
-  createColorBalanceColorMatrix,
-  createColorMatrixFromTint,
-  createContrastColorMatrix,
-  createDesaturateColorMatrix,
-  createGrayscaleColorMatrix,
-  createHueRotateColorMatrix,
-  createIdentityColorMatrix,
-  createInvertColorMatrix,
-  createLevelsColorMatrix,
-  createOpacityColorMatrix,
-  createPolaroidColorMatrix,
-  createSaturationColorMatrix,
-  createSepiaColorMatrix,
-  createTechnicolorColorMatrix,
-  createVintageColorMatrix,
-  createWhiteBalanceColorMatrix,
-  multiplyColorMatrix,
-} from '@flighthq/adjustments';
-
-// Transitional: @flighthq/effects is the canonical home for the spatial-effect blur math, ported
-// verbatim from @flighthq/filters-math, which keeps its copy until the filters* packages retire (see
-// effect-adjustment-architecture.md, migration step 4). Both star-export the same names, so these
-// explicit re-exports resolve the barrel to the effects copy. Remove this block once filters-math is deleted.
-export {
-  computeBoxBlurPassRadius,
-  computeBoxBlurRadius,
-  computeGaussianKernelWeights,
-  computeGaussianSigmaForBlurRadius,
-  computeLinearSampledGaussian,
-  getBlurDownsampleLevel,
-  getBlurResidualSigma,
-  getGaussianKernelSize,
-  getLinearSampledGaussianTapCount,
-} from '@flighthq/effects';
