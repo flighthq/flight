@@ -6,6 +6,7 @@ import { defaultCanvasBrightnessContrastEffectRunner } from './canvasBrightnessC
 import { defaultCanvasChannelMixerEffectRunner } from './canvasChannelMixerEffect';
 import { defaultCanvasChromaticAberrationEffectRunner } from './canvasChromaticAberrationEffect';
 import { defaultCanvasColorGradeEffectRunner } from './canvasColorGradeEffect';
+import { defaultCanvasConvolutionEffectRunner } from './canvasConvolutionEffect';
 import { defaultCanvasCrtEffectRunner } from './canvasCrtEffect';
 import { defaultCanvasDirectionalBlurEffectRunner } from './canvasDirectionalBlurEffect';
 import { defaultCanvasDisplacementEffectRunner } from './canvasDisplacementEffect';
@@ -24,6 +25,7 @@ import { defaultCanvasLensDirtEffectRunner } from './canvasLensDirtEffect';
 import { defaultCanvasLensDistortionEffectRunner } from './canvasLensDistortionEffect';
 import { defaultCanvasLensFlareEffectRunner } from './canvasLensFlareEffect';
 import { defaultCanvasLiftGammaGainEffectRunner } from './canvasLiftGammaGainEffect';
+import { defaultCanvasMedianEffectRunner } from './canvasMedianEffect';
 import { defaultCanvasOuterGlowEffectRunner } from './canvasOuterGlowEffect';
 import { defaultCanvasOutlineEffectRunner } from './canvasOutlineEffect';
 import { defaultCanvasPixelateEffectRunner } from './canvasPixelateEffect';
@@ -164,6 +166,7 @@ const SCREENSPACE_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRen
 // Stylize effects: artistic transforms, screen-space overlays, and film emulation.
 const STYLIZE_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderEffectRunner]> = [
   ['ChromaticAberrationEffect', defaultCanvasChromaticAberrationEffectRunner],
+  ['ConvolutionEffect', defaultCanvasConvolutionEffectRunner],
   ['CrtEffect', defaultCanvasCrtEffectRunner],
   ['DisplacementEffect', defaultCanvasDisplacementEffectRunner],
   ['FilmGrainEffect', defaultCanvasFilmGrainEffectRunner],
@@ -174,6 +177,7 @@ const STYLIZE_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderE
   ['LensDirtEffect', defaultCanvasLensDirtEffectRunner],
   ['LensDistortionEffect', defaultCanvasLensDistortionEffectRunner],
   ['LensFlareEffect', defaultCanvasLensFlareEffectRunner],
+  ['MedianEffect', defaultCanvasMedianEffectRunner],
   ['OutlineEffect', defaultCanvasOutlineEffectRunner],
   ['PixelateEffect', defaultCanvasPixelateEffectRunner],
   ['ScanlinesEffect', defaultCanvasScanlinesEffectRunner],

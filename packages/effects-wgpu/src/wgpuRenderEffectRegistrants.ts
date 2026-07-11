@@ -9,6 +9,7 @@ import { defaultWgpuCameraMotionBlurEffectRunner } from './wgpuCameraMotionBlurE
 import { defaultWgpuChannelMixerEffectRunner } from './wgpuChannelMixerEffect';
 import { defaultWgpuChromaticAberrationEffectRunner } from './wgpuChromaticAberrationEffect';
 import { defaultWgpuColorGradeEffectRunner } from './wgpuColorGradeEffect';
+import { defaultWgpuConvolutionEffectRunner } from './wgpuConvolutionEffect';
 import { defaultWgpuCrtEffectRunner } from './wgpuCrtEffect';
 import { defaultWgpuDirectionalBlurEffectRunner } from './wgpuDirectionalBlurEffect';
 import { defaultWgpuDisplacementEffectRunner } from './wgpuDisplacementEffect';
@@ -33,6 +34,7 @@ import { defaultWgpuLensDistortionEffectRunner } from './wgpuLensDistortionEffec
 import { defaultWgpuLensFlareEffectRunner } from './wgpuLensFlareEffect';
 import { defaultWgpuLiftGammaGainEffectRunner } from './wgpuLiftGammaGainEffect';
 import { defaultWgpuLookupTableGradeEffectRunner } from './wgpuLookupTableGradeEffect';
+import { defaultWgpuMedianEffectRunner } from './wgpuMedianEffect';
 import { defaultWgpuMotionBlurEffectRunner } from './wgpuMotionBlurEffect';
 import { defaultWgpuOuterGlowEffectRunner } from './wgpuOuterGlowEffect';
 import { defaultWgpuOutlineEffectRunner } from './wgpuOutlineEffect';
@@ -149,12 +151,14 @@ export function registerStandardWgpuRenderEffects(state: WgpuRenderState): void 
 // Stylize band: CrtEffect, DitherEffect, FilmGrainEffect, GlitchEffect, HalftoneEffect,
 // KuwaharaEffect, OutlineEffect, PixelateEffect, ScanlinesEffect, SketchEffect.
 export function registerStylizeWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'ConvolutionEffect', defaultWgpuConvolutionEffectRunner);
   registerWgpuRenderEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
   registerWgpuRenderEffect(state, 'DitherEffect', defaultWgpuDitherEffectRunner);
   registerWgpuRenderEffect(state, 'FilmGrainEffect', defaultWgpuFilmGrainEffectRunner);
   registerWgpuRenderEffect(state, 'GlitchEffect', defaultWgpuGlitchEffectRunner);
   registerWgpuRenderEffect(state, 'HalftoneEffect', defaultWgpuHalftoneEffectRunner);
   registerWgpuRenderEffect(state, 'KuwaharaEffect', defaultWgpuKuwaharaEffectRunner);
+  registerWgpuRenderEffect(state, 'MedianEffect', defaultWgpuMedianEffectRunner);
   registerWgpuRenderEffect(state, 'OutlineEffect', defaultWgpuOutlineEffectRunner);
   registerWgpuRenderEffect(state, 'PixelateEffect', defaultWgpuPixelateEffectRunner);
   registerWgpuRenderEffect(state, 'ScanlinesEffect', defaultWgpuScanlinesEffectRunner);

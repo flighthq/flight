@@ -154,6 +154,7 @@ describe('registerStylizeCanvasRenderEffects', () => {
     registerStylizeCanvasRenderEffects(fakeState);
     const stylizeKinds = [
       'ChromaticAberrationEffect',
+      'ConvolutionEffect',
       'CrtEffect',
       'DisplacementEffect',
       'FilmGrainEffect',
@@ -164,6 +165,7 @@ describe('registerStylizeCanvasRenderEffects', () => {
       'LensDirtEffect',
       'LensDistortionEffect',
       'LensFlareEffect',
+      'MedianEffect',
       'OutlineEffect',
       'PixelateEffect',
       'ScanlinesEffect',
