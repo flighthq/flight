@@ -43,7 +43,7 @@ Executed the three sweep-safe items from `assessment.md` → `## Recommended`. A
 
 - `TEXT_LAYOUT_GUTTER` (constant, `packages/textlayout/src/textLayout.ts`) — the canonical 2px gutter constant. Replaces the duplicated `GUTTER` magic number. Both files now share one source of truth.
 - `TEXT_BOUNDS_GUTTER` re-exported from `packages/textlayout/src/textBounds.ts` as an alias of `TEXT_LAYOUT_GUTTER` — zero drift risk going forward.
-- `getTextLayoutIsTruncated(layout, params): boolean` — returns `true` when `params.maxLines` clips the layout.
+- `isTextLayoutTruncated(layout, params): boolean` — returns `true` when `params.maxLines` clips the layout.
 
 ### Changed behavior (no API break)
 
@@ -58,7 +58,7 @@ Executed the three sweep-safe items from `assessment.md` → `## Recommended`. A
 
 ### Tests added (17 new tests across 3 files)
 
-- `textLayout.test.ts`: bullet list, justify alignment, kerning flag, maxLines truncation (3 tests), start/end alignment (3 tests LTR/RTL), codepoint iteration (emoji), `getTextLayoutIsTruncated`, `TEXT_LAYOUT_GUTTER` constant
+- `textLayout.test.ts`: bullet list, justify alignment, kerning flag, maxLines truncation (3 tests), start/end alignment (3 tests LTR/RTL), codepoint iteration (emoji), `isTextLayoutTruncated`, `TEXT_LAYOUT_GUTTER` constant
 - `textBounds.test.ts`: `TEXT_BOUNDS_GUTTER === TEXT_LAYOUT_GUTTER` alias check
 - `textLineBreaks.test.ts`: 5 new binary-search edge cases (exact match, single element, large array)
 
