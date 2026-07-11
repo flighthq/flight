@@ -18,11 +18,11 @@ render                               how you render a node           (backend-ag
 render-{canvas,dom,gl,wgpu}          how you render on a BACKEND      (per-backend core: state/context/targets)
 displayobject-{canvas,dom,gl,wgpu}   how you render THIS family ON that backend  (2D renderers)
 scene-{gl,wgpu}                      how you render THIS family ON that backend  (3D renderers)
-effects / effects-{backend}          post-process pipeline (sibling cell; depends on render-{backend})
-filters / filters-{backend}          filter descriptors + impls (sibling cell)
+effects / effects-{backend}          spatial/composite ops — post-process pipeline (sibling cell; depends on render-{backend})
+adjustments                          pointwise value remaps — fold into the draw as data (no per-backend pass cell; realization is inline)
 ```
 
-A renderer is the per-backend realization of a node family — its name says _what_ it renders and _on what_. The per-backend **core** (`render-gl`/`render-wgpu`: the context, render targets, texture upload, fullscreen pass, shader plumbing) is a distinct cell from the per-family **renderers** — so `scene-gl` and `displayobject-gl` (and `effects-gl`/`filters-gl`) all sit on the lean `render-gl` core without 3D pulling in 2D or vice-versa. 3D rendering is its own cell, exactly as effects/filters are — never blobbed into the 2D renderer. (Canvas/DOM have no 3D sibling, so their core-vs-renderer split is optional; `displayobject-canvas` /`displayobject-dom` may just be the renamed `render-canvas`/`render-dom`.)
+A renderer is the per-backend realization of a node family — its name says _what_ it renders and _on what_. The per-backend **core** (`render-gl`/`render-wgpu`: the context, render targets, texture upload, fullscreen pass, shader plumbing) is a distinct cell from the per-family **renderers** — so `scene-gl` and `displayobject-gl` (and `effects-gl`) all sit on the lean `render-gl` core without 3D pulling in 2D or vice-versa. 3D rendering is its own cell, exactly as effects is — never blobbed into the 2D renderer. (Canvas/DOM have no 3D sibling, so their core-vs-renderer split is optional; `displayobject-canvas` /`displayobject-dom` may just be the renamed `render-canvas`/`render-dom`.)
 
 ## Data atoms (built, pure data — types in `@flighthq/types`)
 

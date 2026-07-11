@@ -32,7 +32,7 @@ Where it ends: types declares contracts; it does not contain constructors, valid
 
 - Cross-package interfaces, type aliases, and `*Like` plain-data input types.
 - Entity quartets: `*Data` / `*Runtime` / entity / `*Kind` + `*Like`.
-- Open base contracts with string `kind` discriminant (`Material`, `RenderEffect`, `BitmapFilter`, `SpritesheetFormat`).
+- Open base contracts with string `kind` discriminant (`Material`, `RenderEffect`, `Adjustment`, `SpritesheetFormat`).
 - Capability backend seam interfaces (`*Backend`, `*BackendOptions`).
 - Closed-vocabulary enums and const objects (`BlendMode`, `PixelFormat`, `KeyCode`, etc.).
 - String `*Kind` identity constants.

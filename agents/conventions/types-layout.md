@@ -8,7 +8,7 @@ The unit of a `types` file is a _concept_, not a single type. A file is named (P
 
 - **Entity home** — an entity bundles a fixed quartet in one file: `Bitmap.ts` → `BitmapData`, `BitmapRuntime`, `Bitmap`, `BitmapKind` (plus `*Factory`, `*TraitsKey`). **Never split the quartet** — it is one concept. `Node.ts` / `Entity.ts` are the foundational version.
 - **Capability home** — one file per platform capability: its enums + options + the `*Backend` seam (`Dialog.ts`, `Platform.ts`, `Connectivity.ts`).
-- **Base-contract home** — an open family's base interface lives in its own file (`Material.ts`, `RenderEffect.ts`, `BitmapFilter.ts`).
+- **Base-contract home** — an open family's base interface lives in its own file (`Material.ts`, `RenderEffect.ts`, `Adjustment.ts`).
 - **Variant** — each concrete member of an open family is its own file, **1:1 with its impl files** (`BloomEffect.ts` ↔ `effects/bloomEffect.ts` ↔ `effects-gl/glBloomEffect.ts`).
 - **Standalone type** — an independent type referenced by others but standing alone (`HitTestFunction.ts`, `Texture.ts`, `Sampler.ts`).
 
@@ -20,7 +20,7 @@ The unit of a `types` file is a _concept_, not a single type. A file is named (P
 
 ## Open contracts for extensible families
 
-Families meant to be extended — materials, effects, filters, lights — are an **open base contract carrying a `kind`**, with concrete variants registered against it. Do **not** enumerate members in a closed `type X = A | B | C` union that must be edited in `@flighthq/types` to extend. A new variant must be addable from outside the package: define its type + a `kind` + register a runner, touching no central list. (`Material` already follows this; `RenderEffect`/`BitmapFilter` were converted from their `type:` unions.)
+Families meant to be extended — materials, effects, adjustments, lights — are an **open base contract carrying a `kind`**, with concrete variants registered against it. Do **not** enumerate members in a closed `type X = A | B | C` union that must be edited in `@flighthq/types` to extend. A new variant must be addable from outside the package: define its type + a `kind` + register a runner, touching no central list. (`Material` already follows this; `RenderEffect` was converted from its `type:` union.)
 
 **Closed families are correct when there is no extensibility goal.** A family with fixed, well-known membership — especially one dispatched in a hot inner loop — may stay a closed discriminated union with `switch` dispatch, which is faster and simpler than a registry. `ParticleForce` / `ParticleCollider` (per-particle, per-frame) and quad-batch internals are deliberate closed families: they still use the per-concept-file layout and the string `kind` field, but membership is closed and dispatch is a `switch`. Go open only when users or other packages genuinely need to add variants — extensibility is a decision, not a default.
 
