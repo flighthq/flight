@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/tileset'
-status: stub
-score: 25
-updated: 2026-07-03
+status: solid
+score: 55
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -52,3 +52,7 @@ Compare Tiled's TSX tileset model, Godot `TileSet`, Phaser `Tileset`, LDtk tiles
 ## Recommendation
 
 Treat this as the seed of a package, not its shape. First, decide region ownership (recommend: regions on the `Tileset`, leaving `TextureAtlas` authoring-owned) and fix the `buildTilesetRegions` contract (truncate on shrink, reset ids, or build ids as tile indices). Then add the missing floor of the domain in order: (1) tile accessors and grid math — `getTilesetTileCount`, `getTilesetRegion`, index↔column/row converters, per-tile UV; (2) per-tile properties (a `TiledPropertyValue`-style map per tile id, types in `@flighthq/types`); (3) animated tiles (per-tile frame/duration lists plus a pure `getTilesetAnimatedTileFrame(tileset, tileId, timeMs)` sampler); (4) per-tile collision shapes (reusing `@flighthq/clip` or geometry rect/polygon types); (5) tileset metadata (`name`, id offset, tile render offset) so multiple tilesets can compose under a future tilemap. That sequence turns the grid slicer into the data spine that `tilemap-formats` (TSX/TMX) and the sprite/tilemap renderer both need; until then the package is a correct but very thin slice of its domain.
+
+## 2026-07-09 — deepened
+
+margin/spacing loaders, disposeTileset, and buildTilesetRegions correctness fixes (commit 5fa2b04c). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.

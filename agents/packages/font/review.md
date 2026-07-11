@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/font'
-status: partial
-score: 33
-updated: 2026-07-03
+status: solid
+score: 58
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -53,3 +53,7 @@ Compare the CSS Font Loading API surface itself, webfontloader/FontFaceObserver,
 ## Recommendation
 
 Resolve the entity duplication first — nothing else is worth polishing until there is one font entity. Merge `Font` and `FontResource` into a single entity-backed `Font { family, face: FontFace | null, … }` with one loader family (`loadFontFromBytes/Name/Url/Urls` as plain async producers), and delete the `out`-mutating quartet. Then bring the layer to its own bar: (1) accept `FontFaceDescriptors` (weight/style/stretch/unicodeRange/display) on every loader; (2) add `disposeFont` (`document.fonts.delete`) and `isFontLoaded`/ready queries; (3) add `detectFontFormat(bytes)` magic-byte sniffing and a `FontFormat` type in `@flighthq/types` (moving `FontUrl` to its own file while there); (4) grow the introspection layer the header already promises — family-name extraction from bytes (removing the caller-supplied-family wart), variation-axis enumeration, and glyph coverage — either in-package or as the seam a `font-formats` sibling fills; (5) put the web `FontFace` path behind a backend seam so the Rust ttf-parser stack has a slot. As it stands the package is a competent `FontFace` shim with a duplicated core, well short of an authoritative font-resource library.
+
+## 2026-07-09 — deepened
+
+detectFontFormat magic-byte sniff, document.fonts load-status queries, family-name escaping fix, inferFontFormatFromUrl rename (commit 82ca6658). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.

@@ -99,7 +99,7 @@ The `StatusBarStyle` values ('light' | 'dark' | 'default') deliberately cover iO
 
 ### `enableStatusBarSignals` no-op
 
-Currently a no-op documentation marker. The `@flighthq/network` package does not have a corresponding `enableNetworkSignals` function either. If the project adds a cost-model pattern to all event capabilities, this is the hook point.
+Currently a no-op documentation marker. The `@flighthq/connectivity` package does not have a corresponding `enableConnectivitySignals` function either. If the project adds a cost-model pattern to all event capabilities, this is the hook point.
 
 ## Concerns and surprises
 

@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/animation'
-status: partial
-score: 40
-updated: 2026-07-03
+status: solid
+score: 62
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -62,3 +62,7 @@ The sampling kernel is keep-worthy as-is; build the system on top of it, in this
 5. **Run the flagged boundary design pass** and record the outcome: player-vs-tween-vs-`clock` time drivers, and whether tween targets ride `AnimationChannel`.
 
 Quality is high; the architecture (target-free core + domain bindings) is the right skeleton for an authoritative library. The score is a scope score: without blending, events, and clip utilities it covers roughly the first third of the domain.
+
+## 2026-07-09 — deepened
+
+binary-search sampling, sampleAnimationClip core, opt-in player signals, ping-pong/repeat loop modes, play/stop/normalized-time, validateAnimationTrack, clone/trim (commit 1fd0a7fd). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.

@@ -1,9 +1,12 @@
 // glTF 2.0 JSON wire-format schema — the subset @flighthq/scene-formats imports today (node hierarchy
-// + mesh geometry from embedded base64 buffers). Field names match the glTF 2.0 spec exactly. Indices
-// into the document's parallel arrays are the spec's referencing model.
+// + mesh geometry from embedded base64 or GLB-binary buffers). Field names match the glTF 2.0 spec
+// exactly. Indices into the document's parallel arrays are the spec's referencing model.
+//
+// These wire types are format-internal: only `GltfDocument` is re-exported from the package barrel (it
+// is the public input shape of `createSceneFromGltf`); the rest stay module-internal to the package.
 
 export interface GltfDocument {
-  asset: { version: string };
+  asset?: { version: string };
   scene?: number;
   scenes?: GltfScene[];
   nodes?: GltfNode[];
@@ -11,6 +14,8 @@ export interface GltfDocument {
   accessors?: GltfAccessor[];
   bufferViews?: GltfBufferView[];
   buffers?: GltfBuffer[];
+  extensionsUsed?: string[];
+  extensionsRequired?: string[];
 }
 
 export interface GltfScene {
@@ -35,9 +40,10 @@ export interface GltfMesh {
 }
 
 export interface GltfPrimitive {
-  attributes: { NORMAL?: number; POSITION?: number; TEXCOORD_0?: number };
+  attributes: { NORMAL?: number; POSITION?: number; TANGENT?: number; TEXCOORD_0?: number };
   indices?: number;
   material?: number;
+  // Primitive topology (GL constant). Absent means 4 (TRIANGLES).
   mode?: number;
 }
 
@@ -62,5 +68,6 @@ export interface GltfBufferView {
 
 export interface GltfBuffer {
   byteLength: number;
+  // Absent when the buffer's bytes come from a GLB binary chunk rather than a URI.
   uri?: string;
 }

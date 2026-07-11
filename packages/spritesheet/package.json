@@ -27,11 +27,8 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/displayobject": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/image": "*",
-    "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/tileset": "*",

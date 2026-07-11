@@ -135,4 +135,27 @@ describe('parseXmlDocument', () => {
     const doc = parseXmlDocument(xml);
     expect(doc?.children[0]?.text).toBe('hello');
   });
+
+  it('keeps a > inside a quoted attribute value as data, not tag-end', () => {
+    const root = parseXmlDocument('<node attr="a>b"/>');
+    expect(root?.name).toBe('node');
+    expect(root?.attributes.attr).toBe('a>b');
+    expect(root?.children).toEqual([]);
+  });
+
+  it('keeps a > inside a single-quoted attribute value and still parses children', () => {
+    const root = parseXmlDocument(`<root><child path='x>y'/></root>`);
+    expect(root?.children.length).toBe(1);
+    expect(root?.children[0].attributes.path).toBe('x>y');
+  });
+
+  it('strips a DOCTYPE that carries an internal subset', () => {
+    const xml =
+      '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" ' +
+      '"http://www.apple.com/DTDs/PropertyList-1.0.dtd" [ <!ENTITY x "y"> ]>' +
+      '<plist version="1.0"/>';
+    const doc = parseXmlDocument(xml);
+    expect(doc?.name).toBe('plist');
+    expect(doc?.attributes.version).toBe('1.0');
+  });
 });

@@ -22,22 +22,31 @@ export function attachPower(power: Power, idleThresholdSeconds = 60): void {
   let wasCharging = backend.getStatus(_scratch).isCharging;
   const unsubscribeChange = backend.subscribe(() => {
     const status = backend.getStatus(_scratch);
-    emitSignal(power.onChange, status);
+    if (power.onChange !== null) emitSignal(power.onChange, status);
     if (status.isCharging !== wasCharging) {
       wasCharging = status.isCharging;
-      emitSignal(status.isCharging ? power.onCharging : power.onDischarging);
+      const transition = status.isCharging ? power.onCharging : power.onDischarging;
+      if (transition !== null) emitSignal(transition);
     }
   });
-  const unsubscribeLockScreen = backend.subscribeLockScreen(() => emitSignal(power.onLockScreen));
-  const unsubscribeLowPowerModeChange = backend.subscribeLowPowerModeChange(() =>
-    emitSignal(power.onLowPowerModeChange),
-  );
-  const unsubscribeResume = backend.subscribeResume(() => emitSignal(power.onResume));
-  const unsubscribeSuspend = backend.subscribeSuspend(() => emitSignal(power.onSuspend));
-  const unsubscribeThermalStateChange = backend.subscribeThermalStateChange(() =>
-    emitSignal(power.onThermalStateChange),
-  );
-  const unsubscribeUnlockScreen = backend.subscribeUnlockScreen(() => emitSignal(power.onUnlockScreen));
+  const unsubscribeLockScreen = backend.subscribeLockScreen(() => {
+    if (power.onLockScreen !== null) emitSignal(power.onLockScreen);
+  });
+  const unsubscribeLowPowerModeChange = backend.subscribeLowPowerModeChange(() => {
+    if (power.onLowPowerModeChange !== null) emitSignal(power.onLowPowerModeChange);
+  });
+  const unsubscribeResume = backend.subscribeResume(() => {
+    if (power.onResume !== null) emitSignal(power.onResume);
+  });
+  const unsubscribeSuspend = backend.subscribeSuspend(() => {
+    if (power.onSuspend !== null) emitSignal(power.onSuspend);
+  });
+  const unsubscribeThermalStateChange = backend.subscribeThermalStateChange(() => {
+    if (power.onThermalStateChange !== null) emitSignal(power.onThermalStateChange);
+  });
+  const unsubscribeUnlockScreen = backend.subscribeUnlockScreen(() => {
+    if (power.onUnlockScreen !== null) emitSignal(power.onUnlockScreen);
+  });
 
   // Idle state polling: poll at the configured interval and emit onIdleStateChange on transitions.
   // The poll emits only when at least one slot is connected, avoiding spurious allocations when
@@ -45,11 +54,12 @@ export function attachPower(power: Power, idleThresholdSeconds = 60): void {
   // when a listener connects after attach.
   let lastIdleState: PowerIdleState = backend.getSystemIdleState(idleThresholdSeconds);
   const idleIntervalId = setInterval(() => {
-    if (!hasSignalSlots(power.onIdleStateChange)) return;
+    const idleSignal = power.onIdleStateChange;
+    if (idleSignal === null || !hasSignalSlots(idleSignal)) return;
     const current = backend.getSystemIdleState(idleThresholdSeconds);
     if (current !== lastIdleState) {
       lastIdleState = current;
-      emitSignal(power.onIdleStateChange);
+      emitSignal(idleSignal);
     }
   }, _idlePollingIntervalMs);
 
@@ -65,19 +75,20 @@ export function attachPower(power: Power, idleThresholdSeconds = 60): void {
   });
 }
 
-// Allocates a Power event entity with inert signals; call attachPower to start delivery.
+// Allocates a Power event entity with its signals left null. Call enablePowerSignals to allocate the
+// signals to connect to, and attachPower to start delivering backend changes into them.
 export function createPower(): Power {
   return {
-    onChange: createSignal(),
-    onCharging: createSignal(),
-    onDischarging: createSignal(),
-    onIdleStateChange: createSignal(),
-    onLockScreen: createSignal(),
-    onLowPowerModeChange: createSignal(),
-    onResume: createSignal(),
-    onSuspend: createSignal(),
-    onThermalStateChange: createSignal(),
-    onUnlockScreen: createSignal(),
+    onChange: null,
+    onCharging: null,
+    onDischarging: null,
+    onIdleStateChange: null,
+    onLockScreen: null,
+    onLowPowerModeChange: null,
+    onResume: null,
+    onSuspend: null,
+    onThermalStateChange: null,
+    onUnlockScreen: null,
   };
 }
 
@@ -279,8 +290,19 @@ export function disposePower(power: Power): void {
   detachPower(power);
 }
 
-export function enablePowerSignals(): Power {
-  return createPower();
+// Allocates any not-yet-allocated Power signals so callers can connect to them. Idempotent: signals
+// already allocated are left untouched. Pair with attachPower to begin delivery.
+export function enablePowerSignals(power: Power): void {
+  if (power.onChange === null) power.onChange = createSignal();
+  if (power.onCharging === null) power.onCharging = createSignal();
+  if (power.onDischarging === null) power.onDischarging = createSignal();
+  if (power.onIdleStateChange === null) power.onIdleStateChange = createSignal();
+  if (power.onLockScreen === null) power.onLockScreen = createSignal();
+  if (power.onLowPowerModeChange === null) power.onLowPowerModeChange = createSignal();
+  if (power.onResume === null) power.onResume = createSignal();
+  if (power.onSuspend === null) power.onSuspend = createSignal();
+  if (power.onThermalStateChange === null) power.onThermalStateChange = createSignal();
+  if (power.onUnlockScreen === null) power.onUnlockScreen = createSignal();
 }
 
 export function getPowerBackend(): PowerBackend {

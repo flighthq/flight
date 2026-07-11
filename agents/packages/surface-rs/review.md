@@ -12,6 +12,8 @@ ingested:
   - charter.md
 ---
 
+> **Historical — package spun out to `flight-rs` (2026-07-10).** This merge-gate review predates the spin-out and refers to `packages/surface-rs/` code that no longer lives in this monorepo. Kept for design/history; not an actionable local gate. See charter for the spin-out note.
+
 # Review: @flighthq/surface-rs (merge gate — integration-b2824e3d8 vs approved origin/main)
 
 ## Verdict

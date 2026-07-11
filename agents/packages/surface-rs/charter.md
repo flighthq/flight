@@ -2,6 +2,7 @@
 package: '@flighthq/surface-rs'
 crate: null
 draft: false
+spunOut: flight-rs
 lastDirection: 2026-07-03
 review: ./review.md
 assessment: ./assessment.md
@@ -9,6 +10,8 @@ status: ./status.md
 ---
 
 # surface-rs — Charter
+
+> **Spun out (2026-07-10).** `@flighthq/surface-rs` and its `flighthq-surface-wasm` crate are **built and maintained in the separate `flight-rs` repository**, not this monorepo — `packages/surface-rs/` and `crates/` no longer exist here. This cell is kept for reference (the design/north-star below still describes the package's contract), but it is **not local build work**: do not scaffold it here, and it is excluded from the TODO's chartered-unbuilt list via the `spunOut` front-matter marker. The same applies to any future Rust/wasm `-rs` acceleration siblings — they live in `flight-rs`. The review and status logs below predate the spin-out and describe its in-repo history.
 
 ## What it is
 

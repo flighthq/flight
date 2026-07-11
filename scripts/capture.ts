@@ -40,9 +40,6 @@
 //
 // Requires Playwright browsers: npx playwright install chromium
 
-import { resolve } from 'path';
-import pc from 'picocolors';
-
 import {
   captureEntry,
   captureParallel,
@@ -55,7 +52,9 @@ import {
   rendererMatchesFilter,
   resolveServer,
   resolveStaticServer,
-} from './capture-core.js';
+} from '@flighthq/tool-capture';
+import { resolve } from 'path';
+import pc from 'picocolors';
 
 // ---------------------------------------------------------------------------
 // Arg parsing

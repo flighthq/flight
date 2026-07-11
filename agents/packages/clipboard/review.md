@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/clipboard'
 status: partial
-score: 35
-updated: 2026-06-25
+score: 40
+updated: 2026-07-09
 ingested:
   - base=origin/main(eb73c3d74)
   - evidence=integration-b2824e3d8 delta
@@ -16,7 +16,7 @@ ingested:
 
 ## Verdict
 
-**REJECT for merge as-is — partial, 35/100.** This is a merge-gate score, not a quality score for the work the builder did. The **clipboard package half** of the change is well-shaped in isolation — a generic MIME format seam, atomic multi-flavor write, batch read, file flavor, a completed `has*` set, and an `@flighthq/network`-shaped `ClipboardWatch` change-event capability, all with colocated tests. But the integration head is **not buildable**: the `@flighthq/types` half of the change — the new `ClipboardWatch` / `ClipboardWriteItem` types and the ~10 new `ClipboardBackend` methods the package and its tests depend on — **never landed in the integration tree**. `packages/clipboard/src/clipboard.ts` imports symbols and calls interface methods that do not exist in `@flighthq/types`. `tsc -b` cannot pass. The status doc claims the types shipped; the diff proves they did not. The package cannot merge until the types half is restored.
+**REJECT for merge as-is — partial, 35/100.** This is a merge-gate score, not a quality score for the work the builder did. The **clipboard package half** of the change is well-shaped in isolation — a generic MIME format seam, atomic multi-flavor write, batch read, file flavor, a completed `has*` set, and an `@flighthq/connectivity`-shaped `ClipboardWatch` change-event capability, all with colocated tests. But the integration head is **not buildable**: the `@flighthq/types` half of the change — the new `ClipboardWatch` / `ClipboardWriteItem` types and the ~10 new `ClipboardBackend` methods the package and its tests depend on — **never landed in the integration tree**. `packages/clipboard/src/clipboard.ts` imports symbols and calls interface methods that do not exist in `@flighthq/types`. `tsc -b` cannot pass. The status doc claims the types shipped; the diff proves they did not. The package cannot merge until the types half is restored.
 
 The other axes (composition, naming, tree-shaking, sentinels, dispose-correctness) are clean and would pass on their own — see the per-axis pass/fail below. The score is dominated by the single hard compile break, because a merge gate cannot pass code that does not type-check.
 
@@ -74,10 +74,14 @@ This is the textbook "types-first" violation the contract guards against, surfac
 
 ## What is genuinely good in this delta (so the fix is cheap to restore)
 
-The package-side design is the right shape and should survive intact once the types are restored: the generic MIME seam as bedrock, the named flavors as convenience, the atomic `writeClipboard(items)` write, the `[]`/`{}`/`-1`/`false` sentinel discipline, and the `create*`/`attach*`/`detach*`/`dispose*` event-entity shape that mirrors `@flighthq/network`. The fix is not a redesign — it is restoring the three `@flighthq/types` files and the `ClipboardBackend` extension that the package was written against.
+The package-side design is the right shape and should survive intact once the types are restored: the generic MIME seam as bedrock, the named flavors as convenience, the atomic `writeClipboard(items)` write, the `[]`/`{}`/`-1`/`false` sentinel discipline, and the `create*`/`attach*`/`detach*`/`dispose*` event-entity shape that mirrors `@flighthq/connectivity`. The fix is not a redesign — it is restoring the three `@flighthq/types` files and the `ClipboardBackend` extension that the package was written against.
 
 ## Where the contract/admin docs need a follow-up
 
 - The Package Map line in `index.md` still reads "system clipboard read/write (text, HTML)"; the delta covers HTML, image, RTF, bookmark, files, the generic MIME seam, atomic write, and change events. (Recommended in assessment, but **after** the merge is buildable — not a gate item.)
 - `package.json` `description` (`b2824e3d8:packages/clipboard/package.json:36`) likewise understates the surface.
 - The `ClipboardFormat` constants the status doc says were added are unused by the package's own code even in the builder's worktree (the `has*` paths hardcode `'text/x-moz-url'` / `'text/html'` / `'text/rtf'`); fold that into the same types-restore pass.
+
+## 2026-07-09 — refreshed
+
+test suite routed through ClipboardFormat constants (source already used them); verified stale-clean (commit b1e7bb81). Verified against source; a full re-review is due.

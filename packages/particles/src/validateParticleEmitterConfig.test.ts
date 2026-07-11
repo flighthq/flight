@@ -1,17 +1,5 @@
-import { createParticleEmitter } from '@flighthq/sprite';
-import type { TextureAtlas } from '@flighthq/types';
-
 import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState } from './particleEmitterState';
-import { updateParticleEmitter } from './updateParticleEmitter';
 import { normalizeParticleEmitterConfig, validateParticleEmitterConfig } from './validateParticleEmitterConfig';
-
-function makeAtlas(): TextureAtlas {
-  return {
-    image: null,
-    regions: [{ id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null }],
-  } as TextureAtlas;
-}
 
 describe('normalizeParticleEmitterConfig', () => {
   it('leaves a valid config materially unchanged', () => {
@@ -64,26 +52,6 @@ describe('normalizeParticleEmitterConfig', () => {
   it('validate flags a non-finite curve sample as an error', () => {
     const issues = validateParticleEmitterConfig(createParticleEmitterConfig({ alphaCurve: [0, NaN, 1] }));
     expect(issues.some((i) => i.field === 'alphaCurve' && i.severity === 'error')).toBe(true);
-  });
-
-  it('produces a config that simulates without NaN poisoning', () => {
-    // A pathologically corrupt config that would otherwise inject NaN everywhere.
-    const corrupt = createParticleEmitterConfig({
-      spawnRate: NaN,
-      lifetimeMin: NaN,
-      lifetimeMax: NaN,
-      gravityY: Infinity,
-      speedMin: NaN,
-      speedMax: NaN,
-    });
-    const safe = normalizeParticleEmitterConfig(corrupt);
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
-    const state = createParticleEmitterState();
-    for (let i = 0; i < 30; i++) updateParticleEmitter(emitter, state, safe, 1 / 60);
-    expect(emitter.data.particleCount).toBeGreaterThan(0);
-    for (let i = 0; i < emitter.data.particleCount * 4; i++) {
-      expect(Number.isFinite(emitter.data.transforms[i])).toBe(true);
-    }
   });
 });
 

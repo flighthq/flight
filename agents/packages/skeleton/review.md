@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/skeleton'
-status: stub
-score: 27
-updated: 2026-07-03
+status: partial
+score: 52
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -58,3 +58,7 @@ Keep the palette kernel and the joints-are-SceneNodes architecture — both are 
 5. **Two-bone IK and aim constraints**, then DQS as a palette-mode sibling.
 
 The one operation present is implemented to a high standard; the package is a stub only in the sense that matters here — the domain surface. It is the single most essential function of a skinning library with nothing yet around it.
+
+## 2026-07-09 — deepened
+
+entity quartet (clone/dispose/equals), CPU linear-blend-skinning kernel, joint names + lookup, validateSkeleton, world-matrix socket accessor (commit 58cce81d). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.

@@ -95,6 +95,12 @@ describe('loadTilesetFromBase64', () => {
     expect(tileset.tileHeight).toBe(16);
     expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
   });
+
+  it('threads margin and spacing into the tileset', async () => {
+    const tileset = await loadTilesetFromBase64('abc123', 'image/png', 16, 16, 2, 4);
+    expect(tileset.margin).toBe(2);
+    expect(tileset.spacing).toBe(4);
+  });
 });
 
 describe('loadTilesetFromBlob', () => {
@@ -102,6 +108,13 @@ describe('loadTilesetFromBlob', () => {
     const blob = new Blob([], { type: 'image/png' });
     const tileset = await loadTilesetFromBlob(blob, 32, 32);
     expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+  });
+
+  it('threads margin and spacing into the tileset', async () => {
+    const blob = new Blob([], { type: 'image/png' });
+    const tileset = await loadTilesetFromBlob(blob, 32, 32, 1, 3);
+    expect(tileset.margin).toBe(1);
+    expect(tileset.spacing).toBe(3);
   });
 });
 
@@ -119,6 +132,14 @@ describe('loadTilesetFromBytes', () => {
     const bytes = new Uint8Array(16);
     await expect(loadTilesetFromBytes(bytes, 32, 32)).rejects.toThrow('Unable to determine image type');
   });
+
+  it('threads margin and spacing into the tileset with mimeType still after them', async () => {
+    const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const tileset = await loadTilesetFromBytes(bytes, 32, 32, 5, 6, 'image/png');
+    expect(tileset.margin).toBe(5);
+    expect(tileset.spacing).toBe(6);
+    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+  });
 });
 
 describe('loadTilesetFromUrl', () => {
@@ -126,6 +147,13 @@ describe('loadTilesetFromUrl', () => {
     const tileset = await loadTilesetFromUrl('data:image/png;base64,abc', 32, 32);
     expect(tileset.tileWidth).toBe(32);
     expect(tileset.tileHeight).toBe(32);
+    expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
+  });
+
+  it('threads margin and spacing into the tileset with crossOrigin still after them', async () => {
+    const tileset = await loadTilesetFromUrl('data:image/png;base64,abc', 32, 32, 3, 2, 'anonymous');
+    expect(tileset.margin).toBe(3);
+    expect(tileset.spacing).toBe(2);
     expect(tileset.atlas?.image?.source).toBeInstanceOf(HTMLImageElement);
   });
 });

@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity';
+import { detectImageMimeType } from '@flighthq/image-codec';
 import type { ImageResource } from '@flighthq/types';
 
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
@@ -35,39 +36,6 @@ export function createImageResourceFromImageElement(img: HTMLImageElement): Imag
     version: 0,
     width: img.width,
   });
-}
-
-export function detectImageMimeType(data: ArrayBuffer | Uint8Array): string | null {
-  const b = data instanceof Uint8Array ? data : new Uint8Array(data);
-  if (b.byteLength < 4) return null;
-
-  // PNG: 89 50 4E 47 0D 0A 1A 0A
-  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
-
-  // JPEG: FF D8 FF
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
-
-  // GIF87a / GIF89a: 47 49 46 38
-  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) return 'image/gif';
-
-  // WebP: RIFF....WEBP (bytes 0-3 and 8-11)
-  if (
-    b.byteLength >= 12 &&
-    b[0] === 0x52 &&
-    b[1] === 0x49 &&
-    b[2] === 0x46 &&
-    b[3] === 0x46 &&
-    b[8] === 0x57 &&
-    b[9] === 0x45 &&
-    b[10] === 0x42 &&
-    b[11] === 0x50
-  )
-    return 'image/webp';
-
-  // BMP: 42 4D
-  if (b[0] === 0x42 && b[1] === 0x4d) return 'image/bmp';
-
-  return null;
 }
 
 export function isImageResourceSameOrigin(url: string): boolean {

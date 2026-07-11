@@ -637,7 +637,7 @@ describe('getScreenNearestPoint', () => {
   });
 });
 describe('getScreenNearestRect', () => {
-  it('delegates to getScreenContainingRect', () => {
+  it('returns the screen that fully contains the rectangle', () => {
     setScreenBackend(
       fakeBackend([
         { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
@@ -645,8 +645,68 @@ describe('getScreenNearestRect', () => {
       ]),
     );
     const out = createScreenInfo();
-    getScreenNearestRect({ x: 1920, y: 0, width: 200, height: 100 }, out);
+    const result = getScreenNearestRect({ x: 2000, y: 100, width: 200, height: 100 }, out);
+    expect(result).toBe(out);
     expect(out.id).toBe(1);
+  });
+
+  it('prefers the containing screen even when a neighbor center is closer', () => {
+    // Rect sits wholly on the wide screen 1 near its left edge; screen 0's center (500) is nearer
+    // the rect center (1060) than screen 1's center (3000), yet containment must still win.
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1000, height: 1000, isPrimary: true },
+        { id: 1, x: 1000, y: 0, width: 4000, height: 1000, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    getScreenNearestRect({ x: 1010, y: 0, width: 100, height: 100 }, out);
+    expect(out.id).toBe(1);
+  });
+
+  it('falls back to the screen nearest by center when no screen contains the rectangle', () => {
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1920, height: 1080, isPrimary: true },
+        { id: 1, x: 1920, y: 0, width: 1920, height: 1080, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    // Rect is far to the right, contained by neither screen — nearest center is screen 1.
+    getScreenNearestRect({ x: 5000, y: 0, width: 10, height: 10 }, out);
+    expect(out.id).toBe(1);
+  });
+
+  it('picks by center distance where getScreenContainingRect picks by overlap area', () => {
+    // A rect straddling both screens, contained by neither: screen 1 has the larger overlap (300px
+    // vs 100px), but the rect center (1100) is nearer screen 0's center (500) than screen 1's (3000).
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1000, height: 1000, isPrimary: true },
+        { id: 1, x: 1000, y: 0, width: 4000, height: 1000, isPrimary: false },
+      ]),
+    );
+    const rect = { x: 900, y: 0, width: 400, height: 100 };
+    const nearest = createScreenInfo();
+    const containing = createScreenInfo();
+    getScreenNearestRect(rect, nearest);
+    getScreenContainingRect(rect, containing);
+    expect(nearest.id).toBe(0);
+    expect(containing.id).toBe(1);
+  });
+
+  it('resolves a center-distance tie to the first such screen', () => {
+    // Two equally-sized screens; a rect centered on their shared seam is equidistant from both
+    // centers, so the first screen in order wins.
+    setScreenBackend(
+      fakeBackend([
+        { id: 0, x: 0, y: 0, width: 1000, height: 1000, isPrimary: true },
+        { id: 1, x: 1000, y: 0, width: 1000, height: 1000, isPrimary: false },
+      ]),
+    );
+    const out = createScreenInfo();
+    getScreenNearestRect({ x: 900, y: 400, width: 200, height: 200 }, out);
+    expect(out.id).toBe(0);
   });
 });
 describe('getScreens', () => {
