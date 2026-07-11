@@ -27,6 +27,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/effects": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-wgpu": "*",

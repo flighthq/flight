@@ -1,7 +1,6 @@
-import type { BloomEffect, GrayscaleEffect, RenderEffect, ToneMapEffect, VignetteEffect } from '@flighthq/types';
+import type { BloomEffect, RenderEffect, ToneMapEffect, VignetteEffect } from '@flighthq/types';
 
 import { createBloomEffect } from './bloomEffect';
-import { createGrayscaleEffect } from './grayscaleEffect';
 import { getRenderEffectDefaults, normalizeRenderEffect } from './renderEffectDefaults';
 import { createToneMapEffect } from './toneMapEffect';
 import { createVignetteEffect } from './vignetteEffect';
@@ -42,10 +41,10 @@ describe('normalizeRenderEffect', () => {
     expect(out.radius).toBe(8); // filled from defaults
   });
   it('preserves explicitly set zero and false', () => {
-    const effect = createGrayscaleEffect({ intensity: 0 });
-    const out = { kind: 'GrayscaleEffect' } as GrayscaleEffect;
+    const effect = createBloomEffect({ threshold: 0 });
+    const out = { kind: 'BloomEffect' } as BloomEffect;
     normalizeRenderEffect(effect, out);
-    expect(out.intensity).toBe(0); // 0 is explicit, should not be replaced by default 1
+    expect(out.threshold).toBe(0); // 0 is explicit, should not be replaced by default 0.8
   });
   it('carries over fields not in the defaults table', () => {
     const effect = createVignetteEffect({ intensity: 0.3 });

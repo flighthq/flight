@@ -372,6 +372,20 @@ export function createWhiteBalanceColorMatrix(temperature: number, tint: number)
 }
 
 /**
+ * Fuses a run of color matrices into ONE matrix that applies them left-to-right (index 0 first, then
+ * 1, …). This is the matrix-tier fuse: a stack of consecutive matrix-tier adjustments collapses to a
+ * single 4×5 matrix run through one generic color-matrix pass instead of one pass per adjustment.
+ * Order matters (matrix composition is not commutative); an empty list yields the identity. Allocates
+ * the result array.
+ */
+export function fuseColorMatrices(matrices: ReadonlyArray<Readonly<number[]>>): number[] {
+  if (matrices.length === 0) return createIdentityColorMatrix();
+  const out = matrices[0].slice();
+  for (let i = 1; i < matrices.length; i++) multiplyColorMatrix(matrices[i], out, out);
+  return out;
+}
+
+/**
  * Composes matrix `b` applied first and then `a`. The result is equivalent to applying `b` to a
  * color and then `a` to the result. When `out` is provided the result is written there (alias-safe:
  * `out` may be `a` or `b`). Returns the output array (either `out` or a freshly allocated array).

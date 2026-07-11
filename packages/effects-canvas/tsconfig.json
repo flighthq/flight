@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../adjustments"
+    },
+    {
       "path": "../displayobject-canvas"
     },
     {

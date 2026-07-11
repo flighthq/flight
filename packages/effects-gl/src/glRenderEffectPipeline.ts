@@ -1,3 +1,4 @@
+import { fuseColorMatrices, getAdjustmentColorMatrix } from '@flighthq/adjustments';
 import { createMatrix } from '@flighthq/geometry';
 import {
   acquireGlRenderTarget,
@@ -14,6 +15,7 @@ import {
   resolveGlRenderTarget,
 } from '@flighthq/render-gl';
 import type {
+  Adjustment,
   GlRenderEffectPipeline,
   GlRenderState,
   GlRenderTarget,
@@ -21,6 +23,7 @@ import type {
   RenderEffectPipelineOptions,
 } from '@flighthq/types';
 
+import { applyColorMatrixPassToGl } from './glColorMatrixPass';
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 
@@ -60,7 +63,7 @@ export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: Gl
 export function endGlRenderEffectPipeline(
   state: GlRenderState,
   pipeline: GlRenderEffectPipeline,
-  effects: ReadonlyArray<RenderEffect>,
+  operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
@@ -73,16 +76,38 @@ export function endGlRenderEffectPipeline(
   let source: GlRenderTarget = scene;
   let scratchA: GlRenderTarget | null = null;
   let scratchB: GlRenderTarget | null = null;
+  // A maximal run of consecutive matrix-tier adjustments fuses into one matrix and one pass; an effect
+  // (or the end of the stack) breaks the run and flushes it first, preserving stack order.
+  let pending: (readonly number[])[] = [];
 
-  for (const effect of effects) {
-    const runner = getGlRenderEffectRunner(state, effect.kind);
-    if (runner === null) continue;
+  const ensureScratch = (): void => {
     if (scratchA === null) scratchA = acquireGlRenderTarget(state, pipeline.pool, descriptor);
     if (scratchB === null) scratchB = acquireGlRenderTarget(state, pipeline.pool, descriptor);
-    const dest = source === scratchA ? scratchB : scratchA;
-    // Hand every effect a clean destination. scratchA/scratchB ping-pong across the chain, so a target
-    // reused two passes later still holds an earlier effect's output; clearing here means a non-covering
-    // effect (one whose output has transparent regions) never composites onto that stale content.
+  };
+  // Hand every pass a clean destination. scratchA/scratchB ping-pong across the chain, so a target
+  // reused two passes later still holds an earlier pass's output; clearing means a non-covering effect
+  // never composites onto stale content.
+  const flushAdjustments = (): void => {
+    if (pending.length === 0) return;
+    ensureScratch();
+    const dest = source === scratchA ? scratchB! : scratchA!;
+    clearGlRenderTarget(state, dest);
+    applyColorMatrixPassToGl(state, source, dest, fuseColorMatrices(pending));
+    source = dest;
+    pending = [];
+  };
+
+  for (const operation of operations) {
+    const matrix = getAdjustmentColorMatrix(operation);
+    if (matrix !== null) {
+      pending.push(matrix);
+      continue;
+    }
+    const runner = getGlRenderEffectRunner(state, operation.kind);
+    if (runner === null) continue;
+    flushAdjustments();
+    ensureScratch();
+    const dest = source === scratchA ? scratchB! : scratchA!;
     clearGlRenderTarget(state, dest);
     // Depth/velocity always come from the original scene target, not the ping-ponged `source`.
     runner(
@@ -94,10 +119,11 @@ export function endGlRenderEffectPipeline(
         sceneDepthTexture: scene.depthTexture,
         sceneVelocityTexture: pipeline.velocityTexture,
       },
-      effect,
+      operation,
     );
     source = dest;
   }
+  flushAdjustments();
 
   presentGlRenderEffectResult(state, source);
 

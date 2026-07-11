@@ -10,14 +10,12 @@ import {
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createDisplayContainer,
-  createSepiaEffect,
+  createSepiaAdjustment,
   createShape,
-  defaultCanvasSepiaEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -33,7 +31,6 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'SepiaEffect', defaultCanvasSepiaEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -46,7 +43,7 @@ export function render(root: DisplayObject): void {
   beginCanvasRenderEffectPipeline(state, pipeline);
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
-  endCanvasRenderEffectPipeline(state, pipeline, [createSepiaEffect({ intensity: 1 })]);
+  endCanvasRenderEffectPipeline(state, pipeline, [createSepiaAdjustment({ intensity: 1 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

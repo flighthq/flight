@@ -1,3 +1,4 @@
+import { fuseColorMatrices, getAdjustmentColorMatrix } from '@flighthq/adjustments';
 import {
   beginCanvasRenderTarget,
   createCanvasRenderTarget,
@@ -6,6 +7,7 @@ import {
 } from '@flighthq/displayobject-canvas';
 import { createMatrix } from '@flighthq/geometry';
 import type {
+  Adjustment,
   CanvasRenderEffectPipeline,
   CanvasRenderState,
   CanvasRenderTarget,
@@ -14,6 +16,7 @@ import type {
   RenderEffectPipelineOptions,
 } from '@flighthq/types';
 
+import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Opt-in Canvas 2D post-process pipeline — the parallel of the Gl effect pipeline. The scene renders
@@ -79,7 +82,7 @@ export function destroyCanvasRenderEffectPipeline(
 export function endCanvasRenderEffectPipeline(
   state: CanvasRenderState,
   pipeline: CanvasRenderEffectPipeline,
-  effects: ReadonlyArray<RenderEffect>,
+  operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
@@ -90,16 +93,38 @@ export function endCanvasRenderEffectPipeline(
   let source: CanvasRenderTarget = scene;
   let scratchA: CanvasRenderTarget | null = null;
   let scratchB: CanvasRenderTarget | null = null;
+  // A maximal run of consecutive matrix-tier adjustments fuses into one matrix and one pass; an effect
+  // (or the end of the stack) breaks the run and flushes it first, preserving stack order.
+  let pending: (readonly number[])[] = [];
 
-  for (const effect of effects) {
-    const runner = getCanvasRenderEffectRunner(state, effect.kind);
-    if (runner === null) continue;
+  const ensureScratch = (): void => {
     if (scratchA === null) scratchA = acquireCanvasRenderTarget(pool, scene.width, scene.height);
     if (scratchB === null) scratchB = acquireCanvasRenderTarget(pool, scene.width, scene.height);
-    const dest = source === scratchA ? scratchB : scratchA;
-    runner({ state, source, dest, pool }, effect);
+  };
+  const flushAdjustments = (): void => {
+    if (pending.length === 0) return;
+    ensureScratch();
+    const dest = source === scratchA ? scratchB! : scratchA!;
+    applyColorMatrixPassToCanvas(source, dest, fuseColorMatrices(pending));
+    source = dest;
+    pending = [];
+  };
+
+  for (const operation of operations) {
+    const matrix = getAdjustmentColorMatrix(operation);
+    if (matrix !== null) {
+      pending.push(matrix);
+      continue;
+    }
+    const runner = getCanvasRenderEffectRunner(state, operation.kind);
+    if (runner === null) continue;
+    flushAdjustments();
+    ensureScratch();
+    const dest = source === scratchA ? scratchB! : scratchA!;
+    runner({ state, source, dest, pool }, operation);
     source = dest;
   }
+  flushAdjustments();
 
   presentCanvasRenderEffectResult(state, source);
 

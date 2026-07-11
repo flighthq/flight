@@ -23,7 +23,7 @@ describe('registerAllCanvasRenderEffects', () => {
     const fakeState = {} as CanvasRenderState;
     registerAllCanvasRenderEffects(fakeState);
     expect(hasCanvasRenderEffectRunner(fakeState, 'BrightnessContrastEffect')).toBe(true);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'GrayscaleEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'ExposureEffect')).toBe(true);
   });
   it('registers stylize effects', () => {
     const fakeState = {} as CanvasRenderState;
@@ -76,7 +76,7 @@ describe('registerColorGradeCanvasRenderEffects', () => {
     const fakeState = {} as CanvasRenderState;
     registerColorGradeCanvasRenderEffects(fakeState);
     expect(hasCanvasRenderEffectRunner(fakeState, 'BrightnessContrastEffect')).toBe(true);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'GrayscaleEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'ExposureEffect')).toBe(true);
   });
   it('covers every non-passthrough color-grade kind', () => {
     const fakeState = {} as CanvasRenderState;
@@ -87,12 +87,9 @@ describe('registerColorGradeCanvasRenderEffects', () => {
       'ColorGradeEffect',
       'DitherEffect',
       'ExposureEffect',
-      'GrayscaleEffect',
       'HueSaturationEffect',
-      'InvertEffect',
       'LiftGammaGainEffect',
       'PosterizeEffect',
-      'SepiaEffect',
       'ToneMapEffect',
       'WhiteBalanceEffect',
     ];
