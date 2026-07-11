@@ -1,7 +1,7 @@
 import type { WgpuRenderState } from '@flighthq/types';
 
 import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
-import { createWgpuMeshPipeline, ensureWgpuScenePipeline } from './wgpuMeshPipeline';
+import { createWgpuMeshPipeline, ensureWgpuScenePipeline, ensureWgpuShadowSampleLayout } from './wgpuMeshPipeline';
 import type { WgpuPbrDefineKey } from './wgpuPbrPrelude';
 import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
 
@@ -37,7 +37,16 @@ export function compileWgpuPbrPipeline(
       { binding: 6, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  return createWgpuMeshPipeline(state, { doubleSided: key.doubleSided, format, materialBindGroupLayout, module });
+  // The PBR family is lit and PCF-samples the directional shadow map, so it carries the group(3)
+  // shadow-sample layout (mirrors scene-gl's PBR shadow sampling; classic mirrors GL classic, which does
+  // not apply the shadow term, so it is NOT passed here).
+  return createWgpuMeshPipeline(state, {
+    doubleSided: key.doubleSided,
+    format,
+    materialBindGroupLayout,
+    module,
+    shadowBindGroupLayout: ensureWgpuShadowSampleLayout(state),
+  });
 }
 
 // Resolves the PBR pipeline for a define key + color-attachment format, compiling and caching it on
