@@ -1,7 +1,12 @@
 import type { WgpuRenderState } from '@flighthq/types';
 
 import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
-import { createWgpuMeshPipeline, ensureWgpuScenePipeline, ensureWgpuShadowSampleLayout } from './wgpuMeshPipeline';
+import {
+  createWgpuMeshPipeline,
+  ensureWgpuIblSampleLayout,
+  ensureWgpuScenePipeline,
+  ensureWgpuShadowSampleLayout,
+} from './wgpuMeshPipeline';
 import type { WgpuPbrDefineKey } from './wgpuPbrPrelude';
 import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
 
@@ -37,12 +42,14 @@ export function compileWgpuPbrPipeline(
       { binding: 6, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  // The PBR family is lit and PCF-samples the directional shadow map, so it carries the group(3)
-  // shadow-sample layout (mirrors scene-gl's PBR shadow sampling; classic mirrors GL classic, which does
-  // not apply the shadow term, so it is NOT passed here).
+  // The PBR family is lit: it PCF-samples the directional shadow map (group 3) and samples image-based
+  // lighting (group 4), so it carries both the shadow-sample and IBL-sample layouts (mirrors scene-gl's
+  // PBR shadow + IBL sampling; classic mirrors GL classic, which applies neither, so neither is passed
+  // there). Passing both keeps the positional group order shadow(3) → IBL(4) in createWgpuMeshPipeline.
   return createWgpuMeshPipeline(state, {
     doubleSided: key.doubleSided,
     format,
+    iblBindGroupLayout: ensureWgpuIblSampleLayout(state),
     materialBindGroupLayout,
     module,
     shadowBindGroupLayout: ensureWgpuShadowSampleLayout(state),

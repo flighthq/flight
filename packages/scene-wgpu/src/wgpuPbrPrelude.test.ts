@@ -111,6 +111,23 @@ describe('getWgpuPbrModuleBody', () => {
     expect(body).toContain('if (CLEARCOAT)');
     expect(body).toContain('if (TRANSMISSION)');
   });
+
+  // The image-based-lighting bindings live at group(4) (shadow already took group 3), and the ambient term
+  // applies the split-sum IBL (diffuse irradiance + prefiltered specular × BRDF LUT) when enabled, mirroring
+  // scene-gl's sampleIblAmbient. A no-baked-IBL draw binds dummies gated off by ibl.params.x.
+  it('declares the group(4) IBL bindings and applies the split-sum ambient term', () => {
+    const body = getWgpuPbrModuleBody();
+    expect(body).toContain('@group(4) @binding(0) var<uniform> ibl');
+    expect(body).toContain('var iblIrradiance : texture_cube<f32>');
+    expect(body).toContain('var iblPrefiltered : texture_cube<f32>');
+    expect(body).toContain('var iblBrdf : texture_2d<f32>');
+    expect(body).toContain('fn sampleIblAmbient');
+    expect(body).toContain('fresnelSchlickRoughness');
+    // split-sum specular = prefiltered * (F * brdf.x + brdf.y)
+    expect(body).toContain('prefiltered * (F * brdf.x + brdf.y)');
+    // gated ambient: IBL when enabled, else the flat ambient term.
+    expect(body).toContain('if (ibl.params.x > 0.5)');
+  });
 });
 
 describe('getWgpuPbrModuleSourceForKey', () => {

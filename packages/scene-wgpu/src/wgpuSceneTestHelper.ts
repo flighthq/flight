@@ -54,6 +54,7 @@ export function makeWgpuSceneState(): { fake: FakeWgpu; state: WgpuRenderState }
     };
 
   const renderPass = {
+    draw: record('draw'),
     drawIndexed: record('drawIndexed'),
     end: record('end'),
     setBindGroup: record('setBindGroup'),
@@ -64,19 +65,27 @@ export function makeWgpuSceneState(): { fake: FakeWgpu; state: WgpuRenderState }
   } as unknown as GPURenderPassEncoder;
 
   // A recording command encoder whose beginRenderPass hands back the same recording pass — enough for
-  // drawWgpuSceneShadowMap to drive its own depth-only pass under JSDOM.
+  // drawWgpuSceneShadowMap and the IBL bake to drive their own render passes under JSDOM. `finish` returns
+  // a plausible command buffer the recording queue's submit accepts.
   const commandEncoder = {
     beginRenderPass: record('beginRenderPass', renderPass),
+    finish: record('finish', {}),
   } as unknown as GPUCommandEncoder;
 
   const device = {
     limits: { minUniformBufferOffsetAlignment: 256 },
     queue: {
+      copyExternalImageToTexture: record('copyExternalImageToTexture'),
+      submit: record('submit'),
       writeBuffer: record('writeBuffer'),
       writeTexture: record('writeTexture'),
     },
     createBindGroup: record('createBindGroup', {}),
     createBindGroupLayout: record('createBindGroupLayout', {}),
+    createCommandEncoder: () => {
+      calls.push({ name: 'createCommandEncoder', args: [] });
+      return commandEncoder;
+    },
     createBuffer: (descriptor: unknown) => {
       calls.push({ name: 'createBuffer', args: [descriptor] });
       return { destroy: () => {} } as unknown as GPUBuffer;
