@@ -44,6 +44,7 @@ export * from './BitmapText';
 export * from './BlendMode';
 export * from './BlinnPhongMaterial';
 export * from './BloomEffect';
+export * from './BlurEffect';
 export * from './BlurFilter';
 export * from './BokehDepthOfFieldEffect';
 export * from './BoundingSphere';

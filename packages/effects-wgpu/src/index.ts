@@ -1,5 +1,6 @@
 export * from './wgpuBevelEffect';
 export * from './wgpuBloomEffect';
+export * from './wgpuBlurEffect';
 export * from './wgpuBokehDepthOfFieldEffect';
 export * from './wgpuBrightnessContrastEffect';
 export * from './wgpuCameraMotionBlurEffect';

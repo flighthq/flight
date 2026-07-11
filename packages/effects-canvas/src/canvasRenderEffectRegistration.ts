@@ -1,6 +1,7 @@
 import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types';
 
 import { defaultCanvasBloomEffectRunner } from './canvasBloomEffect';
+import { defaultCanvasBlurEffectRunner } from './canvasBlurEffect';
 import { defaultCanvasBrightnessContrastEffectRunner } from './canvasBrightnessContrastEffect';
 import { defaultCanvasChannelMixerEffectRunner } from './canvasChannelMixerEffect';
 import { defaultCanvasChromaticAberrationEffectRunner } from './canvasChromaticAberrationEffect';
@@ -128,6 +129,7 @@ const COMPOSITE_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRende
 // (require a depth or velocity buffer that Canvas 2D does not produce) and are omitted here.
 const BLUR_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderEffectRunner]> = [
   ['BloomEffect', defaultCanvasBloomEffectRunner],
+  ['BlurEffect', defaultCanvasBlurEffectRunner],
   ['DirectionalBlurEffect', defaultCanvasDirectionalBlurEffectRunner],
   ['RadialBlurEffect', defaultCanvasRadialBlurEffectRunner],
   ['TiltShiftEffect', defaultCanvasTiltShiftEffectRunner],

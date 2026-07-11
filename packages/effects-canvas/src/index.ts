@@ -1,4 +1,5 @@
 export * from './canvasBloomEffect';
+export * from './canvasBlurEffect';
 export * from './canvasBokehDepthOfFieldEffect';
 export * from './canvasBrightnessContrastEffect';
 export * from './canvasCameraMotionBlurEffect';

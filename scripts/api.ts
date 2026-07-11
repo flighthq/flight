@@ -431,7 +431,15 @@ function filterApi(packages: ApiPackage[], options: ParsedArgs): ApiPackage[] {
 // until the filters* packages retire (see effect-adjustment-architecture.md,
 // migration step 4). The overlapping color-matrix names are a deliberate mirror
 // for the duration of the migration. Remove this pair once filters is deleted.
-const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [['@flighthq/adjustments', '@flighthq/filters']];
+//
+// Likewise @flighthq/effects is the canonical home for the spatial-effect blur
+// math (box-blur radii, gaussian kernel weights, linear-sampled taps, downsample
+// selection), ported verbatim from @flighthq/filters-math, which keeps its copy
+// until the filters* packages retire. Remove this pair once filters-math is deleted.
+const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [
+  ['@flighthq/adjustments', '@flighthq/filters'],
+  ['@flighthq/effects', '@flighthq/filters-math'],
+];
 
 // Ratchet allowlist for accessor-prefix violations that predate the check.
 // Entries are '<package> <functionName>'. Existing entries are tolerated so
