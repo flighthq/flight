@@ -75,8 +75,10 @@ function makeCommandEncoder(): GPUCommandEncoder {
   } as unknown as GPUCommandEncoder;
 }
 
-function makePipeline(): GPURenderPipeline {
-  return {} as GPURenderPipeline;
+// The descriptor is stashed on the returned pipeline so tests can assert blend/target state the
+// real device would consume but the mock otherwise discards.
+function makePipeline(descriptor?: GPURenderPipelineDescriptor): GPURenderPipeline {
+  return { __descriptor: descriptor } as unknown as GPURenderPipeline;
 }
 
 function makeShaderModule(): GPUShaderModule {
@@ -99,7 +101,7 @@ function makeDevice(): GPUDevice {
     createBuffer: () => makeBuffer(),
     createCommandEncoder: () => makeCommandEncoder(),
     createPipelineLayout: () => makePipelineLayout(),
-    createRenderPipeline: () => makePipeline(),
+    createRenderPipeline: (descriptor: GPURenderPipelineDescriptor) => makePipeline(descriptor),
     createSampler: () => makeSampler(),
     createShaderModule: () => makeShaderModule(),
     createTexture: () => makeTexture(),

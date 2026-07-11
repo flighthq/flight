@@ -11,8 +11,8 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Per-node `alpha` | ✓ | ✓ | ✓ | ✓ | `HasAppearance.alpha` |
 | Per-node `visible` | ✓ | ✓ | ✓ | ✓ | inherits to subtree |
 | 2D transform (pos/rot/scale/pivot) | ✓ | ✓ | ✓ | ✓ | `rotation` is **degrees** (`node/transform2d.ts`) |
-| Blend modes — full separable set | ✓ | ✓ | ✗ | ✗ | see gap #1 |
-| Blend mode `Add` (additive) | ✓ | ✓ | ✓ | ✗ | gl: ok; wgpu: none |
+| Blend modes — fixed-function set (Add/Darken/Erase/Lighten/Multiply/Screen/Subtract) | ✓ | ✓ | ✓ | ✓ | gl + wgpu realize these; see gap #1 |
+| Blend modes — shader-composited (Overlay/HardLight/Difference/Invert) | ✓ | ✓ | ✗ | ✗ | no fixed-function form; fall back to Normal on gl/wgpu — gap #1 |
 | Clip (rect + contour) | ✓ | ✓ | ✓ | ✓ | opt-in `enable*ClipSupport` |
 | Render cache (`cacheAsBitmap`) | ✓ | ~ | ✓ | ~ | opt-in `enable*RenderCache`; bake reachable outside the frame loop only on canvas/gl (dom/wgpu bake in-frame) |
 | Stroke caps (none/round/square) | ✓ | ✓ | ✓ | ✓ |  |
@@ -42,7 +42,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 
 ## Known gaps (renderer not at parity — scope tests, don't fight them)
 
-1. **Blend modes are uneven.** Canvas (`globalCompositeOperation`) and DOM (CSS `mix-blend-mode`) do the full separable set. **gl** (`WEBGL_BLEND_MODE` table in `packages/render-gl/src/glDraw.ts`) uses fixed-function `blendFunc` and maps only `Normal`/`Layer` + `Add`; every other mode is `null` → silently falls back to Normal. **wgpu** bakes blend into the immutable render pipeline and honors **no** per-node `blendMode` (not even Add). Tests: `node-blend-modes` (canvas/dom/webgl, asserts Add) + `node-blend-modes-advanced` (canvas/dom, Multiply/Screen).
+1. **Blend modes are uneven for the shader-composited set only.** Canvas (`globalCompositeOperation`) and DOM (CSS `mix-blend-mode`) do the full separable set. **gl** (`DEFAULT_GL_BLEND_MODES` in `packages/render-gl/src/glDraw.ts`) and **wgpu** (`BLEND_MODES` in `packages/render-wgpu/src/wgpuShader.ts`) both realize the fixed-function set — `Add`, `Darken` (MIN), `Erase`, `Lighten` (MAX), `Multiply`, `Screen`, `Subtract` — plus `Normal`/`Layer`. The remaining `Overlay`/`HardLight`/`Difference`/`Invert` have no fixed-function equivalent (they need a shader-composited pass) and are `null` → silently fall back to Normal on gl/wgpu. Caveat: `Darken`/`Lighten` (MIN/MAX) can't fold in the `(1-src.a)` term, so a transparent surround darkens/limits the backdrop at edges the way premultiplied `Multiply` no longer does. Tests: `node-blend-modes` (canvas/dom/webgl, asserts Add) + `node-blend-modes-advanced` (canvas/dom, Multiply/Screen).
 2. **Stroke join styles not differentiated on gl/wgpu.** The GL shape-stroke tessellation has no miter/bevel/round join handling (caps DO work). Test `shape-stroke-joints` scoped to canvas/dom.
 3. **Per-bitmap `smoothing` ignored on gl/wgpu.** `bindGlTexture` (`packages/render-gl/src/glDraw.ts`) sets the texture min/mag filter from the **global** `state.allowSmoothing`, not the per-bitmap flag (and the texture is element-keyed cached, so the first draw's filter sticks). Test `bitmap-downscale-smoothing` scoped to canvas/dom.
 4. **Per-instance ColorTransform tint is gl/wgpu only.** Only `registerGlColorTransformMaterial` / `registerWgpuColorTransformMaterials` exist; Canvas/DOM bitmap renderers have no color-transform material renderer, so a `materialData` ColorTransform draws untinted there. (`bitmap-color-transform` sidesteps this by tinting source pixels via `applySurfaceColorTransform`, which is cross-backend.)
