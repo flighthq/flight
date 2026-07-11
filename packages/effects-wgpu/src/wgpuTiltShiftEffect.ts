@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { TiltShiftEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered at
@@ -16,7 +16,7 @@ export function applyTiltShiftEffectToWgpu(
   const width = effect.width ?? 0.3;
   const blur = effect.blur ?? 4;
   const pipeline = getWgpuEffectPipeline(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = center;
     f32[1] = width;
     f32[2] = blur;

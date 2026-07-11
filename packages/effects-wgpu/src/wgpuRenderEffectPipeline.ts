@@ -1,4 +1,3 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import { createMatrix } from '@flighthq/geometry';
 import {
   acquireWgpuRenderTarget,
@@ -20,6 +19,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
@@ -129,7 +129,7 @@ function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder === null) return;
   const pipeline = getWgpuEffectPipeline(state, 'effect.present', PRESENT_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, null, pipeline, () => {});
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, null, pipeline, () => {});
 }
 
 const PRESENT_FRAGMENT_WGSL = /* wgsl */ `

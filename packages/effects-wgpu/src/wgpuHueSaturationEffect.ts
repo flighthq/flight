@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { HueSaturationEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Hue/saturation/lightness: convert to HSL, adjust, convert back.
@@ -14,7 +14,7 @@ export function applyHueSaturationEffectToWgpu(
   const saturation = effect.saturation ?? 1;
   const lightness = effect.lightness ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.hueSaturation', HUE_SATURATION_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = hue;
     f32[1] = saturation;
     f32[2] = lightness;

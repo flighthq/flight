@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { ColorGradeEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Color grade: combined exposure, brightness, contrast, saturation, and temperature/tint shift.
@@ -17,7 +17,7 @@ export function applyColorGradeEffectToWgpu(
   const tint = effect.tint ?? 0;
   const brightness = effect.brightness ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.colorGrade', COLOR_GRADE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = exposure;
     f32[1] = contrast;
     f32[2] = saturation;

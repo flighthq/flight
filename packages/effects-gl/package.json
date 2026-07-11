@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "@flighthq/effects": "*",
-    "@flighthq/filters-gl": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/types": "*"

@@ -7,7 +7,7 @@ import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgra
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard
 // deviations (CSS `blur(Xpx)` uses sigma = X), so this matches the CSS and surface Gaussian references.
 // The effects-owned blur primitive — the shared gaussian pass BloomEffect and the plain BlurEffect both
-// use, so the effects backend no longer delegates blur to @flighthq/filters-gl.
+// use, so the effects backend owns its blur outright rather than delegating to a filters backend.
 
 // Applies a `BlurEffect` descriptor to `source`, writing to `dest`. `temp` is a ping-pong scratch
 // target distinct from both `source` and `dest`.

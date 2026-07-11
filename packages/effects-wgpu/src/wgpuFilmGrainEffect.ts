@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { FilmGrainEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Film grain: add per-pixel hash noise scaled by intensity, with grain cell size and a seed so the
@@ -15,7 +15,7 @@ export function applyFilmGrainEffectToWgpu(
   const size = effect.size ?? 1;
   const seed = effect.seed ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.filmGrain', FILM_GRAIN_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = Math.max(0.0001, size);
     f32[2] = seed;

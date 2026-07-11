@@ -1,4 +1,3 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   CameraMotionBlurEffect,
   WgpuRenderEffectRunner,
@@ -6,6 +5,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Camera motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
@@ -22,7 +22,7 @@ export function applyCameraMotionBlurEffectToWgpu(
   const intensity = effect.intensity ?? 0.5;
   const samples = effect.samples ?? 16;
   const pipeline = getWgpuEffectPipeline(state, 'motion.cameraMotionBlur', CAMERA_MOTION_BLUR_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = samples;
   });

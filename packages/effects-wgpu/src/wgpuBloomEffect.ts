@@ -1,6 +1,4 @@
 import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects';
-import type { WgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
-import { createWgpuDualSourcePipeline, drawWgpuDualSourcePass, drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
 import type {
   BloomEffect,
@@ -11,6 +9,8 @@ import type {
 } from '@flighthq/types';
 
 import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
+import type { WgpuDualSourceEffectPipeline } from './wgpuEffectPass';
+import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
@@ -35,14 +35,14 @@ export function applyBloomEffectToWgpu(
   const temp = acquireWgpuRenderTarget(state, pool, descriptor);
 
   const brightPipeline = getWgpuEffectPipeline(state, 'bloom.bright', BLOOM_BRIGHT_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, bright, brightPipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, bright, brightPipeline, (f32) => {
     f32[0] = threshold;
   });
 
   applyGaussianBlurToWgpu(state, bright, blurred, temp, { blurX: radius, blurY: radius });
 
   const compositePipeline = getBloomCompositePipeline(state);
-  drawWgpuDualSourcePass(
+  drawWgpuDualSourceEffectPass(
     state,
     source as WgpuRenderTarget,
     blurred,
@@ -64,16 +64,16 @@ export const defaultWgpuBloomEffectRunner: WgpuRenderEffectRunner = (ctx, effect
 
 // The composite pipeline reads two textures (scene = group 1, blurred = group 2) so it uses the
 // dual-source filter primitive; cached per state alongside the single-source pipelines.
-function getBloomCompositePipeline(state: WgpuRenderState): WgpuDualSourcePipeline {
+function getBloomCompositePipeline(state: WgpuRenderState): WgpuDualSourceEffectPipeline {
   let pipeline = _compositePipelines.get(state);
   if (pipeline === undefined) {
-    pipeline = createWgpuDualSourcePipeline(state, BLOOM_COMPOSITE_FRAGMENT_WGSL, 'replace');
+    pipeline = createWgpuDualSourceEffectPipeline(state, BLOOM_COMPOSITE_FRAGMENT_WGSL, 'replace');
     _compositePipelines.set(state, pipeline);
   }
   return pipeline;
 }
 
-const _compositePipelines = new WeakMap<WgpuRenderState, WgpuDualSourcePipeline>();
+const _compositePipelines = new WeakMap<WgpuRenderState, WgpuDualSourceEffectPipeline>();
 
 const BLOOM_BRIGHT_FRAGMENT_WGSL = /* wgsl */ `
 struct Uniforms { u_threshold : f32, _pad0 : f32, _pad1 : f32, _pad2 : f32, }

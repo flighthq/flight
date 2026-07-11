@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { SsrEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // SSR: screen-space reflections. The real recipe ray-marches reflected rays against a sampleable DEPTH
@@ -15,7 +15,7 @@ export function applySsrEffectToWgpu(
   effect: Readonly<SsrEffect>,
 ): void {
   const pipeline = getWgpuEffectPipeline(state, 'atmospheric.ssr', SSR_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, () => {});
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, () => {});
 }
 
 export const defaultWgpuSsrEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

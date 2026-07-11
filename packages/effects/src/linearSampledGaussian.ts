@@ -1,9 +1,9 @@
 // Bilinear-tap ("linear sampling") Gaussian optimization. Substrate-agnostic recipe math: halves the
 // GPU tap count of a separable Gaussian by folding adjacent texel pairs into one hardware-filtered fetch.
 //
-// Copied verbatim from @flighthq/filters-math during the filters→effects migration — effects is the
+// Copied verbatim from filters-math during the filters→effects migration — effects is the
 // canonical home for the spatial-effect blur math (effect-adjustment-architecture.md, migration
-// step 4). @flighthq/filters-math keeps its copy until the filters* packages retire; the duplicate is
+// step 4). filters-math keeps its copy until the filters* packages retire; the duplicate is
 // deliberate for the duration (mirrors the Phase 1 colorMatrixMath port).
 
 import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianKernel';

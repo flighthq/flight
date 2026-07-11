@@ -138,7 +138,7 @@ export function registerColorGradeGlRenderEffects(state: GlRenderState): void {
 }
 
 // Composite band: BevelEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
-// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former @flighthq/filters composite ops,
+// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former Tier-1 filter composite ops,
 // now full-frame composite effects: each chains tint/blur/offset passes and bounces through pooled
 // offscreen targets over the scene silhouette. Symmetric with Wgpu's registerCompositeWgpuRenderEffects.
 export function registerCompositeGlRenderEffects(state: GlRenderState): void {

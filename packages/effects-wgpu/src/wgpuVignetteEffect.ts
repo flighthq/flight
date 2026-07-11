@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { VignetteEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
@@ -23,7 +23,7 @@ export function applyVignetteEffectToWgpu(
   const b = ((color >>> 8) & 0xff) / 255;
   const a = (color & 0xff) / 255;
   const pipeline = getWgpuEffectPipeline(state, 'lens.vignette', VIGNETTE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = radius;
     f32[2] = softness;

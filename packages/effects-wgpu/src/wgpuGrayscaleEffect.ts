@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { GrayscaleEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Grayscale: mix toward luminance by intensity.
@@ -12,7 +12,7 @@ export function applyGrayscaleEffectToWgpu(
 ): void {
   const intensity = effect.intensity ?? 1;
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.grayscale', GRAYSCALE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
   });
 }

@@ -12,6 +12,7 @@ export * from './canvasDisplacementEffect';
 export * from './canvasDropShadowEffect';
 export * from './canvasDitherEffect';
 export * from './canvasEffectCompositing';
+export * from './canvasEffectDropShadowCss';
 export * from './canvasExposureEffect';
 export * from './canvasFilmGrainEffect';
 export * from './canvasFxaaEffect';

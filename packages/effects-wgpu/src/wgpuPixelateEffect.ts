@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { PixelateEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Pixelate: snap uv to the center of `size`-pixel blocks before sampling, producing hard mosaic blocks.
@@ -12,7 +12,7 @@ export function applyPixelateEffectToWgpu(
 ): void {
   const size = effect.size ?? 8;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.pixelate', PIXELATE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(1, size);
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;

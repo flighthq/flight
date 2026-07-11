@@ -1,7 +1,7 @@
-import { computeDropShadowFilterCss } from '@flighthq/filters-css';
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, DropShadowEffect, DropShadowFilter } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, DropShadowEffect } from '@flighthq/types';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { computeDropShadowEffectCss } from './canvasEffectDropShadowCss';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then composite the source over the shadow.
 // Canvas 2D realizes the shadow/glow as a CSS `drop-shadow()` filter chain (the same string the DOM
@@ -12,7 +12,7 @@ export function applyDropShadowEffectToCanvas(
   dest: Readonly<CanvasRenderTarget>,
   effect: Readonly<DropShadowEffect>,
 ): void {
-  const css = computeDropShadowFilterCss({ ...effect, kind: 'DropShadowFilter' } as DropShadowFilter);
+  const css = computeDropShadowEffectCss(effect);
   drawCanvasEffectPass(dest, source, css ?? 'none');
 }
 

@@ -1,4 +1,3 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   ChromaticAberrationEffect,
   WgpuRenderEffectRunner,
@@ -6,6 +5,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
@@ -25,7 +25,7 @@ export function applyChromaticAberrationEffectToWgpu(
     CHROMATIC_ABERRATION_FRAGMENT_WGSL,
     'replace',
   );
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = radial ? 1 : 0;
   });

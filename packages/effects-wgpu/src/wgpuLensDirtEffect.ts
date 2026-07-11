@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { LensDirtEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Lens dirt: procedural soft smudges that brighten where the scene is bright — a cheap bloom-dirt overlay.
@@ -14,7 +14,7 @@ export function applyLensDirtEffectToWgpu(
   const threshold = effect.threshold ?? 0.55;
   const seed = effect.seed ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'lens.lensDirt', LENS_DIRT_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = threshold;
     f32[2] = seed;

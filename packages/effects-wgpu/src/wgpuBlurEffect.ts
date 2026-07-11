@@ -1,14 +1,14 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
 import type { BlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest vertically),
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard
 // deviations (CSS `blur(Xpx)` uses sigma = X), matching the CSS and surface Gaussian references and the
 // effects-gl blur. The effects-owned blur primitive — the shared gaussian pass BloomEffect and the plain
-// BlurEffect both use, so the wgpu effects backend no longer delegates blur to @flighthq/filters-wgpu.
+// BlurEffect both use, so the wgpu effects backend owns its blur rather than delegating to the filters layer.
 
 // Applies a `BlurEffect` descriptor to `source`, writing to `dest`. `temp` is a ping-pong scratch
 // target distinct from both `source` and `dest`.
@@ -58,7 +58,7 @@ function applyWgpuGaussianBlurPass(
   dirY: number,
 ): void {
   const pipeline = getWgpuEffectPipeline(state, 'blur.gaussian', GAUSSIAN_BLUR_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = 1 / source.width;
     f32[1] = 1 / source.height;
     f32[2] = dirX;

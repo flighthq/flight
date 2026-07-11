@@ -113,7 +113,7 @@ export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
 // canonical kind keys. Import this when the full effect palette is needed; import individual band
 // helpers when only a subset of effects is used.
 // Composite band: BevelEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
-// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former @flighthq/filters composite ops,
+// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former filter-layer composite ops,
 // now full-frame composite effects chaining tint/blur/offset passes through pooled offscreen targets.
 // Symmetric with Gl's registerCompositeGlRenderEffects.
 export function registerCompositeWgpuRenderEffects(state: WgpuRenderState): void {

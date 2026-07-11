@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { CrtEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
@@ -16,7 +16,7 @@ export function applyCrtEffectToWgpu(
   const vignette = effect.vignette ?? 0.3;
   const aberration = effect.aberration ?? 0.005;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.crt', CRT_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = curvature;
     f32[1] = scanlineIntensity;
     f32[2] = vignette;

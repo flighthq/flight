@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { GlitchEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh tear),
@@ -16,7 +16,7 @@ export function applyGlitchEffectToWgpu(
   const colorShift = effect.colorShift ?? 8;
   const seed = effect.seed ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.glitch', GLITCH_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = blockSize;
     f32[2] = colorShift;
