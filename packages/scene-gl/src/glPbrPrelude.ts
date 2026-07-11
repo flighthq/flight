@@ -24,6 +24,8 @@
 // transmission) are linear and read raw. Packed material colors are decoded to linear on the CPU
 // with unpackColorToLinear before upload, so the shader never double-decodes them.
 
+import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
+
 // The feature flags that select an uber-shader variant. Each toggles an #ifdef in the prelude and
 // is hashed into the program-cache key (buildGlPbrDefineKey), so distinct flag sets compile and
 // cache as distinct programs. The `has*Map` flags enable the textured paths of the standard block;
@@ -72,7 +74,7 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
 // vertex and fragment prelude bodies before compile. Pure string assembly; the same key always
 // yields the same source, which is what makes the program cache by define key sound.
 export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
-  let defines = '#version 300 es\n';
+  let defines = `#version 300 es\n#define MAX_FORWARD_LIGHTS ${MAX_FORWARD_LIGHTS}\n`;
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasBaseColorMap) defines += '#define HAS_BASE_COLOR_MAP\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
@@ -162,6 +164,19 @@ uniform vec4 u_directionalRadiance;
 uniform vec3 u_ambientRadiance;
 uniform float u_directionalCount;
 uniform float u_ambientCount;
+
+// Punctual (point/spot/hemisphere) forward-light arrays — layout mirrors SceneLightBlock.data exactly
+// (packSceneLightBlock), matching GL_MESH_LIGHT_BLOCK_GLSL used by the classic prelude. Fixed
+// MAX_FORWARD_LIGHTS-wide; each count bounds its loop.
+//   point[i]      = u_pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
+//   spot[i]       = u_spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
+//   hemisphere[i] = u_hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
+uniform vec4 u_pointLights[MAX_FORWARD_LIGHTS * 2];
+uniform vec4 u_spotLights[MAX_FORWARD_LIGHTS * 4];
+uniform vec4 u_hemisphereLights[MAX_FORWARD_LIGHTS * 3];
+uniform int u_pointCount;
+uniform int u_spotCount;
+uniform int u_hemisphereCount;
 
 uniform sampler2D u_shadowMap;       // directional shadow depth map
 uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
@@ -331,6 +346,79 @@ vec3 iridescentFresnel(float cosTheta, vec3 f0, float thicknessNm, float filmIor
 }
 #endif
 
+// Smooth inverse-square range window (glTF/UE4): 1 near the light, eased to 0 at the range. invSqrRange
+// is 1/range^2 (0 = infinite range, no cutoff); dist2 is the squared surface->light distance.
+float rangeWindow(float dist2, float invSqrRange) {
+  float factor = dist2 * invSqrRange;
+  float windowed = clamp(1.0 - factor * factor, 0.0, 1.0);
+  return windowed * windowed;
+}
+
+// The full Cook-Torrance shading (plus every enabled extension lobe) for ONE light. Directional,
+// point, and spot lights all route through this one BRDF so punctual lights never fork the shading
+// model — the caller passes the surface->light direction L and that light's (attenuated, cone-scaled)
+// radiance. The anisotropic tangent frame is rebuilt here per light from the surface tangent frame so
+// the function stays self-contained; f0/diffuseColor/roughness/metallic are the finalized surface
+// values from main. Returns the light's linear radiance contribution (shadowing applied by the caller).
+vec3 shadePbrPunctual(vec3 N, vec3 V, vec3 tangentDir, vec3 bitangentDir, vec3 L, vec3 lightColor,
+                      vec3 f0, vec3 diffuseColor, float roughness, float metallic) {
+  float nDotV = max(dot(N, V), 1e-4);
+  vec3 halfVec = normalize(V + L);
+  float nDotL = max(dot(N, L), 0.0);
+  float nDotH = max(dot(N, halfVec), 0.0);
+  float vDotH = max(dot(V, halfVec), 0.0);
+
+#ifdef ANISOTROPY
+  float cosR = cos(u_anisotropyRotation);
+  float sinR = sin(u_anisotropyRotation);
+  vec3 anisoT = normalize(cosR * tangentDir + sinR * bitangentDir);
+  vec3 anisoB = normalize(cross(N, anisoT));
+  float aniso = clamp(u_anisotropyStrength, 0.0, 1.0);
+  float at = max(roughness * roughness * (1.0 + aniso), 1e-3);
+  float ab = max(roughness * roughness * (1.0 - aniso), 1e-3);
+  float tDotH = dot(anisoT, halfVec);
+  float bDotH = dot(anisoB, halfVec);
+  float d = distributionGgxAnisotropic(nDotH, tDotH, bDotH, at, ab);
+#else
+  float d = distributionGgx(nDotH, roughness);
+#endif
+  float vis = visibilitySmith(nDotV, nDotL, roughness);
+  vec3 fresnel = fresnelSchlick(vDotH, f0);
+
+  vec3 specular = d * vis * fresnel;
+  vec3 kd = (1.0 - fresnel) * (1.0 - metallic);
+  vec3 brdf = kd * diffuseColor / PI + specular;
+  vec3 direct = brdf * lightColor * nDotL;
+
+#ifdef SUBSURFACE
+  // Wrapped-diffuse subsurface approximation (non-interop): a soft back-/side-lit wrap term tinted by
+  // the subsurface color, scaled by thickness (thinner = more translucency).
+  float wrap = clamp((dot(N, L) + 0.5) / 2.25, 0.0, 1.0);
+  float translucency = u_subsurface / (1.0 + u_thickness);
+  direct += translucency * wrap * u_subsurfaceColor * diffuseColor * lightColor;
+#endif
+
+#ifdef SHEEN
+  // Charlie sheen lobe added on top of the base specular for cloth/fabric retroreflection.
+  float sheenD = distributionCharlie(nDotH, u_sheenRoughness);
+  float sheenV = visibilitySheen(nDotV, nDotL);
+  direct += u_sheenColor * sheenD * sheenV * lightColor * nDotL;
+#endif
+
+#ifdef CLEARCOAT
+  // A second, always-dielectric GGX lobe (F0 = 0.04) over the base layer, with its own roughness.
+  // Energy from the clearcoat reflection attenuates the layers beneath it.
+  float ccRough = clamp(u_clearcoatRoughness, 0.04, 1.0);
+  float ccD = distributionGgx(nDotH, ccRough);
+  float ccVis = visibilitySmith(nDotV, nDotL, ccRough);
+  vec3 ccF = fresnelSchlick(vDotH, vec3(0.04)) * u_clearcoat;
+  vec3 ccSpec = ccD * ccVis * ccF * lightColor * nDotL;
+  direct = direct * (1.0 - ccF) + ccSpec;
+#endif
+
+  return direct;
+}
+
 void main() {
   vec4 baseColor = u_baseColor;
 #ifdef HAS_BASE_COLOR_MAP
@@ -391,70 +479,38 @@ void main() {
 
   vec3 diffuseColor = albedo * (1.0 - metallic);
 
-#ifdef ANISOTROPY
-  // Rotate the tangent frame by u_anisotropyRotation, then split roughness into along-/across-
-  // tangent axes (Burley). Higher strength stretches the highlight along the tangent direction.
-  float cosR = cos(u_anisotropyRotation);
-  float sinR = sin(u_anisotropyRotation);
-  vec3 anisoT = normalize(cosR * tangent + sinR * bitangent);
-  vec3 anisoB = normalize(cross(normal, anisoT));
-  float aniso = clamp(u_anisotropyStrength, 0.0, 1.0);
-  float at = max(roughness * roughness * (1.0 + aniso), 1e-3);
-  float ab = max(roughness * roughness * (1.0 - aniso), 1e-3);
-#endif
-
   vec3 radiance = vec3(0.0);
 
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
-    vec3 halfVec = normalize(viewDir + lightDir);
-    float nDotL = max(dot(normal, lightDir), 0.0);
-    float nDotH = max(dot(normal, halfVec), 0.0);
-    float vDotH = max(dot(viewDir, halfVec), 0.0);
-
-#ifdef ANISOTROPY
-    float tDotH = dot(anisoT, halfVec);
-    float bDotH = dot(anisoB, halfVec);
-    float d = distributionGgxAnisotropic(nDotH, tDotH, bDotH, at, ab);
-#else
-    float d = distributionGgx(nDotH, roughness);
-#endif
-    float vis = visibilitySmith(nDotV, nDotL, roughness);
-    vec3 fresnel = fresnelSchlick(vDotH, f0);
-
-    vec3 specular = d * vis * fresnel;
-    vec3 kd = (1.0 - fresnel) * (1.0 - metallic);
-    vec3 brdf = kd * diffuseColor / PI + specular;
-    vec3 direct = brdf * u_directionalRadiance.rgb * nDotL;
-
-#ifdef SUBSURFACE
-    // Wrapped-diffuse subsurface approximation (non-interop): a soft back-/side-lit wrap term
-    // tinted by the subsurface color, scaled by thickness (thinner = more translucency).
-    float wrap = clamp((dot(normal, lightDir) + 0.5) / 2.25, 0.0, 1.0);
-    float translucency = u_subsurface / (1.0 + u_thickness);
-    direct += translucency * wrap * u_subsurfaceColor * diffuseColor * u_directionalRadiance.rgb;
-#endif
-
-#ifdef SHEEN
-    // Charlie sheen lobe added on top of the base specular for cloth/fabric retroreflection.
-    float sheenD = distributionCharlie(nDotH, u_sheenRoughness);
-    float sheenV = visibilitySheen(nDotV, nDotL);
-    direct += u_sheenColor * sheenD * sheenV * u_directionalRadiance.rgb * nDotL;
-#endif
-
-#ifdef CLEARCOAT
-    // A second, always-dielectric GGX lobe (F0 = 0.04) over the base layer, with its own
-    // roughness. Energy from the clearcoat reflection attenuates the layers beneath it.
-    float ccRough = clamp(u_clearcoatRoughness, 0.04, 1.0);
-    float ccD = distributionGgx(nDotH, ccRough);
-    float ccVis = visibilitySmith(nDotV, nDotL, ccRough);
-    vec3 ccF = fresnelSchlick(vDotH, vec3(0.04)) * u_clearcoat;
-    vec3 ccSpec = ccD * ccVis * ccF * u_directionalRadiance.rgb * nDotL;
-    direct = direct * (1.0 - ccF) + ccSpec;
-#endif
-
+    vec3 direct = shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                   u_directionalRadiance.rgb, f0, diffuseColor, roughness, metallic);
     radiance += direct * sampleDirectionalShadow(v_worldPosition);
+  }
+
+  // Point lights: surface->light direction with a smooth inverse-square range falloff, same BRDF.
+  for (int i = 0; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= u_pointCount) break;
+    vec3 toLight = u_pointLights[i * 2 + 0].xyz - v_worldPosition;
+    float dist2 = dot(toLight, toLight);
+    vec3 lightDir = toLight * inversesqrt(max(dist2, 1e-8));
+    float atten = rangeWindow(dist2, u_pointLights[i * 2 + 1].w) / max(dist2, 1e-4);
+    radiance += shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                 u_pointLights[i * 2 + 1].rgb * atten, f0, diffuseColor, roughness, metallic);
+  }
+
+  // Spot lights: point attenuation times a smooth cone falloff between the inner/outer cosines.
+  for (int i = 0; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= u_spotCount) break;
+    vec3 toLight = u_spotLights[i * 4 + 0].xyz - v_worldPosition;
+    float dist2 = dot(toLight, toLight);
+    vec3 lightDir = toLight * inversesqrt(max(dist2, 1e-8));
+    float atten = rangeWindow(dist2, u_spotLights[i * 4 + 1].w) / max(dist2, 1e-4);
+    float cone = smoothstep(u_spotLights[i * 4 + 3].y, u_spotLights[i * 4 + 3].x,
+                            dot(normalize(u_spotLights[i * 4 + 2].xyz), -lightDir));
+    radiance += shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                 u_spotLights[i * 4 + 1].rgb * atten * cone, f0, diffuseColor, roughness, metallic);
   }
 
   // Ambient term: image-based lighting (diffuse irradiance + prefiltered specular) when an environment
@@ -463,6 +519,14 @@ void main() {
     radiance += sampleIblAmbient(normal, viewDir, roughness, f0, diffuseColor, occlusion);
   } else if (u_ambientCount > 0.5) {
     radiance += diffuseColor * u_ambientRadiance * occlusion;
+  }
+
+  // Hemisphere fill: sky/ground gradient blended by the normal's vertical component, AO-attenuated.
+  for (int i = 0; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= u_hemisphereCount) break;
+    float f = 0.5 + 0.5 * dot(normal, u_hemisphereLights[i * 3 + 2].xyz);
+    radiance += mix(u_hemisphereLights[i * 3 + 1].rgb, u_hemisphereLights[i * 3 + 0].rgb, f)
+                * diffuseColor * occlusion;
   }
 
   vec3 emissive = u_emissive;

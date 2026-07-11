@@ -118,6 +118,16 @@ describe('getGlClassicFragmentSourceForKey', () => {
     expect(getGlClassicFragmentSourceForKey(PHONG)).toContain('reflect(');
     expect(getGlClassicFragmentSourceForKey(BLINNPHONG)).toContain('normalize(lightDir + viewDir)');
   });
+
+  it('emits the MAX_FORWARD_LIGHTS spec constant and loops the punctual light arrays', () => {
+    const source = getGlClassicFragmentSourceForKey(LAMBERT);
+    expect(source).toContain('#define MAX_FORWARD_LIGHTS');
+    expect(source).toContain('u_pointLights');
+    expect(source).toContain('u_spotLights');
+    expect(source).toContain('u_hemisphereLights');
+    // Every light type routes through the one shared classic BRDF.
+    expect(source).toContain('shadeClassicLight');
+  });
 });
 
 describe('getGlClassicVertexSource', () => {
