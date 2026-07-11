@@ -81,6 +81,7 @@
     "@flighthq/materials": "*",
     "@flighthq/math": "*",
     "@flighthq/media": "*",
+    "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
     "@flighthq/mesh": "*",
     "@flighthq/motionpath": "*",
