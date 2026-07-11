@@ -148,6 +148,8 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   // Premultiplied multiply: src.rgb*dst + dst*(1-src.a), so transparent/partial pixels leave the
   // backdrop untouched instead of multiplying it toward black. Matches render-gl.
   [BlendMode.Multiply]: createWgpuBlendState('dst', 'one-minus-src-alpha'),
+  // No blending: the source replaces the destination (matches Normal for opaque content).
+  [BlendMode.None]: createWgpuBlendState('one', 'zero'),
   [BlendMode.Normal]: NORMAL_BLEND,
   [BlendMode.Overlay]: null,
   [BlendMode.Screen]: createWgpuBlendState('one', 'one-minus-src'),

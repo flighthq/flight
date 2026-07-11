@@ -50,6 +50,12 @@ describe('applyDomBlendMode', () => {
     expect(el.style.mixBlendMode).toBe('screen');
   });
 
+  it('clears mixBlendMode for BlendMode.None (no CSS equivalent)', () => {
+    el.style.mixBlendMode = 'multiply';
+    applyDomBlendMode(el, BlendMode.None);
+    expect(el.style.mixBlendMode).toBe('');
+  });
+
   it('clears mixBlendMode for null (default)', () => {
     el.style.mixBlendMode = 'multiply';
     applyDomBlendMode(el, null);
@@ -103,6 +109,10 @@ describe('getDomBlendModeFidelity', () => {
 
   it('returns "unsupported" for BlendMode.Invert', () => {
     expect(getDomBlendModeFidelity(BlendMode.Invert)).toBe('unsupported');
+  });
+
+  it('returns "unsupported" for BlendMode.None', () => {
+    expect(getDomBlendModeFidelity(BlendMode.None)).toBe('unsupported');
   });
 
   it('returns "unsupported" for BlendMode.Subtract', () => {

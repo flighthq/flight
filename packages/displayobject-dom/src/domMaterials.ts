@@ -15,6 +15,8 @@ const DOM_BLEND_MODE: Record<BlendMode, string | null> = {
   [BlendMode.Layer]: '',
   [BlendMode.Lighten]: 'lighten',
   [BlendMode.Multiply]: 'multiply',
+  // No-blend has no CSS mix-blend-mode equivalent; degrades to normal (identical for opaque content).
+  [BlendMode.None]: null,
   [BlendMode.Normal]: '',
   [BlendMode.Overlay]: 'overlay',
   [BlendMode.Screen]: 'screen',
@@ -38,6 +40,7 @@ const DOM_BLEND_MODE_FIDELITY: Record<BlendMode, DomBlendModeFidelity> = {
   [BlendMode.Layer]: 'exact', // normal compositing within a stacking context
   [BlendMode.Lighten]: 'exact',
   [BlendMode.Multiply]: 'exact',
+  [BlendMode.None]: 'unsupported',
   [BlendMode.Normal]: 'exact',
   [BlendMode.Overlay]: 'exact',
   [BlendMode.Screen]: 'exact',
