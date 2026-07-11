@@ -1,4 +1,3 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   LookupTableGradeEffect,
   WgpuRenderEffectRunner,
@@ -6,6 +5,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // LUT grade: passthrough with a strength mix. A real 3D LUT grade needs an uploaded LUT cube texture
@@ -19,7 +19,7 @@ export function applyLookupTableGradeEffectToWgpu(
 ): void {
   const strength = effect.strength ?? 1;
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.lutGrade', LUT_GRADE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = strength;
   });
 }

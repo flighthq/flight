@@ -1,5 +1,4 @@
-import { applyOuterGlowFilterToGl } from '@flighthq/filters-gl';
-import { acquireGlRenderTarget, releaseGlRenderTarget } from '@flighthq/render-gl';
+import { acquireGlRenderTarget, clearGlRenderTarget, releaseGlRenderTarget } from '@flighthq/render-gl';
 import type {
   OuterGlowEffect,
   GlRenderEffectRunner,
@@ -8,9 +7,15 @@ import type {
   GlRenderTargetPool,
 } from '@flighthq/types';
 
+import { applyGlEffectBlitPass } from './glEffectBlitShader';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
+import { applyGlEffectTintPass } from './glEffectTintShader';
+
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then composite the source over the glow.
-// Full-frame realization: acquires the recipe's three scratch targets from the effect pool and
-// delegates the multi-pass recipe to the shared Tier-1 filters-gl realization, then releases them.
+// Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
+// inlined multi-pass recipe, then releases them.
+//
+// Compositing order: glow (centered, no offset) → source (unless `knockout`).
 export function applyOuterGlowEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -22,7 +27,37 @@ export function applyOuterGlowEffectToGl(
   const s0 = acquireGlRenderTarget(state, pool, descriptor);
   const s1 = acquireGlRenderTarget(state, pool, descriptor);
   const s2 = acquireGlRenderTarget(state, pool, descriptor);
-  applyOuterGlowFilterToGl(state, source as GlRenderTarget, dest as GlRenderTarget, [s0, s1, s2], effect);
+
+  const src = source as GlRenderTarget;
+  const dst = dest as GlRenderTarget;
+
+  const color = effect.color ?? 0xff0000;
+  const alpha = effect.alpha ?? 1;
+  const strength = effect.strength ?? 1;
+  const quality = Math.max(1, Math.round(effect.quality ?? 1));
+  const knockout = effect.knockout ?? false;
+
+  const tintStrength = Math.min(1, strength);
+  const glowPasses = Math.max(1, Math.floor(strength));
+
+  const [mask, blurred, blurTemp] = [s0, s1, s2];
+
+  applyGlEffectTintPass(state, src, mask, color, alpha, tintStrength);
+  applyGlEffectBoxBlur(state, mask, blurred, blurTemp, {
+    blurX: effect.blurX ?? 6,
+    blurY: effect.blurY ?? 6,
+    passes: quality,
+  });
+
+  clearGlRenderTarget(state, dst);
+  for (let i = 0; i < glowPasses; i++) {
+    applyGlEffectBlitPass(state, blurred, dst);
+  }
+
+  if (!knockout) {
+    applyGlEffectBlitPass(state, src, dst);
+  }
+
   releaseGlRenderTarget(pool, s0);
   releaseGlRenderTarget(pool, s1);
   releaseGlRenderTarget(pool, s2);

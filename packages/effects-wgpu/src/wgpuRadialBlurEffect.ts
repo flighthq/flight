@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { RadialBlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Radial blur: accumulate samples stepped from the current uv toward (centerX, centerY) scaled by
@@ -17,7 +17,7 @@ export function applyRadialBlurEffectToWgpu(
   const strength = effect.strength ?? 0.2;
   const samples = effect.samples ?? 16;
   const pipeline = getWgpuEffectPipeline(state, 'motion.radialBlur', RADIAL_BLUR_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = centerX;
     f32[1] = centerY;
     f32[2] = strength;

@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { DisplacementEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Displacement / heat-haze: warp the sample uv by an animated sine field for a refractive wobble.
@@ -14,7 +14,7 @@ export function applyDisplacementEffectToWgpu(
   const frequency = effect.frequency ?? 12;
   const seed = effect.seed ?? 0;
   const pipeline = getWgpuEffectPipeline(state, 'lens.displacement', DISPLACEMENT_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = frequency;
     f32[2] = seed;

@@ -1,4 +1,3 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   BrightnessContrastEffect,
   WgpuRenderEffectRunner,
@@ -6,6 +5,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Brightness/contrast: shift then scale about mid-grey.
@@ -23,7 +23,7 @@ export function applyBrightnessContrastEffectToWgpu(
     BRIGHTNESS_CONTRAST_FRAGMENT_WGSL,
     'replace',
   );
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = brightness;
     f32[1] = contrast;
   });

@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { LensFlareEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Lens flare: a single-pass approximation. A true flare is a multi-pass recipe (downsample a bright
@@ -19,7 +19,7 @@ export function applyLensFlareEffectToWgpu(
   const ghosts = effect.ghosts ?? 4;
   const halo = effect.halo ?? 0.5;
   const pipeline = getWgpuEffectPipeline(state, 'lens.lensFlare', LENS_FLARE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = threshold;
     f32[1] = intensity;
     f32[2] = ghosts;

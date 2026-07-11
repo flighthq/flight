@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { OutlineEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Outline: Sobel edge detection on luminance; where the gradient magnitude exceeds `threshold`, mix
@@ -19,7 +19,7 @@ export function applyOutlineEffectToWgpu(
   const b = ((color >>> 8) & 0xff) / 255;
   const a = (color & 0xff) / 255;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.outline', OUTLINE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = threshold;
     f32[1] = thickness;
     // u_resolution (vec2f) aligns to slot [2].

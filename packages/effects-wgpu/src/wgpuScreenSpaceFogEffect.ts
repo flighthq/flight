@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { ScreenSpaceFogEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Screen-space fog: blends the scene toward an unpacked fog color by a depth proxy. The real recipe
@@ -25,7 +25,7 @@ export function applyScreenSpaceFogEffectToWgpu(
     SCREEN_SPACE_FOG_FRAGMENT_WGSL,
     'replace',
   );
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = density;
     f32[4] = r;
     f32[5] = g;

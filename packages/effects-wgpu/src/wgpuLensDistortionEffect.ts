@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { LensDistortionEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
@@ -14,7 +14,7 @@ export function applyLensDistortionEffectToWgpu(
   const amount = effect.amount ?? 0.2;
   const scale = effect.scale ?? 1;
   const pipeline = getWgpuEffectPipeline(state, 'lens.lensDistortion', LENS_DISTORTION_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = amount;
     f32[1] = scale;
   });

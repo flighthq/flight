@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { SketchEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Sketch: detect luminance edges and invert them into dark pencil strokes over a light page; `strength`
@@ -13,7 +13,7 @@ export function applySketchEffectToWgpu(
 ): void {
   const strength = effect.strength ?? 1;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.sketch', SKETCH_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = strength;
     // u_resolution (vec2f) aligns to slot [2].
     f32[2] = source.width;

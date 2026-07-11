@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { HalftoneEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Halftone: sample luminance, then carve a rotated dot grid whose dot radius tracks darkness — the
@@ -14,7 +14,7 @@ export function applyHalftoneEffectToWgpu(
   const scale = effect.scale ?? 6;
   const angle = effect.angle ?? 0.4;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.halftone', HALFTONE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(1, scale);
     f32[1] = angle;
     // u_resolution (vec2f) aligns to slot [2].

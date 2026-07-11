@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { TaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // TAA: passthrough copy of source → dest. Real temporal AA needs a history buffer + motion vectors to
@@ -13,7 +13,7 @@ export function applyTaaEffectToWgpu(
   _effect: Readonly<TaaEffect>,
 ): void {
   const pipeline = getWgpuEffectPipeline(state, 'antialiasing.taa', TAA_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, _noopSetUniforms);
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, _noopSetUniforms);
 }
 
 export const defaultWgpuTaaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

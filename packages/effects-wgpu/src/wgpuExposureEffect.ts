@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { ExposureEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Exposure: scale linear color by 2^stops. Single-pass reference recipe, the Wgpu mirror of
@@ -14,7 +14,7 @@ export function applyExposureEffectToWgpu(
   const exposure = effect.exposure ?? 0;
   const multiplier = Math.pow(2, exposure);
   const pipeline = getWgpuEffectPipeline(state, 'exposure', EXPOSURE_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = multiplier;
   });
 }

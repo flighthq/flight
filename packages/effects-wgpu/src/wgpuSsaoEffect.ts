@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { SsaoEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // SSAO: ambient-occlusion approximation. Real SSAO reconstructs view-space position/normals from a
@@ -17,7 +17,7 @@ export function applySsaoEffectToWgpu(
   const radius = effect.radius ?? 1;
   const intensity = effect.intensity ?? 1;
   const pipeline = getWgpuEffectPipeline(state, 'atmospheric.ssao', SSAO_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = radius;
     f32[1] = intensity;
     f32[2] = source.width;

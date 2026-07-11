@@ -1,9 +1,9 @@
 // Box-blur radius/sigma recipe math. Substrate-agnostic: every backend derives identical box-blur
 // pass radii from the same sigma so the GL, WGPU, and CPU spreads match.
 //
-// Copied verbatim from @flighthq/filters-math during the filters→effects migration — effects is the
+// Copied verbatim from filters-math during the filters→effects migration — effects is the
 // canonical home for the spatial-effect blur math (effect-adjustment-architecture.md, migration
-// step 4). @flighthq/filters-math keeps its copy until the filters* packages retire; the duplicate is
+// step 4). filters-math keeps its copy until the filters* packages retire; the duplicate is
 // deliberate for the duration (mirrors the Phase 1 colorMatrixMath port).
 
 /**

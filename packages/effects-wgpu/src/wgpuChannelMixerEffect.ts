@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { ChannelMixerEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Channel mixer: apply a 3x4 row-major RGB->RGB matrix plus per-row offset. The matrix is uploaded as
@@ -14,7 +14,7 @@ export function applyChannelMixerEffectToWgpu(
   const matrix = new Float32Array(12);
   for (let i = 0; i < 12; i++) matrix[i] = effect.matrix[i] ?? IDENTITY_CHANNEL_MIXER[i];
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.channelMixer', CHANNEL_MIXER_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     for (let i = 0; i < 12; i++) f32[i] = matrix[i];
   });
 }

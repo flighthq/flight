@@ -1,7 +1,7 @@
-import { computeOuterGlowFilterCss } from '@flighthq/filters-css';
-import type { CanvasRenderEffectRunner, CanvasRenderTarget, OuterGlowEffect, OuterGlowFilter } from '@flighthq/types';
+import type { CanvasRenderEffectRunner, CanvasRenderTarget, OuterGlowEffect } from '@flighthq/types';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { computeOuterGlowEffectCss } from './canvasEffectDropShadowCss';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then composite the source over the glow.
 // Canvas 2D realizes the shadow/glow as a CSS `drop-shadow()` filter chain (the same string the DOM
@@ -12,7 +12,7 @@ export function applyOuterGlowEffectToCanvas(
   dest: Readonly<CanvasRenderTarget>,
   effect: Readonly<OuterGlowEffect>,
 ): void {
-  const css = computeOuterGlowFilterCss({ ...effect, kind: 'OuterGlowFilter' } as OuterGlowFilter);
+  const css = computeOuterGlowEffectCss(effect);
   drawCanvasEffectPass(dest, source, css ?? 'none');
 }
 

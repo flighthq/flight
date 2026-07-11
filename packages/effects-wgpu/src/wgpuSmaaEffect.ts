@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { SmaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // SMAA: a single-pass edge-aware blur approximation. Full SMAA needs separate edge-detection and
@@ -16,7 +16,7 @@ export function applySmaaEffectToWgpu(
   const width = source.width;
   const height = source.height;
   const pipeline = getWgpuEffectPipeline(state, 'antialiasing.smaa', SMAA_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = width;
     f32[1] = height;
     f32[2] = threshold;

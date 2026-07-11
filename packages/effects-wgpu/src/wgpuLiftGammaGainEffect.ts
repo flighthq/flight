@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { LiftGammaGainEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Lift/gamma/gain: unpack packed-RGBA neutrals to per-channel offsets/exponents/multipliers in JS.
@@ -22,7 +22,7 @@ export function applyLiftGammaGainEffectToWgpu(
     1 / Math.max(gammaRaw[2] * 2, 1e-3),
   ];
   const pipeline = getWgpuEffectPipeline(state, 'colorGrade.liftGammaGain', LIFT_GAMMA_GAIN_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = lift[0];
     f32[1] = lift[1];
     f32[2] = lift[2];

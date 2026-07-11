@@ -1,4 +1,3 @@
-import { applyDropShadowFilterToWgpu } from '@flighthq/filters-wgpu';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
 import type {
   DropShadowEffect,
@@ -8,9 +7,14 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types';
 
+import { applyWgpuEffectBlitOffsetPass, applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
+import { clearWgpuEffectTarget } from './wgpuEffectPass';
+import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then composite the source over the shadow.
-// Full-frame realization: acquires the recipe's three scratch targets from the effect pool and
-// delegates the multi-pass recipe to the shared Tier-1 filters-wgpu realization, then releases them.
+// Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
+// multi-pass recipe (tint → box blur → offset → composite), then releases them.
 export function applyDropShadowEffectToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuRenderTarget>,
@@ -18,14 +22,47 @@ export function applyDropShadowEffectToWgpu(
   pool: WgpuRenderTargetPool,
   effect: Readonly<DropShadowEffect>,
 ): void {
+  if (effect.knockout) return;
+
+  const src = source as WgpuRenderTarget;
+  const dst = dest as WgpuRenderTarget;
   const descriptor = { width: source.width, height: source.height, format: source.format };
-  const s0 = acquireWgpuRenderTarget(state, pool, descriptor);
-  const s1 = acquireWgpuRenderTarget(state, pool, descriptor);
-  const s2 = acquireWgpuRenderTarget(state, pool, descriptor);
-  applyDropShadowFilterToWgpu(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, [s0, s1, s2], effect);
-  releaseWgpuRenderTarget(pool, s0);
-  releaseWgpuRenderTarget(pool, s1);
-  releaseWgpuRenderTarget(pool, s2);
+  const mask = acquireWgpuRenderTarget(state, pool, descriptor);
+  const blurred = acquireWgpuRenderTarget(state, pool, descriptor);
+  const blurTemp = acquireWgpuRenderTarget(state, pool, descriptor);
+
+  const angle = ((effect.angle ?? 45) * Math.PI) / 180;
+  const distance = effect.distance ?? 4;
+  const dx = Math.cos(angle) * distance;
+  const dy = Math.sin(angle) * distance;
+  const color = effect.color ?? 0;
+  const alpha = effect.alpha ?? 1;
+  const strength = effect.strength ?? 1;
+  const quality = Math.max(1, Math.round(effect.quality ?? 1));
+  const hideObject = effect.hideObject ?? false;
+
+  const tintStrength = Math.min(1, strength);
+  const shadowPasses = Math.max(1, Math.floor(strength));
+
+  applyWgpuEffectTintPass(state, src, mask, color, alpha, tintStrength);
+  applyWgpuEffectBoxBlur(state, mask, blurred, blurTemp, {
+    blurX: effect.blurX ?? 4,
+    blurY: effect.blurY ?? 4,
+    passes: quality,
+  });
+
+  clearWgpuEffectTarget(state, dst);
+  for (let i = 0; i < shadowPasses; i++) {
+    applyWgpuEffectBlitOffsetPass(state, blurred, dst, dx, dy);
+  }
+
+  if (!hideObject) {
+    applyWgpuEffectBlitPass(state, src, dst);
+  }
+
+  releaseWgpuRenderTarget(pool, mask);
+  releaseWgpuRenderTarget(pool, blurred);
+  releaseWgpuRenderTarget(pool, blurTemp);
 }
 
 export const defaultWgpuDropShadowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {

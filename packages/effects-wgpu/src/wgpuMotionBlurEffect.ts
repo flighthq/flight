@@ -1,14 +1,14 @@
-import type { WgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
-import { createWgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
-import { drawWgpuDualSourcePass } from '@flighthq/filters-wgpu';
 import type { MotionBlurEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+
+import type { WgpuDualSourceEffectPipeline } from './wgpuEffectPass';
+import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
 
 // Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF), the Wgpu
 // mirror of effects-gl's applyMotionBlurEffectToGl. When the scene produced a per-pixel velocity
 // buffer (`velocityTexture`, rgba16f screen-space velocity in pixels in the RG channels), this is the
 // real recipe — read each fragment's velocity, scale it by `intensity`, and accumulate `samples` taps
 // spread along that vector centered on the fragment, smearing every object by its own motion. The
-// velocity texture binds as the second source via drawWgpuDualSourcePass (@group(2)). When velocity is
+// velocity texture binds as the second source via drawWgpuDualSourceEffectPass (@group(2)). When velocity is
 // absent (the scene did not write the buffer), u_hasVelocity=0 and it is a passthrough copy (sentinel
 // path), preserving the pipeline stage without altering the image. Demonstrates the
 // ctx.sceneVelocityTexture seam: real velocity path when present, sentinel copy when null.
@@ -25,7 +25,7 @@ export function applyMotionBlurEffectToWgpu(
   if (velocityTexture === null) {
     // Sentinel path: no velocity buffer — bind source as both inputs so the dual-source layout is
     // satisfied, and u_hasVelocity=0 makes the fragment a passthrough copy.
-    drawWgpuDualSourcePass(
+    drawWgpuDualSourceEffectPass(
       state,
       source as WgpuRenderTarget,
       source as WgpuRenderTarget,
@@ -41,10 +41,10 @@ export function applyMotionBlurEffectToWgpu(
     );
     return;
   }
-  // Wrap the raw velocity GPUTexture as a minimal second source: drawWgpuDualSourcePass reads only the
+  // Wrap the raw velocity GPUTexture as a minimal second source: drawWgpuDualSourceEffectPass reads only the
   // `.view`, so a view over the velocity texture is all that is required for the @group(2) binding.
   const velocitySource = { view: velocityTexture.createView() } as WgpuRenderTarget;
-  drawWgpuDualSourcePass(
+  drawWgpuDualSourceEffectPass(
     state,
     source as WgpuRenderTarget,
     velocitySource,
@@ -66,16 +66,16 @@ export const defaultWgpuMotionBlurEffectRunner: WgpuRenderEffectRunner = (ctx, e
 
 // Motion blur needs two source bindings (color = group 1, velocity = group 2), so it uses the
 // dual-source filter primitive; cached per state alongside the single-source effect pipelines.
-function getMotionBlurPipeline(state: WgpuRenderState): WgpuDualSourcePipeline {
+function getMotionBlurPipeline(state: WgpuRenderState): WgpuDualSourceEffectPipeline {
   let pipeline = _motionBlurPipelines.get(state);
   if (pipeline === undefined) {
-    pipeline = createWgpuDualSourcePipeline(state, MOTION_BLUR_FRAGMENT_WGSL, 'replace');
+    pipeline = createWgpuDualSourceEffectPipeline(state, MOTION_BLUR_FRAGMENT_WGSL, 'replace');
     _motionBlurPipelines.set(state, pipeline);
   }
   return pipeline;
 }
 
-const _motionBlurPipelines = new WeakMap<WgpuRenderState, WgpuDualSourcePipeline>();
+const _motionBlurPipelines = new WeakMap<WgpuRenderState, WgpuDualSourceEffectPipeline>();
 
 // Slot layout: [0]=intensity, [1]=samples, [2]=resolution.x, [3]=resolution.y, [4]=hasVelocity. Color
 // binds at group 1, velocity at group 2. u_resolution converts the pixel-space velocity into UV offsets.

@@ -1,4 +1,3 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type {
   BokehDepthOfFieldEffect,
   WgpuRenderEffectRunner,
@@ -6,6 +5,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // Bokeh depth-of-field: a disc-shaped blur. The real DoF computes a per-pixel circle of confusion from a
@@ -24,7 +24,7 @@ export function applyBokehDepthOfFieldEffectToWgpu(
   const width = source.width;
   const height = source.height;
   const pipeline = getWgpuEffectPipeline(state, 'lens.bokehDoF', BOKEH_DOF_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = maxBlur;
     f32[2] = width;
     f32[3] = height;

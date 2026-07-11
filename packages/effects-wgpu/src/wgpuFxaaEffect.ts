@@ -1,6 +1,6 @@
-import { drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import type { FxaaEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
+import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
 // FXAA: luminance edge detection + directional blend along the detected edge. Single-pass reference
@@ -15,7 +15,7 @@ export function applyFxaaEffectToWgpu(
   const width = source.width;
   const height = source.height;
   const pipeline = getWgpuEffectPipeline(state, 'antialiasing.fxaa', FXAA_FRAGMENT_WGSL, 'replace');
-  drawWgpuFilterPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
+  drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = width;
     f32[1] = height;
     f32[2] = edgeThreshold;
