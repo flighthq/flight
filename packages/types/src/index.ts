@@ -218,6 +218,7 @@ export * from './Lifecycle';
 export * from './LiftGammaGainEffect';
 export * from './Light';
 export * from './LightUnit';
+export * from './LinearColor';
 export * from './LocaleInput';
 export * from './LodMesh';
 export * from './Log';
