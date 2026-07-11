@@ -80,7 +80,7 @@ Where it ends: it is the **runtime member of a triad** with `@flighthq/spriteshe
 
 1. **Frame event / tag design.** The `SpritesheetFrameEvent` payload shape, how Aseprite tags map to runtime sub-animation records, and the data-schema fields need design before implementation. Cross-package coordination with `spritesheet-formats`.
 
-2. **`gotoAndStop` / `gotoAndPlay` ergonomics.** Whether to add seek-and-pause/play convenience functions (OpenFL-familiar pairing) or leave callers composing `seek` + `pause` themselves. Minor.
+2. **`gotoAndStop` / `gotoAndPlay` ergonomics.** Whether to add seek-and-pause/play convenience functions (a familiar pairing) or leave callers composing `seek` + `pause` themselves. Minor.
 
 3. **Resource / loader integration.** Whether this package gains a `loader`-aware path resolving `SpritesheetData` + image resource into a ready `Spritesheet`. Cross-package. The half-wired `imageFile` fields on `SpritesheetData`/`GridSliceOptions` carry a path that no builder currently loads.
 

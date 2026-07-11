@@ -56,7 +56,7 @@ Non-goals (owned elsewhere):
 
 Every candidate question from the review, plus the structural forks that touch this package. These are the real uncertainties — a direction pass must settle them; nothing here is decided.
 
-1. **Blend-mode boundary (fork B trigger).** Is wgpu intentionally Normal+Add-only until a blend-mode taxonomy lands in `render` / `@flighthq/types`, or is the full OpenFL blend set (Multiply, Screen, Overlay, …) in-scope here once unblocked? This is the single biggest visible feature gap, and it is the closed-branch that fork B says to revisit on growth.
+1. **Blend-mode boundary (fork B trigger).** Is wgpu intentionally Normal+Add-only until a blend-mode taxonomy lands in `render` / `@flighthq/types`, or is the full blend set (Multiply, Screen, Overlay, …) in-scope here once unblocked? This is the single biggest visible feature gap, and it is the closed-branch that fork B says to revisit on growth.
 
 2. **Stats API status and homing.** Is `WgpuRenderStats` a blessed long-term surface or a temporary diagnostic? Its home is `@flighthq/types` (a cross-package commitment) yet `textureUploadCount` is wired to nothing. Should there be a parallel `GlRenderStats`, or a backend-agnostic `RenderStats` in `render`, to avoid per-backend drift?
 

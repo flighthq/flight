@@ -45,7 +45,7 @@ _None. Approval is the user's verbal gate; this section is frozen only on explic
 
 The charter is a stub. These design forks / cross-package questions surfaced during assessment and belong in `charter.md › Open directions` for an explicit direction pass, not in Recommended:
 
-1. **Blend-mode boundary** — is wgpu intentionally Normal+Add-only until the `render`/`types` blend taxonomy lands, or is the full OpenFL blend set in-scope here once unblocked? (Biggest visible feature gap; touches `render`/`@flighthq/types`.)
+1. **Blend-mode boundary** — is wgpu intentionally Normal+Add-only until the `render`/`types` blend taxonomy lands, or is the full blend set in-scope here once unblocked? (Biggest visible feature gap; touches `render`/`@flighthq/types`.)
 2. **Stats-API status** — is `WgpuRenderStats` (homed in `@flighthq/types`, with `textureUploadCount` wired to nothing) a blessed long-term surface or a temporary diagnostic? Should there be a parallel `GlRenderStats`, or a backend-agnostic `RenderStats` in `render`? A direction call avoids per-backend drift.
 3. **Cross-backend register-all contract** — is "register all built-ins for backend X" a blessed, symmetric pattern across gl/wgpu/canvas/dom (with the shared `*Kind` list in `@flighthq/types`)?
 4. **GPU shape-fill home** — do stroke tessellation / gradients / bitmap fills live in `@flighthq/path` as one shared tessellator consumed by both GPU backends (and later skia), or per-backend? Gate on shape fidelity; fork A/E territory.

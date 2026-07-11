@@ -44,7 +44,7 @@ Correctness holes in the new mixer (the most important findings — these are fu
 - **`stopAllAudioMixerChannels` sets `channel.state='stopped'` and zeroes `currentTime` but never calls `stopActiveNode`** (it cannot — that lives in `audioChannel.ts` and is not invoked). The channels keep emitting sound. Same class of bug as the pause case.
 - **`busToMixerRuntimes` is an unbounded strong-ref `Map`.** Every `createAudioMixer` + `addAudioBusToMixer` accumulates entries with no `destroyAudioMixer` to release them — a leak the status doc flags. Given the `destroy*` teardown-verb discipline, a real `destroyAudioMixer` is the missing bracket for `createAudioMixer`.
 
-Missing canonical surface (Gold, per the domain target — OpenFL `SoundTransform`/`SoundMixer` + Web Audio + game-audio middleware):
+Missing canonical surface (Gold, per the domain target — `SoundTransform`/`SoundMixer`-style controls + Web Audio + game-audio middleware):
 
 - **3D / spatial audio** — no `PannerNode`, `AudioListener`, distance model, or cone. The headline Gold feature for a graphics-SDK audio domain; entirely absent.
 - **Analyser / metering** — no `AnalyserNode`, peak/RMS, or frequency data, at channel or bus level.

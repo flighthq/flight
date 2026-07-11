@@ -82,7 +82,7 @@ Same blocker as `reparentNode` with keepWorldTransform — requires matrix decom
 
 ### Skew decision for `HasTransform2D`
 
-The depth review noted that `HasTransform2D` has `x,y,rotation,scaleX,scaleY,pivot` but no `skewX`/`skewY`. OpenFL and most 2D engines expose skew. Silver roadmap says to either add it or mark it missing-by-design. This modifies the `HasTransform2D` type in `@flighthq/types`, touches `ensureNodeLocalTransformMatrix` in `transform2d.ts`, and changes the decomposition logic. **Design decision to surface to user**: add skew or mark intentional omission?
+The depth review noted that `HasTransform2D` has `x,y,rotation,scaleX,scaleY,pivot` but no `skewX`/`skewY`. Most 2D engines expose skew. Silver roadmap says to either add it or mark it missing-by-design. This modifies the `HasTransform2D` type in `@flighthq/types`, touches `ensureNodeLocalTransformMatrix` in `transform2d.ts`, and changes the decomposition logic. **Design decision to surface to user**: add skew or mark intentional omission?
 
 ### 3D TRS parity (Silver)
 
@@ -125,7 +125,7 @@ The depth review and Bronze roadmap both flag that `render`'s `walkNode` and the
 ## Suggestions for Future Sessions
 
 1. **Add `decomposeMatrix` to `@flighthq/geometry`** — enables `reparentNode(keepWorldTransform)`, world decomposition accessors, and decomposition tests. Straightforward 2×2 matrix math (atan2 for rotation, hypot for scale, remainder for residual).
-2. **Skew decision** — consult the project owner on whether `HasTransform2D.skewX`/`skewY` should be added for OpenFL parity or marked as a deliberate omission with a doc comment.
+2. **Skew decision** — consult the project owner on whether `HasTransform2D.skewX`/`skewY` should be added for 2D-transform parity or marked as a deliberate omission with a doc comment.
 3. **3D TRS decision** — settle quaternion vs Euler for `HasTransform3D` and build the cached local-matrix composition analogous to the 2D path.
 4. **Signal coverage** — add the transform/bounds/enabled-change signals to `enableNodeSignals`. The revision channels are already there; it is just wiring.
 5. **`disposeNode` in higher packages** — render packages (`render-canvas`, `render-webgl`, `render-dom`) that hold GPU resources per node should expose their own `destroy*` functions that call `disposeNode` first and then release GPU resources. Coordinate this pattern with those packages.

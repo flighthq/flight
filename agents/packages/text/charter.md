@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/text` is the **display-object entity layer** for text — the OpenFL `TextField` family as scene-graph entities, exposed as plain entity + runtime + free functions. It owns three entity families: `TextLabel` (simple single-format), `RichText` (rich multi-format with scroll, format ranges, and programmatic mutation), and `NativeText` (platform-rendered, measured externally).
+`@flighthq/text` is the **display-object entity layer** for text — the `TextField` family as scene-graph entities, exposed as plain entity + runtime + free functions. It owns three entity families: `TextLabel` (simple single-format), `RichText` (rich multi-format with scroll, format ranges, and programmatic mutation), and `NativeText` (platform-rendered, measured externally).
 
 This package is the entity layer, not the text engine. The engine is a layered stack distributed across sibling packages:
 
@@ -37,7 +37,7 @@ The `text` package name is broad relative to its charter. A reader importing `@f
 - Three entity families: TextLabel, RichText, NativeText — each with create/data/runtime quartet.
 - Full setter/getter surface for all data fields, with diff-skip and invalidation.
 - Programmatic text mutation: append, insert, replace, format-range manipulation.
-- AutoSize bounds computation (the Flash anchor model: none/left/right/center).
+- AutoSize bounds computation (the standard anchor model: none/left/right/center).
 - Scroll model (scrollH/scrollV with clamping, wheel dispatch).
 - Lazy layout cache plumbing (`ensureTextLayout`, `getTextLayout`, metric convenience wrappers).
 - TextField signals group (`enableTextFieldSignals` — change/link/scroll).
@@ -54,7 +54,7 @@ The `text` package name is broad relative to its charter. A reader importing `@f
 
 - **[2026-07-02] Text owns display-object entities, not the text engine.** TextLabel (simple single-format), RichText (rich multi-format), NativeText (platform-rendered). The text engine (layout, shaping, editing) is distributed across sibling packages. The entity layer is a thin, stable surface that delegates the hard problems.
 
-  **Why:** The text stack is a layered problem (entities → layout → shaping → rendering → editing). Bundling it all in one package would violate the cellular architecture — a user who only needs a text label shouldn't pull in shaping or editing. The OpenFL model bundles everything in `TextField`; Flight decomposes it into independently importable primitives.
+  **Why:** The text stack is a layered problem (entities → layout → shaping → rendering → editing). Bundling it all in one package would violate the cellular architecture — a user who only needs a text label shouldn't pull in shaping or editing. The classic model bundles everything in `TextField`; Flight decomposes it into independently importable primitives.
 
 - **[2026-07-02] Programmatic mutation lives on text; interactive editing on textinput.** `appendRichTextString`, `insertRichTextString`, `replaceRichTextString` are API-driven text operations on the static entity. Interactive editing (keyboard, IME, caret management, drag selection) plugs in via textinput's nullable `input` slot on `RichTextRuntime`. Text works without textinput; textinput enriches RichText.
 
@@ -70,7 +70,7 @@ The `text` package name is broad relative to its charter. A reader importing `@f
 
 ## Open directions
 
-1. **Package rename.** The name `text` is broad relative to the package's actual charter (display-object entities only). Considered and rejected: `textfield` (the OpenFL heritage, but `TextField` isn't a type in this package — `TextLabel` and `RichText` are), `textlabel` (too narrow — undersells `RichText` and `NativeText`). `text` is probably fine as the umbrella name for all text display objects. Low priority unless a better name surfaces.
+1. **Package rename.** The name `text` is broad relative to the package's actual charter (display-object entities only). Considered and rejected: `textfield` (the historical heritage, but `TextField` isn't a type in this package — `TextLabel` and `RichText` are), `textlabel` (too narrow — undersells `RichText` and `NativeText`). `text` is probably fine as the umbrella name for all text display objects. Low priority unless a better name surfaces.
 
 2. **`text-formats` neighbor package.** `setRichTextHtml`, `setRichTextCondenseWhite`, `setRichTextStyleSheet` store fields + invalidate, but textlayout's `computeRichTextContent` doesn't consume them yet. A `@flighthq/text-formats` package (HTML/CSS parse seam, registry-dispatched like the shaper) would be the natural home — but it needs a plurality check (≥2 formats) before spinning up. HTML and CSS stylesheets may be enough; Markdown would clinch it.
 

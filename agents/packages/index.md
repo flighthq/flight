@@ -62,7 +62,7 @@ Every `Approved` entry carries a **provenance stamp** — date plus whether it w
 
 ## The charter is the rubric — with a graceful fallback
 
-`review.md` and `assessment.md` are judged **against `charter.md`**, not against a generic ideal. Where the charter is still a stub (no vision captured yet), the review **falls back** to the codebase-map standard (AAA completeness, the OpenFL/Lime feature target, the design constraints) and **flags the silence**: anything the charter does not yet speak to that the reviewer had to assume becomes a candidate **Open direction** for you to settle. The thin-charter case is not a failure mode — it is how the architecture surfaces the questions that turn a stub charter into a real one.
+`review.md` and `assessment.md` are judged **against `charter.md`**, not against a generic ideal. Where the charter is still a stub (no vision captured yet), the review **falls back** to the codebase-map standard (AAA completeness, the broad feature target, the design constraints) and **flags the silence**: anything the charter does not yet speak to that the reviewer had to assume becomes a candidate **Open direction** for you to settle. The thin-charter case is not a failure mode — it is how the architecture surfaces the questions that turn a stub charter into a real one.
 
 ## Prior pipelines (removed)
 

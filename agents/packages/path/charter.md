@@ -80,7 +80,7 @@ Where it ends: rendering, GPU upload, and stencil/cover orchestration belong to 
 
 1. **PathMeasure shape.** Whether to add a stateful cached measure entity (amortized, enabling text-on-path and length-driven animation) vs. keeping the current pure re-flattening distance queries. The current pure functions are correct but re-flatten on every call. A `PathMeasure` entity would cache the flattened representation and amortize repeated queries. Needs discussion — affects the API shape for text-on-path, animation, and closest-point queries.
 
-2. **Stroke dash-phase semantics.** Flash's `Graphics.lineStyle` resets per `moveTo` — each subpath is independent. SVG/Skia/Cairo/PDF continue the dash pattern globally across subpaths. The current code matches Flash (per-subpath reset). Whether to adopt the SVG/Skia global semantic, keep Flash behavior, or make it configurable via `StrokeStyle` (`dashContinuity: 'perSubpath' | 'global'`). Inner/outer stroke alignment (vs. center-only) is also unsettled.
+2. **Stroke dash-phase semantics.** A per-`moveTo` reset makes each subpath independent. SVG/Skia/Cairo/PDF continue the dash pattern globally across subpaths. The current code resets per-subpath. Whether to adopt the SVG/Skia global semantic, keep the per-subpath behavior, or make it configurable via `StrokeStyle` (`dashContinuity: 'perSubpath' | 'global'`). Inner/outer stroke alignment (vs. center-only) is also unsettled.
 
 3. **Package description update.** The current description ("Vector path geometry: curve flattening and tessellation of GraphicsPath outlines") understates the package — it's now construction + conversion + measurement + analysis + transformation + stroking. Should be updated to reflect the full surface.
 

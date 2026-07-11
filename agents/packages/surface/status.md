@@ -132,7 +132,7 @@ All new tests cover: happy paths, alias-safety (out===source), edge cases (zero-
 1. Fix `floodFillSurface` to take a caller-provided visited buffer (same pattern as `scrollSurface` fix).
 2. Add `convertSurfaceAlphaType(out, target)` and update `createSurface` to accept an optional `alphaType`.
 3. Implement `warpSurface` (perspective warp) — now straightforward with `SurfaceEdgeMode` and the affine sampling helpers.
-4. Extend `fillSurfacePerlinNoise` with `stitch`, `channelOptions`, and `fractalSum` vs `turbulence` mode (OpenFL `perlinNoise` parity).
+4. Extend `fillSurfacePerlinNoise` with `stitch`, `channelOptions`, and `fractalSum` vs `turbulence` mode (full `perlinNoise` parity).
 5. Unify `resizeSurface` / `rotateSurface` edge handling through `SurfaceEdgeMode` (currently uses implicit transparent/clamp behavior with no parameter).
 6. `@flighthq/surface-formats` as a new package — establish as a scoped session with scope confirmed by the user.
 7. Verify and build the Rust additions in an environment with `cargo`.

@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/shape` is the **retained command recorder** for vector drawing — the Flash/OpenFL `Graphics`-style display node. It owns a flat command vocabulary (moveTo/lineTo/quadratic + cubic curves, arcs, primitives circle/ellipse/rectangle/round-rect/polygon/polyline, raw path injection, indexed `drawTriangles`), solid/gradient/bitmap fills and strokes, exact analytic local-bounds measurement, a solid-fill region resolver (`getShapeFillRegions`, with a raster-fallback sentinel), an opt-in per-command hit-test registry with built-in primitive handlers, a typed round-trip surface (planned: `getShapeGraphicsData` / `forEachShapeCommand` / `appendShapeGraphicsData`), and a data-only `Scale9Shape` entity carrying a `scale9Grid`.
+`@flighthq/shape` is the **retained command recorder** for vector drawing — the retained-mode vector `Graphics`-style display node. It owns a flat command vocabulary (moveTo/lineTo/quadratic + cubic curves, arcs, primitives circle/ellipse/rectangle/round-rect/polygon/polyline, raw path injection, indexed `drawTriangles`), solid/gradient/bitmap fills and strokes, exact analytic local-bounds measurement, a solid-fill region resolver (`getShapeFillRegions`, with a raster-fallback sentinel), an opt-in per-command hit-test registry with built-in primitive handlers, a typed round-trip surface (planned: `getShapeGraphicsData` / `forEachShapeCommand` / `appendShapeGraphicsData`), and a data-only `Scale9Shape` entity carrying a `scale9Grid`.
 
 Shape is the "what to draw" recorder, not the geometry kernel. General path tessellation, curve flattening, stroke-to-geometry expansion, and boolean operations belong to `@flighthq/path`. Rendering optimization is delegated to `displayobject-<backend>`. Format-specific serialization (SVG `<path d>`, Canvas2D replay, stable JSON) belongs in `@flighthq/shape-formats`.
 
@@ -34,7 +34,7 @@ Shape is the "what to draw" recorder, not the geometry kernel. General path tess
 - Per-command hit-test registry with opt-in built-in handlers for primitives.
 - Typed in-memory round-trip over the command buffer (readback + walk + replay).
 - `Scale9Shape` data entity (the `scale9Grid` field). Whether shape also owns scale-9 _distortion_ is an Open direction.
-- `drawTriangles` as a command in the vocabulary (canonical Flash `Graphics` command).
+- `drawTriangles` as a command in the vocabulary (a canonical `Graphics` command).
 
 **Non-goals:**
 

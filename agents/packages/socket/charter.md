@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/socket` is the **bidirectional message-transport cell** of the platform-integration suite — the Flight home for what OpenFL/Lime expose as `Socket`/`WebSocket`/`XMLSocket`: open a persistent connection, send and receive messages until it closes. Sibling of `@flighthq/net` (which is one-shot request/response HTTP); `socket` is the long-lived, event-bearing connection.
+`@flighthq/socket` is the **bidirectional message-transport cell** of the platform-integration suite — the Flight home for a `Socket`/`WebSocket`/`XMLSocket`-style capability: open a persistent connection, send and receive messages until it closes. Sibling of `@flighthq/net` (which is one-shot request/response HTTP); `socket` is the long-lived, event-bearing connection.
 
 Because a socket *is* an event source (messages, open, close, error arrive asynchronously over time), it takes the suite's **event-capability** shape — a `Socket` entity with `createSocket`/`attachSocket`/`detachSocket`/`disposeSocket` and typed signals — over a swappable `SocketBackend` with a lazy web default (`WebSocket`). Sending/closing are explicit commands on the entity.
 

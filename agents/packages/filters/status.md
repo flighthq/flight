@@ -15,7 +15,7 @@ Swept the `assessment.md` Recommended list within `packages/filters/` only. **Ke
 ### Done
 
 - **Guard-exhaustiveness structural law.** Added two colocated assertions to the `isBitmapFilter` describe block in `bitmapFilterGuards.test.ts`: every known kind is accepted by `isBitmapFilter`, and each kind matches **exactly one** specific `is*` guard (no unguarded kind, no double-claimed kind). Bound to the existing `isBitmapFilter` export; no new public surface. (Sweep-safe subset of "round out the structural-law tests".)
-- **Package README (descriptor reference).** Added `packages/filters/README.md`: OpenFL filter-class → Flight `kind`/constructor mapping table, guard/validation reference, a color-matrix recipe cheat-sheet, the blur-math table, and a usage snippet. Documentation only; grounded strictly in the live exports.
+- **Package README (descriptor reference).** Added `packages/filters/README.md`: filter-class → Flight `kind`/constructor mapping table, guard/validation reference, a color-matrix recipe cheat-sheet, the blur-math table, and a usage snippet. Documentation only; grounded strictly in the live exports.
 
 ### Parked
 
@@ -73,13 +73,13 @@ All 14 constructor files now import and use their `*Kind` constants from `@fligh
 
 ### bitmapFilterOps.ts (pass 1)
 
-- `DEFAULT_FILTER_ALPHA`, `DEFAULT_FILTER_ANGLE`, `DEFAULT_FILTER_BLUR_X`, `DEFAULT_FILTER_BLUR_Y`, `DEFAULT_FILTER_COLOR`, `DEFAULT_FILTER_DISTANCE`, `DEFAULT_FILTER_KNOCKOUT`, `DEFAULT_FILTER_QUALITY`, `DEFAULT_FILTER_STRENGTH` — canonical Flash/OpenFL defaults
+- `DEFAULT_FILTER_ALPHA`, `DEFAULT_FILTER_ANGLE`, `DEFAULT_FILTER_BLUR_X`, `DEFAULT_FILTER_BLUR_Y`, `DEFAULT_FILTER_COLOR`, `DEFAULT_FILTER_DISTANCE`, `DEFAULT_FILTER_KNOCKOUT`, `DEFAULT_FILTER_QUALITY`, `DEFAULT_FILTER_STRENGTH` — canonical filter defaults
 - `cloneBitmapFilter<T>(filter): T` — deep copy
 - `cloneBitmapFilterList(filters): BitmapFilter[]` — deep copy of a list
 - `copyBitmapFilterInto(out, source): void` — alias-safe out-param copy
 - `equalsBitmapFilter(a, b): boolean` — structural equality
 - `equalsBitmapFilterList(a, b): boolean` — structural equality for lists
-- `normalizeBitmapFilter(filter): Readonly<BitmapFilter>` — canonical Flash defaults applied; idempotent
+- `normalizeBitmapFilter(filter): Readonly<BitmapFilter>` — canonical defaults applied; idempotent
 
 ### bitmapFilterSerialization.ts (pass 1)
 
@@ -102,7 +102,7 @@ All 14 constructor files now import and use their `*Kind` constants from `@fligh
 
 ### blurQuality.ts (pass 1)
 
-- `getBlurPassCountForQuality(quality): number` — canonical Flash quality 1–15 → pass count
+- `getBlurPassCountForQuality(quality): number` — canonical quality 1–15 → pass count
 
 ### colorMatrixFilter.ts (pass 1 updated, pass 2 kind constant)
 
@@ -195,11 +195,11 @@ Adding a `signals` opt-in group for live filter-stack mutation notifications (`o
 
 ### Backend De-duplication Pass (Cross-package — deferred)
 
-`normalizeBitmapFilter` now provides the canonical Flash defaults. The five `filters-canvas`, `filters-css`, `filters-gl`, `filters-wgpu`, `filters-surface` backend packages still contain duplicated defaulting logic. Replacing it with `normalizeBitmapFilter` calls would be a high-leverage mechanical change across well-understood files, but it crosses package boundaries. Surfaces as a suggestion.
+`normalizeBitmapFilter` now provides the canonical defaults. The five `filters-canvas`, `filters-css`, `filters-gl`, `filters-wgpu`, `filters-surface` backend packages still contain duplicated defaulting logic. Replacing it with `normalizeBitmapFilter` calls would be a high-leverage mechanical change across well-understood files, but it crosses package boundaries. Surfaces as a suggestion.
 
 ### `@flighthq/filters-formats` (Future — deferred until format needed)
 
-A formats neighbor (`@flighthq/filters-formats`) for importing OpenFL/SWF/Lottie filter blobs. Deferred until a concrete import format is on the roadmap.
+A formats neighbor (`@flighthq/filters-formats`) for importing SWF/Lottie filter blobs. Deferred until a concrete import format is on the roadmap.
 
 ### Rust Parity (`flighthq-filters` crate — deferred)
 
