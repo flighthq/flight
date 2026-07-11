@@ -754,10 +754,7 @@ export function createTextLayoutResult(): TextLayoutResult {
   };
 }
 
-export function getTextLayoutIsTruncated(
-  layout: Readonly<TextLayoutResult>,
-  params: Readonly<TextLayoutParams>,
-): boolean {
+export function isTextLayoutTruncated(layout: Readonly<TextLayoutResult>, params: Readonly<TextLayoutParams>): boolean {
   if (params.maxLines === undefined || params.maxLines < 0) return false;
   return layout.numLines >= params.maxLines && layout.groups.length > 0;
 }

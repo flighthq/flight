@@ -8,7 +8,7 @@ import {
   expandAabbByPoint,
   expandAabbBySphere,
   getAabbCenter,
-  getAabbContainsPoint,
+  containsAabbPoint,
   getAabbExtents,
   getAabbSize,
   getClosestPointOnAabb,
@@ -31,6 +31,19 @@ describe('cloneAabb', () => {
     expect(c.max.z).toBe(6);
     c.min.x = 99;
     expect(a.min.x).toBe(-1);
+  });
+});
+
+describe('containsAabbPoint', () => {
+  it('returns true for an interior point and on the boundary', () => {
+    const a = createAabb(0, 0, 0, 2, 2, 2);
+    expect(containsAabbPoint(a, createVector3(1, 1, 1))).toBe(true);
+    expect(containsAabbPoint(a, createVector3(0, 2, 0))).toBe(true);
+  });
+
+  it('returns false for a point outside', () => {
+    const a = createAabb(0, 0, 0, 2, 2, 2);
+    expect(containsAabbPoint(a, createVector3(3, 1, 1))).toBe(false);
   });
 });
 
@@ -130,19 +143,6 @@ describe('getAabbCenter', () => {
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
     expect(out.z).toBe(0);
-  });
-});
-
-describe('getAabbContainsPoint', () => {
-  it('returns true for an interior point and on the boundary', () => {
-    const a = createAabb(0, 0, 0, 2, 2, 2);
-    expect(getAabbContainsPoint(a, createVector3(1, 1, 1))).toBe(true);
-    expect(getAabbContainsPoint(a, createVector3(0, 2, 0))).toBe(true);
-  });
-
-  it('returns false for a point outside', () => {
-    const a = createAabb(0, 0, 0, 2, 2, 2);
-    expect(getAabbContainsPoint(a, createVector3(3, 1, 1))).toBe(false);
   });
 });
 

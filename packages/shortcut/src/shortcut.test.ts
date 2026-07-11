@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types';
 
 import {
-  areAcceleratorsEqual,
+  equalsAccelerator,
   createParsedAccelerator,
   createWebShortcutBackend,
   disableGlobalShortcut,
@@ -81,30 +81,6 @@ afterEach(() => {
   // Disconnect any signal listeners registered in this test to avoid cross-test bleed.
   const signals = enableGlobalShortcutSignals();
   clearSignal(signals.onTrigger);
-});
-
-describe('areAcceleratorsEqual', () => {
-  it('returns true for same chord in different spellings', () => {
-    expect(areAcceleratorsEqual('Ctrl+K', 'Control+K')).toBe(true);
-    expect(areAcceleratorsEqual('Cmd+Shift+S', 'Meta+Shift+S')).toBe(true);
-    expect(areAcceleratorsEqual('ctrl+shift+k', 'Control+Shift+K')).toBe(true);
-  });
-
-  it('returns false for different chords', () => {
-    expect(areAcceleratorsEqual('Ctrl+K', 'Ctrl+S')).toBe(false);
-    expect(areAcceleratorsEqual('Ctrl+K', 'Alt+K')).toBe(false);
-  });
-
-  it('returns false when either accelerator is unparseable', () => {
-    expect(areAcceleratorsEqual('', 'Ctrl+K')).toBe(false);
-    expect(areAcceleratorsEqual('Ctrl+K', 'bad###key')).toBe(false);
-    expect(areAcceleratorsEqual('', '')).toBe(false);
-  });
-
-  it('is order-insensitive for modifiers', () => {
-    expect(areAcceleratorsEqual('Shift+Ctrl+K', 'Control+Shift+K')).toBe(true);
-    expect(areAcceleratorsEqual('Alt+Shift+Control+K', 'Ctrl+Shift+Alt+K')).toBe(true);
-  });
 });
 
 describe('createParsedAccelerator', () => {
@@ -232,6 +208,30 @@ describe('enableGlobalShortcutSignals', () => {
 
     expect(received).toHaveLength(0);
     expect(backend.entries.size).toBe(0);
+  });
+});
+
+describe('equalsAccelerator', () => {
+  it('returns true for same chord in different spellings', () => {
+    expect(equalsAccelerator('Ctrl+K', 'Control+K')).toBe(true);
+    expect(equalsAccelerator('Cmd+Shift+S', 'Meta+Shift+S')).toBe(true);
+    expect(equalsAccelerator('ctrl+shift+k', 'Control+Shift+K')).toBe(true);
+  });
+
+  it('returns false for different chords', () => {
+    expect(equalsAccelerator('Ctrl+K', 'Ctrl+S')).toBe(false);
+    expect(equalsAccelerator('Ctrl+K', 'Alt+K')).toBe(false);
+  });
+
+  it('returns false when either accelerator is unparseable', () => {
+    expect(equalsAccelerator('', 'Ctrl+K')).toBe(false);
+    expect(equalsAccelerator('Ctrl+K', 'bad###key')).toBe(false);
+    expect(equalsAccelerator('', '')).toBe(false);
+  });
+
+  it('is order-insensitive for modifiers', () => {
+    expect(equalsAccelerator('Shift+Ctrl+K', 'Control+Shift+K')).toBe(true);
+    expect(equalsAccelerator('Alt+Shift+Control+K', 'Ctrl+Shift+Alt+K')).toBe(true);
   });
 });
 
