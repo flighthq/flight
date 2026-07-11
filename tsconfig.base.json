@@ -30,6 +30,8 @@
       "@flighthq/dialog/*": ["./packages/dialog/src/*"],
       "@flighthq/filesystem": ["./packages/filesystem/src/index.ts"],
       "@flighthq/filesystem/*": ["./packages/filesystem/src/*"],
+      "@flighthq/host-capacitor": ["./packages/host-capacitor/src/index.ts"],
+      "@flighthq/host-capacitor/*": ["./packages/host-capacitor/src/*"],
       "@flighthq/host-electron": ["./packages/host-electron/src/index.ts"],
       "@flighthq/host-electron/*": ["./packages/host-electron/src/*"],
       "@flighthq/host-tauri": ["./packages/host-tauri/src/index.ts"],
