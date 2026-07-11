@@ -270,6 +270,8 @@
       "@flighthq/easing/*": ["./packages/easing/src/*"],
       "@flighthq/text": ["./packages/text/src/index.ts"],
       "@flighthq/text/*": ["./packages/text/src/*"],
+      "@flighthq/text-markup": ["./packages/text-markup/src/index.ts"],
+      "@flighthq/text-markup/*": ["./packages/text-markup/src/*"],
       "@flighthq/textbidi": ["./packages/textbidi/src/index.ts"],
       "@flighthq/textbidi/*": ["./packages/textbidi/src/*"],
       "@flighthq/textlayout": ["./packages/textlayout/src/index.ts"],
