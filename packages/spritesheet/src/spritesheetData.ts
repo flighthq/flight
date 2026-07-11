@@ -1,39 +1,8 @@
-import type { SpritesheetAnimationDirection } from '@flighthq/types';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/types';
 
-export interface SpritesheetAnimationData {
-  direction: SpritesheetAnimationDirection;
-  frameDuration: number;
-  frameDurations: number[] | null;
-  frameNames: string[];
-  loop: boolean;
-  name: string;
-  originX: number;
-  originY: number;
-}
-
-export interface SpritesheetFrameData {
-  height: number;
-  name: string;
-  offsetX: number;
-  offsetY: number;
-  pivotX: number | null;
-  pivotY: number | null;
-  rotated: boolean;
-  sourceHeight: number;
-  sourceWidth: number;
-  width: number;
-  x: number;
-  y: number;
-}
-
-export interface SpritesheetData {
-  animations: SpritesheetAnimationData[];
-  frames: SpritesheetFrameData[];
-  imageFile: string;
-  imageHeight: number;
-  imageWidth: number;
-  scale: number;
-}
+// Canonical definitions now live in @flighthq/types (the shared header layer); re-exported here so
+// spritesheet authoring keeps a single import surface alongside the constructors below.
+export type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData };
 
 export function createSpritesheetAnimationData(obj?: Partial<SpritesheetAnimationData>): SpritesheetAnimationData {
   return {
