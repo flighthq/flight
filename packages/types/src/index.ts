@@ -446,6 +446,7 @@ export * from './TextLayout';
 export * from './TextLineMetrics';
 export * from './TextListMarker';
 export * from './TextMetrics';
+export * from './TextSegment';
 export * from './TextSelectionRange';
 export * from './TextSelectionRectangle';
 export * from './TextShaper';

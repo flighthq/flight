@@ -268,6 +268,8 @@
       "@flighthq/textlayout/*": ["./packages/textlayout/src/*"],
       "@flighthq/textinput": ["./packages/textinput/src/index.ts"],
       "@flighthq/textinput/*": ["./packages/textinput/src/*"],
+      "@flighthq/textsegment": ["./packages/textsegment/src/index.ts"],
+      "@flighthq/textsegment/*": ["./packages/textsegment/src/*"],
       "@flighthq/textshaper": ["./packages/textshaper/src/index.ts"],
       "@flighthq/textshaper/*": ["./packages/textshaper/src/*"],
       "@flighthq/textshaper-canvas": ["./packages/textshaper-canvas/src/index.ts"],

@@ -136,6 +136,7 @@
     "@flighthq/text": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
+    "@flighthq/textsegment": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/textshaper-canvas": "*",
     "@flighthq/texture": "*",
