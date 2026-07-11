@@ -70,12 +70,3 @@ function writeBaseline(path: string, data: TestBaseline): void {
   }
   writeFileSync(path, JSON.stringify(sorted, null, 2) + '\n');
 }
-
-// Per-subject baseline root: baselines colocate with their suite (functional/examples are
-// top-level; the landing site lives under site). One JSON file per test under the root's
-// baselines/ dir.
-const BASELINE_ROOTS: Record<string, string> = {
-  functional: 'functional',
-  examples: 'examples',
-  site: 'site',
-};

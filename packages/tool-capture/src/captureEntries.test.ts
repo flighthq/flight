@@ -17,10 +17,6 @@ afterEach(() => {
 });
 
 describe('discoverEntries', () => {
-  it('reports the landing page as a single fixed site entry', () => {
-    expect(discoverEntries('site', root)).toEqual([{ name: 'landing', renderers: ['webgl'] }]);
-  });
-
   it('discovers functional scenes under functional/scenes', () => {
     mkdirSync(join(root, 'functional', 'scenes'), { recursive: true });
     writeFileSync(join(root, 'functional', 'scenes', 'foo.ts'), '');
