@@ -116,6 +116,7 @@
     { "path": "../storage" },
     { "path": "../surface" },
     { "path": "../text" },
+    { "path": "../textbidi" },
     { "path": "../textinput" },
     { "path": "../textlayout" },
     { "path": "../textsegment" },

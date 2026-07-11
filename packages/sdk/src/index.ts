@@ -104,6 +104,7 @@ export * from '@flighthq/statusbar';
 export * from '@flighthq/storage';
 export * from '@flighthq/surface';
 export * from '@flighthq/text';
+export * from '@flighthq/textbidi';
 export * from '@flighthq/textinput';
 export * from '@flighthq/textlayout';
 export * from '@flighthq/textsegment';

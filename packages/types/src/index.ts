@@ -30,6 +30,7 @@ export * from './BatchBarrier';
 export * from './BatchFormat';
 export * from './BevelFilter';
 export * from './BevelFilterOffsets';
+export * from './Bidi';
 export * from './Billboard';
 export * from './BinPack';
 export * from './Bitmap';
