@@ -27,7 +27,7 @@ Evidence: the **delta** between `incoming/integration-b2824e3d8/head/packages/te
 - **Justify** (`justifyLines`). Per-line residual `available - lineW` distributed across `lineGroups.length - 1` group boundaries, skipping paragraph-final lines tracked in `_paragraphLastLines` — the CSS "last line is not justified" rule. The model is space-count-by-group-boundary, a coarse approximation (see Gaps).
 - **start/end alignment** (`applyAlignment`). `'start'`/`'end'` resolve to `left`/`right` under `direction`, reversing under `'rtl'`.
 - **Bullets** (`emitBullet`). Hanging-indent `•` group at paragraph start when `format.bullet === true`, with `listMarker === 'none'` suppressing the glyph while keeping indent. Reads `TextFormat.bullet` (present) and `TextFormat.listMarker` (**absent** — see Blocker).
-- **Truncation** (`checkTruncation`, `getTextLayoutIsTruncated`). On reaching `maxLines`, trims the tail of the last group until the ellipsis fits and pushes a synthetic ellipsis group. Threaded through the main loop and `breakLongWord` via a `truncated` flag and `if (truncated) return/break` guards.
+- **Truncation** (`checkTruncation`, `isTextLayoutTruncated`). On reaching `maxLines`, trims the tail of the last group until the ellipsis fits and pushes a synthetic ellipsis group. Threaded through the main loop and `breakLongWord` via a `truncated` flag and `if (truncated) return/break` guards.
 - **Gutter de-duplication** (`textBounds.ts`, `textLayout.ts`). `TEXT_LAYOUT_GUTTER` is the single source; `TEXT_BOUNDS_GUTTER` is re-exported as an alias. `richTextMetrics.ts` still consumes `TEXT_BOUNDS_GUTTER`, so no import is broken. Clean, zero-drift.
 - **richTextQuery fix.** `getRichTextCharIndexAtPoint` no longer reads a bare `text` (a prior-bundle bug); line 68 now derives `lineStart` from `layout.groups[last].endIndex`. The `_text` param is renamed and documented unused.
 - **Binary-search line-break index.** `getTextLineBreakIndex` is now `O(log n)`; `getTextLineBreaks` pushes in ascending order, so the sorted precondition holds.
@@ -56,7 +56,7 @@ Evidence: the **delta** between `incoming/integration-b2824e3d8/head/packages/te
   ```
   Head `TextLayout.ts` `TextLayoutParams` has only `{ autoSize, border, formatRanges, height, measure, multiline, text, width, wordWrap }`. → TS2339 on each read.
 - `b2824e3d8:packages/textlayout/src/textLayout.ts:325` reads `currentFormat.listMarker === 'none'`, but head `TextFormat.ts` has no `listMarker` field. → TS2339.
-- `b2824e3d8:packages/textlayout/src/textLayout.ts:723-728` `getTextLayoutIsTruncated` reads `params.maxLines` — same missing field.
+- `b2824e3d8:packages/textlayout/src/textLayout.ts:723-728` `isTextLayoutTruncated` reads `params.maxLines` — same missing field.
 - The tests assert the broken surface against an explicit annotation: `b2824e3d8:packages/textlayout/src/textLayout.test.ts:487` `const params: TextLayoutParams = { ..., maxLines: 2 }` → TS2353 "Object literal may only specify known properties … 'maxLines' does not exist in type 'TextLayoutParams'".
 
 Root cause: the codebase-map's header-layer rule ("define its types in `@flighthq/types` first, then implement against them") was followed in the _builder_ bundle the prior review (`builder-67dc46d64`, score 68) was written against — that review explicitly claims "New cross-package types (`TextDirection`, `TextJustification`, `TextListMarker`, extended `TextLayoutParams`) are homed in `@flighthq/types`." In **this** integration, the textlayout source landed and the `@flighthq/types` half did not. This is precisely the split-integration defect a merge gate exists to catch; it is not a pre-release-latitude case (latitude waives back-compat, not compilation).
@@ -72,9 +72,9 @@ Root cause: the codebase-map's header-layer rule ("define its types in `@flighth
 ## Contract & packaging (delta)
 
 - `package.json` is **unchanged**: `sideEffects: false`, single `.` export, deps `@flighthq/textshaper` + `@flighthq/types`. No new top-level side effects; new module scratch `_paragraphLastLines` is a private `Set`, consistent with the existing `_lineBreaks`/`_charAdvances` scratch pattern. No tree-shaking regression in the manifest.
-- New exports are alphabetized within their barrel entry (`b2824e3d8:packages/textlayout/src/index.ts:45`: `computeTextLayout, createTextLayoutResult, getTextLayoutIsTruncated, TEXT_LAYOUT_GUTTER`) and each has colocated coverage (`getTextLayoutIsTruncated` + `TEXT_LAYOUT_GUTTER` describe blocks in `textLayout.test.ts`; `TEXT_BOUNDS_GUTTER` in `textBounds.test.ts`) — `exports:check` would pass once it compiles.
+- New exports are alphabetized within their barrel entry (`b2824e3d8:packages/textlayout/src/index.ts:45`: `computeTextLayout, createTextLayoutResult, isTextLayoutTruncated, TEXT_LAYOUT_GUTTER`) and each has colocated coverage (`isTextLayoutTruncated` + `TEXT_LAYOUT_GUTTER` describe blocks in `textLayout.test.ts`; `TEXT_BOUNDS_GUTTER` in `textBounds.test.ts`) — `exports:check` would pass once it compiles.
 - Tests are colocated, alphabetized, and mirror exports; they are substantive (codepoint, bullet, justify, truncation×wrap, start/end, kerning conformance cases). Honest coverage — **but they cannot run** until the type blocker is fixed (they reference the missing fields).
-- Naming is clean: `getTextLayoutIsTruncated` (`is*` boolean, full type word), `TEXT_LAYOUT_GUTTER` / `TEXT_BOUNDS_GUTTER` are self-identifying. No abbreviations introduced.
+- Naming is clean: `isTextLayoutTruncated` (`is*` boolean, full type word), `TEXT_LAYOUT_GUTTER` / `TEXT_BOUNDS_GUTTER` are self-identifying. No abbreviations introduced.
 - The Rust mirror `flighthq-textlayout` is named in the charter front matter; the delta does not touch it. The new type seam, once homed in `@flighthq/types`, must also be mirrored there — out of scope for this package's gate.
 
 ## Bottom line

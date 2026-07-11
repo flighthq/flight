@@ -49,7 +49,7 @@ All Bronze, Silver, and achievable Gold items are now implemented in `packages/c
 - `createClipRegionFromRoundedRectangle(rectangle, radius, tolerance)` — internally builds a cubic Bezier path and flattens; falls back to plain rect when `radius <= 0`.
 - `createClipRegionFromEllipse(rectangle, tolerance)` — cubic Bezier approximation (kappa).
 - `createClipRegionFromCircle(x, y, radius, tolerance)` — cubic Bezier approximation.
-- `clipRegionsEqual(a, b)` — structural comparison (form, winding, rect, contour point-by-point).
+- `equalsClipRegion(a, b)` — structural comparison (form, winding, rect, contour point-by-point).
 - `unionClipRegions(out, a, b)` — bounding-box union; rect∩rect stays scissor-eligible; mixed forms keep contours from the richer input.
 
 ### Gold (implemented — pass 2)
