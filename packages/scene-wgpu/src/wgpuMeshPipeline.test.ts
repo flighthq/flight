@@ -9,6 +9,8 @@ import {
   createWgpuMeshPipeline,
   drawWgpuMeshSubset,
   ensureWgpuFrameBindGroup,
+  ensureWgpuIblSampleBindGroup,
+  ensureWgpuIblSampleLayout,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuSceneLayouts,
   ensureWgpuScenePipeline,
@@ -138,6 +140,49 @@ describe('ensureWgpuFrameBindGroup', () => {
     const b = ensureWgpuFrameBindGroup(state);
     expect(a).toBe(b);
     expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(buffers);
+  });
+});
+
+describe('ensureWgpuIblSampleBindGroup', () => {
+  it('writes the disabled IBL uniform and reuses the bind group when no IBL changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const a = ensureWgpuIblSampleBindGroup(state);
+    const made = fake.calls.filter((c) => c.name === 'createBindGroup').length;
+    const b = ensureWgpuIblSampleBindGroup(state);
+    expect(a).toBe(b);
+    // No new bind group on the second call (dummy views unchanged); the uniform is rewritten each call.
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(made);
+    expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
+  });
+
+  it('rebuilds the bind group when a baked IBL set becomes present', () => {
+    const { fake, state } = makeWgpuSceneState();
+    ensureWgpuIblSampleBindGroup(state);
+    const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
+    // Simulate bakeWgpuEnvironmentIbl having stored a baked set this frame.
+    getWgpuSceneRuntime(state).ibl = {
+      brdfLut: {} as GPUTexture,
+      brdfLutView: {} as GPUTextureView,
+      intensity: 1,
+      irradianceCube: {} as GPUTexture,
+      irradianceCubeView: {} as GPUTextureView,
+      prefilteredCube: {} as GPUTexture,
+      prefilteredCubeView: {} as GPUTextureView,
+      prefilteredMipCount: 5,
+    };
+    ensureWgpuIblSampleBindGroup(state);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(before + 1);
+  });
+});
+
+describe('ensureWgpuIblSampleLayout', () => {
+  it('creates the IBL-sample layout once per state', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const a = ensureWgpuIblSampleLayout(state);
+    const made = fake.calls.filter((c) => c.name === 'createBindGroupLayout').length;
+    const b = ensureWgpuIblSampleLayout(state);
+    expect(a).toBe(b);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
   });
 });
 

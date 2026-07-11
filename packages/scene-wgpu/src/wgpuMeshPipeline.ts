@@ -27,6 +27,7 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // `hasShadowGroup` is set when the pipeline was laid out with the group(3) shadow-sample layout (lit
 // families that PCF-sample the directional shadow map); beginWgpuMeshDraw then also binds group(3).
 export interface WgpuMeshPipeline {
+  hasIblGroup: boolean;
   hasShadowGroup: boolean;
   materialBindGroupLayout: GPUBindGroupLayout;
   pipeline: GPURenderPipeline;
@@ -55,6 +56,12 @@ export function beginWgpuMeshDraw(state: WgpuRenderState, pipeline: Readonly<Wgp
   if (pipeline.hasShadowGroup) {
     pass.setBindGroup(3, ensureWgpuShadowSampleBindGroup(state));
   }
+  // Lit PBR families that sample image-based lighting carry a group(4) IBL layout; bind the shared IBL
+  // sample group (the baked irradiance/prefiltered/BRDF set when bakeWgpuEnvironmentIbl ran, else 1x1
+  // dummies gated off by the IBL uniform). Only the PBR family sets this today; non-IBL families skip it.
+  if (pipeline.hasIblGroup) {
+    pass.setBindGroup(4, ensureWgpuIblSampleBindGroup(state));
+  }
 }
 
 // Builds a render pipeline for a family: compiles its WGSL module, and lays out [shared Frame, shared
@@ -69,6 +76,7 @@ export function createWgpuMeshPipeline(
   options: Readonly<{
     doubleSided: boolean;
     format: GPUTextureFormat;
+    iblBindGroupLayout?: GPUBindGroupLayout;
     materialBindGroupLayout: GPUBindGroupLayout;
     module: GPUShaderModule;
     shadowBindGroupLayout?: GPUBindGroupLayout;
@@ -82,7 +90,10 @@ export function createWgpuMeshPipeline(
     layouts.drawBindGroupLayout,
     options.materialBindGroupLayout,
   ];
+  // Group order is positional: shadow (group 3) then IBL (group 4). The PBR family passes both, so a
+  // pipeline that carries IBL always also carries shadow — the IBL layout never lands at group 3.
   if (options.shadowBindGroupLayout !== undefined) bindGroupLayouts.push(options.shadowBindGroupLayout);
+  if (options.iblBindGroupLayout !== undefined) bindGroupLayouts.push(options.iblBindGroupLayout);
   const layout = device.createPipelineLayout({ bindGroupLayouts });
   const pipeline = device.createRenderPipeline({
     layout,
@@ -96,6 +107,7 @@ export function createWgpuMeshPipeline(
     depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: true, depthCompare: 'less' },
   });
   return {
+    hasIblGroup: options.iblBindGroupLayout !== undefined,
     hasShadowGroup: options.shadowBindGroupLayout !== undefined,
     materialBindGroupLayout: options.materialBindGroupLayout,
     pipeline,
@@ -150,6 +162,101 @@ export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
     });
   }
   return scene.frameBindGroup;
+}
+
+// Resolves the shared group(4) IBL sample bind group a lit PBR family binds when its pipeline carries the
+// IBL layout — the WGSL counterpart of scene-gl's IBL texture-unit + u_ibl* uniform binds in
+// bindGlMeshLightBlock. Lazily creates the IBL uniform buffer (enabled/intensity/maxMip), a filtering
+// sampler, and 1x1 dummy cube + 2D-LUT textures for the no-IBL case, then rewrites the uniform every call
+// (from scene.ibl) and rebuilds the bind group only when the bound irradiance view changes (present ↔
+// absent). A scene with no baked environment still renders: the dummy views are bound and the shader's
+// `enabled < 0.5` gate keeps them unsampled — mirroring GL's u_iblEnabled = 0 placeholder path.
+export function ensureWgpuIblSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
+  const scene = getWgpuSceneRuntime(state);
+  const device = state.device;
+
+  if (scene.iblUniformBuffer === null) {
+    scene.iblUniformBuffer = device.createBuffer({
+      size: IBL_SAMPLE_UNIFORM_BYTES,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+  }
+  if (scene.iblSampler === null) {
+    // Trilinear so the prefiltered specular cube's roughness mip chain (textureSampleLevel) filters.
+    scene.iblSampler = device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmapFilter: 'linear',
+    });
+  }
+  if (scene.iblDummyCubeView === null) {
+    // 1x1 cube + 1x1 2D bound when no IBL is baked this frame; never sampled (the enabled flag gates them
+    // off), they only satisfy the group(4) texture_cube / texture_2d slots so the draw is valid.
+    scene.iblDummyCubeTexture = device.createTexture({
+      size: [1, 1, 6],
+      format: IBL_DUMMY_FORMAT,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    scene.iblDummyCubeView = scene.iblDummyCubeTexture.createView({ dimension: 'cube' });
+    scene.iblDummyLutTexture = device.createTexture({
+      size: [1, 1, 1],
+      format: IBL_DUMMY_FORMAT,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    scene.iblDummyLutView = scene.iblDummyLutTexture.createView();
+  }
+
+  const ibl = scene.ibl;
+  const u = _iblSampleScratch;
+  if (ibl !== null) {
+    u[0] = 1; // enabled
+    u[1] = ibl.intensity;
+    u[2] = ibl.prefilteredMipCount - 1; // maxMip (roughness 1.0)
+  } else {
+    u[0] = 0;
+    u[1] = 1;
+    u[2] = 0;
+  }
+  u[3] = 0;
+  device.queue.writeBuffer(scene.iblUniformBuffer, 0, u.buffer, 0, IBL_SAMPLE_UNIFORM_BYTES);
+
+  const irradianceView = ibl !== null ? ibl.irradianceCubeView : scene.iblDummyCubeView;
+  const prefilteredView = ibl !== null ? ibl.prefilteredCubeView : scene.iblDummyCubeView;
+  const brdfView = ibl !== null ? ibl.brdfLutView : scene.iblDummyLutView!;
+  if (scene.iblSampleBindGroup === null || scene.iblSampleCubeView !== irradianceView) {
+    scene.iblSampleBindGroup = device.createBindGroup({
+      layout: ensureWgpuIblSampleLayout(state),
+      entries: [
+        { binding: 0, resource: { buffer: scene.iblUniformBuffer } },
+        { binding: 1, resource: irradianceView },
+        { binding: 2, resource: prefilteredView },
+        { binding: 3, resource: brdfView },
+        { binding: 4, resource: scene.iblSampler },
+      ],
+    });
+    scene.iblSampleCubeView = irradianceView;
+  }
+  return scene.iblSampleBindGroup;
+}
+
+// Resolves the shared group(4) IBL sample bind-group layout (uniform enabled/intensity/maxMip, a diffuse
+// irradiance cube, a prefiltered specular cube, a 2D BRDF LUT, and a filtering sampler), created once per
+// state. Lit PBR pipelines pass this to createWgpuMeshPipeline; the shared bind group built by
+// ensureWgpuIblSampleBindGroup targets it, so one IBL bind group serves every lit PBR pipeline variant.
+export function ensureWgpuIblSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
+  const scene = getWgpuSceneRuntime(state);
+  if (scene.iblSampleLayout === null) {
+    scene.iblSampleLayout = state.device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+        { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+        { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+        { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      ],
+    });
+  }
+  return scene.iblSampleLayout;
 }
 
 // The one-time opaque-white 1x1 RGBA texture view bound to a family's map slots in the untextured
@@ -485,6 +592,13 @@ export const SHADOW_DEPTH_FORMAT: GPUTextureFormat = 'depth32float';
 // Shadow-sample uniform: mat4x4f light matrix (64) + vec4f params (16, x = enabled) = 80 bytes / 20 floats.
 const SHADOW_SAMPLE_UNIFORM_BYTES = 80;
 
+// IBL-sample uniform: vec4f params (16, x = enabled, y = intensity, z = maxMip) = 16 bytes / 4 floats.
+const IBL_SAMPLE_UNIFORM_BYTES = 16;
+
+// The 1x1 no-IBL dummy cube + LUT format. A plain filterable 8-bit format satisfies the group(4) `float`
+// texture slots (the dummies are never sampled — the IBL uniform's enabled flag gates them off).
+const IBL_DUMMY_FORMAT: GPUTextureFormat = 'rgba8unorm';
+
 // Opaque-white 1x1 RGBA pixel for the shared placeholder map texture (untextured path).
 const WHITE_PIXEL = new Uint8Array([255, 255, 255, 255]);
 
@@ -508,3 +622,4 @@ const scratchCameraPosition = { x: 0, y: 0, z: 0 };
 const _frameScratch = new Float32Array(FRAME_UNIFORM_BYTES / 4);
 const _dynamicOffsets = new Uint32Array(1);
 const _shadowSampleScratch = new Float32Array(SHADOW_SAMPLE_UNIFORM_BYTES / 4);
+const _iblSampleScratch = new Float32Array(IBL_SAMPLE_UNIFORM_BYTES / 4);

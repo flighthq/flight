@@ -29,6 +29,10 @@
 //   group(3) Shadow   : the directional shadow — light matrix + enabled uniform, the depth map, and a
 //                       comparison sampler. Bound by beginWgpuMeshDraw (the pipeline carries the shadow
 //                       layout); a shadow-less draw binds a 1x1 dummy gated off by the enabled flag.
+//   group(4) Ibl      : image-based lighting — enabled/intensity/maxMip uniform, the diffuse irradiance
+//                       cube, the prefiltered specular cube, the BRDF LUT, and a filtering sampler. Bound
+//                       by beginWgpuMeshDraw; an IBL-less draw binds 1x1 dummies gated off by the enabled
+//                       flag. Group 4 (not 3) because shadow already took 3 — see the maxBindGroups note.
 
 // The feature flags that select an uber-shader variant. Each toggles a `const … : bool` in the prelude
 // and is hashed into the pipeline-cache key (buildWgpuPbrDefineKey), so distinct flag sets compile and
@@ -181,6 +185,20 @@ struct Shadow {
 @group(3) @binding(1) var shadowMap : texture_depth_2d;
 @group(3) @binding(2) var shadowSampler : sampler_comparison;
 
+// The image-based-lighting inputs (group 4), the WGSL mirror of scene-gl's u_ibl* uniforms + samplers.
+// params.x is the enabled flag (0 or 1), params.y the environment intensity, params.z the highest
+// prefiltered mip index (roughness 1.0). The split-sum set: a diffuse irradiance cube, a roughness-mipped
+// prefiltered specular cube, and the 2D BRDF LUT, sampled through one filtering sampler.
+struct Ibl {
+  params : vec4f,   // x = enabled, y = intensity, z = maxMip
+};
+
+@group(4) @binding(0) var<uniform> ibl : Ibl;
+@group(4) @binding(1) var iblIrradiance : texture_cube<f32>;
+@group(4) @binding(2) var iblPrefiltered : texture_cube<f32>;
+@group(4) @binding(3) var iblBrdf : texture_2d<f32>;
+@group(4) @binding(4) var iblSampler : sampler;
+
 struct VertexOutput {
   @builtin(position) clipPosition : vec4f,
   @location(0) worldPosition : vec3f,
@@ -229,6 +247,30 @@ fn visibilitySmith(nDotV : f32, nDotL : f32, roughness : f32) -> f32 {
 
 fn fresnelSchlick(cosTheta : f32, f0 : vec3f) -> vec3f {
   return f0 + (vec3f(1.0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+// Roughness-aware Fresnel for the IBL specular term (Sébastien Lagarde): rougher surfaces reflect less at
+// grazing angles than the smooth Schlick approximation. The WGSL mirror of scene-gl's fresnelSchlickRoughness.
+fn fresnelSchlickRoughness(cosTheta : f32, f0 : vec3f, roughness : f32) -> vec3f {
+  let fMax = max(vec3f(1.0 - roughness), f0);
+  return f0 + (fMax - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+// Image-based ambient via the split-sum approximation: diffuse irradiance over the albedo plus prefiltered
+// specular weighted by the BRDF LUT, scaled by the environment intensity and AO. Replaces the flat ambient
+// term when an environment is baked (bakeWgpuEnvironmentIbl). The cube/LUT samples are already linear
+// (baked from sRGB-decoded sources), so no decode here. The WGSL mirror of scene-gl's sampleIblAmbient.
+// textureSampleLevel is used throughout (the irradiance/LUT at level 0, the prefiltered cube at the
+// roughness-scaled mip) so the sample never needs screen-space derivatives — safe under any control flow.
+fn sampleIblAmbient(N : vec3f, V : vec3f, rough : f32, f0 : vec3f, diffuseColor : vec3f, occ : f32) -> vec3f {
+  let nv = max(dot(N, V), 1e-4);
+  let F = fresnelSchlickRoughness(nv, f0, rough);
+  let diffuse = textureSampleLevel(iblIrradiance, iblSampler, N, 0.0).rgb * diffuseColor;
+  let R = reflect(-V, N);
+  let prefiltered = textureSampleLevel(iblPrefiltered, iblSampler, R, rough * ibl.params.z).rgb;
+  let brdf = textureSampleLevel(iblBrdf, iblSampler, vec2f(nv, rough), 0.0).rg;
+  let specular = prefiltered * (F * brdf.x + brdf.y);
+  return ((vec3f(1.0) - F) * diffuse + specular) * occ * ibl.params.y;
 }
 
 // Anisotropic GGX distribution (Burley): an elliptical lobe along the tangent (at) vs bitangent (ab)
@@ -420,8 +462,12 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
     radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
   }
 
-  // Ambient term: flat irradiance over the diffuse albedo (no IBL specular yet), attenuated by AO.
-  if (frame.ambientRadiance.w > 0.5) {
+  // Ambient term: image-based lighting (diffuse irradiance + prefiltered specular) when an environment is
+  // baked, else the flat ambient irradiance over the diffuse albedo. Both are AO-attenuated. Mirrors
+  // scene-gl's ambient branch (u_iblEnabled ? sampleIblAmbient : flat ambient).
+  if (ibl.params.x > 0.5) {
+    radiance = radiance + sampleIblAmbient(normal, viewDir, roughness, f0, diffuseColor, occlusion);
+  } else if (frame.ambientRadiance.w > 0.5) {
     radiance = radiance + diffuseColor * frame.ambientRadiance.rgb * occlusion;
   }
 
