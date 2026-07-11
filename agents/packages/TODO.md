@@ -8,8 +8,7 @@ One line per actionable item. For detail, read only the named package's cell: `a
 
 Blessed charters with no code behind them. Start from the charter; add a register + Package Map entry with the code.
 
-- **`text-markup`** — `@flighthq/text-markup` is the **styled-text markup codec** — the explicit, Flight-way realization of styled-text **`htmlText`** markup. It parses an HTML subset (the `htmlText` tag set) into Flight's rich-text data model — a `RichTextContent` plus its `TextFormatRange[]` — which the existing `RichText`/`TextLabel` display nodes already render. A codec neighbor of `@flighthq/textlayout`'s rich-text model, matching `path-formats`/`shape-formats` (markup string ↔ rich-text data).
-- **`textbidi`** — `@flighthq/textbidi` is the **Unicode bidirectional-text itemize layer** (UAX #9) — it resolves the embedding levels of a mixed left-to-right / right-to-left string and reorders its runs from *logical* (storage/typing) order to *visual* (display) order. It is the sibling of `@flighthq/textsegment` (grapheme/word/sentence boundaries): together they **itemize** a string before it is shaped, so that Arabic/Hebrew (and mixed LTR+RTL) text lays out correctly. Without it, an RTL run inside an LTR paragraph renders in the wrong order.
+- **`shading`** — `@flighthq/shading` is the reserved home for the **Material Feature / Modifier tier** — *compiled* shader augmentations that inject into a material's shading computation and produce shader variants: Fresnel/rim, dissolve, toon quantization, normal perturbation, fog contribution, vertex displacement. These are the "functions from shading values to shading values, compiled into the shader" that recur when a material catalog grows beyond complete per-kind shaders. It is the tier *between* `materials` (complete surface definitions) and `adjustments` (post-output value remaps).
 
 ## External — spun out to another repo (not built here)
 
@@ -54,11 +53,6 @@ Resolved / redundant — removed from the candidate set:
 _(A full multi-perspective re-poll of severity/demand — the original June-report methodology — is available on request; this regeneration is the prune-and-rerank against actual built state.)_
 
 ## Deepen — Recommended items by package (weakest first)
-
-### filters-css (partial 30)
-
-- Restore buildability — resolve the dangling `./svgFilterUrl` re-export
-- Run `tsc -b` and `npm run exports:check` on the head before re-submitting
 
 ### shortcut (partial 30)
 
@@ -202,26 +196,11 @@ _(A full multi-perspective re-poll of severity/demand — the original June-repo
 - Make the palette an explicit `out` parameter — `computeSkeletonJointMatrices` and `setSkeletonBindPose` take `Readonly<Skeleton>` yet wri…
 - `getSkeletonJointWorldMatrix`-style attachment accessor (prop socketing by joint index/name), once names land
 
-### filters-math (solid 55)
-
-- Gaussian kernel weight generation
-- Linear-sampling weight/offset pairing
-- Downsample-level selection for large sigmas
-- `getBevelFilterOffsets`
-- Package Map entry
-
 ### tileset (solid 55)
 
 - Fix the `buildTilesetRegions` correctness edges
 - Pass `margin`/`spacing` through the loaders
 - Add `disposeTileset`
-
-### filters-canvas (partial 58)
-
-- Fix the `index.ts` export order
-- Drop the `as number[]` cast in the `ColorMatrixFilter` arm
-- Compose the three CSS arms over the existing leaves instead of re-implementing them
-- Delegate the CSS-expressibility predicate to `filters-css` rather than re-deriving it
 
 ### font (solid 58)
 
@@ -337,11 +316,6 @@ _(A full multi-perspective re-poll of severity/demand — the original June-repo
 
 - Remove dead no-op ternaries in raycaster
 - Replace literal casts with `createVector3` in raycast hit construction
-
-### filters (partial 70)
-
-- Move `BitmapFilterMargin` to `@flighthq/types`
-- Update Package Map description for filters
 
 ### velocity (solid 70)
 
@@ -504,10 +478,6 @@ _(A full multi-perspective re-poll of severity/demand — the original June-repo
 - Fix the stale "45 effects / 45 runners" count to 44
 - Add a deterministic unit-assertion tier the jsdom env can run, above the "is a function" floor
 
-### filters-surface (solid 88)
-
-- Replace raw kind-string literals with the imported `*Kind` constants in `surfaceFilterComposite.ts` and `surfaceFilterBounds.ts`
-
 ### lighting (solid 88)
 
 - Fix non-re-entrant module-level scratch in `hasLightInfluenceOnBounds` (use local or pool)
@@ -558,16 +528,6 @@ _(A full multi-perspective re-poll of severity/demand — the original June-repo
 - Add `FilmicToneMapOptions` / `AgxToneMapOptions`
 - Add Package Map entry for effects
 
-### filters-gl (solid 90)
-
-- Correct the `clearGlFilterProgramCache` documentation to match its actual behavior
-- Add `getBlurFilterGlScratchCount`
-- Note the blur scratch-count exception in the status framing
-
-### filters-wgpu (solid 90)
-
-- Document the gradient-ramp / pipeline-cache eviction split at the teardown call site
-
 ### geometry (solid 90)
 
 - Fix `getQuaternionEuler` extraction (correctness defect)
@@ -600,14 +560,14 @@ _(A full multi-perspective re-poll of severity/demand — the original June-repo
 
 ## No open Recommended items
 
-`storage` · `app` · `updater` · `notification` · `platform` · `scene-formats` · `filesystem` · `lifecycle` · `clip` · `menu` · `accessibility` · `assets` · `binpack` · `bitmapfont` · `bitmapfont-formats` · `bitmaptext` · `camera2d` · `capture` · `clock` · `collision` · `debug` · `flow` · `glyphatlas` · `host-capacitor` · `host-tauri` · `image-codec` · `intl` · `mediasession` · `motionpath` · `movieclip` · `net` · `particleemitter` · `path-boolean` · `path-formats` · `permissions` · `shape-formats` · `snapshot` · `socket` · `spatial` · `spring` · `textsegment` · `texture-formats` · `tilemap-formats` · `tool-capture`
+`storage` · `app` · `updater` · `notification` · `platform` · `scene-formats` · `filesystem` · `lifecycle` · `clip` · `menu` · `accessibility` · `adjustments` · `assets` · `binpack` · `bitmapfont` · `bitmapfont-formats` · `bitmaptext` · `camera2d` · `capture` · `clock` · `collision` · `debug` · `flow` · `glyphatlas` · `host-capacitor` · `host-tauri` · `image-codec` · `intl` · `mediasession` · `motionpath` · `movieclip` · `net` · `particleemitter` · `path-boolean` · `path-formats` · `permissions` · `shape-formats` · `snapshot` · `socket` · `spatial` · `spring` · `text-markup` · `textbidi` · `textsegment` · `texture-formats` · `tilemap-formats` · `tool-capture`
 
 ## Liveness — which stage each stale cell needs next
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; workers can ignore it.
 
 - **Needs a direction session (charter stub or never directed):** `textshaper-canvas` · `textureatlas-formats` · `xml`
-- **Needs a first review (built, no review.md):** `accessibility` · `assets` · `binpack` · `bitmapfont` · `bitmapfont-formats` · `bitmaptext` · `camera2d` · `capture` · `clock` · `collision` · `debug` · `flow` · `glyphatlas` · `host-capacitor` · `host-tauri` · `image-codec` · `intl` · `mediasession` · `motionpath` · `movieclip` · `net` · `particleemitter` · `path-boolean` · `path-formats` · `permissions` · `shape-formats` · `snapshot` · `socket` · `spatial` · `spring` · `textsegment` · `texture-formats` · `tilemap-formats` · `tool-capture`
+- **Needs a first review (built, no review.md):** `accessibility` · `adjustments` · `assets` · `binpack` · `bitmapfont` · `bitmapfont-formats` · `bitmaptext` · `camera2d` · `capture` · `clock` · `collision` · `debug` · `flow` · `glyphatlas` · `host-capacitor` · `host-tauri` · `image-codec` · `intl` · `mediasession` · `motionpath` · `movieclip` · `net` · `particleemitter` · `path-boolean` · `path-formats` · `permissions` · `shape-formats` · `snapshot` · `socket` · `spatial` · `spring` · `text-markup` · `textbidi` · `textsegment` · `texture-formats` · `tilemap-formats` · `tool-capture`
 - **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `geometry (review 2026-06-24 < status 2026-07-09)` · `render (review 2026-06-25 < status 2026-07-09)` · `tween (review 2026-06-24 < status 2026-06-25)`
-- **Needs assess refresh (review newer than assessment):** `animation (assessment 2026-07-03 < review 2026-07-09)` · `audio (assessment 2026-07-03 < review 2026-07-09)` · `filters-math (assessment 2026-07-03 < review 2026-07-09)` · `font (assessment 2026-07-03 < review 2026-07-09)` · `picking (assessment 2026-07-03 < review 2026-07-09)` · `scene-formats (assessment 2026-07-03 < review 2026-07-09)` · `skeleton (assessment 2026-07-03 < review 2026-07-09)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 591 across 129 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `filters-css` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `filters-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `filters-gl` (8) · `filters-surface` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `camera` (7) · `filters-wgpu` (7) · `render` (7) · `timeline` (7) · `capture` (6) · `effects-canvas` (6) · `filters` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Needs assess refresh (review newer than assessment):** `animation (assessment 2026-07-03 < review 2026-07-09)` · `audio (assessment 2026-07-03 < review 2026-07-09)` · `font (assessment 2026-07-03 < review 2026-07-09)` · `picking (assessment 2026-07-03 < review 2026-07-09)` · `scene-formats (assessment 2026-07-03 < review 2026-07-09)` · `skeleton (assessment 2026-07-03 < review 2026-07-09)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
+- **Open directions awaiting the user:** 547 across 124 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `camera` (7) · `render` (7) · `timeline` (7) · `capture` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
