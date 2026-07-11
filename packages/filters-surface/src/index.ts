@@ -10,7 +10,6 @@ export { compositeDropShadowFilterResultToSurface } from './surfaceFilterComposi
 export { compositeFilterResultToSurface } from './surfaceFilterComposite';
 export { computeFilterSurfaceOffset } from './surfaceFilterComposite';
 export { getFilterCompositeRole } from './surfaceFilterComposite';
-export { applyFilterListToSurface } from './surfaceFilterList';
 export { acquireFilterSurfaceScratch } from './surfaceFilterScratch';
 export { createFilterSurfaceScratch } from './surfaceFilterScratch';
 export { getFilterSurfaceScratchByteLength } from './surfaceFilterScratch';
