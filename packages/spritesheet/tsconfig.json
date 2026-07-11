@@ -12,7 +12,6 @@
     { "path": "../entity" },
     { "path": "../textureatlas" },
     { "path": "../tileset" },
-    { "path": "../geometry" },
     { "path": "../signals" },
     { "path": "../types" }
   ],
