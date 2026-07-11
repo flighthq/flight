@@ -1,7 +1,6 @@
-// A linear-space RGBA color as four floats in [0, 1] (RGB) / [0, 1] (A). The single
-// float representation downstream lighting and shading math consumes. Written by
-// `unpackColorToLinear` and safe to keep as a reusable scratch out parameter.
-export type LinearColor = [number, number, number, number];
+import type { LinearColor } from '@flighthq/types';
+
+export type { LinearColor };
 
 // A hue/saturation/lightness color as three floats: hue in [0, 360), saturation and
 // lightness in [0, 1]. Written by `rgbToHsl` and safe to keep as a reusable scratch out parameter.
