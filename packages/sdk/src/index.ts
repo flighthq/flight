@@ -1,4 +1,5 @@
 ﻿export * from '@flighthq/accessibility';
+export * from '@flighthq/adjustments';
 export * from '@flighthq/animation';
 export * from '@flighthq/app';
 export * from '@flighthq/application';
@@ -127,3 +128,32 @@ export * from '@flighthq/velocity';
 export * from '@flighthq/video';
 export * from '@flighthq/webcam';
 export * from '@flighthq/xml';
+
+// Transitional: @flighthq/adjustments is the canonical home for the color-matrix fuse primitives,
+// but @flighthq/filters still ships a verbatim copy until it retires (see effect-adjustment-architecture.md,
+// migration step 4). Both star-export the same names, so these explicit re-exports resolve the barrel to
+// the adjustments copy. Remove this block once the filters* packages are deleted.
+export {
+  applyColorMatrixToColor,
+  COLOR_MATRIX_LENGTH,
+  concatColorMatrix,
+  createBrightnessColorMatrix,
+  createChannelMixerColorMatrix,
+  createColorBalanceColorMatrix,
+  createColorMatrixFromTint,
+  createContrastColorMatrix,
+  createDesaturateColorMatrix,
+  createGrayscaleColorMatrix,
+  createHueRotateColorMatrix,
+  createIdentityColorMatrix,
+  createInvertColorMatrix,
+  createLevelsColorMatrix,
+  createOpacityColorMatrix,
+  createPolaroidColorMatrix,
+  createSaturationColorMatrix,
+  createSepiaColorMatrix,
+  createTechnicolorColorMatrix,
+  createVintageColorMatrix,
+  createWhiteBalanceColorMatrix,
+  multiplyColorMatrix,
+} from '@flighthq/adjustments';

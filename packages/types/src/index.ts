@@ -3,6 +3,8 @@ export * from './Accelerator';
 export * from './AcceleratorParseError';
 export * from './Accessibility';
 export * from './AccessibilityDescriptor';
+export * from './Adjustment';
+export * from './AdjustmentKind';
 export * from './AgxToneMapOptions';
 export * from './AlphaType';
 export * from './AmbientLight';

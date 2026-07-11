@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@flighthq/accessibility": "*",
+    "@flighthq/adjustments": "*",
     "@flighthq/animation": "*",
     "@flighthq/app": "*",
     "@flighthq/application": "*",

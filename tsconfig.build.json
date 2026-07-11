@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/accessibility" },
+    { "path": "./packages/adjustments" },
     { "path": "./packages/animation" },
     { "path": "./packages/app" },
     { "path": "./packages/application" },

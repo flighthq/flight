@@ -16,6 +16,8 @@
     "paths": {
       "@flighthq/accessibility": ["./packages/accessibility/src/index.ts"],
       "@flighthq/accessibility/*": ["./packages/accessibility/src/*"],
+      "@flighthq/adjustments": ["./packages/adjustments/src/index.ts"],
+      "@flighthq/adjustments/*": ["./packages/adjustments/src/*"],
       "@flighthq/animation": ["./packages/animation/src/index.ts"],
       "@flighthq/animation/*": ["./packages/animation/src/*"],
       "@flighthq/app": ["./packages/app/src/index.ts"],
