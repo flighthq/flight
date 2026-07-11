@@ -24,7 +24,14 @@ export async function createWgpuRenderState(
   );
   if (!adapter) throw new Error('Failed to get WebGPU adapter.');
 
-  const device = await adapter.requestDevice();
+  // The forward-lit 3D pipeline binds 5 groups (Frame, Draw, Material, Shadow, Ibl); WebGPU's
+  // guaranteed baseline maxBindGroups is only 4, so request 5 when the adapter allows it. Guarded by
+  // the adapter limit: requiredLimits above the adapter's support makes requestDevice reject, and a
+  // baseline-4 adapter simply keeps 4 (the 5-group lit pipeline is unavailable there until shadow+IBL
+  // are folded into one group — a portability follow-up). 2D and unlit paths use ≤4 groups regardless.
+  const requiredLimits: Record<string, number> = {};
+  if (adapter.limits.maxBindGroups >= 5) requiredLimits.maxBindGroups = 5;
+  const device = await adapter.requestDevice(Object.keys(requiredLimits).length > 0 ? { requiredLimits } : undefined);
 
   const format = options.format ?? navigator.gpu.getPreferredCanvasFormat();
 

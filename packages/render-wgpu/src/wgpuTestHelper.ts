@@ -116,6 +116,9 @@ function makeDevice(): GPUDevice {
 
 function makeAdapter(): GPUAdapter {
   return {
+    // A real GPUAdapter always exposes `.limits`; the forward-lit pipeline's device request reads
+    // maxBindGroups off it. Report 8 (the common desktop cap) so the 5-group request path is exercised.
+    limits: { maxBindGroups: 8, minUniformBufferOffsetAlignment: 256 },
     requestDevice: () => Promise.resolve(makeDevice()),
   } as unknown as GPUAdapter;
 }
