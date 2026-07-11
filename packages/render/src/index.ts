@@ -1,3 +1,4 @@
+export * from './explainDisplayObjectRender';
 export * from './renderAppearance';
 export * from './renderCache';
 export * from './renderColor';
