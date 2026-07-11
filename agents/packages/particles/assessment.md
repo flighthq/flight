@@ -6,7 +6,7 @@ basedOn: ./review.md
 
 # particles — Assessment
 
-Sorted from the depth review (82/100, solid), verified against the live tree (33 exports, 164+ tests, 14 source files), and the direction session (2026-07-02). Eight decisions blessed, including the sim/node split. The package is a strong CPU simulation core. The major architectural direction is extracting the display-object wiring into `@flighthq/particle-emitter`, leaving particles as a pure value-leaf.
+Sorted from the depth review (82/100, solid), verified against the live tree (33 exports, 164+ tests, 14 source files), and the direction session (2026-07-02). Eight decisions blessed, including the sim/node split. The package is a strong CPU simulation core. The major architectural direction is extracting the display-object wiring into `@flighthq/particleemitter`, leaving particles as a pure value-leaf.
 
 ## Recommended
 
@@ -26,7 +26,7 @@ Sweep-safe: within `@flighthq/particles`, no cross-package coupling beyond types
 
 Parked — each with the reason it is not sweep-safe.
 
-- **Sim/node split into separate packages.** _Parked — architectural._ Blessed (Decision #1). Extract the 2 files' `sprite`/`node` imports into `@flighthq/particle-emitter`. Needs package scaffold, dependency rewiring, and a particle-emitter charter.
+- **Sim/node split into separate packages.** _Parked — architectural._ Blessed (Decision #1). Extract the 2 files' `sprite`/`node` imports into `@flighthq/particleemitter`. Needs package scaffold, dependency rewiring, and a particleemitter charter.
 
 - **Object-pool feature parity with SoA.** _Parked — secondary tier._ Blessed (Decision #4). Invest only where use cases demand (hit testing, per-particle interaction), not wholesale.
 

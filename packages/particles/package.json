@@ -28,13 +28,11 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
-    "@flighthq/math": "*",
-    "@flighthq/node": "*",
     "@flighthq/signals": "*",
-    "@flighthq/sprite": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/math": "*",
     "typescript": "^5.3.0"
   },
   "description": "Particle system: emitter simulation and typed-array-backed particle primitives",

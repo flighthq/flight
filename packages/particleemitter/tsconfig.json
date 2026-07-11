@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../displayobject" },
+    { "path": "../geometry" },
+    { "path": "../math" },
+    { "path": "../node" },
+    { "path": "../particles" },
+    { "path": "../types" }
+  ],
+  "include": ["src"]
+}

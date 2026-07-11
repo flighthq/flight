@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/image-codec": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

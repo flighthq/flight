@@ -1,8 +1,8 @@
 import { createImageResourceFromImageElement } from '@flighthq/image';
-import { createTextureAtlas } from '@flighthq/textureatlas';
+import { createTextureAtlas, createTextureAtlasRegion, getTextureAtlasRegionById } from '@flighthq/textureatlas';
 import type { TextureAtlas, Tileset } from '@flighthq/types';
 
-import { buildTilesetRegions, createTileset } from './tileset';
+import { buildTilesetRegions, createTileset, disposeTileset } from './tileset';
 
 describe('buildTilesetRegions', () => {
   it('advances y by tileHeight for each row', () => {
@@ -76,6 +76,43 @@ describe('buildTilesetRegions', () => {
     expect(atlas.regions[0].x).toBe(0);
     expect(atlas.regions[1].x).toBe(32);
   });
+
+  it('truncates stale trailing regions when the grid shrinks after growing', () => {
+    const source = createImageResourceFromImageElement({ width: 64, height: 64 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const tileset = createTileset({ atlas, columns: 2, rows: 2, tileWidth: 32, tileHeight: 32 });
+    buildTilesetRegions(tileset);
+    expect(atlas.regions).toHaveLength(4);
+
+    tileset.columns = 1;
+    tileset.rows = 1;
+    buildTilesetRegions(tileset);
+    expect(atlas.regions).toHaveLength(1);
+  });
+
+  it('assigns each region id to its row-major tile index', () => {
+    const source = createImageResourceFromImageElement({ width: 64, height: 64 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const tileset = createTileset({ atlas, columns: 2, rows: 2, tileWidth: 32, tileHeight: 32 });
+    buildTilesetRegions(tileset);
+
+    expect(atlas.regions.map((region) => region.id)).toEqual([0, 1, 2, 3]);
+    expect(getTextureAtlasRegionById(atlas, 3)).toBe(atlas.regions[3]);
+  });
+
+  it('clears stale name/rotated/trimmed metadata on a reused region', () => {
+    const source = createImageResourceFromImageElement({ width: 32, height: 32 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    atlas.regions.push(createTextureAtlasRegion({ id: 99, name: 'stale', rotated: true, trimmed: true }));
+    const tileset = createTileset({ atlas, columns: 1, rows: 1, tileWidth: 32, tileHeight: 32 });
+
+    buildTilesetRegions(tileset);
+
+    expect(atlas.regions[0].id).toBe(0);
+    expect(atlas.regions[0].name).toBeNull();
+    expect(atlas.regions[0].rotated).toBe(false);
+    expect(atlas.regions[0].trimmed).toBe(false);
+  });
 });
 
 describe('createTileset', () => {
@@ -119,5 +156,43 @@ describe('createTileset', () => {
     const base = {};
     const obj = createTileset(base);
     expect(obj).not.toStrictEqual(base);
+  });
+});
+
+describe('disposeTileset', () => {
+  it('clears the atlas reference so it becomes eligible for GC', () => {
+    const source = createImageResourceFromImageElement({ width: 32, height: 32 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const tileset = createTileset({ atlas, columns: 1, rows: 1, tileWidth: 32, tileHeight: 32 });
+
+    disposeTileset(tileset);
+
+    expect(tileset.atlas).toBeNull();
+  });
+
+  it('leaves the grid parameters intact', () => {
+    const source = createImageResourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 16, margin: 4, spacing: 2 });
+
+    disposeTileset(tileset);
+
+    expect(tileset.columns).toBe(2);
+    expect(tileset.rows).toBe(1);
+    expect(tileset.tileWidth).toBe(32);
+    expect(tileset.tileHeight).toBe(16);
+    expect(tileset.margin).toBe(4);
+    expect(tileset.spacing).toBe(2);
+  });
+
+  it('does not erase the shared atlas regions', () => {
+    const source = createImageResourceFromImageElement({ width: 64, height: 32 } as HTMLImageElement);
+    const atlas = createTextureAtlas({ image: source });
+    const tileset = createTileset({ atlas, columns: 2, rows: 1, tileWidth: 32, tileHeight: 32 });
+    buildTilesetRegions(tileset);
+
+    disposeTileset(tileset);
+
+    expect(atlas.regions).toHaveLength(2);
   });
 });

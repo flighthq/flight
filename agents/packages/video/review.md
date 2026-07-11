@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/video'
-status: stub
-score: 15
-updated: 2026-07-03
+status: solid
+score: 60
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -57,3 +57,7 @@ Treat this as the seed of the video subject. Priorities, in order of leverage:
 5. **Export the negotiation primitive** (`selectVideoResourceUrl`) and raise the frame-capture seam (video → `ImageResource`/`Surface`) to the user as a cross-package design question.
 
 The abort handling shows the right instincts; the package now needs the other four-fifths of its layer.
+
+## 2026-07-09 — deepened
+
+VideoResource lifecycle brought to @flighthq/image parity — load options, dispose/predicates, inspection getters, blob/mediastream sources, MIME infer/detect, codec negotiation (commit 2ef652b3). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.

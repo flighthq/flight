@@ -16,13 +16,7 @@
       "path": "../math"
     },
     {
-      "path": "../node"
-    },
-    {
       "path": "../signals"
-    },
-    {
-      "path": "../sprite"
     },
     {
       "path": "../types"

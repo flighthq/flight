@@ -3,16 +3,18 @@ import { extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+// Imported from the package source (not the built barrel) so `vite --config` resolves it before
+// @flighthq/tool-capture is built; it is the same single source the capture scripts consume.
+import { discoverFunctionalScenes, functionalSceneFile } from '../../packages/tool-capture/src/functionalScenes';
+import type { FunctionalScene } from '../../packages/tool-capture/src/functionalScenes';
 import { resolveAssetTarget } from '../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../scripts/copy-dir';
-import { discoverFunctionalScenes, functionalSceneFile } from '../../scripts/functional-scenes';
-import type { FunctionalScene } from '../../scripts/functional-scenes';
 import { workspacePackages } from '../../scripts/workspaces';
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'functional');
 // Scenes are flat files under functional/scenes/: <name>.ts (backend-agnostic) or
-// <name>.<backend>.ts (self-contained backend-specific target). See scripts/functional-scenes.ts.
+// <name>.<backend>.ts (self-contained backend-specific target). See @flighthq/tool-capture.
 const scenesDir = join(testsDir, 'scenes');
 // The shared render harness lives in tools/ (createFunctionalTarget, verify, per-backend factories).
 const harnessDir = join(projectRoot, 'tools/harness');

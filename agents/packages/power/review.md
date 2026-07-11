@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/power'
 status: partial
-score: 35
-updated: 2026-06-25
+score: 45
+updated: 2026-07-09
 ingested:
   - status.md
   - reviews/depth/power.md
@@ -99,3 +99,7 @@ The charter is an unblessed DRAFT (only **What it is** and _proposed_ North star
 ## Bottom line
 
 The design is mergeable; **this branch is not**. Restore the `@flighthq/types` power header (the four new type modules + the widened `PowerStatus`/`PowerBackend`/`Power` in `Power.ts` + barrel exports), confirm the package typechecks and tests pass, then the secondary findings are small cleanups and design-fork notes — none of which block a merge once the build is green.
+
+## 2026-07-09 — refreshed
+
+gated all 10 signals behind enablePowerSignals opt-in (Power type nullable), matching the platform-suite signal-cost convention (commit 1c1e6dc1). Verified against source; a full re-review is due.

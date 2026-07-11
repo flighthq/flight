@@ -13,4 +13,7 @@ export interface Skeleton {
   inverseBindMatrices: Float32Array;
   jointMatrices: Float32Array;
   joints: SceneNode[];
+  // Optional per-joint names, aligned by index with `joints`, for name-based lookup and prop socketing
+  // (getSkeletonJointIndexByName). Omitted or null when the source (e.g. a nameless glTF skin) has none.
+  names?: readonly string[] | null;
 }

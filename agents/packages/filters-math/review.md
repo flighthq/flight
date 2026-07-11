@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/filters-math'
-status: partial
-score: 30
-updated: 2026-07-03
+status: solid
+score: 55
+updated: 2026-07-09
 ingested:
   - source
   - tests
@@ -52,3 +52,7 @@ Not counted against it: per-substrate specifics (CSS filter string building, WGS
 ## Recommendation
 
 Finish the extraction the package started. First settle the seam question with `filters`: adopt "descriptor-independent filter math lives in filters-math" and migrate `colorMatrixMath`, the kernel-math half of `convolutionKernels`, `blurQuality`, and `bitmapFilterMargin` down (they are already pure, typed against `@flighthq/types`, and consumed by backends) — that single move roughly triples the package's honest coverage without writing new math. Then add the missing GPU-blur primitives in priority order: `computeGaussianKernelWeights` + kernel-size-from-sigma, the linear-sampling weight/offset pairing, and downsample-level selection for large sigmas — each is small, testable against closed-form expectations, and prevents three backends from drifting apart. `getBevelFilterOffsets` closes the shadow-geometry family. The four functions present are excellent; the package just needs to become the library its description already claims it is.
+
+## 2026-07-09 — deepened
+
+Gaussian kernel weights, linear-sampling bilinear-tap optimization, large-sigma downsample selection, bevel offsets (commit fae14d6c). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.

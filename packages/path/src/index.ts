@@ -1,3 +1,4 @@
+export * from './cleanPath';
 export * from './containsPathPoint';
 export * from './copyPath';
 export * from './dashPath';
@@ -11,11 +12,10 @@ export * from './getPathNearestPoint';
 export * from './getPathPointAtDistance';
 export * from './getPathSegmentAtParameter';
 export * from './getPathSignedArea';
-export * from './offsetPath';
 export * from './path';
 export * from './pathMeshPool';
 export * from './reversePath';
-export * from './simplifyPath';
+export * from './decimatePath';
 export * from './strokePath';
 export * from './tessellatePath';
 export * from './tessellatePathTyped';

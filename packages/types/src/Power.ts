@@ -60,16 +60,17 @@ export interface PowerBackend {
   subscribeUnlockScreen(listener: () => void): () => void;
 }
 
-// Power event entity. Enable delivery with attachPower; the signals stay inert until then.
+// Power event entity. Opt-in signals, allocated by enablePowerSignals; null until enabled. Enable
+// delivery with attachPower, which stays inert for any signal left null.
 export interface Power {
-  onChange: Signal<(status: Readonly<PowerStatus>) => void>;
-  onCharging: Signal<() => void>;
-  onDischarging: Signal<() => void>;
-  onIdleStateChange: Signal<() => void>;
-  onLockScreen: Signal<() => void>;
-  onLowPowerModeChange: Signal<() => void>;
-  onResume: Signal<() => void>;
-  onSuspend: Signal<() => void>;
-  onThermalStateChange: Signal<() => void>;
-  onUnlockScreen: Signal<() => void>;
+  onChange: Signal<(status: Readonly<PowerStatus>) => void> | null;
+  onCharging: Signal<() => void> | null;
+  onDischarging: Signal<() => void> | null;
+  onIdleStateChange: Signal<() => void> | null;
+  onLockScreen: Signal<() => void> | null;
+  onLowPowerModeChange: Signal<() => void> | null;
+  onResume: Signal<() => void> | null;
+  onSuspend: Signal<() => void> | null;
+  onThermalStateChange: Signal<() => void> | null;
+  onUnlockScreen: Signal<() => void> | null;
 }

@@ -61,6 +61,8 @@ const cells = readdirSync(here, { withFileTypes: true })
   .sort();
 
 const chartered = [];
+const external = []; // charter kept here for reference, but the code was spun out to another repo
+const reserved = []; // charter reserves the name/concept, but it is deliberately not to be built yet
 const deepen = [];
 // Liveness: per-cell staleness signals so the review loop knows which stage each cell needs next.
 const needsDirection = []; // charter is a stub or has never had a direction session
@@ -76,6 +78,18 @@ for (const name of cells) {
 
   const charter = readFileSync(charterPath, 'utf8');
   const charterMeta = frontMatter(charter);
+  // A spun-out package's code lives in another repo; its charter stays here for reference but it is
+  // not actionable local work — keep it out of chartered-unbuilt, deepen, and liveness entirely.
+  if (charterMeta.spunOut) {
+    external.push({ name, repo: charterMeta.spunOut });
+    continue;
+  }
+  // A reserved cell holds a name/concept on purpose but must NOT be built yet — keep it out of the
+  // chartered-unbuilt build queue and liveness; it surfaces only in its own "Reserved" note.
+  if (charterMeta.reserved) {
+    reserved.push({ name, what: firstProseLine(charter, 'What it is') ?? '(reserved)' });
+    continue;
+  }
   if (charter.includes('_TODO') || !charterMeta.lastDirection || charterMeta.lastDirection === 'null') {
     needsDirection.push(name);
   }
@@ -140,6 +154,26 @@ for (const { name, what } of chartered) {
   lines.push(`- **\`${name}\`** — ${what}`);
 }
 lines.push('');
+if (external.length > 0) {
+  lines.push('## External — spun out to another repo (not built here)');
+  lines.push('');
+  lines.push('Charter kept here for reference; the code and its crate live in the named repo. Not local work.');
+  lines.push('');
+  for (const { name, repo } of external) {
+    lines.push(`- **\`${name}\`** — built in \`${repo}\``);
+  }
+  lines.push('');
+}
+if (reserved.length > 0) {
+  lines.push('## Reserved — name/concept held, do NOT build yet');
+  lines.push('');
+  lines.push('Deliberately not-yet-built cells; the charter reserves the name and records when it becomes worth building. Do not pick these up as work.');
+  lines.push('');
+  for (const { name, what } of reserved) {
+    lines.push(`- **\`${name}\`** — ${what}`);
+  }
+  lines.push('');
+}
 lines.push('## Create — ranked candidate queue (from register.md)');
 lines.push('');
 lines.push(buildQueue);
@@ -187,5 +221,5 @@ lines.push('');
 
 writeFileSync(join(here, 'TODO.md'), `${lines.join('\n')}`);
 console.log(
-  `TODO.md: ${chartered.length} chartered-unbuilt, ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
+  `TODO.md: ${chartered.length} chartered-unbuilt, ${reserved.length} reserved, ${external.length} external (spun out), ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
 );

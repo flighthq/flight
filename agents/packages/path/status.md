@@ -133,7 +133,7 @@ MOVE_TO verbs do not count as a "segment" for the index. CLOSE does not count ei
 
 ### Gold items deferred (implementation effort / out of scope for this session)
 
-- **Path simplification** (`simplifyPath`, Douglas-Peucker decimation) and **curve fitting** (`fitPathCurves`, Schneider polyline→bezier). Medium-large effort, no current consumers.
+- **Curve fitting** (`fitPathCurves`, Schneider polyline→bezier). Medium-large effort, no current consumers. (Douglas-Peucker point reduction shipped as `decimatePath` — renamed from `simplifyPath` 2026-07-09; the CSG `simplifyPath` now lives in `@flighthq/path-boolean`.)
 - **Holes-aware triangulation** — Extending `tessellatePath` to honor `path.winding` and bridge nested counter-wound contours (earcut hole-stitching). Requires coordination with `@flighthq/render-*` owners about whether the tessellator contract change is safe (stencil-then-cover vs. direct-fill).
 - **Robust self-intersection triangulation** — Replace ear-clipping with constrained-Delaunay / monotone decomposition for self-intersecting polygons. Research-grade.
 - **Full measurement surface** — `getPathContourLengths`, segmented `PathMeasure` over individual subpaths, closest-point-on-path (`getPathNearestPoint`), curvature query. These are useful for text-on-path and animation but require a `PathMeasure` entity design decision (stateful cache vs. pure function).

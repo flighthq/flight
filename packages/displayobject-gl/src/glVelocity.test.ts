@@ -1,5 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
-import { createParticleEmitter, createQuadBatch, getQuadBatchRuntime, reserveParticleEmitter } from '@flighthq/sprite';
+import { createParticleEmitter, reserveParticleEmitter } from '@flighthq/particleemitter';
+import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types';
 import { QuadBatchKind } from '@flighthq/types';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity';
