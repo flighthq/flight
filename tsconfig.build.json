@@ -110,6 +110,7 @@
     { "path": "./packages/storage" },
     { "path": "./packages/surface" },
     { "path": "./packages/text" },
+    { "path": "./packages/text-markup" },
     { "path": "./packages/textbidi" },
     { "path": "./packages/textinput" },
     { "path": "./packages/textlayout" },
