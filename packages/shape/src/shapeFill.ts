@@ -1,4 +1,4 @@
-import type { Path, PathWinding, ShapeFillRegion } from '@flighthq/types';
+import type { Path, PathWinding, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types';
 import { PathCommand } from '@flighthq/types';
 
 // Resolves a Shape's drawing-command stream into solid-fill regions for the GPU fill path: each
@@ -9,7 +9,7 @@ import { PathCommand } from '@flighthq/types';
 // any stroke (lineStyle) present — so the caller falls back to the raster path. This keeps the GPU path
 // to the case it handles exactly (the "jagged circle" fix) without regressing gradients, bitmap fills,
 // or strokes.
-export function getShapeFillRegions(commands: readonly unknown[]): ShapeFillRegion[] | null {
+export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): ShapeFillRegion[] | null {
   if (hasNonSolidShapeFill(commands)) return null;
 
   const regions: ShapeFillRegion[] = [];
@@ -121,8 +121,7 @@ export function getShapeFillRegions(commands: readonly unknown[]): ShapeFillRegi
       }
       case 'drawPath': {
         if (path === null) break;
-        const pathWinding = commands[a + 2] as PathWinding | undefined;
-        if (pathWinding !== undefined) path.winding = pathWinding;
+        path.winding = commands[a + 2] as PathWinding;
         appendRawPath(path, commands[a] as readonly number[], commands[a + 1] as readonly number[]);
         break;
       }
@@ -138,7 +137,7 @@ export function getShapeFillRegions(commands: readonly unknown[]): ShapeFillRegi
 }
 
 // True if the command stream uses any fill or stroke the GPU solid-fill path cannot express.
-export function hasNonSolidShapeFill(commands: readonly unknown[]): boolean {
+export function hasNonSolidShapeFill(commands: readonly ShapeCommandToken[]): boolean {
   let i = 0;
   while (i < commands.length) {
     const name = commands[i] as string;

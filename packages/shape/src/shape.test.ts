@@ -1,5 +1,6 @@
 import { createRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRevision, getNodeLocalContentRevision } from '@flighthq/node';
+import type { ShapeCommandToken } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
 import {
@@ -64,22 +65,21 @@ describe('computeShapeLocalBoundsRectangle', () => {
 describe('copyShapeCommands', () => {
   it('copies commands from source to target', () => {
     const source = createShape();
-    source.data.commands.push({ key: 'endFill', args: [] });
+    source.data.commands.push('endFill', 0);
     const target = createShape();
     copyShapeCommands(target, source);
-    expect(target.data.commands).toHaveLength(1);
-    expect(target.data.commands[0]).toEqual({ key: 'endFill', args: [] });
+    expect(target.data.commands).toHaveLength(2);
+    expect(target.data.commands).toEqual(['endFill', 0]);
   });
 
   it('replaces existing target commands and bumps the content revision', () => {
     const source = createShape();
-    source.data.commands.push({ key: 'endFill', args: [] });
+    source.data.commands.push('endFill', 0);
     const target = createShape();
-    target.data.commands.push({ key: 'endFill', args: [] });
-    target.data.commands.push({ key: 'endFill', args: [] });
+    target.data.commands.push('beginFill', 2, 0, 1);
     const content = getNodeLocalContentRevision(target);
     copyShapeCommands(target, source);
-    expect(target.data.commands).toHaveLength(1);
+    expect(target.data.commands).toHaveLength(2);
     expect(getNodeLocalContentRevision(target)).toBe(content + 1);
   });
 
@@ -99,7 +99,7 @@ describe('createShape', () => {
   });
 
   it('allows pre-defined commands', () => {
-    const commands = [{ key: 'endFill' as const, args: [] as const }];
+    const commands: ShapeCommandToken[] = ['endFill', 0];
     const shape = createShape({ data: { commands } });
     expect(shape.data.commands).toBe(commands);
   });

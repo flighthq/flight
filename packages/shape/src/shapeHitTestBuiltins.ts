@@ -1,3 +1,5 @@
+import type { ShapeCommandToken } from '@flighthq/types';
+
 import { registerShapeHitTestCommand } from './shapeHitTestRegistry';
 
 // Registers default hit-test handlers for the built-in primitive commands: drawCircle,
@@ -11,7 +13,7 @@ import { registerShapeHitTestCommand } from './shapeHitTestRegistry';
 export function enableShapeHitTesting(): void {
   registerShapeHitTestCommand({
     key: 'drawCircle',
-    hitTest(x: number, y: number, buf: unknown[], i: number): boolean {
+    hitTest(x: number, y: number, buf: readonly ShapeCommandToken[], i: number): boolean {
       const cx = buf[i] as number;
       const cy = buf[i + 1] as number;
       const r = buf[i + 2] as number;
@@ -22,7 +24,7 @@ export function enableShapeHitTesting(): void {
   });
   registerShapeHitTestCommand({
     key: 'drawEllipse',
-    hitTest(x: number, y: number, buf: unknown[], i: number): boolean {
+    hitTest(x: number, y: number, buf: readonly ShapeCommandToken[], i: number): boolean {
       // drawEllipse args: x (top-left), y (top-left), width, height
       const ex = buf[i] as number;
       const ey = buf[i + 1] as number;
@@ -39,7 +41,7 @@ export function enableShapeHitTesting(): void {
   });
   registerShapeHitTestCommand({
     key: 'drawRectangle',
-    hitTest(x: number, y: number, buf: unknown[], i: number): boolean {
+    hitTest(x: number, y: number, buf: readonly ShapeCommandToken[], i: number): boolean {
       const rx = buf[i] as number;
       const ry = buf[i + 1] as number;
       const rw = buf[i + 2] as number;
@@ -49,7 +51,7 @@ export function enableShapeHitTesting(): void {
   });
   registerShapeHitTestCommand({
     key: 'drawRoundRectangle',
-    hitTest(x: number, y: number, buf: unknown[], i: number): boolean {
+    hitTest(x: number, y: number, buf: readonly ShapeCommandToken[], i: number): boolean {
       const rx = buf[i] as number;
       const ry = buf[i + 1] as number;
       const rw = buf[i + 2] as number;

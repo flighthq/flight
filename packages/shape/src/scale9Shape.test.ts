@@ -1,3 +1,4 @@
+import type { ShapeCommandToken } from '@flighthq/types';
 import { Scale9ShapeKind } from '@flighthq/types';
 
 import {
@@ -42,7 +43,7 @@ describe('createScale9ShapeData', () => {
   });
 
   it('uses provided commands when given', () => {
-    const commands = [{ key: 'endFill' as const, args: [] as const }];
+    const commands: ShapeCommandToken[] = ['endFill', 0];
     const data = createScale9ShapeData(grid, { commands });
     expect(data.commands).toBe(commands);
   });
