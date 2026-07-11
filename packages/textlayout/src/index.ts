@@ -42,7 +42,7 @@ export {
   mergeTextFormat,
 } from './textFormat';
 export { createTextFormatRange } from './textFormatRange';
-export { computeTextLayout, createTextLayoutResult, getTextLayoutIsTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
+export { computeTextLayout, createTextLayoutResult, isTextLayoutTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
 export { createTextLayoutGroup } from './textLayoutGroup';
 export { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure';
 export { clearTextLayoutResult, getTextLayoutResult } from './textLayoutRuntime';
