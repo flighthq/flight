@@ -1,11 +1,23 @@
 import { createCamera, createPerspectiveProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createAabb } from '@flighthq/geometry';
-import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
+import {
+  createAmbientLight,
+  createDirectionalLight,
+  createHemisphereLight,
+  createPointLight,
+  createSpotLight,
+} from '@flighthq/lighting';
 import { unpackColorToLinear } from '@flighthq/materials';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createScene } from '@flighthq/scene';
 import type { Camera, Material, MeshGeometry, SceneLightBlock, SceneLights } from '@flighthq/types';
+import {
+  SCENE_LIGHT_BLOCK_FLOATS,
+  SCENE_LIGHT_HEMISPHERE_OFFSET,
+  SCENE_LIGHT_POINT_OFFSET,
+  SCENE_LIGHT_SPOT_OFFSET,
+} from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createRenderState } from './renderState';
@@ -36,7 +48,7 @@ function emptyLights(): SceneLights {
 function newLightBlock(): SceneLightBlock {
   return {
     ambientCount: 0,
-    data: new Float32Array(12),
+    data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
     directionalCount: 0,
     hemisphereCount: 0,
     pointCount: 0,
@@ -106,6 +118,89 @@ describe('packSceneLightBlock', () => {
     packSceneLightBlock(block, { ambient, directional: null });
     expect(block.data[8]).toBeLessThan(0x80 / 0xff);
     expect(block.data[8]).toBeGreaterThan(0);
+  });
+
+  it('packs point lights: position + range, and linear radiance + inverse-square range', () => {
+    const block = newLightBlock();
+    const point = createPointLight({ color: 0xffffffff, intensity: 3, position: { x: 1, y: 2, z: 3 }, range: 10 });
+    packSceneLightBlock(block, { ambient: null, directional: null, point: [point] });
+    expect(block.pointCount).toBe(1);
+    const o = SCENE_LIGHT_POINT_OFFSET;
+    expect(block.data[o + 0]).toBeCloseTo(1);
+    expect(block.data[o + 1]).toBeCloseTo(2);
+    expect(block.data[o + 2]).toBeCloseTo(3);
+    expect(block.data[o + 3]).toBeCloseTo(10);
+    const expected = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
+    expect(block.data[o + 4]).toBeCloseTo(expected[0] * 3);
+    expect(block.data[o + 7]).toBeCloseTo(1 / (10 * 10));
+  });
+
+  it('packs an infinite-range point light with invSqrRange 0 (no cutoff)', () => {
+    const block = newLightBlock();
+    const point = createPointLight({ range: -1 });
+    packSceneLightBlock(block, { ambient: null, directional: null, point: [point] });
+    expect(block.data[SCENE_LIGHT_POINT_OFFSET + 3]).toBeCloseTo(-1);
+    expect(block.data[SCENE_LIGHT_POINT_OFFSET + 7]).toBe(0);
+  });
+
+  it('packs spot lights: point record plus direction and the precomputed cone cosines', () => {
+    const block = newLightBlock();
+    const spot = createSpotLight({
+      direction: { x: 0, y: -1, z: 0 },
+      innerConeDegrees: 10,
+      outerConeDegrees: 30,
+      position: { x: 4, y: 5, z: 6 },
+    });
+    packSceneLightBlock(block, { ambient: null, directional: null, spot: [spot] });
+    expect(block.spotCount).toBe(1);
+    const o = SCENE_LIGHT_SPOT_OFFSET;
+    expect(block.data[o + 0]).toBeCloseTo(4);
+    expect(block.data[o + 8]).toBeCloseTo(0);
+    expect(block.data[o + 9]).toBeCloseTo(-1);
+    expect(block.data[o + 10]).toBeCloseTo(0);
+    expect(block.data[o + 12]).toBeCloseTo(spot.innerConeCos);
+    expect(block.data[o + 13]).toBeCloseTo(spot.outerConeCos);
+    // Inner cone (smaller angle) has the larger cosine.
+    expect(block.data[o + 12]).toBeGreaterThan(block.data[o + 13]);
+  });
+
+  it('packs hemisphere lights: sky, ground, and packed world-up', () => {
+    const block = newLightBlock();
+    const hemisphere = createHemisphereLight({ groundColor: 0x000000ff, intensity: 2, skyColor: 0xffffffff });
+    packSceneLightBlock(block, { ambient: null, directional: null, hemisphere: [hemisphere] });
+    expect(block.hemisphereCount).toBe(1);
+    const o = SCENE_LIGHT_HEMISPHERE_OFFSET;
+    const sky = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
+    expect(block.data[o + 0]).toBeCloseTo(sky[0] * 2);
+    expect(block.data[o + 4]).toBeCloseTo(0);
+    // Packed world-up (0, 1, 0).
+    expect(block.data[o + 8]).toBeCloseTo(0);
+    expect(block.data[o + 9]).toBeCloseTo(1);
+    expect(block.data[o + 10]).toBeCloseTo(0);
+  });
+
+  it('caps each punctual array at MAX_FORWARD_LIGHTS', () => {
+    const block = newLightBlock();
+    const many = Array.from({ length: 9 }, () => createPointLight());
+    packSceneLightBlock(block, { ambient: null, directional: null, point: many });
+    expect(block.pointCount).toBe(4);
+  });
+
+  it('reports zero counts for empty punctual arrays', () => {
+    const block = newLightBlock();
+    packSceneLightBlock(block, { ambient: null, directional: null, hemisphere: [], point: [], spot: [] });
+    expect(block.pointCount).toBe(0);
+    expect(block.spotCount).toBe(0);
+    expect(block.hemisphereCount).toBe(0);
+  });
+
+  it('does not bump version when re-packed with identical punctual lights', () => {
+    const block = newLightBlock();
+    const lights = { ambient: null, directional: null, point: [createPointLight({ range: 5 })] };
+    packSceneLightBlock(block, lights);
+    const v = block.version;
+    packSceneLightBlock(block, lights);
+    expect(block.version).toBe(v);
   });
 });
 

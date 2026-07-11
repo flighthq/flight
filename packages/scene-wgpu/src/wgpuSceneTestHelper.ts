@@ -63,6 +63,12 @@ export function makeWgpuSceneState(): { fake: FakeWgpu; state: WgpuRenderState }
     setViewport: record('setViewport'),
   } as unknown as GPURenderPassEncoder;
 
+  // A recording command encoder whose beginRenderPass hands back the same recording pass — enough for
+  // drawWgpuSceneShadowMap to drive its own depth-only pass under JSDOM.
+  const commandEncoder = {
+    beginRenderPass: record('beginRenderPass', renderPass),
+  } as unknown as GPUCommandEncoder;
+
   const device = {
     limits: { minUniformBufferOffsetAlignment: 256 },
     queue: {
@@ -98,6 +104,7 @@ export function makeWgpuSceneState(): { fake: FakeWgpu; state: WgpuRenderState }
 
   const runtime = createWgpuRenderStateRuntime();
   Object.assign(runtime, {
+    commandEncoder,
     currentBlendMode: null,
     currentColorFormat: 'bgra8unorm',
     linearSampler: {} as GPUSampler,

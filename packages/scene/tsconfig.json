@@ -14,7 +14,6 @@
     { "path": "../materials" },
     { "path": "../mesh" },
     { "path": "../node" },
-    { "path": "../signals" },
     { "path": "../types" }
   ],
   "include": ["src"]

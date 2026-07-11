@@ -727,6 +727,16 @@ describe('inverseMatrix4', () => {
     expect(inv.m[1]).toBeNaN();
     expect(inv.m[2]).toBeNaN();
   });
+
+  it('returns false for a singular matrix with out === source', () => {
+    const m = createMatrix4();
+    m.m[0] = 0; // make determinant zero
+
+    const ok = inverseMatrix4(m, m);
+
+    expect(ok).toBe(false);
+    expect(m.m[0]).toBeNaN();
+  });
 });
 
 describe('isAffineMatrix4', () => {

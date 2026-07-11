@@ -59,7 +59,7 @@ by: ingest:builder-67dc46d64
 - `enableGlobalShortcut(accelerator): boolean` — re-enables a disabled shortcut.
 - `suspendAllGlobalShortcuts(): void` — silences all handlers (e.g. when modal/textfield has focus). No-op on web.
 - `resumeAllGlobalShortcuts(): void` — resumes all. No-op on web.
-- `areAcceleratorsEqual(a, b): boolean` — normalized chord equality; returns false when either is unparseable.
+- `equalsAccelerator(a, b): boolean` — normalized chord equality; returns false when either is unparseable.
 
 **Gold — signals (pass 2):**
 

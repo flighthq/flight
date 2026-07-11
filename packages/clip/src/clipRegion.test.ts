@@ -6,7 +6,7 @@ import {
   clipRegionContainsPoint,
   clipRegionContainsRectangle,
   clipRegionIntersectsRectangle,
-  clipRegionsEqual,
+  equalsClipRegion,
   cloneClipRegion,
   copyClipRegion,
   createClipRegionFromCircle,
@@ -122,46 +122,6 @@ describe('clipRegionIntersectsRectangle', () => {
   it('returns false for a disjoint rectangle', () => {
     const clip = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
     expect(clipRegionIntersectsRectangle(clip, createRectangle(20, 20, 5, 5))).toBe(false);
-  });
-});
-
-describe('clipRegionsEqual', () => {
-  it('returns true for two identical rectangular clips', () => {
-    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
-    const b = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
-    expect(clipRegionsEqual(a, b)).toBe(true);
-  });
-
-  it('returns false when rects differ', () => {
-    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
-    const b = createClipRegionFromRectangle(createRectangle(0, 0, 20, 10));
-    expect(clipRegionsEqual(a, b)).toBe(false);
-  });
-
-  it('returns true for two identical path clips', () => {
-    const path = createPath('nonZero');
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 10, 0);
-    appendPathLineTo(path, 10, 10);
-    appendPathLineTo(path, 0, 10);
-    const a = createClipRegionFromPath(path, 1);
-    const b = createClipRegionFromPath(path, 1);
-    expect(clipRegionsEqual(a, b)).toBe(true);
-  });
-
-  it('returns true for the same object reference', () => {
-    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
-    expect(clipRegionsEqual(a, a)).toBe(true);
-  });
-
-  it('returns false when one is rectangular and the other has contours', () => {
-    const rect = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
-    const path = createPath();
-    appendPathMoveTo(path, 0, 0);
-    appendPathLineTo(path, 10, 0);
-    appendPathLineTo(path, 10, 10);
-    const contour = createClipRegionFromPath(path);
-    expect(clipRegionsEqual(rect, contour)).toBe(false);
   });
 });
 
@@ -310,6 +270,46 @@ describe('createClipRegionFromRoundedRectangle', () => {
     const rect = createRectangle(0, 0, 50, 50);
     const clip = createClipRegionFromRoundedRectangle(rect, 0);
     expect(clip.contours).toBeNull();
+  });
+});
+
+describe('equalsClipRegion', () => {
+  it('returns true for two identical rectangular clips', () => {
+    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    const b = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    expect(equalsClipRegion(a, b)).toBe(true);
+  });
+
+  it('returns false when rects differ', () => {
+    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    const b = createClipRegionFromRectangle(createRectangle(0, 0, 20, 10));
+    expect(equalsClipRegion(a, b)).toBe(false);
+  });
+
+  it('returns true for two identical path clips', () => {
+    const path = createPath('nonZero');
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 10, 0);
+    appendPathLineTo(path, 10, 10);
+    appendPathLineTo(path, 0, 10);
+    const a = createClipRegionFromPath(path, 1);
+    const b = createClipRegionFromPath(path, 1);
+    expect(equalsClipRegion(a, b)).toBe(true);
+  });
+
+  it('returns true for the same object reference', () => {
+    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    expect(equalsClipRegion(a, a)).toBe(true);
+  });
+
+  it('returns false when one is rectangular and the other has contours', () => {
+    const rect = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    const path = createPath();
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 10, 0);
+    appendPathLineTo(path, 10, 10);
+    const contour = createClipRegionFromPath(path);
+    expect(equalsClipRegion(rect, contour)).toBe(false);
   });
 });
 
