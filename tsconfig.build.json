@@ -43,6 +43,7 @@
     { "path": "./packages/geolocation" },
     { "path": "./packages/geometry" },
     { "path": "./packages/haptics" },
+    { "path": "./packages/host-capacitor" },
     { "path": "./packages/host-electron" },
     { "path": "./packages/host-tauri" },
     { "path": "./packages/input" },
