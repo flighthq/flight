@@ -1,11 +1,6 @@
 import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects';
 import type { WgpuDualSourcePipeline } from '@flighthq/filters-wgpu';
-import {
-  applyGaussianBlurFilterToWgpu,
-  createWgpuDualSourcePipeline,
-  drawWgpuDualSourcePass,
-  drawWgpuFilterPass,
-} from '@flighthq/filters-wgpu';
+import { createWgpuDualSourcePipeline, drawWgpuDualSourcePass, drawWgpuFilterPass } from '@flighthq/filters-wgpu';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu';
 import type {
   BloomEffect,
@@ -15,11 +10,12 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types';
 
+import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
-// Bloom: bright-pass → blur the bright branch (reusing the Tier-1 gaussian blur filter) → additively
-// composite back. The multi-pass reference recipe — it acquires intermediate targets from the pool and
-// releases them, branches, and reuses a filter, which is what makes it an effect and not a filter.
+// Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
+// additively composite back. The multi-pass reference recipe — it acquires intermediate targets from
+// the pool and releases them, branches, and reuses the blur primitive, which is what makes it an effect.
 // The Wgpu mirror of effects-gl's applyBloomEffectToGl; identical parameters come from the
 // shared computeBloomThreshold / computeBloomIntensity / computeBloomBlurRadius.
 export function applyBloomEffectToWgpu(
@@ -43,7 +39,7 @@ export function applyBloomEffectToWgpu(
     f32[0] = threshold;
   });
 
-  applyGaussianBlurFilterToWgpu(state, bright, blurred, temp, { blurX: radius, blurY: radius });
+  applyGaussianBlurToWgpu(state, bright, blurred, temp, { blurX: radius, blurY: radius });
 
   const compositePipeline = getBloomCompositePipeline(state);
   drawWgpuDualSourcePass(

@@ -2,6 +2,7 @@ import type { WgpuRenderState } from '@flighthq/types';
 
 import { defaultWgpuBevelEffectRunner } from './wgpuBevelEffect';
 import { defaultWgpuBloomEffectRunner } from './wgpuBloomEffect';
+import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { defaultWgpuBokehDepthOfFieldEffectRunner } from './wgpuBokehDepthOfFieldEffect';
 import { defaultWgpuBrightnessContrastEffectRunner } from './wgpuBrightnessContrastEffect';
 import { defaultWgpuCameraMotionBlurEffectRunner } from './wgpuCameraMotionBlurEffect';
@@ -80,6 +81,7 @@ export function registerBloomWgpuRenderEffects(state: WgpuRenderState): void {
 // Blur band: BokehDepthOfFieldEffect, CameraMotionBlurEffect, DirectionalBlurEffect, MotionBlurEffect,
 // RadialBlurEffect, TiltShiftEffect.
 export function registerBlurWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
   registerWgpuRenderEffect(state, 'BokehDepthOfFieldEffect', defaultWgpuBokehDepthOfFieldEffectRunner);
   registerWgpuRenderEffect(state, 'CameraMotionBlurEffect', defaultWgpuCameraMotionBlurEffectRunner);
   registerWgpuRenderEffect(state, 'DirectionalBlurEffect', defaultWgpuDirectionalBlurEffectRunner);

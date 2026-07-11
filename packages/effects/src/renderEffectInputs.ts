@@ -40,6 +40,7 @@ export const RENDER_EFFECT_KINDS: readonly string[] = [
   'BarrelDistortionEffect',
   'BevelEffect',
   'BloomEffect',
+  'BlurEffect',
   'BokehDepthOfFieldEffect',
   'BrightnessContrastEffect',
   'CameraMotionBlurEffect',

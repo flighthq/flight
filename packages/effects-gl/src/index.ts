@@ -1,5 +1,6 @@
 export * from './glBevelEffect';
 export * from './glBloomEffect';
+export * from './glBlurEffect';
 export * from './glBokehDepthOfFieldEffect';
 export * from './glBrightnessContrastEffect';
 export * from './glCameraMotionBlurEffect';

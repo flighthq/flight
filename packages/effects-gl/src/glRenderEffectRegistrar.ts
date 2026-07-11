@@ -2,6 +2,7 @@ import type { GlRenderState } from '@flighthq/types';
 
 import { defaultGlBevelEffectRunner } from './glBevelEffect';
 import { defaultGlBloomEffectRunner } from './glBloomEffect';
+import { defaultGlBlurEffectRunner } from './glBlurEffect';
 import { defaultGlBokehDepthOfFieldEffectRunner } from './glBokehDepthOfFieldEffect';
 import { defaultGlBrightnessContrastEffectRunner } from './glBrightnessContrastEffect';
 import { defaultGlCameraMotionBlurEffectRunner } from './glCameraMotionBlurEffect';
@@ -100,6 +101,7 @@ export function registerBloomGlRenderEffects(state: GlRenderState): void {
 // MotionBlurEffect, RadialBlurEffect, TiltShiftEffect.
 // Symmetric with Wgpu's registerBlurWgpuRenderEffects (BloomEffect has moved to the bloom band).
 export function registerBlurGlRenderEffects(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
   registerGlRenderEffect(state, 'BokehDepthOfFieldEffect', defaultGlBokehDepthOfFieldEffectRunner);
   registerGlRenderEffect(state, 'CameraMotionBlurEffect', defaultGlCameraMotionBlurEffectRunner);
   registerGlRenderEffect(state, 'DirectionalBlurEffect', defaultGlDirectionalBlurEffectRunner);
@@ -212,6 +214,7 @@ export function registerStylizeGlRenderEffects(state: GlRenderState): void {
 const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'BevelEffect',
   'BloomEffect',
+  'BlurEffect',
   'BokehDepthOfFieldEffect',
   'BrightnessContrastEffect',
   'CameraMotionBlurEffect',

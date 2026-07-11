@@ -157,3 +157,19 @@ export {
   createWhiteBalanceColorMatrix,
   multiplyColorMatrix,
 } from '@flighthq/adjustments';
+
+// Transitional: @flighthq/effects is the canonical home for the spatial-effect blur math, ported
+// verbatim from @flighthq/filters-math, which keeps its copy until the filters* packages retire (see
+// effect-adjustment-architecture.md, migration step 4). Both star-export the same names, so these
+// explicit re-exports resolve the barrel to the effects copy. Remove this block once filters-math is deleted.
+export {
+  computeBoxBlurPassRadius,
+  computeBoxBlurRadius,
+  computeGaussianKernelWeights,
+  computeGaussianSigmaForBlurRadius,
+  computeLinearSampledGaussian,
+  getBlurDownsampleLevel,
+  getBlurResidualSigma,
+  getGaussianKernelSize,
+  getLinearSampledGaussianTapCount,
+} from '@flighthq/effects';

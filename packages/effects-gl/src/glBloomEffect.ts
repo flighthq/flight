@@ -1,5 +1,4 @@
 import { computeBloomBlurRadius, computeBloomIntensity, computeBloomThreshold } from '@flighthq/effects';
-import { applyGaussianBlurFilterToGl } from '@flighthq/filters-gl';
 import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl';
 import type {
   BloomEffect,
@@ -9,11 +8,12 @@ import type {
   GlRenderTargetPool,
 } from '@flighthq/types';
 
+import { applyGaussianBlurToGl } from './glBlurEffect';
 import { getGlEffectProgram } from './glEffectProgramCache';
 
-// Bloom: bright-pass → blur the bright branch (reusing the Tier-1 gaussian blur filter) → additively
-// composite back. The multi-pass reference recipe — it acquires intermediate targets from the pool
-// and releases them, branches, and reuses a filter, which is what makes it an effect and not a filter.
+// Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
+// additively composite back. The multi-pass reference recipe — it acquires intermediate targets from
+// the pool and releases them, branches, and reuses the blur primitive, which is what makes it an effect.
 export function applyBloomEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -35,7 +35,7 @@ export function applyBloomEffectToGl(
     gl.uniform1f(gl.getUniformLocation(program.program, 'u_threshold'), threshold);
   });
 
-  applyGaussianBlurFilterToGl(state, bright, blurred, temp, { blurX: radius, blurY: radius });
+  applyGaussianBlurToGl(state, bright, blurred, temp, { blurX: radius, blurY: radius });
 
   const compositeProgram = getGlEffectProgram(state, 'bloom.composite', BLOOM_COMPOSITE_FRAGMENT_SRC);
   drawGlFullscreenPass(state, compositeProgram, [source.texture, blurred.texture], dest, (gl, program) => {
