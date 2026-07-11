@@ -9,6 +9,7 @@ import { defaultGlCameraMotionBlurEffectRunner } from './glCameraMotionBlurEffec
 import { defaultGlChannelMixerEffectRunner } from './glChannelMixerEffect';
 import { defaultGlChromaticAberrationEffectRunner } from './glChromaticAberrationEffect';
 import { defaultGlColorGradeEffectRunner } from './glColorGradeEffect';
+import { defaultGlConvolutionEffectRunner } from './glConvolutionEffect';
 import { defaultGlCrtEffectRunner } from './glCrtEffect';
 import { defaultGlCustomShaderEffectRunner } from './glCustomShaderEffect';
 import { defaultGlDirectionalBlurEffectRunner } from './glDirectionalBlurEffect';
@@ -34,6 +35,7 @@ import { defaultGlLensDistortionEffectRunner } from './glLensDistortionEffect';
 import { defaultGlLensFlareEffectRunner } from './glLensFlareEffect';
 import { defaultGlLiftGammaGainEffectRunner } from './glLiftGammaGainEffect';
 import { defaultGlLookupTableGradeEffectRunner } from './glLookupTableGradeEffect';
+import { defaultGlMedianEffectRunner } from './glMedianEffect';
 import { defaultGlMotionBlurEffectRunner } from './glMotionBlurEffect';
 import { defaultGlOuterGlowEffectRunner } from './glOuterGlowEffect';
 import { defaultGlOutlineEffectRunner } from './glOutlineEffect';
@@ -197,12 +199,14 @@ export function registerStandardGlRenderEffects(state: GlRenderState): void {
 // DitherEffect has moved here from the color-grade band (matching Wgpu).
 // Symmetric with Wgpu's registerStylizeWgpuRenderEffects.
 export function registerStylizeGlRenderEffects(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'ConvolutionEffect', defaultGlConvolutionEffectRunner);
   registerGlRenderEffect(state, 'CrtEffect', defaultGlCrtEffectRunner);
   registerGlRenderEffect(state, 'DitherEffect', defaultGlDitherEffectRunner);
   registerGlRenderEffect(state, 'FilmGrainEffect', defaultGlFilmGrainEffectRunner);
   registerGlRenderEffect(state, 'GlitchEffect', defaultGlGlitchEffectRunner);
   registerGlRenderEffect(state, 'HalftoneEffect', defaultGlHalftoneEffectRunner);
   registerGlRenderEffect(state, 'KuwaharaEffect', defaultGlKuwaharaEffectRunner);
+  registerGlRenderEffect(state, 'MedianEffect', defaultGlMedianEffectRunner);
   registerGlRenderEffect(state, 'OutlineEffect', defaultGlOutlineEffectRunner);
   registerGlRenderEffect(state, 'PixelateEffect', defaultGlPixelateEffectRunner);
   registerGlRenderEffect(state, 'ScanlinesEffect', defaultGlScanlinesEffectRunner);
@@ -221,6 +225,7 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'ChannelMixerEffect',
   'ChromaticAberrationEffect',
   'ColorGradeEffect',
+  'ConvolutionEffect',
   'CrtEffect',
   'CustomShaderEffect',
   'DirectionalBlurEffect',
@@ -246,6 +251,7 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'LensFlareEffect',
   'LiftGammaGainEffect',
   'LookupTableGradeEffect',
+  'MedianEffect',
   'MotionBlurEffect',
   'OuterGlowEffect',
   'OutlineEffect',

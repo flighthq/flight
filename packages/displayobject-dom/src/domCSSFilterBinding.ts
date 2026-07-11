@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
-import type { BitmapFilter, DisplayObject, DomRenderState, RenderProxy2D } from '@flighthq/types';
+import type { DisplayObject, DomRenderState, RenderProxy2D } from '@flighthq/types';
 
 /**
  * Enables CSS filter support for the render state by installing the resolver the
@@ -14,18 +14,6 @@ export function enableDomCssFilterSupport(state: DomRenderState): void {
 
 export function getDomCssFilter(renderProxy: RenderProxy2D): string | undefined {
   return _cssFilterBindings.get(renderProxy);
-}
-
-/**
- * Returns true when the filter has a native CSS `filter` equivalent supported by the DOM
- * backend. Filters not in this set cannot be expressed directly as a CSS filter string.
- *
- * Callers that need a raster fallback for unsupported filters should route the subtree
- * through the render-cache path (ensureDomRenderCacheTarget) instead of calling
- * setDomCssFilter.
- */
-export function hasDomCssFilterEquivalent(filter: Readonly<BitmapFilter>): boolean {
-  return DOM_CSS_FILTER_KINDS.has(filter.kind);
 }
 
 /**
@@ -50,13 +38,3 @@ export function setDomCssFilter(state: DomRenderState, node: DisplayObject, filt
 // invisible to any other state that renders the same display object. This mirrors
 // the per-state canvas CSS filter and Gl shader bindings.
 const _cssFilterBindings = new WeakMap<RenderProxy2D, string>();
-
-// Filter kinds that have a native CSS filter equivalent in the DOM backend.
-// All other filter kinds require rasterization (e.g. via the render-cache path)
-// or are silently unsupported. This set drives hasDomCssFilterEquivalent.
-//
-// Mapping notes:
-//   BlurFilter       → filter: blur(…px)
-//   DropShadowFilter → filter: drop-shadow(offsetX offsetY blur color)
-//   OuterGlowFilter  → filter: drop-shadow(0 0 blur color)  [approximate: glow = shadow with 0 offset]
-const DOM_CSS_FILTER_KINDS = new Set(['BlurFilter', 'DropShadowFilter', 'OuterGlowFilter']);
