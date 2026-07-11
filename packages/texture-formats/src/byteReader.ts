@@ -1,6 +1,7 @@
 // A minimal cursor over a byte buffer, shared by every container parser. KTX2, DDS, and the Basis
 // container are little-endian (the `read*U16`/`U32`/`U64` helpers); ATF stores its block and header
-// lengths big-endian, so `readByteReaderU24BigEndian` reads ATF's 3-byte block-length prefix. The cursor
+// lengths big-endian, so `readByteReaderU24BigEndian` reads a legacy ATF's 3-byte block-length prefix
+// and `readByteReaderU32BigEndian` reads a versioned ATF's 4-byte block/header lengths. The cursor
 // is a plain `{ view, offset }` value with an advancing `offset`; read functions advance it, and every
 // parser guards a read against `hasByteReaderBytes` first so a truncated file returns a sentinel `null`
 // rather than throwing a `DataView` `RangeError`. `readByteReaderU64` returns the value as a JavaScript
@@ -35,6 +36,12 @@ export function readByteReaderU24BigEndian(reader: ByteReader): number {
 
 export function readByteReaderU32(reader: ByteReader): number {
   const value = reader.view.getUint32(reader.offset, true);
+  reader.offset += 4;
+  return value;
+}
+
+export function readByteReaderU32BigEndian(reader: ByteReader): number {
+  const value = reader.view.getUint32(reader.offset, false);
   reader.offset += 4;
   return value;
 }

@@ -6,6 +6,7 @@ import {
   readByteReaderU16,
   readByteReaderU24BigEndian,
   readByteReaderU32,
+  readByteReaderU32BigEndian,
   readByteReaderU64,
   readByteReaderU8,
   skipByteReader,
@@ -60,6 +61,19 @@ describe('readByteReaderU32', () => {
     const reader = createByteReader(new Uint8Array([0x78, 0x56, 0x34, 0x12]));
     expect(readByteReaderU32(reader)).toBe(0x12345678);
     expect(reader.offset).toBe(4);
+  });
+});
+
+describe('readByteReaderU32BigEndian', () => {
+  it('reads a 4-byte big-endian value and advances 4', () => {
+    const reader = createByteReader(new Uint8Array([0x12, 0x34, 0x56, 0x78]));
+    expect(readByteReaderU32BigEndian(reader)).toBe(0x12345678);
+    expect(reader.offset).toBe(4);
+  });
+
+  it('reads the full 32-bit range as an unsigned value', () => {
+    const reader = createByteReader(new Uint8Array([0xff, 0xff, 0xff, 0xff]));
+    expect(readByteReaderU32BigEndian(reader)).toBe(0xffffffff);
   });
 });
 
