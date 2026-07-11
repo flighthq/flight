@@ -1,5 +1,5 @@
 import type { GlRenderState } from '@flighthq/types';
-import { EntityRuntimeKey } from '@flighthq/types';
+import { EntityRuntimeKey, SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { bindGlMeshLightBlock, GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
@@ -14,6 +14,8 @@ function makeLitProgram(): GlLitProgram {
     locDirectional: loc('u_directional'),
     locDirectionalCount: loc('u_directionalCount'),
     locDirectionalRadiance: loc('u_directionalRadiance'),
+    locHemisphereCount: loc('u_hemisphereCount'),
+    locHemisphereLights: loc('u_hemisphereLights'),
     locIblBrdf: loc('u_iblBrdf'),
     locIblEnabled: loc('u_iblEnabled'),
     locIblIntensity: loc('u_iblIntensity'),
@@ -22,9 +24,13 @@ function makeLitProgram(): GlLitProgram {
     locIblPrefiltered: loc('u_iblPrefiltered'),
     locModel: loc('u_model'),
     locNormalMatrix: loc('u_normalMatrix'),
+    locPointCount: loc('u_pointCount'),
+    locPointLights: loc('u_pointLights'),
     locShadowEnabled: loc('u_shadowEnabled'),
     locShadowMap: loc('u_shadowMap'),
     locShadowMatrix: loc('u_shadowMatrix'),
+    locSpotCount: loc('u_spotCount'),
+    locSpotLights: loc('u_spotLights'),
     locViewProjection: loc('u_viewProjection'),
     program: {} as WebGLProgram,
   };
@@ -37,7 +43,7 @@ function makeState(gl: ReturnType<typeof makeFakeGl2>): GlRenderState {
 describe('bindGlMeshLightBlock', () => {
   it('uploads the directional, ambient, count, shadow-gate, and ibl-gate uniforms from the packed block', () => {
     const gl = makeFakeGl2();
-    const data = new Float32Array(12);
+    const data = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
     data[0] = 0;
     data[1] = -1;
     data[4] = 1;
@@ -65,7 +71,7 @@ describe('bindGlMeshLightBlock', () => {
     const state = makeState(gl);
     const block = {
       ambientCount: 1,
-      data: new Float32Array(12),
+      data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
       directionalCount: 1,
       hemisphereCount: 0,
       pointCount: 0,
@@ -84,11 +90,42 @@ describe('bindGlMeshLightBlock', () => {
     const gl = makeFakeGl2();
     const program = makeLitProgram();
     const state = makeState(gl);
-    const data = new Float32Array(12);
+    const data = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
     const block = { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0 };
     bindGlMeshLightBlock(state, program, { ...block, version: 1 });
     bindGlMeshLightBlock(state, program, { ...block, version: 2 });
     expect(gl.calls.filter((c) => c.name === 'uniform4f').length).toBe(4);
+  });
+
+  it('uploads the punctual light arrays and their int counts from the packed block', () => {
+    const gl = makeFakeGl2();
+    bindGlMeshLightBlock(makeState(gl), makeLitProgram(), {
+      ambientCount: 0,
+      data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
+      directionalCount: 0,
+      hemisphereCount: 3,
+      pointCount: 2,
+      spotCount: 1,
+      version: 1,
+    });
+    // Three vec4 arrays uploaded: point, spot, hemisphere.
+    const arrayUploads = gl.calls.filter((c) => c.name === 'uniform4fv');
+    expect(arrayUploads.length).toBe(3);
+    // Each count uploads as an int uniform (u_pointCount / u_spotCount / u_hemisphereCount).
+    const intUploads = gl.calls.filter(
+      (c) =>
+        c.name === 'uniform1i' &&
+        typeof (c.args[0] as { name?: string })?.name === 'string' &&
+        (c.args[0] as { name: string }).name.endsWith('Count'),
+    );
+    expect(intUploads.map((c) => (c.args[0] as { name: string }).name).sort()).toEqual([
+      'u_hemisphereCount',
+      'u_pointCount',
+      'u_spotCount',
+    ]);
+    expect(intUploads.find((c) => (c.args[0] as { name: string }).name === 'u_pointCount')?.args[1]).toBe(2);
+    expect(intUploads.find((c) => (c.args[0] as { name: string }).name === 'u_spotCount')?.args[1]).toBe(1);
+    expect(intUploads.find((c) => (c.args[0] as { name: string }).name === 'u_hemisphereCount')?.args[1]).toBe(3);
   });
 });
 
@@ -104,6 +141,12 @@ describe('GL_MESH_LIGHT_BLOCK_GLSL', () => {
       'u_shadowMap',
       'u_shadowMatrix',
       'u_shadowEnabled',
+      'u_pointLights',
+      'u_spotLights',
+      'u_hemisphereLights',
+      'u_pointCount',
+      'u_spotCount',
+      'u_hemisphereCount',
     ]) {
       expect(GL_MESH_LIGHT_BLOCK_GLSL).toContain(name);
     }
