@@ -24,7 +24,7 @@ OpenFL and Lime define the feature target, not the API. When deciding what to bu
 
 In practice:
 
-- Prefer explicit data over runtime objects with hidden behavior. A filter is a plain data descriptor applied by an explicit per-backend function (a Canvas/CSS filter string or a multi-pass WebGL shader), not a `BitmapFilter` instance assigned to `displayObject.filters` that the runtime quietly applies on the next frame.
+- Prefer explicit data over runtime objects with hidden behavior. A filter is a plain data descriptor applied by an explicit per-backend function (a Canvas/CSS filter string or a multi-pass WebGL shader), not a `BitmapFilter` instance assigned to `displayObject.filters` that the runtime quietly applies on the next frame. `displayObject.filters` is a **deliberate anti-goal** — before "wiring filters into rendering," read [anti-goals](anti-goals.md).
 - Prefer plain values over wrapper types and accessors. Colors are packed RGBA integers (for example `0xeeddccff`) with one consistent convention across the SDK, not a color type or a mix of RGB-with-separate-alpha conventions.
 - Prefer small, side-effect-free functions with explicit inputs and `out` parameters over methods that mutate shared state. Nothing "magic" should happen internally that the caller did not ask for: rendering, allocation, and update passes are all things the caller invokes by name.
 - Accept more verbose user code when it buys clarity. Spelling out renderer registration, the pre-render update pass, and allocation is preferred over convenience that hides where work and memory go. Examples demonstrate this verbosity on purpose.
@@ -119,6 +119,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 **Reference docs** (`agents/`) — declarative knowledge, read to _know_:
 
+- [anti-goals](anti-goals.md) — before "completing" a missing OpenFL/Lime feature. The registry of deliberately-unbuilt features (starting with `displayObject.filters`), why each is rejected (implicit-runtime magic), the explicit path to use instead, and the test for when a convenience abstraction is allowed (explicit invocation + transparent cost). If a feature seems absent, it may be absent on purpose — check here before building it.
 - [commit messages](conventions/commits.md) — before writing a commit. The `type(scope):` split (type = what kind of change, from a closed set; scope = which package/crate or area), why `rust`/`wasm`/`script`/`tool` are scopes not types, and the `rust/`·`ts/` scope namespace for the shared-name TS↔Rust crates.
 - [npm script naming](conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, why no word may crowd the subject slot, collapse aliases (omit subject → fan over subjects; bare name → `dev:`), `:baseline` as write-mode, and the `smoke` / `parity` / `regression` render-test vocabulary.
 - [packaging & publishing](packaging.md) — the published package shape. Policy is enforced by `npm run packages:check`, not memory.
