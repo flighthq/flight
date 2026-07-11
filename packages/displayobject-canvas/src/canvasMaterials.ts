@@ -17,6 +17,9 @@ const CANVAS_BLEND_MODE: Record<BlendMode, GlobalCompositeOperation | null> = {
   [BlendMode.Layer]: 'source-over',
   [BlendMode.Lighten]: 'lighten',
   [BlendMode.Multiply]: 'multiply',
+  // No per-node Canvas2D equivalent ('copy' clears the whole canvas, not just the covered region),
+  // so no-blend degrades to normal compositing — identical for the opaque content None targets.
+  [BlendMode.None]: null,
   [BlendMode.Normal]: 'source-over',
   [BlendMode.Overlay]: 'overlay',
   [BlendMode.Screen]: 'screen',

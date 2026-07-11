@@ -13,6 +13,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | 2D transform (pos/rot/scale/pivot) | ✓ | ✓ | ✓ | ✓ | `rotation` is **degrees** (`node/transform2d.ts`) |
 | Blend modes — fixed-function set (Add/Darken/Erase/Lighten/Multiply/Screen/Subtract) | ✓ | ✓ | ✓ | ✓ | gl + wgpu realize these; see gap #1 |
 | Blend modes — shader-composited (Overlay/HardLight/Difference/Invert) | ✓ | ✓ | ✗ | ✗ | no fixed-function form; fall back to Normal on gl/wgpu — gap #1 |
+| Blend mode `None` (no-blend / source overwrite) | ~ | ~ | ✓ | ✓ | gl/wgpu overwrite (ONE,ZERO); canvas/dom have no per-node equivalent → Normal (identical for opaque) |
 | Clip (rect + contour) | ✓ | ✓ | ✓ | ✓ | opt-in `enable*ClipSupport` |
 | Render cache (`cacheAsBitmap`) | ✓ | ~ | ✓ | ~ | opt-in `enable*RenderCache`; bake reachable outside the frame loop only on canvas/gl (dom/wgpu bake in-frame) |
 | Stroke caps (none/round/square) | ✓ | ✓ | ✓ | ✓ |  |

@@ -14,6 +14,10 @@ export const BlendMode = {
   Layer: 'Layer',
   Lighten: 'Lighten',
   Multiply: 'Multiply',
+  // No blending: the source overwrites the destination (no alpha compositing). The GPU-oriented
+  // no-blend mode (Pixi/Starling `NONE`), absent from OpenFL. Faithful only on gl/wgpu; canvas/dom
+  // have no per-node equivalent and degrade to Normal.
+  None: 'None',
   Normal: 'Normal',
   Overlay: 'Overlay',
   Screen: 'Screen',

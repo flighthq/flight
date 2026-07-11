@@ -194,6 +194,10 @@ const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization]
   // toward black — the straight-alpha (DST_COLOR, ZERO) form fringes there because this pipeline
   // uploads and shades premultiplied. Exact for an opaque backdrop.
   [BlendMode.Multiply, { src: 'DST_COLOR', dst: 'ONE_MINUS_SRC_ALPHA' }],
+  // No blending: result = src (the premultiplied source replaces the destination). For opaque
+  // content this matches Normal; unlike Normal it does not composite, so semi-transparent source
+  // pixels overwrite the backdrop instead of blending over it.
+  [BlendMode.None, { src: 'ONE', dst: 'ZERO' }],
   [BlendMode.Normal, NORMAL_BLEND],
   [BlendMode.Screen, { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' }],
   [BlendMode.Subtract, { src: 'ONE', dst: 'ONE', equation: 'FUNC_REVERSE_SUBTRACT' }],

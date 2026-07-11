@@ -82,6 +82,7 @@ describe('getWgpuPipeline', () => {
     });
     expect(blendOf(BlendMode.Screen)).toEqual({ srcFactor: 'one', dstFactor: 'one-minus-src', operation: 'add' });
     expect(blendOf(BlendMode.Erase)).toEqual({ srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' });
+    expect(blendOf(BlendMode.None)).toEqual({ srcFactor: 'one', dstFactor: 'zero', operation: 'add' });
     expect(blendOf(BlendMode.Darken).operation).toBe('min');
     expect(blendOf(BlendMode.Lighten).operation).toBe('max');
     expect(blendOf(BlendMode.Subtract).operation).toBe('reverse-subtract');

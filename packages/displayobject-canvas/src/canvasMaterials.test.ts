@@ -60,6 +60,11 @@ describe('applyCanvasBlendMode', () => {
     expect(state.context.globalCompositeOperation).toBe('screen');
   });
 
+  it('should degrade BlendMode.None to "source-over" (no per-node Canvas2D equivalent)', () => {
+    applyCanvasBlendMode(state, BlendMode.None);
+    expect(state.context.globalCompositeOperation).toBe('source-over');
+  });
+
   it('should set globalCompositeOperation to "source-over" for default case', () => {
     applyCanvasBlendMode(state, null);
     expect(state.context.globalCompositeOperation).toBe('source-over');

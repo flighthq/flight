@@ -50,6 +50,14 @@ describe('applyGlBlendMode', () => {
     expect(gl.blendFunc).toHaveBeenCalledWith(g.DST_COLOR, g.ONE_MINUS_SRC_ALPHA);
   });
 
+  it('sets (ONE, ZERO) for BlendMode.None', () => {
+    const { state, gl } = createGlState();
+    registerDefaultGlBlendModes(state);
+    applyGlBlendMode(state, BlendMode.None);
+    const g = gl as unknown as { ONE: number; ZERO: number };
+    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ZERO);
+  });
+
   it('sets (ONE, ONE_MINUS_SRC_COLOR) for BlendMode.Screen', () => {
     const { state, gl } = createGlState();
     registerDefaultGlBlendModes(state);
