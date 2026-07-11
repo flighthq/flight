@@ -51,30 +51,6 @@ export function clipRegionIntersectsRectangle(clip: Readonly<ClipRegion>, rectan
   return intersectsRectangle(clip.rect, rectangle);
 }
 
-// Structural equality check. Does not use the version counter — compares geometry directly.
-// Useful for cache reuse independent of manual invalidation. Contour comparison is exact (point-by-point).
-export function clipRegionsEqual(a: Readonly<ClipRegion>, b: Readonly<ClipRegion>): boolean {
-  if (a === b) return true;
-  if (a.winding !== b.winding) return false;
-  const ar = a.rect;
-  const br = b.rect;
-  if (ar.x !== br.x || ar.y !== br.y || ar.width !== br.width || ar.height !== br.height) return false;
-  if (a.contours === null && b.contours === null) return true;
-  if (a.contours === null || b.contours === null) return false;
-  const ac = a.contours;
-  const bc = b.contours;
-  if (ac.length !== bc.length) return false;
-  for (let i = 0; i < ac.length; i++) {
-    const ai = ac[i];
-    const bi = bc[i];
-    if (ai.length !== bi.length) return false;
-    for (let j = 0; j < ai.length; j++) {
-      if (ai[j] !== bi[j]) return false;
-    }
-  }
-  return true;
-}
-
 // Deep copy of a clip region (rect, contours arrays, winding). Version is preserved from the
 // source so the caller can still detect change; call invalidateClipRegion after mutation.
 export function cloneClipRegion(clip: Readonly<ClipRegion>): ClipRegion {
@@ -150,6 +126,30 @@ export function createClipRegionFromRoundedRectangle(
   const path = createPath('nonZero');
   appendRoundedRectToPath(path, rectangle.x, rectangle.y, rectangle.width, rectangle.height, radius);
   return createClipRegionFromPath(path, tolerance);
+}
+
+// Structural equality check. Does not use the version counter — compares geometry directly.
+// Useful for cache reuse independent of manual invalidation. Contour comparison is exact (point-by-point).
+export function equalsClipRegion(a: Readonly<ClipRegion>, b: Readonly<ClipRegion>): boolean {
+  if (a === b) return true;
+  if (a.winding !== b.winding) return false;
+  const ar = a.rect;
+  const br = b.rect;
+  if (ar.x !== br.x || ar.y !== br.y || ar.width !== br.width || ar.height !== br.height) return false;
+  if (a.contours === null && b.contours === null) return true;
+  if (a.contours === null || b.contours === null) return false;
+  const ac = a.contours;
+  const bc = b.contours;
+  if (ac.length !== bc.length) return false;
+  for (let i = 0; i < ac.length; i++) {
+    const ai = ac[i];
+    const bi = bc[i];
+    if (ai.length !== bi.length) return false;
+    for (let j = 0; j < ai.length; j++) {
+      if (ai[j] !== bi[j]) return false;
+    }
+  }
+  return true;
 }
 
 // Returns the bounding rect of a clip region in the given out rectangle.
