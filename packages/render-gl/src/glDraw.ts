@@ -188,7 +188,12 @@ const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization]
   [BlendMode.Erase, { src: 'ZERO', dst: 'ONE_MINUS_SRC_ALPHA' }],
   [BlendMode.Layer, NORMAL_BLEND],
   [BlendMode.Lighten, { src: 'ONE', dst: 'ONE', equation: 'MAX' }],
-  [BlendMode.Multiply, { src: 'DST_COLOR', dst: 'ZERO' }],
+  // Premultiplied multiply: result = src.rgb*dst + dst*(1-src.a). The (1-src.a) term restores the
+  // destination where the source is transparent or partially covered (antialiased edges, the quad's
+  // transparent surround), so those pixels leave the backdrop untouched instead of multiplying it
+  // toward black — the straight-alpha (DST_COLOR, ZERO) form fringes there because this pipeline
+  // uploads and shades premultiplied. Exact for an opaque backdrop.
+  [BlendMode.Multiply, { src: 'DST_COLOR', dst: 'ONE_MINUS_SRC_ALPHA' }],
   [BlendMode.Normal, NORMAL_BLEND],
   [BlendMode.Screen, { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' }],
   [BlendMode.Subtract, { src: 'ONE', dst: 'ONE', equation: 'FUNC_REVERSE_SUBTRACT' }],
