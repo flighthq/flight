@@ -12,6 +12,7 @@
     { "path": "../displayobject" },
     { "path": "../displayobject-canvas" },
     { "path": "../geometry" },
+    { "path": "../log" },
     { "path": "../materials" },
     { "path": "../node" },
     { "path": "../particleemitter" },

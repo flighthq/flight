@@ -8,15 +8,16 @@
 // reading the rasterized output and seeing white become red.
 //
 // API note: Flight models a color transform as the node-level HasColorTransform trait
-// (packages/types/src/HasColorTransform.ts), an Adjustment folded directly into the GL/WGPU batch
-// draw (packages/displayobject-gl/src/glSpriteBatch.ts recordGlSpriteBatchColorTransform, and the
-// WGPU sibling). The Canvas and DOM bitmap renderers do not yet realize that trait, so a node-attached
-// color transform draws untinted there — diverging across backends. Functional tests must agree
-// byte-for-byte across Canvas/DOM/GL, so this test instead applies the transform to the source PIXELS
-// in JS via the genuine `applySurfaceColorTransform` (the surface ColorTransform API) and a
-// `createColorTransform` descriptor, then blits the result. Every backend then draws identical bytes
-// (the same pattern filter-pixelate uses). The node-trait fold is the GPU-batched form of the same
-// descriptor; it is exercised by the GL/WGPU sprite-batch unit tests, not here.
+// (packages/types/src/HasColorTransform.ts), an Adjustment folded into the GL/WGPU batch draw through
+// the opt-in color-adjustment capability (enableGlColorAdjustment / enableWgpuColorAdjustment;
+// packages/displayobject-gl/src/glColorAdjustment.ts and the WGPU sibling). The Canvas and DOM bitmap
+// renderers do not yet realize that trait, so a node-attached color transform draws untinted there —
+// diverging across backends. Functional tests must agree byte-for-byte across Canvas/DOM/GL, so this
+// test instead applies the transform to the source PIXELS in JS via the genuine
+// `applySurfaceColorTransform` (the surface ColorTransform API) and a `createColorTransform`
+// descriptor, then blits the result. Every backend then draws identical bytes. The node-trait fold is
+// the GPU-batched form of the same descriptor; it is exercised by the GL/WGPU color-adjustment unit
+// tests, not here.
 import type { Surface } from '@flighthq/sdk';
 import {
   addNodeChild,

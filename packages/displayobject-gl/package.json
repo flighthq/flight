@@ -30,6 +30,7 @@
     "@flighthq/displayobject": "*",
     "@flighthq/displayobject-canvas": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",

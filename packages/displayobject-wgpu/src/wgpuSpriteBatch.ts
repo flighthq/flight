@@ -6,22 +6,9 @@ import type {
   MaterialData,
   WgpuMaterialRenderer,
   WgpuRenderState,
-  WgpuRenderStateRuntime,
   WgpuSpriteBatchBufferSlot,
 } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
-
-// Per-instance color-transform data (8 floats = 4 multiplier + 4 offset). Wgpu carries every tint
-// through the material storage buffer, so a whole-batch (uniform) tint is the same value on each
-// instance — there is no separate hardware-uniform path.
-const COLOR_TRANSFORM_FLOATS = 8;
-
-// Color-transform fold modes for the active sprite batch (see GlRenderStateRuntime / the record
-// function for the promotion rules). NONE keeps the base module; UNIFORM defers per-instance fill
-// while one tint covers the whole batch; PER_INSTANCE packs a tint per instance.
-const CT_MODE_NONE = 0;
-const CT_MODE_UNIFORM = 1;
-const CT_MODE_PER_INSTANCE = 2;
 
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
 // from the instance storage buffer; it carries no material concern (no color transform). A material
@@ -155,17 +142,14 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   const texture = runtime.spriteBatchTexture!;
   const blendMode = runtime.spriteBatchBlendMode;
   const renderer = runtime.spriteBatchMaterialRenderer!;
-  const ctMode = runtime.spriteBatchColorTransformMode;
-  const uniformColorTransform = runtime.spriteBatchUniformColorTransform;
-  // A color-transform batch folds its tint through the material storage buffer (@group(3)); an
-  // untinted batch falls back to the resolved material's own per-instance data. The two never mix in
-  // a built-in batch (built-in materials have no per-instance floats).
-  const hasColorTransform = ctMode !== CT_MODE_NONE;
-  if (hasColorTransform && ctMode === CT_MODE_UNIFORM) {
-    fillWgpuSpriteBatchUniformColorTransform(runtime, uniformColorTransform!, count);
-  }
-  const group3Floats = hasColorTransform ? COLOR_TRANSFORM_FLOATS : runtime.spriteBatchMaterialFloats;
-  const group3Data = hasColorTransform ? runtime.spriteBatchColorTransformData : runtime.spriteBatchMaterialData;
+  // The color-adjustment fold is opt-in (enableWgpuColorAdjustment): when installed it resolves a
+  // tinted batch to its per-instance @group(3) storage data + folded module; an untinted batch (or an
+  // un-enabled state) falls back to the resolved material's own per-instance data, and no fold WGSL is
+  // linked into this module. CT and material per-instance data never mix in a built-in batch (built-in
+  // materials have no per-instance floats).
+  const ctFlush = runtime.wgpuColorAdjustmentFold?.resolveFlush(state, count) ?? null;
+  const group3Floats = ctFlush !== null ? ctFlush.floats : runtime.spriteBatchMaterialFloats;
+  const group3Data = ctFlush !== null ? ctFlush.data : runtime.spriteBatchMaterialData;
   resetWgpuSpriteBatch(state);
 
   const resources = ensureWgpuQuadBatchResources(state);
@@ -203,7 +187,7 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
     entries: [{ binding: 0, resource: { buffer: slot.instanceBuffer } }],
   });
 
-  const module = hasColorTransform ? getWgpuSpriteBatchColorTransformModule(state) : renderer.getShaderModule(state);
+  const module = ctFlush !== null ? ctFlush.module : renderer.getShaderModule(state);
   const pipeline = getWgpuQuadBatchPipeline(state, resources, module, group3Floats > 0, blendMode);
   const pass = runtime.renderPass!;
   pass.setPipeline(pipeline);
@@ -353,43 +337,23 @@ export function prepareWgpuSpriteBatchWrite(
   return runtime.spriteBatchCount * SPRITE_INSTANCE_FLOATS;
 }
 
-// Records instance `instanceIndex`'s effective color transform into the active batch, folding it into
-// the draw without ever splitting the batch. A batch starts untinted (mode NONE); the first tint on
-// instance 0 makes it a whole-batch UNIFORM; a diverging tint (or an untinted instance following a
-// tinted one) promotes it to PER_INSTANCE, back-filling already-recorded instances with the prior
-// uniform value (or identity). Wgpu realizes both uniform and per-instance through the material
-// storage buffer — a uniform is replicated per instance at flush. `colorTransform` is null/undefined
-// for an untinted instance.
+// Folds instance `instanceIndex`'s effective color transform into the active batch through the opt-in
+// color-adjustment fold, without ever splitting the batch. When the capability was not enabled
+// (enableWgpuColorAdjustment), the fold slot is null and the tint is skipped — the batch draws
+// untinted (the sentinel behavior, never a throw); an installed guard reports the miss. `colorTransform`
+// is null/undefined for an untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordWgpuSpriteBatchColorTransform(
   state: WgpuRenderState,
   colorTransform: ColorTransform | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const mode = runtime.spriteBatchColorTransformMode;
-  const tint = colorTransform ?? null;
-
-  if (mode === CT_MODE_NONE) {
-    if (tint === null) return;
-    if (instanceIndex === 0) {
-      runtime.spriteBatchColorTransformMode = CT_MODE_UNIFORM;
-      runtime.spriteBatchUniformColorTransform = tint;
-      return;
-    }
-    promoteWgpuSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, null);
-    writeWgpuColorTransformInstance(runtime, tint, instanceIndex);
+  const fold = runtime.wgpuColorAdjustmentFold;
+  if (fold != null) {
+    fold.record(runtime, colorTransform, instanceIndex);
     return;
   }
-
-  if (mode === CT_MODE_UNIFORM) {
-    const uniform = runtime.spriteBatchUniformColorTransform;
-    if (equalsRecordedColorTransform(tint, uniform)) return;
-    promoteWgpuSpriteBatchColorTransformToPerInstance(runtime, instanceIndex, uniform);
-    writeWgpuColorTransformInstance(runtime, tint, instanceIndex);
-    return;
-  }
-
-  writeWgpuColorTransformInstance(runtime, tint, instanceIndex);
+  if (colorTransform != null) runtime.wgpuColorAdjustmentGuard?.(state, colorTransform);
 }
 
 // Resets the per-frame buffer-pool cursor so the next frame reclaims slots from the start. Must be
@@ -425,8 +389,6 @@ function resetWgpuSpriteBatch(state: WgpuRenderState): void {
   runtime.spriteBatchMaterial = null;
   runtime.spriteBatchMaterialRenderer = null;
   runtime.spriteBatchMaterialFloats = 0;
-  runtime.spriteBatchColorTransformMode = CT_MODE_NONE;
-  runtime.spriteBatchUniformColorTransform = null;
 }
 
 // Writes the NDC viewport matrix into the uniform ring (the only uniform the batch shader reads) and
@@ -455,133 +417,3 @@ function writeWgpuSpriteBatchUniforms(state: WgpuRenderState): number {
   runtime.uniformOffset += runtime.uniformStride;
   return uniformOffset;
 }
-
-// Value equality for the whole-batch uniform check: reference-equal short-circuits (every glyph of a
-// bitmap-text node shares one node-level tint), else compares all eight fields.
-function equalsRecordedColorTransform(a: Readonly<ColorTransform> | null, b: Readonly<ColorTransform> | null): boolean {
-  if (a === b) return true;
-  if (a === null || b === null) return false;
-  return (
-    a.redMultiplier === b.redMultiplier &&
-    a.greenMultiplier === b.greenMultiplier &&
-    a.blueMultiplier === b.blueMultiplier &&
-    a.alphaMultiplier === b.alphaMultiplier &&
-    a.redOffset === b.redOffset &&
-    a.greenOffset === b.greenOffset &&
-    a.blueOffset === b.blueOffset &&
-    a.alphaOffset === b.alphaOffset
-  );
-}
-
-// Grows the color-transform data array to hold `floatsNeeded` floats, preserving already-recorded
-// per-instance data.
-function ensureWgpuColorTransformCapacity(runtime: WgpuRenderStateRuntime, floatsNeeded: number): void {
-  if (floatsNeeded <= runtime.spriteBatchColorTransformData.length) return;
-  const newSize = Math.max(floatsNeeded, runtime.spriteBatchColorTransformData.length * 2);
-  const grown = new Float32Array(newSize);
-  grown.set(runtime.spriteBatchColorTransformData);
-  runtime.spriteBatchColorTransformData = grown;
-}
-
-// Replicates a whole-batch uniform tint across `count` instances at flush time — Wgpu has no separate
-// hardware-uniform tint path, so a uniform is the same value on every instance of the storage buffer.
-function fillWgpuSpriteBatchUniformColorTransform(
-  runtime: WgpuRenderStateRuntime,
-  colorTransform: Readonly<ColorTransform>,
-  count: number,
-): void {
-  ensureWgpuColorTransformCapacity(runtime, count * COLOR_TRANSFORM_FLOATS);
-  for (let i = 0; i < count; i++) writeWgpuColorTransformInstance(runtime, colorTransform, i);
-}
-
-// Switches the batch to per-instance mode and back-fills every already-recorded instance
-// [0, instanceCount) with `fill` (a prior uniform value, or null → identity).
-function promoteWgpuSpriteBatchColorTransformToPerInstance(
-  runtime: WgpuRenderStateRuntime,
-  instanceCount: number,
-  fill: Readonly<ColorTransform> | null,
-): void {
-  runtime.spriteBatchColorTransformMode = CT_MODE_PER_INSTANCE;
-  for (let i = 0; i < instanceCount; i++) writeWgpuColorTransformInstance(runtime, fill, i);
-}
-
-// Writes one instance's eight color-transform floats (multiplier rgba, then offset rgba normalized by
-// 255) at its slot, growing the array as needed. A null transform writes the identity.
-function writeWgpuColorTransformInstance(
-  runtime: WgpuRenderStateRuntime,
-  colorTransform: Readonly<ColorTransform> | null,
-  instanceIndex: number,
-): void {
-  const offset = instanceIndex * COLOR_TRANSFORM_FLOATS;
-  ensureWgpuColorTransformCapacity(runtime, offset + COLOR_TRANSFORM_FLOATS);
-  const out = runtime.spriteBatchColorTransformData;
-  if (colorTransform !== null) {
-    out[offset] = colorTransform.redMultiplier;
-    out[offset + 1] = colorTransform.greenMultiplier;
-    out[offset + 2] = colorTransform.blueMultiplier;
-    out[offset + 3] = colorTransform.alphaMultiplier;
-    out[offset + 4] = colorTransform.redOffset / 255;
-    out[offset + 5] = colorTransform.greenOffset / 255;
-    out[offset + 6] = colorTransform.blueOffset / 255;
-    out[offset + 7] = colorTransform.alphaOffset / 255;
-  } else {
-    out[offset] = 1;
-    out[offset + 1] = 1;
-    out[offset + 2] = 1;
-    out[offset + 3] = 1;
-    out[offset + 4] = 0;
-    out[offset + 5] = 0;
-    out[offset + 6] = 0;
-    out[offset + 7] = 0;
-  }
-}
-
-// The folded per-instance color-transform shader module (cached per device): the base sprite-batch
-// prelude plus a stage that reads 8 per-instance floats from the material storage buffer (@group(3))
-// and applies `color * mult + offset` in unpremultiplied space. Reused verbatim from the former
-// color-transform material so premultiplied-alpha handling is unchanged.
-function getWgpuSpriteBatchColorTransformModule(state: WgpuRenderState): GPUShaderModule {
-  const cached = _colorTransformModules.get(state.device);
-  if (cached !== undefined) return cached;
-  const module = state.device.createShaderModule({
-    code: getWgpuQuadBatchPreludeWGSL() + COLOR_TRANSFORM_WGSL,
-  });
-  _colorTransformModules.set(state.device, module);
-  return module;
-}
-
-const COLOR_TRANSFORM_WGSL = /* wgsl */ `
-@group(3) @binding(0) var<storage, read> ctData : array<f32>;
-
-struct VertexOut {
-  @builtin(position) position : vec4f,
-  @location(0) uv : vec2f,
-  @location(1) alpha : f32,
-  @location(2) ctMult : vec4f,
-  @location(3) ctOff : vec4f,
-}
-
-@vertex
-fn vs_main(@builtin(vertex_index) vi : u32, @builtin(instance_index) ii : u32) -> VertexOut {
-  let bv = quadBaseVertex(vi, ii);
-  let b = ii * 8u;
-  let ctMult = vec4f(ctData[b + 0u], ctData[b + 1u], ctData[b + 2u], ctData[b + 3u]);
-  let ctOff = vec4f(ctData[b + 4u], ctData[b + 5u], ctData[b + 6u], ctData[b + 7u]);
-  return VertexOut(bv.position, bv.uv, bv.alpha, ctMult, ctOff);
-}
-
-@fragment
-fn fs_main(in : VertexOut) -> @location(0) vec4f {
-  var color = textureSample(tex, smp, in.uv);
-  if (color.a <= 0.0) { discard; }
-  color = color * clamp(in.alpha, 0.0, 1.0);
-  if (color.a > 0.0) {
-    color = vec4f(color.rgb / color.a, color.a);
-    color = clamp(color * in.ctMult + in.ctOff, vec4f(0.0), vec4f(1.0));
-    color = vec4f(color.rgb * color.a, color.a);
-  }
-  return color;
-}
-`;
-
-const _colorTransformModules = new WeakMap<GPUDevice, GPUShaderModule>();
