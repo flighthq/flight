@@ -5,6 +5,7 @@ import {
   registerBlurGlRenderEffects,
   registerColorGlRenderEffects,
   registerColorGradeGlRenderEffects,
+  registerCompositeGlRenderEffects,
   registerCustomShaderGlRenderEffect,
   registerDefaultGlRenderEffects,
   registerScreenSpaceGlRenderEffects,
@@ -111,6 +112,28 @@ describe('registerColorGradeGlRenderEffects', () => {
     registerColorGradeGlRenderEffects(state);
     expect(hasGlRenderEffectRunner(state, 'BrightnessContrastEffect')).toBe(true);
     expect(hasGlRenderEffectRunner(state, 'GrayscaleEffect')).toBe(true);
+  });
+});
+
+describe('registerCompositeGlRenderEffects', () => {
+  it('is a function', () => {
+    expect(typeof registerCompositeGlRenderEffects).toBe('function');
+  });
+
+  it('registers the seven former-filter composite effect runners', () => {
+    const state = {} as never;
+    registerCompositeGlRenderEffects(state);
+    for (const kind of [
+      'BevelEffect',
+      'DropShadowEffect',
+      'GradientBevelEffect',
+      'GradientGlowEffect',
+      'InnerGlowEffect',
+      'InnerShadowEffect',
+      'OuterGlowEffect',
+    ]) {
+      expect(hasGlRenderEffectRunner(state, kind)).toBe(true);
+    }
   });
 });
 
