@@ -10,6 +10,7 @@
   },
   "references": [
     { "path": "../accessibility" },
+    { "path": "../adjustments" },
     { "path": "../animation" },
     { "path": "../app" },
     { "path": "../application" },

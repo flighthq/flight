@@ -424,9 +424,14 @@ function filterApi(packages: ApiPackage[], options: ParsedArgs): ApiPackage[] {
 
 // Packages allowed to export the same function names as each other. A drop-in
 // pair is a deliberate mirror where identical names are the point, not a
-// collision. None exist in this repo today — the surface-rs/surface wasm mixing
-// pair now lives in the flight-rs repository.
-const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [];
+// collision.
+//
+// Transitional: @flighthq/adjustments is the canonical home for the color-matrix
+// fuse primitives, ported verbatim from @flighthq/filters, which keeps its copy
+// until the filters* packages retire (see effect-adjustment-architecture.md,
+// migration step 4). The overlapping color-matrix names are a deliberate mirror
+// for the duration of the migration. Remove this pair once filters is deleted.
+const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [['@flighthq/adjustments', '@flighthq/filters']];
 
 // Ratchet allowlist for accessor-prefix violations that predate the check.
 // Entries are '<package> <functionName>'. Existing entries are tolerated so
