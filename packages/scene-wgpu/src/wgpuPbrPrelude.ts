@@ -26,6 +26,9 @@
 //   group(2) Material : the 48-float MaterialBlock (base + extension factors) uniform + sampler + 5
 //                       optional maps. Extension factors ride in the one MaterialBlock; the lobe that
 //                       reads them runs only when its const flag is set.
+//   group(3) Shadow   : the directional shadow — light matrix + enabled uniform, the depth map, and a
+//                       comparison sampler. Bound by beginWgpuMeshDraw (the pipeline carries the shadow
+//                       layout); a shadow-less draw binds a 1x1 dummy gated off by the enabled flag.
 
 // The feature flags that select an uber-shader variant. Each toggles a `const … : bool` in the prelude
 // and is hashed into the pipeline-cache key (buildWgpuPbrDefineKey), so distinct flag sets compile and
@@ -158,6 +161,14 @@ struct MaterialBlock {
 
 @group(0) @binding(0) var<uniform> frame : Frame;
 @group(1) @binding(0) var<uniform> draw : Draw;
+// The directional shadow inputs (group 3), the WGSL mirror of scene-gl's u_shadowMap / u_shadowMatrix /
+// u_shadowEnabled. matrix is the light view-projection (world to shadow clip); params.x is the enabled
+// flag (0 or 1). The depth map is a texture_depth_2d PCF-compared with a comparison sampler.
+struct Shadow {
+  matrix : mat4x4f,
+  params : vec4f,   // x = enabled (0 or 1)
+};
+
 @group(2) @binding(0) var<uniform> material : MaterialBlock;
 @group(2) @binding(1) var materialSampler : sampler;
 @group(2) @binding(2) var baseColorTexture : texture_2d<f32>;
@@ -165,6 +176,10 @@ struct MaterialBlock {
 @group(2) @binding(4) var normalTexture : texture_2d<f32>;
 @group(2) @binding(5) var occlusionTexture : texture_2d<f32>;
 @group(2) @binding(6) var emissiveTexture : texture_2d<f32>;
+
+@group(3) @binding(0) var<uniform> shadow : Shadow;
+@group(3) @binding(1) var shadowMap : texture_depth_2d;
+@group(3) @binding(2) var shadowSampler : sampler_comparison;
 
 struct VertexOutput {
   @builtin(position) clipPosition : vec4f,
@@ -247,6 +262,34 @@ fn iridescentFresnel(cosTheta : f32, f0 : vec3f, thicknessNm : f32, filmIor : f3
   let shift = vec3f(0.5) + vec3f(0.5) * cos(phase);
   let base = fresnelSchlick(cosTheta, f0);
   return mix(base, shift, clamp(thicknessNm / 1000.0, 0.0, 1.0));
+}
+
+// Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed, with 3x3 PCF —
+// the WGSL mirror of scene-gl's sampleDirectionalShadow. Two WebGPU-specific deltas from the GL form:
+// the sample UV flips Y (WebGPU textures are top-left origin, GL bottom-left), and the depth reference
+// remaps the GL-convention clip Z (-1..1) into WebGPU's 0..1 depth range — matching the identical remap
+// the shadow depth pass applies when it writes the map. The comparison sampler ('less-equal') yields
+// GL's "current <= closest" per tap; fragments outside the shadow frustum read as lit.
+fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
+  if (shadow.params.x < 0.5) {
+    return 1.0;
+  }
+  let clip = shadow.matrix * vec4f(worldPos, 1.0);
+  let ndc = clip.xyz / clip.w;
+  let uv = vec2f(ndc.x * 0.5 + 0.5, 1.0 - (ndc.y * 0.5 + 0.5));
+  let depthRef = ndc.z * 0.5 + 0.5 - 0.0025;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
+    return 1.0;
+  }
+  let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
+  var sum = 0.0;
+  for (var x = -1; x <= 1; x = x + 1) {
+    for (var y = -1; y <= 1; y = y + 1) {
+      let offset = vec2f(f32(x), f32(y)) * texel;
+      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
+    }
+  }
+  return sum / 9.0;
 }
 
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
@@ -373,7 +416,8 @@ fn iridescentFresnel(cosTheta : f32, f0 : vec3f, thicknessNm : f32, filmIor : f3
       direct = direct * (vec3f(1.0) - ccF) + ccSpec;
     }
 
-    radiance = radiance + direct;
+    // Attenuate only the directional term by the PCF shadow factor (mirrors scene-gl's PBR path).
+    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
   }
 
   // Ambient term: flat irradiance over the diffuse albedo (no IBL specular yet), attenuated by AO.
