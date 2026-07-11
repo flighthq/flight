@@ -1,4 +1,13 @@
 import type { GlRenderState, SceneLightBlock } from '@flighthq/types';
+import {
+  MAX_FORWARD_LIGHTS,
+  SCENE_LIGHT_HEMISPHERE_OFFSET,
+  SCENE_LIGHT_HEMISPHERE_STRIDE,
+  SCENE_LIGHT_POINT_OFFSET,
+  SCENE_LIGHT_POINT_STRIDE,
+  SCENE_LIGHT_SPOT_OFFSET,
+  SCENE_LIGHT_SPOT_STRIDE,
+} from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -16,15 +25,21 @@ export interface GlLitProgram extends GlMeshProgram {
   locDirectional: WebGLUniformLocation | null;
   locDirectionalCount: WebGLUniformLocation | null;
   locDirectionalRadiance: WebGLUniformLocation | null;
+  locHemisphereCount: WebGLUniformLocation | null;
+  locHemisphereLights: WebGLUniformLocation | null;
   locIblBrdf: WebGLUniformLocation | null;
   locIblEnabled: WebGLUniformLocation | null;
   locIblIntensity: WebGLUniformLocation | null;
   locIblIrradiance: WebGLUniformLocation | null;
   locIblMaxMip: WebGLUniformLocation | null;
   locIblPrefiltered: WebGLUniformLocation | null;
+  locPointCount: WebGLUniformLocation | null;
+  locPointLights: WebGLUniformLocation | null;
   locShadowEnabled: WebGLUniformLocation | null;
   locShadowMap: WebGLUniformLocation | null;
   locShadowMatrix: WebGLUniformLocation | null;
+  locSpotCount: WebGLUniformLocation | null;
+  locSpotLights: WebGLUniformLocation | null;
 }
 
 // The texture unit the directional shadow map binds to — above the material texture units (a material
@@ -72,6 +87,29 @@ export function bindGlMeshLightBlock(
     gl.uniform3f(program.locAmbientRadiance, data[8], data[9], data[10]);
     gl.uniform1f(program.locDirectionalCount, lights.directionalCount);
     gl.uniform1f(program.locAmbientCount, lights.ambientCount);
+
+    // Punctual light arrays: upload the whole MAX_FORWARD_LIGHTS-wide slice as flat vec4 arrays (the
+    // shader loops each up to its count uniform). Subarray views over `data` — no copy — sliced at the
+    // same std140 offsets the CPU packer wrote. Classic/PBR programs both declare these; a program that
+    // resolves a location to null (none does today) simply no-ops the upload.
+    gl.uniform4fv(
+      program.locPointLights,
+      data.subarray(SCENE_LIGHT_POINT_OFFSET, SCENE_LIGHT_POINT_OFFSET + SCENE_LIGHT_POINT_STRIDE * MAX_FORWARD_LIGHTS),
+    );
+    gl.uniform4fv(
+      program.locSpotLights,
+      data.subarray(SCENE_LIGHT_SPOT_OFFSET, SCENE_LIGHT_SPOT_OFFSET + SCENE_LIGHT_SPOT_STRIDE * MAX_FORWARD_LIGHTS),
+    );
+    gl.uniform4fv(
+      program.locHemisphereLights,
+      data.subarray(
+        SCENE_LIGHT_HEMISPHERE_OFFSET,
+        SCENE_LIGHT_HEMISPHERE_OFFSET + SCENE_LIGHT_HEMISPHERE_STRIDE * MAX_FORWARD_LIGHTS,
+      ),
+    );
+    gl.uniform1i(program.locPointCount, lights.pointCount);
+    gl.uniform1i(program.locSpotCount, lights.spotCount);
+    gl.uniform1i(program.locHemisphereCount, lights.hemisphereCount);
     _uploadedLightVersion.set(program, lights.version);
   }
 
@@ -172,15 +210,21 @@ export function resolveGlLitLocations(
     locDirectional: gl.getUniformLocation(program, 'u_directional'),
     locDirectionalCount: gl.getUniformLocation(program, 'u_directionalCount'),
     locDirectionalRadiance: gl.getUniformLocation(program, 'u_directionalRadiance'),
+    locHemisphereCount: gl.getUniformLocation(program, 'u_hemisphereCount'),
+    locHemisphereLights: gl.getUniformLocation(program, 'u_hemisphereLights'),
     locIblBrdf: gl.getUniformLocation(program, 'u_iblBrdf'),
     locIblEnabled: gl.getUniformLocation(program, 'u_iblEnabled'),
     locIblIntensity: gl.getUniformLocation(program, 'u_iblIntensity'),
     locIblIrradiance: gl.getUniformLocation(program, 'u_iblIrradiance'),
     locIblMaxMip: gl.getUniformLocation(program, 'u_iblMaxMip'),
     locIblPrefiltered: gl.getUniformLocation(program, 'u_iblPrefiltered'),
+    locPointCount: gl.getUniformLocation(program, 'u_pointCount'),
+    locPointLights: gl.getUniformLocation(program, 'u_pointLights'),
     locShadowEnabled: gl.getUniformLocation(program, 'u_shadowEnabled'),
     locShadowMap: gl.getUniformLocation(program, 'u_shadowMap'),
     locShadowMatrix: gl.getUniformLocation(program, 'u_shadowMatrix'),
+    locSpotCount: gl.getUniformLocation(program, 'u_spotCount'),
+    locSpotLights: gl.getUniformLocation(program, 'u_spotLights'),
   };
 }
 
@@ -198,6 +242,26 @@ uniform vec3 u_cameraPosition;       // world-space camera position for view-dep
 uniform sampler2D u_shadowMap;       // directional shadow depth map
 uniform mat4 u_shadowMatrix;         // world -> shadow light-clip
 uniform float u_shadowEnabled;       // 0 or 1 — gates shadow sampling
+
+// Punctual (point/spot/hemisphere) forward-light arrays. Fixed MAX_FORWARD_LIGHTS-wide; each count
+// uniform bounds its loop. Layout matches SceneLightBlock.data (packSceneLightBlock) byte-for-byte:
+//   point[i]      = u_pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
+//   spot[i]       = u_spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
+//   hemisphere[i] = u_hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
+uniform vec4 u_pointLights[MAX_FORWARD_LIGHTS * 2];
+uniform vec4 u_spotLights[MAX_FORWARD_LIGHTS * 4];
+uniform vec4 u_hemisphereLights[MAX_FORWARD_LIGHTS * 3];
+uniform int u_pointCount;
+uniform int u_spotCount;
+uniform int u_hemisphereCount;
+
+// Smooth inverse-square range window (glTF/UE4): 1 near the light, eased to 0 at the range. invSqrRange
+// is 1/range^2 (0 = infinite range, no cutoff). dist2 is the squared surface->light distance.
+float rangeWindow(float dist2, float invSqrRange) {
+  float factor = dist2 * invSqrRange;
+  float windowed = clamp(1.0 - factor * factor, 0.0, 1.0);
+  return windowed * windowed;
+}
 
 // Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed, with 3x3 PCF.
 // Fragments outside the shadow frustum are treated as lit.

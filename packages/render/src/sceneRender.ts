@@ -18,21 +18,38 @@ import type {
   Camera,
   DirectionalLight,
   Frustum,
+  HemisphereLight,
   Matrix4,
   Mesh,
   NodeAny,
+  PointLight,
   RenderState,
   SceneLightBlock,
   SceneLights,
   SceneNode,
   SceneRenderList,
+  SpotLight,
+} from '@flighthq/types';
+import {
+  MAX_FORWARD_LIGHTS,
+  SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET,
+  SCENE_LIGHT_BLOCK_FLOATS,
+  SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET,
+  SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET,
+  SCENE_LIGHT_HEMISPHERE_OFFSET,
+  SCENE_LIGHT_HEMISPHERE_STRIDE,
+  SCENE_LIGHT_POINT_OFFSET,
+  SCENE_LIGHT_POINT_STRIDE,
+  SCENE_LIGHT_SPOT_OFFSET,
+  SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types';
 
-// Packs the directional + ambient draw-arg lights into `out` (the GPU-ready light block), converting
-// each packed sRgb color to linear, premultiplied radiance (unpackColorToLinear(color) * intensity)
-// so the shader never sees sRgb. Sets the presence counts (0 or 1 each). The float layout matches the
-// shader's std140 light block: directional { direction.xyz, _pad, radiance.rgb, _pad } then ambient
-// { radiance.rgb, _pad }. An absent term leaves its slots zeroed.
+// Packs the directional + ambient + punctual (point/spot/hemisphere) draw-arg lights into `out` (the
+// GPU-ready light block), converting each packed sRgb color to linear, premultiplied radiance
+// (unpackColorToLinear(color) * intensity) so the shader never sees sRgb. Sets every presence count
+// (directional/ambient 0..1, point/spot/hemisphere 0..MAX_FORWARD_LIGHTS). The float layout matches
+// the shader's std140 light block exactly (SCENE_LIGHT_* offsets/strides in @flighthq/types); absent
+// terms and unused array slots stay zeroed. Punctual arrays beyond MAX_FORWARD_LIGHTS are dropped.
 //
 // `version` bumps only when the packed data or counts actually change from the previous pack — a
 // no-op re-pack of identical lights leaves it untouched. This is the SceneLightBlock contract a
@@ -56,9 +73,43 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
     ambientCount = 1;
   }
 
+  let pointCount = 0;
+  const point = lights.point;
+  if (point !== undefined) {
+    pointCount = Math.min(point.length, MAX_FORWARD_LIGHTS);
+    for (let i = 0; i < pointCount; i++) {
+      packPointLight(scratchLightData, SCENE_LIGHT_POINT_OFFSET + i * SCENE_LIGHT_POINT_STRIDE, point[i]);
+    }
+  }
+
+  let spotCount = 0;
+  const spot = lights.spot;
+  if (spot !== undefined) {
+    spotCount = Math.min(spot.length, MAX_FORWARD_LIGHTS);
+    for (let i = 0; i < spotCount; i++) {
+      packSpotLight(scratchLightData, SCENE_LIGHT_SPOT_OFFSET + i * SCENE_LIGHT_SPOT_STRIDE, spot[i]);
+    }
+  }
+
+  let hemisphereCount = 0;
+  const hemisphere = lights.hemisphere;
+  if (hemisphere !== undefined) {
+    hemisphereCount = Math.min(hemisphere.length, MAX_FORWARD_LIGHTS);
+    for (let i = 0; i < hemisphereCount; i++) {
+      packHemisphereLight(
+        scratchLightData,
+        SCENE_LIGHT_HEMISPHERE_OFFSET + i * SCENE_LIGHT_HEMISPHERE_STRIDE,
+        hemisphere[i],
+      );
+    }
+  }
+
   if (
     out.directionalCount === directionalCount &&
     out.ambientCount === ambientCount &&
+    out.pointCount === pointCount &&
+    out.spotCount === spotCount &&
+    out.hemisphereCount === hemisphereCount &&
     isFloat32ArrayEqual(out.data, scratchLightData)
   ) {
     return;
@@ -67,6 +118,9 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
   out.data.set(scratchLightData);
   out.directionalCount = directionalCount;
   out.ambientCount = ambientCount;
+  out.pointCount = pointCount;
+  out.spotCount = spotCount;
+  out.hemisphereCount = hemisphereCount;
   out.version++;
 }
 
@@ -139,7 +193,7 @@ function ensurePreparedScene(state: RenderState): PreparedScene {
     const list: SceneRenderList = {
       lights: {
         ambientCount: 0,
-        data: new Float32Array(LIGHT_BLOCK_FLOATS),
+        data: new Float32Array(SCENE_LIGHT_BLOCK_FLOATS),
         directionalCount: 0,
         hemisphereCount: 0,
         pointCount: 0,
@@ -183,20 +237,75 @@ function isMeshVisible(mesh: Readonly<Mesh>, frustum: Readonly<Frustum>, worldBo
 function packAmbientLight(data: Float32Array, ambient: Readonly<AmbientLight>): void {
   unpackColorToLinear(scratchColor, ambient.color);
   const intensity = ambient.intensity;
-  data[8] = scratchColor[0] * intensity;
-  data[9] = scratchColor[1] * intensity;
-  data[10] = scratchColor[2] * intensity;
+  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 0] = scratchColor[0] * intensity;
+  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 1] = scratchColor[1] * intensity;
+  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 2] = scratchColor[2] * intensity;
 }
 
 function packDirectionalLight(data: Float32Array, directional: Readonly<DirectionalLight>): void {
-  data[0] = directional.direction.x;
-  data[1] = directional.direction.y;
-  data[2] = directional.direction.z;
+  data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 0] = directional.direction.x;
+  data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 1] = directional.direction.y;
+  data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 2] = directional.direction.z;
   unpackColorToLinear(scratchColor, directional.color);
   const intensity = directional.intensity;
-  data[4] = scratchColor[0] * intensity;
-  data[5] = scratchColor[1] * intensity;
-  data[6] = scratchColor[2] * intensity;
+  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 0] = scratchColor[0] * intensity;
+  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 1] = scratchColor[1] * intensity;
+  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 2] = scratchColor[2] * intensity;
+}
+
+// Gradient ambient: sky radiance @+0, ground radiance @+4, world-up @+8. Both colors are premultiplied
+// by the shared intensity. `up` is packed as world +Y so the shader blends sky/ground by dot(N, up)
+// without the HemisphereLight type needing to carry an orientation.
+function packHemisphereLight(data: Float32Array, offset: number, hemisphere: Readonly<HemisphereLight>): void {
+  const intensity = hemisphere.intensity;
+  unpackColorToLinear(scratchColor, hemisphere.skyColor);
+  data[offset + 0] = scratchColor[0] * intensity;
+  data[offset + 1] = scratchColor[1] * intensity;
+  data[offset + 2] = scratchColor[2] * intensity;
+  unpackColorToLinear(scratchColor, hemisphere.groundColor);
+  data[offset + 4] = scratchColor[0] * intensity;
+  data[offset + 5] = scratchColor[1] * intensity;
+  data[offset + 6] = scratchColor[2] * intensity;
+  data[offset + 8] = 0;
+  data[offset + 9] = 1;
+  data[offset + 10] = 0;
+}
+
+// Point light: position.xyz + range @+0, radiance.rgb + invSqrRange @+4. `invSqrRange` is 1/range^2
+// (0 for infinite range, range <= 0), the smooth inverse-square windowing factor the shader applies.
+function packPointLight(data: Float32Array, offset: number, point: Readonly<PointLight>): void {
+  const range = point.range;
+  data[offset + 0] = point.position.x;
+  data[offset + 1] = point.position.y;
+  data[offset + 2] = point.position.z;
+  data[offset + 3] = range;
+  unpackColorToLinear(scratchColor, point.color);
+  const intensity = point.intensity;
+  data[offset + 4] = scratchColor[0] * intensity;
+  data[offset + 5] = scratchColor[1] * intensity;
+  data[offset + 6] = scratchColor[2] * intensity;
+  data[offset + 7] = range > 0 ? 1 / (range * range) : 0;
+}
+
+// Spot light: point's position+range @+0 and radiance+invSqrRange @+4, then direction.xyz @+8 and the
+// precomputed cone cosines (inner @+12, outer @+13) the shader smoothsteps between for cone falloff.
+function packSpotLight(data: Float32Array, offset: number, spot: Readonly<SpotLight>): void {
+  const range = spot.range;
+  data[offset + 0] = spot.position.x;
+  data[offset + 1] = spot.position.y;
+  data[offset + 2] = spot.position.z;
+  data[offset + 3] = range;
+  unpackColorToLinear(scratchColor, spot.color);
+  const intensity = spot.intensity;
+  data[offset + 4] = scratchColor[0] * intensity;
+  data[offset + 5] = scratchColor[1] * intensity;
+  data[offset + 6] = scratchColor[2] * intensity;
+  data[offset + 7] = range > 0 ? 1 / (range * range) : 0;
+  data[offset + 8] = spot.direction.x;
+  data[offset + 9] = spot.direction.y;
+  data[offset + 10] = spot.direction.z;
+  data[offset + 12] = spot.innerConeCos;
+  data[offset + 13] = spot.outerConeCos;
 }
 
 // Composes the camera's view-projection (projection x view) into `out`. For a perspective camera the
@@ -241,10 +350,6 @@ interface PreparedScene {
 // Neutral viewport aspect used when a perspective camera does not carry its own.
 const DEFAULT_VIEWPORT_ASPECT = 1;
 
-// One directional ({ direction.xyz, _pad, radiance.rgb, _pad }) + one ambient ({ radiance.rgb,
-// _pad }) = 12 floats, std140-aligned (vec4 boundaries).
-const LIGHT_BLOCK_FLOATS = 12;
-
 // Per-render-state prepared frames. Keyed by state so independent backends prepare without sharing
 // scratch; a state's entry is freed when the state is GC'd.
 const preparedScenes = new WeakMap<RenderState, PreparedScene>();
@@ -253,5 +358,6 @@ const scratchColor: LinearColor = [0, 0, 0, 0];
 const scratchProjection = createMatrix4();
 
 // Reused staging buffer for packSceneLightBlock's pack-then-compare: the new block is packed here and
-// committed to `out.data` only when it differs, so an unchanged block never bumps `version`.
-const scratchLightData = new Float32Array(LIGHT_BLOCK_FLOATS);
+// committed to `out.data` only when it differs, so an unchanged block never bumps `version`. Sized to
+// the full head + MAX_FORWARD_LIGHTS-per-type layout (SCENE_LIGHT_BLOCK_FLOATS).
+const scratchLightData = new Float32Array(SCENE_LIGHT_BLOCK_FLOATS);
