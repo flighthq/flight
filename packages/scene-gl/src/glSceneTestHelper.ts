@@ -101,6 +101,7 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     uniform1f: record('uniform1f'),
     uniform3f: record('uniform3f'),
     uniform4f: record('uniform4f'),
+    uniform4fv: record('uniform4fv'),
     uniformMatrix3fv: record('uniformMatrix3fv'),
     uniformMatrix4fv: record('uniformMatrix4fv'),
   } as unknown as FakeGl2;

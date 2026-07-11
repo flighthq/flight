@@ -110,6 +110,16 @@ describe('getGlPbrFragmentSourceForKey', () => {
     expect(src).toContain('#define HAS_NORMAL_MAP');
     expect(src).toContain('out vec4 fragColor');
   });
+
+  it('emits the MAX_FORWARD_LIGHTS spec constant and loops the punctual light arrays', () => {
+    const src = getGlPbrFragmentSourceForKey(NONE);
+    expect(src).toContain('#define MAX_FORWARD_LIGHTS');
+    expect(src).toContain('u_pointLights');
+    expect(src).toContain('u_spotLights');
+    expect(src).toContain('u_hemisphereLights');
+    // Directional, point, and spot lights share the one Cook-Torrance BRDF (no forked shading model).
+    expect(src).toContain('shadePbrPunctual');
+  });
 });
 
 describe('getGlPbrVertexSource', () => {
