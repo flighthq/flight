@@ -12,6 +12,8 @@ import {
   ensureWgpuPlaceholderTextureView,
   ensureWgpuSceneLayouts,
   ensureWgpuScenePipeline,
+  ensureWgpuShadowSampleBindGroup,
+  ensureWgpuShadowSampleLayout,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   WGPU_MESH_PRELUDE_WGSL,
@@ -51,6 +53,18 @@ function makePipeline(state: ReturnType<typeof makeWgpuSceneState>['state']) {
   return createWgpuMeshPipeline(state, { doubleSided: false, format: 'bgra8unorm', materialBindGroupLayout, module });
 }
 
+function makeShadowPipeline(state: ReturnType<typeof makeWgpuSceneState>['state']) {
+  const module = state.device.createShaderModule({ code: '' });
+  const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
+  return createWgpuMeshPipeline(state, {
+    doubleSided: false,
+    format: 'bgra8unorm',
+    materialBindGroupLayout,
+    module,
+    shadowBindGroupLayout: ensureWgpuShadowSampleLayout(state),
+  });
+}
+
 describe('beginWgpuMeshDraw', () => {
   it('stores the active pipeline, sets it, and binds the frame group', () => {
     const { fake, state } = makeWgpuSceneState();
@@ -61,6 +75,20 @@ describe('beginWgpuMeshDraw', () => {
     expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 0)).toBe(true);
   });
+
+  it('does not bind group(3) for a pipeline without a shadow layout', () => {
+    const { fake, state } = makeWgpuSceneState();
+    ensureWgpuFrameBindGroup(state);
+    beginWgpuMeshDraw(state, makePipeline(state));
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(false);
+  });
+
+  it('binds the shared shadow group at group(3) for a shadow pipeline', () => {
+    const { fake, state } = makeWgpuSceneState();
+    ensureWgpuFrameBindGroup(state);
+    beginWgpuMeshDraw(state, makeShadowPipeline(state));
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
+  });
 });
 
 describe('createWgpuMeshPipeline', () => {
@@ -69,8 +97,17 @@ describe('createWgpuMeshPipeline', () => {
     const pipeline = makePipeline(state);
     expect(pipeline.pipeline).toBeDefined();
     expect(pipeline.materialBindGroupLayout).toBeDefined();
+    expect(pipeline.hasShadowGroup).toBe(false);
     const layoutCall = fake.calls.find((c) => c.name === 'createPipelineLayout');
     expect((layoutCall!.args[0] as { bindGroupLayouts: unknown[] }).bindGroupLayouts.length).toBe(3);
+  });
+
+  it('appends the shadow layout as group(3) when given a shadow bind-group layout', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const pipeline = makeShadowPipeline(state);
+    expect(pipeline.hasShadowGroup).toBe(true);
+    const layoutCall = fake.calls.filter((c) => c.name === 'createPipelineLayout').at(-1);
+    expect((layoutCall!.args[0] as { bindGroupLayouts: unknown[] }).bindGroupLayouts.length).toBe(4);
   });
 });
 
@@ -137,6 +174,44 @@ describe('ensureWgpuScenePipeline', () => {
     const b = ensureWgpuScenePipeline(state, 'fam:bgra8unorm|-', compile);
     expect(a).toBe(b);
     expect(compiles).toBe(1);
+  });
+});
+
+describe('ensureWgpuShadowSampleBindGroup', () => {
+  it('writes the disabled shadow uniform and reuses the bind group when no shadow changes', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const a = ensureWgpuShadowSampleBindGroup(state);
+    const made = fake.calls.filter((c) => c.name === 'createBindGroup').length;
+    const b = ensureWgpuShadowSampleBindGroup(state);
+    expect(a).toBe(b);
+    // No new bind group on the second call (dummy view unchanged); the uniform is rewritten each call.
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(made);
+    expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
+  });
+
+  it('rebuilds the bind group when a shadow map becomes present', () => {
+    const { fake, state } = makeWgpuSceneState();
+    ensureWgpuShadowSampleBindGroup(state);
+    const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
+    // Simulate drawWgpuSceneShadowMap having stored a shadow this frame.
+    getWgpuSceneRuntime(state).shadow = {
+      depthTexture: {} as GPUTexture,
+      depthView: {} as GPUTextureView,
+      matrix: createMatrix4(),
+    };
+    ensureWgpuShadowSampleBindGroup(state);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(before + 1);
+  });
+});
+
+describe('ensureWgpuShadowSampleLayout', () => {
+  it('creates the shadow-sample layout once per state', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const a = ensureWgpuShadowSampleLayout(state);
+    const made = fake.calls.filter((c) => c.name === 'createBindGroupLayout').length;
+    const b = ensureWgpuShadowSampleLayout(state);
+    expect(a).toBe(b);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
   });
 });
 
