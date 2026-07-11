@@ -232,6 +232,7 @@ export * from './Matrix3';
 export * from './Matrix4';
 export * from './MediaChannelSignals';
 export * from './MedianFilter';
+export * from './MediaSession';
 export * from './Menu';
 export * from './MenuSignals';
 export * from './Mesh';

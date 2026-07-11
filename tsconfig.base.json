@@ -204,6 +204,8 @@
       "@flighthq/particles-formats/*": ["./packages/particles-formats/src/*"],
       "@flighthq/media": ["./packages/media/src/index.ts"],
       "@flighthq/media/*": ["./packages/media/src/*"],
+      "@flighthq/mediasession": ["./packages/mediasession/src/index.ts"],
+      "@flighthq/mediasession/*": ["./packages/mediasession/src/*"],
       "@flighthq/motionpath": ["./packages/motionpath/src/index.ts"],
       "@flighthq/motionpath/*": ["./packages/motionpath/src/*"],
       "@flighthq/movieclip": ["./packages/movieclip/src/index.ts"],

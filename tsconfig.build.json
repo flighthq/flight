@@ -57,6 +57,7 @@
     { "path": "./packages/log" },
     { "path": "./packages/materials" },
     { "path": "./packages/media" },
+    { "path": "./packages/mediasession" },
     { "path": "./packages/menu" },
     { "path": "./packages/mesh" },
     { "path": "./packages/motionpath" },
