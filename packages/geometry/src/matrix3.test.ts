@@ -401,6 +401,33 @@ describe('inverseMatrix3', () => {
 
     expect(equalsMatrix3(matrix, expected)).toBe(true);
   });
+
+  it('returns true on success', () => {
+    const m = createMatrix3(2, 0, 5, 0, 2, 3, 0, 0, 1);
+    const out = createMatrix3();
+    expect(inverseMatrix3(out, m)).toBe(true);
+  });
+
+  it('returns false and fills NaN for a singular affine matrix', () => {
+    const m = createMatrix3(0, 0, 5, 0, 0, 3, 0, 0, 1); // zero linear part -> det 0
+    const out = createMatrix3();
+    expect(inverseMatrix3(out, m)).toBe(false);
+    expect(out.m[0]).toBeNaN();
+    expect(out.m[4]).toBeNaN();
+  });
+
+  it('returns false and fills NaN for a singular non-affine matrix', () => {
+    const m = createMatrix3(1, 2, 3, 2, 4, 6, 1, 1, 1); // rows 0,1 linearly dependent -> det 0
+    const out = createMatrix3();
+    expect(inverseMatrix3(out, m)).toBe(false);
+    expect(out.m[0]).toBeNaN();
+  });
+
+  it('returns false for a singular matrix with out === source', () => {
+    const m = createMatrix3(0, 0, 5, 0, 0, 3, 0, 0, 1);
+    expect(inverseMatrix3(m, m)).toBe(false);
+    expect(m.m[0]).toBeNaN();
+  });
 });
 
 describe('isAffineMatrix3', () => {
