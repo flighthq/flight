@@ -5,7 +5,7 @@ import {
   createBoundingSphere,
   createMatrix4,
   createVector3,
-  getBoundingSphereContainsPoint,
+  containsBoundingSpherePoint,
   getClosestPointOnBoundingSphere,
   isBoundingSphereIntersectingBoundingSphere,
   mergeBoundingSphere,
@@ -25,6 +25,24 @@ describe('cloneBoundingSphere', () => {
     expect(c.radius).toBe(4);
     c.center.x = 99;
     expect(s.center.x).toBe(1);
+  });
+});
+
+describe('containsBoundingSpherePoint', () => {
+  it('returns true inside and on the surface', () => {
+    const s = createBoundingSphere(0, 0, 0, 2);
+    expect(containsBoundingSpherePoint(s, createVector3(1, 0, 0))).toBe(true);
+    expect(containsBoundingSpherePoint(s, createVector3(2, 0, 0))).toBe(true);
+  });
+
+  it('returns false outside', () => {
+    const s = createBoundingSphere(0, 0, 0, 2);
+    expect(containsBoundingSpherePoint(s, createVector3(3, 0, 0))).toBe(false);
+  });
+
+  it('an empty sphere contains no points', () => {
+    const s = createBoundingSphere(0, 0, 0, -1);
+    expect(containsBoundingSpherePoint(s, createVector3(0, 0, 0))).toBe(false);
   });
 });
 
@@ -56,24 +74,6 @@ describe('createBoundingSphere', () => {
     const s = createBoundingSphere(1, 2, 3, 5);
     expect(s.center.z).toBe(3);
     expect(s.radius).toBe(5);
-  });
-});
-
-describe('getBoundingSphereContainsPoint', () => {
-  it('returns true inside and on the surface', () => {
-    const s = createBoundingSphere(0, 0, 0, 2);
-    expect(getBoundingSphereContainsPoint(s, createVector3(1, 0, 0))).toBe(true);
-    expect(getBoundingSphereContainsPoint(s, createVector3(2, 0, 0))).toBe(true);
-  });
-
-  it('returns false outside', () => {
-    const s = createBoundingSphere(0, 0, 0, 2);
-    expect(getBoundingSphereContainsPoint(s, createVector3(3, 0, 0))).toBe(false);
-  });
-
-  it('an empty sphere contains no points', () => {
-    const s = createBoundingSphere(0, 0, 0, -1);
-    expect(getBoundingSphereContainsPoint(s, createVector3(0, 0, 0))).toBe(false);
   });
 });
 
@@ -156,8 +156,8 @@ describe('mergeBoundingSphere', () => {
     const out = createBoundingSphere();
     mergeBoundingSphere(out, a, b);
     // Both original spheres must be contained.
-    expect(getBoundingSphereContainsPoint(out, createVector3(-2, 0, 0))).toBe(true);
-    expect(getBoundingSphereContainsPoint(out, createVector3(2, 0, 0))).toBe(true);
+    expect(containsBoundingSpherePoint(out, createVector3(-2, 0, 0))).toBe(true);
+    expect(containsBoundingSpherePoint(out, createVector3(2, 0, 0))).toBe(true);
   });
 
   it('if a contains b, result equals a', () => {
@@ -182,8 +182,8 @@ describe('mergeBoundingSphere', () => {
     const a = createBoundingSphere(-1, 0, 0, 1);
     const b = createBoundingSphere(1, 0, 0, 1);
     mergeBoundingSphere(a, a, b);
-    expect(getBoundingSphereContainsPoint(a, createVector3(-2, 0, 0))).toBe(true);
-    expect(getBoundingSphereContainsPoint(a, createVector3(2, 0, 0))).toBe(true);
+    expect(containsBoundingSpherePoint(a, createVector3(-2, 0, 0))).toBe(true);
+    expect(containsBoundingSpherePoint(a, createVector3(2, 0, 0))).toBe(true);
   });
 });
 

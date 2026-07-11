@@ -7,7 +7,7 @@ import type { Snapshot } from '@flighthq/types';
  *  entries. Leaves are compared with `===`, so `NaN` never equals itself and `-0`/`+0` are equal.
  *  Used to detect whether state actually changed before pushing an undo entry or sending a frame.
  */
-export function snapshotsEqual<T>(a: Snapshot<T>, b: Snapshot<T>): boolean {
+export function equalsSnapshot<T>(a: Snapshot<T>, b: Snapshot<T>): boolean {
   return snapshotValuesEqual(a, b);
 }
 

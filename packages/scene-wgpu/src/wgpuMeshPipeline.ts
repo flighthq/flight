@@ -24,7 +24,10 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
 // A compiled mesh-material pipeline plus the material bind-group layout its group(2) targets. Frame and
 // Draw layouts are shared on the runtime (see ensureWgpuSceneLayouts), so they are not stored here.
+// `hasShadowGroup` is set when the pipeline was laid out with the group(3) shadow-sample layout (lit
+// families that PCF-sample the directional shadow map); beginWgpuMeshDraw then also binds group(3).
 export interface WgpuMeshPipeline {
+  hasShadowGroup: boolean;
   materialBindGroupLayout: GPUBindGroupLayout;
   pipeline: GPURenderPipeline;
 }
@@ -46,13 +49,21 @@ export function beginWgpuMeshDraw(state: WgpuRenderState, pipeline: Readonly<Wgp
   scene.activeMeshPipeline = pipeline;
   pass.setPipeline(pipeline.pipeline);
   pass.setBindGroup(0, scene.frameBindGroup!);
+  // Lit families that PCF-sample the directional shadow map carry a group(3) shadow layout; bind the
+  // shared shadow-sample group (the real depth map when drawWgpuSceneShadowMap ran this frame, else a
+  // 1x1 dummy gated off by the shadow uniform). Non-lit families have no group(3) and skip this.
+  if (pipeline.hasShadowGroup) {
+    pass.setBindGroup(3, ensureWgpuShadowSampleBindGroup(state));
+  }
 }
 
 // Builds a render pipeline for a family: compiles its WGSL module, and lays out [shared Frame, shared
 // Draw, family Material] over the canonical 48-byte PBR vertex. Depth-stencil is depth24plus-stencil8,
 // compare 'less', depth-write on (the scene pass owns depth; stencil inert); culling is back-face
 // unless doubleSided. The family passes its own materialBindGroupLayout + entry points (default
-// vs_main/fs_main).
+// vs_main/fs_main). A lit family that PCF-samples the directional shadow map passes the shared
+// group(3) `shadowBindGroupLayout` (ensureWgpuShadowSampleLayout), which extends the pipeline layout to
+// [Frame, Draw, Material, Shadow] and flags the pipeline so beginWgpuMeshDraw binds group(3).
 export function createWgpuMeshPipeline(
   state: WgpuRenderState,
   options: Readonly<{
@@ -60,14 +71,19 @@ export function createWgpuMeshPipeline(
     format: GPUTextureFormat;
     materialBindGroupLayout: GPUBindGroupLayout;
     module: GPUShaderModule;
+    shadowBindGroupLayout?: GPUBindGroupLayout;
     topology?: GPUPrimitiveTopology;
   }>,
 ): WgpuMeshPipeline {
   const device = state.device;
   const layouts = ensureWgpuSceneLayouts(state);
-  const layout = device.createPipelineLayout({
-    bindGroupLayouts: [layouts.frameBindGroupLayout, layouts.drawBindGroupLayout, options.materialBindGroupLayout],
-  });
+  const bindGroupLayouts: GPUBindGroupLayout[] = [
+    layouts.frameBindGroupLayout,
+    layouts.drawBindGroupLayout,
+    options.materialBindGroupLayout,
+  ];
+  if (options.shadowBindGroupLayout !== undefined) bindGroupLayouts.push(options.shadowBindGroupLayout);
+  const layout = device.createPipelineLayout({ bindGroupLayouts });
   const pipeline = device.createRenderPipeline({
     layout,
     vertex: { module: options.module, entryPoint: 'vs_main', buffers: VERTEX_BUFFER_LAYOUTS },
@@ -79,7 +95,11 @@ export function createWgpuMeshPipeline(
     },
     depthStencil: { format: DEPTH_STENCIL_FORMAT, depthWriteEnabled: true, depthCompare: 'less' },
   });
-  return { materialBindGroupLayout: options.materialBindGroupLayout, pipeline };
+  return {
+    hasShadowGroup: options.shadowBindGroupLayout !== undefined,
+    materialBindGroupLayout: options.materialBindGroupLayout,
+    pipeline,
+  };
 }
 
 // The shared per-draw tail for every mesh-material family: ring-allocates + writes the Draw uniform
@@ -187,6 +207,90 @@ export function ensureWgpuScenePipeline<T extends WgpuMeshPipeline>(
     runtime.pipelineCache.set(key, pipeline);
   }
   return pipeline as T;
+}
+
+// Resolves the shared group(3) shadow-sample bind group a lit family binds when its pipeline carries the
+// shadow layout — the WGSL counterpart of scene-gl's shadow texture-unit + u_shadow* uniform binds in
+// bindGlMeshLightBlock. Lazily creates the shadow uniform buffer (light matrix + enabled flag), the
+// comparison sampler ('less-equal', matching the GL PCF's `current <= closest`), and a 1x1 dummy depth
+// texture for the no-shadow case, then rewrites the uniform every call (matrix + enabled from
+// scene.shadow) and rebuilds the bind group only when the bound depth view changes (present ↔ absent).
+// A shadow-less scene still renders: the dummy view is bound and the shader's `enabled < 0.5` early-out
+// keeps it unsampled — mirroring GL's u_shadowEnabled = 0 path.
+export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
+  const scene = getWgpuSceneRuntime(state);
+  const device = state.device;
+
+  if (scene.shadowUniformBuffer === null) {
+    scene.shadowUniformBuffer = device.createBuffer({
+      size: SHADOW_SAMPLE_UNIFORM_BYTES,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+  }
+  if (scene.shadowComparisonSampler === null) {
+    scene.shadowComparisonSampler = device.createSampler({ compare: 'less-equal' });
+  }
+  if (scene.shadowDummyView === null) {
+    // A 1x1 sampleable depth texture bound when no shadow map exists this frame; never actually sampled
+    // (the enabled flag gates it off), it only satisfies the group(3) texture_depth_2d slot.
+    scene.shadowDummyTexture = device.createTexture({
+      size: [1, 1, 1],
+      format: SHADOW_DEPTH_FORMAT,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    scene.shadowDummyView = scene.shadowDummyTexture.createView();
+  }
+
+  const shadow = scene.shadow;
+  const s = _shadowSampleScratch;
+  if (shadow !== null) {
+    const m = shadow.matrix.m;
+    for (let i = 0; i < 16; i++) s[i] = m[i];
+    s[16] = 1; // enabled
+  } else {
+    for (let i = 0; i < 16; i++) s[i] = 0;
+    s[0] = 1;
+    s[5] = 1;
+    s[10] = 1;
+    s[15] = 1; // identity
+    s[16] = 0; // disabled
+  }
+  s[17] = 0;
+  s[18] = 0;
+  s[19] = 0;
+  device.queue.writeBuffer(scene.shadowUniformBuffer, 0, s.buffer, 0, SHADOW_SAMPLE_UNIFORM_BYTES);
+
+  const view = shadow !== null ? shadow.depthView : scene.shadowDummyView;
+  if (scene.shadowSampleBindGroup === null || scene.shadowSampleView !== view) {
+    scene.shadowSampleBindGroup = device.createBindGroup({
+      layout: ensureWgpuShadowSampleLayout(state),
+      entries: [
+        { binding: 0, resource: { buffer: scene.shadowUniformBuffer } },
+        { binding: 1, resource: view },
+        { binding: 2, resource: scene.shadowComparisonSampler },
+      ],
+    });
+    scene.shadowSampleView = view;
+  }
+  return scene.shadowSampleBindGroup;
+}
+
+// Resolves the shared group(3) shadow-sample bind-group layout (uniform light matrix + enabled flag, a
+// depth texture, and a comparison sampler), created once per state. Lit pipelines pass this to
+// createWgpuMeshPipeline; the shared bind group built by ensureWgpuShadowSampleBindGroup targets it, so
+// one shadow bind group serves every lit family's pipeline (pbr today).
+export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
+  const scene = getWgpuSceneRuntime(state);
+  if (scene.shadowSampleLayout === null) {
+    scene.shadowSampleLayout = state.device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
+        { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+      ],
+    });
+  }
+  return scene.shadowSampleLayout;
 }
 
 // True when a material map texture is present AND carries a GPU-uploadable image source. Families call
@@ -374,6 +478,13 @@ const DRAW_UNIFORM_BYTES = 112;
 // depth attachment.
 const DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
 
+// The sampleable depth format the directional shadow map (and its 1x1 no-shadow dummy) use. depth32float
+// is bindable as a texture_depth_2d for the lit PCF comparison; drawWgpuSceneShadowMap renders into it.
+export const SHADOW_DEPTH_FORMAT: GPUTextureFormat = 'depth32float';
+
+// Shadow-sample uniform: mat4x4f light matrix (64) + vec4f params (16, x = enabled) = 80 bytes / 20 floats.
+const SHADOW_SAMPLE_UNIFORM_BYTES = 80;
+
 // Opaque-white 1x1 RGBA pixel for the shared placeholder map texture (untextured path).
 const WHITE_PIXEL = new Uint8Array([255, 255, 255, 255]);
 
@@ -396,3 +507,4 @@ const scratchInverseView = createMatrix4();
 const scratchCameraPosition = { x: 0, y: 0, z: 0 };
 const _frameScratch = new Float32Array(FRAME_UNIFORM_BYTES / 4);
 const _dynamicOffsets = new Uint32Array(1);
+const _shadowSampleScratch = new Float32Array(SHADOW_SAMPLE_UNIFORM_BYTES / 4);

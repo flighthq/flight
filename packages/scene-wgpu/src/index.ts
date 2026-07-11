@@ -28,6 +28,7 @@ export * from './wgpuMeshUpload';
 export * from './wgpuPbrPipelineCache';
 export * from './wgpuPbrPrelude';
 export * from './wgpuSceneRuntime';
+export * from './wgpuShadowMap';
 export * from './wgpuToonPrelude';
 export * from './wgpuUnlitPrelude';
 export * from './wgpuWireframePrelude';

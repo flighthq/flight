@@ -9,15 +9,6 @@ import type {
   ShortcutSignals,
 } from '@flighthq/types';
 
-// True when two accelerator strings (in any accepted spelling) represent the same chord.
-// Returns false when either is unparseable.
-export function areAcceleratorsEqual(a: string, b: string): boolean {
-  const na = normalizeAccelerator(a);
-  const nb = normalizeAccelerator(b);
-  if (na === null || nb === null) return false;
-  return na === nb;
-}
-
 // Allocates a zeroed ParsedAccelerator for use as an `out` argument to parseAccelerator.
 export function createParsedAccelerator(): ParsedAccelerator {
   return { key: '', modifiers: [] };
@@ -75,6 +66,15 @@ export function enableGlobalShortcutSignals(): ShortcutSignals {
   if (_signals !== null) return _signals;
   _signals = { onTrigger: createSignal() };
   return _signals;
+}
+
+// True when two accelerator strings (in any accepted spelling) represent the same chord.
+// Returns false when either is unparseable.
+export function equalsAccelerator(a: string, b: string): boolean {
+  const na = normalizeAccelerator(a);
+  const nb = normalizeAccelerator(b);
+  if (na === null || nb === null) return false;
+  return na === nb;
 }
 
 // Formats an accelerator string for human-readable display per the current OS:

@@ -1,9 +1,10 @@
-// A minimal little-endian cursor over a byte buffer, shared by all three container parsers. KTX2, DDS,
-// and the Basis container are all little-endian, so every multi-byte header field is read through this.
-// The cursor is a plain `{ view, offset }` value with an advancing `offset`; read functions advance it,
-// and every parser guards a read against `hasByteReaderBytes` first so a truncated file returns a
-// sentinel `null` rather than throwing a `DataView` `RangeError`. `readByteReaderU64` returns the value
-// as a JavaScript number, exact for the sub-2^53 offsets/lengths real containers use.
+// A minimal cursor over a byte buffer, shared by every container parser. KTX2, DDS, and the Basis
+// container are little-endian (the `read*U16`/`U32`/`U64` helpers); ATF stores its block and header
+// lengths big-endian, so `readByteReaderU24BigEndian` reads ATF's 3-byte block-length prefix. The cursor
+// is a plain `{ view, offset }` value with an advancing `offset`; read functions advance it, and every
+// parser guards a read against `hasByteReaderBytes` first so a truncated file returns a sentinel `null`
+// rather than throwing a `DataView` `RangeError`. `readByteReaderU64` returns the value as a JavaScript
+// number, exact for the sub-2^53 offsets/lengths real containers use.
 
 export interface ByteReader {
   readonly view: DataView;
@@ -21,6 +22,14 @@ export function hasByteReaderBytes(reader: Readonly<ByteReader>, count: number):
 export function readByteReaderU16(reader: ByteReader): number {
   const value = reader.view.getUint16(reader.offset, true);
   reader.offset += 2;
+  return value;
+}
+
+export function readByteReaderU24BigEndian(reader: ByteReader): number {
+  const view = reader.view;
+  const offset = reader.offset;
+  const value = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
+  reader.offset += 3;
   return value;
 }
 

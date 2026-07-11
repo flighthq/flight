@@ -1,4 +1,5 @@
 import type { GlRenderState } from '@flighthq/types';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
@@ -133,7 +134,7 @@ export function getGlClassicVertexSourceForKey(key: Readonly<GlClassicDefineKey>
 // to the vertex and fragment prelude bodies before compile. Pure string assembly; the same key always
 // yields the same source, which is what makes the program cache by define key sound.
 function buildGlClassicDefineSource(key: Readonly<GlClassicDefineKey>): string {
-  let defines = '#version 300 es\n';
+  let defines = `#version 300 es\n#define MAX_FORWARD_LIGHTS ${MAX_FORWARD_LIGHTS}\n`;
   if (key.lightingModel === 'phong') defines += '#define LIGHTING_PHONG\n';
   if (key.lightingModel === 'blinnphong') defines += '#define LIGHTING_BLINNPHONG\n';
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
@@ -207,6 +208,36 @@ vec3 srgbToLinear(vec3 c) {
   return mix(lo, hi, step(0.04045, c));
 }
 
+// The classic shading for ONE light: Lambert diffuse plus the optional Phong/BlinnPhong specular
+// lobe. Every light type (directional, point, spot) routes through this one BRDF so they never fork
+// the shading model — the caller supplies the surface->light direction and the light's (attenuated,
+// cone-scaled) radiance. Specular reads the view vector and material specular/shininess from globals.
+vec3 shadeClassicLight(vec3 normal, vec3 lightDir, vec3 lightColor, vec3 diffuseRgb) {
+  float nDotL = max(dot(normal, lightDir), 0.0);
+  vec3 result = diffuseRgb * nDotL * lightColor;
+#if defined(LIGHTING_PHONG) || defined(LIGHTING_BLINNPHONG)
+  if (nDotL > 0.0) {
+    vec3 viewDir = normalize(u_cameraPosition - v_worldPosition);
+    vec3 specularColor = u_specular.rgb;
+  #ifdef HAS_SPECULAR_MAP
+    specularColor *= srgbToLinear(texture(u_specularMap, v_uv0).rgb);
+  #endif
+  #ifdef LIGHTING_PHONG
+    // Phong: reflection-vector specular.
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float specAngle = max(dot(reflectDir, viewDir), 0.0);
+  #else
+    // BlinnPhong: half-vector specular.
+    vec3 halfVec = normalize(lightDir + viewDir);
+    float specAngle = max(dot(normal, halfVec), 0.0);
+  #endif
+    float specular = pow(specAngle, max(u_shininess, 1.0));
+    result += specular * specularColor * lightColor;
+  }
+#endif
+  return result;
+}
+
 void main() {
   vec4 diffuse = u_diffuse;
 #ifdef HAS_DIFFUSE_MAP
@@ -237,35 +268,41 @@ void main() {
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
-    float nDotL = max(dot(normal, lightDir), 0.0);
-    radiance += diffuse.rgb * nDotL * u_directionalRadiance.rgb;
+    radiance += shadeClassicLight(normal, lightDir, u_directionalRadiance.rgb, diffuse.rgb);
+  }
 
-#if defined(LIGHTING_PHONG) || defined(LIGHTING_BLINNPHONG)
-    if (nDotL > 0.0) {
-      vec3 viewDir = normalize(u_cameraPosition - v_worldPosition);
-      vec3 specularColor = u_specular.rgb;
-  #ifdef HAS_SPECULAR_MAP
-      vec4 sampledSpecular = texture(u_specularMap, v_uv0);
-      specularColor *= srgbToLinear(sampledSpecular.rgb);
-  #endif
-  #ifdef LIGHTING_PHONG
-      // Phong: reflection-vector specular.
-      vec3 reflectDir = reflect(-lightDir, normal);
-      float specAngle = max(dot(reflectDir, viewDir), 0.0);
-  #else
-      // BlinnPhong: half-vector specular.
-      vec3 halfVec = normalize(lightDir + viewDir);
-      float specAngle = max(dot(normal, halfVec), 0.0);
-  #endif
-      float specular = pow(specAngle, max(u_shininess, 1.0));
-      radiance += specular * specularColor * u_directionalRadiance.rgb;
-    }
-#endif
+  // Point lights: surface->light direction with a smooth inverse-square range falloff.
+  for (int i = 0; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= u_pointCount) break;
+    vec3 toLight = u_pointLights[i * 2 + 0].xyz - v_worldPosition;
+    float dist2 = dot(toLight, toLight);
+    vec3 lightDir = toLight * inversesqrt(max(dist2, 1e-8));
+    float atten = rangeWindow(dist2, u_pointLights[i * 2 + 1].w) / max(dist2, 1e-4);
+    radiance += shadeClassicLight(normal, lightDir, u_pointLights[i * 2 + 1].rgb * atten, diffuse.rgb);
+  }
+
+  // Spot lights: point attenuation times a smooth cone falloff between the inner/outer cosines.
+  for (int i = 0; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= u_spotCount) break;
+    vec3 toLight = u_spotLights[i * 4 + 0].xyz - v_worldPosition;
+    float dist2 = dot(toLight, toLight);
+    vec3 lightDir = toLight * inversesqrt(max(dist2, 1e-8));
+    float atten = rangeWindow(dist2, u_spotLights[i * 4 + 1].w) / max(dist2, 1e-4);
+    float cone = smoothstep(u_spotLights[i * 4 + 3].y, u_spotLights[i * 4 + 3].x,
+                            dot(normalize(u_spotLights[i * 4 + 2].xyz), -lightDir));
+    radiance += shadeClassicLight(normal, lightDir, u_spotLights[i * 4 + 1].rgb * atten * cone, diffuse.rgb);
   }
 
   // Ambient term: flat irradiance over the diffuse albedo.
   if (u_ambientCount > 0.5) {
     radiance += diffuse.rgb * u_ambientRadiance;
+  }
+
+  // Hemisphere fill: sky/ground gradient blended by the normal's vertical component.
+  for (int i = 0; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= u_hemisphereCount) break;
+    float f = 0.5 + 0.5 * dot(normal, u_hemisphereLights[i * 3 + 2].xyz);
+    radiance += mix(u_hemisphereLights[i * 3 + 1].rgb, u_hemisphereLights[i * 3 + 0].rgb, f) * diffuse.rgb;
   }
 
   fragColor = vec4(radiance, diffuse.a);

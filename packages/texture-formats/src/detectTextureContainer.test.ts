@@ -9,6 +9,10 @@ describe('detectTextureContainer', () => {
     expect(detectTextureContainer(new Uint8Array([...ktx2Magic, 0, 0, 0, 0]))).toBe('ktx2');
   });
 
+  it('sniffs the ATF signature', () => {
+    expect(detectTextureContainer(new Uint8Array([0x41, 0x54, 0x46, 0, 0, 0]))).toBe('atf');
+  });
+
   it('sniffs the DDS magic', () => {
     expect(detectTextureContainer(new Uint8Array([0x44, 0x44, 0x53, 0x20, 0, 0]))).toBe('dds');
   });

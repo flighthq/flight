@@ -1,6 +1,6 @@
 import { createTextFormatRange } from './textFormatRange';
 import type { TextLayoutParams, TextLayoutResult } from './textLayout';
-import { computeTextLayout, createTextLayoutResult, getTextLayoutIsTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
+import { computeTextLayout, createTextLayoutResult, isTextLayoutTruncated, TEXT_LAYOUT_GUTTER } from './textLayout';
 
 // Fixed-width measure: every character is 10px regardless of font settings.
 const fixedMeasure = (text: string) => text.length * 10;
@@ -477,7 +477,7 @@ describe('computeTextLayout — conformance: truncation + word-wrap combined', (
     // The last visible line carries a group (the truncated word segment or ellipsis).
     const lastGroups = result.groups.filter((g) => g.lineIndex === result.numLines - 1);
     expect(lastGroups.length).toBeGreaterThan(0);
-    expect(getTextLayoutIsTruncated(result, { ...singleRangeParams(text), maxLines: 2 })).toBe(true);
+    expect(isTextLayoutTruncated(result, { ...singleRangeParams(text), maxLines: 2 })).toBe(true);
   });
 });
 
@@ -580,7 +580,7 @@ describe('computeTextLayout — maxLines truncation', () => {
     expect(lastLineGroups.length).toBeGreaterThan(0);
   });
 
-  it('getTextLayoutIsTruncated returns true when maxLines clips the layout', () => {
+  it('isTextLayoutTruncated returns true when maxLines clips the layout', () => {
     const text = 'line one\nline two\nline three';
     const params: TextLayoutParams = {
       text,
@@ -592,14 +592,14 @@ describe('computeTextLayout — maxLines truncation', () => {
       maxLines: 2,
     };
     const result = doLayout(params);
-    expect(getTextLayoutIsTruncated(result, params)).toBe(true);
+    expect(isTextLayoutTruncated(result, params)).toBe(true);
   });
 
-  it('getTextLayoutIsTruncated returns false when maxLines is unlimited', () => {
+  it('isTextLayoutTruncated returns false when maxLines is unlimited', () => {
     const text = 'one line';
     const params: TextLayoutParams = singleRangeParams(text);
     const result = doLayout(params);
-    expect(getTextLayoutIsTruncated(result, params)).toBe(false);
+    expect(isTextLayoutTruncated(result, params)).toBe(false);
   });
 });
 
@@ -665,11 +665,11 @@ describe('createTextLayoutResult', () => {
   });
 });
 
-describe('getTextLayoutIsTruncated', () => {
+describe('isTextLayoutTruncated', () => {
   it('returns false when maxLines is -1', () => {
     const params = singleRangeParams('hello');
     const result = doLayout(params);
-    expect(getTextLayoutIsTruncated(result, params)).toBe(false);
+    expect(isTextLayoutTruncated(result, params)).toBe(false);
   });
 });
 

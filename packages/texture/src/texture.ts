@@ -74,8 +74,9 @@ export function getTextureHeight(texture: Readonly<TextureLike>): number {
 
 // Composes the KHR_texture_transform fields and inverts the result, producing the matrix that maps
 // already-transformed uv coordinates back to the unit-square source uv. The forward transform is
-// affine, so the inverse always exists for a non-degenerate (non-zero) scale; a zero scale yields a
-// degenerate inverse (matching inverseMatrix3's affine-singular handling).
+// affine, so the inverse always exists for a non-degenerate (non-zero) scale; a zero scale is
+// singular, so inverseMatrix3 returns false and fills the matrix with NaN (unused for a zero-scale
+// texture).
 // Out-param form — write into a pre-allocated Matrix3 to avoid per-call allocation.
 export function getTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<TextureLike>): void {
   getTextureUvMatrix(out, texture);
