@@ -1,13 +1,17 @@
 // Sniffs which GPU texture container a byte buffer holds from its magic bytes — `'ktx2'`, `'dds'`,
-// `'basis'`, or `null` when the header is too short or unrecognized. The texture-container sibling of
-// `detectImageMimeType`: a cheap dispatcher to pick a `parse*` function without fully parsing, and the
-// single point of container identification in the SDK.
-export function detectTextureContainer(bytes: Readonly<Uint8Array>): 'basis' | 'dds' | 'ktx2' | null {
+// `'basis'`, `'atf'`, or `null` when the header is too short or unrecognized. The texture-container
+// sibling of `detectImageMimeType`: a cheap dispatcher to pick a `parse*` function without fully
+// parsing, and the single point of container identification in the SDK. `'atf'` alone maps to the
+// array-returning `parseAtf` (an ATF holds one-or-more peer encodings); the others map to a single
+// `parse*` returning one `TextureContainer`.
+export function detectTextureContainer(bytes: Readonly<Uint8Array>): 'atf' | 'basis' | 'dds' | 'ktx2' | null {
   if (bytes.byteLength >= 12 && isKtx2Magic(bytes)) return 'ktx2';
   // DDS: 'DDS ' (0x44 0x44 0x53 0x20)
   if (bytes.byteLength >= 4 && bytes[0] === 0x44 && bytes[1] === 0x44 && bytes[2] === 0x53 && bytes[3] === 0x20) {
     return 'dds';
   }
+  // ATF: 'ATF' (0x41 0x54 0x46)
+  if (bytes.byteLength >= 3 && bytes[0] === 0x41 && bytes[1] === 0x54 && bytes[2] === 0x46) return 'atf';
   // Basis: m_sig 0x4273 little-endian ('s' then 'B')
   if (bytes.byteLength >= 2 && bytes[0] === 0x73 && bytes[1] === 0x42) return 'basis';
   return null;
