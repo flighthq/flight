@@ -117,6 +117,13 @@ const formatBlockInfo: Record<TextureContainerFormat, TextureFormatBlockInfo | n
   etc2RgbSrgb: compressedBlock(4, 4, 8),
   etc2Rgba: compressedBlock(4, 4, 16),
   etc2RgbaSrgb: compressedBlock(4, 4, 16),
+  // PVRTC v1 blocks are 64-bit (8 bytes): 4bpp packs a 4x4 pixel tile, 2bpp an 8x4 tile. The formula
+  // matches the tightly-packed (aligned) size; PVRTC's real minimum-size/overlap rules are a decode
+  // concern, not needed to locate ATF's explicitly length-prefixed blocks.
+  pvrtc2bppRgb: compressedBlock(8, 4, 8),
+  pvrtc2bppRgba: compressedBlock(8, 4, 8),
+  pvrtc4bppRgb: compressedBlock(4, 4, 8),
+  pvrtc4bppRgba: compressedBlock(4, 4, 8),
   r8unorm: pixelBlock(1),
   rg8unorm: pixelBlock(2),
   rgba16f: pixelBlock(8),
