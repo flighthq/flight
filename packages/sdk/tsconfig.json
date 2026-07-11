@@ -117,6 +117,7 @@
     { "path": "../text" },
     { "path": "../textinput" },
     { "path": "../textlayout" },
+    { "path": "../textsegment" },
     { "path": "../textshaper" },
     { "path": "../textshaper-canvas" },
     { "path": "../texture" },
