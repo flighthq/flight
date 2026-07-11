@@ -129,30 +129,30 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 
 type StencilMode = 'normal' | 'masked' | 'maskwrite';
 
-const NORMAL_BLEND: GPUBlendState = {
-  color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-  alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-};
+const NORMAL_BLEND: GPUBlendState = createWgpuBlendState('one', 'one-minus-src-alpha');
 
+// The fixed-function realizations, mirroring render-gl's DEFAULT_GL_BLEND_MODES. Both channels share
+// one component (WebGPU reads the alpha part of a color factor in the alpha slot, so a single factor
+// reproduces GL's non-separate blendFunc). Alpha, Difference, HardLight, Invert, Overlay, and Shader
+// stay null — they have no fixed-function equivalent and degrade to normal premultiplied compositing.
 const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
-  [BlendMode.Add]: {
-    color: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
-    alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' },
-  },
+  [BlendMode.Add]: createWgpuBlendState('one', 'one'),
   [BlendMode.Alpha]: null,
-  [BlendMode.Darken]: null,
+  [BlendMode.Darken]: createWgpuBlendState('one', 'one', 'min'),
   [BlendMode.Difference]: null,
-  [BlendMode.Erase]: null,
+  [BlendMode.Erase]: createWgpuBlendState('zero', 'one-minus-src-alpha'),
   [BlendMode.HardLight]: null,
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: NORMAL_BLEND,
-  [BlendMode.Lighten]: null,
-  [BlendMode.Multiply]: null,
+  [BlendMode.Lighten]: createWgpuBlendState('one', 'one', 'max'),
+  // Premultiplied multiply: src.rgb*dst + dst*(1-src.a), so transparent/partial pixels leave the
+  // backdrop untouched instead of multiplying it toward black. Matches render-gl.
+  [BlendMode.Multiply]: createWgpuBlendState('dst', 'one-minus-src-alpha'),
   [BlendMode.Normal]: NORMAL_BLEND,
   [BlendMode.Overlay]: null,
-  [BlendMode.Screen]: null,
+  [BlendMode.Screen]: createWgpuBlendState('one', 'one-minus-src'),
   [BlendMode.Shader]: null,
-  [BlendMode.Subtract]: null,
+  [BlendMode.Subtract]: createWgpuBlendState('one', 'one', 'reverse-subtract'),
 };
 
 // ---- Pipeline creation ----
@@ -387,4 +387,16 @@ export function writeWgpuQuadUniforms(
 
   runtime.uniformOffset += runtime.uniformStride;
   return byteOffset;
+}
+
+// One GPUBlendComponent shared by both channels. WebGPU applies the alpha part of a color factor
+// (e.g. 'dst' → Ad) in the alpha slot, so a single factor pair reproduces GL's non-separate
+// blendFunc. For min/max/reverse-subtract the factors are ignored but must still be valid.
+function createWgpuBlendState(
+  srcFactor: GPUBlendFactor,
+  dstFactor: GPUBlendFactor,
+  operation: GPUBlendOperation = 'add',
+): GPUBlendState {
+  const component: GPUBlendComponent = { srcFactor, dstFactor, operation };
+  return { color: component, alpha: component };
 }

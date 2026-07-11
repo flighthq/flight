@@ -1,3 +1,5 @@
+import { BlendMode } from '@flighthq/types';
+
 import { renderWgpuBackground } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
@@ -62,6 +64,46 @@ describe('getWgpuPipeline', () => {
     const normal = getWgpuPipeline(state, null, 'normal');
     const maskwrite = getWgpuPipeline(state, null, 'maskwrite');
     expect(normal).not.toBe(maskwrite);
+  });
+
+  it('realizes each fixed-function blend mode with GL-parity factors', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const blendOf = (mode: BlendMode) =>
+      [
+        ...(getWgpuPipeline(state, mode, 'normal') as unknown as { __descriptor: GPURenderPipelineDescriptor })
+          .__descriptor.fragment!.targets,
+      ][0]!.blend!.color;
+    expect(blendOf(BlendMode.Normal)).toEqual({ srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' });
+    expect(blendOf(BlendMode.Add)).toEqual({ srcFactor: 'one', dstFactor: 'one', operation: 'add' });
+    expect(blendOf(BlendMode.Multiply)).toEqual({
+      srcFactor: 'dst',
+      dstFactor: 'one-minus-src-alpha',
+      operation: 'add',
+    });
+    expect(blendOf(BlendMode.Screen)).toEqual({ srcFactor: 'one', dstFactor: 'one-minus-src', operation: 'add' });
+    expect(blendOf(BlendMode.Erase)).toEqual({ srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' });
+    expect(blendOf(BlendMode.Darken).operation).toBe('min');
+    expect(blendOf(BlendMode.Lighten).operation).toBe('max');
+    expect(blendOf(BlendMode.Subtract).operation).toBe('reverse-subtract');
+  });
+
+  it('falls back to normal blend for shader-composited modes', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const blendOf = (mode: BlendMode) =>
+      [
+        ...(getWgpuPipeline(state, mode, 'normal') as unknown as { __descriptor: GPURenderPipelineDescriptor })
+          .__descriptor.fragment!.targets,
+      ][0]!.blend!.color;
+    expect(blendOf(BlendMode.Overlay)).toEqual({
+      srcFactor: 'one',
+      dstFactor: 'one-minus-src-alpha',
+      operation: 'add',
+    });
+    expect(blendOf(BlendMode.HardLight)).toEqual({
+      srcFactor: 'one',
+      dstFactor: 'one-minus-src-alpha',
+      operation: 'add',
+    });
   });
 });
 
