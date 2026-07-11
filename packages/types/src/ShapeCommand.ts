@@ -78,8 +78,17 @@ export interface ShapeCommandRegistry {
 
 export type ShapeCommandKey = keyof ShapeCommandRegistry;
 
+// One slot of the flat, heterogeneous shape command buffer (`ShapeData.commands`). The buffer stores
+// each command inline as a key string, an argument count, then that many argument tokens:
+// `[key, argCount, ...args, key, argCount, ...args, …]`. Across all commands an argument slot may hold
+// a coordinate/color/count (number), a style keyword or command key (string), a flag (boolean), a
+// gradient/triangle/path buffer (number[]), a fill matrix (Matrix, or null when absent), or a bitmap
+// fill's live resource (ImageResource). A reader advances by `argCount + 2` and casts each slot to the
+// type its command's `ShapeCommandRegistry` entry documents.
+export type ShapeCommandToken = ImageResource | Matrix | boolean | number | readonly number[] | string | null;
+
 // Handler for hit-testing a command. Reads args from the flat command buffer at position i.
-export type ShapeCommandHitTest = (x: number, y: number, buf: unknown[], i: number) => boolean;
+export type ShapeCommandHitTest = (x: number, y: number, buf: readonly ShapeCommandToken[], i: number) => boolean;
 
 // Command definition registered in the hit-test registry.
 export type ShapeHitTestCommand<K extends ShapeCommandKey = ShapeCommandKey> = K extends ShapeCommandKey

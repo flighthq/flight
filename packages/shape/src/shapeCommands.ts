@@ -8,6 +8,7 @@ import type {
   Matrix,
   PathWinding,
   Shape,
+  ShapeCommandToken,
   SpreadMethod,
   TriangleCulling,
 } from '@flighthq/types';
@@ -395,7 +396,7 @@ function normalizeArcSweep(startAngle: number, endAngle: number, anticlockwise: 
 // (cx, cy) with the given radius. startAngle is the arc's start; segmentAngle is the angle
 // covered per segment; alpha is the cubic control-point scale factor.
 function pushArcCubics(
-  cmds: unknown[],
+  cmds: ShapeCommandToken[],
   cx: number,
   cy: number,
   radius: number,
