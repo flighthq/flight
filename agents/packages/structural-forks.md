@@ -81,3 +81,17 @@ The breadth/depth passes are the mechanism for determining what is in/out of sco
 Within-3D boundaries still to design: `animation` (channels/clips) vs `skeleton` (bones/skinning) vs `tween`/`timeline`; and `render-graph`'s reshaping of `render` (architecturally significant — its own design pass).
 
 **Authoritative 3D design already exists** in [`render-architecture.md`](../render-architecture.md), [`3d-materials-architecture.md`](../3d-materials-architecture.md), and the blessed [`3d-pipeline-architecture.md`](../3d-pipeline-architecture.md) (2026-06-25 — explicit passes, `picking`, shadow/environment as recipes, the target-free `animation` core + `skeleton`, `scene-formats`/glTF, the additive gate, build sequencing) — materials, lighting, shadows, and IBL are designed (and `materials` is built). The register reconciles the accepted candidates against them (already-planned vs net-new), and the charter/register system **references these pre-existing blessed docs rather than duplicating them** — a general rule: blessed architecture that predates this structure is linked, not restated.
+
+## H. Filters dissolve into Adjustments + Effects _(decided 2026-07-11)_
+
+**Decision:** `@flighthq/filters` is not a real domain — it straddled two tiers. An image operation is authored at one of three tiers, split by **composition algebra**, not scope:
+
+- **Material** — a shading input (surface definition fed to lighting). Complete shaders today.
+- **Adjustment** (`@flighthq/adjustments`, new) — a **pointwise** value remap that **fuses** (a stack → one color matrix or one baked LUT) and **folds into the draw** as per-instance/uniform data. Batch-safe, never bounces. **Data-fed, not compiled shader composition** — the recurring misread.
+- **Effect** (`@flighthq/effects`) — a **spatial/composite** op that **chains** (N passes) and **bounces** through an offscreen target.
+
+Reserved fourth tier: **Material Feature / Modifier** (`@flighthq/shading`, chartered, not built) — *compiled* shader features (Fresnel, dissolve, vertex displacement) that inject variants; the home for the compiled composition the other tiers avoid.
+
+**Realization** comes in three shapes — inline contribution (fold into the draw), offscreen pass (bounce), declarative (DOM CSS) — and the **presence** of a `(kind, backend)` realization *is* the support matrix (generating/retiring [render-backend-support](../render-backend-support.md)). One-line rule: **data folds, code bounces.**
+
+**Retires:** `filters`, `filters-gl`, `filters-wgpu`, `filters-canvas`, `filters-css`, `filters-surface`, `filters-math` — contents sort into `adjustments` (pointwise) / `effects` (spatial-composite). **Touches:** filters*, effects*, materials (ColorTransform migrates out), displayobject-gl/sprite (inline realization). **Full design + migration staging:** [effect-adjustment-architecture](../../effect-adjustment-architecture.md). Resolves the filters/effects strand of fork B (the unconsumed `normalizeBitmapFilter`/`getBitmapFilterMargin` dispatchers go away with the package).

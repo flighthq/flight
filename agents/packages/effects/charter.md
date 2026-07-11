@@ -16,7 +16,7 @@ status: ./status.md
 
 It does not execute — pixel work lives in `effects-gl` / `effects-wgpu` / `effects-canvas`. Sole runtime dependency is `@flighthq/types`.
 
-Effects and filters are genuinely separate domains. Filters (`@flighthq/filters`) are per-display-object bitmap filter descriptors. Effects are full-frame post-processing pipeline passes. An effect may compose filters internally (bloom uses blur), but the type hierarchies (`BitmapFilter` vs `RenderEffect`), application models (per-object vs render pipeline), and dependencies are distinct.
+**Effects are the spatial/composite tier.** As of the 2026-07-11 ruling ([effect-adjustment-architecture](../../effect-adjustment-architecture.md), fork H), `@flighthq/filters` dissolves: an image operation is either an **Adjustment** (`@flighthq/adjustments` — pointwise, *fuses* to one matrix/LUT, *folds* into the draw as data) or an **Effect** (this package — spatial or composite: reads neighbors or needs multiple passes/buffers, *chains* as passes, *bounces* through an offscreen target). Effects keeps only the chain-and-bounce ops (`blur`, `sharpen`, `displacement`, `dropShadow`, `glow`, `bevel`, `bloom`, `bokehDoF`, `godRays`, …); the pointwise catalog (`colorGrade`, `hueSaturation`, `brightnessContrast`, `invert`, `grayscale`, `liftGammaGain`, `channelMixer`, `exposure`, `lookupTableGrade`, `colorBlindSimulation`) migrates out to `adjustments`. `customShaderEffect` stays here as the escape hatch for non-pointwise custom shading. (The 52-kind and per-backend counts above predate this split and will drop as the pointwise kinds move.)
 
 ## North star
 
