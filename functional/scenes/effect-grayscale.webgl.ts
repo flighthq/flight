@@ -10,15 +10,13 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createGrayscaleEffect,
+  createGrayscaleAdjustment,
   createShape,
-  defaultGlGrayscaleEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'GrayscaleEffect', defaultGlGrayscaleEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -52,7 +49,7 @@ export function render(root: DisplayObject): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createGrayscaleEffect({ intensity: 1 })]);
+  endGlRenderEffectPipeline(state, pipeline, [createGrayscaleAdjustment({ intensity: 1 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

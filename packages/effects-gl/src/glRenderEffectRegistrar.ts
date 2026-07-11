@@ -23,12 +23,10 @@ import { defaultGlGlitchEffectRunner } from './glGlitchEffect';
 import { defaultGlGodRaysEffectRunner } from './glGodRaysEffect';
 import { defaultGlGradientBevelEffectRunner } from './glGradientBevelEffect';
 import { defaultGlGradientGlowEffectRunner } from './glGradientGlowEffect';
-import { defaultGlGrayscaleEffectRunner } from './glGrayscaleEffect';
 import { defaultGlHalftoneEffectRunner } from './glHalftoneEffect';
 import { defaultGlHueSaturationEffectRunner } from './glHueSaturationEffect';
 import { defaultGlInnerGlowEffectRunner } from './glInnerGlowEffect';
 import { defaultGlInnerShadowEffectRunner } from './glInnerShadowEffect';
-import { defaultGlInvertEffectRunner } from './glInvertEffect';
 import { defaultGlKuwaharaEffectRunner } from './glKuwaharaEffect';
 import { defaultGlLensDirtEffectRunner } from './glLensDirtEffect';
 import { defaultGlLensDistortionEffectRunner } from './glLensDistortionEffect';
@@ -45,7 +43,6 @@ import { defaultGlRadialBlurEffectRunner } from './glRadialBlurEffect';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
 import { defaultGlScanlinesEffectRunner } from './glScanlinesEffect';
 import { defaultGlScreenSpaceFogEffectRunner } from './glScreenSpaceFogEffect';
-import { defaultGlSepiaEffectRunner } from './glSepiaEffect';
 import { defaultGlSharpenEffectRunner } from './glSharpenEffect';
 import { defaultGlSketchEffectRunner } from './glSketchEffect';
 import { defaultGlSmaaEffectRunner } from './glSmaaEffect';
@@ -61,8 +58,10 @@ import { defaultGlWhiteBalanceEffectRunner } from './glWhiteBalanceEffect';
 //   antialiasing — FXAA, SMAA, TAA
 //   bloom        — BloomEffect, ChromaticAberration, GodRays, LensDirt, LensDistortion, LensFlare, Vignette
 //   blur         — BokehDepthOfField, CameraMotionBlur, DirectionalBlur, MotionBlur, RadialBlur, TiltShift
-//   color        — BrightnessContrast, ChannelMixer, ColorGrade, Exposure, Grayscale, HueSaturation,
-//                  Invert, LiftGammaGain, LookupTableGrade, Posterize, Sepia, ToneMap, WhiteBalance
+//   color        — BrightnessContrast, ChannelMixer, ColorGrade, Exposure, HueSaturation,
+//                  LiftGammaGain, LookupTableGrade, Posterize, ToneMap, WhiteBalance
+//                  (Grayscale/Invert/Sepia moved to the matrix-tier @flighthq/adjustments, folded
+//                   through the pipeline's generic color-matrix pass — see effect-adjustment-architecture)
 //   screen-space — Displacement, ScreenSpaceFog, Sharpen, Ssao, Ssr
 //   stylize      — Crt, Dither, FilmGrain, Glitch, Halftone, Kuwahara, Outline, Pixelate, Scanlines, Sketch
 //
@@ -113,8 +112,9 @@ export function registerBlurGlRenderEffects(state: GlRenderState): void {
 }
 
 // Color / tone band: BrightnessContrastEffect, ChannelMixerEffect, ColorGradeEffect,
-// ExposureEffect, GrayscaleEffect, HueSaturationEffect, InvertEffect, LiftGammaGainEffect,
-// LookupTableGradeEffect, PosterizeEffect, SepiaEffect, ToneMapEffect, WhiteBalanceEffect.
+// ExposureEffect, HueSaturationEffect, LiftGammaGainEffect,
+// LookupTableGradeEffect, PosterizeEffect, ToneMapEffect, WhiteBalanceEffect.
+// (GrayscaleEffect/InvertEffect/SepiaEffect were dissolved into the matrix-tier @flighthq/adjustments.)
 // DitherEffect has moved to the stylize band (matching Wgpu).
 // Symmetric with Wgpu's registerColorWgpuRenderEffects.
 export function registerColorGlRenderEffects(state: GlRenderState): void {
@@ -122,13 +122,10 @@ export function registerColorGlRenderEffects(state: GlRenderState): void {
   registerGlRenderEffect(state, 'ChannelMixerEffect', defaultGlChannelMixerEffectRunner);
   registerGlRenderEffect(state, 'ColorGradeEffect', defaultGlColorGradeEffectRunner);
   registerGlRenderEffect(state, 'ExposureEffect', defaultGlExposureEffectRunner);
-  registerGlRenderEffect(state, 'GrayscaleEffect', defaultGlGrayscaleEffectRunner);
   registerGlRenderEffect(state, 'HueSaturationEffect', defaultGlHueSaturationEffectRunner);
-  registerGlRenderEffect(state, 'InvertEffect', defaultGlInvertEffectRunner);
   registerGlRenderEffect(state, 'LiftGammaGainEffect', defaultGlLiftGammaGainEffectRunner);
   registerGlRenderEffect(state, 'LookupTableGradeEffect', defaultGlLookupTableGradeEffectRunner);
   registerGlRenderEffect(state, 'PosterizeEffect', defaultGlPosterizeEffectRunner);
-  registerGlRenderEffect(state, 'SepiaEffect', defaultGlSepiaEffectRunner);
   registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
   registerGlRenderEffect(state, 'WhiteBalanceEffect', defaultGlWhiteBalanceEffectRunner);
 }
@@ -239,12 +236,10 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'GodRaysEffect',
   'GradientBevelEffect',
   'GradientGlowEffect',
-  'GrayscaleEffect',
   'HalftoneEffect',
   'HueSaturationEffect',
   'InnerGlowEffect',
   'InnerShadowEffect',
-  'InvertEffect',
   'KuwaharaEffect',
   'LensDirtEffect',
   'LensDistortionEffect',
@@ -260,7 +255,6 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'RadialBlurEffect',
   'ScanlinesEffect',
   'ScreenSpaceFogEffect',
-  'SepiaEffect',
   'SharpenEffect',
   'SketchEffect',
   'SmaaEffect',

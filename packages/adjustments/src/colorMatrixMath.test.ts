@@ -20,6 +20,7 @@ import {
   createTechnicolorColorMatrix,
   createVintageColorMatrix,
   createWhiteBalanceColorMatrix,
+  fuseColorMatrices,
   multiplyColorMatrix,
 } from './colorMatrixMath';
 
@@ -348,6 +349,47 @@ describe('createWhiteBalanceColorMatrix', () => {
     const m = createWhiteBalanceColorMatrix(0, 100);
     // m[6] = G diagonal (index 1*5+1)
     expect(m[6]).toBeGreaterThan(1); // G gain > 1
+  });
+});
+
+describe('fuseColorMatrices', () => {
+  it('empty list yields the identity', () => {
+    expect(fuseColorMatrices([])).toEqual(createIdentityColorMatrix());
+  });
+
+  it('single matrix is returned as an independent copy', () => {
+    const invert = createInvertColorMatrix();
+    const fused = fuseColorMatrices([invert]);
+    expect(fused).toEqual(invert);
+    expect(fused).not.toBe(invert);
+  });
+
+  it('fuses a run of three in application order (index 0 first)', () => {
+    const a = createInvertColorMatrix();
+    const b = createGrayscaleColorMatrix();
+    const c = createContrastColorMatrix(1.5);
+    // Applying `a` then `b` then `c` = c × b × a as a single composed matrix (no per-stage rounding).
+    const expected = multiplyColorMatrix(c, multiplyColorMatrix(b, a));
+    const fused = fuseColorMatrices([a, b, c]);
+    for (let i = 0; i < 20; i++) expect(fused[i]).toBeCloseTo(expected[i], 10);
+  });
+
+  it('order matters (composition is not commutative)', () => {
+    const invert = createInvertColorMatrix();
+    const sepia = createSepiaColorMatrix();
+    const forward = fuseColorMatrices([invert, sepia]);
+    const reversed = fuseColorMatrices([sepia, invert]);
+    expect(applyColorMatrixToColor(forward, RED)).not.toBe(applyColorMatrixToColor(reversed, RED));
+  });
+
+  it('does not mutate its inputs', () => {
+    const a = createInvertColorMatrix();
+    const b = createSepiaColorMatrix();
+    const aCopy = a.slice();
+    const bCopy = b.slice();
+    fuseColorMatrices([a, b]);
+    expect(a).toEqual(aCopy);
+    expect(b).toEqual(bCopy);
   });
 });
 

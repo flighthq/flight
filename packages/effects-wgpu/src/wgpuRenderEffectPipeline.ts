@@ -1,3 +1,4 @@
+import { fuseColorMatrices, getAdjustmentColorMatrix } from '@flighthq/adjustments';
 import { createMatrix } from '@flighthq/geometry';
 import {
   acquireWgpuRenderTarget,
@@ -12,6 +13,7 @@ import {
   resizeWgpuRenderTarget,
 } from '@flighthq/render-wgpu';
 import type {
+  Adjustment,
   RenderEffect,
   RenderEffectPipelineOptions,
   WgpuRenderEffectPipeline,
@@ -19,6 +21,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types';
 
+import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass';
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
@@ -71,7 +74,7 @@ export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline
 export function endWgpuRenderEffectPipeline(
   state: WgpuRenderState,
   pipeline: WgpuRenderEffectPipeline,
-  effects: ReadonlyArray<RenderEffect>,
+  operations: ReadonlyArray<RenderEffect | Adjustment>,
 ): void {
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
@@ -84,13 +87,34 @@ export function endWgpuRenderEffectPipeline(
   let source: WgpuRenderTarget = scene;
   let scratchA: WgpuRenderTarget | null = null;
   let scratchB: WgpuRenderTarget | null = null;
+  // A maximal run of consecutive matrix-tier adjustments fuses into one matrix and one pass; an effect
+  // (or the end of the stack) breaks the run and flushes it first, preserving stack order.
+  let pending: (readonly number[])[] = [];
 
-  for (const effect of effects) {
-    const runner = getWgpuRenderEffectRunner(state, effect.kind);
-    if (runner === null) continue;
+  const ensureScratch = (): void => {
     if (scratchA === null) scratchA = acquireWgpuRenderTarget(state, pipeline.pool, descriptor);
     if (scratchB === null) scratchB = acquireWgpuRenderTarget(state, pipeline.pool, descriptor);
-    const dest = source === scratchA ? scratchB : scratchA;
+  };
+  const flushAdjustments = (): void => {
+    if (pending.length === 0) return;
+    ensureScratch();
+    const dest = source === scratchA ? scratchB! : scratchA!;
+    applyColorMatrixPassToWgpu(state, source, dest, fuseColorMatrices(pending));
+    source = dest;
+    pending = [];
+  };
+
+  for (const operation of operations) {
+    const matrix = getAdjustmentColorMatrix(operation);
+    if (matrix !== null) {
+      pending.push(matrix);
+      continue;
+    }
+    const runner = getWgpuRenderEffectRunner(state, operation.kind);
+    if (runner === null) continue;
+    flushAdjustments();
+    ensureScratch();
+    const dest = source === scratchA ? scratchB! : scratchA!;
     runner(
       {
         state,
@@ -103,10 +127,11 @@ export function endWgpuRenderEffectPipeline(
         sceneDepthTexture: null,
         sceneVelocityTexture: pipeline.velocityTexture,
       },
-      effect,
+      operation,
     );
     source = dest;
   }
+  flushAdjustments();
 
   presentWgpuRenderEffectResult(state, source);
 

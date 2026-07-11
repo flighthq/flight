@@ -61,13 +61,10 @@ describe('registerColorWgpuRenderEffects', () => {
     expect(getWgpuRenderEffectRunner(state, 'ChannelMixerEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'ColorGradeEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'ExposureEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'GrayscaleEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'HueSaturationEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'InvertEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'LiftGammaGainEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'LookupTableGradeEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'PosterizeEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'SepiaEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'ToneMapEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'WhiteBalanceEffect')).not.toBe(null);
   });
@@ -104,14 +101,13 @@ describe('registerScreenSpaceWgpuRenderEffects', () => {
 });
 
 describe('registerStandardWgpuRenderEffects', () => {
-  it('registers all 45 standard effect runners', async () => {
+  it('registers all 42 standard effect runners', async () => {
     const state = await createWgpuRenderStateForTest();
     registerStandardWgpuRenderEffects(state);
     // Spot-check one from each band.
     expect(getWgpuRenderEffectRunner(state, 'FxaaEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'BloomEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'DirectionalBlurEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'GrayscaleEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'SsaoEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'HalftoneEffect')).not.toBe(null);
   });

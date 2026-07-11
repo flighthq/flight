@@ -1,8 +1,5 @@
-import type { GrayscaleEffect } from '@flighthq/types';
-
 import { createBloomEffect } from './bloomEffect';
 import { createColorGradeEffect } from './colorGradeEffect';
-import { createGrayscaleEffect } from './grayscaleEffect';
 import { canLerpRenderEffects, lerpRenderEffect } from './renderEffectInterpolation';
 
 describe('canLerpRenderEffects', () => {
@@ -60,9 +57,9 @@ describe('lerpRenderEffect', () => {
     expect(a.threshold).toBeCloseTo(0.5, 5);
   });
   it('boolean fields snap at t=0.5 boundary', () => {
-    const a = createGrayscaleEffect({ enabled: false } as Partial<GrayscaleEffect>);
-    const b = createGrayscaleEffect({ enabled: true } as Partial<GrayscaleEffect>);
-    const out = createGrayscaleEffect();
+    const a = createColorGradeEffect({ enabled: false } as never);
+    const b = createColorGradeEffect({ enabled: true } as never);
+    const out = createColorGradeEffect();
     lerpRenderEffect(a, b, 0.4, out);
     expect((out as unknown as Record<string, unknown>).enabled).toBe(false);
     lerpRenderEffect(a, b, 0.5, out);

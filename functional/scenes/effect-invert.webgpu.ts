@@ -7,19 +7,17 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayContainer,
-  createInvertEffect,
+  createInvertAdjustment,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuInvertEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuDisplayObject,
@@ -39,7 +37,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'InvertEffect', defaultWgpuInvertEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -52,7 +49,7 @@ export function render(root: DisplayObject): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuDisplayObject(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createInvertEffect({ intensity: 1 })]);
+  endWgpuRenderEffectPipeline(state, pipeline, [createInvertAdjustment({ intensity: 1 })]);
   submitWgpuRenderPass(state);
 }
 

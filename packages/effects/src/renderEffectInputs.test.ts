@@ -1,7 +1,6 @@
 import { createBloomEffect } from './bloomEffect';
 import { createBokehDepthOfFieldEffect } from './bokehDepthOfFieldEffect';
 import { createColorGradeEffect } from './colorGradeEffect';
-import { createGrayscaleEffect } from './grayscaleEffect';
 import { getRenderEffectInputs, getRenderEffectKinds, RENDER_EFFECT_KINDS } from './renderEffectInputs';
 import { createSsaoEffect } from './ssaoEffect';
 import { createTaaEffect } from './taaEffect';
@@ -29,7 +28,6 @@ describe('getRenderEffectInputs', () => {
   });
 
   it('returns empty array for effects that need only the color buffer', () => {
-    expect(getRenderEffectInputs(createGrayscaleEffect())).toEqual([]);
     expect(getRenderEffectInputs(createColorGradeEffect())).toEqual([]);
   });
 
@@ -44,7 +42,7 @@ describe('getRenderEffectKinds', () => {
     expect(kinds).toContain('BloomEffect');
     expect(kinds).toContain('ToneMapEffect');
     expect(kinds).toContain('SsaoEffect');
-    expect(kinds).toContain('GrayscaleEffect');
+    expect(kinds).toContain('ExposureEffect');
   });
 
   it('returns the same reference as RENDER_EFFECT_KINDS', () => {

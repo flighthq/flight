@@ -9,6 +9,7 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../adjustments" },
     { "path": "../effects" },
     { "path": "../geometry" },
     { "path": "../render-wgpu" },
