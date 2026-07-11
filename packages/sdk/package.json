@@ -135,6 +135,7 @@
     "@flighthq/storage": "*",
     "@flighthq/surface": "*",
     "@flighthq/text": "*",
+    "@flighthq/textbidi": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/textsegment": "*",
