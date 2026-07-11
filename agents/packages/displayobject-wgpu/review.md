@@ -47,7 +47,7 @@ Side-effect-free (`"sideEffects": false`), single root `.` export, no top-level 
 
 What a mature GPU 2D backend has that this lacks — each is externally gated, per the status, and none blocks use of the package:
 
-- **Blend modes beyond Normal + Add.** `wgpuSpriteBatch.ts` defines only `NORMAL_BLEND` and `ADD_BLEND`; any other `BlendMode` silently resolves to Normal (`blendMode === BlendMode.Add ? ADD_BLEND : NORMAL_BLEND`). The full OpenFL blend set (Multiply, Screen, Overlay, etc.) is unimplemented. Gated on a blend-mode taxonomy in `render`/`@flighthq/types`. (Note: this makes the `render-backend-support.md` "wgpu = none" line stale — see Contract & docs fit.)
+- **Blend modes beyond Normal + Add.** `wgpuSpriteBatch.ts` defines only `NORMAL_BLEND` and `ADD_BLEND`; any other `BlendMode` silently resolves to Normal (`blendMode === BlendMode.Add ? ADD_BLEND : NORMAL_BLEND`). The full blend set (Multiply, Screen, Overlay, etc.) is unimplemented. Gated on a blend-mode taxonomy in `render`/`@flighthq/types`. (Note: this makes the `render-backend-support.md` "wgpu = none" line stale — see Contract & docs fit.)
 - **GPU stroke tessellation** and **GPU gradient / bitmap-fill shading** for shapes — blocked on a shared tessellator/fill design in `@flighthq/path`. Shapes today are solid-fill mesh.
 - **Glyph-atlas GPU text.** Text rendering does not yet have a GPU glyph atlas; blocked on the `text-shaping` seam landing (the codebase-map "designed, not yet built" package).
 - **MSAA / multisample pipelines** — blocked on `render-wgpu` growing multisample support first.
@@ -80,7 +80,7 @@ None. The charter (`charter.md`) is a stub — only "What it is" is filled (seed
 
 The charter is a stub; these are the questions a future direction pass must settle (each became an assumption I had to make to review):
 
-1. **What is the blend-mode boundary for this package?** Is wgpu intentionally Normal+Add-only until the `render`/`types` blend taxonomy lands, or is the full OpenFL blend set in-scope here once unblocked? This is the single biggest visible feature gap.
+1. **What is the blend-mode boundary for this package?** Is wgpu intentionally Normal+Add-only until the `render`/`types` blend taxonomy lands, or is the full blend set in-scope here once unblocked? This is the single biggest visible feature gap.
 2. **Is the stats API (`WgpuRenderStats`) a blessed long-term surface or a temporary diagnostic?** Its home is `@flighthq/types` (a cross-package commitment), yet `textureUploadCount` is wired to nothing. Should a parallel `GlRenderStats` exist, or should stats be a backend-agnostic `RenderStats` in `render`? A direction call avoids per-backend drift.
 3. **Should `register*DisplayObjectRenderers` / `register*SpriteRenderers` be a cross-backend contract?** The status flags the missing `displayobject-gl` twins. If "register all built-ins for backend X" is a blessed pattern, it should be symmetric across gl/wgpu/canvas/dom — a charter-level decision, not a per-package add.
 4. **Where do GPU shape fills (stroke tessellation, gradients, bitmap fills) live** — in `@flighthq/path` as a shared tessellator consumed by both GPU backends, or per-backend? This is the gate on shape fidelity and is explicitly cross-package (fork A/E territory).

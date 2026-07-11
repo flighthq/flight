@@ -22,8 +22,8 @@ The package exports four functions in two files: three box-blur/Gaussian convers
 
 - `computeBoxBlurRadius(sigma, passes)` — single uniform box radius whose `passes`-fold variance matches a Gaussian sigma; the standard W3C/SVG-derived formula, `0` sentinel for non-positive sigma.
 - `computeBoxBlurPassRadius(sigma, passes, pass)` — per-pass radius using two adjacent odd box widths so combined variance tracks sigma without cumulative overshoot; non-decreasing in `pass`; for backends that can vary radius per pass (gl separable passes). Docs explain exactly when to use which — model documentation.
-- `computeGaussianSigmaForBlurRadius(radius, passes)` — the inverse mapping (e.g. Flash `blurX` → sigma-based backend).
-- `getShadowFilterOffset(filter, out)` — degrees-clockwise angle + distance → rounded `{dx, dy}`, Flash/OpenFL convention, shared by drop-shadow/inner-shadow/bevel across every backend; out-param returning `out`, filter types from `@flighthq/types`.
+- `computeGaussianSigmaForBlurRadius(radius, passes)` — the inverse mapping (e.g. a `blurX` radius → sigma-based backend).
+- `getShadowFilterOffset(filter, out)` — degrees-clockwise angle + distance → rounded `{dx, dy}`, the standard drop-shadow convention, shared by drop-shadow/inner-shadow/bevel across every backend; out-param returning `out`, filter types from `@flighthq/types`.
 - Tests: 19 cases including variance-approximation bounds, monotonicity, the overshoot comparison, sentinels, and per-filter-kind coverage of the offset.
 
 ## Gaps vs an authoritative filter-math library
@@ -37,14 +37,14 @@ Compare the shared math layers inside Skia, Cairo, WebRender, and the SVG filter
 - **Color-matrix math** — 5×20 (or 4×20) matrix composition/identity/application lives in `filters/colorMatrixMath.ts`, not here. Two backends applying stacked color-matrix filters must share composition math; same layering question as margin.
 - **Convolution kernel normalization/analysis** — kernel builders live in `filters/convolutionKernels.ts`; the *math* half (normalize, divisor/bias handling, separability test) is shared-backend territory.
 - **Bevel geometry** — `getShadowFilterOffset` covers the offset, but bevel highlight/shadow are the offset pair (+d and −d) with type-dependent compositing; a `getBevelFilterOffsets` companion would stop backends deriving the negation and rounding independently (rounding *before* negation vs after differs for odd distances — exactly the cross-backend drift this package exists to kill).
-- **Quality→passes mapping** — Flash's quality 1/2/3 → pass count convention appears to live in `filters/blurQuality.ts`; it parameterizes every function in `blurMath.ts` (`passes`) and is needed by every backend, so it sits on the wrong side of the seam.
+- **Quality→passes mapping** — the quality 1/2/3 → pass count convention appears to live in `filters/blurQuality.ts`; it parameterizes every function in `blurMath.ts` (`passes`) and is needed by every backend, so it sits on the wrong side of the seam.
 
 Not counted against it: per-substrate specifics (CSS filter string building, WGSL/GLSL codegen, ImageData loops) — those correctly belong in the backend packages.
 
 ## Naming / API-shape notes
 
 - `compute*` for pure derivations and `get*` for accessor-shaped extraction is used consistently; all four names carry their full domain words and are globally self-identifying. Good.
-- `getShadowFilterOffset` takes a `DropShadowFilter | InnerShadowFilter | BevelFilter` union — as this widens (glow filters share angle/distance in Flash lineage), consider whether the honest parameter is a minimal structural `{ angle?, distance? }` `*Like` input rather than a growing union of entity types.
+- `getShadowFilterOffset` takes a `DropShadowFilter | InnerShadowFilter | BevelFilter` union — as this widens (glow filters share angle/distance in the same lineage), consider whether the honest parameter is a minimal structural `{ angle?, distance? }` `*Like` input rather than a growing union of entity types.
 - The `out: { dx: number; dy: number }` inline type is anonymous; if any second function returns an offset pair, the shape should be a named type in `@flighthq/types` (`PixelOffset` or reuse an existing vector type) rather than repeated structural literals.
 - The blur trio operates on bare numbers, so no type-word is required — same carve-out the `math` review applied to scalar helpers.
 - **Layering inconsistency is the real shape issue:** the package description says filters-math is "depended on by the filters intents package and every filter backend," i.e. it is the bottom of the filter stack. But `colorMatrixMath`, `convolutionKernels`, `blurQuality`, and `bitmapFilterMargin` — all backend-shared math — live in `filters`, which sits above it. Either the seam means "all shared filter math lives below the descriptors" (then those four files migrate here) or the seam is only "math the descriptors themselves need" (then the description over-claims). The current split looks like extraction-in-progress, not a decided boundary.

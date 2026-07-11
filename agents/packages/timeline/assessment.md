@@ -18,7 +18,7 @@ Sweep-safe: within `@flighthq/timeline`, no open design decision, no cross-packa
 
 2. **Simplify or document the `setMovieClipSource` signal re-wire branch.** In `movieClip.ts`, `setMovieClipSource` reuses the same timeline object, so the `if (runtime.movieClipSignals !== null) { enableTimelineSignals(timeline) }` branch re-fetches the same idempotent group and assigns it to itself. Either drop the dead branch or add a durable comment pinning why it is load-bearing. Correctness-neutral, in-source.
 
-3. **Document the frame-skip accounting contract.** Catch-up via `Math.floor(timeElapsed/frameTime)` jumps to the landing frame and fires `onEnterFrame`/scripts for that frame only — skipped frames are silent. This matches Flash and is tested but undocumented. Add a durable semantic comment on the advance path stating the landing-frame-only contract. Documentation only — the behavior is correct.
+3. **Document the frame-skip accounting contract.** Catch-up via `Math.floor(timeElapsed/frameTime)` jumps to the landing frame and fires `onEnterFrame`/scripts for that frame only — skipped frames are silent. This matches conventional frame-advance behavior and is tested but undocumented. Add a durable semantic comment on the advance path stating the landing-frame-only contract. Documentation only — the behavior is correct.
 
 ## Backlog
 

@@ -34,7 +34,7 @@ No claim was overstated. The status doc's self-estimate (91) is a touch high aga
 Grounded in `incoming/builder-67dc46d64/head/packages/displayobject-canvas/src/`:
 
 - **Full per-kind renderer set** — `defaultCanvas*Renderer` for Bitmap, DisplayObject, ParticleEmitter, QuadBatch, RichText, Scale9Shape, Shape, Sprite, TextLabel, Tilemap, Video, each a `{ createData, submit }` object. `canvasBitmap.ts` honors `sourceRectangle`, per-bitmap `smoothing` against `state.allowSmoothing`, blend mode, and alpha.
-- **Shape command spine** — `canvasShapeCommands.ts` implements the OpenFL graphics vocabulary as registerable `CanvasShapeCommand` objects (`beginFill`, `beginBitmapFill`, `beginGradientFill`, `lineStyle`, `moveTo`/`lineTo`/`curveTo`, fills/winding), dispatched by `renderCanvasShapeCommands` over a shared `CanvasShapeDrawState`; `canvasShapeRegistry.ts` makes the command set open and user-extensible.
+- **Shape command spine** — `canvasShapeCommands.ts` implements the retained-mode graphics vocabulary as registerable `CanvasShapeCommand` objects (`beginFill`, `beginBitmapFill`, `beginGradientFill`, `lineStyle`, `moveTo`/`lineTo`/`curveTo`, fills/winding), dispatched by `renderCanvasShapeCommands` over a shared `CanvasShapeDrawState`; `canvasShapeRegistry.ts` makes the command set open and user-extensible.
 - **Material seam** — `canvasMaterialRegistry.ts` exposes `registerCanvasMaterialRenderer`/`resolveCanvasMaterialRenderer`/`getCanvasMaterialRenderer` over a lazy `materialRendererMap`, with `applyCanvasMaterial` bracketing a save/restore only when a material contributes draw state — the common path pays nothing.
 - **Blend modes** — `canvasMaterials.ts` maps the full `BlendMode` enum to `globalCompositeOperation`, caches the current mode on the runtime to skip redundant context writes, and documents every unsupported mode.
 - **Clipping/masking** — handled uniformly through `canvasClip.ts` / `canvasClipRectangle.ts` (`pushCanvasClipContours`), not per-kind `drawMask`; the canvas backend correctly treats `drawMask` as a no-op satisfying the renderer interface.
@@ -47,7 +47,7 @@ Test coverage is dense (status reports 217 across 29 files; the diff adds materi
 
 ## Gaps
 
-Measured against the AAA OpenFL/Lime feature target (charter is a stub — see Candidate open directions):
+Measured against the AAA 2D display-object feature target (charter is a stub — see Candidate open directions):
 
 - **Dashed strokes** — no `setLineDash`/`lineDashOffset`; blocked on a `dashPattern`/`dashOffset` field in the `lineStyle` command tuple in `@flighthq/types`+`@flighthq/shape`. Cross-package.
 - **`LineScaleMode 'horizontal'` / `'vertical'`** — fall back to `'normal'`; needs per-axis scale decomposition of the canvas transform. Within-package but a focused item.
@@ -85,7 +85,7 @@ None — the charter is an unfilled stub (all four body sections are `TODO`), so
 
 The charter is silent on all of these; each is a question the direction pass should settle rather than an agent assume:
 
-1. **Scope of the Canvas backend vs. `displayobject-skia`.** Is `displayobject-canvas` the _primary_ 2D software path (richest fidelity, owns the OpenFL feature target), or the _thin host-web_ path with `skia` as the conformance reference? This decides how hard to push canvas-specific fidelity (dashed strokes, per-axis scale modes) vs. deferring to the shared rasterizer.
+1. **Scope of the Canvas backend vs. `displayobject-skia`.** Is `displayobject-canvas` the _primary_ 2D software path (richest fidelity, owns the 2D feature target), or the _thin host-web_ path with `skia` as the conformance reference? This decides how hard to push canvas-specific fidelity (dashed strokes, per-axis scale modes) vs. deferring to the shared rasterizer.
 2. **Render-target readback ownership.** Does canvas expose raw `ImageData`, or only a `CanvasRenderTarget → ImageSource` bridge into `@flighthq/surface`? This is a real API fork that blocks the readback feature and should not be decided silently.
 3. **Fidelity floor for unsupported blend modes.** Is "degrade to normal, document it" the accepted posture for `Invert`/`Shader`/`Subtract`, or should canvas gain a pixel-readback path for at least `Invert`? Today it is documented degradation; the charter should bless or reject that.
 4. **Where cross-backend conformance scenes live and which backends they target.** The blend/scale-mode features are unverified visually; the charter should name the expectation (canvas ↔ dom ↔ gl parity scenes, plus the `rust:skia ~ ts:canvas` cross-impl pairing).

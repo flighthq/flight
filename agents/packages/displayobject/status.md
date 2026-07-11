@@ -41,8 +41,8 @@ The package shape has diverged from the assessment (which was written against th
 
 ### Updated Types (in @flighthq/types)
 
-- `StageAlign` — added `''` (empty string / center) as a valid value, matching OpenFL/Flash's default alignment. Added doc comment explaining the semantics.
-- `StageData` — added seven OpenFL-parity fields: `contentsScaleFactor`, `frameRate`, `fullScreenHeight`, `fullScreenWidth`, `mouseChildren`, `showDefaultContextMenu`, `stageFocusRect`, `tabChildren`. All are alphabetized within the interface.
+- `StageAlign` — added `''` (empty string / center) as a valid value, matching the conventional default alignment. Added doc comment explaining the semantics.
+- `StageData` — added seven standard stage fields: `contentsScaleFactor`, `frameRate`, `fullScreenHeight`, `fullScreenWidth`, `mouseChildren`, `showDefaultContextMenu`, `stageFocusRect`, `tabChildren`. All are alphabetized within the interface.
 - `DisplayObjectTraits` — extended to include `HasCacheAsBitmap`. Every display object now carries `cacheAsBitmap: false` and `cacheAsBitmapMatrix: null` by default.
 - `DisplayObjectRuntime` — promoted from a type alias to an `interface` (required to add a field), added `lifecycleSignals: DisplayObjectLifecycleSignals | null`.
 
@@ -65,7 +65,7 @@ The package shape has diverged from the assessment (which was written against th
 
 **stage.ts:**
 
-- `createStageData` — default `align` changed from `'topleft'` to `''` (center), matching OpenFL default. Added defaults for all seven new fields.
+- `createStageData` — default `align` changed from `'topleft'` to `''` (center), matching the conventional default. Added defaults for all seven new fields.
 - `setStageColor(source, value)` — sets `color` (was previously unset-able without data mutation), invalidates appearance.
 - `setStageContentsScaleFactor(source, value)` — sets DPR hint, invalidates appearance.
 - `setStageFrameRate(source, value)` — sets frame-rate hint (no invalidation needed; the loop backend reads it).
@@ -162,7 +162,7 @@ All 195 tests pass. `npm run packages:check` ✓ · `npm run exports:check` ✓ 
 
 ### `StageAlign` default changed to `''` (center)
 
-OpenFL/Flash's default stage alignment is `''` (centered) — not `'topleft'`. The first pass incorrectly defaulted to `'topleft'`. This pass corrects it. Any code that relied on `'topleft'` as the default must be updated; there are no known consumers since this package is pre-release.
+The conventional default stage alignment is `''` (centered) — not `'topleft'`. The first pass incorrectly defaulted to `'topleft'`. This pass corrects it. Any code that relied on `'topleft'` as the default must be updated; there are no known consumers since this package is pre-release.
 
 ### `DisplayObjectRuntime` promoted from type alias to interface
 
@@ -178,7 +178,7 @@ The `Loader` is a `DisplayObject` (entity/runtime pair) that holds a `ResourceLo
 
 ### `cacheAsBitmap` / `cacheAsBitmapMatrix` as display-object-level hints
 
-Both fields are on `DisplayObjectTraits` (hence on every display object) as render hints. A renderer that has not implemented cache-as-bitmap ignores them silently. This matches the OpenFL pattern where `cacheAsBitmap` is a property on `DisplayObject`, not on a special subtype. The `cacheAsBitmapMatrix` override is needed for filter-compositing workflows where you want a world-aligned, rotation-free cached texture.
+Both fields are on `DisplayObjectTraits` (hence on every display object) as render hints. A renderer that has not implemented cache-as-bitmap ignores them silently. This matches the conventional pattern where `cacheAsBitmap` is a property on `DisplayObject`, not on a special subtype. The `cacheAsBitmapMatrix` override is needed for filter-compositing workflows where you want a world-aligned, rotation-free cached texture.
 
 ---
 
@@ -195,7 +195,7 @@ Both fields are on `DisplayObjectTraits` (hence on every display object) as rend
 | Category                                                              | Score      |
 | --------------------------------------------------------------------- | ---------- |
 | Entity/runtime quartet completeness                                   | 18/20      |
-| Stage OpenFL-parity                                                   | 17/20      |
+| Stage feature parity                                                  | 17/20      |
 | Leaf type coverage (Bitmap, Video, Loader, RenderView, HtmlView)      | 18/20      |
 | Trait coverage (HasCacheAsBitmap, HasScrollRect, HasOpaqueBackground) | 10/10      |
 | Lifecycle signals (type+enable, emission deferred)                    | 7/10       |

@@ -15,7 +15,7 @@ status: ./status.md
 
 `@flighthq/materials` is the data-side material system for the SDK — the package that holds material _descriptors_ and the color _values_ they are built from, not the shading code that consumes them. It spans three slices fused into one package today:
 
-- **2D color transform** — a complete OpenFL-parity `ColorTransform` algebra (create/clone/copy/concat/invert/equals, offset packers, GPU-array upload path). This is the Flash/OpenFL tinting model.
+- **2D color transform** — a complete `ColorTransform` algebra (create/clone/copy/concat/invert/equals, offset packers, GPU-array upload path). This is the classic 2D tinting model.
 - **Color utilities** — packed-RGBA values and the conversions between color spaces: the bidirectional sRGB↔linear seam (`unpackColorToLinear`/`packLinearToColor`), gamma-free pack/unpack, HSL/HSV (artist-facing, sRGB-space), gamma-correct mixing/lerp, luminance/contrast/WCAG, and premultiply/unpremultiply.
 - **3D material catalog** — a broad, glTF-aligned descriptor library: unlit/debug, classic lighting (Lambert/Phong/Blinn-Phong), metallic-roughness PBR core, the spec-gloss model and its conversion to metallic-roughness, the KHR-named extension materials (anisotropy, clearcoat, iridescence, sheen, specular, transmission/volume, subsurface), validation/clamping, a generic clone/copy/equals suite, and named PBR presets.
 
@@ -39,7 +39,7 @@ _Proposed scope lines, drawn from the review and neighbors. Confirm before relyi
 
 **In scope:**
 
-- Color-transform algebra (OpenFL parity) and its GPU-upload path.
+- Color-transform algebra and its GPU-upload path.
 - Packed-color utilities and the bidirectional sRGB↔linear seam.
 - Artist-facing color spaces (HSL/HSV) and gamma-correct mixing/measurement.
 - The full 3D material descriptor catalog (unlit, classic, PBR core + spec-gloss, KHR extensions), with clone/copy/equals/validate and named presets.

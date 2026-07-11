@@ -22,12 +22,12 @@ This is a **merge-gate** review of the incoming delta only, judged against the a
 
 Four files, two source units:
 
-- **`surfaceNoise.ts`** (modified): `fillSurfacePerlinNoise` gains `stitch` and `channelOptions` parameters and OpenFL-parity channel masking; a new exported `fillSurfaceTurbulence`; four new exported constants `SURFACE_NOISE_CHANNEL_{R,G,B,A}`; internal `stitchedCoord` and `turbulenceNoise` helpers. Plus `surfaceNoise.test.ts` (6 new `it`s).
+- **`surfaceNoise.ts`** (modified): `fillSurfacePerlinNoise` gains `stitch` and `channelOptions` parameters and per-channel masking; a new exported `fillSurfaceTurbulence`; four new exported constants `SURFACE_NOISE_CHANNEL_{R,G,B,A}`; internal `stitchedCoord` and `turbulenceNoise` helpers. Plus `surfaceNoise.test.ts` (6 new `it`s).
 - **`surfaceWarp.ts`** (new): `warpSurface` (3×3 projective/homography, inverse-mapped, nearest/bilinear/bicubic sampling, edge modes) and `warpSurfaceQuad` (4-corner DLT homography → invert → delegate), plus `surfaceWarp.test.ts` (10 `it`s).
 
 ## Verdict
 
-`REVISE — 72/100, NOT mergeable as-is.` The noise half of the delta is clean, well-tested, and a genuine OpenFL-parity improvement that I would merge on its own. The warp half is **not fit to merge**: it imports a type that does not exist on this base (a hard `tsc -b` failure for the whole package) and is not wired into the barrel (dead public API even if it compiled). One of those two is independently blocking; together they mean the candidate, as delivered, does not build and ships no reachable warp API. Fix both (or split warp out of this merge) and the delta is mergeable.
+`REVISE — 72/100, NOT mergeable as-is.` The noise half of the delta is clean, well-tested, and a genuine perlin-noise improvement that I would merge on its own. The warp half is **not fit to merge**: it imports a type that does not exist on this base (a hard `tsc -b` failure for the whole package) and is not wired into the barrel (dead public API even if it compiled). One of those two is independently blocking; together they mean the candidate, as delivered, does not build and ships no reachable warp API. Fix both (or split warp out of this merge) and the delta is mergeable.
 
 ## Blocking defects (must fix before merge)
 
@@ -67,7 +67,7 @@ The warp file invents an edge-mode vocabulary that (a) is undefined and (b) dive
 ## Minor (non-blocking)
 
 - The four `SURFACE_NOISE_CHANNEL_*` constants are exported but have no dedicated test `describe`; they are exercised inside the function describes (`fillSurfacePerlinNoise`/`fillSurfaceTurbulence` use `SURFACE_NOISE_CHANNEL_R`/`_A`). `exports:check` binds _functions_ to colocated tests, so this is unlikely to fail the gate, but if the checker is extended to constants it would. Acceptable as-is.
-- `fillSurfacePerlinNoise`'s default behavior changes (independent-channel default → `channelOptions = 0x7` RGB mask, alpha forced opaque unless A selected). Pre-release, no back-compat duty, and the new params are additive with OpenFL-matching defaults — **not** an objection, recorded only so the noise-determinism baselines (if any fingerprint tests pin perlin output) are re-captured.
+- `fillSurfacePerlinNoise`'s default behavior changes (independent-channel default → `channelOptions = 0x7` RGB mask, alpha forced opaque unless A selected). Pre-release, no back-compat duty, and the new params are additive with conventional perlin defaults — **not** an objection, recorded only so the noise-determinism baselines (if any fingerprint tests pin perlin output) are re-captured.
 
 ## Score rationale
 

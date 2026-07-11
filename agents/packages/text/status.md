@@ -57,7 +57,7 @@ Verification: `npm run test --workspace=packages/text` → 4 files, 178 tests pa
 - `setRichTextWidth` — bumps content + bounds
 - `setRichTextWordWrap` — bumps content + bounds
 
-**Read accessors restoring OpenFL symmetry:**
+**Read accessors restoring getter/setter symmetry:**
 
 - `getRichTextDefaultTextFormat` — returns `data.defaultTextFormat`
 - `getRichTextHtml` — returns `data.htmlText`
@@ -127,7 +127,7 @@ All new exported functions have colocated tests. Test count grew from 74 to 149 
 
 ### Gold — not started
 
-- **Full OpenFL `TextField` semantic coverage** (`restrict`, `displayAsPassword` on static field, `embedFonts`/`antiAliasType`/`gridFitType`, `replaceSelectedText`) — some couple to `@flighthq/textinput`, making them cross-package design decisions.
+- **Full `TextField` semantic coverage** (`restrict`, `displayAsPassword` on static field, `embedFonts`/`antiAliasType`/`gridFitType`, `replaceSelectedText`) — some couple to `@flighthq/textinput`, making them cross-package design decisions.
 - **Inline object (`<img>`) support** — requires `textlayout` changes and a `RichTextInlineObject` type in `@flighthq/types`.
 - **Performance** — prefix-sum line heights, O(ranges) content-build, large-document scroll.
 - **Functional/parity tests** — multi-format RichText, autoSize anchors, word-wrap reflow, scroll, links, NativeText.

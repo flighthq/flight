@@ -22,7 +22,7 @@ _(Needs a full direction session to design MovieClipSignals shape, recursion beh
 
 ## North star
 
-The display-object composition layer over `@flighthq/timeline`: a `MovieClip` is a `DisplayObject` whose frames a timeline drives, plus the bridges (spritesheet → `TimelineSource`) that feed it. The timeline engine stays pure and headless; movieclip is where it meets the scene graph. AAA target is OpenFL MovieClip parity — nested-clip playback, frame scripts, labels, goto/play/stop — expressed Flight-style (explicit, no hidden per-frame magic).
+The display-object composition layer over `@flighthq/timeline`: a `MovieClip` is a `DisplayObject` whose frames a timeline drives, plus the bridges (spritesheet → `TimelineSource`) that feed it. The timeline engine stays pure and headless; movieclip is where it meets the scene graph. AAA target is full timeline-clip parity — nested-clip playback, frame scripts, labels, goto/play/stop — expressed Flight-style (explicit, no hidden per-frame magic).
 
 ## Boundaries
 
@@ -47,7 +47,7 @@ _Append-only, dated, blessed rulings._
 
 - **[2026-07-10] Extracted from timeline + spritesheet (behavior-preserving).** `@flighthq/movieclip` now exists as its own package (`849ada06`), holding the complete MovieClip node/playback wrapper (moved from `packages/timeline/src/movieClip.ts`) and `createSpritesheetTimelineSource` (moved from `packages/spritesheet/src/spritesheetTimelineSource.ts`). No behavior/signature change — pure relocation + registration. Deps corrected to the set above. This absorbs the planned `timeline-spritesheet` scope (that package will not be built).
 
-- **[2026-07-10] Nested-clip advance is not `updateMovieClip` recursion — it hooks the existing update-before-render tree walk.** OpenFL leaves *when* a MovieClip advances to the implementer; Flight already walks every display object in the pre-render update pass, so making `updateMovieClip` recurse into children would duplicate that walk and hide work. Direction: keep `updateMovieClip(clip, dt)` non-recursive and explicit (advance one clip's own timeline), and add an **opt-in per-node advance hook driven by the existing tree walk** — a signal or callback each MovieClip node can register so it advances as the pre-render pass visits it. The implementer chooses manual `updateMovieClip` calls or the walk-driven hook; the engine never silently advances clips the caller didn't opt in. (Maturation item — not yet built; the extraction preserves the non-recursive-only behavior.)
+- **[2026-07-10] Nested-clip advance is not `updateMovieClip` recursion — it hooks the existing update-before-render tree walk.** A retained-mode timeline runtime typically leaves *when* a MovieClip advances to the implementer; Flight already walks every display object in the pre-render update pass, so making `updateMovieClip` recurse into children would duplicate that walk and hide work. Direction: keep `updateMovieClip(clip, dt)` non-recursive and explicit (advance one clip's own timeline), and add an **opt-in per-node advance hook driven by the existing tree walk** — a signal or callback each MovieClip node can register so it advances as the pre-render pass visits it. The implementer chooses manual `updateMovieClip` calls or the walk-driven hook; the engine never silently advances clips the caller didn't opt in. (Maturation item — not yet built; the extraction preserves the non-recursive-only behavior.)
 
 ### Origin decisions (from timeline charter)
 

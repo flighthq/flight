@@ -10,7 +10,7 @@ The freedom is a **direction-and-review-time license, not a blanket execution li
 
 ## The frame: monolith decomposition, down to bedrock
 
-This whole project is the decomposition of the OpenFL/Lime monolith into composable primitives (see [Composition and Complexity](../index.md#composition-and-complexity)). Two opposing forces bound the work:
+This whole project is the decomposition of a monolithic display-and-application framework into composable primitives (see [Composition and Complexity](../index.md#composition-and-complexity)). Two opposing forces bound the work:
 
 - **Decompose** until every unit is a primitive or simple-by-composition.
 - **Stop at bedrock.** Decomposition has a floor — the irreducible primitive. Past it is _blood from a stone_: over-decomposition with diminishing returns. Finding where bedrock lies, per domain, is itself a recurring judgement (fork E).

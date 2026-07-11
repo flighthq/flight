@@ -29,7 +29,7 @@ Every export has a colocated test, though the loader tests assert little beyond 
 
 ## Gaps vs an authoritative font-resource library
 
-Compare the CSS Font Loading API surface itself, webfontloader/FontFaceObserver, Lime's `Font`, and — per `register.md`, which names `ttf-parser` as this subject's upstream oracle — a font-introspection primitive:
+Compare the CSS Font Loading API surface itself, webfontloader/FontFaceObserver, and — per `register.md`, which names `ttf-parser` as this subject's upstream oracle — a font-introspection primitive:
 
 - **The dual entity model is itself the top gap.** `Font` vs `FontResource` split one subject into two half-libraries; neither holds the whole story (`Font` has no `FontFace` handle and cannot be unloaded; `FontResource` has no entity identity). An authoritative layer has one font entity with identity *and* the loaded-face handle.
 - **No `FontFaceDescriptors`.** None of the eight loaders accept weight, style, stretch, `unicodeRange`, `display`, or `featureSettings` — so you cannot register `Roboto Bold Italic` as a variant of the `Roboto` family, cannot subset by unicode range, and cannot control FOUT behavior. This makes multi-weight families — the normal case — unrepresentable.

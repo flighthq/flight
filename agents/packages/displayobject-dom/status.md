@@ -56,7 +56,7 @@ Recommend a review pass re-verify this package against its actual diff before re
 **From second pass:**
 
 - **`hasDomCssFilterEquivalent` — expanded** (`domCSSFilterBinding.ts`): added `OuterGlowFilter` to the supported set. `OuterGlowFilter` maps to CSS `drop-shadow(0 0 blur color)` — a glow effect is a shadow with zero offset. The mapping comment in the source documents the approximation.
-- **`getDomSvgColorMatrixFilter(filter)`** (`domSvgFilter.ts`) — builds a CSS `filter: url(#id)` string for a `ColorMatrixFilter` by injecting an inline SVG `<feColorMatrix>` element into a shared hidden SVG container at the document root. This is the **DOM-native exact fidelity path** for color-matrix filters — no GPU readback, no rasterization. Converts Flash's 0–255 offset convention to SVG's 0–1 range. Sets `color-interpolation-filters: sRGB` for sRGB-consistent color math. Returns `null` outside a document context (SSR-safe).
+- **`getDomSvgColorMatrixFilter(filter)`** (`domSvgFilter.ts`) — builds a CSS `filter: url(#id)` string for a `ColorMatrixFilter` by injecting an inline SVG `<feColorMatrix>` element into a shared hidden SVG container at the document root. This is the **DOM-native exact fidelity path** for color-matrix filters — no GPU readback, no rasterization. Converts the 0–255 offset convention to SVG's 0–1 range. Sets `color-interpolation-filters: sRGB` for sRGB-consistent color math. Returns `null` outside a document context (SSR-safe).
 - **`releaseDomSvgColorMatrixFilter(id)`** (`domSvgFilter.ts`) — removes the injected `<filter>` DOM element by its id to avoid `<filter>` node leaks. The id is the fragment portion of the CSS string returned by `getDomSvgColorMatrixFilter`.
 
 **HiDPI/pixelRatio fix (drawDomShape):**

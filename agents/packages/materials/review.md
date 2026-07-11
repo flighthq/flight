@@ -16,7 +16,7 @@ ingested:
 
 ## Verdict
 
-solid — **86/100**. This package is now two coherent libraries fused into one: a complete OpenFL `ColorTransform` algebra and a broad, glTF-aligned 3D material descriptor catalog — and as of this bundle it has grown a real color-utility tier (HSL/HSV, premultiply, luminance/contrast, lerp, pack/unpack, the inverse sRGB seam), a validation/clamping tier, a generic material clone/copy/equals suite, a spec→metallic-roughness conversion, and 11 named PBR presets. The depth review's two highest-value gaps (no clone/copy/equals across the 3D family; a one-directional color seam) are both closed. It falls short of authoritative on the deliberate descriptor-vs-math line (no BRDF/Fresnel/GGX), a stale Rust crate (~60% conformance), and a handful of contract-fit drifts (cross-package scratch types defined file-local, a stale doc comment on `hslToRgb`, an `equals` that shallow-compares the PBR `standard` sub-block).
+solid — **86/100**. This package is now two coherent libraries fused into one: a complete `ColorTransform` algebra and a broad, glTF-aligned 3D material descriptor catalog — and as of this bundle it has grown a real color-utility tier (HSL/HSV, premultiply, luminance/contrast, lerp, pack/unpack, the inverse sRGB seam), a validation/clamping tier, a generic material clone/copy/equals suite, a spec→metallic-roughness conversion, and 11 named PBR presets. The depth review's two highest-value gaps (no clone/copy/equals across the 3D family; a one-directional color seam) are both closed. It falls short of authoritative on the deliberate descriptor-vs-math line (no BRDF/Fresnel/GGX), a stale Rust crate (~60% conformance), and a handful of contract-fit drifts (cross-package scratch types defined file-local, a stale doc comment on `hslToRgb`, an `equals` that shallow-compares the PBR `standard` sub-block).
 
 The status report claims **92/100 (gold)** and a 143→200 test count. The test count verifies exactly (200 `it(`s, 84 exported functions, 84 `describe` blocks, 1:1 colocated). The capability claims all verify against `head/`. The score is marked down from the worker's self-estimate for the contract-fit and conformance items below — those are observation deltas, not capability disputes.
 
@@ -24,7 +24,7 @@ The status report claims **92/100 (gold)** and a 143→200 test count. The test 
 
 Grounded in `incoming/builder-67dc46d64/head/packages/materials/src/`.
 
-**Color transform (OpenFL parity)** — unchanged this pass, still the most authoritative slice: `createColorTransform`, `clone/copy/set/setIdentity`, `concatColorTransform` (alias-safe), `invertColorTransform`, the `equals*` family with `compareAlpha`, `isIdentityColorTransform`, the RGB/RGBA offset packers, and `copyColorTransformToArrays` (GPU upload path).
+**Color transform** — unchanged this pass, still the most authoritative slice: `createColorTransform`, `clone/copy/set/setIdentity`, `concatColorTransform` (alias-safe), `invertColorTransform`, the `equals*` family with `compareAlpha`, `isIdentityColorTransform`, the RGB/RGBA offset packers, and `copyColorTransformToArrays` (GPU upload path).
 
 **Color utilities (`color.ts`)** — substantially expanded this pass:
 

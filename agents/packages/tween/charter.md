@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/tween` is the **property animation engine**: tweening numeric (and typed-value) properties of a target object from start to end over time, with easing, delay, repeat, yoyo, callbacks, and a multi-tween manager that advances many tweens per frame. The canonical reference set is GSAP, TweenJS, anime.js, and the OpenFL-adjacent Actuate/Tweener/Tweensy family. It owns single-object property animation and single-object sequencing; multi-object orchestration and MovieClip-style frame-keyed animation belong to `@flighthq/timeline`.
+`@flighthq/tween` is the **property animation engine**: tweening numeric (and typed-value) properties of a target object from start to end over time, with easing, delay, repeat, yoyo, callbacks, and a multi-tween manager that advances many tweens per frame. The canonical reference set is GSAP, TweenJS, anime.js, and the Actuate/Tweener/Tweensy family. It owns single-object property animation and single-object sequencing; multi-object orchestration and MovieClip-style frame-keyed animation belong to `@flighthq/timeline`.
 
 It consumes `@flighthq/easing` for curve shapes, `@flighthq/signals` for the callback surface, and will consume `@flighthq/clock` for time source abstraction once that package exists. It does not own the frame loop (that is `@flighthq/application`), the easing curves (that is `@flighthq/easing`), or the time primitive itself (that will be `@flighthq/clock`).
 

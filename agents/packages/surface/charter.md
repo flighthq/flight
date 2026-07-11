@@ -12,7 +12,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/surface` is the **CPU pixel-manipulation library** — read, generate, transform, and analyze raw RGBA pixel buffers (`Surface` over `Uint8ClampedArray`). This is the OpenFL `BitmapData` lineage plus the wider feature set of a software raster library (BitmapData + a slice of ImageMagick/Pixman/tiny-skia's raster ops). 97 exported functions across 40 source files. Dependencies: `entity`, `image`, `types`.
+`@flighthq/surface` is the **CPU pixel-manipulation library** — read, generate, transform, and analyze raw RGBA pixel buffers (`Surface` over `Uint8ClampedArray`). This is the `BitmapData` lineage plus the wider feature set of a software raster library (BitmapData + a slice of ImageMagick/Pixman/tiny-skia's raster ops). 97 exported functions across 40 source files. Dependencies: `entity`, `image`, `types`.
 
 It serves two roles: (1) user-facing CPU pixel operations (offline processing, procedural generation, color manipulation, compositing) and (2) SDK infrastructure (fingerprinting, comparison, test baseline capture). Both roles are first-class.
 

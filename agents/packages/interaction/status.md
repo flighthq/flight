@@ -102,7 +102,7 @@ Executed the sweep-safe items from `assessment.md › Recommended` that are stri
 
 #### `hitTests.ts`
 
-- `areNodeChildrenInteractive(source)` — whether picking descends into this node's subtree (mirrors OpenFL `mouseChildren`).
+- `areNodeChildrenInteractive(source)` — whether picking descends into this node's subtree (the `mouseChildren` behavior).
 - `findGraphHitTarget(source, x, y, shapeFlag?)` — front-to-back DFS; honors `isNodeInteractive`, `areNodeChildrenInteractive`, and `setNodeHitArea` proxy. Traversal order comment documents why this reverses child order while `hitTestGraphPoint` does not.
 - `findGraphHitTargetDetailed(source, x, y, out, shapeFlag?)` — fills `out.node`, `out.localX`, `out.localY`, `out.subIndex` (via registered detailed resolver or -1).
 - `getNodeHitArea(source)` — returns hit area proxy or null.
@@ -214,7 +214,7 @@ The two spatial query functions are linear O(n) DFS — correct for small to med
 
 ### Cursor rollover resolution: innermost ancestor wins
 
-`dispatchPointerRolloverChange` walks the rollover chain innermost-first and calls `setCursor` with the first non-null cursor found in the chain (or null when none). This matches the OpenFL `useHandCursor` / `buttonMode` traversal model: the frontmost hit node controls the cursor, but if it has no cursor override, the parent's cursor (if any) takes effect. Applications wanting to block cursor propagation can set `cursor: 'default'` on a container.
+`dispatchPointerRolloverChange` walks the rollover chain innermost-first and calls `setCursor` with the first non-null cursor found in the chain (or null when none). This matches the classic `useHandCursor` / `buttonMode` traversal model: the frontmost hit node controls the cursor, but if it has no cursor override, the parent's cursor (if any) takes effect. Applications wanting to block cursor propagation can set `cursor: 'default'` on a container.
 
 ---
 

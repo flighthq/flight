@@ -44,7 +44,7 @@ Parked — each with the reason it is not sweep-safe.
 
 - **PathMeasure shape.** _Parked — open direction._ Whether to add a stateful cached measure entity (amortized for text-on-path, animation) vs. keeping the current pure re-flattening functions. Open direction #1 in the charter.
 
-- **Stroke dash-phase semantics.** _Parked — open direction._ Per-subpath (Flash) vs. global (SVG/Skia) vs. configurable. Inner/outer stroke alignment also unsettled. Open direction #2 in the charter.
+- **Stroke dash-phase semantics.** _Parked — open direction._ Per-subpath vs. global (SVG/Skia) vs. configurable. Inner/outer stroke alignment also unsettled. Open direction #2 in the charter.
 
 - **Package description update.** The current description understates the package. Should reflect construction + conversion + measurement + analysis + transformation + stroking. Open direction #3 in the charter.
 

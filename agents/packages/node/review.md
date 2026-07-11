@@ -16,7 +16,7 @@ ingested:
 
 ## Verdict
 
-**solid — 87/100.** The base scene-graph tier is now close to authoritative on the 2D side. This bundle closed the single largest gap the prior depth review named — first-class traversal — with a clean, well-tested `traversal.ts`, and added the missing `disposeNode` teardown verb, hierarchy convenience operations, and the 3D alloc fix. The status doc's claimed work is real and verified against the diff. It stops short of authoritative because (a) the 3D side remains a thin shell next to 2D (raw `localMatrix`, no TRS, no 3D bounds), (b) several genuinely-deferred items are blocked on a cross-package `decomposeMatrix`, and (c) the bundle silently added three OpenFL DisplayObject traits to this tier that the status report never mentions and that raise a real boundary question.
+**solid — 87/100.** The base scene-graph tier is now close to authoritative on the 2D side. This bundle closed the single largest gap the prior depth review named — first-class traversal — with a clean, well-tested `traversal.ts`, and added the missing `disposeNode` teardown verb, hierarchy convenience operations, and the 3D alloc fix. The status doc's claimed work is real and verified against the diff. It stops short of authoritative because (a) the 3D side remains a thin shell next to 2D (raw `localMatrix`, no TRS, no 3D bounds), (b) several genuinely-deferred items are blocked on a cross-package `decomposeMatrix`, and (c) the bundle silently added three classic DisplayObject traits to this tier that the status report never mentions and that raise a real boundary question.
 
 ## What the bundle changed (verified against `changes.patch`)
 
@@ -36,13 +36,13 @@ Three brand-new trait files were added in this bundle that the worker status rep
 - `hasOpaqueBackground.ts` → `initOpaqueBackgroundTrait` (over `HasOpaqueBackground`: `opaqueBackground`)
 - `hasScrollRect.ts` → `initScrollRectTrait` (over `HasScrollRect`: `scrollRect`)
 
-All three are confirmed `new file mode 100644` against `base/`, all three have colocated tests, and all three types are properly homed in `@flighthq/types` (`HasCacheAsBitmap.ts`, `HasOpaqueBackground.ts`, `HasScrollRect.ts`) with good doc comments. The code is clean. The concern is twofold: (1) the status report is an **incomplete** account of the delta — a reviewer trusting it would miss a real public-API expansion; and (2) `cacheAsBitmap`, `opaqueBackground`, and `scrollRect` are canonical OpenFL _DisplayObject_ properties, and placing their trait initializers at the base `node` tier is a boundary decision (source-data vs. graph-participation, structural-fork A) that was made silently rather than surfaced. They follow the established `init*Trait` pattern faithfully, so this is not a code defect — it is an unflagged scope/home choice that deserves an explicit ruling.
+All three are confirmed `new file mode 100644` against `base/`, all three have colocated tests, and all three types are properly homed in `@flighthq/types` (`HasCacheAsBitmap.ts`, `HasOpaqueBackground.ts`, `HasScrollRect.ts`) with good doc comments. The code is clean. The concern is twofold: (1) the status report is an **incomplete** account of the delta — a reviewer trusting it would miss a real public-API expansion; and (2) `cacheAsBitmap`, `opaqueBackground`, and `scrollRect` are canonical _DisplayObject_ properties, and placing their trait initializers at the base `node` tier is a boundary decision (source-data vs. graph-participation, structural-fork A) that was made silently rather than surfaced. They follow the established `init*Trait` pattern faithfully, so this is not a code defect — it is an unflagged scope/home choice that deserves an explicit ruling.
 
 ## Present capabilities (full picture)
 
 Carried forward from the depth review and re-confirmed in this bundle:
 
-- **Hierarchy** — the complete OpenFL-faithful child API (`addNodeChild`/`At`, `removeNodeChild`/ `At`/`Children`, `getNodeChildAt`/`ByName`/`Count`/`Index`, `getNodeParent`/`Root`, `containsNodeChild`, `setNodeChildIndex`, `swapNodeChildren`/`At`) plus this bundle's convenience additions, with signal emission and `canAddChild` gating.
+- **Hierarchy** — the complete child API (`addNodeChild`/`At`, `removeNodeChild`/ `At`/`Children`, `getNodeChildAt`/`ByName`/`Count`/`Index`, `getNodeParent`/`Root`, `containsNodeChild`, `setNodeChildIndex`, `swapNodeChildren`/`At`) plus this bundle's convenience additions, with signal emission and `canAddChild` gating.
 - **Transform 2D** (`transform2d.ts`) — lazy, cached, revision-gated local/world matrices with pivot, ±180 rotation normalization, cached sin/cos, and `convertNodeVector2*` conversions.
 - **Transform 3D** (`transform3d.ts`) — `ensureNodeWorldTransformMatrix4`, Matrix4 world composition, `convertNodeVector3*` (now alloc-free).
 - **Bounds** (`boundsRectangle.ts`) — three coordinate tiers, `computeNodeBoundsRectangle` with arbitrary target space, scale-derived sizing, offset-only fast recompute.
@@ -59,7 +59,7 @@ The traversal and dispose gaps are now **closed**. What remains:
 - **3D is still a thin shell next to 2D.** `HasTransform3D` stores a raw `localMatrix: Matrix4` only (confirmed in `types/src/HasTransform3D.ts`) — no cached/lazy local-matrix build from TRS components, no 3D bounds tier, no 3D parent-bounds. The 3D path also still lacks a cached inverse slot for `convertNodeVector3GlobalToLocal` (the alloc fix prevents per-call allocation but re-inverts every call). The 2D/3D asymmetry the depth review flagged persists.
 - **Reparent does not preserve world transform.** `reparentNode(child, newParent)` is a documented pass-through to `addNodeChild`; the standard `keepWorldTransform` affordance is absent, blocked on a missing `decomposeMatrix` in `@flighthq/geometry`.
 - **No world-transform decomposition accessors** — `getNodeWorldPosition`/`Scale`/`Rotation`, `setNodeWorldTransformMatrix`. Same `decomposeMatrix` blocker.
-- **No skew in `HasTransform2D`** — still `x,y,rotation,scaleX,scaleY,pivot` only. OpenFL/Flash `Matrix` and most 2D engines expose it; absence remains unmarked-by-design.
+- **No skew in `HasTransform2D`** — still `x,y,rotation,scaleX,scaleY,pivot` only. Classic 2D `Matrix` types and most 2D engines expose it; absence remains unmarked-by-design.
 - **No change signals beyond hierarchy.** `enableNodeSignals` covers child/parent mutation only; the revision channels for transform/bounds/enabled exist but are not wired to `onTransformChanged`/`onBoundsChanged`/`onEnabledChanged`/`onNodeDisposed` emission.
 - **No batch/deferred invalidation** (`beginNodeBatch`/`endNodeBatch`) for bulk edits.
 - **No Rust `flighthq-node` crate yet** — the charter declares `crate: flighthq-node`, but the slotmap-arena foundation does not exist; the conformance mirror is unbuilt.
@@ -93,9 +93,9 @@ The traversal and dispose gaps are now **closed**. What remains:
 
 These are questions the stub charter does not answer that this review had to assume:
 
-1. **Where is the source-data / graph-participation line (fork A)?** Do OpenFL DisplayObject properties — `cacheAsBitmap`, `opaqueBackground`, `scrollRect`, and the pre-existing `appearance`/ `clip`/`material` — belong at the base `node` tier as opt-in traits, or in `@flighthq/displayobject`? This bundle answered "node" silently for three of them; the charter should ratify or reverse it.
+1. **Where is the source-data / graph-participation line (fork A)?** Do the classic DisplayObject properties — `cacheAsBitmap`, `opaqueBackground`, `scrollRect`, and the pre-existing `appearance`/ `clip`/`material` — belong at the base `node` tier as opt-in traits, or in `@flighthq/displayobject`? This bundle answered "node" silently for three of them; the charter should ratify or reverse it.
 2. **`decomposeMatrix` home.** `reparentNode(keepWorldTransform)` and the world-decomposition accessors are all blocked on 2×2 matrix decomposition. Does it live in `@flighthq/geometry` (pure math, benefits all callers) or inline in `transform2d.ts`? Cross-package; surfaced, not decided.
-3. **Skew: add or mark-omitted.** Settle `HasTransform2D.skewX`/`skewY` for OpenFL parity, or record a deliberate-omission decision with a doc comment.
+3. **Skew: add or mark-omitted.** Settle `HasTransform2D.skewX`/`skewY` for 2D-transform parity, or record a deliberate-omission decision with a doc comment.
 4. **3D rotation representation.** Bringing 3D to 2D parity (cached lazy local matrix from TRS) needs a quaternion-vs-Euler choice; it changes the public `HasTransform3D` surface. Also: do 3D bounds (`getNodeLocalBoundsBox`/`WorldBoundsBox`) belong here or in `@flighthq/scene`? Mark the boundary before building.
 5. **Signal coverage scope.** Should `enableNodeSignals` grow transform/bounds/enabled/disposed change signals (the revision channels already exist), or is hierarchy-only the intended surface?
 6. **Spatial query layer (`pickNodeAtPoint`, `queryNodesInRectangle`).** Overlaps `@flighthq/interaction`'s hit-testing domain — agree the seam with that owner before building, or declare it out of scope for `node`.

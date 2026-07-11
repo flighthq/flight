@@ -84,7 +84,7 @@ It is **not** the MovieClip. The display-object-specific wrapper that consumes a
 
 2. **`updateMovieClip` recursion behavior.** `updateTimeline` doesn't recurse. Does `updateMovieClip` also stay non-recursive, or does movieclip's wrapper add recursive child advance? Worth thought.
 
-3. **Frame-skip policy.** Landing-frame-only (Flash behavior) is the current contract — catch-up via `Math.floor(timeElapsed/frameTime)` jumps to the landing frame, skipped frames' scripts/signals are silent. Frame skip has consequences for code execution (scripts on skipped frames never run). Should there be a `maxFrameSkip` clamp or a `skipPolicy` option?
+3. **Frame-skip policy.** Landing-frame-only is the current contract — catch-up via `Math.floor(timeElapsed/frameTime)` jumps to the landing frame, skipped frames' scripts/signals are silent. Frame skip has consequences for code execution (scripts on skipped frames never run). Should there be a `maxFrameSkip` clamp or a `skipPolicy` option?
 
 4. **Play ranges / reverse / speed.** Label-delimited loop regions, reverse playback direction, and speed control are natural timeline-level primitives. Design TBD — these extend `advanceFrame` with frame-behavior the current engine doesn't have.
 

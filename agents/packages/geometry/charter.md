@@ -13,7 +13,7 @@ status: ./status.md
 
 ## What it is
 
-`@flighthq/geometry` is the SDK's linear-algebra substrate: the value-typed math primitives every other package computes against. It covers the full canonical roster — vectors (vec2/3/4), three matrix tiers (2D affine `Matrix`, `Matrix3`, `Matrix4`), `Quaternion`, the OpenFL-grade 2D `Rectangle`, and the 3D bounding volumes (AABB, sphere, plane, frustum) plus a first-class `Ray3D` with a full intersection suite — along with the supporting infrastructure: typed-array capacity (`reserve*`) helpers and per-type `acquire*`/`release*` object pools.
+`@flighthq/geometry` is the SDK's linear-algebra substrate: the value-typed math primitives every other package computes against. It covers the full canonical roster — vectors (vec2/3/4), three matrix tiers (2D affine `Matrix`, `Matrix3`, `Matrix4`), `Quaternion`, a full-featured 2D `Rectangle`, and the 3D bounding volumes (AABB, sphere, plane, frustum) plus a first-class `Ray3D` with a full intersection suite — along with the supporting infrastructure: typed-array capacity (`reserve*`) helpers and per-type `acquire*`/`release*` object pools.
 
 It is **pure value-math**: free functions over plain data, alias-safe `out`-parameters, sentinel returns, no graph identity, no rendering, no host coupling. Where a neighbor begins: the moment a value gains scene-graph participation it belongs to `@flighthq/node`/`@flighthq/displayobject`/ `@flighthq/scene`, not here; the shared types it operates on (`Ray3DLike`, `FrustumLike`, `EulerOrder`, `BoundingSphereLike`, …) are homed in `@flighthq/types`, not defined inline. How far past pure value-math `geometry` reaches — ray casting, closest-point/distance — is itself live (see Open directions).
 
@@ -34,7 +34,7 @@ _Proposed scope lines — confirm or redraw._
 **In scope:**
 
 - Vector / matrix / quaternion algebra across the full dimension ladder.
-- 2D `Rectangle` (OpenFL-grade) and 3D bounding volumes (AABB, sphere, plane, frustum).
+- 2D `Rectangle` (full-featured) and 3D bounding volumes (AABB, sphere, plane, frustum).
 - `Ray3D` and its intersection suite (the picking/collision math primitive).
 - Float32Array / GPU-buffer packing bridges for vectors and all matrix tiers.
 - Typed-array capacity helpers and per-type object pools.
