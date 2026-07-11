@@ -42,6 +42,7 @@ Filters are genuinely separate from effects. Effects (`@flighthq/effects`) is a 
 
 **Non-goals:**
 
+- **`displayObject.filters` (auto-applying property) — a deliberate anti-goal, will NOT be built** (see [anti-goals](../../anti-goals.md)). Filters are applied by *explicit* per-backend functions the caller invokes, never a property the runtime applies each frame. If you came here to "wire filters into rendering," read the anti-goals entry first — the explicit compose path (render-to-surface → `apply*Filter*` → composite) is the sanctioned model, and any convenience helper must stay explicit + cost-transparent.
 - Pixel rasterization — `filters-gl` / `filters-wgpu` / `filters-surface` / `filters-canvas` / `filters-css`.
 - Blur sigma/radius math — `@flighthq/filters-math` (shared leaf; exists for dependency direction reasons).
 - Post-processing effects — `@flighthq/effects` (layer above; may compose filters).
