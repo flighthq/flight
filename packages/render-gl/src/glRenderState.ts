@@ -70,10 +70,8 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: Partial<
   runtime.spriteBatchInstanceBuffer = null;
   runtime.spriteBatchInstanceData = new Float32Array(13 * 256);
   runtime.spriteBatchTexture = null;
-  runtime.spriteBatchColorTransformMode = 0;
-  runtime.spriteBatchUniformColorTransform = null;
-  runtime.spriteBatchColorTransformData = new Float32Array(8 * 256);
-  runtime.spriteBatchColorTransformBuffer = null;
+  // Color-adjustment fold state (mode/data/buffer + the compiled programs) is not allocated here: it
+  // is owned by the opt-in enableGlColorAdjustment, so a state that never tints carries none of it.
   runtime.textureCache = new WeakMap();
   runtime.quadVertexBuffer = quadVertexBuffer;
   runtime.quadIndexBuffer = quadIndexBuffer;

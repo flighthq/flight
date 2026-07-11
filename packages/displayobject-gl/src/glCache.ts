@@ -73,6 +73,10 @@ export function createGlCacheState(screenState: GlRenderState): GlRenderState {
   cacheRuntime.quadBatchCornerBuffer = screenRuntime.quadBatchCornerBuffer;
   cacheRuntime.colorTransformInstancedShader = screenRuntime.colorTransformInstancedShader;
   cacheRuntime.uniformColorTransformShader = screenRuntime.uniformColorTransformShader;
+  // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold
+  // the same way when baked offscreen. Their per-batch CT data lives on cacheRuntime, lazily grown.
+  cacheRuntime.glColorAdjustmentFold = screenRuntime.glColorAdjustmentFold;
+  cacheRuntime.glColorAdjustmentGuard = screenRuntime.glColorAdjustmentGuard;
   cacheRuntime.materialRendererMap = screenRuntime.materialRendererMap;
   cacheRuntime.materialBitmapShaderMap = screenRuntime.materialBitmapShaderMap;
   cacheRuntime.shaderLoc = screenRuntime.shaderLoc;

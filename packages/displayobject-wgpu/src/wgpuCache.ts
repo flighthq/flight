@@ -114,6 +114,10 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.spriteBatchInstanceData = new Float32Array(0);
   cacheRuntime.spriteBatchMaterialData = new Float32Array(0);
   cacheRuntime.spriteBatchTexture = null;
+  // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold the
+  // same way when baked offscreen. Their per-batch CT data lives on cacheRuntime, lazily grown.
+  cacheRuntime.wgpuColorAdjustmentFold = screenRuntime.wgpuColorAdjustmentFold;
+  cacheRuntime.wgpuColorAdjustmentGuard = screenRuntime.wgpuColorAdjustmentGuard;
   // The bake state owns its own buffer pool (its flushes record into the same frame, so they must
   // not share slots with the screen's batch either).
   cacheRuntime.spriteBatchBufferPool = [];
