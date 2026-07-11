@@ -1,6 +1,6 @@
 # Flight Codebase Map
 
-This repository is a TypeScript monorepo for a tree-shakable graphics and application SDK. It spans a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL 2, and WebGPU), offscreen image processing, and a full application layer. The goal is to cover the full feature set of OpenFL and Lime — every capability they offer should be reachable here — without adopting their API shape or their reliance on implicit, stateful runtime behavior. It is written with AI code agents and a future C/C++ port of this codebase in mind, so names, module boundaries, allocation behavior, and grepability are part of the design surface.
+This repository is a TypeScript monorepo for a tree-shakable graphics and application SDK. It spans a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL 2, and WebGPU), offscreen image processing, and a full application layer. The goal is a complete graphics-and-application feature set — reachable in full — exposed through explicit, side-effect-free APIs over plain data, without implicit, stateful runtime behavior. It is written with AI code agents and a future C/C++ port of this codebase in mind, so names, module boundaries, allocation behavior, and grepability are part of the design surface.
 
 This document should stay useful, not ornamental. Prefer making architecture and API behavior obvious in source, tests, package manifests, and generated API output. Use this file for project-level rules and architecture that are hard to infer from one or two files. Read it once at the start of each session; revisit the relevant section when a task touches package shape, exports, examples, rendering, graph internals, or publishing.
 
@@ -18,9 +18,9 @@ Unless a task specifies otherwise, the goal when working on a feature area is to
 
 When gaps in completeness are identified during a task, the default is to add them to the current task list and address them within the session. Gaps that cross package boundaries, require a design decision, or are too large for the current scope should be surfaced to the user as a suggestion rather than acted on autonomously.
 
-## Relationship to OpenFL and Lime
+## Design posture
 
-OpenFL and Lime define the feature target, not the API. When deciding what to build, aim to support what they support — display objects, shapes, filters, blend modes, text, tilemaps, particle emitters, audio/video, and so on. When deciding how to expose it, design from scratch around Flight's constraints instead of mirroring OpenFL's classes, property setters, or implicit runtime behavior.
+The feature scope is broad — display objects, shapes, filters, blend modes, text, tilemaps, particle emitters, audio/video, and a full platform-integration layer — but the API is designed from scratch around Flight's own constraints, never by mirroring another framework's classes, property setters, or implicit runtime behavior. How a capability is exposed is as much a design output as whether it exists.
 
 In practice:
 
@@ -119,7 +119,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 **Reference docs** (`agents/`) — declarative knowledge, read to _know_:
 
-- [anti-goals](anti-goals.md) — before "completing" a missing OpenFL/Lime feature. The registry of deliberately-unbuilt features (starting with `displayObject.filters`), why each is rejected (implicit-runtime magic), the explicit path to use instead, and the test for when a convenience abstraction is allowed (explicit invocation + transparent cost). If a feature seems absent, it may be absent on purpose — check here before building it.
+- [anti-goals](anti-goals.md) — before "completing" a seemingly-missing feature. The registry of deliberately-unbuilt features (starting with `displayObject.filters`), why each is rejected (implicit-runtime magic), the explicit path to use instead, and the test for when a convenience abstraction is allowed (explicit invocation + transparent cost). If a feature seems absent, it may be absent on purpose — check here before building it.
 - [commit messages](conventions/commits.md) — before writing a commit. The `type(scope):` split (type = what kind of change, from a closed set; scope = which package/crate or area), why `rust`/`wasm`/`script`/`tool` are scopes not types, and the `rust/`·`ts/` scope namespace for the shared-name TS↔Rust crates.
 - [npm script naming](conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, why no word may crowd the subject slot, collapse aliases (omit subject → fan over subjects; bare name → `dev:`), `:baseline` as write-mode, and the `smoke` / `parity` / `regression` render-test vocabulary.
 - [packaging & publishing](packaging.md) — the published package shape. Policy is enforced by `npm run packages:check`, not memory.
