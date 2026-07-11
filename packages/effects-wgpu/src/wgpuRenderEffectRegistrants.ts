@@ -1,5 +1,6 @@
 import type { WgpuRenderState } from '@flighthq/types';
 
+import { defaultWgpuBevelEffectRunner } from './wgpuBevelEffect';
 import { defaultWgpuBloomEffectRunner } from './wgpuBloomEffect';
 import { defaultWgpuBokehDepthOfFieldEffectRunner } from './wgpuBokehDepthOfFieldEffect';
 import { defaultWgpuBrightnessContrastEffectRunner } from './wgpuBrightnessContrastEffect';
@@ -11,14 +12,19 @@ import { defaultWgpuCrtEffectRunner } from './wgpuCrtEffect';
 import { defaultWgpuDirectionalBlurEffectRunner } from './wgpuDirectionalBlurEffect';
 import { defaultWgpuDisplacementEffectRunner } from './wgpuDisplacementEffect';
 import { defaultWgpuDitherEffectRunner } from './wgpuDitherEffect';
+import { defaultWgpuDropShadowEffectRunner } from './wgpuDropShadowEffect';
 import { defaultWgpuExposureEffectRunner } from './wgpuExposureEffect';
 import { defaultWgpuFilmGrainEffectRunner } from './wgpuFilmGrainEffect';
 import { defaultWgpuFxaaEffectRunner } from './wgpuFxaaEffect';
 import { defaultWgpuGlitchEffectRunner } from './wgpuGlitchEffect';
 import { defaultWgpuGodRaysEffectRunner } from './wgpuGodRaysEffect';
+import { defaultWgpuGradientBevelEffectRunner } from './wgpuGradientBevelEffect';
+import { defaultWgpuGradientGlowEffectRunner } from './wgpuGradientGlowEffect';
 import { defaultWgpuGrayscaleEffectRunner } from './wgpuGrayscaleEffect';
 import { defaultWgpuHalftoneEffectRunner } from './wgpuHalftoneEffect';
 import { defaultWgpuHueSaturationEffectRunner } from './wgpuHueSaturationEffect';
+import { defaultWgpuInnerGlowEffectRunner } from './wgpuInnerGlowEffect';
+import { defaultWgpuInnerShadowEffectRunner } from './wgpuInnerShadowEffect';
 import { defaultWgpuInvertEffectRunner } from './wgpuInvertEffect';
 import { defaultWgpuKuwaharaEffectRunner } from './wgpuKuwaharaEffect';
 import { defaultWgpuLensDirtEffectRunner } from './wgpuLensDirtEffect';
@@ -27,6 +33,7 @@ import { defaultWgpuLensFlareEffectRunner } from './wgpuLensFlareEffect';
 import { defaultWgpuLiftGammaGainEffectRunner } from './wgpuLiftGammaGainEffect';
 import { defaultWgpuLookupTableGradeEffectRunner } from './wgpuLookupTableGradeEffect';
 import { defaultWgpuMotionBlurEffectRunner } from './wgpuMotionBlurEffect';
+import { defaultWgpuOuterGlowEffectRunner } from './wgpuOuterGlowEffect';
 import { defaultWgpuOutlineEffectRunner } from './wgpuOutlineEffect';
 import { defaultWgpuPixelateEffectRunner } from './wgpuPixelateEffect';
 import { defaultWgpuPosterizeEffectRunner } from './wgpuPosterizeEffect';
@@ -100,6 +107,23 @@ export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
 }
 
+// Full standard set — composes all taxonomy bands. Registers all 45 default runners under their
+// canonical kind keys. Import this when the full effect palette is needed; import individual band
+// helpers when only a subset of effects is used.
+// Composite band: BevelEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
+// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former @flighthq/filters composite ops,
+// now full-frame composite effects chaining tint/blur/offset passes through pooled offscreen targets.
+// Symmetric with Gl's registerCompositeGlRenderEffects.
+export function registerCompositeWgpuRenderEffects(state: WgpuRenderState): void {
+  registerWgpuRenderEffect(state, 'BevelEffect', defaultWgpuBevelEffectRunner);
+  registerWgpuRenderEffect(state, 'DropShadowEffect', defaultWgpuDropShadowEffectRunner);
+  registerWgpuRenderEffect(state, 'GradientBevelEffect', defaultWgpuGradientBevelEffectRunner);
+  registerWgpuRenderEffect(state, 'GradientGlowEffect', defaultWgpuGradientGlowEffectRunner);
+  registerWgpuRenderEffect(state, 'InnerGlowEffect', defaultWgpuInnerGlowEffectRunner);
+  registerWgpuRenderEffect(state, 'InnerShadowEffect', defaultWgpuInnerShadowEffectRunner);
+  registerWgpuRenderEffect(state, 'OuterGlowEffect', defaultWgpuOuterGlowEffectRunner);
+}
+
 // Screen-space / atmospheric band: DisplacementEffect, ScreenSpaceFogEffect, SharpenEffect,
 // SsaoEffect, SsrEffect.
 export function registerScreenSpaceWgpuRenderEffects(state: WgpuRenderState): void {
@@ -110,14 +134,12 @@ export function registerScreenSpaceWgpuRenderEffects(state: WgpuRenderState): vo
   registerWgpuRenderEffect(state, 'SsrEffect', defaultWgpuSsrEffectRunner);
 }
 
-// Full standard set — composes all taxonomy bands. Registers all 45 default runners under their
-// canonical kind keys. Import this when the full effect palette is needed; import individual band
-// helpers when only a subset of effects is used.
 export function registerStandardWgpuRenderEffects(state: WgpuRenderState): void {
   registerAntialiasingWgpuRenderEffects(state);
   registerBloomWgpuRenderEffects(state);
   registerBlurWgpuRenderEffects(state);
   registerColorWgpuRenderEffects(state);
+  registerCompositeWgpuRenderEffects(state);
   registerScreenSpaceWgpuRenderEffects(state);
   registerStylizeWgpuRenderEffects(state);
 }

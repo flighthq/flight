@@ -9,6 +9,7 @@ import { defaultCanvasCrtEffectRunner } from './canvasCrtEffect';
 import { defaultCanvasDirectionalBlurEffectRunner } from './canvasDirectionalBlurEffect';
 import { defaultCanvasDisplacementEffectRunner } from './canvasDisplacementEffect';
 import { defaultCanvasDitherEffectRunner } from './canvasDitherEffect';
+import { defaultCanvasDropShadowEffectRunner } from './canvasDropShadowEffect';
 import { defaultCanvasExposureEffectRunner } from './canvasExposureEffect';
 import { defaultCanvasFilmGrainEffectRunner } from './canvasFilmGrainEffect';
 import { defaultCanvasGlitchEffectRunner } from './canvasGlitchEffect';
@@ -22,6 +23,7 @@ import { defaultCanvasLensDirtEffectRunner } from './canvasLensDirtEffect';
 import { defaultCanvasLensDistortionEffectRunner } from './canvasLensDistortionEffect';
 import { defaultCanvasLensFlareEffectRunner } from './canvasLensFlareEffect';
 import { defaultCanvasLiftGammaGainEffectRunner } from './canvasLiftGammaGainEffect';
+import { defaultCanvasOuterGlowEffectRunner } from './canvasOuterGlowEffect';
 import { defaultCanvasOutlineEffectRunner } from './canvasOutlineEffect';
 import { defaultCanvasPixelateEffectRunner } from './canvasPixelateEffect';
 import { defaultCanvasPosterizeEffectRunner } from './canvasPosterizeEffect';
@@ -50,6 +52,7 @@ import { defaultCanvasWhiteBalanceEffectRunner } from './canvasWhiteBalanceEffec
 export function registerAllCanvasRenderEffects(state: CanvasRenderState): void {
   registerBlurCanvasRenderEffects(state);
   registerColorGradeCanvasRenderEffects(state);
+  registerCompositeCanvasRenderEffects(state);
   registerScreenSpaceCanvasRenderEffects(state);
   registerStylizeCanvasRenderEffects(state);
 }
@@ -73,6 +76,17 @@ export function registerBlurCanvasRenderEffects(state: CanvasRenderState): void 
 // `registerCanvasRenderEffect` per-runner for full tree-shaking.
 export function registerColorGradeCanvasRenderEffects(state: CanvasRenderState): void {
   for (const [kind, runner] of COLOR_GRADE_CANVAS_EFFECT_KINDS) {
+    registerCanvasRenderEffect(state, kind, runner);
+  }
+}
+
+// Registers the composite-family default runners realizable on Canvas 2D: DropShadowEffect and
+// OuterGlowEffect, both drawn via a CSS `drop-shadow()` filter chain. The other former-filter
+// composites (bevel, inner glow/shadow, gradient glow/bevel) have no Canvas 2D realization — they
+// require the multi-target tint/blur/offset GPU recipe — so they are intentionally omitted here (the
+// pipeline skips unregistered kinds). Symmetric with registerCompositeGlRenderEffects.
+export function registerCompositeCanvasRenderEffects(state: CanvasRenderState): void {
+  for (const [kind, runner] of COMPOSITE_CANVAS_EFFECT_KINDS) {
     registerCanvasRenderEffect(state, kind, runner);
   }
 }
@@ -101,6 +115,13 @@ export function registerStylizeCanvasRenderEffects(state: CanvasRenderState): vo
 
 // The kind strings for the four category groups. Kept as local constants so the individual
 // register* functions above have a single source of truth for the loop.
+
+// Composite effects realizable on Canvas 2D via a CSS drop-shadow() chain. Only the two centered/
+// offset shadow-and-glow ops have a CSS equivalent; the rest are GPU-only and omitted.
+const COMPOSITE_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderEffectRunner]> = [
+  ['DropShadowEffect', defaultCanvasDropShadowEffectRunner],
+  ['OuterGlowEffect', defaultCanvasOuterGlowEffectRunner],
+];
 
 // Blur effects: multi-pass or directional blurs operating on the color buffer.
 // BokehDepthOfFieldEffect, CameraMotionBlurEffect, and MotionBlurEffect are passthrough on Canvas

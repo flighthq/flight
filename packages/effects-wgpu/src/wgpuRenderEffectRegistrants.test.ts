@@ -5,6 +5,7 @@ import {
   registerBloomWgpuRenderEffects,
   registerBlurWgpuRenderEffects,
   registerColorWgpuRenderEffects,
+  registerCompositeWgpuRenderEffects,
   registerScreenSpaceWgpuRenderEffects,
   registerStandardWgpuRenderEffects,
   registerStylizeWgpuRenderEffects,
@@ -69,6 +70,24 @@ describe('registerColorWgpuRenderEffects', () => {
     expect(getWgpuRenderEffectRunner(state, 'SepiaEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'ToneMapEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'WhiteBalanceEffect')).not.toBe(null);
+  });
+});
+
+describe('registerCompositeWgpuRenderEffects', () => {
+  it('registers the seven former-filter composite effect runners', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerCompositeWgpuRenderEffects(state);
+    for (const kind of [
+      'BevelEffect',
+      'DropShadowEffect',
+      'GradientBevelEffect',
+      'GradientGlowEffect',
+      'InnerGlowEffect',
+      'InnerShadowEffect',
+      'OuterGlowEffect',
+    ]) {
+      expect(getWgpuRenderEffectRunner(state, kind)).not.toBe(null);
+    }
   });
 });
 

@@ -4,6 +4,7 @@ import {
   registerAllCanvasRenderEffects,
   registerBlurCanvasRenderEffects,
   registerColorGradeCanvasRenderEffects,
+  registerCompositeCanvasRenderEffects,
   registerScreenSpaceCanvasRenderEffects,
   registerStylizeCanvasRenderEffects,
 } from './canvasRenderEffectRegistration';
@@ -98,6 +99,27 @@ describe('registerColorGradeCanvasRenderEffects', () => {
     for (const kind of colorGradeKinds) {
       expect(hasCanvasRenderEffectRunner(fakeState, kind)).toBe(true);
     }
+  });
+});
+
+describe('registerCompositeCanvasRenderEffects', () => {
+  it('is a function', () => {
+    expect(typeof registerCompositeCanvasRenderEffects).toBe('function');
+  });
+
+  it('registers the CSS-realizable composite effects (DropShadow, OuterGlow)', () => {
+    const fakeState = {} as CanvasRenderState;
+    registerCompositeCanvasRenderEffects(fakeState);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'DropShadowEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'OuterGlowEffect')).toBe(true);
+  });
+
+  it('does not register the GPU-only composites (Bevel, InnerGlow, gradient variants)', () => {
+    const fakeState = {} as CanvasRenderState;
+    registerCompositeCanvasRenderEffects(fakeState);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'BevelEffect')).toBe(false);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'InnerGlowEffect')).toBe(false);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'GradientGlowEffect')).toBe(false);
   });
 });
 

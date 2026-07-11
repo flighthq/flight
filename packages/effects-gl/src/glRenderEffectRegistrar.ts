@@ -1,5 +1,6 @@
 import type { GlRenderState } from '@flighthq/types';
 
+import { defaultGlBevelEffectRunner } from './glBevelEffect';
 import { defaultGlBloomEffectRunner } from './glBloomEffect';
 import { defaultGlBokehDepthOfFieldEffectRunner } from './glBokehDepthOfFieldEffect';
 import { defaultGlBrightnessContrastEffectRunner } from './glBrightnessContrastEffect';
@@ -12,14 +13,19 @@ import { defaultGlCustomShaderEffectRunner } from './glCustomShaderEffect';
 import { defaultGlDirectionalBlurEffectRunner } from './glDirectionalBlurEffect';
 import { defaultGlDisplacementEffectRunner } from './glDisplacementEffect';
 import { defaultGlDitherEffectRunner } from './glDitherEffect';
+import { defaultGlDropShadowEffectRunner } from './glDropShadowEffect';
 import { defaultGlExposureEffectRunner } from './glExposureEffect';
 import { defaultGlFilmGrainEffectRunner } from './glFilmGrainEffect';
 import { defaultGlFxaaEffectRunner } from './glFxaaEffect';
 import { defaultGlGlitchEffectRunner } from './glGlitchEffect';
 import { defaultGlGodRaysEffectRunner } from './glGodRaysEffect';
+import { defaultGlGradientBevelEffectRunner } from './glGradientBevelEffect';
+import { defaultGlGradientGlowEffectRunner } from './glGradientGlowEffect';
 import { defaultGlGrayscaleEffectRunner } from './glGrayscaleEffect';
 import { defaultGlHalftoneEffectRunner } from './glHalftoneEffect';
 import { defaultGlHueSaturationEffectRunner } from './glHueSaturationEffect';
+import { defaultGlInnerGlowEffectRunner } from './glInnerGlowEffect';
+import { defaultGlInnerShadowEffectRunner } from './glInnerShadowEffect';
 import { defaultGlInvertEffectRunner } from './glInvertEffect';
 import { defaultGlKuwaharaEffectRunner } from './glKuwaharaEffect';
 import { defaultGlLensDirtEffectRunner } from './glLensDirtEffect';
@@ -28,6 +34,7 @@ import { defaultGlLensFlareEffectRunner } from './glLensFlareEffect';
 import { defaultGlLiftGammaGainEffectRunner } from './glLiftGammaGainEffect';
 import { defaultGlLookupTableGradeEffectRunner } from './glLookupTableGradeEffect';
 import { defaultGlMotionBlurEffectRunner } from './glMotionBlurEffect';
+import { defaultGlOuterGlowEffectRunner } from './glOuterGlowEffect';
 import { defaultGlOutlineEffectRunner } from './glOutlineEffect';
 import { defaultGlPixelateEffectRunner } from './glPixelateEffect';
 import { defaultGlPosterizeEffectRunner } from './glPosterizeEffect';
@@ -128,6 +135,20 @@ export function registerColorGradeGlRenderEffects(state: GlRenderState): void {
   registerColorGlRenderEffects(state);
 }
 
+// Composite band: BevelEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
+// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former @flighthq/filters composite ops,
+// now full-frame composite effects: each chains tint/blur/offset passes and bounces through pooled
+// offscreen targets over the scene silhouette. Symmetric with Wgpu's registerCompositeWgpuRenderEffects.
+export function registerCompositeGlRenderEffects(state: GlRenderState): void {
+  registerGlRenderEffect(state, 'BevelEffect', defaultGlBevelEffectRunner);
+  registerGlRenderEffect(state, 'DropShadowEffect', defaultGlDropShadowEffectRunner);
+  registerGlRenderEffect(state, 'GradientBevelEffect', defaultGlGradientBevelEffectRunner);
+  registerGlRenderEffect(state, 'GradientGlowEffect', defaultGlGradientGlowEffectRunner);
+  registerGlRenderEffect(state, 'InnerGlowEffect', defaultGlInnerGlowEffectRunner);
+  registerGlRenderEffect(state, 'InnerShadowEffect', defaultGlInnerShadowEffectRunner);
+  registerGlRenderEffect(state, 'OuterGlowEffect', defaultGlOuterGlowEffectRunner);
+}
+
 // CustomShaderEffect: runs a user-authored fragment shader (registered with
 // registerGlCustomShaderSource) as a fullscreen pass. Not part of any fixed taxonomy band — it is the
 // escape hatch for effects the built-in set does not cover. registerDefaultGlRenderEffects includes
@@ -145,6 +166,7 @@ export function registerDefaultGlRenderEffects(state: GlRenderState): void {
   registerBloomGlRenderEffects(state);
   registerBlurGlRenderEffects(state);
   registerColorGlRenderEffects(state);
+  registerCompositeGlRenderEffects(state);
   registerCustomShaderGlRenderEffect(state);
   registerScreenSpaceGlRenderEffects(state);
   registerStylizeGlRenderEffects(state);
@@ -188,6 +210,7 @@ export function registerStylizeGlRenderEffects(state: GlRenderState): void {
 // All kind strings covered by this package's default runners, alphabetical order.
 // Single source of truth for registerDefaultGlRenderEffects and getGlRenderEffectKinds.
 const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
+  'BevelEffect',
   'BloomEffect',
   'BokehDepthOfFieldEffect',
   'BrightnessContrastEffect',
@@ -200,14 +223,19 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'DirectionalBlurEffect',
   'DisplacementEffect',
   'DitherEffect',
+  'DropShadowEffect',
   'ExposureEffect',
   'FilmGrainEffect',
   'FxaaEffect',
   'GlitchEffect',
   'GodRaysEffect',
+  'GradientBevelEffect',
+  'GradientGlowEffect',
   'GrayscaleEffect',
   'HalftoneEffect',
   'HueSaturationEffect',
+  'InnerGlowEffect',
+  'InnerShadowEffect',
   'InvertEffect',
   'KuwaharaEffect',
   'LensDirtEffect',
@@ -216,6 +244,7 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'LiftGammaGainEffect',
   'LookupTableGradeEffect',
   'MotionBlurEffect',
+  'OuterGlowEffect',
   'OutlineEffect',
   'PixelateEffect',
   'PosterizeEffect',
