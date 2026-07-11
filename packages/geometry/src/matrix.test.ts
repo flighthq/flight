@@ -331,6 +331,32 @@ describe('inverseMatrix', () => {
 
     expect(equalsMatrix(matrix, expected)).toBe(true);
   });
+
+  it('returns true on success', () => {
+    const m = createMatrix(2, 0, 0, 2, 5, 3);
+    const out = createMatrix();
+    expect(inverseMatrix(out, m)).toBe(true);
+  });
+
+  it('returns false and writes a degenerate fill for a singular matrix', () => {
+    const m = createMatrix(0, 0, 0, 0, 5, 3); // det = a*d - c*b = 0
+    const out = createMatrix();
+    expect(inverseMatrix(out, m)).toBe(false);
+    expect(out.a).toBe(0);
+    expect(out.b).toBe(0);
+    expect(out.c).toBe(0);
+    expect(out.d).toBe(0);
+    expect(out.tx).toBe(-5);
+    expect(out.ty).toBe(-3);
+  });
+
+  it('returns false for a singular matrix with out === source', () => {
+    const m = createMatrix(0, 0, 0, 0, 5, 3);
+    expect(inverseMatrix(m, m)).toBe(false);
+    expect(m.a).toBe(0);
+    expect(m.tx).toBe(-5);
+    expect(m.ty).toBe(-3);
+  });
 });
 
 describe('inverseMatrixTransformPoint', () => {
