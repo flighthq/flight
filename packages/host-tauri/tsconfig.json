@@ -1,0 +1,51 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
+  },
+  "references": [
+    {
+      "path": "../app"
+    },
+    {
+      "path": "../application"
+    },
+    {
+      "path": "../clipboard"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../menu"
+    },
+    {
+      "path": "../notification"
+    },
+    {
+      "path": "../platform"
+    },
+    {
+      "path": "../shell"
+    },
+    {
+      "path": "../shortcut"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../tray"
+    },
+    {
+      "path": "../types"
+    }
+  ],
+  "include": ["src"]
+}
