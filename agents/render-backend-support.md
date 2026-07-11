@@ -38,7 +38,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Perspective projection | ✓ | ✓ |  |
 | Orthographic projection | ✓ | ✗ | see gap #6 — **blank on wgpu** |
 | Ambient + Directional lights | ✓ | ✓ |  |
-| Point / Spot / Hemisphere lights | ✗ | ✗ | see gap #8 — descriptors exist, renderer does not consume them |
+| Point / Spot / Hemisphere lights | ✓ | ✗ | gl: forward punctual lighting wired (gap #8); wgpu: not yet |
 
 ## Known gaps (renderer not at parity — scope tests, don't fight them)
 
@@ -52,7 +52,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 
 ## Feature gaps (not implemented at all — implement before testing)
 
-8. **Punctual lights.** `createPointLight` / `createSpotLight` / `createHemisphereLight` exist as data in `@flighthq/lighting`, but `SceneLights` (`packages/types/src/SceneLights.ts`) carries only `{ ambient, directional }` and the forward renderer does not consume punctual lights yet (the type comment: "grows to `MAX_FORWARD_LIGHTS` … in later passes"). Not testable until wired.
+8. **Punctual lights — wired on gl, not wgpu.** Forward punctual lighting (point/spot/hemisphere) now shades on **gl**: `SceneLights` (`packages/types/src/SceneLights.ts`) carries `point`/`spot`/`hemisphere` arrays alongside `ambient`/`directional`, `packSceneLightBlock` (`packages/render/src/sceneRender.ts`) packs up to `MAX_FORWARD_LIGHTS` (= 4) of each type into the `SceneLightBlock`, and the gl lit shader (`GL_MESH_LIGHT_BLOCK_GLSL` in `packages/scene-gl/src/glLitProgram.ts`) consumes the `u_pointLights`/`u_spotLights`/`u_hemisphereLights` uniform arrays, each bounded by its count uniform. **wgpu** does not yet consume punctual lights. Area lights remain deferred (no `SceneLights.area` field).
 9. **Group/layer blend.** A `blendMode` on a container (so the whole subtree composites as one layer) needs render-to-texture flattening; unverified whether the renderer does this. Treat as a gap until confirmed.
 10. **TextureAtlasRegion pivot.** `pivotX/pivotY` on an atlas region are reported (audit, unverified) as stored but never read by the sprite renderers.
 
