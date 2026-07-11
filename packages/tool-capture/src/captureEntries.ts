@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { discoverFunctionalScenes } from './functionalScenes.js';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-export type Tool = 'examples' | 'functional' | 'site';
+export type Tool = 'examples' | 'functional';
 
 export interface Entry {
   name: string;
@@ -25,10 +25,6 @@ export const BACKEND_UNAVAILABLE =
   /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter|WebGPU is not supported|external Instance reference no longer exists|device (was )?lost|device is lost/i;
 
 export function discoverEntries(tool: Tool, root: string): Entry[] {
-  // The landing page is a single document rendered with Flight (one Gl canvas), with no
-  // per-name or per-renderer routing, so it presents as one fixed entry.
-  if (tool === 'site') return [{ name: 'landing', renderers: ['webgl'] }];
-
   // Functional scenes are flat files under functional/scenes/; the shared discovery is the single
   // source of truth (also used by tools/functional/vite.config.ts).
   if (tool === 'functional') return discoverFunctionalScenes(join(root, 'functional', 'scenes'));

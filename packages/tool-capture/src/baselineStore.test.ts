@@ -19,7 +19,7 @@ afterEach(() => {
 describe('baselinePath', () => {
   it('maps known subjects to their suite root', () => {
     expect(baselinePath(root, 'functional', 'foo')).toBe(join(root, 'functional', 'baselines', 'foo.json'));
-    expect(baselinePath(root, 'site', 'landing')).toBe(join(root, 'site', 'baselines', 'landing.json'));
+    expect(baselinePath(root, 'examples', 'bar')).toBe(join(root, 'examples', 'baselines', 'bar.json'));
   });
 
   it('falls back to the subject name for an unknown subject', () => {
