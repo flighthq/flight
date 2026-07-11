@@ -153,11 +153,14 @@ export function equalsMatrix(
 }
 
 /**
- * Computes the inverse of a 2D affine matrix and writes it to out.
+ * Computes the inverse of a 2D affine matrix and writes it to out. Returns `true` on success.
+ * When the matrix is singular (determinant zero, non-invertible) — an expected failure — writes a
+ * documented degenerate fill (zeroed linear part, negated translation) and returns `false` as the
+ * sentinel.
  *
  * Translation (tx, ty) is applied after the linear transformation (scale/rotation/shear) is inverted.
  */
-export function inverseMatrix(out: MatrixLike, source: Readonly<MatrixLike>): void {
+export function inverseMatrix(out: MatrixLike, source: Readonly<MatrixLike>): boolean {
   const a = source.a;
   const b = source.b;
   const c = source.c;
@@ -169,19 +172,20 @@ export function inverseMatrix(out: MatrixLike, source: Readonly<MatrixLike>): vo
     out.a = out.b = out.c = out.d = 0;
     out.tx = -tx;
     out.ty = -ty;
-  } else {
-    const invDet = 1 / det;
-    const outA = d * invDet;
-    const outB = -b * invDet;
-    const outC = -c * invDet;
-    const outD = a * invDet;
-    out.a = outA;
-    out.b = outB;
-    out.c = outC;
-    out.d = outD;
-    out.tx = -(outA * tx + outC * ty);
-    out.ty = -(outB * tx + outD * ty);
+    return false;
   }
+  const invDet = 1 / det;
+  const outA = d * invDet;
+  const outB = -b * invDet;
+  const outC = -c * invDet;
+  const outD = a * invDet;
+  out.a = outA;
+  out.b = outB;
+  out.c = outC;
+  out.d = outD;
+  out.tx = -(outA * tx + outC * ty);
+  out.ty = -(outB * tx + outD * ty);
+  return true;
 }
 
 /**

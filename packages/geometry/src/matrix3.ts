@@ -151,9 +151,11 @@ export function getMatrix3Element(source: Readonly<Matrix3Like>, row: number, co
 }
 
 /**
- * Attempts to invert a matrix, so long as it is invertable
+ * Attempts to invert a 3×3 matrix, writing the result to `out`. Returns `true` on success.
+ * When the matrix is singular (determinant zero, non-invertible) — an expected failure — fills
+ * `out` with NaN and returns `false` as the documented sentinel, mirroring `inverseMatrix4`.
  */
-export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>): void {
+export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>): boolean {
   const _out = out.m;
   const _in = source.m;
   const m0 = _in[0];
@@ -171,12 +173,8 @@ export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>):
     const det = m0 * m4 - m1 * m3;
 
     if (det === 0) {
-      _out[0] = _out[1] = _out[3] = _out[4] = 0;
-      _out[2] = -m2;
-      _out[5] = -m5;
-      _out[6] = _out[7] = 0;
-      _out[8] = 1;
-      return;
+      _out.fill(NaN);
+      return false;
     }
 
     const invDet = 1 / det;
@@ -196,13 +194,14 @@ export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>):
     _out[6] = 0;
     _out[7] = 0;
     _out[8] = 1;
-    return;
+    return true;
   }
 
   const det = m0 * m4 * m8 + m1 * m5 * m6 + m2 * m3 * m7 - m2 * m4 * m6 - m1 * m3 * m8 - m0 * m5 * m7;
 
   if (det === 0) {
-    throw new Error('Matrix is not invertable');
+    _out.fill(NaN);
+    return false;
   }
 
   const inv = 1 / det;
@@ -218,6 +217,7 @@ export function inverseMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>):
   _out[6] = (m3 * m7 - m4 * m6) * inv;
   _out[7] = (m1 * m6 - m0 * m7) * inv;
   _out[8] = (m0 * m4 - m1 * m3) * inv;
+  return true;
 }
 
 export function isAffineMatrix3(source: Readonly<Matrix3Like>): boolean {
