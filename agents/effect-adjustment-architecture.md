@@ -84,3 +84,13 @@ Build the generic/bedrock layer before specializing per op/backend (design botto
 5. **Support matrix** — generate `render-backend-support.md` from realization presence (or retire it).
 
 Each step is a gated, separately-committed unit. See the [adjustments charter](packages/adjustments/charter.md) for the package's own north star and boundaries.
+
+### Phase 2 — the ColorTransform fold: invariants + mechanism
+
+The map of the current wiring (ColorTransform is a `Material` kind — `ColorTransformMaterial` per-instance / `UniformColorTransformMaterial` per-batch — keyed as the batch identity, so a CT node and a non-CT node cannot batch together) sets hard invariants the fold must honor:
+
+- **Preserve the uniform path.** `bitmaptext` tints thousands of glyphs via *one uniform* `u_ctMult`/`u_ctOff` (`UniformColorTransformMaterial`). The fold must keep a whole-batch color transform as a **uniform**, never per-instance data — regressing it to per-glyph attributes is unacceptable. This is the "uniform vs per-instance by data cardinality" rule made load-bearing.
+- **No always-on tax on the common primitive.** A plain sprite (no color transform) must not pay the 8 CT floats (+62% instance stride) or the unpremultiply→apply→repremultiply fragment cost. Buying a screw must not pay for the lawnmower (bundle-size discipline, applied to the hot draw path). So **do not** make the base shader unconditionally carry the CT stage.
+- **CT stops being the batch key.** A color transform becomes a node **trait** (`HasColorTransform`, which already exists) / per-quad `materialData`, not a `Material`. The batcher keys on **texture + blend**, so CT and non-CT nodes batch together.
+
+**Recommended mechanism — promote per batch, not per instance.** A batch selects the CT-enabled shader + layout iff **any** member carries a color transform (identity for the members that don't); a batch with no CT anywhere stays on the lean base shader. This is the promote-not-split rule at the batch grain: attaching a CT promotes the batch (one draw, whole-batch layout upgrade), never splits it, and never taxes CT-free batches. The existing GL/WGPU CT shader math (the `a_ctMult`/`a_ctOff` per-instance stage and the `u_ctMult`/`u_ctOff` uniform stage) is reused verbatim — the change is *where the batcher gets the CT from* (trait, not material identity) and *that the base and CT layouts are two batch-level variants of one draw path*, not two materials. `ColorTransformMaterial` + `UniformColorTransformMaterial` kinds are then removed; `bitmaptext` switches from the uniform material to a whole-batch color-transform trait. Cross-cutting (types, materials, displayobject-gl/wgpu, sprite batcher, bitmaptext, render-gl/wgpu, functional test) → gate with full `npm run test`.
