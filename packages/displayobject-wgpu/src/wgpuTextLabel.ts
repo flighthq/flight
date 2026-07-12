@@ -103,6 +103,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
       width: fieldWidth,
       height: fieldHeight,
       measure,
+      verticalAlign: source.data.autoSize === 'none' ? source.data.verticalAlign : 'top',
     });
 
     textData.lastContentId = version;

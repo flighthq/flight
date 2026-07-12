@@ -17,6 +17,7 @@ import {
   setTextLabelFormat,
   setTextLabelHeight,
   setTextLabelString,
+  setTextLabelVerticalAlign,
   setTextLabelWidth,
 } from './textLabel';
 
@@ -241,6 +242,29 @@ describe('setTextLabelString', () => {
     const text = createTextLabel({ data: { text: 'same' } });
     const content = getNodeLocalContentRevision(text);
     setTextLabelString(text, 'same');
+    expect(getNodeLocalContentRevision(text)).toBe(content);
+  });
+});
+
+describe('setTextLabelVerticalAlign', () => {
+  it('defaults to top', () => {
+    expect(createTextLabel().data.verticalAlign).toBe('top');
+  });
+
+  it('sets the value and bumps content without touching bounds', () => {
+    const text = createTextLabel();
+    const content = getNodeLocalContentRevision(text);
+    const bounds = getNodeLocalBoundsRevision(text);
+    setTextLabelVerticalAlign(text, 'middle');
+    expect(text.data.verticalAlign).toBe('middle');
+    expect(getNodeLocalContentRevision(text)).toBe(content + 1);
+    expect(getNodeLocalBoundsRevision(text)).toBe(bounds);
+  });
+
+  it('does not bump content when the value is unchanged', () => {
+    const text = createTextLabel({ data: { verticalAlign: 'bottom' } });
+    const content = getNodeLocalContentRevision(text);
+    setTextLabelVerticalAlign(text, 'bottom');
     expect(getNodeLocalContentRevision(text)).toBe(content);
   });
 });

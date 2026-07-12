@@ -2,12 +2,16 @@ import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './D
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormat } from './TextFormat';
 import type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from './TextLayout';
+import type { TextVerticalAlign } from './TextVerticalAlign';
 
 export interface TextLabelData extends DisplayObjectData {
   autoSize: TextAutoSize;
   height: number;
   text: string;
   textFormat: TextFormat;
+  // Vertical placement of the text block within `height`; block-level, distinct from TextFormat.align.
+  // Inert while autoSize fits the height to the content (no vertical slack).
+  verticalAlign: TextVerticalAlign;
   width: number;
 }
 

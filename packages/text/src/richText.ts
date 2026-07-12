@@ -40,6 +40,7 @@ import type {
   TextLayoutResult,
   TextLineMetrics,
   TextMeasureFunction,
+  TextVerticalAlign,
 } from '@flighthq/types';
 import { RichTextKind } from '@flighthq/types';
 
@@ -69,6 +70,9 @@ export function buildRichTextLayoutParams(source: Readonly<TextLabel>, measure: 
     measure,
     multiline: data.multiline,
     text: content.text,
+    // Vertical alignment only means something within a fixed-height box; an auto-fit field has no
+    // slack, so pass 'top' and leave the block at the content origin.
+    verticalAlign: data.autoSize === 'none' ? data.verticalAlign : 'top',
     width: data.wordWrap ? data.width : 10000,
     wordWrap: data.wordWrap,
   };
@@ -527,6 +531,15 @@ export function setRichTextStyleSheet(source: RichText, value: RichTextStyleShee
 export function setRichTextTextColor(source: RichText, value: number): void {
   if (source.data.textColor === value) return;
   source.data.textColor = value;
+  invalidateNodeLocalContent(source);
+}
+
+// Vertical alignment repositions the glyphs within the (unchanged) height box, so it invalidates only
+// the content revision — the field's bounds are the fixed height/width box and do not move. Mirrors
+// setRichTextTextColor's content-only invalidation.
+export function setRichTextVerticalAlign(source: RichText, value: TextVerticalAlign): void {
+  if (source.data.verticalAlign === value) return;
+  source.data.verticalAlign = value;
   invalidateNodeLocalContent(source);
 }
 

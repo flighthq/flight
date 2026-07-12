@@ -38,6 +38,7 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
     width: source.data.width,
     height: source.data.height,
     measure,
+    verticalAlign: source.data.autoSize === 'none' ? source.data.verticalAlign : 'top',
   });
 
   context.textBaseline = 'alphabetic';

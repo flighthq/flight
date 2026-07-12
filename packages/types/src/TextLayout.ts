@@ -3,6 +3,7 @@ import type { TextDirection } from './TextDirection';
 import type { TextFormat } from './TextFormat';
 import type { TextFormatRange } from './TextFormatRange';
 import type { TextJustification } from './TextJustification';
+import type { TextVerticalAlign } from './TextVerticalAlign';
 
 export type TextMeasureFunction = (text: string, format: TextFormat) => number;
 
@@ -38,6 +39,9 @@ export interface TextLayoutParams {
   text: string;
   // Character appended to the final line when truncated by maxLines. Defaults to the ellipsis '…'.
   truncationCharacter?: string;
+  // Vertical placement of the whole text block within `height` when the container is taller than the
+  // laid-out content. Defaults to 'top' (no offset). See computeTextLayout / TextVerticalAlign.
+  verticalAlign?: TextVerticalAlign;
   width: number;
   wordWrap?: boolean;
 }

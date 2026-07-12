@@ -32,6 +32,7 @@ function createData(data: Partial<RichTextData> = {}): RichTextData {
     textColor: 0,
     textFormat: {},
     textFormatRanges: [],
+    verticalAlign: 'top',
     width: 200,
     wordWrap: false,
     ...data,
