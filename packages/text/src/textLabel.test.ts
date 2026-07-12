@@ -178,7 +178,7 @@ describe('getTextLabelString', () => {
 });
 
 describe('invalidateTextLabel', () => {
-  it('bumps content only, without touching local bounds or the transform', () => {
+  it('under autoSize none, bumps content only, without touching local bounds or the transform', () => {
     const text = createTextLabel();
     const content = getNodeLocalContentRevision(text);
     const bounds = getNodeLocalBoundsRevision(text);
@@ -186,6 +186,17 @@ describe('invalidateTextLabel', () => {
     invalidateTextLabel(text);
     expect(getNodeLocalContentRevision(text)).toBe(content + 1);
     expect(getNodeLocalBoundsRevision(text)).toBe(bounds);
+    expect(getNodeLocalTransformRevision(text)).toBe(transform);
+  });
+
+  it('also invalidates local bounds under autoSize, since the extent is measured from content', () => {
+    const text = createTextLabel({ data: { autoSize: 'left' } });
+    const content = getNodeLocalContentRevision(text);
+    const bounds = getNodeLocalBoundsRevision(text);
+    const transform = getNodeLocalTransformRevision(text);
+    invalidateTextLabel(text);
+    expect(getNodeLocalContentRevision(text)).toBe(content + 1);
+    expect(getNodeLocalBoundsRevision(text)).not.toBe(bounds);
     expect(getNodeLocalTransformRevision(text)).toBe(transform);
   });
 });
@@ -242,7 +253,7 @@ describe('setTextLabelHeight', () => {
 });
 
 describe('setTextLabelString', () => {
-  it('sets text and bumps content without touching bounds', () => {
+  it('sets text and bumps content without touching bounds under autoSize none', () => {
     const text = createTextLabel();
     const content = getNodeLocalContentRevision(text);
     const bounds = getNodeLocalBoundsRevision(text);
@@ -250,6 +261,13 @@ describe('setTextLabelString', () => {
     expect(text.data.text).toBe('hello');
     expect(getNodeLocalContentRevision(text)).toBe(content + 1);
     expect(getNodeLocalBoundsRevision(text)).toBe(bounds);
+  });
+
+  it('also invalidates bounds under autoSize (the box is measured from the text)', () => {
+    const text = createTextLabel({ data: { autoSize: 'left' } });
+    const bounds = getNodeLocalBoundsRevision(text);
+    setTextLabelString(text, 'hello');
+    expect(getNodeLocalBoundsRevision(text)).not.toBe(bounds);
   });
 
   it('does not bump content when the value is unchanged', () => {
