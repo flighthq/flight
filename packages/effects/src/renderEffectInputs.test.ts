@@ -1,10 +1,10 @@
 import { createBloomEffect } from './bloomEffect';
 import { createBokehDepthOfFieldEffect } from './bokehDepthOfFieldEffect';
-import { createColorGradeEffect } from './colorGradeEffect';
 import { getRenderEffectInputs, getRenderEffectKinds, RENDER_EFFECT_KINDS } from './renderEffectInputs';
 import { createSsaoEffect } from './ssaoEffect';
 import { createTaaEffect } from './taaEffect';
 import { createToneMapEffect } from './toneMapEffect';
+import { createVignetteEffect } from './vignetteEffect';
 
 describe('getRenderEffectInputs', () => {
   it('returns Hdr for BloomEffect', () => {
@@ -28,7 +28,7 @@ describe('getRenderEffectInputs', () => {
   });
 
   it('returns empty array for effects that need only the color buffer', () => {
-    expect(getRenderEffectInputs(createColorGradeEffect())).toEqual([]);
+    expect(getRenderEffectInputs(createVignetteEffect())).toEqual([]);
   });
 
   it('returns empty array for unknown kind', () => {
@@ -42,7 +42,7 @@ describe('getRenderEffectKinds', () => {
     expect(kinds).toContain('BloomEffect');
     expect(kinds).toContain('ToneMapEffect');
     expect(kinds).toContain('SsaoEffect');
-    expect(kinds).toContain('ColorGradeEffect');
+    expect(kinds).toContain('VignetteEffect');
   });
 
   it('returns the same reference as RENDER_EFFECT_KINDS', () => {

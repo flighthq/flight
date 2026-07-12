@@ -54,16 +54,15 @@ describe('registerBlurWgpuRenderEffects', () => {
 });
 
 describe('registerColorWgpuRenderEffects', () => {
-  it('registers all color and tone effect runners', async () => {
+  it('registers the remaining color and tone effect runners', async () => {
     const state = await createWgpuRenderStateForTest();
     registerColorWgpuRenderEffects(state);
-    expect(getWgpuRenderEffectRunner(state, 'ColorGradeEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'HueSaturationEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'LiftGammaGainEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'LookupTableGradeEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'PosterizeEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'ToneMapEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'WhiteBalanceEffect')).not.toBe(null);
+    // The pointwise color ops moved to @flighthq/adjustments and fold through the pipeline, no runner.
+    expect(getWgpuRenderEffectRunner(state, 'ColorGradeEffect')).toBe(null);
+    expect(getWgpuRenderEffectRunner(state, 'HueSaturationEffect')).toBe(null);
+    expect(getWgpuRenderEffectRunner(state, 'LookupTableGradeEffect')).toBe(null);
   });
 });
 

@@ -6,7 +6,6 @@ import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { defaultWgpuBokehDepthOfFieldEffectRunner } from './wgpuBokehDepthOfFieldEffect';
 import { defaultWgpuCameraMotionBlurEffectRunner } from './wgpuCameraMotionBlurEffect';
 import { defaultWgpuChromaticAberrationEffectRunner } from './wgpuChromaticAberrationEffect';
-import { defaultWgpuColorGradeEffectRunner } from './wgpuColorGradeEffect';
 import { defaultWgpuConvolutionEffectRunner } from './wgpuConvolutionEffect';
 import { defaultWgpuCrtEffectRunner } from './wgpuCrtEffect';
 import { defaultWgpuDirectionalBlurEffectRunner } from './wgpuDirectionalBlurEffect';
@@ -20,21 +19,17 @@ import { defaultWgpuGodRaysEffectRunner } from './wgpuGodRaysEffect';
 import { defaultWgpuGradientBevelEffectRunner } from './wgpuGradientBevelEffect';
 import { defaultWgpuGradientGlowEffectRunner } from './wgpuGradientGlowEffect';
 import { defaultWgpuHalftoneEffectRunner } from './wgpuHalftoneEffect';
-import { defaultWgpuHueSaturationEffectRunner } from './wgpuHueSaturationEffect';
 import { defaultWgpuInnerGlowEffectRunner } from './wgpuInnerGlowEffect';
 import { defaultWgpuInnerShadowEffectRunner } from './wgpuInnerShadowEffect';
 import { defaultWgpuKuwaharaEffectRunner } from './wgpuKuwaharaEffect';
 import { defaultWgpuLensDirtEffectRunner } from './wgpuLensDirtEffect';
 import { defaultWgpuLensDistortionEffectRunner } from './wgpuLensDistortionEffect';
 import { defaultWgpuLensFlareEffectRunner } from './wgpuLensFlareEffect';
-import { defaultWgpuLiftGammaGainEffectRunner } from './wgpuLiftGammaGainEffect';
-import { defaultWgpuLookupTableGradeEffectRunner } from './wgpuLookupTableGradeEffect';
 import { defaultWgpuMedianEffectRunner } from './wgpuMedianEffect';
 import { defaultWgpuMotionBlurEffectRunner } from './wgpuMotionBlurEffect';
 import { defaultWgpuOuterGlowEffectRunner } from './wgpuOuterGlowEffect';
 import { defaultWgpuOutlineEffectRunner } from './wgpuOutlineEffect';
 import { defaultWgpuPixelateEffectRunner } from './wgpuPixelateEffect';
-import { defaultWgpuPosterizeEffectRunner } from './wgpuPosterizeEffect';
 import { defaultWgpuRadialBlurEffectRunner } from './wgpuRadialBlurEffect';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 import { defaultWgpuScanlinesEffectRunner } from './wgpuScanlinesEffect';
@@ -86,17 +81,12 @@ export function registerBlurWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'TiltShiftEffect', defaultWgpuTiltShiftEffectRunner);
 }
 
-// Color / tone band: ColorGradeEffect, HueSaturationEffect, LiftGammaGainEffect, LookupTableGradeEffect,
-// PosterizeEffect, ToneMapEffect, WhiteBalanceEffect.
-// (GrayscaleEffect/InvertEffect/SepiaEffect and BrightnessContrastEffect/ChannelMixerEffect/ExposureEffect
-//  were dissolved into the matrix-tier @flighthq/adjustments, folded through the pipeline's generic
-//  color-matrix pass — see effect-adjustment-architecture.)
+// Color / tone band: ToneMapEffect, WhiteBalanceEffect.
+// (The pointwise color ops were dissolved into @flighthq/adjustments — Grayscale/Invert/Sepia/
+//  BrightnessContrast/ChannelMixer/Exposure as matrix-tier, and HueSaturation/LiftGammaGain/ColorGrade/
+//  Posterize/LookupTableGrade as LUT-tier — folded through the pipeline's generic color-matrix / color-LUT
+//  pass; see effect-adjustment-architecture.)
 export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'ColorGradeEffect', defaultWgpuColorGradeEffectRunner);
-  registerWgpuRenderEffect(state, 'HueSaturationEffect', defaultWgpuHueSaturationEffectRunner);
-  registerWgpuRenderEffect(state, 'LiftGammaGainEffect', defaultWgpuLiftGammaGainEffectRunner);
-  registerWgpuRenderEffect(state, 'LookupTableGradeEffect', defaultWgpuLookupTableGradeEffectRunner);
-  registerWgpuRenderEffect(state, 'PosterizeEffect', defaultWgpuPosterizeEffectRunner);
   registerWgpuRenderEffect(state, 'ToneMapEffect', defaultWgpuToneMapEffectRunner);
   registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
 }

@@ -7,7 +7,7 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createBloomEffect,
-  createColorGradeEffect,
+  createColorGradeAdjustment,
   createDisplayContainer,
   createShape,
   createVignetteEffect,
@@ -15,7 +15,6 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   defaultWgpuBloomEffectRunner,
-  defaultWgpuColorGradeEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   defaultWgpuVignetteEffectRunner,
@@ -43,7 +42,6 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
 registerWgpuRenderEffect(state, 'BloomEffect', defaultWgpuBloomEffectRunner);
-registerWgpuRenderEffect(state, 'ColorGradeEffect', defaultWgpuColorGradeEffectRunner);
 registerWgpuRenderEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba16f' });
@@ -59,7 +57,7 @@ export function render(root: DisplayObject): void {
   renderWgpuDisplayObject(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
-    createColorGradeEffect({ saturation: 1.4, contrast: 1.1 }),
+    createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
     createVignetteEffect({ intensity: 0.7, radius: 0.7, softness: 0.5 }),
   ]);
   submitWgpuRenderPass(state);

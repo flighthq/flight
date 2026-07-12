@@ -3,7 +3,6 @@ import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/type
 import { defaultCanvasBloomEffectRunner } from './canvasBloomEffect';
 import { defaultCanvasBlurEffectRunner } from './canvasBlurEffect';
 import { defaultCanvasChromaticAberrationEffectRunner } from './canvasChromaticAberrationEffect';
-import { defaultCanvasColorGradeEffectRunner } from './canvasColorGradeEffect';
 import { defaultCanvasConvolutionEffectRunner } from './canvasConvolutionEffect';
 import { defaultCanvasCrtEffectRunner } from './canvasCrtEffect';
 import { defaultCanvasDirectionalBlurEffectRunner } from './canvasDirectionalBlurEffect';
@@ -14,17 +13,14 @@ import { defaultCanvasFilmGrainEffectRunner } from './canvasFilmGrainEffect';
 import { defaultCanvasGlitchEffectRunner } from './canvasGlitchEffect';
 import { defaultCanvasGodRaysEffectRunner } from './canvasGodRaysEffect';
 import { defaultCanvasHalftoneEffectRunner } from './canvasHalftoneEffect';
-import { defaultCanvasHueSaturationEffectRunner } from './canvasHueSaturationEffect';
 import { defaultCanvasKuwaharaEffectRunner } from './canvasKuwaharaEffect';
 import { defaultCanvasLensDirtEffectRunner } from './canvasLensDirtEffect';
 import { defaultCanvasLensDistortionEffectRunner } from './canvasLensDistortionEffect';
 import { defaultCanvasLensFlareEffectRunner } from './canvasLensFlareEffect';
-import { defaultCanvasLiftGammaGainEffectRunner } from './canvasLiftGammaGainEffect';
 import { defaultCanvasMedianEffectRunner } from './canvasMedianEffect';
 import { defaultCanvasOuterGlowEffectRunner } from './canvasOuterGlowEffect';
 import { defaultCanvasOutlineEffectRunner } from './canvasOutlineEffect';
 import { defaultCanvasPixelateEffectRunner } from './canvasPixelateEffect';
-import { defaultCanvasPosterizeEffectRunner } from './canvasPosterizeEffect';
 import { defaultCanvasRadialBlurEffectRunner } from './canvasRadialBlurEffect';
 import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import { defaultCanvasScanlinesEffectRunner } from './canvasScanlinesEffect';
@@ -65,10 +61,11 @@ export function registerBlurCanvasRenderEffects(state: CanvasRenderState): void 
   }
 }
 
-// Registers all color-grade default runners into a CanvasRenderState: brightness-contrast,
-// channel-mixer, color-grade, dither, exposure (approximate), grayscale, hue-saturation, invert,
-// lift-gamma-gain, posterize, sepia, tone-map (approximate), and white-balance.
-// LookupTableGradeEffect is excluded (passthrough — descriptor carries no cube data array).
+// Registers the remaining color-tone default runners into a CanvasRenderState: dither, tone-map
+// (approximate), and white-balance. The pointwise color ops (grayscale/invert/sepia/brightness-contrast/
+// channel-mixer/exposure as matrix-tier, and hue-saturation/lift-gamma-gain/color-grade/posterize/
+// lookup-table-grade as LUT-tier) moved to @flighthq/adjustments and fold through the pipeline's generic
+// color-matrix / color-LUT pass — see effect-adjustment-architecture.
 // Importing only this function pulls those runners into the bundle — use
 // `registerCanvasRenderEffect` per-runner for full tree-shaking.
 export function registerColorGradeCanvasRenderEffects(state: CanvasRenderState): void {
@@ -131,17 +128,11 @@ const BLUR_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderEffe
   ['TiltShiftEffect', defaultCanvasTiltShiftEffectRunner],
 ];
 
-// Color-grade effects: per-pixel color transforms with no multi-pass or geometry dependency.
-// LookupTableGradeEffect is passthrough on Canvas (descriptor carries no cube data array) and is
-// omitted here. ToneMapEffect is included as an approximate LDR implementation. (BrightnessContrast,
-// ChannelMixer, and Exposure moved to the matrix-tier @flighthq/adjustments, folded through the
-// pipeline's generic color-matrix pass — see effect-adjustment-architecture.)
+// Color-tone effects still realized as Canvas passes: dither, tone-map (approximate LDR), and
+// white-balance. The pointwise color ops moved to @flighthq/adjustments and fold through the pipeline's
+// generic color-matrix / color-LUT pass (see effect-adjustment-architecture).
 const COLOR_GRADE_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderEffectRunner]> = [
-  ['ColorGradeEffect', defaultCanvasColorGradeEffectRunner],
   ['DitherEffect', defaultCanvasDitherEffectRunner],
-  ['HueSaturationEffect', defaultCanvasHueSaturationEffectRunner],
-  ['LiftGammaGainEffect', defaultCanvasLiftGammaGainEffectRunner],
-  ['PosterizeEffect', defaultCanvasPosterizeEffectRunner],
   ['ToneMapEffect', defaultCanvasToneMapEffectRunner],
   ['WhiteBalanceEffect', defaultCanvasWhiteBalanceEffectRunner],
 ];

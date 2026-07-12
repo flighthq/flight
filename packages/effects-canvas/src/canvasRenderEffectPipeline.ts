@@ -1,4 +1,10 @@
-import { fuseColorMatrices, getAdjustmentColorMatrix } from '@flighthq/adjustments';
+import {
+  bakeColorLut,
+  fuseColorMatrices,
+  getAdjustmentColorMatrix,
+  getAdjustmentColorTransform,
+  isColorLutAdjustment,
+} from '@flighthq/adjustments';
 import {
   beginCanvasRenderTarget,
   createCanvasRenderTarget,
@@ -12,10 +18,12 @@ import type {
   CanvasRenderState,
   CanvasRenderTarget,
   CanvasRenderTargetPool,
+  ColorTransformFunction,
   RenderEffect,
   RenderEffectPipelineOptions,
 } from '@flighthq/types';
 
+import { applyColorLutPassToCanvas } from './canvasColorLutPass';
 import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass';
 import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
@@ -93,9 +101,11 @@ export function endCanvasRenderEffectPipeline(
   let source: CanvasRenderTarget = scene;
   let scratchA: CanvasRenderTarget | null = null;
   let scratchB: CanvasRenderTarget | null = null;
-  // A maximal run of consecutive matrix-tier adjustments fuses into one matrix and one pass; an effect
-  // (or the end of the stack) breaks the run and flushes it first, preserving stack order.
-  let pending: (readonly number[])[] = [];
+  // A maximal run of consecutive pointwise adjustments fuses into ONE pass: all matrix-tier → one 4×5
+  // matrix (cheaper applyColorMatrixPass); any LUT-tier member → the whole run (matrices folded in) bakes
+  // into one ColorLut (applyColorLutPass). An effect (or the end of the stack) breaks the run and flushes
+  // it first, preserving stack order.
+  let pending: Adjustment[] = [];
 
   const ensureScratch = (): void => {
     if (scratchA === null) scratchA = acquireCanvasRenderTarget(pool, scene.width, scene.height);
@@ -105,15 +115,28 @@ export function endCanvasRenderEffectPipeline(
     if (pending.length === 0) return;
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
-    applyColorMatrixPassToCanvas(source, dest, fuseColorMatrices(pending));
+    if (pending.some(isColorLutAdjustment)) {
+      const transforms: ColorTransformFunction[] = [];
+      for (const op of pending) {
+        const transform = getAdjustmentColorTransform(op);
+        if (transform !== null) transforms.push(transform);
+      }
+      applyColorLutPassToCanvas(source, dest, bakeColorLut(transforms));
+    } else {
+      const matrices: (readonly number[])[] = [];
+      for (const op of pending) {
+        const matrix = getAdjustmentColorMatrix(op);
+        if (matrix !== null) matrices.push(matrix);
+      }
+      applyColorMatrixPassToCanvas(source, dest, fuseColorMatrices(matrices));
+    }
     source = dest;
     pending = [];
   };
 
   for (const operation of operations) {
-    const matrix = getAdjustmentColorMatrix(operation);
-    if (matrix !== null) {
-      pending.push(matrix);
+    if (getAdjustmentColorMatrix(operation) !== null || isColorLutAdjustment(operation)) {
+      pending.push(operation as Adjustment);
       continue;
     }
     const runner = getCanvasRenderEffectRunner(state, operation.kind);

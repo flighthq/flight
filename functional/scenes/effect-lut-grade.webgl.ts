@@ -10,15 +10,13 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createLookupTableGradeEffect,
+  createLookupTableGradeAdjustment,
   createShape,
-  defaultGlLookupTableGradeEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'LookupTableGradeEffect', defaultGlLookupTableGradeEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -52,7 +49,7 @@ export function render(root: DisplayObject): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createLookupTableGradeEffect({ size: 32, strength: 1 })]);
+  endGlRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ size: 32, strength: 1 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

@@ -10,15 +10,13 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createLiftGammaGainEffect,
+  createLiftGammaGainAdjustment,
   createShape,
-  defaultGlLiftGammaGainEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'LiftGammaGainEffect', defaultGlLiftGammaGainEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -53,7 +50,7 @@ export function render(root: DisplayObject): void {
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
-    createLiftGammaGainEffect({ lift: 0x8a7860ff, gamma: 0x808080ff, gain: 0x7088a0ff }),
+    createLiftGammaGainAdjustment({ lift: 0x8a7860ff, gamma: 0x808080ff, gain: 0x7088a0ff }),
   ]);
 }
 

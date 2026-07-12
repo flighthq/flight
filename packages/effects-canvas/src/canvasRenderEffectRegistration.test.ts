@@ -19,11 +19,14 @@ describe('registerAllCanvasRenderEffects', () => {
     registerAllCanvasRenderEffects(fakeState);
     expect(hasCanvasRenderEffectRunner(fakeState, 'BloomEffect')).toBe(true);
   });
-  it('registers color-grade effects', () => {
+  it('registers color-tone effects', () => {
     const fakeState = {} as CanvasRenderState;
     registerAllCanvasRenderEffects(fakeState);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'ColorGradeEffect')).toBe(true);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'HueSaturationEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'ToneMapEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'WhiteBalanceEffect')).toBe(true);
+    // The pointwise color ops moved to @flighthq/adjustments and fold through the pipeline, no runner.
+    expect(hasCanvasRenderEffectRunner(fakeState, 'ColorGradeEffect')).toBe(false);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'HueSaturationEffect')).toBe(false);
   });
   it('registers stylize effects', () => {
     const fakeState = {} as CanvasRenderState;
@@ -72,24 +75,17 @@ describe('registerColorGradeCanvasRenderEffects', () => {
   it('is a function', () => {
     expect(typeof registerColorGradeCanvasRenderEffects).toBe('function');
   });
-  it('registers color-grade effects', () => {
+  it('registers color-tone effects', () => {
     const fakeState = {} as CanvasRenderState;
     registerColorGradeCanvasRenderEffects(fakeState);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'ColorGradeEffect')).toBe(true);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'HueSaturationEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'ToneMapEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'WhiteBalanceEffect')).toBe(true);
   });
-  it('covers every non-passthrough color-grade kind', () => {
+  it('covers every remaining color-tone kind', () => {
     const fakeState = {} as CanvasRenderState;
     registerColorGradeCanvasRenderEffects(fakeState);
-    const colorGradeKinds = [
-      'ColorGradeEffect',
-      'DitherEffect',
-      'HueSaturationEffect',
-      'LiftGammaGainEffect',
-      'PosterizeEffect',
-      'ToneMapEffect',
-      'WhiteBalanceEffect',
-    ];
+    // The pointwise color ops moved to @flighthq/adjustments; only Dither/ToneMap/WhiteBalance remain.
+    const colorGradeKinds = ['DitherEffect', 'ToneMapEffect', 'WhiteBalanceEffect'];
     for (const kind of colorGradeKinds) {
       expect(hasCanvasRenderEffectRunner(fakeState, kind)).toBe(true);
     }

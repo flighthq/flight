@@ -1,8 +1,8 @@
 import { createBloomEffect } from './bloomEffect';
-import { createColorGradeEffect } from './colorGradeEffect';
 import { validateRenderEffectList } from './renderEffectValidation';
 import { createSsaoEffect } from './ssaoEffect';
 import { createToneMapEffect } from './toneMapEffect';
+import { createVignetteEffect } from './vignetteEffect';
 
 describe('validateRenderEffectList', () => {
   it('returns null when all required inputs are available', () => {
@@ -11,7 +11,7 @@ describe('validateRenderEffectList', () => {
   });
 
   it('returns null for effects that need only the color buffer', () => {
-    const effects = [createColorGradeEffect()];
+    const effects = [createVignetteEffect()];
     expect(validateRenderEffectList(effects, [])).toBeNull();
   });
 

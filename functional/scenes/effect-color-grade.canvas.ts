@@ -9,15 +9,13 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createColorGradeEffect,
+  createColorGradeAdjustment,
   createDisplayContainer,
   createShape,
-  defaultCanvasColorGradeEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -33,7 +31,6 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'ColorGradeEffect', defaultCanvasColorGradeEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -47,7 +44,7 @@ export function render(root: DisplayObject): void {
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [
-    createColorGradeEffect({ saturation: 1.5, contrast: 1.2, temperature: 0.2 }),
+    createColorGradeAdjustment({ saturation: 1.5, contrast: 1.2, temperature: 0.2 }),
   ]);
 }
 

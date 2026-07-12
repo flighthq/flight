@@ -88,11 +88,18 @@ describe('registerColorGlRenderEffects', () => {
     expect(typeof registerColorGlRenderEffects).toBe('function');
   });
 
-  it('registers ColorGradeEffect and HueSaturationEffect runners', () => {
+  it('registers ToneMapEffect and WhiteBalanceEffect runners', () => {
     const state = {} as never;
     registerColorGlRenderEffects(state);
-    expect(hasGlRenderEffectRunner(state, 'ColorGradeEffect')).toBe(true);
-    expect(hasGlRenderEffectRunner(state, 'HueSaturationEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'ToneMapEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'WhiteBalanceEffect')).toBe(true);
+  });
+
+  it('does not register the moved pointwise color adjustments (ColorGrade/HueSaturation)', () => {
+    const state = {} as never;
+    registerColorGlRenderEffects(state);
+    expect(hasGlRenderEffectRunner(state, 'ColorGradeEffect')).toBe(false);
+    expect(hasGlRenderEffectRunner(state, 'HueSaturationEffect')).toBe(false);
   });
 
   it('does not register DitherEffect (moved to stylize band)', () => {
@@ -107,11 +114,11 @@ describe('registerColorGradeGlRenderEffects', () => {
     expect(typeof registerColorGradeGlRenderEffects).toBe('function');
   });
 
-  it('registers ColorGradeEffect and HueSaturationEffect runners', () => {
+  it('registers ToneMapEffect and WhiteBalanceEffect runners', () => {
     const state = {} as never;
     registerColorGradeGlRenderEffects(state);
-    expect(hasGlRenderEffectRunner(state, 'ColorGradeEffect')).toBe(true);
-    expect(hasGlRenderEffectRunner(state, 'HueSaturationEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'ToneMapEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'WhiteBalanceEffect')).toBe(true);
   });
 });
 
