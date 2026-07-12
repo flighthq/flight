@@ -237,6 +237,33 @@ describe('computeTextLayout', () => {
       );
       expect(result.numLines).toBeGreaterThan(1);
     });
+
+    // Reconstructing the placed text from group [startIndex, endIndex) spans must
+    // preserve every non-space character. A wrap that advanced past the first
+    // character of the wrapped word would drop it here.
+    it('preserves every character when wrapping across word boundaries', () => {
+      const text = 'aaa bbb ccc';
+      const result = doLayout(
+        singleRangeParams(text, 60, { wordWrap: true, multiline: true, formatRanges: [range(0, text.length)] }),
+      );
+      const placed = result.groups.map((g) => text.slice(g.startIndex, g.endIndex)).join('');
+      expect(placed.replace(/ /g, '')).toBe(text.replace(/ /g, ''));
+    });
+
+    it('preserves every character when wrapping multi-format (rich) text', () => {
+      const text = 'aaa bbb ccc';
+      const result = doLayout({
+        text,
+        formatRanges: [createTextFormatRange({ size: 16 }, 0, 4), createTextFormatRange({ size: 16 }, 4, text.length)],
+        width: 60,
+        height: 100,
+        measure: fixedMeasure,
+        wordWrap: true,
+        multiline: true,
+      });
+      const placed = result.groups.map((g) => text.slice(g.startIndex, g.endIndex)).join('');
+      expect(placed.replace(/ /g, '')).toBe(text.replace(/ /g, ''));
+    });
   });
 });
 

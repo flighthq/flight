@@ -207,7 +207,6 @@ function buildGroups(
   let breakCount = 0;
   let breakIndex = lineBreaks.length > 0 ? lineBreaks[0] : -1;
   let spaceIndex = text.indexOf(' ');
-  let prevSpaceIndex = -2;
 
   let activeGroup: TextLayoutGroup | null = null;
 
@@ -512,7 +511,6 @@ function buildGroups(
       breakCount++;
       breakIndex = breakCount < lineBreaks.length ? lineBreaks[breakCount] : -1;
       spaceIndex = text.indexOf(' ', textIndex);
-      prevSpaceIndex = -2;
 
       updateParagraphMetrics();
       updateLineMetrics();
@@ -544,12 +542,15 @@ function buildGroups(
         commitLine();
         if (checkTruncation()) break;
 
-        // Skip leading space of the newly wrapped line.
-        if (textIndex === prevSpaceIndex + 1) textIndex++;
+        // Skip a leading space carried onto the newly wrapped line. Only an
+        // actual space at textIndex is dropped: the space separating words is
+        // placed as the trailing space of the previous word, so after a normal
+        // wrap textIndex already points at the next word's first character and
+        // must be kept — advancing unconditionally would consume that character.
+        if (text.charCodeAt(textIndex) === 0x20) textIndex++;
       }
 
       placeSpan(textIndex, segEnd);
-      prevSpaceIndex = spaceIndex;
       spaceIndex = text.indexOf(' ', wordEnd);
     } else {
       // No more spaces or breaks — place the remainder of the text.
