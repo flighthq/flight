@@ -1,4 +1,5 @@
 import type {
+  MarkupClassResolver,
   MarkupColorResolver,
   MarkupTagHandler,
   MarkupTagRegistry,
@@ -35,14 +36,18 @@ export function registerMarkupTag(
  * Registers the standard `htmlText` dialect into `registry` — the default bundle `parseTextMarkup`
  * uses when no registry is passed. Covers `<b>`/`<strong>`, `<i>`/`<em>`, `<u>`, `<s>`/`<strike>`,
  * `<font color size face>` (color is `#rgb`/`#rrggbb`/`0x` only by default), `<a href target>`,
- * `<p align>` (implicit line break), `<li type>` (break + bullet), `<br>` (a `\n`), `<span>` (a
- * no-op base), and `<textformat leftmargin blockindent indent rightmargin leading tabstops>`. Each
- * handler returns a fresh result, so registrations share no mutable state.
+ * `<p align>` (implicit line break), `<li type>` (break + bullet), `<br>` (a `\n`), `<span class>`
+ * (a transparent grouping element, styled only once class styles are registered), and `<textformat
+ * leftmargin blockindent indent rightmargin leading tabstops>`. Each handler returns a fresh result,
+ * so registrations share no mutable state.
  *
  * The `<font>` handler resolves color through the registry's `colorResolver` seam, which this installs
  * as the hex-only `resolveMarkupHexColor`. A named color like `red` therefore resolves to no color by
  * default (graceful, not an error). Call `registerMarkupNamedColors` afterward to opt the ~148-entry
- * CSS named-color table in; a bundle that never does keeps the table tree-shaken out.
+ * CSS named-color table in; a bundle that never does keeps the table tree-shaken out. The `<span>`
+ * handler consults the registry's `classResolver` seam, left unset here so a bare `<span class>` is
+ * inert; call `registerMarkupClassStyles` to bind a class → format map — the same tree-shakable opt-in
+ * shape as named colors.
  */
 export function registerStandardMarkupTags(registry: MarkupTagRegistry): void {
   registry.colorResolver = resolveMarkupHexColor;
@@ -55,7 +60,7 @@ export function registerStandardMarkupTags(registry: MarkupTagRegistry): void {
   registerMarkupTag(registry, 'li', markupListItemTagHandler);
   registerMarkupTag(registry, 'p', markupParagraphTagHandler);
   registerMarkupTag(registry, 's', markupStrikethroughTagHandler);
-  registerMarkupTag(registry, 'span', markupSpanTagHandler);
+  registerMarkupTag(registry, 'span', createMarkupSpanTagHandler(registry));
   registerMarkupTag(registry, 'strike', markupStrikethroughTagHandler);
   registerMarkupTag(registry, 'strong', markupBoldTagHandler);
   registerMarkupTag(registry, 'textformat', markupTextformatTagHandler);
@@ -84,6 +89,26 @@ export function resolveMarkupHexColor(value: string): number | null {
     return Number.isNaN(parsed) ? null : parsed;
   }
   return null;
+}
+
+// Builds the `<span>` handler bound to `registry`, so it consults the live `classResolver` seam at
+// parse time — letting `registerMarkupClassStyles` add class styling after registration without
+// re-registering the handler. With no resolver set, or a `class` naming only unknown classes, the span
+// contributes nothing (a transparent grouping element). Space-separated class names in one `class`
+// attribute merge left to right, so a later class overrides an earlier one on a shared field.
+function createMarkupSpanTagHandler(registry: Readonly<MarkupTagRegistry>): MarkupTagHandler {
+  return (attributes: Readonly<Record<string, string>>): Partial<TextFormat> => {
+    const resolve: MarkupClassResolver | undefined = registry.classResolver;
+    const classes = attributes.class;
+    if (resolve === undefined || classes === undefined) return {};
+    const format: TextFormat = {};
+    for (const name of classes.split(/\s+/)) {
+      if (name.length === 0) continue;
+      const contribution = resolve(name);
+      if (contribution !== null) Object.assign(format, contribution);
+    }
+    return format;
+  };
 }
 
 // Builds the `<font>` handler bound to `registry`, so it can consult the live `colorResolver` seam at
@@ -175,10 +200,6 @@ function markupParagraphTagHandler(attributes: Readonly<Record<string, string>>)
   const align = attributes.align;
   if (align !== undefined && isMarkupAlign(align)) format.align = align.toLowerCase() as TextFormatAlign;
   return { breakBefore: true, format };
-}
-
-function markupSpanTagHandler(): Partial<TextFormat> {
-  return {};
 }
 
 function markupStrikethroughTagHandler(): Partial<TextFormat> {

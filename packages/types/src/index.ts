@@ -221,6 +221,7 @@ export * from './LodMesh';
 export * from './Log';
 export * from './LogSignals';
 export * from './LoopBackend';
+export * from './MarkupClassResolver';
 export * from './MarkupColorResolver';
 export * from './MarkupTagHandler';
 export * from './MarkupTagRegistry';
