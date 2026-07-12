@@ -43,7 +43,7 @@ function buildTextLabelLayoutParams(source: Readonly<TextLabel>, measure: TextMe
 export function appendTextLabelString(source: TextLabel, value: string): void {
   if (value.length === 0) return;
   source.data.text += value;
-  invalidateNodeLocalContent(source);
+  invalidateTextLabelContent(source);
 }
 
 // The field-box bounds in local space, mirroring computeRichTextLocalBoundsRectangle. A fixed field
@@ -112,13 +112,12 @@ export function getTextLabelString(source: Readonly<TextLabel>): string {
   return source.data.text;
 }
 
-// The discoverable companion to the direct-mutation path: after mutating `data.text`,
-// `data.textFormat`, or `data.verticalAlign` in place (rather than through a `setTextLabel*` setter),
-// call this to invalidate. It mirrors what the label's content-setters invalidate — the content
-// revision only (a TextLabel derives its extent from the label box, and its content-setters do not
-// bump local bounds), and never touches the transform.
+// The discoverable companion to the direct-mutation path: after mutating `data.text` or
+// `data.textFormat` in place (rather than through a `setTextLabel*` setter), call this to invalidate —
+// the content revision, plus local bounds when `autoSize` derives the box from the text. Never touches
+// the transform.
 export function invalidateTextLabel(source: TextLabel): void {
-  invalidateNodeLocalContent(source);
+  invalidateTextLabelContent(source);
 }
 
 export function setTextLabelAutoSize(source: TextLabel, value: TextAutoSize): void {
@@ -133,7 +132,7 @@ export function setTextLabelAutoSize(source: TextLabel, value: TextAutoSize): vo
 // apply; the content revision bumps unconditionally because field-level equality is not tracked.
 export function setTextLabelFormat(source: TextLabel, value: TextFormat): void {
   source.data.textFormat = value;
-  invalidateNodeLocalContent(source);
+  invalidateTextLabelContent(source);
 }
 
 export function setTextLabelHeight(source: TextLabel, value: number): void {
@@ -148,7 +147,7 @@ export function setTextLabelString(source: TextLabel, value: string): void {
   const data = source.data;
   if (data.text === value) return;
   data.text = value;
-  invalidateNodeLocalContent(source);
+  invalidateTextLabelContent(source);
 }
 
 // Vertical alignment repositions the glyphs within the (unchanged) height box, so it invalidates only
@@ -167,6 +166,15 @@ export function setTextLabelWidth(source: TextLabel, value: number): void {
   data.width = value;
   invalidateNodeLocalContent(source);
   invalidateNodeLocalBounds(source);
+}
+
+// Content invalidation shared by the text/format setters and `invalidateTextLabel`: bumps the content
+// revision, and — only when `autoSize` measures the box from the text (`autoSize !== 'none'`) — the
+// local bounds too, since the extent then depends on the content. Under `autoSize 'none'` the box is the
+// fixed user width/height, so bounds are untouched. Mirrors `@flighthq/text`'s `invalidateRichTextContent`.
+function invalidateTextLabelContent(source: TextLabel): void {
+  invalidateNodeLocalContent(source);
+  if (source.data.autoSize !== 'none') invalidateNodeLocalBounds(source);
 }
 
 const defaultMethods: Partial<MethodsOf<TextLabelRuntime>> = {
