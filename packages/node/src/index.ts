@@ -2,7 +2,6 @@ export * from './boundsRectangle';
 export * from './hasAppearance';
 export * from './hasBoundsRectangle';
 export * from './hasClip';
-export * from './hasColorTransform';
 export * from './hasMaterial';
 export * from './hasTransform2d';
 export * from './hasTransform3d';

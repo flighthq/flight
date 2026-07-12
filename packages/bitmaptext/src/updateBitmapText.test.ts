@@ -1,4 +1,5 @@
-import type { GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
+import { getDisplayObjectColorAdjustments } from '@flighthq/displayobject';
+import type { ColorTransformAdjustment, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapText, getBitmapTextBounds, getBitmapTextQuadBatches, setBitmapTextColor } from './bitmapText';
@@ -185,13 +186,16 @@ describe('updateBitmapText', () => {
   it('sets a whole-batch color-transform tint only for non-white colors', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);
-    expect(getBitmapTextQuadBatches(text)[0]!.colorTransform).toBeNull();
+    expect(getDisplayObjectColorAdjustments(getBitmapTextQuadBatches(text)[0]!)).toBeNull();
     setBitmapTextColor(text, 0xff0000ff);
     updateBitmapText(text);
-    const colorTransform = getBitmapTextQuadBatches(text)[0]!.colorTransform;
-    expect(colorTransform).not.toBeNull();
-    expect(colorTransform!.redMultiplier).toBe(1);
-    expect(colorTransform!.greenMultiplier).toBe(0);
+    // One color-transform adjustment on the batch's runtime slot — a single whole-batch tint, not per-glyph.
+    const adjustments = getDisplayObjectColorAdjustments(getBitmapTextQuadBatches(text)[0]!);
+    expect(adjustments).not.toBeNull();
+    expect(adjustments!).toHaveLength(1);
+    const colorTransform = (adjustments![0] as ColorTransformAdjustment).colorTransform;
+    expect(colorTransform.redMultiplier).toBe(1);
+    expect(colorTransform.greenMultiplier).toBe(0);
   });
 
   it('produces exactly one batch bound to the page-0 image for a single-page source', () => {

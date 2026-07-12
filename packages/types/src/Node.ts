@@ -1,3 +1,5 @@
+import type { Adjustment } from './Adjustment';
+import type { ColorTransform } from './ColorTransform';
 import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from './Entity';
 import type { InteractionSignals } from './InteractionSignals';
 import type { NodeSignals } from './NodeSignals';
@@ -23,6 +25,18 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   boundsUsingLocalTransformId: number;
   canAddChild: (target: Node<Traits>, child: Node<Traits>) => boolean;
   children: Node<Traits>[] | null;
+  // Adjustment-tier subsystem slot (off the entity, like nodeSignals): the node's pointwise
+  // color-adjustment stack — the source of truth, default `null` → no adjustments. Set through
+  // `setDisplayObjectColorAdjustments`, which fuses it once (on change, not per frame) into the affine
+  // `resolvedColorTransform` cache below; the render walk just hands that cache to the inline fold as
+  // `RenderProxy.colorTransform`, so the hot path is identical to reading the old `.colorTransform` and
+  // the fuse math never weighs on the base render bundle.
+  colorAdjustments: readonly Adjustment[] | null;
+  // Cached affine resolution of `colorAdjustments` (fused once on set). `null` → the stack resolves to no
+  // tint. When the fused stack carries off-diagonal channel-mixing terms the 8-float fold cannot represent
+  // yet (the deferred 4×5 path), this holds only the affine part and `colorAdjustmentsChannelMixing` is set.
+  resolvedColorTransform: ColorTransform | null;
+  colorAdjustmentsChannelMixing: boolean;
   traits?: NodeTraitsKey<Traits>;
   interactionSignals: InteractionSignals | null;
   localBoundsId: number;

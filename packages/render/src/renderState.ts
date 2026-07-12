@@ -28,6 +28,7 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
 // intentionally mutable (not Readonly).
 export function createRenderStateRuntime(): RenderStateRuntime {
   const runtime = createEntityRuntime() as RenderStateRuntime;
+  runtime.colorAdjustmentChannelMixingGuard = null;
   runtime.currentFrameId = 0;
   runtime.renderAdaptHook = null;
   runtime.renderProxyAdapterMap = new WeakMap();

@@ -1,3 +1,4 @@
+export * from './enableColorAdjustmentGuards';
 export * from './explainDisplayObjectRender';
 export * from './renderAppearance';
 export * from './renderCache';

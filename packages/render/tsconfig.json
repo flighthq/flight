@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../adjustments"
+    },
+    {
       "path": "../camera"
     },
     {
@@ -23,6 +26,9 @@
     },
     {
       "path": "../lighting"
+    },
+    {
+      "path": "../log"
     },
     {
       "path": "../materials"

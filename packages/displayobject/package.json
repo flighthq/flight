@@ -27,7 +27,9 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"

@@ -1,4 +1,5 @@
 import { getEntityRuntime } from '@flighthq/entity';
+import { createColorTransform } from '@flighthq/materials';
 import type {
   BoundsNode,
   DisplayObject,
@@ -10,18 +11,46 @@ import type {
 import { BlendMode, DisplayObjectKind, DisplayObjectTraitsKey } from '@flighthq/types';
 
 import {
+  addDisplayObjectColorAdjustment,
   createDisplayObject,
   createDisplayObjectGeneric,
   createDisplayObjectRuntime,
+  getDisplayObjectColorAdjustments,
   getDisplayObjectRuntime,
   isDisplayObject,
   setDisplayObjectClip,
+  setDisplayObjectColorAdjustments,
   setDisplayObjectColorTransform,
 } from './displayObject';
 
 function getRuntime_(obj: DisplayObject): DisplayObjectRuntime {
   return getEntityRuntime(obj) as DisplayObjectRuntime;
 }
+
+describe('addDisplayObjectColorAdjustment', () => {
+  let obj: DisplayObject;
+  beforeEach(() => {
+    obj = createDisplayObject();
+  });
+
+  it('appends to a fresh (null) stack and invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceId;
+    const adjustment = { kind: 'ColorTransformAdjustment' } as never;
+    addDisplayObjectColorAdjustment(obj, adjustment);
+    expect(getDisplayObjectColorAdjustments(obj)).toEqual([adjustment]);
+    expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
+  });
+
+  it('appends to an existing stack without mutating the previous array', () => {
+    const a = { kind: 'A' } as never;
+    const b = { kind: 'B' } as never;
+    addDisplayObjectColorAdjustment(obj, a);
+    const first = getDisplayObjectColorAdjustments(obj);
+    addDisplayObjectColorAdjustment(obj, b);
+    expect(getDisplayObjectColorAdjustments(obj)).toEqual([a, b]);
+    expect(first).toEqual([a]); // the earlier array was not mutated
+  });
+});
 
 describe('createDisplayObject', () => {
   let displayObject: DisplayObject;
@@ -114,6 +143,12 @@ describe('createDisplayObjectRuntime', () => {
   });
 });
 
+describe('getDisplayObjectColorAdjustments', () => {
+  it('defaults to null on a fresh node', () => {
+    expect(getDisplayObjectColorAdjustments(createDisplayObject())).toBeNull();
+  });
+});
+
 describe('getDisplayObjectRuntime', () => {
   it('returns the runtime for a DisplayObject', () => {
     const obj = createDisplayObject();
@@ -162,32 +197,41 @@ describe('setDisplayObjectClip', () => {
   });
 });
 
-describe('setDisplayObjectColorTransform', () => {
+describe('setDisplayObjectColorAdjustments', () => {
   let obj: DisplayObject;
   beforeEach(() => {
     obj = createDisplayObject();
   });
 
-  it('defaults colorTransform to null on a fresh node', () => {
-    expect(obj.colorTransform).toBeNull();
-  });
-
-  it('sets colorTransform', () => {
-    const colorTransform = { redMultiplier: 0.5 } as never;
-    setDisplayObjectColorTransform(obj, colorTransform);
-    expect(obj.colorTransform).toBe(colorTransform);
+  it('sets the stack and invalidates appearance', () => {
+    const idBefore = getRuntime_(obj).appearanceId;
+    const stack = [{ kind: 'ColorTransformAdjustment' }] as never;
+    setDisplayObjectColorAdjustments(obj, stack);
+    expect(getDisplayObjectColorAdjustments(obj)).toBe(stack);
+    expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
   });
 
   it('accepts null', () => {
-    setDisplayObjectColorTransform(obj, { redMultiplier: 0.5 } as never);
-    setDisplayObjectColorTransform(obj, null);
-    expect(obj.colorTransform).toBeNull();
+    setDisplayObjectColorAdjustments(obj, [{ kind: 'ColorTransformAdjustment' }] as never);
+    setDisplayObjectColorAdjustments(obj, null);
+    expect(getDisplayObjectColorAdjustments(obj)).toBeNull();
+  });
+});
+
+describe('setDisplayObjectColorTransform', () => {
+  it('wraps a color transform as one ColorTransformAdjustment on the stack', () => {
+    const obj = createDisplayObject();
+    setDisplayObjectColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
+    const stack = getDisplayObjectColorAdjustments(obj);
+    expect(stack?.length).toBe(1);
+    expect(stack?.[0].kind).toBe('ColorTransformAdjustment');
   });
 
-  it('invalidates appearance', () => {
-    const idBefore = getRuntime_(obj).appearanceId;
-    setDisplayObjectColorTransform(obj, { redMultiplier: 0.5 } as never);
-    expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
+  it('clears with null', () => {
+    const obj = createDisplayObject();
+    setDisplayObjectColorTransform(obj, createColorTransform({ redMultiplier: 0.5 }));
+    setDisplayObjectColorTransform(obj, null);
+    expect(getDisplayObjectColorAdjustments(obj)).toBeNull();
   });
 });
 

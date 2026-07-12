@@ -9,6 +9,7 @@ export * from './BrightnessContrastAdjustment';
 export * from './ChannelMixerAdjustment';
 export * from './ColorBlindSimulationAdjustment';
 export * from './ColorMatrixAdjustment';
+export * from './ColorTransformAdjustment';
 export * from './ExposureAdjustment';
 export * from './GrayscaleAdjustment';
 export * from './InvertAdjustment';

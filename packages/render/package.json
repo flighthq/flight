@@ -29,12 +29,14 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/camera": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/lighting": "*",
