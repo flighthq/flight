@@ -1,6 +1,7 @@
 import type { RichTextContent, TextFormat } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
+import { createMarkupTagRegistry, registerMarkupTag } from './markupTagRegistry';
 import { formatTextMarkup, parseTextMarkup } from './textMarkup';
 
 function formatAt(content: RichTextContent, index: number): TextFormat {
@@ -95,6 +96,27 @@ describe('parseTextMarkup', () => {
     expect(formatAt(parseTextMarkup('<s>x</s>'), 0)).toEqual({ strikethrough: true });
   });
 
+  it('maps the strong/em/strike aliases to the same booleans', () => {
+    expect(formatAt(parseTextMarkup('<strong>x</strong>'), 0)).toEqual({ bold: true });
+    expect(formatAt(parseTextMarkup('<em>x</em>'), 0)).toEqual({ italic: true });
+    expect(formatAt(parseTextMarkup('<strike>x</strike>'), 0)).toEqual({ strikethrough: true });
+  });
+
+  it('parses a CSS named font color', () => {
+    expect(formatAt(parseTextMarkup('<font color="red">x</font>'), 0).color).toBe(0xff0000);
+    expect(formatAt(parseTextMarkup('<font color="cornflowerblue">x</font>'), 0).color).toBe(0x6495ed);
+  });
+
+  it('uses a passed registry instead of the standard dialect', () => {
+    const registry = createMarkupTagRegistry();
+    registerMarkupTag(registry, 'hot', () => ({ color: 0xff0000 }));
+    const content = parseTextMarkup('<hot>x</hot><b>y</b>', registry);
+    expect(content.text).toBe('xy');
+    // `hot` is registered; `b` is not, so it keeps its text with no format.
+    expect(formatAt(content, 0)).toEqual({ color: 0xff0000 });
+    expect(formatAt(content, 1)).toEqual({});
+  });
+
   it('parses font color (#rrggbb, #rgb, 0x), size, and face', () => {
     expect(formatAt(parseTextMarkup('<font color="#ff0000">x</font>'), 0).color).toBe(0xff0000);
     expect(formatAt(parseTextMarkup('<font color="#f00">x</font>'), 0).color).toBe(0xff0000);
@@ -118,6 +140,19 @@ describe('parseTextMarkup', () => {
   it('parses li into bullet and an optional list marker', () => {
     expect(formatAt(parseTextMarkup('<li>x</li>'), 0)).toEqual({ bullet: true });
     expect(formatAt(parseTextMarkup('<li type="square">x</li>'), 0)).toEqual({ bullet: true, listMarker: 'square' });
+  });
+
+  it('inserts an implicit break before a block tag but not at the start', () => {
+    expect(parseTextMarkup('<p align="left">first</p>').text).toBe('first');
+    const content = parseTextMarkup('<p align="left">a</p><p align="right">b</p>');
+    expect(content.text).toBe('a\nb');
+    expect(formatAt(content, 0)).toEqual({ align: 'left' });
+    expect(formatAt(content, 2)).toEqual({ align: 'right' });
+  });
+
+  it('collapses the block break against an existing trailing newline', () => {
+    const content = parseTextMarkup('a<br><li>b</li>');
+    expect(content.text).toBe('a\nb');
   });
 
   it('parses textformat block metrics', () => {
@@ -196,6 +231,8 @@ describe('textMarkupRoundTrip', () => {
     '<font color="#00ff00"><b><u>deep</u></b></font>',
     'entities &amp; &lt; &gt; escaped',
     'line one<br>line two',
+    '<p align="left">one</p><p align="right">two</p>',
+    'lead<li type="disc">item</li>',
   ];
 
   it('is a fixed point over parse, format, reparse', () => {

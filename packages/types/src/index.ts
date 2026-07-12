@@ -221,6 +221,8 @@ export * from './LodMesh';
 export * from './Log';
 export * from './LogSignals';
 export * from './LoopBackend';
+export * from './MarkupTagHandler';
+export * from './MarkupTagRegistry';
 export * from './MatcapMaterial';
 export * from './Material';
 export * from './Matrix';
