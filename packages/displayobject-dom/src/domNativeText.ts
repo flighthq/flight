@@ -10,6 +10,7 @@ import type {
   RendererData,
   RenderProxy2D,
   RenderState,
+  TextVerticalAlign,
 } from '@flighthq/types';
 
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
@@ -40,15 +41,25 @@ export function drawDomNativeText(state: DomRenderState, renderProxy: RenderProx
 
   applyNativeTextStyle(element, data.style);
   if (data.autoSize === 'none') {
+    // A fixed-height box frames the text; a column flexbox positions the block vertically within the
+    // leftover height (justify-content), leaving textAlign to handle the horizontal axis. Cross-axis
+    // stretch is the flexbox default, so the text item keeps the full width and textAlign still applies.
     element.style.whiteSpace = 'normal';
     element.style.width = `${data.width}px`;
     element.style.height = `${data.height}px`;
     element.style.overflow = 'hidden';
+    element.style.display = 'flex';
+    element.style.flexDirection = 'column';
+    element.style.justifyContent = _verticalAlignToJustifyContent(data.verticalAlign);
   } else {
+    // The box hugs the content, so there is no slack to align within — drop the flexbox framing.
     element.style.whiteSpace = 'nowrap';
     element.style.width = '';
     element.style.height = '';
     element.style.overflow = '';
+    element.style.display = '';
+    element.style.flexDirection = '';
+    element.style.justifyContent = '';
   }
   element.textContent = data.text;
 
@@ -70,6 +81,20 @@ export const defaultDomNativeTextRenderer: DisplayObjectRenderer = {
   createData: createDomNativeTextData,
   submit: drawDomNativeText,
 };
+
+// Maps the field's vertical alignment onto the column flexbox's main-axis distribution. 'top' is the
+// CSS default (flex-start); 'baseline'/'justify' are reserved TextVerticalAlign values with no faithful
+// CSS block-frame mapping yet, so they fall back to the top of the box.
+function _verticalAlignToJustifyContent(verticalAlign: TextVerticalAlign): string {
+  switch (verticalAlign) {
+    case 'bottom':
+      return 'flex-end';
+    case 'middle':
+      return 'center';
+    default:
+      return 'flex-start';
+  }
+}
 
 function applyNativeTextStyle(element: HTMLElement, style: Readonly<NativeTextStyle>): void {
   const size = style.size ?? 12;

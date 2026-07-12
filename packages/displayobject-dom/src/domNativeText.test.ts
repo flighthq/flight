@@ -59,6 +59,37 @@ describe('drawDomNativeText', () => {
     expect(div.style.height).toBe('40px');
     expect(div.style.overflow).toBe('hidden');
   });
+
+  it('positions the block vertically via the flexbox on a fixed box', () => {
+    const state = makeState();
+    const node = createNativeText({ data: { text: 'hi', verticalAlign: 'middle' } });
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+
+    const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
+    expect(div.style.display).toBe('flex');
+    expect(div.style.flexDirection).toBe('column');
+    expect(div.style.justifyContent).toBe('center');
+  });
+
+  it('maps top and bottom to the box ends', () => {
+    const state = makeState();
+    const top = createNativeText({ data: { text: 'hi', verticalAlign: 'top' } });
+    const bottom = createNativeText({ data: { text: 'hi', verticalAlign: 'bottom' } });
+    const topDiv = drawGetEl(state, () => drawDomNativeText(state, getOrCreateRenderProxy2D(state, top)))!;
+    const bottomDiv = drawGetEl(state, () => drawDomNativeText(state, getOrCreateRenderProxy2D(state, bottom)))!;
+    expect(topDiv.style.justifyContent).toBe('flex-start');
+    expect(bottomDiv.style.justifyContent).toBe('flex-end');
+  });
+
+  it('drops the flexbox framing under autoSize (no slack to align within)', () => {
+    const state = makeState();
+    const node = createNativeText({ data: { text: 'hi', autoSize: 'left', verticalAlign: 'middle' } });
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+
+    const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
+    expect(div.style.display).toBe('');
+    expect(div.style.justifyContent).toBe('');
+  });
 });
 
 describe('drawDomNativeTextMask', () => {
