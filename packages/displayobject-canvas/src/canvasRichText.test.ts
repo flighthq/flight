@@ -46,10 +46,14 @@ describe('drawCanvasRichText', () => {
     expect(spy).toHaveBeenCalled();
   });
 
-  it('renders resolved htmlText spans', () => {
+  it('renders resolved multi-format spans', () => {
     const state = makeState();
     const node = createRichText();
-    node.data.htmlText = '<font color="#ff0000">red</font><b>bold</b>';
+    node.data.text = 'redbold';
+    node.data.textFormatRanges = [
+      { start: 0, end: 3, format: { color: 0xff0000 } },
+      { start: 3, end: 7, format: { bold: true } },
+    ];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     const spy = vi.spyOn(state.context, 'fillText');
 

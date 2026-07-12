@@ -16,7 +16,6 @@ export interface RichTextData extends TextLabelData {
   condenseWhite: boolean;
   defaultTextFormat: TextFormat;
   height: number;
-  htmlText: string;
   maxChars: number;
   mouseWheelEnabled: boolean;
   multiline: boolean;

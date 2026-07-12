@@ -20,7 +20,6 @@ function createData(data: Partial<RichTextData> = {}): RichTextData {
     condenseWhite: false,
     defaultTextFormat: {},
     height: 100,
-    htmlText: '',
     maxChars: -1,
     mouseWheelEnabled: true,
     multiline: true,

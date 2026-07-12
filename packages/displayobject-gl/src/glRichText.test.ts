@@ -85,10 +85,15 @@ describe('drawGlRichText', () => {
     expect(gl.drawElements).toHaveBeenCalled();
   });
 
-  it('draws resolved htmlText spans', () => {
+  it('draws resolved multi-format spans', () => {
     const { state, gl } = createGlState();
     const renderProxy = makeRichTextNode();
-    (renderProxy.source as RichText).data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
+    const node = renderProxy.source as RichText;
+    node.data.text = 'BoldGreen';
+    node.data.textFormatRanges = [
+      { start: 0, end: 4, format: { bold: true } },
+      { start: 4, end: 9, format: { color: 0x00ff00 } },
+    ];
     drawGlRichText(state, renderProxy);
     expect(gl.drawElements).toHaveBeenCalled();
   });

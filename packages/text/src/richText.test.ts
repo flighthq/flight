@@ -25,7 +25,6 @@ import {
   getRichTextFormatRangeByIndex,
   getRichTextFormatRangeCount,
   getRichTextFormatRangesIn,
-  getRichTextHtml,
   getRichTextLength,
   getRichTextLineCount,
   getRichTextLineMetrics,
@@ -45,10 +44,10 @@ import {
   setRichTextBorder,
   setRichTextBorderColor,
   setRichTextCondenseWhite,
+  setRichTextContent,
   setRichTextDefaultTextFormat,
   setRichTextFormatRange,
   setRichTextHeight,
-  setRichTextHtml,
   setRichTextMaxChars,
   setRichTextMouseWheelEnabled,
   setRichTextMultiline,
@@ -168,7 +167,6 @@ describe('createRichText', () => {
     expect(richText.data.borderColor).toBe(0);
     expect(richText.data.condenseWhite).toBe(false);
     expect(richText.data.defaultTextFormat).not.toBeNull();
-    expect(richText.data.htmlText).toBe('');
     expect(richText.data.maxChars).toBe(-1);
     expect(richText.data.mouseWheelEnabled).toBe(true);
     expect(richText.data.multiline).toBe(true);
@@ -191,7 +189,6 @@ describe('createRichText', () => {
         borderColor: 0xff,
         condenseWhite: true,
         defaultTextFormat: {},
-        htmlText: 'aslfkj',
         maxChars: 100,
         mouseWheelEnabled: false,
         multiline: false,
@@ -209,7 +206,6 @@ describe('createRichText', () => {
     expect(obj.data.borderColor).toStrictEqual(base.data.borderColor);
     expect(obj.data.condenseWhite).toStrictEqual(base.data.condenseWhite);
     expect(obj.data.defaultTextFormat).toStrictEqual(base.data.defaultTextFormat);
-    expect(obj.data.htmlText).toStrictEqual(base.data.htmlText);
     expect(obj.data.maxChars).toStrictEqual(base.data.maxChars);
     expect(obj.data.mouseWheelEnabled).toStrictEqual(base.data.mouseWheelEnabled);
     expect(obj.data.multiline).toStrictEqual(base.data.multiline);
@@ -233,16 +229,15 @@ describe('createRichTextData', () => {
     const data = createRichTextData();
     expect(data.width).toBe(100);
     expect(data.height).toBe(100);
-    expect(data.htmlText).toBe('');
     expect(data.multiline).toBe(true);
     expect(data.wordWrap).toBe(false);
   });
 
   it('allows pre-defined values', () => {
-    const data = createRichTextData({ width: 300, height: 200, htmlText: '<b>hi</b>' });
+    const data = createRichTextData({ width: 300, height: 200, maxChars: 12 });
     expect(data.width).toBe(300);
     expect(data.height).toBe(200);
-    expect(data.htmlText).toBe('<b>hi</b>');
+    expect(data.maxChars).toBe(12);
   });
 });
 
@@ -308,7 +303,8 @@ describe('dispatchRichTextLinkAtPoint', () => {
   it('emits onTextFieldLink with the url and point when a link is hit', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
     const richText = createRichText({ data: { width: 400, height: 50 } });
-    setRichTextHtml(richText, '<a href="https://example.com">click</a>');
+    setRichTextString(richText, 'click');
+    setRichTextFormatRange(richText, { url: 'https://example.com' }, 0, 5);
     const signals = enableTextFieldSignals(richText);
     const seen: string[] = [];
     connectSignal(signals.onTextFieldLink, (event) => {
@@ -509,13 +505,6 @@ describe('getRichTextFormatRangesIn', () => {
     const out: TextFormatRange[] = [];
     getRichTextFormatRangesIn(out, richText, 0, 5);
     expect(out[0]).toBe(richText.data.textFormatRanges[0]);
-  });
-});
-
-describe('getRichTextHtml', () => {
-  it('returns the htmlText field', () => {
-    const richText = createRichText({ data: { htmlText: '<b>hi</b>' } });
-    expect(getRichTextHtml(richText)).toBe('<b>hi</b>');
   });
 });
 
@@ -949,6 +938,36 @@ describe('setRichTextCondenseWhite', () => {
   });
 });
 
+describe('setRichTextContent', () => {
+  it('sets text and format ranges from a RichTextContent and bumps content', () => {
+    const richText = createRichText();
+    const revision = getNodeLocalContentRevision(richText);
+    setRichTextContent(richText, { formatRanges: [{ start: 0, end: 4, format: { bold: true } }], text: 'bold' });
+    expect(richText.data.text).toBe('bold');
+    expect(richText.data.textFormatRanges).toEqual([{ start: 0, end: 4, format: { bold: true } }]);
+    expect(getNodeLocalContentRevision(richText)).toBe(revision + 1);
+  });
+
+  it('copies the format ranges so the field does not alias the caller array', () => {
+    const richText = createRichText();
+    const ranges: TextFormatRange[] = [{ start: 0, end: 2, format: { italic: true } }];
+    setRichTextContent(richText, { formatRanges: ranges, text: 'hi' });
+    expect(richText.data.textFormatRanges).not.toBe(ranges);
+    expect(richText.data.textFormatRanges[0]).not.toBe(ranges[0]);
+  });
+
+  it('emits onTextFieldChange when the text changes', () => {
+    const richText = createRichText({ data: { text: 'old' } });
+    const signals = enableTextFieldSignals(richText);
+    let seen = '';
+    connectSignal(signals.onTextFieldChange, (event) => {
+      seen = event.previousText;
+    });
+    setRichTextContent(richText, { formatRanges: [], text: 'new' });
+    expect(seen).toBe('old');
+  });
+});
+
 describe('setRichTextDefaultTextFormat', () => {
   it('sets the defaultTextFormat and bumps content', () => {
     const richText = createRichText();
@@ -983,23 +1002,6 @@ describe('setRichTextHeight', () => {
     const richText = createRichText();
     const content = getNodeLocalContentRevision(richText);
     setRichTextHeight(richText, richText.data.height);
-    expect(getNodeLocalContentRevision(richText)).toBe(content);
-  });
-});
-
-describe('setRichTextHtml', () => {
-  it('sets htmlText and bumps content', () => {
-    const richText = createRichText();
-    const content = getNodeLocalContentRevision(richText);
-    setRichTextHtml(richText, '<b>bold</b>');
-    expect(richText.data.htmlText).toBe('<b>bold</b>');
-    expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
-  });
-
-  it('does not bump content when the value is unchanged', () => {
-    const richText = createRichText({ data: { htmlText: '<i>same</i>' } });
-    const content = getNodeLocalContentRevision(richText);
-    setRichTextHtml(richText, '<i>same</i>');
     expect(getNodeLocalContentRevision(richText)).toBe(content);
   });
 });
