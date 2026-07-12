@@ -88,11 +88,11 @@ describe('registerColorGlRenderEffects', () => {
     expect(typeof registerColorGlRenderEffects).toBe('function');
   });
 
-  it('registers BrightnessContrastEffect and ExposureEffect runners', () => {
+  it('registers ColorGradeEffect and HueSaturationEffect runners', () => {
     const state = {} as never;
     registerColorGlRenderEffects(state);
-    expect(hasGlRenderEffectRunner(state, 'BrightnessContrastEffect')).toBe(true);
-    expect(hasGlRenderEffectRunner(state, 'ExposureEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'ColorGradeEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'HueSaturationEffect')).toBe(true);
   });
 
   it('does not register DitherEffect (moved to stylize band)', () => {
@@ -107,11 +107,11 @@ describe('registerColorGradeGlRenderEffects', () => {
     expect(typeof registerColorGradeGlRenderEffects).toBe('function');
   });
 
-  it('registers BrightnessContrastEffect and ExposureEffect runners', () => {
+  it('registers ColorGradeEffect and HueSaturationEffect runners', () => {
     const state = {} as never;
     registerColorGradeGlRenderEffects(state);
-    expect(hasGlRenderEffectRunner(state, 'BrightnessContrastEffect')).toBe(true);
-    expect(hasGlRenderEffectRunner(state, 'ExposureEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'ColorGradeEffect')).toBe(true);
+    expect(hasGlRenderEffectRunner(state, 'HueSaturationEffect')).toBe(true);
   });
 });
 

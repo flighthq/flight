@@ -4,9 +4,7 @@ import { defaultGlBevelEffectRunner } from './glBevelEffect';
 import { defaultGlBloomEffectRunner } from './glBloomEffect';
 import { defaultGlBlurEffectRunner } from './glBlurEffect';
 import { defaultGlBokehDepthOfFieldEffectRunner } from './glBokehDepthOfFieldEffect';
-import { defaultGlBrightnessContrastEffectRunner } from './glBrightnessContrastEffect';
 import { defaultGlCameraMotionBlurEffectRunner } from './glCameraMotionBlurEffect';
-import { defaultGlChannelMixerEffectRunner } from './glChannelMixerEffect';
 import { defaultGlChromaticAberrationEffectRunner } from './glChromaticAberrationEffect';
 import { defaultGlColorGradeEffectRunner } from './glColorGradeEffect';
 import { defaultGlConvolutionEffectRunner } from './glConvolutionEffect';
@@ -16,7 +14,6 @@ import { defaultGlDirectionalBlurEffectRunner } from './glDirectionalBlurEffect'
 import { defaultGlDisplacementEffectRunner } from './glDisplacementEffect';
 import { defaultGlDitherEffectRunner } from './glDitherEffect';
 import { defaultGlDropShadowEffectRunner } from './glDropShadowEffect';
-import { defaultGlExposureEffectRunner } from './glExposureEffect';
 import { defaultGlFilmGrainEffectRunner } from './glFilmGrainEffect';
 import { defaultGlFxaaEffectRunner } from './glFxaaEffect';
 import { defaultGlGlitchEffectRunner } from './glGlitchEffect';
@@ -58,10 +55,11 @@ import { defaultGlWhiteBalanceEffectRunner } from './glWhiteBalanceEffect';
 //   antialiasing — FXAA, SMAA, TAA
 //   bloom        — BloomEffect, ChromaticAberration, GodRays, LensDirt, LensDistortion, LensFlare, Vignette
 //   blur         — BokehDepthOfField, CameraMotionBlur, DirectionalBlur, MotionBlur, RadialBlur, TiltShift
-//   color        — BrightnessContrast, ChannelMixer, ColorGrade, Exposure, HueSaturation,
-//                  LiftGammaGain, LookupTableGrade, Posterize, ToneMap, WhiteBalance
-//                  (Grayscale/Invert/Sepia moved to the matrix-tier @flighthq/adjustments, folded
-//                   through the pipeline's generic color-matrix pass — see effect-adjustment-architecture)
+//   color        — ColorGrade, HueSaturation, LiftGammaGain, LookupTableGrade, Posterize, ToneMap,
+//                  WhiteBalance
+//                  (Grayscale/Invert/Sepia and BrightnessContrast/ChannelMixer/Exposure moved to the
+//                   matrix-tier @flighthq/adjustments, folded through the pipeline's generic
+//                   color-matrix pass — see effect-adjustment-architecture)
 //   screen-space — Displacement, ScreenSpaceFog, Sharpen, Ssao, Ssr
 //   stylize      — Crt, Dither, FilmGrain, Glitch, Halftone, Kuwahara, Outline, Pixelate, Scanlines, Sketch
 //
@@ -111,17 +109,15 @@ export function registerBlurGlRenderEffects(state: GlRenderState): void {
   registerGlRenderEffect(state, 'TiltShiftEffect', defaultGlTiltShiftEffectRunner);
 }
 
-// Color / tone band: BrightnessContrastEffect, ChannelMixerEffect, ColorGradeEffect,
-// ExposureEffect, HueSaturationEffect, LiftGammaGainEffect,
+// Color / tone band: ColorGradeEffect, HueSaturationEffect, LiftGammaGainEffect,
 // LookupTableGradeEffect, PosterizeEffect, ToneMapEffect, WhiteBalanceEffect.
-// (GrayscaleEffect/InvertEffect/SepiaEffect were dissolved into the matrix-tier @flighthq/adjustments.)
+// (GrayscaleEffect/InvertEffect/SepiaEffect and BrightnessContrastEffect/ChannelMixerEffect/ExposureEffect
+//  were dissolved into the matrix-tier @flighthq/adjustments, folded through the pipeline's generic
+//  color-matrix pass — see effect-adjustment-architecture.)
 // DitherEffect has moved to the stylize band (matching Wgpu).
 // Symmetric with Wgpu's registerColorWgpuRenderEffects.
 export function registerColorGlRenderEffects(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'BrightnessContrastEffect', defaultGlBrightnessContrastEffectRunner);
-  registerGlRenderEffect(state, 'ChannelMixerEffect', defaultGlChannelMixerEffectRunner);
   registerGlRenderEffect(state, 'ColorGradeEffect', defaultGlColorGradeEffectRunner);
-  registerGlRenderEffect(state, 'ExposureEffect', defaultGlExposureEffectRunner);
   registerGlRenderEffect(state, 'HueSaturationEffect', defaultGlHueSaturationEffectRunner);
   registerGlRenderEffect(state, 'LiftGammaGainEffect', defaultGlLiftGammaGainEffectRunner);
   registerGlRenderEffect(state, 'LookupTableGradeEffect', defaultGlLookupTableGradeEffectRunner);
@@ -217,9 +213,7 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'BloomEffect',
   'BlurEffect',
   'BokehDepthOfFieldEffect',
-  'BrightnessContrastEffect',
   'CameraMotionBlurEffect',
-  'ChannelMixerEffect',
   'ChromaticAberrationEffect',
   'ColorGradeEffect',
   'ConvolutionEffect',
@@ -229,7 +223,6 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'DisplacementEffect',
   'DitherEffect',
   'DropShadowEffect',
-  'ExposureEffect',
   'FilmGrainEffect',
   'FxaaEffect',
   'GlitchEffect',

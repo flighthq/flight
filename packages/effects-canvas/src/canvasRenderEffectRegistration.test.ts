@@ -22,8 +22,8 @@ describe('registerAllCanvasRenderEffects', () => {
   it('registers color-grade effects', () => {
     const fakeState = {} as CanvasRenderState;
     registerAllCanvasRenderEffects(fakeState);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'BrightnessContrastEffect')).toBe(true);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'ExposureEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'ColorGradeEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'HueSaturationEffect')).toBe(true);
   });
   it('registers stylize effects', () => {
     const fakeState = {} as CanvasRenderState;
@@ -75,18 +75,15 @@ describe('registerColorGradeCanvasRenderEffects', () => {
   it('registers color-grade effects', () => {
     const fakeState = {} as CanvasRenderState;
     registerColorGradeCanvasRenderEffects(fakeState);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'BrightnessContrastEffect')).toBe(true);
-    expect(hasCanvasRenderEffectRunner(fakeState, 'ExposureEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'ColorGradeEffect')).toBe(true);
+    expect(hasCanvasRenderEffectRunner(fakeState, 'HueSaturationEffect')).toBe(true);
   });
   it('covers every non-passthrough color-grade kind', () => {
     const fakeState = {} as CanvasRenderState;
     registerColorGradeCanvasRenderEffects(fakeState);
     const colorGradeKinds = [
-      'BrightnessContrastEffect',
-      'ChannelMixerEffect',
       'ColorGradeEffect',
       'DitherEffect',
-      'ExposureEffect',
       'HueSaturationEffect',
       'LiftGammaGainEffect',
       'PosterizeEffect',

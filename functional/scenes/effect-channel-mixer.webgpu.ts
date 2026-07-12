@@ -6,20 +6,18 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
-  createChannelMixerEffect,
+  createChannelMixerAdjustment,
   createDisplayContainer,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuChannelMixerEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuDisplayObject,
@@ -39,7 +37,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'ChannelMixerEffect', defaultWgpuChannelMixerEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -53,7 +50,7 @@ export function render(root: DisplayObject): void {
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuDisplayObject(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [
-    createChannelMixerEffect({
+    createChannelMixerAdjustment({
       matrix: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
     }),
   ]);

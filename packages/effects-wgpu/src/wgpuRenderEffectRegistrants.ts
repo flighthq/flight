@@ -4,9 +4,7 @@ import { defaultWgpuBevelEffectRunner } from './wgpuBevelEffect';
 import { defaultWgpuBloomEffectRunner } from './wgpuBloomEffect';
 import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { defaultWgpuBokehDepthOfFieldEffectRunner } from './wgpuBokehDepthOfFieldEffect';
-import { defaultWgpuBrightnessContrastEffectRunner } from './wgpuBrightnessContrastEffect';
 import { defaultWgpuCameraMotionBlurEffectRunner } from './wgpuCameraMotionBlurEffect';
-import { defaultWgpuChannelMixerEffectRunner } from './wgpuChannelMixerEffect';
 import { defaultWgpuChromaticAberrationEffectRunner } from './wgpuChromaticAberrationEffect';
 import { defaultWgpuColorGradeEffectRunner } from './wgpuColorGradeEffect';
 import { defaultWgpuConvolutionEffectRunner } from './wgpuConvolutionEffect';
@@ -15,7 +13,6 @@ import { defaultWgpuDirectionalBlurEffectRunner } from './wgpuDirectionalBlurEff
 import { defaultWgpuDisplacementEffectRunner } from './wgpuDisplacementEffect';
 import { defaultWgpuDitherEffectRunner } from './wgpuDitherEffect';
 import { defaultWgpuDropShadowEffectRunner } from './wgpuDropShadowEffect';
-import { defaultWgpuExposureEffectRunner } from './wgpuExposureEffect';
 import { defaultWgpuFilmGrainEffectRunner } from './wgpuFilmGrainEffect';
 import { defaultWgpuFxaaEffectRunner } from './wgpuFxaaEffect';
 import { defaultWgpuGlitchEffectRunner } from './wgpuGlitchEffect';
@@ -89,15 +86,13 @@ export function registerBlurWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'TiltShiftEffect', defaultWgpuTiltShiftEffectRunner);
 }
 
-// Color / tone band: BrightnessContrastEffect, ChannelMixerEffect, ColorGradeEffect, ExposureEffect,
-// HueSaturationEffect, LiftGammaGainEffect, LookupTableGradeEffect,
+// Color / tone band: ColorGradeEffect, HueSaturationEffect, LiftGammaGainEffect, LookupTableGradeEffect,
 // PosterizeEffect, ToneMapEffect, WhiteBalanceEffect.
-// (GrayscaleEffect/InvertEffect/SepiaEffect were dissolved into the matrix-tier @flighthq/adjustments.)
+// (GrayscaleEffect/InvertEffect/SepiaEffect and BrightnessContrastEffect/ChannelMixerEffect/ExposureEffect
+//  were dissolved into the matrix-tier @flighthq/adjustments, folded through the pipeline's generic
+//  color-matrix pass — see effect-adjustment-architecture.)
 export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'BrightnessContrastEffect', defaultWgpuBrightnessContrastEffectRunner);
-  registerWgpuRenderEffect(state, 'ChannelMixerEffect', defaultWgpuChannelMixerEffectRunner);
   registerWgpuRenderEffect(state, 'ColorGradeEffect', defaultWgpuColorGradeEffectRunner);
-  registerWgpuRenderEffect(state, 'ExposureEffect', defaultWgpuExposureEffectRunner);
   registerWgpuRenderEffect(state, 'HueSaturationEffect', defaultWgpuHueSaturationEffectRunner);
   registerWgpuRenderEffect(state, 'LiftGammaGainEffect', defaultWgpuLiftGammaGainEffectRunner);
   registerWgpuRenderEffect(state, 'LookupTableGradeEffect', defaultWgpuLookupTableGradeEffectRunner);

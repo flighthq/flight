@@ -6,19 +6,17 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createBrightnessContrastEffect,
+  createBrightnessContrastAdjustment,
   createDisplayContainer,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
-  defaultGlBrightnessContrastEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'BrightnessContrastEffect', defaultGlBrightnessContrastEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -52,7 +49,9 @@ export function render(root: DisplayObject): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createBrightnessContrastEffect({ brightness: 0.15, contrast: 0.35 })]);
+  endGlRenderEffectPipeline(state, pipeline, [
+    createBrightnessContrastAdjustment({ brightness: 0.15, contrast: 0.35 }),
+  ]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

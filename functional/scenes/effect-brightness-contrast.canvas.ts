@@ -6,18 +6,16 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginCanvasRenderEffectPipeline,
-  createBrightnessContrastEffect,
+  createBrightnessContrastAdjustment,
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createDisplayContainer,
   createShape,
-  defaultCanvasBrightnessContrastEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -33,7 +31,6 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'BrightnessContrastEffect', defaultCanvasBrightnessContrastEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -47,7 +44,7 @@ export function render(root: DisplayObject): void {
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [
-    createBrightnessContrastEffect({ brightness: 0.15, contrast: 0.35 }),
+    createBrightnessContrastAdjustment({ brightness: 0.15, contrast: 0.35 }),
   ]);
 }
 

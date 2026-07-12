@@ -7,18 +7,16 @@ import {
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
   createDisplayContainer,
-  createExposureEffect,
+  createExposureAdjustment,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
-  defaultGlExposureEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'ExposureEffect', defaultGlExposureEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   sampleCount: 4,
@@ -55,7 +52,7 @@ export function render(root: DisplayObject): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createExposureEffect({ exposure: 1 })]);
+  endGlRenderEffectPipeline(state, pipeline, [createExposureAdjustment({ exposure: 1 })]);
 }
 
 // A normal scene of bright, saturated shapes on a near-black field, rendered through an HDR pipeline.
