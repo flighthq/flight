@@ -1,8 +1,8 @@
 import {
-  bakeColorLut,
+  bakeColorLutForRun,
+  createColorLutCache,
   fuseColorMatrices,
   getAdjustmentColorMatrix,
-  getAdjustmentColorTransform,
   isColorLutAdjustment,
 } from '@flighthq/adjustments';
 import { createMatrix } from '@flighthq/geometry';
@@ -20,7 +20,6 @@ import {
 } from '@flighthq/render-wgpu';
 import type {
   Adjustment,
-  ColorTransformFunction,
   RenderEffect,
   RenderEffectPipelineOptions,
   WgpuRenderEffectPipeline,
@@ -68,7 +67,14 @@ export function createWgpuRenderEffectPipeline(
   _state: WgpuRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): WgpuRenderEffectPipeline {
-  return { options: { ...options }, sceneTarget: null, pool: createWgpuRenderTargetPool(), velocityTexture: null };
+  return {
+    options: { ...options },
+    sceneTarget: null,
+    pool: createWgpuRenderTargetPool(),
+    lutCache: createColorLutCache(),
+    lutTexture: { texture: null, size: 0, lut: null },
+    velocityTexture: null,
+  };
 }
 
 export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: WgpuRenderEffectPipeline): void {
@@ -77,6 +83,12 @@ export function destroyWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline
     pipeline.sceneTarget = null;
   }
   destroyWgpuRenderTargetPool(state, pipeline.pool);
+  pipeline.lutTexture.texture?.destroy();
+  pipeline.lutTexture.texture = null;
+  pipeline.lutTexture.size = 0;
+  pipeline.lutTexture.lut = null;
+  pipeline.lutCache.signature = null;
+  pipeline.lutCache.lut = null;
 }
 
 export function endWgpuRenderEffectPipeline(
@@ -110,12 +122,7 @@ export function endWgpuRenderEffectPipeline(
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
     if (pending.some(isColorLutAdjustment)) {
-      const transforms: ColorTransformFunction[] = [];
-      for (const op of pending) {
-        const transform = getAdjustmentColorTransform(op);
-        if (transform !== null) transforms.push(transform);
-      }
-      applyColorLutPassToWgpu(state, source, dest, bakeColorLut(transforms));
+      applyColorLutPassToWgpu(state, source, dest, bakeColorLutForRun(pipeline.lutCache, pending), pipeline.lutTexture);
     } else {
       const matrices: (readonly number[])[] = [];
       for (const op of pending) {

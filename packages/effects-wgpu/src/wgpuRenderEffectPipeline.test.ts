@@ -36,6 +36,8 @@ describe('setWgpuRenderEffectVelocityTexture', () => {
       options: {},
       sceneTarget: null,
       pool: { free: [] },
+      lutCache: { signature: null, lut: null },
+      lutTexture: { texture: null, size: 0, lut: null },
       velocityTexture: null,
     };
     const texture = {} as GPUTexture;

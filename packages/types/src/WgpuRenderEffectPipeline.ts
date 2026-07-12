@@ -1,5 +1,7 @@
+import type { ColorLutCache } from './ColorLutCache';
 import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
 import type { RenderEffect } from './RenderEffect';
+import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache';
 import type { WgpuRenderState } from './WgpuRenderState';
 import type { WgpuRenderTarget, WgpuRenderTargetPool } from './WgpuRenderTarget';
 
@@ -31,6 +33,11 @@ export interface WgpuRenderEffectPipeline {
   readonly options: Readonly<RenderEffectPipelineOptions>;
   sceneTarget: WgpuRenderTarget | null;
   readonly pool: WgpuRenderTargetPool;
+  // Bake and GPU-upload memos for the fused LUT-tier adjustment run, so a static grade neither re-bakes
+  // its size³ cells nor re-uploads its 3D texture every frame. `lutCache` is GC-managed; `lutTexture`
+  // owns a GPU texture destroyed by destroyWgpuRenderEffectPipeline.
+  readonly lutCache: ColorLutCache;
+  readonly lutTexture: WgpuColorLutTextureCache;
   // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion
   // blur, TAA); null when no velocity pass ran (velocity-driven effects then color-only-fall-back).
   // Depth, by contrast, comes from the scene target directly.

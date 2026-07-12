@@ -1,5 +1,6 @@
 import type { CanvasRenderState } from './CanvasRenderState';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
+import type { ColorLutCache } from './ColorLutCache';
 import type { RenderEffectPipelineOptions } from './GlRenderEffectPipeline';
 import type { RenderEffect } from './RenderEffect';
 
@@ -43,4 +44,7 @@ export interface CanvasRenderEffectPipeline {
   readonly options: Readonly<RenderEffectPipelineOptions>;
   sceneTarget: CanvasRenderTarget | null;
   readonly pool: CanvasRenderTargetPool;
+  // Bake memo for the fused LUT-tier adjustment run, so a static grade does not re-bake its size³ cells
+  // every frame. GC-managed; Canvas has no GPU upload (its per-pixel CPU lookup is inherent).
+  readonly lutCache: ColorLutCache;
 }

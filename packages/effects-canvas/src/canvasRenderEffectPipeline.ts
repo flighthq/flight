@@ -1,8 +1,8 @@
 import {
-  bakeColorLut,
+  bakeColorLutForRun,
+  createColorLutCache,
   fuseColorMatrices,
   getAdjustmentColorMatrix,
-  getAdjustmentColorTransform,
   isColorLutAdjustment,
 } from '@flighthq/adjustments';
 import {
@@ -18,7 +18,6 @@ import type {
   CanvasRenderState,
   CanvasRenderTarget,
   CanvasRenderTargetPool,
-  ColorTransformFunction,
   RenderEffect,
   RenderEffectPipelineOptions,
 } from '@flighthq/types';
@@ -69,7 +68,12 @@ export function createCanvasRenderEffectPipeline(
   _state: CanvasRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): CanvasRenderEffectPipeline {
-  return { options: { ...options }, sceneTarget: null, pool: createCanvasRenderTargetPool() };
+  return {
+    options: { ...options },
+    sceneTarget: null,
+    pool: createCanvasRenderTargetPool(),
+    lutCache: createColorLutCache(),
+  };
 }
 
 export function createCanvasRenderTargetPool(): CanvasRenderTargetPool {
@@ -85,6 +89,8 @@ export function destroyCanvasRenderEffectPipeline(
   pipeline.sceneTarget = null;
   pipeline.pool.free.length = 0;
   pipeline.pool.inUse.length = 0;
+  pipeline.lutCache.signature = null;
+  pipeline.lutCache.lut = null;
 }
 
 export function endCanvasRenderEffectPipeline(
@@ -116,12 +122,7 @@ export function endCanvasRenderEffectPipeline(
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
     if (pending.some(isColorLutAdjustment)) {
-      const transforms: ColorTransformFunction[] = [];
-      for (const op of pending) {
-        const transform = getAdjustmentColorTransform(op);
-        if (transform !== null) transforms.push(transform);
-      }
-      applyColorLutPassToCanvas(source, dest, bakeColorLut(transforms));
+      applyColorLutPassToCanvas(source, dest, bakeColorLutForRun(pipeline.lutCache, pending));
     } else {
       const matrices: (readonly number[])[] = [];
       for (const op of pending) {
