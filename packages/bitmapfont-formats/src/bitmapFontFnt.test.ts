@@ -26,7 +26,7 @@ const FNT_TEXT = [
   'common lineHeight=32 base=26 scaleW=64 scaleH=64 pages=1 packed=0',
   'page id=0 file="test_0.png"',
   'chars count=2',
-  'char id=65 x=0 y=0 width=7 height=8 xoffset=1 yoffset=0 xadvance=9 page=0 chnl=15',
+  'char id=65 x=0 y=0 width=7 height=8 xoffset=1 yoffset=5 xadvance=9 page=0 chnl=15',
   'char id=86 x=8 y=0 width=6 height=8 xoffset=0 yoffset=0 xadvance=8 page=0 chnl=15',
   'kernings count=1',
   'kerning first=65 second=86 amount=-2',
@@ -60,20 +60,22 @@ describe('parseBitmapFontFnt', () => {
     expect(font).not.toBeNull();
 
     expect(getBitmapFontPage(font!, 0)).toBe(atlas);
+    // yoffset=5 with base=26 → bearingY = base - yoffset = 21 (baseline-relative, up-positive).
     expect(getBitmapFontGlyph(font!, 65)).toEqual({
       advance: 9,
       bearingX: 1,
-      bearingY: 0,
+      bearingY: 21,
       height: 8,
       page: 0,
       width: 7,
       x: 0,
       y: 0,
     });
+    // yoffset=0 → bearingY = base = 26 (glyph top at the line top, one full ascent above the baseline).
     expect(getBitmapFontGlyph(font!, 86)).toEqual({
       advance: 8,
       bearingX: 0,
-      bearingY: 0,
+      bearingY: 26,
       height: 8,
       page: 0,
       width: 6,

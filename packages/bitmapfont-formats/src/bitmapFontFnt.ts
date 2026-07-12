@@ -43,7 +43,7 @@ export function formatBitmapFontFnt(font: Readonly<BitmapFont>): string {
     const glyph = font.glyphs.get(codepoint) as GlyphEntry;
     lines.push(
       `char id=${codepoint} x=${glyph.x} y=${glyph.y} width=${glyph.width} height=${glyph.height} ` +
-        `xoffset=${glyph.bearingX} yoffset=${glyph.bearingY} xadvance=${glyph.advance} page=${glyph.page} chnl=15`,
+        `xoffset=${glyph.bearingX} yoffset=${base - glyph.bearingY} xadvance=${glyph.advance} page=${glyph.page} chnl=15`,
     );
   }
 

@@ -99,7 +99,11 @@ export function buildBitmapFontFromRecord(
   const glyphs: BitmapFontGlyphData[] = record.chars.map((char) => ({
     advance: char.xadvance,
     bearingX: char.xoffset,
-    bearingY: char.yoffset,
+    // BMFont `yoffset` is the distance down from the line top to the glyph's top; `GlyphEntry.bearingY`
+    // is the distance up from the baseline to that same top (the convention the renderer and
+    // @flighthq/glyphatlas share, `quadY = baselineY - bearingY`). Convert across the two references
+    // via `base` (line-top-to-baseline). `formatBitmapFontFnt` inverts this with `yoffset = base - bearingY`.
+    bearingY: record.base - char.yoffset,
     codepoint: char.id,
     height: char.height,
     page: char.page,
