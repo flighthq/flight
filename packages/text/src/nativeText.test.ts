@@ -13,7 +13,6 @@ import {
   getNativeTextRuntime,
   getNativeTextString,
   getNativeTextStyle,
-  invalidateNativeText,
   patchNativeTextStyle,
   setNativeTextAutoSize,
   setNativeTextHeight,
@@ -165,19 +164,6 @@ describe('getNativeTextStyle', () => {
     const style = { size: 16, bold: true };
     const native = createNativeText({ data: { style } });
     expect(getNativeTextStyle(native)).toBe(native.data.style);
-  });
-});
-
-describe('invalidateNativeText', () => {
-  it('bumps content and local bounds without touching the transform', () => {
-    const native = createNativeText();
-    const content = getNodeLocalContentRevision(native);
-    const bounds = getNodeLocalBoundsRevision(native);
-    const transform = getNodeLocalTransformRevision(native);
-    invalidateNativeText(native);
-    expect(getNodeLocalContentRevision(native)).toBe(content + 1);
-    expect(getNodeLocalBoundsRevision(native)).toBe(bounds + 1);
-    expect(getNodeLocalTransformRevision(native)).toBe(transform);
   });
 });
 

@@ -37,7 +37,6 @@ import {
   getRichTextTextWidth,
   getTextFieldSignals,
   insertRichTextString,
-  invalidateRichText,
   removeRichTextFormatRangesIn,
   replaceRichTextString,
   setRichTextBackground,
@@ -747,31 +746,6 @@ describe('insertRichTextString', () => {
     insertRichTextString(richText, 1, 'Z');
     expect(previous).toBe('abc');
     expect(richText.data.text).toBe('aZbc');
-  });
-});
-
-describe('invalidateRichText', () => {
-  it('bumps the content revision without touching the transform', () => {
-    const richText = createRichText();
-    const content = getNodeLocalContentRevision(richText);
-    const transform = getNodeLocalTransformRevision(richText);
-    invalidateRichText(richText);
-    expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
-    expect(getNodeLocalTransformRevision(richText)).toBe(transform);
-  });
-
-  it('does not bump local bounds for a fixed (non-autoSize) field', () => {
-    const richText = createRichText({ data: { autoSize: 'none' } });
-    const bounds = getNodeLocalBoundsRevision(richText);
-    invalidateRichText(richText);
-    expect(getNodeLocalBoundsRevision(richText)).toBe(bounds);
-  });
-
-  it('bumps local bounds when autoSize is active', () => {
-    const richText = createRichText({ data: { autoSize: 'left' } });
-    const bounds = getNodeLocalBoundsRevision(richText);
-    invalidateRichText(richText);
-    expect(getNodeLocalBoundsRevision(richText)).toBe(bounds + 1);
   });
 });
 

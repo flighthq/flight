@@ -3,13 +3,13 @@ import {
   createDisplayObjectRuntime,
   getDisplayObjectRuntime,
 } from '@flighthq/displayobject';
-import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node';
+import { invalidateContent } from '@flighthq/node';
 import type { BoundsNodeAny, PartialNode, Rectangle, Shape, ShapeData, ShapeRuntime } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
 export function clearShapeCommands(shape: Shape): void {
   shape.data.commands.length = 0;
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
@@ -277,7 +277,7 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
 export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
   out.data.commands.length = 0;
   out.data.commands.push(...source.data.commands);
-  invalidateShape(out);
+  invalidateContent(out);
 }
 
 export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
@@ -313,14 +313,6 @@ export function getShapeCommandCount(source: Readonly<Shape>): number {
 
 export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime> {
   return getDisplayObjectRuntime(source) as ShapeRuntime;
-}
-
-// A shape's payload defines both its drawn surface and its extent, so any command change bumps
-// content (re-rasterize) and local bounds (re-measure) together. Call after mutating
-// shape.data.commands directly; the append*/clear/copy helpers call it for you.
-export function invalidateShape(shape: Shape): void {
-  invalidateNodeLocalContent(shape);
-  invalidateNodeLocalBounds(shape);
 }
 
 // True when the shape has no drawing commands in its command stream.

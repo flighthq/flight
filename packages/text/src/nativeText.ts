@@ -82,16 +82,6 @@ export function getNativeTextStyle(source: Readonly<NativeText>): Readonly<Nativ
   return source.data.style;
 }
 
-// The discoverable companion to the direct-mutation path: after mutating `data.text`, `data.style`,
-// or another content field in place (rather than through a `setNativeText*` setter), call this to
-// invalidate. It mirrors what every NativeText content-setter invalidates — the content revision and
-// the local-bounds revision (the platform engine remeasures the element, so its extent may change) —
-// and never touches the transform.
-export function invalidateNativeText(source: NativeText): void {
-  invalidateNodeLocalContent(source);
-  invalidateNodeLocalBounds(source);
-}
-
 // Merges individual style properties into the existing style without replacing the whole object.
 // Useful for single-property style changes that would otherwise force rebuilding the full NativeTextStyle.
 export function patchNativeTextStyle(source: NativeText, patch: Readonly<Partial<NativeTextStyle>>): void {
