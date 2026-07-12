@@ -17,10 +17,11 @@ describe('buildBitmapFontFromRecord', () => {
     expect(font).not.toBeNull();
 
     expect(getBitmapFontPage(font!, 0)).toBe(atlas);
+    // yoffset=5 with base=26 → bearingY = base - yoffset = 21 (baseline-relative, up-positive).
     expect(getBitmapFontGlyph(font!, 65)).toEqual({
       advance: 9,
       bearingX: 1,
-      bearingY: 0,
+      bearingY: 21,
       height: 8,
       page: 0,
       width: 7,
@@ -109,7 +110,7 @@ function sampleRecord(): BitmapFontRecord {
   return {
     base: 26,
     chars: [
-      { height: 8, id: 65, page: 0, width: 7, x: 0, xadvance: 9, xoffset: 1, y: 0, yoffset: 0 },
+      { height: 8, id: 65, page: 0, width: 7, x: 0, xadvance: 9, xoffset: 1, y: 0, yoffset: 5 },
       { height: 8, id: 86, page: 0, width: 6, x: 8, xadvance: 8, xoffset: 0, y: 0, yoffset: 0 },
     ],
     encoding: 'raster',
