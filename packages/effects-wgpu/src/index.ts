@@ -35,6 +35,7 @@ export * from './wgpuMotionBlurEffect';
 export * from './wgpuOuterGlowEffect';
 export * from './wgpuOutlineEffect';
 export * from './wgpuPixelateEffect';
+export * from './wgpuPosterizeEffect';
 export * from './wgpuRadialBlurEffect';
 export * from './wgpuRenderEffectPipeline';
 export * from './wgpuRenderEffectRegistrants';

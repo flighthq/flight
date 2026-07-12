@@ -26,6 +26,7 @@ export * from './canvasMotionBlurEffect';
 export * from './canvasOuterGlowEffect';
 export * from './canvasOutlineEffect';
 export * from './canvasPixelateEffect';
+export * from './canvasPosterizeEffect';
 export * from './canvasRadialBlurEffect';
 export * from './canvasRenderEffectPipeline';
 export * from './canvasRenderEffectRegistration';

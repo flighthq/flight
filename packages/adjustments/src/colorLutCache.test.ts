@@ -3,7 +3,6 @@ import { bakeColorLut } from './colorLut';
 import { getAdjustmentColorTransform } from './colorLutAdjustment';
 import { bakeColorLutForRun, createColorLutCache } from './colorLutCache';
 import { createHueSaturationAdjustment } from './hueSaturationAdjustment';
-import { createPosterizeAdjustment } from './posterizeAdjustment';
 
 describe('bakeColorLutForRun', () => {
   it('reuses the same ColorLut reference for a content-identical run rebuilt with fresh objects', () => {
@@ -19,16 +18,16 @@ describe('bakeColorLutForRun', () => {
 
   it('re-bakes into a new LUT when an op param changes', () => {
     const cache = createColorLutCache();
-    const first = bakeColorLutForRun(cache, [createPosterizeAdjustment({ levels: 4 })], 8);
-    const changed = bakeColorLutForRun(cache, [createPosterizeAdjustment({ levels: 6 })], 8);
+    const first = bakeColorLutForRun(cache, [createHueSaturationAdjustment({ saturation: 0.4 })], 8);
+    const changed = bakeColorLutForRun(cache, [createHueSaturationAdjustment({ saturation: 0.8 })], 8);
     expect(changed).not.toBe(first);
     expect(changed.samples).not.toEqual(first.samples);
   });
 
   it('re-keys when the LUT size changes', () => {
     const cache = createColorLutCache();
-    const small = bakeColorLutForRun(cache, [createPosterizeAdjustment({ levels: 4 })], 8);
-    const large = bakeColorLutForRun(cache, [createPosterizeAdjustment({ levels: 4 })], 16);
+    const small = bakeColorLutForRun(cache, [createHueSaturationAdjustment({ saturation: 0.4 })], 8);
+    const large = bakeColorLutForRun(cache, [createHueSaturationAdjustment({ saturation: 0.4 })], 16);
     expect(large).not.toBe(small);
     expect(large.size).toBe(16);
   });

@@ -1,10 +1,10 @@
 import { getAdjustmentColorTransform, isColorLutAdjustment } from './colorLutAdjustment';
+import { createHueSaturationAdjustment } from './hueSaturationAdjustment';
 import { createInvertAdjustment } from './invertAdjustment';
-import { createPosterizeAdjustment } from './posterizeAdjustment';
 
 describe('getAdjustmentColorTransform', () => {
   it('returns a LUT-tier adjustment its own transform', () => {
-    const op = createPosterizeAdjustment({ levels: 4 });
+    const op = createHueSaturationAdjustment({ hue: 45 });
     expect(getAdjustmentColorTransform(op)).toBe(op.transform);
   });
 
@@ -27,7 +27,7 @@ describe('getAdjustmentColorTransform', () => {
 
 describe('isColorLutAdjustment', () => {
   it('is true for a LUT-tier adjustment', () => {
-    expect(isColorLutAdjustment(createPosterizeAdjustment())).toBe(true);
+    expect(isColorLutAdjustment(createHueSaturationAdjustment())).toBe(true);
   });
 
   it('is false for a matrix-tier adjustment and for a plain effect', () => {

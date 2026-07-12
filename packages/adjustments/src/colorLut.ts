@@ -3,8 +3,10 @@ import type { ColorLut, ColorTransformFunction } from '@flighthq/types';
 /**
  * Baked-LUT math: compose a stack of pointwise rgb→rgb transforms into ONE 3D color lookup table, and
  * sample it. This is the LUT-tier fuse (the sibling of colorMatrixMath's `fuseColorMatrices`): where a
- * run of adjustments is not a pure affine matrix (gamma, hue/saturation, posterize, a supplied grade
- * LUT), it bakes into a single `ColorLut` evaluated once at each cell and applied as one trilinear tap.
+ * run of adjustments is not a pure affine matrix (gamma, hue/saturation, a supplied grade LUT), it
+ * bakes into a single `ColorLut` evaluated once at each cell and applied as one trilinear tap. The
+ * transforms must be continuous — the trilinear tap interpolates between cells, so hard-step ops
+ * (posterize, threshold, quantize) are Effects with a dedicated per-op pass, not LUT adjustments.
  *
  * All color values are normalized `[0, 1]`. `samples` is `size³ · 3`, R fastest then G then B: cell
  * `(ri, gi, bi)` starts at `((bi · size + gi) · size + ri) · 3` (see the ColorLut type).

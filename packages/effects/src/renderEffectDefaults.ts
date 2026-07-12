@@ -90,6 +90,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   OutlineEffect: { color: 0x000000ff, thickness: 1, threshold: 0.1 },
   PanniniProjectionEffect: { compression: 0.5, crop: 0 },
   PixelateEffect: { size: 8 },
+  PosterizeEffect: { levels: 8 },
   RadialBlurEffect: { centerX: 0.5, centerY: 0.5, samples: 8, strength: 0.1 },
   ScanlinesEffect: { count: 480, intensity: 0.25 },
   ScreenSpaceFogEffect: { density: 0.5, far: 1000, near: 10 },

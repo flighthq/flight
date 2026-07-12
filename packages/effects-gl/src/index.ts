@@ -35,6 +35,7 @@ export * from './glMotionBlurEffect';
 export * from './glOuterGlowEffect';
 export * from './glOutlineEffect';
 export * from './glPixelateEffect';
+export * from './glPosterizeEffect';
 export * from './glRadialBlurEffect';
 export * from './glRenderEffectPipeline';
 export * from './glRenderEffectRegistrar';

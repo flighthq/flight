@@ -45,6 +45,7 @@ export * from './outerGlowEffect';
 export * from './outlineEffect';
 export * from './panniniProjectionEffect';
 export * from './pixelateEffect';
+export * from './posterizeEffect';
 export * from './radialBlurEffect';
 export * from './renderEffectDefaults';
 export * from './renderEffectInputs';
