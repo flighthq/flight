@@ -1,4 +1,5 @@
-import { getDisplayObjectRuntime } from '@flighthq/displayobject';
+import { createColorTransformAdjustment } from '@flighthq/adjustments';
+import { getDisplayObjectRuntime, setDisplayObjectColorAdjustments } from '@flighthq/displayobject';
 import { createRectangle } from '@flighthq/geometry';
 import { createColorTransform } from '@flighthq/materials';
 import { addNodeChild, invalidateNodeLocalBounds } from '@flighthq/node';
@@ -108,20 +109,22 @@ export function updateBitmapText(bitmapText: BitmapText): void {
   invalidateNodeLocalBounds(bitmapText);
 }
 
-// Sets (or clears) the backing batch's node-level color transform from a packed-RGBA color. White
-// clears it. Every glyph of the batch shares this one tint, so it folds into the glyph draw as a
-// single whole-batch color-transform uniform.
+// Sets (or clears) the backing batch's node-level color transform from a packed-RGBA color, as a
+// single-entry color-adjustment stack on the batch's runtime slot. White clears it. Every glyph of the
+// batch shares this one tint (whole-batch, not per-glyph), so it resolves to one value and folds into the
+// glyph draw as a single whole-batch color-transform uniform.
 function applyBitmapTextColor(quadBatch: QuadBatch, color: number): void {
   if (color === BITMAP_TEXT_DEFAULT_COLOR) {
-    quadBatch.colorTransform = null;
+    setDisplayObjectColorAdjustments(quadBatch, null);
     return;
   }
-  quadBatch.colorTransform = createColorTransform({
+  const colorTransform = createColorTransform({
     redMultiplier: ((color >>> 24) & 0xff) / 255,
     greenMultiplier: ((color >>> 16) & 0xff) / 255,
     blueMultiplier: ((color >>> 8) & 0xff) / 255,
     alphaMultiplier: (color & 0xff) / 255,
   });
+  setDisplayObjectColorAdjustments(quadBatch, [createColorTransformAdjustment(colorTransform)]);
 }
 
 // Measures one paragraph (a newline-free run) into words separated by whitespace gaps. Intra-word

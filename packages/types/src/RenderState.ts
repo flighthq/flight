@@ -40,6 +40,12 @@ export interface RenderState extends Entity {
 // counter, proxy maps, and renderer registry are shared across every backend. Defined in
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
+  // Shakeable diagnostics seam (default `null` → no cost): when a node's color-adjustment stack contains
+  // an off-diagonal channel-mixing adjustment (saturation/hue/sepia/channelMixer) that the affine inline
+  // fold cannot represent yet, the render walk routes it here. `enableColorAdjustmentGuards` installs a
+  // handler that warns through @flighthq/log; un-installed, the non-affine part is silently skipped
+  // (only the affine diagonal + offset is applied) — see effect-adjustment-architecture.md (4×5 deferral).
+  colorAdjustmentChannelMixingGuard: ((state: RenderState, source: Renderable) => void) | null;
   currentFrameId: number;
   renderAdaptHook: ((state: RenderState, source: Renderable, data: RenderProxy2D) => void) | null;
   renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;

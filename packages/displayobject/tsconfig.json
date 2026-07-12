@@ -9,8 +9,10 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../adjustments" },
     { "path": "../entity" },
     { "path": "../geometry" },
+    { "path": "../materials" },
     { "path": "../node" },
     { "path": "../signals" },
     { "path": "../types" }
