@@ -30,6 +30,7 @@ import { defaultWgpuMotionBlurEffectRunner } from './wgpuMotionBlurEffect';
 import { defaultWgpuOuterGlowEffectRunner } from './wgpuOuterGlowEffect';
 import { defaultWgpuOutlineEffectRunner } from './wgpuOutlineEffect';
 import { defaultWgpuPixelateEffectRunner } from './wgpuPixelateEffect';
+import { defaultWgpuPosterizeEffectRunner } from './wgpuPosterizeEffect';
 import { defaultWgpuRadialBlurEffectRunner } from './wgpuRadialBlurEffect';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 import { defaultWgpuScanlinesEffectRunner } from './wgpuScanlinesEffect';
@@ -91,7 +92,7 @@ export function registerColorWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
 }
 
-// Full standard set — composes all taxonomy bands. Registers all 42 default runners under their
+// Full standard set — composes all taxonomy bands. Registers all 43 default runners under their
 // canonical kind keys. Import this when the full effect palette is needed; import individual band
 // helpers when only a subset of effects is used.
 // Composite band: BevelEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
@@ -129,7 +130,9 @@ export function registerStandardWgpuRenderEffects(state: WgpuRenderState): void 
 }
 
 // Stylize band: CrtEffect, DitherEffect, FilmGrainEffect, GlitchEffect, HalftoneEffect,
-// KuwaharaEffect, OutlineEffect, PixelateEffect, ScanlinesEffect, SketchEffect.
+// KuwaharaEffect, OutlineEffect, PixelateEffect, PosterizeEffect, ScanlinesEffect, SketchEffect.
+// PosterizeEffect is a stylize effect, not a LUT adjustment: its hard step (floor) would be smoothed
+// away by a trilinear fused LUT, so it needs a dedicated per-op pass — see effect-adjustment-architecture.
 export function registerStylizeWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'ConvolutionEffect', defaultWgpuConvolutionEffectRunner);
   registerWgpuRenderEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
@@ -141,6 +144,7 @@ export function registerStylizeWgpuRenderEffects(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'MedianEffect', defaultWgpuMedianEffectRunner);
   registerWgpuRenderEffect(state, 'OutlineEffect', defaultWgpuOutlineEffectRunner);
   registerWgpuRenderEffect(state, 'PixelateEffect', defaultWgpuPixelateEffectRunner);
+  registerWgpuRenderEffect(state, 'PosterizeEffect', defaultWgpuPosterizeEffectRunner);
   registerWgpuRenderEffect(state, 'ScanlinesEffect', defaultWgpuScanlinesEffectRunner);
   registerWgpuRenderEffect(state, 'SketchEffect', defaultWgpuSketchEffectRunner);
 }

@@ -72,6 +72,7 @@ export const RENDER_EFFECT_KINDS: readonly string[] = [
   'OutlineEffect',
   'PanniniProjectionEffect',
   'PixelateEffect',
+  'PosterizeEffect',
   'RadialBlurEffect',
   'ScanlinesEffect',
   'ScreenSpaceFogEffect',

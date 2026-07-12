@@ -13,5 +13,4 @@ export * from './hueSaturationAdjustment';
 export * from './invertAdjustment';
 export * from './liftGammaGainAdjustment';
 export * from './lookupTableGradeAdjustment';
-export * from './posterizeAdjustment';
 export * from './sepiaAdjustment';

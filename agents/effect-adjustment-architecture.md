@@ -51,10 +51,12 @@ Attaching an adjustment can at most **promote** a batch (batch-wide layout upgra
 A user adds their own pointwise adjustment as **data that composes**, never a shader snippet — that is what keeps composition out of shader-code space (no variant/collation compiler for the common case):
 
 - **Matrix tier (linear):** contribute a 4×5 color matrix (or a params→matrix builder). Stacks fold via `concatColorMatrix` (already in `filters/colorMatrixMath.ts`) into one matrix → the `a_ctMult`/`u_ctMult` slot. Covers tint/brightness/contrast/saturation/hue/invert/channel-mix/color-balance.
-- **LUT tier (arbitrary value→value):** contribute a plain `rgb→rgb` function; the system bakes the composed stack into one 3D LUT (CPU, cached by stack identity) → one texture tap. Covers gamma/curves/posterize/custom grade — no user GLSL.
+- **LUT tier (arbitrary *continuous* value→value):** contribute a plain `rgb→rgb` function; the system bakes the composed stack into one 3D LUT (CPU, cached by stack identity) → one texture tap. Covers gamma/curves/custom grade — no user GLSL.
 - **Escape hatch:** `customShaderEffect` (an **Effect**, already present) for ops that aren't pure value→value (read alpha nonlinearly, vary by position, sample neighbors). These can't fold into the batch anyway, so they are standalone passes — the *only* place shader-code collation lives, and it's bounded there.
 
-Every pure value→value op fits matrix or LUT; nothing pointwise escapes to the shader path. **No `FilterList`-style container type**, no `Adjustment`/`Effect` wrapper hierarchy — a stack is a plain `readonly T[]`; the plural is expressed by the function name (`applyImageAdjustmentsTo…`), not an invented noun.
+**Hard-step / discontinuous pointwise ops (posterize, threshold, quantize) are Effects, not LUT adjustments.** A baked LUT is sampled with hardware/CPU **trilinear (LINEAR) interpolation**, which ramps between the quantized grid cells and smooths hard steps *away* — a posterize baked into a fused LUT loses its bands entirely (the functional regression that caught this: `effect-posterize` failed on both webgl and canvas). So even though such an op is pointwise, it does **not** trilinear-fuse: its correct home is a dedicated per-op **Effect** pass that applies the step exactly in the shader (`floor` at nearest/exact precision), which does not fuse. Adjustments — matrix or *smooth* LUT — must be **continuous**; anything with a discontinuity belongs in `@flighthq/effects`.
+
+Every *continuous* pure value→value op fits matrix or LUT; nothing continuous-pointwise escapes to the shader path, and nothing discontinuous folds into the LUT. **No `FilterList`-style container type**, no `Adjustment`/`Effect` wrapper hierarchy — a stack is a plain `readonly T[]`; the plural is expressed by the function name (`applyImageAdjustmentsTo…`), not an invented noun.
 
 ## Support matrix = realization presence
 

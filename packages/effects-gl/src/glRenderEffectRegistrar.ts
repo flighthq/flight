@@ -31,6 +31,7 @@ import { defaultGlMotionBlurEffectRunner } from './glMotionBlurEffect';
 import { defaultGlOuterGlowEffectRunner } from './glOuterGlowEffect';
 import { defaultGlOutlineEffectRunner } from './glOutlineEffect';
 import { defaultGlPixelateEffectRunner } from './glPixelateEffect';
+import { defaultGlPosterizeEffectRunner } from './glPosterizeEffect';
 import { defaultGlRadialBlurEffectRunner } from './glRadialBlurEffect';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
 import { defaultGlScanlinesEffectRunner } from './glScanlinesEffect';
@@ -178,8 +179,10 @@ export function registerStandardGlRenderEffects(state: GlRenderState): void {
 }
 
 // Stylize band: CrtEffect, DitherEffect, FilmGrainEffect, GlitchEffect, HalftoneEffect,
-// KuwaharaEffect, OutlineEffect, PixelateEffect, ScanlinesEffect, SketchEffect.
-// DitherEffect has moved here from the color-grade band (matching Wgpu).
+// KuwaharaEffect, OutlineEffect, PixelateEffect, PosterizeEffect, ScanlinesEffect, SketchEffect.
+// DitherEffect has moved here from the color-grade band (matching Wgpu). PosterizeEffect is a
+// stylize effect, not a LUT adjustment: its hard step (floor) would be smoothed away by a trilinear
+// fused LUT, so it needs a dedicated per-op pass — see effect-adjustment-architecture.
 // Symmetric with Wgpu's registerStylizeWgpuRenderEffects.
 export function registerStylizeGlRenderEffects(state: GlRenderState): void {
   registerGlRenderEffect(state, 'ConvolutionEffect', defaultGlConvolutionEffectRunner);
@@ -192,6 +195,7 @@ export function registerStylizeGlRenderEffects(state: GlRenderState): void {
   registerGlRenderEffect(state, 'MedianEffect', defaultGlMedianEffectRunner);
   registerGlRenderEffect(state, 'OutlineEffect', defaultGlOutlineEffectRunner);
   registerGlRenderEffect(state, 'PixelateEffect', defaultGlPixelateEffectRunner);
+  registerGlRenderEffect(state, 'PosterizeEffect', defaultGlPosterizeEffectRunner);
   registerGlRenderEffect(state, 'ScanlinesEffect', defaultGlScanlinesEffectRunner);
   registerGlRenderEffect(state, 'SketchEffect', defaultGlSketchEffectRunner);
 }
@@ -230,6 +234,7 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'OuterGlowEffect',
   'OutlineEffect',
   'PixelateEffect',
+  'PosterizeEffect',
   'RadialBlurEffect',
   'ScanlinesEffect',
   'ScreenSpaceFogEffect',

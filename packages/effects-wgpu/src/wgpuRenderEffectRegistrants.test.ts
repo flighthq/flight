@@ -97,7 +97,7 @@ describe('registerScreenSpaceWgpuRenderEffects', () => {
 });
 
 describe('registerStandardWgpuRenderEffects', () => {
-  it('registers all 42 standard effect runners', async () => {
+  it('registers all 43 standard effect runners', async () => {
     const state = await createWgpuRenderStateForTest();
     registerStandardWgpuRenderEffects(state);
     // Spot-check one from each band.
