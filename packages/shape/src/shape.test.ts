@@ -13,7 +13,6 @@ import {
   getShapeBounds,
   getShapeCommandCount,
   getShapeRuntime,
-  invalidateShape,
   isShapeEmpty,
 } from './shape';
 
@@ -172,24 +171,6 @@ describe('getShapeRuntime', () => {
     const shape = createShape();
     const runtime = getShapeRuntime(shape);
     expect(runtime).not.toBeNull();
-  });
-});
-
-describe('invalidateShape', () => {
-  it('bumps both the content and local-bounds revisions', () => {
-    const shape = createShape();
-    const content = getNodeLocalContentRevision(shape);
-    const bounds = getNodeLocalBoundsRevision(shape);
-    invalidateShape(shape);
-    expect(getNodeLocalContentRevision(shape)).toBe(content + 1);
-    expect(getNodeLocalBoundsRevision(shape)).toBe(bounds + 1);
-  });
-
-  it('does not bump the local-transform revision', () => {
-    const shape = createShape();
-    const transform = getNodeLocalTransformRevision(shape);
-    invalidateShape(shape);
-    expect(getNodeLocalTransformRevision(shape)).toBe(transform);
   });
 });
 

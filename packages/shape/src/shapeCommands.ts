@@ -1,3 +1,4 @@
+import { invalidateContent } from '@flighthq/node';
 import type {
   CapsStyle,
   GradientType,
@@ -12,8 +13,6 @@ import type {
   SpreadMethod,
   TriangleCulling,
 } from '@flighthq/types';
-
-import { invalidateShape } from './shape';
 
 // Canonical definition now lives in @flighthq/types (shared with @flighthq/path); re-exported here so
 // shape authoring keeps a single import surface.
@@ -43,7 +42,7 @@ export function appendShapeArc(
   const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
   cmds.push('moveTo', 2, cx + radius * Math.cos(startAngle), cy + radius * Math.sin(startAngle));
   pushArcCubics(cmds, cx, cy, radius, startAngle, segmentCount, segmentAngle, alpha);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 // Appends an arc segment using SVG-style tangent-line arguments. Draws an arc from the current
@@ -91,7 +90,7 @@ export function appendShapeArcTo(shape: Shape, x1: number, y1: number, x2: numbe
   // Degenerate case: zero-length tangent → emit a plain lineTo to (x1, y1).
   if (len1 < 1e-10 || len2 < 1e-10) {
     cmds.push('lineTo', 2, x1, y1);
-    invalidateShape(shape);
+    invalidateContent(shape);
     return;
   }
   // Compute the angle between the two tangent lines.
@@ -101,7 +100,7 @@ export function appendShapeArcTo(shape: Shape, x1: number, y1: number, x2: numbe
   // Degenerate: tangents are parallel/anti-parallel.
   if (Math.abs(Math.sin(halfAngle)) < 1e-10) {
     cmds.push('lineTo', 2, x1, y1);
-    invalidateShape(shape);
+    invalidateContent(shape);
     return;
   }
   // Distance from the corner (x1, y1) to the tangent points.
@@ -138,7 +137,7 @@ export function appendShapeArcTo(shape: Shape, x1: number, y1: number, x2: numbe
   const alpha = (4 / 3) * Math.tan(segmentAngle / 4);
   // Push arc cubics directly — no moveTo because we already emitted lineTo(tx1, ty1).
   pushArcCubics(cmds, ocx, ocy, radius, startA, segmentCount, segmentAngle, alpha);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeBeginBitmapFill(
@@ -149,12 +148,12 @@ export function appendShapeBeginBitmapFill(
   smooth = false,
 ): void {
   shape.data.commands.push('beginBitmapFill', 4, bitmap, matrix, repeat, smooth);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeBeginFill(shape: Shape, color = 0, alpha = 1): void {
   shape.data.commands.push('beginFill', 2, color, alpha);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeBeginGradientFill(
@@ -180,12 +179,12 @@ export function appendShapeBeginGradientFill(
     interpolationMethod,
     focalPointRatio,
   );
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeCircle(shape: Shape, x: number, y: number, radius: number): void {
   shape.data.commands.push('drawCircle', 3, x, y, radius);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeCubicCurveTo(
@@ -198,7 +197,7 @@ export function appendShapeCubicCurveTo(
   anchorY: number,
 ): void {
   shape.data.commands.push('cubicCurveTo', 6, controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeCurveTo(
@@ -209,7 +208,7 @@ export function appendShapeCurveTo(
   anchorY: number,
 ): void {
   shape.data.commands.push('curveTo', 4, controlX, controlY, anchorX, anchorY);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeDrawTriangles(
@@ -220,17 +219,17 @@ export function appendShapeDrawTriangles(
   culling: TriangleCulling = 'none',
 ): void {
   shape.data.commands.push('drawTriangles', 4, vertices, indices, uvtData, culling);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeEllipse(shape: Shape, x: number, y: number, width: number, height: number): void {
   shape.data.commands.push('drawEllipse', 4, x, y, width, height);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeEndFill(shape: Shape): void {
   shape.data.commands.push('endFill', 0);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeLineBitmapStyle(
@@ -241,7 +240,7 @@ export function appendShapeLineBitmapStyle(
   smooth = false,
 ): void {
   shape.data.commands.push('lineBitmapStyle', 4, bitmap, matrix, repeat, smooth);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeLineGradientStyle(
@@ -267,7 +266,7 @@ export function appendShapeLineGradientStyle(
     interpolationMethod,
     focalPointRatio,
   );
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeLineStyle(
@@ -282,17 +281,17 @@ export function appendShapeLineStyle(
   miterLimit = 3,
 ): void {
   shape.data.commands.push('lineStyle', 8, thickness, color, alpha, pixelHinting, scaleMode, caps, joints, miterLimit);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeLineTo(shape: Shape, x: number, y: number): void {
   shape.data.commands.push('lineTo', 2, x, y);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeMoveTo(shape: Shape, x: number, y: number): void {
   shape.data.commands.push('moveTo', 2, x, y);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapePath(
@@ -302,7 +301,7 @@ export function appendShapePath(
   winding: PathWinding = 'evenOdd',
 ): void {
   shape.data.commands.push('drawPath', 3, commands, pathData, winding);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 // Appends a closed polygon to the shape's command stream as a sequence of moveTo and lineTo
@@ -319,7 +318,7 @@ export function appendShapePolygon(shape: Shape, points: number[]): void {
   }
   // Close the polygon.
   cmds.push('lineTo', 2, points[0], points[1]);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 // Appends an open polyline to the shape's command stream as a sequence of moveTo and lineTo
@@ -333,12 +332,12 @@ export function appendShapePolyline(shape: Shape, points: number[]): void {
   for (let k = 2; k < points.length - 1; k += 2) {
     cmds.push('lineTo', 2, points[k], points[k + 1]);
   }
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeRectangle(shape: Shape, x: number, y: number, width: number, height: number): void {
   shape.data.commands.push('drawRectangle', 4, x, y, width, height);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeRoundRectangle(
@@ -351,7 +350,7 @@ export function appendShapeRoundRectangle(
   ellipseHeight: number,
 ): void {
   shape.data.commands.push('drawRoundRectangle', 6, x, y, width, height, ellipseWidth, ellipseHeight);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 export function appendShapeRoundRectangleVarying(
@@ -377,7 +376,7 @@ export function appendShapeRoundRectangleVarying(
   cmds.push('curveTo', 4, x, b, x, b - bottomLeftRadius);
   cmds.push('lineTo', 2, x, y + topLeftRadius);
   cmds.push('curveTo', 4, x, y, x + topLeftRadius, y);
-  invalidateShape(shape);
+  invalidateContent(shape);
 }
 
 // Returns the normalized arc sweep in the requested direction. Always returns a value whose

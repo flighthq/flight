@@ -13,7 +13,6 @@ import {
   getTextLabelFormat,
   getTextLabelRuntime,
   getTextLabelString,
-  invalidateTextLabel,
   setTextLabelAutoSize,
   setTextLabelFormat,
   setTextLabelHeight,
@@ -174,30 +173,6 @@ describe('getTextLabelString', () => {
   it('returns the text field', () => {
     const text = createTextLabel({ data: { text: 'hello' } });
     expect(getTextLabelString(text)).toBe('hello');
-  });
-});
-
-describe('invalidateTextLabel', () => {
-  it('under autoSize none, bumps content only, without touching local bounds or the transform', () => {
-    const text = createTextLabel();
-    const content = getNodeLocalContentRevision(text);
-    const bounds = getNodeLocalBoundsRevision(text);
-    const transform = getNodeLocalTransformRevision(text);
-    invalidateTextLabel(text);
-    expect(getNodeLocalContentRevision(text)).toBe(content + 1);
-    expect(getNodeLocalBoundsRevision(text)).toBe(bounds);
-    expect(getNodeLocalTransformRevision(text)).toBe(transform);
-  });
-
-  it('also invalidates local bounds under autoSize, since the extent is measured from content', () => {
-    const text = createTextLabel({ data: { autoSize: 'left' } });
-    const content = getNodeLocalContentRevision(text);
-    const bounds = getNodeLocalBoundsRevision(text);
-    const transform = getNodeLocalTransformRevision(text);
-    invalidateTextLabel(text);
-    expect(getNodeLocalContentRevision(text)).toBe(content + 1);
-    expect(getNodeLocalBoundsRevision(text)).not.toBe(bounds);
-    expect(getNodeLocalTransformRevision(text)).toBe(transform);
   });
 });
 

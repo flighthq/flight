@@ -350,15 +350,6 @@ export function insertRichTextString(source: RichText, index: number, value: str
   emitTextFieldChange(source, previousText);
 }
 
-// The discoverable companion to the direct-mutation path: after mutating `data.text`,
-// `data.textFormatRanges`, or another content field in place (rather than through a `setRichText*`
-// setter), call this to invalidate. It mirrors exactly what the content-setters invalidate — the
-// content revision always, plus the local-bounds revision only when autoSize is active (a fixed field
-// keeps its user width/height) — and never touches the transform. See `invalidateRichTextContent`.
-export function invalidateRichText(source: RichText): void {
-  invalidateRichTextContent(source);
-}
-
 export function removeRichTextFormatRangesIn(source: RichText, begin: number, end: number): void {
   const ranges = source.data.textFormatRanges;
   let changed = false;

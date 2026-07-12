@@ -10,7 +10,6 @@ import {
   createBitmapData,
   createBitmapRuntime,
   getBitmapRuntime,
-  invalidateBitmap,
   setBitmapImage,
 } from './bitmap';
 
@@ -97,19 +96,6 @@ describe('getBitmapRuntime', () => {
     const bitmap = createBitmap();
     const runtime = getBitmapRuntime(bitmap);
     expect(runtime).not.toBeNull();
-  });
-});
-
-describe('invalidateBitmap', () => {
-  it('bumps content and local bounds without touching the transform', () => {
-    const bitmap = createBitmap();
-    const content = getNodeLocalContentRevision(bitmap);
-    const bounds = getNodeLocalBoundsRevision(bitmap);
-    const transform = getNodeLocalTransformRevision(bitmap);
-    invalidateBitmap(bitmap);
-    expect(getNodeLocalContentRevision(bitmap)).toBe(content + 1);
-    expect(getNodeLocalBoundsRevision(bitmap)).toBe(bounds + 1);
-    expect(getNodeLocalTransformRevision(bitmap)).toBe(transform);
   });
 });
 

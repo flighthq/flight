@@ -112,14 +112,6 @@ export function getTextLabelString(source: Readonly<TextLabel>): string {
   return source.data.text;
 }
 
-// The discoverable companion to the direct-mutation path: after mutating `data.text` or
-// `data.textFormat` in place (rather than through a `setTextLabel*` setter), call this to invalidate —
-// the content revision, plus local bounds when `autoSize` derives the box from the text. Never touches
-// the transform.
-export function invalidateTextLabel(source: TextLabel): void {
-  invalidateTextLabelContent(source);
-}
-
 export function setTextLabelAutoSize(source: TextLabel, value: TextAutoSize): void {
   const data = source.data;
   if (data.autoSize === value) return;

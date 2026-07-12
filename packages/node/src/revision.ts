@@ -33,6 +33,18 @@ export function getNodeWorldTransformRevision<Traits extends object>(source: Rea
   return getNodeRuntime(source).worldTransformId;
 }
 
+/**
+ * Target node's rendered content changed — the general direct-mutation companion. After mutating a
+ * node's content fields in place (rather than through a setter), call this to invalidate the content
+ * revision plus local bounds together, the uniform "the node's drawn payload and extent changed"
+ * contract for any node kind. Setters keep their own precise per-field invalidation; this is the
+ * broad companion, not a replacement for them. Never touches the transform.
+ */
+export function invalidateContent<Traits extends object>(target: Node<Traits>): void {
+  invalidateNodeLocalContent(target);
+  invalidateNodeLocalBounds(target);
+}
+
 export function invalidateNode<Traits extends object>(target: Node<Traits>): void {
   invalidateNodeAppearance(target);
   invalidateNodeLocalBounds(target);

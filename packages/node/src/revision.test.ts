@@ -8,6 +8,7 @@ import {
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
   getNodeWorldTransformRevision,
+  invalidateContent,
   invalidateNode,
   invalidateNodeAppearance,
   invalidateNodeLocalBounds,
@@ -87,6 +88,22 @@ describe('getNodeWorldTransformRevision', () => {
     const runtime = getEntityRuntime(node);
     runtime.worldTransformId = 100;
     expect(getNodeWorldTransformRevision(node)).toStrictEqual(runtime.worldTransformId);
+  });
+});
+
+describe('invalidateContent', () => {
+  it('increments localContentId and localBoundsId', () => {
+    const localContentId = getEntityRuntime(node).localContentId;
+    const localBoundsId = getEntityRuntime(node).localBoundsId;
+    invalidateContent(node);
+    expect(getEntityRuntime(node).localContentId).toBe(localContentId + 1);
+    expect(getEntityRuntime(node).localBoundsId).toBe(localBoundsId + 1);
+  });
+
+  it('does not touch the transform', () => {
+    const localTransformId = getEntityRuntime(node).localTransformId;
+    invalidateContent(node);
+    expect(getEntityRuntime(node).localTransformId).toBe(localTransformId);
   });
 });
 
