@@ -1,25 +1,31 @@
 import { createRichTextContent, createTextFormatRange } from '@flighthq/textlayout';
 import type {
+  MarkupTagEffect,
+  MarkupTagHandler,
+  MarkupTagRegistry,
+  MarkupTagResult,
   RichTextContent,
   TextFormat,
-  TextFormatAlign,
-  TextFormatListMarker,
   TextFormatRange,
 } from '@flighthq/types';
 
+import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry';
+
 /**
  * Serializes a `RichTextContent` back into `htmlText`-subset markup — the inverse of
- * `parseTextMarkup` for everything the rich-text model can express. The emitted tag set is the
- * minimal one that reproduces the `formatRanges`: `<b>`/`<i>`/`<u>`/`<s>` for the style booleans,
+ * `parseTextMarkup` for everything the rich-text model can express. The emitted tag set is the fixed
+ * standard dialect that reproduces the `formatRanges`: `<b>`/`<i>`/`<u>`/`<s>` for the style booleans,
  * `<font color size face>` for color/size/font, `<a href target>` for links, `<p align>` for
- * alignment, `<li>` for bullets, and `<textformat …>` for the block metrics. Text is escaped
- * (`&` `<` `>`); attribute values additionally escape `"`.
+ * alignment, `<li>` for bullets, and `<textformat …>` for the block metrics. Colors always emit as
+ * `#rrggbb` (a named-color source like `red` normalizes to `#ff0000`). Text is escaped (`&` `<` `>`);
+ * attribute values additionally escape `"`.
  *
  * The round-trip guarantee is `parseTextMarkup(formatTextMarkup(parseTextMarkup(x)))` equals
- * `parseTextMarkup(x)` — a fixed point over the modeled tags. Newlines are emitted literally (a
- * `<br>` in the source parses to `\n`, which serializes back as a raw newline that re-parses to the
- * same `\n`). Format fields with no `htmlText` representation (`kerning`, `letterSpacing`) cannot be
- * expressed and are omitted; `parseTextMarkup` never produces them, so the fixed point is unaffected.
+ * `parseTextMarkup(x)` — a fixed point over the modeled tags. `<p>`/`<li>` imply a collapsing line
+ * break before their content; the resulting `\n` carries no block format and re-parses as a plain
+ * newline that the block tag's own collapse rule does not double, so the fixed point holds. Format
+ * fields with no `htmlText` representation (`kerning`, `letterSpacing`) cannot be expressed and are
+ * omitted; `parseTextMarkup` never produces them, so the fixed point is unaffected.
  */
 export function formatTextMarkup(content: Readonly<RichTextContent>): string {
   const text = content.text;
@@ -39,27 +45,29 @@ export function formatTextMarkup(content: Readonly<RichTextContent>): string {
 }
 
 /**
- * Parses the `htmlText` HTML subset into Flight's rich-text model — a plain `text` string plus the
+ * Parses `htmlText`-style markup into Flight's rich-text model — a plain `text` string plus the
  * `TextFormatRange[]` a `RichText`/`TextLabel` node renders. This is the explicit, Flight-way
  * replacement for the `textField.htmlText = "…"` magic property: the caller invokes it and assigns
  * the result, rather than the runtime silently parsing markup on assignment.
  *
- * Supported tags: `<b>`/`<i>`/`<u>`/`<s>` (bold/italic/underline/strikethrough),
- * `<font color size face>`, `<a href target>`, `<p align>`, `<li type>` (bullet + list marker),
- * `<textformat leftmargin blockindent indent rightmargin leading tabstops>`, and `<br>` (a `\n`).
- * `<span>` and any unknown tag keep their enclosed text but apply no format. `<img>` has no
- * rich-text model field yet and is dropped entirely (an inline-image reference is a future model
- * addition). Entities (`&amp; &lt; &gt; &quot; &apos; &#nn; &#xhh;`) decode; unknown named entities
- * are left verbatim. Nested tags compose — `<font color="#f00"><b>x</b></font>` yields one range
- * carrying both `color` and `bold`.
+ * Parsing is two layers. The parse layer here tokenizes the markup (a lenient, text-node-preserving
+ * pass — not the strict document tree of `@flighthq/xml`) and owns composition: it walks the tags,
+ * maintains a format stack (push a tag's handler contribution on open, pop on close), and emits the
+ * `text` and `TextFormatRange[]`. The meaning layer is the `registry` — an open map of tag name →
+ * handler that decides what each tag contributes. When no `registry` is passed the standard
+ * `htmlText` dialect is used (`registerStandardMarkupTags`), so the default is backward-compatible;
+ * pass a custom registry to add, replace, or narrow the supported tags.
  *
- * Malformed markup is recovered best-effort, never thrown: unclosed tags simply extend to the end
- * of the text, stray `<` with no `>` stays literal text, and an extra closing tag is ignored. The
- * result is always a valid `RichTextContent`. Block tags (`<p>`, `<li>`) carry alignment/bullet
- * formatting but do NOT insert implicit line breaks — use `<br>` for newlines; this keeps the
- * model losslessly round-trippable.
+ * Nested tags compose — `<font color="#f00"><b>x</b></font>` yields one range carrying both `color`
+ * and `bold`. An unregistered tag keeps its enclosed text but applies no format. Entities
+ * (`&amp; &lt; &gt; &quot; &apos; &#nn; &#xhh;`) decode; unknown named entities are left verbatim.
+ *
+ * Malformed markup is recovered best-effort, never thrown: unclosed tags simply extend to the end of
+ * the text, a stray `<` with no `>` stays literal text, and an extra closing tag is ignored. The
+ * result is always a valid `RichTextContent`.
  */
-export function parseTextMarkup(html: string): RichTextContent {
+export function parseTextMarkup(html: string, registry?: Readonly<MarkupTagRegistry>): RichTextContent {
+  const handlers = (registry ?? getDefaultMarkupTagRegistry()).handlers;
   const content = createRichTextContent();
   const stack: TextFormat[] = [{}];
   const tagPattern = /<[^>]*>/g;
@@ -67,95 +75,39 @@ export function parseTextMarkup(html: string): RichTextContent {
   let match: RegExpExecArray | null;
   while ((match = tagPattern.exec(html)) !== null) {
     appendMarkupText(content, html.slice(index, match.index), stack[stack.length - 1]);
-    handleMarkupTag(content, match[0], stack);
+    handleMarkupToken(content, handlers, match[0], stack);
     index = match.index + match[0].length;
   }
   appendMarkupText(content, html.slice(index), stack[stack.length - 1]);
   return content;
 }
 
-function appendMarkupBreak(content: RichTextContent, format: Readonly<TextFormat>): void {
-  const start = content.text.length;
-  content.text += '\n';
-  pushMarkupRange(content.formatRanges, format, start, content.text.length);
+// Inserts a collapsing block break — the implicit newline before a `<p>`/`<li>`. Suppressed at the
+// start of the output and against an existing trailing newline so block tags never stack blank lines.
+// The break carries no format, which keeps it indistinguishable from a plain newline on re-parse and
+// preserves the serialize/parse fixed point.
+function appendMarkupBreakBefore(content: RichTextContent): void {
+  const text = content.text;
+  if (text.length === 0 || text.endsWith('\n')) return;
+  appendMarkupString(content, '\n', emptyMarkupFormat);
 }
 
-function appendMarkupText(content: RichTextContent, raw: string, format: Readonly<TextFormat>): void {
-  const value = decodeMarkupEntities(raw);
+// Appends a literal string (already decoded — a handler's `text`, or a decoded text node).
+function appendMarkupString(content: RichTextContent, value: string, format: Readonly<TextFormat>): void {
   if (value.length === 0) return;
   const start = content.text.length;
   content.text += value;
   pushMarkupRange(content.formatRanges, format, start, content.text.length);
 }
 
-function applyMarkupFontAttributes(format: TextFormat, attributes: Readonly<MarkupAttributes>): void {
-  const color = attributes.color;
-  if (color !== undefined) {
-    const parsed = parseMarkupColor(color);
-    if (parsed !== null) format.color = parsed;
-  }
-  const size = attributes.size;
-  if (size !== undefined) {
-    const parsed = parseMarkupNumber(size);
-    if (parsed !== null) format.size = parsed;
-  }
-  const face = attributes.face ?? attributes.font;
-  if (face !== undefined && face.length > 0) format.font = face;
+// Appends a raw text node, decoding entities first.
+function appendMarkupText(content: RichTextContent, raw: string, format: Readonly<TextFormat>): void {
+  appendMarkupString(content, decodeMarkupEntities(raw), format);
 }
 
-function applyMarkupTag(format: TextFormat, tag: string, attributes: Readonly<MarkupAttributes>): void {
-  switch (tag) {
-    case 'a':
-      if (attributes.href !== undefined) format.url = attributes.href;
-      if (attributes.target !== undefined) format.target = attributes.target;
-      break;
-    case 'b':
-      format.bold = true;
-      break;
-    case 'font':
-      applyMarkupFontAttributes(format, attributes);
-      break;
-    case 'i':
-      format.italic = true;
-      break;
-    case 'li': {
-      format.bullet = true;
-      const marker = attributes.type;
-      if (marker !== undefined && isMarkupListMarker(marker))
-        format.listMarker = marker.toLowerCase() as TextFormatListMarker;
-      break;
-    }
-    case 'p': {
-      const align = attributes.align;
-      if (align !== undefined && isMarkupAlign(align)) format.align = align.toLowerCase() as TextFormatAlign;
-      break;
-    }
-    case 's':
-      format.strikethrough = true;
-      break;
-    case 'textformat':
-      applyMarkupTextformatAttributes(format, attributes);
-      break;
-    case 'u':
-      format.underline = true;
-      break;
-    // 'span' and any unrecognized tag: keep the enclosed text, apply no format.
-  }
-}
-
-function applyMarkupTextformatAttributes(format: TextFormat, attributes: Readonly<MarkupAttributes>): void {
-  const blockIndent = readMarkupNumberAttribute(attributes, 'blockindent');
-  if (blockIndent !== null) format.blockIndent = blockIndent;
-  const indent = readMarkupNumberAttribute(attributes, 'indent');
-  if (indent !== null) format.indent = indent;
-  const leading = readMarkupNumberAttribute(attributes, 'leading');
-  if (leading !== null) format.leading = leading;
-  const leftMargin = readMarkupNumberAttribute(attributes, 'leftmargin');
-  if (leftMargin !== null) format.leftMargin = leftMargin;
-  const rightMargin = readMarkupNumberAttribute(attributes, 'rightmargin');
-  if (rightMargin !== null) format.rightMargin = rightMargin;
-  const tabStops = readMarkupTabStopsAttribute(attributes, 'tabstops');
-  if (tabStops !== null) format.tabStops = tabStops;
+function codePointToString(code: number, fallback: string): string {
+  if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return fallback;
+  return String.fromCodePoint(code);
 }
 
 function decodeMarkupEntities(value: string): string {
@@ -166,11 +118,6 @@ function decodeMarkupEntities(value: string): string {
     if (lower.startsWith('#')) return codePointToString(Number.parseInt(lower.slice(1), 10), matched);
     return markupNamedEntities[lower] ?? matched;
   });
-}
-
-function codePointToString(code: number, fallback: string): string {
-  if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return fallback;
-  return String.fromCodePoint(code);
 }
 
 function equalsMarkupFormat(a: Readonly<TextFormat>, b: Readonly<TextFormat>): boolean {
@@ -304,7 +251,29 @@ function formatMarkupTextformatTag(format: Readonly<TextFormat>): string | null 
   return any ? `${tag}>` : null;
 }
 
-function handleMarkupTag(content: RichTextContent, token: string, stack: TextFormat[]): void {
+// The default standard-dialect registry, built lazily and memoized. Not a module-load side effect:
+// nothing runs until the first `parseTextMarkup` call that omits a registry. Kept internal so the
+// standard tags stay immutable from outside; a caller wanting custom tags builds their own registry.
+function getDefaultMarkupTagRegistry(): MarkupTagRegistry {
+  let registry = defaultMarkupTagRegistry;
+  if (registry === null) {
+    registry = createMarkupTagRegistry();
+    registerStandardMarkupTags(registry);
+    defaultMarkupTagRegistry = registry;
+  }
+  return registry;
+}
+
+// The dispatch + build binder: resolves one tag token against the registry and applies its result to
+// the format stack and emitted content. Structure (tokenizing, the stack) stays free of TextFormat
+// specifics beyond what a handler returns, so a general markup-binding engine could lift this shape
+// out later against a different handler result type.
+function handleMarkupToken(
+  content: RichTextContent,
+  handlers: Readonly<Map<string, MarkupTagHandler>>,
+  token: string,
+  stack: TextFormat[],
+): void {
   // The tag body is everything between the angle brackets; drop comments (`<!-- -->`), doctypes
   // (`<!…>`), processing instructions (`<?…>`), and the degenerate empty `<>`.
   const inner = token.slice(1, -1).trim();
@@ -314,7 +283,7 @@ function handleMarkupTag(content: RichTextContent, token: string, stack: TextFor
   const selfClosing = inner.endsWith('/');
   const body = (closing ? inner.slice(1) : inner).replace(/\/$/, '').trim();
   const separator = body.search(/\s/);
-  const tag = (separator === -1 ? body : body.slice(0, separator)).toLowerCase();
+  const name = (separator === -1 ? body : body.slice(0, separator)).toLowerCase();
 
   if (closing) {
     // Guard the base format: an extra closing tag with nothing open is ignored, not an error.
@@ -322,50 +291,41 @@ function handleMarkupTag(content: RichTextContent, token: string, stack: TextFor
     return;
   }
 
-  const attributes = parseMarkupAttributes(separator === -1 ? '' : body.slice(separator + 1));
-
-  if (tag === 'br') {
-    appendMarkupBreak(content, stack[stack.length - 1]);
+  const top = stack[stack.length - 1];
+  const handler = handlers.get(name);
+  if (handler === undefined) {
+    // Unregistered tag: keep the enclosed text, apply no format. Push a copy of the current format so
+    // the matching close pops it without disturbing an enclosing tag.
+    if (!selfClosing) stack.push({ ...top });
     return;
   }
-  // `<img>` is a void tag with no rich-text model field yet (inline images are a future model
-  // addition); it is dropped entirely rather than emitting a placeholder the model cannot round-trip.
-  if (tag === 'img') return;
 
-  const format = { ...stack[stack.length - 1] };
-  applyMarkupTag(format, tag, attributes);
-  if (!selfClosing) stack.push(format);
-}
+  const attributes = parseMarkupAttributes(separator === -1 ? '' : body.slice(separator + 1));
+  const result = normalizeMarkupTagResult(handler(attributes));
 
-function isMarkupAlign(value: string): boolean {
-  switch (value.toLowerCase()) {
-    case 'center':
-    case 'end':
-    case 'justify':
-    case 'left':
-    case 'right':
-    case 'start':
-      return true;
-    default:
-      return false;
+  // A void insertion tag (text, no format) inserts literal text and never pushes — e.g. `<br>`.
+  if (result.format === undefined && result.text !== undefined) {
+    appendMarkupString(content, result.text, top);
+    return;
   }
+
+  if (result.breakBefore === true) appendMarkupBreakBefore(content);
+  if (result.text !== undefined) appendMarkupString(content, result.text, top);
+
+  const merged: TextFormat = { ...top, ...result.format };
+  if (!selfClosing) stack.push(merged);
 }
 
-function isMarkupListMarker(value: string): boolean {
-  switch (value.toLowerCase()) {
-    case 'circle':
-    case 'decimal':
-    case 'disc':
-    case 'none':
-    case 'square':
-      return true;
-    default:
-      return false;
-  }
+// Normalizes a handler result to the `MarkupTagEffect` shape. The common `Partial<TextFormat>` return
+// carries none of the reserved effect keys, so it is wrapped as `{ format }`; a richer return is used
+// as-is. `TextFormat` shares no field name with `format`/`breakBefore`/`text`, so the test is exact.
+function normalizeMarkupTagResult(result: Readonly<MarkupTagResult>): MarkupTagEffect {
+  if ('format' in result || 'breakBefore' in result || 'text' in result) return result as MarkupTagEffect;
+  return { format: result as Partial<TextFormat> };
 }
 
-function parseMarkupAttributes(source: string): MarkupAttributes {
-  const attributes: MarkupAttributes = {};
+function parseMarkupAttributes(source: string): Record<string, string> {
+  const attributes: Record<string, string> = {};
   const pattern = /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(source)) !== null) {
@@ -373,29 +333,6 @@ function parseMarkupAttributes(source: string): MarkupAttributes {
     attributes[name] = decodeMarkupEntities(match[2] ?? match[3] ?? match[4] ?? '');
   }
   return attributes;
-}
-
-function parseMarkupColor(value: string): number | null {
-  const color = value.trim().toLowerCase();
-  if (color.startsWith('#')) {
-    const hex = color.slice(1);
-    if (hex.length === 3) {
-      const parsed = Number.parseInt(`${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`, 16);
-      return Number.isNaN(parsed) ? null : parsed;
-    }
-    const parsed = Number.parseInt(hex, 16);
-    return Number.isNaN(parsed) ? null : parsed;
-  }
-  if (color.startsWith('0x')) {
-    const parsed = Number.parseInt(color.slice(2), 16);
-    return Number.isNaN(parsed) ? null : parsed;
-  }
-  return null;
-}
-
-function parseMarkupNumber(value: string): number | null {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function pushMarkupRange(ranges: TextFormatRange[], format: Readonly<TextFormat>, start: number, end: number): void {
@@ -411,22 +348,6 @@ function pushMarkupRange(ranges: TextFormatRange[], format: Readonly<TextFormat>
   ranges.push(createTextFormatRange({ ...format }, start, end));
 }
 
-function readMarkupNumberAttribute(attributes: Readonly<MarkupAttributes>, name: string): number | null {
-  const raw = attributes[name];
-  return raw === undefined ? null : parseMarkupNumber(raw);
-}
-
-function readMarkupTabStopsAttribute(attributes: Readonly<MarkupAttributes>, name: string): number[] | null {
-  const raw = attributes[name];
-  if (raw === undefined) return null;
-  const stops: number[] = [];
-  for (const part of raw.split(',')) {
-    const parsed = parseMarkupNumber(part.trim());
-    if (parsed !== null) stops.push(parsed);
-  }
-  return stops;
-}
-
 function resolveMarkupFormats(content: Readonly<RichTextContent>): TextFormat[] {
   const length = content.text.length;
   const formats: TextFormat[] = new Array(length);
@@ -440,9 +361,9 @@ function resolveMarkupFormats(content: Readonly<RichTextContent>): TextFormat[] 
   return formats;
 }
 
-interface MarkupAttributes {
-  [name: string]: string;
-}
+let defaultMarkupTagRegistry: MarkupTagRegistry | null = null;
+
+const emptyMarkupFormat: Readonly<TextFormat> = {};
 
 const markupAttributeEscapes: Readonly<Record<string, string>> = {
   '"': '&quot;',
