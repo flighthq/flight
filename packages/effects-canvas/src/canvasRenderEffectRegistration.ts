@@ -2,8 +2,6 @@ import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/type
 
 import { defaultCanvasBloomEffectRunner } from './canvasBloomEffect';
 import { defaultCanvasBlurEffectRunner } from './canvasBlurEffect';
-import { defaultCanvasBrightnessContrastEffectRunner } from './canvasBrightnessContrastEffect';
-import { defaultCanvasChannelMixerEffectRunner } from './canvasChannelMixerEffect';
 import { defaultCanvasChromaticAberrationEffectRunner } from './canvasChromaticAberrationEffect';
 import { defaultCanvasColorGradeEffectRunner } from './canvasColorGradeEffect';
 import { defaultCanvasConvolutionEffectRunner } from './canvasConvolutionEffect';
@@ -12,7 +10,6 @@ import { defaultCanvasDirectionalBlurEffectRunner } from './canvasDirectionalBlu
 import { defaultCanvasDisplacementEffectRunner } from './canvasDisplacementEffect';
 import { defaultCanvasDitherEffectRunner } from './canvasDitherEffect';
 import { defaultCanvasDropShadowEffectRunner } from './canvasDropShadowEffect';
-import { defaultCanvasExposureEffectRunner } from './canvasExposureEffect';
 import { defaultCanvasFilmGrainEffectRunner } from './canvasFilmGrainEffect';
 import { defaultCanvasGlitchEffectRunner } from './canvasGlitchEffect';
 import { defaultCanvasGodRaysEffectRunner } from './canvasGodRaysEffect';
@@ -136,13 +133,12 @@ const BLUR_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderEffe
 
 // Color-grade effects: per-pixel color transforms with no multi-pass or geometry dependency.
 // LookupTableGradeEffect is passthrough on Canvas (descriptor carries no cube data array) and is
-// omitted here. ExposureEffect and ToneMapEffect are included as approximate LDR implementations.
+// omitted here. ToneMapEffect is included as an approximate LDR implementation. (BrightnessContrast,
+// ChannelMixer, and Exposure moved to the matrix-tier @flighthq/adjustments, folded through the
+// pipeline's generic color-matrix pass — see effect-adjustment-architecture.)
 const COLOR_GRADE_CANVAS_EFFECT_KINDS: ReadonlyArray<readonly [string, CanvasRenderEffectRunner]> = [
-  ['BrightnessContrastEffect', defaultCanvasBrightnessContrastEffectRunner],
-  ['ChannelMixerEffect', defaultCanvasChannelMixerEffectRunner],
   ['ColorGradeEffect', defaultCanvasColorGradeEffectRunner],
   ['DitherEffect', defaultCanvasDitherEffectRunner],
-  ['ExposureEffect', defaultCanvasExposureEffectRunner],
   ['HueSaturationEffect', defaultCanvasHueSaturationEffectRunner],
   ['LiftGammaGainEffect', defaultCanvasLiftGammaGainEffectRunner],
   ['PosterizeEffect', defaultCanvasPosterizeEffectRunner],

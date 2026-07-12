@@ -42,7 +42,7 @@ describe('getRenderEffectKinds', () => {
     expect(kinds).toContain('BloomEffect');
     expect(kinds).toContain('ToneMapEffect');
     expect(kinds).toContain('SsaoEffect');
-    expect(kinds).toContain('ExposureEffect');
+    expect(kinds).toContain('ColorGradeEffect');
   });
 
   it('returns the same reference as RENDER_EFFECT_KINDS', () => {

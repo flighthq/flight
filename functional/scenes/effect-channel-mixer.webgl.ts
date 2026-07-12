@@ -6,19 +6,17 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createChannelMixerEffect,
+  createChannelMixerAdjustment,
   createDisplayContainer,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
-  defaultGlChannelMixerEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'ChannelMixerEffect', defaultGlChannelMixerEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -53,7 +50,7 @@ export function render(root: DisplayObject): void {
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
-    createChannelMixerEffect({
+    createChannelMixerAdjustment({
       matrix: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
     }),
   ]);

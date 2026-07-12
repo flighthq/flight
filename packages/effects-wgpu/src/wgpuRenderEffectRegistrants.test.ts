@@ -57,10 +57,7 @@ describe('registerColorWgpuRenderEffects', () => {
   it('registers all color and tone effect runners', async () => {
     const state = await createWgpuRenderStateForTest();
     registerColorWgpuRenderEffects(state);
-    expect(getWgpuRenderEffectRunner(state, 'BrightnessContrastEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'ChannelMixerEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'ColorGradeEffect')).not.toBe(null);
-    expect(getWgpuRenderEffectRunner(state, 'ExposureEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'HueSaturationEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'LiftGammaGainEffect')).not.toBe(null);
     expect(getWgpuRenderEffectRunner(state, 'LookupTableGradeEffect')).not.toBe(null);

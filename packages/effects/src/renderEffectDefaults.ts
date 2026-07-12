@@ -61,7 +61,6 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   BloomEffect: { brightness: 1, mipCount: 0, passes: 1, radius: 8, threshold: 0.8, thresholdKnee: 0.5 },
   BlurEffect: { blurX: 4, blurY: 4 },
   BokehDepthOfFieldEffect: { apertureBlades: 6, maxBlurRadius: 16, samples: 16 },
-  BrightnessContrastEffect: { brightness: 0, contrast: 0 },
   CameraMotionBlurEffect: { samples: 8 },
   ChromaticAberrationEffect: { fringeStrength: 0.01, radial: true, samples: 3 },
   ColorGradeEffect: {
@@ -75,7 +74,6 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     temperature: 0,
     tint: 0,
   },
-  ColorBlindSimulationEffect: { type: 'deuteranopia' },
   ContactShadowsEffect: { distance: 0.5, opacity: 0.6, samples: 16, smoothness: 0.5 },
   ConvolutionEffect: { bias: 0, clamp: true, preserveAlpha: true },
   CrtEffect: { curvature: 0.1, scanlineIntensity: 0.5, vignette: 0.4, aberration: 0 },
@@ -83,7 +81,6 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   DisplacementEffect: { frequency: 12, intensity: 8 },
   DitherEffect: { levels: 16 },
   DropShadowEffect: { alpha: 1, angle: 45, blurX: 4, blurY: 4, distance: 4, quality: 1, strength: 1 },
-  ExposureEffect: { exposure: 0 },
   FilmEmulationEffect: { gateWeave: 0, grainIntensity: 0.1, halationRadius: 4, halationStrength: 0.3 },
   FilmGrainEffect: { intensity: 0.2, size: 1, seed: 0 },
   FxaaEffect: { edgeThreshold: 0.0312, subpixel: 0.75 },
