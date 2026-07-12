@@ -96,6 +96,7 @@ function drawDomRichTextField(state: DomRenderState, renderProxy: RenderProxy2D)
     height: source.data.height,
     measure,
     multiline,
+    verticalAlign: source.data.autoSize === 'none' ? source.data.verticalAlign : 'top',
     wordWrap,
   });
   const fieldW = computeTextBoundsWidth(source.data, result);

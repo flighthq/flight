@@ -64,6 +64,7 @@ export function drawDomTextLabel(state: DomRenderState, renderProxy: RenderProxy
     width: source.data.width,
     height: source.data.height,
     measure,
+    verticalAlign: source.data.autoSize === 'none' ? source.data.verticalAlign : 'top',
   });
 
   let divWidth = 0;

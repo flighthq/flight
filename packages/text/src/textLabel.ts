@@ -17,6 +17,7 @@ import type {
   TextLabelRuntime,
   TextLayoutParams,
   TextMeasureFunction,
+  TextVerticalAlign,
 } from '@flighthq/types';
 import { TextLabelKind } from '@flighthq/types';
 
@@ -32,6 +33,9 @@ function buildTextLabelLayoutParams(source: Readonly<TextLabel>, measure: TextMe
     height: data.height,
     measure,
     text: data.text,
+    // Vertical alignment only means something within a fixed-height box; an auto-fit field has no
+    // slack, so pass 'top' and leave the block at the content origin.
+    verticalAlign: data.autoSize === 'none' ? data.verticalAlign : 'top',
     width: data.width,
   };
 }
@@ -81,6 +85,7 @@ export function createTextLabelData(data?: Readonly<Partial<TextLabelData>>): Te
     height: data?.height ?? 100,
     text: data?.text ?? '',
     textFormat: data?.textFormat ?? {},
+    verticalAlign: data?.verticalAlign ?? 'top',
     width: data?.width ?? 100,
   };
 }
@@ -134,6 +139,16 @@ export function setTextLabelString(source: TextLabel, value: string): void {
   const data = source.data;
   if (data.text === value) return;
   data.text = value;
+  invalidateNodeLocalContent(source);
+}
+
+// Vertical alignment repositions the glyphs within the (unchanged) height box, so it invalidates only
+// the content revision — the field's bounds are the fixed height/width box and do not move. Mirrors
+// setTextLabelString's content-only invalidation.
+export function setTextLabelVerticalAlign(source: TextLabel, value: TextVerticalAlign): void {
+  const data = source.data;
+  if (data.verticalAlign === value) return;
+  data.verticalAlign = value;
   invalidateNodeLocalContent(source);
 }
 

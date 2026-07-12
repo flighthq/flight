@@ -58,6 +58,7 @@ import {
   setRichTextString,
   setRichTextStyleSheet,
   setRichTextTextColor,
+  setRichTextVerticalAlign,
   setRichTextWidth,
   setRichTextWordWrap,
 } from './richText';
@@ -1165,6 +1166,29 @@ describe('setRichTextTextColor', () => {
     const richText = createRichText();
     const content = getNodeLocalContentRevision(richText);
     setRichTextTextColor(richText, richText.data.textColor);
+    expect(getNodeLocalContentRevision(richText)).toBe(content);
+  });
+});
+
+describe('setRichTextVerticalAlign', () => {
+  it('defaults to top', () => {
+    expect(createRichText().data.verticalAlign).toBe('top');
+  });
+
+  it('sets the value and bumps content without touching bounds', () => {
+    const richText = createRichText();
+    const content = getNodeLocalContentRevision(richText);
+    const bounds = getNodeLocalBoundsRevision(richText);
+    setRichTextVerticalAlign(richText, 'bottom');
+    expect(richText.data.verticalAlign).toBe('bottom');
+    expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
+    expect(getNodeLocalBoundsRevision(richText)).toBe(bounds);
+  });
+
+  it('does not bump content when the value is unchanged', () => {
+    const richText = createRichText();
+    const content = getNodeLocalContentRevision(richText);
+    setRichTextVerticalAlign(richText, richText.data.verticalAlign);
     expect(getNodeLocalContentRevision(richText)).toBe(content);
   });
 });

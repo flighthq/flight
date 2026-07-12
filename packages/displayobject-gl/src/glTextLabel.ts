@@ -95,6 +95,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
       width: fieldWidth,
       height: fieldHeight,
       measure,
+      verticalAlign: source.data.autoSize === 'none' ? source.data.verticalAlign : 'top',
     });
 
     textData.lastContentId = version;

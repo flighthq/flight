@@ -231,6 +231,7 @@ function layoutRichText(
     measure,
     multiline: data.multiline,
     text,
+    verticalAlign: data.autoSize === 'none' ? data.verticalAlign : 'top',
     width: Math.min(data.wordWrap ? data.width : 10000, maxLogical),
     wordWrap: data.wordWrap,
   });

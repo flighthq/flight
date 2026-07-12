@@ -7,6 +7,7 @@ import type {
   TextLayoutParams,
   TextLayoutResult,
   TextMeasureFunction,
+  TextVerticalAlign,
 } from '@flighthq/types';
 export type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from '@flighthq/types';
 
@@ -37,6 +38,7 @@ export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParam
     justification = 'interWord',
     maxLines = -1,
     truncationCharacter = '…',
+    verticalAlign = 'top',
   } = params;
 
   if (!text || formatRanges.length === 0) {
@@ -71,6 +73,10 @@ export function computeTextLayout(out: TextLayoutResult, params: TextLayoutParam
 
   // Alignment shifts require knowing per-line widths first.
   applyAlignment(out.groups, width, out.lineWidths, direction, justification, _paragraphLastLines, text);
+
+  // Vertical alignment shifts the whole block within the container height, so it needs the final
+  // content height (out.textHeight) computed by writeLineMetrics above.
+  applyVerticalAlignment(out.groups, params.height, out.textHeight, verticalAlign);
 
   // autoSize is intentionally not applied here — callers (scene graph /
   // renderer) own the node's width/height and apply the result themselves.
@@ -621,6 +627,26 @@ function applyAlignment(
   // distribute residual width across inter-word spaces. The last line of each
   // paragraph (tracked in paragraphLastLines) is left-aligned per CSS standard.
   justifyLines(groups, containerWidth, lineWidths, justification, paragraphLastLines, text);
+}
+
+// Shifts every line's offsetY so the text block sits at the top / middle / bottom of the container
+// height. The block occupies `contentHeight` (the laid-out textHeight) plus a gutter on the top and
+// bottom — mirroring computeTextBoundsHeight — so the free space is `height - (contentHeight + 2*gutter)`.
+// When that slack is <= 0 the container is not taller than its content and the pass is inert. Only glyph
+// positions move; the content metrics (textHeight/textWidth) are the block's own size and stay unchanged.
+// Auto-sizing fields pass verticalAlign 'top' from their layout-param builder (an auto-fit box has no
+// meaningful container height to align within), so this pass only ever acts on fixed-height fields.
+function applyVerticalAlignment(
+  groups: TextLayoutGroup[],
+  containerHeight: number,
+  contentHeight: number,
+  verticalAlign: TextVerticalAlign,
+): void {
+  if (verticalAlign === 'top') return;
+  const slack = containerHeight - (contentHeight + TEXT_LAYOUT_GUTTER * 2);
+  if (slack <= 0) return;
+  const shift = verticalAlign === 'middle' ? slack / 2 : slack;
+  for (const g of groups) g.offsetY += shift;
 }
 
 function justifyLines(

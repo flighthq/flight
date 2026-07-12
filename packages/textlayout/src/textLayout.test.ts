@@ -211,6 +211,47 @@ describe('computeTextLayout', () => {
     });
   });
 
+  describe('vertical alignment', () => {
+    // A single short line in a tall (height=200) container has ample vertical slack.
+    const tall = (overrides: object = {}) => singleRangeParams('hi', 100, { height: 200, ...overrides });
+
+    it('leaves offsetY unchanged for the top default', () => {
+      const implicitTop = doLayout(tall()).groups[0].offsetY;
+      const explicitTop = doLayout(tall({ verticalAlign: 'top' })).groups[0].offsetY;
+      expect(explicitTop).toBe(implicitTop);
+    });
+
+    it('shifts the block down for middle and further for bottom when the container has slack', () => {
+      const topY = doLayout(tall()).groups[0].offsetY;
+      const middleY = doLayout(tall({ verticalAlign: 'middle' })).groups[0].offsetY;
+      const bottomY = doLayout(tall({ verticalAlign: 'bottom' })).groups[0].offsetY;
+      expect(middleY).toBeGreaterThan(topY);
+      expect(bottomY).toBeGreaterThan(middleY);
+    });
+
+    it('places middle at exactly half the bottom shift', () => {
+      const topY = doLayout(tall()).groups[0].offsetY;
+      const middleY = doLayout(tall({ verticalAlign: 'middle' })).groups[0].offsetY;
+      const bottomY = doLayout(tall({ verticalAlign: 'bottom' })).groups[0].offsetY;
+      expect(middleY - topY).toBeCloseTo((bottomY - topY) / 2);
+    });
+
+    it('shifts the bottom block by the full vertical slack (content height + gutters)', () => {
+      const height = 200;
+      const topResult = doLayout(tall());
+      const bottomResult = doLayout(tall({ verticalAlign: 'bottom' }));
+      const slack = height - (topResult.textHeight + TEXT_LAYOUT_GUTTER * 2);
+      expect(bottomResult.groups[0].offsetY - topResult.groups[0].offsetY).toBeCloseTo(slack);
+    });
+
+    it('is inert when the container is not taller than its content (no slack)', () => {
+      const short = (overrides: object = {}) => singleRangeParams('hi', 100, { height: 4, ...overrides });
+      const topY = doLayout(short()).groups[0].offsetY;
+      expect(doLayout(short({ verticalAlign: 'middle' })).groups[0].offsetY).toBe(topY);
+      expect(doLayout(short({ verticalAlign: 'bottom' })).groups[0].offsetY).toBe(topY);
+    });
+  });
+
   describe('word wrap', () => {
     // With fixedMeasure (10px/char) and width=50:
     //   "hello world" → "hello " = 60px → wraps; "world" = 50px fits

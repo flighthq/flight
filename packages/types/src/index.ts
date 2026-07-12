@@ -450,6 +450,7 @@ export * from './TextSelectionRectangle';
 export * from './TextShaper';
 export * from './TextShaperOptions';
 export * from './TextShaperSignals';
+export * from './TextVerticalAlign';
 export * from './Texture';
 export * from './TextureAtlas';
 export * from './TextureAtlasFormatKind';
