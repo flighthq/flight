@@ -10,12 +10,11 @@ import {
   createCanvasElement,
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
-  createColorGradeEffect,
+  createColorGradeAdjustment,
   createDisplayContainer,
   createShape,
   createVignetteEffect,
   defaultCanvasBloomEffectRunner,
-  defaultCanvasColorGradeEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   defaultCanvasVignetteEffectRunner,
@@ -39,7 +38,6 @@ export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundCol
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 registerCanvasRenderEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
-registerCanvasRenderEffect(state, 'ColorGradeEffect', defaultCanvasColorGradeEffectRunner);
 registerCanvasRenderEffect(state, 'VignetteEffect', defaultCanvasVignetteEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
@@ -55,7 +53,7 @@ export function render(root: DisplayObject): void {
   renderCanvasDisplayObject(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
-    createColorGradeEffect({ saturation: 1.4, contrast: 1.1 }),
+    createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
     createVignetteEffect({ intensity: 0.7, radius: 0.7, softness: 0.5 }),
   ]);
 }

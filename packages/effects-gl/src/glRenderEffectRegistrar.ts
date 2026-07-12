@@ -6,7 +6,6 @@ import { defaultGlBlurEffectRunner } from './glBlurEffect';
 import { defaultGlBokehDepthOfFieldEffectRunner } from './glBokehDepthOfFieldEffect';
 import { defaultGlCameraMotionBlurEffectRunner } from './glCameraMotionBlurEffect';
 import { defaultGlChromaticAberrationEffectRunner } from './glChromaticAberrationEffect';
-import { defaultGlColorGradeEffectRunner } from './glColorGradeEffect';
 import { defaultGlConvolutionEffectRunner } from './glConvolutionEffect';
 import { defaultGlCrtEffectRunner } from './glCrtEffect';
 import { defaultGlCustomShaderEffectRunner } from './glCustomShaderEffect';
@@ -21,21 +20,17 @@ import { defaultGlGodRaysEffectRunner } from './glGodRaysEffect';
 import { defaultGlGradientBevelEffectRunner } from './glGradientBevelEffect';
 import { defaultGlGradientGlowEffectRunner } from './glGradientGlowEffect';
 import { defaultGlHalftoneEffectRunner } from './glHalftoneEffect';
-import { defaultGlHueSaturationEffectRunner } from './glHueSaturationEffect';
 import { defaultGlInnerGlowEffectRunner } from './glInnerGlowEffect';
 import { defaultGlInnerShadowEffectRunner } from './glInnerShadowEffect';
 import { defaultGlKuwaharaEffectRunner } from './glKuwaharaEffect';
 import { defaultGlLensDirtEffectRunner } from './glLensDirtEffect';
 import { defaultGlLensDistortionEffectRunner } from './glLensDistortionEffect';
 import { defaultGlLensFlareEffectRunner } from './glLensFlareEffect';
-import { defaultGlLiftGammaGainEffectRunner } from './glLiftGammaGainEffect';
-import { defaultGlLookupTableGradeEffectRunner } from './glLookupTableGradeEffect';
 import { defaultGlMedianEffectRunner } from './glMedianEffect';
 import { defaultGlMotionBlurEffectRunner } from './glMotionBlurEffect';
 import { defaultGlOuterGlowEffectRunner } from './glOuterGlowEffect';
 import { defaultGlOutlineEffectRunner } from './glOutlineEffect';
 import { defaultGlPixelateEffectRunner } from './glPixelateEffect';
-import { defaultGlPosterizeEffectRunner } from './glPosterizeEffect';
 import { defaultGlRadialBlurEffectRunner } from './glRadialBlurEffect';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
 import { defaultGlScanlinesEffectRunner } from './glScanlinesEffect';
@@ -55,11 +50,11 @@ import { defaultGlWhiteBalanceEffectRunner } from './glWhiteBalanceEffect';
 //   antialiasing — FXAA, SMAA, TAA
 //   bloom        — BloomEffect, ChromaticAberration, GodRays, LensDirt, LensDistortion, LensFlare, Vignette
 //   blur         — BokehDepthOfField, CameraMotionBlur, DirectionalBlur, MotionBlur, RadialBlur, TiltShift
-//   color        — ColorGrade, HueSaturation, LiftGammaGain, LookupTableGrade, Posterize, ToneMap,
-//                  WhiteBalance
-//                  (Grayscale/Invert/Sepia and BrightnessContrast/ChannelMixer/Exposure moved to the
-//                   matrix-tier @flighthq/adjustments, folded through the pipeline's generic
-//                   color-matrix pass — see effect-adjustment-architecture)
+//   color        — ToneMap, WhiteBalance
+//                  (the pointwise color ops — Grayscale/Invert/Sepia/BrightnessContrast/ChannelMixer/
+//                   Exposure as matrix-tier, and HueSaturation/LiftGammaGain/ColorGrade/Posterize/
+//                   LookupTableGrade as LUT-tier — moved to @flighthq/adjustments, folded through the
+//                   pipeline's generic color-matrix / color-LUT pass — see effect-adjustment-architecture)
 //   screen-space — Displacement, ScreenSpaceFog, Sharpen, Ssao, Ssr
 //   stylize      — Crt, Dither, FilmGrain, Glitch, Halftone, Kuwahara, Outline, Pixelate, Scanlines, Sketch
 //
@@ -109,19 +104,14 @@ export function registerBlurGlRenderEffects(state: GlRenderState): void {
   registerGlRenderEffect(state, 'TiltShiftEffect', defaultGlTiltShiftEffectRunner);
 }
 
-// Color / tone band: ColorGradeEffect, HueSaturationEffect, LiftGammaGainEffect,
-// LookupTableGradeEffect, PosterizeEffect, ToneMapEffect, WhiteBalanceEffect.
-// (GrayscaleEffect/InvertEffect/SepiaEffect and BrightnessContrastEffect/ChannelMixerEffect/ExposureEffect
-//  were dissolved into the matrix-tier @flighthq/adjustments, folded through the pipeline's generic
-//  color-matrix pass — see effect-adjustment-architecture.)
+// Color / tone band: ToneMapEffect, WhiteBalanceEffect.
+// (The pointwise color ops were dissolved into @flighthq/adjustments — Grayscale/Invert/Sepia/
+//  BrightnessContrast/ChannelMixer/Exposure as matrix-tier, and HueSaturation/LiftGammaGain/ColorGrade/
+//  Posterize/LookupTableGrade as LUT-tier — folded through the pipeline's generic color-matrix / color-LUT
+//  pass; see effect-adjustment-architecture.)
 // DitherEffect has moved to the stylize band (matching Wgpu).
 // Symmetric with Wgpu's registerColorWgpuRenderEffects.
 export function registerColorGlRenderEffects(state: GlRenderState): void {
-  registerGlRenderEffect(state, 'ColorGradeEffect', defaultGlColorGradeEffectRunner);
-  registerGlRenderEffect(state, 'HueSaturationEffect', defaultGlHueSaturationEffectRunner);
-  registerGlRenderEffect(state, 'LiftGammaGainEffect', defaultGlLiftGammaGainEffectRunner);
-  registerGlRenderEffect(state, 'LookupTableGradeEffect', defaultGlLookupTableGradeEffectRunner);
-  registerGlRenderEffect(state, 'PosterizeEffect', defaultGlPosterizeEffectRunner);
   registerGlRenderEffect(state, 'ToneMapEffect', defaultGlToneMapEffectRunner);
   registerGlRenderEffect(state, 'WhiteBalanceEffect', defaultGlWhiteBalanceEffectRunner);
 }
@@ -215,7 +205,6 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'BokehDepthOfFieldEffect',
   'CameraMotionBlurEffect',
   'ChromaticAberrationEffect',
-  'ColorGradeEffect',
   'ConvolutionEffect',
   'CrtEffect',
   'CustomShaderEffect',
@@ -230,21 +219,17 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'GradientBevelEffect',
   'GradientGlowEffect',
   'HalftoneEffect',
-  'HueSaturationEffect',
   'InnerGlowEffect',
   'InnerShadowEffect',
   'KuwaharaEffect',
   'LensDirtEffect',
   'LensDistortionEffect',
   'LensFlareEffect',
-  'LiftGammaGainEffect',
-  'LookupTableGradeEffect',
   'MedianEffect',
   'MotionBlurEffect',
   'OuterGlowEffect',
   'OutlineEffect',
   'PixelateEffect',
-  'PosterizeEffect',
   'RadialBlurEffect',
   'ScanlinesEffect',
   'ScreenSpaceFogEffect',

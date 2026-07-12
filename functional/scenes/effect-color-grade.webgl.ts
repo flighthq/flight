@@ -6,19 +6,17 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
-  createColorGradeEffect,
+  createColorGradeAdjustment,
   createDisplayContainer,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
-  defaultGlColorGradeEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'ColorGradeEffect', defaultGlColorGradeEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -53,7 +50,7 @@ export function render(root: DisplayObject): void {
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
-    createColorGradeEffect({ saturation: 1.5, contrast: 1.2, temperature: 0.2 }),
+    createColorGradeAdjustment({ saturation: 1.5, contrast: 1.2, temperature: 0.2 }),
   ]);
 }
 

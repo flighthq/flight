@@ -10,15 +10,13 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createHueSaturationEffect,
+  createHueSaturationAdjustment,
   createShape,
-  defaultGlHueSaturationEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
-  registerGlRenderEffect,
   registerGlShapeCommands,
   registerRenderer,
   renderGlBackground,
@@ -39,7 +37,6 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
-registerGlRenderEffect(state, 'HueSaturationEffect', defaultGlHueSaturationEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -52,7 +49,9 @@ export function render(root: DisplayObject): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlDisplayObject(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createHueSaturationEffect({ hue: 90, saturation: 0.4, lightness: 0 })]);
+  endGlRenderEffectPipeline(state, pipeline, [
+    createHueSaturationAdjustment({ hue: 90, saturation: 0.4, lightness: 0 }),
+  ]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

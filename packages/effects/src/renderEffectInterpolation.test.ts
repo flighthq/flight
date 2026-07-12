@@ -1,20 +1,20 @@
 import { createBloomEffect } from './bloomEffect';
-import { createColorGradeEffect } from './colorGradeEffect';
 import { canLerpRenderEffects, lerpRenderEffect } from './renderEffectInterpolation';
+import { createVignetteEffect } from './vignetteEffect';
 
 describe('canLerpRenderEffects', () => {
   it('returns true for same kind', () => {
     expect(canLerpRenderEffects(createBloomEffect(), createBloomEffect())).toBe(true);
   });
   it('returns false for different kinds', () => {
-    expect(canLerpRenderEffects(createBloomEffect(), createColorGradeEffect())).toBe(false);
+    expect(canLerpRenderEffects(createBloomEffect(), createVignetteEffect())).toBe(false);
   });
 });
 
 describe('lerpRenderEffect', () => {
   it('returns false and leaves out unchanged for mismatched kinds', () => {
     const a = createBloomEffect({ threshold: 0.5 });
-    const b = createColorGradeEffect({ exposure: 1 });
+    const b = createVignetteEffect({ intensity: 1 });
     const out = createBloomEffect({ threshold: 0.99 });
     const result = lerpRenderEffect(a, b, 0.5, out);
     expect(result).toBe(false);
@@ -57,9 +57,9 @@ describe('lerpRenderEffect', () => {
     expect(a.threshold).toBeCloseTo(0.5, 5);
   });
   it('boolean fields snap at t=0.5 boundary', () => {
-    const a = createColorGradeEffect({ enabled: false } as never);
-    const b = createColorGradeEffect({ enabled: true } as never);
-    const out = createColorGradeEffect();
+    const a = createVignetteEffect({ enabled: false } as never);
+    const b = createVignetteEffect({ enabled: true } as never);
+    const out = createVignetteEffect();
     lerpRenderEffect(a, b, 0.4, out);
     expect((out as unknown as Record<string, unknown>).enabled).toBe(false);
     lerpRenderEffect(a, b, 0.5, out);

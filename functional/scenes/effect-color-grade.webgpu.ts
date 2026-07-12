@@ -6,20 +6,18 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
-  createColorGradeEffect,
+  createColorGradeAdjustment,
   createDisplayContainer,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuColorGradeEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuDisplayObject,
@@ -37,7 +35,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'ColorGradeEffect', defaultWgpuColorGradeEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -51,7 +48,7 @@ export function render(root: DisplayObject): void {
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuDisplayObject(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [
-    createColorGradeEffect({ saturation: 1.5, contrast: 1.2, temperature: 0.2 }),
+    createColorGradeAdjustment({ saturation: 1.5, contrast: 1.2, temperature: 0.2 }),
   ]);
   submitWgpuRenderPass(state);
 }

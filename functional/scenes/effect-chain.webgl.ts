@@ -7,7 +7,7 @@ import {
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
   createBloomEffect,
-  createColorGradeEffect,
+  createColorGradeAdjustment,
   createDisplayContainer,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -15,7 +15,6 @@ import {
   createShape,
   createVignetteEffect,
   defaultGlBloomEffectRunner,
-  defaultGlColorGradeEffectRunner,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlVignetteEffectRunner,
@@ -45,7 +44,6 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlShapeCommands(defaultGlShapeCommands);
 registerDefaultGlMaterial(state);
 registerGlRenderEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
-registerGlRenderEffect(state, 'ColorGradeEffect', defaultGlColorGradeEffectRunner);
 registerGlRenderEffect(state, 'VignetteEffect', defaultGlVignetteEffectRunner);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
@@ -64,7 +62,7 @@ export function render(root: DisplayObject): void {
   renderGlDisplayObject(state, root);
   endGlRenderEffectPipeline(state, pipeline, [
     createBloomEffect({ threshold: 0.6, intensity: 1.2 }),
-    createColorGradeEffect({ saturation: 1.4, contrast: 1.1 }),
+    createColorGradeAdjustment({ saturation: 1.4, contrast: 1.1 }),
     createVignetteEffect({ intensity: 0.7, radius: 0.7, softness: 0.5 }),
   ]);
 }

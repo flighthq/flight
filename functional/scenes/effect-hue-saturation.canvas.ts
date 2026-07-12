@@ -10,14 +10,12 @@ import {
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createDisplayContainer,
-  createHueSaturationEffect,
+  createHueSaturationAdjustment,
   createShape,
-  defaultCanvasHueSaturationEffectRunner,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareDisplayObjectRender,
-  registerCanvasRenderEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -33,7 +31,6 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
-registerCanvasRenderEffect(state, 'HueSaturationEffect', defaultCanvasHueSaturationEffectRunner);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -47,7 +44,7 @@ export function render(root: DisplayObject): void {
   renderCanvasBackground(state);
   renderCanvasDisplayObject(state, root);
   endCanvasRenderEffectPipeline(state, pipeline, [
-    createHueSaturationEffect({ hue: 90, saturation: 0.4, lightness: 0 }),
+    createHueSaturationAdjustment({ hue: 90, saturation: 0.4, lightness: 0 }),
   ]);
 }
 

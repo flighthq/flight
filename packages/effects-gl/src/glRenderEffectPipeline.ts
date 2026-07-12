@@ -1,4 +1,10 @@
-import { fuseColorMatrices, getAdjustmentColorMatrix } from '@flighthq/adjustments';
+import {
+  bakeColorLut,
+  fuseColorMatrices,
+  getAdjustmentColorMatrix,
+  getAdjustmentColorTransform,
+  isColorLutAdjustment,
+} from '@flighthq/adjustments';
 import { createMatrix } from '@flighthq/geometry';
 import {
   acquireGlRenderTarget,
@@ -16,6 +22,7 @@ import {
 } from '@flighthq/render-gl';
 import type {
   Adjustment,
+  ColorTransformFunction,
   GlRenderEffectPipeline,
   GlRenderState,
   GlRenderTarget,
@@ -23,6 +30,7 @@ import type {
   RenderEffectPipelineOptions,
 } from '@flighthq/types';
 
+import { applyColorLutPassToGl } from './glColorLutPass';
 import { applyColorMatrixPassToGl } from './glColorMatrixPass';
 import { getGlEffectProgram } from './glEffectProgramCache';
 import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
@@ -76,9 +84,11 @@ export function endGlRenderEffectPipeline(
   let source: GlRenderTarget = scene;
   let scratchA: GlRenderTarget | null = null;
   let scratchB: GlRenderTarget | null = null;
-  // A maximal run of consecutive matrix-tier adjustments fuses into one matrix and one pass; an effect
-  // (or the end of the stack) breaks the run and flushes it first, preserving stack order.
-  let pending: (readonly number[])[] = [];
+  // A maximal run of consecutive pointwise adjustments fuses into ONE pass: all matrix-tier → one 4×5
+  // matrix (cheaper applyColorMatrixPass); any LUT-tier member → the whole run (matrices folded in) bakes
+  // into one ColorLut (applyColorLutPass). An effect (or the end of the stack) breaks the run and flushes
+  // it first, preserving stack order.
+  let pending: Adjustment[] = [];
 
   const ensureScratch = (): void => {
     if (scratchA === null) scratchA = acquireGlRenderTarget(state, pipeline.pool, descriptor);
@@ -92,15 +102,28 @@ export function endGlRenderEffectPipeline(
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
     clearGlRenderTarget(state, dest);
-    applyColorMatrixPassToGl(state, source, dest, fuseColorMatrices(pending));
+    if (pending.some(isColorLutAdjustment)) {
+      const transforms: ColorTransformFunction[] = [];
+      for (const op of pending) {
+        const transform = getAdjustmentColorTransform(op);
+        if (transform !== null) transforms.push(transform);
+      }
+      applyColorLutPassToGl(state, source, dest, bakeColorLut(transforms));
+    } else {
+      const matrices: (readonly number[])[] = [];
+      for (const op of pending) {
+        const matrix = getAdjustmentColorMatrix(op);
+        if (matrix !== null) matrices.push(matrix);
+      }
+      applyColorMatrixPassToGl(state, source, dest, fuseColorMatrices(matrices));
+    }
     source = dest;
     pending = [];
   };
 
   for (const operation of operations) {
-    const matrix = getAdjustmentColorMatrix(operation);
-    if (matrix !== null) {
-      pending.push(matrix);
+    if (getAdjustmentColorMatrix(operation) !== null || isColorLutAdjustment(operation)) {
+      pending.push(operation as Adjustment);
       continue;
     }
     const runner = getGlRenderEffectRunner(state, operation.kind);

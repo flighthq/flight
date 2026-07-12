@@ -7,19 +7,17 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayContainer,
-  createLiftGammaGainEffect,
+  createLiftGammaGainAdjustment,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuLiftGammaGainEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuDisplayObject,
@@ -39,7 +37,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'LiftGammaGainEffect', defaultWgpuLiftGammaGainEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -53,7 +50,7 @@ export function render(root: DisplayObject): void {
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuDisplayObject(state, root);
   endWgpuRenderEffectPipeline(state, pipeline, [
-    createLiftGammaGainEffect({ lift: 0x8a7860ff, gamma: 0x808080ff, gain: 0x7088a0ff }),
+    createLiftGammaGainAdjustment({ lift: 0x8a7860ff, gamma: 0x808080ff, gain: 0x7088a0ff }),
   ]);
   submitWgpuRenderPass(state);
 }

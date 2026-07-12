@@ -7,19 +7,17 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayContainer,
-  createHueSaturationEffect,
+  createHueSaturationAdjustment,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
-  defaultWgpuHueSaturationEffectRunner,
   defaultWgpuShapeCommands,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
-  registerWgpuRenderEffect,
   registerWgpuShapeCommands,
   renderWgpuBackground,
   renderWgpuDisplayObject,
@@ -39,7 +37,6 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuShapeCommands(defaultWgpuShapeCommands);
 registerDefaultWgpuMaterial(state);
-registerWgpuRenderEffect(state, 'HueSaturationEffect', defaultWgpuHueSaturationEffectRunner);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
@@ -52,7 +49,9 @@ export function render(root: DisplayObject): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuDisplayObject(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createHueSaturationEffect({ hue: 90, saturation: 0.4, lightness: 0 })]);
+  endWgpuRenderEffectPipeline(state, pipeline, [
+    createHueSaturationAdjustment({ hue: 90, saturation: 0.4, lightness: 0 }),
+  ]);
   submitWgpuRenderPass(state);
 }
 
