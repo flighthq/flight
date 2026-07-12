@@ -100,10 +100,14 @@ describe('drawDomRichText', () => {
     expect(div.innerHTML).toContain('world');
   });
 
-  it('renders resolved htmlText spans', () => {
+  it('renders resolved multi-format spans', () => {
     const state = makeState();
     const node = createRichText();
-    node.data.htmlText = '<b>Bold</b><font color="#00ff00">Green</font>';
+    node.data.text = 'BoldGreen';
+    node.data.textFormatRanges = [
+      { start: 0, end: 4, format: { bold: true } },
+      { start: 4, end: 9, format: { color: 0x00ff00 } },
+    ];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomRichText(state, renderProxy))!;

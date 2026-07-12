@@ -26,6 +26,7 @@ import type {
   PartialNode,
   Rectangle,
   RichText,
+  RichTextContent,
   RichTextData,
   RichTextRuntime,
   RichTextStyleSheet,
@@ -127,7 +128,6 @@ export function createRichTextData(data?: Readonly<Partial<RichTextData>>): Rich
   _data.width = data?.width ?? 100;
   _data.condenseWhite = data?.condenseWhite ?? false;
   _data.defaultTextFormat = data?.defaultTextFormat ?? {};
-  _data.htmlText = data?.htmlText ?? '';
   _data.maxChars = data?.maxChars ?? -1;
   _data.mouseWheelEnabled = data?.mouseWheelEnabled ?? true;
   _data.multiline = data?.multiline ?? true;
@@ -256,10 +256,6 @@ export function getRichTextFormatRangesIn(
   for (const range of source.data.textFormatRanges) {
     if (range.start < endIndex && range.end > beginIndex) out.push(range);
   }
-}
-
-export function getRichTextHtml(source: Readonly<RichText>): string {
-  return source.data.htmlText;
 }
 
 export function getRichTextLength(source: Readonly<RichText>): number {
@@ -441,6 +437,20 @@ export function setRichTextCondenseWhite(source: RichText, value: boolean): void
   invalidateRichTextContent(source);
 }
 
+// Populates the field from a resolved RichTextContent — the plain `text` plus its `formatRanges` —
+// and invalidates. This is the explicit path for markup: the caller parses `htmlText`-subset markup
+// with `parseTextMarkup(html)` from @flighthq/text-markup and hands the resulting content here, rather
+// than assigning a markup string that the runtime silently parses. The format ranges are copied so the
+// field does not alias the caller's array (mirroring createRichTextData). Password masking and the
+// base default format still apply at layout, independent of how the content was produced.
+export function setRichTextContent(source: RichText, content: Readonly<RichTextContent>): void {
+  const previousText = source.data.text;
+  source.data.text = content.text;
+  source.data.textFormatRanges = content.formatRanges.map((range) => ({ ...range }));
+  invalidateRichTextContent(source);
+  if (previousText !== content.text) emitTextFieldChange(source, previousText);
+}
+
 export function setRichTextDefaultTextFormat(source: RichText, value: TextFormat): void {
   source.data.defaultTextFormat = value;
   invalidateRichTextContent(source);
@@ -461,12 +471,6 @@ export function setRichTextHeight(source: RichText, value: number): void {
   source.data.height = value;
   invalidateNodeLocalContent(source);
   invalidateNodeLocalBounds(source);
-}
-
-export function setRichTextHtml(source: RichText, value: string): void {
-  if (source.data.htmlText === value) return;
-  source.data.htmlText = value;
-  invalidateRichTextContent(source);
 }
 
 export function setRichTextMaxChars(source: RichText, value: number): void {

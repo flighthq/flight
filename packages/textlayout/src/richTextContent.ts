@@ -22,12 +22,11 @@ export function computeRichTextContent(
   const source = getRenderableSource(data, passwordCharacter);
   if (source.length === 0) return;
 
-  if (data.htmlText.length === 0 || passwordCharacter !== null) {
-    appendText(out, source, baseFormat, data.condenseWhite, data.maxChars);
-  } else {
-    parseHtmlText(out, source, data, baseFormat);
-  }
-
+  // The field renders its plain `text` under the base format, then layers the serialized
+  // `textFormatRanges` on top. Markup is no longer parsed here: `htmlText`-subset markup is parsed
+  // explicitly by parseTextMarkup (@flighthq/text-markup) into a RichTextContent the caller assigns
+  // via setRichTextContent, which lands in `text` + `textFormatRanges` — the same two inputs below.
+  appendText(out, source, baseFormat, data.condenseWhite, data.maxChars);
   clampRanges(out.formatRanges, out.text.length);
   applyTextFormatRanges(out, data.textFormatRanges);
 }
@@ -41,11 +40,6 @@ export function getRichTextContent(runtime: RichTextRuntime): RichTextContent {
     runtime.richTextContent = createRichTextContent();
   }
   return runtime.richTextContent;
-}
-
-function appendLineBreak(out: RichTextContent, maxChars: number): void {
-  if (maxChars >= 0 && out.text.length >= maxChars) return;
-  out.text += '\n';
 }
 
 function appendText(
@@ -70,158 +64,6 @@ function appendText(
   const start = out.text.length;
   out.text += value;
   writeFormatRange(out.formatRanges, format, start, out.text.length);
-}
-
-function applyAttributeFormat(format: TextFormat, name: string, value: string): void {
-  switch (name) {
-    case 'align':
-      if (isTextAlign(value)) format.align = value;
-      break;
-    case 'blockindent':
-      format.blockIndent = parseNumber(value);
-      break;
-    case 'color':
-      format.color = parseColor(value);
-      break;
-    case 'face':
-    case 'font':
-    case 'fontfamily':
-      format.font = value;
-      break;
-    case 'indent':
-      format.indent = parseNumber(value);
-      break;
-    case 'leading':
-      format.leading = parseNumber(value);
-      break;
-    case 'leftmargin':
-      format.leftMargin = parseNumber(value);
-      break;
-    case 'letterspacing':
-      format.letterSpacing = parseNumber(value);
-      break;
-    case 'rightmargin':
-      format.rightMargin = parseNumber(value);
-      break;
-    case 'size':
-      format.size = parseNumber(value);
-      break;
-    case 'tabstops':
-      format.tabStops = parseTabStops(value);
-      break;
-  }
-}
-
-function applyCssFormat(format: TextFormat, property: string, value: string): void {
-  switch (property) {
-    case 'color':
-      format.color = parseColor(value);
-      break;
-    case 'font-family':
-      format.font = stripQuotes(value);
-      break;
-    case 'font-size':
-      format.size = parseNumber(value);
-      break;
-    case 'font-style':
-      if (value === 'italic' || value === 'oblique') format.italic = true;
-      break;
-    case 'font-weight':
-      if (value === 'bold' || parseNumber(value) >= 600) format.bold = true;
-      break;
-    case 'letter-spacing':
-      format.letterSpacing = parseNumber(value);
-      break;
-    case 'line-height':
-      format.leading = parseNumber(value);
-      break;
-    case 'margin-left':
-      format.leftMargin = parseNumber(value);
-      break;
-    case 'margin-right':
-      format.rightMargin = parseNumber(value);
-      break;
-    case 'text-align':
-      if (isTextAlign(value)) format.align = value;
-      break;
-    case 'text-decoration':
-      if (value.includes('underline')) format.underline = true;
-      if (value.includes('line-through')) format.strikethrough = true;
-      break;
-    case 'text-indent':
-      format.indent = parseNumber(value);
-      break;
-  }
-}
-
-function applyInlineStyle(format: TextFormat, style: string): void {
-  for (const declaration of style.split(';')) {
-    const separator = declaration.indexOf(':');
-    if (separator === -1) continue;
-    const property = declaration.slice(0, separator).trim().toLowerCase();
-    const value = declaration
-      .slice(separator + 1)
-      .trim()
-      .toLowerCase();
-    if (property.length > 0 && value.length > 0) applyCssFormat(format, property, value);
-  }
-}
-
-function applyStyleSheetFormat(format: TextFormat, data: Readonly<RichTextData>, tag: string, attrs: Attributes): void {
-  const styleSheet = data.styleSheet;
-  if (styleSheet === null) return;
-
-  mergeFormatInto(format, styleSheet[tag]);
-  const className = attrs.class;
-  if (className !== undefined) {
-    for (const name of className.split(/\s+/)) {
-      if (name.length > 0) {
-        mergeFormatInto(format, styleSheet[`.${name}`]);
-        mergeFormatInto(format, styleSheet[name]);
-      }
-    }
-  }
-
-  const id = attrs.id;
-  if (id !== undefined) mergeFormatInto(format, styleSheet[`#${id}`]);
-}
-
-function applyTagFormat(format: TextFormat, tag: string, attrs: Attributes): void {
-  switch (tag) {
-    case 'b':
-    case 'strong':
-      format.bold = true;
-      break;
-    case 'em':
-    case 'i':
-      format.italic = true;
-      break;
-    case 'font':
-      for (const name of Object.keys(attrs)) applyAttributeFormat(format, name, attrs[name]);
-      break;
-    case 'li':
-      format.bullet = true;
-      break;
-    case 'p':
-      if (attrs.align !== undefined && isTextAlign(attrs.align)) format.align = attrs.align;
-      break;
-    case 'a':
-      if (attrs.href !== undefined) format.url = attrs.href;
-      if (attrs.target !== undefined) format.target = attrs.target;
-      break;
-    case 'textformat':
-      for (const name of Object.keys(attrs)) applyAttributeFormat(format, name, attrs[name]);
-      break;
-    case 's':
-    case 'strike':
-      format.strikethrough = true;
-      break;
-    case 'u':
-      format.underline = true;
-      break;
-  }
-
-  if (attrs.style !== undefined) applyInlineStyle(format, attrs.style);
 }
 
 function applyTextFormatRanges(out: RichTextContent, overrides: readonly TextFormatRange[]): void {
@@ -282,124 +124,10 @@ function decodeHtmlEntities(value: string): string {
   });
 }
 
-function handleHtmlTag(out: RichTextContent, token: string, data: Readonly<RichTextData>, stack: TextFormat[]): void {
-  const content = token.slice(1, -1).trim();
-  if (content.length === 0 || content.startsWith('!')) return;
-
-  const closing = content.startsWith('/');
-  const selfClosing = content.endsWith('/');
-  const body = (closing ? content.slice(1) : content).replace(/\/$/, '').trim();
-  const separator = body.search(/\s/);
-  const tag = (separator === -1 ? body : body.slice(0, separator)).toLowerCase();
-  const attrs = parseAttributes(separator === -1 ? '' : body.slice(separator + 1));
-
-  if (closing) {
-    if (stack.length > 1) stack.pop();
-    if (tag === 'p' && out.text.length > 0 && !out.text.endsWith('\n')) appendLineBreak(out, data.maxChars);
-    return;
-  }
-
-  if (tag === 'br') {
-    appendLineBreak(out, data.maxChars);
-    return;
-  }
-
-  if ((tag === 'p' || tag === 'li') && out.text.length > 0 && !out.text.endsWith('\n')) {
-    appendLineBreak(out, data.maxChars);
-  }
-
-  const format = { ...stack[stack.length - 1] };
-  applyStyleSheetFormat(format, data, tag, attrs);
-  applyTagFormat(format, tag, attrs);
-
-  if (!selfClosing) stack.push(format);
-}
-
 function getRenderableSource(data: Readonly<RichTextData>, passwordCharacter: string | null): string {
-  if (passwordCharacter === null) return data.htmlText.length > 0 ? data.htmlText : data.text;
+  if (passwordCharacter === null) return data.text;
   const mask = passwordCharacter.length > 0 ? passwordCharacter.charAt(0) : '\u2022';
   return mask.repeat(data.text.length);
-}
-
-function isTextAlign(value: string): value is NonNullable<TextFormat['align']> {
-  return (
-    value === 'center' ||
-    value === 'end' ||
-    value === 'justify' ||
-    value === 'left' ||
-    value === 'right' ||
-    value === 'start'
-  );
-}
-
-function mergeFormatInto(format: TextFormat, style: TextFormat | undefined): void {
-  if (style === undefined) return;
-  const merged = mergeTextFormat(format, style);
-  for (const key of Object.keys(merged) as (keyof TextFormat)[]) {
-    (format as Record<string, unknown>)[key] = merged[key];
-  }
-}
-
-function parseAttributes(source: string): Attributes {
-  const attrs: Attributes = {};
-  const pattern = /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(source)) !== null) {
-    const name = match[1].toLowerCase();
-    attrs[name] = match[2] ?? match[3] ?? match[4] ?? '';
-  }
-  return attrs;
-}
-
-function parseColor(value: string): number {
-  const color = value.trim().toLowerCase();
-  if (color.startsWith('#')) {
-    if (color.length === 4) {
-      const r = color.charAt(1);
-      const g = color.charAt(2);
-      const b = color.charAt(3);
-      return Number.parseInt(`${r}${r}${g}${g}${b}${b}`, 16);
-    }
-    return Number.parseInt(color.slice(1), 16);
-  }
-  if (color.startsWith('0x')) return Number.parseInt(color.slice(2), 16);
-  return namedColors[color] ?? 0;
-}
-
-function parseHtmlText(
-  out: RichTextContent,
-  source: string,
-  data: Readonly<RichTextData>,
-  baseFormat: TextFormat,
-): void {
-  const stack: TextFormat[] = [baseFormat];
-  const pattern = /<[^>]*>/g;
-  let index = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(source)) !== null) {
-    appendText(out, source.slice(index, match.index), stack[stack.length - 1], data.condenseWhite, data.maxChars);
-    handleHtmlTag(out, match[0], data, stack);
-    index = match.index + match[0].length;
-  }
-
-  appendText(out, source.slice(index), stack[stack.length - 1], data.condenseWhite, data.maxChars);
-}
-
-function parseNumber(value: string): number {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function parseTabStops(value: string): number[] {
-  return value
-    .split(',')
-    .map((part) => parseNumber(part.trim()))
-    .filter((part) => Number.isFinite(part));
-}
-
-function stripQuotes(value: string): string {
-  return value.replace(/^['"]|['"]$/g, '');
 }
 
 function writeFormatRange(ranges: TextFormatRange[], format: Readonly<TextFormat>, start: number, end: number): void {
@@ -430,30 +158,6 @@ function textFormatEquals(a: Readonly<TextFormat>, b: Readonly<TextFormat>): boo
   }
   return true;
 }
-
-interface Attributes {
-  [name: string]: string;
-}
-
-const namedColors: Record<string, number> = {
-  black: 0x000000,
-  blue: 0x0000ff,
-  cyan: 0x00ffff,
-  fuchsia: 0xff00ff,
-  gray: 0x808080,
-  green: 0x008000,
-  lime: 0x00ff00,
-  magenta: 0xff00ff,
-  maroon: 0x800000,
-  navy: 0x000080,
-  olive: 0x808000,
-  purple: 0x800080,
-  red: 0xff0000,
-  silver: 0xc0c0c0,
-  teal: 0x008080,
-  white: 0xffffff,
-  yellow: 0xffff00,
-};
 
 const namedEntities: Record<string, string> = {
   amp: '&',
