@@ -87,6 +87,19 @@ The 46 net-new proposals from the breadth pass (specs under `reviews/maturation/
 | `compute-wgpu`        | gpu · compute `-backend`      | bedrock                                     |
 | `font`                | font · primitive              | ✅ landed (partial 33 — needs matching/fallback/variable axes) |
 
+### Visual authoring import (fork I) — chartered candidates, unbuilt
+
+The visual-authoring-artifact arc ([structural-forks fork I](structural-forks.md#i-visual-authoring-artifacts-import-as--formats-not-as-a-code-layout-dsl)): UI and rich vector content are **authored visually and imported**, not built from a code-layout DSL. Each importer is a `-formats` cell into an **existing** subject home (never a new runtime), so the plurality is real (three distinct formats) and the outputs are well-homed.
+
+| Candidate          | Subject · layer                       | Verdict                                                                                   |
+| ------------------ | ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `svg-formats`      | shape/display · `-formats`            | **bedrock** — static SVG only ("to a point"); path data delegates to `path-formats`; output is `shape`/display |
+| `lottie-formats`   | shape + animation · `-formats`        | **bedrock** — Bodymovin JSON → `shape` + `@flighthq/animation` tracks; static-vector path shared with `svg-formats` |
+| `rive-formats`     | shape/mesh/skeleton/anim · `-formats` | **bedrock**, with a parse/runtime split — `.riv` → Flight data here; the state-machine *runtime* is a distinct future cell (à la `particles`/`particleemitter`) |
+| `markup-tokenizer` | text · lenient lexer                  | **reserved** — extract `text-markup`'s inline lenient lexer at the 2nd consumer; the rich-text runs inside the importers above are that trigger |
+
+**Still open (not greenlit):** the responsive **constraint/anchor** layer that fits a fixed-size imported artifact to a live viewport — the one place a little *layout* logic is warranted. A data descriptor over display nodes vs. a solver is undecided; it is a direction to settle, not a code-layout DSL, and distinct from the importers (which are in scope). Charters: `packages/{svg-formats,lottie-formats,rive-formats,markup-tokenizer}/charter.md` (draft).
+
 ### Platform-suite capabilities (clean cells, like clipboard/dialog)
 
 `biometrics`, `calendar`, `contacts`, `mediasession`, `permissions`, `purchase` — all **bedrock**.
