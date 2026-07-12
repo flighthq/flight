@@ -1,7 +1,12 @@
 import type { MarkupTagRegistry, RichTextContent, TextFormat } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { createMarkupTagRegistry, registerMarkupTag, registerStandardMarkupTags } from './markupTagRegistry';
+import {
+  createMarkupTagRegistry,
+  registerMarkupTag,
+  registerStandardMarkupTags,
+  resolveMarkupHexColor,
+} from './markupTagRegistry';
 import { parseTextMarkup } from './textMarkup';
 
 function formatAt(content: RichTextContent, index: number): TextFormat {
@@ -97,10 +102,17 @@ describe('registerStandardMarkupTags', () => {
     expect(formatAt(parseTextMarkup('<s>x</s>', registry), 0)).toEqual({ strikethrough: true });
   });
 
-  it('parses a CSS named font color', () => {
+  it('parses a hex font color but leaves a named color unresolved by default', () => {
     const registry = standardRegistry();
-    expect(formatAt(parseTextMarkup('<font color="red">x</font>', registry), 0).color).toBe(0xff0000);
-    expect(formatAt(parseTextMarkup('<font color="RebeccaPurple">x</font>', registry), 0).color).toBe(0x663399);
+    expect(formatAt(parseTextMarkup('<font color="#ff0000">x</font>', registry), 0).color).toBe(0xff0000);
+    // Named colors are gated behind `registerMarkupNamedColors`; the standard dialect alone is hex-only,
+    // so a named color resolves to no color gracefully rather than erroring.
+    expect(formatAt(parseTextMarkup('<font color="red">x</font>', registry), 0).color).toBeUndefined();
+  });
+
+  it('installs the hex-only color resolver as the registry seam', () => {
+    const registry = standardRegistry();
+    expect(registry.colorResolver).toBe(resolveMarkupHexColor);
   });
 
   it('inserts an implicit collapsing break before a block tag', () => {
@@ -108,5 +120,20 @@ describe('registerStandardMarkupTags', () => {
     const content = parseTextMarkup('a<p align="center">b</p>', registry);
     expect(content.text).toBe('a\nb');
     expect(formatAt(content, 2)).toEqual({ align: 'center' });
+  });
+});
+
+describe('resolveMarkupHexColor', () => {
+  it('parses #rrggbb, #rgb, and 0xRRGGBB values', () => {
+    expect(resolveMarkupHexColor('#ff0000')).toBe(0xff0000);
+    expect(resolveMarkupHexColor('#f00')).toBe(0xff0000);
+    expect(resolveMarkupHexColor('0x00ff00')).toBe(0x00ff00);
+    expect(resolveMarkupHexColor('  #0000FF  ')).toBe(0x0000ff);
+  });
+
+  it('returns null for a named color or unparseable value — no table on this path', () => {
+    expect(resolveMarkupHexColor('red')).toBeNull();
+    expect(resolveMarkupHexColor('#zz0000')).toBeNull();
+    expect(resolveMarkupHexColor('')).toBeNull();
   });
 });
