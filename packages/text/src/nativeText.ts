@@ -14,6 +14,7 @@ import type {
   PartialNode,
   Rectangle,
   TextAutoSize,
+  TextVerticalAlign,
 } from '@flighthq/types';
 import { NativeTextKind } from '@flighthq/types';
 
@@ -50,6 +51,7 @@ export function createNativeTextData(data?: Readonly<Partial<NativeTextData>>): 
     height: data?.height ?? 100,
     style: data?.style ?? {},
     text: data?.text ?? '',
+    verticalAlign: data?.verticalAlign ?? 'top',
     width: data?.width ?? 100,
   };
 }
@@ -120,6 +122,17 @@ export function setNativeTextStyle(source: NativeText, value: NativeTextStyle): 
   source.data.style = value;
   invalidateNodeLocalContent(source);
   invalidateNodeLocalBounds(source);
+}
+
+// Vertical alignment repositions the text block within the (unchanged) height box, so it invalidates
+// only the content revision — the field's bounds are the fixed width/height box and do not move.
+// Mirrors setTextLabelVerticalAlign; inert under autoSize (the DOM renderer only applies it to a fixed
+// box).
+export function setNativeTextVerticalAlign(source: NativeText, value: TextVerticalAlign): void {
+  const data = source.data;
+  if (data.verticalAlign === value) return;
+  data.verticalAlign = value;
+  invalidateNodeLocalContent(source);
 }
 
 export function setNativeTextWidth(source: NativeText, value: number): void {

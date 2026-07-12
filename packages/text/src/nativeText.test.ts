@@ -18,6 +18,7 @@ import {
   setNativeTextHeight,
   setNativeTextString,
   setNativeTextStyle,
+  setNativeTextVerticalAlign,
   setNativeTextWidth,
 } from './nativeText';
 
@@ -91,6 +92,7 @@ describe('createNativeTextData', () => {
     expect(data.height).toBe(100);
     expect(data.text).toBe('');
     expect(data.style).not.toBeNull();
+    expect(data.verticalAlign).toBe('top');
     expect(data.width).toBe(100);
   });
 
@@ -240,6 +242,29 @@ describe('setNativeTextStyle', () => {
     setNativeTextStyle(native, style);
     expect(native.data.style).toBe(style);
     expect(getNodeLocalContentRevision(native)).toBe(content + 1);
+  });
+});
+
+describe('setNativeTextVerticalAlign', () => {
+  it('defaults to top', () => {
+    expect(createNativeText().data.verticalAlign).toBe('top');
+  });
+
+  it('sets the value and bumps content without touching bounds', () => {
+    const native = createNativeText();
+    const content = getNodeLocalContentRevision(native);
+    const bounds = getNodeLocalBoundsRevision(native);
+    setNativeTextVerticalAlign(native, 'middle');
+    expect(native.data.verticalAlign).toBe('middle');
+    expect(getNodeLocalContentRevision(native)).toBe(content + 1);
+    expect(getNodeLocalBoundsRevision(native)).toBe(bounds);
+  });
+
+  it('does not bump content when the value is unchanged', () => {
+    const native = createNativeText({ data: { verticalAlign: 'bottom' } });
+    const content = getNodeLocalContentRevision(native);
+    setNativeTextVerticalAlign(native, 'bottom');
+    expect(getNodeLocalContentRevision(native)).toBe(content);
   });
 });
 

@@ -1,6 +1,7 @@
 import type { DisplayObject, DisplayObjectData, DisplayObjectRuntime } from './DisplayObject';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFormatAlign } from './TextFormat';
+import type { TextVerticalAlign } from './TextVerticalAlign';
 
 // NativeText is the platform/DOM-backed text type. It opts OUT of the TextLayout spine entirely (no
 // textLayout slot, no buildTextLayoutParams), so it is a sibling of TextLabel/RichText, NOT an extension
@@ -25,6 +26,11 @@ export interface NativeTextData extends DisplayObjectData {
   height: number;
   style: NativeTextStyle;
   text: string;
+  // The vertical placement of the text block within the fixed-height field box, matching
+  // TextLabelData.verticalAlign. A block-level property of the whole field (like width/height/autoSize),
+  // not part of the per-run NativeTextStyle — the platform engine lays out the run, the field frames it.
+  // Inert under autoSize (the box hugs the content, so there is no slack to align within).
+  verticalAlign: TextVerticalAlign;
   width: number;
 }
 
