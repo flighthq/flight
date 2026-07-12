@@ -4,6 +4,7 @@ export * from './colorBlindSimulationAdjustment';
 export * from './colorGradeAdjustment';
 export * from './colorLut';
 export * from './colorLutAdjustment';
+export * from './colorLutCache';
 export * from './colorMatrixAdjustment';
 export * from './colorMatrixMath';
 export * from './exposureAdjustment';

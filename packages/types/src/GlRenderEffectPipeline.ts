@@ -1,3 +1,5 @@
+import type { ColorLutCache } from './ColorLutCache';
+import type { GlColorLutTextureCache } from './GlColorLutTextureCache';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget, GlRenderTargetPool } from './GlRenderTarget';
 import type { RenderEffect } from './RenderEffect';
@@ -40,6 +42,11 @@ export interface GlRenderEffectPipeline {
   readonly options: Readonly<RenderEffectPipelineOptions>;
   sceneTarget: GlRenderTarget | null;
   readonly pool: GlRenderTargetPool;
+  // Bake and GPU-upload memos for the fused LUT-tier adjustment run, so a static grade neither re-bakes
+  // its size³ cells nor re-uploads its 3D texture every frame. `lutCache` is GC-managed; `lutTexture`
+  // owns a GPU texture destroyed by destroyGlRenderEffectPipeline.
+  readonly lutCache: ColorLutCache;
+  readonly lutTexture: GlColorLutTextureCache;
   // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion
   // blur, TAA). Produced separately by renderGlVelocity and set via setGlRenderEffectVelocityTexture;
   // null when no velocity pass ran (velocity-driven effects then sentinel-fall-back). Depth, by contrast,

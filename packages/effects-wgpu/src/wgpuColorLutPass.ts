@@ -1,4 +1,4 @@
-import type { ColorLut, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { ColorLut, WgpuColorLutTextureCache, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
 import type { WgpuEffectPipeline } from './wgpuEffectPass';
 import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
@@ -8,16 +8,20 @@ import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 // bakes to ONE 3D `ColorLut` (matrices folded in) and runs through this one trilinear pass instead of one
 // pass per op. The LUT uploads as a `size³` rgba8unorm 3D texture (group 2); the shared linear sampler
 // does the trilinear interpolation. Sampled color is treated as premultiplied and passed straight into
-// the LUT (matching the per-op color passes this replaces); alpha is preserved.
+// the LUT (matching the per-op color passes this replaces); alpha is preserved. `cache` owns the uploaded
+// 3D texture across frames; the LUT is re-uploaded only when it differs by identity from the last one
+// written into `cache` (bakeColorLutForRun returns a stable reference for an unchanged run), so a static
+// grade uploads once. The caller owns `cache.texture` and destroys it on teardown.
 export function applyColorLutPassToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuRenderTarget>,
   dest: Readonly<WgpuRenderTarget>,
   lut: Readonly<ColorLut>,
+  cache: WgpuColorLutTextureCache,
 ): void {
   const { device } = state;
   const fs = getWgpuEffectPassState(state);
-  const texture = uploadLutTexture(state, lut);
+  const texture = uploadLutTexture(state, lut, cache);
 
   const sourceBG = device.createBindGroup({
     layout: fs.textureBGLayout,
@@ -95,12 +99,28 @@ function getLutPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuE
   return pipeline;
 }
 
-// Uploads `lut` into a per-state reusable rgba8unorm 3D texture and returns it. The texture is recreated
-// when the LUT size changes, otherwise re-written each call (the effect list is per-frame data, so the
-// baked LUT can change every frame); caching by stack identity to skip the re-upload is a follow-up.
-function uploadLutTexture(state: WgpuRenderState, lut: Readonly<ColorLut>): GPUTexture {
+// Uploads `lut` into the cache's reusable rgba8unorm 3D texture and returns it. The texture is recreated
+// when the LUT size changes; the write is skipped entirely when `lut` is the same reference already in the
+// texture — the common static-grade case — so an unchanged grade costs one writeTexture total, not one
+// per frame.
+function uploadLutTexture(
+  state: WgpuRenderState,
+  lut: Readonly<ColorLut>,
+  cache: WgpuColorLutTextureCache,
+): GPUTexture {
   const { device } = state;
   const n = lut.size;
+  if (cache.texture !== null && cache.lut === lut) return cache.texture;
+  if (cache.texture === null || cache.size !== n) {
+    cache.texture?.destroy();
+    cache.texture = device.createTexture({
+      size: [n, n, n],
+      dimension: '3d',
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    cache.size = n;
+  }
   const samples = lut.samples;
   const data = new Uint8Array(n * n * n * 4);
   for (let i = 0, j = 0, o = 0; i < n * n * n; i++) {
@@ -109,20 +129,9 @@ function uploadLutTexture(state: WgpuRenderState, lut: Readonly<ColorLut>): GPUT
     data[o++] = Math.round(clamp01(samples[j++]) * 255);
     data[o++] = 255;
   }
-  let cached = lutTextures.get(state);
-  if (cached === undefined || cached.size !== n) {
-    cached?.texture.destroy();
-    const texture = device.createTexture({
-      size: [n, n, n],
-      dimension: '3d',
-      format: 'rgba8unorm',
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-    });
-    cached = { texture, size: n };
-    lutTextures.set(state, cached);
-  }
-  device.queue.writeTexture({ texture: cached.texture }, data, { bytesPerRow: n * 4, rowsPerImage: n }, [n, n, n]);
-  return cached.texture;
+  device.queue.writeTexture({ texture: cache.texture }, data, { bytesPerRow: n * 4, rowsPerImage: n }, [n, n, n]);
+  cache.lut = lut;
+  return cache.texture;
 }
 
 function clamp01(v: number): number {
@@ -155,4 +164,3 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
 
 const lutBindGroupLayouts = new WeakMap<WgpuRenderState, GPUBindGroupLayout>();
 const lutPipelines = new WeakMap<WgpuRenderState, Map<GPUTextureFormat, WgpuEffectPipeline>>();
-const lutTextures = new WeakMap<WgpuRenderState, { texture: GPUTexture; size: number }>();

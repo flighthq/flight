@@ -1,8 +1,8 @@
 import {
-  bakeColorLut,
+  bakeColorLutForRun,
+  createColorLutCache,
   fuseColorMatrices,
   getAdjustmentColorMatrix,
-  getAdjustmentColorTransform,
   isColorLutAdjustment,
 } from '@flighthq/adjustments';
 import { createMatrix } from '@flighthq/geometry';
@@ -22,7 +22,6 @@ import {
 } from '@flighthq/render-gl';
 import type {
   Adjustment,
-  ColorTransformFunction,
   GlRenderEffectPipeline,
   GlRenderState,
   GlRenderTarget,
@@ -57,7 +56,14 @@ export function createGlRenderEffectPipeline(
   _state: GlRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): GlRenderEffectPipeline {
-  return { options: { ...options }, sceneTarget: null, pool: createGlRenderTargetPool(), velocityTexture: null };
+  return {
+    options: { ...options },
+    sceneTarget: null,
+    pool: createGlRenderTargetPool(),
+    lutCache: createColorLutCache(),
+    lutTexture: { texture: null, lut: null },
+    velocityTexture: null,
+  };
 }
 
 export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRenderEffectPipeline): void {
@@ -66,6 +72,13 @@ export function destroyGlRenderEffectPipeline(state: GlRenderState, pipeline: Gl
     pipeline.sceneTarget = null;
   }
   destroyGlRenderTargetPool(state, pipeline.pool);
+  if (pipeline.lutTexture.texture !== null) {
+    state.gl.deleteTexture(pipeline.lutTexture.texture);
+    pipeline.lutTexture.texture = null;
+  }
+  pipeline.lutTexture.lut = null;
+  pipeline.lutCache.signature = null;
+  pipeline.lutCache.lut = null;
 }
 
 export function endGlRenderEffectPipeline(
@@ -103,12 +116,7 @@ export function endGlRenderEffectPipeline(
     const dest = source === scratchA ? scratchB! : scratchA!;
     clearGlRenderTarget(state, dest);
     if (pending.some(isColorLutAdjustment)) {
-      const transforms: ColorTransformFunction[] = [];
-      for (const op of pending) {
-        const transform = getAdjustmentColorTransform(op);
-        if (transform !== null) transforms.push(transform);
-      }
-      applyColorLutPassToGl(state, source, dest, bakeColorLut(transforms));
+      applyColorLutPassToGl(state, source, dest, bakeColorLutForRun(pipeline.lutCache, pending), pipeline.lutTexture);
     } else {
       const matrices: (readonly number[])[] = [];
       for (const op of pending) {
