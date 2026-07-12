@@ -23,7 +23,6 @@ function createData(data: Partial<RichTextData> = {}): RichTextData {
     scrollH: 0,
     scrollV: 1,
     selectable: true,
-    styleSheet: null,
     text: '',
     textColor: 0,
     textFormat: {},

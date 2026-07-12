@@ -335,7 +335,6 @@ export * from './ResourceLoadItemStatus';
 export * from './ResourceLoadReport';
 export * from './RichText';
 export * from './RichTextContent';
-export * from './RichTextStyleSheet';
 export * from './Sampler';
 export * from './ScalarRemap';
 export * from './Scale9Mapper';

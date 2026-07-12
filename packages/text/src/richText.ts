@@ -29,7 +29,6 @@ import type {
   RichTextContent,
   RichTextData,
   RichTextRuntime,
-  RichTextStyleSheet,
   TextFieldChangeEvent,
   TextFieldLinkEvent,
   TextFieldScrollEvent,
@@ -134,7 +133,6 @@ export function createRichTextData(data?: Readonly<Partial<RichTextData>>): Rich
   _data.scrollH = data?.scrollH ?? 0;
   _data.scrollV = data?.scrollV ?? 1;
   _data.selectable = data?.selectable ?? true;
-  _data.styleSheet = data?.styleSheet ?? null;
   _data.textColor = data?.textColor ?? 0;
   _data.textFormatRanges = data?.textFormatRanges ? data.textFormatRanges.map((range) => ({ ...range })) : [];
   _data.wordWrap = data?.wordWrap ?? false;
@@ -352,6 +350,15 @@ export function insertRichTextString(source: RichText, index: number, value: str
   emitTextFieldChange(source, previousText);
 }
 
+// The discoverable companion to the direct-mutation path: after mutating `data.text`,
+// `data.textFormatRanges`, or another content field in place (rather than through a `setRichText*`
+// setter), call this to invalidate. It mirrors exactly what the content-setters invalidate — the
+// content revision always, plus the local-bounds revision only when autoSize is active (a fixed field
+// keeps its user width/height) — and never touches the transform. See `invalidateRichTextContent`.
+export function invalidateRichText(source: RichText): void {
+  invalidateRichTextContent(source);
+}
+
 export function removeRichTextFormatRangesIn(source: RichText, begin: number, end: number): void {
   const ranges = source.data.textFormatRanges;
   let changed = false;
@@ -525,11 +532,6 @@ export function setRichTextString(source: RichText, value: string): void {
   source.data.text = value;
   invalidateRichTextContent(source);
   if (previousText !== value) emitTextFieldChange(source, previousText);
-}
-
-export function setRichTextStyleSheet(source: RichText, value: RichTextStyleSheet | null): void {
-  source.data.styleSheet = value;
-  invalidateRichTextContent(source);
 }
 
 export function setRichTextTextColor(source: RichText, value: number): void {
