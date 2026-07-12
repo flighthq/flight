@@ -1,6 +1,6 @@
 import { getEntityRuntime } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision } from '@flighthq/node';
+import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
 import { connectSignal } from '@flighthq/signals';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
 import type { Node, RichText, RichTextRuntime, TextFormatRange } from '@flighthq/types';
@@ -37,6 +37,7 @@ import {
   getRichTextTextWidth,
   getTextFieldSignals,
   insertRichTextString,
+  invalidateRichText,
   removeRichTextFormatRangesIn,
   replaceRichTextString,
   setRichTextBackground,
@@ -55,7 +56,6 @@ import {
   setRichTextScrollV,
   setRichTextSelectable,
   setRichTextString,
-  setRichTextStyleSheet,
   setRichTextTextColor,
   setRichTextVerticalAlign,
   setRichTextWidth,
@@ -173,7 +173,6 @@ describe('createRichText', () => {
     expect(richText.data.scrollH).toBe(0);
     expect(richText.data.scrollV).toBe(1);
     expect(richText.data.selectable).toBe(true);
-    expect(richText.data.styleSheet).toBeNull();
     expect(richText.data.textColor).toBe(0);
     expect(richText.data.textFormatRanges).toEqual([]);
     expect(richText.data.wordWrap).toBe(false);
@@ -193,7 +192,6 @@ describe('createRichText', () => {
         mouseWheelEnabled: false,
         multiline: false,
         selectable: false,
-        styleSheet: { p: { color: 0xff00ff } },
         textColor: 0xff,
         textFormatRanges: [{ start: 0, end: 2, format: { bold: true } }],
         wordWrap: true,
@@ -210,7 +208,6 @@ describe('createRichText', () => {
     expect(obj.data.mouseWheelEnabled).toStrictEqual(base.data.mouseWheelEnabled);
     expect(obj.data.multiline).toStrictEqual(base.data.multiline);
     expect(obj.data.selectable).toStrictEqual(base.data.selectable);
-    expect(obj.data.styleSheet).toStrictEqual(base.data.styleSheet);
     expect(obj.data.textColor).toStrictEqual(base.data.textColor);
     expect(obj.data.textFormatRanges).toStrictEqual(base.data.textFormatRanges);
     expect(obj.data.textFormatRanges).not.toBe(base.data.textFormatRanges);
@@ -753,6 +750,31 @@ describe('insertRichTextString', () => {
   });
 });
 
+describe('invalidateRichText', () => {
+  it('bumps the content revision without touching the transform', () => {
+    const richText = createRichText();
+    const content = getNodeLocalContentRevision(richText);
+    const transform = getNodeLocalTransformRevision(richText);
+    invalidateRichText(richText);
+    expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
+    expect(getNodeLocalTransformRevision(richText)).toBe(transform);
+  });
+
+  it('does not bump local bounds for a fixed (non-autoSize) field', () => {
+    const richText = createRichText({ data: { autoSize: 'none' } });
+    const bounds = getNodeLocalBoundsRevision(richText);
+    invalidateRichText(richText);
+    expect(getNodeLocalBoundsRevision(richText)).toBe(bounds);
+  });
+
+  it('bumps local bounds when autoSize is active', () => {
+    const richText = createRichText({ data: { autoSize: 'left' } });
+    const bounds = getNodeLocalBoundsRevision(richText);
+    invalidateRichText(richText);
+    expect(getNodeLocalBoundsRevision(richText)).toBe(bounds + 1);
+  });
+});
+
 describe('removeRichTextFormatRangesIn', () => {
   it('removes ranges that overlap the given span', () => {
     const richText = createRichText({ data: { text: 'hello world' } });
@@ -1133,25 +1155,6 @@ describe('setRichTextString', () => {
     const boundsBefore = runtime.localBoundsId;
     setRichTextString(richText, 'hello');
     expect(runtime.localBoundsId).not.toBe(boundsBefore);
-  });
-});
-
-describe('setRichTextStyleSheet', () => {
-  it('sets styleSheet and bumps content', () => {
-    const richText = createRichText();
-    const content = getNodeLocalContentRevision(richText);
-    const sheet = { p: { color: 0xff0000 } };
-    setRichTextStyleSheet(richText, sheet);
-    expect(richText.data.styleSheet).toBe(sheet);
-    expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
-  });
-
-  it('sets styleSheet to null and bumps content', () => {
-    const richText = createRichText({ data: { styleSheet: { p: {} } } });
-    const content = getNodeLocalContentRevision(richText);
-    setRichTextStyleSheet(richText, null);
-    expect(richText.data.styleSheet).toBeNull();
-    expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
   });
 });
 

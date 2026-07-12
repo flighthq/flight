@@ -1,5 +1,4 @@
 import type { RichTextContent } from './RichTextContent';
-import type { RichTextStyleSheet } from './RichTextStyleSheet';
 import type { TextAutoSize } from './TextAutoSize';
 import type { TextFieldSignals } from './TextFieldSignals';
 import type { TextFormat } from './TextFormat';
@@ -22,7 +21,6 @@ export interface RichTextData extends TextLabelData {
   scrollH: number;
   scrollV: number;
   selectable: boolean;
-  styleSheet: RichTextStyleSheet | null;
   text: string;
   textColor: number;
   textFormatRanges: TextFormatRange[];

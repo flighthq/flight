@@ -1,3 +1,4 @@
+import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
 import type { Video } from '@flighthq/types';
 import { VideoKind } from '@flighthq/types';
 
@@ -7,6 +8,7 @@ import {
   createVideoData,
   createVideoRuntime,
   getVideoRuntime,
+  invalidateVideo,
   setVideoSmoothing,
   setVideoSource,
 } from './video';
@@ -86,6 +88,19 @@ describe('getVideoRuntime', () => {
     const video = createVideo();
     const runtime = getVideoRuntime(video);
     expect(runtime).not.toBeNull();
+  });
+});
+
+describe('invalidateVideo', () => {
+  it('bumps content and local bounds without touching the transform', () => {
+    const video = createVideo();
+    const content = getNodeLocalContentRevision(video);
+    const bounds = getNodeLocalBoundsRevision(video);
+    const transform = getNodeLocalTransformRevision(video);
+    invalidateVideo(video);
+    expect(getNodeLocalContentRevision(video)).toBe(content + 1);
+    expect(getNodeLocalBoundsRevision(video)).toBe(bounds + 1);
+    expect(getNodeLocalTransformRevision(video)).toBe(transform);
   });
 });
 

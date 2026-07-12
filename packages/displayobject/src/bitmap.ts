@@ -35,6 +35,15 @@ export function getBitmapRuntime(source: Readonly<Bitmap>): Readonly<BitmapRunti
   return getDisplayObjectRuntime(source) as BitmapRuntime;
 }
 
+// The discoverable companion to the direct-mutation path: after mutating `data.image` or
+// `data.sourceRectangle` in place (rather than through `setBitmapImage`), call this to invalidate. It
+// mirrors what `setBitmapImage` invalidates — the content revision (new pixels) and the local-bounds
+// revision (a differently-sized image changes the node's extent) — and never touches the transform.
+export function invalidateBitmap(source: Bitmap): void {
+  invalidateNodeLocalContent(source);
+  invalidateNodeLocalBounds(source);
+}
+
 export function setBitmapImage(source: Bitmap, value: BitmapData['image']): void {
   source.data.image = value;
   // A different image is new pixels (content) and possibly new dimensions (bounds) — not a

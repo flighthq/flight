@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision } from '@flighthq/node';
+import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
 import type { Node, PartialNode, TextLabel } from '@flighthq/types';
 import { TextLabelKind } from '@flighthq/types';
@@ -13,6 +13,7 @@ import {
   getTextLabelFormat,
   getTextLabelRuntime,
   getTextLabelString,
+  invalidateTextLabel,
   setTextLabelAutoSize,
   setTextLabelFormat,
   setTextLabelHeight,
@@ -173,6 +174,19 @@ describe('getTextLabelString', () => {
   it('returns the text field', () => {
     const text = createTextLabel({ data: { text: 'hello' } });
     expect(getTextLabelString(text)).toBe('hello');
+  });
+});
+
+describe('invalidateTextLabel', () => {
+  it('bumps content only, without touching local bounds or the transform', () => {
+    const text = createTextLabel();
+    const content = getNodeLocalContentRevision(text);
+    const bounds = getNodeLocalBoundsRevision(text);
+    const transform = getNodeLocalTransformRevision(text);
+    invalidateTextLabel(text);
+    expect(getNodeLocalContentRevision(text)).toBe(content + 1);
+    expect(getNodeLocalBoundsRevision(text)).toBe(bounds);
+    expect(getNodeLocalTransformRevision(text)).toBe(transform);
   });
 });
 

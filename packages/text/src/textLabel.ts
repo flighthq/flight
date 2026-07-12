@@ -112,6 +112,15 @@ export function getTextLabelString(source: Readonly<TextLabel>): string {
   return source.data.text;
 }
 
+// The discoverable companion to the direct-mutation path: after mutating `data.text`,
+// `data.textFormat`, or `data.verticalAlign` in place (rather than through a `setTextLabel*` setter),
+// call this to invalidate. It mirrors what the label's content-setters invalidate — the content
+// revision only (a TextLabel derives its extent from the label box, and its content-setters do not
+// bump local bounds), and never touches the transform.
+export function invalidateTextLabel(source: TextLabel): void {
+  invalidateNodeLocalContent(source);
+}
+
 export function setTextLabelAutoSize(source: TextLabel, value: TextAutoSize): void {
   const data = source.data;
   if (data.autoSize === value) return;

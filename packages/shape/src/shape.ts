@@ -9,7 +9,7 @@ import { ShapeKind } from '@flighthq/types';
 
 export function clearShapeCommands(shape: Shape): void {
   shape.data.commands.length = 0;
-  invalidateShapeGeometry(shape);
+  invalidateShape(shape);
 }
 
 export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
@@ -277,7 +277,7 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
 export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
   out.data.commands.length = 0;
   out.data.commands.push(...source.data.commands);
-  invalidateShapeGeometry(out);
+  invalidateShape(out);
 }
 
 export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
@@ -318,7 +318,7 @@ export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime>
 // A shape's payload defines both its drawn surface and its extent, so any command change bumps
 // content (re-rasterize) and local bounds (re-measure) together. Call after mutating
 // shape.data.commands directly; the append*/clear/copy helpers call it for you.
-export function invalidateShapeGeometry(shape: Shape): void {
+export function invalidateShape(shape: Shape): void {
   invalidateNodeLocalContent(shape);
   invalidateNodeLocalBounds(shape);
 }

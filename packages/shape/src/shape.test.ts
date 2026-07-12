@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry';
-import { getNodeLocalBoundsRevision, getNodeLocalContentRevision } from '@flighthq/node';
+import { getNodeLocalBoundsRevision, getNodeLocalContentRevision, getNodeLocalTransformRevision } from '@flighthq/node';
 import type { ShapeCommandToken } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
@@ -13,7 +13,7 @@ import {
   getShapeBounds,
   getShapeCommandCount,
   getShapeRuntime,
-  invalidateShapeGeometry,
+  invalidateShape,
   isShapeEmpty,
 } from './shape';
 
@@ -175,14 +175,21 @@ describe('getShapeRuntime', () => {
   });
 });
 
-describe('invalidateShapeGeometry', () => {
+describe('invalidateShape', () => {
   it('bumps both the content and local-bounds revisions', () => {
     const shape = createShape();
     const content = getNodeLocalContentRevision(shape);
     const bounds = getNodeLocalBoundsRevision(shape);
-    invalidateShapeGeometry(shape);
+    invalidateShape(shape);
     expect(getNodeLocalContentRevision(shape)).toBe(content + 1);
     expect(getNodeLocalBoundsRevision(shape)).toBe(bounds + 1);
+  });
+
+  it('does not bump the local-transform revision', () => {
+    const shape = createShape();
+    const transform = getNodeLocalTransformRevision(shape);
+    invalidateShape(shape);
+    expect(getNodeLocalTransformRevision(shape)).toBe(transform);
   });
 });
 
