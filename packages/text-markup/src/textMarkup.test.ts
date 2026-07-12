@@ -102,9 +102,11 @@ describe('parseTextMarkup', () => {
     expect(formatAt(parseTextMarkup('<strike>x</strike>'), 0)).toEqual({ strikethrough: true });
   });
 
-  it('parses a CSS named font color', () => {
-    expect(formatAt(parseTextMarkup('<font color="red">x</font>'), 0).color).toBe(0xff0000);
-    expect(formatAt(parseTextMarkup('<font color="cornflowerblue">x</font>'), 0).color).toBe(0x6495ed);
+  it('leaves a named font color unresolved by default — named colors are opt-in', () => {
+    // The default registry is hex-only; `registerMarkupNamedColors` opts a registry into named colors.
+    // Without it, a named color resolves to no color gracefully rather than erroring.
+    expect(formatAt(parseTextMarkup('<font color="red">x</font>'), 0).color).toBeUndefined();
+    expect(formatAt(parseTextMarkup('<font color="cornflowerblue">x</font>'), 0).color).toBeUndefined();
   });
 
   it('uses a passed registry instead of the standard dialect', () => {
