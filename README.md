@@ -173,22 +173,25 @@ npm run api -- --json
 
 Major areas:
 
-| Area | Packages and capabilities |
+| Area | Packages |
 | --- | --- |
-| Core model | `types`, `entity`, `node`, `signals`, `log`, `debug` |
+| Core | `types`, `entity`, `node`, `signals` |
 | Math and geometry | `math`, `geometry`, `path`, `path-boolean`, `clip`, `binpack` |
-| 2D graph | `displayobject`, `shape`, `sprite`, `bitmaptext`, `text`, `textureatlas`, `tileset` |
-| Renderers | `render`, `displayobject-canvas`, `displayobject-dom`, `render-gl`, `displayobject-gl`, `render-wgpu`, `displayobject-wgpu` |
-| Effects and pixels | `adjustments`, `effects`, `effects-canvas`, `effects-gl`, `effects-wgpu`, `surface`, `capture` |
-| 3D | `scene`, `mesh`, `materials`, `lighting`, `texture`, `camera`, `skeleton`, `picking`, `scene-gl`, `scene-wgpu` |
-| Text | `textlayout`, `textshaper`, `textshaper-canvas`, `textsegment`, `textbidi`, `textinput`, `glyphatlas`, `bitmapfont`, `text-markup` |
+| 2D scene graph | `displayobject`, `shape`, `sprite`, `text` |
+| 3D scene graph | `scene`, `mesh`, `materials`, `lighting`, `texture`, `camera`, `skeleton`, `picking` |
+| Rendering | `render`, `displayobject-canvas`, `displayobject-dom`, `render-gl`, `displayobject-gl`, `render-wgpu`, `displayobject-wgpu`, `scene-gl`, `scene-wgpu` |
+| Effects and adjustments | `adjustments`, `effects`, `effects-canvas`, `effects-gl`, `effects-wgpu` |
+| Text | `textlayout`, `textshaper`, `textshaper-canvas`, `textsegment`, `textbidi`, `textinput`, `glyphatlas`, `bitmapfont`, `bitmaptext`, `text-markup` |
 | Animation and simulation | `easing`, `tween`, `spring`, `animation`, `timeline`, `movieclip`, `spritesheet`, `motionpath`, `clock`, `particles`, `particleemitter` |
-| Game primitives | `camera2d`, `collision`, `spatial`, `flow`, `snapshot`, `interaction`, `input` |
-| Assets and codecs | `assets`, `loader`, `image`, `image-codec`, `audio`, `video`, `font`, plus atlas, sprite, tilemap, bitmap-font, texture, path, shape, particle, scene, XML, and text-markup format packages |
-| Application and media | `application`, `app`, `media`, `mediasession`, `intl`, `useragent` |
-| Platform and hosts | Clipboard, dialog, filesystem, notifications, share, shell, menu, tray, shortcut, screen, power, storage, lifecycle, connectivity, device, sensors, keyboard, geolocation, webcam, permissions, net, socket, IPC, protocol, updater, and host adapters for Electron, Tauri, and Capacitor |
-| Tooling | `tool-capture`, functional/example capture baselines, renderer parity checks, API/export/package/order/size validation scripts |
-| Convenience barrel | `@flighthq/sdk` re-exports the packages for application code and examples |
+| Input and interaction | `input`, `interaction` |
+| Game | `camera2d`, `collision`, `spatial`, `flow`, `snapshot` |
+| Resources | `image`, `image-codec`, `surface`, `audio`, `video`, `font`, `textureatlas`, `tileset`, `loader`, `assets` |
+| Format codecs | Atlas, sprite, tilemap, bitmap-font, texture, path, shape, particle, scene, XML, and text-markup `-formats` packages |
+| Application and media | `application`, `app`, `media`, `intl`, `useragent` |
+| Diagnostics | `log`, `debug` |
+| Platform | Clipboard, dialog, filesystem, notifications, share, shell, menu, tray, shortcut, screen, power, storage, lifecycle, connectivity, device, sensors, keyboard, geolocation, webcam, permissions, mediasession, net, socket, IPC, protocol, updater, and host adapters for Electron, Tauri, and Capacitor |
+| Tooling | `tool-capture`, `capture`, functional/example baselines, renderer parity checks, API/export/package/order/size validation scripts |
+| Convenience barrel | `@flighthq/sdk` re-exports the packages above for application code and examples |
 
 All packages are published under `@flighthq/`. Applications and examples usually import from `@flighthq/sdk`:
 
