@@ -1,6 +1,10 @@
 {
   "name": "flight",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git"
+  },
   "type": "module",
   "workspaces": [
     "packages/**",

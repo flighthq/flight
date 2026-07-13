@@ -1,6 +1,11 @@
 {
   "name": "@flighthq/permissions",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/permissions"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

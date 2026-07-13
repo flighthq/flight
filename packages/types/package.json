@@ -1,6 +1,11 @@
 {
   "name": "@flighthq/types",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/types"
+  },
   "type": "module",
   "exports": {
     ".": {

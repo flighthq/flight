@@ -1,6 +1,11 @@
 {
   "name": "@flighthq/share",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/share"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

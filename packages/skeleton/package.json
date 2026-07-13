@@ -1,6 +1,11 @@
 {
   "name": "@flighthq/skeleton",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/skeleton"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

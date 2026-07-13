@@ -24,6 +24,12 @@ interface ExampleTsConfig {
   references?: { path: string }[];
 }
 
+interface PackageRepository {
+  type: string;
+  url: string;
+  directory?: string;
+}
+
 interface PackageJson {
   name?: string;
   main?: string;
@@ -31,6 +37,7 @@ interface PackageJson {
   types?: string;
   exports?: PackageExports;
   files?: string[];
+  repository?: PackageRepository;
   sideEffects?: boolean | string[];
   scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
@@ -293,6 +300,7 @@ const expectedPackageFiles = [
   '!dist/**/*.test.js.map',
   '!dist/**/*.test.d.ts.map',
 ];
+const expectedRepositoryUrl = 'https://github.com/flighthq/flight.git';
 const expectedCleanScript = 'tsc -b --clean';
 const expectedCleanDistScript = 'tsx ../../scripts/clean-package-dist.ts';
 const expectedPrepackScript = 'npm run clean && npm run clean:dist && npm run build';
@@ -351,6 +359,21 @@ for (const pkgDir of packageDirs) {
   check(errors, `${name}/* in tsconfig.base.json paths`, `${name}/*` in tsconfigPaths);
 
   const dirName = pkgDir.split(/[\\/]/).at(-1)!;
+
+  const expectedDir = `packages/${dirName}`;
+  check(
+    errors,
+    'repository.url matches',
+    pkg.repository?.url === expectedRepositoryUrl,
+    `got ${JSON.stringify(pkg.repository?.url)}`,
+  );
+  check(
+    errors,
+    'repository.directory matches',
+    pkg.repository?.directory === expectedDir,
+    `got ${JSON.stringify(pkg.repository?.directory)}, expected "${expectedDir}"`,
+  );
+
   // Wasm-backed (`-rs`) packages depend on generated wasm (baked by `build:wasm`)
   // and are intentionally kept out of the standard tsc build graph so it needs no
   // Rust toolchain. They must NOT be in tsconfig.build.json references; `build:wasm`
