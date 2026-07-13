@@ -1,14 +1,14 @@
 # Flight
 
-Flight is a graphics and application SDK designed for AI agents. Its API is cellular — every function is self-contained, legible in isolation, and free of hidden state. Explicit inputs, explicit outputs, no globals to trace, no implicit runtime behavior. An agent reading one function understands and applies it without context from anywhere else in the codebase.
+Flight is a modular TypeScript graphics and application SDK. It combines a 2D display-object graph, a 3D scene stack, four interchangeable renderers, image/effect processing, animation, text, media, input, game primitives, platform integrations, and tooling behind explicit, tree-shakable APIs.
 
-The same design properties that make Flight easy to reason over also make bundles small. Nothing runs at import time: renderers, update loops, and event listeners are all opt-in. A minimal bitmap display gzips to 3.9 KB. A full match-3 game with tweens, audio, text, and input gzips to 14.9 KB.
+The framework is built around small cellular packages. Importing a package does not register renderers, patch globals, start loops, attach listeners, or allocate host resources. Applications opt into each backend and subsystem by calling the relevant `create*`, `register*`, `attach*`, or `enable*` functions.
 
-It provides a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL 2, and WebGPU), offscreen image processing, and everything needed for a complete interactive application — animation, input, audio, video, text, filters, and effects. Build a scene once; choose a backend by registering it.
+That design keeps both humans and AI agents oriented: exported function names are globally legible, data flow is explicit, and hidden runtime behavior is avoided. The same properties keep bundles narrow. A minimal bitmap display gzips to 3.9 KB, while a full match-3 game with tweens, audio, text, and input gzips to 14.9 KB.
 
 ## Try It
 
-Browse the live examples gallery at [flighthq.github.io/flight](https://flighthq.github.io/flight), or run it locally:
+Browse the live examples gallery at [flighthq.ai](https://flighthq.ai), or run it locally:
 
 ```sh
 npm install
@@ -17,18 +17,18 @@ npm run examples
 
 ## Getting Started
 
-Create a display-object scene, register the renderer kinds you use, update the render graph, then draw:
+Create a display-object tree, register the renderer kinds you use, prepare the render graph, then draw:
 
 ```ts
 import {
-  addGraphChild,
+  addNodeChild,
   BitmapKind,
   createBitmap,
   createCanvasElement,
   createCanvasRenderState,
   createDisplayObject,
   defaultCanvasBitmapRenderer,
-  loadImageSourceFromURL,
+  loadImageResourceFromUrl,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
@@ -41,7 +41,7 @@ document.body.appendChild(canvas);
 
 const state = createCanvasRenderState(canvas, {
   backgroundColor: 0xeeddccff,
-  contextAttributes: { alpha: false },
+  sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
 registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
@@ -51,8 +51,8 @@ root.scaleX = pixelRatio;
 root.scaleY = pixelRatio;
 
 const bitmap = createBitmap();
-bitmap.data.image = await loadImageSourceFromURL('assets/wabbit_alpha.png');
-addGraphChild(root, bitmap);
+bitmap.data.image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
+addNodeChild(root, bitmap);
 
 function enterFrame(): void {
   if (prepareDisplayObjectRender(state, root)) {
@@ -66,87 +66,59 @@ function enterFrame(): void {
 enterFrame();
 ```
 
-The same scene renders through DOM or WebGL2 by creating the matching render state and registering that backend's renderers — `createWebGLRenderState` with `defaultWebGLBitmapRenderer` and `renderWebGLDisplayObject`, or the `*DOM*` equivalents — with no change to the scene graph itself.
+The same tree can render through DOM, WebGL2, or WebGPU by creating that backend's render state and registering that backend's renderers. The display objects stay plain data; backend work remains explicit.
 
-### Animation
+## Breadth
 
-The application package provides a request-animation-frame loop with typed update and render signals:
+Flight currently spans 128 workspace packages. The public API can be inspected with:
 
-```ts
-import {
-  connectSignal,
-  createApplication,
-  createTween,
-  createTweenManager,
-  invalidateRender,
-  Quad,
-  startApplicationLoop,
-  updateTweens,
-} from '@flighthq/sdk';
-
-const app = createApplication();
-const tweens = createTweenManager();
-
-const tween = createTween(tweens, sprite, 1000, { x: 400, alpha: 0 }, { ease: Quad.easeOut });
-connectSignal(tween.onUpdate, () => invalidateRender(sprite));
-
-connectSignal(app.onUpdate, (deltaMs) => updateTweens(tweens, deltaMs));
-connectSignal(app.onRender, () => {
-  if (prepareDisplayObjectRender(state, root)) {
-    render(root);
-  }
-});
-
-startApplicationLoop(app);
+```sh
+npm run api
+npm run api -- --json
 ```
 
-### Interaction
+Major areas:
 
-Wire up pointer events on any scene node. Register a hit-test strategy once, then create an interaction manager and connect it to the input system:
+| Area | Packages and capabilities |
+| --- | --- |
+| Core model | `@flighthq/types`, `@flighthq/entity`, `@flighthq/node`, `@flighthq/signals`, `@flighthq/log`, `@flighthq/debug` |
+| Math and geometry | `@flighthq/math`, `@flighthq/geometry`, `@flighthq/path`, `@flighthq/path-boolean`, `@flighthq/clip`, `@flighthq/binpack` |
+| 2D graph | `@flighthq/displayobject`, `@flighthq/shape`, `@flighthq/sprite`, `@flighthq/bitmaptext`, `@flighthq/text`, `@flighthq/textureatlas`, `@flighthq/tileset` |
+| Renderers | `@flighthq/render`, `@flighthq/displayobject-canvas`, `@flighthq/displayobject-dom`, `@flighthq/render-gl`, `@flighthq/displayobject-gl`, `@flighthq/render-wgpu`, `@flighthq/displayobject-wgpu` |
+| Effects and pixels | `@flighthq/adjustments`, `@flighthq/effects`, `@flighthq/effects-canvas`, `@flighthq/effects-gl`, `@flighthq/effects-wgpu`, `@flighthq/surface`, `@flighthq/capture` |
+| 3D | `@flighthq/scene`, `@flighthq/mesh`, `@flighthq/materials`, `@flighthq/lighting`, `@flighthq/texture`, `@flighthq/camera`, `@flighthq/skeleton`, `@flighthq/picking`, `@flighthq/scene-gl`, `@flighthq/scene-wgpu` |
+| Text | `@flighthq/textlayout`, `@flighthq/textshaper`, `@flighthq/textshaper-canvas`, `@flighthq/textsegment`, `@flighthq/textbidi`, `@flighthq/textinput`, `@flighthq/glyphatlas`, `@flighthq/bitmapfont`, `@flighthq/text-markup` |
+| Animation and simulation | `@flighthq/easing`, `@flighthq/tween`, `@flighthq/spring`, `@flighthq/animation`, `@flighthq/timeline`, `@flighthq/movieclip`, `@flighthq/spritesheet`, `@flighthq/motionpath`, `@flighthq/clock`, `@flighthq/particles`, `@flighthq/particleemitter` |
+| Game primitives | `@flighthq/camera2d`, `@flighthq/collision`, `@flighthq/spatial`, `@flighthq/flow`, `@flighthq/snapshot`, `@flighthq/interaction`, `@flighthq/input` |
+| Assets and codecs | `@flighthq/assets`, `@flighthq/loader`, `@flighthq/image`, `@flighthq/image-codec`, `@flighthq/audio`, `@flighthq/video`, `@flighthq/font`, plus atlas, sprite, tilemap, bitmap-font, texture, path, shape, particle, scene, XML, and text-markup format packages |
+| Application and media | `@flighthq/application`, `@flighthq/app`, `@flighthq/media`, `@flighthq/mediasession`, `@flighthq/intl`, `@flighthq/useragent` |
+| Platform and hosts | Clipboard, dialog, filesystem, notifications, share, shell, menu, tray, shortcut, screen, power, storage, lifecycle, connectivity, device, sensors, keyboard, geolocation, webcam, permissions, net, socket, IPC, protocol, updater, and host adapters for Electron, Tauri, and Capacitor |
+| Tooling | `@flighthq/tool-capture`, functional/example capture baselines, renderer parity checks, API/export/package/order/size validation scripts |
+| Convenience barrel | `@flighthq/sdk` re-exports the packages for application code and examples |
 
-```ts
-import {
-  attachPointerInput,
-  connectInputToInteraction,
-  connectSignal,
-  createInputManager,
-  createInteractionManager,
-  DisplayObjectKind,
-  getInteractionSignals,
-  graphHitTestLocalBounds,
-  invalidateRender,
-  registerHitTestPoint,
-} from '@flighthq/sdk';
-
-registerHitTestPoint(DisplayObjectKind, graphHitTestLocalBounds);
-
-const interaction = createInteractionManager(root);
-const input = createInputManager();
-attachPointerInput(input, canvas);
-connectInputToInteraction(input, interaction, pixelRatio);
-
-const signals = getInteractionSignals(bitmap);
-connectSignal(signals.onPointerDown, () => {
-  bitmap.alpha = 0.5;
-  invalidateRender(bitmap);
-});
-connectSignal(signals.onPointerUp, () => {
-  bitmap.alpha = 1;
-  invalidateRender(bitmap);
-});
-```
-
-### Sound
-
-Load an audio source with fallback formats, then play it:
+Applications and examples usually import from `@flighthq/sdk`:
 
 ```ts
-import { loadAudioSourceFromURLs, playAudioSource } from '@flighthq/sdk';
-
-const sound = await loadAudioSourceFromURLs([{ url: 'assets/click.ogg' }, { url: 'assets/click.mp3' }]);
-
-connectSignal(signals.onPointerDown, () => playAudioSource(sound));
+import { addNodeChild, createBitmap, createShape } from '@flighthq/sdk';
 ```
+
+Library code should prefer the smallest package root that provides the needed API:
+
+```ts
+import { createTween, updateTweens } from '@flighthq/tween';
+```
+
+## Rendering Model
+
+Flight separates authored data from backend work:
+
+1. Build a graph from display objects, sprites, text, shapes, tilemaps, particles, or 3D scene nodes.
+2. Create a backend render state for Canvas 2D, DOM, WebGL2, or WebGPU.
+3. Register only the renderers and effect backends the scene needs.
+4. Run the explicit prepare/update pass.
+5. Draw through the selected backend.
+
+Canvas and DOM are lightweight host-web paths. WebGL2 and WebGPU add GPU render targets, cached pipelines, shader/material registries, post-processing, clipping, masking, velocity, render caches, 2D batching, and 3D forward renderers.
 
 ## Examples
 
@@ -155,15 +127,17 @@ connectSignal(signals.onPointerDown, () => playAudioSource(sound));
 | `addinganimation`   | Bitmap animation with tweens                     |
 | `addingtext`        | Text rendering with a custom font                |
 | `animatedsprite`    | Spritesheet animation                            |
+| `batchloading`      | Batch asset loading with progress                |
 | `bunnymark`         | Bitmap batching benchmark                        |
 | `comparebitmapdata` | Surface and bitmap-data comparison               |
 | `displayingabitmap` | Minimal bitmap display                           |
 | `drawingshapes`     | Shape primitives, lines, curves, and polygons    |
 | `nyancat`           | Frame animation                                  |
 | `piratepig`         | Match-3 game with tweens, audio, text, and input |
+| `playingvideo`      | Video playback through media channels            |
 | `playingsound`      | Sound playback with pause, resume, and fades     |
-| `playingvideo`      | Video playback through the media channels        |
-| `sparktrail`        | WebGL particle-emitter trail                     |
+| `renderview`        | Render-to-texture style composition              |
+| `sparktrail`        | Particle-emitter trail                           |
 | `textmetrics`       | Text measurement and layout metrics              |
 | `tweenexample`      | Animated circles using tweens and timers         |
 | `usingtilemap`      | Tilemap rendering                                |
@@ -174,57 +148,16 @@ Build a specific example:
 npm run build --workspace=examples/drawingshapes
 ```
 
-Run a renderer-specific example dev server. Use whichever backend the example implements:
+Run a renderer-specific example dev server:
 
 ```sh
 npm run dev:canvas --workspace=examples/textmetrics
 npm run dev:dom --workspace=examples/textmetrics
 npm run dev:webgl --workspace=examples/textmetrics
+npm run dev:webgpu --workspace=examples/textmetrics
 ```
 
-## Packages
-
-Applications and examples import from the SDK barrel:
-
-```ts
-import { addGraphChild, createBitmap, createShape } from '@flighthq/sdk';
-```
-
-Library code should prefer the smallest package or subpath that provides the needed API.
-
-| Package | Purpose |
-| --- | --- |
-| `@flighthq/application` | Application loop and browser window/host lifecycle helpers |
-| `@flighthq/resources` | Image, audio, video, and font resources plus texture atlas and tileset utilities |
-| `@flighthq/loader` | Group resource loading with progress and completion signals |
-| `@flighthq/entity` | Entity, node, runtime, and binding primitives |
-| `@flighthq/filters` | Blur, glow, bevel, drop-shadow, color-matrix, and convolution filters with Canvas/CSS and WebGL backends |
-| `@flighthq/geometry` | Vectors, matrices, rectangles, typed-array helpers, and pools |
-| `@flighthq/input` | Keyboard, pointer, wheel, and text input normalization |
-| `@flighthq/interaction` | Hit testing, pointer dispatch, and object overlap detection |
-| `@flighthq/materials` | Color transform and material utilities |
-| `@flighthq/media` | Audio and video playback channels |
-| `@flighthq/render` | Renderer registration, render state/queue, render nodes, and the update pipeline |
-| `@flighthq/render-canvas` | Canvas 2D renderer |
-| `@flighthq/render-dom` | DOM renderer |
-| `@flighthq/render-webgl` | WebGL2 renderer |
-| `@flighthq/node` | Shared hierarchy, transforms, bounds, appearance, and invalidation |
-| `@flighthq/displayobject` | Display-object graph: bitmaps, shapes, text, containers, masks, and video |
-| `@flighthq/sprite` | Sprite graph: sprites, quad batches, and tilemaps |
-| `@flighthq/scene` | Experimental 3D world graph |
-| `@flighthq/sdk` | Application-level convenience barrel |
-| `@flighthq/signals` | Strictly typed signals and slots |
-| `@flighthq/spritesheet` | Spritesheet frame animation playback |
-| `@flighthq/surface` | Pixel-level image manipulation using browser `ImageData` |
-| `@flighthq/textinput` | Editable text helpers: selection, replacement, and input restriction |
-| `@flighthq/textlayout` | Renderer-agnostic glyph measuring and text layout |
-| `@flighthq/timeline` | Timeline-based animation sequencing |
-| `@flighthq/timeline-spritesheet` | Spritesheet animation driven by timelines |
-| `@flighthq/tween` | Tween managers, tweens, and timers |
-| `@flighthq/easing` | Easing functions for animation |
-| `@flighthq/types` | Shared interfaces, kind symbols, and cross-package contracts |
-
-## Contributing
+## Repository
 
 ```sh
 git clone https://github.com/flighthq/flight.git
@@ -235,7 +168,16 @@ npm install
 ```text
 packages/      Workspace packages published as @flighthq/*
 examples/      Standalone Vite example apps
-tests/         Integration, API, browser API, and size tests
-tools/         Development tools, including the examples gallery
+functional/    Renderer-focused functional scenes and baselines
+tools/         Gallery, functional harness, capture tooling, and repo utilities
 scripts/       Validation, API, coverage, ordering, size, and build scripts
+```
+
+Useful checks:
+
+```sh
+npm run check
+npm run test
+npm run size
+npm run test:functional
 ```
