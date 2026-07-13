@@ -546,6 +546,54 @@ function checkSdkBarrelSync(): BarrelSyncError[] {
     }
   }
 
+  // --- check SDK group file coverage ---
+  // Every package in the barrel must appear in exactly one group file (src/*.ts excluding
+  // index.ts and test files). A package missing from all groups or appearing in multiple
+  // groups is an error.
+
+  const sdkSrcDir = join(sdkDir, 'src');
+  const groupFiles = readdirSync(sdkSrcDir)
+    .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && !f.endsWith('.test.ts'))
+    .sort();
+
+  const groupExports = new Map<string, string[]>();
+  for (const file of groupFiles) {
+    const groupName = file.replace('.ts', '');
+    const source = readFileSync(join(sdkSrcDir, file), 'utf-8');
+    for (const line of source.split('\n')) {
+      const match = /^export \* from '(@flighthq\/[^']+)';/.exec(line.trim());
+      if (match) {
+        const pkgName = match[1];
+        if (!groupExports.has(pkgName)) groupExports.set(pkgName, []);
+        groupExports.get(pkgName)!.push(groupName);
+      }
+    }
+  }
+
+  for (const name of [...barrelExports].sort()) {
+    const groups = groupExports.get(name);
+    if (!groups || groups.length === 0) {
+      errors.push({
+        label: `@flighthq/sdk group coverage: ${name} not in any group file`,
+        detail: `add "export * from '${name}';" to one of: ${groupFiles.join(', ')}`,
+      });
+    } else if (groups.length > 1) {
+      errors.push({
+        label: `@flighthq/sdk group overlap: ${name} in multiple groups`,
+        detail: `appears in: ${groups.join(', ')} — keep it in exactly one`,
+      });
+    }
+  }
+
+  for (const [name, groups] of [...groupExports.entries()].sort()) {
+    if (!barrelExports.has(name)) {
+      errors.push({
+        label: `@flighthq/sdk group ${groups[0]} exports ${name} not in barrel`,
+        detail: `${name} is in ${groups[0]}.ts but not in index.ts — add it to the barrel or remove from the group`,
+      });
+    }
+  }
+
   return errors;
 }
 
