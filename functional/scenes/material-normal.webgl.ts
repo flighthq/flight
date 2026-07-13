@@ -17,6 +17,7 @@ import {
   createVector3,
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
+  getSurfacePixelRgb,
   normalizeVector3,
   prepareSceneRender,
   registerNormalGlMaterial,
@@ -119,8 +120,9 @@ const lights = {
 render(scene, camera, lights);
 
 // Oracle: not blank + orientation-varying color. Sample the center (normal facing the camera) and an
-// on-sphere offset point (a tilted normal); assert the center is not blank and that the two differ —
-// proof that color tracks the world normal rather than being a flat fill.
+// on-sphere offset point (a tilted normal); assert the center is not blank and that the two differ in
+// RGB — proof that color tracks the world normal rather than being a flat fill. Luminance alone is too
+// weak here because hue shifts in encoded normals can preserve nearly the same perceived brightness.
 export function assertRender(surface: Readonly<Surface>): void {
   const cx = Math.floor(surface.width / 2);
   const cy = Math.floor(surface.height / 2);
@@ -128,16 +130,30 @@ export function assertRender(surface: Readonly<Surface>): void {
   const offsetX = Math.floor(surface.width * 0.07);
 
   const center = getSurfacePixelLuminance(surface, cx, cy);
-  const offset = getSurfacePixelLuminance(surface, cx + offsetX, cy);
+  const centerRgb = getSurfacePixelRgb(surface, cx, cy);
+  const offsetRgb = getSurfacePixelRgb(surface, cx + offsetX, cy);
+  const delta = maxRgbDelta(centerRgb, offsetRgb);
 
   if (center <= 16) {
     throw new Error(`[material-normal] surface is blank (center luminance ${center}) — mesh did not render`);
   }
-  if (Math.abs(center - offset) <= 12) {
+  if (delta <= 24) {
     throw new Error(
-      `[material-normal] no normal variation: center (${center}) and offset (${offset}) are nearly equal — color appears to be a flat fill, not the world normal`,
+      `[material-normal] no normal variation: center (${formatRgb(centerRgb)}) and offset (${formatRgb(offsetRgb)}) are nearly equal — color appears to be a flat fill, not the world normal`,
     );
   }
+}
+
+function maxRgbDelta(a: number, b: number): number {
+  return Math.max(
+    Math.abs(((a >>> 16) & 0xff) - ((b >>> 16) & 0xff)),
+    Math.abs(((a >>> 8) & 0xff) - ((b >>> 8) & 0xff)),
+    Math.abs((a & 0xff) - (b & 0xff)),
+  );
+}
+
+function formatRgb(rgb: number): string {
+  return `#${rgb.toString(16).padStart(6, '0')}`;
 }
 
 // Barrel so TypeScript resolves the `./render` import in app.ts; the functional harness routes it to the

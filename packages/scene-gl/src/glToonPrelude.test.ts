@@ -56,6 +56,7 @@ describe('ensureGlToonProgram', () => {
 describe('getGlToonFragmentSourceForKey', () => {
   it('includes the light block and gates feature defines on their flag', () => {
     expect(getGlToonFragmentSourceForKey(FLAT)).toContain('u_directional');
+    expect(getGlToonFragmentSourceForKey(FLAT)).toContain('#define MAX_FORWARD_LIGHTS');
     expect(getGlToonFragmentSourceForKey(FLAT)).not.toContain('#define HAS_BASE_COLOR_MAP');
     expect(getGlToonFragmentSourceForKey(FLAT)).not.toContain('#define HAS_RAMP');
     expect(getGlToonFragmentSourceForKey({ ...FLAT, hasBaseColorMap: true })).toContain('#define HAS_BASE_COLOR_MAP');

@@ -112,12 +112,11 @@ describe('getWgpuPbrModuleBody', () => {
     expect(body).toContain('if (TRANSMISSION)');
   });
 
-  // The image-based-lighting bindings live at group(4) (shadow already took group 3), and the ambient term
-  // applies the split-sum IBL (diffuse irradiance + prefiltered specular × BRDF LUT) when enabled, mirroring
-  // scene-gl's sampleIblAmbient. A no-baked-IBL draw binds dummies gated off by ibl.params.x.
-  it('declares the group(4) IBL bindings and applies the split-sum ambient term', () => {
+  // Image-based-lighting shares group(3) with shadow so PBR stays within WebGPU's required
+  // maxBindGroups minimum of 4.
+  it('declares the group(3) IBL bindings and applies the split-sum ambient term', () => {
     const body = getWgpuPbrModuleBody();
-    expect(body).toContain('@group(4) @binding(0) var<uniform> ibl');
+    expect(body).toContain('@group(3) @binding(3) var<uniform> ibl');
     expect(body).toContain('var iblIrradiance : texture_cube<f32>');
     expect(body).toContain('var iblPrefiltered : texture_cube<f32>');
     expect(body).toContain('var iblBrdf : texture_2d<f32>');

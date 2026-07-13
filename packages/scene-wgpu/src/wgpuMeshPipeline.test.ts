@@ -11,6 +11,7 @@ import {
   ensureWgpuFrameBindGroup,
   ensureWgpuIblSampleBindGroup,
   ensureWgpuIblSampleLayout,
+  ensureWgpuPbrSampleLayout,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuSceneLayouts,
   ensureWgpuScenePipeline,
@@ -67,6 +68,18 @@ function makeShadowPipeline(state: ReturnType<typeof makeWgpuSceneState>['state'
   });
 }
 
+function makePbrSamplePipeline(state: ReturnType<typeof makeWgpuSceneState>['state']) {
+  const module = state.device.createShaderModule({ code: '' });
+  const materialBindGroupLayout = state.device.createBindGroupLayout({ entries: [] });
+  return createWgpuMeshPipeline(state, {
+    doubleSided: false,
+    format: 'bgra8unorm',
+    materialBindGroupLayout,
+    module,
+    pbrSampleBindGroupLayout: ensureWgpuPbrSampleLayout(state),
+  });
+}
+
 describe('beginWgpuMeshDraw', () => {
   it('stores the active pipeline, sets it, and binds the frame group', () => {
     const { fake, state } = makeWgpuSceneState();
@@ -91,6 +104,13 @@ describe('beginWgpuMeshDraw', () => {
     beginWgpuMeshDraw(state, makeShadowPipeline(state));
     expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
   });
+
+  it('binds the combined PBR sample group at group(3)', () => {
+    const { fake, state } = makeWgpuSceneState();
+    ensureWgpuFrameBindGroup(state);
+    beginWgpuMeshDraw(state, makePbrSamplePipeline(state));
+    expect(fake.calls.some((c) => c.name === 'setBindGroup' && c.args[0] === 3)).toBe(true);
+  });
 });
 
 describe('createWgpuMeshPipeline', () => {
@@ -108,6 +128,16 @@ describe('createWgpuMeshPipeline', () => {
     const { fake, state } = makeWgpuSceneState();
     const pipeline = makeShadowPipeline(state);
     expect(pipeline.hasShadowGroup).toBe(true);
+    const layoutCall = fake.calls.filter((c) => c.name === 'createPipelineLayout').at(-1);
+    expect((layoutCall!.args[0] as { bindGroupLayouts: unknown[] }).bindGroupLayouts.length).toBe(4);
+  });
+
+  it('uses one group(3) sample layout for PBR shadow and IBL resources', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const pipeline = makePbrSamplePipeline(state);
+    expect(pipeline.hasPbrSampleGroup).toBe(true);
+    expect(pipeline.hasShadowGroup).toBe(false);
+    expect(pipeline.hasIblGroup).toBe(false);
     const layoutCall = fake.calls.filter((c) => c.name === 'createPipelineLayout').at(-1);
     expect((layoutCall!.args[0] as { bindGroupLayouts: unknown[] }).bindGroupLayouts.length).toBe(4);
   });

@@ -7,7 +7,7 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 // Bakes an Environment's source radiance cubemap into the split-sum image-based-lighting set — a diffuse
 // irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF integration LUT —
 // and stores it on the scene runtime as `runtime.ibl`. The lit PBR bind reads that to light every PBR draw
-// from the environment (see wgpuPbrPrelude's sampleIblAmbient / the group(4) IBL bind). The WGSL mirror of
+// from the environment (see wgpuPbrPrelude's sampleIblAmbient / the PBR sample bind). The WGSL mirror of
 // scene-gl's bakeEnvironmentIbl: an explicit pass the app sequences once when the environment is set (the
 // bake is the substantial cost); a no-op when the environment has no complete source cube. Re-baking
 // replaces the prior set.
@@ -88,6 +88,8 @@ export function destroyWgpuSceneIbl(state: WgpuRenderState): void {
   scene.iblSampleLayout = null;
   scene.iblSampleBindGroup = null;
   scene.iblSampleCubeView = null;
+  scene.pbrSampleBindGroup = null;
+  scene.pbrSampleIblCubeView = null;
   _bakePrograms.delete(state);
 }
 
