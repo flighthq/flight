@@ -1,5 +1,4 @@
 export * from '@flighthq/animation';
-export * from '@flighthq/clock';
 export * from '@flighthq/easing';
 export * from '@flighthq/motionpath';
 export * from '@flighthq/movieclip';
