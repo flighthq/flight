@@ -11,6 +11,7 @@ import {
   ensureWgpuFrameBindGroup,
   ensureWgpuIblSampleBindGroup,
   ensureWgpuIblSampleLayout,
+  ensureWgpuPbrSampleBindGroup,
   ensureWgpuPbrSampleLayout,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuSceneLayouts,
@@ -213,6 +214,50 @@ describe('ensureWgpuIblSampleLayout', () => {
     const b = ensureWgpuIblSampleLayout(state);
     expect(a).toBe(b);
     expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
+  });
+});
+
+describe('ensureWgpuPbrSampleBindGroup', () => {
+  it('packs shadow and IBL sample bindings into one cached group', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const a = ensureWgpuPbrSampleBindGroup(state);
+    const bindGroupCall = fake.calls.filter((c) => c.name === 'createBindGroup').at(-1);
+    const made = fake.calls.filter((c) => c.name === 'createBindGroup').length;
+    const b = ensureWgpuPbrSampleBindGroup(state);
+
+    expect(a).toBe(b);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(made);
+    expect((bindGroupCall!.args[0] as { entries: unknown[] }).entries.length).toBe(8);
+    expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('rebuilds the group when a shadow map becomes present', () => {
+    const { fake, state } = makeWgpuSceneState();
+    ensureWgpuPbrSampleBindGroup(state);
+    const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
+
+    getWgpuSceneRuntime(state).shadow = {
+      depthTexture: {} as GPUTexture,
+      depthView: {} as GPUTextureView,
+      matrix: createMatrix4(),
+    };
+
+    ensureWgpuPbrSampleBindGroup(state);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(before + 1);
+  });
+});
+
+describe('ensureWgpuPbrSampleLayout', () => {
+  it('creates the combined PBR sample layout once per state', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const a = ensureWgpuPbrSampleLayout(state);
+    const layoutCall = fake.calls.filter((c) => c.name === 'createBindGroupLayout').at(-1);
+    const made = fake.calls.filter((c) => c.name === 'createBindGroupLayout').length;
+    const b = ensureWgpuPbrSampleLayout(state);
+
+    expect(a).toBe(b);
+    expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
+    expect((layoutCall!.args[0] as { entries: unknown[] }).entries.length).toBe(8);
   });
 });
 
