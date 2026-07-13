@@ -1,80 +1,58 @@
 ---
 package: '@flighthq/keyboard'
-status: partial
-score: 45
-updated: 2026-06-25
+status: solid
+score: 80
+updated: '2026-07-13'
 ingested:
   - status.md
-  - reviews/depth/keyboard.md
-  - source
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
+  - charter.md
+  - source (packages/keyboard/src)
+  - packages/types/src/Keyboard.ts, SoftKeyboardEasingKind.ts
+  - packages/keyboard/README.md
 ---
 
-# keyboard — Review (merge gate: integration-b2824e3d8 → origin/main)
+# keyboard — Review
 
 ## Verdict
 
-**`revise` — do not merge as-is.** This is a merge-gate review of the **delta** (`incoming/integration-b2824e3d8/head` vs the approved baseline `origin/main` `eb73c3d74`), not a survey of the package's eventual shape. The keyboard _source_ change in isolation is the same idiomatic event-capability upgrade a prior review scored 90 against the builder worktree `<67dc46d64>` — will/did phases, the frame rect, the native control extensions, and a Chromium VirtualKeyboard web path. **But this integration branch carries the keyboard package's source upgrade without the `@flighthq/types` changes it depends on.** The head `@flighthq/types` is byte-identical to base for keyboard: `Keyboard.ts` still has the 3-signal `SoftKeyboard`, the 2-field `SoftKeyboardInfo`, and the bare `subscribe(() => void)`; none of the four new `SoftKeyboard*.ts` type files exist; `index.ts` exports zero `SoftKeyboard*` symbols. The head keyboard package imports five symbols and several fields that **are defined nowhere in the head bundle**. It cannot typecheck or build. That is a hard merge blocker regardless of the source's standalone quality.
+**`solid` — 80/100.** The prior review (2026-06-25, 45/partial) was a merge-gate review of an integration slice that carried the keyboard source upgrade without its `@flighthq/types` companion and therefore did not compile. **That blocker is resolved:** `packages/types/src/Keyboard.ts` now declares the full surface the source was written against — `SoftKeyboardInfo` with `x`/`y`/`width` rect fields, `SoftKeyboardPhase`, `SoftKeyboardTransition`, the phase+transition `subscribe` signature, the seven optional native-control backend methods, and the 9-signal `SoftKeyboard` — with `SoftKeyboardEasingKind.ts` alongside. Everything compiles and every claim of the earlier standalone 90-scoring read is verified in source, with the caveats below.
 
-The score (45) reflects the **integration state**, not the source's intrinsic quality: a package that does not compile against its own dependency in the branch being merged is not `solid`. The earlier 90 stands only against `<67dc46d64>`, where the types shipped alongside.
+Judged against this package's own charter boundary (the global soft keyboard; per-field IME/input traits belong to `@flighthq/textinput`, raw key events to `@flighthq/input`), the surface is close to the industry-reference shape (Capacitor's Keyboard plugin): show/hide, visibility + height + frame rect, will/did lifecycle signals with transition metadata, and the native-control quartet (resize mode, style, accessory bar, scroll assist). The web backend is a genuine reference implementation — Chromium VirtualKeyboard API with `visualViewport` fallback — and the seam is shaped so native hosts can hit full fidelity (will-phase with real timing, rect geometry, all control methods). Held below 90: the easing tier is a dead type-only placeholder, the kind-const vocabulary is thinner than the status log claims, and no native backend has ever exercised the will-phase/control paths.
 
-## The blocker — dangling `@flighthq/types` imports (standard 7: compiles)
+## Present capabilities (verified against source)
 
-The delta `b2824e3d8:packages/keyboard/src/keyboard.ts` opens with:
+20 exports in `packages/keyboard/src/keyboard.ts`, 60 tests, `describe` blocks alphabetized 1:1 with exports, plus a package README (functions table, nine-signal table, capability matrix, keyboard-aware-layout recipe):
 
-```ts
-import type {
-  SoftKeyboard,
-  SoftKeyboardBackend,
-  SoftKeyboardInfo,
-  SoftKeyboardPhase,
-  SoftKeyboardResizeMode,
-  SoftKeyboardStyleKind,
-  SoftKeyboardTransition,
-} from '@flighthq/types';
-import { SoftKeyboardResizeNoneKind } from '@flighthq/types';
-```
+- **Entity quartet:** `createSoftKeyboard` (9 inert signals), `attachSoftKeyboard` (idempotent; will-phase dispatches `onWillShow`/`onWillHide`/`onWillResize` with the transition, did-phase dispatches `onDidResize`+`onResize` and the show/hide edge pairs with alias co-emission; visibility edge tracked across phases), `detachSoftKeyboard`, `disposeSoftKeyboard`. Subscriptions in a `WeakMap`.
+- **Snapshot reads:** `getSoftKeyboardInfo(out)` (alias-safe out-param), `getSoftKeyboardHeight()` (zero-alloc via module scratch), allocators `createSoftKeyboardInfo` / `createSoftKeyboardTransition`.
+- **Control:** `showSoftKeyboard` / `hideSoftKeyboard` — real operations when `navigator.virtualKeyboard` exists, documented no-ops otherwise.
+- **Native-control extensions:** `get/setSoftKeyboardResizeMode`, `setSoftKeyboardStyle`, `is/setSoftKeyboardAccessoryBarVisible`, `is/setSoftKeyboardScrollAssistEnabled` — each a flat delegation to an optional backend method with a sentinel (`SoftKeyboardResizeNoneKind` / `false`) or no-op fallback. Never throws.
+- **Backend seam:** `getSoftKeyboardBackend` / `setSoftKeyboardBackend` / `createWebSoftKeyboardBackend`. Web geometry prefers the VirtualKeyboard `boundingRect`, falls back to `visualViewport` shrink inference; emits `'did'` only with `durationSeconds: 0`; SSR-safe (guards on `window`/`navigator`, degrades to height 0 and no-op subscribe).
 
-And `b2824e3d8:packages/keyboard/src/keyboard.test.ts` additionally imports the value consts `SoftKeyboardResizeBodyKind`, `SoftKeyboardResizeNoneKind`, `SoftKeyboardStyleDarkKind`, `SoftKeyboardStyleDefaultKind`, plus the types `SoftKeyboardPhase`, `SoftKeyboardResizeMode`, `SoftKeyboardTransition`.
+Test depth is real: multi-listener dispatch, signal priority ordering, `cancelSignal` chains, will→did ordering, rapid show/hide bursts, re-entrant detach/re-attach, both web geometry paths (VirtualKeyboard and visualViewport stubs), and the show/hide VirtualKeyboard drive.
 
-In the head bundle:
+The 2026-07-02 charter Decision (document the `transition.height` frozen-at-0 limitation) is **implemented**: `keyboard.ts` carries the durable comment stating the web backend fires `'did'` only and that native hosts emitting `'will'` must populate `transition.height`.
 
-- `head/packages/types/src/Keyboard.ts` is **identical to base** — `SoftKeyboardInfo { visible; height }` (no `x`/`y`/`width`), `SoftKeyboardBackend.subscribe(listener: () => void)` (no `phase`/`transition` parameter, no optional `getResizeMode`/`setResizeMode`/`setStyle`/`getAccessoryBarVisible`/`setAccessoryBarVisible`/`getScrollAssistEnabled`/`setScrollAssistEnabled` methods), and a 3-signal `SoftKeyboard` (`onShow`/`onHide`/`onResize` only — no `onWill*`/`onDid*`).
-- `head/packages/types/src/index.ts` exports **no** `SoftKeyboard*` symbols (`grep "SoftKeyboard" head/packages/types/src/index.ts` → empty).
-- The four type files the prior review verified at `<67dc46d64>` — `SoftKeyboardTransition.ts`, `SoftKeyboardEasingKind.ts`, `SoftKeyboardResizeMode.ts`, `SoftKeyboardStyleKind.ts` — **do not exist** in `head/packages/types/src/`.
-- A whole-bundle grep confirms `SoftKeyboardResizeNoneKind`, `SoftKeyboardPhase`, `SoftKeyboardTransition`, `SoftKeyboardResizeMode` are **defined nowhere** under `head/packages/`.
+## Gaps (AAA-depth judgment)
 
-Concrete consequences, each a `tsc` error against head types:
+1. **The easing tier is a dead placeholder.** `SoftKeyboardEasingKind` (5 kinds, closed union) exists in types but nothing references it: `SoftKeyboardTransition` has no `easing` field and the keyboard package never imports it. Either wire it (adds the field + the kind vocabulary native backends populate) or remove it — a typed symbol with zero consumers is header noise. Charter Open direction (the `@flighthq/easing`-dependency question only arises if a kind→curve lookup is wanted; the field itself needs no dependency).
+2. **Kind-const vocabulary is thinner than the status log claims.** Source ships only `SoftKeyboardResizeNoneKind`/`SoftKeyboardResizeBodyKind` and `SoftKeyboardStyleDefaultKind`/`SoftKeyboardStyleDarkKind`. The claimed `SoftKeyboardResizeNativeKind`, `SoftKeyboardResizeIonicKind`, and `SoftKeyboardStyleLightKind` do **not** exist. The Capacitor-vocabulary coverage (`native`, `ionic` resize modes; `light` style) is incomplete — small, but exactly what a native backend will reach for first.
+3. **No native backend proof.** The will-phase path, `transition.height`, `senderless` rect semantics for floating/split keyboards, and all seven control methods have only ever run against fakes. The seam looks right; fidelity is unproven until a `host-*` backend lands (cross-package).
+4. **Types layout deviation.** `SoftKeyboardTransition`, `SoftKeyboardResizeMode`, `SoftKeyboardStyleKind`, `SoftKeyboardPhase`, `SoftKeyboardInfo`, `SoftKeyboardBackend`, and `SoftKeyboard` all live in one `Keyboard.ts` rather than one-concept-per-file (only `SoftKeyboardEasingKind` got its own file). The status log's claim of four separate type files is false in the current tree. Consistent with other platform-suite headers, but noted against the types-layout convention.
+5. **No diagnostics layer.** The many silent no-ops (unsupported control methods, SSR degradation, VirtualKeyboard-absent show/hide) have no `explain*`/`enable*Guards` seams. Suite-wide pattern.
 
-1. `import type { SoftKeyboardPhase, SoftKeyboardResizeMode, SoftKeyboardStyleKind, SoftKeyboardTransition }` — four type imports with no declaration. (`b2824e3d8:packages/keyboard/src/keyboard.ts:2-10`)
-2. `import { SoftKeyboardResizeNoneKind }` — value import with no declaration; the test imports three more such consts. (`b2824e3d8:packages/keyboard/src/keyboard.ts:10`, `keyboard.test.ts:8-13`)
-3. `createSoftKeyboard()` returns an object with `onWillShow … onDidResize` (`b2824e3d8:packages/keyboard/src/keyboard.ts:56-66`) but the head `SoftKeyboard` interface declares only `onShow`/`onHide`/`onResize` — excess-property / assignability error.
-4. `createSoftKeyboardInfo()` returns `{ visible, height, x, y, width }` (`b2824e3d8:packages/keyboard/src/keyboard.ts:69`) against a 2-field `SoftKeyboardInfo` — excess-property error; and every `out.x = … out.width = …` write in `createWebSoftKeyboardBackend.getInfo` references fields the type does not have.
-5. `backend.subscribe((phase, transition) => …)` (`b2824e3d8:packages/keyboard/src/keyboard.ts:11`) does not match `subscribe(listener: () => void)`; and `backend.getResizeMode?.()` / `setResizeMode?.()` / `setStyle?.()` / `getAccessoryBarVisible?.()` / `setAccessoryBarVisible?.()` / `getScrollAssistEnabled?.()` / `setScrollAssistEnabled?.()` reference optional methods absent from the head `SoftKeyboardBackend`.
+Resolved-in-source since the last review, worth recording: `SoftKeyboardResizeMode` and `SoftKeyboardStyleKind` are now **open** string types (`= string`) with const kinds — the charter's open-vs-closed question (fork B) is de facto answered *open* for those two, while `SoftKeyboardEasingKind` remains a closed union. If that split is intentional, the charter should bless it; if not, it is drift.
 
-This is the textbook merge-gate failure: a feature branch was sliced so that the consumer (`packages/keyboard`) advanced but the header (`packages/types`) did not come with it. The source is good; the **integration** is broken.
+## Charter contradictions
 
-## The delta judged in isolation (standards 1–6) — assuming types were present
+None of substance. The What-it-is paragraph matches source exactly (including the 20-export shape and the input-package boundary). One nuance: Open direction 3 ("open vs closed kinds — resolve per fork B") is now half-resolved in source (gap 5 note above) without a charter Decision recording it.
 
-To keep the dispatch honest, here is the delta against the other six standards _as if_ the types changes accompanied it. All pass; the only gate failure is the missing dependency above.
+## Contract & docs fit
 
-- **1. Composition / bedrock — PASS.** The native-control commands (`get/setSoftKeyboardResizeMode`, `setSoftKeyboardStyle`, `is/setSoftKeyboardAccessoryBarVisible`, `is/setSoftKeyboardScrollAssistEnabled`) are flat free functions that each delegate to one optional backend method (`b2824e3d8:packages/keyboard/src/keyboard.ts:163-217`). No config-gated branch fuses subjects; the will/did split is one subject (the soft keyboard) modeled across two animation phases, not two subjects bundled. Not over-split either — these are bedrock commands.
-- **2. Naming clarity — PASS.** Every new export carries the full `SoftKeyboard` type word and the correct prefix: `getSoftKeyboardHeight`, `getSoftKeyboardResizeMode`, `setSoftKeyboardResizeMode`, `setSoftKeyboardStyle`, `isSoftKeyboardAccessoryBarVisible`, `setSoftKeyboardAccessoryBarVisible`, `isSoftKeyboardScrollAssistEnabled`, `setSoftKeyboardScrollAssistEnabled`, `createSoftKeyboardTransition`. Self-identifying; nothing abbreviated.
-- **3. Tree-shaking / bundle invariant — PASS.** `package.json` is unchanged (`"sideEffects": false`, single `.` export, deps still only `signals` + `types`). `index.ts` unchanged (`export * from './keyboard'`). New module state (`VirtualKeyboard` interface, `getVirtualKeyboard`, `getWebKeyboardGeometry`) sits at the file bottom after the exports (`b2824e3d8:packages/keyboard/src/keyboard.ts:225-265`); no top-level side effect, no eager registration. The added native-control functions are independently importable; they do not tax `getSoftKeyboardInfo`'s baseline.
-- **4. Registry vs closed union — N/A to the delta.** The keyboard _source_ does no `switch (kind)`; the closed-vs-open `*Kind` question lives in `@flighthq/types` (and is moot here, since those types are absent). Pre-existing Open direction, not introduced by this delta.
-- **5. Subject triad + plurality guard — PASS.** No format/backend mis-homing; this is an event capability with one swappable `*Backend`, exactly the platform-suite shape.
-- **6. Contract hygiene — PASS (in isolation).** `out`-param readers return `out` and are alias-safe; native-control readers return sentinels (`SoftKeyboardResizeNoneKind` / `false`) via `?? `, never throw (`b2824e3d8:packages/keyboard/src/keyboard.ts:165, 178, 184`); `disposeSoftKeyboard` is the correct verb (detach-to-GC; no non-GC resource). The Rust mirror `flighthq-keyboard` still does not exist — a pre-existing conformance gap, unchanged by this delta.
+- **Envelope:** front matter valid; `crate: flighthq-keyboard` — no Rust crate exists (cross-worktree conformance gap).
+- **Self-descriptions:** `package.json` description ("visibility, height, and show/hide/resize signals") omits the frame rect, will/did phases, and the native-control quartet — mildly stale. `agents/packages/map.md` line ("on-screen keyboard visibility/height") is similarly understated. Shared-doc edits, out of sweep scope; README is current and accurate.
+- **README precedent:** this package and `device` set the platform-suite README convention siblings lack.
 
-## Minor, non-blocking observations on the source
+## Candidate open directions
 
-- **Web backend `transition.height` is a frozen 0.** `createWebSoftKeyboardBackend.subscribe` allocates `const transition = { durationSeconds: 0, height: 0 }` once and never updates it before `fire()` (`b2824e3d8:packages/keyboard/src/keyboard.ts:98-99`). The web default only emits `'did'`, and `did`-phase dispatch reads `info.height` fresh — so the stale `transition` is never consumed and this is harmless today. It would matter only if the web backend ever emitted `'will'`. Consistent with the documented "All did-phase only" contract; note as a follow-up, not a fix.
-- **Tests assert the 9-signal shape and rect fields** (`createSoftKeyboard … expect(keyboard.onWillShow).toBeDefined()`, `createSoftKeyboardInfo … toEqual({ visible:false, height:0, x:0, y:0, width:0 })` — `b2824e3d8:packages/keyboard/src/keyboard.test.ts`). These tests are well-formed and mirror the new exports, alphabetized — but they will fail to compile in this branch for the same dangling-types reason. The test quality is fine; the dependency is the problem.
-
-## What must happen before merge
-
-The keyboard source delta is mergeable **only** bundled with the `@flighthq/types` keyboard edits it was written against. Either carry those edits into the integration branch (the four `SoftKeyboard*.ts` files, the rect fields on `SoftKeyboardInfo`, `SoftKeyboardPhase`, the 9-signal `SoftKeyboard`, the phase/transition `subscribe` signature, the optional backend methods, and their `index.ts` re-exports) or hold the keyboard package change back until they land together. See `outgoing/integration/keyboard.md` for the imperative directives.
-
-## Pre-existing Open directions (unchanged by this delta)
-
-These predate the integration and are not merge blockers; they are routed to the charter's Open directions (see `assessment.md`): the keyboard↔textinput boundary, `SoftKeyboardEasingKind` scope + wiring + value namespacing, open-vs-closed `*Kind` unions (fork B at the type level), safe-area / `@flighthq/device` coordination, the duplicate `types` re-export site, the understated Package Map line, and Rust conformance timing.
+Carried from charter (all still live): the keyboard↔textinput boundary for per-field traits; easing wiring-or-removal (gap 1); the kind open/closed blessing (see above); safe-area/`@flighthq/device` coordination. Add: completing the Capacitor kind vocabulary (gap 2 — a types-package edit) and the first native backend realization (gap 3).

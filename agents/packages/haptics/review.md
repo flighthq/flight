@@ -1,94 +1,54 @@
 ---
 package: '@flighthq/haptics'
-status: partial
-score: 35
-updated: 2026-06-25
+status: solid
+score: 80
+updated: 2026-07-13
 ingested:
   - status.md
-  - reviews/depth/haptics.md
-  - source
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
+  - charter.md
+  - source (packages/haptics/src)
+  - packages/types/src/Haptics.ts
 ---
 
 # haptics — Review
 
-> **Merge-gate review.** Judged as the **delta** of `integration-b2824e3d8` (head) against the approved baseline `origin/main (eb73c3d74)` (base), not as a standalone survey. The approved baseline is the blessed floor and is not under review. The prior `solid`/88 review described the package at `67dc46d64`, a _different_ source state in which the supporting `@flighthq/types` surface was present. That surface is **absent** in this integration branch, so this review scores the branch as-shipped, not the worker's claim.
+> Depth review of the live tree (2026-07-13). Supersedes the 2026-06-25 merge-gate review of `integration-b2824e3d8`, whose Reject verdict (35) scored a snapshot missing the `@flighthq/types` half of the change. **That blocker is resolved**: `packages/types/src/Haptics.ts` now carries the widened `HapticImpactStyle` (`'light' | 'medium' | 'heavy' | 'soft' | 'rigid'`), `HapticsCapabilities`, and the extended `HapticsBackend` (`cancel`, `capabilities(out)`, two-arg `impact`, `isSupported`, optional `prepare`, `vibratePattern`, optional `vibrateWaveform`). The June minor note on `triggerHapticImpact` is also fixed: it now resolves the documented default explicitly (`intensity ?? 1`) so no backend has to reinterpret `undefined`.
 
 ## Verdict
 
-**Reject — the package does not compile in the integration branch.** The incoming `haptics.ts` and `haptics.test.ts` were extended to depend on a `@flighthq/types` surface (`HapticsCapabilities`, an extended `HapticsBackend`, the widened `HapticImpactStyle`) that **was never landed in `b2824e3d8`**. The header layer the implementation compiles against is byte-identical to the approved base. This is a fatal types-first violation (standard 6) and a claim-vs-code dishonesty (standard 7): the embedded worker status report asserts the types were updated; the bytes say they were not. The design of the delta is otherwise sound — flat free functions, tree-shakable, honest sentinels — but a merge gate cannot pass a tree that fails `tsc -b`.
+`solid — 80/100`. The device-vibration half of the haptics rubric is complete and well-shaped: 13 flat free functions covering raw vibration, Web-Vibration pattern arrays, amplitude-aware waveforms (Android `VibrationEffect.createWaveform` convention, 0–255 amplitudes, repeat index) with an automatic `vibratePattern` fallback when a backend lacks waveform support, semantic impact (5 styles × continuous 0..1 intensity) / notification / selection triggers, cancel, an out-param capability query, a support predicate, and a `prepare` warm-up hint mirroring `UIFeedbackGenerator.prepare`. The web default over `navigator.vibrate` degrades honestly (every method `false`-sentinels; capabilities report `patterns` only). 31 colocated tests mirror all 13 exports. What keeps it out of the high 80s against the textbook-maturity bar: **gamepad rumble (dual-rotor) is absent** — a capability every mature haptics library exposes — and the pattern-authoring/continuous-player tier is chartered but undecided. The prior depth review's `solid/88` read as generous now that the rubric explicitly includes gamepad rumble.
 
-## The fatal finding — implementation depends on absent header surface
+## Present capabilities
 
-`b2824e3d8:packages/haptics/src/haptics.ts:1` imports a type that does not exist in the branch:
+Verified against `packages/haptics/src/haptics.ts` (147 lines) and `haptics.test.ts` (31 tests, describes mirror all 13 exports in order):
 
-```ts
-import type { HapticImpactStyle, HapticNotificationType, HapticsBackend, HapticsCapabilities } from '@flighthq/types';
-```
+- **Raw vibration**: `vibrateDevice(durationMs)`, `vibrateDevicePattern([onMs, offMs, …])` (`false` on empty), `vibrateDeviceWaveform(timings, amplitudes, repeat = -1)` — free-function fallback to `vibratePattern(timings)` when the backend omits the optional `vibrateWaveform`, `cancelDeviceVibration()` (web: `vibrate(0)`).
+- **Semantic triggers**: `triggerHapticImpact(style, intensity?)` with the default-1 resolution at the free-function layer (durable comment explains why); `triggerHapticNotification('success' | 'warning' | 'error')` (distinct web patterns per type); `triggerHapticSelection()` (5 ms tick).
+- **Introspection**: `getHapticsCapabilities(out)` — correct caller-owned out-param, returns the same `out`; `isHapticsSupported()`; `prepareHaptics()` optional-chained so a backend without `prepare` is a safe no-op.
+- **Seam**: `getHapticsBackend` lazy web default / `setHapticsBackend(null)` restore; `createWebHapticsBackend` maps styles to duration/pattern approximations, clamps intensity 0..1, and routes everything through a single guarded `webVibrate` helper (never throws, `false` in jsdom/desktop).
+- Hygiene: `sideEffects: false`, single `.` export, `@flighthq/types` the only dependency; `Readonly<number[]>` on pattern/waveform inputs; module state below exports; the closed style/type string unions are correctly closed (no growing handler family).
 
-But `head/packages/types/src/Haptics.ts` is **identical to base** (md5 `e8e0f6d8…` on both; no hunk for it in `changes.patch`) and still declares only:
+## Gaps
 
-```ts
-export type HapticImpactStyle = 'light' | 'medium' | 'heavy';
-export interface HapticsBackend {
-  vibrate(durationMs: number): boolean;
-  impact(style: HapticImpactStyle): boolean;
-  notification(type: HapticNotificationType): boolean;
-  selection(): boolean;
-}
-```
+1. **Gamepad rumble (dual-rotor) absent.** No `vibrationActuator` / dual-rumble (`strongMagnitude`/`weakMagnitude`, duration, `playEffect`/`reset`) surface anywhere — `@flighthq/input` owns gamepad state but exposes no rumble either. This is the biggest hole against the textbook rubric, and its home (haptics vs input) is a cross-package design fork, not a sweep.
+2. **Pattern-authoring/continuous tier undecided** (charter Open direction #1): no `HapticPattern` value type, no live continuous-haptic player, no Core-Haptics-grade transient/continuous events. Gates the potential `-formats` neighbor (AHAP import) and a signals group.
+3. **Down-conversion contract unwritten** (charter Open direction #2): if patterns land, the degradation to web's duration/amplitude motor needs a spec.
+4. **No diagnostics layer** — `false` sentinels with no `explain*` / `enable*Guards`; suite-wide condition.
+5. **No native `host-*` reference backend yet** exercises the richer seam (waveform, prepare, capabilities), so its native fidelity is designed but unproven.
+6. **Rust mirror `flighthq-haptics` unstarted.**
 
-`HapticsCapabilities` does not exist anywhere in `head/packages/types/src/` (grep: zero hits). Yet the incoming implementation uses it and five other undeclared members against the `HapticsBackend` seam — every one is a compile error in this branch:
+## Charter contradictions
 
-- `b2824e3d8:packages/haptics/src/haptics.ts:5` — `getHapticsBackend().cancel()` (no `cancel` on `HapticsBackend`).
-- `…:67` — `getHapticsBackend().capabilities(out)` with `out: HapticsCapabilities` (neither exists).
-- `…:72` — `getHapticsBackend().isSupported()` (no `isSupported`).
-- `…:78` — `getHapticsBackend().prepare?.()` (no `prepare`).
-- `…:89` — `getHapticsBackend().impact(style, intensity)` — the seam's `impact` takes one argument.
-- `…:112` — `getHapticsBackend().vibratePattern(pattern)` (no `vibratePattern`).
-- `…:127-130` — `backend.vibrateWaveform(...)` (no `vibrateWaveform`).
-- `…:26` — `style === 'rigid' … style === 'soft'` against a union that is only `'light' | 'medium' | 'heavy'`.
+None. The 2026-07-02 Decision (impact default intensity = 1, passed explicitly) is verified implemented. The boundary holds: no badge (`@flighthq/app`) or sensor (`@flighthq/sensors`) creep. The charter's "13 exports" inventory matches source exactly.
 
-The test file repeats the break at `b2824e3d8:packages/haptics/src/haptics.test.ts:1` (`import type { … HapticsCapabilities } from '@flighthq/types'`) and at `…test.ts:19` (`function makeCapabilities(...): HapticsCapabilities`). `tsc -b` typechecks `src/*.test.ts`, so both source and test fail to build.
+## Contract & docs fit
 
-This is the integration merge dropping one half of a two-file change: the `packages/haptics` hunks landed, the `packages/types/src/Haptics.ts` hunk did not. The result is an internally inconsistent tree. It must not merge in this state.
+- Types-first satisfied: the full seam with doc comments (including the optional-member contracts for `prepare`/`vibrateWaveform`) lives in `packages/types/src/Haptics.ts`. The June "status claims types that are absent" honesty finding is resolved.
+- `capabilities(out)` follows the out-param convention including on the backend interface — the only platform-suite seam doing so; a pattern worth noting when other cells grow capability queries.
+- `vibrateDeviceWaveform` documents equal-length timings/amplitudes without validating — correct under the contract (API misuse, not expected failure); the empty-timings expected-failure case is checked.
 
-## Claim vs. code (standard 7 — honesty)
+## Candidate open directions
 
-The status report embedded in the same patch (the haptics status block in `changes.patch`) states verbatim:
-
-> **`HapticImpactStyle`** extended to `'heavy' | 'light' | 'medium' | 'rigid' | 'soft'` … **`HapticsCapabilities` interface** added … **`HapticsBackend` interface fully extended** (`cancel` / `capabilities` / `isSupported` / `prepare?` / `vibratePattern` / `vibrateWaveform?`).
-
-None of that is true of `b2824e3d8`'s `packages/types/src/Haptics.ts`. The continuity narrative describes a state that is not the shipped state. A reviewer trusting the report would wave through a non-compiling tree.
-
-## What the delta gets right (would pass once the header lands)
-
-Judged on design alone — assuming the missing `@flighthq/types` hunk is restored — the incoming change is the right shape:
-
-- **Composition / bedrock (standard 1):** every new capability is a flat free function (`cancelDeviceVibration`, `getHapticsCapabilities`, `isHapticsSupported`, `prepareHaptics`, `vibrateDevicePattern`, `vibrateDeviceWaveform`) delegating to one backend method. No config-gated monolith, no fused subjects, no over-split. `b2824e3d8:packages/haptics/src/haptics.ts:108-131`.
-- **Naming (standard 2):** full, unabbreviated, domain-carrying, self-identifying from the barrel — `vibrateDeviceWaveform`, `getHapticsCapabilities`, `isHapticsSupported` (`is*` predicate), `cancelDeviceVibration`. No abbreviations.
-- **Tree-shaking / bundle invariant (standard 3):** `package.json` is unchanged — single `.` export, `"sideEffects": false` intact. New functions are independent free functions; none adds a hot-loop branch or shared switch that taxes an existing import. The web backend's `impact` ternary chain (`…:26`) is local to one backend factory, not a shared dispatch.
-- **Registry vs. union (standard 4):** N/A — haptics has no growing `kind`/handler family; the impact/notification style sets are small closed string unions, correctly so.
-- **Subject triad / plurality guard (standard 5):** no format/backend code is mis-homed; the `-formats` neighbor and a `host-*` native backend are correctly deferred, not prematurely split.
-- **Contract hygiene (standard 6), the parts that are present:** `getHapticsCapabilities(out)` is a correct out-param returning the same `out` (`…:66-68`); sentinels (`false` / no-op) everywhere, no throws; `Readonly<number[]>` on pattern/waveform inputs; `prepare?.()` optional-chained so a backend without it is a safe no-op. The empty-pattern / empty-timings guards return `false` (expected-failure sentinel), correct per the contract.
-- **Tests (standard 7), modulo the compile break:** colocated, alphabetized, `describe` blocks mirror exports, 31 `it` cases covering forwarding, jsdom-unavailable, empty-input sentinels, intensity clamping, the waveform→pattern fallback, and `prepare`-absent. Good coverage **if it compiled**.
-
-## Minor notes (not blockers, recorded for the eventual re-land)
-
-- `b2824e3d8:packages/haptics/src/haptics.ts:86-87` documents "Intensity defaults to 1 when omitted," but `triggerHapticImpact` forwards `undefined` to the backend rather than substituting `1`. On the web backend this is behaviorally equivalent (`base * 1 === base`); on a native backend the meaning of "undefined intensity" is the backend's call. The doc-comment slightly overstates a guarantee the free function does not enforce. Cosmetic.
-- `vibrateDeviceWaveform` documents "timings and amplitudes must have equal length" (`…:116`) but validates neither length nor equality. This is acceptable under the contract (do not validate internal invariants correct usage cannot reach; mismatched length is API misuse), and the empty-timings guard is the one expected-failure case it does check. No action required.
-
-## Standards scorecard (delta only)
-
-| #   | Standard                        | Result                                                                  |
-| --- | ------------------------------- | ----------------------------------------------------------------------- |
-| 1   | Composition / bedrock           | Pass                                                                    |
-| 2   | Naming clarity                  | Pass                                                                    |
-| 3   | Tree-shaking / bundle invariant | Pass                                                                    |
-| 4   | Registry vs. closed union       | N/A (no growing family)                                                 |
-| 5   | Subject triad + plurality guard | Pass (correct deferrals)                                                |
-| 6   | Contract hygiene (types-first)  | **Fail — implementation depends on absent `@flighthq/types` surface**   |
-| 7   | Tests & honesty (compiles)      | **Fail — does not compile; status report claims types that are absent** |
-
-Two hard fails on the merge-gate axes, both stemming from the single dropped `@flighthq/types` hunk. Score 35 reflects a design that is fundamentally right but a tree that cannot be merged as-is. The fix is mechanical (land the matching `packages/types/src/Haptics.ts` change), after which this returns to the prior `solid` standing.
+1. **Gamepad rumble home** — decide whether dual-rotor rumble lives here (device-agnostic "haptics" framing, keyed by a gamepad reference) or in `@flighthq/input` (which owns gamepad identity); either way it is the missing rubric row.
+2. `HapticPattern` + player tier and its web down-conversion contract (charter Open directions #1–2) — the gate on `-formats` (AHAP) and any signals group.
+3. A native `host-electron`/host reference implementation of the extended seam to validate waveform/prepare/capabilities fidelity end-to-end.

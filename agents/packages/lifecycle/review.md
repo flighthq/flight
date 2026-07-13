@@ -1,86 +1,58 @@
 ---
 package: '@flighthq/lifecycle'
-status: partial
-score: 58
-updated: 2026-06-25
+status: solid
+score: 78
+updated: '2026-07-13'
 ingested:
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
-  - head/packages/lifecycle/src
-  - head/packages/types/src/Lifecycle.ts
-  - changes.patch (packages/lifecycle slice)
-  - charter.md (draft)
+  - status.md
+  - charter.md
+  - source (packages/lifecycle/src)
+  - packages/types/src/Lifecycle.ts
 ---
 
-# lifecycle — Merge Review (integration-b2824e3d8 delta vs approved origin/main eb73c3d74)
+# lifecycle — Review
 
-This is a **merge-gate** review of the incoming change only. The approved baseline (`base/packages/lifecycle/`) is the blessed floor and is not under review. The delta roughly triples the package: source `3.6K → 11K`, test `3.6K → 13.8K`. It adds three feature clusters — a third `inactive` state edge driven by window focus/blur, a save/restore-state bag, an OS memory-pressure channel, cold/warm launch classification, three `is*` booleans, and a vetoable back-button request — all matching the drafted (unblessed) charter's in-scope list.
+## Verdict
 
-The work itself is well-crafted. It fails the gate on **one** hard, mechanical defect: the implementation grew its type surface but the header layer in `@flighthq/types` was never updated, so the package does not compile.
+**`solid` — 78/100.** The prior review (2026-06-25, 58/partial) was a merge-gate review of an integration slice whose implementation had outrun its header — `AppLaunchKind`, `AppMemoryPressure`, the three new signals, and the optional backend methods were absent from `@flighthq/types`, so the package did not compile. **That blocker is resolved:** `packages/types/src/Lifecycle.ts` now declares the complete surface — the tri-state `AppLifecycleState`, `AppLaunchKind` (`cold`/`warm`), `AppMemoryPressure` (`normal`/`moderate`/`critical`), the 7-signal `AppLifecycle`, and `LifecycleBackend` with optional `getLaunchKind`/`subscribeMemoryWarning` — all with durable doc comments. Every import resolves; types-first is satisfied.
 
-## Verdict: REVISE — one compile-breaking, contract-violating blocker; otherwise mergeable.
+What stands is the strongest event capability in the platform suite: a full tri-state lifecycle (active/inactive/background) with deduped resume/pause edges, save/restore-state across backgrounding, OS memory-pressure delivery, cold/warm launch classification, boolean state queries, and a vetoable back-button request — over a swappable backend whose web default is a genuine reference implementation (visibilitychange + focus/blur + pagehide/pageshow, bfcache-based launch kind, experimental memory-pressure events), SSR-safe throughout. Test coverage includes property/fuzz storms over transition sequences. Held below the high-solid band by one textbook-surface hole (no before-quit/exit hook), the undecided 4-edge signal set, and the absence of any native backend proof.
 
-## Blocker — the new type surface is absent from `@flighthq/types` (the package does not compile)
+## Present capabilities (verified against source)
 
-`b2824e3d8:packages/lifecycle/src/lifecycle.ts:1-8` imports two types that **do not exist anywhere in the head tree**:
+13 exports in `packages/lifecycle/src/lifecycle.ts`, 43 tests, `describe` blocks alphabetized 1:1 with exports:
 
-```ts
-import type {
-  AppLaunchKind,
-  AppLifecycle,
-  AppLifecycleState,
-  AppMemoryPressure,
-  LifecycleBackend,
-} from '@flighthq/types';
-```
+- **Entity quartet:** `createAppLifecycle` (7 inert signals), `attachAppLifecycle` (idempotent; emits raw `onStateChange` per notification; derives deduped `onResume`/`onPause` on the `'active'` boundary — the `inactive↔background` transitions correctly do not re-fire them; emits `onSaveState` with a fresh mutable bag on leaving active and `onRestoreState` with that bag on next resume; wires `subscribeMemoryWarning` when the backend has it), `detachAppLifecycle`, `disposeAppLifecycle` (also clears the saved-state `WeakMap` entry).
+- **State queries:** `getAppLifecycleState`, `isAppActive` / `isAppInactive` / `isAppBackground`.
+- **Launch:** `getAppLaunchKind` — delegates to optional `backend.getLaunchKind`, falls back to `'warm'` for backends that omit it (the web backend returns `'cold'` unless `PerformanceNavigationTiming.type === 'back_forward'`, i.e. a bfcache thaw — the closest web analog of a warm resume).
+- **Back button:** `requestAppBack` — emits `onBackButton`, returns `false` when a listener vetoed via `cancelSignal`; mirrors `@flighthq/application`'s `requestWindowClose`/`onCloseRequest` contract.
+- **Backend seam:** `getLifecycleBackend` / `setLifecycleBackend` / `createWebLifecycleBackend`. Web backend: three states over document visibility + window focus; `subscribeMemoryWarning` wires the experimental `memory-pressure`/`memory-pressure-relieved` window events (critical→`critical`, moderate→`moderate`, unknown-but-present→`moderate` rather than a silent drop, relieved→`normal`); degrades to `'active'`/no-op in SSR.
 
-A grep of the entire head `packages/` tree (and the whole head worktree) finds `AppLaunchKind` and `AppMemoryPressure` only in `lifecycle.ts` and `lifecycle.test.ts` — never in any `@flighthq/types` source. The header file is **byte-for-byte unchanged** between base and head (`b2824e3d8:packages/types/src/Lifecycle.ts` is identical to base), and `changes.patch` does not touch `packages/types/src/Lifecycle.ts` at all. The head `Lifecycle.ts` still declares only the four-signal entity and the two-method backend:
+Test depth is real: all transition edges including the inactive dedup cases, save→restore round-trip, memory delivery + unsubscribe, all four launch-kind navigation types, veto and no-veto back paths, and four property/fuzz suites (100–200 random trials each) pinning the raw-vs-deduped invariants: `onStateChange` fires per notification, resume/pause collapse to the minimal edge set, an all-active flutter emits zero pause/resume, and pause/resume counts alternate within one.
 
-```ts
-export interface LifecycleBackend {
-  getState(): AppLifecycleState;
-  subscribe(listener: () => void): () => void;
-}
-export interface AppLifecycle {
-  onStateChange;
-  onResume;
-  onPause;
-  onBackButton; // four signals, no more
-}
-```
+## Gaps (AAA-depth judgment)
 
-Yet the head implementation references, against those interfaces:
+1. **No before-quit/exit hook.** A textbook lifecycle surface includes app-termination: a vetoable `onBeforeExit`/`requestAppExit` (native `before-quit`, web `beforeunload`/`pagehide`-as-final) and/or an `onExitRequested` signal. Nothing here covers it. Note the boundary question: `@flighthq/application` owns the *window*-close veto (`requestWindowClose`/`onCloseRequest`); app/process-level quit arguably belongs in this package as the process sibling of `onBackButton`. A design decision, not a sweep — but the largest hole in the domain coverage.
+2. **The 4-edge signal set is undecided.** `onResume`/`onPause` key on the `'active'` boundary, so "focus lost" and "fully backgrounded" are indistinguishable without deriving from `onStateChange`. First-class `onForeground`/`onBackground` (and possibly `onActivate`/`onResignActive`) remain the charter's first Open direction.
+3. **No native backend proof.** The seam has only run against fakes and the web default; the Electron mapping (app focus/blur events, `low-memory-notification`, launch heuristics) is specced in status but unbuilt (cross-package, `host-electron`).
+4. **`getAppLaunchKind` fallback asymmetry.** A backend omitting `getLaunchKind` yields `'warm'` while the web path defaults `'cold'`. The `'warm'` choice is documented in the function comment as the safe cache-assumption for minimal backends, so it is now a recorded rationale rather than a surprise — but it remains worth a deliberate bless-or-flip.
+5. **Stale self-description.** `package.json` still reads "foreground/background lifecycle state and resume/pause/back signals" — omits the inactive state, memory pressure, save/restore, and launch kind. Within-package, sweep-safe.
+6. **Minor comment drift.** The `subscribeMemoryWarning` function-level comment describes only the critical→critical and relieved→normal mappings; the unknown-pressure→`'moderate'` mapping is documented only at the branch. Cosmetic, sweep-safe.
+7. **No diagnostics layer.** SSR sentinels and the memory-events-unsupported no-op have no `explain*`/guards seams. Suite-wide pattern.
 
-- `getAppLaunchKind(): AppLaunchKind` and `backend.getLaunchKind` (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:122,187-189`)
-- `backend.subscribeMemoryWarning` + `AppMemoryPressure` (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:46-51,132`)
-- `app.onMemoryWarning`, `app.onSaveState`, `app.onRestoreState` (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:39,48-50,66-68`)
+Also unbuilt: `timeInBackground` payload on resume (charter Open direction), idle/user-inactivity (ownership vs `@flighthq/input` unresolved), the `flighthq-lifecycle` Rust crate.
 
-None of these members exist on the `@flighthq/types` interfaces they are read from. `tsc -b` will fail with unresolved-import and missing-property errors; `npm run check` (typecheck + exports:check) cannot pass; the package cannot build. This is a hard merge blocker. It also directly violates the **types-first** contract from the codebase map ("define its types in `@flighthq/types` first, then implement against them — the header is the design surface"): the implementation is ahead of its header. The fix is mechanical — extend `Lifecycle.ts` to add `AppLaunchKind`, `AppMemoryPressure`, the three new `AppLifecycle` signals, and the two optional `LifecycleBackend` methods — but until it lands the candidate does not compile and must not merge.
+## Charter contradictions
 
-## The seven standards (delta judged against each)
+None. The What-it-is paragraph matches source exactly. One stale detail: it cites "highest suite review score (58)" — a reference to the June merge-gate number, which this review supersedes. The 2026-07-02 Decision ("no specific issues to fix") predates this review's gap 5/6 findings but those are cosmetic, not bugs, so no contradiction. The save-state bag remains the mutable `Record<string, unknown>` the charter asks to have confirmed (Open direction 4) — still awaiting blessing, faithfully implemented meanwhile.
 
-1. **Composition / bedrock — PASS.** The cell is a single event-capability composed of independent free functions over one `LifecycleBackend` seam and one `AppLifecycle` entity. The added clusters (memory, save/restore, launch-kind, back) are not config-gated branches fused into a god-function; each is its own export and its own backend method. `attachAppLifecycle` gains save/restore and a guarded memory subscription, but only callers who opt into delivery pay for them (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:45-51` gates the memory wire behind `if (memSub !== undefined)`). The memory-pressure-vs-`@flighthq/power` home is a genuine fork, already raised in the charter's Open directions — a design question, not a delta defect.
+## Contract & docs fit
 
-2. **Naming clarity — PASS.** New exports `getAppLaunchKind`, `isAppActive`, `isAppBackground`, `isAppInactive`, `requestAppBack` follow the package's established `App*` prefix and the `get*`/`is*` rules. `requestAppBack` is a faithful 1:1 of `application`'s `requestWindowClose` (`application/src/window.ts:552`), same veto contract, same boolean direction (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:224-227` returns `app.onBackButton.data?.cancelled !== true`). New type names `AppLaunchKind`/`AppMemoryPressure` read clearly — they just need to _exist_ (see blocker).
+- **Envelope:** front matter valid; `crate: flighthq-lifecycle` — no Rust crate exists (cross-worktree conformance gap).
+- **Types-first:** satisfied; `Lifecycle.ts` fully describes the API with good doc comments. All concepts share one file rather than one-per-file (`AppLaunchKind`/`AppMemoryPressure` did not get the separate files the status log claims) — consistent with the other platform-suite headers, noted against the types-layout convention.
+- **Shared docs:** the `agents/packages/map.md` line ("active/inactive/background, resume/pause, back button") omits memory/save-restore/launch-kind; `agents/index.md` lists the package bare. Shared-doc edits, out of sweep scope.
+- **No package README**, where `keyboard`/`device` set the suite convention.
 
-3. **Tree-shaking / bundle invariant — PASS.** `package.json` is unchanged: `"sideEffects": false`, single `.` export, no per-file subpaths. No top-level wiring is added — module state stays lazy at the file bottom (`_backend`, `_savedState`, `_subscriptions` at `b2824e3d8:packages/lifecycle/src/lifecycle.ts:234-236`). The new `is*`/launch/back functions are independent and tree-shake individually. No new branch is added to a shared hot loop that unrelated importers would pay.
+## Candidate open directions
 
-4. **Registry vs closed union — PASS.** Lifecycle state is a genuinely closed tri-state (`'active' | 'inactive' | 'background'`); the implementation branches with `if/else`, not a `switch(kind)` over a growing handler family. This is bedrock-closed, not a registry candidate.
-
-5. **Subject triad + plurality guard — PASS (N/A).** No format codecs and no backend plurality. The single web/native `LifecycleBackend` seam is the standard event-capability shape, not a premature `<subject>-<backend>` split.
-
-6. **Contract hygiene — FAIL (the blocker).** Types-first is violated: the new cross-package types were implemented before being defined in `@flighthq/types`. Otherwise hygiene is good: sentinels not throws (web backend degrades to `'active'` / no-op in SSR, `b2824e3d8:packages/lifecycle/src/lifecycle.ts:93,98,138`), `dispose*` correctly detaches-and-releases-to-GC and now also clears the saved-state bag (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:178-181`), the optional backend methods are read defensively (`backend.getLaunchKind !== undefined`, `b2824e3d8:packages/lifecycle/src/lifecycle.ts:189`). The save-state bag is a mutable `Record<string, unknown>` handed to listeners — intentionally mutable (it is the output of `onSaveState`), so the `Readonly<>` default does not apply there.
-
-7. **Tests & honesty — PASS (mechanically blocked).** Test quality is strong: every export has a colocated test, `describe` blocks are alphabetized and mirror exports 1:1 (verified), and coverage is real — the dedup edges (`active↔inactive↔background` not double-firing pause, `b2824e3d8:packages/lifecycle/src/lifecycle.test.ts:85-97`), idempotent re-attach, save→restore round-trip, memory delivery + unsubscribe, and the four launch-kind cases. The tests do, however, share the blocker: they import `AppMemoryPressure` and exercise `subscribeMemoryWarning`/`getLaunchKind`/`onSaveState` members that the types do not declare, so `tsc -b` over `*.test.ts` fails alongside the source.
-
-## Secondary (non-blocking) observations on the delta
-
-- **Surface/description drift (delta-introduced).** The delta grew the public surface but left the package's self-description stale. `package.json`'s `description` is unchanged ("foreground/background lifecycle state and resume/pause/back signals") and omits memory-pressure, save/restore, and launch-kind; the codebase-map Package Map line is likewise stale-by-omission. The charter already lists the Package Map line as an Open direction; the `package.json` description is a one-line within-package cleanup the delta should have included.
-
-- **`getAppLaunchKind` 'warm' fallback is a surprising default.** When a backend omits `getLaunchKind`, `getAppLaunchKind` returns `'warm'` (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:187-190`), while the web backend itself defaults to `'cold'` (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:127-130`). 'cold' is the conservative default used by the web path; the 'warm' fallback for minimal backends is defensible but worth a one-line rationale or a flip to 'cold'. Open question for the user, not a blocker.
-
-- **Memory-pressure comment drift.** The top-of-function comment (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:86-88`) describes only the `'critical'`→`'critical'` and resolution→`'normal'` mappings, while the body also maps unknown pressure to `'moderate'` (`b2824e3d8:packages/lifecycle/src/lifecycle.ts:149-151`). The richer inline comment is correct; the header comment is incomplete. Cosmetic.
-
-## Bottom line
-
-The delta is the right shape and matches the drafted charter — but it ships an implementation against a header that was never updated, so it does not compile and breaks the types-first contract. One mechanical fix (extend `@flighthq/types`'s `Lifecycle.ts`) clears the gate. Score reflects strong craft gated behind a hard compile failure.
+Carried from charter (all still live): the 4-edge signal set; memory-warning home (here vs `power`-adjacent); idle ownership vs `input`; the save-state bag blessing; `timeInBackground`. Add: the before-quit/exit hook and its lifecycle-vs-application boundary (gap 1), and the `'warm'` fallback bless-or-flip (gap 4).

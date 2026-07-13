@@ -1,102 +1,75 @@
 ---
 package: '@flighthq/node'
 status: solid
-score: 87
-updated: 2026-06-24
+score: 89
+updated: 2026-07-13
 ingested:
+  - charter.md
   - status.md
-  - reviews/depth/node.md
-  - source
-  - changes.patch
+  - review.md (prior, 2026-06-24)
+  - assessment.md (prior, 2026-07-02)
+  - source (packages/node/src, all 15 files + 14 colocated tests, 321 tests)
+  - git log since 2026-06-24 (9 commits touching packages/node)
 ---
 
 # node — Review
 
-> Evidence: incoming bundle `builder-67dc46d64` (`head/packages/node/` + `changes.patch`). References below are `67dc46d64:<path>`.
+> Rereview against the live worktree. Supersedes the 2026-06-24 bundle review; the 2026-07-01 direction session and the commits through `23fcf86c` (2026-07-12) are now in evidence.
 
 ## Verdict
 
-**solid — 87/100.** The base scene-graph tier is now close to authoritative on the 2D side. This bundle closed the single largest gap the prior depth review named — first-class traversal — with a clean, well-tested `traversal.ts`, and added the missing `disposeNode` teardown verb, hierarchy convenience operations, and the 3D alloc fix. The status doc's claimed work is real and verified against the diff. It stops short of authoritative because (a) the 3D side remains a thin shell next to 2D (raw `localMatrix`, no TRS, no 3D bounds), (b) several genuinely-deferred items are blocked on a cross-package `decomposeMatrix`, and (c) the bundle silently added three classic DisplayObject traits to this tier that the status report never mentions and that raise a real boundary question.
+**solid — 89/100.** The 2D scene-graph tier is effectively finished against its charter: every 2026-07-01 Decision has landed in source — `skewX`/`skewY` on `HasTransform2D` (Decision #5, `c5262d4c`), the world-transform-preserving `reparentNode` with inline decomposition (Decision #7, `e86c2d01`), and the three DisplayObject traits (`hasCacheAsBitmap`/`hasOpaqueBackground`/`hasScrollRect`) removed per the trait-boundary ruling (Decision #1). New since the prior review: a **content revision channel** (`localContentId` + `invalidateNodeLocalContent`/`getNodeLocalContentRevision`) and the cross-package `invalidateContent` consolidation that collapsed per-package `invalidate<Subject>` functions into one node-tier call (`23fcf86c`). It stops short of authoritative because the charter-blessed 3D bounds tier (Decision #3) is still unbuilt, the 3D path lacks a cached world-inverse, and a handful of naming/consistency nits remain — including one new export that breaks the package's own naming rule.
 
-## What the bundle changed (verified against `changes.patch`)
+## Present capabilities
 
-Every status-claimed item checks out in source:
+- **Hierarchy** (`hierarchy.ts`) — complete child API (`addNodeChild`/`At`/`Children`, `removeNodeChild`/`At`/`Children`, `getNodeChildAt`/`ByName`/`Count`/`Index`, `getNodeParent`/`Root`, `containsNodeChild`, `setNodeChildIndex`, `swapNodeChildren`/`At`, `replaceNodeChild`, `forEachNodeChild`, `getNodeAncestors`, `getNodeCommonAncestor`, `isNodeAncestorOf`) with per-signal emission and `canAddChild` gating. `reparentNode` now genuinely preserves world TRS: pooled-matrix `inverse(newParent.world) × child.world`, sqrt/atan2 decomposition, skew-aware (subtracts `skewY` from the rotation extraction, preserves existing skew fields), pivot-corrected, `try/finally`-balanced `acquireMatrix`/`releaseMatrix`.
+- **Traversal** (`traversal.ts`) — `findNode`/`findNodeByName`, `forEachNodeAncestor`/`forEachNodeDescendant`, `getNodeChildren` (copy; shared `_emptyChildren` sentinel), `getNodeDepth`, `getNodeNextSibling`/`getNodePreviousSibling`, `walkNodeDescendants` (early-out visitor, completed boolean). The two-style inconsistency the prior review flagged was unified (2026-06-25 sweep).
+- **Transform 2D** (`transform2d.ts`) — lazy, revision-gated local/world matrices with pivot, ±180 rotation normalization, cached sin/cos, a skew-free fast path (`skewX === 0 && skewY === 0`) and the skewed composition otherwise; `convertNodeVector2GlobalToLocal`/`LocalToGlobal` out-param converters.
+- **Transform 3D** (`transform3d.ts`) — raw `localMatrix: Matrix4` composition (blessed, Decision #2), `ensureNodeWorldTransformMatrix4`/`getNodeWorldTransformMatrix4`, alloc-free `convertNodeVector3*` via the Matrix4 pool bracket.
+- **Bounds** (`boundsRectangle.ts`) — local/parent/world tiers, `computeNodeBoundsRectangle` with arbitrary target space + fast paths, offset-only world-bounds fast recompute, disabled-children exclusion, scale-derived `getNodeWidth`/`Height` + setters.
+- **Revision** (`revision.ts`) — now **eight** exported invalidators over the seven dirty channels: per-channel primitives (`invalidateNodeAppearance`/`LocalBounds`/`LocalContent`/`LocalTransform`/`ParentReference`/`WorldBounds`), the composites `invalidateNodeRender` (appearance+transform), `invalidateContent` (content+localBounds — the direct-mutation companion for any node kind), and the everything `invalidateNode`; matching `get*Revision` readers including the new `getNodeLocalContentRevision`.
+- **Lifecycle, signals, traits, viewport** — `createNode`/`createNodeRuntime`/`disposeNode` (recursive, signal-clearing, `destroyNode` absence justified in source), `enableNodeSignals`/`getNodeSignals`/`setNodeEnabled`; opt-in trait initializers `initAppearanceTrait`, `initClipTrait`, `initMaterialTrait`, `initBoundsRectangleTrait`(+Runtime), `initTransform2DTrait`(+Runtime, now with skew defaults), `initTransform3DTrait`(+Runtime); `createViewport` + scale-mode/align transform helpers.
+- **Manifest** — `sideEffects: false`, single `.` export, deps `entity`/`geometry`/`signals`/`types` only, no top-level side effects, no `switch(kind)` anywhere. 321 tests across 14 colocated files, describes alphabetized and mirroring exports (including aliased out-param cases and skew/reparent round-trips).
 
-- **New `traversal.ts`** (`67dc46d64:packages/node/src/traversal.ts`) — `findNode`, `findNodeByName`, `forEachNodeAncestor`, `forEachNodeDescendant`, `getNodeChildren` (read-only copy, shared `_emptyChildren` sentinel for leaves), `getNodeDepth`, `getNodeNextSibling`, `getNodePreviousSibling`, `walkNodeDescendants` (early-out visitor returning a completed/cut-short boolean). All eight present; `NodeDescendantVisitor<Traits>` is correctly homed in `@flighthq/types` (`NodeDescendantVisitor.ts`), not inlined. 233-line colocated test, describe blocks alphabetized and mirroring exports.
-- **`disposeNode`** (`node.ts:93`) — detaches from parent, recursively disposes children bottom-up over a snapshot, disconnects all five `nodeSignals` slots, clears `interactionSignals`. The doc comment correctly justifies the absence of `destroyNode` (no non-GC resources at this tier) and points higher packages at the dispose-then-release pattern. This satisfies the codebase teardown contract precisely.
-- **Hierarchy additions** (`hierarchy.ts`) — `addNodeChildren`, `forEachNodeChild` (index-ordered, early-out on `false`), `getNodeAncestors`, `getNodeCommonAncestor` (LCA via ancestor `Set`), `isNodeAncestorOf`, `reparentNode` (world-transform _not_ preserved, documented), `replaceNodeChild` (no-op when `oldChild` absent).
-- **3D alloc fix** (`transform3d.ts:21`) — `convertNodeVector3GlobalToLocal` now brackets `acquireMatrix4()`/`releaseMatrix4()` instead of `createMatrix4()` per call. The hot path is alloc-free and the bracket is balanced.
-- **Consistency cleanups** — `getNodeWorldTransformRevision` param now `Readonly<Node<Traits>>` (`revision.ts` diff confirms the one-line signature change), aligning it with sibling revision getters.
+## Gaps
 
-## Undocumented in the status report (found in the diff)
+Vs a textbook retained-mode scene-graph base (2D/3D node library tier):
 
-Three brand-new trait files were added in this bundle that the worker status report does **not** mention anywhere — they are not in the Implemented, Deferred, or Concerns sections:
-
-- `hasCacheAsBitmap.ts` → `initCacheAsBitmapTrait` (over `HasCacheAsBitmap`: `cacheAsBitmap`, `cacheAsBitmapMatrix`)
-- `hasOpaqueBackground.ts` → `initOpaqueBackgroundTrait` (over `HasOpaqueBackground`: `opaqueBackground`)
-- `hasScrollRect.ts` → `initScrollRectTrait` (over `HasScrollRect`: `scrollRect`)
-
-All three are confirmed `new file mode 100644` against `base/`, all three have colocated tests, and all three types are properly homed in `@flighthq/types` (`HasCacheAsBitmap.ts`, `HasOpaqueBackground.ts`, `HasScrollRect.ts`) with good doc comments. The code is clean. The concern is twofold: (1) the status report is an **incomplete** account of the delta — a reviewer trusting it would miss a real public-API expansion; and (2) `cacheAsBitmap`, `opaqueBackground`, and `scrollRect` are canonical _DisplayObject_ properties, and placing their trait initializers at the base `node` tier is a boundary decision (source-data vs. graph-participation, structural-fork A) that was made silently rather than surfaced. They follow the established `init*Trait` pattern faithfully, so this is not a code defect — it is an unflagged scope/home choice that deserves an explicit ruling.
-
-## Present capabilities (full picture)
-
-Carried forward from the depth review and re-confirmed in this bundle:
-
-- **Hierarchy** — the complete child API (`addNodeChild`/`At`, `removeNodeChild`/ `At`/`Children`, `getNodeChildAt`/`ByName`/`Count`/`Index`, `getNodeParent`/`Root`, `containsNodeChild`, `setNodeChildIndex`, `swapNodeChildren`/`At`) plus this bundle's convenience additions, with signal emission and `canAddChild` gating.
-- **Transform 2D** (`transform2d.ts`) — lazy, cached, revision-gated local/world matrices with pivot, ±180 rotation normalization, cached sin/cos, and `convertNodeVector2*` conversions.
-- **Transform 3D** (`transform3d.ts`) — `ensureNodeWorldTransformMatrix4`, Matrix4 world composition, `convertNodeVector3*` (now alloc-free).
-- **Bounds** (`boundsRectangle.ts`) — three coordinate tiers, `computeNodeBoundsRectangle` with arbitrary target space, scale-derived sizing, offset-only fast recompute.
-- **Revision/invalidation** (`revision.ts`) — seven distinct dirty channels; the strongest part of the package, more granular than most engines expose.
-- **Lifecycle & traits** — `createNode`/`createNodeRuntime`/`getNodeRuntime`/`setNodeEnabled`, opt-in signals via `enableNodeSignals`, and the opt-in trait initializers (`hasAppearance`, `hasClip`, `hasMaterial`, `hasBoundsRectangle`, `hasTransform2d`, `hasTransform3d`, and the three new traits).
-- **Viewport** — `createViewport` + scale-mode/align transform helpers.
-
-`package.json` is correct: `"sideEffects": false`, a single `"."` export (no subpaths), and a clean dependency set (`entity`, `geometry`, `signals`, `types`). No top-level side effects. No closed `switch(kind)` anywhere — no registry-vs-union fork applies here.
-
-## Gaps vs an authoritative scene-graph base
-
-The traversal and dispose gaps are now **closed**. What remains:
-
-- **3D is still a thin shell next to 2D.** `HasTransform3D` stores a raw `localMatrix: Matrix4` only (confirmed in `types/src/HasTransform3D.ts`) — no cached/lazy local-matrix build from TRS components, no 3D bounds tier, no 3D parent-bounds. The 3D path also still lacks a cached inverse slot for `convertNodeVector3GlobalToLocal` (the alloc fix prevents per-call allocation but re-inverts every call). The 2D/3D asymmetry the depth review flagged persists.
-- **Reparent does not preserve world transform.** `reparentNode(child, newParent)` is a documented pass-through to `addNodeChild`; the standard `keepWorldTransform` affordance is absent, blocked on a missing `decomposeMatrix` in `@flighthq/geometry`.
-- **No world-transform decomposition accessors** — `getNodeWorldPosition`/`Scale`/`Rotation`, `setNodeWorldTransformMatrix`. Same `decomposeMatrix` blocker.
-- **No skew in `HasTransform2D`** — still `x,y,rotation,scaleX,scaleY,pivot` only. Classic 2D `Matrix` types and most 2D engines expose it; absence remains unmarked-by-design.
-- **No change signals beyond hierarchy.** `enableNodeSignals` covers child/parent mutation only; the revision channels for transform/bounds/enabled exist but are not wired to `onTransformChanged`/`onBoundsChanged`/`onEnabledChanged`/`onNodeDisposed` emission.
-- **No batch/deferred invalidation** (`beginNodeBatch`/`endNodeBatch`) for bulk edits.
-- **No Rust `flighthq-node` crate yet** — the charter declares `crate: flighthq-node`, but the slotmap-arena foundation does not exist; the conformance mirror is unbuilt.
+- **3D bounds tier is blessed but unbuilt.** Charter Decision #3 rules `getNodeLocalBoundsBox`/`getNodeWorldBoundsBox` (AABB) node-level; nothing exists. This is the largest charter-promised capability missing.
+- **No cached inverse-world `Matrix4`** — `convertNodeVector3GlobalToLocal` is alloc-free but re-inverts every call; a `HasTransform3DRuntime` slot would match the 2D path's caching discipline.
+- **No world-decomposition accessors** (`getNodeWorldPosition`/`Scale`/`Rotation`, `setNodeWorldTransformMatrix`) — `reparentNode` proved the inline-decomposition pattern; the accessor set has not followed.
+- **Recursive traversal/dispose only.** `findNode`, `forEachNodeDescendant`, `walkNodeDescendants`, and `disposeNode` all recurse (stack depth = tree depth); no iterative variants, no BFS/post-order order options, and no subtree-prune visitor result (visit children vs skip-subtree-continue-siblings, à la DOM TreeWalker) — the one traversal affordance mature graph libraries have that this file lacks.
+- **No child-sort/ordering conveniences** — `sortNodeChildren(target, comparator)` (z-sort) and front/back move helpers are standard container ops absent here (composable from `setNodeChildIndex`, but the batch sort emits O(n) reorder signals if hand-rolled).
+- **No batch/deferred invalidation** (`beginNodeBatch`/`endNodeBatch`) — charter Open direction #2, gated on benchmarks.
+- **No spatial query layer** — charter Open direction #1; home unsettled (`interaction` overlap).
+- **No Rust `flighthq-node` crate** — Open direction #3; gated on the slotmap-arena foundation.
 
 ## Charter contradictions
 
-**None to report** — and that is itself a finding: the charter's only authored section is _What it is_; North star, Boundaries, Decisions, and Open directions are all `TODO`. There is no stated principle, boundary, or ruling for the code to contradict. Judged against the codebase-map AAA fallback instead, the package is in good standing. (The unmarked DisplayObject-trait placement would be a _Boundaries_ contradiction if the charter had drawn the source-data/graph-participation line — it has not, which is why this lands as a candidate open direction rather than a violation.)
+**None.** All seven 2026-07-01 Decisions check out in source: the trait set matches Decision #1 exactly (the three DisplayObject trait files are gone), 3D is raw-matrix per Decision #2, signals are hierarchy-only per Decision #4, skew per Decision #5, no serialization functions per Decision #6, and `reparentNode`/`addNodeChild` split per Decision #7. Decision #3 (3D bounds node-level) is unfulfilled but not contradicted — the code simply hasn't been built.
 
 ## Contract & docs fit
 
-**Lives up to the contract well:**
+**Lives up to the contract well:** types-first (`skewX`/`skewY`, `localContentId`, `NodeDescendantVisitor` all defined in `@flighthq/types`), `ensure*`/`compute*`/`get*` split clean, pool brackets balanced (`reparentNode` even uses `try/finally`), sentinels for misses with misuse-only throws, `Readonly<>` throughout, single root export, tests mirror exports.
 
-- Names are fully self-identifying (every export carries the `Node` type word); `get`/`has`/`is` prefixes respected; the `ensure*` (recompute-if-dirty) / `compute*` (write-to-out) / `get*` (cached read) three-way split is clean.
-- Types-first: `NodeDescendantVisitor` and the three new `Has*` traits are defined in `@flighthq/types` before being implemented against here.
-- `dispose*` used correctly, with the `destroy*` absence justified in source.
-- Pool bracket (`acquireMatrix4`/`releaseMatrix4`) balanced; `Readonly<>` applied to the corrected revision getter and throughout the new traversal signatures.
-- Sentinels (`null`, `-1`, empty array) used for expected misses; the few `throw`s in `hierarchy.ts` (`addNodeChildAt` self-add / bounds, `throwOutOfBoundsError`) are misuse-only, matching the rule.
-- Single root export, `sideEffects: false`. Tests colocated, alphabetized, mirroring exports.
+**Findings, package side:**
 
-**Minor in-source nits (carried from depth review or new this bundle):**
+- **`invalidateContent` breaks the full-type-name rule.** Every sibling is `invalidateNode*`; this one drops `Node` from the name despite taking `target: Node<Traits>` ("exported function names include the full, unabbreviated name of the type they operate on"). It landed via a deliberate user commit (`23fcf86c`, "one invalidateContent(node)"), so this may be an intentional vocabulary choice for the cross-package mutation contract — but as written it is the package's one naming outlier. Rename to `invalidateNodeContent` or record the exception.
+- **Self-import by package name** — `transform2d.ts:9` imports `computeNodeWorldTransformRevision` from `'@flighthq/node'` while `transform3d.ts` imports the same function from `'./revision'`. A package importing itself through its own published name is a circular package reference; should be the relative import.
+- **Stale doc comment** — `invalidateNodeLocalTransform` still enumerates "(x, y, rotation, scaleX, scaleY)"; the transform now includes `skewX`/`skewY`/pivot.
+- **`hasTransform3d.ts` re-exports its types** (`export type { HasTransform3D, HasTransform3DRuntime }`) — no other trait file does; drop or standardize.
+- **Early-out callback asymmetry** — `forEachNodeAncestor` requires `=> boolean` while `forEachNodeChild` accepts `=> boolean | void`; one convention should win.
+- **`computeViewportRenderTransform`** carries two `eslint-disable no-explicit-any` casts — the one typed-hole spot in the package.
 
-- `walkNodeDescendants` (`traversal.ts:133`) re-fetches `getNodeRuntime(source).children!` _inside_ the loop each iteration and drives iteration off `getNodeChildCount`, while its sibling `forEachNodeDescendant` hoists `children` once and iterates directly. Two traversal styles in one file for the same job — harmless, but an inconsistency a disciplined file would unify (hoist the children array once).
-- `getNodeCommonAncestor` uses a `Set` (O(depth a) space); a two-pointer LCA is O(1) space. Clear over optimal; fine for typical depths, noted in status.
+**Findings, docs side (candidate revisions, user's gate):**
 
-**Candidate doc revisions (user's gate, not mine):**
+- The Package Map line — "`@flighthq/node` (graph hierarchy, transforms, bounds, appearance)" — still omits the traversal surface, lifecycle (`disposeNode`), the revision system (arguably the package's headline feature), and the viewport helpers. Prior review flagged this; still stale.
+- The charter's revision-channel prose ("seven-channel") predates the `localContentId` channel — the count still works out to seven if worldTransform is counted as derived, but the charter nowhere names the content channel; the What-it-is should mention content invalidation now that shape/text/displayobject build on it.
+- `NodeRuntime` now carries the adjustments-tier slots (`colorAdjustments`, `resolvedColorTransform`, `colorAdjustmentsChannelMixing` — commit `df810bf5`, well-commented in `types/src/Node.ts`). The codebase-map rule says `NodeRuntime` "should stay empty until a subsystem truly applies to every node kind"; placing a color-adjustment stack on the base runtime rather than a narrower tier is a deliberate cross-package choice that the node charter does not record. Worth a one-line ratification either way.
 
-- The Package Map line `@flighthq/node: graph hierarchy, transforms, bounds, appearance, and invalidation` no longer enumerates the now-substantial **traversal** surface, the **lifecycle** (`disposeNode`) surface, the **viewport** transform helpers, or the **clip/material/cacheAsBitmap/ opaqueBackground/scrollRect** traits the tier now hosts. If those traits stay here, the map line and the charter's _What it is_ should name them; if they belong in `displayobject`, that is the ruling to record.
-- The charter is a stub (four `TODO` sections). The whole _North star / Boundaries / Decisions_ set is unwritten — every assumption below is a consequence of that silence.
+## Candidate open directions
 
-## Candidate open directions (feeds the charter)
-
-These are questions the stub charter does not answer that this review had to assume:
-
-1. **Where is the source-data / graph-participation line (fork A)?** Do the classic DisplayObject properties — `cacheAsBitmap`, `opaqueBackground`, `scrollRect`, and the pre-existing `appearance`/ `clip`/`material` — belong at the base `node` tier as opt-in traits, or in `@flighthq/displayobject`? This bundle answered "node" silently for three of them; the charter should ratify or reverse it.
-2. **`decomposeMatrix` home.** `reparentNode(keepWorldTransform)` and the world-decomposition accessors are all blocked on 2×2 matrix decomposition. Does it live in `@flighthq/geometry` (pure math, benefits all callers) or inline in `transform2d.ts`? Cross-package; surfaced, not decided.
-3. **Skew: add or mark-omitted.** Settle `HasTransform2D.skewX`/`skewY` for 2D-transform parity, or record a deliberate-omission decision with a doc comment.
-4. **3D rotation representation.** Bringing 3D to 2D parity (cached lazy local matrix from TRS) needs a quaternion-vs-Euler choice; it changes the public `HasTransform3D` surface. Also: do 3D bounds (`getNodeLocalBoundsBox`/`WorldBoundsBox`) belong here or in `@flighthq/scene`? Mark the boundary before building.
-5. **Signal coverage scope.** Should `enableNodeSignals` grow transform/bounds/enabled/disposed change signals (the revision channels already exist), or is hierarchy-only the intended surface?
-6. **Spatial query layer (`pickNodeAtPoint`, `queryNodesInRectangle`).** Overlaps `@flighthq/interaction`'s hit-testing domain — agree the seam with that owner before building, or declare it out of scope for `node`.
-7. **Scene serialization (`serializeNodeGraph`/`deserializeNodeGraph`).** Cross-cutting, needs the versioned-migration model and per-kind data delegation; a multi-package effort to scope, not a node-local task.
+1. **Traversal order/prune options** — iterative and/or BFS/post-order variants, and a skip-subtree visitor result. Does the charter want traversal breadth here, or is pre-order-with-early-out the deliberate floor?
+2. **`invalidateContent` naming** — ratify the exception or rename; it defines the cross-package mutation vocabulary, so the call is direction, not sweep.
+3. **Adjustments slots on base `NodeRuntime`** — ratify the placement (vs a narrower runtime tier) in the charter's Decisions, since it touches the node/types surface this package owns.
+4. **Child sorting** — is `sortNodeChildren` in scope as a hierarchy convenience, or left to callers?

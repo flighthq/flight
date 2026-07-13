@@ -1,42 +1,37 @@
 ---
 package: '@flighthq/timeline'
-updated: 2026-07-02
+updated: 2026-07-13
 basedOn: ./review.md
 ---
 
 # timeline — Assessment
 
-Sorted from the depth review (38/100 — stale; types-first blocking defects have since been fixed in the live tree, effective score ~80), verified against the live tree (15 timeline exports, 21 movieClip exports, 95 tests), and the direction session (2026-07-02). Eight decisions blessed, including the timeline/movieclip split.
-
-The package is a functional frame engine with armed signal lifecycle, frame scripts, loop/once play modes, and label navigation. The major architectural direction is the timeline/movieclip split — timeline becomes a pure frame engine, movieclip moves to its own package. The sweep-safe items below are within-`@flighthq/timeline` work that lands cleanly regardless of when the split happens.
+Sorted from the 2026-07-13 review (solid — 68/100). The 2026-06-25 merge-gate blockers are resolved (types-first fixed), the movieclip extraction landed (`75c4076b`), and all three previously Approved sweep items are verified done in source. What remains is playback depth (parked on open directions) plus a short sweep-safe list.
 
 ## Recommended
 
-Sweep-safe: within `@flighthq/timeline`, no open design decision, no cross-package coupling beyond types.
+Sweep-safe: within `@flighthq/timeline`, no cross-package coupling, no open design decision.
 
-1. **Add `disposeTimelineSignals(timeline)`.** The `enableTimelineSignals` path arms `createSignal()` groups onto `timeline.signals` with no detach path. Add `disposeTimelineSignals` that clears the signal group back to `null`, matching the codebase-map `dispose*` (detach-and-release-to-GC) verb. Pure within-package addition.
-
-2. **Simplify or document the `setMovieClipSource` signal re-wire branch.** In `movieClip.ts`, `setMovieClipSource` reuses the same timeline object, so the `if (runtime.movieClipSignals !== null) { enableTimelineSignals(timeline) }` branch re-fetches the same idempotent group and assigns it to itself. Either drop the dead branch or add a durable comment pinning why it is load-bearing. Correctness-neutral, in-source.
-
-3. **Document the frame-skip accounting contract.** Catch-up via `Math.floor(timeElapsed/frameTime)` jumps to the landing frame and fires `onEnterFrame`/scripts for that frame only — skipped frames are silent. This matches conventional frame-advance behavior and is tested but undocumented. Add a durable semantic comment on the advance path stating the landing-frame-only contract. Documentation only — the behavior is correct.
+1. **Make `updateTimeline` return whether the frame changed.** North star 4 states this outright ("Update returns whether the frame changed"); the function returns `void` today. Return `boolean` from `updateTimeline` (frame realized this update), add the aliased/no-change test cases. Charter-decided, within-package, greenfield signature change with no external consumers beyond movieclip's thin delegate.
+2. **Document the frameRate-null advance ordering.** Between updates in the one-frame-per-update path, `currentFrame` reads one ahead of the realized frame (`lastFrameUpdate`). Add a durable semantic comment on `updateTimeline` stating the two clock paths' ordering and what `currentFrame` means in each. Documentation-only floor; changing the semantics itself is an open direction (review §candidate 3).
+3. **Frame-script bulk queries.** `getTimelineFrameScriptFrames` (or an iteration seam) and `clearTimelineFrameScripts` — completes the CRUD family over the existing `Map`, null-sentinel on empty. Small, additive, no design fork.
+4. **`getTimelineLabels(timeline)` public accessor.** The private helper already exists; labels are reachable only via `timeline.source?.labels` or one-at-a-time lookups. Exposing the read-only list (empty-array sentinel) serves editors/debug UIs without touching the source contract.
 
 ## Backlog
 
-Parked — each with the reason it is not sweep-safe.
+Parked — with the reason each is not sweep-safe.
 
-- **Timeline/MovieClip split into separate packages.** _Parked — architectural._ Blessed (Decision #1). `@flighthq/movieclip` absorbs `movieClip.ts`, `createSpritesheetTimelineSource`, and `timeline-spritesheet` scope. Timeline becomes a pure frame engine with zero display-object coupling. Needs a new package scaffold, a movieclip charter, dependency rewiring, barrel/import updates, and a Package Map update. Largest remaining item.
-
-- **`MovieClipSignals` as a separate interface.** _Parked — blocked on movieclip package._ Blessed (Decision #2). Currently `type MovieClipSignals = TimelineSignals`. When movieclip splits out, `MovieClipSignals` becomes its own interface with clip-specific signals. The exact shape is an open direction.
-
-- **Play ranges / reverse / direction / speed.** _Parked — open direction._ Label-delimited loop regions, reverse playback, and speed control are natural timeline primitives but need design before implementation.
-
-- **Frame-skip policy option.** _Parked — open direction._ Whether to add a `maxFrameSkip` clamp or `skipPolicy`. Frame skip has consequences for code execution (scripts on skipped frames never run). Needs a deliberate decision.
-
-- **Clock integration.** _Parked — blocked on clock package._ Blessed (Decision #7). Timeline adopts `@flighthq/clock` once it exists.
-
-- **Package description update.** _Parked — depends on split landing._ The Package Map line still says "MovieClip-style keyframes." Update after the split to reflect the pure-engine identity.
-
-- **Rust `flighthq-timeline` crate.** _Parked — global posture._ TS leads, Rust follows.
+- **Play ranges / reverse / direction / speed / ping-pong.** _Open direction (charter Boundaries: "future direction/speed/ranges as open design")._ The largest depth gap; extends `advanceFrame` and `TimelinePlayMode`. Needs a design pass before implementation.
+- **Time addressing (`getTimelineDuration`, seek-by-time, normalized progress).** _Open design._ Requires deciding the time model for `frameRate: null` sources (null sentinel vs undefined behavior) — motion-design/scrubbing consumers hinge on it.
+- **Goto-with-unknown-label throw → sentinel + `enableTimelineGuards`.** _Open direction (review §candidate 2)._ Behavior change plus a new guard module per the diagnostics conventions; decide throw-vs-sentinel once, deliberately.
+- **`onComplete`/`onLoop` payloads; onPlay/onStop/onSeek/label-entered signals.** _Open direction (charter #1)._ Signal-shape decision.
+- **Frame-skip policy (`maxFrameSkip` / `skipPolicy`).** _Open direction (charter #3)._ The landing-frame-only contract is now documented in source; a clamp is a deliberate policy fork.
+- **Clock integration.** _Cross-package; unblocked._ `@flighthq/clock` now exists, so the charter's North star 5 can proceed — but the seam shape (Clock parameter vs caller-scaled deltaTime) is an open direction (review §candidate 4).
+- **Generic/feature-alias target type for `Timeline.target`/`FrameScript`.** _Cross-package (`@flighthq/types`) + design._ Review §candidate 1; route to charter Open directions.
+- **Remove the orphaned `PlayMode` type from `@flighthq/types`.** _Cross-package._ Superseded by `TimelinePlayMode`, referenced nowhere outside types; deletion is a types-package edit outside this cell.
+- **Charter pruning: Open directions 6 and 7 are resolved** (Package Map line updated; movieclip charter exists). _Charter edit — user's gate at the next direction session._
+- **`timeline-formats` neighbor / SWF-Animate importer.** _Bedrock/plurality guard._ No second format exists yet; the native `createTimelineSource` plus movieclip's spritesheet bridge do not justify a `-formats` cell.
+- **Rust `flighthq-timeline` crate.** _Global posture._ TS leads; Rust follows in parity passes.
 
 ## Approved
 

@@ -1,55 +1,38 @@
 ---
 package: '@flighthq/geometry'
-updated: 2026-07-03
+updated: 2026-07-13
 basedOn: ./review.md
 ---
 
 # geometry — Assessment
 
-Sorts the gaps from `review.md` (solid, 90/100) and the absorbed roadmap (`reviews/maturation/depth/geometry.md`) into sweep-safe `Recommended` work and parked `Backlog`. Most of the prior roadmap's Bronze/Silver and part of Gold already landed across builder passes 1–2 (the full vec2/3/4 symmetry set, quaternion-to-canonical, Float32Array bridges, the AABB/sphere/plane/frustum culling set, and a first-class `Ray3D` intersection suite); what remains is a small correctness/consistency tail plus the larger parked workstreams.
+Sorts the gaps from `review.md` (authoritative, 92/100, 2026-07-13). The prior assessment's Recommended list is fully landed except the Approved guard item: the Euler-extraction fix, closest-point suite, `expandAabbBySphere` typing, look-rotation convention (fixed to standard per Decision, beyond the documented-only ask), predicate renames, and the hardening tests all shipped across the 2026-07-01→07-10 commits. What remains is a small correctness/consistency tail plus additive breadth on existing types.
 
-Design forks and cross-package items are **not** in `Recommended` — they are surfaced to the charter's Open directions (the stub charter's _North star_/_Boundaries_/_Decisions_ are still `TODO`). `Approved` is empty until the user verbally approves.
+**Outstanding Approved work:** the 2026-07-03 guarded-pool-mode item (ledger below) is blessed but **not yet built** — no `enableGeometryPoolGuards` module exists in the tree. It is the first thing a worker pass should execute.
 
 ## Recommended
 
-Strictly sweep-safe: within `@flighthq/geometry`, no cross-package type, no breaking signature change, no open design decision. Each follows the established file-per-type, free-function, out-param, alias-safe, pooled style; every addition is a barrel re-export from `index.ts`.
+Strictly sweep-safe: within `packages/geometry/`, existing `@flighthq/types` entries only, no breaking change, no open design decision. Each follows the file-per-type, free-function, out-param, alias-safe style; additions are barrel re-exports via the existing `export *`.
 
-- **Fix `getQuaternionEuler` extraction (correctness defect).** The _set_ side (`setQuaternionFromEuler`) is the standard per-order half-angle product and is correct; the _get_ side extracts with a convention that does not invert the set-side multiply order, so `set → get` only round-trips for single-axis inputs (a combined `(0.3, 0.5, 0.7)` XYZ rotation drifts ~0.027 in `|dot|`). Make `getQuaternionEuler` the true inverse of the existing `setQuaternionFromEuler` for all six orders. This targets the already-shipped set-side convention — no new convention decision is required, so it is autonomous. Add a `set → get` round-trip test per `EulerOrder`. (review.md#gaps; the choice of _which_ handedness/look convention to bless is the separate Open direction, below.)
-- **Closest-point / distance suite.** Add `getClosestPointOnAabb`, `getClosestPointOnBoundingSphere`, `getClosestPointOnPlane`, `getClosestPointOnRay3D`, and `getClosestPointBetweenRay3Ds` — the standard collision-support kit that pairs with the now-present intersection suite. Pure omission, no new `@flighthq/types` entry, low design risk; operates on types that already exist. (review.md#gaps, roadmap Gold.)
-- **`expandAabbBySphere` should take `Readonly<BoundingSphereLike>`.** It currently accepts an inline anonymous `Readonly<{ center; radius }>` that bypasses the already-homed `BoundingSphereLike` and reads inconsistently with `setBoundingSphereFromAabb`/`expandAabbByPoint`. Swap to the homed type. Non-breaking (the inline shape is structurally assignable from `BoundingSphereLike`), within-package, uses an existing `@flighthq/types` entry. (review.md#contract-fit.)
-- **Document `setQuaternionLookRotation`'s axis convention in JSDoc.** Its body swaps X/Z (`fz = forward.x; fx = forward.z`), so "look along +Z, +Y up" is not identity — deterministic but undocumented. _Documenting the existing behavior_ is sweep-safe; **changing** the convention is the routed Open direction. State the current convention precisely so callers can rely on it. (review.md#gaps.)
-- **Numerical / edge-case hardening.** Add explicit handling + tests for degenerate input that the current guards do not cover: `setQuaternionFromUnitVectors` antiparallel case, gimbal at ±90° in Euler conversions, singular-matrix inverse returning a documented sentinel/identity. Add property-based round-trip tests (compose∘decompose, inverse∘transform = identity, quat↔matrix round-trip). Within-package, no new surface. (roadmap Gold.)
-- **Batch / performance pass.** Add `applyMatrix4ToVector3Array(out, source, count, matrix)`-style batch transforms for vertex buffers, and confirm hot transforms/multiplies stay allocation-free and alias-safe under fuzz. Additive, within-package; verify tree-shaking with `npm run size` after. (roadmap Gold.)
-
-- **Add `enableGeometryPoolGuards()` (guarded pool mode).** Chartered by the 2026-07-03 Decision. Membership check on `release*` warns once per key on double release via `logOnce`, channel `'geometry'`; `areGeometryPoolGuardsEnabled()` mirror; zero branches in unguarded hot paths; fire/silent test pair via `createMemoryLogSink`. Adds a workspace dependency `geometry → log` (guard module only).
+- **Fix the `translateMatrix` / `translateMatrixByVectorXY` out-param defect.** They write only `tx`/`ty`, leaving `out`'s linear part stale when `out !== source` — a violation of the out-param contract every sibling honors (`translateMatrix4` copies first). Copy the full matrix, add the distinct-`out` and aliased test cases, and add the missing `: void` annotations on `translateMatrixByVector`/`XY`. (review.md#gaps; charter North-star contradiction.)
+- **Document `setPerspectiveMatrix4`'s parameter as tan(fovY/2) and rename the param.** `top = fov * zNear` means `fov` is the half-FOV tangent, not an angle; the compensating comment currently lives in the consumer (`camera/src/projection.ts`), the exact caller-side-warning smell the diagnostics rule bans. Renaming a parameter and writing the JSDoc is non-breaking; _changing_ the semantics to radians is the routed Open direction. (review.md#gaps.)
+- **De-allocate the OBB hot paths.** Replace `obbLocalAxes`'s fresh 9-tuple, `intersectRay3DObb`'s three temporary arrays, and `obbSatSeparated`'s per-call `onAxis` closure with scalar locals (or a bottom-of-file scratch), restoring the package's allocation-free-in-hot-loops promise. Behavior-preserving; existing tests pin results. (review.md#gaps; charter North-star contradiction.)
+- **Add the missing pair predicates on existing types:** `isAabbIntersectingSphere` (Arvo), `isObbIntersectingSphere`, `isCapsuleIntersectingAabb`, `isFrustumIntersectingObb` — all spelled per the blessed 2026-07-01 `is*Intersecting*` Decision, all over already-homed types. (review.md#gaps.)
+- **Add the missing conventional singles:** `transformRay3DByMatrix4` (transform origin as point, direction as vector — the picking-into-local-space primitive), `getQuaternionAxisAngle` (inverse of the existing `setQuaternionFromAxisAngle`), and the 2D vector kit — scalar `crossVector2`, `rotateVector2`, `getVector2Angle`. Additive, textbook semantics, no new types. (review.md#gaps.)
+- **`transformVector3ByMatrix3` should take `Readonly<Matrix3Like>`** instead of the inline `Readonly<{ m: Readonly<Float32Array> }>` — same homed-type swap as the landed `expandAabbBySphere` fix; structurally assignable, non-breaking. (review.md#contract--docs-fit.)
+- **Doc/style hygiene pass:** correct the "byte offset" JSDoc on the element-offset Float32Array bridges (vector3/vector4/matrix3), reattach the orphaned transpose JSDoc block in `matrix4.ts` to `transposeMatrix4`, and retire the `var` relics in `rotateMatrix`. (review.md#gaps.)
 
 ## Backlog
 
-Parked — each names _why_ it is not sweep-safe.
+Parked — each names why it is not sweep-safe.
 
-- **`getQuaternionEuler` / `setQuaternionLookRotation` convention contract.** _Parked: open design decision._ Fixing the get-side extraction (above) is autonomous, but the SDK-blessed handedness and look-rotation convention (does "+Z forward" = identity? which Euler round-trip guarantee does the SDK promise?) is a charter Decision, not a within-package add. Routed to Open directions #4.
-- **Intersection-predicate naming unification.** _Parked: open design decision (API-shape fork)._ The same "do these two volumes overlap?" predicate is spelled three ways — `intersectsAabb`, `getBoundingSphereIntersectsBoundingSphere`, `isFrustumIntersecting{Aabb,Sphere}`. In a package whose whole value is greppable symmetry this is a real defect, but picking the one canonical spelling (lean: an `is*…Intersecting*` form per the SDK boolean rule, leaving `intersectAabb` as the out-computing overlap-box op) is a charter Decision that governs every future bounding volume — and the rename touches the public surface. Routed to Open directions #3.
-- **OBB and Capsule primitives.** _Parked: cross-package — needs new `@flighthq/types` entry first._ Both require an `Obb`/`Capsule` type in `@flighthq/types`, and whether ray casting / volume math of this kind belongs in `geometry` at all is the geometry↔picking/physics boundary question. Bedrock test: a real subject (mature engines ship OBB/capsule), but it is a cross-package design decision, not an in-package omission. Routed to Open directions #1 and #2.
-- **Rust crate conformance (`flighthq-geometry`).** _Parked: separate crate, large workstream, fork-adjacent._ The crate gained `frustum.rs` + `ray3d.rs` but still lacks `quaternion.rs`, `aabb.rs`, `boundingSphere.rs`, `plane.rs`, and every op from passes 1–2. Per the 1:1 conformance goal this is Gold-blocking, but it is a crate defect (a Rust-focused workstream + `flighthq-functional` conformance scenes), not a TS-package defect — and whether TS completeness may land ahead of the crate mirror is itself a fork-adjacent posture question. Routed to Open directions #5.
-- **Geometry concepts doc + Package Map line.** _Parked: outside the package source tree._ A short coordinate-conventions doc (row/column-major, handedness, radian convention, matrix-multiply order, tier suffixes) under `agents`, plus widening the stale codebase-map geometry line to name quaternion / bounding volumes / `Ray3D`. Both edit shared docs, not `packages/geometry/`. Surface the Package Map edit to the user.
+- **Perspective fovY semantics.** _Parked: design fork, breaking._ Switching `setPerspectiveMatrix4` to take fovY radians (GLM/three.js convention) changes the contract and `camera`'s call site. Routed to Open direction #1; the Recommended rename/JSDoc item removes the hazard meanwhile.
+- **Naming unification, second wave.** _Parked: open design decision + cross-package renames._ One spelling for containment (`containsAabbPoint` vs `isFrustumContainingPoint`), one for smallest-enclosing (`unionAabb` vs `mergeBoundingSphere`/`mergeRectangle`), whether the rectangle family (`intersectsRectangle`, consumed by `spatial`/`clip`/`interaction`) joins `is*Intersecting*`, and the `matrix4Transform*` → `transform*ByMatrix4` family. Extends the 2026-07-01 Decision; needs a charter ruling before the renames touch consumers. Routed to Open direction #2.
+- **Obb/Capsule field shape.** _Parked: `@flighthq/types` design._ Flattened scalars vs the nested-`Vector3Like` shape Aabb/BoundingSphere use — the blessed shape for future volume types should be decided once, in the types layer. Routed to Open direction #3.
+- **Singularity policy across matrix tiers.** _Parked: behavioral convention choice._ `inverseMatrix4` (absolute `1e-6`, NaN-fill) vs `inverseMatrix3` (`=== 0`, NaN-fill) vs `inverseMatrix` (`=== 0`, degenerate fill). Unifying changes observable behavior; wants one documented rule (likely magnitude-relative epsilon). Routed to Open direction #4.
+- **2D `Matrix` skew + decompose.** _Parked: convention choice._ Canonical for the 2D authoring domain (Flash/CSS heritage), but the skew representation (angle vs factor, skewX/skewY definition) and the decompose contract need blessing before the API is frozen.
+- **Rust crate conformance.** _Parked: external repo._ No `crates/` exists in this monorepo — `flighthq-geometry` work belongs to the flight-rs repo. The charter's "faithful Rust mirror" North star and this cell's crate framing should be re-pointed there (a charter/docs edit, surfaced to the user, not package work).
 
 ## Approved
 
-_None. Approval is the user's verbal gate; nothing frozen yet._
-
----
-
-### Notes for the charter's Open directions
-
-Carried from review.md#candidate-open-directions for the user to settle (this skill does **not** edit the charter):
-
-1. The `geometry` ↔ picking/physics boundary — does `geometry` own ray casting and the closest-point/distance support kit as the math substrate for `interaction`/physics?
-2. OBB / Capsule scope, and where the `@flighthq/types` entry lives.
-3. The one canonical intersection-predicate spelling (governs every future bounding volume).
-4. The SDK quaternion handedness / look-rotation convention, and the `setQuaternionFromEuler` ⇄ `getQuaternionEuler` round-trip guarantee.
-5. Rust conformance as a release gate — may TS-package completeness land ahead of the `flighthq-geometry` mirror (fork-adjacent, applies beyond geometry).
-
-### Roadmap absorption
-
-`reviews/maturation/depth/geometry.md` is now fully absorbed into this assessment (its Bronze/Silver and the Ray3D slice of Gold already landed; the residue is sorted above). It is one-time seed and can be removed.
 - [2026-07-03 · charter session] Guarded pool mode (`enableGeometryPoolGuards`) — charter Decision 2026-07-03 (diagnostics)

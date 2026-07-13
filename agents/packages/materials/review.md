@@ -1,93 +1,68 @@
 ---
 package: '@flighthq/materials'
 status: solid
-score: 86
-updated: 2026-06-24
+score: 87
+updated: 2026-07-13
 ingested:
   - status.md
-  - reviews/depth/materials.md
-  - reviews/alignment/api/materials.md
-  - reviews/alignment/ts-rust/materials.md
   - source
-  - incoming/builder-67dc46d64 (changes.patch + head)
+  - tests
 ---
 
 # Review: @flighthq/materials
 
+Evidence: live worktree `packages/materials/src/` (11 source files + 11 colocated tests, 194 `it(` cases, ~85 exports). Prior review (2026-06-24, solid/86) was over the `builder-67dc46d64` bundle; this one re-grounds in the live tree, which has since absorbed the fork-H filters dissolution and the 2026-07-03 direction session.
+
 ## Verdict
 
-solid — **86/100**. This package is now two coherent libraries fused into one: a complete `ColorTransform` algebra and a broad, glTF-aligned 3D material descriptor catalog — and as of this bundle it has grown a real color-utility tier (HSL/HSV, premultiply, luminance/contrast, lerp, pack/unpack, the inverse sRGB seam), a validation/clamping tier, a generic material clone/copy/equals suite, a spec→metallic-roughness conversion, and 11 named PBR presets. The depth review's two highest-value gaps (no clone/copy/equals across the 3D family; a one-directional color seam) are both closed. It falls short of authoritative on the deliberate descriptor-vs-math line (no BRDF/Fresnel/GGX), a stale Rust crate (~60% conformance), and a handful of contract-fit drifts (cross-package scratch types defined file-local, a stale doc comment on `hslToRgb`, an `equals` that shallow-compares the PBR `standard` sub-block).
-
-The status report claims **92/100 (gold)** and a 143→200 test count. The test count verifies exactly (200 `it(`s, 84 exported functions, 84 `describe` blocks, 1:1 colocated). The capability claims all verify against `head/`. The score is marked down from the worker's self-estimate for the contract-fit and conformance items below — those are observation deltas, not capability disputes.
+solid — **87/100**. A coherent three-slice descriptor library — ColorTransform algebra, a broad color-utility tier around the single sRGB↔linear seam, and the complete 20-material 3D catalog — with clean hygiene and strong tests. Since the prior review: fork H landed cleanly (the `ColorTransformMaterial`/`UniformColorTransformMaterial` kinds are gone from the whole tree; the algebra stays here per the 2026-07-03 Decision, realized as `ColorTransformAdjustment` in `@flighthq/adjustments`), `LinearColor` moved to `@flighthq/types`, `createColorTransform` now takes `opts?: Readonly<Partial<…>>`, and the `KHR_texture_transform` + per-texture `colorSpace` gap closed on `Texture` in types. Held below 90: two blessed Decisions are only partially executed (Hsl/Hsv types not moved; OKLab/OKLCH in scope but unbuilt), a known stale doc comment survived two passes, the manifest description is stale, and the conversion matrix is still one-directional.
 
 ## Present capabilities
 
-Grounded in `incoming/builder-67dc46d64/head/packages/materials/src/`.
-
-**Color transform** — unchanged this pass, still the most authoritative slice: `createColorTransform`, `clone/copy/set/setIdentity`, `concatColorTransform` (alias-safe), `invertColorTransform`, the `equals*` family with `compareAlpha`, `isIdentityColorTransform`, the RGB/RGBA offset packers, and `copyColorTransformToArrays` (GPU upload path).
-
-**Color utilities (`color.ts`)** — substantially expanded this pass:
-
-- Seam, now bidirectional: `unpackColorToLinear` (IEC 61966-2-1 EOTF, the single SDK sRGB→linear decode), and its inverse `packLinearToColor` + per-channel `linearChannelToSrgb`. `createLinearColor`.
-- Pack/unpack without gamma: `packColor`, `unpackColorRgba`.
-- HSL/HSV (sRGB-space, artist-facing): `rgbToHsl`/`rgbToHsv` (out-param, returns `out`), `hslToRgb`/`hsvToRgb` (write `out[0..2]`, leave alpha), `createHslColor`/`createHsvColor`, with `HslColor`/`HsvColor` tuple types.
-- Mixing/measurement: `lerpColor` (gamma-correct, mixes in linear), `lerpLinearColor` (alias-safe), `getColorLuminance` (Rec. 709), `getColorContrastRatio` (WCAG 2.x [1,21]).
-- Premultiply: `premultiplyColorAlpha`, `unpremultiplyColorAlpha` (zero-alpha division guard). `computeRgbHexString`.
-
-**Material entity core (`material.ts`)** — the depth review's #1 gap, now closed: `cloneMaterial` (generic structural shallow clone; map handles shared, `colorTransform` sub-entity deep-cloned, `standard` block shallow-copied), `copyMaterial` (in-place for pooling, alias-safe no-op when `out === source`), and a rewritten `equalsMaterial` that now does generic structural field comparison for every kind (scalars by value, handles by reference) — fixing the prior "two distinct PBR materials compare equal" sharp edge. UCTM still routes to deep `equalsColorTransform`.
-
-**Surface trailer + alpha mode (`surfaceMaterial.ts`)**: `createSurfaceMaterial` plus `getMaterialAlphaMode`, `isMaterialBlended/Masked/Opaque`.
-
-**3D material catalog**: unlit/debug set (8), classic lighting (Lambert/Phong/BlinnPhong), PBR core (`createStandardPbrMaterial`, `…Properties`, `createSpecularGlossinessPbrMaterial`), and the KHR-named extensions (anisotropy, clearcoat, iridescence, sheen, specular, transmission+volume, Flight subsurface).
-
-**Model conversion (`pbrMaterials.ts`)** — the depth review's #2 gap, now closed: `convertSpecularGlossinessToStandardPbr` — the canonical KHR_materials_pbrSpecularGlossiness → metallic-roughness approximation (roughness = 1 − glossiness; metallic from Rec. 709 F0 luma vs the 0.04 dielectric threshold; base color blended by metallic), alias-safe, forwarding all pass-through fields and remapping the diffuse/spec-gloss map slots.
-
-**Validation/clamping (`materialValidation.ts`)**: `clampStandardPbrMaterialProperties` (metallic/roughness/occlusion → [0,1], emissive/normalScale → [0,∞), returns `out` for chaining), `isValidMaterialIor` ([1,5]), `isValidMaterialClearcoat`, `isValidMaterialIridescenceThickness`, `isValidMaterialWeight`. All sentinels, no throws — verified `grep` finds zero `throw` in src.
-
-**Named presets (`materialPresets.ts`)**: 11 tree-shakable wrappers (aluminum, carbon, glass→transmission-volume, gold, iron, marble, plastic, rubber, silver, skin, wood), each over `create*PbrMaterial` with canonical values and a `Readonly<Partial<…>>` override. No registry — zero cost if unused.
-
-**Hygiene verified**: no `@flighthq/sdk` import, `sideEffects: false`, single `.` export, 84 exports each with a colocated test and matching `describe`. The manifest `description` was updated to reflect the true 3D scope (depth review item #4, done).
+- **ColorTransform algebra (`colorTransform.ts`, 16 exports)** — `createColorTransform` (now `opts`-shaped), `clone/copy/set/setColorTransformIdentity`, alias-safe `concatColorTransform`, `invertColorTransform` (zero-multiplier guard), `equalsColorTransform` + `…Multipliers`/`…Offsets` with `compareAlpha`, `isIdentityColorTransform`, RGB/RGBA offset packers both directions, `copyColorTransformToArrays` (GPU upload). The material *kinds* that consumed it migrated to `adjustments` (fork H); the value algebra is the retained bedrock.
+- **Color utilities (`color.ts`, 22 exports)** — the bidirectional seam `unpackColorToLinear` (consumed across `render`, `scene-gl`, `scene-wgpu` — the seam is real, not aspirational) / `packLinearToColor` / `linearChannelToSrgb`; gamma-free `packColor`/`unpackColorRgba`; HSL/HSV both directions (sRGB-space, artist-facing, hue [0,360)); gamma-correct `lerpColor` + alias-safe `lerpLinearColor`; `getColorLuminance` (Rec. 709, linear) + `getColorContrastRatio` (WCAG [1,21]); `premultiplyColorAlpha`/`unpremultiplyColorAlpha` (zero-alpha guard); `computeRgbHexString`; `create{Hsl,Hsv,Linear}Color` scratch allocators. `LinearColor` is imported from `@flighthq/types` ✓; `HslColor`/`HsvColor` remain file-local tuples ✗.
+- **Material entity core (`material.ts`)** — `createMaterial`, `cloneMaterial`/`copyMaterial` (generic field copy; the `standard` sub-block shallow-copied into a fresh object, map handles shared), `equalsMaterial` (generic scalar-by-value / object-by-reference loop; `standard` compares by reference per the blessed 2026-07-03 Decision).
+- **Surface trailer (`surfaceMaterial.ts`)** — `createSurfaceMaterial` (opaque / straight-alpha / `BlendMode.Normal` / 0.5 cutoff / single-sided defaults) + `getMaterialAlphaMode`, `isMaterialBlended/Masked/Opaque`. Trailer matches the architecture: `alphaMode`/`alphaCutoff`/`alphaType`/`blendMode`/`doubleSided`, reusing the 2D `BlendMode` enum (§0.6).
+- **The 20-material taxonomy — complete against the §2 table** in `3d-materials-architecture.md`: unlit/special/utility ×8 (`Unlit`, `Emissive`, `Matcap`, `Toon`, `Wireframe`, `VertexColor`, `Depth`, `Normal`), classic ×3 (`Lambert`, `Phong`, `BlinnPhong`), PBR core ×2 (`StandardPbr` + `createStandardPbrMaterialProperties`, `SpecularGlossinessPbr`), KHR extensions ×7 (`Anisotropy`, `Clearcoat`, `Iridescence`, `Sheen`, `Specular`, `Subsurface`, `TransmissionVolume`) — every extension composes a `standard` block (D4), defaults match glTF (iridescence IOR 1.3 / 100–400 nm, transmission IOR 1.5, `attenuationDistance` Infinity). Maps are `Texture | null`, and `Texture` (in types) now carries `colorSpace` + the KHR_texture_transform `uvOffset`/`uvScale`/`uvRotation` — the prior review's two header gaps are closed.
+- **Conversion (`pbrMaterials.ts`)** — `convertSpecularGlossinessToStandardPbr`: canonical spec-gloss → metallic-roughness (roughness = 1−glossiness, metallic from Rec. 709 F0 luma vs 0.04 dielectric threshold), alias-safe, forwards all pass-through fields.
+- **Validation (`materialValidation.ts`)** — `clampStandardPbrMaterialProperties` (chains), `isValidMaterialIor` [1,5] / `Clearcoat` / `IridescenceThickness` / `Weight`. Sentinels only; zero `throw` in src.
+- **Presets (`materialPresets.ts`)** — 11 tree-shakable named PBR presets, each an `opts`-overridable thin wrapper; glass correctly uses transmission-volume.
+- **Hygiene** — deps `entity`+`types` only, `sideEffects: false`, single `.` export, no `@flighthq/sdk` import, colocated tests throughout.
 
 ## Gaps
 
-- **No material math.** Still no BRDF/Fresnel-Schlick/GGX/IBL/normal-mapping primitives. This is the deliberate descriptor-vs-shading line, and it is the single largest distance from "authoritative material library" → "authoritative material-descriptor library." The status report names it as the gating Gold decision; it correctly does **not** act on it (it has Rust-conformance and package-boundary implications). Surfaced below as an Open direction.
-- **`equalsMaterial` shallow-compares the `standard` sub-block.** The generic loop does `aFields[key] !== bFields[key]` for every non-`kind` field, so a PBR-extension material's nested `standard` object (and any other nested entity besides `colorTransform`) compares by reference. Two extension materials built with structurally-equal-but-distinct `standard` blocks return `false`. `cloneMaterial`/`copyMaterial` _do_ allocate a fresh `standard` object, so `equalsMaterial(clone(m), m)` is `false` for any extension material — a real round-trip inconsistency between the clone and equals halves. Not flagged in the status report.
-- **Color tier still missing the perceptual layer.** No OKLab/OKLCH (the status report parks this as a scope choice — `@flighthq/materials` vs a dedicated `@flighthq/color`). No named-color or CSS-string parse/format beyond `computeRgbHexString`.
-- **No serialization / `materials-formats` neighbor.** No `serializeMaterial`/`deserializeMaterial` and no glTF `material` JSON import — both correctly deferred as cross-package (the map-handle ↔ resource-id seam needs `resources`/`loader` sign-off). This is the triad's `-formats` layer for materials; it does not yet exist and may not need to until plurality appears.
-- **No `KHR_texture_transform`** (per-map UV transform) — deferred as a `@flighthq/types` change the GPU renderers read.
-- **Conversion matrix is one-directional.** Only spec-gloss→metallic; no `convertStandardPbrToSpecularGlossiness`, no phong↔PBR / shininess↔roughness helpers.
-- **No functional/parity rendering scenes** exercising material descriptors end-to-end across backends — unit coverage only.
-- **Rust crate is stale.** `flighthq-materials` exists but the ts-rust gate reports ~60% conformance (45 TS / 21 Rust / 24 missing): the entire 3D family, the new color helpers, and the new conversion/validation/preset surface are unported, and Rust has drifted names (`equals_material_by_kind`, a split `create_color_transform_from`) not recorded in the divergence map. The TS `equalsMaterial` rewrite this pass widens that gap — the Rust `_by_kind` name now describes behavior TS no longer has.
+- **No shading math** (BRDF/Fresnel/GGX/IBL) — still the descriptor-vs-shading line; the math lives in the `scene-gl`/`scene-wgpu` preludes (`glPbrPrelude`, `wgpuPbrPrelude`) and IBL baking in `glEnvironmentIblBake`. Charter Open direction #1 remains the gating fork; the package correctly does not act on it.
+- **OKLab/OKLCH tier blessed but absent.** Decision 2026-07-03 puts the perceptual tier in scope; there is no `rgbToOklab`/`oklabToRgb`/`rgbToOklch`/`oklchToRgb`/perceptual mix in `color.ts`. This is now blessed missing work, not an open question.
+- **`HslColor`/`HsvColor` not yet in `@flighthq/types`** — the 2026-07-03 Decision names all three types; only `LinearColor` moved.
+- **Stale `hslToRgb` doc comment persists** (`color.ts:56-59`): the block above `hslToRgb` is `rgbToHsl`'s ("Converts a packed sRGB `0xRRGGBBAA` color to HSL … Returns `out`") — the function converts HSL→RGB and returns `void`. Flagged 2026-06-24, listed in the assessment, still unfixed.
+- **Conversion matrix one-directional** — no metallic→spec-gloss back-conversion, no phong↔PBR / shininess↔roughness helpers (charter Open direction #7).
+- **`equalsMaterial` purpose-comment vs blessed contract tension.** The Decision blesses reference comparison of `standard` (batching signal), but the function's own comment claims it serves "dedup, pooling, and serialization round-trips — NOT the batch flush path". Under that stated purpose, reference-comparing `standard` fails: `equalsMaterial(cloneMaterial(m), m)` is `false` for every extension material (clone allocates a fresh `standard`), and a parsed material would never compare equal. The code is blessed; the comment's stated purpose is not achievable by it — one of the two should change.
+- **`copyMaterial` sharp edges** — the copy loop iterates `source` keys only, so copying onto an `out` with extra fields leaves residue, and it rewrites `out.kind` to `source.kind` (a cross-kind copy silently mutates identity). Same-kind precondition is implied, not stated.
+- **Minor internal duplication** — `pbrMaterials.ts` re-implements private `linearChannelToSrgb8`/`packLinear` beside the exported `linearChannelToSrgb`/`packLinearToColor`; `lerpColor` allocates a fresh 4-array per call.
+- **Manifest `description` is stale**: `"Color transform and material utilities"` — the bundle-era fix ("…3D material descriptors…") never landed in this tree.
 
 ## Charter contradictions
 
-None — the charter's North star, Boundaries, Decisions, and Open directions are all `TODO`/empty stubs (only "What it is" is seeded). There is nothing blessed to contradict. Per the rubric rule, judgment fell back to the codebase-map AAA standard; every assumption that filled a charter silence is surfaced as a candidate Open direction below. The thin charter is the dominant finding here: a package this broad, sitting on the 2D-tint / 3D-material / color-seam intersection and feeding both the GPU renderers and `displayobject-skia`, is carrying real design weight with no recorded direction.
+Two, both partial-execution of blessed Decisions rather than code defying direction:
+
+1. **Decision 2026-07-03 "`LinearColor`/`HslColor`/`HsvColor` move to `@flighthq/types`"** — only `LinearColor` moved; `HslColor`/`HsvColor` are still `color.ts`-local exports.
+2. **Decision 2026-07-03 "OKLab/OKLCH perceptual color tier in scope"** — nothing built.
+
+Everything else conforms: ColorTransform stays (✓, and the fork-H kind migration confirms the algebra/kind split), `equalsMaterial` reference-compare on `standard` (✓ blessed — modulo the comment tension above), TS-leads/Rust-later (✓, no `rust/` in this worktree).
 
 ## Contract & docs fit
 
-**Package lives up to the contract — mostly:**
+**Contract**: clean — naming (full type names, `create*`/`clone*`/`copy*`/`equals*`/`is*`/`get*` verbs), out-param alias-safety (tested), `Readonly<>` on inputs, sentinels-not-throws, single root export, `sideEffects: false`, alphabetized exports, types-first for every cross-package type except the two tuple stragglers above.
 
-- Naming, allocation-by-verb, `out`-param alias-safety, `Readonly<>` on read-only params, sentinels-not-throws, single root export, `sideEffects: false`, 1:1 colocated tests — all clean (corroborated by the api-alignment review's "Clean" list).
+**Candidate doc revisions (user-gated):**
 
-**Where the contract is not met (candidate fixes, within-package):**
-
-- **Cross-package scratch types defined file-local.** `LinearColor` is the return/out type of the SDK-wide sRGB decode seam — it crosses into `render-gl`/`scene-wgpu`/`displayobject-skia` — yet it is `export type` in `color.ts`, not in `@flighthq/types`. The api-alignment review flags this **High**. This pass _adds two more of the same shape_: `HslColor` and `HsvColor` are also file-local tuples. The status report acknowledges all three "should migrate to `@flighthq/types` if shared" — they are at minimum the return types of exported barrel functions, so they are already public surface. Candidate: move `LinearColor`/`HslColor`/`HsvColor` to `@flighthq/types`.
-- **Stale doc comment on `hslToRgb` (`color.ts:57-60`).** The block comment above `hslToRgb` is a copy-paste of `rgbToHsl`'s — it claims the function "Converts a packed sRGB color to HSL", writes hue/sat/lightness to `out`, and "Returns `out`". The function actually does HSL→RGB and returns `void`. A documentation defect on a public function; the name is right, the comment lies.
-- **`createColorTransform` constructor drift** (api-alignment Medium): param named `obj`, not `opts`, and not `Readonly<>` — diverges from every `create*Material`'s `opts?: Readonly<Partial<…>>`. Within-package consistency fix.
-- **`compute*` vs `get*` verb split** (api-alignment Low): `computeRgbHexString` derives a value like the `getColorTransformOffsetRgb*` siblings but uses a different verb. Pick one for derived-color reads.
-
-**Where the admin docs are stale (candidate revisions, user-gated):**
-
-- **Package Map entry is badly out of date.** `agents/index.md` still reads "`@flighthq/materials`: color transform and shader-related utilities. A logical home for these concepts; 3D material support is planned as a future direction." The 3D material library is shipped and extensive, the color tier is broad, and there is no "shader" code at all. This is the depth review's item #4 applied to the map (the manifest `description` was fixed; the map line was not). Candidate: rewrite to match the charter's "What it is."
-- **CONTRACT front-matter `crate` list.** `materials` has a real `flighthq-materials` crate (confirmed present), so it is correctly absent from the `crate: null` list — no change. Noted only to confirm.
+- **Package Map line** (`agents/index.md`): "`@flighthq/materials` (PBR material taxonomy — unlit, Blinn-Phong, metallic-roughness, depth)" — undersells badly: omits the ColorTransform algebra, the whole color tier and the SDK's single sRGB↔linear seam (which `render-architecture.md` explicitly locates here), the full 20-kind catalog, validation, and presets. Candidate: rewrite from the charter's "What it is".
+- **Charter Open direction #8 is itself stale** — it quotes a map line ("color transform and shader-related utilities … 3D material support is planned") that no longer exists; the current line is different but still wrong. Worth refreshing when the map line is rewritten.
+- `render-architecture.md`'s materials data-atom line ("20-material taxonomy constructors + the single `unpackColorToLinear` seam; maps are `Texture | null`; extensions compose `standard`") — verified accurate against source. No change.
 
 ## Candidate open directions
 
-These are the charter silences the review had to assume past. Each is a question for the user to settle into the charter, not a recommendation:
-
-1. **Material-math boundary (the gating fork).** Does `@flighthq/materials` become the shading source of truth (BRDF/Fresnel/GGX/IBL as tested reference math consumed by both the GPU shaders and `displayobject-skia`), or stay descriptor-only with the math living in renderer backends? This is the difference between authoritative material _library_ and authoritative material _descriptor_ library, and it has direct Rust-conformance weight. The status report flags it as the #1 design call. (structural-forks A: source-data vs participation; and the Wasm-mixable-leaf question in fork D — material/color math is named there as a mixable candidate.)
-2. **Where do `LinearColor`/`HslColor`/`HsvColor` (and a future color tier) live?** In `@flighthq/types` as shared scratch types, and/or does the color half graduate to a dedicated `@flighthq/color` neighbor? The package is already half a color library; the boundary is undecided.
-3. **OKLab/OKLCH tier** — in-package or in the `color` neighbor above. Pure math, no blocker but a scope choice.
-4. **Materials serialization / a `materials-formats` triad cell** — the map-handle ↔ resource-id seam shape, and whether glTF `material` import is a `materials-formats` package (triad `-formats` layer) or belongs to `resources`. Cross-package; the plurality guard says don't pre-create the cell until ≥2 formats appear.
-5. **`KHR_texture_transform` and the full extension-parity set** (dispersion, diffuse-transmission, emissive-strength as a first-class field, unlit round-trip) — which extensions are in scope, given each may touch `@flighthq/types`.
-6. **Rust conformance posture** — when does `flighthq-materials` catch up, and are the existing Rust name drifts (`equals_material_by_kind`, `create_color_transform_from`) sanctioned (recorded in the divergence map) or bugs to rename? The TS `equalsMaterial` rewrite makes the `_by_kind` name actively misleading.
+1. **Material-math boundary** (carried; the gating fork) — descriptor-only vs shading source of truth. Unchanged, still open, still the ceiling between solid and authoritative.
+2. **Conversion-matrix completeness** (carried, Open direction #7) — canonical one path only, or the full graph.
+3. **`materials-formats` / serialization seam** (carried) — plurality guard still says wait.
+4. **Where does the color tier ultimately live** — with OKLab/OKLCH blessed in-package, `color.ts` will be ~30 exports; the `@flighthq/color` neighbor question (Open direction #2's second half) gets more live with each addition. No new evidence forces it; noting the trend.

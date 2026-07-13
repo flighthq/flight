@@ -1,74 +1,58 @@
 ---
 package: '@flighthq/displayobject'
 status: solid
-score: 82
-updated: 2026-06-24
+score: 80
+updated: 2026-07-13
 ingested:
+  - charter.md
   - status.md
-  - source # incoming/builder-67dc46d64/head/packages/displayobject/src + dist d.ts
-  - changes.patch # incoming/builder-67dc46d64/changes.patch
-  # reviews/depth/displayobject.md — does not exist (no prior depth review to supersede)
+  - review.md (2026-06-24, superseded — written against the builder bundle, not this tree)
+  - source # live packages/displayobject/src + colocated tests
 ---
 
 # displayobject — Review
 
 ## Verdict
 
-**solid — 82/100.** A clean, well-shaped entity layer: every leaf kind (`Bitmap`, `Stage`, `Video`, `Loader`, `RenderView`, `HtmlView`) follows the entity/runtime quartet, setters guard and invalidate correctly, signals are opt-in via `enable*`, and tests are dense (195 claimed; the diff shows substantial new coverage). It falls short of authoritative on two axes: a few classic display-object kinds are still absent or deferred to neighbors (`SimpleButton`, `MorphShape`, plain `Shape`/`Sprite` which live elsewhere), and the _behaviors_ the new data fields imply (`cacheAsBitmap`, `scrollRect`, `opaqueBackground`, lifecycle-signal emission) are declared but inert — they are honored by no renderer and emitted by no hierarchy call yet. The status report's score of 88 is slightly generous: it counts declared-but-unwired traits as near-complete.
-
-The status report's claims **check out against the diff**: `loader.ts` is genuinely new, `stage.ts` gained the seven standard stage fields + setters and the `align: ''` default, `displayObject.ts` gained `cacheAsBitmap`/lifecycle/`getDisplayObjectByName`, and `htmlView`/`renderView` are untouched in the src delta (verified — neither appears in the patch's source hunks). Lifecycle emission is genuinely absent: the four signals are constructed in `createDisplayObjectLifecycleSignals` but no source file emits them (only stage resize/fullscreen and loader forwarding emit at all).
+**solid — 80/100.** The pruned core the 2026-06-25 Decisions blessed, now landed and clean: seven kinds (`DisplayObject`, `DisplayContainer`, `Bitmap`, `Stage`, `Video`, `HtmlView`, `RenderView`), each an entity/runtime quartet with a `compute*LocalBoundsRectangle` wired through `defaultMethods`, plus the new **color-adjustments runtime-slot API** — the generic replacement for the removed color-transform trait. The prior review (82, 2026-06-24) described a builder bundle (`Loader`, the seven-field `Stage`, `cacheAsBitmap`/`scrollRect`/`opaqueBackground`, lifecycle signals) that the charter has since ruled **dropped**; none of it is in this tree, correctly. The score reflects a smaller but charter-aligned surface: what remains is a Stage that has not yet re-grown the fields the Decision said it *keeps*, a few setter asymmetries, and dead debt (`internal.ts`, an unused `@flighthq/geometry` dependency).
 
 ## Present capabilities
 
-Grounded in `<sha>:packages/displayobject/src/`:
+Grounded in `packages/displayobject/src/`:
 
-- **Base entity (`displayObject.ts`).** `createDisplayObject` / `createDisplayObjectGeneric` compose the trait-init sequence (transform2D, bounds, appearance, cacheAsBitmap, clip, material, opaqueBackground, scrollRect). `createDisplayObjectRuntime` promoted to an `interface` to carry `lifecycleSignals`. `isDisplayObject` via `DisplayObjectTraitsKey`. `getDisplayObjectByName` wraps `findNodeByName`. Compositing-hint setters (`setDisplayObjectCacheAsBitmap[Matrix]`, `setDisplayObjectClip`, `setDisplayObjectOpaqueBackground`, `setDisplayObjectScrollRect`) all guard on equality then `invalidateNodeAppearance`.
-- **Stage (`stage.ts`).** Full standard stage data: `align` (now `''`/center default), `color`, `contentsScaleFactor` (defaults to `devicePixelRatio`), `displayState`, `frameRate`, `fullScreen{Width,Height}`, `mouseChildren`, `quality`, `scaleMode`, `showDefaultContextMenu`, `stageFocusRect`, `stage{Width,Height}`, `tabChildren` — each with a guarded setter. `setStageDisplayState` and `setStageSize` emit `onFullscreenChanged` / `onResize`. Stage-locating helpers `getDisplayObjectStage`, `getDisplayObjectStageDepth`, `isDisplayObjectOnStage`.
-- **Bitmap (`bitmap.ts`).** `pixelSnapping`, `smoothing`, `sourceRectangle`, `image`, the `createBitmapDataFromImage` convenience constructor, and a correct invalidation split — image/source changes go to `invalidateNodeLocalContent` + `invalidateNodeLocalBounds`, not appearance.
-- **Loader (`loader.ts`, new).** Full quartet + `LoaderSignals`. `setLoaderResourceLoader` forwards a `ResourceLoader`'s `onProgress/onComplete/onError/onCancel` into the loader's own signal group and tracks `loaded`/`total`/`reports`. `setLoaderContent` mounts the loaded root and invalidates bounds. `disposeLoader` correctly uses `dispose*` (detach slots, no resource to free) and `disconnectAllSlots`. `computeLoaderLocalBoundsRectangle` delegates to the content's bounds.
-- **Video / HtmlView / RenderView.** Each a complete quartet with a `compute*LocalBoundsRectangle` wired through `defaultMethods`, plus `setVideoSource/Smoothing`, `setHtmlViewSize`, `setRenderViewSize`.
-- **DisplayContainer.** Thin runtime-only wrapper over the generic factory.
-- **Contract hygiene.** Single root barrel, `sideEffects: false`, no top-level registration, all cross-package types sourced from `@flighthq/types`, `out`-param bounds functions, `Readonly<>` on read paths, sentinel `null` returns (`getDisplayObjectStage`, `get*Signals`, `getDisplayObjectByName`).
+- **Base entity (`displayObject.ts`).** `createDisplayObject` / `createDisplayObjectGeneric` compose the trait-init sequence (transform2D, boundsRectangle, appearance, material, clip); `createDisplayObjectRuntime` layers the runtime traits and stamps `DisplayObjectTraitsKey` (read back by `isDisplayObject`). `setDisplayObjectClip` sets the clip region and invalidates appearance.
+- **Color adjustments (new since the prior review — commits `df810bf5`/`7ec54aea`).** `addDisplayObjectColorAdjustment`, `setDisplayObjectColorAdjustments`, `getDisplayObjectColorAdjustments`, and the single-tint convenience `setDisplayObjectColorTransform` operate on the `NodeRuntime.colorAdjustments` slot (`@flighthq/types` `Node.ts`). The private `resolveDisplayObjectColorAdjustments` **fuses once on set** (never per frame) into the cached `resolvedColorTransform` — reused in place to avoid per-set churn — and raises `colorAdjustmentsChannelMixing` when the fused stack has off-diagonal terms the 8-float fold cannot carry, for the render walk's shakeable guard to report. This is the adjustments tier's "data folds" rule realized on the node: the render walk only reads the cache; the gl/wgpu folds (`enableGlColorAdjustment`/`enableWgpuColorAdjustment`) consume it downstream.
+- **Leaf kinds.** `Bitmap` (`image`/`smoothing`/`sourceRectangle`, exactly the Decision's field set; `setBitmapImage` splits invalidation correctly into local-content + local-bounds, not appearance), `Video` (`setVideoSource`/`setVideoSmoothing` with the same content-tier reasoning in comments), `HtmlView`/`RenderView` (`set*Size` with guard-then-invalidate), `Stage` (`color`/`stageWidth`/`stageHeight`, `setStageSize` guards, invalidates local bounds, and emits `onResize`), `DisplayContainer` (thin runtime-only wrapper).
+- **Stage helpers + signals.** `getDisplayObjectStage` derives stage membership from `getNodeRoot` — no privileged `stage` back-pointer survives (the old traversal wrappers and stage-depth helpers are gone per the Decisions). `StageSignals` (`onResize`/`onFullscreenChanged`/`onOrientationChanged`) behind `enableStageSignals`.
+- **Contract hygiene.** Single root barrel, `sideEffects: false`, types all from `@flighthq/types`, `out`-param bounds functions, sentinel `null` returns, full unabbreviated names. 96 tests across 7 colocated files, including the new color-adjustment surface (fuse cache reuse, channel-mixing flag, null-clears).
 
 ## Gaps
 
-What a mature display-object layer has that this lacks:
-
-- **Declared-but-inert traits.** `cacheAsBitmap`/`cacheAsBitmapMatrix`, `scrollRect`, and `opaqueBackground` are settable and invalidate appearance, but _no renderer reads them_ — setting them is a silent no-op visually. This is the largest gap between the score and reality. (Cross-package to honor; see Contract & docs fit for where that work now lives.)
-- **Lifecycle signals never fire.** `onAdded`/`onAddedToStage`/`onRemoved`/`onRemovedFromStage` can be connected but are emitted nowhere. The originating event (parent change / stage entry) fires in `@flighthq/node`'s `addNodeChild`/`removeNodeChild`, so emission needs a cross-package hook. Until then the trait is a constructible group with no producer.
-- **Missing classic kinds.** `SimpleButton` (deferred to `@flighthq/interaction` for state-swap) and `MorphShape` (deferred to `@flighthq/shape`) have no presence here. Whether the base `DisplayObject` layer should host _any_ button/morph entity shell, or whether those are wholly neighbor concerns, is unsettled (charter-silent).
-- **`Loader` re-wiring leak.** `setLoaderResourceLoader` connects four slots on the new loader but never disconnects the _previous_ loader's slots when replaced. Wire-once is fine; re-wire leaks. The status report flags this honestly; it remains a real defect for the replace path.
-- **`fullScreenWidth`/`fullScreenHeight` have no setter** and are documented as renderer-set, leaving a field with no first-class mutation path in-package — a small asymmetry against the "every data field has a guarded setter" pattern the rest of `stage.ts` follows.
-- **No `Loader` URL-driven convenience.** Loading a display object from a URL is reduced to "caller builds a `ResourceLoader`, wires it, calls `startResourceLoad`." That is the correct Flight decomposition, but there is no `loadLoaderFromUrl`-style convenience even as an opt-in, so the common path is verbose. (May be intentional; charter-silent — see open directions.)
+- **Stage is thinner than its own Decision.** The 2026-06-25 ruling says Stage *keeps* surface geometry — `scaleMode`, `align`, `contentsScaleFactor`, fullscreen dims — while shedding app/input concerns. Live `StageData` has only `color`/`stageWidth`/`stageHeight`. The kept set was never re-landed after the prune (the bundle carrying it was discarded wholesale).
+- **Signals with no producer.** `StageSignals.onFullscreenChanged` and `onOrientationChanged` are constructible but emitted nowhere in-package (only `setStageSize → onResize` fires). Either the emitting fields/setters return with the Stage geometry set above, or the two signals are premature surface.
+- **Bitmap setter asymmetry.** `smoothing` and `sourceRectangle` are blessed data fields (the Decision names both) but have no setters — only `setBitmapImage` exists — while `Video` has `setVideoSmoothing`. A caller mutating `bitmap.data.smoothing` directly bypasses invalidation.
+- **Guard inconsistency across setters.** North star #1 says setters "compare, short-circuit on equality." `setStageSize`/`setHtmlViewSize`/`setRenderViewSize` do; `setDisplayObjectClip`, `setBitmapImage`, `setVideoSource`, `setVideoSmoothing` set-and-invalidate unconditionally.
+- **Dead module `internal.ts`.** `DisplayObjectInternal` has zero importers anywhere in the repo, is not in the barrel, and `Omit<…, 'stage'>` names a field that no longer exists on `DisplayObject`. The charter's Open direction #8 asked whether to migrate this cast to runtime slots; the answer the tree gives is simpler — it is dead and can be deleted.
+- **Unused dependency.** `package.json` declares `@flighthq/geometry`; no source file imports it (only `signals`, `node`, `adjustments`, `materials`, `types` are used). Same hygiene class as the `textlayout` drop logged 2026-06-25.
 
 ## Charter contradictions
 
-**None** — the charter's North star, Boundaries, and Decisions are all still `TODO`, so there is no stated principle for the code to contradict. The "What it is" line (concrete composited 2D node types
+The charter now speaks, so this section is substantive:
 
-- base entity) matches the code exactly. This is a stub-charter case: the absence of contradictions is a measure of the charter's silence, not of the code's alignment. Every judgement below the "What it is" line falls back to the codebase-map AAA standard.
+- **Decision vs. code: the kept Stage fields are absent** (above). The code does not contradict the *spirit* (nothing dropped-by-decision snuck back), but the "Stage keeps surface geometry" half of the decomposition ruling is unimplemented.
+- **North star #1 partially violated** by the unguarded setters listed above — minor, mechanical.
+- **The charter body carries internal staleness**: North star #3 still cites `HasCacheAsBitmap` and #5 the "complete `Stage` field set, `Loader`" — both superseded by the Decisions section itself (which says so for the cacheAsBitmap case). Boundaries "In scope" still lists `Loader` and the compositing-hint data. Candidate charter revision at the next direction pass: prune the pre-Decision draft prose so a fresh agent cannot re-derive dropped features from the charter's own North star.
+
+Nothing dropped-on-sight has reappeared: no `cacheAsBitmap`/`scrollRect`/`opaqueBackground`, no `Loader`, no lifecycle signals, no `pixelSnapping`. The drop discipline held.
 
 ## Contract & docs fit
 
-**(a) How well the package lives up to the contract — strong.**
-
-- `@flighthq/types`-first: every cross-package type (`Loader`, `LoaderData`, `HasCacheAsBitmap`, `DisplayObjectLifecycleSignals`, the `Stage*` enums) is defined in `@flighthq/types`; the package imports them, never declares them inline. ✔
-- Naming: full unabbreviated type words throughout (`setDisplayObjectCacheAsBitmapMatrix`, `computeLoaderLocalBoundsRectangle`). `dispose*` vs `destroy*` chosen correctly (`disposeLoader` detaches, frees nothing). `enable*` opt-in for both signal groups. ✔
-- `out`-params, `Readonly<>`, sentinel returns, single root export, `sideEffects: false`, no top-level side effects: all hold. ✔
-- **Stale dependency.** `package.json` declares `@flighthq/textlayout` but no source file references it (verified: zero `textlayout`/`TextLayout` hits in `src/`). This inflates the install graph and the potential bundle reach for every consumer; it is the kind of dependency-hygiene drift `packages:check` may or may not catch. **Candidate fix:** drop the dependency.
-- **Legacy `internal.ts` cast.** `DisplayObjectInternal` (the `Omit<… 'children'|'parent'|'stage'> & writable` cast) is exactly the "legacy `internal.ts` cast — do not extend; prefer runtime slots" pattern the codebase map calls out. It is inherited, not new, but worth noting as a standing debt.
-
-**(b) Where the contract / admin docs are now stale against the work — two real items.**
-
-- **The Package Map line is outdated.** `agents/index.md` still describes `@flighthq/displayobject` as "bitmaps, shapes, containers, masks, stages, and videos." The actual package has **no shapes and no masks** (shapes → `@flighthq/shape`, masks → clip via `@flighthq/clip`), and _does_ have `Loader`, `RenderView`, and `HtmlView` which the line omits. The package's own `index.ts` doc comment is accurate; the map line should be updated to match it. **Candidate revision.**
-- **The status report's "deferred to render-canvas/dom/webgl" is mis-homed against the current tree.** The render reorg has landed in the same bundle: `packages/displayobject-canvas`, `packages/displayobject-dom`, and `packages/clip` now exist (confirmed present in `head/packages/`), and the codebase map documents the `displayobject-<backend>` layering. So the honoring of `scrollRect`/`opaqueBackground`/`cacheAsBitmap` and the clip/mask rendering now belong in those `displayobject-<backend>` leaves, **not** in the monolithic `render-canvas`/`render-dom`/ `render-webgl` the status entry names. The deferred-items framing is correct in spirit but points at the pre-reorg package names. This is a status-doc staleness note, not a code defect.
+- **(a) Contract:** strong. Types-first (`colorAdjustments`/`resolvedColorTransform`/`colorAdjustmentsChannelMixing` live on `NodeRuntime` in `@flighthq/types` with ownership comments), diagnostics inverted (the channel-mixing sentinel is a flag the render walk's guard reports — no message here), allocation explicit (the fuse cache is reused in place, documented). The `@flighthq/geometry` dep is the one hygiene miss.
+- **(b) Docs:** the Package Map line ("bitmaps, shapes, containers, masks, stages, videos") is still wrong — no shapes, no masks, and it omits `HtmlView`/`RenderView`; flagged since 2026-06-24, still unfixed. The prior `review.md`/`assessment.md` described the discarded bundle; this review supersedes both. `package.json` `description` ("bitmaps, shapes, text, masks, blend modes") has the same drift.
 
 ## Candidate open directions
 
-The charter is a stub; each item below is a question the review had to assume an answer to, surfaced for the user to settle into the charter's North star / Boundaries / Decisions / Open directions.
-
-1. **Where does the boundary with neighbor entity packages fall?** `Shape`/`Sprite` live elsewhere, `SimpleButton`/`MorphShape` are deferred to `interaction`/`shape`. Does `displayobject` own _only_ the base entity + leaf surfaces (bitmap/video/html/render/stage/loader), or should it host button/ morph entity shells whose _behavior_ lives in neighbors? (Touches structural fork A: source-data vs graph participation.)
-2. **Should declared traits ship before a renderer honors them?** `cacheAsBitmap`/`scrollRect`/ `opaqueBackground` are inert today. Is "data field lands here, behavior lands in a `-backend` pass" the blessed sequencing, or should a trait wait until at least one backend reads it? This is the central judgement for scoring this package honestly.
-3. **Who emits lifecycle signals, and how is the `node`→`displayobject` hook shaped?** A callback slot on `NodeRuntime`, a registry the hierarchy calls, or display-object-specific emission inside `addNodeChild`? This is a real cross-package design fork that blocks the lifecycle feature.
-4. **Is a URL-driven `Loader` convenience in scope,** or is the verbose "build a `ResourceLoader`, wire it, start it" path the deliberate golden path? The status's "wraps, not extends" decision leans toward the latter but never states it as a boundary.
-5. **Should `setLoaderResourceLoader` own slot lifecycle** (disconnect the prior loader on replace), or is wire-once the contract and re-wire a misuse? Settling this turns the leak into either a bug to fix or a documented precondition.
-6. **`Stage` as graph root vs. ordinary node.** `getDisplayObjectStageDepth` and the `internal.ts` `stage` slot encode stage-specific hierarchy semantics; the charter should state whether `Stage` is a privileged root kind or just another `DisplayObject` that happens to sit at the top.
+1. **Re-land the kept Stage geometry** (`scaleMode`, `align`, `contentsScaleFactor`, fullscreen dims) — the Decision already blesses it, but the field set touches `@flighthq/types` `StageData` and the renderers that honor `scaleMode`, so sequencing (data-first vs. with a consuming backend) needs a call given Open direction #2's no-unhonored-data lean.
+2. **Who emits `onFullscreenChanged`/`onOrientationChanged`?** Application/windowing owns fullscreen per the Decisions; is the emitter a `@flighthq/application` integration, or do the signals move there?
+3. **Are unconditional setters acceptable for reference-typed fields** (`clip`, `image`, `source`) where equality is identity and re-set-same-reference is rare, or should North star #1's guard rule be absolute? A one-line ruling settles the inconsistency either way.
+4. **Charter prose cleanup** — reconcile North star #3/#5 and Boundaries with the 2026-06-25 Decisions (user's gate; the Decisions ledger itself already says the draft is stale).

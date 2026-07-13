@@ -1,70 +1,55 @@
 ---
 package: '@flighthq/geolocation'
-status: partial
-score: 35
-updated: 2026-06-25
+status: solid
+score: 82
+updated: 2026-07-13
 ingested:
   - status.md
-  - source
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
+  - charter.md
+  - source (packages/geolocation/src)
+  - packages/types/src/Geolocation.ts
 ---
 
-# geolocation — Review (merge gate: integration-b2824e3d8 → origin/main)
+# geolocation — Review
 
-This is a **merge-gate** review of the incoming delta (head vs base under `incoming/integration-b2824e3d8/`), judged against the approved baseline `origin/main` (`eb73c3d74`). The baseline is the blessed floor and is not under review. Findings are grounded in `b2824e3d8:<path>` hunks of the delta and the `packages/geolocation/` slice of `changes.patch`.
+> Depth review of the live tree (2026-07-13). Supersedes the 2026-06-25 merge-gate review of `integration-b2824e3d8`, whose REJECT verdict (35) scored a snapshot missing the `@flighthq/types` half of the change. **That blocker is resolved**: `packages/types/src/Geolocation.ts` now defines `GeolocationErrorReason`, `GeolocationPermissionState`, `GeoPositionResult`, the `floorLevel` field, and the full 7-member `GeolocationBackend` (`getCurrentPositionResult`, `getPermission`, `subscribePermission`, `watchPosition` with `onError`). The June review's estimate — "would score ~80 reviewed in isolation" — now applies to the tree as it stands, and both 2026-07-02 charter Decisions are verified implemented.
 
 ## Verdict
 
-**REJECT — the integration tree does not type-check.** The package half of a two-part change landed (`geolocation.ts` grew 143 → 247 lines: +5 exported functions and a richer web backend) but the `@flighthq/types` half it is written against was **dropped from this integration**. The new package source imports three types and calls four backend members that exist nowhere in the head tree. The package-side design is genuinely good and convention-clean; it is blocked purely by the missing types header. This is the same failure mode as `@flighthq/storage`, `@flighthq/shortcut`, and `@flighthq/clipboard` this cycle — a builder change (`incoming/builder-67dc46d64`) whose `types` hunk was lost in integration.
+`solid — 82/100`. A small domain covered completely for its rubric: one-shot position (both the `null`-sentinel form and the reason-carrying `GeoPositionResult` companion), position watch with an ongoing `onError` channel, accuracy/timeout/max-age options, heading/speed/altitude/floor-level fields, the full permission lifecycle (query without prompting, request, live change subscription), a synchronous availability probe, and a zeroed-scratch constructor. The web default guards every `navigator.geolocation` / `navigator.permissions` touch and degrades to sentinels; the seam gives native hosts everything they need for full fidelity except watch-throttling options. 25 colocated tests mirror all 12 exports. Held below 85 by the chartered open items (throttle options, the `subscribePermission` attach race) and the absent diagnostics layer — not by any missing rubric row.
 
-## The blocker — the types header is missing from the delta (standards 6, 7)
+## Present capabilities
 
-`b2824e3d8:packages/geolocation/src/geolocation.ts:1-8` imports:
+Verified against `packages/geolocation/src/geolocation.ts` (250 lines) and `geolocation.test.ts` (25 tests, describes mirror all 12 exports in order):
 
-```ts
-import type {
-  GeolocationBackend,
-  GeolocationErrorReason,
-  GeolocationPermissionState,
-  GeolocationRequestOptions,
-  GeoPosition,
-  GeoPositionResult,
-} from '@flighthq/types';
-```
+- **Acquisition**: `getCurrentGeoPosition(options?) → GeoPosition | null`; `getCurrentGeoPositionResult(options?) → { position, reason }` distinguishing `'denied' | 'timeout' | 'unavailable'`; `createGeoPosition()` zeroed scratch value.
+- **Watching**: `watchGeolocationPosition(handler, options?, onError?) → id` (`-1` sentinel), `clearGeolocationWatch(id)`. The 2026-07-02 `Geo*` → `Geolocation*` rename Decision is **implemented** — no `watchGeoPosition` / `clearGeoWatch` remains anywhere in `packages/`.
+- **Permissions**: `getGeolocationPermission()` (Permissions API, `'prompt'` fallback), `requestGeolocationPermission()` (query, falling back to a position probe), `onGeolocationPermissionChange(listener) → unsubscribe` (no-op subscription without the Permissions API).
+- **Probes/seam**: `isGeolocationAvailable()` synchronous (checks `navigator`, secure context, `navigator.geolocation`); `getGeolocationBackend` lazy web default / `setGeolocationBackend(null)` restore; `createWebGeolocationBackend` implements all 7 seam members with try/catch around every host call.
+- **`floorLevel` fix implemented** (2026-07-02 Decision): `mapWebPosition` reads `(coords as { floorLevel?: number }).floorLevel ?? 0` with a durable comment on the non-standard field — no longer hardcoded to 0.
+- **Options mapping**: `GeolocationRequestOptions` (`enableHighAccuracy`, `timeoutMs`, `maximumAgeMs`) maps to `PositionOptions` at the web seam; unit-suffixed names per convention.
+- Hygiene: `sideEffects: false`, single `.` export, no dependencies beyond `@flighthq/types`; module state (`_backend`, `_emptyOptions`, `_noopUnsubscribe`) below exports; lib.dom name collision handled via a local `GlobalGeolocationPosition` alias.
 
-and the new web backend calls `getCurrentPositionResult`, `getPermission`, `subscribePermission` (`geolocation.ts:62-126`), reads `GeoPosition.floorLevel` (`geolocation.ts:24`, `:218`), and wires a third `onError` parameter into `watchPosition` (`geolocation.ts:127-139`, `:195-201`).
+## Gaps
 
-None of `GeolocationErrorReason`, `GeolocationPermissionState`, `GeoPositionResult`, the `floorLevel` field, or the new `GeolocationBackend` members (`getCurrentPositionResult`, `getPermission`, `subscribePermission`, the `onError` param) exist in the head tree:
+1. **Native watch-throttling options absent** (charter Open direction #2): `minimumUpdateDistanceMeters` / `minimumUpdateIntervalMs` on `GeolocationRequestOptions` — the one seam field native hosts (Core Location / FusedLocationProvider) expect that web cannot honor. Additive type + docs; needs the chartered decision on how the web backend documents ignoring them.
+2. **`subscribePermission` attach race** (charter Open direction #3): the `change` listener is wired only after `permissions.query()` resolves, so a state change inside that window is missed; the unsubscribe returned before resolution also cannot cancel a pending attach.
+3. **`requestGeolocationPermission` web fallback is a position probe** — when the Permissions API is absent it acquires an actual fix to trigger the prompt, a heavier side effect than "request permission" implies. Inherent to the web platform; worth a seam-doc note so native backends implement a true request.
+4. **No diagnostics layer** — silent sentinels (`null`, `-1`, `'prompt'`, no-op unsubscribe) with no `explain*` / `enable*Guards`; suite-wide condition.
+5. **Rust mirror `flighthq-geolocation` unstarted.**
 
-- `head/packages/types/src/Geolocation.ts` is **byte-identical to base** (`diff` reports IDENTICAL); it still declares only the original 4-member `GeolocationBackend` and an 8-field `GeoPosition` with no `floorLevel`.
-- `grep` over `head/packages/types/` returns **nothing** for any of the three new type names.
-- `changes.patch` contains **no** `diff --git a/packages/types/src/Geolocation.ts` hunk — only the package source, test, and docs hunks.
+## Charter contradictions
 
-Yet the carried-in `status.md` (added in this same patch) asserts a whole "### Types added to `packages/types/src/Geolocation.ts`" block listing exactly these symbols as done. That claim is **false against this head** — the honesty standard (7) fails: the status log describes a types change that is not in the tree it ships with. As shipped, `@flighthq/geolocation` imports nonexistent exports and the package (and anything that builds it) does not compile.
+None. Both 2026-07-02 Decisions (full `Geolocation*` prefix; `floorLevel` read-through) are verified landed in source and tests. The domain boundary holds — acquisition only, no geospatial math (distance/bearing/geofencing) has crept in.
 
-## What the delta gets right (would pass once the header is restored)
+## Contract & docs fit
 
-Judged on its own terms, the package-side change is well-shaped and convention-clean:
+- Types-first satisfied: the complete seam and all result/permission types live in `packages/types/src/Geolocation.ts` with doc comments on sentinel semantics. The June "status claims types that are absent" honesty finding is resolved — `status.md`'s as-claimed block now matches the tree.
+- Sentinels never throws; `Readonly<>` on options/position params; `GeoPositionResult` is geolocation-local pending the chartered suite-wide question (Open direction #1).
+- Package Map line ("current position and position watches") still undersells the permission lifecycle + availability probe — the doc widen the June review flagged remains outstanding, behind the user's gate.
 
-- **Composition / bedrock (1) — pass.** Acquisition-only; no geospatial math fused in. The new `getCurrentGeoPositionResult` is an additive explicit-data companion to the `null`-sentinel `getCurrentGeoPosition`, not a config-gated branch inside it (`geolocation.ts:144-152`). Permission query/request/subscribe are distinct flat functions, not a mode flag.
-- **Naming (2) — pass for the delta's new surface.** `getGeolocationPermission`, `onGeolocationPermissionChange`, `isGeolocationAvailable`, `getCurrentGeoPositionResult` all carry the full `Geolocation`/`GeoPosition` stem and the right verb (`get*` / `is*` / `on*`). The pre-existing `watchGeoPosition` / `clearGeoWatch` `Geo*`-stem split is inherited from base (both functions are unchanged in name), **not** introduced by this delta, and is already tracked as charter Open direction #1 — so it is not a delta defect and is not a merge blocker.
-- **Tree-shaking / bundle (3) — pass.** `package.json` is byte-identical to base (single `.` export, `sideEffects: false`, no new dependency). Module state stays lazy (`_backend`, `_emptyOptions`, `_noopUnsubscribe` at `geolocation.ts:203-205`); no top-level registration or listener.
-- **Registry vs union (4) — n/a.** No `kind` family here; the swappable backend seam is the right abstraction.
-- **Subject triad (5) — n/a.** No format/backend split; the web backend correctly lives in-package behind `createWebGeolocationBackend`.
-- **Contract hygiene (6) — strong where it compiles.** Sentinels throughout (`null`, `false`, `-1`, `'prompt'`, no-op unsubscribe), never throws on expected failure; `Readonly<>` on every options parameter; `try/catch` guards around every web API touch (`geolocation.ts:35-139`). `out`-params are n/a (async acquisition, not hot-loop math). The one contract failure is types-first: the types are referenced but absent (the blocker above).
-- **Tests (7) — colocated, alphabetized, mirror exports.** `geolocation.test.ts` (251 lines) covers all 12 exports with describe blocks in source order, including the sentinel paths and the new `onError`/`getCurrentPositionResult`/`subscribePermission` surface. The tests are honest about jsdom (`isGeolocationAvailable` expected `false` at `:178`, result `reason` `'unavailable'` at `:143`). They will not run until the types exist.
+## Candidate open directions
 
-## Minor (non-blocking, fold into the unblock pass)
-
-- **`floorLevel` is structurally present but never populated.** `mapWebPosition` writes `floorLevel: 0` unconditionally (`geolocation.ts:212-225`) and never reads `coords.floorLevel`. This is honest "zeroed-when-unknown" per the type doc and lib.dom does not yet type the field, so it is correct as-is — a tracked follow-up (charter Open direction #6), not a fix.
-- **`subscribePermission` attach-race.** The listener is wired only after `permissions.query()` resolves (`geolocation.ts:104-126`), so a change in that window is missed. Acceptable as a documented Permissions-API limitation; surfaced as charter Open direction #8.
-
-## Where the admin docs need revising
-
-- The Package Map line for `@flighthq/geolocation` still reads "current position and position watches"; the delta widens the cell to also own the full permission lifecycle (query / request / live change) and a synchronous availability probe. The map line should widen (charter Open direction #9) — a doc change behind the user's gate, not an autonomous edit.
-- `status.md` must not assert the types as landed while the integration tree lacks them. The integration worker must either restore the types hunk or correct the status log; the two must agree.
-
-## Score
-
-35/100. The package-side craft is solid-tier work (it would score ~80 reviewed in isolation), but a merge gate scores the tree that would land, and **this tree does not compile**. The score rises to solid the moment the `@flighthq/types` Geolocation header is restored to match what the package imports.
+1. Watch-throttling seam fields (charter Open direction #2) — decide and land the type before a native host commits to the narrower contract.
+2. Whether `GeoPositionResult` (sentinel + reason companion) becomes a suite-wide pattern (charter Open direction #1) — `storage`/`net`/`webcam` share the same "why did it fail" need.
+3. Fix the `subscribePermission` attach race (charter Open direction #3) — re-read `status.state` after attach and cancel pending attaches on unsubscribe; small, but chartered as open rather than swept.

@@ -1,103 +1,73 @@
 ---
 package: '@flighthq/scene'
-status: solid
-score: 68
-updated: 2026-06-24
+status: partial
+score: 55
+updated: 2026-07-13
 ingested:
   - status.md
   - source
-  - changes.patch
+  - tests
 ---
 
 # scene — Review
 
-> Survey of `@flighthq/scene` from the incoming bundle `builder-67dc46d64` (head, committed at `67dc46d64`; `dirty: false`). Evidence is `incoming/builder-67dc46d64/head/packages/scene/` plus `committed.patch`. No prior `reviews/depth/scene.md` exists in this worktree, so this is the first survey. The charter is a stub (only "What it is" is seeded), so the package is judged against the codebase-map AAA standard and the structural forks, with every charter silence flagged below.
+> Survey of the **live worktree** (`packages/scene/src/`, 17 files: 8 modules + 8 tests + barrel, ~440 source lines, 90 tests). The prior review (2026-06-24, solid/68) was evidence-based on the incoming bundle `builder-67dc46d64`; **the live tree never received four of that bundle's modules**. Commit `06a0c480` ("recover lost source across packages") restored `sceneNodeBounds`/`sceneNodeCulling`/`sceneNodeDispose`/`sceneNodeTransform` (+ tests) but **not** `sceneNodeTraversal`, `sceneNodeTaxonomy`, `sceneNodeClone`, `sceneNodeBoundingSphere`, or `sceneNodeRaycast`. Since then, `6e188717` added the new `sceneAnimation` binding layer. This review re-scores the tree as it stands.
 
 ## Verdict
 
-`solid — 68/100`. What the codebase map still calls "a doorway… the road mostly untaken" is no longer a stub: this session built the 3D scene graph out into a real spatial-query surface — traversal, TRS ergonomics, world AABB + bounding sphere, frustum culling, raycasting, a node taxonomy (Group/Mesh/InstancedMesh/LodMesh/Billboard), subtree clone, and dispose. Twelve source files, 172 colocated tests, render-free, side-effect-free, all types homed in `@flighthq/types`. It clears Bronze comfortably and reaches into Silver. It is held back from a higher score by (a) a stale status doc that under-claims the actual work, (b) a raycaster that allocates per hit and carries dead ternaries, and (c) a charter with no North star or boundaries to anchor the in-scope/out-of-scope calls the package is now implicitly making.
-
-## Status-doc verification (AS-CLAIMED → verified)
-
-The distributed worker report (`status.md`, 2026-06-24) is a **mid-session snapshot** and is now **stale against the committed head**. Every item it lists as _deferred_ is in fact implemented and committed (`committed.patch`):
-
-| status.md claim | Reality in head/src + committed.patch |
-| --- | --- |
-| "Estimated new score 52/100 (Bronze complete)" | Under-claims — culling, raycast, taxonomy, clone, bounding sphere all landed |
-| Frustum culling **deferred** (Silver) | `sceneNodeCulling.ts`: `buildSceneFrustum`, `cullSceneNodeByFrustum` — committed, 7 tests |
-| Raycasting **deferred** (Silver) | `sceneNodeRaycast.ts`: `raycastSceneNode`, `raycastSceneNodeFirst` — committed, 13 tests |
-| Instanced/LOD/Billboard taxonomy **deferred** (Silver) | `sceneNodeTaxonomy.ts`: `createGroup/createInstancedMesh/createLodMesh/createBillboard` + `is*`/`selectLodMeshLevel`/`setInstancedMesh*` — committed, 35 tests |
-| Subtree clone **deferred** (Silver) | `sceneNodeClone.ts`: `cloneSceneNode` — committed, 10 tests |
-| `getSceneNodeWorldBoundingSphere` "consider" (suggestion #4) | `sceneNodeBoundingSphere.ts` — committed, 6 tests |
-| "Total tests: 101 (7 files)" | Actually **172 tests across 12 source test files** |
-| `@flighthq/mesh` moved to `dependencies` | Confirmed in `package.json` |
-
-The `dist/` captured in the bundle predates these files (it shows only the 6-file Bronze surface), which is why `index.d.ts` under-reports the API; `src/index.ts` is the source of truth and re-exports all twelve modules. **Recommendation for the status pass: replace the stale entry** — it actively misleads on what is built and would re-task already-done Silver work. The status file is not a correctness finding against the _code_; it is a continuity-log staleness finding.
+`partial — 55/100`. What exists is clean, contract-conformant, and well-tested: node/mesh primitives, TRS ergonomics with a correct model-space lookAt, world-AABB aggregation, frustum culling, dispose, and a new animation-clip binding layer. But the tree is thinner than both the prior review and the charter describe. Of the bundle's losses: raycast is **superseded by design** (`@flighthq/picking` now owns the full camera/ray pick over `SceneHit`, per the 2026-07-03 "keep standalone" Decision), and traversal is **well-homed generically** in `@flighthq/node` (`findNode`, `findNodeByName`, `forEachNodeDescendant`, `walkNodeDescendants`, `forEachNodeAncestor`, `getNodeCommonAncestor`, `reparentNode`). The taxonomy (`Group`/`InstancedMesh`/`LodMesh`/`Billboard`), `cloneSceneNode`, and `getSceneNodeWorldBoundingSphere` are **genuinely gone** — their types sit orphaned in `@flighthq/types` with zero consumers. BVH/octree acceleration is in scope by Decision but unstarted, and scene's cull surface has no production consumer (render duplicates the walk internally).
 
 ## Present capabilities
 
-Grounded in `head/packages/scene/src/`:
+Grounded in `packages/scene/src/`:
 
-- **Node primitives** (`sceneNode.ts`, `scene.ts`, `mesh.ts`): `createSceneNode`/`createScene`/ `createMesh`, the `SceneNodeRuntime` (`worldMatrix` slot, `HasTransform3D` trait), per-entity signal opt-in (`enableSceneNodeSignals`/`enableMeshSignals` delegating to `@flighthq/node`), and `isMesh` discriminating by presence of `geometry` rather than kind — robust across custom kinds.
-- **Traversal/query** (`sceneNodeTraversal.ts`): `traverseSceneNode` (pre-order, prune-on-`false`), `traverseSceneNodePostOrder`, `forEachSceneNodeChild`, `findSceneNodeByName`, `findSceneNodeWhere`, `findSceneNodesWhere` (out-array, no alloc). Clean depth-tracking via the `SceneNodeVisitor` type.
-- **TRS ergonomics** (`sceneNodeTransform.ts`): get/set position, rotation (quaternion), scale, `setSceneNodeTransform` (full TRS recompose), and `setSceneNodeLookAt` — correctly a _model_ matrix, distinct from geometry's view-matrix `setMatrix4LookAt`, with the distinction documented inline. Module-scratch vectors/quat for zero hot-path allocation; alias-safety comments throughout.
-- **Bounds** (`sceneNodeBounds.ts`, `sceneNodeBoundingSphere.ts`): world-space AABB and bounding-sphere aggregation over all Mesh descendants, both out-param and alias-safe, both resetting to an empty box/sphere first. Sphere is offered as the cheaper frustum pre-filter (documented).
-- **Culling** (`sceneNodeCulling.ts`): `buildSceneFrustum` (from a view-projection matrix) + `cullSceneNodeByFrustum` collecting visible Mesh leaves into an out-array, skipping disabled subtrees. The render-integration contract the status flagged as "needs a decision" was resolved the right way: a **caller-driven, acyclic** seam — scene builds the cull list, the render walk consumes it; scene never imports render. This is documented in the function's design note and matches the codebase-map "rendering is something the caller invokes by name" rule.
-- **Raycasting** (`sceneNodeRaycast.ts`): `raycastSceneNode`/`raycastSceneNodeFirst` with AABB broadphase + Möller-Trumbore narrowphase, triangle-list and triangle-strip (with odd-triangle winding flip), indexed and non-indexed, `maxDistance`/`backfaceCull`/`predicate` options, subset resolution, and optional world-space normals. World-space triangle transform avoids needing an inverse-world matrix.
-- **Taxonomy** (`sceneNodeTaxonomy.ts`): `Group`, `InstancedMesh` (instance matrices + packed-RGBA per-instance colors + active-count window), `LodMesh` (distance-selected levels), `Billboard` (`full`/`axisY`/`screenAligned`). Each has a constructor, a presence-based `is*` guard, and the field accessors a backend needs (`selectLodMeshLevel`, `setInstancedMeshInstance*`). Orientation/ instancing draw is correctly left to `scene-gl`/`scene-wgpu`.
-- **Lifecycle** (`sceneNodeClone.ts`, `sceneNodeDispose.ts`): `cloneSceneNode` (deep structural copy, geometry/materials shared by reference with the ownership caveat documented; per-taxonomy reconstruction) and `disposeSceneNode` (thin delegate to `disposeNode`, intentionally a named hook point, GPU-free per the `dispose*` contract).
+- **Node primitives** (`sceneNode.ts`, `scene.ts`, `mesh.ts`): `createSceneNode`/`createScene`/`createMesh` over the shared `@flighthq/node` spine (`SceneNodeRuntime` with the `worldMatrix` slot, `SceneNodeTraitsKey`), per-entity signal opt-in (`enableSceneNodeSignals`/`enableMeshSignals` delegating to node), `getSceneNodeRuntime`/`getMeshRuntime` accessors, and `isMesh` discriminating structurally by presence of `geometry` — robust across custom kinds. `Scene = SceneNode` (observer-agnostic root; camera and lights are draw-args, matching the render-architecture principle).
+- **TRS ergonomics** (`sceneNodeTransform.ts`): get/set position, rotation quaternion, scale; `setSceneNodeTransform` full recompose; `setSceneNodeLookAt` correctly building a **model** matrix (translation = eye), explicitly distinguished from geometry's view-matrix `setMatrix4LookAt`. Module-scratch vectors/quat, alias-safety documented, `invalidateNodeLocalTransform` on every write.
+- **Bounds** (`sceneNodeBounds.ts`): `getSceneNodeWorldBounds` — world-space AABB over all Mesh descendants, resets `out` to an empty box, prefers cached `geometry.bounds`, computes into scratch when null (never mutates shared geometry), alias-safe.
+- **Culling** (`sceneNodeCulling.ts`): `buildSceneFrustum` (view-projection → frustum) + `cullSceneNodeByFrustum` (out-array of visible Mesh leaves, disabled subtrees pruned, caller controls accumulation). The caller-driven acyclic seam is documented in a design note.
+- **Animation binding** (`sceneAnimation.ts`, new since the prior review): `applyAnimationClipToScene` — the 3D binding layer over the target-free `@flighthq/animation` core, mapping `SceneAnimationTarget {node, path}` channel refs onto node TRS via the transform setters. Types (`SceneAnimationTarget`, `SceneAnimationPath` + constants) homed in `@flighthq/types`.
+- **Lifecycle** (`sceneNodeDispose.ts`): `disposeSceneNode`, a thin named delegate to `disposeNode`, with the `dispose*`-vs-`destroy*` contract explicitly documented (GPU frees belong to the render packages).
+- **Tests**: 90 `it` blocks across 8 colocated files; alias-safety cases present (`sceneNodeTransform.test.ts:153,202`, `sceneNodeBounds.test.ts:81`); hierarchy/world-transform integration covered in `sceneNode.test.ts`.
 
-Render integration lives correctly **outside** this package: `render/src/sceneRender.ts` (`prepareSceneRender`), `scene-gl/src/drawGlScene.ts`, and `scene-wgpu` are siblings in the bundle. `scene` itself imports only `geometry`, `mesh`, `node`, `signals`, `types` — no render dependency, `sideEffects: false`, single root `.` export. The triad's 3D family is materializing as designed.
+Downstream consumers are real: `@flighthq/picking` (imports `getSceneNodeWorldBounds`, `isMesh`, `Scene`), `@flighthq/skeleton` (`createSceneNode`, `setSceneNodePosition`), `@flighthq/scene-formats` (`createSceneFromGltf/Glb` return a `Scene`), and the render/scene-gl/scene-wgpu test suites. Deps are exactly `animation`/`geometry`/`mesh`/`node`/`types`; no render import; `sideEffects: false`; single root export.
 
 ## Gaps
 
-What a mature 3D scene-graph library has that this one does not yet:
+Judged against the charter, the render-architecture target ("Scene = what exists", minimal `Scene`/`Mesh`/bare-group node set — which the live tree **does** deliver), and a textbook scene-graph layer:
 
-- **Raycaster code quality.** `sceneNodeRaycast.ts` has two no-op ternaries (`absoluteTriIndex = indexedMode ? tri : tri` and the identical-branch `absoluteIndexStart`), confusing dead logic that should collapse. It allocates **per hit**: each `SceneRaycastHit` is a fresh object literal and `point` is `{ x, y, z } as Vector3`; the normal path calls a local `_createVector3()` that returns `{ x:0,y:0,z:0 } as Vector3` — a literal cast — _next to an imported `createVector3` it does not use_. This violates the source-style rule "prefer constructors over object literals for SDK entity types," and the per-hit allocation is a GC hazard for a query meant to run on pointer-move. (A result type carrying entities is allocation by necessity, but it should use the constructors.)
-- **Normal accuracy.** Raycast normals are transformed by the world matrix's upper-3×3, not its inverse-transpose; documented as a uniform-scale-only approximation, but wrong under non-uniform scale — a real gap for skewed/stretched meshes.
-- **No spatial acceleration.** Culling and raycasting are linear subtree walks. A mature graph offers a BVH/octree (the status' own Gold item) for large scenes; absent here, every query is O(n) over all meshes. Acceptable at this stage but a named ceiling.
-- **No per-node visibility/layer mask.** Culling keys only on `enabled`; there is no render-layer or visibility-mask field (the status' deferred "renderLayer") for selective culling/picking.
-- **Skinning/animation node family absent** (`Bone`/`Skeleton`/`SkinnedMesh`) — the largest Gold item; expected for AAA but cross-package (mesh skin weights + backend palette upload).
-- **No serialization / scene descriptor.** No round-trip to a plain descriptor; needs a resource-key strategy and is cross-package.
-- **No Rust crate yet.** `flighthq-scene` is unstarted (TS is authoritative; mirror is downstream).
-- **`createScene` vs `createGroup` overlap.** Both produce transform-only roots; `Scene = SceneNode` while `Group` is a distinct kind. The intended difference (root identity vs. interior container) is reasonable but undocumented as a boundary — see open directions.
+- **Lost taxonomy, clone, and bounding sphere.** `Group`, `InstancedMesh` (instance matrices/colors/count), `LodMesh` (`LodLevel[]`), `Billboard` (`BillboardMode`) exist as complete types in `@flighthq/types` (`Group.ts`, `InstancedMesh.ts`, `LodMesh.ts`, `Billboard.ts`) with **no constructor, guard, or consumer anywhere in the tree** — as does `SceneNodeVisitor.ts`. `cloneSceneNode` and `getSceneNodeWorldBoundingSphere` are likewise absent. The charter's Boundaries list all of these as "realized".
+- **Scene's cull surface has no production consumer.** `prepareSceneRender` (`packages/render/src/sceneRender.ts`) reimplements the walk internally (`collectVisibleMeshes`, including its own structural `geometry != null` mesh test and frustum check) rather than consuming `cullSceneNodeByFrustum`. The charter's North-star seam ("scene builds the list, the render walk consumes it") is currently honored in dependency direction but not in fact — the cull logic exists twice, and scene's copy is exercised only by its own tests.
+- **No spatial acceleration** (BVH/octree) — in scope per the 2026-07-03 Decision; every bounds/cull query is an O(n) recursive walk.
+- **No world-space TRS getters** (`getSceneNodeWorldPosition`/`WorldScale`/`WorldRotationQuaternion`) — a textbook staple; users must go through `getNodeWorldTransformMatrix4` + manual decompose.
+- **No per-node visibility/layer mask** — culling keys only on `enabled` (Open direction 6).
+- **No skinning node family, no serialization, no Rust crate** — all chartered as separate packages / open directions; `skeleton` exists and already consumes scene, so the node-family boundary is holding.
+- **Optional `CameraNode`/`LightNode` + `findSceneCameras`/`findSceneLights`** (render-architecture's "additive, never structural" convenience) — not built; correctly absent until directed, but worth naming as the target's stated future.
+- **Code-quality nits** (each grounded): `setSceneNodePosition`'s comment contradicts itself and its own implementation ("preserved by decompose–recompose … use `setSceneNodePosition` which is faster" — on `setSceneNodePosition` itself, which is the fast column-stomp path); `scene.ts` doc says "render via prepareSceneRender + drawScene" but no `drawScene` exists (backends export `drawGlScene`/`drawWgpuScene`); `sceneNodeCulling.ts` points to "`buildSceneFrustumFromCamera` in `@flighthq/camera`", which does not exist; `applyAnimationClipToScene` compares raw `'Translation'`/`'Scale'` literals instead of the exported `SceneAnimationPath*` constants and its trailing `else` treats **any** unknown path as Rotation; `sceneAnimation.test.ts` has no Rotation-path test (the quaternion path is untested); `sceneAnimation.test.ts` and `sceneNodeDispose.test.ts` omit the explicit `vitest` import the other six test files use; the mesh-local-bounds→world-AABB block is duplicated verbatim between `sceneNodeBounds.ts` and `sceneNodeCulling.ts`.
 
 ## Charter contradictions
 
-The charter has only a seeded "What it is" line and no North star, Boundaries, or Decisions, so there is little to contradict. Measured against the **one** thing it asserts — "a scene root, transform-only group nodes, and renderable mesh leaf nodes, plus the runtime/signal/world-matrix plumbing those nodes need to participate in a render walk" — the code is **consistent and then some**: it delivers exactly that core and extends it (taxonomy, queries) without violating it. The charter's implicit "participate in a render walk, but do not render" line is honored: no render import, caller-driven cull seam. **No contradictions found.**
+The code violates no North-star **principle** — render-free, acyclic, plain data, out-params, sentinels, types-first all hold. But the charter's **factual claims** are now wrong against the tree:
+
+- **Boundaries "In scope (today, realized)"** lists the taxonomy, traversal/find queries, subtree clone, bounding sphere, and raycasting. None of these live in `packages/scene/src/` today (raycast → `picking` by Decision; traversal → `node` generics; taxonomy/clone/sphere lost).
+- **North star 2** cites `getSceneNodeWorldBoundingSphere` and raycast allocation policy; **Open directions 2, 5, 8, 9, 10** reason over code (`Group`, `InstancedMesh`, raycaster internals, `_cloneNode` cascade) that no longer exists here. Direction 8/9 (raycast allocation, normal accuracy) now belong to `picking`'s cell if anywhere.
+
+These are charter-staleness findings for the user's gate, not code defects — but a successor reading the charter alone would materially mis-model the package.
 
 ## Contract & docs fit
 
-**Lives up to the contract:**
+**Lives up to the contract:** all cross-package types in `@flighthq/types` (`SceneNode`, `Mesh`, `SceneAnimationTarget`, `SceneAnimationPath`); full unabbreviated names (`cullSceneNodeByFrustum`, `getSceneNodeWorldBounds`); out-params first with documented alias-safety; sentinels not throws (`getSceneNodeSignals` → `null`; animation binding skips non-scene targets silently); `dispose*` semantics documented; single root `.` export, `sideEffects: false`, no top-level side effects, signals opt-in via `enable*`; every export has a colocated test (per file inspection). `crate: flighthq-scene` remains a forward declaration — TS-leads per Decision.
 
-- Types are `@flighthq/types`-first — every new type (`SceneNode`, `Mesh`, `Group`, `Billboard`, `InstancedMesh`, `LodMesh`, `Ray3D`, `SceneRaycastHit`, `SceneRaycastOptions`, `SceneNodeVisitor`) is defined in `types/src/` and re-exported, per `committed.patch`. No cross-package type defined inline.
-- Full unabbreviated names throughout (`getSceneNodeWorldBoundingSphere`, `cullSceneNodeByFrustum`).
-- Out-params with documented alias-safety (`getSceneNode*`, `getSceneNodeWorldBounds/Sphere`); `find*Where`/`cull*`/`raycast*` take an out-array and return it.
-- Sentinels not throws: `findSceneNodeWhere` → `null`, `raycastSceneNodeFirst` → `null`, `selectLodMeshLevel` → `-1`, `setInstancedMesh*` → `false` on out-of-range.
-- `dispose*` vs `destroy*` distinction is correct and explicitly documented in `sceneNodeDispose.ts`.
-- Single root `.` export, `sideEffects: false`, no top-level side effects, signals opt-in via `enable*` delegating to the owner package.
+**Candidate doc/admin revisions (user's gate):**
 
-**Candidate doc revisions (user's gate, not mine to act on):**
-
-- **Package Map line is stale.** `agents/index.md` still reads "`@flighthq/scene`: 3D world graph… A doorway for future development; the road is mostly untaken and the package is not yet built out." That is no longer true and contradicts structural-fork G's 2026-06-24 ruling ("full 3D is in scope… `scene`… becomes a priority build-out, not a doorway"). The line should be rewritten to describe the realized scene-graph + query surface.
-- **`crate` front-matter.** Charter declares `crate: flighthq-scene`; the crate does not exist yet. Correct per the conformance "crate existence" intent (TS-first), but worth a register note that the mirror is pending.
-- **Source-style enforcement.** The raycaster's object-literal entities would ideally be caught by whatever `npm run fix`/lint covers; flag that the "constructors over literals" rule is currently only prose, not mechanically enforced here.
-
-**Structural-fork fit:**
-
-- **Fork B (closed union vs open registry).** `cloneSceneNode`'s `_cloneNode` is a closed `if (isInstancedMesh) … else if (isLodMesh) … else if (isBillboard) … else if (isMesh) …` cascade over the taxonomy. Today the family is small and the cascade is fine (fork B's "tight loop within a closed system" exception), but clone is exactly the kind of per-kind dispatch that taxes every new node type and is a candidate to flip to a registry (a per-kind `cloneNode` registered beside the constructor) as the taxonomy grows. Worth tracking, not yet acting on.
-- **Fork A (source-data vs graph participation).** `scene` holds graph participation; `mesh` holds geometry data; `InstancedMesh` fuses the instance buffer (source data) with the node — the same sim-vs-node fusion the fork flags for particles↔sprite. The line is currently drawn at "instance buffers live on the node"; whether they should live in a `mesh`/instancing data layer is an open fork question, not a defect.
-- **Fork C (within-unit feature-bundling smell).** No single hot function bundles config-gated feature branches here; the closest is the raycaster's topology branching, which is legitimate geometry handling, not feature-flag bundling.
+- **Charter Boundaries + Open directions 2/5/8/9/10** need rebasing onto the live tree (see above); the raycast directions should migrate to `picking`'s cell.
+- **`status.md` is doubly stale**: the newest entry (2026-06-24) is a mid-session snapshot of bundle work that was then partially lost; it would re-task or mis-task a successor. The lost-source event and the picking/node re-homing deserve a verified entry.
+- **Package Map** (`agents/index.md`): `@flighthq/scene` "3D world graph; early stage" is defensible again, but `@flighthq/picking`'s line — "composition over `@flighthq/scene` raycast" — is wrong: scene exports no raycast; picking implements its own Möller–Trumbore over scene's bounds + `isMesh`.
+- **Orphaned types** `Group`/`InstancedMesh`/`LodMesh`/`Billboard`/`SceneNodeVisitor` in `@flighthq/types` have zero consumers — reconcile (reimplement against them or remove them) once the taxonomy direction is settled.
 
 ## Candidate open directions
 
-The charter is silent on these; each is something this review had to assume and should feed the charter's Open directions for the user to settle:
-
-1. **North star / bar.** What defines "good" for `scene` — minimal spatial graph + queries, or a full three.js/Babylon-class scene system (acceleration structures, layers, scene-level lighting/ environment binding)? Fork G says full 3D is in scope; the per-package bar is still unstated.
-2. **Boundaries: `Scene` vs `Group` vs bare `SceneNode`.** Three near-identical transform-only node forms exist. Bless the intended distinction (root identity vs. named container vs. anonymous transform) or collapse it.
-3. **Where the cull/render-walk contract is owned.** The package chose a caller-driven cull list (acyclic, scene builds → render consumes). Is that the blessed seam, or should `prepareSceneRender` own culling? This is the one cross-package design decision the build implicitly made; it should be ratified rather than left implicit.
-4. **Acceleration-structure home.** BVH/octree as `scene`-internal vs. a `scene-spatial` neighbor — the status raised this; it is a bedrock/decomposition call.
-5. **Instance-data home (fork A).** Do per-instance matrices/colors belong on the `InstancedMesh` node (current) or a separate instancing data layer?
-6. **Visibility/layer mask.** Is a `renderLayer`/visibility-mask field in scope (a `types` change coordinated with render and cull)?
-7. **Skinning/animation node family.** In or out of `scene` (vs. a future `skeleton`/`animation` package, per fork G's within-3D boundary question)?
-8. **Raycast result allocation policy.** Should hits be pooled/reused (acquire/release) for pointer-move-frequency picking, or is per-call allocation acceptable? Settles the raycaster cleanup above.
+1. **Taxonomy restore-or-drop.** The types exist, the implementations do not. Restore `Group`/`InstancedMesh`/`LodMesh`/`Billboard` (the bundle's shape survives in the types), or remove the orphan types? Interacts with Open directions 2 (Scene/Group/SceneNode) and 5 (instance-data home).
+2. **Cull-seam duplication.** Render's `collectVisibleMeshes` and scene's `cullSceneNodeByFrustum` are parallel implementations of one walk. Should render consume scene's cull list (making the charter's seam real), should scene's cull functions be dropped as unconsumed surface (fork B's "don't build the dispatcher"), or is deliberate duplication the blessed acyclic price? Sharpens Open direction 3.
+3. **Where the visitor/traversal vocabulary lives.** `@flighthq/node` now owns generic traversal; `SceneNodeVisitor` in types is orphaned. Bless node as the traversal home (and delete the type), or does scene still want thin 3D-typed wrappers?
+4. **BVH/octree shape** — in scope by Decision, home undecided (Open direction 4); now also the natural place to de-duplicate the bounds/cull walk.
+5. **World-space TRS getters** — in scope for scene, or is matrix + geometry decompose the intended path?
