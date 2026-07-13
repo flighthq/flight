@@ -134,3 +134,95 @@ The 2D↔3D boundary the binding constraint demands already has a home in `rende
 ### Flag — naming collision
 
 `audio` (the candidate is an audio **mixer** graph over `media`) collides with the `audio` **subject** from the `resources` dissolution. Rename the mixer (e.g. `audiomixer`) or fold the subject's playback layer in — **discuss**.
+
+## Breadth review candidates (2026-07-13)
+
+Net-new candidates from the four-angle breadth review ([synthesis](../breadth-synthesis.md)). Prioritized by cross-report consensus. These remain **recommended**, not blessed — the verdicts below are the recommendation.
+
+### Pure-math value-leaves (now — cheapest authority)
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `color` | color · primitive | [adjacent](../breadth-adjacent-content.md), [deepening](../breadth-domain-deepening.md) | **bedrock** — spaces sRGB↔linear/HSL/OKLab/LCH, ramps/schemes, contrast. Oracle: d3-color, chroma.js. Pure value-leaf, wasm-mixable |
+| `scale` | scale · primitive | [adjacent](../breadth-adjacent-content.md) | **bedrock** — d3-scale tier: linear/log/time/ordinal/band, ticks, nice(), invert. **discuss** naming collision with transform-scale vocabulary |
+
+### Platform primitives (now — two genuine gaps)
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `focus` | focus · primitive | [platform](../breadth-platform-variance.md), [deepening](../breadth-domain-deepening.md) | **bedrock** — spatial dpad/LRUD focus nav over plain-data `{id, bounds}` regions. Oracle: BBC LRUD, Norigin. TV + console + gamepad + keyboard-a11y converge |
+
+### Gameplay tier (now/soon — one layer below gameplay)
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `physics2d` | physics · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — rigid-body dynamics/constraints/joints over collision+spatial. Oracle: Box2D/planck.js. Prereq: collision phases 2-3. Constraint solver rust-intended-optional |
+| `pathfinding` | pathfinding · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — A\*/Dijkstra/JPS/flow fields. Charter must draw the path ≠ pathfinding line |
+| `steering` | steering · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — Reynolds seek/flee/arrive/flocking. Distinct from motionpath (authored) and spring (smoothing) |
+| `behaviortree` | ai · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — plain-data BTs, open node-kind registry, explicit tick, caller-owned blackboard |
+| `statechart` | state · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — hierarchical FSM. Doubly motivated: gameplay + Rive SM runtime substrate. Distinct from flow (app stack) |
+
+### Cloud / distributed tier (soon)
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `serialize` | serialization · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — plain-data ↔ compact bytes with schema. Varint/float32 policy. Oracle: msgpack/FlatBuffers. Wasm-mixable. Unblocks ipc, socket binary, snapshot wire |
+| `telemetry` | telemetry · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — event envelope, offline batch queue in storage, backoff flush over net, flush-on-lifecycle-hide. Log sink feeds it |
+| `flags` | config · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — typed remote-config seam, OpenFeature-shaped. Exposure events → telemetry |
+| `tool-assetpipeline` | assets · tool | [cloud](../breadth-cloud-distributed.md) | **bedrock** — build-time producer: binpack+image-codec+texture-formats → hashed manifest. Same package local or cloud-CI |
+
+### Content import (soon — fork I generalized)
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `localization` | localization · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — string catalogs, ICU MessageFormat plural/select, locale fallback. `intl` = values, `localization` = catalogs |
+| `localization-formats` | localization · `-formats` | [deepening](../breadth-domain-deepening.md) | **bedrock** — PO/XLIFF/FTL/ARB codecs. Triad-predicted |
+
+### Host / environment (soon)
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `host-node` | host · `-backend` | [platform](../breadth-platform-variance.md) | **bedrock** — Node/Deno/Bun host: timer LoopBackend, fs storage/filesystem, file log sink. Unlocks headless chain |
+| `worker` | worker · primitive | [platform](../breadth-platform-variance.md) | **bedrock** — typed cross-context channel with explicit transferables. comlink-minus-proxy-magic. Lean distinct from ipc: transferables don't exist in process IPC |
+
+### Media codecs (soon)
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `video-codec` | video · `-formats` | [adjacent](../breadth-adjacent-content.md) | **bedrock** — WebCodecs mux/demux seam, mirror of image-codec for time-media. Encode = differentiator |
+| `audio-formats` | audio · `-formats` | [adjacent](../breadth-adjacent-content.md) | **bedrock** — triad-predicted. Decode rust-intended |
+
+### Later / reserve
+
+| Candidate | Subject · layer | Source | Verdict |
+| --- | --- | --- | --- |
+| `replication` | sync · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — server-auth entity sync over snapshot-diff+serialize+socket. Blocked on now/soon tier |
+| `rollback` | netcode · primitive | [cloud](../breadth-cloud-distributed.md) | **reserve** — GGPO-style. Demands determinism audit |
+| `bindiff` | diff · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — bsdiff-class binary diff. Serves updater + asset patching |
+| `peer` | transport · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — WebRTC data channels. Only unreliable/unordered browser transport |
+| `history` | undo · primitive | [adjacent](../breadth-adjacent-content.md) | **discuss** — command-stack undo. Boundary vs snapshot memento + textinput undo |
+| `snapping` | editing · primitive | [adjacent](../breadth-adjacent-content.md) | **bedrock** — align/distribute/magnetism math |
+| `dialogue` | dialogue · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — Yarn/Ink/Twine runtime. Fork I for content |
+| `dialogue-formats` | dialogue · `-formats` | [deepening](../breadth-domain-deepening.md) | **bedrock** — Yarn/Ink/Twine codecs. Triad-predicted |
+| `navmesh` | navigation · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — bake rust-intended, query TS. Recast/Detour split |
+| `xr` | xr · primitive | [platform](../breadth-platform-variance.md) | **bedrock** — session/reference-space/input-source data + XrBackend. Gated on 3D maturity |
+| `geo` | geo · primitive | [adjacent](../breadth-adjacent-content.md) | **discuss** — projections, haversine. Needs fork-G-style scope ruling |
+| `geo-formats` | geo · `-formats` | [adjacent](../breadth-adjacent-content.md) | **discuss** — GeoJSON/TopoJSON/MVT. After scope ruling |
+| `maptile` | geo · primitive | [adjacent](../breadth-adjacent-content.md) | **discuss** — slippy z/x/y math. After scope ruling |
+| `physics` (3D) | physics · primitive | [deepening](../breadth-domain-deepening.md) | **reserve** — rust-intended. After physics2d proves the seam |
+| `presence` | sync · primitive | [cloud](../breadth-cloud-distributed.md) | **reserve** |
+| `identity` | auth · primitive | [cloud](../breadth-cloud-distributed.md) | **reserve** — vendor territory today |
+| `midi` | midi · primitive | [adjacent](../breadth-adjacent-content.md) | **reserve** |
+
+## Rejected candidates (2026-07-13)
+
+Formally rejected to prevent re-proposal. Each fails the bedrock test or is covered by composition.
+
+| Candidate | Source | Rejection |
+| --- | --- | --- |
+| `ecs` | [deepening](../breadth-domain-deepening.md) | **reject → anti-goals.md entry.** Flight's entity/runtime model + SoA batching is the deliberate alternative. The entity/runtime split is documented and intentional |
+| `inventory` / `economy` | [deepening](../breadth-domain-deepening.md) | **reject** — app-domain logic, not SDK bedrock |
+| `cloud-save` | [cloud](../breadth-cloud-distributed.md) | **reject** — composition over existing primitives (snapshot + storage + net), not a standalone cell |
+| `matchmaking` / `lobby` / `leaderboards` | [cloud](../breadth-cloud-distributed.md) | **reject** — vendor services, not SDK bedrock. The `*Backend` seam vocabulary is the SDK's job; the server is the vendor's |
+| `chart` | [adjacent](../breadth-adjacent-content.md) | **reject** — assembly (composition over scale + color + sprite + interaction), not bedrock. Reserve name only |
+| `l-systems` | [deepening](../breadth-domain-deepening.md) | **reject** — a path recipe (assembly), not a standalone primitive |
