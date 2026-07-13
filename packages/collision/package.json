@@ -1,6 +1,11 @@
 {
   "name": "@flighthq/collision",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/collision"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
