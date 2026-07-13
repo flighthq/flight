@@ -54,9 +54,9 @@
       "types": "./dist/resources.d.ts",
       "default": "./dist/resources.js"
     },
-    "./scene": {
-      "types": "./dist/scene.d.ts",
-      "default": "./dist/scene.js"
+    "./scene2d": {
+      "types": "./dist/scene2d.d.ts",
+      "default": "./dist/scene2d.js"
     },
     "./scene3d": {
       "types": "./dist/scene3d.d.ts",
