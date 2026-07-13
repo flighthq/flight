@@ -1,69 +1,44 @@
 ---
 package: '@flighthq/protocol'
-status: partial
-score: 58
-updated: 2026-06-25
+status: solid
+score: 84
+updated: 2026-07-13
 ingested:
-  - status.md
-  - charter.md
   - source
-  - changes.patch
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
+  - tests
+  - packages/types/src/Protocol.ts
+  - charter.md
+  - assessment.md
+  - status.md (skimmed)
+  - prior review (2026-06-25 merge gate)
 ---
 
 # protocol — Review
 
-Merge-gate review of the `integration-b2824e3d8` delta for `@flighthq/protocol` against the approved baseline `origin/main (eb73c3d74)`. Judged on the seven harsh-standard axes. The package's _design_ in isolation is strong; the _delta as shipped_ does not compile, because the source was extended to depend on a `@flighthq/types` contract that the same change set never adds. That is a hard merge blocker, not a polish item.
+Light re-review of the **live tree**. Supersedes the 2026-06-25 merge-gate review (`partial — 58`), whose single hard blocker — the `@flighthq/types` contract missing `ParsedProtocolUrl` and five `ProtocolBackend` methods — is **resolved**: `packages/types/src/Protocol.ts` now defines `ParsedProtocolUrl` and the full 10-method `ProtocolBackend` (`register`/`unregister`/`isRegistered`/`getRegisteredSchemes`/`setAsDefault`/`isDefault`/`removeAsDefault`/`getLaunchUrl`/`drainPendingUrls`/`subscribe`), matching every call site in `packages/protocol/src/protocol.ts`. The types-first violation and the honesty failure that review documented no longer describe this tree.
 
 ## Verdict
 
-**Revise before merge.** The new functions (`createProtocolUrl`, `parseProtocolUrl`, `isValidProtocolScheme`, `getProtocolLaunchUrl`, `getRegisteredProtocolSchemes`, `isProtocolSchemeDefault`, `removeProtocolSchemeAsDefault`, `registerProtocolSchemes`, `unregisterProtocolSchemes`, plus the pre-attach drain) are well-named, sentinel-clean, and well-tested — but they reference a `ParsedProtocolUrl` type and five `ProtocolBackend` methods that are **not in the head's `@flighthq/types/Protocol.ts`**. The candidate cannot typecheck as bundled.
+`solid — 84/100`. The prior review projected "low 90s" once the types landed; this read is slightly more conservative. The realized surface is the full deep-linking capability a platform suite needs — scheme registration (single + batch), default-handler set/query/remove, cold-start launch URL vs warm `onOpenUrl` split, pre-attach URL drain, RFC 3986 scheme validation with reserved-scheme rejection, and a parse/build URL pair that round-trips — all sentinel-clean, types-first, and covered by 50 colocated tests with alphabetized `describe` blocks mirroring every export. What keeps it out of the 90s: `ParsedProtocolUrl` has no `fragment` field and `parseProtocolUrl` does not split on `#` (a `myapp://h/p?a=1#frag` leaks the fragment into the last query value); `ParsedProtocolUrl.query` landed as a mutable `Record<string, string>` where the prior review already asked for `Readonly<>`; the web backend's `unregister` hard-codes failure although the HTML spec (and Chromium) provide `navigator.unregisterProtocolHandler`; and there is no guard/`explain*` layer for the silent `false`/`null` sentinels. None of these are blockers; all are close-out polish on an otherwise textbook suite member.
 
-## The blocking finding: types-first contract was not updated
+## Verified against live source
 
-`b2824e3d8:packages/protocol/src/protocol.ts` line 2 now imports a type the contract does not define:
+- **Backend seam** (`protocol.ts`): `getProtocolBackend` (lazy web default), `setProtocolBackend(backend | null)`, `createWebProtocolBackend()` over `navigator.registerProtocolHandler` with a `/?url=%s` redirect and a local registered-scheme mirror; every web-impossible capability returns an honest sentinel with a durable comment.
+- **Handler entity**: `createProtocolHandler` (inert signal) / `attachProtocolHandler` (idempotent; drains `drainPendingUrls()` before subscribing) / `detachProtocolHandler` / `disposeProtocolHandler` — correct `dispose*` verb (detach-to-GC), `WeakMap` subscription store at module bottom.
+- **Commands**: `registerProtocolScheme(s)`/`unregisterProtocolScheme(s)` (+ batch pair, partial-failure → `false`), `setProtocolSchemeAsDefault`/`isProtocolSchemeDefault`/`removeProtocolSchemeAsDefault`, `isProtocolSchemeRegistered`, `getRegisteredProtocolSchemes`, `getProtocolLaunchUrl`.
+- **URL pair**: `parseProtocolUrl` (scheme-lowercasing, authority/path/query split, percent-decode with `+`→space, last-value-wins multi-keys, `null` sentinel) and `createProtocolUrl` (round-trips; empty-key filtering).
+- **Validation**: `isValidProtocolScheme` — RFC 3986 grammar, lowercase normalization, reserved set (`file`/`ftp`/`ftps`/`http`/`https`/`mailto`).
+- **Contract hygiene**: `sideEffects: false`, single `.` export, thin barrel, deps = `signals` + `types` only, exports alphabetized, module statics at bottom, `Readonly<Partial<ParsedProtocolUrl>>` input.
 
-```ts
-import type { ParsedProtocolUrl, ProtocolBackend, ProtocolHandler } from '@flighthq/types';
-```
+## Remaining gaps
 
-and the new bodies call five `ProtocolBackend` methods that the interface does not declare — `b2824e3d8:packages/protocol/src/protocol.ts`:
+1. **No fragment support.** `ParsedProtocolUrl` lacks `fragment`; `parseProtocolUrl` never splits on `#`, so a fragment corrupts the final query value (or the path). Deep-link URLs in the wild (OAuth redirects especially) carry fragments. Fix spans `@flighthq/types` (add the field) + both URL functions.
+2. **`ParsedProtocolUrl.query` should be `Readonly<Record<string, string>>`** per the contract's Readonly-by-default rule — carried over from the prior review; the type landed mutable.
+3. **Web `unregister` could be real.** `navigator.unregisterProtocolHandler(scheme, url)` exists in the HTML spec; the backend unconditionally returns `false` ("no programmatic unregister"), which is stale for Chromium-family browsers. Sweep-safe: feature-detect and call it, keep the `false` sentinel otherwise.
+4. **`createProtocolUrl` defaults a missing scheme to `'unknown'`**, silently emitting `unknown:...` instead of a sentinel. Minor design nit — a caller bug is masked rather than surfaced; an `explain*`/guard would cover it under the diagnostics inversion rule.
+5. **No guards/`explain*` layer** for the sentinel surface (why did `registerProtocolScheme` return false — invalid grammar, reserved, or host denial?). `explainProtocolSchemeRejection` returning plain data would fit the diagnostics convention.
 
-```ts
-const pending = backend.drainPendingUrls(); // attachProtocolHandler
-return getProtocolBackend().getLaunchUrl(); // getProtocolLaunchUrl
-return getProtocolBackend().getRegisteredSchemes(); // getRegisteredProtocolSchemes
-return getProtocolBackend().isDefault(scheme); // isProtocolSchemeDefault
-return getProtocolBackend().removeAsDefault(scheme); // removeProtocolSchemeAsDefault
-```
+## Candidate open directions (not for the assessment's Recommended)
 
-But `b2824e3d8:packages/types/src/Protocol.ts` is **byte-identical to base** — its `ProtocolBackend` declares only `register` / `unregister` / `isRegistered` / `setAsDefault` / `subscribe`, and there is no `ParsedProtocolUrl`. The change set's diff (`changes.patch`) touches `packages/protocol/src/protocol.{ts,test.ts}` and the four protocol docs, and **contains no hunk for `packages/types/src/Protocol.ts`** (`grep '^diff --git .*types/src/Protocol' changes.patch` → empty). A repo-wide grep confirms `ParsedProtocolUrl`, `drainPendingUrls`, `getLaunchUrl`, `isDefault`, `removeAsDefault`, and `getRegisteredSchemes` exist _only_ inside the protocol package's own source and test — never in `@flighthq/types`.
-
-Consequence: `tsc -b` over the head fails on the protocol crate. This violates the contract's types-first rule directly ("define its types in `@flighthq/types` first, then implement against them"). It is the delta — the new import and the new method calls are exactly the lines this change adds — so it is squarely in scope and not a critique of the approved base.
-
-## Honesty failure compounding the blocker
-
-`b2824e3d8:agents/packages/protocol/status.md` (the worker report carried in this change set) **claims** the type work was done:
-
-> `packages/types/src/Protocol.ts` — `ProtocolBackend` interface extended: `getRegisteredSchemes` … `isDefault` … `removeAsDefault` … `getLaunchUrl` … `drainPendingUrls` … new type added: `ParsedProtocolUrl` interface …
-
-No such edit exists in the change set. The status ledger asserts a contract change the code does not make — exactly the "claims match code" honesty axis failing. The fix is mechanical (land the type edits), but the merge cannot proceed on a report that misstates what shipped.
-
-## The seven axes
-
-1. **Composition / bedrock — PASS.** Flat free functions; no config-gated branches, no fused subjects. `parseProtocolUrl`/`createProtocolUrl` are correctly colocated payload helpers, not a premature `protocol-url` split.
-2. **Naming clarity — PASS.** Every new export carries the full unabbreviated type word and is globally self-identifying: `getProtocolLaunchUrl`, `isProtocolSchemeDefault`, `removeProtocolSchemeAsDefault`, `getRegisteredProtocolSchemes`, `registerProtocolSchemes`, `unregisterProtocolSchemes`, `isValidProtocolScheme`. `get*`/`is*` prefixes are correct.
-3. **Tree-shaking / bundle invariant — PASS.** `package.json` keeps `"sideEffects": false`, a single `.` export, and no top-level side effects; the new module-bottom statics (`_schemePattern`, `_reservedSchemes`, `_safeDecode`) are inert until called.
-4. **Registry vs closed union (fork B) — N/A.** No `kind`/handler family here; the backend seam is a single swappable interface, which is the right shape.
-5. **Subject triad + plurality guard — PASS.** No format codec or backend-per-technology split is warranted; the single web default + native-host seam is correct, and the charter already parks App-Link / association-file work as siblings.
-6. **Contract hygiene — FAIL (blocking).** Types-first is broken (see above). Sub-points that _are_ right: sentinels (`null`/`false`/`[]`) not throws; `Readonly<Partial<ParsedProtocolUrl>>` on `createProtocolUrl`'s input; `dispose*` used correctly (detach-to-GC, no resource freed). The claimed `query: Readonly<Record<string, string>>` cannot be checked because the type is absent; note `parseProtocolUrl` builds a **mutable** `Record<string, string>` and returns it as the field, so when the type lands, `ParsedProtocolUrl.query` should be `Readonly<Record<string,string>>` with the builder reading into a local before the return object is shaped.
-7. **Tests & honesty — MIXED.** The colocated `protocol.test.ts` is excellent in coverage: alphabetized `describe` blocks mirroring every export, the pre-attach drain, idempotent reattach, round-trip parse/build, reserved-scheme rejection, batch partial-failure. **But** the suite is built against a `fakeBackend` that hand-implements the five missing methods, so the tests only compile if the types exist — they encode the intended contract while the contract file does not. The suite being green in the worker's tree is consistent with the type edit having been staged locally; it was not captured in this change set.
-
-## Where the contract/admin docs are fine
-
-The charter (`draft: true`) already frames this package accurately — command+event capability, web default, host seam, parse/build colocated, App-Link parked. No charter revision is needed; the problem is entirely a missing code hunk plus an over-claiming status entry.
-
-## Score
-
-58/100. The design is `solid`-grade and the tests are AAA, but a merge candidate that does not typecheck cannot score as `solid`; `partial` with a single, mechanical, hard blocker is the honest read. Land the `@flighthq/types/Protocol.ts` edits the source already assumes and this returns to the low 90s.
+- App Links / Universal Links (association files) stay parked as charter siblings — unchanged.
+- Whether the launch-URL query-param convention (`/?url=%s`) should be configurable on the web backend.

@@ -1,65 +1,67 @@
 ---
 package: '@flighthq/sprite'
-status: partial
-score: 62
-updated: 2026-06-25
+status: solid
+score: 78
+updated: 2026-07-13
 ingested:
-  - status.md
-  - reviews/depth/sprite.md
-  - reviews/maturation/depth/sprite.md
-  - source
-  - changes.patch
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
+  - charter.md
+  - status.md (2026-06-24 entry, now heavily stale)
+  - prior review.md (2026-06-25 merge-gate) and assessment.md
+  - source (packages/sprite/src/{index,sprite,quadBatch,tilemap}.ts + colocated tests)
+  - packages/sprite/package.json
+  - consumers: bitmaptext, tilemap-formats (tiledGid/tiledProject), displayobject-gl/wgpu velocity, particleemitter (independence check)
+  - packages/types/src/{QuadBatch,Tilemap,QuadBatchSignals,SpriteSignals,TilemapSignals}.ts
 ---
 
 # sprite — Review
 
-> **Merge-gate review.** Frame: the approved floor is `origin/main` (`eb73c3d74`) at `incoming/integration-b2824e3d8/base/packages/sprite/`; the candidate is the integration branch at `incoming/integration-b2824e3d8/head/packages/sprite/`. This review judges **only the delta** (head vs base, plus the `packages/sprite/` hunks of `incoming/integration-b2824e3d8/changes.patch`) as a gate into the approved baseline. It does not re-survey or re-score the package as a whole — see the prior `builder-67dc46d64` review for the standalone capability map. The score below grades the delta's fitness-to-merge, not the package's maturity.
+> Full re-survey of the live tree. The prior review (2026-06-25) was a merge-gate review of the integration delta, not a standalone survey; its two blockers (B1: `*Signals` types missing from `@flighthq/types`; B2: undeclared `@flighthq/signals` dependency) are both **fixed** in the live tree. Since then, commit `b62d9808` extracted the entire ParticleEmitter quartet into `@flighthq/particleemitter` — sprite is now a **three**-quartet package.
 
 ## Verdict
 
-**partial — 62/100. Do not merge as-is.** The delta is large, well-shaped, and well-tested in isolation, but it **does not compile against its own bundle** and **breaks packaging hygiene** — two hard, mechanical, delta-introduced blockers that `npm run check` / `npm run packages:check` / `tsc -b` would each fail on. The design and test work behind the delta is good; it is the header-layer and manifest wiring that did not land with the source. Both blockers are narrow and fixable; this is a "wire it up" gate, not a "redesign it" gate.
+**solid — 78/100.** A clean, well-tested, fully header-disciplined node-data layer: three symmetric quartets (Sprite, QuadBatch, Tilemap) of side-effect-free free functions, all 63 exports with colocated alphabetized tests, all prior merge blockers and all three Approved items landed. What holds it below 85: the blessed Int32Array/tile-flags decision is unexecuted while `tilemap-formats` now demonstrably drops Tiled flip bits against it, two out-param hygiene defects in the bounds path, and a stale self-contradicting doc comment on `compactQuadBatch`.
 
-The base sprite (`eb73c3d74`) is the pre-second-wave package: bounds + hit-test + capacity for `QuadBatch`, plain grid ops for `Tilemap`, and the bare quartets for `Sprite`/`ParticleEmitter`. The delta adds the **entire second wave** in one move: per-instance/per-tile/per-particle accessors and mutators, `append*`/`remove*`/`clear*`, `clone*` for every kind, `compact*`, QuadBatch range/iterate/transform-type-switch and exact-polygon hit test, full Tilemap navigation, and an opt-in **signals group** for `Sprite`/`QuadBatch`/`Tilemap`. The signals subsystem is the source of both blockers.
+## Present capabilities
 
-## Blocking findings (grounded in the delta)
+- **Sprite** (`sprite.ts`, 13 exports): quartet (`createSprite`/`createSpriteData`/`createSpriteRuntime`/`SpriteKind`), `cloneSprite`, frame selection (`setSpriteFrame`, `setSpriteFrameRect`), region lookup (`getSpriteRegion`), pivot-anchored origin (`getSpriteOrigin`), pivot-honoring `computeSpriteLocalBoundsRectangle` (wired as the runtime default bounds method), opt-in signals (`enableSpriteSignals`/`getSpriteSignals`/`createSpriteSignals`, `onFrameChanged`).
+- **QuadBatch** (`quadBatch.ts`, 29 exports + `QUAD_BATCH_DELETED_ID`): capacity (`reserveQuadBatch`/`resizeQuadBatch`/`getQuadBatchCapacity` via geometry's `reserve*Array`), per-instance accessors/mutators (`appendQuadBatchInstance`, `setQuadBatchInstance`, `setQuadBatchInstanceMatrix`, `setQuadBatchInstanceRange`, `getQuadBatchInstanceId`, `getQuadBatchInstanceTransform` into a `Vector2Like`), O(1) swap-remove (`removeQuadBatchInstance`, emits `(index, swapSource)`), `clearQuadBatch`, order-restoring `compactQuadBatch` filtering the blessed `QUAD_BATCH_DELETED_ID = 0xffff` sentinel (maintains `materialData` alongside), allocation-free `iterateQuadBatchInstances` (subarray views), both-direction alias-safe `setQuadBatchTransformType` re-stride (expand fills in reverse; collapse `dst < src`), AABB (`hitTestQuadBatchPoint[XY]`) and exact point-in-quad (`hitTestQuadBatchPointExact[XY]` via `crossSign` winding) hit tests, `computeQuadBatchLocalBoundsRectangle` for both strides, user-set bounds override (`setQuadBatchLocalBoundsRectangle` + runtime `localBoundsRectangle`), a `instanceVelocities` runtime slot consumed by `displayobject-gl/wgpu` velocity writers, signals (`onInstanceAppended`/`onInstanceRemoved`/`onCleared`). Stride constants keep `i*2`/`i*6` out of callers.
+- **Tilemap** (`tilemap.ts`, 21 exports): quartet + `cloneTilemap`, grid ops (`getTilemapTile`/`setTilemapTile`/`fillTilemapTiles`/`clearTilemap`), clipped row-major blit `setTilemapTiles`, content-preserving `resizeTilemap`, full navigation (`getTilemapColumnAtX`, `getTilemapRowAtY`, `getTilemapColumnRowAtPoint` into `Vector2Like`, `getTilemapTileAtPoint[XY]`, `getTilemapTileRect`), grid×tileset bounds, signals (`onTileChanged`/`onTilesChanged`/`onCleared`).
+- **Hygiene:** thin 3-line barrel; `sideEffects: false`; all five deps declared (signals included); all cross-package types in `@flighthq/types` including the three `*Signals` interfaces; sentinels (`-1`/`false`/no-op) throughout; signals zero-cost until enabled via `Symbol`-keyed slots; per-instance `materialData` (adjustments fold target) carried through clone/remove/compact on QuadBatch and Tilemap.
+- **Tests:** 63 `describe` blocks exactly mirroring the 63 exports across three colocated test files (~1,750 loc); every export covered.
 
-### B1 — The signals types are imported from `@flighthq/types` but never defined there (compile break, types-first violation)
+## Gaps
 
-All three signals-bearing source files import their `*Signals` interface from `@flighthq/types`:
+Vs a mature sprite/tilemap/quad-batch atlas-rendering library:
 
-- `b2824e3d8:packages/sprite/src/quadBatch.ts` line 16 — `import type { … QuadBatchSignals … } from '@flighthq/types';`
-- `b2824e3d8:packages/sprite/src/sprite.ts` line 15 — `import type { … SpriteSignals … } from '@flighthq/types';`
-- `b2824e3d8:packages/sprite/src/tilemap.ts` line 15 — `import type { … TilemapSignals … } from '@flighthq/types';`
+1. **Tile flip/rotate flags — blessed, unexecuted, now under live pressure.** Charter Decision #5 (2026-07-02) blessed widening `TilemapData.tiles` to `Int32Array` plus `TilemapTileFlags`/`packTilemapTileId`/`getTilemapTileBaseId`. `tiles` is still `Int16Array` (`types/src/Tilemap.ts:9`), and `tilemap-formats` now ships a Tiled importer that decodes flip bits (`tiledGid.ts`) and then **drops them** — `tiledProject.ts:16`: "NOT carried into the grid: `TilemapData` has no per-tile flip slot." The consumer that Decision #5 anticipated exists; the header change does not.
+2. **Out-param hygiene in the bounds path.** `computeSpriteLocalBoundsRectangle` on the `data.rect` path writes only `width`/`height` — `out.x`/`out.y` keep stale caller values, and `rect.x`/`rect.y` are ignored; the no-atlas/no-region path writes nothing at all. QuadBatch's default bounds method (`copyLocalBoundsRectangle`) likewise silently leaves `out` untouched when `runtime.localBoundsRectangle` is null. Both violate "sentinel or fully-written out"; QuadBatch's compute function zeroes correctly, showing the intended pattern.
+3. **Stale, self-contradicting `compactQuadBatch` doc comment.** The body filters `QUAD_BATCH_DELETED_ID` per Decision #1, but the comment still claims "this function does NOT filter by id," references an `id==-1` sentinel and "callers zero-out ids," and calls itself "a no-op for the common case." The blessed workflow and its own documentation disagree.
+4. **Bulk-read asymmetry.** `setTilemapTiles` blits in; there is no `getTilemapTiles` blit out (needed by editors/serializers; `tilemap-formats` builds grids by hand).
+5. **No matrix append.** `appendQuadBatchInstance` is vector2-only; `setQuadBatchInstanceMatrix` exists but a matrix3x2 batch cannot be appended to without manual `resizeQuadBatch` + set (flagged in the 2026-06-24 status, never landed).
+6. **Signal-emission asymmetries.** `clearTilemap` emits but `fillTilemapTiles` and `resizeTilemap` do not; `setQuadBatchInstance`/`setQuadBatchInstanceMatrix`/`setQuadBatchInstanceRange` and `setSpriteFrameRect` emit nothing (plausibly deliberate for hot paths, but unrecorded — only ParticleEmitter's absence was blessed, and that quartet has left the package).
+7. **Linear region scans in sprite hot paths.** `getSpriteRegion` and `computeSpriteLocalBoundsRectangle` do `atlas.regions.find(...)` per call (allocating a closure); `@flighthq/textureatlas` owns region-lookup queries this could delegate to.
+8. **No diagnostics layer.** Decision #3 blessed documented-precondition-only for the vector2-only mutators; per the diagnostics inversion rule the doc-comment warning is a candidate for a shakeable `enableQuadBatchGuards`, which Decision #3 does not preclude (it rejected a hot-loop runtime check, not an opt-in guard).
+9. Charter Open directions still open: tilemap capacity symmetry, bounds caching/dirty slot, edge-case hardening (NaN transforms, negative `reserve*`, id past `atlas.regions`), pooling brackets, Rust `flighthq-sprite` catch-up.
 
-These three interfaces **exist nowhere in `@flighthq/types`**. The bundled header files `incoming/integration-b2824e3d8/head/packages/types/src/{QuadBatch,Sprite,Tilemap}.ts` define `*Data`/`*Runtime`/`*Kind` but no `*Signals` (e.g. `Sprite.ts` declares `export interface SpriteRuntime extends DisplayObjectRuntime {}` and stops there). The integration patch confirms the omission is intentional-to-the-diff, not a capture artifact: `changes.patch` never touches `types/src/QuadBatch.ts`, `types/src/Sprite.ts`, or `types/src/Tilemap.ts`, and a search for `interface QuadBatchSignals|interface SpriteSignals|interface TilemapSignals` over the whole patch returns nothing. The sprite source consumes a header surface that was never written. `tsc -b` on `@flighthq/sprite` fails with "Module '@flighthq/types' has no exported member 'QuadBatchSignals'" (and the two siblings). This also violates the contract's **types-first** rule (charter North star #4, codebase-map header-layer discipline): cross-package types must be defined in `@flighthq/types` first, then implemented against.
+**Structural fork A note:** the fork's live case — particles' sim reaching into sprite via `reserveParticleEmitter` — is **resolved** by the `b62d9808` extraction: `reserveParticleEmitter` and the whole emitter node now live in `@flighthq/particleemitter`, which does not depend on sprite at all. Sprite's remaining cross-package participation is healthy: `bitmaptext` composes QuadBatch (`createQuadBatch`/`reserveQuadBatch`/`appendQuadBatchInstance`/`clearQuadBatch`), and the backend renderers read `QuadBatchRuntime.instanceVelocities`.
 
-### B2 — `@flighthq/signals` is a new runtime import but is not a declared dependency (packaging break)
+## Charter contradictions
 
-The delta adds a value import of `createSignal` to three files — `b2824e3d8:packages/sprite/src/sprite.ts` line 6 (`import { createSignal } from '@flighthq/signals';`), and the same line in `quadBatch.ts` and `tilemap.ts`. The base imported `@flighthq/signals` in **none** of its files. Yet `b2824e3d8:packages/sprite/package.json` is **unchanged by the patch** (it is not in `changes.patch`) and its `dependencies` block lists only `@flighthq/displayobject`, `@flighthq/geometry`, `@flighthq/node`, `@flighthq/types` — no `@flighthq/signals`. A package that imports from a workspace package it does not declare fails `npm run packages:check` (workspace dependency-mismatch) and is a real publish-shape defect. The fix is one line in the manifest.
+No code-vs-charter contradictions — but the **charter itself is now stale in identity**: "What it is" describes **four** quartets including ParticleEmitter, Decision #2 rules on ParticleEmitter signals, and North star #2 cites emitter asymmetries; that quartet moved to `@flighthq/particleemitter`. The code did not violate the charter (the extraction is the fork-A resolution and the Package Map already reflects it); the charter needs a direction-session refresh to the three-quartet identity. Decision #5 is blessed-but-unexecuted (Gap 1), and Decision #1's blessed sentinel landed but its function comment contradicts it (Gap 3). Decisions #3 and #4 are honored.
 
-## Non-blocking observations on the delta
+## Contract & docs fit
 
-These are correctness/clarity edges the delta introduces. The first two are already held as the charter's Open directions #1 and #3 — they are **design forks the user owns**, not merge blockers, so they are routed to the dispatch brief's open questions and the assessment's Notes, not to must-fix.
+**Package → contract: strong.** Types-first (the three `*Signals` interfaces now live in `@flighthq/types` — prior B1 fixed); manifest declares all imports (prior B2 fixed); single root `.` export over a thin barrel; `sideEffects: false`; full unabbreviated names with correct verbs throughout; sentinels-not-throws; `Readonly<>` on inputs; alphabetized exports mirrored by tests; `exports:check`-clean. Residue: the out-param hygiene defects (Gap 2) and the rotted comment (Gap 3). Rust `flighthq-sprite` mirror remains behind the TS surface (charter Open direction #5).
 
-- **`transformType` stride corruption in the vector2-only mutators.** `appendQuadBatchInstance` (`b2824e3d8:packages/sprite/src/quadBatch.ts` lines 34-44) and `setQuadBatchInstance` (lines 473-480) always write `index * QUAD_VECTOR2_STRIDE` regardless of `data.transformType`. Called on a `matrix3x2` batch they write a stride-2 layout into a stride-6 buffer, silently corrupting it. The doc comments state the precondition ("Target must use `transformType === 'vector2'`"), so this is documented-precondition-only behavior — within the contract's latitude — but it is the delta's main silent-corruption surface. Charter Open direction #3 already asks whether these should hard-guard.
+**Docs → package: candidate revisions.**
+- `agents/index.md` Package Map's sprite line ("sprite/tilemap/quad-batch for atlas rendering") is accurate post-extraction; no change needed there.
+- `agents/packages/sprite/charter.md` — stale four-quartet identity (above); ParticleEmitter prose/decisions should be marked superseded-by-extraction or migrated to the `particleemitter` cell.
+- `agents/packages/sprite/status.md` (2026-06-24) — describes `particleEmitter.ts` functions as living in this package; historically true, now misleading to a fresh reader.
+- `agents/render-backend-support.md` item 10 reports region `pivotX`/`pivotY` "stored but never read by the sprite renderers" — sprite's bounds/origin now consume pivots, so the render-side half of that audit item is worth re-verifying.
 
-- **The `0xffff` sentinel that nothing writes.** `compactQuadBatch` (`b2824e3d8:packages/sprite/src/quadBatch.ts` lines 88-112) and `compactParticleEmitter` (`particleEmitter.ts` lines 101-129) filter on `data.ids[read] === 0xffff` as a "deleted" sentinel, but no function in the package ever writes `0xffff` (removal is swap-remove + count-decrement). The quadBatch doc comment even argues with itself ("this is a no-op for the common case… The only meaningful compaction is when callers zero-out ids"). As shipped these are no-ops for every workflow the package itself supports. Charter Open direction #1 already asks: bless a named `mark-deleted then compact` seam, or remove the compact functions.
+## Candidate open directions
 
-- **Third spelling of `{ x: number; y: number }`.** `getQuadBatchInstanceTransform` (`b2824e3d8:packages/sprite/src/quadBatch.ts` line 252 — `out: Vector2Like`) reads cleanly, but `getTilemapColumnRowAtPoint` (`tilemap.ts` line 114) and `getParticleEmitterParticleVelocity` (`particleEmitter.ts` line 248) take an inline `out: { x: number; y: number }` rather than `Vector2Like`. A one-line SDK-wide convention ruling removes the third spelling; charter Open direction #6.
-
-## What the delta does well (passes its standards)
-
-- **Composition / bedrock (pass).** Four value-typed buffer quartets, each a flat family of side-effect-free free functions. No config-gated feature fusion, no subject mixing. Internal stride constants (`QUAD_VECTOR2_STRIDE`/`QUAD_MATRIX3X2_STRIDE` at `quadBatch.ts` lines 25-26; `PARTICLE_*_STRIDE` at `particleEmitter.ts` lines 21-23) keep `i*2`/`i*6` math out of callers.
-- **Naming (pass).** Every new export carries the full unabbreviated type word and the right verb prefix: `appendQuadBatchInstance`, `getTilemapColumnRowAtPoint`, `hitTestQuadBatchPointExactXY`, `setParticleEmitterParticleVelocity`, `enable*Signals`/`get*Signals`/`create*Signals`. No abbreviations, no vague names.
-- **Tree-shaking / side-effects (pass).** Thin 4-file barrel (`index.ts` unchanged from base); `package.json` keeps `"sideEffects": false`; signals are opt-in via `enable*Signals` with a `Symbol`-keyed runtime slot (`quadBatchSignalsSlot` etc.), so the signal cost is zero until enabled and no importer of a primitive pays for it. The signal-emit checks in the mutators are a single `getQuadBatchSignals(target) !== null` guard, not a new shared switch.
-- **Registry vs closed union (n/a).** The one closed switch is the two-member `transformType` (`vector2`/`matrix3x2`) — a genuinely closed, tight value type, correctly left as a union per the contract's "closed union for a tight loop within a closed system" carve-out. No growing kind family is mis-modeled as a switch.
-- **Subject triad (n/a).** No format codecs or backends added; nothing mis-homed; no premature split.
-- **Out-params + alias-safety + sentinels (pass).** Readers return `-1`/`false` and mutators no-op on out-of-range (`getQuadBatchInstanceId` line 241-244, `removeQuadBatchInstance` line 422-446, `setTilemapTile` line 208-214). `setQuadBatchTransformType` (lines 544-574) documents and respects its in-place re-stride direction (expand fills in reverse, collapse `dst < src`), which is the alias-safety concern for that function.
-- **Tests & honesty (pass, and a regression-from-the-prior-bundle fix).** Every exported function in all four files has a colocated, alphabetized `describe` block mirroring the export list (verified by diffing export names against `describe(` blocks in each `*.test.ts`). The prior `builder-67dc46d64` review's central defect — "~26 second-wave exports untested, `exports:check` would fail" — is **resolved** in this bundle; the delta lands its tests. The claim and the code now match.
-
-## Contract / charter notes surfaced by the delta
-
-- The charter (still `draft: true`) describes the realized head as already upholding header-layer discipline ("Cross-package types … live in `@flighthq/types`"). The delta as bundled **does not** — B1 shows the `*Signals` types never reached the header. The charter prose is aspirational here, not descriptive of `b2824e3d8`.
-- The Rust `flighthq-sprite` mirror is not in this bundle; conformance of the new buffer math is unverified (charter Open direction #10). No action for this gate.
+1. **QuadBatch default-bounds posture.** `computeQuadBatchLocalBoundsRectangle` exists but is *not* wired as the runtime default (the default copies a user-set override or does nothing). Is "bounds are explicit — compute-and-set, never implicit per-frame scans over thousands of instances" the intended posture? If yes, record it (and zero the out on null); if no, wire the compute.
+2. **Mutation-signal completeness.** Which mutators emit is currently ad hoc (Gap 6). A ruling — "append/remove/clear/blit emit; per-instance sets never do" — would make the asymmetry deliberate.
+3. **Region lookup delegation.** Should sprite depend on `@flighthq/textureatlas` for id→region queries (Gap 7), or keep the dependency floor at `types` and accept the linear scan?
+4. **ParticleEmitter decision migration.** Decide where the emitter-era charter Decisions (#2) and prose live now that the quartet is `particleemitter`'s.

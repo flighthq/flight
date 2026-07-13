@@ -1,13 +1,16 @@
+---
+package: '@flighthq/screen'
+updated: 2026-07-13
+basedOn: ./review.md
+---
+
 # screen — Assessment
 
 See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-Sweep-safe changes. Builder-ready.
-
-1. **Implement `getScreenNearestRect` with actual nearest-screen logic** — currently shares one body with `getScreenContainingRect`. Give it distinct semantics using center-distance fallback (find the screen whose center is closest to the input rect's center), mirroring Electron's `getDisplayNearestPoint` vs `getDisplayMatching` split.
-2. **Remove structural divider comments in test file** — delete the `// --- attachScreenSignals ---` and sibling `// --- ... ---` section headers in `screen.test.ts`. The alphabetized `describe` names already carry the structure; the dividers violate the "avoid structural divider comments" source-style rule.
+No open sweep-safe items — both previously-Approved items are verified implemented in the live tree (`getScreenNearestRect` distinct contains-else-nearest-center semantics at `screen.ts:604`; test divider comments removed from `screen.test.ts`).
 
 ## Approved
 
@@ -16,4 +19,9 @@ Sweep-safe changes. Builder-ready.
 
 ## Backlog
 
-None.
+- Late-subscribe + upgrade ordering (subscribers before `requestScreenDetails` miss `screenschange`) — behavior-contract decision, charter Open direction; not sweep-safe.
+- Optional `ScreenBackend.refresh?()` seam so `refreshScreens` delegates instead of being a no-op hook — touches the `@flighthq/types` backend interface; small, but a seam-shape call for direction.
+- Web derivation of `monochrome`/`dpi`/`depthPerComponent` vs leave-sentinel — charter Open direction.
+- Stable-id contract for `ScreenInfo.id` across hot-plug — charter Open direction.
+- Explicit scope ruling on display-mode *setting* (`setScreenMode`) — absent today; decide absent-on-purpose vs chartered-native.
+- Rust `flighthq-screen` conformance verification — cross-tree.

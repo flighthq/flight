@@ -1,70 +1,61 @@
 ---
 package: '@flighthq/filesystem'
-status: partial
-score: 58
-updated: 2026-06-25
+status: solid
+score: 82
+updated: 2026-07-13
 ingested:
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
-  - head/packages/filesystem/src
-  - changes.patch (packages/filesystem slice)
-  - head/packages/types/src/FileSystem.ts + types/src/index.ts
-  - head/packages/dialog/src/dialog.ts
-  - MANIFEST.json
+  - status.md
   - charter.md
+  - source (packages/filesystem/src)
+  - packages/types/src/FileSystem.ts + Dialog.ts
 ---
 
-# filesystem — Merge Review (integration b2824e3d8 vs approved origin/main eb73c3d74)
+# filesystem — Review
 
-Evidence: `incoming/integration-b2824e3d8/head/packages/filesystem/` + the `packages/filesystem/` slice of `changes.patch`, judged as a merge gate against the approved base `incoming/integration-b2824e3d8/base/packages/filesystem/`. Findings reference `b2824e3d8:<path>`. The score grades the _delta's fitness to merge_, not the package's distance to authoritative.
+> Depth review of the live tree (2026-07-13). Supersedes the 2026-06-25 merge-gate review of `integration-b2824e3d8`, whose REVISE verdict (58) scored a snapshot where the `@flighthq/types` header half of the change was missing. **That blocker is resolved**: `packages/types/src/FileSystem.ts` now carries `FilePermissions`, `FileSystemUsage`, `FileWalkOptions`, and the full extended `FileSystemBackend` (streams, ranged read, recursive walk, atomic write, symlink/permissions/real-path, usage), and `packages/types/src/Dialog.ts` defines `FileDialogHandle`. Source, tests, and header are in sync; the June "as-claimed, not landed" status finding no longer describes this tree.
 
 ## Verdict
 
-`partial — 58/100`. **REVISE — do not merge as-is.** The design of the delta is strong: it roughly triples the API (streaming I/O, ranged read, recursive walk + glob, atomic write, the symlink/permissions/real-path native seam, disk-usage, pure path utilities, and a dialog-handle bridge), and on its own merits the new surface is well-named, sentinel-disciplined, tree-shakable, and exhaustively tested. But the integration snapshot is **internally inconsistent and will not typecheck**: `b2824e3d8:packages/filesystem/src/filesystem.ts` imports four `@flighthq/types` symbols (`FileDialogHandle`, `FilePermissions`, `FileSystemUsage`, `FileWalkOptions`) and calls eleven new `FileSystemBackend` methods that **do not exist in this integration's `@flighthq/types` head**. The filesystem + dialog work landed without its required header-layer change. That is a hard merge blocker independent of any design opinion.
+`solid — 82/100`. The largest and most complete cell in the platform suite: 43 exported free functions covering every row of the textbook filesystem rubric — text/binary read/write/append, ranged read, directory CRUD (list, create, remove with the POSIX file/directory verb split), recursive walk with `maxDepth`, glob `findFiles`, streaming I/O plus chunked write, atomic write, stat/metadata, watch seam, six pure path utilities, permissions/symlink/real-path native seams, disk-usage, and the sanctioned `@flighthq/dialog` handle bridge (4 functions). The web (OPFS) default implements everything OPFS can express and returns honest sentinels for the rest; every API touch is guarded. 97 colocated tests mirror the exports 1:1, including jsdom sentinel coverage per function. What separates it from authoritative: the `watchPath` shape is below the suite's event-capability convention (web no-op bare callback), bulk directory operations and locking are absent, and the path utilities do not resolve `..` segments or Windows `\` separators.
 
-## The blocker: the `@flighthq/types` header dependency is missing from the integration head
+## Present capabilities
 
-This is the dominant finding and it is fully grounded:
+Verified against `packages/filesystem/src/filesystem.ts` (765 lines) and `filesystem.test.ts` (909 lines, 97 tests):
 
-- `b2824e3d8:packages/filesystem/src/filesystem.ts:1-12` imports:
-  ```ts
-  import { getWebFileSystemHandle } from '@flighthq/dialog';
-  import type {
-    FileDialogHandle,
-    FileEntry,
-    FilePermissions,
-    FileStat,
-    FileSystemBackend,
-    FileSystemPathKind,
-    FileSystemUsage,
-    FileWalkOptions,
-    FileWatchEvent,
-  } from '@flighthq/types';
-  ```
-  and the OPFS backend object implements `readBinaryFileRange`, `directoryExists`, `removeDirectory`, `readDirectoryRecursive`, `openFileReadStream`, `openFileWriteStream`, `writeFileAtomic`, `createFileSymlink`, `readFileSymlink`, `getFileRealPath`, `getFilePermissions`, `setFilePermissions`, `canAccessFile`, `getFileSystemUsage`.
-- But the integration **head** `incoming/integration-b2824e3d8/head/packages/types/src/FileSystem.ts:28-44` still carries the _base_ 15-method `FileSystemBackend` interface — none of the eleven new methods, no `FilePermissions`/`FileSystemUsage`/`FileWalkOptions` import. A tree-wide grep finds **no definition** of `FileDialogHandle`, `FilePermissions`, `FileSystemUsage`, or `FileWalkOptions` anywhere under `head/packages/types/src/`.
-- `head/packages/types/src/index.ts` exports no `FilePermissions`/`FileSystemUsage`/`FileWalkOptions`/`FileDialogHandle`; `changes.patch` contains **no diff hunk for `packages/types/src/FileSystem.ts`**, and the only `types/src` files it touches are `FontMetrics`, `GlyphExtents`, `Notification`, `RenderViewport2D`, `ShapedRun`, `SpritesheetFormat`, `TextShaper`, `index.ts` (MANIFEST: `types changedFiles 8` — all unrelated to filesystem).
-- The same gap hits the sibling: `head/packages/dialog/src/dialog.ts:78` (`getWebFileSystemHandle(handle: Readonly<FileDialogHandle>)`) and its import also reference `FileDialogHandle`, which is **not** defined in `head/packages/types/src/Dialog.ts` (that file defines `FileDialogFilter`, `OpenFileDialogOptions`, `SaveFileDialogOptions`, `MessageDialog*`, `DialogBackend` — no `FileDialogHandle`).
-- The status doc shipped with the bundle (`b2824e3d8:agents/packages/filesystem/status.md`) **claims** these types and the eleven methods were added to `@flighthq/types` — they are as-claimed, not present. The charter already warned to "verify against `dist/*.d.ts`, not the report"; verification here says the header change was never committed to this branch.
+- **Files**: `readTextFile` / `writeTextFile` / `appendTextFile`, `readBinaryFile` / `writeBinaryFile`, `readBinaryFileRange` (empty-array for out-of-range, null for missing), `copyFile`, `renameFile`, `removeFile` (strictly file-only — web verifies a file handle before removal), `fileExists`, `statFile`, `writeFileAtomic` (temp-sibling then replace; documented best-effort/not-crash-safe on OPFS).
+- **Directories**: `makeDirectory` (creates parents), `readDirectory`, `readDirectoryRecursive(path, FileWalkOptions)` with `maxDepth`, `directoryExists` (documented `''`→OPFS-root edge), `removeDirectory(path, recursive?)`, `findFiles` glob (`*` / `**` / `?`, case-sensitive) composed over the recursive walk.
+- **Streaming**: `openFileReadStream` (OPFS `File.stream()`), `openFileWriteStream` (`createWritable()`), `writeBinaryFileChunks` (async-iterable chunked write, never holds the payload; aborts the writer on failure).
+- **Native seams (web sentinels)**: `createFileSymlink` / `readFileSymlink` / `getFileRealPath`, `getFilePermissions` / `setFilePermissions`, `canAccessFile('readable' | 'writable' | 'executable')` (web probes handles / `createWritable` for readable/writable, false for executable), `getFileSystemUsage` (web via `navigator.storage.estimate()`), `watchPath` (web no-op unsubscribe), `getFileSystemPath` (web `''`).
+- **Path utilities (pure, no backend)**: `getFileBaseName`, `getFileDirectoryName`, `getFileExtensionName`, `isAbsoluteFilePath` (POSIX `/` + Windows drive letter), `joinFilePath`, `normalizeFilePath`.
+- **Dialog bridge**: `readDialogHandleBinaryFile` / `readDialogHandleTextFile` / `writeDialogHandleBinaryFile` / `writeDialogHandleTextFile` over `FileDialogHandle` — native path delegation, live web `FileSystemFileHandle` via `getWebFileSystemHandle`, OPFS-by-name fallback.
+- **Seam discipline**: `getFileSystemBackend` lazily creates the OPFS default (no import-time side effect), `setFileSystemBackend(null)` restores it; `package.json` keeps `"sideEffects": false` and the single `.` export; module state and helpers sit below the exports.
 
-Net: `@flighthq/filesystem`, `@flighthq/dialog`, and `@flighthq/types` are out of sync in this integration head. `tsc -b` on the filesystem package cannot resolve its imports; `filesystem.ts` and `filesystem.test.ts` both fail to compile. This must be resolved before merge — it is not a pre-release-latitude waiver (latitude covers back-compat, not a non-compiling tree).
+## Gaps
 
-## Axis-by-axis (the 7 standards), judging the delta
+Ordered by distance-to-authoritative:
 
-1. **Composition / bedrock — PASS (with one surfaced fork).** Each new export is a thin free function delegating to the backend (`b2824e3d8:filesystem.ts:15-619`); no config-gated mega-function, no fused subjects. The pure path utilities (`getFileBaseName`/`DirectoryName`/`ExtensionName`, `isAbsoluteFilePath`, `joinFilePath`, `normalizeFilePath`, `b2824e3d8:filesystem.ts:326-408`) are value-typed leaves that _could_ extract to a `@flighthq/path` cell — a real decomposition fork, already charter Open direction #2. Not a blocker; surfaced.
-2. **Naming clarity — PASS, two pre-release nits.** Full, unabbreviated, self-identifying names throughout. (a) `findFiles` (`b2824e3d8:filesystem.ts:318-323`) filters on `re.test(entry.name) || re.test(entry.path)` with **no `isDirectory` filter**, so it returns directory entries too — its name over-promises "files." (b) `renameFile` (`b2824e3d8:filesystem.ts:514-516`) is the only mover; on native it moves directories as well. Both are charter Open direction #6 reshape candidates, cheap pre-release — open questions, not blockers.
-3. **Tree-shaking / bundle invariant — PASS.** `b2824e3d8:packages/filesystem/package.json` keeps `"sideEffects": false` and the single `"."` export; no per-file subpaths added. Module state (`let _backend`) and all helpers (`getWebRoot`, `walkWebDirectory`, `globToRegExp`, …) sit at file bottom after the exports (`b2824e3d8:filesystem.ts:622-765`); no top-level execution, no eager OPFS touch (`getFileSystemBackend` lazily creates, `:358-361`). New surface is additive free functions — no new hot-loop branch taxing existing importers.
-4. **Registry vs closed union (fork B) — N/A / PASS.** No `kind` switch in the delta; `canAccessFile`'s `'readable' | 'writable' | 'executable'` mode is a closed tri-state argument, correctly a tight closed set, not a growing handler family.
-5. **Subject triad + plurality guard — PASS, one cross-cell fork.** No misplaced `-formats`/`-backend` code. The new `@flighthq/dialog` dependency (`b2824e3d8:package.json` adds `"@flighthq/dialog": "*"`; `filesystem.ts:1` imports `getWebFileSystemHandle`) makes `filesystem` the first platform-suite cell to import a _sibling_ cell — charter Open direction #1 (structural fork A). The four bridge functions (`read/writeDialogHandle{Binary,Text}File`, `:437-608`) are a real cross-cell coupling whose home is undecided. Surface, do not block.
-6. **Contract hygiene — FAIL (the blocker) + otherwise good.** Types-first is **violated in this snapshot**: the implementation references a `@flighthq/types` surface that does not exist here (see above) — the header was not landed first (or at all) on this branch. Setting that aside, the rest is clean: sentinels not throws everywhere (`null`/`[]`/`false`), `Readonly<>` on `FileDialogHandle`/`FilePermissions`/`Uint8Array` params, `dispose*`/`destroy*` correctly absent (nothing owns a non-GC resource), and the OPFS backend guards every API touch. No `out`-param functions in the delta, so alias-safety is moot. Rust mirror `flighthq-filesystem` is unstarted (charter-acknowledged).
-7. **Tests & honesty — STRONG design, but cannot compile.** `b2824e3d8:filesystem.test.ts` is colocated, alphabetized, and mirrors the exports 1:1, with both fake-backend behavior and jsdom-web-sentinel coverage for every new function (e.g. `createWebFileSystemBackend` asserts all eleven new sentinels at `:265-292`; `writeBinaryFileChunks`, `writeFileAtomic`, the dialog-handle round-trips all covered). This is genuinely thorough. But it imports `FileDialogHandle`/`FilePermissions` from `@flighthq/types` (`test:1-8`) and so fails to compile for the same reason as the source. No dead exports; every export has a test.
+1. **`watchPath` is below the suite's event-capability convention.** A bare `(path, listener) → unsubscribe` callback, web no-op. The suite convention for event capabilities is a signal entity (`create*`/`attach*`/`detach*`/`dispose*`); recursive watch, debounce/coalesce are unaddressed. Chartered as Open direction #1 — a design decision, not a sweep.
+2. **Bulk directory operations absent**: `copyDirectory`, `moveDirectory`, `emptyDirectory`, `getDirectorySize`. `renameFile` on web moves single files only (copy+remove); there is no directory mover.
+3. **Path utilities do not resolve `..`** — `normalizeFilePath('a/b/../c')` preserves the `..` literally (`splitWebPath` filters only `''` and `.`), and `\` is never treated as a separator. A textbook normalize resolves parent segments; Windows-awareness is a separate design call.
+4. **No locking / sync-access-handle tier**: advisory `lockFile`/`releaseFileLock` brackets and OPFS `createSyncAccessHandle` (high-throughput worker I/O) are unbuilt.
+5. **Text I/O is UTF-8-only** — no encoding parameter, no BOM handling.
+6. **Naming reshape window still open** (charter Open direction #2): `findFiles` returns directory entries too (filters `name || path` match with no `isDirectory` filter); `renameFile` is the only mover and moves directories on native. `findPaths` / `renamePath` candidates before native hosts commit.
+7. **No diagnostics layer** — the many silent sentinels (`null`/`false`/`[]`) have no `explain*` queries or `enable*Guards`; suite-wide condition shared by every platform cell.
+8. **Rust mirror `flighthq-filesystem` unstarted** (the pure path utilities are the clean first slice).
 
-## Charter contradictions / confirmations
+## Charter contradictions
 
-- Confirms North-star #2 (sentinels, never throws) and #1 (lazy in-crate OPFS default) — the delta upholds both.
-- Confirms Open direction #5: the POSIX file/directory split landed cleanly — `removeFile` (`:509-511`) is now strictly file-only (web verifies a file handle via `writeWebRemove(path, false)`, `:687-705`), `removeDirectory(path, recursive?)` is the directory verb (`:503-505`, `:92-106`). This is the likely intended Decision; worth recording.
-- Open directions #1 (dialog coupling), #2 (`@flighthq/path` extraction), #6 (`renameFile`/`findFiles` naming) are all live in this delta and routed to the assessment's charter-forks section.
+None. The tree matches both 2026-07-02 Decisions: the six path utilities live in-package, and the `@flighthq/dialog` dependency stands as the suite's only sanctioned sibling import. The POSIX file/directory verb split (`removeFile` strictly file-only, `removeDirectory` the directory verb) that the June review flagged as "likely intended Decision; worth recording" is implemented but still not recorded as a charter Decision — a candidate for the next direction session.
 
-## Notes for status verification (as-claimed → verified)
+## Contract & docs fit
 
-The bundled `status.md` self-scores 93/100 and claims the `@flighthq/types` additions as done. **Verified false against the tree:** the type definitions and `FileSystemBackend` method additions are absent from `head/packages/types/src/` and from `changes.patch`. Treat the status doc's "Implemented APIs › New types in `@flighthq/types`" section as _not landed on this branch_.
+- Types-first is now satisfied: the full `FileSystemBackend` seam, `FilePermissions`, `FileSystemUsage`, `FileWalkOptions` live in `@flighthq/types`; `FileDialogHandle` in `Dialog.ts`. The June status entry's "as-claimed, not landed" annotation is resolved — the claims are true of this tree.
+- Sentinels throughout, never throws; `Readonly<>` on data/handle/options params; no `dispose*`/`destroy*` needed (nothing owns a non-GC resource); exports alphabetized; tests mirror exports in order.
+- Package Map line ("read/write files and directory access") undersells the cell — streams, glob, atomic write, permissions seam, dialog bridge. A doc widen behind the user's gate.
+
+## Candidate open directions
+
+1. Record the file/directory verb split as a charter Decision (it is implemented and load-bearing for native backends).
+2. Bulk directory operations tier (`copyDirectory` / `moveDirectory` / `emptyDirectory` / `getDirectorySize`) — additive free functions over the existing seam, but each needs a seam-method decision (backend-native vs composed-over-walk).
+3. Locking + OPFS sync-access-handle tier — gates high-throughput worker use.
+4. `@flighthq/filesystem-formats` archive-as-backend (zip/tar mounted through `FileSystemBackend`) — held at the plurality guard until a second virtual backend is real.

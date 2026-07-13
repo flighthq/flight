@@ -1,76 +1,81 @@
 ---
 package: '@flighthq/log'
-status: partial
-score: 40
-updated: 2026-06-25
+status: solid
+score: 76
+updated: 2026-07-13
 ingested:
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
-  - head/packages/log/src/log.ts
-  - head/packages/log/src/log.test.ts
-  - head/packages/types/src/Log.ts
-  - changes.patch (packages/log + packages/types slices)
+  - live packages/log/src/log.ts (800 lines) + log.test.ts (114 tests, 61 describes)
+  - live packages/types/src/Log.ts + LogSignals.ts
+  - charter.md (2026-07-02 direction), assessment.md, status.md
+  - prior review (2026-06-25 merge gate, score 40)
 ---
 
-# log — Merge Review (integration b2824e3d8 vs approved base eb73c3d74)
+# log — Review (live-tree re-review, 2026-07-13)
 
 ## Verdict
 
-**Reject as a merge into the approved baseline.** The candidate is an ambitious, mostly-idiomatic expansion of `@flighthq/log` (base: a ~116-line two-face emit/listener seam → head: an 813-line full logging library: 61 exported functions, 4 opaque sink tokens, multi-sink fan-out, level gates, formatters, redaction, tracing). On its own terms the design is largely sound. But **the integration head does not compile**: `log.ts` and `log.test.ts` import seven types from `@flighthq/types` that do not exist anywhere in the integration tree. This is a hard merge-gate failure independent of the design's merits — a non-building package cannot enter the approved floor. The committed `review.md` carried in the same patch claims `status: solid`, `score: 86`, and "7 new `@flighthq/types` files," but those files are absent from `b2824e3d8`. The score here reflects the build-blocking state of _this merge_, not the quality of the code in isolation.
+**Solid, 76/100** — up from 40. The prior score reflected a build-blocking merge state (seven `@flighthq/types` imports undefined at the integration head), not the code's quality. That state is resolved in the live tree: `packages/types/src/Log.ts` now defines `LogContext`, `LogData`, `LogDataProvider`, `LogEntry`, `LogFormatter`, `LogLevel`, `LogSpan`, `LogTimer`, `LogTransportBackend`, and `LogSink`, and `packages/types/src/LogSignals.ts` defines `LogSignals`. Every import in `packages/log/src/log.ts:1-14` resolves. The recovery landed via `06a0c480` ("recover lost source across packages"); the three structural divider comments the prior review flagged were removed in `d730004a`. The charter's 2026-07-02 "false alarm" decision is confirmed against live source.
 
-## The blocker — undefined cross-package types (standards 6 + 7)
+What ships is a genuinely comprehensive diagnostic logging library: 62 exports (58 functions + 4 opaque sink handle interfaces: `BufferedLogSink`, `FileLogSink`, `MemoryLogSink`, `RateLimitedLogSink`), one thin barrel, `"sideEffects": false`, 114 colocated tests with alphabetized describes mirroring exports. The codebase-map line ("leveled structured logging — log(level, data, channel?), severity wrappers, multi-sink fan-out (console/memory/file/buffered/rate-limited/sampled/filtered/fanout), text/JSON formatters, timing/spans, groups, assertions, redaction") is **accurate against source**, feature for feature — no longer aspirational.
 
-`b2824e3d8:packages/log/src/log.ts` lines 2–13 import:
+The score lands at solid-mid rather than higher because three fidelity holes cut across otherwise-complete subsystems: entries carry no capture-time timestamp, redaction/serializers apply only inside one formatter rather than at emit, and the file-sink tier is a single global transport that cannot serve two destinations. None is a missing subsystem; each is a place where an existing subsystem doesn't fully deliver its own promise.
 
-```ts
-import type {
-  LogContext,
-  LogDataProvider,
-  LogFormatter,
-  LogSignals,
-  LogSink,
-  LogSpan,
-  LogTimer,
-  LogTransportBackend,
-} from '@flighthq/types';
-```
+## AAA gap read (against a mature structured-logging library)
 
-Of these, only `LogSink` (and `LogData`, `LogEntry`, `LogLevel`) are defined. `head/packages/types/src/Log.ts` is **byte-identical to base** — it still defines only `LogLevel`, `LogData`, `LogEntry`, `LogSink`. A tree-wide grep finds **zero** definitions of `LogContext`, `LogDataProvider`, `LogFormatter`, `LogSignals`, `LogSpan`, `LogTimer`, `LogTransportBackend` anywhere under `head/packages/types/`. The integration patch _does_ add new `packages/types/src/*.ts` files (`FontMetrics`, `GlyphExtents`, `Notification`, `RenderViewport2D`, `ShapedRun`, `SpritesheetFormat`, `TextShaper`) — but none of the seven Log types. `b2824e3d8:packages/log/src/log.test.ts:2` likewise imports the undefined `LogSignals`.
+Present and verified in `packages/log/src/log.ts`:
 
-Consequences, all in the delta (base had none of these imports):
+- **Leveled core + channels** — `log`/`logDebug`/`logInfo`/`logWarn`/`logError`/`logVerbose`, `LogLevel` gate, per-channel overrides (`setLogChannelLevel`/`getLogChannelLevel`/`clearLogChannelLevels`), lazy `LogDataProvider` thunks invoked only past the gate (`log.ts:402-408` — suppressed verbose emits allocate nothing).
+- **Scoped/child loggers with bound fields** — `createLogContext`/`createChildLogContext` (field merge + channel inheritance, `log.ts:114-126`) with the full `logWith`/`log*With` wrapper family. This is the child-logger capability of pino/bunyan, delivered as plain data + free functions.
+- **Sink fan-out + combinators** — `addLogSink`/`removeLogSink`/`setLogSink`/`clearLogSinks`; console-capture, memory (ring buffer with capacity), file (via transport), buffered (interval auto-flush + `flushLogSink`/`disposeLogSink`), rate-limited (windowed, optional per-channel budget), sampled, filtered, fanout. All eight sink types from the map exist.
+- **Formatters** — `createTextLogFormatter` (timestamp/levelPrefix/indentGroups options), `createJsonLogFormatter`, plus the internal `_defaultJsonFormatter` envelope for the capture harness.
+- **Spans/timing/groups** — `createLogSpan`/`enterLogSpan`/`exitLogSpan` (field-merging span stack, out-of-order unwind supported), `startLogTimer`/`endLogTimer` (emits elapsed-ms Debug entry), `beginLogGroup`/`endLogGroup` (depth-tracked).
+- **Sampling, rate limiting, redaction, assertions, once-logging** — `createSampledLogSink`, `createRateLimitedLogSink`, `setLogRedactionPaths` (dot-notation, copy-before-mutate in `_redactPath`), `logAssert` (never throws), `logOnce`.
+- **Crash-report buffering** — `createMemoryLogSink(capacity)` ring buffer + `getMemoryLogSinkEntries` (oldest-first) is the right primitive; see the timestamp gap below for the caveat.
+- **Persistence seam** — `LogTransportBackend` (`write`/`flush?`/`dispose?`) with `createWebLogTransportBackend` as the honest no-op web default and `setLogTransportBackend` for native hosts. Rotation correctly lives behind the seam, not in the SDK.
+- **Serializer registry** — `registerLogSerializer(kind, fn)` keyed on `__kind` strings, last-write-wins. Correct open-registry fork shape.
+- **Signals** — `enableLogSignals` → `LogSignals` (`onLogEntry`, `onLogError`), inert until enabled; `_passesLevelGate` short-circuits when no sinks and no signals, so an unconfigured build does no work.
 
-- `tsc -b` fails for `@flighthq/log` and its consumers — the package cannot build, so `npm run check` / `npm run ci` cannot pass.
-- This violates the codebase-map "types-first" rule directly: cross-package shapes must be authored in `@flighthq/types` _first_, then implemented against. Here the implementation landed and the header layer did not.
-- The committed `b2824e3d8:agents/packages/log/review.md` asserts the capabilities are "Grounded in `67dc46d64:packages/log/src/log.ts` and `packages/types/src/Log*.ts`" — a state that exists at the source worktree `67dc46d64` but **not** at the integration head `b2824e3d8`. The merge dropped the types files; the as-claimed review now misrepresents the integrated tree.
+Deliberately out of scope per charter (confirmed non-goals, not gaps): distributed tracing / correlation IDs / request-context propagation; log shipping to external services (composable via sinks/transport).
 
-This is the single decisive finding. Everything below is conditional on it being fixed.
+### Gap 1 — no capture-time timestamp on `LogEntry` (the biggest one)
 
-## Secondary — structural divider comments (standard 6, source style)
+`LogEntry` is `{ level, channel, data }` (`packages/types/src/Log.ts:60-64`). Timestamps are stamped at **format** time — `createTextLogFormatter` and `_defaultJsonFormatter` call `_timestamp()` when rendering (`log.ts:262`, `log.ts:778`) — not at emit time. Consequences:
 
-`b2824e3d8:packages/log/src/log.ts` introduces three banner dividers the head's own Source Style rule forbids ("Avoid structural divider comments such as `// ---- setup ----`"):
+- Any deferred-formatting path records the wrong moment: a `createBufferedLogSink` that formats on flush stamps flush time; entries replayed from `createMemoryLogSink` have no time at all — a crash-report ring buffer cannot order or timeline its entries, which is half the point of a crash buffer.
+- Two sinks formatting the same entry print different timestamps.
 
-```
-29:// ---------------------------------------------------------------------------
-30:// Emit side — multi-sink fan-out + level-gated emit
-31:// ---------------------------------------------------------------------------
-613:// ... Opaque tokens ...
-639:// ... Internals ...
-```
+A mature structured logger stamps at capture. The fix is one field on `LogEntry` written at emit (the wrappers already share the gate/emit shape) and formatters reading `entry.t` instead of calling `_timestamp()`. Within-package plus one types-file field; flagged as the top recommended item (the `@flighthq/types` edit is the established header-first workflow, not a design fork).
 
-Base `log.ts` had none. The boundaries these draw are already carried by names and file position; the dividers add maintenance surface for no signal. Minor mislabel inside the first banner: the "Emit side" header sits directly above `addLogSink`, whose own docstring tags it "Listener side."
+### Gap 2 — redaction and serializers apply only inside `createJsonLogFormatter`
 
-## What passes (judged on the delta, conditional on the blocker)
+`_applySerializers`/`_applyRedaction` are invoked exactly once, in `createJsonLogFormatter` (`log.ts:170-171`). They are **not** applied at emit, so:
 
-- **Naming (standard 2).** Full, unabbreviated type words throughout: `createBufferedLogSink`, `getMemoryLogSinkEntries`, `setLogTransportBackend`, `enableLogSignals`. `get*`/`is*` discipline holds; sink-creating functions are `create*`. No abbreviations. Globally self-identifying.
-- **Tree-shaking / bundle invariant (standard 3).** `package.json` keeps the single root `.` export and `"sideEffects": false`; `index.ts` is a thin `export * from './log'`. No top-level registration or side effect. The emit gate (`_passesLevelGate`) runs before payload construction, and `LogData | LogDataProvider` thunks are invoked only past the gate, so a suppressed verbose emit allocates nothing — the listener-side combinators/formatters tree-shake away from an emit-only import. (The "tree-shakes to near-nothing" claim is asserted by inspection, not proven by `npm run size` — see Notes.)
-- **Registry vs closed union (standard 4).** `registerLogSerializer` is a `__kind` string registry (last-write-wins, vendor-prefixed user kinds), not a closed `switch`. Correct fork-B shape.
-- **Contract hygiene (standard 6), where types exist.** Sentinels not throws: `logAssert` never throws, `parseLogLevel`→`null`, `removeLogSink`→`false`, `getLogChannelLevel`→`null`. `dispose*` is correctly chosen over `destroy*` for `disposeLogSink`/`disposeFileLogSink` (they detach an interval timer / release a GC-managed backend, not a GPU/native handle). `_applyRedaction` shallow-copies before mutating (alias-safe). `Readonly<LogEntry>` on sink/formatter inputs.
-- **Tests (standard 7).** Colocated `log.test.ts`, 61 `describe` blocks, alphabetized, mirroring the 61 exported functions one-to-one (the 4 exported interfaces are opaque tokens, not describe-bound). No dead exports; every exported function is imported and exercised. The suite nonetheless cannot run until the type blocker is fixed (`log.test.ts:2` imports `LogSignals`).
+- Raw, unredacted entries fan out to every sink (`_emitToSinks`, `log.ts:735-741`), to `LogSignals` listeners, to `createMemoryLogSink` buffers, and through `createConsoleCaptureSink`'s `_defaultJsonFormatter` — which skips redaction entirely (`log.ts:774-782`).
+- `createTextLogFormatter` also skips both, so the human console line prints the secret the JSON line would have redacted.
 
-## Composition / bedrock (standard 1)
+`setLogRedactionPaths` reads as a privacy feature ("keep this out of the logs") but only holds for one formatter. Either apply redaction+serializers once at emit (before `_emitToSinks`), or document the feature as JSON-formatter-scoped. Applying at emit is the honest fix and removes per-formatter duplication; within-package and sweep-safe.
 
-The file is large but is mostly a flat catalog of small free functions over shared module state, not a monolith of config-gated branches — closer to simple-by-composition than to a decomposition smell. The one real composition question (whether tracing — spans/groups/timers — is `log`'s bedrock or wants to be extracted into a `tracing`/`telemetry` neighbor) is a charter Open-direction fork, not a merge defect; routed to Notes, not raised as a must-fix.
+### Gap 3 — single global transport; file-sink handles are vestigial
 
-## Standard 5 (subject triad / plurality guard)
+All `createFileLogSink` handles share the one module-global `_transportBackend`. `disposeFileLogSink(_handle)` **ignores its handle parameter** and flushes/disposes the global backend (`log.ts:290-296`). Two file sinks cannot write to two destinations, and disposing "one" disposes the shared transport for all. Either the transport moves onto the `FileLogSink` handle (`createFileLogSink(options: { transport?, formatter? })` falling back to the global), or the API should stop pretending handles are independent. Per-sink transport is the mature shape and keeps the global as default; recommended.
 
-No new format-codec or backend code is mis-homed here. The `LogTransportBackend` seam belongs in `@flighthq/types` (correct), and the parked `@flighthq/log-formats` reader split is gated on a second consumer — consistent with the plurality guard. No premature split. Pass.
+### Smaller observations
+
+- **Monolith** — 800 lines, 62 exports, one file. Charter Decision #2 (decompose into logCore/logSink/logFormat/logTiming) was parked on "needs compiled package first"; that precondition is now met, so the decomposition is unblocked (still Backlog: it's a file-layout design pass, not a mechanical sweep).
+- **Global singleton state** — levels, sinks, spans, groups, channels are module globals; there are no logger instances. Consistent with the "SDK diagnostic layer" north star and the C-portability posture (contexts serve the child-logger role), but two libraries in one page share one logger. Not raised as a gap; it is the charter's chosen shape.
+- **Types layout** — the Log types live in one `Log.ts` rather than one-concept-per-file (`LogSignals` is separate). Deviation from [types-layout](../../conventions/types-layout.md); cross-package (types cell), noted here only.
+- **`exitLogSpan` emits nothing** — spans are field-scopes, not timers; duration lives in `startLogTimer`/`endLogTimer`. Coherent split, no action.
+- **Diagnostics inversion** — `log` *is* the emission substrate, and `@flighthq/debug` (see `d2fc920a`) now builds gated timing spans/frame markers over it. No `explain*`/guard gaps identified within `log` itself.
+
+## Standards summary
+
+- **Naming (pass)** — full unabbreviated names throughout; `create*`/`get*`/`set*`/`dispose*` discipline holds (`disposeLogSink`/`disposeFileLogSink` correctly `dispose*`, not `destroy*` — timers/GC release, no native handles).
+- **Tree-shaking (pass)** — thin barrel, `"sideEffects": false`, no top-level side effects; emit side and listener side documented as two tree-shakable faces (`log.ts:16-27`).
+- **Registry vs union (pass)** — serializer registry is string-keyed, last-write-wins.
+- **Sentinels (pass)** — `parseLogLevel`→`null`, `removeLogSink`→`false`, `getLogChannelLevel`→`null`, `logAssert` never throws.
+- **Tests (pass)** — 61 alphabetized describes mirroring exports; 114 tests. Copy-before-mutate covered for redaction.
+
+## Admin-doc drift noted (not edited here)
+
+- `charter.md` "What it is" says 61 exports; live is 62 (58 functions + 4 interfaces). Trivial.
+- The codebase-map Package Map line for `log` is now accurate — the prior assessment's "Package Map description update" item is satisfied.

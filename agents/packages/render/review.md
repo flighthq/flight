@@ -1,105 +1,66 @@
 ---
 package: '@flighthq/render'
-status: partial
-score: 58
-updated: 2026-06-25
+status: solid
+score: 76
+updated: 2026-07-13
 ingested:
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
-  - changes.patch (packages/render slice)
-  - source (head vs base)
-  - status.md (as-claimed)
+  - charter.md
+  - status.md
+  - prior review.md (2026-06-25 merge-gate)
+  - source + tests (live tree)
+  - agents/render-architecture.md + render-backend-support.md
 ---
 
 # render — Review
 
-> Merge-gate survey. Judges ONLY the **delta** of `@flighthq/render` in the integration bundle (`incoming/integration-b2824e3d8/head/`) against the **approved baseline** `origin/main` (`eb73c3d74`, `…/base/`). The baseline is the blessed floor and is **not** reviewed. Findings cite `b2824e3d8:<path>`. The score scores the _incoming change_, not the package's lifetime maturity.
-
-## What actually landed (scope reconciliation)
-
-The `status.md` and the draft `charter.md` in this bundle describe a large two-pass effort — a shared draw driver (`drawRenderProxy`/`flushRenderBatch`/`registerRenderBatchFlush`/`submitRenderProxy`), a retained sortable `RenderQueue`, a blend save/restore stack, a stats snapshot, and 2D viewport culling, plus a cross-backend parity suite. **None of that is in this delta.** Diffing `base/packages/render/src` against `head/packages/render/src` and the `packages/render/` slice of `changes.patch`, the entire incoming change is three files:
-
-- `b2824e3d8:packages/render/src/renderViewport.ts` (new, 58 lines)
-- `b2824e3d8:packages/render/src/renderViewport.test.ts` (new, 104 lines)
-- `b2824e3d8:packages/render/src/index.ts` — one added line: `export * from './renderViewport';`
-
-There is no `renderDriver.ts`, `renderQueue.ts`, or `renderBlendState.ts` in either `base` or `head`. The status log is therefore **as-claimed and contradicted by the merged artifact**: the review below judges the viewport file alone, and flags the doc/delta mismatch as an honesty finding.
+> Full survey of the live package (16 source files + 16 test files, ~186 tests, `packages/render/src/`). Replaces the 2026-06-25 merge-gate review, which judged only an integration bundle's viewport-file delta (then a broken stub) — that delta has since been fixed and landed; this review judges the package as it stands.
 
 ## Verdict
 
-**partial — 58/100, REVISE before merge.** The delta is a small, self-contained, tree-shakable 2D viewport-culling primitive with a clean export shape, alphabetized exports/tests, and correct sentinel/`out`-param/`Readonly<>` form. It would be a clean low-risk merge — except its core function lies about what it computes. `computeRenderProxyWorldBounds` is named and documented as a **world-space bounding box** but writes the source's _local_ `x`/`y` with a hardcoded zero size, never consulting the real world-bounds path (`getNodeWorldBoundsRectangle`) that already exists in `@flighthq/node` and that the charter explicitly names for this exact culling concern. The tests only exercise the degenerate at-origin/zero-size cases, so they confirm the stub rather than the contract. As shipped, `isRenderableInViewport` mis-culls any object with real geometry or a non-identity ancestor transform. Two smaller delta nits compound it: a doc/code contradiction on edge inclusivity, and an entity-typed `Rectangle` built from a bare literal cast instead of `createRectangle`.
+**solid — 76/100.** The core the package actually owns — renderer registry, dirty-tracked 2D prepare pipeline, render-cache seam, 3D scene-prepare with frustum cull and a full punctual light block, viewport culling with real world bounds, a retained sortable queue — is well built, well commented, and genuinely tested. What keeps it out of solid-high is that a visible slice of its chartered surface is header or charter only: the shared draw driver (Decision #1, the keystone), the stats snapshot the charter's "What it is" claims in the present tense, and the blend stack all have types in `@flighthq/types` but no implementation, and the queue/viewport primitives have zero consumers anywhere in the tree.
 
-## Axis-by-axis (delta only)
+## Present capabilities
 
-### 1. Composition / bedrock — PASS
+- **Renderer registration** (`renderer.ts`): `registerRenderer` (last-write-wins, `rendererMapId` bump for proxy resync), `copyRenderersFromRenderState`/`copyAllRenderersFromRenderState`, `noopRendererData`. Mask renderers are retired (masks → clips), documented at the seam.
+- **Render state** (`renderState.ts`, `renderColor.ts`): `createRenderState`/`createRenderStateRuntime`/`getRenderStateRuntime`; all mutable machinery (frame counter, proxy maps, registry, `tempStack`, `renderAdaptHook`, guard slot) lives on `RenderStateRuntime` per state. `setRenderStateBackgroundColor` derives packed/RGBA/string forms behind a documented narrow writable cast.
+- **2D prepare pipeline** (`renderProxy.ts` + the trait visitors): `prepareDisplayObjectRender` → `walkNode` (explicit-stack, frame-id'd, dirty-checked via `isRenderProxyDirty` over local-transform/appearance/content revisions and `sceneGraphSyncPolicy`) → `updateRenderProxy2D` composing `updateRenderProxyAppearance`, `updateRenderProxy2DTransform`, `updateRenderProxyMaterial`, `updateRenderProxyColorTransform` (adjustment-tier fused `resolvedColorTransform`, single field read per frame), and `updateNodeClip`. One proxy type serves display objects and sprites. Teardown twins: `disposeDisplayObjectRender`/`disposeRenderProxy` cascade to `destroyData` and visit disabled/hidden nodes.
+- **Adapter + render cache** (`renderProxyAdapter.ts`, `renderCache.ts`): per-state adapt hook (`installRenderAdaptHook(state, fn)` — the old global slot is gone), `setRenderProxyAdapter` self-installs the hook; `createRenderCache`/`createRenderCacheAdapter`/`useRenderCache`/`getRenderProxyCache` plus opt-in `enableRenderCacheAdapterSignals`.
+- **Render-target math** (`renderTarget.ts`): `computeDisplayObjectRenderTargetTransform`, `computeRenderCacheTransform`, `computeRenderTargetSize` — consumed by `canvasCache`/`glCache`/`wgpuCache`.
+- **Retained queue** (`renderQueue.ts`): `buildRenderQueue` (scene-order keys over prepared proxies), `sortRenderQueue`, `packRenderSortKey` (15-bit layer / transparent bit / 15-bit depth), capacity-reusing `pushRenderQueueEntry`/`clearRenderQueue`.
+- **Viewport culling** (`renderViewport.ts`): `computeRenderProxyWorldBounds` now reads `getNodeWorldBoundsRectangle` (the merge-gate review's local-x/y-zero-size stub is fixed), `isRenderableInViewport`/`isRenderProxyInViewport` take an optional `renderTransform2D` for world→screen, inclusive edges with the comment now matching the code, `createRectangle()` scratch. Tests exercise nested/scaled parents and render transforms — the cases the old suite could not distinguish.
+- **3D scene prepare** (`sceneRender.ts`): `prepareSceneRender` (world-matrix propagation, view-projection, frustum cull against transformed mesh AABBs, per-state `PreparedScene` scratch) and `packSceneLightBlock` — directional/ambient plus point/spot/hemisphere to `MAX_FORWARD_LIGHTS`, sRGB→linear premultiplied radiance, std140-exact offsets, and a pack-compare-commit so `version` bumps only on real change (the 2026-07-09 status claim, verified in source). Consumed by `scene-gl`/`scene-wgpu`.
+- **Diagnostics** (`enableColorAdjustmentGuards.ts`, `explainDisplayObjectRender.ts`): a shakeable guard for the non-inlineable channel-mixing adjustment deferral (nullable runtime slot, `logOnce`, channel `'render'`), and `explainDisplayObjectRender` — a pure plain-data blank-frame query with root-cause-prioritized `reason` (`no-renderer` > `not-prepared` > `not-visible` > `zero-alpha` > `ok`).
 
-The file is a small composition: a trait sniff, a bounds writer, a constructor, an overlap test, and a proxy-dispatch wrapper. No config-gated branches, no fused subjects. `isRenderProxyInViewport` correctly delegates to `isRenderableInViewport(proxy.source, …)` (`b2824e3d8:packages/render/src/renderViewport.ts:52-54`) rather than duplicating the math. Decomposition is at the right grain.
+## Gaps
 
-### 2. Naming clarity — FAIL (semantic, not lexical)
+Versus a mature backend-agnostic render-abstraction layer (and the charter's own in-scope list):
 
-Lexically the names are full and self-identifying (`computeRenderProxyWorldBounds`, `createRenderViewport2D`, `isRenderableInViewport`, `isRenderProxyInViewport`). But the most important name is **untrue to its behavior**: `computeRenderProxyWorldBounds` promises world-space bounds and delivers a local-position point.
+- **No shared draw driver.** `Renderer.submit`/`format` (`@flighthq/types/Renderer.ts`) exist for a core-owned walk-and-flush, but there is no `drawRenderProxy`/`submitRenderProxy`/`flushRenderBatch`/`registerRenderBatchFlush` — each backend still owns its draw walk. Charter Decision #1 blessed this; it has never landed.
+- **Orphaned header types.** `RenderDrawContext`, `RenderStateStats`, `RenderBlendStateEntry` sit in `@flighthq/types` with no implementation and no consumer anywhere — header drift from the never-merged builder pass. Either the driver/stats/blend work lands against them or they are debt.
+- **Queue and viewport culling are unconsumed.** `buildRenderQueue`/`sortRenderQueue` and `isRenderableInViewport` have zero callers outside their own tests — no `drawRenderQueue`, no cull integration in prepare or queue-build. The seams exist; nothing drives them (fork B's "don't build the dispatcher before its consumer" tension, though here the charter blesses the queue itself).
+- **No stats/counter seam** — `getRenderStateStats` does not exist despite the charter's "What it is" naming a counter-level stats snapshot; no draw-call/flush counters anywhere in core.
+- **No blend save/restore stack** (`pushRenderBlendState`/`popRenderBlendState` — charter Open direction #5).
+- **No render-pass / render-graph abstraction** — in scope per Decision #2, still needs its design pass against `render-gl`/`render-wgpu` targets.
+- **`prepareSceneRender` ignores `sceneGraphSyncPolicy`** — full re-walk/re-cull/re-pack every call; the 3D analog of `isRenderProxyDirty` is missing (Approved 2026-07-09, gated on a node-side aggregate revision). Light-block versioning (the groundwork) is done.
+- **3D prepare depth**: no material/opaque-transparent sort of the visible list, no shadow-caster collection, instancing, or LOD (Open direction #4, gated on scene/lighting/mesh).
+- **Chartered guard set unbuilt**: the 2026-07-03 Decision names `enableRenderGuards(state)` (unregistered-kind, draw-before-prepare, clip-data-with-null-hook), `explainRenderState(state, root)`, and `formatRenderStateExplanation`. What exists is a different (also valuable) pair — the channel-mixing guard and the per-node explain; there is no aggregate explain and no `format*` companion at all, though `explainDisplayObjectRender`'s own doc comment promises one.
+- Minor: `collectVisibleMeshes` recurses (call stack) where every other walk in the package uses an explicit stack; `computeRenderTargetSize` allocates its return object with no `out` form; `RenderTargetSizeOptions` is exported but referenced by nothing, including its own file's function.
 
-```ts
-// b2824e3d8:packages/render/src/renderViewport.ts:14-22
-export function computeRenderProxyWorldBounds(out: Rectangle, source: unknown): boolean {
-  if (!hasTransform2D(source)) return false;
-  const s = source as HasTransform2D;
-  out.x = s.x;
-  out.y = s.y;
-  out.width = 0;
-  out.height = 0;
-  return true;
-}
-```
+## Charter contradictions
 
-`s.x`/`s.y` are the node's **local** transform fields (`HasTransform2D` carries `x, y, pivotX, scaleX, rotation, …`), not a world AABB. The package already has the canonical accessor — `getNodeWorldBoundsRectangle(target: Spatial2DNode): Readonly<Rectangle>` in `@flighthq/node` (`boundsRectangle.ts:137`) — which returns the actual world bounds rectangle. A name that means "world bounds" must compute world bounds; either rename it to what it does or, better, make it compute real bounds.
+- **"What it is" overclaims stats**: the charter states the package owns "a counter-level stats snapshot" in the present tense; no such export exists. This is charter drift (describing the target as current), not code violating a principle — a candidate charter revision.
+- **North star #4 (state on the runtime, not module globals) is mostly honored, with two soft spots**: `preparedScenes` is a module-level `WeakMap<RenderState, PreparedScene>` (per-state coexistence holds, but the blessed pattern is a runtime slot), and `_buildStack` (`renderQueue.ts`) is module scratch where the prepare walk's `tempStack` lives on the runtime. Documented and single-threaded-safe; still a pattern inconsistency against the stated principle.
+- Otherwise clean: no pixels in core, registry at the backend seam, no eager registration, 3D strictly additive (2D imports never touch `sceneRender`), lighting definitions consumed from descriptors not defined here. The previously-decided violations (no-op export, alias, global adapt hook, fake world bounds, font-string scope leak) are all verified gone.
 
-### 3. Tree-shaking / bundle invariant — PASS
+## Contract & docs fit
 
-Pure free functions, no new dependency, no eager registration, no module-top side effect. The one barrel line is a thin re-export; `package.json` is unchanged and stays `"sideEffects": false`. The module-level `_scratchBounds` is a grow-once scratch consistent with the package's existing scratch pattern, allocated at load with no side effect. No new hot-loop branch or shared `switch` case is imposed on any other importer.
+- **Contract: good.** `sideEffects: false`, single root `.` export, thin barrel; unabbreviated self-identifying names throughout; `out`-params for target/cache-transform and bounds writers; sentinels (`null` renderer, `false` from `computeRenderProxyWorldBounds`, conservative in-viewport) not throws; `Readonly<>` on inputs; one test file per source file, alphabetized. Types are `@flighthq/types`-first with three local exceptions: `DisplayObjectRenderExplanation`/`DisplayObjectRenderBlankReason` (defensible — an `explain*` plain-data return owned by the diagnostics module) and `RenderTargetSizeOptions` (dead).
+- **Residual from the approved viewport fix**: `isSpatial2DNode` still detects the trait via `'pivotX' in (source as object)` — the one piece of the Approved item ("replace the duck-type sniff with proper narrowing") that did not land.
+- **Stale comment**: `renderQueue.ts:114` references "the drawDriver's `_drawStack`" — no such module exists in this tree.
+- **Candidate admin-doc revisions**: (a) the Package Map line "registration, render state/queue, update pipeline, transform/color propagation" undersells the live surface — no mention of the 3D scene-prepare/light-pack pass, viewport culling, the render-cache seam, or the explain/guard diagnostics; (b) the charter "What it is" stats-snapshot claim above; (c) `render-backend-support.md` remains accurate on this package's slice (gap #8's `packSceneLightBlock` citation matches source).
 
-### 4. Registry vs closed union (fork B) — N/A
+## Candidate open directions
 
-No `kind`/handler family is introduced or switched over. `hasTransform2D` is a single structural predicate, not a dispatch table.
-
-### 5. Subject triad + plurality guard — PASS
-
-No format codec or backend leaf is mis-homed here; this is core 2D culling math living in the core. Correctly placed.
-
-### 6. Contract hygiene — MIXED
-
-- **`out`-param + sentinel: PASS.** `computeRenderProxyWorldBounds` writes `out` and returns `false` for the no-trait case; `isRenderable*` return `boolean`. No throws on expected failure. Conservative "unknown source → in-viewport" is a defensible sentinel default.
-- **`Readonly<>`: PASS.** `viewport: Readonly<RenderViewport2D>` and `proxy: Readonly<RenderProxy2D>` are correctly immutable.
-- **Types-first: PASS.** `RenderViewport2D` lives in `@flighthq/types` (`RenderViewport2D.ts`); the implementation imports it.
-- **Entity literal cast: FAIL.** `b2824e3d8:packages/render/src/renderViewport.ts:57` —
-  ```ts
-  const _scratchBounds = { x: 0, y: 0, width: 0, height: 0 } as Rectangle;
-  ```
-  `Rectangle extends Entity` (`@flighthq/types/Rectangle.ts`) and carries runtime/binding identity beyond its public fields. The source-style rule is explicit: use `createRectangle(...)` over a bare literal for entity-backed types. This scratch should be `createRectangle()`.
-- **Trait detection is a brittle duck-type.** `hasTransform2D` sniffs a single field —
-  ```ts
-  // b2824e3d8:packages/render/src/renderViewport.ts:6-8
-  return source !== null && typeof source === 'object' && 'pivotX' in (source as object);
-  ```
-  Keying spatial-ness off one property name (`pivotX`) is fragile and couples the predicate to a field that could be absent on a future `HasTransform2D` shape or present coincidentally. This disappears entirely if the function resolves bounds through the node's real bounds path instead of hand-rolling field access.
-
-### 7. Tests & honesty — FAIL
-
-- **Order/mirroring: PASS.** Exports are alphabetized (`computeRenderProxyWorldBounds`, `createRenderViewport2D`, `isRenderableInViewport`, `isRenderProxyInViewport`); the `describe` blocks mirror that order.
-- **Tests confirm the stub, not the contract: FAIL.** Every assertion uses a fresh `createDisplayObject()` at the origin with zero-size bounds (`b2824e3d8:packages/render/src/renderViewport.test.ts:34-48, 68-82`). No test moves, scales, nests, or parents an object — i.e. no test exercises a case where local `x/y` and the true world AABB diverge. The suite would pass identically whether the function returned real bounds or the current degenerate point, so it provides **zero** coverage of the function's stated purpose. The "returns false … outside the viewport" test (`:75-82`) is satisfied only because the object sits at `(0,0)` and the viewport is far away — it proves the point-vs-rect test, not bounds correctness.
-- **Doc/code contradiction (honesty): FAIL.** The header comment claims an asymmetric edge rule —
-  ```
-  // b2824e3d8:packages/render/src/renderViewport.ts:30-33
-  // available, uses an inclusive-left/top, exclusive-right/bottom overlap test so that a zero-size
-  // object touching the viewport's top-left corner is considered in-viewport.
-  ```
-  but the implementation is **inclusive on all four edges**: `!(objMaxX < vpMinX || objMinX > vpMaxX || objMaxY < vpMinY || objMinY > vpMaxY)` (`:47`) uses strict `<`/`>`, so an object exactly at the right/bottom edge (`objMinX === vpMaxX`) is _kept_, not excluded. The comment says exclusive-right/bottom; the code is inclusive-right/bottom. The status.md "design choices" note (inclusive overlap) agrees with the _code_, making the in-file comment the lie.
-- **Status/charter overclaim (honesty):** the `status.md` in this bundle attributes a driver, queue, blend stack, parity suite, and stats snapshot to this change; the merged artifact contains none of them. The pre-existing `review.md` (`solid` 86/100) was written against that as-claimed scope. The integration delta does not earn that.
-
-## What the charter says, and where this lands against it
-
-The draft charter's North star — "Contracts and preparation, not pixels," "Types-first," "no hidden per-frame allocation" — this delta honours mechanically (no allocation in the hot test path; type in `@flighthq/types`). But Open direction #8 in the charter already named the live tension this file walks into: viewport culling that "swallows a throw from `getNodeWorldBoundsRectangle` as a conservative 'in-view'." The integration's answer is worse than swallowing the throw — it **never calls** `getNodeWorldBoundsRectangle` at all and substitutes a fabricated zero-size point, so culling is silently wrong rather than conservatively safe. The charter ruling that question (where world-bounds resolution for 2D culling lives, and whether the conservative path is a sentinel-probe or a real bounds read) should be made before this primitive is blessed.
-
-## Bottom line
-
-A merge-ready _shape_ wrapped around a function that does not do what its name and doc claim, with tests that cannot catch the gap. Low blast radius (nothing in `base` consumes it yet — it is a fresh export), so this is REVISE, not REJECT: fix the bounds computation (or honestly rename and re-scope it to "position-only"), reconcile the inclusivity comment, and use `createRectangle`.
+- **Orphaned driver-family types**: should `RenderDrawContext`/`RenderStateStats`/`RenderBlendStateEntry` stay in `@flighthq/types` as the pre-declared header for the blessed driver work, or be removed until the implementation lands? Types-first says header-before-implementation is the workflow; a year of drift says otherwise.
+- **Where does the `explain*` return type live?** `explainDisplayObjectRender` defines its plain-data interface locally. If `explain*` queries across the SDK follow suit, the types-first rule wants an explicit carve-out documented in the diagnostics convention; if not, these move to `@flighthq/types`.
+- **Guard scope**: the chartered `enableRenderGuards` bundles three checks under one enable, while the shipped `enableColorAdjustmentGuards` is per-concern. One switch or many? The diagnostics convention does not currently say.

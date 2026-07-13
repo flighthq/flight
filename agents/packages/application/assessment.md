@@ -1,27 +1,26 @@
 ---
 package: '@flighthq/application'
-updated: 2026-07-02
+updated: 2026-07-13
 basedOn: ./review.md
 ---
 
 # application — Assessment
 
-Verified against the live tree (2 source files, 2 test files, 133 tests, 70 exports), the prior review (reject — 38/100), and the direction session (2026-07-02). Four charter decisions blessed. The package cannot compile due to missing types.
+Refreshed against the 2026-07-13 review (solid — 88). All three previously-Recommended items are verified done in the live tree: the `@flighthq/types` half exists (`LoopBackend.ts`, `ApplicationLoopOptions.ts`, expanded `Application`, the three `WindowBackend` methods), dead `LoopState.accumulated` is removed (only `fixedAccumulator` remains), and the Package Map line in `agents/index.md` now describes the full loop + windowing surface.
 
 ## Recommended
 
-Sweep-safe: prerequisites to make the package compile.
+Sweep-safe, within-package, no design fork:
 
-1. **Rebuild missing types in `@flighthq/types`.** Per charter Decision #1. Write `LoopBackend`, `ApplicationLoopOptions`, expanded `Application` interface fields, and 3 missing `WindowBackend` methods. One concept per file.
-
-2. **Remove dead `LoopState.accumulated`.** Per charter Decision #2.
-
-3. **Package Map description update.** Per charter Open direction #4.
+1. **Fold the triplicated `onError` emit guard into one internal helper.** The `if (app.onError !== null) try/catch else emit` shape is repeated in the tick, `stepApplicationLoop`, and the fixed-update inner loop. Pure within-package refactor, no exported-surface change. — review.md gap 3.
 
 ## Backlog
 
-- **Evaluate decomposition.** _Parked — needs compiled package first._ Charter Decision #3 / Open directions #1-2.
-- **Rust `flighthq-application` crate.** _Parked — global posture._
+- **Fixed-update support in `stepApplicationLoop`.** _Design decision._ `step` forces `interpolationAlpha = 1` and never emits `onFixedUpdate`; whether it should honor an active fixed-mode loop state (or accept options) changes the headless-stepping contract. — review.md gap 1.
+- **Frame-time jitter / dropped-frame metrics.** _Cross-boundary._ New read-only fields on the `Application` interface in `@flighthq/types`; the loop-side math is in-package. Carried from status. — review.md gap 2.
+- **Evaluate decomposition (windowing → `@flighthq/window`, loop → `@flighthq/loop`).** _Charter Open directions 1–2; bedrock-test ruling needed, package now compiles so the precondition is met._
+- **Retire stale charter stats and completed Open direction 4 (Package Map update).** _Charter edit — direction-session territory._
+- **Rust `flighthq-application` crate.** _Parked — global posture (TS is the spec; Rust conforms in parity passes)._
 
 ## Approved
 

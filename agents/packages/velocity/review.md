@@ -1,64 +1,73 @@
 ---
 package: '@flighthq/velocity'
 status: solid
-score: 70
-updated: 2026-06-25
+score: 82
+updated: 2026-07-13
 ingested:
-  - status.md
-  - source
-  - changes.patch
   - charter.md
-  - 'base=origin/main(eb73c3d74)'
-  - 'evidence=integration-b2824e3d8 delta'
+  - status.md
+  - prior review.md
+  - source + tests (live tree)
+  - agents/render-architecture.md + render-backend-support.md
 ---
 
-# velocity — Review (merge gate: integration b2824e3d8 → approved origin/main eb73c3d74)
+# velocity — Review (live tree, 2026-07-13)
 
-This is a **merge-gate** review of the incoming delta only. Baseline = `incoming/integration-b2824e3d8/base/packages/velocity/` (`origin/main`, `eb73c3d74`) — the approved floor, not under review. Candidate = `incoming/integration-b2824e3d8/head/packages/velocity/`. The delta is exactly two NEW files; findings cite `b2824e3d8:<path>`.
-
-> Lineage note. The prior `review.md`/`assessment.md`/`status.md` in this folder were written against a **different** worker lineage (`builder-67dc46d64`) whose `velocity` had grown to ~21 `velocityField` exports (full `Velocity2D` value algebra, angular velocity, `dt`/per-second normalization) **and** a barrel that re-exported `affineVelocity`. The integration branch under gate here is the **leaner** lineage: `velocityField.ts` has only 8 exports (no value algebra, no angular, no `dt`), and `Velocity.ts` in `@flighthq/types` has **no** `angularVelocity`/`dt`. Conclusions from the old docs that presume the richer surface or the re-exporting barrel do **not** transfer. This review supersedes them for the b2824e3d8 gate.
-
-## The delta
-
-`changes.patch` touches exactly two files under `packages/velocity/`:
-
-- `b2824e3d8:src/affineVelocity.ts` — NEW. Exports `contributeAffineVelocity` and `getVelocitySampleAt`.
-- `b2824e3d8:src/affineVelocity.test.ts` — NEW. 9 tests across the two functions.
-
-`src/index.ts` (the package barrel) is **byte-identical to base** — it still re-exports only the 8 `velocityField` functions plus `contributeTransformVelocity`, and mentions nothing from `affineVelocity`. `@flighthq/types/Velocity.ts`, `package.json`, `transformVelocity.ts`, and `velocityField.ts` are unchanged by the delta.
+Full re-survey of the live package. The prior review (2026-06-25) was a merge gate on the `integration-b2824e3d8` delta and predates the 2026-07-02 direction session; it is superseded here. The live tree is the **lean lineage plus the blessed cleanup**: no `affineVelocity.ts`, no angular velocity, no `dt` — 20 exports across three source files (`velocityField.ts`, `transformVelocity.ts`, `velocitySample.ts`), 48 tests in three colocated files, all describes mirroring exports.
 
 ## Verdict
 
-`REVISE — 70/100` as a merge gate. The math the delta adds is correct and tested — `getVelocitySampleAt` computes a genuine per-pixel affine reprojection `current·p − previous·p` and the rotation test verifies `(-1, 1)` for a 90° turn at `p=(1,0)`. But the change ships **unfinished**: both new functions are **dead exports** (unreachable from the package root), the contributor's name over-promises the value it actually stores, and the new file leaks an inline structural matrix type and a near-duplicate subtree walker. None of these critique the approved base; all are introduced by the two new files. The package's contract hygiene elsewhere (single `.` export, `sideEffects: false`, sentinels, alias-safe out-params, types-first) remains the clean baseline — the score is the distance the _delta_ sits from a final-shape, mergeable change, not a grade on the package as a whole.
+`solid — 82/100`. Small, focused, and architecturally clean: every 2026-07-02 charter Decision has landed in source, the field/contributor/sample split matches the charter's Boundaries exactly, and the package is genuinely consumed end-to-end (gl/wgpu velocity passes → motion-blur effect → functional scenes). What holds it below high-solid is unrealized surface — `getVelocitySampleAt` and `contributeTransformVelocity` have zero consumers outside the package — plus a stale header-layer doc comment, no `explain*` diagnostics for its silent sentinels, and a semantic seam (stored velocity vs. transform reprojection) the package neither documents by test nor rules on.
 
-## Standard-by-standard (delta only)
+## Prior Approved items — all landed
 
-**1. Composition / bedrock — PASS (with a smell).** The two additions are flat free functions over the existing `VelocityField`/`VelocitySample` value types — no config-gated mega-function, no fused subject. `getVelocitySampleAt` is a clean bedrock primitive (point-in → reprojected-velocity-out). The smell is duplication, not bundling: `visitAffineVelocity` (`b2824e3d8:src/affineVelocity.ts:63-99`) is the same walk-and-retain body as base `visitTransformVelocity`, with an affine branch that collapses to the same origin delta (see standard 2). That is dead duplication tied to the naming defect, not a decomposition failure of the primitive.
+1. **`contributeAffineVelocity` removed.** No `affineVelocity.ts` exists; the only sample-side export is `getVelocitySampleAt`, now in its own `velocitySample.ts`, re-exported from the barrel (`src/index.ts:22`). The duplicate walker is gone. Per charter Decision 1.
+2. **`getVelocitySampleAt` matrix param tightened.** `currentWorldTransform: Readonly<Matrix>` imported from `@flighthq/types` (`src/velocitySample.ts:1,11`) — the inline structural literal is gone. Per charter Decision 3.
+3. **Package Map entry added.** `agents/index.md` Rendering section carries `@flighthq/velocity` ("per-frame per-object 2D motion tracking for velocity-buffer writers"). Per charter Decision 4.
 
-**2. Naming clarity — FAIL.** `contributeAffineVelocity` does **not** contribute affine velocity. Its inner `visitAffineVelocity` derives the stored per-node velocity from `cx = world.tx … px = sample.previousWorldTransform.tx` (`b2824e3d8:src/affineVelocity.ts:77-80`) — i.e. `current·p − previous·p` evaluated at the **origin** `p=(0,0)`, where the linear part `a,b,c,d` drops out. For an origin-anchored node this is **numerically identical** to base `contributeTransformVelocity`. The file comment concedes it: "For purely translating nodes the result is equivalent to contributeTransformVelocity" (`b2824e3d8:src/affineVelocity.ts:15`), but the honesty does not rescue the name — an agent reading the export would expect `getVelocity` after `contributeAffineVelocity` to differ from `contributeTransformVelocity` for a _rotating_ node; it does not. The genuine affine result lives only in `getVelocitySampleAt`, which the contributor never folds into `sample.velocity`. `getVelocitySampleAt` itself is well named (`get*`, full type words, alias-safe).
+## Present capabilities
 
-**3. Tree-shaking / bundle invariant — FAIL (the hard blocker).** Both new exports are unreachable from the package root: `src/index.ts` is unchanged and re-exports nothing from `./affineVelocity`. The package is `sideEffects: false` and single-`.`-export, so an importer of `@flighthq/velocity` cannot reach `contributeAffineVelocity` or `getVelocitySampleAt` at all, and the SDK barrel / any consumer package is blind to them. The colocated test imports `from './affineVelocity'` directly (`b2824e3d8:src/affineVelocity.test.ts:5`), so the suite is green while the **public surface is dead** — implemented-but-unexported code, the exact dishonesty standard 7 forbids. This is a merge blocker: a delta that adds API the package cannot expose is not the final shape.
+**Field lifecycle** (`velocityField.ts`): `createVelocityField` (WeakMap samples + `frameId`), `beginVelocityFrame` (frame counter), `ensureVelocitySample` (get-or-create), `contributeVelocity` (explicit set, stamps `explicitFrameId` so it wins over the baseline regardless of call order), `suppressVelocity` (teleport/cut = explicit zero), `getVelocity` (stale-fenced: sentinel zero for missing or not-this-frame samples), `hasVelocity`.
 
-**4. Registry vs closed union (fork B) — N/A.** No `kind`/handler family in the delta; no closed switch introduced.
+**Transform-delta baseline** (`transformVelocity.ts`): `contributeTransformVelocity` walks a `Transform2DNode` subtree top-down, derives each node's velocity from the world-transform `tx/ty` delta, honors the explicit-override fence, and always commits the current world matrix into `sample.previousWorldTransform` (allocating via `createMatrix` once, then `copyMatrix`) — so the per-pixel sample path stays available even under explicit overrides. First frame yields zero (tested). The known `child as unknown as Transform2DNode` cast carries a durable comment and is the charter's Open direction 3.
 
-**5. Subject triad + plurality guard — PASS.** No format codec or backend code; nothing mis-homed; no premature split. `affineVelocity.ts` correctly sits inside `velocity`, not a spurious neighbor.
+**Per-pixel affine sample** (`velocitySample.ts`): `getVelocitySampleAt(sample, currentWorldTransform, pointX, pointY, out)` computes `current·p − previous·p` — full rotation/scale reprojection at an arbitrary local point, sentinel zero when no previous transform is stored. The 90°-rotation test verifies `(-1, 1)` at `p=(1,0)`.
 
-**6. Contract hygiene — PARTIAL.** Good: `getVelocitySampleAt` is an `out`-param function returning a sentinel zero when `sample.previousWorldTransform === null` (`b2824e3d8:src/affineVelocity.ts:40-44`), reads inputs into locals before writing `out`, and never throws; `VelocitySample`/`Velocity2D` are types-first in `@flighthq/types` (unchanged by the delta). Defect: the `currentWorldTransform` parameter is typed as an inline structural literal `Readonly<{ a: number; b: number; c: number; d: number; tx: number; ty: number }>` (`b2824e3d8:src/affineVelocity.ts:35`) rather than `Readonly<Matrix>` (or `Readonly<MatrixLike>`) from `@flighthq/types`. `getNodeWorldTransformMatrix` already returns a real `Matrix`, so the ad-hoc shape is a structural-type leak the types-layout convention discourages. The `crate: flighthq-velocity` mirror is named in the charter front matter; the two new TS functions are not yet mirrored (Rust-worktree scope, not a TS-merge blocker).
+**Value algebra** (`velocityField.ts`): `addVelocity`, `clampVelocity` (max-blur-length safety), `copyVelocity`, `dampVelocity` (EMA), `lerpVelocity`, `normalizeVelocity` (zero-safe), `scaleVelocity` (pixel-ratio conversion), `subtractVelocity`, `zeroVelocity`, plus predicates `isVelocityZero` (epsilon) and `lengthOfVelocity`. All out-param, locals-before-writes, alias-safe, tested with aliased cases.
 
-**7. Tests & honesty — PARTIAL.** The new `affineVelocity.test.ts` is colocated, has two `describe` blocks (`contributeAffineVelocity`, `getVelocitySampleAt`) that mirror and alphabetize against the exports, and the math assertions are correct (origin delta, non-origin reprojection, 90° rotation, explicit-override fencing). But the suite passes **because** it imports the source file directly while the barrel omits the exports — so the tests certify behavior that no public consumer can invoke. Claims vs code otherwise check out: the functions exist and do what the comments say, modulo the `contributeAffineVelocity` name (standard 2).
+**Types-first**: `Velocity2D` / `VelocitySample` / `VelocityField` / `VelocityContributor` live in `@flighthq/types/Velocity.ts` with the per-instance-velocity ownership rule documented there (instances live on the batch, not the field).
 
-## What must change before merge
+**Real consumption**: `displayobject-gl/src/glVelocity.ts` and `displayobject-wgpu/src/wgpuVelocity.ts` build the per-kind velocity-writer registries and rgba16f velocity passes over `VelocityField` + `getVelocity`; `effects-gl`/`effects-wgpu` motion blur reads the resulting buffer; `functional/scenes/effect-motion-blur.*` and `particle-motion-blur.*` exercise the whole path with `beginVelocityFrame`/`contributeVelocity`. (Neither render-backend doc mentions the velocity pass — see Contract & docs fit.)
 
-1. **Re-export the new functions from the barrel** (or drop them). `src/index.ts` must add `export { contributeAffineVelocity, getVelocitySampleAt } from './affineVelocity';` — otherwise the delta adds dead, unreachable code. Hard blocker.
-2. **Resolve the `contributeAffineVelocity` name/semantics mismatch** — a naming decision, routed to the charter's Open directions (do not sweep). Either make the contributor store per-pixel/anchor velocity, or rename/redescribe it to promise only "retains the world transform so `getVelocitySampleAt` is available." The duplicate `visitAffineVelocity` walker resolves with whichever way this lands.
-3. **Tighten `getVelocitySampleAt`'s matrix parameter** to `Readonly<Matrix>` (sweep-safe), unless structural input is deliberately sanctioned (then `Readonly<MatrixLike>` + a durable comment).
+## Gaps
+
+Measured against a mature per-object motion-vector/velocity-tracking layer for motion blur/TAA:
+
+- **Affine sample unadopted (the headline).** No file outside `packages/velocity` calls `getVelocitySampleAt`; the gl/wgpu writers read only the coarse per-node `getVelocity`, so a rotating or scaling node gets one origin vector across its whole bounds (or zero, if its origin didn't move). The function that justifies `previousWorldTransform` retention is dead weight until the writers adopt it. Cross-package — already parked in the assessment's Backlog.
+- **Transform-delta baseline also unadopted.** `contributeTransformVelocity` has no consumer outside its own tests; the functional scenes contribute explicitly. Not wrong — the seam is there — but "any motion is velocity for free" (North star 2) has no in-tree proof.
+- **Two velocity truths can disagree, unruled and untested.** `contributeVelocity`/`suppressVelocity` set the *stored* velocity, but `getVelocitySampleAt` reprojects transforms and ignores explicit contributions entirely — an explicitly suppressed node still reports nonzero per-pixel velocity if its transform moved. Consistent with the design (the sample is a transform reprojection), but nothing documents or pins the behavior.
+- **No time normalization.** Velocity is per-frame in node units; there is no `dt`/per-second view. The removed builder lineage had one; the charter's Boundaries are silent. A fixed-timestep or variable-rate consumer must scale by hand.
+- **No angular velocity.** Removed with the builder lineage; charter silent. Per-pixel rotation is recoverable via `getVelocitySampleAt`, so this may be deliberate bedrock — but it is undecided, not decided.
+- **No diagnostics.** `getVelocity`'s silent zero has three distinct causes (no sample / stale sample / explicit zero) and no shakeable `explain*` query; no `enableVelocityGuards` for the classic misuse (contributing without `beginVelocityFrame`, so every frame is frame 0). The diagnostics convention says every silent sentinel gets an `explain*`.
+- **Test thinness at the walker.** `transformVelocity.test.ts` (4 tests) never walks a subtree — no parent+child case, so the recursion and the trait-cast path are untested. The `velocitySample.test.ts` case labeled "alias-safe" is a plain correctness check (out cannot alias a `Matrix` input); the label overpromises.
+- **No multi-frame history.** Single previous transform; TAA-style temporal reprojection or trails need N frames. Known, deferred by design (status log), and a real allocation-model decision.
 
 ## Charter contradictions
 
-The charter is a stub — North star, Boundaries, Decisions, Open directions are all `TODO`. No blessed rule exists for the delta to contradict, so **no charter contradiction** in the strict sense. The one tension to surface: the charter does not yet say whether a _contributor_ is obliged to store per-pixel-correct (affine) velocity or only anchor velocity — which is exactly the ambiguity `contributeAffineVelocity`'s name exposes. The charter should rule on it; the code should not guess.
+**None.** All five 2026-07-02 Decisions are honored in source (removal, WeakMap keying with no iteration surface, `Readonly<Matrix>`, Package Map entry, TS-leads posture). The Boundaries' in-scope function list matches the live 20-export surface one-for-one. This is the good-empty result.
 
-## Notes for the charter's Open directions
+## Contract & docs fit
 
-- **Affine contributor semantics (headline).** Is anchor/origin velocity the right per-node scalar with per-pixel reprojection strictly a `getVelocitySampleAt` consumer concern, or must `contributeAffineVelocity` store per-pixel/anchor velocity (honoring a pivot)? This single ruling decides the rename-vs-rework-vs-merge question and dissolves the duplicate walker.
-- **`getVelocitySampleAt` matrix parameter.** `Readonly<Matrix>` (entity-backed, the default) vs. `Readonly<MatrixLike>` (structural input as a sanctioned convenience).
-- **Rust parity.** Mirror `contributeAffineVelocity` / `getVelocitySampleAt` in `flighthq-velocity` (scoped to the `rust` worktree, not this TS merge).
+**Package side — clean.** Single `.` export, `sideEffects: false`, deps exactly `geometry` + `node` + `types`, full unabbreviated names (`getVelocitySampleAt`, `contributeTransformVelocity`), out-params with locals-before-writes, sentinels not throws, types-first, exports alphabetized in the barrel and mirrored by alphabetized describes. One defect: the **`VelocityContributor` doc comment in `@flighthq/types/Velocity.ts:36` is stale** — it names `contributeNodeVelocity / suppressNodeVelocity`, functions that do not exist (actual: `contributeVelocity` / `suppressVelocity`). The builder lineage claimed this fix; it never landed in the live tree. Also note `VelocityContributor` itself has zero consumers anywhere — an unconsumed seam type (fork B's "don't build the dispatcher before the consumer" applies at the type level too).
+
+**Docs side — two candidate revisions** (user's gate, not acted on):
+
+1. `agents/render-backend-support.md` and `agents/render-architecture.md` contain **zero** mentions of the velocity pass, despite `renderGlVelocity`/`renderWgpuVelocity` being a real, shipped, backend-divergent capability (gl+wgpu only; canvas/dom have none) with functional-scene coverage. The backend gap matrix should carry a velocity-buffer row.
+2. The Package Map entry is accurate but could name the writer seam (`registerGlVelocityWriter`/`registerWgpuVelocityWriter`) as the consumer path; minor.
+
+## Candidate open directions
+
+- **Adoption sequencing for `getVelocitySampleAt`.** The affine sample is built and blessed but consumed nowhere. Should the gl/wgpu writers' upgrade be scheduled (cross-package session), or is coarse per-node velocity the accepted quality bar for now? Until ruled, the package carries a deliberately dormant export.
+- **Time base.** Per-frame is the blessed-by-silence status quo. Rule on whether `dt`/per-second normalization is in scope (the removed lineage's `beginVelocityFrame(field, dt?)` shape) or the consumer's job — feeds charter Open direction 1 (velocity's broader role).
+- **Explicit-override vs. reprojection semantics.** Should `getVelocitySampleAt` respect `explicitFrameId` (an explicitly suppressed node samples zero), or is the reprojection deliberately transform-only? One sentence in the charter settles it; a pinning test follows either way.
+- **Angular velocity.** In or out — the charter should say, so the next builder lineage doesn't re-add it speculatively.

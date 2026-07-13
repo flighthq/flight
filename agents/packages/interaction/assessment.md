@@ -1,51 +1,44 @@
 ---
 package: '@flighthq/interaction'
-updated: 2026-07-02
+updated: 2026-07-13
 basedOn: ./review.md
 ---
 
 # interaction — Assessment
 
-Sorted from the depth review (solid, 68/100), the builder's as-claimed Gold expansion (lost — not present in this tree), and the direction session (2026-07-02). Six decisions blessed. The dispatch layer is deep and well-shaped; the hit-testing layer is shallow (bounds-only, `shapeFlag` dead wiring, tilemap/quad-batch TODO stubs). The builder's prior work (cursor, gating, hitArea, overlap, spatial queries, sub-index picking, shape-accurate picking) was lost and needs re-implementation. Tiers 1–3 approved for builder integration.
+Sorted from the 2026-07-13 rereview (solid, 68/100). The dispatch layer is deep and healthy; the hit-testing layer is bounds-only with `shapeFlag` dead wiring. The dominant fact is that most of the gap list is **already Approved** (2026-07-02, Tiers 1–3) and Tier 1 alone was delivered before the builder's mature layer was lost — Tiers 2–3 remain the standing rebuild scope, restated below so a worker brief can carry them. New sweep-safe items found by the rereview are listed alongside.
 
 ## Recommended
 
-All three tiers below are approved for builder integration as a single parcel. Tier 1 is within-package; Tiers 2–3 require `@flighthq/types` additions and cross-package implementation.
+Standing Approved rebuild (Tiers 2–3 of the 2026-07-02 approval — the design decisions are already settled by the ledger and charter Decisions #4/#5):
 
-### Tier 1 — Within-package, no types changes
+- **Shape-accurate picking.** `defaultShapeHitTestPointHandler` honors `shapeFlag=true` via `getShapeFillRegions` (`@flighthq/shape`) + `containsPathPoint` (`@flighthq/path`); bounds fallback for gradient/bitmap fills. Promotes `@flighthq/shape` from devDependency and adds `@flighthq/path` — blessed by the Tier-3 approval.
+- **Per-node interaction gating.** `setNodeInteractive`/`isNodeInteractive` (self-hit opt-out) and `setNodeChildrenInteractive`/`areNodeChildrenInteractive` (subtree opt-out), consulted by `findGraphHitTarget`/`hitTestGraphPoint`. State in a package-local `WeakMap`; distinct from `enabled`.
+- **`hitArea` proxy.** `setNodeHitArea`/`getNodeHitArea` over the existing (currently orphaned) `HitArea` type in `@flighthq/types`; `findGraphHitTarget` delegates to the proxy. (Sub-index semantics across a proxy stay Open direction #2 — the boolean path does not need them.)
+- **Detailed hit + sub-index.** `findGraphHitTargetDetailed(source, x, y, out, shapeFlag?)` filling the existing `HitTestResult` type; `registerHitTestDetailed(kind, fn)` registry; real Tilemap per-populated-tile and QuadBatch per-quad tests replacing the bounds fallbacks, with `resolveTilemapHitSubIndex`/`resolveQuadBatchHitSubIndex`.
+- **`suppressTouchHover`** (default `true`) on `InteractionManager`/`InteractionManagerOptions` — touch pointer moves do not synthesize rollover chains.
+- **Clip-aware picking** (Decision #4). Gate hits through `clipRegionContainsPoint` when a node carries a clip region; adds `@flighthq/clip` — blessed.
 
-- **`registerDefaultHitTestPoints()`.** One-call registrar that wires the full built-in bank of default hit-test handlers. Side-effect-free, tree-shaken when unused. New file `registerDefaultHitTestPoints.ts`.
-- **Document traversal-order difference.** `findGraphHitTarget` traverses reverse child order (front-to-back); `hitTestGraphPoint` traverses natural order. Add a comment on `hitTestGraphPoint` explaining why they differ to prevent future "fixes."
-- **Spatial area queries.** `hitTestAreaQuery(root, rect, out?)` and `hitTestAreaQueryCircle(root, cx, cy, radius, out?)` — linear O(n) DFS collecting nodes whose world bounds intersect the region. New file `spatialQuery.ts`. Typed on `DisplayObject`.
-- **Overlap family.** `containsDisplayObject(outer, inner)`, `getDisplayObjectOverlapRectangle(source, other, out)`, `hitTestDisplayObjectsShape(source, other)` — all typed on `DisplayObject` (Decision #2). New file `displayObjectOverlap.ts`. `hitTestDisplayObjectsShape` uses cross-center + AABB approximation (documented; precision ceiling is Open direction #3).
+New sweep-safe items from the rereview:
 
-### Tier 2 — Needs `@flighthq/types` additions
-
-- **`HitTestResult` type** in `@flighthq/types`: `{ node: NodeAny; subIndex: number; localX: number; localY: number }`. `subIndex = -1` sentinel when the kind has no sub-index concept.
-- **`findGraphHitTargetDetailed(source, x, y, out, shapeFlag?)`** — fills `out.node`, `out.localX`, `out.localY`, `out.subIndex` via registered detailed resolver.
-- **`registerHitTestDetailed(kind, fn)`** — registers sub-index resolver.
-- **Per-node interaction gating.** Types: `NodeInteraction` or similar in `@flighthq/types`. Functions: `setNodeInteractive(node, enabled)` / `isNodeInteractive(node)` (self-hit opt-out), `setNodeChildrenInteractive(node, enabled)` / `areNodeChildrenInteractive(node)` (subtree opt-out). `findGraphHitTarget`/`hitTestGraphPoint` consult both. Distinct from existing `enabled` flag.
-- **`hitArea` proxy.** Type: `HitArea = Readonly<Rectangle> | Readonly<NodeAny>` in `@flighthq/types`. Functions: `setNodeHitArea(node, area | null)` / `getNodeHitArea(node)`. `findGraphHitTarget` delegates to the proxy.
-- **`suppressTouchHover`** on `InteractionManagerOptions` (default `true`): touch pointer moves do not synthesize rollover/over/out chains.
-
-### Tier 3 — Cross-package implementation
-
-- **Shape-accurate picking.** `defaultShapeHitTestPointHandler` honors `shapeFlag=true` using `containsPathPoint` from `@flighthq/path` (already exists). Falls back to bounds for gradient/bitmap fills.
-- **Tilemap/QuadBatch real sub-index picking.** Replace `// TODO` stubs with: `defaultTilemapHitTestPointHandler` — local point → tile cell, hit only on populated tiles. `defaultQuadBatchHitTestPointHandler` — per-quad AABB test. Register sub-index resolvers (`resolveTilemapHitSubIndex`, `resolveQuadBatchHitSubIndex`).
-- **Clip-aware picking** (Decision #4). `findGraphHitTarget` checks `clipRegionContainsPoint` from `@flighthq/clip` when a node has a clip region. Add `@flighthq/clip` as a dependency.
+- **Document the bounds fallbacks** on every `_shapeFlag` handler (Decision #5 / North star #5 compliance: the fallback must be stated, not silent) and on `hitTestDisplayObjectsShape` (cross-center approximation + pointer to the exact path) and `getDisplayObjectOverlapRectangle` (empty-rect-on-disjoint contract).
+- **Fix doc slips**: `hitTestGraphPoint` comment says `registerHitTest` → `registerHitTestPoint`; `CursorBackend` doc in `@flighthq/types` claims a disposer against a `void` signature (types file, one line — pair with any Tier-2 types touch).
+- **Manifest hygiene**: move `@flighthq/displayobject` to `devDependencies` (only tests import it); extend the `package.json` description to mention pointer dispatch.
+- **Register `defaultTextInputHitTestPointHandler` or unexport it** — currently exported but wired to no kind; resolve within the registrar once the coverage-policy question (Open direction below) is answered, or drop the export as dead surface.
 
 ## Backlog
 
-Parked — each with the reason it is not sweep-safe.
+Parked — each with why:
 
-- **Cursor management.** _Parked — design unsettled._ Multi-canvas architecture and whether `*Backend` pattern is right are Open direction #1. Do not implement the singleton version.
-- **Bitmap alpha-threshold picking.** _Parked — gated on `@flighthq/surface`._ Needs a pixel-alpha accessor. Cross-package.
-- **Glyph-box text picking + `getTextHitCaretIndex`.** _Parked — gated on `@flighthq/textlayout`._ Needs per-glyph rects.
-- **True SAT overlap for `hitTestDisplayObjectsShape`.** _Parked — precision ceiling unsettled._ Open direction #3.
-- **Spatial broadphase (`SpatialIndex`).** _Parked — profiling-gated._ Blessed as interaction's opt-in (Decision #6), but the type contract and implementation are future work.
-- **`@flighthq/gestures` neighbor package.** _Parked — new package._ Blessed as separate (Decision #1). Drag, pan, pinch, swipe, tap, long-press.
-- **`hitArea` proxy coordinate semantics.** _Parked — unspecified._ Open direction #2.
-- **Rust `flighthq-interaction` crate.** _Parked — cross-worktree._ Open direction #4.
+- **Cursor management rebuild.** _Parked — design unsettled._ Charter Open direction #1 (module singleton vs per-manager, multi-canvas). Do not rebuild the singleton until directed; the orphaned `Cursor`/`CursorBackend` types wait on the same call.
+- **Default registrar coverage for `NativeText`/`BitmapText`/`ParticleEmitter`.** _Parked — design decision._ Whether interaction's registrar owns every renderable kind or composition packages register their own is a boundary question (new Open direction; bundle-invariant implications).
+- **Bitmap alpha-threshold picking.** _Parked — gated on `@flighthq/surface`_ exposing a pixel-alpha accessor.
+- **Glyph-box text picking + caret index.** _Parked — gated on `@flighthq/textlayout`_ per-glyph rects.
+- **True SAT overlap for `hitTestDisplayObjectsShape`.** _Parked — precision ceiling unsettled_ (Open direction #3).
+- **`getDisplayObjectOverlapRectangle` disjoint contract (empty rect vs boolean).** _Parked — small API design fork_ (new Open direction; the lost implementation returned `boolean`).
+- **Spatial broadphase (`SpatialIndex` opt-in).** _Parked — profiling-gated_ (Decision #6 blessed the seam location, not the build).
+- **`@flighthq/gestures` neighbor package.** _Parked — new package_ (Decision #1).
+- **Rust `flighthq-interaction` crate.** _Parked — cross-worktree; sequenced after the TS surface stabilizes_ (Open direction #4).
 
 ## Approved
 

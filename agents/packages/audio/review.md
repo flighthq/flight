@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/audio'
 status: solid
-score: 60
-updated: 2026-07-09
+score: 62
+updated: 2026-07-13
 ingested:
   - source
   - tests
@@ -10,55 +10,49 @@ ingested:
 
 # audio — Review
 
-_Migrated from the 2026-07-03 depth-review generation (reviews/depth/audio.md)._
+_LIGHT re-verification 2026-07-13 of the 2026-07-03 depth review plus the 2026-07-09 deepening (commit 52004502: AudioResource lifecycle to image parity). All 20 current exports re-checked against source; verdict re-judged._
 
 **Domain:** Audio data primitives — the resource-carrier and acquisition layer for sound: decoded-buffer entities, loading/decoding from sources, codec negotiation, format identification, and buffer inspection. (Runtime playback — channels, mixing, bus routing — is `@flighthq/media`'s layer and is not counted here.)
 
-**Verdict:** stub — completeness 18/100
+**Verdict:** solid — 62/100
 
-The package exports exactly four functions: `createAudioResource(buffer?)`, `inferAudioType(url)`, `loadAudioResourceFromUrl(context, url, signal?)`, and `loadAudioResourceFromUrls(context, sources, signal?)`. What exists is competent — the URL loader is abortable, the multi-source loader does real `canPlayType` codec negotiation, and the extension→MIME table covers the seven web-relevant containers — but this is one thin slice of the loading sub-area and nothing else. Judged against what an expert expects from a dedicated audio-data library (the decode/inspect layers of howler.js, symphonia, `audiobuffer-utils`, wavesurfer's data layer), the resource-lifecycle, buffer-inspection, sample-access, and byte-level format surfaces are entirely absent. The extraction from `resources` also dropped `getAudioContext()` while the package.json description still claims "the shared audio context" — the description is stale against the actual export surface.
+The 2026-07-09 deepening executed the previous review's build-out plan essentially in full, taking the package from a four-function stub (18/100) to image-family parity: the loader matrix now covers URL/URLs/bytes/Blob/Base64, the lifecycle set (`clone`/`dispose`/`hasBuffer`/`isEmpty`) and the inspection getters (duration/sampleRate/channelCount/byteSize) exist, the sample tier has its constructor and channel-data accessor, format identification has both the extension-based `inferAudioMimeType` and the magic-byte `detectAudioMimeType`, and the codec-negotiation primitives (`canPlayAudioType`, `selectAudioResourceUrl`) are exported standalone. The stale package.json description was rewritten. What keeps it in the low-solid band is the tiers the deepening deliberately did not touch: no streaming-source carrier (a long music track is still unrepresentable in the data layer), no processing tier (peaks/waveform extraction, trim/slice/concat/normalize — the package's `surface`-equivalent identity), no context-free WAV codec for tests/Rust, and the unresolved `*FromUrl`-rejects vs `*FromUrls`-sentinel failure-convention split.
 
-## Present capabilities
+## Present capabilities (verified 2026-07-13)
 
-- `createAudioResource(buffer?: AudioBuffer): AudioResource` — constructs the carrier entity (`{ buffer: AudioBuffer | null }`, defined in `@flighthq/types`). Null-buffer default doubles as the sentinel "empty resource."
-- `loadAudioResourceFromUrl(context, url, signal?)` — fetch → `arrayBuffer` → `decodeAudioData`, with `AbortSignal` plumbed into the fetch. Clean and explicit; requiring the caller to pass the `AudioContext` is good Flight style (no hidden shared state).
-- `loadAudioResourceFromUrls(context, sources, signal?)` — first-playable selection over `AudioResourceUrl[]` via an `HTMLAudioElement.canPlayType` probe, falling back to `inferAudioType`; returns an empty resource as the sentinel when nothing is playable. This is the genuinely valuable primitive in the package.
-- `inferAudioType(url)` — extension→MIME for mp3/ogg/wav/aac/flac/webm/m4a, query-string-safe, `null` sentinel for unknown.
+- **Lifecycle:** `createAudioResource(buffer?)`, `cloneAudioResource`, `disposeAudioResource`, `hasAudioResourceBuffer`, `isAudioResourceEmpty` — the full image-family lifecycle set over `AudioResource { buffer: AudioBuffer | null }`.
+- **Inspection:** `getAudioResourceDuration`, `getAudioResourceSampleRate`, `getAudioResourceChannelCount`, `getAudioResourceByteSize` — thin accessors over `AudioBuffer`, byte-size following the SDK memory-budgeting convention.
+- **Sample tier:** `createAudioResourceFromSamples(context, channels, sampleRate)` and `getAudioResourceChannelData` — procedural-audio entry point and channel access.
+- **Loading:** `loadAudioResourceFromUrl` (fetch → `decodeAudioData`, abortable), `FromUrls` (codec negotiation, empty-resource sentinel), `FromBytes`, `FromBlob`, `FromBase64` — explicit `AudioContext` parameter throughout (no hidden singleton, per charter Decision #1).
+- **Negotiation:** `canPlayAudioType(type)` and `selectAudioResourceUrl(sources)` exported standalone — the `HTMLAudioElement.canPlayType` probe coupling is now visible and testable.
+- **Identification:** `inferAudioMimeType(url)` (extension→MIME, seven containers, query-safe, `null` sentinel) and `detectAudioMimeType(bytes)` (magic bytes: ID3/MPEG sync, fLaC, OggS, RIFF/WAVE, ftyp M4A, EBML).
 
-Tests are colocated per file and the package is `sideEffects: false` with a thin barrel. Quality of what exists is fine; the problem is scope.
+Tests are colocated per file; the package is `sideEffects: false` with a thin barrel, deps `types` only.
 
 ## Gaps vs an authoritative audio-data library
 
-- **Loader matrix is one cell wide.** Sibling `@flighthq/image` loads from URL / bytes / Blob / Base64; audio has only URL(s). `loadAudioResourceFromBytes(context, ArrayBuffer)` is literally the middle of the existing URL loader left unexported — a textbook missing-primitive extraction — and `FromBlob` / `FromBase64` follow trivially. Bytes-loading matters for bundled assets, IndexedDB caches, and `@flighthq/filesystem` reads.
-- **No resource lifecycle beyond `create`.** No `disposeAudioResource` (drop the buffer reference), no `cloneAudioResource`, no `hasAudioResourceBuffer` / `isAudioResourceEmpty` predicates. The image sibling has all of these; here a caller cannot even test emptiness through the API surface.
-- **No buffer inspection.** No `getAudioResourceDuration`, `getAudioResourceSampleRate`, `getAudioResourceChannelCount`, `getAudioResourceByteSize` (memory budgeting — decoded PCM is the largest asset class by RAM in most games and the SDK convention is `get*ByteSize`).
-- **No sample-level access or synthesis.** No `createAudioResourceFromSamples(Float32Array[], sampleRate)` (procedural audio, tone generation), no `getAudioResourceChannelData`, no peak/waveform extraction (`computeAudioResourcePeaks` — the standard visualization primitive in wavesurfer/waveform-data), no trim/slice/concat/normalize buffer ops. This whole tier — the audio analogue of what `@flighthq/surface` is to images — is missing.
-- **No byte-level format identification.** `inferAudioType` is extension sniffing only. Image has magic-byte `detectImageMimeType`; audio's equivalents are easy and well-known (`ID3`/`0xFFEx` MPEG sync, `fLaC`, `OggS`, `RIFF….WAVE`, `ftyp` M4A, EBML WebM) and are the reliable path when URLs have no extension.
-- **No streaming-source carrier.** `AudioResource` models only fully-decoded `AudioBuffer`s. Every mature engine (howler, Unity) distinguishes decode-in-memory (SFX) from streamed media-element sources (music). Whether the streaming carrier lives here or in `media` is a boundary decision, but today the data layer cannot represent a long music track at all.
-- **Selection primitive not exported.** The `canPlayType` negotiation inside `loadAudioResourceFromUrls` (probe + pick) is not available standalone — no `selectAudioResourceUrl(sources)` / `canPlayAudioType(type)` — so a caller wanting negotiation without loading must reimplement it.
-- **No WAV encode/decode.** A context-free PCM↔WAV codec is the standard escape hatch for tests, capture, and native ports (jsdom has no `decodeAudioData`; the Rust port needs a decode path that is not Web-Audio-bound). Could be a `-formats` neighbor, but nothing exists.
+- **No streaming-source carrier.** `AudioResource` models only fully-decoded `AudioBuffer`s. Every mature engine (howler, Unity) distinguishes decode-in-memory (SFX) from streamed media-element sources (music). Whether the streaming carrier lives here or in `media` is a boundary decision (charter Open direction #3), but today the data layer cannot represent a long music track at all.
+- **No processing tier.** No peak/waveform extraction (`computeAudioResourcePeaks` — the standard visualization primitive in wavesurfer/waveform-data), no trim/slice/concat/normalize buffer ops. This tier — the audio analogue of what `@flighthq/surface` is to images — is the most defensible reason for the package to exist as its own subject and remains absent.
+- **No WAV encode/decode.** A context-free PCM↔WAV codec is the standard escape hatch for tests, capture, and native ports (jsdom has no `decodeAudioData`; the Rust port needs a decode path that is not Web-Audio-bound). Could be a `-formats`/codec neighbor, but nothing exists.
+- **Failure-convention split.** `*FromUrl` rejects on failure while `*FromUrls` resolves to an empty-resource sentinel — two conventions one line apart, still undecided family-wide.
 
 ## Naming / API-shape notes
 
-- `inferAudioType` is doubly off-convention: it does not name what it returns (a MIME type, not an "audio type") and it is asymmetric with image's `detectImageMimeType`. `inferAudioMimeType` (extension-based) alongside a future `detectAudioMimeType` (magic-byte) would restore the family symmetry.
-- The `*FromUrl` rejects on failure while `*FromUrls` resolves to an empty-resource sentinel. Two failure conventions one line apart; the SDK's sentinel rule suggests both should resolve to the empty resource (or the divergence should be a documented decision).
-- `loadAudioResourceFromUrls` silently allocates a throwaway `HTMLAudioElement` probe per call — fine, but it couples the function to DOM presence in a package whose decode path is otherwise Web-Audio-only; an exported probe primitive would make that coupling visible and testable.
-- package.json description ("…and the shared audio context") is stale: `getAudioContext()` was dropped in the `resources` dissolution and exists nowhere in the repo. Either the description is wrong or a decided-upon context helper never landed — resolve one way or the other.
+- The 2026-07-09 rename resolved the `inferAudioType` asymmetry: `inferAudioMimeType`/`detectAudioMimeType` now mirror image's family exactly.
 - Boundary note: in `@flighthq/types`, `AudioResource.ts` also defines `AudioChannel`, `AudioChannelState`, and `AudioPlayOptions` — playback-layer (media) types cohabiting with the resource type in a file named for the resource. Not this package's code, but it is the header-layer echo of the old resources/media blur and worth splitting when the types file is next touched.
-- What does exist follows house style well: `create*` allocation verb, explicit `context` parameter (no hidden singleton), `AbortSignal` support, types owned by `@flighthq/types`, sentinel `null` returns.
+- House style is well kept: `create*` allocation verb, explicit `context` parameter, `AbortSignal` support, types owned by `@flighthq/types`, sentinel `null` returns, `Readonly<>` on non-mutating parameters.
 
-## Recommendation
+## Charter contradictions
 
-Treat this as the seed of the audio subject, not a finished data layer. Build out in this order:
+None. Decisions #1–#3 (context singleton removed, fire-and-forget loaders removed, format helper DRY'd) are all verified executed; Decision #4 ("audio needs expansion — scope ceiling not here") is exactly what the deepening did.
 
-1. **Complete the loader matrix** — export `loadAudioResourceFromBytes` (extract it from the URL loader), then `FromBlob` / `FromBase64`, mirroring `@flighthq/image` exactly.
-2. **Lifecycle + inspection parity with image** — `disposeAudioResource`, `hasAudioResourceBuffer` / `isAudioResourceEmpty`, `getAudioResourceDuration` / `SampleRate` / `ChannelCount` / `ByteSize`.
-3. **Byte-level `detectAudioMimeType`** and rename `inferAudioType` → `inferAudioMimeType` for family symmetry.
-4. **Sample tier** — `createAudioResourceFromSamples`, channel-data access, and peak extraction; this is the package's `surface`-equivalent identity and the most defensible reason for it to exist as its own subject.
-5. **Decide the streaming-carrier boundary** with `@flighthq/media` (buffer vs media-element source) and record it; today the gap is invisible because neither package models it.
+## Contract & docs fit
 
-The four functions present are well-made; the package is simply ~one-fifth of one sub-area of its domain.
+Contract fit is clean (single root export, `sideEffects: false`, colocated tests, unabbreviated names). Doc staleness: the charter's "What it is" still says "6 exports across 2 source files … plus a shared `AudioContext` singleton" — it is now 20 exports across 3 files with the singleton long gone (its own Decision #1); candidate touch-up next direction session. The codebase-map Package Map line for audio is still the bare `@flighthq/audio` with no descriptor — candidate revision now that the package has real shape.
 
-## 2026-07-09 — deepened
+## Candidate open directions
 
-AudioResource lifecycle to image parity — full loader matrix, sample-tier constructors, clone/dispose/predicates, buffer getters, MIME infer/detect, codec negotiation (commit fc5cd290). The assessment Recommended items landed and gated green; a full re-review to reconfirm this directional score is due.
+- Streaming-carrier boundary with `@flighthq/media` (charter Open direction #3) — still the biggest unmodeled capability.
+- Whether the processing tier (peaks, trim/slice/concat/normalize) is in-scope identity or edges into the charter's "effects processing" non-goal.
+- WAV codec placement (in-package escape hatch vs codec neighbor under the plurality guard).
+- One family-wide ruling on reject-vs-sentinel for single- vs multi-source loaders (shared with image/video).

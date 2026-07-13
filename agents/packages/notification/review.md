@@ -1,99 +1,70 @@
 ---
 package: '@flighthq/notification'
 status: solid
-score: 40
-updated: 2026-06-25
+score: 72
+updated: 2026-07-13
 ingested:
-  - base=origin/main(eb73c3d74)
-  - evidence=integration-b2824e3d8 delta
-  - head/packages/notification/src
-  - head/packages/types/src/Notification.ts
-  - changes.patch (packages/notification/ + packages/types/src/Notification.ts hunks)
+  - packages/notification/src (live)
+  - packages/types/src/Notification.ts (live)
+  - host-electron/src/electronNotification.ts
   - charter.md
-  - status.md (committed in the integration delta)
+  - status.md
+  - prior review (2026-06-25 merge-gate)
 ---
 
-# notification — Merge Review (integration b2824e3d8 → approved origin/main eb73c3d74)
+# notification — Review
 
-Evidence: the **delta** between `incoming/integration-b2824e3d8/base/packages/notification/` (origin/main `eb73c3d74`, the approved floor — not reviewed) and `incoming/integration-b2824e3d8/head/packages/notification/`, plus the `packages/notification/` and `packages/types/src/Notification.ts` hunks of `incoming/integration-b2824e3d8/changes.patch`. Findings reference `b2824e3d8:<path>`. The package source itself is the worker's rich rewrite (86 → 687 lines, 25 exports). The decisive finding is not in that source — it is in what the integration **dropped on the way in**.
+Evidence: the **live worktree** `packages/notification/src/` (source + tests), `packages/types/src/Notification.ts`, and `packages/host-electron/src/electronNotification.ts`.
+
+**Supersedes the 2026-06-25 merge-gate review.** That review's `status: solid / score: 40` pairing was a deliberate split: 40 was a *merge-gate* score for integration `b2824e3d8`, whose head did not typecheck because the rich `@flighthq/types` header was dropped in the merge; "solid" was its judgment of the worker's package on its own terms. **The blocker is resolved in the live tree**: `packages/types/src/Notification.ts` now contains the full header — `NotificationRequest` (17 fields), `NotificationAction`, `NotificationChannel`, `NotificationPermission`, `NotificationCapabilities`, `NotificationSchedule`, `ScheduledNotification`, and the 18-method `NotificationBackend` — and `notification.ts`'s imports all resolve. This review re-scores the compiling live package on the AAA depth rubric; the contradictory front matter is resolved to `solid / 72`.
 
 ## Verdict
 
-`reject as a merge — 40/100`. The score is a merge-gate score, not a grade of the worker's package in isolation (which, judged on its own terms, is a strong `solid`). The integration head **does not typecheck**: `b2824e3d8:packages/notification/src/notification.ts` imports five cross-package types from `@flighthq/types` that this integration branch does not contain, and implements a `NotificationBackend` whose shape directly conflicts with the one the integration's `@flighthq/types` actually declares. The worker delivered a self-consistent package + types pair at its own SHA (the committed `status.md` documents exactly that), but the integration merge carried the rich `notification.ts`/`notification.test.ts` across while leaving `packages/types/src/Notification.ts` at the approved-base shape plus a single one-line addition. The result is a broken seam. This is a hard blocker; the secondary quality findings below are moot until it is fixed, and most are already parked in the charter's Open directions.
+`solid` — 72/100. This is one of the deeper platform-suite packages: a full 18-method backend seam covering permission (tri-state read + request), show-with-identity, update, close/closeAll, local scheduling with repeat cadence + cancel + pending introspection, capabilities feature-detection, launch-notification, and five lifecycle subscriptions (show/click/dismiss/action/reply) — with **two real web backends** (basic `Notification` API and a Service Worker variant that actually delivers action buttons, plus the `notifyServiceWorkerBackendAction` page-side forwarding helper) and an Electron backend implementing the same seam. Sentinels throughout (`''`, `'denied'`, `[]`, `null`, `false`), every DOM touch guarded. What keeps it out of the 80s: the ~95% duplicated backend factories (a charter-blessed extraction, still undone), the channel methods living off-header behind structural casts, a thin `NotificationChannel` (`{id, name}` — no importance/sound/description, so Android-class hosts can't express real channels), no priority/importance or progress vocabulary on `NotificationRequest`, and the lossy `getActiveNotifications` cast. Textbook shape, not yet textbook-complete vocabulary.
 
-## The blocker — head does not compile (types dropped in integration)
+## Present capabilities (verified against live source)
 
-`b2824e3d8:packages/notification/src/notification.ts` (lines 1–9):
+- **Seam.** `NotificationBackend` (types) with 18 methods; `getNotificationBackend` lazily creates the web default; `setNotificationBackend(backend | null)` swaps/reverts.
+- **Free-function surface — 25 exports**: `showNotification`, `updateNotification`, `closeNotification`, `closeAllNotifications`, `scheduleNotification`, `cancelScheduledNotification`, `getPendingNotifications`, `getActiveNotifications`, `getLaunchNotification`, `getNotificationPermission`, `requestNotificationPermission`, `isNotificationSupported`, `getNotificationCapabilities`, `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels`, `onNotificationShow`/`Click`/`Dismiss`/`Action`/`Reply`, `notifyServiceWorkerBackendAction`, the two backend factories, `getNotificationBackend`/`setNotificationBackend`.
+- **Request vocabulary.** `NotificationRequest`: title, id, body, icon, badge, tag, silent, actions (with per-action icon), dir, image, lang, renotify, requireInteraction, timestamp, vibrate, data.
+- **Basic web backend** (`createWebNotificationBackend`): live id→Notification map + id→request registry (so `updateNotification` can close-and-reopen with merged fields), per-instance onshow/onclick/onclose wiring, best-effort `setTimeout` scheduler with repeat, honest capabilities (`actions: false`, `listActive: false`).
+- **Service-worker backend** (`createServiceWorkerNotificationBackend`): `registration.showNotification` with actions/image, `getNotifications`-based close/listActive, internal `_dispatch*` hooks fed by `notifyServiceWorkerBackendAction` for click/action/reply forwarding from the SW thread, documented SW-side wiring snippet.
+- **Electron backend** (`electronNotification.ts`): implements the seam — notify with id registry, capabilities, permission mapped to supported/unsupported; `scheduleNotification`/`updateNotification` honestly report unsupported.
+- **Tests.** 66 tests / 26 `describe` blocks, colocated, alphabetized, mirroring the 25 exports.
 
-```ts
-import type {
-  NotificationBackend,
-  NotificationCapabilities,
-  NotificationChannel,
-  NotificationPermission,
-  NotificationRequest,
-  NotificationSchedule,
-  ScheduledNotification,
-} from '@flighthq/types';
-```
+## Gaps
 
-But `b2824e3d8:packages/types/src/Notification.ts` — the integration head's authoritative header — contains only:
+- **Backend duplication (charter Decision 2026-07-02, still open).** The two web factories each re-declare the five listener `Set`s, `_fire`, `_generateId`, and the entire `setTimeout` scheduler (~230 lines each, ~95% shared). The blessed extraction — one listener-registry + one scheduler primitive, backends as thin wrappers — has not happened.
+- **Channels are off-header.** `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels` reach the backend through `getNotificationBackend() as NotificationBackend & {…}` structural casts (`notification.ts` lines 37–40, 532–535, 564–567) instead of seam methods; `NotificationCapabilities.channels` exists but the seam cannot actually be implemented against the header. The legacy-cast pattern the codebase map says not to extend.
+- **`NotificationChannel` is a stub vocabulary.** `{id, name}` only — real channel models (Android) carry importance, sound, vibration, description, grouping. A native host cannot express what the type omits.
+- **No priority/importance/urgency on `NotificationRequest`**, and no progress/ongoing vocabulary — `updateNotification`'s comment advertises "progress bars" the request type cannot express (charter Open direction 3).
+- **Lossy `getActiveNotifications`.** The SW backend returns `{title, tag}` objects typed as full `Readonly<NotificationRequest>` (line 161 vs the `Promise<ReadonlyArray<Readonly<NotificationRequest>>>` header) — the type over-promises (charter Open direction 2).
+- **Monkey-patched SW dispatch.** `_dispatchAction/Click/Dismiss/Reply` bolted onto the backend via cast (`SwBackendInternal`, lines 262–286) and read back via cast in `notifyServiceWorkerBackendAction` — works, but is the internal-cast pattern, not a designed seam.
+- **Inert reply surface on both included backends** (`subscribeReply` never fires except via SW forwarding with a `text-input` action; the basic backend never fires action or reply) — charter Open direction 1's inert-infrastructure question stands.
+- **No Rust `flighthq-notification` crate** (conformance-map gap, charter-tracked).
 
-```ts
-export interface NotificationAction {
-  id: string;
-  title: string;
-}
-export interface NotificationRequest {
-  title: string;
-  body?: string;
-  icon?: string;
-  tag?: string;
-  silent?: boolean;
-  actions?: NotificationAction[];
-}
-export interface NotificationBackend {
-  notify(request: Readonly<NotificationRequest>): Promise<boolean>;
-  requestPermission(): Promise<boolean>;
-  isSupported(): boolean;
-  subscribeClick(listener: (tag: string) => void): () => void;
-  subscribeAction(listener: (tag: string, actionId: string) => void): () => void;
-  updateNotification(id: string, update: Readonly<Partial<NotificationRequest>>): Promise<boolean>;
-}
-```
+## Charter contradictions
 
-A grep of `b2824e3d8:packages/types/src` for `NotificationCapabilities`, `NotificationChannel`, `NotificationPermission`, `NotificationSchedule`, `ScheduledNotification`, `NotificationImportance`, `NotificationPriority` returns **nothing**. The `changes.patch` hunk for `packages/types/src/Notification.ts` is a single added line (`+ updateNotification(...)`); the rich types the package needs are not in the patch and not on disk.
+None. The charter's "What it is" accurately describes the live surface (including "channels" — though the seam realizes them off-header, which the charter's Open directions don't yet name explicitly). The Decision's extraction remains valid and undone.
 
-Concrete consequences in the integration head:
+## Contract & docs fit
 
-- **Missing exported members (TS2305).** The five imported type names above do not exist in `@flighthq/types`, so `tsc -b` fails outright.
-- **`NotificationRequest` field mismatch.** `notification.ts` reads `request.id`, `request.badge`, `request.image`, `request.dir`, `request.lang`, `request.data`, `request.renotify`, `request.requireInteraction`, `request.timestamp`, `request.vibrate` (lines 86–101) — none of which exist on the integration's 6-field `NotificationRequest`.
-- **`NotificationBackend` shape conflict.** The package's two factories return objects with ~20 methods (`getCapabilities`, `getPermission(): NotificationPermission`, `scheduleNotification`, `subscribeDismiss/Reply/Show`, `getActiveNotifications`, `getPendingNotifications`, `getLaunchNotification`, `closeNotification`, `closeAllNotifications`, `cancelScheduledNotification`, …) typed `as NotificationBackend`. The integration's `NotificationBackend` declares six methods, two of them with incompatible return types (`notify`/`requestPermission` are `Promise<boolean>` in the header but the package returns `Promise<string>`/`Promise<NotificationPermission>`).
+- Types-first: the full header now lives in `@flighthq/types`, `import type` only. ✔ (the June defect was an integration artifact, now healed)
+- Sentinels-not-throws: consistent (`''`, `'denied'`, `[]`, `null`, `false`); every browser-API touch try/catch-guarded. ✔
+- `sideEffects: false`, lazy backend, `_backend` at file bottom, single root export. ✔
+- Exports alphabetized; tests mirror exports. ✔
+- **Suite-pattern note:** notification uses `on*(listener) → unsubscribe` wrappers rather than the platform-suite "event capability = signal entity with `create*`/`attach*`/`detach*`/`dispose*`" shape, and has no `enable*Signals` group. Several suite packages share this drift (shortcut has a `ShortcutSignals` type; menu has `enableMenuSignals`); the suite-wide event-shape convention is inconsistently realized — a suite-level direction question, not a notification defect.
+- Style nit (from the prior review, still present): `// ----` divider comments in `notification.ts`/`notification.test.ts` (e.g. line 11) violate the no-structural-divider rule.
 
-The committed `status.md` in the same delta states these types **were** added ("All types added in the first pass… `NotificationCapabilities` … `ScheduledNotification`… `requestPermission(): Promise<NotificationPermission>` _(changed in pass 2)_"), and the committed `review.md` cites them at SHA `67dc46d6`. So this is an **integration merge defect**, not a defect in the worker's package: the type half of the change was lost when the package half was merged into `b2824e3d8`. Either way, the gate judges what lands — and what lands does not build.
+## Structural-fork fit
 
-## The seven standards, judged on the delta
+- **Fork D (backend seam):** textbook.
+- **Fork C:** `_repeatMs` closed `switch` over fixed calendar units — legitimate closed system.
+- **Subject triad:** stays a thin subject; native delivery via `host-*`. No premature neighbors.
 
-1. **Composition / bedrock — fail (within-package).** `createWebNotificationBackend` (`b2824e3d8:notification.ts` 291–523) and `createServiceWorkerNotificationBackend` (62–284) are ~95% duplicated: each re-declares its own `_idCounter`, `_generateId`, `_fire`, the five listener `Set`s, the `_scheduled` map, the entire `scheduleNotification`/`cancelScheduledNotification` setTimeout scheduler, and five identical `subscribe*` bodies. The shared spine (a listener-registry primitive and a best-effort scheduler primitive) wants extracting — this is the "missing primitive underneath a bundled unit" smell, not simple-by-composition. ~250 lines collapse to two thin backends over one registry + one scheduler.
+## Candidate open directions
 
-2. **Naming clarity — pass.** Exports carry the full `Notification` type word and are self-identifying (`getNotificationPermission`, `scheduleNotification`, `onNotificationDismiss`, `createServiceWorkerNotificationBackend`). `notifyServiceWorkerBackendAction` is the only slightly awkward name and it is documented; acceptable.
-
-3. **Tree-shaking / bundle invariant — pass.** `package.json` keeps `"sideEffects": false`, a single root `.` export, and a thin `index.ts` barrel (`export * from './notification'`). The backend is created lazily in `getNotificationBackend` (546–549), `_backend` initialized to `null` at file bottom (687) — no module-top side effect, no eager registration. `_repeatMs` (670–685) is a closed `switch` over a fixed calendar-unit set, a legitimate closed system (units don't grow by user extension), so it does not tax importers.
-
-4. **Registry vs closed union — pass.** No growing `kind`/handler family is forced through a closed switch; the only switch is the calendar-unit one in (3), correctly closed.
-
-5. **Subject triad + plurality guard — pass.** notification stays a thin subject: two web backends (basic + service-worker) behind one `*Backend` seam, no premature `-formats`/`-backend` split. Native delivery is left to `host-*`. Matches the charter's "thin subject" boundary.
-
-6. **Contract hygiene — mixed (the blocker plus parked forks).** The types-first rule is the blocker above: the header the package designs against is absent from the integration. Beyond that, three pre-existing design-fork frictions (all already in the charter's Open directions, none a sweep blocker):
-   - **Monkey-patched dispatch via cast.** `createServiceWorkerNotificationBackend` bolts `_dispatchAction`/`_dispatchClick`/`_dispatchDismiss` onto the returned object through `backend as SwBackendInternal` (262–281), read back by `notifyServiceWorkerBackendAction` via another cast (588–596) — the legacy `internal.ts`-style cast the codebase map says not to extend.
-   - **Off-header channel methods.** `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels` reach the backend through structural casts `getNotificationBackend() as NotificationBackend & { … }` (37–40, 527–530, 559–562) rather than living on the seam type.
-   - **Lossy `getActiveNotifications`.** The SW backend returns `{ title, tag }` mapped objects (160–161) typed as `Promise<ReadonlyArray<Readonly<NotificationRequest>>>` (535) — the type over-promises. `Readonly<>` and sentinels (`''`, `[]`, `false`, `null`, no-op) are otherwise used correctly throughout; `dispose*`/`destroy*` are correctly absent (nothing to free). No Rust `flighthq-notification` crate exists yet (conformance-map gap, charter-tracked).
-
-7. **Tests & honesty — pass (with one style nit).** `notification.test.ts` is colocated and its `describe` blocks are alphabetized and mirror the 25 exports (verified: `cancelScheduledNotification` … `updateNotification`). Claims match code; no dead exports. The committed `status.md`'s "64 tests" and surface inventory are accurate against the source. The one nit: the file is littered with stale `// ----` divider-comment headers (e.g. the `// createWebNotificationBackend` divider above `describe('createServiceWorkerNotificationBackend'`) — these violate the codebase-map "avoid structural divider comments" rule and have drifted out of sync with the blocks beneath them. Cosmetic; not an `order:check` failure.
-
-## Self-check (objections re-examined, dropped where ungrounded)
-
-- **Dropped:** "`describe` blocks are not alphabetized." Re-grepping the file shows they are correctly alphabetized; only the divider _comments_ are misaligned. Re-filed as a cosmetic style nit, not an order failure.
-- **Dropped:** treating the `_dispatch*` cast / lossy active cast / off-header channels as merge blockers. These pre-exist the worker's intent, are explicitly enumerated in the charter's Open directions as design forks for the user, and pre-release latitude (no back-compat duty) means they are not sweep-fixable without a direction decision. Retained only as Open-direction pointers, not must-fix.
-- **Retained:** the missing-types blocker. It is grounded in the head tree and the `changes.patch` hunk, it is about the **delta** (the integration head, not the approved base), and pre-release latitude does not excuse a non-compiling head. It stands.
-- **Retained:** the backend duplication (Composition/bedrock). Grounded in two cited line ranges of the delta; within-package; sweep-safe once the build is restored.
+1. **Channels on the seam** — promote `createNotificationChannel`/`deleteNotificationChannel`/`getNotificationChannels` to optional `NotificationBackend` methods (or a capability-gated sub-seam) and enrich `NotificationChannel` toward the canonical Android vocabulary. Header change → design decision.
+2. **Request vocabulary completion** — `priority`/`importance`, progress/ongoing (charter Open direction 3), grouping/thread id.
+3. **Inert-infrastructure policy** (charter Open direction 1) and **lossy active-notification type** (Open direction 2) still await rulings.
+4. **Suite event-shape convention** — signal entity vs `on*` unsubscribe-return; notification should follow whatever the suite-wide ruling is.
