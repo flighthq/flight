@@ -117,32 +117,40 @@ const lights = {
 
 render(scene, camera, lights);
 
-// Oracle: edges render, but it is not a solid fill. Scan the center horizontal row across the sphere
-// and count "bright" samples (luminance > 40). Assert at least one is bright (lines render) and not
-// every sample is bright (dark triangle interiors remain) — the signature of a wireframe, not a fill.
+// Oracle: edges render, but it is not a solid fill. Sample a small grid inside the sphere and count
+// bright and dark samples. A single equator row can land on a dense run of meridian edges, so use a 2D
+// distribution instead: real wireframe has both bright edges and dark interiors; solid fill has no dark
+// interior samples; blank output has no bright samples.
 export function assertRender(surface: Readonly<Surface>): void {
   const cx = Math.floor(surface.width / 2);
   const cy = Math.floor(surface.height / 2);
-  // The sphere is ~width * 0.13 in screen radius; scan the row across its full width.
+  // The sphere is ~width * 0.13 in screen radius; stay inside that circle while sampling.
   const r = Math.floor(surface.width * 0.13);
 
   let brightCount = 0;
+  let darkCount = 0;
   let sampleCount = 0;
-  for (let x = cx - r; x <= cx + r; x += 2) {
-    sampleCount++;
-    if (getSurfacePixelLuminance(surface, x, cy) > 40) {
-      brightCount++;
+  const step = 6;
+  for (let y = cy - r; y <= cy + r; y += step) {
+    for (let x = cx - r; x <= cx + r; x += step) {
+      const dx = x - cx;
+      const dy = y - cy;
+      if (dx * dx + dy * dy > r * r) continue;
+      sampleCount++;
+      const luminance = getSurfacePixelLuminance(surface, x, y);
+      if (luminance > 40) brightCount++;
+      if (luminance <= 20) darkCount++;
     }
   }
 
   if (brightCount === 0) {
     throw new Error(
-      `[material-wireframe] no bright samples across the sphere row (of ${sampleCount}) — wireframe lines did not render`,
+      `[material-wireframe] no bright samples inside the sphere (of ${sampleCount}) — wireframe lines did not render`,
     );
   }
-  if (brightCount === sampleCount) {
+  if (darkCount === 0) {
     throw new Error(
-      `[material-wireframe] every sample across the row is bright (${brightCount}/${sampleCount}) — surface appears to be a solid fill, not edges`,
+      `[material-wireframe] no dark interior samples inside the sphere (${brightCount}/${sampleCount} bright) — surface appears to be a solid fill, not edges`,
     );
   }
 }

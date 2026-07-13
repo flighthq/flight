@@ -1,3 +1,4 @@
+import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 import type { GlRenderState } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
@@ -95,7 +96,7 @@ export function getGlToonVertexSourceForKey(key: Readonly<GlToonDefineKey>): str
 // vertex and fragment prelude bodies before compile. Pure string assembly; the same key always
 // yields the same source, which is what makes the program cache by define key sound.
 function buildGlToonDefineSource(key: Readonly<GlToonDefineKey>): string {
-  let defines = '#version 300 es\n';
+  let defines = `#version 300 es\n#define MAX_FORWARD_LIGHTS ${MAX_FORWARD_LIGHTS}\n`;
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasBaseColorMap) defines += '#define HAS_BASE_COLOR_MAP\n';
   if (key.hasRamp) defines += '#define HAS_RAMP\n';

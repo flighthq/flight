@@ -44,6 +44,8 @@ export function destroyWgpuSceneShadow(state: WgpuRenderState): void {
   scene.shadowSampleBindGroup = null;
   scene.shadowSampleLayout = null;
   scene.shadowSampleView = null;
+  scene.pbrSampleBindGroup = null;
+  scene.pbrSampleShadowView = null;
 }
 
 // The directional shadow recipe's first pass — the WGSL mirror of scene-gl's drawGlSceneShadowMap.

@@ -26,13 +26,8 @@
 //   group(2) Material : the 48-float MaterialBlock (base + extension factors) uniform + sampler + 5
 //                       optional maps. Extension factors ride in the one MaterialBlock; the lobe that
 //                       reads them runs only when its const flag is set.
-//   group(3) Shadow   : the directional shadow — light matrix + enabled uniform, the depth map, and a
-//                       comparison sampler. Bound by beginWgpuMeshDraw (the pipeline carries the shadow
-//                       layout); a shadow-less draw binds a 1x1 dummy gated off by the enabled flag.
-//   group(4) Ibl      : image-based lighting — enabled/intensity/maxMip uniform, the diffuse irradiance
-//                       cube, the prefiltered specular cube, the BRDF LUT, and a filtering sampler. Bound
-//                       by beginWgpuMeshDraw; an IBL-less draw binds 1x1 dummies gated off by the enabled
-//                       flag. Group 4 (not 3) because shadow already took 3 — see the maxBindGroups note.
+//   group(3) Samples  : the directional shadow resources plus image-based-lighting resources. They share
+//                       one group so PBR fits WebGPU's required maxBindGroups minimum of 4.
 
 // The feature flags that select an uber-shader variant. Each toggles a `const … : bool` in the prelude
 // and is hashed into the pipeline-cache key (buildWgpuPbrDefineKey), so distinct flag sets compile and
@@ -185,7 +180,7 @@ struct Shadow {
 @group(3) @binding(1) var shadowMap : texture_depth_2d;
 @group(3) @binding(2) var shadowSampler : sampler_comparison;
 
-// The image-based-lighting inputs (group 4), the WGSL mirror of scene-gl's u_ibl* uniforms + samplers.
+// The image-based-lighting inputs share group 3 with shadow so PBR fits WebGPU's maxBindGroups minimum.
 // params.x is the enabled flag (0 or 1), params.y the environment intensity, params.z the highest
 // prefiltered mip index (roughness 1.0). The split-sum set: a diffuse irradiance cube, a roughness-mipped
 // prefiltered specular cube, and the 2D BRDF LUT, sampled through one filtering sampler.
@@ -193,11 +188,11 @@ struct Ibl {
   params : vec4f,   // x = enabled, y = intensity, z = maxMip
 };
 
-@group(4) @binding(0) var<uniform> ibl : Ibl;
-@group(4) @binding(1) var iblIrradiance : texture_cube<f32>;
-@group(4) @binding(2) var iblPrefiltered : texture_cube<f32>;
-@group(4) @binding(3) var iblBrdf : texture_2d<f32>;
-@group(4) @binding(4) var iblSampler : sampler;
+@group(3) @binding(3) var<uniform> ibl : Ibl;
+@group(3) @binding(4) var iblIrradiance : texture_cube<f32>;
+@group(3) @binding(5) var iblPrefiltered : texture_cube<f32>;
+@group(3) @binding(6) var iblBrdf : texture_2d<f32>;
+@group(3) @binding(7) var iblSampler : sampler;
 
 struct VertexOutput {
   @builtin(position) clipPosition : vec4f,

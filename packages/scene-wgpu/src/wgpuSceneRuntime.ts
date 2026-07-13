@@ -22,7 +22,8 @@ export interface WgpuSceneShadow {
 // uniform). The three GPU textures are the split-sum approximation: a diffuse irradiance cubemap, a
 // roughness-mipped prefiltered specular cubemap, and the 2D BRDF integration LUT. `intensity` scales the
 // environment's contribution (Environment.intensity). The textures are non-GC GPU resources — freed by
-// destroyWgpuSceneIbl. Each `*View` is the sampleable cube/2D view the lit bind wires into group(4).
+// destroyWgpuSceneIbl. Each `*View` is the sampleable cube/2D view the lit bind wires into the PBR
+// sample group.
 export interface WgpuSceneIbl {
   brdfLut: GPUTexture;
   brdfLutView: GPUTextureView;
@@ -56,7 +57,7 @@ export interface WgpuSceneRuntime {
   // is the uploaded source radiance cube (ensureWgpuEnvironmentSourceCube); `ibl` is the baked split-sum
   // result written by bakeWgpuEnvironmentIbl. The rest are the lazily-created singletons the lit sample
   // side (everything ibl* prefixed) reuses each frame: the IBL uniform buffer (enabled/intensity/maxMip),
-  // a filtering sampler, 1x1 dummy cube + 2D LUT for the no-IBL case, and the shared group(4) sample
+  // a filtering sampler, 1x1 dummy cube + 2D LUT for the no-IBL case, and the shared sample
   // layout + bind group (rebuilt only when the bound irradiance view changes present ↔ absent). All
   // created lazily, so a state that never bakes IBL pays nothing. Freed by destroyWgpuSceneIbl.
   environmentSourceCube: GPUTexture | null;
@@ -72,6 +73,10 @@ export interface WgpuSceneRuntime {
   iblSampler: GPUSampler | null;
   iblUniformBuffer: GPUBuffer | null;
   materialBindGroups: WeakMap<object, WgpuMaterialBinding>;
+  pbrSampleBindGroup: GPUBindGroup | null;
+  pbrSampleIblCubeView: GPUTextureView | null;
+  pbrSampleLayout: GPUBindGroupLayout | null;
+  pbrSampleShadowView: GPUTextureView | null;
   materialRegistry: Map<Kind, WgpuMeshMaterialRenderer>;
   pendingDrawOffset: number;
   pipelineCache: Map<string, WgpuMeshPipeline>;
@@ -141,6 +146,10 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       iblSampler: null,
       iblUniformBuffer: null,
       materialBindGroups: new WeakMap(),
+      pbrSampleBindGroup: null,
+      pbrSampleIblCubeView: null,
+      pbrSampleLayout: null,
+      pbrSampleShadowView: null,
       materialRegistry: new Map(),
       pendingDrawOffset: 0,
       pipelineCache: new Map(),

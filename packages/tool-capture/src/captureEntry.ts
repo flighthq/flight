@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import type { BrowserContext } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
@@ -102,6 +102,12 @@ export interface CaptureOutputPaths {
   tmpLogs: string;
   finalLogs: string;
   statusPath: string;
+}
+
+interface RenderVerification {
+  coverage: number | null;
+  fingerprint: string | null;
+  render: string;
 }
 
 export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'changed' | 'error'> {
@@ -222,6 +228,9 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
       if (extraWait > 0) await page.waitForTimeout(extraWait);
 
+      const waitsForVerification = tool === 'functional';
+      if (waitsForVerification) await waitForRenderVerification(page);
+
       // Screenshot the render output only — not the full viewport — so all renderers produce the same
       // frame size and the gallery blink comparator has something meaningful to compare.
       //
@@ -233,19 +242,17 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // - canvas / webgl: a <canvas> is appended directly to <body>.
       // - fallback: full page screenshot when neither canvas nor div is found (unknown layout).
       let screenshotBuffer: Buffer;
-      if (renderer === 'webgpu') {
-        const dataUrl = await page
-          .waitForFunction(() => (window as { __ftRenderImage?: string }).__ftRenderImage ?? null, null, {
-            timeout: 15_000,
-          })
-          .then((handle) => handle.jsonValue() as Promise<string>)
-          .catch(() => null);
+      const backend = rendererBackend(renderer);
+      if (backend === 'webgpu') {
+        const dataUrl = await getRenderImageDataUrl(page);
         if (dataUrl) {
           screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
+        } else if (waitsForVerification) {
+          throw new Error('WebGPU verifier did not produce a render image');
         } else {
           screenshotBuffer = await page.screenshot();
         }
-      } else if (renderer === 'dom') {
+      } else if (backend === 'dom') {
         screenshotBuffer = await page
           .locator('body > div')
           .first()
@@ -358,6 +365,42 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   if (anyFailed) return 'error';
   if (anyChanged) return 'changed';
   return 'ok';
+}
+
+async function getRenderImageDataUrl(page: Page): Promise<string | null> {
+  return page
+    .evaluate(() => (window as unknown as { __ftRenderImage?: string }).__ftRenderImage ?? null)
+    .catch(() => null);
+}
+
+function rendererBackend(renderer: string): string {
+  const i = renderer.indexOf(':');
+  return i === -1 ? renderer : renderer.slice(i + 1);
+}
+
+async function waitForRenderVerification(page: Page): Promise<RenderVerification | null> {
+  await page
+    .waitForFunction(
+      () => {
+        const w = window as unknown as {
+          __ftRenderImage?: string;
+          __ftVerification?: RenderVerification;
+        };
+        const verification = w.__ftVerification;
+        if (document.getElementById('ft-error') !== null) return true;
+        if (verification === undefined) return false;
+        if (verification.render === 'dom') return true;
+        if (verification.render === 'webgpu') return typeof w.__ftRenderImage === 'string' && w.__ftRenderImage !== '';
+        return verification.fingerprint !== null;
+      },
+      null,
+      { polling: 100, timeout: 15_000 },
+    )
+    .catch(() => {});
+
+  return page
+    .evaluate(() => (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification ?? null)
+    .catch(() => null);
 }
 
 // Flattens entries × renderers into a shared job queue and processes them with workerCount
