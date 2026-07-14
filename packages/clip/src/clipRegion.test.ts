@@ -583,6 +583,30 @@ describe('unionClipRegions', () => {
     expect(out.version).toBe(1);
   });
 
+  it('is alias-safe when out === a', () => {
+    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    const b = createClipRegionFromRectangle(createRectangle(5, 5, 15, 15));
+    const expected = createClipRegionFromRectangle(createRectangle(0, 0, 1, 1));
+    unionClipRegions(expected, a, b);
+    unionClipRegions(a, a, b);
+    expect(a.rect.x).toBe(expected.rect.x);
+    expect(a.rect.y).toBe(expected.rect.y);
+    expect(a.rect.width).toBe(expected.rect.width);
+    expect(a.rect.height).toBe(expected.rect.height);
+  });
+
+  it('is alias-safe when out === b', () => {
+    const a = createClipRegionFromRectangle(createRectangle(0, 0, 10, 10));
+    const b = createClipRegionFromRectangle(createRectangle(5, 5, 15, 15));
+    const expected = createClipRegionFromRectangle(createRectangle(0, 0, 1, 1));
+    unionClipRegions(expected, a, b);
+    unionClipRegions(b, a, b);
+    expect(b.rect.x).toBe(expected.rect.x);
+    expect(b.rect.y).toBe(expected.rect.y);
+    expect(b.rect.width).toBe(expected.rect.width);
+    expect(b.rect.height).toBe(expected.rect.height);
+  });
+
   it('preserves contours from the richer input', () => {
     const path = createPath();
     appendPathMoveTo(path, 0, 0);
