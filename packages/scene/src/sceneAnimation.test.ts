@@ -1,10 +1,10 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
-import { createVector3 } from '@flighthq/geometry';
-import { SceneAnimationPathScale, SceneAnimationPathTranslation } from '@flighthq/types';
+import { createQuaternion, createVector3 } from '@flighthq/geometry';
+import { SceneAnimationPathRotation, SceneAnimationPathScale, SceneAnimationPathTranslation } from '@flighthq/types';
 
 import { applyAnimationClipToScene } from './sceneAnimation';
 import { createSceneNode } from './sceneNode';
-import { getSceneNodePosition, getSceneNodeScale } from './sceneNodeTransform';
+import { getSceneNodePosition, getSceneNodeRotationQuaternion, getSceneNodeScale } from './sceneNodeTransform';
 
 describe('applyAnimationClipToScene', () => {
   it('drives a node translation from a Vector3 channel', () => {
@@ -19,6 +19,27 @@ describe('applyAnimationClipToScene', () => {
     expect(out.x).toBeCloseTo(5);
     expect(out.y).toBeCloseTo(10);
     expect(out.z).toBeCloseTo(15);
+  });
+
+  it('drives a node rotation from a quaternion channel', () => {
+    const node = createSceneNode();
+    const s = Math.sin(Math.PI / 4);
+    const c = Math.cos(Math.PI / 4);
+    const track = createAnimationTrack({
+      components: 4,
+      times: [0, 1],
+      values: [0, 0, 0, 1, 0, 0, s, c],
+    });
+    const clip = createAnimationClip([createAnimationChannel(track, { node, path: SceneAnimationPathRotation })]);
+
+    applyAnimationClipToScene(clip, 1);
+
+    const out = createQuaternion();
+    getSceneNodeRotationQuaternion(out, node);
+    expect(out.x).toBeCloseTo(0);
+    expect(out.y).toBeCloseTo(0);
+    expect(out.z).toBeCloseTo(s);
+    expect(out.w).toBeCloseTo(c);
   });
 
   it('drives a node scale', () => {
