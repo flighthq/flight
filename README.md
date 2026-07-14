@@ -223,6 +223,7 @@ import { createTween, updateTweens } from '@flighthq/tween';
 | `pathboolean` | Path boolean operations (union/intersect/difference)     |
 | `shapes`      | Shape primitives, fills, strokes, curves, and polygons   |
 | `snapshot`    | State snapshot capture, restore, and interpolation       |
+| `spritesheet` | Procedural sprite strip with grid slicing and playback   |
 | `spatial`     | Broadphase spatial query with uniform grid               |
 | `spring`      | Spring-physics animation with frequency/damping controls |
 | `text`        | TextLabel, RichText, alignment, wrapping, and styles     |
