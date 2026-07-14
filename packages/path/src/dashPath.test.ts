@@ -65,6 +65,21 @@ describe('dashPath', () => {
     expect(out.commands.length).toBeGreaterThan(0);
   });
 
+  it('produces the same result for a separate out object as for a fresh path', () => {
+    const source = createPath();
+    appendPathMoveTo(source, 0, 0);
+    appendPathLineTo(source, 100, 0);
+    appendPathLineTo(source, 100, 100);
+    const out = createPath();
+    dashPath(source, [15, 10], 0, out);
+    // Verify the source is unchanged after dashing into a separate out.
+    expect(source.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
+    expect(source.data).toStrictEqual([0, 0, 100, 0, 100, 100]);
+    // Verify the out path has dashed segments.
+    const moves = out.commands.filter((c) => c === PathCommand.MOVE_TO);
+    expect(moves.length).toBeGreaterThanOrEqual(2);
+  });
+
   it('preserves winding rule', () => {
     const source = createPath('evenOdd');
     appendPathMoveTo(source, 0, 0);
