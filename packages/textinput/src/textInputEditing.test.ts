@@ -839,6 +839,34 @@ describe('selectLineAtTextInputIndex', () => {
     expect(getTextInputSelectionBeginIndex(text)).toBe(6);
     expect(getTextInputSelectionEndIndex(text)).toBe(11);
   });
+
+  it('selects the correct line in multiline text', () => {
+    const text = createInput({ text: 'aaa\nbbb\nccc' });
+    selectLineAtTextInputIndex(text, 5);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(4);
+    expect(getTextInputSelectionEndIndex(text)).toBe(7);
+  });
+
+  it('selects the first line when index is at a line boundary', () => {
+    const text = createInput({ text: 'hello\nworld' });
+    selectLineAtTextInputIndex(text, 5);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(0);
+    expect(getTextInputSelectionEndIndex(text)).toBe(5);
+  });
+
+  it('selects empty range for empty text', () => {
+    const text = createInput({ text: '' });
+    selectLineAtTextInputIndex(text, 0);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(0);
+    expect(getTextInputSelectionEndIndex(text)).toBe(0);
+  });
+
+  it('selects the last line', () => {
+    const text = createInput({ text: 'aaa\nbbb\nccc' });
+    selectLineAtTextInputIndex(text, 10);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(8);
+    expect(getTextInputSelectionEndIndex(text)).toBe(11);
+  });
 });
 
 describe('selectWordAtTextInputIndex', () => {
@@ -847,6 +875,48 @@ describe('selectWordAtTextInputIndex', () => {
     selectWordAtTextInputIndex(text, 1);
     expect(getTextInputSelectionBeginIndex(text)).toBe(0);
     expect(getTextInputSelectionEndIndex(text)).toBe(5);
+  });
+
+  it('selects the preceding word when index is at a whitespace boundary', () => {
+    const text = createInput({ text: 'hello world' });
+    selectWordAtTextInputIndex(text, 5);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(0);
+    expect(getTextInputSelectionEndIndex(text)).toBe(5);
+  });
+
+  it('selects non-word region when surrounded by non-word characters', () => {
+    const text = createInput({ text: '  hello' });
+    selectWordAtTextInputIndex(text, 1);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(0);
+    expect(getTextInputSelectionEndIndex(text)).toBe(2);
+  });
+
+  it('selects the preceding word when index is at punctuation', () => {
+    const text = createInput({ text: 'hello, world' });
+    selectWordAtTextInputIndex(text, 5);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(0);
+    expect(getTextInputSelectionEndIndex(text)).toBe(5);
+  });
+
+  it('selects word at start of text (index 0)', () => {
+    const text = createInput({ text: 'hello world' });
+    selectWordAtTextInputIndex(text, 0);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(0);
+    expect(getTextInputSelectionEndIndex(text)).toBe(5);
+  });
+
+  it('selects word at end of text', () => {
+    const text = createInput({ text: 'hello world' });
+    selectWordAtTextInputIndex(text, 11);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(6);
+    expect(getTextInputSelectionEndIndex(text)).toBe(11);
+  });
+
+  it('selects empty range for empty text', () => {
+    const text = createInput({ text: '' });
+    selectWordAtTextInputIndex(text, 0);
+    expect(getTextInputSelectionBeginIndex(text)).toBe(0);
+    expect(getTextInputSelectionEndIndex(text)).toBe(0);
   });
 });
 
