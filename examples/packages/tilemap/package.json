@@ -1,0 +1,19 @@
+{
+  "name": "tilemap",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/displayobject-canvas": "*",
+    "@flighthq/sprite": "*",
+    "@flighthq/tileset": "*",
+    "@flighthq/sdk": "*"
+  },
+  "scripts": {
+    "dev": "npm run dev:canvas",
+    "dev:canvas": "cross-env RENDER=canvas vite",
+    "build": "npm run build:canvas",
+    "build:canvas": "cross-env RENDER=canvas vite build",
+    "test": "npm run build",
+    "preview": "vite preview"
+  }
+}
