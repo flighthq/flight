@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "references": [{ "path": "../../../packages/sdk" }],
+  "references": [{ "path": "../../../packages/displayobject-canvas" }, { "path": "../../../packages/sdk" }],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
