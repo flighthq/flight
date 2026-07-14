@@ -1,4 +1,3 @@
-import type { MotionPathLoopMode } from '@flighthq/motionpath';
 import {
   createMotionPath,
   getMotionPathHeading,
@@ -7,7 +6,7 @@ import {
   updateMotionPath,
 } from '@flighthq/motionpath';
 import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/path';
-import type { DisplayObject } from '@flighthq/sdk';
+import type { DisplayObject, MotionPathLoopMode } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,

@@ -1,4 +1,3 @@
-import type { CollisionAabb, CollisionCircle, CollisionManifold, CollisionPolygon } from '@flighthq/collision';
 import {
   createCollisionManifold,
   testAabbAabbCollision,
@@ -8,7 +7,7 @@ import {
   testCirclePolygonCollision,
   testPolygonPolygonCollision,
 } from '@flighthq/collision';
-import type { Shape } from '@flighthq/sdk';
+import type { CollisionAabb, CollisionCircle, CollisionManifold, CollisionPolygon, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,

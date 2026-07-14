@@ -1,4 +1,4 @@
-import type { Shape } from '@flighthq/sdk';
+import type { Shape, Snapshot } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -13,7 +13,6 @@ import {
   createTextLabel,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import type { Snapshot } from '@flighthq/snapshot';
 import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/snapshot';
 
 import { render, scale } from './render';

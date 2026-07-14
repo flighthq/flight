@@ -1,4 +1,4 @@
-import type { Shape } from '@flighthq/sdk';
+import type { Shape, SpatialAabb, SpatialObjectId, SpatialPair } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -14,7 +14,6 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import type { SpatialAabb, SpatialObjectId, SpatialPair } from '@flighthq/spatial';
 import {
   createSpatialIndex,
   createUniformGridSpatialBackend,
