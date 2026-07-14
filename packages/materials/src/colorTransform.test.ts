@@ -67,15 +67,72 @@ describe('concatColorTransform', () => {
     expect(out.redOffset).toBe(2 * 5 + 10);
   });
 
-  it('can write result into one of the inputs', () => {
-    const a = createColorTransform({ redMultiplier: 2, redOffset: 10 });
-    const b = createColorTransform({ redMultiplier: 3, redOffset: 5 });
-    const out = createColorTransform();
-    concatColorTransform(out, a, b);
-    const expectedMultiplier = 6;
-    const expectedOffset = 2 * 5 + 10;
-    expect(out.redMultiplier).toBe(expectedMultiplier);
-    expect(out.redOffset).toBe(expectedOffset);
+  it('produces correct result when out aliases source', () => {
+    const a = createColorTransform({
+      redMultiplier: 2,
+      greenMultiplier: 0.5,
+      blueMultiplier: 3,
+      alphaMultiplier: 0.25,
+      redOffset: 10,
+      greenOffset: 20,
+      blueOffset: 30,
+      alphaOffset: 40,
+    });
+    const b = createColorTransform({
+      redMultiplier: 3,
+      greenMultiplier: 4,
+      blueMultiplier: 0.5,
+      alphaMultiplier: 2,
+      redOffset: 5,
+      greenOffset: 15,
+      blueOffset: 25,
+      alphaOffset: 35,
+    });
+    const ref = createColorTransform();
+    concatColorTransform(ref, a, b);
+    concatColorTransform(a, a, b);
+    expect(a.redMultiplier).toBe(ref.redMultiplier);
+    expect(a.greenMultiplier).toBe(ref.greenMultiplier);
+    expect(a.blueMultiplier).toBe(ref.blueMultiplier);
+    expect(a.alphaMultiplier).toBe(ref.alphaMultiplier);
+    expect(a.redOffset).toBe(ref.redOffset);
+    expect(a.greenOffset).toBe(ref.greenOffset);
+    expect(a.blueOffset).toBe(ref.blueOffset);
+    expect(a.alphaOffset).toBe(ref.alphaOffset);
+  });
+
+  it('produces correct result when out aliases other', () => {
+    const a = createColorTransform({
+      redMultiplier: 2,
+      greenMultiplier: 0.5,
+      blueMultiplier: 3,
+      alphaMultiplier: 0.25,
+      redOffset: 10,
+      greenOffset: 20,
+      blueOffset: 30,
+      alphaOffset: 40,
+    });
+    const b = createColorTransform({
+      redMultiplier: 3,
+      greenMultiplier: 4,
+      blueMultiplier: 0.5,
+      alphaMultiplier: 2,
+      redOffset: 5,
+      greenOffset: 15,
+      blueOffset: 25,
+      alphaOffset: 35,
+    });
+    const ref = createColorTransform();
+    concatColorTransform(ref, a, b);
+    concatColorTransform(b, a, b);
+    expect(b.redMultiplier).toBe(ref.redMultiplier);
+    expect(b.greenMultiplier).toBe(ref.greenMultiplier);
+    expect(b.blueMultiplier).toBe(ref.blueMultiplier);
+    expect(b.alphaMultiplier).toBe(ref.alphaMultiplier);
+    expect(b.redOffset).toBe(ref.redOffset);
+    expect(b.greenOffset).toBe(ref.greenOffset);
+    expect(b.blueOffset).toBe(ref.blueOffset);
+    expect(b.alphaOffset).toBe(ref.alphaOffset);
   });
 });
 
