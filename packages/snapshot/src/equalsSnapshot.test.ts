@@ -33,8 +33,8 @@ describe('equalsSnapshot', () => {
   });
 
   it('is false for an array compared to an object with the same indexed values', () => {
-    const a = captureSnapshot([1, 2] as unknown);
-    const b = captureSnapshot({ 0: 1, 1: 2 } as unknown);
+    const a = captureSnapshot([1, 2] as unknown as object);
+    const b = captureSnapshot({ 0: 1, 1: 2 } as unknown as object);
     expect(equalsSnapshot(a, b)).toBe(false);
   });
 
