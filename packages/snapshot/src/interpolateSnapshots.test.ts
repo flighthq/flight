@@ -23,6 +23,16 @@ describe('interpolateSnapshots', () => {
     expect(atEnd).toEqual({ x: 10, y: 0 });
   });
 
+  it('interpolates only dotted-path schema-listed nested fields', () => {
+    const a = captureSnapshot({ pos: { x: 0, y: 0 }, hp: 100 });
+    const b = captureSnapshot({ pos: { x: 100, y: 200 }, hp: 0 });
+    const out = { pos: { x: 0, y: 0 }, hp: 0 };
+    interpolateSnapshots(a, b, 0.5, out, ['pos.x']);
+    expect(out.pos.x).toBe(50);
+    expect(out.pos.y).toBe(200);
+    expect(out.hp).toBe(0);
+  });
+
   it('interpolates only schema-listed paths and snaps the rest to b', () => {
     const a = captureSnapshot({ x: 0, y: 10 });
     const b = captureSnapshot({ x: 10, y: 0 });
@@ -37,6 +47,16 @@ describe('interpolateSnapshots', () => {
     const out = { pos: { x: 0, y: 0 } };
     interpolateSnapshots(a, b, 0.25, out);
     expect(out.pos).toEqual({ x: 25, y: 10 });
+  });
+
+  it('assigns keys present only in b and ignores keys present only in a', () => {
+    const a = captureSnapshot({ x: 10, onlyA: 99 } as Record<string, unknown>);
+    const b = captureSnapshot({ x: 20, onlyB: 'hello' } as Record<string, unknown>);
+    const out = { x: 0 } as Record<string, unknown>;
+    interpolateSnapshots(a, b, 0.5, out);
+    expect(out.x).toBe(15);
+    expect(out.onlyB).toBe('hello');
+    expect(out).not.toHaveProperty('onlyA');
   });
 
   it('clamps t below 0 and above 1', () => {
@@ -56,6 +76,14 @@ describe('interpolateSnapshots', () => {
     const out = { points: [0, 0] };
     interpolateSnapshots(a, b, 0.5, out);
     expect(out.points).toEqual([5, 50]);
+  });
+
+  it('snaps to b when a has a number but b has a non-number at the same key', () => {
+    const a = captureSnapshot({ x: 5 } as Record<string, unknown>);
+    const b = captureSnapshot({ x: 'hello' } as Record<string, unknown>);
+    const out = { x: 0 } as Record<string, unknown>;
+    interpolateSnapshots(a, b, 0.5, out);
+    expect(out.x).toBe('hello');
   });
 
   it('snaps a null field to b', () => {

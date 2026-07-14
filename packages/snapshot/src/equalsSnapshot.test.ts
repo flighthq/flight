@@ -32,6 +32,24 @@ describe('equalsSnapshot', () => {
     expect(equalsSnapshot(captureSnapshot({}), captureSnapshot({}))).toBe(true);
   });
 
+  it('is false for an array compared to an object with the same indexed values', () => {
+    const a = captureSnapshot([1, 2] as unknown);
+    const b = captureSnapshot({ 0: 1, 1: 2 } as unknown);
+    expect(equalsSnapshot(a, b)).toBe(false);
+  });
+
+  it('is false when objects differ three levels deep', () => {
+    const a = captureSnapshot({ level1: { level2: { level3: { value: 1 } } } });
+    const b = captureSnapshot({ level1: { level2: { level3: { value: 2 } } } });
+    expect(equalsSnapshot(a, b)).toBe(false);
+  });
+
+  it('is true when objects are equal three levels deep', () => {
+    const a = captureSnapshot({ level1: { level2: { level3: { value: 42 } } } });
+    const b = captureSnapshot({ level1: { level2: { level3: { value: 42 } } } });
+    expect(equalsSnapshot(a, b)).toBe(true);
+  });
+
   it('distinguishes null from a value at the same key', () => {
     const a = captureSnapshot({ tag: null as number | null });
     const b = captureSnapshot({ tag: 0 as number | null });

@@ -19,6 +19,13 @@ describe('restoreSnapshot', () => {
     expect(target.items).toEqual([1, 2, 3]);
   });
 
+  it('is a no-op for a primitive top-level snapshot', () => {
+    const snapshot = captureSnapshot(42 as unknown as Record<string, unknown>);
+    const target = { x: 1 };
+    restoreSnapshot(snapshot, target);
+    expect(target).toEqual({ x: 1 });
+  });
+
   it('keeps the target object identity, mutating in place', () => {
     const snapshot = captureSnapshot({ x: 1 });
     const target = { x: 0 };
@@ -43,6 +50,31 @@ describe('restoreSnapshot', () => {
     target.nested.a = 42;
     expect(target.nested.a).toBe(42);
     expect(snapshot.nested.a).toBe(1);
+  });
+
+  it('preserves extra keys in the target that are not in the snapshot', () => {
+    const snapshot = captureSnapshot({ x: 10 } as Record<string, number>);
+    const target = { x: 0, y: 5, z: 99 } as Record<string, number>;
+    restoreSnapshot(snapshot, target);
+    expect(target.x).toBe(10);
+    expect(target.y).toBe(5);
+    expect(target.z).toBe(99);
+  });
+
+  it('replaces a nested container when the type changes from object to array', () => {
+    const snapshot = captureSnapshot({ data: [1, 2, 3] as unknown });
+    const target = { data: { a: 1 } as unknown };
+    restoreSnapshot(snapshot, target);
+    expect(target.data).toEqual([1, 2, 3]);
+    expect(Array.isArray(target.data)).toBe(true);
+  });
+
+  it('replaces a nested container when the type changes from array to object', () => {
+    const snapshot = captureSnapshot({ data: { a: 1 } as unknown });
+    const target = { data: [1, 2, 3] as unknown };
+    restoreSnapshot(snapshot, target);
+    expect(target.data).toEqual({ a: 1 });
+    expect(Array.isArray(target.data)).toBe(false);
   });
 
   it('resizes the target array to the snapshot array length', () => {
