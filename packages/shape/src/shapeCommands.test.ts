@@ -1,3 +1,5 @@
+import { getNodeLocalContentRevision } from '@flighthq/node';
+
 import { createShape } from './shape';
 import {
   appendShapeArc,
@@ -236,6 +238,43 @@ describe('appendShapeDrawTriangles', () => {
     appendShapeDrawTriangles(shape, verts, indices, uvt, 'positive');
     expect(shape.data.commands).toEqual(['drawTriangles', 4, verts, indices, uvt, 'positive']);
   });
+
+  it('accepts negative culling', () => {
+    const shape = createShape();
+    const verts = [0, 0, 100, 0, 50, 80];
+    appendShapeDrawTriangles(shape, verts, null, null, 'negative');
+    expect(shape.data.commands[5]).toBe('negative');
+  });
+
+  it('invalidates content on the shape', () => {
+    const shape = createShape();
+    const revision = getNodeLocalContentRevision(shape);
+    appendShapeDrawTriangles(shape, [0, 0, 100, 0, 50, 80]);
+    expect(getNodeLocalContentRevision(shape)).toBe(revision + 1);
+  });
+
+  it('works within a beginFill/endFill cycle', () => {
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeDrawTriangles(shape, [0, 0, 100, 0, 50, 80], [0, 1, 2]);
+    appendShapeEndFill(shape);
+    const keys: string[] = [];
+    let i = 0;
+    while (i < shape.data.commands.length) {
+      const key = shape.data.commands[i] as string;
+      const argCount = shape.data.commands[i + 1] as number;
+      keys.push(key);
+      i += argCount + 2;
+    }
+    expect(keys).toEqual(['beginFill', 'drawTriangles', 'endFill']);
+  });
+
+  it('stores the vertices array by reference', () => {
+    const shape = createShape();
+    const verts = [10, 20, 30, 40, 50, 60];
+    appendShapeDrawTriangles(shape, verts);
+    expect(shape.data.commands[2]).toBe(verts);
+  });
 });
 
 describe('appendShapeEllipse', () => {
@@ -329,6 +368,54 @@ describe('appendShapePath', () => {
     const shape = createShape();
     appendShapePath(shape, [], []);
     expect(shape.data.commands).toEqual(['drawPath', 3, [], [], 'evenOdd']);
+  });
+
+  it('bridges a rectangle path from @flighthq/path command constants', () => {
+    const shape = createShape();
+    const cmds = [
+      PathCommand.MOVE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+      PathCommand.LINE_TO,
+    ];
+    const data = [0, 0, 100, 0, 100, 50, 0, 50, 0, 0];
+    appendShapePath(shape, cmds, data, 'nonZero');
+    // The drawPath token stores the commands and data arrays by reference.
+    expect(shape.data.commands[2]).toBe(cmds);
+    expect(shape.data.commands[3]).toBe(data);
+    expect(shape.data.commands[4]).toBe('nonZero');
+  });
+
+  it('accepts CUBIC_CURVE_TO commands in the path', () => {
+    const shape = createShape();
+    const cmds = [PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO];
+    const data = [0, 0, 10, 20, 30, 40, 50, 60];
+    appendShapePath(shape, cmds, data);
+    expect(shape.data.commands).toEqual(['drawPath', 3, cmds, data, 'evenOdd']);
+  });
+
+  it('invalidates content on the shape', () => {
+    const shape = createShape();
+    const revision = getNodeLocalContentRevision(shape);
+    appendShapePath(shape, [PathCommand.MOVE_TO], [10, 20]);
+    expect(getNodeLocalContentRevision(shape)).toBe(revision + 1);
+  });
+
+  it('works within a beginFill/endFill cycle', () => {
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0x00ff00, 1);
+    appendShapePath(shape, [PathCommand.MOVE_TO, PathCommand.LINE_TO], [0, 0, 100, 100]);
+    appendShapeEndFill(shape);
+    const keys: string[] = [];
+    let i = 0;
+    while (i < shape.data.commands.length) {
+      const key = shape.data.commands[i] as string;
+      const argCount = shape.data.commands[i + 1] as number;
+      keys.push(key);
+      i += argCount + 2;
+    }
+    expect(keys).toEqual(['beginFill', 'drawPath', 'endFill']);
   });
 });
 
