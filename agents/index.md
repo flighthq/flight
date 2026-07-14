@@ -70,6 +70,7 @@ When a feature's familiar API would require hidden state, eager side effects, or
 - Add comments when a name cannot carry the full rule: ownership, aliasing, allocation, coordinate-space semantics, C/C++ portability, or architecture. Do not comment obvious assignments. These are _durable semantic_ comments — they explain what the code **is**.
 - Keep _transient_ notes about the **work** out of the code. `TODO`, "half-done", "revisit after X", and known-incomplete threads rot inline. Their home is the package's `status.md` continuity log (see [packages](packages/index.md)). Code carries meaning that survives; work-in-progress state lives in status. Caller-facing warning comments ("must call X first", "do not release twice") are likewise banned inline — they become guard-layer runtime warnings (see [diagnostics](conventions/diagnostics.md)).
 - Accessor and getter functions use the `get*` prefix. Boolean-returning functions use `has*` or `is*`.
+- Commit messages are single-line only — no body, no multi-paragraph descriptions. If a change needs more explanation, split it into smaller commits whose subjects are self-explanatory. See [commit messages](conventions/commits.md) for the `type(scope): subject` format.
 - Leave touched files cleaner than you found them.
 
 ## Bundle Size Discipline
