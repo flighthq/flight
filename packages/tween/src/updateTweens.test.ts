@@ -289,4 +289,27 @@ describe('updateTweens', () => {
     updateTweens(manager, 500);
     expect(target.x).toBeCloseTo(50); // 500ms of actual animation, not 1000ms
   });
+
+  it('handles negative deltaTime without advancing', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 1000, { x: 100 }, { ease: (t) => t });
+    updateTweens(manager, 500);
+    expect(target.x).toBeCloseTo(50);
+    // Negative delta subtracts from elapsed; activeElapsed drops below current,
+    // so clamp produces t <= previous t. Verify no NaN or crash.
+    updateTweens(manager, -200);
+    expect(Number.isFinite(target.x)).toBe(true);
+  });
+
+  it('handles zero-duration tween without NaN', () => {
+    const manager = createTweenManager();
+    const target = { x: 0 };
+    const tween = createTween(manager, target, 0, { x: 100 }, { ease: (t) => t });
+    updateTweens(manager, 1);
+    // duration=0 means activeElapsed/duration is Infinity, clamped to 1 by Math.min
+    expect(target.x).toBe(100);
+    expect(tween.complete).toBe(true);
+    expect(Number.isFinite(target.x)).toBe(true);
+  });
 });

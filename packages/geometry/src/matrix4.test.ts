@@ -1603,6 +1603,19 @@ describe('transposeMatrix4', () => {
     transposeMatrix4(matrix, matrix);
     expect(equalsMatrix4(matrix, expected)).toBe(true);
   });
+
+  it('supports out === source with non-symmetric values', () => {
+    // A deliberately non-symmetric matrix where aliasing would corrupt results
+    // if __swap read from out after a prior __swap already wrote to it.
+    const m = createMatrix4();
+    setMatrix4(m, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53);
+    transposeMatrix4(m, m);
+    // Column-major transposed: rows become columns.
+    const expected = [2, 11, 23, 41, 3, 13, 29, 43, 5, 17, 31, 47, 7, 19, 37, 53];
+    for (let i = 0; i < 16; i++) {
+      expect(m.m[i]).toBe(expected[i]);
+    }
+  });
 });
 
 describe('writeMatrix4ToFloat32Array', () => {
