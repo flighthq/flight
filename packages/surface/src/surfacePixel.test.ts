@@ -16,6 +16,18 @@ describe('getSurfacePixel', () => {
     expect(getSurfacePixel(img, 0, 0)).toBe(0xaabbcc80);
   });
 
+  it('reads the first pixel at (0, 0)', () => {
+    const img = createSurface(8, 8);
+    setSurfacePixel(img, 0, 0, 0xdeadbeef);
+    expect(getSurfacePixel(img, 0, 0)).toBe(0xdeadbeef);
+  });
+
+  it('reads the last pixel at (width-1, height-1)', () => {
+    const img = createSurface(8, 8);
+    setSurfacePixel(img, 7, 7, 0xcafebabe);
+    expect(getSurfacePixel(img, 7, 7)).toBe(0xcafebabe);
+  });
+
   it('round-trips an RGBA value', () => {
     const img = createSurface(4, 4);
     setSurfacePixel(img, 1, 2, 0x11223380);
@@ -79,6 +91,12 @@ describe('setSurfacePixel', () => {
     const img = createSurface(2, 2);
     setSurfacePixel(img, 1, 0, 0xadbeefde);
     expect(getSurfacePixel(img, 1, 0)).toBe(0xadbeefde);
+  });
+
+  it('writes to the last pixel at (width-1, height-1)', () => {
+    const img = createSurface(8, 8);
+    setSurfacePixel(img, 7, 7, 0xfedcba98);
+    expect(getSurfacePixel(img, 7, 7)).toBe(0xfedcba98);
   });
 
   it('bumps the surface version (self-invalidation)', () => {
