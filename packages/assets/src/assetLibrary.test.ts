@@ -168,6 +168,51 @@ describe('getAssetRefCount', () => {
 });
 
 describe('loadAssetGroup', () => {
+  it('makes successfully loaded assets accessible even when another group member fails', async () => {
+    const library = createAssetLibrary();
+    let failNextId: string | null = null;
+    const disposed: unknown[] = [];
+    const adapter = {
+      load(descriptor: Readonly<AssetDescriptor>): Promise<{ id: string }> {
+        if (descriptor.id === failNextId) {
+          return Promise.reject(new Error(`load failed: ${descriptor.id}`));
+        }
+        return Promise.resolve({ id: descriptor.id });
+      },
+      dispose(value: { id: string }): void {
+        disposed.push(value);
+      },
+    };
+    registerAssetLoader(library, 'image', adapter);
+    loadAssetManifest(library, [
+      { id: 'ok-1', url: 'ok-1.bin', type: 'image', group: 'mixed' },
+      { id: 'bad', url: 'bad.bin', type: 'image', group: 'mixed' },
+      { id: 'ok-2', url: 'ok-2.bin', type: 'image', group: 'mixed' },
+    ]);
+    failNextId = 'bad';
+
+    // loadAssetGroup routes each acquire through @flighthq/loader, which rejects the per-item handle on
+    // failure. That handle is void'd by loadAssetGroup (error-policy: continue), so the rejection
+    // surfaces as an unhandled rejection. Suppress it for this test.
+    const rejections: unknown[] = [];
+    const capture = (reason: unknown) => {
+      rejections.push(reason);
+    };
+    process.on('unhandledRejection', capture);
+
+    await loadAssetGroup(library, 'mixed');
+    // Drain the microtask queue so the rejection fires within the listener's window.
+    await tick();
+
+    process.removeListener('unhandledRejection', capture);
+    expect(rejections).toHaveLength(1);
+
+    expect(getAsset(library, 'ok-1')).toEqual({ id: 'ok-1' });
+    expect(getAsset(library, 'ok-2')).toEqual({ id: 'ok-2' });
+    // The failed asset never became resident.
+    expect(getAsset(library, 'bad')).toBeNull();
+  });
+
   it('preloads a group through the loader with bounded concurrency and aggregate progress', async () => {
     const library = createAssetLibrary();
     const mock = createMockAdapter();
@@ -254,6 +299,23 @@ describe('registerAssetLoader', () => {
 });
 
 describe('releaseAsset', () => {
+  it('disposes the orphaned value when released while the load is still in flight', async () => {
+    const { library, mock } = libraryWith('hero');
+    const promise = acquireAsset(library, 'hero');
+    // Release before the load settles — refcount drops to zero, entry removed.
+    releaseAsset(library, 'hero');
+    expect(getAssetRefCount(library, 'hero')).toBe(0);
+    expect(getAsset(library, 'hero')).toBeNull();
+
+    // Let the load resolve — the continuation detects the orphan and disposes the value.
+    mock.flush();
+    await promise;
+    expect(mock.disposed).toHaveLength(1);
+    expect(mock.disposed[0]).toEqual({ id: 'hero' });
+    // The value is not retained.
+    expect(getAsset(library, 'hero')).toBeNull();
+  });
+
   it('disposes and drops the asset at reference count zero', async () => {
     const { library, mock } = libraryWith('hero');
     const promise = acquireAsset(library, 'hero');
@@ -278,6 +340,22 @@ describe('releaseAsset', () => {
     releaseAsset(library, 'hero');
     expect(mock.disposed).toEqual([]);
     expect(getAssetRefCount(library, 'hero')).toBe(0);
+  });
+
+  it('keeps the asset loaded when one of two holders releases', async () => {
+    const { library, mock } = libraryWith('hero');
+    const first = acquireAsset<{ id: string }>(library, 'hero');
+    const second = acquireAsset<{ id: string }>(library, 'hero');
+    expect(mock.loadCalls).toBe(1);
+    mock.flush();
+    const [a, b] = await Promise.all([first, second]);
+    expect(a).toBe(b);
+    expect(getAssetRefCount(library, 'hero')).toBe(2);
+
+    releaseAsset(library, 'hero');
+    expect(getAssetRefCount(library, 'hero')).toBe(1);
+    expect(mock.disposed).toEqual([]);
+    expect(getAsset(library, 'hero')).toBe(a);
   });
 });
 
