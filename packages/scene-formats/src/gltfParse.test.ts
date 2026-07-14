@@ -371,6 +371,135 @@ describe('createSceneFromGltf', () => {
     expect(warnings.some((w) => w.includes('mode'))).toBe(true);
   });
 
+  it('applies a matrix transform when node.matrix is a 16-element column-major array', () => {
+    // A translation matrix (column-major) placing the node at (10, 20, 30).
+    const matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10, 20, 30, 1];
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const uri = toDataUri(bytesOf(positions));
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: 0 }],
+      buffers: [{ byteLength: positions.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ matrix, mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
+    const m = meshNode.localMatrix.m;
+    expect(m[12]).toBeCloseTo(10);
+    expect(m[13]).toBeCloseTo(20);
+    expect(m[14]).toBeCloseTo(30);
+    expect(m[0]).toBeCloseTo(1);
+    expect(m[5]).toBeCloseTo(1);
+    expect(m[10]).toBeCloseTo(1);
+    expect(m[15]).toBeCloseTo(1);
+  });
+
+  it('applies a quaternion rotation from node.rotation', () => {
+    // 90-degree rotation around the Z axis: quaternion [0, 0, sin(45deg), cos(45deg)].
+    const s = Math.sin(Math.PI / 4);
+    const c = Math.cos(Math.PI / 4);
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const uri = toDataUri(bytesOf(positions));
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: 0 }],
+      buffers: [{ byteLength: positions.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0, rotation: [0, 0, s, c] }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
+    const m = meshNode.localMatrix.m;
+    // After 90-degree Z rotation: col0 ≈ [0, 1, 0], col1 ≈ [-1, 0, 0].
+    expect(m[0]).toBeCloseTo(0);
+    expect(m[1]).toBeCloseTo(1);
+    expect(m[4]).toBeCloseTo(-1);
+    expect(m[5]).toBeCloseTo(0);
+    expect(m[10]).toBeCloseTo(1);
+  });
+
+  it('applies scale transforms from node.scale', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const uri = toDataUri(bytesOf(positions));
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: 0 }],
+      buffers: [{ byteLength: positions.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0, scale: [2, 3, 4] }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
+    const m = meshNode.localMatrix.m;
+    expect(m[0]).toBeCloseTo(2);
+    expect(m[5]).toBeCloseTo(3);
+    expect(m[10]).toBeCloseTo(4);
+    // Off-diagonal rotation elements should be zero (identity rotation with scale).
+    expect(m[1]).toBeCloseTo(0);
+    expect(m[2]).toBeCloseTo(0);
+    expect(m[4]).toBeCloseTo(0);
+  });
+
+  it('reads uint32 index buffers (componentType 5125) correctly', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    // Uint32 indices — values within uint16 range to keep the triangle valid, but the accessor
+    // declares componentType 5125 (UNSIGNED_INT) to exercise the uint32 read path.
+    const indices = new Uint32Array([0, 1, 2]);
+    const uri = toDataUri(bytesOf(positions), bytesOf(indices));
+    const doc: GltfDocument = {
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+        { bufferView: 1, componentType: 5125, count: 3, type: 'SCALAR' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: positions.byteLength, byteOffset: 0 },
+        { buffer: 0, byteLength: indices.byteLength, byteOffset: positions.byteLength },
+      ],
+      buffers: [{ byteLength: positions.byteLength + indices.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1 }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const geometry = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    expect(getMeshGeometryIndexCount(geometry)).toBe(3);
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect([p.x, p.y, p.z]).toEqual([0, 0, 0]);
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect([p.x, p.y, p.z]).toEqual([1, 0, 0]);
+  });
+
+  it('selects the correct scene when the document.scene index is not 0', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const uri = toDataUri(bytesOf(positions));
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: 0 }],
+      buffers: [{ byteLength: positions.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      // Node 0 goes to scene 0; node 1 (the mesh) goes to scene 1.
+      nodes: [{ translation: [99, 0, 0] }, { mesh: 0 }],
+      scene: 1,
+      scenes: [{ nodes: [0] }, { nodes: [1] }],
+    };
+    const scene = createSceneFromGltf(doc);
+    const roots = getNodeChildren(scene);
+    // Scene 1 has only node 1 (the mesh node), not node 0.
+    expect(roots).toHaveLength(1);
+    expect(isMesh(roots[0] as SceneNode)).toBe(true);
+  });
+
   it('warns when extensionsRequired names an unsupported extension', () => {
     const doc = makeTriangleGltf();
     doc.extensionsRequired = ['KHR_draco_mesh_compression'];
