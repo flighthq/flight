@@ -29,6 +29,17 @@ describe('advanceClock', () => {
     expect(clock.elapsed).toBe(0);
   });
 
+  it('composes scale down a 3-level hierarchy — grandparent to parent to child', () => {
+    const grandparent = createClock({ scale: 2 });
+    const parent = createChildClock(grandparent, { scale: 3 });
+    const child = createChildClock(parent, { scale: 0.5 });
+    advanceClock(grandparent, 1);
+    expect(grandparent.deltaTime).toBe(2); // 1 * 2
+    expect(parent.deltaTime).toBe(6); // 2 * 3
+    expect(child.deltaTime).toBe(3); // 6 * 0.5
+    expect(child.elapsed).toBe(3);
+  });
+
   it('composes scale down the hierarchy — a child rate is the product of the chain', () => {
     const parent = createClock({ scale: 2 });
     const child = createChildClock(parent, { scale: 0.5 });
@@ -54,6 +65,22 @@ describe('advanceClock', () => {
     connectSignal(onTick, (deltaTime) => received.push(deltaTime));
     advanceClock(clock, 0.5);
     expect(received).toEqual([1]); // 0.5 * 2
+  });
+
+  it('applies a negative deltaTime, producing negative deltaTime and decreasing elapsed', () => {
+    const clock = createClock();
+    advanceClock(clock, 1);
+    expect(clock.elapsed).toBe(1);
+    advanceClock(clock, -0.5);
+    expect(clock.deltaTime).toBe(-0.5);
+    expect(clock.elapsed).toBe(0.5);
+  });
+
+  it('applies a negative scale, reversing the effective delta direction', () => {
+    const clock = createClock({ scale: -1 });
+    advanceClock(clock, 1);
+    expect(clock.deltaTime).toBe(-1);
+    expect(clock.elapsed).toBe(-1);
   });
 
   it('does not emit or throw when signals are not enabled', () => {

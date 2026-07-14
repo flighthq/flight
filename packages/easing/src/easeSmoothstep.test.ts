@@ -67,10 +67,27 @@ describe('easeSmoothstepRange', () => {
     expect(fn(50)).toBeCloseTo(0.5);
   });
 
+  it('inverts the remap direction when edge0 > edge1', () => {
+    const fn = easeSmoothstepRange(20, 10);
+    expect(fn(20)).toBe(0);
+    expect(fn(10)).toBe(1);
+    expect(fn(15)).toBeCloseTo(0.5);
+  });
+
   it('matches easeSmoothstep when range is [0, 1]', () => {
     const fn = easeSmoothstepRange(0, 1);
     for (const t of [0, 0.25, 0.5, 0.75, 1]) {
       expect(fn(t)).toBeCloseTo(easeSmoothstep(t));
     }
+  });
+
+  it('returns a finite value for edge0 === edge1 (degenerate zero-width range)', () => {
+    const fn = easeSmoothstepRange(5, 5);
+    // Division by zero: at exactly the edge the numerator is also zero (0/0 → NaN).
+    expect(fn(5)).toBeNaN();
+    // Above the edge: positive Infinity clamps to 1 → smoothstep(1) = 1.
+    expect(fn(6)).toBe(1);
+    // Below the edge: negative Infinity clamps to 0 → smoothstep(0) = 0.
+    expect(fn(4)).toBe(0);
   });
 });
