@@ -207,30 +207,30 @@ import { createTween, updateTweens } from '@flighthq/tween';
 
 ## Examples
 
-| Example             | Description                                      |
-| ------------------- | ------------------------------------------------ |
-| `addinganimation`   | Bitmap animation with tweens                     |
-| `addingtext`        | Text rendering with a custom font                |
-| `animatedsprite`    | Spritesheet animation                            |
-| `batchloading`      | Batch asset loading with progress                |
-| `bunnymark`         | Bitmap batching benchmark                        |
-| `comparebitmapdata` | Surface and bitmap-data comparison               |
-| `displayingabitmap` | Minimal bitmap display                           |
-| `drawingshapes`     | Shape primitives, lines, curves, and polygons    |
-| `nyancat`           | Frame animation                                  |
-| `piratepig`         | Match-3 game with tweens, audio, text, and input |
-| `playingvideo`      | Video playback through media channels            |
-| `playingsound`      | Sound playback with pause, resume, and fades     |
-| `renderview`        | Render-to-texture style composition              |
-| `sparktrail`        | Particle-emitter trail                           |
-| `textmetrics`       | Text measurement and layout metrics              |
-| `tweenexample`      | Animated circles using tweens and timers         |
-| `usingtilemap`      | Tilemap rendering                                |
+| Example       | Description                                              |
+| ------------- | -------------------------------------------------------- |
+| `adjustments` | Color matrix composition with interactive sliders        |
+| `benchmark`   | QuadBatch bouncing benchmark with procedural textures    |
+| `bitmap`      | Procedural bitmap display with transforms                |
+| `camera2d`    | 2D game camera with follow, zoom, and parallax           |
+| `clock`       | Hierarchical clocks with pause and time scaling          |
+| `collision`   | 2D collision detection with manifold visualization       |
+| `flowstates`  | Application mode/screen flow-state stack                 |
+| `motionpath`  | Path-following animation along bezier curves             |
+| `particles`   | Dual particle emitters with forces and color curves      |
+| `pathboolean` | Path boolean operations (union/intersect/difference)     |
+| `shapes`      | Shape primitives, fills, strokes, curves, and polygons   |
+| `snapshot`    | State snapshot capture, restore, and interpolation       |
+| `spatial`     | Broadphase spatial query with uniform grid               |
+| `spring`      | Spring-physics animation with frequency/damping controls |
+| `text`        | TextLabel, RichText, alignment, wrapping, and styles     |
+| `textinput`   | Editable text field with caret, selection, and undo      |
+| `tween`       | Easing function grid with 15 curve families              |
 
 Build a specific example:
 
 ```sh
-npm run build --workspace=examples/drawingshapes
+npm run build --workspace=examples/shapes
 ```
 
 Run a renderer-specific example dev server:
