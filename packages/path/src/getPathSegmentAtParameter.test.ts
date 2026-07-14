@@ -151,6 +151,15 @@ describe('getPathSegmentTangentAtParameter', () => {
 });
 
 describe('getQuadraticBezierPoint', () => {
+  it('returns midpoint at t=0.5 for a known quadratic curve', () => {
+    // P0=(0,0), C=(50,100), P1=(100,0)
+    // B(0.5) = 0.25*(0,0) + 2*0.25*(50,100) + 0.25*(100,0) = (50, 50)
+    const out = { x: 0, y: 0 };
+    getQuadraticBezierPoint(0, 0, 50, 100, 100, 0, 0.5, out);
+    expect(out.x).toBeCloseTo(50);
+    expect(out.y).toBeCloseTo(50);
+  });
+
   it('returns start at t=0', () => {
     const out = { x: 0, y: 0 };
     getQuadraticBezierPoint(0, 1, 5, 5, 10, 1, 0, out);
@@ -167,6 +176,25 @@ describe('getQuadraticBezierPoint', () => {
 });
 
 describe('getQuadraticBezierTangent', () => {
+  it('returns the end tangent direction at t=1', () => {
+    const out = { x: 0, y: 0 };
+    // P0=(0,0), C=(50,100), P1=(100,0)
+    // B'(1) = 2*(P1-C) = 2*(100-50, 0-100) = (100, -200)
+    getQuadraticBezierTangent(0, 0, 50, 100, 100, 0, 1, out);
+    expect(out.x).toBeCloseTo(100);
+    expect(out.y).toBeCloseTo(-200);
+  });
+
+  it('returns the midpoint tangent at t=0.5', () => {
+    const out = { x: 0, y: 0 };
+    // P0=(0,0), C=(50,100), P1=(100,0)
+    // B'(0.5) = 2*(0.5*(C-P0) + 0.5*(P1-C)) = 2*(0.5*(50,100) + 0.5*(50,-100))
+    //         = 2*((25,50) + (25,-50)) = 2*(50,0) = (100, 0)
+    getQuadraticBezierTangent(0, 0, 50, 100, 100, 0, 0.5, out);
+    expect(out.x).toBeCloseTo(100);
+    expect(out.y).toBeCloseTo(0);
+  });
+
   it('returns the start tangent direction at t=0', () => {
     const out = { x: 0, y: 0 };
     // P0=(0,0), C=(4,0), P1=(8,0) — straight horizontal
