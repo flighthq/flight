@@ -23,6 +23,8 @@ A dispatched workflow should review unit tests across all packages for adequate 
 
 The output should be a prioritized list per package: which functions need deeper tests, ranked by API importance.
 
+**Status: completed.** Results in [test-depth-review.md](test-depth-review.md). 52 solid / 21 adequate / 1 thin / 0 stub across 78 packages. 10 high-priority gaps identified, concentrated in bezier bounds, bidi Unicode, path containment, asset ref-counting, and snapshot semantics.
+
 ## 3. Unit Tests vs Functional Tests
 
 Unit tests are much cheaper to execute and validate — they run in jsdom in seconds, require no browser, and can be parallelized across all packages. They are the primary verification layer and should cover the vast majority of API behavior.
