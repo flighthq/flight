@@ -21,7 +21,7 @@ describe('restoreSnapshot', () => {
 
   it('is a no-op for a primitive top-level snapshot', () => {
     const snapshot = captureSnapshot(42 as unknown as Record<string, unknown>);
-    const target = { x: 1 };
+    const target: Record<string, unknown> = { x: 1 };
     restoreSnapshot(snapshot, target);
     expect(target).toEqual({ x: 1 });
   });
