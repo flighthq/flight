@@ -216,7 +216,9 @@ import { createTween, updateTweens } from '@flighthq/tween';
 | `clock`       | Hierarchical clocks with pause and time scaling          |
 | `collision`   | 2D collision detection with manifold visualization       |
 | `flowstates`  | Application mode/screen flow-state stack                 |
+| `interaction` | Pointer hit testing with drag and hover                  |
 | `motionpath`  | Path-following animation along bezier curves             |
+| `movieclip`   | Timeline-driven frame animation with labels and scripts  |
 | `particles`   | Dual particle emitters with forces and color curves      |
 | `pathboolean` | Path boolean operations (union/intersect/difference)     |
 | `shapes`      | Shape primitives, fills, strokes, curves, and polygons   |
