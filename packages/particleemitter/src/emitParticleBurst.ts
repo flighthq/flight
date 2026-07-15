@@ -1,4 +1,9 @@
-import { ensureParticleEmitterStateCapacity, sampleParticleColorCurve, sampleParticleCurve } from '@flighthq/particles';
+import {
+  PARTICLE_VELOCITY_STRIDE,
+  ensureParticleEmitterStateCapacity,
+  sampleParticleColorCurve,
+  sampleParticleCurve,
+} from '@flighthq/particles';
 import type { ParticleEmitter } from '@flighthq/types';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 
@@ -69,8 +74,10 @@ export function emitParticleBurst(
 
     const angle = baseAngle + (random() - 0.5) * 2 * config.spread;
     const speed = config.speedMin + random() * (config.speedMax - config.speedMin);
-    state.velocities[idx * 2] = Math.cos(angle) * speed;
-    state.velocities[idx * 2 + 1] = Math.sin(angle) * speed;
+    const vt = idx * PARTICLE_VELOCITY_STRIDE;
+    state.velocities[vt] = Math.cos(angle) * speed;
+    state.velocities[vt + 1] = Math.sin(angle) * speed;
+    state.velocities[vt + 2] = 0;
 
     // Position = burst point + emitter-shape offset.
     let spawnX = x;
@@ -93,6 +100,7 @@ export function emitParticleBurst(
     data.transforms[tt + 1] = spawnY;
     data.transforms[tt + 2] = angle;
     data.transforms[tt + 3] = hasScaleCurve ? spawnScale * sampleParticleCurve(scaleCurve, 0) : spawnScale;
+    data.positionsZ[idx] = 0;
     data.alphas[idx] = hasAlphaCurve ? sampleParticleCurve(alphaCurve, 0) : config.alphaStart;
 
     const ct = idx * 3;

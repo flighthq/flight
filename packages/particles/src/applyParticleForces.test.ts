@@ -17,6 +17,7 @@ function createEmitterFixture(capacity: number): ParticleEmitter {
     colors: new Float32Array(capacity * 3),
     ids: new Uint16Array(capacity),
     particleCount: 0,
+    positionsZ: new Float32Array(capacity),
     transforms: new Float32Array(capacity * 4),
     velocities: new Float32Array(capacity * 2),
     worldSpace: false,
@@ -118,6 +119,57 @@ describe('applyParticleForces', () => {
     applyParticleForces(emitter, state, [], 1);
     applyParticleForces(emitter, state, [{ kind: 'WindForce', x: 5, y: 0 }], 0);
     expect(state.velocities[0]).toBe(42); // unchanged by either no-op call
+  });
+
+  it('wind z component adds acceleration on the Z axis', () => {
+    const { emitter, state } = oneParticle();
+    applyParticleForces(emitter, state, [{ kind: 'WindForce', x: 0, y: 0, z: 10 }], 1);
+    expect(state.velocities[0]).toBeCloseTo(0);
+    expect(state.velocities[1]).toBeCloseTo(0);
+    expect(state.velocities[2]).toBeCloseTo(10);
+  });
+
+  it('attractor with z pulls velocity toward the 3D point', () => {
+    const { emitter, state } = oneParticle();
+    emitter.data.positionsZ[0] = 0;
+    applyParticleForces(emitter, state, [{ kind: 'AttractorForce', x: 0, y: 0, z: 100, strength: 50 }], 1);
+    expect(state.velocities[0]).toBeCloseTo(0);
+    expect(state.velocities[1]).toBeCloseTo(0);
+    expect(state.velocities[2]).toBeCloseTo(50); // accelerated +z toward (0,0,100)
+  });
+
+  it('vortex with custom axis rotates around that axis', () => {
+    const { emitter, state } = oneParticle();
+    // Particle at (10, 0, 0), vortex at origin with axis [1, 0, 0] (X axis)
+    emitter.data.transforms[0] = 0;
+    emitter.data.transforms[1] = 10;
+    emitter.data.positionsZ[0] = 0;
+    applyParticleForces(
+      emitter,
+      state,
+      [{ kind: 'VortexForce', x: 0, y: 0, z: 0, strength: 20, axisX: 1, axisY: 0, axisZ: 0 }],
+      1,
+    );
+    // With axis = [1,0,0], radial = [0,1,0], tangent = axis x radial = [0,0,1]
+    expect(state.velocities[0]).toBeCloseTo(0);
+    expect(state.velocities[1]).toBeCloseTo(0);
+    expect(state.velocities[2]).toBeCloseTo(20); // force in z direction
+  });
+
+  it('turbulence produces a finite z component', () => {
+    const { emitter, state } = oneParticle();
+    emitter.data.transforms[0] = 5;
+    emitter.data.transforms[1] = 5;
+    emitter.data.positionsZ[0] = 5;
+    applyParticleForces(emitter, state, [{ kind: 'TurbulenceForce', strength: 100, scale: 0.1 }], 1);
+    expect(Number.isFinite(state.velocities[2])).toBe(true);
+  });
+
+  it('drag damps z velocity', () => {
+    const { emitter, state } = oneParticle();
+    state.velocities[2] = 100;
+    applyParticleForces(emitter, state, [{ kind: 'DragForce', strength: 0.5 }], 1);
+    expect(state.velocities[2]).toBeCloseTo(50); // 100 - 0.5*100
   });
 });
 
