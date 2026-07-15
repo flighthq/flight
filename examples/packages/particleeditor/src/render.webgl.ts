@@ -2,7 +2,6 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createGlCanvasElement,
   createGlRenderState,
-  createMatrix,
   defaultGlParticleEmitterRenderer,
   defaultGlTextLabelRenderer,
   enableGlBlendModeSupport,
@@ -25,8 +24,6 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
-
-state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 registerDefaultGlMaterial(state);
 registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);

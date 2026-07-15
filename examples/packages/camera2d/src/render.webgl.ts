@@ -4,7 +4,6 @@ import {
   TextLabelKind,
   createGlCanvasElement,
   createGlRenderState,
-  createMatrix,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   defaultGlTextLabelRenderer,
@@ -30,8 +29,6 @@ export const state = createGlRenderState(canvas, {
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
-
-state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 registerDefaultGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

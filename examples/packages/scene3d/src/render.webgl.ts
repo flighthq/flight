@@ -15,7 +15,7 @@ import {
 // @flighthq/sdk barrel (both scene-gl and scene-wgpu re-export a drawScene function).
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
