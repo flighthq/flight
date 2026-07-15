@@ -3,6 +3,7 @@ import {
   addNodeChild,
   createDisplayContainer,
   createVideo,
+  invalidateNodeAppearance,
   loadVideoResourceFromBlob,
   setVideoSource,
 } from '@flighthq/sdk';
@@ -48,6 +49,9 @@ generateVideoBlob().then(async (blob) => {
   }
 
   function enterFrame(): void {
+    invalidateNodeAppearance(videoNode);
+    invalidateNodeAppearance(secondVideoNode);
+    invalidateNodeAppearance(thirdVideoNode);
     render(root as DisplayObject);
     requestAnimationFrame(enterFrame);
   }

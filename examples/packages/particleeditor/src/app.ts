@@ -212,7 +212,14 @@ const controlSections: readonly { readonly heading: string; readonly controls: r
   },
 ];
 
-const controlsDiv = document.getElementById('controls')!;
+const controlsDiv =
+  document.getElementById('controls') ??
+  (() => {
+    const div = document.createElement('div');
+    div.id = 'controls';
+    document.body.appendChild(div);
+    return div;
+  })();
 
 function formatValue(value: number): string {
   if (Number.isInteger(value)) return String(value);

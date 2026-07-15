@@ -120,7 +120,7 @@ function enterFrame(): void {
   }
 
   countLabel.data.text = posX.length + ' shapes';
-  invalidateNodeLocalTransform(countLabel);
+  invalidateNodeAppearance(countLabel);
 
   frameCount++;
   const now = performance.now();
