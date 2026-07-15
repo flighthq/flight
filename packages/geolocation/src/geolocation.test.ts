@@ -119,7 +119,10 @@ describe('createWebGeolocationBackend', () => {
   });
 
   it('reads a host-provided floorLevel from coords', async () => {
-    const original = Object.getOwnPropertyDescriptor(navigator, 'geolocation');
+    const hadOwn = Object.prototype.hasOwnProperty.call(navigator, 'geolocation');
+    const original =
+      Object.getOwnPropertyDescriptor(navigator, 'geolocation') ??
+      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(navigator), 'geolocation');
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: {
@@ -145,8 +148,11 @@ describe('createWebGeolocationBackend', () => {
       const position = await backend.getCurrentPosition({});
       expect(position?.floorLevel).toBe(3);
     } finally {
-      if (original !== undefined) Object.defineProperty(navigator, 'geolocation', original);
-      else delete (navigator as { geolocation?: unknown }).geolocation;
+      if (hadOwn && original !== undefined) {
+        Object.defineProperty(navigator, 'geolocation', original);
+      } else {
+        delete (navigator as { geolocation?: unknown }).geolocation;
+      }
     }
   });
 });
