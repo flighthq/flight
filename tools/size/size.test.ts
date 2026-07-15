@@ -21,7 +21,7 @@ const sizeOutputPath = process.env.SIZE_OUTPUT_PATH;
 const baseline: Record<string, number> = readBaseline(baselineFile);
 const pendingBaseline: Record<string, number> = { ...baseline };
 
-const examplesDir = resolve(__dirname, '../../examples');
+const examplesDir = resolve(__dirname, '../../examples/packages');
 const sizeExampleFilter = parseFilter(process.env.SIZE_EXAMPLE_FILTER);
 const sizeRenderFilter = parseFilter(process.env.SIZE_RENDER_FILTER);
 
