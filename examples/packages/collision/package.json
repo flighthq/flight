@@ -11,6 +11,10 @@
     "dev:canvas": "cross-env RENDER=canvas vite",
     "build": "npm run build:canvas",
     "build:canvas": "cross-env RENDER=canvas vite build",
+    "dev:webgl": "cross-env RENDER=webgl vite",
+    "dev:dom": "cross-env RENDER=dom vite",
+    "build:webgl": "cross-env RENDER=webgl vite build",
+    "build:dom": "cross-env RENDER=dom vite build",
     "test": "npm run build",
     "preview": "vite preview"
   }
