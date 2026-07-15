@@ -239,9 +239,9 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Fog | `effects` (ScreenSpaceFogEffect) | canvas, gl, wgpu | Post-process effect |
 | Ambient light | `lighting` | gl, wgpu | |
 | Directional light | `lighting` | gl, wgpu | Supports shadow config |
-| Point light | `lighting`, SceneLights.point | gl only | WebGPU gap #8 |
-| Spot light | `lighting`, SceneLights.spot | gl only | WebGPU gap #8 |
-| Hemisphere light | `lighting`, SceneLights.hemisphere | gl only | WebGPU gap #8 |
+| Point light | `lighting`, SceneLights.point | gl, wgpu | |
+| Spot light | `lighting`, SceneLights.spot | gl, wgpu | |
+| Hemisphere light | `lighting`, SceneLights.hemisphere | gl, wgpu | |
 | Area light | `lighting` | --- | Descriptor exists, renderer not wired |
 | IBL / Environment maps | `lighting` (createEnvironment) + `texture` (CubeTexture) | gl, wgpu | |
 | Particles (2D) | `particles` (sim) + `particleemitter` (display node) | canvas, gl, wgpu | |

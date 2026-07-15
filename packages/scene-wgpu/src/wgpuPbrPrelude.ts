@@ -11,14 +11,16 @@
 //
 // The lighting model is Cook-Torrance: GGX normal distribution, Smith height-correlated visibility,
 // and a Fresnel-Schlick approximation, evaluated over the interpolated world-space normal/tangent/uv
-// for one directional + one ambient light read from the Frame uniform. The fragment stage outputs
-// LINEAR HDR radiance (no tonemap / gamma here — the effect pipeline's resolve/tonemap pass owns
-// that), matching the rgba16float scene target.
+// for one directional + one ambient light, up to MAX_FORWARD_LIGHTS (4) each of point, spot, and
+// hemisphere lights, read from the Frame uniform. The fragment stage outputs LINEAR HDR radiance (no
+// tonemap / gamma here — the effect pipeline's resolve/tonemap pass owns that), matching the
+// rgba16float scene target.
 //
 // The Frame uniform mirrors SceneLightBlock.data: a directional term { direction.xyz, _pad,
-// radiance.rgb, _pad } then an ambient term { radiance.rgb, _pad } — radiance is already linear and
-// premultiplied by intensity at pack time, so the shader never decodes sRgb. directionalCount /
-// ambientCount (0 or 1) gate each term's contribution.
+// radiance.rgb, _pad } then an ambient term { radiance.rgb, _pad }, followed by packed point/spot/
+// hemisphere arrays and a punctualCounts vec4f — radiance is already linear and premultiplied by
+// intensity at pack time, so the shader never decodes sRgb. directionalCount / ambientCount (0 or 1)
+// gate each term's contribution; the punctual loops are bounded by their respective count.
 //
 // Bind groups (must match standardPbrWgpuMeshMaterialRenderer):
 //   group(0) Frame    : viewProjection, cameraPosition, directional + ambient light — uniform.
@@ -115,6 +117,7 @@ export function getWgpuPbrModuleSourceForKey(key: Readonly<WgpuPbrDefineKey>): s
 
 const PBR_WGSL_BODY = /* wgsl */ `
 const PI : f32 = 3.14159265359;
+const MAX_FORWARD_LIGHTS : u32 = 4u;
 
 struct Frame {
   viewProjection : mat4x4f,
@@ -122,6 +125,15 @@ struct Frame {
   lightDirection : vec4f,       // xyz = directional light travel direction; w = directionalCount
   directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
   ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
+  view : mat4x4f,               // camera view matrix (unused by PBR, but keeps struct in lockstep)
+  // Punctual light arrays — layout mirrors SceneLightBlock.data (packSceneLightBlock).
+  //   point[i]      = pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
+  //   spot[i]       = spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
+  //   hemisphere[i] = hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
+  pointLights : array<vec4f, 8>,       // MAX_FORWARD_LIGHTS * 2
+  spotLights : array<vec4f, 16>,       // MAX_FORWARD_LIGHTS * 4
+  hemisphereLights : array<vec4f, 12>, // MAX_FORWARD_LIGHTS * 3
+  punctualCounts : vec4f,              // x = pointCount, y = spotCount, z = hemisphereCount
 };
 
 struct Draw {
@@ -329,6 +341,69 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
   return sum / 9.0;
 }
 
+// Smooth inverse-square range window (glTF/UE4): 1 near the light, eased to 0 at the range.
+// invSqrRange is 1/range^2 (0 = infinite range, no cutoff); dist2 is the squared surface->light
+// distance. The WGSL mirror of scene-gl's rangeWindow.
+fn rangeWindow(dist2 : f32, invSqrRange : f32) -> f32 {
+  let factor = dist2 * invSqrRange;
+  let windowed = clamp(1.0 - factor * factor, 0.0, 1.0);
+  return windowed * windowed;
+}
+
+// The full Cook-Torrance shading (plus every enabled extension lobe) for ONE light. Directional,
+// point, and spot lights all route through this one BRDF so punctual lights never fork the shading
+// model — the caller passes the surface->light direction L and that light's (attenuated, cone-scaled)
+// radiance. The anisotropic tangent frame is rebuilt here per light from the surface tangent frame so
+// the function stays self-contained; f0/diffuseColor/roughness/metallic are the finalized surface
+// values from main. Returns the light's linear radiance contribution (shadowing applied by the caller).
+// The WGSL mirror of scene-gl's shadePbrPunctual.
+fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec3f, L : vec3f,
+                    lightColor : vec3f, f0 : vec3f, diffuseColor : vec3f, roughness : f32,
+                    metallic : f32, anisoT : vec3f, anisoB : vec3f, at : f32, ab : f32) -> vec3f {
+  let nDotV = max(dot(N, V), 1e-4);
+  let halfVec = normalize(V + L);
+  let nDotL = max(dot(N, L), 0.0);
+  let nDotH = max(dot(N, halfVec), 0.0);
+  let vDotH = max(dot(V, halfVec), 0.0);
+
+  var d = distributionGgx(nDotH, roughness);
+  if (ANISOTROPY) {
+    let tDotH = dot(anisoT, halfVec);
+    let bDotH = dot(anisoB, halfVec);
+    d = distributionGgxAnisotropic(nDotH, tDotH, bDotH, at, ab);
+  }
+  let vis = visibilitySmith(nDotV, nDotL, roughness);
+  let fresnel = fresnelSchlick(vDotH, f0);
+
+  let specular = d * vis * fresnel;
+  let kd = (vec3f(1.0) - fresnel) * (1.0 - metallic);
+  let brdf = kd * diffuseColor / PI + specular;
+  var direct = brdf * lightColor * nDotL;
+
+  if (SUBSURFACE) {
+    let wrap = clamp((dot(N, L) + 0.5) / 2.25, 0.0, 1.0);
+    let translucency = material.subsurface.x / (1.0 + material.thickness.x);
+    direct = direct + translucency * wrap * material.subsurface.yzw * diffuseColor * lightColor;
+  }
+
+  if (SHEEN) {
+    let sheenD = distributionCharlie(nDotH, material.sheen.w);
+    let sheenV = visibilitySheen(nDotV, nDotL);
+    direct = direct + material.sheen.rgb * sheenD * sheenV * lightColor * nDotL;
+  }
+
+  if (CLEARCOAT) {
+    let ccRough = clamp(material.clearcoat.y, 0.04, 1.0);
+    let ccD = distributionGgx(nDotH, ccRough);
+    let ccVis = visibilitySmith(nDotV, nDotL, ccRough);
+    let ccF = fresnelSchlick(vDotH, vec3f(0.04)) * material.clearcoat.x;
+    let ccSpec = ccD * ccVis * ccF * lightColor * nDotL;
+    direct = direct * (vec3f(1.0) - ccF) + ccSpec;
+  }
+
+  return direct;
+}
+
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var baseColor = material.baseColor;
   if (HAS_BASE_COLOR_MAP) {
@@ -406,55 +481,44 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
   var radiance = vec3f(0.0);
 
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
+  // Routed through shadePbrPunctual so the BRDF is identical for all light types.
   if (frame.lightDirection.w > 0.5) {
     let lightDir = normalize(-frame.lightDirection.xyz);
-    let halfVec = normalize(viewDir + lightDir);
-    let nDotL = max(dot(normal, lightDir), 0.0);
-    let nDotH = max(dot(normal, halfVec), 0.0);
-    let vDotH = max(dot(viewDir, halfVec), 0.0);
-
-    var d = distributionGgx(nDotH, roughness);
-    if (ANISOTROPY) {
-      let tDotH = dot(anisoT, halfVec);
-      let bDotH = dot(anisoB, halfVec);
-      d = distributionGgxAnisotropic(nDotH, tDotH, bDotH, at, ab);
-    }
-    let vis = visibilitySmith(nDotV, nDotL, roughness);
-    let fresnel = fresnelSchlick(vDotH, f0);
-
-    let specular = d * vis * fresnel;
-    let kd = (vec3f(1.0) - fresnel) * (1.0 - metallic);
-    let brdf = kd * diffuseColor / PI + specular;
-    var direct = brdf * frame.directionalRadiance.rgb * nDotL;
-
-    if (SUBSURFACE) {
-      // Wrapped-diffuse subsurface approximation (non-interop): a soft back-/side-lit wrap term tinted
-      // by the subsurface color, scaled by thickness (thinner = more translucency).
-      let wrap = clamp((dot(normal, lightDir) + 0.5) / 2.25, 0.0, 1.0);
-      let translucency = material.subsurface.x / (1.0 + material.thickness.x);
-      direct = direct + translucency * wrap * material.subsurface.yzw * diffuseColor * frame.directionalRadiance.rgb;
-    }
-
-    if (SHEEN) {
-      // Charlie sheen lobe added on top of the base specular for cloth/fabric retroreflection.
-      let sheenD = distributionCharlie(nDotH, material.sheen.w);
-      let sheenV = visibilitySheen(nDotV, nDotL);
-      direct = direct + material.sheen.rgb * sheenD * sheenV * frame.directionalRadiance.rgb * nDotL;
-    }
-
-    if (CLEARCOAT) {
-      // A second, always-dielectric GGX lobe (F0 = 0.04) over the base layer, with its own roughness.
-      // Energy from the clearcoat reflection attenuates the layers beneath it.
-      let ccRough = clamp(material.clearcoat.y, 0.04, 1.0);
-      let ccD = distributionGgx(nDotH, ccRough);
-      let ccVis = visibilitySmith(nDotV, nDotL, ccRough);
-      let ccF = fresnelSchlick(vDotH, vec3f(0.04)) * material.clearcoat.x;
-      let ccSpec = ccD * ccVis * ccF * frame.directionalRadiance.rgb * nDotL;
-      direct = direct * (vec3f(1.0) - ccF) + ccSpec;
-    }
-
+    let direct = shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                  frame.directionalRadiance.rgb, f0, diffuseColor, roughness,
+                                  metallic, anisoT, anisoB, at, ab);
     // Attenuate only the directional term by the PCF shadow factor (mirrors scene-gl's PBR path).
     radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
+  }
+
+  // Point lights: surface->light direction with a smooth inverse-square range falloff, same BRDF.
+  let pointCount = u32(frame.punctualCounts.x);
+  for (var i = 0u; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= pointCount) { break; }
+    let toLight = frame.pointLights[i * 2u + 0u].xyz - in.worldPosition;
+    let dist2 = dot(toLight, toLight);
+    let lightDir = toLight * inverseSqrt(max(dist2, 1e-8));
+    let atten = rangeWindow(dist2, frame.pointLights[i * 2u + 1u].w) / max(dist2, 1e-4);
+    radiance = radiance + shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                           frame.pointLights[i * 2u + 1u].xyz * atten, f0,
+                                           diffuseColor, roughness, metallic,
+                                           anisoT, anisoB, at, ab);
+  }
+
+  // Spot lights: point attenuation times a smooth cone falloff between the inner/outer cosines.
+  let spotCount = u32(frame.punctualCounts.y);
+  for (var j = 0u; j < MAX_FORWARD_LIGHTS; j++) {
+    if (j >= spotCount) { break; }
+    let toLight = frame.spotLights[j * 4u + 0u].xyz - in.worldPosition;
+    let dist2 = dot(toLight, toLight);
+    let lightDir = toLight * inverseSqrt(max(dist2, 1e-8));
+    let atten = rangeWindow(dist2, frame.spotLights[j * 4u + 1u].w) / max(dist2, 1e-4);
+    let cone = smoothstep(frame.spotLights[j * 4u + 3u].y, frame.spotLights[j * 4u + 3u].x,
+                          dot(normalize(frame.spotLights[j * 4u + 2u].xyz), -lightDir));
+    radiance = radiance + shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                           frame.spotLights[j * 4u + 1u].xyz * atten * cone, f0,
+                                           diffuseColor, roughness, metallic,
+                                           anisoT, anisoB, at, ab);
   }
 
   // Ambient term: image-based lighting (diffuse irradiance + prefiltered specular) when an environment is
@@ -464,6 +528,16 @@ fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
     radiance = radiance + sampleIblAmbient(normal, viewDir, roughness, f0, diffuseColor, occlusion);
   } else if (frame.ambientRadiance.w > 0.5) {
     radiance = radiance + diffuseColor * frame.ambientRadiance.rgb * occlusion;
+  }
+
+  // Hemisphere fill: sky/ground gradient blended by the normal's vertical component, AO-attenuated.
+  let hemisphereCount = u32(frame.punctualCounts.z);
+  for (var k = 0u; k < MAX_FORWARD_LIGHTS; k++) {
+    if (k >= hemisphereCount) { break; }
+    let hf = 0.5 + 0.5 * dot(normal, frame.hemisphereLights[k * 3u + 2u].xyz);
+    radiance = radiance + mix(frame.hemisphereLights[k * 3u + 1u].xyz,
+                              frame.hemisphereLights[k * 3u + 0u].xyz, hf)
+                          * diffuseColor * occlusion;
   }
 
   var emissive = material.emissive.rgb;
