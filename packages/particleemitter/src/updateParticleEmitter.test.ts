@@ -1,5 +1,5 @@
 import { createRandomSource } from '@flighthq/math';
-import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
+import { PARTICLE_VELOCITY_STRIDE, createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
 import { createParticleEmitter, reserveParticleEmitter } from './particleEmitter';
@@ -494,7 +494,7 @@ describe('updateParticleEmitter', () => {
     updateParticleEmitter(emitter, state, config, 1 / 60);
     // Emitter moved 100px in 1/60s → velocity ≈ 6000 px/s
     // With inheritance=1, vx of new particle should be ≈ 6000
-    const vx = state.velocities[(emitter.data.particleCount - 1) * 2];
+    const vx = state.velocities[(emitter.data.particleCount - 1) * PARTICLE_VELOCITY_STRIDE];
     expect(vx).toBeGreaterThan(100);
   });
 
@@ -523,8 +523,8 @@ describe('updateParticleEmitter', () => {
     expect(emitter.data.particleCount).toBe(countBefore);
     // ...and existing particle velocities remain finite (no divide-by-deltaTime poisoning).
     for (let i = 0; i < emitter.data.particleCount; i++) {
-      expect(Number.isFinite(state.velocities[i * 2])).toBe(true);
-      expect(Number.isFinite(state.velocities[i * 2 + 1])).toBe(true);
+      expect(Number.isFinite(state.velocities[i * PARTICLE_VELOCITY_STRIDE])).toBe(true);
+      expect(Number.isFinite(state.velocities[i * PARTICLE_VELOCITY_STRIDE + 1])).toBe(true);
     }
   });
 

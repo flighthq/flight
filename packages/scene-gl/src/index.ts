@@ -1,6 +1,7 @@
 export * from './anisotropyPbrGlMeshMaterialRenderer';
 export * from './blinnPhongGlMeshMaterialRenderer';
 export * from './clearcoatPbrGlMeshMaterialRenderer';
+export * from './customShaderGlMeshMaterialRenderer';
 export * from './depthGlMeshMaterialRenderer';
 export * from './drawGlScene';
 export * from './emissiveGlMeshMaterialRenderer';

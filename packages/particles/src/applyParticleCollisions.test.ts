@@ -14,6 +14,7 @@ function createEmitterFixture(capacity: number): ParticleEmitter {
     colors: new Float32Array(capacity * 3),
     ids: new Uint16Array(capacity),
     particleCount: 0,
+    positionsZ: new Float32Array(capacity),
     transforms: new Float32Array(capacity * 4),
     velocities: new Float32Array(capacity * 2),
     worldSpace: false,
@@ -92,6 +93,56 @@ describe('applyParticleCollisions', () => {
       applyParticleCollisions(emitter, state, [{ kind: 'PlaneCollider', nx: 0, ny: -1, distance: -500 }]);
       expect(emitter.data.transforms[1]).toBe(100);
       expect(state.velocities[1]).toBe(100);
+    });
+  });
+
+  describe('plane (3D normal)', () => {
+    it('plane with nz pushes a penetrating particle back along the 3D normal', () => {
+      // Plane with normal pointing in -z, distance -100 → valid region z <= 100
+      const { emitter, state } = place(0, 0, 0, 0);
+      emitter.data.positionsZ[0] = 120; // 20 units past the plane, moving +z
+      state.velocities[2] = 50;
+      applyParticleCollisions(emitter, state, [{ kind: 'PlaneCollider', nx: 0, ny: 0, nz: -1, distance: -100 }]);
+      expect(emitter.data.positionsZ[0]).toBeCloseTo(100); // snapped to surface
+      expect(state.velocities[2]).toBeCloseTo(0); // normal velocity killed (restitution 0)
+    });
+  });
+
+  describe('sphere', () => {
+    it('exclude mode keeps a particle outside the sphere', () => {
+      const { emitter, state } = place(3, 4, -10, 0); // inside radius-10 sphere at origin
+      emitter.data.positionsZ[0] = 0;
+      state.velocities[2] = 0;
+      applyParticleCollisions(emitter, state, [
+        { kind: 'SphereCollider', x: 0, y: 0, z: 0, radius: 10, mode: 'exclude', restitution: 1 },
+      ]);
+      const d = Math.sqrt(
+        emitter.data.transforms[0] ** 2 + emitter.data.transforms[1] ** 2 + emitter.data.positionsZ[0] ** 2,
+      );
+      expect(d).toBeCloseTo(10); // pushed to the surface
+    });
+
+    it('contain mode keeps a particle inside the sphere', () => {
+      const { emitter, state } = place(20, 0, 10, 0); // outside radius-10 sphere
+      emitter.data.positionsZ[0] = 0;
+      state.velocities[2] = 0;
+      applyParticleCollisions(emitter, state, [
+        { kind: 'SphereCollider', x: 0, y: 0, z: 0, radius: 10, mode: 'contain' },
+      ]);
+      const d = Math.sqrt(
+        emitter.data.transforms[0] ** 2 + emitter.data.transforms[1] ** 2 + emitter.data.positionsZ[0] ** 2,
+      );
+      expect(d).toBeCloseTo(10);
+    });
+
+    it('sphere contain with 3D offset', () => {
+      const { emitter, state } = place(0, 0, 0, 0);
+      emitter.data.positionsZ[0] = 25; // 25 units from center at (0,0,0), outside radius 10
+      state.velocities[2] = 10;
+      applyParticleCollisions(emitter, state, [
+        { kind: 'SphereCollider', x: 0, y: 0, z: 0, radius: 10, mode: 'contain' },
+      ]);
+      expect(emitter.data.positionsZ[0]).toBeCloseTo(10); // clamped to surface
     });
   });
 

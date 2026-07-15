@@ -35,8 +35,11 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-10] Manifold-returning, `out`-parameter, allocation-free.** Tests write into an `out` `CollisionManifold` and return a boolean overlap, so a hot loop over thousands of pairs allocates nothing. A general convex separating-axis (SAT) core handles AABB/OBB/convex-polygon uniformly; circle and point/segment are special-cased. Implementation structure (SAT core + specials, or a per-pair registry) is the builder's call, but the manifold contract and shape set are fixed.
 - **[2026-07-10] Shapes + `CollisionManifold` in `@flighthq/types`.** `CollisionShapeKind` (string kinds), the shape types, and the manifold live in the header layer, so a physics/broadphase neighbor references them without importing this package.
 
+- **[2026-07-15] Unified 2D+3D package.** When 3D shapes arrive (sphere, box, capsule, convex hull), they join this package rather than a separate `collision3d`. The concept is the same (test two shapes for overlap, produce a manifold); the dimension changes the representation and algorithm (SAT for 2D, GJK/EPA for 3D) but not the domain. Where shape names are vocabulary-distinct (Circle vs Sphere, ConvexPolygon vs ConvexHull), no suffix is needed. Where names are ambiguous (AABB, Box), they get a 2D/3D suffix. Test functions split by dimension: `testCollision2D`, `testCollision3D`. User-directed.
+
 ## Open directions
 
 1. **Swept / time-of-impact (phase 2).** Continuous tests for moving colliders — the chartered follow-on for fast movers.
 2. **Contact manifolds (phase 3).** Full contact-point sets (not just the MTV) for stable physics resolution.
 3. **More shapes.** 2D capsule, rounded polygon, and a general concave-as-convex-decomposition path.
+4. **3D narrow-phase (GJK/EPA).** When 3D shapes land, the narrow-phase algorithm is GJK + EPA — fundamentally different from the 2D SAT core but housed in the same package per the unification decision. Internal file separation (`collision2d.ts` / `collision3d.ts` or similar) keeps the codepaths clear.

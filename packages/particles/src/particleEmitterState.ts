@@ -1,6 +1,9 @@
 import { reserveFloat32Array } from '@flighthq/geometry';
 import type { ParticleEmitterState, RandomSource } from '@flighthq/types';
 
+// Velocity stride: [vx, vy, vz] per particle.
+export const PARTICLE_VELOCITY_STRIDE = 3;
+
 export function createParticleEmitterState(random: RandomSource = Math.random): ParticleEmitterState {
   return {
     burstTimer: 0,
@@ -10,6 +13,7 @@ export function createParticleEmitterState(random: RandomSource = Math.random): 
     lifetimes: new Float32Array(),
     prevX: NaN,
     prevY: NaN,
+    prevZ: NaN,
     random,
     rotationSpeeds: new Float32Array(),
     scales: new Float32Array(),
@@ -34,7 +38,7 @@ export function ensureParticleEmitterStateCapacity(
     return;
   }
   state.lifetimes = reserveFloat32Array(state.lifetimes, capacity * 2);
-  state.velocities = reserveFloat32Array(state.velocities, capacity * 2);
+  state.velocities = reserveFloat32Array(state.velocities, capacity * PARTICLE_VELOCITY_STRIDE);
   state.scales = reserveFloat32Array(state.scales, capacity);
   state.rotationSpeeds = reserveFloat32Array(state.rotationSpeeds, capacity);
   if (hasColorVariance) {

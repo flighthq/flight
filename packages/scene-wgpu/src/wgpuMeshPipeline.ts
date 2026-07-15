@@ -9,6 +9,15 @@ import type {
   Texture,
   WgpuRenderState,
 } from '@flighthq/types';
+import {
+  MAX_FORWARD_LIGHTS,
+  SCENE_LIGHT_HEMISPHERE_OFFSET,
+  SCENE_LIGHT_HEMISPHERE_STRIDE,
+  SCENE_LIGHT_POINT_OFFSET,
+  SCENE_LIGHT_POINT_STRIDE,
+  SCENE_LIGHT_SPOT_OFFSET,
+  SCENE_LIGHT_SPOT_STRIDE,
+} from '@flighthq/types';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
@@ -610,7 +619,9 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
 // block layout matches SceneLightBlock.data: directional { direction.xyz @0, radiance.rgb @4 } then
 // ambient { radiance.rgb @8 }; the presence counts go into the lightDirection.w / ambientRadiance.w
 // lanes the shader branches on. Camera world position is the translation of the inverse view matrix.
-// Shared by every family — lighting-independent families simply ignore the light lanes.
+// Punctual light arrays (point/spot/hemisphere) follow the camera view matrix, mirroring the packed
+// layout from SceneLightBlock.data; a final vec4f carries the three punctual counts. Shared by every
+// family — lighting-independent families simply ignore the light lanes.
 export function writeWgpuFrameUniform(
   state: WgpuRenderState,
   camera: Readonly<Camera>,
@@ -651,6 +662,23 @@ export function writeWgpuFrameUniform(
   const view = camera.view.m;
   for (let i = 0; i < 16; i++) f[32 + i] = view[i];
 
+  // Punctual light arrays (floats 48..) — the point/spot/hemisphere slices from SceneLightBlock.data
+  // (identical packed layout), followed by a counts vec4f. Families that shade punctual lights read
+  // these; others simply ignore the trailing data.
+  const pointFloats = SCENE_LIGHT_POINT_STRIDE * MAX_FORWARD_LIGHTS;
+  for (let i = 0; i < pointFloats; i++) f[FRAME_POINT_OFFSET + i] = data[SCENE_LIGHT_POINT_OFFSET + i];
+
+  const spotFloats = SCENE_LIGHT_SPOT_STRIDE * MAX_FORWARD_LIGHTS;
+  for (let i = 0; i < spotFloats; i++) f[FRAME_SPOT_OFFSET + i] = data[SCENE_LIGHT_SPOT_OFFSET + i];
+
+  const hemisphereFloats = SCENE_LIGHT_HEMISPHERE_STRIDE * MAX_FORWARD_LIGHTS;
+  for (let i = 0; i < hemisphereFloats; i++) f[FRAME_HEMISPHERE_OFFSET + i] = data[SCENE_LIGHT_HEMISPHERE_OFFSET + i];
+
+  f[FRAME_COUNTS_OFFSET] = lights.pointCount;
+  f[FRAME_COUNTS_OFFSET + 1] = lights.spotCount;
+  f[FRAME_COUNTS_OFFSET + 2] = lights.hemisphereCount;
+  f[FRAME_COUNTS_OFFSET + 3] = 0;
+
   state.device.queue.writeBuffer(scene.frameBuffer!, 0, f.buffer, 0, FRAME_UNIFORM_BYTES);
 }
 
@@ -661,6 +689,7 @@ export function writeWgpuFrameUniform(
 // scene-gl's shared vertex body + GL_MESH_LIGHT_BLOCK_GLSL.
 export const WGPU_MESH_PRELUDE_WGSL = /* wgsl */ `
 const PI : f32 = 3.14159265359;
+const MAX_FORWARD_LIGHTS : u32 = 4u;
 
 struct Frame {
   viewProjection : mat4x4f,
@@ -669,6 +698,14 @@ struct Frame {
   directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
   ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
   view : mat4x4f,               // camera view matrix; rotates world normals into view space (matcap)
+  // Punctual light arrays — layout mirrors SceneLightBlock.data (packSceneLightBlock).
+  //   point[i]      = pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
+  //   spot[i]       = spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
+  //   hemisphere[i] = hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
+  pointLights : array<vec4f, 8>,       // MAX_FORWARD_LIGHTS * 2
+  spotLights : array<vec4f, 16>,       // MAX_FORWARD_LIGHTS * 4
+  hemisphereLights : array<vec4f, 12>, // MAX_FORWARD_LIGHTS * 3
+  punctualCounts : vec4f,              // x = pointCount, y = spotCount, z = hemisphereCount
 };
 
 struct Draw {
@@ -711,10 +748,21 @@ fn srgbToLinear(c : vec3f) -> vec3f {
 }
 `;
 
+// Frame uniform float offsets for the punctual light arrays — the byte offset within the Frame buffer
+// where each punctual array begins, used by writeWgpuFrameUniform to copy the packed data from
+// SceneLightBlock.data into the right Frame buffer position. All offsets in FLOATS (multiply by 4
+// for bytes). The head block (viewProjection + cameraPosition + directional + ambient + view) is 48
+// floats, followed by point → spot → hemisphere → counts.
+const FRAME_POINT_OFFSET = 48;
+const FRAME_SPOT_OFFSET = FRAME_POINT_OFFSET + SCENE_LIGHT_POINT_STRIDE * MAX_FORWARD_LIGHTS;
+const FRAME_HEMISPHERE_OFFSET = FRAME_SPOT_OFFSET + SCENE_LIGHT_SPOT_STRIDE * MAX_FORWARD_LIGHTS;
+const FRAME_COUNTS_OFFSET = FRAME_HEMISPHERE_OFFSET + SCENE_LIGHT_HEMISPHERE_STRIDE * MAX_FORWARD_LIGHTS;
+
 // Frame uniform: mat4x4f viewProjection (64) + vec4f cameraPosition (16) + vec4f lightDirection (16)
-// + vec4f directionalRadiance (16) + vec4f ambientRadiance (16) + mat4x4f view (64) = 192 bytes / 48
-// floats.
-const FRAME_UNIFORM_BYTES = 192;
+// + vec4f directionalRadiance (16) + vec4f ambientRadiance (16) + mat4x4f view (64) + point lights
+// (8 * 16 = 128) + spot lights (16 * 16 = 256) + hemisphere lights (12 * 16 = 192) + counts vec4f
+// (16) = 784 bytes / 196 floats.
+const FRAME_UNIFORM_BYTES = (FRAME_COUNTS_OFFSET + 4) * 4;
 
 // Draw uniform: mat4x4f world (64) + mat3x3f normalMatrix as 3 padded vec4 (48) = 112; the ring buffer
 // rounds the per-slot stride up to the device's minUniformBufferOffsetAlignment.

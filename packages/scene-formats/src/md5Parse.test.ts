@@ -1,0 +1,538 @@
+import {
+  getMeshGeometryIndexCount,
+  getMeshGeometryVertexCount,
+  getMeshGeometryVertexPosition,
+  getMeshGeometryVertexUv0,
+} from '@flighthq/mesh';
+import { getNodeChildren } from '@flighthq/node';
+import { isMesh } from '@flighthq/scene';
+import type { Mesh, SceneNode } from '@flighthq/types';
+
+import { createSceneFromMd5Mesh } from './md5Parse';
+
+// Minimal valid MD5 mesh with a single joint at the origin (identity orientation) and a single
+// triangle whose three vertices each reference one weight with bias 1.0 at known positions.
+const SINGLE_TRIANGLE = [
+  'MD5Version 10',
+  'commandline ""',
+  '',
+  'numJoints 1',
+  'numMeshes 1',
+  '',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  '',
+  'mesh {',
+  '  shader "textures/default"',
+  '',
+  '  numverts 3',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.0 1.0 ) 2 1',
+  '',
+  '  numtris 1',
+  '  tri 0 0 1 2',
+  '',
+  '  numweights 3',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 0 1.0 ( 1 0 0 )',
+  '  weight 2 0 1.0 ( 0 1 0 )',
+  '}',
+].join('\n');
+
+// MD5 mesh with two joints forming a parent-child hierarchy.
+const MULTI_JOINT_HIERARCHY = [
+  'MD5Version 10',
+  'commandline ""',
+  '',
+  'numJoints 3',
+  'numMeshes 1',
+  '',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '  "child_a" 0 ( 1 0 0 ) ( 0 0 0 )',
+  '  "child_b" 0 ( 0 1 0 ) ( 0 0 0 )',
+  '}',
+  '',
+  'mesh {',
+  '  shader "textures/body"',
+  '',
+  '  numverts 3',
+  '  vert 0 ( 0.0 0.0 ) 0 1',
+  '  vert 1 ( 1.0 0.0 ) 1 1',
+  '  vert 2 ( 0.5 0.5 ) 2 1',
+  '',
+  '  numtris 1',
+  '  tri 0 0 1 2',
+  '',
+  '  numweights 3',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '  weight 1 1 1.0 ( 0 0 0 )',
+  '  weight 2 2 1.0 ( 0 0 0 )',
+  '}',
+].join('\n');
+
+// MD5 mesh where a vertex is influenced by two joints with different weights.
+const WEIGHTED_VERTICES = [
+  'MD5Version 10',
+  'commandline ""',
+  '',
+  'numJoints 2',
+  'numMeshes 1',
+  '',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '  "arm" 0 ( 10 0 0 ) ( 0 0 0 )',
+  '}',
+  '',
+  'mesh {',
+  '  shader "textures/arm"',
+  '',
+  '  numverts 3',
+  '  vert 0 ( 0.0 0.0 ) 0 2',
+  '  vert 1 ( 1.0 0.0 ) 2 1',
+  '  vert 2 ( 0.5 1.0 ) 3 1',
+  '',
+  '  numtris 1',
+  '  tri 0 0 1 2',
+  '',
+  '  numweights 4',
+  '  weight 0 0 0.5 ( 0 0 0 )',
+  '  weight 1 1 0.5 ( 0 0 0 )',
+  '  weight 2 0 1.0 ( 1 0 0 )',
+  '  weight 3 1 1.0 ( 0 1 0 )',
+  '}',
+].join('\n');
+
+describe('createSceneFromMd5Mesh', () => {
+  it('parses a single triangle with one joint', () => {
+    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const children = getNodeChildren(scene);
+    // Skeleton group + one mesh.
+    expect(children).toHaveLength(2);
+
+    // The skeleton is the first child.
+    const skeleton = children[0] as SceneNode;
+    expect(isMesh(skeleton)).toBe(false);
+
+    // The mesh is the second child.
+    const meshNode = children[1] as SceneNode;
+    expect(isMesh(meshNode)).toBe(true);
+
+    const geometry = (meshNode as unknown as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    expect(getMeshGeometryIndexCount(geometry)).toBe(3);
+
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect(p.x).toBeCloseTo(1);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    getMeshGeometryVertexPosition(p, geometry, 2);
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(1);
+    expect(p.z).toBeCloseTo(0);
+  });
+
+  it('preserves UV coordinates', () => {
+    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const children = getNodeChildren(scene);
+    const meshNode = children[1] as unknown as Mesh;
+    const geometry = meshNode.geometry;
+
+    const uv = { x: 0, y: 0 };
+    getMeshGeometryVertexUv0(uv, geometry, 0);
+    expect(uv.x).toBeCloseTo(0);
+    expect(uv.y).toBeCloseTo(0);
+
+    getMeshGeometryVertexUv0(uv, geometry, 1);
+    expect(uv.x).toBeCloseTo(1);
+    expect(uv.y).toBeCloseTo(0);
+
+    getMeshGeometryVertexUv0(uv, geometry, 2);
+    expect(uv.x).toBeCloseTo(0);
+    expect(uv.y).toBeCloseTo(1);
+  });
+
+  it('builds joint hierarchy as SceneNode children', () => {
+    const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
+    const skeleton = getNodeChildren(scene)[0] as SceneNode;
+
+    // The skeleton group should have one root joint.
+    const rootJoints = getNodeChildren(skeleton);
+    expect(rootJoints).toHaveLength(1);
+
+    // The root joint should have two children.
+    const rootChildren = getNodeChildren(rootJoints[0] as SceneNode);
+    expect(rootChildren).toHaveLength(2);
+  });
+
+  it('computes vertex positions from weights referencing different joints', () => {
+    const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
+    // Find the mesh node (second child after skeleton).
+    const meshNode = getNodeChildren(scene)[1] as unknown as Mesh;
+    const geometry = meshNode.geometry;
+
+    const p = { x: 0, y: 0, z: 0 };
+
+    // Vert 0: weight 0 references joint 0 (root at origin), bias=1, offset (0,0,0) => (0,0,0)
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    // Vert 1: weight 1 references joint 1 (child_a at (1,0,0)), bias=1, offset (0,0,0) => (1,0,0)
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect(p.x).toBeCloseTo(1);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    // Vert 2: weight 2 references joint 2 (child_b at (0,1,0)), bias=1, offset (0,0,0) => (0,1,0)
+    getMeshGeometryVertexPosition(p, geometry, 2);
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(1);
+    expect(p.z).toBeCloseTo(0);
+  });
+
+  it('blends vertex positions from multiple weighted joints', () => {
+    const scene = createSceneFromMd5Mesh(WEIGHTED_VERTICES);
+    const meshNode = getNodeChildren(scene)[1] as unknown as Mesh;
+    const geometry = meshNode.geometry;
+
+    const p = { x: 0, y: 0, z: 0 };
+
+    // Vert 0: weight 0 (joint 0 at origin, bias 0.5, offset (0,0,0)) = 0.5*(0,0,0)
+    //       + weight 1 (joint 1 at (10,0,0), bias 0.5, offset (0,0,0)) = 0.5*(10,0,0)
+    //       = (5, 0, 0)
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect(p.x).toBeCloseTo(5);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    // Vert 1: weight 2 (joint 0 at origin, bias 1, offset (1,0,0)) = 1*(0+1, 0, 0) = (1, 0, 0)
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect(p.x).toBeCloseTo(1);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    // Vert 2: weight 3 (joint 1 at (10,0,0), bias 1, offset (0,1,0)) = 1*(10+0, 0+1, 0) = (10,1,0)
+    getMeshGeometryVertexPosition(p, geometry, 2);
+    expect(p.x).toBeCloseTo(10);
+    expect(p.y).toBeCloseTo(1);
+    expect(p.z).toBeCloseTo(0);
+  });
+
+  it('handles multiple mesh sections', () => {
+    const source = [
+      'MD5Version 10',
+      'commandline ""',
+      'numJoints 1',
+      'numMeshes 2',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "body"',
+      '  numverts 3',
+      '  vert 0 ( 0 0 ) 0 1',
+      '  vert 1 ( 1 0 ) 1 1',
+      '  vert 2 ( 0 1 ) 2 1',
+      '  numtris 1',
+      '  tri 0 0 1 2',
+      '  numweights 3',
+      '  weight 0 0 1.0 ( 0 0 0 )',
+      '  weight 1 0 1.0 ( 1 0 0 )',
+      '  weight 2 0 1.0 ( 0 1 0 )',
+      '}',
+      'mesh {',
+      '  shader "head"',
+      '  numverts 3',
+      '  vert 0 ( 0 0 ) 0 1',
+      '  vert 1 ( 1 0 ) 1 1',
+      '  vert 2 ( 0 1 ) 2 1',
+      '  numtris 1',
+      '  tri 0 0 1 2',
+      '  numweights 3',
+      '  weight 0 0 1.0 ( 2 0 0 )',
+      '  weight 1 0 1.0 ( 3 0 0 )',
+      '  weight 2 0 1.0 ( 2 1 0 )',
+      '}',
+    ].join('\n');
+
+    const scene = createSceneFromMd5Mesh(source);
+    const children = getNodeChildren(scene);
+    // Skeleton + 2 meshes.
+    expect(children).toHaveLength(3);
+    expect(isMesh(children[1] as SceneNode)).toBe(true);
+    expect(isMesh(children[2] as SceneNode)).toBe(true);
+  });
+
+  it('returns an empty scene for empty input', () => {
+    const scene = createSceneFromMd5Mesh('');
+    expect(getNodeChildren(scene)).toHaveLength(0);
+  });
+
+  it('returns an empty scene for comment-only input', () => {
+    const scene = createSceneFromMd5Mesh('// just a comment\n');
+    expect(getNodeChildren(scene)).toHaveLength(0);
+  });
+
+  it('warns on malformed joint lines', () => {
+    const source = ['MD5Version 10', 'numJoints 1', 'numMeshes 0', 'joints {', '  bad joint line', '}'].join('\n');
+
+    const warnings: string[] = [];
+    createSceneFromMd5Mesh(source, warnings);
+    expect(warnings.some((w) => w.includes('malformed joint'))).toBe(true);
+  });
+
+  it('warns on malformed vert lines', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "default"',
+      '  numverts 1',
+      '  vert 0 ( abc def ) 0 1',
+      '  numtris 0',
+      '  numweights 0',
+      '}',
+    ].join('\n');
+
+    const warnings: string[] = [];
+    createSceneFromMd5Mesh(source, warnings);
+    expect(warnings.some((w) => w.includes('malformed vert'))).toBe(true);
+  });
+
+  it('warns on malformed tri lines', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "default"',
+      '  numverts 0',
+      '  numtris 1',
+      '  tri 0 abc',
+      '  numweights 0',
+      '}',
+    ].join('\n');
+
+    const warnings: string[] = [];
+    createSceneFromMd5Mesh(source, warnings);
+    expect(warnings.some((w) => w.includes('malformed tri'))).toBe(true);
+  });
+
+  it('warns on malformed weight lines', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "default"',
+      '  numverts 0',
+      '  numtris 0',
+      '  numweights 1',
+      '  weight 0',
+      '}',
+    ].join('\n');
+
+    const warnings: string[] = [];
+    createSceneFromMd5Mesh(source, warnings);
+    expect(warnings.some((w) => w.includes('malformed weight'))).toBe(true);
+  });
+
+  it('warns on unsupported MD5Version', () => {
+    const source = ['MD5Version 11', 'numJoints 0', 'numMeshes 0'].join('\n');
+
+    const warnings: string[] = [];
+    createSceneFromMd5Mesh(source, warnings);
+    expect(warnings.some((w) => w.includes('unsupported MD5Version'))).toBe(true);
+  });
+
+  it('handles empty joints and mesh sections gracefully', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 0',
+      'numMeshes 1',
+      'joints {',
+      '}',
+      'mesh {',
+      '  shader "empty"',
+      '  numverts 0',
+      '  numtris 0',
+      '  numweights 0',
+      '}',
+    ].join('\n');
+
+    const scene = createSceneFromMd5Mesh(source);
+    // No skeleton node (no joints), no mesh node (no indices).
+    expect(getNodeChildren(scene)).toHaveLength(0);
+  });
+
+  it('skips comment lines inside blocks', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  // This is a comment inside joints',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  // This is a comment inside mesh',
+      '  shader "default"',
+      '  numverts 3',
+      '  vert 0 ( 0 0 ) 0 1',
+      '  vert 1 ( 1 0 ) 1 1',
+      '  vert 2 ( 0 1 ) 2 1',
+      '  numtris 1',
+      '  tri 0 0 1 2',
+      '  numweights 3',
+      '  weight 0 0 1.0 ( 0 0 0 )',
+      '  weight 1 0 1.0 ( 1 0 0 )',
+      '  weight 2 0 1.0 ( 0 1 0 )',
+      '}',
+    ].join('\n');
+
+    const warnings: string[] = [];
+    const scene = createSceneFromMd5Mesh(source, warnings);
+    expect(warnings).toHaveLength(0);
+    expect(getNodeChildren(scene)).toHaveLength(2);
+  });
+
+  it('computes quaternion W from XYZ with non-zero orientation', () => {
+    // Joint with orientation (0.5, 0.5, 0.5) — w = -sqrt(1 - 0.75) = -0.5
+    // Weight position (1, 0, 0) rotated by q(0.5, 0.5, 0.5, -0.5) should produce a rotated result.
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0.5 0.5 0.5 )',
+      '}',
+      'mesh {',
+      '  shader "test"',
+      '  numverts 3',
+      '  vert 0 ( 0 0 ) 0 1',
+      '  vert 1 ( 0 0 ) 1 1',
+      '  vert 2 ( 0 0 ) 2 1',
+      '  numtris 1',
+      '  tri 0 0 1 2',
+      '  numweights 3',
+      '  weight 0 0 1.0 ( 1 0 0 )',
+      '  weight 1 0 1.0 ( 0 1 0 )',
+      '  weight 2 0 1.0 ( 0 0 1 )',
+      '}',
+    ].join('\n');
+
+    const scene = createSceneFromMd5Mesh(source);
+    const meshNode = getNodeChildren(scene)[1] as unknown as Mesh;
+    const geometry = meshNode.geometry;
+
+    const p = { x: 0, y: 0, z: 0 };
+
+    // With q = (0.5, 0.5, 0.5, -0.5), rotating (1,0,0) gives (0,0,1).
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(1);
+
+    // Rotating (0,1,0) by the same quaternion gives (1,0,0).
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect(p.x).toBeCloseTo(1);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    // Rotating (0,0,1) by the same quaternion gives (0,1,0).
+    getMeshGeometryVertexPosition(p, geometry, 2);
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(1);
+    expect(p.z).toBeCloseTo(0);
+  });
+
+  it('warns on out-of-range weight joint index', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "test"',
+      '  numverts 3',
+      '  vert 0 ( 0 0 ) 0 1',
+      '  vert 1 ( 0 0 ) 1 1',
+      '  vert 2 ( 0 0 ) 2 1',
+      '  numtris 1',
+      '  tri 0 0 1 2',
+      '  numweights 3',
+      '  weight 0 99 1.0 ( 0 0 0 )',
+      '  weight 1 0 1.0 ( 1 0 0 )',
+      '  weight 2 0 1.0 ( 0 1 0 )',
+      '}',
+    ].join('\n');
+
+    const warnings: string[] = [];
+    createSceneFromMd5Mesh(source, warnings);
+    expect(warnings.some((w) => w.includes('joint index') && w.includes('out of range'))).toBe(true);
+  });
+
+  it('handles joint with no weights gracefully (zero-position vertex)', () => {
+    const source = [
+      'MD5Version 10',
+      'numJoints 1',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 5 5 5 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "test"',
+      '  numverts 3',
+      '  vert 0 ( 0 0 ) 0 0',
+      '  vert 1 ( 0 0 ) 0 1',
+      '  vert 2 ( 0 0 ) 1 1',
+      '  numtris 1',
+      '  tri 0 0 1 2',
+      '  numweights 2',
+      '  weight 0 0 1.0 ( 0 0 0 )',
+      '  weight 1 0 1.0 ( 1 0 0 )',
+      '}',
+    ].join('\n');
+
+    const scene = createSceneFromMd5Mesh(source);
+    const meshNode = getNodeChildren(scene)[1] as unknown as Mesh;
+    const geometry = meshNode.geometry;
+
+    const p = { x: 0, y: 0, z: 0 };
+
+    // Vert 0: countWeights=0, so position stays at (0,0,0).
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect(p.x).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(0);
+
+    // Vert 1: weight 0, joint at (5,5,5), offset (0,0,0) => (5,5,5).
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect(p.x).toBeCloseTo(5);
+    expect(p.y).toBeCloseTo(5);
+    expect(p.z).toBeCloseTo(5);
+  });
+});

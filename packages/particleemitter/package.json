@@ -36,12 +36,13 @@
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
     "@flighthq/particles": "*",
+    "@flighthq/scene": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/math": "*",
     "typescript": "^5.3.0"
   },
-  "description": "ParticleEmitter display-object composition layer over @flighthq/particles",
+  "description": "ParticleEmitter 2D and 3D composition layer over @flighthq/particles",
   "sideEffects": false
 }

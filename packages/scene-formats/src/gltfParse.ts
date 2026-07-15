@@ -2,7 +2,7 @@ import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, setSceneNodeTransform } from '@flighthq/scene';
-import type { MeshGeometry, SceneNode, VertexAttributeLayout } from '@flighthq/types';
+import type { MeshGeometry, SceneNode } from '@flighthq/types';
 
 import type { GltfBuffer, GltfComponentType, GltfDocument, GltfNode, GltfPrimitive } from './gltfSchema';
 
@@ -411,15 +411,4 @@ const GLB_HEADER_BYTES = 12;
 const GLB_CHUNK_HEADER_BYTES = 8;
 
 // The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share:
-// position(3) + normal(3) + tangent(4) + uv0(2), stride 48 bytes / 12 floats. Mirrored here (mesh keeps
-// the source-of-truth const private); kept in sync structurally.
-const CANONICAL_FLOATS_PER_VERTEX = 12;
-const CANONICAL_LAYOUT: VertexAttributeLayout = {
-  attributes: [
-    { byteOffset: 0, format: 'float32x3', semantic: 'position' },
-    { byteOffset: 12, format: 'float32x3', semantic: 'normal' },
-    { byteOffset: 24, format: 'float32x4', semantic: 'tangent' },
-    { byteOffset: 40, format: 'float32x2', semantic: 'uv0' },
-  ],
-  stride: 48,
-};
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';

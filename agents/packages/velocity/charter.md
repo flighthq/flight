@@ -61,10 +61,12 @@ Small package, focused scope. The velocity field is the conduit between motion s
 
 - **[2026-07-02] TS is the spec; Rust conforms in parity passes later.** Global posture.
 
+- **[2026-07-15] Unified 2D+3D package.** When 3D motion tracking is needed, it joins this package as `Velocity3D` alongside the existing 2D implementation. Same concept (per-frame position delta / dt), different vector dimension. The 3D contributor would walk scene-node transforms (Matrix4) rather than 2D transforms. User-directed.
+
 ## Open directions
 
 1. **Velocity's broader role.** Currently the primary consumer is motion blur. Could velocity serve physics, trails, interaction? The identity as a general motion-tracking primitive vs. a motion-blur enabler is undecided.
 
-2. **3D velocity.** The current implementation is 2D (`Velocity2D`). If/when 3D scene rendering matures, velocity may need a 3D variant. The contributor is already typed on `Transform2DNode` — a 3D contributor would be a separate function.
+2. **3D velocity.** The current implementation is 2D (`Velocity2D`). If/when 3D scene rendering matures, velocity may need a 3D variant. The contributor is already typed on `Transform2DNode` — a 3D contributor would be a separate function. Per the unification decision, 3D velocity lives in this package.
 
 3. **Transform trait hardening.** The `child as unknown as Transform2DNode` cast in the visitor is a type-level weakness. The fix lives in `@flighthq/node` (the hierarchy should carry the transform trait through children). Cross-package.

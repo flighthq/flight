@@ -1,5 +1,6 @@
 import { invalidateNodeLocalBounds } from '@flighthq/node';
 import {
+  PARTICLE_VELOCITY_STRIDE,
   ensureParticleEmitterStateCapacity,
   getParticleEmitterSignals,
   sampleParticleColorCurve,
@@ -76,8 +77,10 @@ export function updateParticleEmitter(
   const velocities = state.velocities;
   const scales = state.scales;
   const rotationSpeeds = state.rotationSpeeds;
+  const positionsZ = data.positionsZ;
   const gx = config.gravityX * deltaTime;
   const gy = config.gravityY * deltaTime;
+  const gz = config.gravityZ * deltaTime;
   const { colorStartR, colorStartG, colorStartB, colorEndR, colorEndG, colorEndB } = config;
   const hasColorVariance =
     config.colorStartVarianceR !== 0 ||
@@ -123,16 +126,18 @@ export function updateParticleEmitter(
         const lt2 = liveCount * 2;
         lifetimes[lt] = lifetimes[lt2];
         lifetimes[lt + 1] = lifetimes[lt2 + 1];
-        const vt = i * 2;
-        const vt2 = liveCount * 2;
+        const vt = i * PARTICLE_VELOCITY_STRIDE;
+        const vt2 = liveCount * PARTICLE_VELOCITY_STRIDE;
         velocities[vt] = velocities[vt2];
         velocities[vt + 1] = velocities[vt2 + 1];
+        velocities[vt + 2] = velocities[vt2 + 2];
         const tt = i * PARTICLE_TRANSFORM_STRIDE;
         const tt2 = liveCount * PARTICLE_TRANSFORM_STRIDE;
         data.transforms[tt] = data.transforms[tt2];
         data.transforms[tt + 1] = data.transforms[tt2 + 1];
         data.transforms[tt + 2] = data.transforms[tt2 + 2];
         data.transforms[tt + 3] = data.transforms[tt2 + 3];
+        positionsZ[i] = positionsZ[liveCount];
         data.alphas[i] = data.alphas[liveCount];
         data.ids[i] = data.ids[liveCount];
         const ct = i * 3;
@@ -154,12 +159,14 @@ export function updateParticleEmitter(
       continue;
     }
 
-    const vt = i * 2;
+    const vt = i * PARTICLE_VELOCITY_STRIDE;
     velocities[vt] += gx;
     velocities[vt + 1] += gy;
+    velocities[vt + 2] += gz;
     const tt = i * PARTICLE_TRANSFORM_STRIDE;
     data.transforms[tt] += velocities[vt] * deltaTime;
     data.transforms[tt + 1] += velocities[vt + 1] * deltaTime;
+    positionsZ[i] += velocities[vt + 2] * deltaTime;
 
     const lifeFraction = lifetimes[lt] / lifetimes[lt + 1];
 
@@ -241,8 +248,18 @@ export function updateParticleEmitter(
     const prevPathX = doTrail ? state.prevX : trackX;
     const prevPathY = doTrail ? state.prevY : trackY;
 
-    for (let s = 0; s < toSpawn; s++) {
-      const idx = liveCount + s;
+    // 3D direction unit vector for sphere/cone3d/box spawn shapes.
+    const dirLen = Math.sqrt(
+      config.directionX * config.directionX +
+        config.directionY * config.directionY +
+        config.directionZ * config.directionZ,
+    );
+    const dirNx = dirLen > 1e-6 ? config.directionX / dirLen : 0;
+    const dirNy = dirLen > 1e-6 ? config.directionY / dirLen : -1;
+    const dirNz = dirLen > 1e-6 ? config.directionZ / dirLen : 0;
+
+    for (let sIdx = 0; sIdx < toSpawn; sIdx++) {
+      const idx = liveCount + sIdx;
 
       // Lifetime
       const lifetime = config.lifetimeMin + state.random() * (config.lifetimeMax - config.lifetimeMin);
@@ -251,22 +268,98 @@ export function updateParticleEmitter(
       state.lifetimes[lt + 1] = lifetime;
 
       // Velocity direction in local/emitter space
-      const angle = baseAngle + (state.random() - 0.5) * 2 * config.spread;
       const speed = config.speedMin + state.random() * (config.speedMax - config.speedMin);
-      let vx = Math.cos(angle) * speed;
-      let vy = Math.sin(angle) * speed;
+      let vx: number;
+      let vy: number;
+      let vz: number;
 
       // Spawn position (local to emitter, or shape offset)
       let spawnX = 0;
       let spawnY = 0;
-      if (config.emitterShape === 'circle' && config.emitterRadius > 0) {
-        const r = Math.sqrt(state.random()) * config.emitterRadius;
-        const a = state.random() * TWO_PI;
-        spawnX = Math.cos(a) * r;
-        spawnY = Math.sin(a) * r;
-      } else if (config.emitterShape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
+      let spawnZ = 0;
+
+      const shape = config.emitterShape;
+      if (shape === 'sphere' || shape === 'cone3d') {
+        // 3D velocity: uniform random direction on the sphere, or inside a cone.
+        let sx: number;
+        let sy: number;
+        let sz: number;
+        if (shape === 'cone3d' && config.emitterConeAngle > 0) {
+          // Cone: generate a random direction within coneAngle (radians) of the direction vector.
+          const coneHalf = config.emitterConeAngle / 2;
+          const cosTheta = 1 - state.random() * (1 - Math.cos(coneHalf));
+          const sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
+          const phi = state.random() * TWO_PI;
+          // Local cone direction: z-aligned, then rotate to match direction vector.
+          const lx = sinTheta * Math.cos(phi);
+          const ly = sinTheta * Math.sin(phi);
+          const lz = cosTheta;
+          // Rotate from z-axis to direction vector using Rodrigues' rotation.
+          const rDir = rotateToDirection(lx, ly, lz, dirNx, dirNy, dirNz);
+          sx = rDir[0];
+          sy = rDir[1];
+          sz = rDir[2];
+        } else {
+          // Uniform sphere: Marsaglia method.
+          let u: number;
+          let v: number;
+          let s2: number;
+          do {
+            u = state.random() * 2 - 1;
+            v = state.random() * 2 - 1;
+            s2 = u * u + v * v;
+          } while (s2 >= 1 || s2 === 0);
+          const f = 2 * Math.sqrt(1 - s2);
+          sx = u * f;
+          sy = v * f;
+          sz = 1 - 2 * s2;
+        }
+        vx = sx * speed;
+        vy = sy * speed;
+        vz = sz * speed;
+
+        // Spawn position for sphere shape
+        if (config.emitterRadius > 0) {
+          const r = Math.cbrt(state.random()) * config.emitterRadius;
+          // Uniform random direction for position offset
+          let pu: number;
+          let pv: number;
+          let ps2: number;
+          do {
+            pu = state.random() * 2 - 1;
+            pv = state.random() * 2 - 1;
+            ps2 = pu * pu + pv * pv;
+          } while (ps2 >= 1 || ps2 === 0);
+          const pf = 2 * Math.sqrt(1 - ps2);
+          spawnX = pu * pf * r;
+          spawnY = pv * pf * r;
+          spawnZ = (1 - 2 * ps2) * r;
+        }
+      } else if (shape === 'box') {
+        // Box shape: random position in a 3D box, 2D velocity spread
+        const angle = baseAngle + (state.random() - 0.5) * 2 * config.spread;
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+        vz = (config.directionZ * speed) / (dirLen > 1e-6 ? dirLen : 1);
         spawnX = (state.random() - 0.5) * config.emitterWidth;
         spawnY = (state.random() - 0.5) * config.emitterHeight;
+        spawnZ = (state.random() - 0.5) * config.emitterDepth;
+      } else {
+        // 2D shapes: point, circle, rect — velocity uses the 2D spread angle.
+        const angle = baseAngle + (state.random() - 0.5) * 2 * config.spread;
+        vx = Math.cos(angle) * speed;
+        vy = Math.sin(angle) * speed;
+        vz = 0;
+
+        if (shape === 'circle' && config.emitterRadius > 0) {
+          const r = Math.sqrt(state.random()) * config.emitterRadius;
+          const a = state.random() * TWO_PI;
+          spawnX = Math.cos(a) * r;
+          spawnY = Math.sin(a) * r;
+        } else if (shape === 'rect' && (config.emitterWidth > 0 || config.emitterHeight > 0)) {
+          spawnX = (state.random() - 0.5) * config.emitterWidth;
+          spawnY = (state.random() - 0.5) * config.emitterHeight;
+        }
       }
 
       // World-space: transform spawn position and velocity into world space,
@@ -274,7 +367,7 @@ export function updateParticleEmitter(
       if (config.worldSpace && worldTransform != null) {
         const wt = worldTransform;
         // Trail: interpolate origin between prev and current world position
-        const t = toSpawn > 1 ? s / (toSpawn - 1) : 1;
+        const t = toSpawn > 1 ? sIdx / (toSpawn - 1) : 1;
         const originX = prevPathX + (trackX - prevPathX) * t;
         const originY = prevPathY + (trackY - prevPathY) * t;
         // Apply rotation+scale of world transform to shape offset, then add trail origin
@@ -282,11 +375,13 @@ export function updateParticleEmitter(
         const wy = wt.b * spawnX + wt.d * spawnY + originY;
         spawnX = wx;
         spawnY = wy;
+        // Z is unaffected by the 2D world transform.
         // Rotate velocity by world transform (no translation for vectors)
         const wvx = wt.a * vx + wt.c * vy;
         const wvy = wt.b * vx + wt.d * vy;
         vx = wvx;
         vy = wvy;
+        // vz is unaffected by the 2D world transform.
       }
 
       // Velocity inheritance: blend emitter velocity into new particle velocity
@@ -295,9 +390,10 @@ export function updateParticleEmitter(
         vy += emitterVelY * config.velocityInheritance;
       }
 
-      const vt = idx * 2;
+      const vt = idx * PARTICLE_VELOCITY_STRIDE;
       state.velocities[vt] = vx;
       state.velocities[vt + 1] = vy;
+      state.velocities[vt + 2] = vz;
 
       const spawnScale = config.scaleMin + state.random() * (config.scaleMax - config.scaleMin);
       state.scales[idx] = spawnScale;
@@ -305,8 +401,15 @@ export function updateParticleEmitter(
       const tt = idx * PARTICLE_TRANSFORM_STRIDE;
       data.transforms[tt] = spawnX;
       data.transforms[tt + 1] = spawnY;
-      data.transforms[tt + 2] = angle;
+      // For 2D shapes the angle is used as rotation; for 3D shapes use baseAngle as a fallback.
+      const spawnAngle =
+        shape === 'sphere' || shape === 'cone3d' ? baseAngle : baseAngle + (state.random() - 0.5) * 2 * config.spread;
+      // Use the already-computed angle for 2D shapes — but for 3D shapes we compute velocity
+      // differently, so store a neutral rotation from the direction vector.
+      data.transforms[tt + 2] =
+        shape === 'sphere' || shape === 'cone3d' || shape === 'box' ? Math.atan2(vy, vx) : spawnAngle;
       data.transforms[tt + 3] = hasScaleCurve ? spawnScale * sampleParticleCurve(scaleCurve, 0) : spawnScale;
+      data.positionsZ[idx] = spawnZ;
       data.alphas[idx] = hasAlphaCurve ? sampleParticleCurve(alphaCurve, 0) : config.alphaStart;
 
       // Color — curve takes precedence, then per-particle variance, then constants
@@ -352,11 +455,16 @@ export function updateParticleEmitter(
   state.prevY = trackY;
 
   // Mirror the live per-particle velocities into the render data so the velocity G-buffer writer can
-  // smear each particle by its own vector. state.velocities is kept aligned with data.transforms by the
-  // compaction above, so the leading particleCount entries are the live particles in render order.
-  const liveVelocityCount = data.particleCount * 2;
-  if (data.velocities.length >= liveVelocityCount) {
-    data.velocities.set(state.velocities.subarray(0, liveVelocityCount));
+  // smear each particle by its own vector. The sim velocities are stride-3 (vx, vy, vz) while the
+  // render velocities are stride-2 (vx, vy), so we copy component-wise.
+  const liveRenderVelocityCount = data.particleCount * 2;
+  if (data.velocities.length >= liveRenderVelocityCount) {
+    for (let vi = 0; vi < data.particleCount; vi++) {
+      const src = vi * PARTICLE_VELOCITY_STRIDE;
+      const dst = vi * 2;
+      data.velocities[dst] = state.velocities[src];
+      data.velocities[dst + 1] = state.velocities[src + 1];
+    }
   }
 
   // Fire onEmitterComplete when a finite emitter has just finished and all particles are gone.
@@ -369,4 +477,58 @@ export function updateParticleEmitter(
 
 function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+// Rotate a local direction (lx, ly, lz) from z-axis alignment to the target direction (dx, dy, dz).
+// Uses Rodrigues' rotation formula. Returns [rx, ry, rz].
+const _rot: [number, number, number] = [0, 0, 0];
+function rotateToDirection(
+  lx: number,
+  ly: number,
+  lz: number,
+  dx: number,
+  dy: number,
+  dz: number,
+): [number, number, number] {
+  // Cross product of z-axis (0,0,1) with direction = (-dy, dx, 0)
+  const kx = -dy;
+  const ky = dx;
+  // kz = 0
+  const sinAngle = Math.sqrt(kx * kx + ky * ky);
+  const cosAngle = dz; // dot(z-axis, dir)
+
+  if (sinAngle < 1e-6) {
+    // Direction is nearly aligned with z-axis (or anti-aligned).
+    if (cosAngle > 0) {
+      _rot[0] = lx;
+      _rot[1] = ly;
+      _rot[2] = lz;
+    } else {
+      // 180-degree flip: negate z
+      _rot[0] = lx;
+      _rot[1] = -ly;
+      _rot[2] = -lz;
+    }
+    return _rot;
+  }
+
+  // Normalized rotation axis
+  const invSin = 1 / sinAngle;
+  const ax = kx * invSin;
+  const ay = ky * invSin;
+  // az = 0
+
+  // Rodrigues: v' = v*cos + (k cross v)*sin + k*(k dot v)*(1-cos)
+  const kdotv = ax * lx + ay * ly; // az=0
+
+  // k cross v (k=(ax,ay,0), v=(lx,ly,lz)):
+  // k x v = (ay*lz - 0*ly, 0*lx - ax*lz, ax*ly - ay*lx)
+  const crossX = ay * lz;
+  const crossY = -ax * lz;
+  const crossZ = ax * ly - ay * lx;
+
+  _rot[0] = lx * cosAngle + crossX * sinAngle + ax * kdotv * (1 - cosAngle);
+  _rot[1] = ly * cosAngle + crossY * sinAngle + ay * kdotv * (1 - cosAngle);
+  _rot[2] = lz * cosAngle + crossZ * sinAngle + 0; // az=0, so last term is 0
+  return _rot;
 }
