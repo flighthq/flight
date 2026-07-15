@@ -1,6 +1,7 @@
 export * from './classicMaterials';
 export * from './color';
 export * from './colorTransform';
+export * from './customShaderMaterial';
 export * from './material';
 export * from './materialPresets';
 export * from './materialValidation';

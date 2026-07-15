@@ -90,6 +90,7 @@ export * from './CubeTexture';
 export * from './CurlNoiseForce';
 export * from './Cursor';
 export * from './CustomShaderEffect';
+export * from './CustomShaderMaterial';
 export * from './Debug';
 export * from './DecodedImage';
 export * from './DepthMaterial';
