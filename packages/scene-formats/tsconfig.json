@@ -8,6 +8,12 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../mesh" }, { "path": "../node" }, { "path": "../scene" }, { "path": "../types" }],
+  "references": [
+    { "path": "../animation" },
+    { "path": "../mesh" },
+    { "path": "../node" },
+    { "path": "../scene" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }
