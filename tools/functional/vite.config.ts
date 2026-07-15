@@ -76,6 +76,7 @@ function buildEntryHtml(name: string, render: string, scriptSrc: string, assetBa
   <base href="${assetBase}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${name} · ${render}</title>
+  <link rel="icon" href="data:," />
   <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: sans-serif; font-size: 16px; overflow: hidden; }</style>
   <script>
     window.addEventListener('pagehide', function() {
@@ -239,6 +240,7 @@ function functionalTestsPlugin(tests: FunctionalScene[]): Plugin[] {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${name} · ${render}</title>
+  <link rel="icon" href="data:," />
   <style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: sans-serif; font-size: 16px; overflow: hidden; }</style>
   <script>
     function __ftShowError(msg) {
