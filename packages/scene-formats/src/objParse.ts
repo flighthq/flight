@@ -2,9 +2,10 @@ import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
-import type { SceneNode, VertexAttributeLayout } from '@flighthq/types';
+import type { SceneNode } from '@flighthq/types';
 
 import type { ObjMaterialLibrary } from './objSchema';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
 
 // Parses a Wavefront OBJ text source into a Scene. Groups (`g`) and objects (`o`) become
 // transform-only SceneNode hierarchy containers; faces within each material group become a
@@ -272,14 +273,3 @@ function flushBuckets(buckets: Readonly<Map<string, MaterialBucket>>, parent: Sc
     }
   }
 }
-
-const CANONICAL_FLOATS_PER_VERTEX = 12;
-const CANONICAL_LAYOUT: VertexAttributeLayout = {
-  attributes: [
-    { byteOffset: 0, format: 'float32x3', semantic: 'position' },
-    { byteOffset: 12, format: 'float32x3', semantic: 'normal' },
-    { byteOffset: 24, format: 'float32x4', semantic: 'tangent' },
-    { byteOffset: 40, format: 'float32x2', semantic: 'uv0' },
-  ],
-  stride: 48,
-};
