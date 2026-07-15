@@ -27,7 +27,7 @@ import {
   setAudioMixerMasterGain,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const SAMPLE_RATE = 44100;
 
@@ -85,7 +85,7 @@ root.scaleY = scale;
 registerDefaultHitTestPoints();
 const interactionManager = createInteractionManager(root);
 const inputManager = createInputManager();
-const canvasElement = document.querySelector('canvas')!;
+const canvasElement = canvas;
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, interactionManager, scale);
 

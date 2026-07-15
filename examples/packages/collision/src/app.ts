@@ -23,7 +23,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -291,7 +291,7 @@ let dragTarget: Collider | null = null;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 
-const canvasElement = document.querySelector('canvas')!;
+const canvasElement = canvas;
 
 canvasElement.addEventListener('pointerdown', (e: PointerEvent) => {
   const rect = canvasElement.getBoundingClientRect();

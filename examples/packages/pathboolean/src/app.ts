@@ -13,7 +13,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const CELL_W = 400;
 const CELL_H = 300;
@@ -111,7 +111,7 @@ function rebuild(): void {
 rebuild();
 
 // Drag interaction: detect which source shape the pointer is near and drag it.
-const canvasEl = document.querySelector('canvas')!;
+const canvasEl = canvas;
 let dragging: 'a' | 'b' | null = null;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -121,8 +121,8 @@ let dragStartOffsetY = 0;
 function canvasToWorld(clientX: number, clientY: number): { x: number; y: number } {
   const rect = canvasEl.getBoundingClientRect();
   return {
-    x: (clientX - rect.left) * (canvasEl.width / rect.width / scale),
-    y: (clientY - rect.top) * (canvasEl.height / rect.height / scale),
+    x: ((clientX - rect.left) / rect.width) * (CELL_W * 2),
+    y: ((clientY - rect.top) / rect.height) * (CELL_H * 2),
   };
 }
 

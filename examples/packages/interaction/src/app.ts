@@ -23,7 +23,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const CANVAS_HEIGHT = 600;
 
@@ -40,7 +40,7 @@ const manager = createInteractionManager(root);
 // Wire DOM pointer events into the interaction manager via an InputManager. The coordScale
 // bridges CSS pixels to the backing-store pixel space used by hit testing.
 const inputManager = createInputManager();
-const canvasElement = document.querySelector('canvas')!;
+const canvasElement = canvas;
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, manager, scale);
 
