@@ -1,0 +1,394 @@
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
+import type { AnimationChannel, AnimationClip, SceneNode } from '@flighthq/types';
+import { SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
+
+// Parses an id Tech 4 MD5 animation file (.md5anim) into an AnimationClip that drives the given
+// joint SceneNodes (produced by createSceneFromMd5Mesh). The ASCII line-oriented format declares a
+// skeleton hierarchy, a baseframe pose, and per-frame animated components selected by a bitmask.
+// Each joint produces up to two channels (translation and rotation) in the returned clip.
+//
+// Joint positions and orientations are converted from MD5's Z-up coordinate system to Flight's Y-up
+// system by swapping the Y and Z components. Quaternion W is reconstructed from XYZ.
+//
+// Returns null when the source is empty or cannot be parsed. Malformed lines push a warning and are
+// skipped; the function never throws on bad input.
+export function parseMd5Anim(source: string, joints: readonly SceneNode[], warnings?: string[]): AnimationClip | null {
+  const lines = source.split('\n');
+  let i = 0;
+
+  let frameRate = 24;
+  let numFrames = 0;
+  let numJoints = 0;
+
+  const hierarchy: Md5AnimHierarchyEntry[] = [];
+  const baseframe: Md5AnimBaseframePose[] = [];
+  const frames: number[][] = [];
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    i++;
+
+    if (line.length === 0 || line.startsWith('//')) continue;
+
+    if (line.startsWith('MD5Version')) {
+      const version = parseInt(line.split(/\s+/)[1], 10);
+      if (Number.isFinite(version) && version !== 10) {
+        warnings?.push(`parseMd5Anim: unsupported MD5Version ${version} (expected 10)`);
+      }
+      continue;
+    }
+
+    if (line.startsWith('commandline')) continue;
+
+    if (line.startsWith('numFrames')) {
+      numFrames = parseInt(line.split(/\s+/)[1], 10);
+      if (!Number.isFinite(numFrames)) {
+        warnings?.push(`parseMd5Anim: non-numeric numFrames`);
+        numFrames = 0;
+      }
+      continue;
+    }
+
+    if (line.startsWith('numJoints')) {
+      numJoints = parseInt(line.split(/\s+/)[1], 10);
+      if (!Number.isFinite(numJoints)) {
+        warnings?.push(`parseMd5Anim: non-numeric numJoints`);
+        numJoints = 0;
+      }
+      continue;
+    }
+
+    if (line.startsWith('frameRate')) {
+      frameRate = parseInt(line.split(/\s+/)[1], 10);
+      if (!Number.isFinite(frameRate) || frameRate <= 0) {
+        warnings?.push(`parseMd5Anim: invalid frameRate, defaulting to 24`);
+        frameRate = 24;
+      }
+      continue;
+    }
+
+    if (line.startsWith('numAnimatedComponents')) continue;
+
+    if (line === 'hierarchy {') {
+      i = parseHierarchyBlock(lines, i, hierarchy, warnings);
+      continue;
+    }
+
+    if (line === 'bounds {') {
+      i = skipBlock(lines, i);
+      continue;
+    }
+
+    if (line === 'baseframe {') {
+      i = parseBaseframeBlock(lines, i, baseframe, warnings);
+      continue;
+    }
+
+    if (line.startsWith('frame ') && line.endsWith('{')) {
+      const frameData: number[] = [];
+      i = parseFrameBlock(lines, i, frameData, warnings);
+      frames.push(frameData);
+      continue;
+    }
+  }
+
+  if (hierarchy.length === 0 || frames.length === 0) {
+    warnings?.push('parseMd5Anim: no hierarchy or frame data found');
+    return null;
+  }
+
+  if (hierarchy.length !== numJoints) {
+    warnings?.push(`parseMd5Anim: hierarchy has ${hierarchy.length} entries but numJoints declared ${numJoints}`);
+  }
+
+  if (frames.length !== numFrames) {
+    warnings?.push(`parseMd5Anim: found ${frames.length} frames but numFrames declared ${numFrames}`);
+  }
+
+  if (joints.length < hierarchy.length) {
+    warnings?.push(
+      `parseMd5Anim: joints array has ${joints.length} nodes but animation has ${hierarchy.length} joints`,
+    );
+    return null;
+  }
+
+  return buildAnimationClip(joints, hierarchy, baseframe, frames, frameRate);
+}
+
+// Builds the AnimationClip from parsed MD5 anim data. Each joint gets a translation channel
+// (3 components) and a rotation channel (4 components, quaternion slerp).
+function buildAnimationClip(
+  joints: readonly SceneNode[],
+  hierarchy: readonly Md5AnimHierarchyEntry[],
+  baseframe: readonly Md5AnimBaseframePose[],
+  frames: readonly number[][],
+  frameRate: number,
+): AnimationClip {
+  const frameCount = frames.length;
+  const jointCount = hierarchy.length;
+  const channels: AnimationChannel[] = [];
+
+  // Build time array: one entry per frame, spaced by 1/frameRate.
+  const times: number[] = [];
+  for (let f = 0; f < frameCount; f++) {
+    times.push(f / frameRate);
+  }
+
+  for (let j = 0; j < jointCount; j++) {
+    const entry = hierarchy[j];
+    const base = j < baseframe.length ? baseframe[j] : DEFAULT_BASEFRAME;
+    const flags = entry.flags;
+
+    // Extract per-frame translation and rotation for this joint.
+    const translationValues: number[] = [];
+    const rotationValues: number[] = [];
+
+    for (let f = 0; f < frameCount; f++) {
+      const frameData = frames[f];
+
+      let tx = base.positionX;
+      let ty = base.positionY;
+      let tz = base.positionZ;
+      let qx = base.orientationX;
+      let qy = base.orientationY;
+      let qz = base.orientationZ;
+
+      let componentOffset = entry.startIndex;
+      if (flags & FLAG_TX) {
+        tx = frameData[componentOffset++] ?? tx;
+      }
+      if (flags & FLAG_TY) {
+        ty = frameData[componentOffset++] ?? ty;
+      }
+      if (flags & FLAG_TZ) {
+        tz = frameData[componentOffset++] ?? tz;
+      }
+      if (flags & FLAG_QX) {
+        qx = frameData[componentOffset++] ?? qx;
+      }
+      if (flags & FLAG_QY) {
+        qy = frameData[componentOffset++] ?? qy;
+      }
+      if (flags & FLAG_QZ) {
+        qz = frameData[componentOffset++] ?? qz;
+      }
+
+      // Reconstruct quaternion W from XYZ.
+      const sumSq = qx * qx + qy * qy + qz * qz;
+      const qw = sumSq < 1 ? -Math.sqrt(1 - sumSq) : 0;
+
+      // Convert from MD5 Z-up to Flight Y-up: swap Y and Z.
+      translationValues.push(tx, tz, ty);
+      rotationValues.push(qx, qz, qy, qw);
+    }
+
+    const node = joints[j];
+
+    const translationTrack = createAnimationTrack({
+      components: 3,
+      times,
+      values: translationValues,
+    });
+    channels.push(createAnimationChannel(translationTrack, { node, path: SceneAnimationPathTranslation }));
+
+    const rotationTrack = createAnimationTrack({
+      components: 4,
+      quaternion: true,
+      times,
+      values: rotationValues,
+    });
+    channels.push(createAnimationChannel(rotationTrack, { node, path: SceneAnimationPathRotation }));
+  }
+
+  return createAnimationClip(channels);
+}
+
+// Parses the hierarchy { ... } block. Returns the line index after the closing brace.
+function parseHierarchyBlock(
+  lines: readonly string[],
+  startLine: number,
+  hierarchy: Md5AnimHierarchyEntry[],
+  warnings: string[] | undefined,
+): number {
+  let i = startLine;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    i++;
+
+    if (line === '}') return i;
+    if (line.length === 0 || line.startsWith('//')) continue;
+
+    const entry = parseHierarchyLine(line, warnings, i - 1);
+    if (entry !== null) hierarchy.push(entry);
+  }
+  warnings?.push('parseMd5Anim: hierarchy block was not closed');
+  return i;
+}
+
+// Parses a single hierarchy line: "jointName" parentIndex flags startIndex
+function parseHierarchyLine(
+  line: string,
+  warnings: string[] | undefined,
+  lineIndex: number,
+): Md5AnimHierarchyEntry | null {
+  const nameStart = line.indexOf('"');
+  const nameEnd = line.indexOf('"', nameStart + 1);
+  if (nameStart < 0 || nameEnd < 0) {
+    warnings?.push(`parseMd5Anim: malformed hierarchy entry on line ${lineIndex + 1}: missing name quotes`);
+    return null;
+  }
+  const name = line.slice(nameStart + 1, nameEnd);
+
+  const rest = line.slice(nameEnd + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+
+  if (tokens.length < 3) {
+    warnings?.push(`parseMd5Anim: malformed hierarchy entry on line ${lineIndex + 1}: not enough components`);
+    return null;
+  }
+
+  const parentIndex = parseInt(tokens[0], 10);
+  const flags = parseInt(tokens[1], 10);
+  const startIndex = parseInt(tokens[2], 10);
+
+  if (!Number.isFinite(parentIndex) || !Number.isFinite(flags) || !Number.isFinite(startIndex)) {
+    warnings?.push(`parseMd5Anim: malformed hierarchy entry on line ${lineIndex + 1}: non-numeric values`);
+    return null;
+  }
+
+  return { flags, name, parentIndex, startIndex };
+}
+
+// Parses the baseframe { ... } block. Returns the line index after the closing brace.
+function parseBaseframeBlock(
+  lines: readonly string[],
+  startLine: number,
+  baseframe: Md5AnimBaseframePose[],
+  warnings: string[] | undefined,
+): number {
+  let i = startLine;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    i++;
+
+    if (line === '}') return i;
+    if (line.length === 0 || line.startsWith('//')) continue;
+
+    const pose = parseBaseframeLine(line, warnings, i - 1);
+    if (pose !== null) baseframe.push(pose);
+  }
+  warnings?.push('parseMd5Anim: baseframe block was not closed');
+  return i;
+}
+
+// Parses a baseframe line: ( posX posY posZ ) ( quatX quatY quatZ )
+function parseBaseframeLine(
+  line: string,
+  warnings: string[] | undefined,
+  lineIndex: number,
+): Md5AnimBaseframePose | null {
+  const tokens = line
+    .replace(/[()]/g, '')
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
+
+  if (tokens.length < 6) {
+    warnings?.push(`parseMd5Anim: malformed baseframe entry on line ${lineIndex + 1}: not enough components`);
+    return null;
+  }
+
+  const positionX = parseFloat(tokens[0]);
+  const positionY = parseFloat(tokens[1]);
+  const positionZ = parseFloat(tokens[2]);
+  const orientationX = parseFloat(tokens[3]);
+  const orientationY = parseFloat(tokens[4]);
+  const orientationZ = parseFloat(tokens[5]);
+
+  if (
+    !Number.isFinite(positionX) ||
+    !Number.isFinite(positionY) ||
+    !Number.isFinite(positionZ) ||
+    !Number.isFinite(orientationX) ||
+    !Number.isFinite(orientationY) ||
+    !Number.isFinite(orientationZ)
+  ) {
+    warnings?.push(`parseMd5Anim: malformed baseframe entry on line ${lineIndex + 1}: non-numeric values`);
+    return null;
+  }
+
+  return { orientationX, orientationY, orientationZ, positionX, positionY, positionZ };
+}
+
+// Parses a frame N { ... } block, collecting all float values. Returns the line index after the
+// closing brace.
+function parseFrameBlock(
+  lines: readonly string[],
+  startLine: number,
+  frameData: number[],
+  warnings: string[] | undefined,
+): number {
+  let i = startLine;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    i++;
+
+    if (line === '}') return i;
+    if (line.length === 0 || line.startsWith('//')) continue;
+
+    const tokens = line.split(/\s+/).filter((t) => t.length > 0);
+    for (const token of tokens) {
+      const value = parseFloat(token);
+      if (!Number.isFinite(value)) {
+        warnings?.push(`parseMd5Anim: non-numeric frame value "${token}" on line ${i}`);
+        continue;
+      }
+      frameData.push(value);
+    }
+  }
+  warnings?.push('parseMd5Anim: frame block was not closed');
+  return i;
+}
+
+// Skips a block delimited by { ... }. Returns the line index after the closing brace.
+function skipBlock(lines: readonly string[], startLine: number): number {
+  let i = startLine;
+  while (i < lines.length) {
+    if (lines[i].trim() === '}') return i + 1;
+    i++;
+  }
+  return i;
+}
+
+// MD5 anim hierarchy entry flags: each bit indicates which component is animated and read from the
+// frame data rather than the baseframe.
+const FLAG_TX = 1;
+const FLAG_TY = 2;
+const FLAG_TZ = 4;
+const FLAG_QX = 8;
+const FLAG_QY = 16;
+const FLAG_QZ = 32;
+
+interface Md5AnimHierarchyEntry {
+  flags: number;
+  name: string;
+  parentIndex: number;
+  startIndex: number;
+}
+
+interface Md5AnimBaseframePose {
+  orientationX: number;
+  orientationY: number;
+  orientationZ: number;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+}
+
+const DEFAULT_BASEFRAME: Md5AnimBaseframePose = {
+  orientationX: 0,
+  orientationY: 0,
+  orientationZ: 0,
+  positionX: 0,
+  positionY: 0,
+  positionZ: 0,
+};

@@ -4,6 +4,7 @@ export * from './gltfParse';
 // format-internal and stay module-scoped within the package.
 export type { GltfDocument } from './gltfSchema';
 export * from './md2Parse';
+export * from './md5AnimParse';
 export * from './md5Parse';
 export * from './mtlParse';
 export * from './objParse';
