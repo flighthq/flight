@@ -15,6 +15,7 @@ import {
   createStandardPbrMaterial,
   createVector3,
   destroyMeshGeometryGlData,
+  destroyMeshGeometryWgpuData,
   normalizeVector3,
   setCameraViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
@@ -253,6 +254,7 @@ function animate(time: number): void {
   // Bump the version so scene-gl re-uploads the vertex data.
   geometry.version++;
   destroyMeshGeometryGlData(geometry);
+  destroyMeshGeometryWgpuData(geometry);
 
   render(scene, camera, lights);
   requestAnimationFrame(animate);
