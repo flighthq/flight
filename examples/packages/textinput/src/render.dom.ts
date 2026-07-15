@@ -34,6 +34,8 @@ registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 enableDomTextInput();
 
+export const canvas: HTMLElement = container;
+
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
