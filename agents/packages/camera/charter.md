@@ -54,6 +54,7 @@ _Drawn from the review and neighbor packages. Edit freely._
 - **2026-07-03 — Reversed-Z / infinite-far perspective in scope.**
 - **2026-07-03 — Off-axis/asymmetric projection (stereo/VR/portals) in scope.**
 - **2026-07-03 — TS-leads, Rust conforms later.**
+- **[2026-07-15] Merge `camera2d` into this package.** Both are pure math — matrix producers with no graph dependency. `Camera` renames to `Camera3D`; `Camera2D` keeps its name. One package, two camera types, same concept at different dimensionalities. The dimension changes the representation (Matrix vs Matrix4), not the model. Tree-shaking zeroes the cost for single-dimension users. User-directed.
 
 ## Open directions
 

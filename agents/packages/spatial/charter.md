@@ -33,8 +33,11 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-10] Pair enumeration is dedup'd and self-excluding.** `querySpatialPairs` yields each candidate unordered pair at most once and never pairs an object with itself; the caller confirms with narrow-phase. Query results are ids/handles, not object references (the caller owns its objects).
 - **[2026-07-10] `SpatialIndex`/`SpatialIndexBackend` + query result shapes in `@flighthq/types`.** Header layer owns the seam and result types so `collision`/`camera2d`/renderer consumers reference them without importing an index implementation.
 
+- **[2026-07-15] Unified 2D+3D package.** When 3D broadphase arrives (BVH, octree, 3D sweep-and-prune), it joins this package behind the same `SpatialIndexBackend` seam. The concept is the same (spatial index for candidate-pair queries); the dimension changes the data structure, not the domain. 3D backends slot into the existing swappable-backend architecture: `createBvhSpatialBackend`, `createOctreeSpatialBackend`. User-directed.
+
 ## Open directions
 
 1. **Quadtree backend (phase 2).** Recursive quadrant subdivision for clustered/variably-sized objects.
 2. **Sort-and-sweep backend (phase 3).** Sweep-and-prune along dominant axes for many similarly-sized movers.
 3. **Persistent-pair tracking.** Enter/stay/exit pair events across frames (for trigger volumes), emitted through signals — a composing layer over the raw pair query.
+4. **3D backends.** BVH and octree for 3D broadphase, behind the same `SpatialIndexBackend` seam. These serve `@flighthq/physics3d` and 3D scene culling.
