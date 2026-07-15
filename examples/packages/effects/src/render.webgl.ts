@@ -5,7 +5,6 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createMatrix,
   defaultGlShapeCommands,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
@@ -19,7 +18,7 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
@@ -27,8 +26,6 @@ export const state = createGlRenderState(canvas, {
   backgroundColor: 0x0a0c14ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
-
-state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
 registerDefaultGlMaterial(state);
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);

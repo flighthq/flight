@@ -15,7 +15,7 @@ import {
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createGlCanvasElement(800, 600, pixelRatio);
+export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
