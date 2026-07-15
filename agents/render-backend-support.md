@@ -39,7 +39,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Perspective projection | ✓ | ✓ |  |
 | Orthographic projection | ✓ | ✗ | see gap #6 — **blank on wgpu** |
 | Ambient + Directional lights | ✓ | ✓ |  |
-| Point / Spot / Hemisphere lights | ✓ | ✗ | gl: forward punctual lighting wired (gap #8); wgpu: not yet |
+| Point / Spot / Hemisphere lights | ✓ | ✓ | forward punctual lighting wired on both gl and wgpu |
 
 ## Known gaps (renderer not at parity — scope tests, don't fight them)
 
@@ -53,7 +53,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 
 ## Feature gaps (not implemented at all — implement before testing)
 
-8. **Punctual lights — wired on gl, not wgpu.** Forward punctual lighting (point/spot/hemisphere) now shades on **gl**: `SceneLights` (`packages/types/src/SceneLights.ts`) carries `point`/`spot`/`hemisphere` arrays alongside `ambient`/`directional`, `packSceneLightBlock` (`packages/render/src/sceneRender.ts`) packs up to `MAX_FORWARD_LIGHTS` (= 4) of each type into the `SceneLightBlock`, and the gl lit shader (`GL_MESH_LIGHT_BLOCK_GLSL` in `packages/scene-gl/src/glLitProgram.ts`) consumes the `u_pointLights`/`u_spotLights`/`u_hemisphereLights` uniform arrays, each bounded by its count uniform. **wgpu** does not yet consume punctual lights. Area lights remain deferred (no `SceneLights.area` field).
+8. **~~Punctual lights — wired on gl, not wgpu.~~ DONE.** Forward punctual lighting (point/spot/hemisphere) now shades on **both gl and wgpu**: `SceneLights` (`packages/types/src/SceneLights.ts`) carries `point`/`spot`/`hemisphere` arrays alongside `ambient`/`directional`, `packSceneLightBlock` (`packages/render/src/sceneRender.ts`) packs up to `MAX_FORWARD_LIGHTS` (= 4) of each type into the `SceneLightBlock`, and both backends consume them — gl via `u_pointLights`/`u_spotLights`/`u_hemisphereLights` uniform arrays (`GL_MESH_LIGHT_BLOCK_GLSL` in `packages/scene-gl/src/glLitProgram.ts`), wgpu via the expanded Frame struct's `pointLights`/`spotLights`/`hemisphereLights` arrays (`wgpuPbrPrelude.ts`). Both share the `shadePbrPunctual` factored BRDF (Cook-Torrance + extension lobes), `rangeWindow` inverse-square falloff, and cone smoothstep for spots. Area lights remain deferred (no `SceneLights.area` field).
 9. **Group/layer blend.** A `blendMode` on a container (so the whole subtree composites as one layer) needs render-to-texture flattening; unverified whether the renderer does this. Treat as a gap until confirmed.
 10. **TextureAtlasRegion pivot.** `pivotX/pivotY` on an atlas region are reported (audit, unverified) as stored but never read by the sprite renderers.
 

@@ -1,6 +1,6 @@
 import type { ParticleCurve } from './ParticleCurve';
 
-export type ParticleEmitterShape = 'point' | 'circle' | 'rect';
+export type ParticleEmitterShape = 'box' | 'circle' | 'cone3d' | 'point' | 'rect' | 'sphere';
 
 /** Blend mode hint stored in the config for round-tripping through format parsers.
  *  Apply it to the emitter node (e.g. `emitter.blendMode = BlendMode.Add`) after
@@ -25,8 +25,12 @@ export interface ParticleEmitterConfig {
   readonly colorStartVarianceR: number;
   readonly directionX: number;
   readonly directionY: number;
+  readonly directionZ: number;
   readonly gravityX: number;
   readonly gravityY: number;
+  readonly gravityZ: number;
+  readonly emitterConeAngle: number;
+  readonly emitterDepth: number;
   readonly emitterHeight: number;
   readonly emitterRadius: number;
   readonly emitterShape: ParticleEmitterShape;

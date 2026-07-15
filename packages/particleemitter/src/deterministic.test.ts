@@ -1,5 +1,5 @@
 import { createRandomSource } from '@flighthq/math';
-import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
+import { PARTICLE_VELOCITY_STRIDE, createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
 import { createParticleEmitter } from './particleEmitter';
@@ -46,8 +46,11 @@ describe('deterministic replay', () => {
     expect(emitterA.data.alphas.subarray(0, count)).toEqual(emitterB.data.alphas.subarray(0, count));
     expect(emitterA.data.colors.subarray(0, count * 3)).toEqual(emitterB.data.colors.subarray(0, count * 3));
     expect(emitterA.data.velocities.subarray(0, count * 2)).toEqual(emitterB.data.velocities.subarray(0, count * 2));
+    expect(emitterA.data.positionsZ.subarray(0, count)).toEqual(emitterB.data.positionsZ.subarray(0, count));
     expect(stateA.lifetimes.subarray(0, count * 2)).toEqual(stateB.lifetimes.subarray(0, count * 2));
-    expect(stateA.velocities.subarray(0, count * 2)).toEqual(stateB.velocities.subarray(0, count * 2));
+    expect(stateA.velocities.subarray(0, count * PARTICLE_VELOCITY_STRIDE)).toEqual(
+      stateB.velocities.subarray(0, count * PARTICLE_VELOCITY_STRIDE),
+    );
     expect(stateA.scales.subarray(0, count)).toEqual(stateB.scales.subarray(0, count));
   });
 });

@@ -1,4 +1,8 @@
-import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
+import {
+  PARTICLE_VELOCITY_STRIDE,
+  createParticleEmitterState,
+  ensureParticleEmitterStateCapacity,
+} from './particleEmitterState';
 
 describe('createParticleEmitterState', () => {
   it('returns empty arrays, zero accumulator, burstTimer=0, and NaN prev position', () => {
@@ -17,6 +21,7 @@ describe('createParticleEmitterState', () => {
     expect(state.burstTimer).toBe(0);
     expect(isNaN(state.prevX)).toBe(true);
     expect(isNaN(state.prevY)).toBe(true);
+    expect(isNaN(state.prevZ)).toBe(true);
   });
 
   it('returns a new object each call', () => {
@@ -31,7 +36,7 @@ describe('ensureParticleEmitterStateCapacity', () => {
     const state = createParticleEmitterState();
     ensureParticleEmitterStateCapacity(state, 10, false);
     expect(state.lifetimes.length).toBeGreaterThanOrEqual(10 * 2);
-    expect(state.velocities.length).toBeGreaterThanOrEqual(10 * 2);
+    expect(state.velocities.length).toBeGreaterThanOrEqual(10 * PARTICLE_VELOCITY_STRIDE);
     expect(state.scales.length).toBeGreaterThanOrEqual(10);
     expect(state.rotationSpeeds.length).toBeGreaterThanOrEqual(10);
   });

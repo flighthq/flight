@@ -65,6 +65,7 @@ export function appendParticleEmitterParticle(
   const vt = index * PARTICLE_VELOCITY_STRIDE;
   target.data.velocities[vt] = 0;
   target.data.velocities[vt + 1] = 0;
+  target.data.positionsZ[index] = 0;
   return index;
 }
 
@@ -87,6 +88,7 @@ export function cloneParticleEmitter(source: Readonly<ParticleEmitter>): Particl
       colors: src.colors.slice(),
       ids: src.ids.slice(),
       particleCount: src.particleCount,
+      positionsZ: src.positionsZ.slice(),
       transforms: src.transforms.slice(),
       velocities: src.velocities.slice(),
       worldSpace: src.worldSpace,
@@ -126,6 +128,7 @@ export function compactParticleEmitter(target: ParticleEmitter): void {
       const vts = read * PARTICLE_VELOCITY_STRIDE;
       data.velocities[vt] = data.velocities[vts];
       data.velocities[vt + 1] = data.velocities[vts + 1];
+      data.positionsZ[write] = data.positionsZ[read];
     }
     write++;
   }
@@ -208,6 +211,7 @@ export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitte
     colors: data?.colors ?? new Float32Array(),
     ids: data?.ids ?? new Uint16Array(),
     particleCount: data?.particleCount ?? 0,
+    positionsZ: data?.positionsZ ?? new Float32Array(),
     transforms: data?.transforms ?? new Float32Array(),
     velocities: data?.velocities ?? new Float32Array(),
     worldSpace: data?.worldSpace ?? false,
@@ -292,6 +296,7 @@ export function removeParticleEmitterParticle(target: ParticleEmitter, index: nu
     const vts = last * PARTICLE_VELOCITY_STRIDE;
     data.velocities[vt] = data.velocities[vts];
     data.velocities[vt + 1] = data.velocities[vts + 1];
+    data.positionsZ[index] = data.positionsZ[last];
   }
   data.particleCount = last;
 }
@@ -302,6 +307,7 @@ export function reserveParticleEmitter(target: ParticleEmitter, capacity: number
   data.alphas = reserveFloat32Array(data.alphas, capacity);
   data.colors = reserveFloat32Array(data.colors, capacity * 3);
   data.ids = reserveUint16Array(data.ids, capacity);
+  data.positionsZ = reserveFloat32Array(data.positionsZ, capacity);
   data.transforms = reserveFloat32Array(data.transforms, capacity * PARTICLE_TRANSFORM_STRIDE);
   data.velocities = reserveFloat32Array(data.velocities, capacity * 2);
 }

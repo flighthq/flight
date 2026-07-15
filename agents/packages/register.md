@@ -60,6 +60,37 @@ Design calls to settle before building the affected entries:
 - **`render-graph`** — its own design pass (reshaping `render`) before shadow/lighting sequencing hardens.
 - **The `animation`/`skeleton`/`tween`/`timeline` boundary** — now that all four are built, revisit for overlap (anchor: the `clock` charter).
 
+## 2D/3D naming architecture (decided 2026-07-15)
+
+The standing rule for packages that span two and three dimensions. The test: **"does the dimension change the mathematical model, or just the representation?"** If the model is the same, one package with suffixed types; if the model differs, separate packages.
+
+### Unified (representation differs, model same)
+
+| Package | 2D type | 3D type | Status | Notes |
+| --- | --- | --- | --- | --- |
+| `camera` | `Camera2D` | `Camera3D` | merge `camera2d` into `camera` | Both pure math (matrix producers), no graph dep |
+| `particleemitter` | `ParticleEmitter2D` | `ParticleEmitter3D` | add 3D, rename existing | Dual `displayobject`+`scene` dep accepted; tree-shaking zeroes cost |
+| `collision` | 2D shapes (existing) | 3D shapes (future) | add 3D when built | GJK/EPA joins same package; vocabulary-distinct names (Circle/Sphere) need no suffix |
+| `spatial` | 2D backends (existing) | 3D backends (future) | add 3D when built | BVH/octree behind same `SpatialIndexBackend` seam |
+| `velocity` | `Velocity2D` (existing) | `Velocity3D` (future) | add 3D when built | Same concept: position delta / dt |
+
+### Split (model differs)
+
+| 2D package | 3D package | Status | Why different models |
+| --- | --- | --- | --- |
+| `physics2d` | `physics3d` | both new (chartered) | Different solvers, constraint Jacobians, contact generation (SAT vs GJK/EPA), island strategies |
+| `skeleton2d` | `skeleton3d` | both new (chartered); `skeleton` renames to `skeleton3d` | Different skinning math (CPU 2D mesh warp vs GPU skin palette), different IK, different blend strategies |
+
+### Inherently single-dimension (no counterpart)
+
+Display graph families (`displayobject`=2D, `scene`=3D), 2D geometry primitives (`path`, `shape`, `clip`, `motionpath`), 3D geometry (`mesh`), 3D rendering (`lighting`, `materials`), 2D animation (`movieclip`, `spritesheet`), 2D input (`interaction`), 3D selection (`picking`).
+
+### Naming convention
+
+- When both 2D and 3D types coexist in one package, both get explicit suffixes: `Camera2D`/`Camera3D`, `ParticleEmitter2D`/`ParticleEmitter3D`.
+- Where shape names are vocabulary-distinct (Circle vs Sphere, ConvexPolygon vs ConvexHull), no dimension suffix is needed.
+- `skeleton` renames to `skeleton3d` for symmetry with `skeleton2d`. Both dimensions get explicit suffixes.
+
 Resolved / redundant — removed from the candidate set:
 
 - `postprocess` → **covered by the built `effects`** + `effects-gl`/`effects-wgpu`/`effects-canvas` (substrate-agnostic post-process descriptors + per-backend execution).
@@ -161,6 +192,7 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 | `steering` | steering · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — Reynolds seek/flee/arrive/flocking. Distinct from motionpath (authored) and spring (smoothing) |
 | `behaviortree` | ai · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — plain-data BTs, open node-kind registry, explicit tick, caller-owned blackboard |
 | `statechart` | state · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — hierarchical FSM. Doubly motivated: gameplay + Rive SM runtime substrate. Distinct from flow (app stack) |
+| `skeleton2d` | skeleton · primitive | naming matrix (2026-07-15) | **bedrock** — 2D skeletal animation (Spine/DragonBones territory). Separate from `skeleton` (3D) because the dimension changes the mathematical model. Chartered 2026-07-15 |
 
 ### Cloud / distributed tier (soon)
 
@@ -209,7 +241,7 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 | `geo` | geo · primitive | [adjacent](../breadth-adjacent-content.md) | **discuss** — projections, haversine. Needs fork-G-style scope ruling |
 | `geo-formats` | geo · `-formats` | [adjacent](../breadth-adjacent-content.md) | **discuss** — GeoJSON/TopoJSON/MVT. After scope ruling |
 | `maptile` | geo · primitive | [adjacent](../breadth-adjacent-content.md) | **discuss** — slippy z/x/y math. After scope ruling |
-| `physics` (3D) | physics · primitive | [deepening](../breadth-domain-deepening.md) | **reserve** — rust-intended. After physics2d proves the seam |
+| `physics3d` | physics · primitive | [deepening](../breadth-domain-deepening.md) | **reserve** — rust-intended. After physics2d proves the seam. Chartered 2026-07-15 |
 | `presence` | sync · primitive | [cloud](../breadth-cloud-distributed.md) | **reserve** |
 | `identity` | auth · primitive | [cloud](../breadth-cloud-distributed.md) | **reserve** — vendor territory today |
 | `midi` | midi · primitive | [adjacent](../breadth-adjacent-content.md) | **reserve** |

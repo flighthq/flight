@@ -229,4 +229,56 @@ Host backends (`host-<runtime>` — not tree-shakable, not re-exported from `@fl
 
 Tooling suite (`tool-*` — the dev/CI sibling of `host-*`: harness/build/test tooling packages, **not re-exported from `@flighthq/sdk`**, may depend on Node/Playwright, never in a browser bundle; opt-in **tooling primitives a harness composes**, while the project's specific harness wiring stays in `scripts/`/`tools/`). Excluded from the sdk barrel by `scripts/sdk-policy.ts`'s `isSdkBarrelExcludedPackage`. First member: `@flighthq/tool-capture` (drive an example/functional/site page → clean `screenshot.png` + `logs.jsonl` + `status.json`, with the hardened present-frame sync; consumes `@flighthq/capture` for compare/tier policy and `flight-reference` for baselines) — DRY'd across repos so `flight-reference`/`flight-rs`/main share one capture path instead of copied scripts.
 
+## Feature Lookup
+
+Quick-reference for common feature keywords. All package names use the `@flighthq/` prefix. "Backend" lists which renderers or runtimes support the feature today; "headless" means no renderer needed, "runtime" means any JS environment, "web" means browser APIs required, "parser" means pure data parsing.
+
+| Feature | Package(s) | Backend | Notes |
+| --- | --- | --- | --- |
+| Shadows (directional) | `lighting` + `scene-gl` + `scene-wgpu` | gl, wgpu | DirectionalLight ShadowConfig |
+| Fog | `effects` (ScreenSpaceFogEffect) | canvas, gl, wgpu | Post-process effect |
+| Ambient light | `lighting` | gl, wgpu | |
+| Directional light | `lighting` | gl, wgpu | Supports shadow config |
+| Point light | `lighting`, SceneLights.point | gl, wgpu | |
+| Spot light | `lighting`, SceneLights.spot | gl, wgpu | |
+| Hemisphere light | `lighting`, SceneLights.hemisphere | gl, wgpu | |
+| Area light | `lighting` | --- | Descriptor exists, renderer not wired |
+| IBL / Environment maps | `lighting` (createEnvironment) + `texture` (CubeTexture) | gl, wgpu | |
+| Particles (2D) | `particles` (sim) + `particleemitter` (display node) | canvas, gl, wgpu | |
+| Particles (3D) | --- | --- | Not yet implemented |
+| Collision (2D) | `collision` | headless | SAT narrow-phase |
+| Broadphase | `spatial` | headless | Uniform grid |
+| Custom shaders (post-process) | `effects` (CustomShaderEffect) | gl, wgpu | |
+| Custom shaders (material) | --- | --- | Not yet implemented |
+| Bloom | `effects` (BloomEffect) | canvas, gl, wgpu | |
+| Blur | `effects` (BlurEffect) | canvas, gl, wgpu | |
+| Vignette | `effects` (VignetteEffect) | canvas, gl, wgpu | |
+| Tone mapping | `effects` (ToneMapEffect) | canvas, gl, wgpu | |
+| Drop shadow / Glow | `effects` (composite recipes) | canvas, gl, wgpu | |
+| Color adjustments | `adjustments` | canvas, gl, wgpu | Color matrix fuse |
+| Materials (PBR) | `materials` (StandardPbrMaterial) | gl, wgpu | |
+| Materials (unlit) | `materials` (UnlitMaterial) | gl, wgpu | |
+| Materials (toon) | `materials` (ToonMaterial) | gl, wgpu | |
+| Text | `text` | canvas, dom, gl, wgpu | TextLabel, RichText, NativeText |
+| Text (bitmap) | `bitmaptext` + `bitmapfont` | canvas, gl, wgpu | |
+| Text input | `textinput` | headless | |
+| Audio | `audio` + `media` | web | Web Audio mixer |
+| Video | `video` + `displayobject` | canvas, dom, gl, wgpu | |
+| Camera (2D) | `camera2d` | headless | Deadzone, parallax, zoom |
+| Camera (3D) | `camera` | gl, wgpu | Perspective, orthographic, frustum |
+| Tween / Spring / Easing | `tween`, `spring`, `easing` | headless | |
+| Skeletal animation | `skeleton` + `animation` | gl, wgpu | |
+| Spritesheet animation | `spritesheet` + `movieclip` | canvas, gl, wgpu | |
+| Path / shapes | `path` + `shape` | canvas, dom, gl, wgpu | |
+| Path booleans | `path-boolean` | headless | |
+| Hit testing | `interaction` | runtime | |
+| Tilemap | `sprite` + `tilemap-formats` | canvas, gl, wgpu | Tiled TMX/TMJ |
+| Asset loading | `assets` + `loader` | runtime | Ref-counted, concurrent |
+| glTF import | `scene-formats` | parser | JSON + GLB |
+| OBJ/3DS/FBX import | --- | --- | Chartered, not implemented |
+| Flow / game states | `flow` | headless | |
+| Snapshot / undo | `snapshot` | headless | |
+| Input | `input` | web | Keyboard/pointer/wheel/gamepad |
+| Accessibility | `accessibility` | web | ARIA bridge |
+
 See [package map](packages/map.md) for full per-package detail and API surface.

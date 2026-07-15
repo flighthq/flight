@@ -32,6 +32,10 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-10] Frame-rate-independent follow smoothing.** Target follow uses `@flighthq/math`'s `damp` (exponential smoothing by a time constant), not a raw per-frame `lerp` factor, so behavior is stable across frame rates. A deadzone box (half-extents around the view center) suppresses motion until the target leaves it; optional world-bounds clamping keeps the view inside the level. All parameters are explicit options, no hidden defaults mutating the camera.
 - **[2026-07-10] `Camera2D` type in `@flighthq/types`.** Header layer owns the shape so renderer/culling consumers reference it without importing this package. Function names carry the full `Camera2D` type name per the naming rule (`getCamera2DViewMatrix`, `updateCamera2DFollow`, `getCamera2DVisibleBounds`, world/screen projection + parallax + zoom-at-point helpers).
 
+## Decisions
+
+- **[2026-07-15] Merge into `@flighthq/camera`.** Both camera packages are pure math (matrix producers, no graph dependency). `Camera2D` moves into the unified `camera` package alongside the renamed `Camera3D`. The `camera2d` package is retired. User-directed.
+
 ## Open directions
 
 1. **Camera shake / impulse.** Additive positional/rotational noise over a decay — a composing helper on top of the base transform.
