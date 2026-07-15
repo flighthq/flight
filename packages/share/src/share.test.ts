@@ -41,7 +41,24 @@ function fakeBackend(
   };
 }
 
-afterEach(() => setShareBackend(null));
+const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+
+function mockNavigator(value: unknown): void {
+  Object.defineProperty(globalThis, 'navigator', { value, configurable: true });
+}
+
+function restoreNavigator(): void {
+  if (originalNavigatorDescriptor !== undefined) {
+    Object.defineProperty(globalThis, 'navigator', originalNavigatorDescriptor);
+  } else {
+    delete (globalThis as { navigator?: unknown }).navigator;
+  }
+}
+
+afterEach(() => {
+  setShareBackend(null);
+  restoreNavigator();
+});
 
 describe('attachShareSignals', () => {
   it('replaces an existing attachment idempotently', async () => {
@@ -126,70 +143,54 @@ describe('createWebShareBackend', () => {
 
   it('shareWithResult returns dismissed=true on AbortError', async () => {
     const backend = createWebShareBackend();
-    Object.defineProperty(globalThis, 'navigator', {
-      value: {
-        share: async () => {
-          const err = new Error('User aborted');
-          err.name = 'AbortError';
-          throw err;
-        },
-        canShare: () => true,
+    mockNavigator({
+      share: async () => {
+        const err = new Error('User aborted');
+        err.name = 'AbortError';
+        throw err;
       },
-      configurable: true,
+      canShare: () => true,
     });
     const result = await backend.shareWithResult({ text: 'hi' });
     expect(result.completed).toBe(false);
     expect(result.dismissed).toBe(true);
-    Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
   });
 
   it('shareWithResult returns dismissed=false on non-AbortError', async () => {
     const backend = createWebShareBackend();
-    Object.defineProperty(globalThis, 'navigator', {
-      value: {
-        share: async () => {
-          const err = new Error('Data error');
-          err.name = 'DataError';
-          throw err;
-        },
-        canShare: () => true,
+    mockNavigator({
+      share: async () => {
+        const err = new Error('Data error');
+        err.name = 'DataError';
+        throw err;
       },
-      configurable: true,
+      canShare: () => true,
     });
     const result = await backend.shareWithResult({ text: 'hi' });
     expect(result.completed).toBe(false);
     expect(result.dismissed).toBe(false);
-    Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
   });
 
   it('isAvailable returns true when navigator.share exists', () => {
-    Object.defineProperty(globalThis, 'navigator', {
-      value: { share: async () => {} },
-      configurable: true,
-    });
+    mockNavigator({ share: async () => {} });
     const backend = createWebShareBackend();
     expect(backend.isAvailable()).toBe(true);
-    Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
   });
 
   it('canShare delegates files to navigator.canShare', () => {
     let passedData: ShareData | undefined;
-    Object.defineProperty(globalThis, 'navigator', {
-      value: {
-        share: async () => {},
-        canShare: (data: ShareData) => {
-          passedData = data;
-          return true;
-        },
+    mockNavigator({
+      share: async () => {},
+      canShare: (data: ShareData) => {
+        passedData = data;
+        return true;
       },
-      configurable: true,
     });
     const backend = createWebShareBackend();
     const file: ShareFile = { name: 'img.png', mimeType: 'image/png', dataUrl: 'data:image/png;base64,AA==' };
     backend.canShare({ files: [file] });
     expect(passedData?.files).toHaveLength(1);
     expect(passedData?.files?.[0]).toBeInstanceOf(File);
-    Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
   });
 });
 
@@ -269,12 +270,8 @@ describe('isShareAvailable', () => {
   });
 
   it('returns true when navigator.share exists', () => {
-    Object.defineProperty(globalThis, 'navigator', {
-      value: { share: async () => {} },
-      configurable: true,
-    });
+    mockNavigator({ share: async () => {} });
     expect(isShareAvailable()).toBe(true);
-    Object.defineProperty(globalThis, 'navigator', { value: undefined, configurable: true });
   });
 });
 
