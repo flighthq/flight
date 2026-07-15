@@ -191,17 +191,14 @@ for (const ds of shapes) {
     lastEventType = 'pointerMove';
     if (dragTarget !== ds) return;
 
-    // Move the shape center to follow the pointer, adjusting for the grab offset.
-    const worldX = data.worldX;
-    const worldY = data.worldY;
-    ds.cx = worldX - dragOffsetX + ds.w / 2;
-    ds.cy = worldY - dragOffsetY + ds.h / 2;
+    const localX = data.worldX / scale;
+    const localY = data.worldY / scale;
+    ds.cx = localX - dragOffsetX + ds.w / 2;
+    ds.cy = localY - dragOffsetY + ds.h / 2;
 
-    // For circles, cx/cy is already the center (not offset by w/h) since localX/localY
-    // are relative to the shape's local bounds origin.
     if (ds.kind === 'circle') {
-      ds.cx = worldX - dragOffsetX + ds.w;
-      ds.cy = worldY - dragOffsetY + ds.w;
+      ds.cx = localX - dragOffsetX + ds.w;
+      ds.cy = localY - dragOffsetY + ds.w;
     }
 
     redrawShape(ds);
