@@ -181,8 +181,8 @@ for (const ds of shapes) {
   connectInteractionSignal(manager, ds.shape, 'onPointerDown', (data: Readonly<PointerEventData>) => {
     lastEventType = 'pointerDown';
     dragTarget = ds;
-    dragOffsetX = data.localX;
-    dragOffsetY = data.localY;
+    dragOffsetX = data.localX - ds.cx;
+    dragOffsetY = data.localY - ds.cy;
     dragStatus = 'dragging ' + ds.name;
     captureInteractionPointer(manager, data.pointerId, ds.shape);
   });
@@ -193,13 +193,8 @@ for (const ds of shapes) {
 
     const localX = data.worldX / scale;
     const localY = data.worldY / scale;
-    ds.cx = localX - dragOffsetX + ds.w / 2;
-    ds.cy = localY - dragOffsetY + ds.h / 2;
-
-    if (ds.kind === 'circle') {
-      ds.cx = localX - dragOffsetX + ds.w;
-      ds.cy = localY - dragOffsetY + ds.w;
-    }
+    ds.cx = localX - dragOffsetX;
+    ds.cy = localY - dragOffsetY;
 
     redrawShape(ds);
   });
