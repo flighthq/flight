@@ -1,5 +1,5 @@
-/** A single structural issue reported by `validateSkeleton`. */
-export interface SkeletonValidationDiagnostic {
+/** A single structural issue reported by `validateSkeleton3D`. */
+export interface Skeleton3DValidationDiagnostic {
   /** Number of joints in the skeleton. */
   jointCount: number;
   /** Actual length of `inverseBindMatrices` (should be `jointCount * 16`). */
