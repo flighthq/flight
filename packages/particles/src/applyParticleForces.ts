@@ -12,10 +12,12 @@ import type {
   WindForce,
 } from '@flighthq/types';
 
+import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState';
+
 export type { AttractorForce, DragForce, ForceFalloff, ParticleForce, TurbulenceForce, VortexForce, WindForce };
 
 // Per-particle acceleration scratch, reused across the loop to avoid allocation.
-const accel: [number, number] = [0, 0];
+const accel: [number, number, number] = [0, 0, 0];
 
 /** Apply force fields to a typed-array particle emitter, integrating the
  *  resulting acceleration into per-particle velocity. Call this BEFORE
@@ -34,16 +36,29 @@ export function applyParticleForces(
   const data = emitter.data;
   const count = data.particleCount;
   const transforms = data.transforms;
+  const positionsZ = data.positionsZ;
   const velocities = state.velocities;
 
   for (let i = 0; i < count; i++) {
     const tt = i * 4;
-    const vt = i * 2;
+    const vt = i * PARTICLE_VELOCITY_STRIDE;
     accel[0] = 0;
     accel[1] = 0;
-    accumulateForces(forces, transforms[tt], transforms[tt + 1], velocities[vt], velocities[vt + 1], accel);
+    accel[2] = 0;
+    const pz = positionsZ.length > i ? positionsZ[i] : 0;
+    accumulateForces(
+      forces,
+      transforms[tt],
+      transforms[tt + 1],
+      pz,
+      velocities[vt],
+      velocities[vt + 1],
+      velocities[vt + 2],
+      accel,
+    );
     velocities[vt] += accel[0] * deltaTime;
     velocities[vt + 1] += accel[1] * deltaTime;
+    velocities[vt + 2] += accel[2] * deltaTime;
   }
 }
 
@@ -62,7 +77,8 @@ export function applyParticleObjectForces(
     const vt = i * 2;
     accel[0] = 0;
     accel[1] = 0;
-    accumulateForces(forces, objects[i].x, objects[i].y, velocities[vt], velocities[vt + 1], accel);
+    accel[2] = 0;
+    accumulateForces(forces, objects[i].x, objects[i].y, 0, velocities[vt], velocities[vt + 1], 0, accel);
     velocities[vt] += accel[0] * deltaTime;
     velocities[vt + 1] += accel[1] * deltaTime;
   }
@@ -72,9 +88,11 @@ function accumulateForces(
   forces: ReadonlyArray<ParticleForce>,
   px: number,
   py: number,
+  pz: number,
   vx: number,
   vy: number,
-  out: [number, number],
+  vz: number,
+  out: [number, number, number],
 ): void {
   for (let f = 0; f < forces.length; f++) {
     const force = forces[f];
@@ -82,38 +100,55 @@ function accumulateForces(
       case 'WindForce':
         out[0] += force.x;
         out[1] += force.y;
+        out[2] += force.z ?? 0;
         break;
       case 'DragForce':
         out[0] -= force.strength * vx;
         out[1] -= force.strength * vy;
+        out[2] -= force.strength * vz;
         break;
       case 'AttractorForce': {
+        const fz = force.z ?? 0;
         const dx = force.x - px;
         const dy = force.y - py;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dz = fz - pz;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (dist <= 1e-6) break;
         const mag = force.strength * falloffFactor(force.falloff, dist, force.radius);
         if (mag === 0) break;
         out[0] += (dx / dist) * mag;
         out[1] += (dy / dist) * mag;
+        out[2] += (dz / dist) * mag;
         break;
       }
       case 'VortexForce': {
+        const fz = force.z ?? 0;
         const dx = px - force.x;
         const dy = py - force.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dz = pz - fz;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (dist <= 1e-6) break;
         const mag = force.strength * falloffFactor(force.falloff, dist, force.radius);
         if (mag === 0) break;
-        // Tangent = perpendicular to the radial direction.
-        out[0] += (-dy / dist) * mag;
-        out[1] += (dx / dist) * mag;
+        // Vortex axis (defaults to [0, 0, 1] for 2D-compatible rotation in the XY plane).
+        const ax = force.axisX ?? 0;
+        const ay = force.axisY ?? 0;
+        const az = force.axisZ ?? 1;
+        // Tangent = axis cross radial direction, scaled by mag / dist.
+        const invDist = 1 / dist;
+        const rx = dx * invDist;
+        const ry = dy * invDist;
+        const rz = dz * invDist;
+        out[0] += (ay * rz - az * ry) * mag;
+        out[1] += (az * rx - ax * rz) * mag;
+        out[2] += (ax * ry - ay * rx) * mag;
         break;
       }
       case 'TurbulenceForce': {
         const s = force.scale;
         out[0] += (valueNoise(px * s, py * s, 0) * 2 - 1) * force.strength;
         out[1] += (valueNoise(px * s, py * s, 1) * 2 - 1) * force.strength;
+        out[2] += (valueNoise(px * s, pz * s, 2) * 2 - 1) * force.strength;
         break;
       }
     }

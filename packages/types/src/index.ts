@@ -387,6 +387,7 @@ export * from './SmaaEffect';
 export * from './Snapshot';
 export * from './Socket';
 export * from './SoftKeyboardEasingKind';
+export * from './SphereCollider';
 export * from './Spatial';
 export * from './SpecularGlossinessPbrMaterial';
 export * from './SpecularPbrMaterial';

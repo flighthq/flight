@@ -23,8 +23,12 @@ describe('createParticleEmitterConfig', () => {
     expect(config.emitterHeight).toBe(0);
     expect(config.frameCount).toBe(1);
     expect(config.frameRate).toBe(12);
+    expect(config.directionZ).toBe(0);
+    expect(config.emitterConeAngle).toBe(0);
+    expect(config.emitterDepth).toBe(0);
     expect(config.gravityX).toBe(0);
     expect(config.gravityY).toBe(0);
+    expect(config.gravityZ).toBe(0);
     expect(config.lifetimeMax).toBe(1);
     expect(config.lifetimeMin).toBe(0.5);
     expect(config.maxParticles).toBe(1000);

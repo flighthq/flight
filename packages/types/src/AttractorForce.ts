@@ -4,6 +4,7 @@ export interface AttractorForce {
   kind: 'AttractorForce';
   x: number;
   y: number;
+  z?: number;
   strength: number;
   radius?: number;
   falloff?: ForceFalloff;

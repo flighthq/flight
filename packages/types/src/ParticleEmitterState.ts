@@ -8,6 +8,7 @@ export interface ParticleEmitterState {
   lifetimes: Float32Array;
   prevX: number;
   prevY: number;
+  prevZ: number;
   random: RandomSource;
   rotationSpeeds: Float32Array;
   scales: Float32Array;
