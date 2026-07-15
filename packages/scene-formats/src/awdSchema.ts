@@ -21,6 +21,9 @@ export const AWD_NAMESPACE_CORE = 0;
 export const AWD_BLOCK_TRIANGLE_GEOMETRY = 1;
 export const AWD_BLOCK_CONTAINER = 22;
 export const AWD_BLOCK_MESH_INSTANCE = 23;
+export const AWD_BLOCK_SKELETON = 101;
+export const AWD_BLOCK_SKELETON_POSE = 102;
+export const AWD_BLOCK_SKELETON_ANIMATION = 103;
 
 // Compression method constants from the AWD header.
 export const AWD_COMPRESSION_NONE = 0;
@@ -35,6 +38,9 @@ export const AWD_STREAM_NORMALS = 4;
 export const AWD_STREAM_TANGENTS = 5;
 export const AWD_STREAM_JOINT_INDICES = 6;
 export const AWD_STREAM_JOINT_WEIGHTS = 7;
+
+// Sentinel parent index indicating a root joint in a skeleton block.
+export const AWD_ROOT_JOINT_PARENT = 0xffff;
 
 // Data type constants for attribute streams.
 export const AWD_DATA_INT8 = 1;

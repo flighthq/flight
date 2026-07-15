@@ -36,6 +36,7 @@
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/scene": "*",
+    "@flighthq/skeleton": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
