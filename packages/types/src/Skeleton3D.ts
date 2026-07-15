@@ -6,14 +6,14 @@ import type { SceneNode } from './SceneNode';
 // so the skeleton itself only owns the skinning math, not a second hierarchy.
 //
 // `inverseBindMatrices` and `jointMatrices` are flat column-major 4x4 blocks, 16 floats per joint, in
-// joint order. `jointMatrices` is the palette filled by computeSkeletonJointMatrices each frame
+// joint order. `jointMatrices` is the palette filled by computeSkeleton3DJointMatrices each frame
 // (jointWorldMatrix * inverseBindMatrix per joint) and uploaded as the bone uniform; a vertex is
 // deformed by the weighted sum of its joints' palette matrices.
-export interface Skeleton {
+export interface Skeleton3D {
   inverseBindMatrices: Float32Array;
   jointMatrices: Float32Array;
   joints: SceneNode[];
   // Optional per-joint names, aligned by index with `joints`, for name-based lookup and prop socketing
-  // (getSkeletonJointIndexByName). Omitted or null when the source (e.g. a nameless glTF skin) has none.
+  // (getSkeleton3DJointIndexByName). Omitted or null when the source (e.g. a nameless glTF skin) has none.
   names?: readonly string[] | null;
 }

@@ -1,10 +1,10 @@
 {
-  "name": "@flighthq/skeleton",
+  "name": "@flighthq/skeleton3d",
   "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/flighthq/flight.git",
-    "directory": "packages/skeleton"
+    "directory": "packages/skeleton3d"
   },
   "type": "module",
   "main": "dist/index.js",
