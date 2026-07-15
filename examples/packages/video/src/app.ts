@@ -34,18 +34,22 @@ thirdVideoNode.rotation = 10;
 addNodeChild(root, thirdVideoNode);
 
 generateVideoBlob().then(async (blob) => {
-  const resource = await loadVideoResourceFromBlob(blob, {
-    muted: true,
-    playsInline: true,
-  });
+  const opts = { muted: true, playsInline: true } as const;
+  const [resource1, resource2, resource3] = await Promise.all([
+    loadVideoResourceFromBlob(blob, opts),
+    loadVideoResourceFromBlob(blob, opts),
+    loadVideoResourceFromBlob(blob, opts),
+  ]);
 
-  setVideoSource(videoNode, resource);
-  setVideoSource(secondVideoNode, resource);
-  setVideoSource(thirdVideoNode, resource);
+  setVideoSource(videoNode, resource1);
+  setVideoSource(secondVideoNode, resource2);
+  setVideoSource(thirdVideoNode, resource3);
 
-  if (resource.element !== null) {
-    resource.element.loop = true;
-    resource.element.play();
+  for (const r of [resource1, resource2, resource3]) {
+    if (r.element !== null) {
+      r.element.loop = true;
+      r.element.play();
+    }
   }
 
   function enterFrame(): void {

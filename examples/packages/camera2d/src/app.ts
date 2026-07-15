@@ -308,8 +308,8 @@ function rebuildStars(): void {
 
 function rebuildMountains(): void {
   clearShapeCommands(mountainsShape);
-  appendShapeBeginFill(mountainsShape, 0x3c5064, 0.6);
   for (const mt of mountains) {
+    appendShapeBeginFill(mountainsShape, 0x3c5064, 0.6);
     appendShapePolygon(mountainsShape, [
       mt.x - mt.width * 0.5,
       mt.baseY,
@@ -318,15 +318,15 @@ function rebuildMountains(): void {
       mt.x + mt.width * 0.5,
       mt.baseY,
     ]);
+    appendShapeEndFill(mountainsShape);
   }
-  appendShapeEndFill(mountainsShape);
   invalidateNodeAppearance(mountainsShape);
 }
 
 function rebuildClouds(): void {
   clearShapeCommands(cloudsShape);
-  appendShapeBeginFill(cloudsShape, 0xc8d2e6, 0.4);
   for (const cloud of clouds) {
+    appendShapeBeginFill(cloudsShape, 0xc8d2e6, 0.4);
     appendShapeEllipse(
       cloudsShape,
       cloud.x - cloud.width * 0.5,
@@ -334,8 +334,8 @@ function rebuildClouds(): void {
       cloud.width,
       cloud.height,
     );
+    appendShapeEndFill(cloudsShape);
   }
-  appendShapeEndFill(cloudsShape);
   invalidateNodeAppearance(cloudsShape);
 }
 

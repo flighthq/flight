@@ -221,6 +221,12 @@ const controlsDiv =
     return div;
   })();
 
+controlsDiv.style.backgroundColor = '#1a1a2e';
+controlsDiv.style.color = '#e0e0e0';
+controlsDiv.style.padding = '12px';
+controlsDiv.style.fontFamily = 'system-ui, sans-serif';
+controlsDiv.style.fontSize = '13px';
+
 function formatValue(value: number): string {
   if (Number.isInteger(value)) return String(value);
   return value.toFixed(2);
