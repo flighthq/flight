@@ -1,0 +1,18 @@
+{
+  "name": "skeleton",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flighthq/scene": "*",
+    "@flighthq/scene-gl": "*",
+    "@flighthq/sdk": "*"
+  },
+  "scripts": {
+    "dev": "npm run dev:webgl",
+    "dev:webgl": "cross-env RENDER=webgl vite",
+    "build": "npm run build:webgl",
+    "build:webgl": "cross-env RENDER=webgl vite build",
+    "test": "npm run build",
+    "preview": "vite preview"
+  }
+}
