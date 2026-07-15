@@ -27,7 +27,7 @@ import {
   redoTextInput,
 } from '@flighthq/textinput';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const FIELD_WIDTH = 340;
 const FIELD_HEIGHT = 28;
@@ -165,8 +165,7 @@ function updateFocusHighlight(): void {
 
 // Click-to-focus: detect which field was clicked based on bounds.
 window.addEventListener('pointerdown', (e: PointerEvent) => {
-  const rect = document.querySelector('canvas')?.getBoundingClientRect();
-  if (rect === undefined) return;
+  const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 

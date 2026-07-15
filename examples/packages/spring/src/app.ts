@@ -17,7 +17,7 @@ import {
 } from '@flighthq/sdk';
 import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/spring';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const STAGE_WIDTH = 600;
 const STAGE_HEIGHT = 400;
@@ -85,8 +85,8 @@ appendShapeEndFill(legend);
 addNodeChild(root, legend);
 
 // Click to set a new target.
-document.querySelector('canvas')!.addEventListener('click', (event: MouseEvent) => {
-  const rect = (event.target as HTMLCanvasElement).getBoundingClientRect();
+canvas.addEventListener('click', (event: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
   targetX = ((event.clientX - rect.left) / rect.width) * STAGE_WIDTH;
   targetY = ((event.clientY - rect.top) / rect.height) * STAGE_HEIGHT;
   redrawTargetMarker();

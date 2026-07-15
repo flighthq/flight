@@ -25,7 +25,7 @@ import {
   updateSpatialObject,
 } from '@flighthq/spatial';
 
-import { render, scale } from './render';
+import { canvas, render, scale } from './render';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 500;
@@ -112,7 +112,7 @@ let mouseY = CANVAS_HEIGHT / 2;
 type QueryMode = 'pairs' | 'point' | 'ray' | 'region';
 let activeMode: QueryMode = 'pairs';
 
-const canvasElement = document.querySelector('canvas')!;
+const canvasElement = canvas;
 
 canvasElement.addEventListener('pointermove', (e: PointerEvent) => {
   const rect = canvasElement.getBoundingClientRect();
