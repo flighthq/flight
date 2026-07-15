@@ -195,7 +195,7 @@ const camera: Camera = createCamera({
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: 800 / 600, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(4, 2, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCameraViewMatrix4FromLookAt(camera, createVector3(6, 4, 10), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // Lighting: one white directional sun plus a cool dim ambient fill.
 const directionalDirection = createVector3(-1, -0.5, -0.7);

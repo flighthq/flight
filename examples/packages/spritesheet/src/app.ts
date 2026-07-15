@@ -26,9 +26,6 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-// Procedurally generate a sprite strip: 12 frames of a spinning six-pointed star.
-// Each frame rotates the star by 30 degrees, completing a full revolution over all frames.
-
 function createSpriteStrip(): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = STRIP_WIDTH;
@@ -38,53 +35,42 @@ function createSpriteStrip(): HTMLCanvasElement {
   for (let i = 0; i < FRAME_COUNT; i++) {
     const cx = i * FRAME_SIZE + FRAME_SIZE / 2;
     const cy = FRAME_SIZE / 2;
-    const angle = (i / FRAME_COUNT) * Math.PI * 2;
+    const phase = (i / FRAME_COUNT) * Math.PI * 2;
+    const widthFactor = Math.abs(Math.cos(phase));
+    const rx = Math.max(2, 24 * widthFactor);
+    const ry = 24;
 
-    // Outer ring glow.
-    const gradient = ctx.createRadialGradient(cx, cy, 8, cx, cy, 28);
-    gradient.addColorStop(0, `hsla(${(i * 30) % 360}, 80%, 60%, 0.9)`);
-    gradient.addColorStop(1, `hsla(${(i * 30 + 60) % 360}, 70%, 40%, 0)`);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(i * FRAME_SIZE, 0, FRAME_SIZE, FRAME_SIZE);
+    const hue = 40 + widthFactor * 10;
+    const lightness = 45 + widthFactor * 15;
+    const highlightX = cx - rx * 0.3 * Math.sign(Math.cos(phase));
 
-    // Six-pointed star drawn as two overlapping triangles.
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(angle);
-    drawStar(ctx, 0, 0, 6, 24, 12);
-    ctx.restore();
+    const grad = ctx.createRadialGradient(highlightX, cy - 4, 2, cx, cy, ry + 2);
+    grad.addColorStop(0, `hsl(${hue}, 85%, ${lightness + 20}%)`);
+    grad.addColorStop(0.5, `hsl(${hue}, 80%, ${lightness}%)`);
+    grad.addColorStop(1, `hsl(${hue - 10}, 70%, ${lightness - 20}%)`);
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (widthFactor > 0.15) {
+      const edgeX = cx + (Math.cos(phase) > 0 ? -1 : 1) * rx * 0.85;
+      ctx.strokeStyle = `hsla(35, 60%, 30%, ${0.4 * widthFactor})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(edgeX, cy, 1.5, ry * 0.75, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = `hsl(${hue - 10}, 60%, ${lightness - 25}%)`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   return c;
-}
-
-function drawStar(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  points: number,
-  outerRadius: number,
-  innerRadius: number,
-): void {
-  const step = Math.PI / points;
-  ctx.beginPath();
-  for (let i = 0; i < points * 2; i++) {
-    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-    const a = -Math.PI / 2 + i * step;
-    const x = cx + Math.cos(a) * radius;
-    const y = cy + Math.sin(a) * radius;
-    if (i === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  }
-  ctx.closePath();
-  ctx.fillStyle = '#ffd700';
-  ctx.fill();
-  ctx.strokeStyle = '#cc8800';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
 }
 
 // Build the spritesheet from the procedural sprite strip.
