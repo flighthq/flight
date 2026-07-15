@@ -37,7 +37,7 @@ const JOINT_COUNT = 4;
 const SEGMENTS_PER_JOINT = 6;
 const RADIAL_SEGMENTS = 12;
 const SEGMENT_HEIGHT = 0.5;
-const TUBE_RADIUS = 0.15;
+const TUBE_RADIUS = 0.5;
 const TOTAL_HEIGHT = JOINT_COUNT * SEGMENTS_PER_JOINT * SEGMENT_HEIGHT;
 const FLOATS_PER_VERTEX = 12; // position(3) + normal(3) + tangent(4) + uv0(2)
 

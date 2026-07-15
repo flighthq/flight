@@ -10,6 +10,7 @@ import {
   createShape,
   createToneMapEffect,
   createVignetteEffect,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -42,6 +43,7 @@ appendShapeEndFill(center);
 center.rotation = 45;
 center.pivotX = 400;
 center.pivotY = 300;
+invalidateNodeLocalTransform(center);
 addNodeChild(root, center);
 
 // Effect chain: bloom -> vignette -> tone map.
