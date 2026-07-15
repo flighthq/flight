@@ -198,13 +198,15 @@ describe('loadAssetGroup', () => {
     const capture = (reason: unknown) => {
       rejections.push(reason);
     };
-    process.on('unhandledRejection', capture);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).process.on('unhandledRejection', capture);
 
     await loadAssetGroup(library, 'mixed');
     // Drain the microtask queue so the rejection fires within the listener's window.
     await tick();
 
-    process.removeListener('unhandledRejection', capture);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).process.removeListener('unhandledRejection', capture);
     expect(rejections).toHaveLength(1);
 
     expect(getAsset(library, 'ok-1')).toEqual({ id: 'ok-1' });
