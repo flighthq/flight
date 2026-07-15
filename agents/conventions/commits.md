@@ -68,6 +68,10 @@ Pre-1.0, APIs are reshaped freely (see the codebase map's API philosophy). Still
 feat(surface)!: repack color as packed RGBA
 ```
 
+## Single-line only
+
+Commit messages are the subject line and nothing else — no body, no multi-paragraph descriptions, no `Co-Authored-By` or other trailers. If a change needs more explanation, split it into smaller commits whose subjects are self-explanatory.
+
 ## Enforcement
 
 These rules are enforced, not just documented. `commitlint.config.js` at the repo root encodes the type set and scope rules above; a husky `commit-msg` hook (`.husky/commit-msg`) runs `commitlint` on every commit. The hook is registered by the `prepare` script on `npm install` — if hooks ever stop firing, run `npx husky` once to re-register. To check a message by hand: `echo "feat(surface): …" | npx commitlint`.
