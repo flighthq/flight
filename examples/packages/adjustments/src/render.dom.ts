@@ -28,6 +28,8 @@ registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
+export const canvas: HTMLElement = container;
+
 export const scale = 1;
 
 export function render(root: DisplayObject): void {

@@ -25,6 +25,8 @@ export const state = createDomRenderState(container, {
 registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
 registerCanvasShapeCommands(defaultCanvasShapeCommands);
 
+export const canvas: HTMLElement = container;
+
 export const scale = 1;
 
 export function render(root: DisplayObject): void {

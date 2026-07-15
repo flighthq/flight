@@ -22,6 +22,8 @@ export const state = createDomRenderState(container, {
 
 registerRenderer(state, BitmapKind, defaultDomBitmapRenderer);
 
+export const canvas: HTMLElement = container;
+
 export const scale = 1;
 
 export function render(root: DisplayObject): void {
