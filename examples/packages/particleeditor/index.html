@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Particle Editor</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        font-family: system-ui, sans-serif;
+        background: #111;
+        color: #eee;
+      }
+      #controls {
+        width: 280px;
+        padding: 12px;
+        overflow-y: auto;
+        max-height: 100vh;
+        flex-shrink: 0;
+      }
+      #controls h3 {
+        margin: 14px 0 6px;
+        font-size: 13px;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      #controls h3:first-child {
+        margin-top: 0;
+      }
+      #controls label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 4px 0 1px;
+        font-size: 12px;
+      }
+      #controls input[type='range'] {
+        width: 100%;
+        margin: 0 0 4px;
+      }
+      #controls .value {
+        font-size: 11px;
+        color: #888;
+        font-variant-numeric: tabular-nums;
+        min-width: 40px;
+        text-align: right;
+      }
+      #controls select {
+        width: 100%;
+        margin: 0 0 4px;
+        background: #222;
+        color: #eee;
+        border: 1px solid #444;
+        padding: 2px 4px;
+        font-size: 12px;
+      }
+      #controls input[type='color'] {
+        width: 40px;
+        height: 20px;
+        border: 1px solid #444;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+      }
+      canvas {
+        flex: 1;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls"></div>
+    <script type="module" src="/src/app.ts"></script>
+  </body>
+</html>
