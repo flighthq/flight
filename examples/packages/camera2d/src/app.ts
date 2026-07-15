@@ -6,10 +6,29 @@ import {
   updateCamera2DFollow,
   zoomCamera2DAtScreenPoint,
 } from '@flighthq/camera2d';
-import { createMatrix, createRectangle, createVector2 } from '@flighthq/sdk';
-import type { Matrix, Rectangle } from '@flighthq/sdk';
+import type { Shape } from '@flighthq/sdk';
+import {
+  addNodeChild,
+  appendShapeBeginFill,
+  appendShapeCircle,
+  appendShapeEllipse,
+  appendShapeEndFill,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  appendShapePolygon,
+  appendShapeRectangle,
+  clearShapeCommands,
+  createDisplayContainer,
+  createRectangle,
+  createShape,
+  createTextLabel,
+  createVector2,
+  invalidateNodeAppearance,
+  invalidateNodeLocalTransform,
+} from '@flighthq/sdk';
 
-import { canvas, CANVAS_HEIGHT, CANVAS_WIDTH, ctx, scale } from './render';
+import { canvas, CANVAS_HEIGHT, CANVAS_WIDTH, render, scale } from './render';
 
 const WORLD_WIDTH = 2400;
 const WORLD_HEIGHT = 1800;
@@ -40,15 +59,6 @@ const player = { x: playerX, y: playerY };
 
 const keysDown = new Set<string>();
 
-interface Landmark {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color: string;
-  kind: 'rect' | 'circle';
-}
-
 function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
@@ -59,22 +69,59 @@ function seededRandom(seed: number): () => number {
 
 const rand = seededRandom(42);
 
-function randomColor(): string {
-  const hue = Math.floor(rand() * 360);
-  return `hsl(${hue}, 60%, 50%)`;
+interface LandmarkData {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: number;
+  kind: 'rect' | 'circle';
 }
 
-const landmarks: Landmark[] = [];
+function randomHslToRgb(hue: number): number {
+  const s = 0.6;
+  const l = 0.5;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (hue < 60) {
+    r = c;
+    g = x;
+  } else if (hue < 120) {
+    r = x;
+    g = c;
+  } else if (hue < 180) {
+    g = c;
+    b = x;
+  } else if (hue < 240) {
+    g = x;
+    b = c;
+  } else if (hue < 300) {
+    r = x;
+    b = c;
+  } else {
+    r = c;
+    b = x;
+  }
+  const ri = Math.round((r + m) * 255);
+  const gi = Math.round((g + m) * 255);
+  const bi = Math.round((b + m) * 255);
+  return (ri << 16) | (gi << 8) | bi;
+}
 
+const landmarkData: LandmarkData[] = [];
 for (let i = 0; i < 60; i++) {
-  const kind = rand() > 0.5 ? 'rect' : 'circle';
+  const kind = rand() > 0.5 ? ('rect' as const) : ('circle' as const);
   const size = 20 + rand() * 80;
-  landmarks.push({
+  landmarkData.push({
     x: 100 + rand() * (WORLD_WIDTH - 200),
     y: 100 + rand() * (WORLD_HEIGHT - 200),
     width: size,
     height: kind === 'circle' ? size : 20 + rand() * 80,
-    color: randomColor(),
+    color: randomHslToRgb(Math.floor(rand() * 360)),
     kind,
   });
 }
@@ -130,9 +177,171 @@ for (let i = 0; i < 8; i++) {
   });
 }
 
-const viewMatrix = createMatrix();
-const visibleBounds = createRectangle();
 const parallaxOffset = createVector2();
+
+const root = createDisplayContainer();
+root.scaleX = scale;
+root.scaleY = scale;
+
+const starsContainer = createDisplayContainer();
+addNodeChild(root, starsContainer);
+
+const mountainsContainer = createDisplayContainer();
+addNodeChild(root, mountainsContainer);
+
+const cloudsContainer = createDisplayContainer();
+addNodeChild(root, cloudsContainer);
+
+const worldContainer = createDisplayContainer();
+addNodeChild(root, worldContainer);
+
+const hudContainer = createDisplayContainer();
+addNodeChild(root, hudContainer);
+
+const starsShape = createShape();
+addNodeChild(starsContainer, starsShape);
+
+const mountainsShape = createShape();
+addNodeChild(mountainsContainer, mountainsShape);
+
+const cloudsShape = createShape();
+addNodeChild(cloudsContainer, cloudsShape);
+
+const gridShape = createShape();
+addNodeChild(worldContainer, gridShape);
+
+const borderShape = createShape();
+addNodeChild(worldContainer, borderShape);
+
+const landmarkShapes: Shape[] = [];
+for (const lm of landmarkData) {
+  const shape = createShape();
+  appendShapeBeginFill(shape, lm.color, 0.7);
+  if (lm.kind === 'rect') {
+    appendShapeRectangle(shape, lm.x - lm.width * 0.5, lm.y - lm.height * 0.5, lm.width, lm.height);
+  } else {
+    appendShapeCircle(shape, lm.x, lm.y, lm.width * 0.5);
+  }
+  appendShapeEndFill(shape);
+  addNodeChild(worldContainer, shape);
+  landmarkShapes.push(shape);
+}
+
+const playerShape = createShape();
+addNodeChild(worldContainer, playerShape);
+
+const visibleBoundsShape = createShape();
+addNodeChild(worldContainer, visibleBoundsShape);
+
+const hudBg = createShape();
+appendShapeBeginFill(hudBg, 0x000000, 0.5);
+appendShapeRectangle(hudBg, 8, 8, 260, 80);
+appendShapeEndFill(hudBg);
+addNodeChild(hudContainer, hudBg);
+
+const cameraLabel = createTextLabel();
+cameraLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+cameraLabel.x = 16;
+cameraLabel.y = 16;
+invalidateNodeLocalTransform(cameraLabel);
+addNodeChild(hudContainer, cameraLabel);
+
+const playerLabel = createTextLabel();
+playerLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+playerLabel.x = 16;
+playerLabel.y = 34;
+invalidateNodeLocalTransform(playerLabel);
+addNodeChild(hudContainer, playerLabel);
+
+const controlsLabel = createTextLabel();
+controlsLabel.data.text = 'WASD/Arrows: move  Scroll: zoom';
+controlsLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+controlsLabel.x = 16;
+controlsLabel.y = 52;
+invalidateNodeLocalTransform(controlsLabel);
+addNodeChild(hudContainer, controlsLabel);
+
+const legendLabel = createTextLabel();
+legendLabel.data.text = 'Green = visible bounds  Red = world border';
+legendLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+legendLabel.x = 16;
+legendLabel.y = 70;
+invalidateNodeLocalTransform(legendLabel);
+addNodeChild(hudContainer, legendLabel);
+
+function buildGridShape(): void {
+  clearShapeCommands(gridShape);
+  appendShapeLineStyle(gridShape, 1, 0x64788c, 0.15);
+  const gridSize = 100;
+  for (let x = 0; x <= WORLD_WIDTH; x += gridSize) {
+    appendShapeMoveTo(gridShape, x, 0);
+    appendShapeLineTo(gridShape, x, WORLD_HEIGHT);
+  }
+  for (let y = 0; y <= WORLD_HEIGHT; y += gridSize) {
+    appendShapeMoveTo(gridShape, 0, y);
+    appendShapeLineTo(gridShape, WORLD_WIDTH, y);
+  }
+  appendShapeEndFill(gridShape);
+  invalidateNodeAppearance(gridShape);
+}
+
+function buildBorderShape(): void {
+  clearShapeCommands(borderShape);
+  appendShapeLineStyle(borderShape, 3, 0xc85050, 0.5);
+  appendShapeRectangle(borderShape, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+  appendShapeEndFill(borderShape);
+  invalidateNodeAppearance(borderShape);
+}
+
+buildGridShape();
+buildBorderShape();
+
+function rebuildStars(): void {
+  clearShapeCommands(starsShape);
+  for (const star of stars) {
+    appendShapeBeginFill(starsShape, 0xffffd0, star.brightness);
+    appendShapeCircle(starsShape, star.x, star.y, star.radius);
+    appendShapeEndFill(starsShape);
+  }
+  invalidateNodeAppearance(starsShape);
+}
+
+function rebuildMountains(): void {
+  clearShapeCommands(mountainsShape);
+  appendShapeBeginFill(mountainsShape, 0x3c5064, 0.6);
+  for (const mt of mountains) {
+    appendShapePolygon(mountainsShape, [
+      mt.x - mt.width * 0.5,
+      mt.baseY,
+      mt.x,
+      mt.baseY - mt.peakHeight,
+      mt.x + mt.width * 0.5,
+      mt.baseY,
+    ]);
+  }
+  appendShapeEndFill(mountainsShape);
+  invalidateNodeAppearance(mountainsShape);
+}
+
+function rebuildClouds(): void {
+  clearShapeCommands(cloudsShape);
+  appendShapeBeginFill(cloudsShape, 0xc8d2e6, 0.4);
+  for (const cloud of clouds) {
+    appendShapeEllipse(
+      cloudsShape,
+      cloud.x - cloud.width * 0.5,
+      cloud.y - cloud.height * 0.5,
+      cloud.width,
+      cloud.height,
+    );
+  }
+  appendShapeEndFill(cloudsShape);
+  invalidateNodeAppearance(cloudsShape);
+}
+
+rebuildStars();
+rebuildMountains();
+rebuildClouds();
 
 let lastTime = performance.now();
 
@@ -144,11 +353,12 @@ window.addEventListener('keyup', (e: KeyboardEvent) => {
   keysDown.delete(e.key);
 });
 
-canvas.addEventListener(
+const wheelTarget = canvas instanceof HTMLCanvasElement ? canvas : (canvas as HTMLElement);
+wheelTarget.addEventListener(
   'wheel',
   (e: WheelEvent) => {
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
+    const rect = wheelTarget.getBoundingClientRect();
     const screenX = ((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
     const screenY = ((e.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
     const direction = e.deltaY < 0 ? 1 : -1;
@@ -179,155 +389,8 @@ function updatePlayer(deltaTime: number): void {
   player.y = Math.max(PLAYER_SIZE, Math.min(WORLD_HEIGHT - PLAYER_SIZE, player.y));
 }
 
-function drawParallaxLayers(): void {
-  // Layer 1: stars (factor 0.1 -- nearly screen-locked, far background)
-  getCamera2DParallaxPoint(camera, 0.1, parallaxOffset);
-  ctx.save();
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  for (const star of stars) {
-    ctx.fillStyle = `rgba(255, 255, 220, ${star.brightness})`;
-    ctx.beginPath();
-    ctx.arc(star.x + parallaxOffset.x, star.y + parallaxOffset.y, star.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-
-  // Layer 2: mountains (factor 0.4 -- mid background)
-  getCamera2DParallaxPoint(camera, 0.4, parallaxOffset);
-  ctx.save();
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  ctx.fillStyle = 'rgba(60, 80, 100, 0.6)';
-  for (const mt of mountains) {
-    const bx = mt.x + parallaxOffset.x;
-    const by = mt.baseY + parallaxOffset.y;
-    ctx.beginPath();
-    ctx.moveTo(bx - mt.width * 0.5, by);
-    ctx.lineTo(bx, by - mt.peakHeight);
-    ctx.lineTo(bx + mt.width * 0.5, by);
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.restore();
-
-  // Layer 3: clouds (factor 0.6 -- near background)
-  getCamera2DParallaxPoint(camera, 0.6, parallaxOffset);
-  ctx.save();
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  ctx.fillStyle = 'rgba(200, 210, 230, 0.4)';
-  for (const cloud of clouds) {
-    const cx = cloud.x + parallaxOffset.x;
-    const cy = cloud.y + parallaxOffset.y;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, cloud.width * 0.5, cloud.height * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-function drawWorldGrid(vm: Readonly<Matrix>): void {
-  ctx.save();
-  ctx.setTransform(vm.a * scale, vm.b * scale, vm.c * scale, vm.d * scale, vm.tx * scale, vm.ty * scale);
-
-  ctx.strokeStyle = 'rgba(100, 120, 140, 0.15)';
-  ctx.lineWidth = 1;
-  const gridSize = 100;
-  for (let x = 0; x <= WORLD_WIDTH; x += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, WORLD_HEIGHT);
-    ctx.stroke();
-  }
-  for (let y = 0; y <= WORLD_HEIGHT; y += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(WORLD_WIDTH, y);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-function drawWorldBorder(vm: Readonly<Matrix>): void {
-  ctx.save();
-  ctx.setTransform(vm.a * scale, vm.b * scale, vm.c * scale, vm.d * scale, vm.tx * scale, vm.ty * scale);
-
-  ctx.strokeStyle = 'rgba(200, 80, 80, 0.5)';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([8, 4]);
-  ctx.strokeRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-  ctx.setLineDash([]);
-
-  ctx.restore();
-}
-
-function drawLandmarks(vm: Readonly<Matrix>): void {
-  ctx.save();
-  ctx.setTransform(vm.a * scale, vm.b * scale, vm.c * scale, vm.d * scale, vm.tx * scale, vm.ty * scale);
-
-  for (const lm of landmarks) {
-    ctx.fillStyle = lm.color;
-    ctx.globalAlpha = 0.7;
-    if (lm.kind === 'rect') {
-      ctx.fillRect(lm.x - lm.width * 0.5, lm.y - lm.height * 0.5, lm.width, lm.height);
-    } else {
-      ctx.beginPath();
-      ctx.arc(lm.x, lm.y, lm.width * 0.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  ctx.globalAlpha = 1;
-  ctx.restore();
-}
-
-function drawPlayer(vm: Readonly<Matrix>): void {
-  ctx.save();
-  ctx.setTransform(vm.a * scale, vm.b * scale, vm.c * scale, vm.d * scale, vm.tx * scale, vm.ty * scale);
-
-  ctx.fillStyle = '#ffcc33';
-  ctx.strokeStyle = '#cc9900';
-  ctx.lineWidth = 2;
-
-  ctx.beginPath();
-  ctx.moveTo(player.x, player.y - PLAYER_SIZE);
-  ctx.lineTo(player.x + PLAYER_SIZE * 0.8, player.y + PLAYER_SIZE * 0.6);
-  ctx.lineTo(player.x - PLAYER_SIZE * 0.8, player.y + PLAYER_SIZE * 0.6);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function drawVisibleBoundsOverlay(bounds: Readonly<Rectangle>, vm: Readonly<Matrix>): void {
-  ctx.save();
-  ctx.setTransform(vm.a * scale, vm.b * scale, vm.c * scale, vm.d * scale, vm.tx * scale, vm.ty * scale);
-
-  ctx.strokeStyle = 'rgba(0, 200, 100, 0.6)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6, 3]);
-  ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
-  ctx.setLineDash([]);
-
-  ctx.restore();
-}
-
-function drawHud(): void {
-  ctx.save();
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-  ctx.fillRect(8, 8, 260, 80);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '13px monospace';
-  ctx.fillText(`Camera: (${camera.x.toFixed(0)}, ${camera.y.toFixed(0)})  Zoom: ${camera.zoom.toFixed(2)}`, 16, 28);
-  ctx.fillText(`Player: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`, 16, 46);
-  ctx.fillText('WASD/Arrows: move  Scroll: zoom', 16, 64);
-  ctx.fillText('Green = visible bounds  Red = world border', 16, 80);
-
-  ctx.restore();
-}
+const viewMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+const visibleBounds = createRectangle();
 
 function enterFrame(): void {
   const now = performance.now();
@@ -339,18 +402,64 @@ function enterFrame(): void {
   getCamera2DViewMatrix(camera, viewMatrix);
   getCamera2DVisibleBounds(camera, visibleBounds);
 
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  getCamera2DParallaxPoint(camera, 0.1, parallaxOffset);
+  starsContainer.x = parallaxOffset.x;
+  starsContainer.y = parallaxOffset.y;
+  invalidateNodeLocalTransform(starsContainer);
 
-  drawParallaxLayers();
-  drawWorldGrid(viewMatrix);
-  drawWorldBorder(viewMatrix);
-  drawLandmarks(viewMatrix);
-  drawPlayer(viewMatrix);
-  drawVisibleBoundsOverlay(visibleBounds, viewMatrix);
-  drawHud();
+  getCamera2DParallaxPoint(camera, 0.4, parallaxOffset);
+  mountainsContainer.x = parallaxOffset.x;
+  mountainsContainer.y = parallaxOffset.y;
+  invalidateNodeLocalTransform(mountainsContainer);
 
+  getCamera2DParallaxPoint(camera, 0.6, parallaxOffset);
+  cloudsContainer.x = parallaxOffset.x;
+  cloudsContainer.y = parallaxOffset.y;
+  invalidateNodeLocalTransform(cloudsContainer);
+
+  worldContainer.scaleX = viewMatrix.a;
+  worldContainer.skewY = viewMatrix.b;
+  worldContainer.skewX = viewMatrix.c;
+  worldContainer.scaleY = viewMatrix.d;
+  worldContainer.x = viewMatrix.tx;
+  worldContainer.y = viewMatrix.ty;
+  invalidateNodeLocalTransform(worldContainer);
+
+  clearShapeCommands(playerShape);
+  appendShapeBeginFill(playerShape, 0xffcc33, 1);
+  appendShapePolygon(playerShape, [
+    player.x,
+    player.y - PLAYER_SIZE,
+    player.x + PLAYER_SIZE * 0.8,
+    player.y + PLAYER_SIZE * 0.6,
+    player.x - PLAYER_SIZE * 0.8,
+    player.y + PLAYER_SIZE * 0.6,
+  ]);
+  appendShapeEndFill(playerShape);
+  appendShapeLineStyle(playerShape, 2, 0xcc9900, 1);
+  appendShapePolygon(playerShape, [
+    player.x,
+    player.y - PLAYER_SIZE,
+    player.x + PLAYER_SIZE * 0.8,
+    player.y + PLAYER_SIZE * 0.6,
+    player.x - PLAYER_SIZE * 0.8,
+    player.y + PLAYER_SIZE * 0.6,
+  ]);
+  appendShapeEndFill(playerShape);
+  invalidateNodeAppearance(playerShape);
+
+  clearShapeCommands(visibleBoundsShape);
+  appendShapeLineStyle(visibleBoundsShape, 2, 0x00c864, 0.6);
+  appendShapeRectangle(visibleBoundsShape, visibleBounds.x, visibleBounds.y, visibleBounds.width, visibleBounds.height);
+  appendShapeEndFill(visibleBoundsShape);
+  invalidateNodeAppearance(visibleBoundsShape);
+
+  cameraLabel.data.text = `Camera: (${camera.x.toFixed(0)}, ${camera.y.toFixed(0)})  Zoom: ${camera.zoom.toFixed(2)}`;
+  invalidateNodeAppearance(cameraLabel);
+  playerLabel.data.text = `Player: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`;
+  invalidateNodeAppearance(playerLabel);
+
+  render(root);
   requestAnimationFrame(enterFrame);
 }
 

@@ -4,7 +4,11 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "references": [{ "path": "../../../packages/effects-canvas" }, { "path": "../../../packages/sdk" }],
+  "references": [
+    { "path": "../../../packages/effects-canvas" },
+    { "path": "../../../packages/effects-gl" },
+    { "path": "../../../packages/sdk" }
+  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

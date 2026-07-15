@@ -4,13 +4,16 @@
   "type": "module",
   "dependencies": {
     "@flighthq/effects-canvas": "*",
+    "@flighthq/effects-gl": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {
     "dev": "npm run dev:canvas",
     "dev:canvas": "cross-env RENDER=canvas vite",
+    "dev:webgl": "cross-env RENDER=webgl vite",
     "build": "npm run build:canvas",
     "build:canvas": "cross-env RENDER=canvas vite build",
+    "build:webgl": "cross-env RENDER=webgl vite build",
     "test": "npm run build",
     "preview": "vite preview"
   }
