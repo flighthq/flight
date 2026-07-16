@@ -3,6 +3,7 @@ import { getNodeParent, getNodeRuntime, getNodeWorldTransformMatrix } from '@fli
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
 import type {
   AnyInteractionSignalSlot,
+  Cursor,
   InputKeyboardData,
   InputPointerData,
   InteractionInputSource,
@@ -22,6 +23,7 @@ import type {
 } from '@flighthq/types';
 
 import { findGraphHitTarget } from './hitTests';
+import { getNodeCursor } from './nodeInteractionState';
 
 export function captureInteractionPointer<N extends NodeAny>(
   manager: InteractionManager<N>,
@@ -122,6 +124,7 @@ export function createInteractionManager<N extends NodeAny>(
   options: Readonly<InteractionManagerOptions> = {},
 ): InteractionManager<N> {
   return {
+    cursorBackend: options.cursorBackend ?? null,
     doubleClickDelay: 500,
     enabled: options.enabled ?? true,
     pointerCaptures: new Map(),
@@ -251,7 +254,11 @@ export function dispatchInteractionPointerMove<N extends NodeAny>(
   button: number = 0,
   options?: Readonly<InteractionPointerOptions>,
 ): void {
-  if (!isPointerSignalNeeded(manager, moveSignalNames)) return;
+  // Run the move body when a rollover subscriber needs it OR a cursor backend is active — a scene that
+  // only changes the cursor on hover (no move/over/out listeners) must still resolve the rollover.
+  if (!isPointerSignalNeeded(manager, moveSignalNames) && !(manager.enabled && manager.cursorBackend !== null)) {
+    return;
+  }
 
   const pointerId = options?.pointerId ?? 0;
   const state = getInteractionPointerState(manager, pointerId);
@@ -375,6 +382,33 @@ function dispatchPointerRolloverChange<N extends NodeAny>(
   if (target !== null) {
     emitInteractionSignal(target, manager.root, 'onPointerOver', _pointerData);
   }
+
+  applyInteractionCursor(manager, target);
+}
+
+/**
+ * Applies the cursor resolved for the current rollover target through the manager's cursor backend.
+ * No-op when no backend is installed. A `null` target (pointer left everything) clears to the default.
+ **/
+function applyInteractionCursor<N extends NodeAny>(manager: InteractionManager<N>, target: N | null): void {
+  const backend = manager.cursorBackend;
+  if (backend === null) return;
+  backend.setCursor(resolveInteractionCursor(target, manager.root));
+}
+
+/**
+ * Resolves the effective rollover cursor: the nearest cursor set on `target` or any of its ancestors
+ * up to `root` (innermost wins). Returns `null` when none is set, so the backend clears to its default.
+ **/
+function resolveInteractionCursor<N extends NodeAny>(target: N | null, root: N): Cursor | null {
+  let current: N | null = target;
+  while (current !== null) {
+    const cursor = getNodeCursor(current);
+    if (cursor !== null) return cursor;
+    if (current === root) break;
+    current = getNodeParent(current) as N | null;
+  }
+  return null;
 }
 
 function dispatchPointerSignalAt<N extends NodeAny>(

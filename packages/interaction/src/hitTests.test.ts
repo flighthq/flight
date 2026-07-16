@@ -1,5 +1,5 @@
 import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntime } from '@flighthq/displayobject';
-import { setRectangle } from '@flighthq/geometry';
+import { createRectangle, setRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { DisplayObject, DisplayObjectRuntime } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
@@ -11,6 +11,7 @@ import {
   hitTestGraphPoint,
   registerHitTestPoint,
 } from './hitTests';
+import { setNodeHitArea, setNodeHitTestChildren, setNodeHitTestEnabled } from './nodeInteractionState';
 
 describe('findGraphHitTarget', () => {
   it('returns null when node is disabled', () => {
@@ -27,6 +28,43 @@ describe('findGraphHitTarget', () => {
     registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
     const hit = findGraphHitTarget(parent, 50, 50);
     expect(hit).toBe(child);
+  });
+
+  it('excludes self from hits when hitTestEnabled is false', () => {
+    const obj = createDisplayObject();
+    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
+    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+    expect(findGraphHitTarget(obj, 50, 50)).toBe(obj);
+    setNodeHitTestEnabled(obj, false);
+    expect(findGraphHitTarget(obj, 50, 50)).toBeNull();
+  });
+
+  it('does not descend into the subtree when hitTestChildren is false', () => {
+    const parent = createDisplayObject();
+    const child = createDisplayObjectGeneric(DisplayObjectKind);
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addNodeChild(parent, child);
+    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+    setNodeHitTestChildren(parent, false);
+    expect(findGraphHitTarget(parent, 50, 50)).toBeNull();
+  });
+
+  it('delegates a rectangle hitArea proxy using world-space containment', () => {
+    const obj = createDisplayObject();
+    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+    setNodeHitArea(obj, createRectangle(0, 0, 30, 30));
+    expect(findGraphHitTarget(obj, 10, 10)).toBe(obj);
+    expect(findGraphHitTarget(obj, 40, 40)).toBeNull();
+  });
+
+  it('delegates a node hitArea proxy through that node hit function', () => {
+    const obj = createDisplayObject();
+    const proxy = createDisplayObjectGeneric(DisplayObjectKind);
+    setRectangle(getNodeLocalBoundsRectangle(proxy), 0, 0, 20, 20);
+    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+    setNodeHitArea(obj, proxy);
+    expect(findGraphHitTarget(obj, 5, 5)).toBe(obj);
+    expect(findGraphHitTarget(obj, 50, 50)).toBeNull();
   });
 });
 

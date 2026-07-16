@@ -2,7 +2,7 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { addNodeChild, createNode, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals';
-import type { InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
+import type { Cursor, InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { hitTestGraphLocalBounds } from './hitTests';
@@ -26,6 +26,7 @@ import {
   getInteractionSignals,
   releaseInteractionPointer,
 } from './interactionManager';
+import { setNodeCursor } from './nodeInteractionState';
 
 beforeAll(() => {
   registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
@@ -136,6 +137,13 @@ describe('createInteractionManager', () => {
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     expect(manager.enabled).toBe(true);
     expect(manager.trackedSubscribersOnly).toBe(true);
+  });
+
+  it('defaults cursorBackend to null and accepts one via options', () => {
+    const root = createDisplayObject();
+    expect(createInteractionManager(root).cursorBackend).toBeNull();
+    const backend = { setCursor: () => {} };
+    expect(createInteractionManager(root, { cursorBackend: backend }).cursorBackend).toBe(backend);
   });
 });
 
@@ -420,6 +428,22 @@ describe('dispatchInteractionPointerMove', () => {
 
     dispatchInteractionPointerMove(manager, 50, 50);
     expect(fired).toBe(1);
+  });
+
+  it('applies the rollover target cursor and clears it on exit — even with no move subscribers', () => {
+    const root = createDisplayObject();
+    const child = createDisplayObject();
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    addNodeChild(root, child);
+    const applied: (Cursor | null)[] = [];
+    const manager = createInteractionManager(root, { cursorBackend: { setCursor: (c) => applied.push(c) } });
+    setNodeCursor(child, 'pointer');
+
+    dispatchInteractionPointerMove(manager, 50, 50);
+    expect(applied.at(-1)).toBe('pointer');
+
+    dispatchInteractionPointerMove(manager, 500, 500);
+    expect(applied.at(-1)).toBeNull();
   });
 
   it('fires over and roll over when entering a target', () => {
