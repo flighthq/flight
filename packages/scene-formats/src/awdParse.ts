@@ -35,7 +35,13 @@ import {
   AWD_STREAM_TANGENTS,
   AWD_STREAM_UVS,
 } from './awdSchema';
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
+import {
+  CANONICAL_FLOATS_PER_VERTEX,
+  CANONICAL_LAYOUT,
+  convertTransformLhToRh,
+  negateVec3Z,
+  reverseTriangleWinding,
+} from './shared';
 
 // Parses an Away3D AWD 2.x binary file into a Scene. The 12-byte header (magic `AWD`, version,
 // flags, compression, body length) is validated, then the block stream is walked to extract
@@ -391,6 +397,7 @@ function readAwdTransform(
       ? dv.getFloat64(offset + i * floatSize, true)
       : dv.getFloat32(offset + i * floatSize, true);
   }
+  convertTransformLhToRh(transform);
   return { end: offset + 12 * floatSize, transform };
 }
 
@@ -560,6 +567,12 @@ function parseTriangleGeometryBlock(
       warnings?.push('createSceneFromAwd: sub-mesh has no positions or fewer than 3 position values');
       continue;
     }
+
+    // Convert from AWD's left-handed Y-up to Flight's right-handed Y-up.
+    negateVec3Z(positions);
+    if (normals !== null) negateVec3Z(normals);
+    if (tangents !== null) negateVec3Z(tangents);
+    if (indices !== null) reverseTriangleWinding(indices);
 
     const vertexCount = positions.length / 3;
     const vertices = new Float32Array(vertexCount * CANONICAL_FLOATS_PER_VERTEX);

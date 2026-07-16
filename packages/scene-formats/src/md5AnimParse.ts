@@ -2,13 +2,16 @@ import { createAnimationChannel, createAnimationClip, createAnimationTrack } fro
 import type { AnimationChannel, AnimationClip, SceneNode } from '@flighthq/types';
 import { SceneAnimationPathRotation, SceneAnimationPathTranslation } from '@flighthq/types';
 
+import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
+
 // Parses an id Tech 4 MD5 animation file (.md5anim) into an AnimationClip that drives the given
 // joint SceneNodes (produced by createSceneFromMd5Mesh). The ASCII line-oriented format declares a
 // skeleton hierarchy, a baseframe pose, and per-frame animated components selected by a bitmask.
 // Each joint produces up to two channels (translation and rotation) in the returned clip.
 //
-// Joint positions and orientations are converted from MD5's Z-up coordinate system to Flight's Y-up
-// system by swapping the Y and Z components. Quaternion W is reconstructed from XYZ.
+// Joint positions and orientations are converted from MD5's right-handed Z-up coordinate system
+// to Flight's right-handed Y-up system via convertPositionsZUpToYUp and
+// convertQuaternionsZUpToYUp. Quaternion W is reconstructed from XYZ.
 //
 // Returns null when the source is empty or cannot be parsed. Malformed lines push a warning and are
 // skipped; the function never throws on bad input.
@@ -177,10 +180,14 @@ function buildAnimationClip(
       const sumSq = qx * qx + qy * qy + qz * qz;
       const qw = sumSq < 1 ? -Math.sqrt(1 - sumSq) : 0;
 
-      // Convert from MD5 Z-up to Flight Y-up: swap Y and Z.
-      translationValues.push(tx, tz, ty);
-      rotationValues.push(qx, qz, qy, qw);
+      // Push in MD5's native Z-up space; batch-converted below.
+      translationValues.push(tx, ty, tz);
+      rotationValues.push(qx, qy, qz, qw);
     }
+
+    // Convert from Z-up to Y-up.
+    convertPositionsZUpToYUp(translationValues);
+    convertQuaternionsZUpToYUp(rotationValues);
 
     const node = joints[j];
 

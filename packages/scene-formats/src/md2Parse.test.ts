@@ -160,8 +160,8 @@ describe('createSceneFromMd2', () => {
     getMeshGeometryVertexNormal(n, geometry, 0);
     const expected = MD2_ANORMS[5];
     expect(n.x).toBeCloseTo(expected[0], 5);
-    expect(n.y).toBeCloseTo(expected[1], 5);
-    expect(n.z).toBeCloseTo(expected[2], 5);
+    expect(n.y).toBeCloseTo(expected[2], 5);
+    expect(n.z).toBeCloseTo(-expected[1], 5);
   });
 
   it('parses a single triangle with vertex decompression', () => {
@@ -192,12 +192,13 @@ describe('createSceneFromMd2', () => {
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     expect(getMeshGeometryIndexCount(geometry)).toBe(3);
 
-    // Verify decompressed position of vertex 0: (10*0.5+1, 20*0.5+2, 30*0.5+3) = (6, 12, 18).
+    // Decompressed MD2 position: (10*0.5+1, 20*0.5+2, 30*0.5+3) = (6, 12, 18).
+    // Z-up to Y-up: (x, z, -y) = (6, 18, -12).
     const p = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexPosition(p, geometry, 0);
     expect(p.x).toBeCloseTo(6, 5);
-    expect(p.y).toBeCloseTo(12, 5);
-    expect(p.z).toBeCloseTo(18, 5);
+    expect(p.y).toBeCloseTo(18, 5);
+    expect(p.z).toBeCloseTo(-12, 5);
   });
 
   it('returns an empty scene for input shorter than the header', () => {
