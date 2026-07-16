@@ -4,6 +4,7 @@ import {
   connectInteractionSignal,
   createInteractionManager,
   registerDefaultHitTests,
+  registerShapeHitTest,
   releaseInteractionPointer,
   setNodeHitTestEnabled,
 } from '@flighthq/interaction';
@@ -33,10 +34,14 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 // Register hit test handlers for all built-in display object kinds so the interaction manager
-// can find targets under the pointer.
+// can find targets under the pointer. registerDefaultHitTests installs the coarse (bounding-box)
+// bank; registerShapeHitTest adds the exact fill-winding provider for Shape, so `precise: true`
+// resolves a hit against the actual circle/rectangle fill rather than its bounding box — a click in
+// a circle's bbox corner misses.
 registerDefaultHitTests();
+registerShapeHitTest();
 
-const manager = createInteractionManager(root);
+const manager = createInteractionManager(root, { precise: true });
 
 // Wire DOM pointer events into the interaction manager via an InputManager. The coordScale
 // bridges CSS pixels to the backing-store pixel space used by hit testing.
