@@ -135,12 +135,12 @@ function buildContainerBody(name: string, parentId: number, transform: number[])
   return result;
 }
 
-// MeshInstance layout: SceneHeader → NumAttrList → geometryId(uint32) → numMaterials(uint16) → UserAttrList
+// MeshInstance layout: SceneHeader → geometryId(uint32) → numMaterials(uint16) → materialIds → NumAttrList → UserAttrList
 function buildMeshInstanceBody(name: string, parentId: number, transform: number[], geometryId: number): Uint8Array {
   const nameBytes = buildAwdString(name);
   const numAttrList = buildEmptyAttrList();
   const userAttrList = buildEmptyAttrList();
-  const result = new Uint8Array(4 + 12 * 4 + nameBytes.length + numAttrList.length + 4 + 2 + userAttrList.length);
+  const result = new Uint8Array(4 + 12 * 4 + nameBytes.length + 4 + 2 + numAttrList.length + userAttrList.length);
   const view = new DataView(result.buffer);
   let offset = 0;
   view.setUint32(offset, parentId, true);
@@ -151,12 +151,12 @@ function buildMeshInstanceBody(name: string, parentId: number, transform: number
   offset += 12 * 4;
   result.set(nameBytes, offset);
   offset += nameBytes.length;
-  result.set(numAttrList, offset);
-  offset += numAttrList.length;
   view.setUint32(offset, geometryId, true);
   offset += 4;
   view.setUint16(offset, 0, true);
   offset += 2;
+  result.set(numAttrList, offset);
+  offset += numAttrList.length;
   result.set(userAttrList, offset);
   return result;
 }
