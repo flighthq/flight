@@ -4,6 +4,7 @@ import type { InteractionSignals } from './InteractionSignals';
 import type { KeyboardEventData } from './KeyboardEventData';
 import type { Node, NodeAny, NodeTraits } from './Node';
 import type { PointerEventData, PointerType } from './PointerEventData';
+import type { SpatialIndex } from './Spatial';
 
 export type InteractionSignalName = keyof InteractionSignals;
 export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData) => void;
@@ -18,6 +19,10 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
   pointerCaptures: Map<number, N>;
   pointerStates: Map<number, InteractionPointerState<N>>;
   root: N;
+  // Opt-in broadphase. When set, pointer picking queries this index (populated by
+  // `refreshInteractionSpatialIndex`) instead of walking the whole tree — the 240 Hz acceleration for
+  // large scenes. `null` (default) uses the linear tree walk.
+  spatialIndex: SpatialIndex | null;
   signalSubscriberCounts: Map<InteractionSignalName, number>;
   trackedSignalSlots: Map<N, Map<InteractionSignalName, Map<AnyInteractionSignalSlot, AnyInteractionSignalSlot>>>;
   trackedSubscribersOnly: boolean;
@@ -26,6 +31,7 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
 export interface InteractionManagerOptions {
   cursorBackend?: CursorBackend | null;
   enabled?: boolean;
+  spatialIndex?: SpatialIndex | null;
   trackedSubscribersOnly?: boolean;
 }
 
