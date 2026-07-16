@@ -1,3 +1,4 @@
+import type { CursorBackend } from './Cursor';
 import type { InputSignals } from './InputSignals';
 import type { InteractionSignals } from './InteractionSignals';
 import type { KeyboardEventData } from './KeyboardEventData';
@@ -8,6 +9,10 @@ export type InteractionSignalName = keyof InteractionSignals;
 export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData) => void;
 
 export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
+  // Active cursor backend for this manager's canvas; `null` disables cursor resolution. Per-manager
+  // (not a global) so each manager owns its own canvas's cursor zone. Rollover resolves the innermost
+  // ancestor's `NodeInteractionState.cursor` and applies it here.
+  cursorBackend: CursorBackend | null;
   doubleClickDelay: number;
   enabled: boolean;
   pointerCaptures: Map<number, N>;
@@ -19,6 +24,7 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
 }
 
 export interface InteractionManagerOptions {
+  cursorBackend?: CursorBackend | null;
   enabled?: boolean;
   trackedSubscribersOnly?: boolean;
 }
