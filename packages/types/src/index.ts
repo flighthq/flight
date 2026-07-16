@@ -250,6 +250,7 @@ export * from './Net';
 export * from './Node';
 export * from './NodeDescendantVisitor';
 export * from './NodeInteraction';
+export * from './NodeInteractionState';
 export * from './NodeSignals';
 export * from './NormalMaterial';
 export * from './Notification';
