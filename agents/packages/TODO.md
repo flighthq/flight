@@ -409,7 +409,7 @@ _(A full multi-perspective re-poll of severity/demand — the original June-repo
 
 ### interaction (solid 84)
 
-- `registerDefaultHitTestPoints()`
+- `registerDefaultHitTests()`
 - Document traversal-order difference
 - Spatial area queries
 - Overlap family

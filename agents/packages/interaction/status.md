@@ -18,8 +18,8 @@ Documented the coordinate-space contract on `connectInputToInteraction` (JSDoc):
 
 `no-warning-comments` is now enforced over `packages/*/src` (see `.oxlintrc.json`); inline TODO markers move here per the Source Style convention.
 
-- [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:11` (in `defaultQuadBatchHitTestPointHandler`): bare `// TODO` — the handler currently falls back to `defaultSpriteHitTestPointHandler` (graph local-bounds test); a real per-quad hit test is still pending.
-- [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:20` (in `defaultTilemapHitTestPointHandler`): bare `// TODO` — same fallback; a real per-tile hit test is still pending.
+- [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:11` (in `defaultQuadBatchHitTestHandler`): bare `// TODO` — the handler currently falls back to `defaultSpriteHitTestHandler` (graph local-bounds test); a real per-quad hit test is still pending.
+- [2026-07-03] Relocated inline TODO from `src/spriteHitTests.ts:20` (in `defaultTilemapHitTestHandler`): bare `// TODO` — same fallback; a real per-tile hit test is still pending.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
@@ -112,7 +112,7 @@ Executed the sweep-safe items from `assessment.md › Recommended` that are stri
 - `hitTestGraphPoint(source, x, y, shapeFlag?)` — natural-order DFS; any-hit query.
 - `isNodeInteractive(source)` — whether node participates in self hit testing.
 - `registerHitTestDetailed(kind, fn)` — registers sub-index resolver for `findGraphHitTargetDetailed`.
-- `registerHitTestPoint(kind, fn)` — registers hit function for a node kind.
+- `registerHitTest(kind, fn)` — registers hit function for a node kind.
 - `setNodeChildrenInteractive(source, enabled)` — prevents picking from descending.
 - `setNodeHitArea(source, area | null)` — installs proxy hit area.
 - `setNodeInteractive(source, enabled)` — excludes node from self-hits.
@@ -129,9 +129,9 @@ Executed the sweep-safe items from `assessment.md › Recommended` that are stri
 - `dispatchInteractionPointerMove` — updated: suppresses rollover chain for touch pointers when `suppressTouchHover` is true; runs the pointer-move body when either signals are needed OR a cursor backend is active; calls `setCursor` through `dispatchPointerRolloverChange` on target change (innermost ancestor cursor wins).
 - `enableInteractionSignals` / `getInteractionSignals` — signal access.
 
-#### `registerDefaultHitTestPoints.ts`
+#### `registerDefaultHitTests.ts`
 
-- `registerDefaultHitTestPoints()` — one-call registrar for all built-in kinds (Bitmap, DisplayObject, HtmlView, MovieClip, NativeText, QuadBatch, RenderView, RichText, Shape, Sprite, Stage, TextLabel, Tilemap, Video) plus the QuadBatch/Tilemap sub-index resolvers.
+- `registerDefaultHitTests()` — one-call registrar for all built-in kinds (Bitmap, DisplayObject, HtmlView, MovieClip, NativeText, QuadBatch, RenderView, RichText, Shape, Sprite, Stage, TextLabel, Tilemap, Video) plus the QuadBatch/Tilemap sub-index resolvers.
 
 #### `spatialQuery.ts` — new file (pass 2)
 
@@ -242,7 +242,7 @@ Recorded in `agents/rust/conformance.md` under "Intentional value-type seam dive
 - Overlap family (`hitTestDisplayObjects`, `containsDisplayObject`, `getDisplayObjectOverlapRectangle`, `hitTestDisplayObjectsShape`): complete with approximation documented (8/8)
 - Cursor management (backend seam, `setNodeCursor`, rollover auto-assignment, touch suppression): complete (10/10)
 - Spatial queries (`hitTestAreaQuery`, `hitTestAreaQueryCircle`): complete (6/6)
-- `registerDefaultHitTestPoints` startup registrar: complete (4/4)
+- `registerDefaultHitTests` startup registrar: complete (4/4)
 - Rust conformance divergences recorded: complete (3/3)
 - Deductions: bitmap alpha-threshold hit-test still bounds-only (-3), gesture neighbor package not started (-3), spatial broadphase not started (-2), glyph-box text caret missing (-1)
 

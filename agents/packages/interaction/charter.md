@@ -14,7 +14,7 @@ status: ./status.md
 
 `@flighthq/interaction` is the SDK's **input-to-graph router**: it turns a position (or a stream of pointer events) into a hit on a scene-graph node, then dispatches that hit with bubbling, cancellation, capture, and rollover semantics. Two cooperating layers share a node model:
 
-- **Hit testing** — given a world-space point, find which node is under it. Front-to-back DFS, kind-dispatched per-node tests through an open string registry (`registerHitTestPoint`), per-node gating (`mouseEnabled`/`mouseChildren`), `hitArea` proxies, shape-accurate picking (when `shapeFlag=true`), sub-index resolution for tilemap/quad-batch, overlap detection, and linear spatial area queries.
+- **Hit testing** — given a world-space point, find which node is under it. Front-to-back DFS, kind-dispatched per-node tests through an open string registry (`registerHitTest`), per-node gating (`mouseEnabled`/`mouseChildren`), `hitArea` proxies, shape-accurate picking (when `shapeFlag=true`), sub-index resolution for tilemap/quad-batch, overlap detection, and linear spatial area queries.
 - **Pointer dispatch** — given raw pointer events (via the `@flighthq/input` seam), drive the per-pointer interaction model: bubbling event dispatch with cancellation, click/double-click/`releaseOutside`, multi-pointer capture, rollover-chain diffing, cursor resolution, and lazy subscriber-gated work.
 
 Where it ends: it does **not** own the scene graph (`@flighthq/node`), signal machinery (`@flighthq/signals`), raw-input normalization (`@flighthq/input`), text editing (`@flighthq/textinput`), clip geometry (`@flighthq/clip`), or gesture recognition (`@flighthq/gestures`). It composes or consumes those neighbors.
@@ -38,7 +38,7 @@ Where it ends: it does **not** own the scene graph (`@flighthq/node`), signal ma
 - Object overlap detection (AABB-based, typed on `DisplayObject`).
 - Linear spatial area queries (rect, circle).
 - Cursor management (design of the multi-canvas-capable architecture is unsettled — see Open directions).
-- A `registerDefaultHitTestPoints()` one-call registrar for the built-in bank.
+- A `registerDefaultHitTests()` one-call registrar for the built-in bank.
 - Touch hover suppression (`suppressTouchHover`).
 
 **Non-goals:**
@@ -57,7 +57,7 @@ Where it ends: it does **not** own the scene graph (`@flighthq/node`), signal ma
 
   **Why:** Users think in `DisplayObject`, not `Spatial2DNode`. The overlap family is a display-object feature surface.
 
-- **[2026-07-02] `*Handler` suffix is intentional on default hit-test functions.** `defaultBitmapHitTestPointHandler`, `defaultShapeHitTestPointHandler`, etc. keep the `Handler` suffix to signal that these are callbacks passed to `registerHitTestPoint`, not functions users call directly.
+- **[2026-07-02] `*Handler` suffix is intentional on default hit-test functions.** `defaultBitmapHitTestHandler`, `defaultShapeHitTestHandler`, etc. keep the `Handler` suffix to signal that these are callbacks passed to `registerHitTest`, not functions users call directly.
 
   **Why:** Without the suffix, `defaultBitmapHitTestPoint` reads like a function invocation. The `Handler` suffix communicates that the value is a registrable callback — a thing you pass, not a thing you call.
 
