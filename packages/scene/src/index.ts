@@ -1,3 +1,5 @@
+export * from './billboard';
+export * from './billboardCamera';
 export * from './mesh';
 export * from './scene';
 export * from './sceneAnimation';
