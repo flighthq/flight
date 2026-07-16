@@ -7,20 +7,20 @@ import type { HitArea } from './NodeInteraction';
  *
  * Lives on `NodeRuntime.interactionState` (a lazily-created subsystem slot, like `interactionSignals`),
  * never on the `Node` entity: not every app uses interaction, so the entity stays lean and the cost is
- * only paid when the slot is created. An absent slot (`null`) means every field is at its default, which
- * reproduces the pre-cell behavior: fully hit-testable, no cursor, not focusable.
+ * only paid when the slot is created. An absent slot (`null`) means every field is at its default:
+ * NOT a hit candidate (hit testing is opt-in), no cursor, not focusable.
  *
- * Two systems share this one cell without sharing a flag. `hitTestEnabled`/`hitTestChildren`/`hitArea`
- * are read by the pointer hit-test walk (`findGraphHitTarget`/`hitTestGraphPoint`); `cursor` is read by
- * pointer dispatch on rollover; `focusable`/`tabIndex` are read by a keyboard focus/navigation manager
- * and are never consulted on the pointer path.
+ * Two systems share this one cell without sharing a flag. `hitTestEnabled`/`hitArea` are read by the
+ * pointer hit-test walk (`findGraphHitTarget`/`hitTestGraphPoint`); `cursor` is read by pointer dispatch
+ * on rollover; `focusable`/`tabIndex` are read by a keyboard focus/navigation manager and are never
+ * consulted on the pointer path.
  */
 export interface NodeInteractionState {
-  // Whether this node registers a hit on its own geometry (the `mouseEnabled` role). Default `true`.
+  // Opt-in eligibility: whether this node participates in hit testing at all. Defaults to `false` — a
+  // node is a hit candidate only after it volunteers. Also the on/off toggle for a volunteered node.
   hitTestEnabled: boolean;
-  // Whether the hit-test walk descends into this node's subtree (the `mouseChildren` role). Default `true`.
-  hitTestChildren: boolean;
-  // Proxy region/node whose hit test replaces this node's own geometry; `null` uses own geometry.
+  // The region this node presents when hit-tested; `null` uses its own kind geometry. Setting a hitArea
+  // makes the node an atomic unit — the walk stops recursing into children and the hit resolves here.
   hitArea: HitArea | null;
   // Cursor applied while the pointer rolls over this node; `null` inherits the nearest ancestor with a
   // cursor set, or the backend default when none. `'pointer'` reproduces the OpenFL `buttonMode` hand.
