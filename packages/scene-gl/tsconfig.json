@@ -15,6 +15,7 @@
     { "path": "../materials" },
     { "path": "../mesh" },
     { "path": "../node" },
+    { "path": "../particleemitter" },
     { "path": "../render" },
     { "path": "../render-gl" },
     { "path": "../scene" },

@@ -13,6 +13,7 @@ export * from './glEnvironmentSkybox';
 export * from './glLitProgram';
 export * from './glMatcapPrelude';
 export * from './glMeshMaterialRegistry';
+export * from './glParticleEmitter3D';
 export * from './glMeshProgram';
 export * from './glMeshUpload';
 export * from './glPbrPrelude';
