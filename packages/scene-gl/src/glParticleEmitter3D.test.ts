@@ -1,0 +1,163 @@
+import { createCamera } from '@flighthq/camera';
+import { createMatrix4 } from '@flighthq/geometry';
+import { addNodeChild } from '@flighthq/node';
+import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
+import { createScene } from '@flighthq/scene';
+import type { ParticleEmitter3D, SceneLights } from '@flighthq/types';
+
+import { destroyGlParticleEmitter3DShader, drawGlSceneParticleEmitters } from './glParticleEmitter3D';
+import { makeGlSceneState } from './glSceneTestHelper';
+
+function makeCamera() {
+  const cam = createCamera({
+    far: 100,
+    near: 0.1,
+    projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
+  });
+  cam.view = createMatrix4();
+  return cam;
+}
+
+function makeLights(): SceneLights {
+  return { ambient: null, directional: null };
+}
+
+function makeEmitterWithParticles(count: number): ParticleEmitter3D {
+  const emitter = createParticleEmitter3D();
+  reserveParticleEmitter3D(emitter, count);
+  const data = emitter.data;
+  data.particleCount = count;
+  for (let i = 0; i < count; i++) {
+    const tt = i * 4;
+    data.transforms[tt] = i;
+    data.transforms[tt + 1] = i * 2;
+    data.transforms[tt + 2] = 0;
+    data.transforms[tt + 3] = 1;
+    data.positionsZ[i] = i * 3;
+    data.alphas[i] = 1;
+    const ct = i * 3;
+    data.colors[ct] = 1;
+    data.colors[ct + 1] = 1;
+    data.colors[ct + 2] = 1;
+    data.ids[i] = 0;
+  }
+  return emitter;
+}
+
+describe('destroyGlParticleEmitter3DShader', () => {
+  it('is a no-op when no shader was created', () => {
+    const { state } = makeGlSceneState();
+    expect(() => destroyGlParticleEmitter3DShader(state)).not.toThrow();
+  });
+
+  it('deletes GPU resources after a draw', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    const emitter = makeEmitterWithParticles(1);
+    addNodeChild(scene, emitter);
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    destroyGlParticleEmitter3DShader(state);
+    expect(gl.calls.some((c) => c.name === 'deleteProgram')).toBe(true);
+    expect(gl.calls.filter((c) => c.name === 'deleteBuffer').length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('drawGlSceneParticleEmitters', () => {
+  it('is a no-op when scene has no particle emitter 3D nodes', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
+  });
+
+  it('skips emitters with zero particles', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    const emitter = createParticleEmitter3D();
+    addNodeChild(scene, emitter);
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
+  });
+
+  it('issues an instanced draw for particles', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    const emitter = makeEmitterWithParticles(5);
+    addNodeChild(scene, emitter);
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const draw = gl.calls.find((c) => c.name === 'drawElementsInstanced');
+    expect(draw).toBeDefined();
+    expect(draw!.args[4]).toBe(5);
+  });
+
+  it('compiles the shader program on first call', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeEmitterWithParticles(1));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.some((c) => c.name === 'createProgram')).toBe(true);
+  });
+
+  it('reuses the shader program on subsequent calls', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeEmitterWithParticles(1));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const programCount = gl.calls.filter((c) => c.name === 'createProgram').length;
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.filter((c) => c.name === 'createProgram').length).toBe(programCount);
+  });
+
+  it('enables depth test and alpha blending', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeEmitterWithParticles(1));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.BLEND)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'depthMask' && c.args[0] === false)).toBe(true);
+  });
+
+  it('restores depth write and disables blend after draw', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeEmitterWithParticles(1));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const depthMaskCalls = gl.calls.filter((c) => c.name === 'depthMask');
+    expect(depthMaskCalls[depthMaskCalls.length - 1].args[0]).toBe(true);
+    const disableCalls = gl.calls.filter((c) => c.name === 'disable');
+    expect(disableCalls.some((c) => c.args[0] === gl.BLEND)).toBe(true);
+  });
+
+  it('uploads view-projection and camera vectors as uniforms', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeEmitterWithParticles(1));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
+    const uniform3fCalls = gl.calls.filter((c) => c.name === 'uniform3f');
+    expect(uniform3fCalls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('draws multiple emitters in one call', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeEmitterWithParticles(3));
+    addNodeChild(scene, makeEmitterWithParticles(7));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const draws = gl.calls.filter((c) => c.name === 'drawElementsInstanced');
+    expect(draws.length).toBe(2);
+    expect(draws[0].args[4]).toBe(3);
+    expect(draws[1].args[4]).toBe(7);
+  });
+
+  it('skips disabled emitters', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    const emitter = makeEmitterWithParticles(5);
+    emitter.enabled = false;
+    addNodeChild(scene, emitter);
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
+  });
+});
