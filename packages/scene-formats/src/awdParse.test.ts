@@ -22,30 +22,26 @@ import {
   AWD_DATA_FLOAT32,
   AWD_DATA_UINT16,
   AWD_NAMESPACE_CORE,
-  AWD_ROOT_JOINT_PARENT,
   AWD_STREAM_INDICES,
   AWD_STREAM_NORMALS,
   AWD_STREAM_POSITIONS,
   AWD_STREAM_UVS,
 } from './awdSchema';
 
-// Builds a minimal AWD file header. Returns 12 bytes.
 function buildAwdHeader(bodyLength: number, compression = 0, flags = 0): Uint8Array {
   const header = new Uint8Array(12);
   const view = new DataView(header.buffer);
   header[0] = 0x41; // 'A'
   header[1] = 0x57; // 'W'
   header[2] = 0x44; // 'D'
-  header[3] = 0x00; // '\0'
-  header[4] = 2; // version major
-  header[5] = 1; // version minor (least significant byte of flags overlaps — see below)
-  view.setUint16(5, flags, true); // flags (little-endian)
+  header[3] = 2; // version major
+  header[4] = 1; // version minor
+  view.setUint16(5, flags, true);
   header[7] = compression;
   view.setUint32(8, bodyLength, true);
   return header;
 }
 
-// Builds a block header (11 bytes): blockId(4) + namespace(1) + blockType(1) + flags(1) + blockLength(4).
 function buildBlockHeader(
   blockId: number,
   blockType: number,
@@ -63,7 +59,6 @@ function buildBlockHeader(
   return header;
 }
 
-// Builds an AWD string: uint16 length + UTF-8 bytes.
 function buildAwdString(s: string): Uint8Array {
   const encoded = new TextEncoder().encode(s);
   const result = new Uint8Array(2 + encoded.length);
@@ -73,75 +68,97 @@ function buildAwdString(s: string): Uint8Array {
   return result;
 }
 
-// Builds a property list terminator (key=0, length=0). Uses narrow (uint16) keys by default.
-function buildEmptyProperties(wide = false): Uint8Array {
-  const keySize = wide ? 4 : 2;
-  const result = new Uint8Array(keySize + 4);
-  // All zeros — key=0 signals end of properties, length=0.
-  return result;
+// Builds an empty attribute list: uint32(0) byte-length prefix = 4 bytes.
+function buildEmptyAttrList(): Uint8Array {
+  return new Uint8Array(4);
 }
 
-// Builds an attribute stream: streamType(1) + dataType(1) + count(4) + data.
+// Builds an attribute stream: streamType(1) + dataType(1) + byteLength(4) + data.
 function buildStream(streamType: number, dataType: number, data: ArrayBufferView): Uint8Array {
-  const elementSize = dataType === AWD_DATA_FLOAT32 ? 4 : dataType === AWD_DATA_UINT16 ? 2 : 4;
-  const count = data.byteLength / elementSize;
   const result = new Uint8Array(6 + data.byteLength);
   const view = new DataView(result.buffer);
   result[0] = streamType;
   result[1] = dataType;
-  view.setUint32(2, count, true);
+  view.setUint32(2, data.byteLength, true);
   result.set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength), 6);
   return result;
 }
 
-// Builds a TriangleGeometry block body: name + numSubMeshes + properties + [sub-mesh data].
-// Each sub-mesh: numStreams(4) + streams + properties.
+// Sub-mesh layout: totalByteLen(uint32) → NumAttrList → streams → UserAttrList
 function buildTriangleGeometryBody(name: string, subMeshes: Array<{ streams: Uint8Array[] }>): Uint8Array {
   const nameBytes = buildAwdString(name);
   const numSubMeshesBytes = new Uint8Array(2);
-  const numSubMeshesView = new DataView(numSubMeshesBytes.buffer);
-  numSubMeshesView.setUint16(0, subMeshes.length, true);
-  const props = buildEmptyProperties();
+  new DataView(numSubMeshesBytes.buffer).setUint16(0, subMeshes.length, true);
+  const geoAttrList = buildEmptyAttrList();
 
-  const parts: Uint8Array[] = [nameBytes, numSubMeshesBytes, props];
+  const parts: Uint8Array[] = [nameBytes, numSubMeshesBytes, geoAttrList];
 
   for (const subMesh of subMeshes) {
-    const numStreamsBytes = new Uint8Array(4);
-    const numStreamsView = new DataView(numStreamsBytes.buffer);
-    numStreamsView.setUint32(0, subMesh.streams.length, true);
-    parts.push(numStreamsBytes);
-    for (const stream of subMesh.streams) {
-      parts.push(stream);
-    }
-    parts.push(buildEmptyProperties());
+    const subAttrList = buildEmptyAttrList();
+    const userAttrList = buildEmptyAttrList();
+
+    let streamsSize = 0;
+    for (const stream of subMesh.streams) streamsSize += stream.length;
+    const totalByteLen = subAttrList.length + streamsSize + userAttrList.length;
+
+    const lenBytes = new Uint8Array(4);
+    new DataView(lenBytes.buffer).setUint32(0, totalByteLen, true);
+
+    parts.push(lenBytes, subAttrList);
+    for (const stream of subMesh.streams) parts.push(stream);
+    parts.push(userAttrList);
   }
 
   return concatBytes(...parts);
 }
 
-// Builds a Container or MeshInstance block body: name + parentId(4) + transform(12*4 floats).
-// For MeshInstance, also adds geometryId(4) + numMaterials(2).
+// SceneHeader layout: parentId(uint32) → matrix4x3(12×float32) → name(VarString)
+// Container adds: NumAttrList → UserAttrList
 function buildContainerBody(name: string, parentId: number, transform: number[]): Uint8Array {
   const nameBytes = buildAwdString(name);
-  const result = new Uint8Array(nameBytes.length + 4 + 12 * 4);
+  const numAttrList = buildEmptyAttrList();
+  const userAttrList = buildEmptyAttrList();
+  const result = new Uint8Array(4 + 12 * 4 + nameBytes.length + numAttrList.length + userAttrList.length);
   const view = new DataView(result.buffer);
-  result.set(nameBytes, 0);
-  let offset = nameBytes.length;
+  let offset = 0;
   view.setUint32(offset, parentId, true);
   offset += 4;
   for (let i = 0; i < 12; i++) {
     view.setFloat32(offset + i * 4, transform[i] ?? 0, true);
   }
+  offset += 12 * 4;
+  result.set(nameBytes, offset);
+  offset += nameBytes.length;
+  result.set(numAttrList, offset);
+  offset += numAttrList.length;
+  result.set(userAttrList, offset);
   return result;
 }
 
+// MeshInstance layout: SceneHeader → NumAttrList → geometryId(uint32) → numMaterials(uint16) → UserAttrList
 function buildMeshInstanceBody(name: string, parentId: number, transform: number[], geometryId: number): Uint8Array {
-  const containerBody = buildContainerBody(name, parentId, transform);
-  const extra = new Uint8Array(4 + 2);
-  const view = new DataView(extra.buffer);
-  view.setUint32(0, geometryId, true);
-  view.setUint16(4, 0, true); // numMaterials = 0
-  return concatBytes(containerBody, extra);
+  const nameBytes = buildAwdString(name);
+  const numAttrList = buildEmptyAttrList();
+  const userAttrList = buildEmptyAttrList();
+  const result = new Uint8Array(4 + 12 * 4 + nameBytes.length + numAttrList.length + 4 + 2 + userAttrList.length);
+  const view = new DataView(result.buffer);
+  let offset = 0;
+  view.setUint32(offset, parentId, true);
+  offset += 4;
+  for (let i = 0; i < 12; i++) {
+    view.setFloat32(offset + i * 4, transform[i] ?? 0, true);
+  }
+  offset += 12 * 4;
+  result.set(nameBytes, offset);
+  offset += nameBytes.length;
+  result.set(numAttrList, offset);
+  offset += numAttrList.length;
+  view.setUint32(offset, geometryId, true);
+  offset += 4;
+  view.setUint16(offset, 0, true);
+  offset += 2;
+  result.set(userAttrList, offset);
+  return result;
 }
 
 function concatBytes(...arrays: readonly Uint8Array[]): Uint8Array {
@@ -156,7 +173,6 @@ function concatBytes(...arrays: readonly Uint8Array[]): Uint8Array {
   return result;
 }
 
-// Identity transform: 4x3 column-major = [1,0,0, 0,1,0, 0,0,1, 0,0,0].
 const IDENTITY_TRANSFORM = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 
 describe('createSceneFromAwd', () => {
@@ -234,11 +250,9 @@ describe('createSceneFromAwd', () => {
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
     const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
 
-    // Container block (block ID 2, parent 0 = root).
     const containerBody = buildContainerBody('Group', 0, IDENTITY_TRANSFORM);
     const containerBlockHeader = buildBlockHeader(2, AWD_BLOCK_CONTAINER, containerBody.length);
 
-    // Mesh instance block (block ID 3, parent = block 2).
     const meshBody = buildMeshInstanceBody('ChildMesh', 2, IDENTITY_TRANSFORM, 1);
     const meshBlockHeader = buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
 
@@ -247,7 +261,6 @@ describe('createSceneFromAwd', () => {
 
     const scene = createSceneFromAwd(awd);
     const roots = getNodeChildren(scene);
-    // One root node (the container).
     expect(roots).toHaveLength(1);
     const container = roots[0] as SceneNode;
     expect(isMesh(container)).toBe(false);
@@ -295,7 +308,6 @@ describe('createSceneFromAwd', () => {
     const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
     const geomBlockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
 
-    // Transform with translation (10, 20, 30): identity rotation columns + translation.
     const transform = [1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 20, 30];
     const meshBody = buildMeshInstanceBody('Mesh', 0, transform, 1);
     const meshBlockHeader = buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length);
@@ -315,7 +327,6 @@ describe('createSceneFromAwd', () => {
   });
 
   it('warns when block length runs past the end of the body', () => {
-    // Create a block header that declares a length larger than available.
     const blockHeader = buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, 9999);
     const body = blockHeader;
     const awd = concatBytes(buildAwdHeader(body.length), body);
@@ -334,7 +345,6 @@ describe('createSceneFromAwd', () => {
 
     const warnings: string[] = [];
     const scene = createSceneFromAwd(awd, warnings);
-    // A scene node is created even without geometry.
     expect(getNodeChildren(scene)).toHaveLength(1);
     expect(warnings.some((w) => w.includes('geometry block 99'))).toBe(true);
   });
@@ -357,7 +367,8 @@ describe('createSceneFromAwd', () => {
   });
 });
 
-// Builds a skeleton block body: name + jointCount(2) + per-joint(name + parentIndex(2) + transform(12*4)).
+// Skeleton block body: name → jointCount(uint16) → NumAttrList → per joint:
+//   jointId(uint16) → parentId(uint16, 1-based, 0=root) → name → matrix4x3(float32) → NumAttrList → UserAttrList
 function buildSkeletonBody(
   name: string,
   joints: Array<{ name: string; parentIndex: number; transform: number[] }>,
@@ -366,29 +377,37 @@ function buildSkeletonBody(
   const jointCountBytes = new Uint8Array(2);
   new DataView(jointCountBytes.buffer).setUint16(0, joints.length, true);
   parts.push(jointCountBytes);
+  parts.push(buildEmptyAttrList());
 
-  for (const joint of joints) {
+  for (let j = 0; j < joints.length; j++) {
+    const joint = joints[j];
+    const headerBytes = new Uint8Array(4);
+    const hv = new DataView(headerBytes.buffer);
+    hv.setUint16(0, j, true);
+    hv.setUint16(2, joint.parentIndex, true);
+    parts.push(headerBytes);
     parts.push(buildAwdString(joint.name));
-    const parentBytes = new Uint8Array(2);
-    new DataView(parentBytes.buffer).setUint16(0, joint.parentIndex, true);
-    parts.push(parentBytes);
     const transformBytes = new Uint8Array(12 * 4);
     const transformView = new DataView(transformBytes.buffer);
     for (let i = 0; i < 12; i++) {
       transformView.setFloat32(i * 4, joint.transform[i] ?? 0, true);
     }
     parts.push(transformBytes);
+    parts.push(buildEmptyAttrList());
+    parts.push(buildEmptyAttrList());
   }
 
   return concatBytes(...parts);
 }
 
-// Builds a skeleton-pose block body: name + jointCount(4) + per-joint(hasTransform(1) + optional transform(12*4)).
+// Skeleton-pose block body: name → jointCount(uint16) → NumAttrList → per joint:
+//   hasTransform(uint8) → optional matrix4x3(float32)
 function buildSkeletonPoseBody(name: string, jointTransforms: (number[] | null)[]): Uint8Array {
   const parts: Uint8Array[] = [buildAwdString(name)];
-  const jointCountBytes = new Uint8Array(4);
-  new DataView(jointCountBytes.buffer).setUint32(0, jointTransforms.length, true);
+  const jointCountBytes = new Uint8Array(2);
+  new DataView(jointCountBytes.buffer).setUint16(0, jointTransforms.length, true);
   parts.push(jointCountBytes);
+  parts.push(buildEmptyAttrList());
 
   for (const transform of jointTransforms) {
     if (transform !== null) {
@@ -407,12 +426,14 @@ function buildSkeletonPoseBody(name: string, jointTransforms: (number[] | null)[
   return concatBytes(...parts);
 }
 
-// Builds a skeleton-animation block body: name + poseCount(2) + per-pose(poseBlockId(4) + duration(2)).
+// Skeleton-animation block body: name → frameCount(uint16) → NumAttrList → per frame:
+//   poseBlockId(uint32) → duration(uint16, ms)
 function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: number; poseBlockId: number }>): Uint8Array {
   const parts: Uint8Array[] = [buildAwdString(name)];
   const poseCountBytes = new Uint8Array(2);
   new DataView(poseCountBytes.buffer).setUint16(0, poses.length, true);
   parts.push(poseCountBytes);
+  parts.push(buildEmptyAttrList());
 
   for (const pose of poses) {
     const poseBytes = new Uint8Array(6);
@@ -427,9 +448,10 @@ function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: numbe
 
 describe('parseAwdSkeletonAnimation', () => {
   it('parses a skeleton with two joints into a Skeleton with joint hierarchy', () => {
+    // parentIndex 0 = root (no parent); parentIndex 1 = parent is joint[0] (1-based).
     const skeletonBody = buildSkeletonBody('TestSkeleton', [
-      { name: 'Root', parentIndex: AWD_ROOT_JOINT_PARENT, transform: IDENTITY_TRANSFORM },
-      { name: 'Child', parentIndex: 0, transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0] },
+      { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
+      { name: 'Child', parentIndex: 1, transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0] },
     ]);
     const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
 
@@ -464,17 +486,15 @@ describe('parseAwdSkeletonAnimation', () => {
     expect(skeleton.joints).toHaveLength(2);
     expect(skeleton.names).toEqual(['Root', 'Child']);
 
-    // Child joint should be parented to root joint.
     expect(getNodeParent(skeleton.joints[1])).toBe(skeleton.joints[0]);
 
-    // Clip should have 2 channels (one per joint), each with 2 keyframes.
     expect(clip.channels).toHaveLength(2);
     expect(clip.duration).toBeCloseTo(1.0);
   });
 
   it('samples animation clip translation values correctly', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
-      { name: 'Joint0', parentIndex: AWD_ROOT_JOINT_PARENT, transform: IDENTITY_TRANSFORM },
+      { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
     const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
 
@@ -505,20 +525,17 @@ describe('parseAwdSkeletonAnimation', () => {
     const result = parseAwdSkeletonAnimation(awd)!;
     const track = result.clip.channels[0].track;
 
-    // At time 0, translation should be (0, 0, 0).
     const out = [0, 0, 0];
     sampleAnimationTrack(out, track, 0);
     expect(out[0]).toBeCloseTo(0);
     expect(out[1]).toBeCloseTo(0);
     expect(out[2]).toBeCloseTo(0);
 
-    // At time 1 (second keyframe), translation should be (10, 20, 30).
     sampleAnimationTrack(out, track, 1);
     expect(out[0]).toBeCloseTo(10);
     expect(out[1]).toBeCloseTo(20);
     expect(out[2]).toBeCloseTo(30);
 
-    // At time 0.5 (midpoint, linear interpolation), translation should be (5, 10, 15).
     sampleAnimationTrack(out, track, 0.5);
     expect(out[0]).toBeCloseTo(5);
     expect(out[1]).toBeCloseTo(10);
@@ -527,7 +544,7 @@ describe('parseAwdSkeletonAnimation', () => {
 
   it('uses SceneAnimationTarget as channel targetRef', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
-      { name: 'Bone', parentIndex: AWD_ROOT_JOINT_PARENT, transform: IDENTITY_TRANSFORM },
+      { name: 'Bone', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
     const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
 
@@ -548,11 +565,10 @@ describe('parseAwdSkeletonAnimation', () => {
 
   it('handles poses with missing transforms using identity translation', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
-      { name: 'Joint0', parentIndex: AWD_ROOT_JOINT_PARENT, transform: IDENTITY_TRANSFORM },
+      { name: 'Joint0', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
     const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
 
-    // Pose with hasTransform=0 for the joint.
     const poseBody = buildSkeletonPoseBody('P0', [null]);
     const poseBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, poseBody.length);
 
@@ -578,7 +594,7 @@ describe('parseAwdSkeletonAnimation', () => {
 
   it('returns null and warns when no animation blocks are found', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
-      { name: 'Root', parentIndex: AWD_ROOT_JOINT_PARENT, transform: IDENTITY_TRANSFORM },
+      { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
     const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
 
@@ -608,11 +624,10 @@ describe('parseAwdSkeletonAnimation', () => {
 
   it('warns when animation references a missing pose block', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
-      { name: 'Root', parentIndex: AWD_ROOT_JOINT_PARENT, transform: IDENTITY_TRANSFORM },
+      { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
     const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
 
-    // Animation references pose block 99 which does not exist.
     const animBody = buildSkeletonAnimationBody('Anim', [{ duration: 100, poseBlockId: 99 }]);
     const animBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
 
@@ -627,7 +642,7 @@ describe('parseAwdSkeletonAnimation', () => {
 
   it('converts pose durations from milliseconds to seconds in keyframe times', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
-      { name: 'Root', parentIndex: AWD_ROOT_JOINT_PARENT, transform: IDENTITY_TRANSFORM },
+      { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
     const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
 
@@ -637,7 +652,6 @@ describe('parseAwdSkeletonAnimation', () => {
     const pose1Body = buildSkeletonPoseBody('P1', [IDENTITY_TRANSFORM]);
     const pose1Block = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, pose1Body.length);
 
-    // 250ms + 750ms = 1000ms = 1s total duration.
     const animBody = buildSkeletonAnimationBody('Anim', [
       { duration: 250, poseBlockId: 2 },
       { duration: 750, poseBlockId: 3 },
@@ -659,7 +673,6 @@ describe('parseAwdSkeletonAnimation', () => {
     const result = parseAwdSkeletonAnimation(awd)!;
     expect(result.clip.duration).toBeCloseTo(1.0);
 
-    // First keyframe at t=0, second at t=0.25.
     const track = result.clip.channels[0].track;
     expect(track.times[0]).toBeCloseTo(0);
     expect(track.times[1]).toBeCloseTo(0.25);
