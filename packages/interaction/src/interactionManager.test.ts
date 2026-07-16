@@ -6,7 +6,7 @@ import type { Cursor, InputKeyboardData, InputPointerData, InputSignals } from '
 import { DisplayObjectKind } from '@flighthq/types';
 
 import { hitTestGraphLocalBounds } from './hitTests';
-import { registerHitTestPoint } from './hitTests';
+import { registerHitTest } from './hitTests';
 import {
   captureInteractionPointer,
   connectInputToInteraction,
@@ -30,7 +30,7 @@ import {
 import { setNodeCursor, setNodeHitTestEnabled } from './nodeInteractionState';
 
 beforeAll(() => {
-  registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+  registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
 });
 
 describe('captureInteractionPointer', () => {
@@ -82,7 +82,7 @@ describe('connectInteractionSignal', () => {
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
-    registerHitTestPoint(kind, () => {
+    registerHitTest(kind, () => {
       hitTests++;
       return true;
     });
@@ -105,7 +105,7 @@ describe('connectInteractionSignal', () => {
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
-    registerHitTestPoint(kind, () => {
+    registerHitTest(kind, () => {
       hitTests++;
       return true;
     });
@@ -184,7 +184,7 @@ describe('disconnectInteractionSignal', () => {
     let fired = 0;
     let hitTests = 0;
     const slot = () => fired++;
-    registerHitTestPoint(kind, () => {
+    registerHitTest(kind, () => {
       hitTests++;
       return true;
     });
@@ -266,7 +266,7 @@ describe('dispatchInteractionPointerDown', () => {
     const root = createNode(kind);
     const manager = createInteractionManager(root);
     let hitTests = 0;
-    registerHitTestPoint(kind, () => {
+    registerHitTest(kind, () => {
       hitTests++;
       return true;
     });
@@ -280,7 +280,7 @@ describe('dispatchInteractionPointerDown', () => {
     const root = createNode(kind);
     const manager = createInteractionManager(root);
     let hitTests = 0;
-    registerHitTestPoint(kind, () => {
+    registerHitTest(kind, () => {
       hitTests++;
       return true;
     });

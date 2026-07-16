@@ -22,7 +22,7 @@ import type {
   Transform2DNode,
 } from '@flighthq/types';
 
-import { findGraphHitTarget } from './hitTests';
+import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests';
 import { findSpatialInteractionTarget } from './interactionSpatialIndex';
 import { getNodeCursor } from './nodeInteractionState';
 
@@ -134,6 +134,7 @@ export function createInteractionManager<N extends NodeAny>(
     enabled: options.enabled ?? true,
     pointerCaptures: new Map(),
     pointerStates: new Map(),
+    precise: options.precise ?? false,
     root,
     spatialIndex: options.spatialIndex ?? null,
     signalSubscriberCounts: new Map(),
@@ -491,8 +492,9 @@ function findInteractionTarget<N extends NodeAny>(
   if (!manager.enabled) return null;
   const captured = manager.pointerCaptures.get(pointerId);
   if (captured !== undefined) return captured;
-  if (manager.spatialIndex !== null) return findSpatialInteractionTarget(manager, x, y) as N | null;
-  return findGraphHitTarget(manager.root, x, y) as N | null;
+  if (manager.spatialIndex !== null) return findSpatialInteractionTarget(manager, x, y, manager.precise) as N | null;
+  const root = manager.root;
+  return (manager.precise ? findGraphHitTargetPrecise(root, x, y) : findGraphHitTarget(root, x, y)) as N | null;
 }
 
 function getInteractionPointerState<N extends NodeAny>(

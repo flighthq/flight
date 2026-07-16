@@ -15,6 +15,7 @@ export function findSpatialInteractionTarget<N extends NodeAny>(
   manager: InteractionManager<N>,
   x: number,
   y: number,
+  precise: boolean = false,
 ): N | null {
   const index = manager.spatialIndex;
   if (index === null) return null;
@@ -28,7 +29,7 @@ export function findSpatialInteractionTarget<N extends NodeAny>(
     const rank = spatialQueryOut[i]!;
     if (rank >= bestRank) continue;
     const node = nodes[rank] as N | undefined;
-    if (node !== undefined && hitTestNodeRegion(node, x, y)) {
+    if (node !== undefined && hitTestNodeRegion(node, x, y, precise)) {
       best = node;
       bestRank = rank;
     }

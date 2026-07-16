@@ -3,7 +3,7 @@ import {
   connectInputToInteraction,
   connectInteractionSignal,
   createInteractionManager,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   releaseInteractionPointer,
   setNodeHitTestEnabled,
 } from '@flighthq/interaction';
@@ -34,7 +34,7 @@ root.scaleY = scale;
 
 // Register hit test handlers for all built-in display object kinds so the interaction manager
 // can find targets under the pointer.
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 
 const manager = createInteractionManager(root);
 

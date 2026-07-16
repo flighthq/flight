@@ -10,8 +10,8 @@ import { containsPathPoint } from '@flighthq/path';
 import type {
   DisplayObject,
   HitArea,
-  HitTestDetailedFunction,
   HitTestFunction,
+  HitTestPreciseFunction,
   HitTestResult,
   Kind,
   Node,
@@ -23,76 +23,70 @@ import type {
 import { getNodeInteractionState } from './nodeInteractionState';
 
 /**
- * Tier-1 pick. Walks the graph depth-first, front-to-back (reverse child order), and returns the first
- * node that registers a hit at world-space (x, y), or null.
- *
- * Eligibility is opt-in: a node is a self-hit candidate only when `hitTestEnabled` is set (default off),
- * so decorative nodes are transparent for free. A candidate with a `hitArea` is an **atomic unit** — it
- * consumes the hit and its children are not descended (they are part of the unit). Recursion into
- * children is not gated by the parent's own eligibility, so an inert container still exposes its
- * interactive children. Coarse only: no shape/pixel math runs here — use `findGraphHitTargetDetailed`.
+ * Fills `out` with the sub-index and local coordinates of a hit at world-space (x, y) on a node you
+ * already have (usually the result of a `*Precise` query, or a dispatch target). `out.subIndex` is the
+ * sub-element under the point (text char, tile, quad) from the node kind's registered exact provider, or
+ * -1 when the kind has no provider. This is the "resolve detail on a known node" call — it does no walk.
+ **/
+export function describeGraphHit(node: NodeAny, x: number, y: number, out: HitTestResult): void {
+  out.node = node;
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldTransformMatrix(node as DisplayObject), x, y);
+  out.localX = hitTestScratchPoint.x;
+  out.localY = hitTestScratchPoint.y;
+  const exact = hitTestExactRegistry.get(node.kind);
+  out.subIndex = exact ? exact(node, x, y) : -1;
+}
+
+/**
+ * Coarse pick: front-to-back (reverse child order), the first node whose bounding geometry contains
+ * world-space (x, y), or null. Eligibility is opt-in (`hitTestEnabled`, default off); a node with a
+ * `hitArea` is an atomic unit that consumes the hit and hides its children. Cheap — the bbox path.
  **/
 export function findGraphHitTarget<Traits extends object>(
   source: Node<Traits>,
   x: number,
   y: number,
-  shapeFlag: boolean = false,
 ): Node<Traits> | null {
-  if (!source.enabled) return null;
-
-  const state = getNodeInteractionState(source);
-  const enabled = state?.hitTestEnabled === true;
-  const hitArea = state?.hitArea ?? null;
-
-  // Atomic unit: an enabled node with a hitArea consumes the hit and hides its interior.
-  if (enabled && hitArea !== null) {
-    return hitAreaContainsPoint(source as NodeAny, hitArea, x, y, shapeFlag) ? source : null;
-  }
-
-  const children = getNodeRuntime(source).children;
-  if (children !== null) {
-    for (let i = children.length - 1; i >= 0; i--) {
-      const hit = findGraphHitTarget(children[i], x, y, shapeFlag);
-      if (hit !== null) return hit;
-    }
-  }
-
-  if (enabled) {
-    const hitTestSelf = hitTestPointRegistry.get(source.kind);
-    if (hitTestSelf?.(source as NodeAny, x, y, shapeFlag)) return source;
-  }
-
-  return null;
+  return findFirstHit(source as NodeAny, x, y, false) as Node<Traits> | null;
 }
 
 /**
- * Tier-2 refine. Finds the deepest eligible node at world-space (x, y) — **piercing** an atomic
- * `hitArea` unit to report the real child inside it — and fills `out` with that node, the hit point in
- * its local space, and a sub-index resolved via `registerHitTestDetailed` (tile/quad/glyph index, else
- * -1). Defaults `shapeFlag` to true so per-kind shape-accurate tests run. This is the explicit,
- * pay-for-precision call; the coarse hot path (`findGraphHitTarget`) never runs it.
+ * Precise pick: like `findGraphHitTarget`, but each node is tested by its registered exact geometry
+ * (fill/alpha/glyph), **falling back to bounds per kind** where no exact provider is registered — so
+ * the answer is the most precise available. Pays for the exact math; use on click/select, not per move.
  **/
-export function findGraphHitTargetDetailed<Traits extends object>(
+export function findGraphHitTargetPrecise<Traits extends object>(
   source: Node<Traits>,
   x: number,
   y: number,
-  out: HitTestResult,
-  shapeFlag: boolean = true,
-): HitTestResult | null {
-  const node = findDetailedHitNode(source as NodeAny, x, y, shapeFlag);
-  if (node === null) return null;
+): Node<Traits> | null {
+  return findFirstHit(source as NodeAny, x, y, true) as Node<Traits> | null;
+}
 
-  out.node = node;
-  inverseMatrixTransformPointXY(
-    hitTestLocalBoundsRectanglePoint,
-    getNodeWorldTransformMatrix(node as DisplayObject),
-    x,
-    y,
-  );
-  out.localX = hitTestLocalBoundsRectanglePoint.x;
-  out.localY = hitTestLocalBoundsRectanglePoint.y;
-  const detailed = hitTestDetailedRegistry.get(node.kind);
-  out.subIndex = detailed ? detailed(node, x, y, shapeFlag) : -1;
+/**
+ * Coarse stack: every node whose bounding geometry contains (x, y), front-to-back into `out` (cleared
+ * first). The "what is under this point" query — overlapping targets, multi-pick.
+ **/
+export function findGraphHitTargets<Traits extends object>(
+  source: Node<Traits>,
+  x: number,
+  y: number,
+  out: Node<Traits>[] = [],
+): Node<Traits>[] {
+  out.length = 0;
+  collectHits(source as NodeAny, x, y, false, out as NodeAny[]);
+  return out;
+}
+
+/** Precise stack: `findGraphHitTargets` using exact geometry per kind (bounds fallback where none). */
+export function findGraphHitTargetsPrecise<Traits extends object>(
+  source: Node<Traits>,
+  x: number,
+  y: number,
+  out: Node<Traits>[] = [],
+): Node<Traits>[] {
+  out.length = 0;
+  collectHits(source as NodeAny, x, y, true, out as NodeAny[]);
   return out;
 }
 
@@ -112,136 +106,148 @@ export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObjec
  * after inverting through the node's world transform.
  **/
 export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
-  inverseMatrixTransformPointXY(
-    hitTestLocalBoundsRectanglePoint,
-    getNodeWorldTransformMatrix(source as DisplayObject),
-    x,
-    y,
-  );
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldTransformMatrix(source as DisplayObject), x, y);
   return containsRectanglePointXY(
     getNodeLocalBoundsRectangle(source as DisplayObject),
-    hitTestLocalBoundsRectanglePoint.x,
-    hitTestLocalBoundsRectanglePoint.y,
+    hitTestScratchPoint.x,
+    hitTestScratchPoint.y,
   );
 }
 
-/**
- * Tier-1 any-hit query: whether the node or any descendant registers a hit at world-space (x, y).
- * Same opt-in eligibility and atomic-`hitArea` rules as `findGraphHitTarget`; traversal order does not
- * affect a boolean result.
- **/
-export function hitTestGraphPoint<Traits extends object>(
-  source: Node<Traits>,
-  x: number,
-  y: number,
-  shapeFlag: boolean = false,
-): boolean {
-  if (!source.enabled) return false;
+/** Coarse any-hit query: whether the node or any descendant is hit at (x, y). Traversal order is irrelevant to the boolean. */
+export function hitTestGraphPoint<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
+  return anyHit(source as NodeAny, x, y, false);
+}
 
-  const state = getNodeInteractionState(source);
+/** Precise any-hit query: `hitTestGraphPoint` using exact geometry per kind (bounds fallback where none). */
+export function hitTestGraphPointPrecise<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
+  return anyHit(source as NodeAny, x, y, true);
+}
+
+/**
+ * Tests one node's own hit region at world-space (x, y): its `hitArea` if set, else its kind geometry
+ * (coarse bounds, or the exact provider when `precise`). No eligibility check and no recursion — for
+ * callers (e.g. the broadphase) that already hold an eligible, atomic candidate.
+ **/
+export function hitTestNodeRegion(source: NodeAny, x: number, y: number, precise: boolean = false): boolean {
+  const hitArea = getNodeInteractionState(source)?.hitArea ?? null;
+  if (hitArea !== null) return hitAreaContainsPoint(source, hitArea, x, y);
+  return testNodeGeometry(source, x, y, precise);
+}
+
+/**
+ * Registers a node kind's coarse (bounding) hit function — the bbox path used by the non-`Precise`
+ * queries. Open registry: register only the kinds you need, or `registerDefaultHitTests()` for the bank.
+ **/
+export function registerHitTest(kind: Kind, fn: HitTestFunction): void {
+  hitTestRegistry.set(kind, fn);
+}
+
+/**
+ * Registers a node kind's exact (precise) hit provider — used by the `*Precise` queries and by
+ * `describeGraphHit`. The provider returns -1 (miss), 0 (hit, no sub-element), or a sub-index (>0).
+ * Opt-in per kind so the exact geometry and its dependencies tree-shake unless registered.
+ **/
+export function registerHitTestPrecise(kind: Kind, fn: HitTestPreciseFunction): void {
+  hitTestExactRegistry.set(kind, fn);
+}
+
+// Front-to-back DFS for the first hit; shared by findGraphHitTarget(Precise).
+function findFirstHit(node: NodeAny, x: number, y: number, precise: boolean): NodeAny | null {
+  if (!node.enabled) return null;
+
+  const state = getNodeInteractionState(node);
   const enabled = state?.hitTestEnabled === true;
   const hitArea = state?.hitArea ?? null;
 
   if (enabled && hitArea !== null) {
-    return hitAreaContainsPoint(source as NodeAny, hitArea, x, y, shapeFlag);
+    return hitAreaContainsPoint(node, hitArea, x, y) ? node : null;
   }
 
-  if (enabled) {
-    const hitTestSelf = hitTestPointRegistry.get(source.kind);
-    if (hitTestSelf?.(source as NodeAny, x, y, shapeFlag)) return true;
-  }
-
-  const children = getNodeRuntime(source).children;
-  if (children !== null) {
-    for (const child of children) {
-      if (hitTestGraphPoint(child as Node<Traits>, x, y, shapeFlag)) return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Tests one node's own hit region at world-space (x, y): its `hitArea` if set, else its kind-registered
- * geometry. No eligibility check and no recursion — for callers (e.g. the broadphase) that already hold
- * an eligible, atomic candidate and need only the precise per-node test.
- **/
-export function hitTestNodeRegion(source: NodeAny, x: number, y: number, shapeFlag: boolean = false): boolean {
-  const hitArea = getNodeInteractionState(source)?.hitArea ?? null;
-  if (hitArea !== null) return hitAreaContainsPoint(source, hitArea, x, y, shapeFlag);
-  const hitTestSelf = hitTestPointRegistry.get(source.kind);
-  return hitTestSelf ? hitTestSelf(source, x, y, shapeFlag) : false;
-}
-
-/**
- * Registers the Tier-2 sub-index resolver for a node kind (tilemap tile, quad index, glyph). Consulted
- * only by `findGraphHitTargetDetailed`; opt-in per kind so the coarse path never carries the cost.
- **/
-export function registerHitTestDetailed(kind: Kind, fn: HitTestDetailedFunction): void {
-  hitTestDetailedRegistry.set(kind, fn);
-}
-
-/**
- * Registers the Tier-1 point hit function for a node kind.
- * Call this once at startup to give a node kind coarse hit geometry.
- **/
-export function registerHitTestPoint(kind: Kind, fn: HitTestFunction): void {
-  hitTestPointRegistry.set(kind, fn);
-}
-
-// Resolves a `hitArea` region against world-space (x, y). Local-space forms (`'bounds'`, `Rectangle`,
-// `Path`) map the point through the owning node's world matrix; a `Node` proxy is tested in the proxy's
-// own world space via its registered hit function. Union members are discriminated structurally:
-// `'bounds'` is a string, a node carries `kind`, a path carries `commands`, otherwise it is a rectangle.
-function hitAreaContainsPoint(node: NodeAny, hitArea: HitArea, x: number, y: number, shapeFlag: boolean): boolean {
-  if (hitArea === 'bounds') return hitTestGraphLocalBounds(node, x, y);
-
-  if ('kind' in hitArea) {
-    const proxy = hitArea as NodeAny;
-    const proxyHit = hitTestPointRegistry.get(proxy.kind);
-    return proxyHit ? proxyHit(proxy, x, y, shapeFlag) : hitTestGraphLocalBounds(proxy, x, y);
-  }
-
-  inverseMatrixTransformPointXY(
-    hitTestLocalBoundsRectanglePoint,
-    getNodeWorldTransformMatrix(node as DisplayObject),
-    x,
-    y,
-  );
-  const lx = hitTestLocalBoundsRectanglePoint.x;
-  const ly = hitTestLocalBoundsRectanglePoint.y;
-  if ('commands' in hitArea) return containsPathPoint(hitArea as Readonly<Path>, lx, ly);
-  return containsRectanglePointXY(hitArea as Readonly<Rectangle>, lx, ly);
-}
-
-// Tier-2 walk: deepest eligible node front-to-back, descending through atomic units so a registered
-// child inside a `hitArea` unit is reported instead of the unit. Falls back to the unit itself when no
-// deeper candidate is hit.
-function findDetailedHitNode(source: NodeAny, x: number, y: number, shapeFlag: boolean): NodeAny | null {
-  if (!source.enabled) return null;
-
-  const children = getNodeRuntime(source).children;
+  const children = getNodeRuntime(node).children;
   if (children !== null) {
     for (let i = children.length - 1; i >= 0; i--) {
-      const hit = findDetailedHitNode(children[i] as NodeAny, x, y, shapeFlag);
+      const hit = findFirstHit(children[i] as NodeAny, x, y, precise);
       if (hit !== null) return hit;
     }
   }
 
-  const state = getNodeInteractionState(source);
-  if (state?.hitTestEnabled === true) {
-    const hitArea = state.hitArea;
-    if (hitArea !== null) {
-      if (hitAreaContainsPoint(source, hitArea, x, y, shapeFlag)) return source;
-    } else {
-      const hitTestSelf = hitTestPointRegistry.get(source.kind);
-      if (hitTestSelf?.(source, x, y, shapeFlag)) return source;
-    }
-  }
-
+  if (enabled && testNodeGeometry(node, x, y, precise)) return node;
   return null;
 }
 
-const hitTestLocalBoundsRectanglePoint = { x: 0, y: 0 };
-const hitTestDetailedRegistry = new Map<Kind, HitTestDetailedFunction>();
-const hitTestPointRegistry = new Map<Kind, HitTestFunction>();
+// DFS any-hit; order-independent boolean.
+function anyHit(node: NodeAny, x: number, y: number, precise: boolean): boolean {
+  if (!node.enabled) return false;
+
+  const state = getNodeInteractionState(node);
+  const enabled = state?.hitTestEnabled === true;
+  const hitArea = state?.hitArea ?? null;
+
+  if (enabled && hitArea !== null) return hitAreaContainsPoint(node, hitArea, x, y);
+  if (enabled && testNodeGeometry(node, x, y, precise)) return true;
+
+  const children = getNodeRuntime(node).children;
+  if (children !== null) {
+    for (const child of children) {
+      if (anyHit(child as NodeAny, x, y, precise)) return true;
+    }
+  }
+  return false;
+}
+
+// Front-to-back DFS collecting every hit; shared by findGraphHitTargets(Precise).
+function collectHits(node: NodeAny, x: number, y: number, precise: boolean, out: NodeAny[]): void {
+  if (!node.enabled) return;
+
+  const state = getNodeInteractionState(node);
+  const enabled = state?.hitTestEnabled === true;
+  const hitArea = state?.hitArea ?? null;
+
+  if (enabled && hitArea !== null) {
+    if (hitAreaContainsPoint(node, hitArea, x, y)) out.push(node);
+    return;
+  }
+
+  const children = getNodeRuntime(node).children;
+  if (children !== null) {
+    for (let i = children.length - 1; i >= 0; i--) collectHits(children[i] as NodeAny, x, y, precise, out);
+  }
+
+  if (enabled && testNodeGeometry(node, x, y, precise)) out.push(node);
+}
+
+// A single node's own-geometry test. Precise uses the kind's exact provider (hit iff >= 0) and falls
+// back to the coarse bounds handler when no exact provider is registered — best-available precision.
+function testNodeGeometry(node: NodeAny, x: number, y: number, precise: boolean): boolean {
+  if (precise) {
+    const exact = hitTestExactRegistry.get(node.kind);
+    if (exact !== undefined) return exact(node, x, y) >= 0;
+  }
+  const coarse = hitTestRegistry.get(node.kind);
+  return coarse ? coarse(node, x, y) : false;
+}
+
+// Resolves a `hitArea` region against world-space (x, y). Local-space forms (`'bounds'`, `Rectangle`,
+// `Path`) map the point through the owning node's world matrix; a `Node` proxy is tested in the proxy's
+// own world space via its coarse hit function. Union members are discriminated structurally: `'bounds'`
+// is a string, a node carries `kind`, a path carries `commands`, otherwise it is a rectangle.
+function hitAreaContainsPoint(node: NodeAny, hitArea: HitArea, x: number, y: number): boolean {
+  if (hitArea === 'bounds') return hitTestGraphLocalBounds(node, x, y);
+
+  if ('kind' in hitArea) {
+    const proxy = hitArea as NodeAny;
+    const proxyHit = hitTestRegistry.get(proxy.kind);
+    return proxyHit ? proxyHit(proxy, x, y) : hitTestGraphLocalBounds(proxy, x, y);
+  }
+
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldTransformMatrix(node as DisplayObject), x, y);
+  const lx = hitTestScratchPoint.x;
+  const ly = hitTestScratchPoint.y;
+  if ('commands' in hitArea) return containsPathPoint(hitArea as Readonly<Path>, lx, ly);
+  return containsRectanglePointXY(hitArea as Readonly<Rectangle>, lx, ly);
+}
+
+const hitTestScratchPoint = { x: 0, y: 0 };
+const hitTestRegistry = new Map<Kind, HitTestFunction>();
+const hitTestExactRegistry = new Map<Kind, HitTestPreciseFunction>();

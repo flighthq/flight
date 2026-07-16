@@ -4,7 +4,7 @@ import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform
 import { createSpatialIndex, createUniformGridSpatialBackend } from '@flighthq/spatial';
 import { DisplayObjectKind } from '@flighthq/types';
 
-import { hitTestGraphLocalBounds, registerHitTestPoint } from './hitTests';
+import { hitTestGraphLocalBounds, registerHitTest } from './hitTests';
 import { createInteractionManager } from './interactionManager';
 import { findSpatialInteractionTarget, refreshInteractionSpatialIndex } from './interactionSpatialIndex';
 import { setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState';
@@ -20,7 +20,7 @@ function candidate(x: number, y: number, w: number, h: number) {
 }
 
 function managedScene() {
-  registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+  registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
   const root = createDisplayObject();
   const index = createSpatialIndex(createUniformGridSpatialBackend(64));
   const manager = createInteractionManager(root, { spatialIndex: index });
