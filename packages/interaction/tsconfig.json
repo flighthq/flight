@@ -12,10 +12,13 @@
     { "path": "../geometry" },
     { "path": "../node" },
     { "path": "../displayobject" },
+    { "path": "../log" },
     { "path": "../path" },
     { "path": "../shape" },
     { "path": "../signals" },
+    { "path": "../spatial" },
     { "path": "../sprite" },
+    { "path": "../surface" },
     { "path": "../types" }
   ],
   "include": ["src"]

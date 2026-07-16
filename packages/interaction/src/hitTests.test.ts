@@ -11,6 +11,7 @@ import {
   hitTestDisplayObjects,
   hitTestGraphLocalBounds,
   hitTestGraphPoint,
+  hitTestNodeRegion,
   registerHitTestDetailed,
   registerHitTestPoint,
 } from './hitTests';
@@ -296,6 +297,27 @@ describe('hitTestGraphPoint', () => {
     const custom = createDisplayObjectGeneric(CustomKind);
     setNodeHitTestEnabled(custom, true);
     expect(hitTestGraphPoint(custom, 50, 50)).toBe(true);
+  });
+});
+
+describe('hitTestNodeRegion', () => {
+  beforeAll(() => {
+    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+  });
+
+  it('tests a node kind geometry, ignoring eligibility and children', () => {
+    const obj = createDisplayObject();
+    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
+    // No opt-in required — hitTestNodeRegion is the precise per-node test the broadphase calls.
+    expect(hitTestNodeRegion(obj, 50, 50)).toBe(true);
+    expect(hitTestNodeRegion(obj, 200, 200)).toBe(false);
+  });
+
+  it('uses the hitArea when one is set', () => {
+    const obj = createDisplayObject();
+    setNodeHitArea(obj, createRectangle(0, 0, 30, 30));
+    expect(hitTestNodeRegion(obj, 10, 10)).toBe(true);
+    expect(hitTestNodeRegion(obj, 40, 40)).toBe(false);
   });
 });
 

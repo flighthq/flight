@@ -23,6 +23,7 @@ import type {
 } from '@flighthq/types';
 
 import { findGraphHitTarget } from './hitTests';
+import { findSpatialInteractionTarget } from './interactionSpatialIndex';
 import { getNodeCursor } from './nodeInteractionState';
 
 export function captureInteractionPointer<N extends NodeAny>(
@@ -117,6 +118,10 @@ export function connectInteractionSignal<N extends NodeAny, Name extends Interac
   connectSignal(signal, connectedSlot, options);
   setTrackedInteractionSignalSlot(manager, target, name, slot, connectedSlot);
   incrementInteractionSignalSubscriberCount(manager, name);
+
+  // Diagnostics seam: the guard module (separately imported) fills this to catch listeners on nodes
+  // with no hit path. Null in production, so no `@flighthq/log` weight on the base bundle.
+  interactionConnectGuard?.(target, name);
 }
 
 export function createInteractionManager<N extends NodeAny>(
@@ -130,6 +135,7 @@ export function createInteractionManager<N extends NodeAny>(
     pointerCaptures: new Map(),
     pointerStates: new Map(),
     root,
+    spatialIndex: options.spatialIndex ?? null,
     signalSubscriberCounts: new Map(),
     trackedSignalSlots: new Map(),
     trackedSubscribersOnly: options.trackedSubscribersOnly ?? false,
@@ -340,6 +346,15 @@ export function releaseInteractionPointer<N extends NodeAny>(manager: Interactio
   manager.pointerCaptures.delete(pointerId);
 }
 
+/**
+ * Installs the connect-time guard hook consulted by `connectInteractionSignal`; `null` uninstalls it.
+ * This is the diagnostics seam — `enableInteractionGuards` (a separately-imported module that depends on
+ * `@flighthq/log`) provides the implementation, so the core carries no message or log weight.
+ **/
+export function setInteractionConnectGuard(guard: InteractionConnectGuard | null): void {
+  interactionConnectGuard = guard;
+}
+
 function dispatchKeyboardSignal<N extends NodeAny>(
   manager: InteractionManager<N>,
   name: KeyboardSignalName,
@@ -476,6 +491,7 @@ function findInteractionTarget<N extends NodeAny>(
   if (!manager.enabled) return null;
   const captured = manager.pointerCaptures.get(pointerId);
   if (captured !== undefined) return captured;
+  if (manager.spatialIndex !== null) return findSpatialInteractionTarget(manager, x, y) as N | null;
   return findGraphHitTarget(manager.root, x, y) as N | null;
 }
 
@@ -690,10 +706,14 @@ function isTransform2DNode(source: Readonly<NodeAny>): source is Transform2DNode
 type KeyboardSignalName = 'onKeyDown' | 'onKeyUp';
 type PointerSignalName = Exclude<InteractionSignalName, KeyboardSignalName>;
 
+export type InteractionConnectGuard = (target: NodeAny, name: InteractionSignalName) => void;
+
 type InteractionSignalPayload<Name extends InteractionSignalName> = Name extends KeyboardSignalName
   ? Readonly<KeyboardEventData>
   : Readonly<PointerEventData>;
 type InteractionSignalSlot<Name extends InteractionSignalName> = (value: InteractionSignalPayload<Name>) => void;
+
+let interactionConnectGuard: InteractionConnectGuard | null = null;
 
 const cancelSignalNames = ['onPointerCancel', 'onPointerOut', 'onPointerRollOut'] as const;
 const downSignalNames = ['onClick', 'onDoubleClick', 'onPointerCancel', 'onPointerDown', 'onReleaseOutside'] as const;
