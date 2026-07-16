@@ -1,8 +1,8 @@
 import { createScene } from '@flighthq/scene';
-import type { Camera, Mesh, SceneLights, SceneNode, Skeleton } from '@flighthq/sdk';
+import type { Camera, Mesh, SceneLights, SceneNode, Skeleton3D } from '@flighthq/sdk';
 import {
   addNodeChild,
-  computeSkeletonJointMatrices,
+  computeSkeleton3DJointMatrices,
   createAmbientLight,
   createCamera,
   createCylinderMeshGeometry,
@@ -11,7 +11,7 @@ import {
   createPerspectiveProjection,
   createQuaternion,
   createSceneNode,
-  createSkeleton,
+  createSkeleton3D,
   createStandardPbrMaterial,
   createVector3,
   destroyMeshGeometryGlData,
@@ -178,7 +178,7 @@ for (let j = 0; j < JOINT_COUNT; j++) {
 
 // Create the skeleton from the joint nodes. Omitting inverseBindMatrices captures the current
 // joint poses as the bind (rest) pose automatically.
-const skeleton: Skeleton = createSkeleton(jointNodes);
+const skeleton: Skeleton3D = createSkeleton3D(jointNodes);
 
 // PBR material: a warm orange dielectric surface.
 const material = createStandardPbrMaterial({
@@ -226,7 +226,7 @@ function animate(time: number): void {
   }
 
   // Recompute the skin palette from the updated joint world transforms.
-  computeSkeletonJointMatrices(skeleton);
+  computeSkeleton3DJointMatrices(skeleton);
 
   // CPU-skin the bind-pose positions/normals into the output buffers.
   skinVertices(
