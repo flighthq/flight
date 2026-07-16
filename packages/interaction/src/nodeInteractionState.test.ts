@@ -8,13 +8,11 @@ import {
   getNodeHitArea,
   getNodeInteractionState,
   getNodeTabIndex,
-  hasNodeHitTestChildren,
   isNodeFocusable,
   isNodeHitTestEnabled,
   setNodeCursor,
   setNodeFocusable,
   setNodeHitArea,
-  setNodeHitTestChildren,
   setNodeHitTestEnabled,
   setNodeTabIndex,
 } from './nodeInteractionState';
@@ -25,8 +23,7 @@ describe('createNodeInteractionState', () => {
       cursor: null,
       focusable: false,
       hitArea: null,
-      hitTestChildren: true,
-      hitTestEnabled: true,
+      hitTestEnabled: false,
       tabIndex: -1,
     });
   });
@@ -78,15 +75,6 @@ describe('getNodeTabIndex', () => {
   });
 });
 
-describe('hasNodeHitTestChildren', () => {
-  it('defaults to true and reflects the setter', () => {
-    const obj = createDisplayObject();
-    expect(hasNodeHitTestChildren(obj)).toBe(true);
-    setNodeHitTestChildren(obj, false);
-    expect(hasNodeHitTestChildren(obj)).toBe(false);
-  });
-});
-
 describe('isNodeFocusable', () => {
   it('defaults to false and reflects the setter', () => {
     const obj = createDisplayObject();
@@ -97,11 +85,11 @@ describe('isNodeFocusable', () => {
 });
 
 describe('isNodeHitTestEnabled', () => {
-  it('defaults to true and reflects the setter', () => {
+  it('defaults to false (opt-in) and reflects the setter', () => {
     const obj = createDisplayObject();
-    expect(isNodeHitTestEnabled(obj)).toBe(true);
-    setNodeHitTestEnabled(obj, false);
     expect(isNodeHitTestEnabled(obj)).toBe(false);
+    setNodeHitTestEnabled(obj, true);
+    expect(isNodeHitTestEnabled(obj)).toBe(true);
   });
 });
 
@@ -134,17 +122,11 @@ describe('setNodeHitArea', () => {
   });
 });
 
-describe('setNodeHitTestChildren', () => {
-  it('assigns subtree gating', () => {
-    const obj = createDisplayObject();
-    setNodeHitTestChildren(obj, false);
-    expect(hasNodeHitTestChildren(obj)).toBe(false);
-  });
-});
-
 describe('setNodeHitTestEnabled', () => {
-  it('assigns self gating', () => {
+  it('opts the node in and out of hit testing', () => {
     const obj = createDisplayObject();
+    setNodeHitTestEnabled(obj, true);
+    expect(isNodeHitTestEnabled(obj)).toBe(true);
     setNodeHitTestEnabled(obj, false);
     expect(isNodeHitTestEnabled(obj)).toBe(false);
   });

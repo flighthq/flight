@@ -4,6 +4,7 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { createShape } from '@flighthq/shape';
 
 import { findGraphHitTarget } from './hitTests';
+import { setNodeHitTestEnabled } from './nodeInteractionState';
 import { registerDefaultHitTestPoints } from './registerDefaultHitTestPoints';
 
 describe('registerDefaultHitTestPoints', () => {
@@ -12,10 +13,12 @@ describe('registerDefaultHitTestPoints', () => {
 
     const bitmap = createBitmap();
     setRectangle(getNodeLocalBoundsRectangle(bitmap), 0, 0, 100, 100);
+    setNodeHitTestEnabled(bitmap, true);
     expect(findGraphHitTarget(bitmap, 50, 50)).toBe(bitmap);
 
     const shape = createShape();
     setRectangle(getNodeLocalBoundsRectangle(shape), 0, 0, 100, 100);
+    setNodeHitTestEnabled(shape, true);
     expect(findGraphHitTarget(shape, 50, 50)).toBe(shape);
   });
 

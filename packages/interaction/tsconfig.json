@@ -12,6 +12,7 @@
     { "path": "../geometry" },
     { "path": "../node" },
     { "path": "../displayobject" },
+    { "path": "../path" },
     { "path": "../shape" },
     { "path": "../signals" },
     { "path": "../sprite" },

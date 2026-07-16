@@ -26,7 +26,7 @@ import {
   getInteractionSignals,
   releaseInteractionPointer,
 } from './interactionManager';
-import { setNodeCursor } from './nodeInteractionState';
+import { setNodeCursor, setNodeHitTestEnabled } from './nodeInteractionState';
 
 beforeAll(() => {
   registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
@@ -77,6 +77,7 @@ describe('connectInteractionSignal', () => {
   it('can use tracked subscribers without scanning for direct signal connections', () => {
     const kind = 'TrackedSubscriberHitTest';
     const root = createNode(kind);
+    setNodeHitTestEnabled(root, true);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
@@ -99,6 +100,7 @@ describe('connectInteractionSignal', () => {
   it('clears tracked once subscribers after dispatch', () => {
     const kind = 'TrackedOnceHitTest';
     const root = createNode(kind);
+    setNodeHitTestEnabled(root, true);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
@@ -176,6 +178,7 @@ describe('disconnectInteractionSignal', () => {
   it('disconnects a tracked subscriber and removes the dispatch cost', () => {
     const kind = 'DisconnectTrackedHitTest';
     const root = createNode(kind);
+    setNodeHitTestEnabled(root, true);
     const manager = createInteractionManager(root, { trackedSubscribersOnly: true });
     let fired = 0;
     let hitTests = 0;
@@ -296,6 +299,7 @@ describe('dispatchInteractionPointerDown', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    setNodeHitTestEnabled(child, true);
     addNodeChild(root, child);
 
     const signals = enableInteractionSignals(child);
@@ -311,6 +315,7 @@ describe('dispatchInteractionPointerDown', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    setNodeHitTestEnabled(child, true);
     addNodeChild(root, child);
 
     const signals = enableInteractionSignals(child);
@@ -326,6 +331,7 @@ describe('dispatchInteractionPointerDown', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    setNodeHitTestEnabled(child, true);
     addNodeChild(root, child);
 
     const signals = enableInteractionSignals(child);
@@ -349,6 +355,7 @@ describe('dispatchInteractionPointerDown', () => {
     child.y = 20;
     invalidateNodeLocalTransform(child);
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    setNodeHitTestEnabled(child, true);
     addNodeChild(root, child);
 
     const manager = createInteractionManager(root);
@@ -387,6 +394,7 @@ describe('dispatchInteractionPointerDown', () => {
     child.y = 7;
     invalidateNodeLocalTransform(child);
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    setNodeHitTestEnabled(child, true);
     addNodeChild(root, parent);
     addNodeChild(parent, child);
 
@@ -434,6 +442,7 @@ describe('dispatchInteractionPointerMove', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+    setNodeHitTestEnabled(child, true);
     addNodeChild(root, child);
     const applied: (Cursor | null)[] = [];
     const manager = createInteractionManager(root, { cursorBackend: { setCursor: (c) => applied.push(c) } });
@@ -590,6 +599,7 @@ function createHitScene() {
   const root = createDisplayObject();
   const child = createDisplayObject();
   setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 100, 100);
+  setNodeHitTestEnabled(child, true);
   addNodeChild(root, child);
   return { child, manager: createInteractionManager(root), root };
 }
