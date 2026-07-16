@@ -334,17 +334,22 @@ for (const btn of buttons) {
   drawButton(btn);
 }
 
+// Each fill/handle is a child of its track, not a sibling. The track carries the pointer
+// handler; parenting the overlay to it means a click anywhere on the slider — including the
+// filled portion that sits on top of the track — resolves to the overlay and then bubbles up
+// to the track, so the whole bar is draggable. As siblings layered above, the fills would
+// swallow clicks on the filled half and you could never lower a fader.
 addNodeChild(root, sliderTrack);
-addNodeChild(root, sliderFill);
-addNodeChild(root, sliderHandle);
+addNodeChild(sliderTrack, sliderFill);
+addNodeChild(sliderTrack, sliderHandle);
 addNodeChild(root, sfxSliderTrack);
-addNodeChild(root, sfxSliderFill);
+addNodeChild(sfxSliderTrack, sfxSliderFill);
 addNodeChild(root, musicSliderTrack);
-addNodeChild(root, musicSliderFill);
+addNodeChild(musicSliderTrack, musicSliderFill);
 addNodeChild(root, sfxPanTrack);
-addNodeChild(root, sfxPanFill);
+addNodeChild(sfxPanTrack, sfxPanFill);
 addNodeChild(root, musicPanTrack);
-addNodeChild(root, musicPanFill);
+addNodeChild(musicPanTrack, musicPanFill);
 
 drawMasterSlider();
 drawBusSliders();
@@ -367,7 +372,9 @@ instructionLabel.y = 65;
 invalidateNodeLocalTransform(instructionLabel);
 addNodeChild(root, instructionLabel);
 
-// Button labels.
+// Button labels are children of their button, not root siblings. The button owns the pointer
+// handler, so parenting the label to it lets a click on the text bubble up to the button; as a
+// sibling drawn on top, the label would intercept the click and it would never reach the button.
 for (const btn of buttons) {
   const label = createTextLabel();
   label.data.text = btn.label;
@@ -375,7 +382,7 @@ for (const btn of buttons) {
   label.x = btn.x + 12;
   label.y = btn.y + btn.h / 2 - 8;
   invalidateNodeLocalTransform(label);
-  addNodeChild(root, label);
+  addNodeChild(btn.shape, label);
 }
 
 const masterLabel = createTextLabel();
@@ -436,12 +443,15 @@ addNodeChild(root, statusLabel);
 
 // Wire interaction signals for sound buttons.
 for (const btn of buttons) {
-  connectInteractionSignal(interactionManager, btn.shape, 'onPointerOver', () => {
+  // Roll-over/out (not over/out) so the button stays highlighted while the pointer is over its
+  // child label too: roll signals fire across the whole ancestor chain, whereas over/out fire
+  // only on the exact node under the pointer and would flicker as it crossed onto the label.
+  connectInteractionSignal(interactionManager, btn.shape, 'onPointerRollOver', () => {
     hoveredButtons.add(btn);
     drawButton(btn);
   });
 
-  connectInteractionSignal(interactionManager, btn.shape, 'onPointerOut', () => {
+  connectInteractionSignal(interactionManager, btn.shape, 'onPointerRollOut', () => {
     hoveredButtons.delete(btn);
     drawButton(btn);
   });
