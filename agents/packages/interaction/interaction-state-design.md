@@ -100,8 +100,24 @@ index; the walk-but-test-only-volunteers baseline is order-correct and fine into
 - `@flighthq/interaction` gains a dependency on `@flighthq/path` (for `containsPathPoint`).
 - The sound example opts its buttons/tracks in and drops the decorative-overlay `false` calls.
 
-## Boundaries (explicitly out of this pass, so they're not mistaken for missing)
+## Built (follow-up pass, 2026-07-16)
 
-- Bitmap-alpha and glyph-accurate Tier-2 handlers (cross-package: `surface`, `textlayout`).
-- The manager registry / spatial broadphase (chartered opt-in acceleration).
+- **Guard** — `enableInteractionGuards()` / `disableInteractionGuards()` / `explainInteractionHitEligibility()`
+  (separately-imported, `@flighthq/log`). Warns once when a listener is connected to a node with no
+  hit-testable subtree (the opt-in footgun). Core seam: `setInteractionConnectGuard`.
+- **Shape-accurate Tier-2** — `defaultShapeHitTestPointHandler` does true fill-region winding under
+  `shapeFlag` (via `@flighthq/shape` + `@flighthq/path`); Tier-1 stays bounds.
+- **Bitmap-alpha Tier-2** — `registerAccurateBitmapHitTest(threshold)` (opt-in, pulls `@flighthq/surface`)
+  reads pixel alpha under `shapeFlag`, bounds fallback when pixels are unreadable. Positive path is
+  functional-suite territory (jsdom can't rasterize); unit tests cover wiring + fallback.
+- **Broadphase** — `InteractionManagerOptions.spatialIndex` (a `@flighthq/spatial` index) +
+  `refreshInteractionSpatialIndex(manager)`; pointer dispatch queries it instead of walking the tree,
+  front-to-back-consistent with the linear pick. The 240 Hz acceleration.
+
+## Boundaries (still out)
+
+- **Glyph-accurate / per-glyph sub-index for text.** Blocked on a clean per-glyph-rect API: `getTextLayout`
+  lives in the heavy `@flighthq/text` package and `TextLayoutResult` exposes line metrics but not per-glyph
+  rects. Needs a small text/textlayout API touch (a design decision) rather than a guess; and it is
+  jsdom-untestable (functional-suite territory) like bitmap-alpha. Surfaced to the user.
 - A focus/tab navigation manager consuming `focusable`/`tabIndex` (fields exist; consumer deferred).
