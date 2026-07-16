@@ -11,3 +11,10 @@ export interface HitTestResult {
   node: NodeAny;
   subIndex: number;
 }
+
+/**
+ * Sub-index resolver registered per node kind via `registerHitTestDetailed`. Given a node hit at
+ * world-space (x, y), returns the index of the sub-element under the point (tile index, quad index,
+ * glyph index), or -1 when the point falls on no sub-element. Runs only on the Tier-2 detailed path.
+ */
+export type HitTestDetailedFunction = (source: NodeAny, x: number, y: number, shapeFlag: boolean) => number;
