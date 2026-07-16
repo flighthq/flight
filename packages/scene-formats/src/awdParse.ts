@@ -28,9 +28,7 @@ import {
   AWD_MAGIC_0,
   AWD_MAGIC_1,
   AWD_MAGIC_2,
-  AWD_MAGIC_3,
   AWD_NAMESPACE_CORE,
-  AWD_ROOT_JOINT_PARENT,
   AWD_STREAM_INDICES,
   AWD_STREAM_NORMALS,
   AWD_STREAM_POSITIONS,
@@ -39,7 +37,7 @@ import {
 } from './awdSchema';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
 
-// Parses an Away3D AWD binary file into a Scene. The 12-byte header (magic `AWD\0`, version,
+// Parses an Away3D AWD 2.x binary file into a Scene. The 12-byte header (magic `AWD`, version,
 // flags, compression, body length) is validated, then the block stream is walked to extract
 // geometry blocks (type 1), container blocks (type 22), and mesh-instance blocks (type 23).
 // Mesh instances reference geometry blocks by block ID.
@@ -56,13 +54,8 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
 
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
 
-  if (
-    source[0] !== AWD_MAGIC_0 ||
-    source[1] !== AWD_MAGIC_1 ||
-    source[2] !== AWD_MAGIC_2 ||
-    source[3] !== AWD_MAGIC_3
-  ) {
-    warnings?.push("createSceneFromAwd: magic is not 'AWD\\0'; not an AWD file");
+  if (source[0] !== AWD_MAGIC_0 || source[1] !== AWD_MAGIC_1 || source[2] !== AWD_MAGIC_2) {
+    warnings?.push("createSceneFromAwd: magic is not 'AWD'; not an AWD file");
     return createScene();
   }
 
@@ -74,13 +67,9 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     return createScene();
   }
 
-  const flags = view.getUint16(5, true);
-  const wideAttributes = (flags & 1) !== 0;
-
   const bodyLength = view.getUint32(8, true);
   const bodyEnd = Math.min(AWD_HEADER_BYTES + bodyLength, source.byteLength);
 
-  // First pass: parse all blocks into a block map keyed by block ID.
   const geometryBlocks = new Map<number, ParsedGeometry[]>();
   const containerBlocks = new Map<number, ParsedContainer>();
   const meshInstanceBlocks = new Map<number, ParsedMeshInstance>();
@@ -99,7 +88,8 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
       break;
     }
 
-    const widePrecision = (blockFlags & 1) !== 0;
+    const matrixWide = (blockFlags & 1) !== 0;
+    const geometryWide = (blockFlags & 2) !== 0;
 
     if (namespace === AWD_NAMESPACE_CORE) {
       if (blockType === AWD_BLOCK_TRIANGLE_GEOMETRY) {
@@ -108,8 +98,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
           source,
           blockDataStart,
           blockDataStart + blockLength,
-          widePrecision,
-          wideAttributes,
+          geometryWide,
           warnings,
         );
         geometryBlocks.set(blockId, geoms);
@@ -119,7 +108,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
           source,
           blockDataStart,
           blockDataStart + blockLength,
-          widePrecision,
+          matrixWide,
           warnings,
         );
         if (container !== null) containerBlocks.set(blockId, container);
@@ -129,7 +118,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
           source,
           blockDataStart,
           blockDataStart + blockLength,
-          widePrecision,
+          matrixWide,
           warnings,
         );
         if (meshInst !== null) meshInstanceBlocks.set(blockId, meshInst);
@@ -139,18 +128,15 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     offset = blockDataStart + blockLength;
   }
 
-  // Second pass: build scene nodes from containers and mesh instances, then wire up hierarchy.
   const scene = createScene();
   const sceneNodes = new Map<number, SceneNode>();
 
-  // Create container nodes.
   for (const [blockId, container] of containerBlocks) {
     const node = createSceneNode(undefined, { name: container.name || undefined });
     applyAwdTransform(node, container.transform);
     sceneNodes.set(blockId, node);
   }
 
-  // Create mesh instance nodes.
   for (const [blockId, meshInst] of meshInstanceBlocks) {
     const geometries = geometryBlocks.get(meshInst.geometryId);
     let node: SceneNode;
@@ -175,7 +161,6 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     sceneNodes.set(blockId, node);
   }
 
-  // Wire up parent-child relationships. Blocks with parentId 0 are scene roots.
   const parented = new Set<number>();
   for (const [blockId, container] of containerBlocks) {
     if (container.parentId !== 0) {
@@ -196,7 +181,6 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     }
   }
 
-  // Add root-level nodes to the scene.
   for (const [blockId, node] of sceneNodes) {
     if (!parented.has(blockId)) {
       addNodeChild(scene, node);
@@ -209,9 +193,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
 // Parses AWD skeleton, skeleton-pose, and skeleton-animation blocks from the same AWD binary that
 // createSceneFromAwd handles. Returns the first parsed Skeleton (joints as a SceneNode hierarchy
 // with transforms applied), an AnimationClip whose channels drive each joint's translation per
-// keyframe, or null when no animation blocks are found. The skeleton's joints are standalone
-// SceneNodes (not part of the scene returned by createSceneFromAwd); wire them into the scene
-// hierarchy as needed.
+// keyframe, or null when no animation blocks are found.
 export function parseAwdSkeletonAnimation(
   bytes: Readonly<Uint8Array>,
   warnings?: string[],
@@ -224,13 +206,8 @@ export function parseAwdSkeletonAnimation(
 
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
 
-  if (
-    source[0] !== AWD_MAGIC_0 ||
-    source[1] !== AWD_MAGIC_1 ||
-    source[2] !== AWD_MAGIC_2 ||
-    source[3] !== AWD_MAGIC_3
-  ) {
-    warnings?.push("parseAwdSkeletonAnimation: magic is not 'AWD\\0'; not an AWD file");
+  if (source[0] !== AWD_MAGIC_0 || source[1] !== AWD_MAGIC_1 || source[2] !== AWD_MAGIC_2) {
+    warnings?.push("parseAwdSkeletonAnimation: magic is not 'AWD'; not an AWD file");
     return null;
   }
 
@@ -263,7 +240,7 @@ export function parseAwdSkeletonAnimation(
       break;
     }
 
-    const widePrecision = (blockFlags & 1) !== 0;
+    const matrixWide = (blockFlags & 1) !== 0;
 
     if (namespace === AWD_NAMESPACE_CORE) {
       if (blockType === AWD_BLOCK_SKELETON) {
@@ -272,7 +249,7 @@ export function parseAwdSkeletonAnimation(
           source,
           blockDataStart,
           blockDataStart + blockLength,
-          widePrecision,
+          matrixWide,
           warnings,
         );
         if (skeleton !== null) skeletonBlocks.set(blockId, skeleton);
@@ -282,7 +259,7 @@ export function parseAwdSkeletonAnimation(
           source,
           blockDataStart,
           blockDataStart + blockLength,
-          widePrecision,
+          matrixWide,
           warnings,
         );
         if (pose !== null) poseBlocks.set(blockId, pose);
@@ -304,11 +281,9 @@ export function parseAwdSkeletonAnimation(
     return null;
   }
 
-  // Use the first skeleton and first animation block.
   const parsedSkeleton = skeletonBlocks.values().next().value!;
   const parsedAnimation = animationBlocks.values().next().value!;
 
-  // Build joint SceneNode hierarchy from the parsed skeleton.
   const jointNodes: SceneNode[] = [];
   const jointNames: string[] = [];
   for (let j = 0; j < parsedSkeleton.joints.length; j++) {
@@ -319,17 +294,16 @@ export function parseAwdSkeletonAnimation(
     jointNames.push(joint.name);
   }
 
-  // Wire up parent-child relationships for joints.
+  // Wire up parent-child relationships. Parent index is 1-based (0 = root / no parent).
   for (let j = 0; j < parsedSkeleton.joints.length; j++) {
-    const parentIndex = parsedSkeleton.joints[j].parentIndex;
-    if (parentIndex !== AWD_ROOT_JOINT_PARENT && parentIndex < jointNodes.length) {
-      addNodeChild(jointNodes[parentIndex], jointNodes[j]);
+    const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
+    if (parentIndex1 > 0 && parentIndex1 - 1 < jointNodes.length) {
+      addNodeChild(jointNodes[parentIndex1 - 1], jointNodes[j]);
     }
   }
 
   const skeleton = createSkeleton3D(jointNodes, undefined, jointNames);
 
-  // Build animation clip from pose references and durations.
   const jointCount = jointNodes.length;
   const poseCount = parsedAnimation.poses.length;
 
@@ -338,7 +312,6 @@ export function parseAwdSkeletonAnimation(
     return null;
   }
 
-  // Accumulate times from durations (milliseconds to seconds).
   const times: number[] = [];
   let timeAccumulator = 0;
   for (let p = 0; p < poseCount; p++) {
@@ -346,8 +319,6 @@ export function parseAwdSkeletonAnimation(
     timeAccumulator += parsedAnimation.poses[p].duration / 1000;
   }
 
-  // Build one translation channel per joint. Each pose provides the joint's 4x3 transform; we
-  // extract the translation (last 3 of the 12 floats: indices 9, 10, 11 in column-major order).
   const channels = [];
   for (let j = 0; j < jointCount; j++) {
     const values: number[] = [];
@@ -358,13 +329,11 @@ export function parseAwdSkeletonAnimation(
         warnings?.push(
           `parseAwdSkeletonAnimation: pose block ${poseBlockId} referenced by animation not found; using identity`,
         );
-        // Identity translation.
         values.push(0, 0, 0);
       } else if (j < pose.jointTransforms.length && pose.jointTransforms[j] !== null) {
         const transform = pose.jointTransforms[j]!;
         values.push(transform[9], transform[10], transform[11]);
       } else {
-        // No transform for this joint in this pose — use identity translation.
         values.push(0, 0, 0);
       }
     }
@@ -398,7 +367,6 @@ interface ParsedMeshInstance {
   transform: Float64Array;
 }
 
-// Reads an AWD string: a uint16 length prefix followed by that many UTF-8 bytes.
 function readAwdString(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
@@ -410,8 +378,6 @@ function readAwdString(
   return { end: offset + 2 + length, value };
 }
 
-// Reads a 4x3 column-major transform matrix (12 float values). The float size depends on the
-// block's wide-precision flag: float32 (4 bytes each) or float64 (8 bytes each).
 function readAwdTransform(
   view: Readonly<DataView>,
   offset: number,
@@ -428,9 +394,8 @@ function readAwdTransform(
   return { end: offset + 12 * floatSize, transform };
 }
 
-// Applies a 4x3 AWD column-major transform to a scene node's 4x4 local matrix. AWD stores
-// transforms as 12 floats in column-major order: columns [c0x,c0y,c0z, c1x,c1y,c1z,
-// c2x,c2y,c2z, tx,ty,tz]. This maps to the 4x4 column-major matrix with w-column [0,0,0,1].
+// AWD stores transforms as 12 column-major floats: [c0x,c0y,c0z, c1x,c1y,c1z,
+// c2x,c2y,c2z, tx,ty,tz] → 4×4 column-major with w-column [0,0,0,1].
 function applyAwdTransform(node: SceneNode, transform: Readonly<Float64Array>): void {
   const m = node.localMatrix.m;
   m[0] = transform[0];
@@ -452,7 +417,6 @@ function applyAwdTransform(node: SceneNode, transform: Readonly<Float64Array>): 
   invalidateNodeLocalTransform(node);
 }
 
-// Returns the byte size of one element for an AWD data type constant.
 function awdDataTypeByteSize(dataType: number): number {
   switch (dataType) {
     case AWD_DATA_INT8:
@@ -463,7 +427,6 @@ function awdDataTypeByteSize(dataType: number): number {
       return 2;
     case AWD_DATA_INT32:
     case AWD_DATA_UINT32:
-      return 4;
     case AWD_DATA_FLOAT32:
       return 4;
     case AWD_DATA_FLOAT64:
@@ -473,7 +436,6 @@ function awdDataTypeByteSize(dataType: number): number {
   }
 }
 
-// Reads a single numeric value from the DataView according to the AWD data type.
 function readAwdDataValue(view: Readonly<DataView>, offset: number, dataType: number): number {
   const dv = view as DataView;
   switch (dataType) {
@@ -498,39 +460,48 @@ function readAwdDataValue(view: Readonly<DataView>, offset: number, dataType: nu
   }
 }
 
-// Parses a TriangleGeometry block (type 1). Contains one or more sub-meshes, each with typed
-// attribute streams (positions, indices, UVs, normals, tangents).
+// Skips an AWD attribute list (NumAttrList or UserAttrList). The list is a uint32 byte-length
+// prefix followed by that many bytes of attribute data.
+function skipAwdAttrList(view: Readonly<DataView>, offset: number, end: number): number {
+  if (offset + 4 > end) return offset;
+  const byteLength = (view as DataView).getUint32(offset, true);
+  return offset + 4 + byteLength;
+}
+
+// Parses a TriangleGeometry block (type 1). Layout:
+// name(VarString) → numSubMeshes(uint16) → NumAttrList → per sub-mesh:
+//   totalByteLen(uint32) → NumAttrList → streams → UserAttrList
 function parseTriangleGeometryBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  widePrecision: boolean,
-  wideAttributes: boolean,
+  geometryWide: boolean,
   warnings?: string[],
 ): ParsedGeometry[] {
   const dv = view as DataView;
   let offset = start;
 
-  // Skip the geometry name (AWD string).
   if (offset + 2 > end) return [];
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  // Number of sub-meshes.
   if (offset + 2 > end) return [];
   const numSubMeshes = dv.getUint16(offset, true);
   offset += 2;
 
-  // Skip geometry-level properties (AWD property list).
-  offset = skipAwdProperties(dv, offset, end, wideAttributes);
+  offset = skipAwdAttrList(view, offset, end);
 
   const geometries: ParsedGeometry[] = [];
 
   for (let s = 0; s < numSubMeshes; s++) {
     if (offset + 4 > end) break;
-    const numStreams = dv.getUint32(offset, true);
+    const subMeshByteLen = dv.getUint32(offset, true);
+    const subMeshEnd = offset + 4 + subMeshByteLen;
     offset += 4;
+
+    // NumAttrList for sub-mesh properties.
+    offset = skipAwdAttrList(view, offset, end);
 
     let positions: number[] | null = null;
     let indices: number[] | null = null;
@@ -538,21 +509,22 @@ function parseTriangleGeometryBlock(
     let normals: number[] | null = null;
     let tangents: number[] | null = null;
 
-    for (let st = 0; st < numStreams; st++) {
-      if (offset + 6 > end) break;
+    // Read streams until we reach the sub-mesh byte boundary (leaving room for UserAttrList).
+    while (offset + 6 <= subMeshEnd) {
       const streamType = dv.getUint8(offset);
       offset += 1;
       const dataType = dv.getUint8(offset);
       offset += 1;
-      const count = dv.getUint32(offset, true);
+      const streamByteLength = dv.getUint32(offset, true);
       offset += 4;
 
-      const elementSize = awdDataTypeByteSize(dataType);
-      const streamByteLength = count * elementSize;
       if (offset + streamByteLength > end) {
         warnings?.push('createSceneFromAwd: stream data runs past the end of the block');
         break;
       }
+
+      const elementSize = awdDataTypeByteSize(dataType);
+      const count = Math.floor(streamByteLength / elementSize);
 
       const values: number[] = [];
       for (let i = 0; i < count; i++) {
@@ -581,8 +553,8 @@ function parseTriangleGeometryBlock(
       }
     }
 
-    // Skip sub-mesh-level properties.
-    offset = skipAwdProperties(dv, offset, end, wideAttributes);
+    // UserAttrList for sub-mesh.
+    offset = skipAwdAttrList(view, offset, end);
 
     if (positions === null || positions.length < 3) {
       warnings?.push('createSceneFromAwd: sub-mesh has no positions or fewer than 3 position values');
@@ -594,26 +566,22 @@ function parseTriangleGeometryBlock(
 
     for (let v = 0; v < vertexCount; v++) {
       const o = v * CANONICAL_FLOATS_PER_VERTEX;
-      // Position (3 floats).
       vertices[o] = positions[v * 3];
       vertices[o + 1] = positions[v * 3 + 1];
       vertices[o + 2] = positions[v * 3 + 2];
 
-      // Normal (3 floats).
       if (normals !== null && v * 3 + 2 < normals.length) {
         vertices[o + 3] = normals[v * 3];
         vertices[o + 4] = normals[v * 3 + 1];
         vertices[o + 5] = normals[v * 3 + 2];
       }
 
-      // Tangent (4 floats) — AWD tangents are 3-component; the handedness w is zero-filled.
       if (tangents !== null && v * 3 + 2 < tangents.length) {
         vertices[o + 6] = tangents[v * 3];
         vertices[o + 7] = tangents[v * 3 + 1];
         vertices[o + 8] = tangents[v * 3 + 2];
       }
 
-      // UV (2 floats).
       if (uvs !== null && v * 2 + 1 < uvs.length) {
         vertices[o + 10] = uvs[v * 2];
         vertices[o + 11] = uvs[v * 2 + 1];
@@ -628,18 +596,34 @@ function parseTriangleGeometryBlock(
   return geometries;
 }
 
-// Parses a Container block (type 22): name, parent ID, and transform.
+// Parses a Container block (type 22). AWD SceneHeader layout:
+// parentId(uint32) → matrix4x3(12 × floatSize) → name(VarString) → NumAttrList → UserAttrList
 function parseContainerBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  widePrecision: boolean,
+  matrixWide: boolean,
   warnings?: string[],
 ): ParsedContainer | null {
+  const dv = view as DataView;
   let offset = start;
 
-  // Name.
+  if (offset + 4 > end) {
+    warnings?.push('createSceneFromAwd: container block truncated before parent ID');
+    return null;
+  }
+  const parentId = dv.getUint32(offset, true);
+  offset += 4;
+
+  const floatSize = matrixWide ? 8 : 4;
+  if (offset + 12 * floatSize > end) {
+    warnings?.push('createSceneFromAwd: container block truncated before transform');
+    return null;
+  }
+  const transformResult = readAwdTransform(view, offset, matrixWide);
+  offset = transformResult.end;
+
   if (offset + 2 > end) {
     warnings?.push('createSceneFromAwd: container block truncated before name');
     return null;
@@ -647,37 +631,41 @@ function parseContainerBlock(
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  // Parent ID.
-  if (offset + 4 > end) {
-    warnings?.push('createSceneFromAwd: container block truncated before parent ID');
-    return null;
-  }
-  const parentId = (view as DataView).getUint32(offset, true);
-  offset += 4;
-
-  // Transform (12 floats).
-  const floatSize = widePrecision ? 8 : 4;
-  if (offset + 12 * floatSize > end) {
-    warnings?.push('createSceneFromAwd: container block truncated before transform');
-    return null;
-  }
-  const transformResult = readAwdTransform(view, offset, widePrecision);
+  offset = skipAwdAttrList(view, offset, end);
+  offset = skipAwdAttrList(view, offset, end);
 
   return { name: nameResult.value, parentId, transform: transformResult.transform };
 }
 
-// Parses a MeshInstance block (type 23): name, parent ID, transform, and geometry reference.
+// Parses a MeshInstance block (type 23). Layout:
+// SceneHeader(parentId → matrix → name) → NumAttrList → geometryId(uint32)
+// → numMaterials(uint16) → materialIds(uint32 × N) → UserAttrList
 function parseMeshInstanceBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  widePrecision: boolean,
+  matrixWide: boolean,
   warnings?: string[],
 ): ParsedMeshInstance | null {
+  const dv = view as DataView;
   let offset = start;
 
-  // Name.
+  if (offset + 4 > end) {
+    warnings?.push('createSceneFromAwd: mesh instance block truncated before parent ID');
+    return null;
+  }
+  const parentId = dv.getUint32(offset, true);
+  offset += 4;
+
+  const floatSize = matrixWide ? 8 : 4;
+  if (offset + 12 * floatSize > end) {
+    warnings?.push('createSceneFromAwd: mesh instance block truncated before transform');
+    return null;
+  }
+  const transformResult = readAwdTransform(view, offset, matrixWide);
+  offset = transformResult.end;
+
   if (offset + 2 > end) {
     warnings?.push('createSceneFromAwd: mesh instance block truncated before name');
     return null;
@@ -685,53 +673,43 @@ function parseMeshInstanceBlock(
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  // Parent ID.
-  if (offset + 4 > end) {
-    warnings?.push('createSceneFromAwd: mesh instance block truncated before parent ID');
-    return null;
-  }
-  const parentId = (view as DataView).getUint32(offset, true);
-  offset += 4;
+  // NumAttrList (block properties).
+  offset = skipAwdAttrList(view, offset, end);
 
-  // Transform (12 floats).
-  const floatSize = widePrecision ? 8 : 4;
-  if (offset + 12 * floatSize > end) {
-    warnings?.push('createSceneFromAwd: mesh instance block truncated before transform');
-    return null;
-  }
-  const transformResult = readAwdTransform(view, offset, widePrecision);
-  offset = transformResult.end;
-
-  // Geometry ID.
   if (offset + 4 > end) {
     warnings?.push('createSceneFromAwd: mesh instance block truncated before geometry ID');
     return null;
   }
-  const geometryId = (view as DataView).getUint32(offset, true);
+  const geometryId = dv.getUint32(offset, true);
   offset += 4;
 
-  // Number of materials and material IDs (skipped — materials are not yet imported).
   if (offset + 2 <= end) {
-    const numMaterials = (view as DataView).getUint16(offset, true);
+    const numMaterials = dv.getUint16(offset, true);
     offset += 2;
-    offset += numMaterials * 4; // skip material IDs
+    offset += numMaterials * 4;
   }
+
+  // UserAttrList.
+  offset = skipAwdAttrList(view, offset, end);
 
   return { geometryId, name: nameResult.value, parentId, transform: transformResult.transform };
 }
 
-// Parses a Skeleton block (type 101): name, joint count, per-joint (name, parentIndex, transform).
+// Parses a Skeleton block (type 101). Layout:
+// name(VarString) → jointCount(uint16) → NumAttrList → per joint:
+//   jointId(uint16) → parentId(uint16, 1-based, 0=root) → name(VarString)
+//   → matrix4x3(12 × floatSize) → NumAttrList → UserAttrList
 function parseSkeletonBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  widePrecision: boolean,
+  matrixWide: boolean,
   warnings?: string[],
 ): ParsedSkeleton | null {
+  const dv = view as DataView;
   let offset = start;
 
-  // Name.
   if (offset + 2 > end) {
     warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before name');
     return null;
@@ -739,17 +717,26 @@ function parseSkeletonBlock(
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  // Joint count.
   if (offset + 2 > end) {
     warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint count');
     return null;
   }
-  const jointCount = (view as DataView).getUint16(offset, true);
+  const jointCount = dv.getUint16(offset, true);
   offset += 2;
+
+  offset = skipAwdAttrList(view, offset, end);
 
   const joints: ParsedJoint[] = [];
   for (let j = 0; j < jointCount; j++) {
-    // Joint name.
+    // Joint ID (sequential, 0-based).
+    if (offset + 4 > end) {
+      warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint fields');
+      return null;
+    }
+    offset += 2; // skip jointId (implicit from array position)
+    const parentIndex = dv.getUint16(offset, true);
+    offset += 2;
+
     if (offset + 2 > end) {
       warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint name');
       return null;
@@ -757,22 +744,16 @@ function parseSkeletonBlock(
     const jointNameResult = readAwdString(view, source, offset);
     offset = jointNameResult.end;
 
-    // Parent index.
-    if (offset + 2 > end) {
-      warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint parent index');
-      return null;
-    }
-    const parentIndex = (view as DataView).getUint16(offset, true);
-    offset += 2;
-
-    // Transform (12 floats).
-    const floatSize = widePrecision ? 8 : 4;
+    const floatSize = matrixWide ? 8 : 4;
     if (offset + 12 * floatSize > end) {
       warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint transform');
       return null;
     }
-    const transformResult = readAwdTransform(view, offset, widePrecision);
+    const transformResult = readAwdTransform(view, offset, matrixWide);
     offset = transformResult.end;
+
+    offset = skipAwdAttrList(view, offset, end);
+    offset = skipAwdAttrList(view, offset, end);
 
     joints.push({ name: jointNameResult.value, parentIndex, transform: transformResult.transform });
   }
@@ -780,19 +761,20 @@ function parseSkeletonBlock(
   return { joints, name: nameResult.value };
 }
 
-// Parses a SkeletonPose block (type 102): name, joint count, per-joint (hasTransform, optional transform).
+// Parses a SkeletonPose block (type 102). Layout:
+// name(VarString) → jointCount(uint16) → NumAttrList → per joint:
+//   hasTransform(uint8) → optional matrix4x3(12 × floatSize)
 function parseSkeletonPoseBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
   start: number,
   end: number,
-  widePrecision: boolean,
+  matrixWide: boolean,
   warnings?: string[],
 ): ParsedSkeletonPose | null {
   const dv = view as DataView;
   let offset = start;
 
-  // Name.
   if (offset + 2 > end) {
     warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before name');
     return null;
@@ -800,17 +782,17 @@ function parseSkeletonPoseBlock(
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  // Joint count (uint32).
-  if (offset + 4 > end) {
+  if (offset + 2 > end) {
     warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before joint count');
     return null;
   }
-  const jointCount = dv.getUint32(offset, true);
-  offset += 4;
+  const jointCount = dv.getUint16(offset, true);
+  offset += 2;
+
+  offset = skipAwdAttrList(view, offset, end);
 
   const jointTransforms: (Float64Array | null)[] = [];
   for (let j = 0; j < jointCount; j++) {
-    // hasTransform flag (uint8).
     if (offset + 1 > end) {
       warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before hasTransform');
       return null;
@@ -819,12 +801,12 @@ function parseSkeletonPoseBlock(
     offset += 1;
 
     if (hasTransform !== 0) {
-      const floatSize = widePrecision ? 8 : 4;
+      const floatSize = matrixWide ? 8 : 4;
       if (offset + 12 * floatSize > end) {
         warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before joint transform');
         return null;
       }
-      const transformResult = readAwdTransform(view, offset, widePrecision);
+      const transformResult = readAwdTransform(view, offset, matrixWide);
       offset = transformResult.end;
       jointTransforms.push(transformResult.transform);
     } else {
@@ -835,7 +817,9 @@ function parseSkeletonPoseBlock(
   return { jointTransforms, name: nameResult.value };
 }
 
-// Parses a SkeletonAnimation block (type 103): name, pose count, per-pose (poseBlockId, duration).
+// Parses a SkeletonAnimation block (type 103). Layout:
+// name(VarString) → frameCount(uint16) → NumAttrList → per frame:
+//   poseBlockId(uint32) → duration(uint16, milliseconds)
 function parseSkeletonAnimationBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
@@ -846,7 +830,6 @@ function parseSkeletonAnimationBlock(
   const dv = view as DataView;
   let offset = start;
 
-  // Name.
   if (offset + 2 > end) {
     warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before name');
     return null;
@@ -854,17 +837,17 @@ function parseSkeletonAnimationBlock(
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  // Pose count.
   if (offset + 2 > end) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before pose count');
+    warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before frame count');
     return null;
   }
   const poseCount = dv.getUint16(offset, true);
   offset += 2;
 
+  offset = skipAwdAttrList(view, offset, end);
+
   const poses: { duration: number; poseBlockId: number }[] = [];
   for (let p = 0; p < poseCount; p++) {
-    // Pose block ID (uint32).
     if (offset + 4 > end) {
       warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before pose block ID');
       return null;
@@ -872,7 +855,6 @@ function parseSkeletonAnimationBlock(
     const poseBlockId = dv.getUint32(offset, true);
     offset += 4;
 
-    // Duration in milliseconds (uint16).
     if (offset + 2 > end) {
       warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before pose duration');
       return null;
@@ -884,23 +866,6 @@ function parseSkeletonAnimationBlock(
   }
 
   return { name: nameResult.value, poses };
-}
-
-// Skips an AWD property list. Properties are encoded as a sequence of entries: key (uint16 or
-// uint32, depending on wideAttributes) + length (uint32) + data bytes. The list ends when a
-// key of 0 is encountered, which also has a zero length and no data.
-function skipAwdProperties(view: Readonly<DataView>, offset: number, end: number, wideAttributes: boolean): number {
-  const dv = view as DataView;
-  const keySize = wideAttributes ? 4 : 2;
-  while (offset + keySize + 4 <= end) {
-    const key = wideAttributes ? dv.getUint32(offset, true) : dv.getUint16(offset, true);
-    offset += keySize;
-    const propLength = dv.getUint32(offset, true);
-    offset += 4;
-    if (key === 0) break;
-    offset += propLength;
-  }
-  return offset;
 }
 
 interface ParsedJoint {

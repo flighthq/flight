@@ -1,13 +1,12 @@
 // Away3D AWD binary wire-format constants and types. These are format-internal: none are
 // re-exported from the package barrel; they stay module-scoped within the package.
 
-// AWD file header magic bytes: 'A', 'W', 'D', '\0'.
+// AWD file header magic bytes: 'A', 'W', 'D'.
 export const AWD_MAGIC_0 = 0x41; // 'A'
 export const AWD_MAGIC_1 = 0x57; // 'W'
 export const AWD_MAGIC_2 = 0x44; // 'D'
-export const AWD_MAGIC_3 = 0x00; // '\0'
 
-// Minimum header size: magic (3 bytes + null) + version major (1) + version minor (1) +
+// Header size: magic (3) + version major (1) + version minor (1) +
 // flags (2) + compression (1) + body length (4) = 12 bytes.
 export const AWD_HEADER_BYTES = 12;
 
