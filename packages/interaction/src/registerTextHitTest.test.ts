@@ -5,9 +5,9 @@ import { setTextLayoutMeasureProvider } from '@flighthq/textlayout';
 import type { HitTestResult, TextLabel } from '@flighthq/types';
 import { TextLabelKind } from '@flighthq/types';
 
-import { findGraphHitTargetDetailed, hitTestGraphLocalBounds, registerHitTestPoint } from './hitTests';
+import { describeGraphHit, findGraphHitTargetPrecise, hitTestGraphLocalBounds, registerHitTest } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';
-import { registerAccurateTextHitTest } from './registerAccurateTextHitTest';
+import { registerTextHitTest } from './registerTextHitTest';
 
 function hittableLabel(text: string): TextLabel {
   const label = createTextLabel();
@@ -22,34 +22,32 @@ function emptyResult(node: TextLabel): HitTestResult {
 }
 
 beforeAll(() => {
-  registerHitTestPoint(TextLabelKind, hitTestGraphLocalBounds);
-  registerAccurateTextHitTest();
+  registerHitTest(TextLabelKind, hitTestGraphLocalBounds);
+  registerTextHitTest();
 });
 
 afterEach(() => {
   setTextLayoutMeasureProvider(null);
 });
 
-describe('registerAccurateTextHitTest', () => {
-  it('resolves subIndex to -1 when no layout is available (no measure provider)', () => {
+describe('registerTextHitTest', () => {
+  it('hits the whole box precisely, and describes subIndex 0 when no layout is available', () => {
     setTextLayoutMeasureProvider(null);
     const label = hittableLabel('hello');
+    expect(findGraphHitTargetPrecise(label, 5, 10)).toBe(label);
     const out = emptyResult(label);
-    findGraphHitTargetDetailed(label, 5, 10, out);
-    expect(out.node).toBe(label);
-    expect(out.subIndex).toBe(-1);
+    describeGraphHit(label, 5, 10, out);
+    expect(out.subIndex).toBe(0);
   });
 
-  it('resolves the character index under the pointer via the layout', () => {
+  it('describes the character index under the pointer via the layout', () => {
     // Fixed 7px-per-character measure — a real layout without a renderer.
     setTextLayoutMeasureProvider((t) => t.length * 7);
     const label = hittableLabel('ABCDE');
     const left = emptyResult(label);
     const right = emptyResult(label);
-
-    findGraphHitTargetDetailed(label, 1, 10, left);
-    findGraphHitTargetDetailed(label, 30, 10, right);
-
+    describeGraphHit(label, 1, 10, left);
+    describeGraphHit(label, 30, 10, right);
     expect(left.subIndex).toBe(0);
     expect(right.subIndex).toBeGreaterThan(left.subIndex);
   });

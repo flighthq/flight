@@ -4,48 +4,38 @@ import { createSurfaceFromImageResource, getSurfacePixelChannel } from '@flighth
 import type { Bitmap, DisplayObject, ImageResource, NodeAny, Surface } from '@flighthq/types';
 import { BitmapKind, ImageChannel } from '@flighthq/types';
 
-import { hitTestGraphLocalBounds, registerHitTestPoint } from './hitTests';
+import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
 
 /**
- * Opt-in Tier-2 accuracy for bitmaps: replaces the coarse Bitmap hit handler with an alpha-accurate one,
- * so a hit counts only where the bitmap's pixel alpha meets `alphaThreshold` (0..255). Tier-1
- * (`shapeFlag=false`) stays the cheap bounds box; the pixel read runs only under `shapeFlag`.
+ * Opt-in exact hit provider for bitmaps: the `*Precise` queries then hit a Bitmap only where its pixel
+ * alpha meets `alphaThreshold` (0..255). Within the node's bounds but where the pixels aren't readable
+ * (no image, a GPU-only texture, or a headless environment that can't rasterize), it falls back to a
+ * bounds hit rather than throwing — best-available precision for that instance.
  *
  * Importing this module is the opt-in — it pulls `@flighthq/surface`, so the base interaction bundle
- * stays free of it (tree-shaken unless referenced). Requires the image's pixels to be CPU-readable (a
- * decoded / canvas-backed `ImageResource`); where they are not (e.g. a GPU-only texture, or a headless
- * environment that cannot rasterize), it falls back to the bounds box rather than throwing.
+ * stays free of it (tree-shaken unless referenced).
  */
-export function registerAccurateBitmapHitTest(alphaThreshold: number = 1): void {
-  registerHitTestPoint(BitmapKind, (source, x, y, shapeFlag) =>
-    hitTestBitmapAlpha(source, x, y, shapeFlag, alphaThreshold),
-  );
+export function registerBitmapHitTest(alphaThreshold: number = 1): void {
+  registerHitTestPrecise(BitmapKind, (source, x, y) => hitTestBitmapAlpha(source, x, y, alphaThreshold));
 }
 
-function hitTestBitmapAlpha(
-  source: NodeAny,
-  x: number,
-  y: number,
-  shapeFlag: boolean,
-  alphaThreshold: number,
-): boolean {
-  // Broad-phase reject, then the coarse tier stops here.
-  if (!hitTestGraphLocalBounds(source, x, y)) return false;
-  if (!shapeFlag) return true;
+// Returns 0 on a hit (opaque pixel, or bounds fallback when pixels are unreadable), -1 on a miss.
+function hitTestBitmapAlpha(source: NodeAny, x: number, y: number, alphaThreshold: number): number {
+  if (!hitTestGraphLocalBounds(source, x, y)) return -1;
 
   const bitmap = source as Bitmap;
   const image = bitmap.data.image;
-  if (image === null) return true;
+  if (image === null) return 0;
 
   const surface = surfaceForImage(image);
-  if (surface === null) return true;
+  if (surface === null) return 0;
 
   inverseMatrixTransformPointXY(bitmapAlphaLocalPoint, getNodeWorldTransformMatrix(source as DisplayObject), x, y);
   const rect = bitmap.data.sourceRectangle;
   const px = Math.floor(bitmapAlphaLocalPoint.x + (rect !== null ? rect.x : 0));
   const py = Math.floor(bitmapAlphaLocalPoint.y + (rect !== null ? rect.y : 0));
-  if (px < 0 || py < 0 || px >= surface.width || py >= surface.height) return false;
-  return getSurfacePixelChannel(surface, px, py, ImageChannel.Alpha) >= alphaThreshold;
+  if (px < 0 || py < 0 || px >= surface.width || py >= surface.height) return -1;
+  return getSurfacePixelChannel(surface, px, py, ImageChannel.Alpha) >= alphaThreshold ? 0 : -1;
 }
 
 function surfaceForImage(image: ImageResource): Surface | null {

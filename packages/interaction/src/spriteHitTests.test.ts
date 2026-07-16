@@ -3,9 +3,9 @@ import { addNodeChild, getNodeLocalBoundsRectangle } from '@flighthq/node';
 import { createQuadBatch, createSprite, createTilemap } from '@flighthq/sprite';
 
 import {
-  defaultQuadBatchHitTestPointHandler,
-  defaultSpriteHitTestPointHandler,
-  defaultTilemapHitTestPointHandler,
+  defaultQuadBatchHitTestHandler,
+  defaultSpriteHitTestHandler,
+  defaultTilemapHitTestHandler,
 } from './spriteHitTests';
 
 function makeSprite(boundsW = 100, boundsH = 100) {
@@ -16,13 +16,13 @@ function makeSprite(boundsW = 100, boundsH = 100) {
   return sprite;
 }
 
-describe('defaultQuadBatchHitTestPointHandler', () => {
+describe('defaultQuadBatchHitTestHandler', () => {
   it('returns true inside bounds', () => {
     const parent = createSprite();
     const qb = createQuadBatch();
     addNodeChild(parent, qb);
     setRectangle(getNodeLocalBoundsRectangle(qb), 0, 0, 100, 100);
-    expect(defaultQuadBatchHitTestPointHandler(qb, 50, 50, false)).toBe(true);
+    expect(defaultQuadBatchHitTestHandler(qb, 50, 50)).toBe(true);
   });
 
   it('returns false outside bounds', () => {
@@ -30,40 +30,40 @@ describe('defaultQuadBatchHitTestPointHandler', () => {
     const qb = createQuadBatch();
     addNodeChild(parent, qb);
     setRectangle(getNodeLocalBoundsRectangle(qb), 0, 0, 100, 100);
-    expect(defaultQuadBatchHitTestPointHandler(qb, 200, 200, false)).toBe(false);
+    expect(defaultQuadBatchHitTestHandler(qb, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultSpriteHitTestPointHandler', () => {
+describe('defaultSpriteHitTestHandler', () => {
   it('returns true when point is inside local bounds', () => {
     const sprite = makeSprite();
-    expect(defaultSpriteHitTestPointHandler(sprite, 50, 50, false)).toBe(true);
+    expect(defaultSpriteHitTestHandler(sprite, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const sprite = makeSprite();
-    expect(defaultSpriteHitTestPointHandler(sprite, 200, 200, false)).toBe(false);
+    expect(defaultSpriteHitTestHandler(sprite, 200, 200)).toBe(false);
   });
 
   it('returns false for a zero-size sprite', () => {
     const sprite = makeSprite(0, 0);
-    expect(defaultSpriteHitTestPointHandler(sprite, 0, 0, false)).toBe(false);
+    expect(defaultSpriteHitTestHandler(sprite, 0, 0)).toBe(false);
   });
 
   it('ignores shapeFlag', () => {
     const sprite = makeSprite();
-    expect(defaultSpriteHitTestPointHandler(sprite, 10, 10, true)).toBe(true);
-    expect(defaultSpriteHitTestPointHandler(sprite, 200, 200, true)).toBe(false);
+    expect(defaultSpriteHitTestHandler(sprite, 10, 10)).toBe(true);
+    expect(defaultSpriteHitTestHandler(sprite, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultTilemapHitTestPointHandler', () => {
+describe('defaultTilemapHitTestHandler', () => {
   it('returns true inside bounds', () => {
     const parent = createSprite();
     const tilemap = createTilemap();
     addNodeChild(parent, tilemap);
     setRectangle(getNodeLocalBoundsRectangle(tilemap), 0, 0, 100, 100);
-    expect(defaultTilemapHitTestPointHandler(tilemap, 10, 10, false)).toBe(true);
+    expect(defaultTilemapHitTestHandler(tilemap, 10, 10)).toBe(true);
   });
 
   it('returns false outside bounds', () => {
@@ -71,6 +71,6 @@ describe('defaultTilemapHitTestPointHandler', () => {
     const tilemap = createTilemap();
     addNodeChild(parent, tilemap);
     setRectangle(getNodeLocalBoundsRectangle(tilemap), 0, 0, 100, 100);
-    expect(defaultTilemapHitTestPointHandler(tilemap, 999, 999, false)).toBe(false);
+    expect(defaultTilemapHitTestHandler(tilemap, 999, 999)).toBe(false);
   });
 });

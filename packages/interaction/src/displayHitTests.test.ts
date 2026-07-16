@@ -3,17 +3,17 @@ import { setRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
 
 import {
-  defaultBitmapHitTestPointHandler,
-  defaultDisplayObjectHitTestPointHandler,
-  defaultHtmlViewHitTestPointHandler,
-  defaultMovieClipHitTestPointHandler,
-  defaultRenderViewHitTestPointHandler,
-  defaultRichTextHitTestPointHandler,
-  defaultShapeHitTestPointHandler,
-  defaultStageHitTestPointHandler,
-  defaultTextHitTestPointHandler,
-  defaultTextInputHitTestPointHandler,
-  defaultVideoHitTestPointHandler,
+  defaultBitmapHitTestHandler,
+  defaultDisplayObjectHitTestHandler,
+  defaultHtmlViewHitTestHandler,
+  defaultMovieClipHitTestHandler,
+  defaultRenderViewHitTestHandler,
+  defaultRichTextHitTestHandler,
+  defaultShapeHitTestHandler,
+  defaultStageHitTestHandler,
+  defaultTextHitTestHandler,
+  defaultTextInputHitTestHandler,
+  defaultVideoHitTestHandler,
 } from './displayHitTests';
 
 function makeDisplayObject() {
@@ -22,116 +22,116 @@ function makeDisplayObject() {
   return obj;
 }
 
-describe('defaultBitmapHitTestPointHandler', () => {
+describe('defaultBitmapHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultBitmapHitTestPointHandler(obj, 50, 50, false)).toBe(true);
+    expect(defaultBitmapHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultBitmapHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultBitmapHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultDisplayObjectHitTestPointHandler', () => {
+describe('defaultDisplayObjectHitTestHandler', () => {
   it('always returns false â€” plain display objects have no hit geometry', () => {
     const obj = makeDisplayObject();
-    expect(defaultDisplayObjectHitTestPointHandler(obj, 50, 50, false)).toBe(false);
-    expect(defaultDisplayObjectHitTestPointHandler(obj, 0, 0, false)).toBe(false);
-    expect(defaultDisplayObjectHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultDisplayObjectHitTestHandler(obj, 50, 50)).toBe(false);
+    expect(defaultDisplayObjectHitTestHandler(obj, 0, 0)).toBe(false);
+    expect(defaultDisplayObjectHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultHtmlViewHitTestPointHandler', () => {
+describe('defaultHtmlViewHitTestHandler', () => {
   it('always returns false â€” browser manages HtmlView hit testing', () => {
     const obj = makeDisplayObject();
-    expect(defaultHtmlViewHitTestPointHandler(obj, 50, 50, false)).toBe(false);
+    expect(defaultHtmlViewHitTestHandler(obj, 50, 50)).toBe(false);
   });
 });
 
-describe('defaultMovieClipHitTestPointHandler', () => {
+describe('defaultMovieClipHitTestHandler', () => {
   it('always returns false â€” containers have no self hit area', () => {
     const obj = makeDisplayObject();
-    expect(defaultMovieClipHitTestPointHandler(obj, 50, 50, false)).toBe(false);
+    expect(defaultMovieClipHitTestHandler(obj, 50, 50)).toBe(false);
   });
 });
 
-describe('defaultRenderViewHitTestPointHandler', () => {
+describe('defaultRenderViewHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultRenderViewHitTestPointHandler(obj, 50, 50, false)).toBe(true);
+    expect(defaultRenderViewHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultRenderViewHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultRenderViewHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultRichTextHitTestPointHandler', () => {
+describe('defaultRichTextHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultRichTextHitTestPointHandler(obj, 50, 50, false)).toBe(true);
+    expect(defaultRichTextHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultRichTextHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultRichTextHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultShapeHitTestPointHandler', () => {
+describe('defaultShapeHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultShapeHitTestPointHandler(obj, 50, 50, false)).toBe(true);
+    expect(defaultShapeHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultShapeHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultShapeHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultStageHitTestPointHandler', () => {
+describe('defaultStageHitTestHandler', () => {
   it('always returns false â€” containers have no self hit area', () => {
     const obj = makeDisplayObject();
-    expect(defaultStageHitTestPointHandler(obj, 50, 50, false)).toBe(false);
+    expect(defaultStageHitTestHandler(obj, 50, 50)).toBe(false);
   });
 });
 
-describe('defaultTextHitTestPointHandler', () => {
+describe('defaultTextHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultTextHitTestPointHandler(obj, 50, 50, false)).toBe(true);
+    expect(defaultTextHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultTextHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultTextHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultTextInputHitTestPointHandler', () => {
+describe('defaultTextInputHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultTextInputHitTestPointHandler(obj, 50, 50, false)).toBe(true);
+    expect(defaultTextInputHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultTextInputHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultTextInputHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });
 
-describe('defaultVideoHitTestPointHandler', () => {
+describe('defaultVideoHitTestHandler', () => {
   it('returns true when point is within local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultVideoHitTestPointHandler(obj, 50, 50, false)).toBe(true);
+    expect(defaultVideoHitTestHandler(obj, 50, 50)).toBe(true);
   });
 
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
-    expect(defaultVideoHitTestPointHandler(obj, 200, 200, false)).toBe(false);
+    expect(defaultVideoHitTestHandler(obj, 200, 200)).toBe(false);
   });
 });

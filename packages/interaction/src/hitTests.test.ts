@@ -2,20 +2,29 @@ import { createDisplayObject, createDisplayObjectGeneric, getDisplayObjectRuntim
 import { createRectangle, setRectangle } from '@flighthq/geometry';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node';
 import { appendPathRectangle, createPath } from '@flighthq/path';
-import type { DisplayObject, DisplayObjectRuntime, HitTestResult } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRuntime, HitTestResult, NodeAny } from '@flighthq/types';
 import { DisplayObjectKind } from '@flighthq/types';
 
 import {
+  describeGraphHit,
   findGraphHitTarget,
-  findGraphHitTargetDetailed,
+  findGraphHitTargetPrecise,
+  findGraphHitTargets,
+  findGraphHitTargetsPrecise,
   hitTestDisplayObjects,
   hitTestGraphLocalBounds,
   hitTestGraphPoint,
+  hitTestGraphPointPrecise,
   hitTestNodeRegion,
-  registerHitTestDetailed,
-  registerHitTestPoint,
+  registerHitTest,
+  registerHitTestPrecise,
 } from './hitTests';
 import { setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState';
+
+// A precise provider over local bounds: 0 (hit) inside, -1 outside — the boolean-precise shape.
+function boundsPrecise(source: NodeAny, x: number, y: number): number {
+  return hitTestGraphLocalBounds(source, x, y) ? 0 : -1;
+}
 
 function boundsObject(w: number, h: number): DisplayObject {
   const obj = createDisplayObject();
@@ -28,18 +37,45 @@ function emptyResult(node: DisplayObject): HitTestResult {
   return { localX: 0, localY: 0, node, subIndex: -2 };
 }
 
+beforeAll(() => {
+  registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
+});
+
+describe('describeGraphHit', () => {
+  it('fills node, local coordinates, and the sub-index from the kind exact provider', () => {
+    const kind = 'DescribeKind';
+    const node = createDisplayObjectGeneric(kind);
+    node.x = 40;
+    node.y = 40;
+    invalidateNodeLocalTransform(node);
+    setRectangle(getNodeLocalBoundsRectangle(node), 0, 0, 100, 100);
+    registerHitTestPrecise(kind, () => 7);
+    const out = emptyResult(node);
+    describeGraphHit(node, 50, 50, out);
+    expect(out.node).toBe(node);
+    expect(out.localX).toBe(10);
+    expect(out.localY).toBe(10);
+    expect(out.subIndex).toBe(7);
+  });
+
+  it('reports subIndex -1 when the kind has no exact provider', () => {
+    const obj = boundsObject(100, 100);
+    const out = emptyResult(obj);
+    describeGraphHit(obj, 50, 50, out);
+    expect(out.subIndex).toBe(-1);
+  });
+});
+
 describe('findGraphHitTarget', () => {
   it('returns null when node is disabled', () => {
     const obj = boundsObject(100, 100);
     obj.enabled = false;
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
     expect(findGraphHitTarget(obj, 50, 50)).toBeNull();
   });
 
   it('is not a candidate until it opts in, then is', () => {
     const obj = createDisplayObject();
     setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
     expect(findGraphHitTarget(obj, 50, 50)).toBeNull();
     setNodeHitTestEnabled(obj, true);
     expect(findGraphHitTarget(obj, 50, 50)).toBe(obj);
@@ -51,7 +87,6 @@ describe('findGraphHitTarget', () => {
     const parent = createDisplayObject();
     const child = boundsObject(100, 100);
     addNodeChild(parent, child);
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
     expect(findGraphHitTarget(parent, 50, 50)).toBe(child);
   });
 
@@ -59,101 +94,93 @@ describe('findGraphHitTarget', () => {
     const parent = boundsObject(200, 200);
     const child = boundsObject(50, 50);
     addNodeChild(parent, child);
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
     setNodeHitArea(parent, 'bounds');
-    // The child sits inside the parent, but the atomic parent is what resolves.
     expect(findGraphHitTarget(parent, 25, 25)).toBe(parent);
   });
 
-  it('resolves a rectangle hitArea in the node local space', () => {
-    const obj = createDisplayObject();
-    setNodeHitTestEnabled(obj, true);
-    setNodeHitArea(obj, createRectangle(0, 0, 30, 30));
-    expect(findGraphHitTarget(obj, 10, 10)).toBe(obj);
-    expect(findGraphHitTarget(obj, 40, 40)).toBeNull();
-  });
-
-  it('resolves a rectangle hitArea through the node world transform', () => {
+  it('resolves a rectangle hitArea in the node local space, through the world transform', () => {
     const obj = createDisplayObject();
     obj.x = 40;
     obj.y = 40;
     invalidateNodeLocalTransform(obj);
     setNodeHitTestEnabled(obj, true);
     setNodeHitArea(obj, createRectangle(0, 0, 100, 100));
-    // Local (0,0,100,100) offset by the node position → world (40,40)-(140,140).
     expect(findGraphHitTarget(obj, 50, 50)).toBe(obj);
     expect(findGraphHitTarget(obj, 20, 20)).toBeNull();
   });
 
-  it('resolves a path hitArea by winding in the node local space', () => {
-    const obj = createDisplayObject();
-    setNodeHitTestEnabled(obj, true);
+  it('resolves a path hitArea by winding, and a node proxy in the proxy world space', () => {
+    const pathObj = createDisplayObject();
+    setNodeHitTestEnabled(pathObj, true);
     const path = createPath();
     appendPathRectangle(path, 0, 0, 30, 30);
-    setNodeHitArea(obj, path);
-    expect(findGraphHitTarget(obj, 10, 10)).toBe(obj);
-    expect(findGraphHitTarget(obj, 40, 40)).toBeNull();
-  });
+    setNodeHitArea(pathObj, path);
+    expect(findGraphHitTarget(pathObj, 10, 10)).toBe(pathObj);
+    expect(findGraphHitTarget(pathObj, 40, 40)).toBeNull();
 
-  it('resolves a node hitArea proxy in the proxy world space', () => {
-    const obj = createDisplayObject();
+    const proxyOwner = createDisplayObject();
     const proxy = createDisplayObjectGeneric(DisplayObjectKind);
     setRectangle(getNodeLocalBoundsRectangle(proxy), 0, 0, 20, 20);
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
-    setNodeHitTestEnabled(obj, true);
-    setNodeHitArea(obj, proxy);
-    expect(findGraphHitTarget(obj, 5, 5)).toBe(obj);
-    expect(findGraphHitTarget(obj, 50, 50)).toBeNull();
+    setNodeHitTestEnabled(proxyOwner, true);
+    setNodeHitArea(proxyOwner, proxy);
+    expect(findGraphHitTarget(proxyOwner, 5, 5)).toBe(proxyOwner);
+    expect(findGraphHitTarget(proxyOwner, 50, 50)).toBeNull();
   });
 });
 
-describe('findGraphHitTargetDetailed', () => {
-  beforeAll(() => {
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
-  });
-
-  it('returns null when nothing is hit', () => {
-    const obj = boundsObject(100, 100);
-    expect(findGraphHitTargetDetailed(obj, 500, 500, emptyResult(obj))).toBeNull();
-  });
-
-  it('fills the node and local coordinates', () => {
-    const obj = createDisplayObject();
-    obj.x = 40;
-    obj.y = 40;
-    invalidateNodeLocalTransform(obj);
-    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
-    setNodeHitTestEnabled(obj, true);
-    const out = emptyResult(obj);
-    const result = findGraphHitTargetDetailed(obj, 50, 50, out);
-    expect(result).toBe(out);
-    expect(out.node).toBe(obj);
-    expect(out.localX).toBe(10);
-    expect(out.localY).toBe(10);
-  });
-
-  it('pierces an atomic hitArea unit to report the real child', () => {
-    const parent = boundsObject(200, 200);
-    const child = boundsObject(50, 50);
-    addNodeChild(parent, child);
-    setNodeHitArea(parent, 'bounds');
-    // Tier-1 would stop at the parent; the detailed refine descends to the child.
-    const out = emptyResult(parent);
-    findGraphHitTargetDetailed(parent, 25, 25, out);
-    expect(out.node).toBe(child);
-  });
-
-  it('resolves a sub-index from a registered detailed handler', () => {
-    const kind = 'DetailedSubIndexKind';
+describe('findGraphHitTargetPrecise', () => {
+  it('uses the kind exact provider, so a bbox hit off the real geometry misses', () => {
+    const kind = 'PreciseFirstKind';
     const node = createDisplayObjectGeneric(kind);
     setRectangle(getNodeLocalBoundsRectangle(node), 0, 0, 100, 100);
     setNodeHitTestEnabled(node, true);
-    registerHitTestPoint(kind, hitTestGraphLocalBounds);
-    registerHitTestDetailed(kind, () => 7);
-    const out = emptyResult(node);
-    findGraphHitTargetDetailed(node, 10, 10, out);
-    expect(out.node).toBe(node);
-    expect(out.subIndex).toBe(7);
+    // Exact provider only accepts the left half.
+    registerHitTestPrecise(kind, (s, x, y) => (hitTestGraphLocalBounds(s, x, y) && x < 50 ? 0 : -1));
+    registerHitTest(kind, hitTestGraphLocalBounds);
+    expect(findGraphHitTargetPrecise(node, 25, 50)).toBe(node);
+    expect(findGraphHitTargetPrecise(node, 75, 50)).toBeNull();
+    // Coarse still hits the whole box.
+    expect(findGraphHitTarget(node, 75, 50)).toBe(node);
+  });
+
+  it('falls back to the coarse bounds handler when no exact provider is registered', () => {
+    const obj = boundsObject(100, 100);
+    expect(findGraphHitTargetPrecise(obj, 50, 50)).toBe(obj);
+  });
+});
+
+describe('findGraphHitTargets', () => {
+  it('collects every hit under the point, front-to-back', () => {
+    const root = createDisplayObject();
+    const under = boundsObject(100, 100);
+    const over = boundsObject(100, 100);
+    addNodeChild(root, under);
+    addNodeChild(root, over);
+    const stack = findGraphHitTargets(root, 50, 50);
+    expect(stack).toEqual([over, under]);
+  });
+
+  it('clears the out array and returns it', () => {
+    const obj = boundsObject(100, 100);
+    const out: DisplayObject[] = [createDisplayObject()];
+    const result = findGraphHitTargets(obj, 50, 50, out);
+    expect(result).toBe(out);
+    expect(out).toEqual([obj]);
+  });
+});
+
+describe('findGraphHitTargetsPrecise', () => {
+  it('collects hits using exact geometry per kind', () => {
+    const kind = 'PreciseStackKind';
+    registerHitTest(kind, hitTestGraphLocalBounds);
+    registerHitTestPrecise(kind, boundsPrecise);
+    const root = createDisplayObject();
+    const a = createDisplayObjectGeneric(kind);
+    setRectangle(getNodeLocalBoundsRectangle(a), 0, 0, 100, 100);
+    setNodeHitTestEnabled(a, true);
+    addNodeChild(root, a);
+    expect(findGraphHitTargetsPrecise(root, 50, 50)).toEqual([a]);
+    expect(findGraphHitTargetsPrecise(root, 500, 500)).toEqual([]);
   });
 });
 
@@ -164,18 +191,14 @@ describe('hitTestDisplayObjects', () => {
   beforeEach(() => {
     a = createDisplayObject();
     b = createDisplayObject();
-
     addNodeChild(createDisplayObject(), a);
     addNodeChild(createDisplayObject(), b);
-
     setRectangle(getNodeLocalBoundsRectangle(a), 0, 0, 10, 10);
     setRectangle(getNodeLocalBoundsRectangle(b), 0, 0, 10, 10);
-
     a.x = 0;
     a.y = 0;
     b.x = 5;
     b.y = 5;
-
     a.scaleX = a.scaleY = 1;
     b.scaleX = b.scaleY = 1;
   });
@@ -196,13 +219,6 @@ describe('hitTestDisplayObjects', () => {
     expect(hitTestDisplayObjects(a, b)).toBe(false);
   });
 
-  it('compares bounds in world space', () => {
-    b.x = 5;
-    b.y = 5;
-    invalidateNodeLocalTransform(b);
-    expect(hitTestDisplayObjects(a, b)).toBe(true);
-  });
-
   it('includes child bounds when a child extends beyond the object local bounds', () => {
     const child = createDisplayObject();
     child.x = 90;
@@ -210,25 +226,18 @@ describe('hitTestDisplayObjects', () => {
     invalidateNodeLocalTransform(child);
     setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 20, 20);
     addNodeChild(a, child);
-
     b.x = 100;
     b.y = 100;
     invalidateNodeLocalTransform(b);
-
     expect(hitTestDisplayObjects(a, b)).toBe(true);
   });
 });
 
 describe('hitTestGraphLocalBounds', () => {
-  it('returns true when world-space point is inside local bounds', () => {
+  it('returns whether a world-space point is inside local bounds', () => {
     const obj = createDisplayObject();
     setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
     expect(hitTestGraphLocalBounds(obj, 50, 50)).toBe(true);
-  });
-
-  it('returns false when world-space point is outside local bounds', () => {
-    const obj = createDisplayObject();
-    setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
     expect(hitTestGraphLocalBounds(obj, 200, 200)).toBe(false);
   });
 });
@@ -236,19 +245,12 @@ describe('hitTestGraphLocalBounds', () => {
 describe('hitTestGraphPoint', () => {
   let obj: DisplayObject;
 
-  beforeAll(() => {
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
-  });
-
   beforeEach(() => {
     obj = boundsObject(100, 100);
   });
 
-  it('returns true for point inside bounds', () => {
+  it('returns true for point inside bounds, false outside', () => {
     expect(hitTestGraphPoint(obj, 50, 50)).toBe(true);
-  });
-
-  it('returns false for point outside bounds', () => {
     expect(hitTestGraphPoint(obj, 200, 200)).toBe(false);
   });
 
@@ -261,19 +263,6 @@ describe('hitTestGraphPoint', () => {
   it('returns false if object is not enabled', () => {
     obj.enabled = false;
     expect(hitTestGraphPoint(obj, 50, 50)).toBe(false);
-  });
-
-  it('respects world transform', () => {
-    obj.x = 100;
-    obj.y = 100;
-    invalidateNodeLocalTransform(obj);
-    expect(hitTestGraphPoint(obj, 150, 150)).toBe(true);
-    expect(hitTestGraphPoint(obj, 50, 50)).toBe(false);
-  });
-
-  it('works with the default shapeFlag param', () => {
-    expect(hitTestGraphPoint(obj, 50, 50)).toBe(true);
-    expect(hitTestGraphPoint(obj, 50, 50, true)).toBe(true);
   });
 
   it('returns true when an opted-in child is hit even if the parent is inert', () => {
@@ -290,25 +279,24 @@ describe('hitTestGraphPoint', () => {
     addNodeChild(parent, child);
     expect(hitTestGraphPoint(parent, 50, 50)).toBe(false);
   });
+});
 
-  it('uses a registered handler for a custom kind', () => {
-    const CustomKind = 'CustomKindHitPoint';
-    registerHitTestPoint(CustomKind, () => true);
-    const custom = createDisplayObjectGeneric(CustomKind);
-    setNodeHitTestEnabled(custom, true);
-    expect(hitTestGraphPoint(custom, 50, 50)).toBe(true);
+describe('hitTestGraphPointPrecise', () => {
+  it('uses exact geometry, so a bbox hit off the real geometry misses', () => {
+    const kind = 'PreciseAnyKind';
+    const node = createDisplayObjectGeneric(kind);
+    setRectangle(getNodeLocalBoundsRectangle(node), 0, 0, 100, 100);
+    setNodeHitTestEnabled(node, true);
+    registerHitTestPrecise(kind, (s, x, y) => (hitTestGraphLocalBounds(s, x, y) && x < 50 ? 0 : -1));
+    expect(hitTestGraphPointPrecise(node, 25, 50)).toBe(true);
+    expect(hitTestGraphPointPrecise(node, 75, 50)).toBe(false);
   });
 });
 
 describe('hitTestNodeRegion', () => {
-  beforeAll(() => {
-    registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
-  });
-
   it('tests a node kind geometry, ignoring eligibility and children', () => {
     const obj = createDisplayObject();
     setRectangle(getNodeLocalBoundsRectangle(obj), 0, 0, 100, 100);
-    // No opt-in required — hitTestNodeRegion is the precise per-node test the broadphase calls.
     expect(hitTestNodeRegion(obj, 50, 50)).toBe(true);
     expect(hitTestNodeRegion(obj, 200, 200)).toBe(false);
   });
@@ -319,27 +307,37 @@ describe('hitTestNodeRegion', () => {
     expect(hitTestNodeRegion(obj, 10, 10)).toBe(true);
     expect(hitTestNodeRegion(obj, 40, 40)).toBe(false);
   });
-});
 
-describe('registerHitTestDetailed', () => {
-  it('registers a sub-index resolver used by findGraphHitTargetDetailed', () => {
-    const kind = 'RegisterDetailedTest';
-    registerHitTestPoint(kind, () => true);
-    registerHitTestDetailed(kind, () => 3);
+  it('uses the exact provider when precise', () => {
+    const kind = 'RegionPreciseKind';
     const node = createDisplayObjectGeneric(kind);
-    setNodeHitTestEnabled(node, true);
-    const out = emptyResult(node);
-    findGraphHitTargetDetailed(node, 0, 0, out);
-    expect(out.subIndex).toBe(3);
+    setRectangle(getNodeLocalBoundsRectangle(node), 0, 0, 100, 100);
+    registerHitTestPrecise(kind, (s, x, y) => (hitTestGraphLocalBounds(s, x, y) && x < 50 ? 0 : -1));
+    expect(hitTestNodeRegion(node, 25, 50, true)).toBe(true);
+    expect(hitTestNodeRegion(node, 75, 50, true)).toBe(false);
   });
 });
 
-describe('registerHitTestPoint', () => {
-  it('registers a handler that hitTestGraphPoint will use', () => {
+describe('registerHitTest', () => {
+  it('registers a coarse handler that hitTestGraphPoint will use', () => {
     const kind = 'RegisterTest';
-    registerHitTestPoint(kind, () => true);
+    registerHitTest(kind, () => true);
     const node = createDisplayObjectGeneric(kind);
     setNodeHitTestEnabled(node, true);
     expect(hitTestGraphPoint(node, 0, 0)).toBe(true);
+  });
+});
+
+describe('registerHitTestPrecise', () => {
+  it('registers an exact provider used by the precise queries and describeGraphHit', () => {
+    const kind = 'RegisterPreciseTest';
+    registerHitTest(kind, () => true);
+    registerHitTestPrecise(kind, () => 3);
+    const node = createDisplayObjectGeneric(kind);
+    setNodeHitTestEnabled(node, true);
+    expect(findGraphHitTargetPrecise(node, 0, 0)).toBe(node);
+    const out = emptyResult(node);
+    describeGraphHit(node, 0, 0, out);
+    expect(out.subIndex).toBe(3);
   });
 });

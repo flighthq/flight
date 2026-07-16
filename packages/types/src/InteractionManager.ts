@@ -18,6 +18,9 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
   enabled: boolean;
   pointerCaptures: Map<number, N>;
   pointerStates: Map<number, InteractionPointerState<N>>;
+  // When true, pointer dispatch resolves targets with the precise (exact geometry) hit walk instead of
+  // the coarse bbox walk — so a listener fires only on a real hit. `false` (default) uses coarse.
+  precise: boolean;
   root: N;
   // Opt-in broadphase. When set, pointer picking queries this index (populated by
   // `refreshInteractionSpatialIndex`) instead of walking the whole tree — the 240 Hz acceleration for
@@ -31,6 +34,7 @@ export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
 export interface InteractionManagerOptions {
   cursorBackend?: CursorBackend | null;
   enabled?: boolean;
+  precise?: boolean;
   spatialIndex?: SpatialIndex | null;
   trackedSubscribersOnly?: boolean;
 }

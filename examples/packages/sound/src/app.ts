@@ -21,7 +21,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   playAudioResource,
-  registerDefaultHitTestPoints,
+  registerDefaultHitTests,
   routeAudioChannelToMixerBus,
   setAudioBusGain,
   setAudioBusPan,
@@ -86,7 +86,7 @@ root.scaleY = scale;
 
 // Interaction setup: register hit test handlers and wire DOM events. The manager gets a cursor
 // backend so a node's `setNodeCursor` shows through on rollover (the buttons/sliders below opt in).
-registerDefaultHitTestPoints();
+registerDefaultHitTests();
 const canvasElement = canvas;
 const interactionManager = createInteractionManager(root, {
   cursorBackend: createWebCursorBackend(canvasElement),

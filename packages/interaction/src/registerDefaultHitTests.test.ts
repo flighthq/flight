@@ -5,11 +5,11 @@ import { createShape } from '@flighthq/shape';
 
 import { findGraphHitTarget } from './hitTests';
 import { setNodeHitTestEnabled } from './nodeInteractionState';
-import { registerDefaultHitTestPoints } from './registerDefaultHitTestPoints';
+import { registerDefaultHitTests } from './registerDefaultHitTests';
 
-describe('registerDefaultHitTestPoints', () => {
+describe('registerDefaultHitTests', () => {
   it('registers all built-in kinds so findGraphHitTarget resolves them', () => {
-    registerDefaultHitTestPoints();
+    registerDefaultHitTests();
 
     const bitmap = createBitmap();
     setRectangle(getNodeLocalBoundsRectangle(bitmap), 0, 0, 100, 100);
@@ -23,7 +23,7 @@ describe('registerDefaultHitTestPoints', () => {
   });
 
   it('containers return null for self hit', () => {
-    registerDefaultHitTestPoints();
+    registerDefaultHitTests();
 
     const stage = createStage();
     setRectangle(getNodeLocalBoundsRectangle(stage), 0, 0, 100, 100);
