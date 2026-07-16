@@ -41,6 +41,8 @@
     "@flighthq/spatial": "*",
     "@flighthq/signals": "*",
     "@flighthq/surface": "*",
+    "@flighthq/text": "*",
+    "@flighthq/textlayout": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

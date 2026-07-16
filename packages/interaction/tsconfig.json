@@ -19,6 +19,8 @@
     { "path": "../spatial" },
     { "path": "../sprite" },
     { "path": "../surface" },
+    { "path": "../text" },
+    { "path": "../textlayout" },
     { "path": "../types" }
   ],
   "include": ["src"]

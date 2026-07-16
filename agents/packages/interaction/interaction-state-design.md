@@ -105,19 +105,25 @@ index; the walk-but-test-only-volunteers baseline is order-correct and fine into
 - **Guard** — `enableInteractionGuards()` / `disableInteractionGuards()` / `explainInteractionHitEligibility()`
   (separately-imported, `@flighthq/log`). Warns once when a listener is connected to a node with no
   hit-testable subtree (the opt-in footgun). Core seam: `setInteractionConnectGuard`.
-- **Shape-accurate Tier-2** — `defaultShapeHitTestPointHandler` does true fill-region winding under
-  `shapeFlag` (via `@flighthq/shape` + `@flighthq/path`); Tier-1 stays bounds.
-- **Bitmap-alpha Tier-2** — `registerAccurateBitmapHitTest(threshold)` (opt-in, pulls `@flighthq/surface`)
-  reads pixel alpha under `shapeFlag`, bounds fallback when pixels are unreadable. Positive path is
-  functional-suite territory (jsdom can't rasterize); unit tests cover wiring + fallback.
+**Tree-shaking rule for Tier-2 accuracy:** each kind's accurate/detailed hit test is a **separate opt-in
+`register*` per kind**, so its heavy dependency is pulled only when called. `registerDefaultHitTestPoints`
+stays bounds-only and dependency-light (no shape/path/surface/text).
+
 - **Broadphase** — `InteractionManagerOptions.spatialIndex` (a `@flighthq/spatial` index) +
   `refreshInteractionSpatialIndex(manager)`; pointer dispatch queries it instead of walking the tree,
   front-to-back-consistent with the linear pick. The 240 Hz acceleration.
+- **Shape-accurate Tier-2** — `registerAccurateShapeHitTest()` (opt-in, pulls `@flighthq/shape` +
+  `@flighthq/path`): winding test against fill regions under `shapeFlag` for Shape/Scale9Shape; Tier-1 stays
+  bounds. Fully unit-tested.
+- **Bitmap-alpha Tier-2** — `registerAccurateBitmapHitTest(threshold)` (opt-in, pulls `@flighthq/surface`):
+  pixel-alpha under `shapeFlag`, bounds fallback when pixels are unreadable. Positive path is functional-suite
+  territory (jsdom can't rasterize); unit tests cover wiring + fallback.
+- **Text glyph sub-index Tier-2** — `registerAccurateTextHitTest()` (opt-in, pulls `@flighthq/text` +
+  `@flighthq/textlayout`): registers a `registerHitTestDetailed` resolver for TextLabel/RichText that maps the
+  point to a **character index** via `getTextLayout` + `computeRichTextCharIndexAtPoint` (the generic
+  glyph-rect/char-index API that already existed on `TextLayoutResult`; `getRichTextCharBoundaries` gives the
+  rect). `-1` when no layout yet. Fully unit-tested (fake fixed-advance measure provider gives a real layout).
 
 ## Boundaries (still out)
 
-- **Glyph-accurate / per-glyph sub-index for text.** Blocked on a clean per-glyph-rect API: `getTextLayout`
-  lives in the heavy `@flighthq/text` package and `TextLayoutResult` exposes line metrics but not per-glyph
-  rects. Needs a small text/textlayout API touch (a design decision) rather than a guess; and it is
-  jsdom-untestable (functional-suite territory) like bitmap-alpha. Surfaced to the user.
 - A focus/tab navigation manager consuming `focusable`/`tabIndex` (fields exist; consumer deferred).

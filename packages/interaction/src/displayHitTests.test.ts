@@ -1,7 +1,6 @@
 import { createDisplayObject } from '@flighthq/displayobject';
 import { setRectangle } from '@flighthq/geometry';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node';
-import { appendShapeBeginFill, appendShapeCircle, appendShapeEndFill, createShape } from '@flighthq/shape';
 
 import {
   defaultBitmapHitTestPointHandler,
@@ -91,19 +90,6 @@ describe('defaultShapeHitTestPointHandler', () => {
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
     expect(defaultShapeHitTestPointHandler(obj, 200, 200, false)).toBe(false);
-  });
-
-  it('shapeFlag: winding-tests the actual fill, so a bbox corner outside the circle misses', () => {
-    const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000ff, 1);
-    appendShapeCircle(shape, 50, 50, 40);
-    appendShapeEndFill(shape);
-    // Center is inside the fill; (85,85) is inside the bounding box but outside the circle.
-    expect(defaultShapeHitTestPointHandler(shape, 50, 50, true)).toBe(true);
-    expect(defaultShapeHitTestPointHandler(shape, 85, 85, true)).toBe(false);
-    // Without shapeFlag, the coarse bounds box counts (85,85) as a hit.
-    setRectangle(getNodeLocalBoundsRectangle(shape), 10, 10, 80, 80);
-    expect(defaultShapeHitTestPointHandler(shape, 85, 85, false)).toBe(true);
   });
 });
 
