@@ -3,8 +3,8 @@ import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
-import { createSkeleton } from '@flighthq/skeleton';
-import type { AnimationClip, SceneNode, Skeleton } from '@flighthq/types';
+import { createSkeleton3D } from '@flighthq/skeleton3d';
+import type { AnimationClip, SceneNode, Skeleton3D } from '@flighthq/types';
 import { SceneAnimationPathTranslation } from '@flighthq/types';
 
 import {
@@ -215,7 +215,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
 export function parseAwdSkeletonAnimation(
   bytes: Readonly<Uint8Array>,
   warnings?: string[],
-): { clip: AnimationClip; skeleton: Skeleton } | null {
+): { clip: AnimationClip; skeleton: Skeleton3D } | null {
   const source = bytes as Uint8Array;
   if (source.byteLength < AWD_HEADER_BYTES) {
     warnings?.push('parseAwdSkeletonAnimation: byte length is smaller than the 12-byte AWD header');
@@ -327,7 +327,7 @@ export function parseAwdSkeletonAnimation(
     }
   }
 
-  const skeleton = createSkeleton(jointNodes, undefined, jointNames);
+  const skeleton = createSkeleton3D(jointNodes, undefined, jointNames);
 
   // Build animation clip from pose references and durations.
   const jointCount = jointNodes.length;
