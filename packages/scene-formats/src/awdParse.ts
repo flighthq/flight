@@ -638,8 +638,8 @@ function parseContainerBlock(
 }
 
 // Parses a MeshInstance block (type 23). Layout:
-// SceneHeader(parentId → matrix → name) → NumAttrList → geometryId(uint32)
-// → numMaterials(uint16) → materialIds(uint32 × N) → UserAttrList
+// SceneHeader(parentId → matrix → name) → geometryId(uint32)
+// → numMaterials(uint16) → materialIds(uint32 × N) → NumAttrList → UserAttrList
 function parseMeshInstanceBlock(
   view: Readonly<DataView>,
   source: Readonly<Uint8Array>,
@@ -673,9 +673,6 @@ function parseMeshInstanceBlock(
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
-  // NumAttrList (block properties).
-  offset = skipAwdAttrList(view, offset, end);
-
   if (offset + 4 > end) {
     warnings?.push('createSceneFromAwd: mesh instance block truncated before geometry ID');
     return null;
@@ -689,7 +686,8 @@ function parseMeshInstanceBlock(
     offset += numMaterials * 4;
   }
 
-  // UserAttrList.
+  // NumAttrList (block properties) and UserAttrList.
+  offset = skipAwdAttrList(view, offset, end);
   offset = skipAwdAttrList(view, offset, end);
 
   return { geometryId, name: nameResult.value, parentId, transform: transformResult.transform };
