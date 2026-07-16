@@ -1,137 +1,107 @@
-# NodeInteractionState — design note
+# Interaction hit-test model (model of record)
 
-Status: **blessed and implemented**, 2026-07-16 (all four axes' types + gating + hitArea + cursor
-stack landed; the focus/tab-order *fields* exist, their navigation-manager consumer is deferred).
-Owning package: `@flighthq/interaction`; types in `@flighthq/types`. This note is the design record;
-the Decisions section below is authoritative.
+Status: **blessed, building** — 2026-07-16. Signed direction from the design thread; this is the
+authoritative spec the `@flighthq/interaction` re-architecture executes against. Supersedes the
+earlier "NodeInteractionState cell" note (the cell survives, but eligibility inverts and
+`hitTestChildren` is removed).
 
-## Why this note exists
+## Principles (the four decisions everything else follows from)
 
-The sound example surfaced that Flight has **no "visible but non-interactive" state** — the only
-per-node gate is `Node.enabled`, which also stops rendering. Working through it raised the real
-question: *where do per-node interaction settings live, and what are they?* A bare
-`node.allowInteraction` boolean is the wrong answer — it belongs on the runtime (not the lean
-entity), and a single boolean immediately wants friends (children-gating, hit-area, cursor, and —
-the user's point — tab order). This note specs the whole cell once so the fields don't accrete
-piecemeal.
+1. **Eligibility is opt-in.** A node is a hit *candidate* only if it explicitly volunteered. Most
+   objects never do, so hit testing is cheap by default and a decorative node is invisible to the
+   pointer with zero configuration. This is why interaction is a separate subsystem.
+2. **Node vs. dispatch are different layers.** The node answers "am I a candidate, and what's my
+   region." *Dispatch* (bubbling) answers "who hears it." You register what is *hittable*; you listen
+   *wherever* — the two are decoupled.
+3. **Reference, don't snapshot.** A hit region that is linked to live geometry (a node, a path, the
+   node's own bounds) never needs re-syncing, because the test reads the source at query time and
+   composes the transform live. Snapshotting a rect is the only thing that drifts.
+4. **Pay for precision.** The default hot path is coarse and cheap (a rectangle/bounds test, no
+   pixels, no paths). Shape-accuracy and "which child inside" are an *explicit second call* — never on
+   the per-move path. This is what keeps 240 Hz viable.
 
-## What already exists (build on, don't reinvent)
+## Eligibility (opt-in)
 
-The interaction charter (blessed 2026-07-02) already charters most of this, and a mature
-implementation existed and was **lost** from the tree (review.md 2026-07-13). Remnants and ledger:
+- `hitTestEnabled` is the opt-in flag, and it now **defaults to `false`**. A node participates in hit
+  testing only after `setNodeHitTestEnabled(node, true)`. (This inverts the previously-shipped
+  default; the sound example's explicit `false` calls on decorative overlays disappear — they were
+  never eligible.)
+- `hitTestEnabled` doubles as the toggle: a volunteered node can be switched off without losing its
+  region/cursor/listeners.
+- **Listening is decoupled.** Signals dispatch by bubbling from the resolved hit up the ancestor
+  chain; a listener on an *un-volunteered* ancestor still fires, because a volunteered descendant (or
+  its own `hitArea`) produced the hit. You register geometry candidates; you listen anywhere.
+- **Guard for the footgun.** A separately-importable `enableInteractionGuards()` warns (through
+  `@flighthq/log`) when a node carries an interaction listener but neither it nor any descendant is a
+  hit candidate — the "why isn't my click firing" case. Costs production nothing (inversion rule).
 
-- **Orphaned header types**, already in `@flighthq/types`: `HitArea = Readonly<Rectangle> |
-  Readonly<NodeAny>` (`NodeInteraction.ts`) and `Cursor` + `CursorBackend` (`Cursor.ts`).
-- **Approved-but-unbuilt** (assessment ledger, Tiers 2–3): per-node gating
-  `setNodeInteractive`/`isNodeInteractive` + `setNodeChildrenInteractive`/`areNodeChildrenInteractive`
-  (the `mouseEnabled`/`mouseChildren` pair), consulted by `findGraphHitTarget`/`hitTestGraphPoint`;
-  `hitArea` proxy `setNodeHitArea`/`getNodeHitArea`; cursor `setNodeCursor`/`getNodeCursor` resolved
-  on rollover through `CursorBackend`.
-- The ledger stored each of these in a **separate package-local `WeakMap`**.
+## `hitArea` — the linked-region primitive
 
-So three of the four axes below are already blessed in principle. This note's new contributions are
-(a) **consolidating** them into one cell instead of N WeakMaps, and (b) adding the **focus/tab-order**
-axis, which the charter does not mention.
+Setting a `hitArea` makes the node an **atomic hit unit**: it stops recursion (children are no longer
+individual targets), it **consumes** (the hit resolves to *this* node), and it defines the region. The
+value is one of:
 
-## The four axes — two systems that share a cell
+| `hitArea` value | Linked to source? | Tier | Resolved in… |
+|---|---|---|---|
+| `Rectangle` | no — a snapshot (the only drifting form) | 1 | node **local** space |
+| `'bounds'` (sentinel) | yes — the node's own local bounds, i.e. the union of its subtree; auto-invalidated | 1 | node local |
+| `Path` (share the Shape's own path object) | yes — editing the path is seen immediately | 2 (winding) | node local |
+| `Node` (proxy) | yes — reads that node's live geometry + transform | 1/2 | the **proxy's world** space |
 
-| Axis | Fields | Consumed by | Blessed? |
-| --- | --- | --- | --- |
-| Pointer hit-gating | `interactive`, `childrenInteractive` | the hit-test walk (`findGraphHitTarget`, `hitTestGraphPoint`) | yes (Approved) |
-| Hit-area override | `hitArea` | the hit-test walk | yes (Approved) |
-| Cursor | `cursor` | pointer dispatch, on rollover, via `CursorBackend` | yes (Approved; arch Open) |
-| **Focus / tab order** | `focusable`, `tabIndex` | a **focus/navigation manager** (keyboard), NOT the pointer path | **new — needs blessing** |
+**Coordinate rule (this also settles interaction charter Open direction #2):** the region resolves in
+the space of whoever *owns* the geometry. A bare `Rectangle`/`Path`/`'bounds'` is owned by the
+referencing node → authored in that node's local space, and the world hit-point is inverse-mapped
+through the node's world matrix (so it tracks position **and** rotation/scale). A `Node` proxy is
+owned by the proxy → tested in the proxy's world space, wherever it sits. The user never writes matrix
+math; they pick the space by picking the reference.
 
-The tell that focus is a *separate system*, not a fifth pointer flag: its consumer is different. The
-first three are read by the pointer hit-test walk; focus/tab is data a keyboard navigation manager
-walks to build a tab sequence (Flight already has focus managers in `@flighthq/textinput`). They
-share the *cell* (one per-node home) without sharing a *flag*.
+`'bounds'` is the **10 000-children answer**: register one parent, `hitArea='bounds'`, and the whole
+subtree is approximated by one region — no per-child registration. When a handler needs *which* child,
+it makes the Tier-2 call.
 
-`buttonMode`/`useHandCursor` (OpenFL) needs no field: it is just `setNodeCursor(node, 'pointer')`.
+## Two-tier testing
 
-## Proposed shape
+- **Tier 1 — default dispatch.** `findGraphHitTarget` / `hitTestGraphPoint`: eligibility gate, then a
+  coarse region test (`hitArea`, or the node's bounds via its kind handler). A node with a `hitArea`
+  consumes here; children are not descended. No path or pixel math ever runs on this path.
+- **Tier 2 — explicit refine.** `findGraphHitTargetDetailed(root, x, y, out, shapeFlag=true)` fills a
+  `HitTestResult { node, subIndex, localX, localY }`: it may recurse *into* a consumed unit, run the
+  shape-accurate per-kind test (`shapeFlag`), and resolve a sub-index via `registerHitTestDetailed(kind, fn)`
+  (tile index, list row, glyph). Broad-phase (AABB) rejects before any exact test. This is the home of
+  the `event.hitTarget` / sub-index information — obtained by *asking*, never auto-populated.
 
-One concept-per-file type in `@flighthq/types` (new `NodeInteractionState.ts`; keep `HitArea` in
-`NodeInteraction.ts` and `Cursor` in `Cursor.ts`, referenced here):
+Per-kind accuracy is a **registered seam**, honest about its ceiling: Shape does true path winding
+(via `@flighthq/path`); bitmap-alpha (`@flighthq/surface`) and glyph (`@flighthq/textlayout`) land as
+those neighbors allow, documented as bounds fallbacks until then.
 
-Naming decided with the user (2026-07-16): **`hitTest`/`pointer`, never `mouse`** (Flight is
-pointer/touch/pen, and the package's existing vocabulary is `hitTest*`). So the gating fields are
-`hitTestEnabled`/`hitTestChildren`, not `interactive`/`mouseEnabled`.
+## Dispatch
 
-```ts
-export interface NodeInteractionState {
-  hitTestEnabled: boolean;   // self participates in hit testing (the mouseEnabled role)
-  hitTestChildren: boolean;  // subtree participates in hit testing (the mouseChildren role)
-  hitArea: HitArea | null;   // proxy region/node overriding own geometry; null = own geometry
-  cursor: Cursor | null;     // rollover cursor; null = inherit nearest ancestor / none
-  focusable: boolean;        // is a keyboard focus target (tab stop)
-  tabIndex: number;          // focus order; -1 = not a tab stop / natural order
-}
-```
+`event.target` is the atomic unit the hit resolved to; `event.currentTarget` is the node whose handler
+is firing as it bubbles; the deep child (`hitTarget`) is a Tier-2 result, not a hot-path field.
+Bubbling, cancellation (a handler can stop the bubble), capture, click/double-click/`releaseOutside`,
+and rollover-chain diffing are unchanged.
 
-**Storage — the main revision to bless.** One lazily-created runtime slot
-`NodeRuntime.interactionState: NodeInteractionState | null`, exactly mirroring how
-`interactionSignals` and `colorAdjustments` already hang off the runtime (subsystem state on the
-narrowest runtime tier, not on the `Node` entity). `null` = all defaults = today's behavior, so it
-is **zero bundle/runtime cost until used** and needs no migration. This **supersedes the ledger's
-per-property WeakMaps**: one allocation instead of five, one teardown, better locality, and it *is*
-the "InteractionState" cell the user asked for. (WeakMaps were the lost impl's choice; the runtime
-slot is the house pattern established since.)
+## Performance posture (240 Hz)
 
-**API** (in `@flighthq/interaction`, the owning package):
+Four levers, cheapest first: reused event objects (have) · dispatch skipped when nothing subscribes
+(have) · **opt-in eligibility so only volunteers are tested** (this work) · an **opt-in manager
+registry / broadphase** that skips the tree walk entirely for huge scenes (future — charter's spatial
+index; the walk-but-test-only-volunteers baseline is order-correct and fine into the low thousands).
 
-- `enableNodeInteractionState(node): NodeInteractionState` — lazy-create the slot (mirrors
-  `enableInteractionSignals`).
-- `getNodeInteractionState(node): NodeInteractionState | null` — raw read, `null` if never set.
-- Ergonomic per-field pairs (auto-create on set, default on read): `setNodeHitTestEnabled`/`isNodeHitTestEnabled`,
-  `setNodeHitTestChildren`/`hasNodeHitTestChildren`, `setNodeHitArea`/`getNodeHitArea`,
-  `setNodeCursor`/`getNodeCursor`, `setNodeFocusable`/`isNodeFocusable`, `setNodeTabIndex`/`getNodeTabIndex`.
-- Diagnostics seam (per the inversion rule): `explainNodeHitTest(node, x, y)` returning plain data
-  on why a hit did/didn't land (gating / hitArea / clip), in a shakeable guard module.
+## What changes on `main`
 
-**Defaults when the slot is absent:** `hitTestEnabled=true`, `hitTestChildren=true`, `hitArea=null`,
-`cursor=null`, `focusable=false` (opt-in — a scene node is a tab stop only when asked; see Q2),
-`tabIndex=-1`.
+- `NodeInteractionState` loses `hitTestChildren` (its jobs are now eligibility, `hitArea`, and
+  bubbling). `hitTestEnabled` keeps its name but its **default flips to `false`** (opt-in).
+- `hitArea` gains the `'bounds'` sentinel and `Path` value; setting it makes the node a flatten
+  boundary (stop-recursion + consume) — a behavior change from today's "children first, then hitArea."
+- `findGraphHitTarget` / `hitTestGraphPoint` become eligibility-gated and hitArea-flatten-aware.
+- New: `findGraphHitTargetDetailed` + `registerHitTestDetailed` (Tier-2), a Shape path-winding
+  detailed handler, and `enableInteractionGuards`.
+- `@flighthq/interaction` gains a dependency on `@flighthq/path` (for `containsPathPoint`).
+- The sound example opts its buttons/tracks in and drops the decorative-overlay `false` calls.
 
-## Cursor-on-hit stack (explicit deliverable)
+## Boundaries (explicitly out of this pass, so they're not mistaken for missing)
 
-The user wants a working stack where **hovering a node that supports a hit changes the cursor**, not
-just a `cursor` field. That is end-to-end:
-
-1. `CursorBackend` seam (exists in `@flighthq/types`) — fix its doc: it currently claims "returns a
-   disposer" against a `void setCursor` signature. It is a plain setter; the note keeps it `void`.
-2. `createWebCursorBackend(element): CursorBackend` (sets `element.style.cursor`),
-   `getCursorBackend()`/`setCursorBackend(backend | null)` — the active-backend install, opt-in so
-   headless/native hosts swap it and nothing is patched at import.
-3. `setNodeCursor`/`getNodeCursor` on the cell.
-4. **Rollover resolution in pointer dispatch:** on rollover-target change, walk the ancestor chain of
-   the new target and apply the **innermost non-null `cursor`** through the active backend (falling
-   back to `'default'`/`null` when none). This reuses the existing rollover-chain diffing.
-5. **Dispatch gating:** run the pointer-move body when signals are needed **OR** a cursor backend is
-   active — otherwise a scene with only cursor changes (no move subscribers) would never resolve.
-
-This is the piece that makes "object supports hit → cursor updates" real. It depends only on the
-gating/hitArea walk above (to know what the pointer is over) plus the `Cursor` header already present.
-
-**Consumers:**
-
-- `findGraphHitTarget` / `hitTestGraphPoint`: skip self-hit when `!interactive`; skip recursion when
-  `!childrenInteractive`; delegate to `hitArea` when set. ~4 lines at the two chokepoints.
-- Pointer dispatch rollover: resolve innermost non-null `cursor` up the ancestor chain, apply via the
-  active `CursorBackend`.
-- A focus/navigation manager (new, or an extension of the textinput focus managers): walks
-  `focusable`/`tabIndex` to build the tab sequence. Never touched by the pointer path.
-
-## Decisions (all resolved with the user, 2026-07-16)
-
-1. **Storage:** ✅ **one consolidated runtime-slot cell** (`NodeRuntime.interactionState`), superseding
-   the ledger's per-property WeakMaps.
-2. **Default `focusable`:** ✅ opt-in (`false`) — explicit tab stops.
-3. **Scope this pass:** ✅ **full stack + wire the example** — gating + hitArea + the cursor-on-hit
-   stack; focus fields defined in the type, the navigation manager that consumes them deferred.
-4. **Naming:** ✅ `hitTest`/`pointer`, never `mouse` — fields `hitTestEnabled`/`hitTestChildren`.
-5. **Cursor backend home:** ✅ **per-`InteractionManager`** (`manager.cursorBackend`), not a module
-   singleton — this is the multi-canvas-capable shape charter Open direction #1 asked for (one
-   manager = one canvas = one cursor zone). `createWebCursorBackend(element)` is a factory the user
-   passes to `createInteractionManager`.
-```
+- Bitmap-alpha and glyph-accurate Tier-2 handlers (cross-package: `surface`, `textlayout`).
+- The manager registry / spatial broadphase (chartered opt-in acceleration).
+- A focus/tab navigation manager consuming `focusable`/`tabIndex` (fields exist; consumer deferred).
