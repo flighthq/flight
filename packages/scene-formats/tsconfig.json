@@ -13,7 +13,7 @@
     { "path": "../mesh" },
     { "path": "../node" },
     { "path": "../scene" },
-    { "path": "../skeleton" },
+    { "path": "../skeleton3d" },
     { "path": "../types" }
   ],
   "include": ["src"]
