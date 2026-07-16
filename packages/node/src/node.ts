@@ -52,6 +52,7 @@ export function createNodeRuntime<Traits extends object = NodeTraits>(
   out.colorAdjustmentsChannelMixing = false;
   out.nodeSignals = null;
   out.interactionSignals = null;
+  out.interactionState = null;
   out.localBoundsId = 0;
   out.localBoundsUsingLocalBoundsId = -1;
   out.localContentId = 0;
@@ -130,6 +131,9 @@ export function disposeNode<Traits extends object = NodeTraits>(target: Node<Tra
     // reference so the owning package's signals are released via GC.
     runtime.interactionSignals = null;
   }
+
+  // Plain-data interaction settings owned by the interaction package; drop the reference for GC.
+  runtime.interactionState = null;
 }
 
 export function enableNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals {
