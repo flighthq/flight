@@ -18,9 +18,14 @@ import {
 
 import { render, scale } from './render';
 
-const FRAME_SIZE = 64;
+// Frames are authored at a higher resolution than they are shown: the bitmaps display at
+// DISPLAY_SCALE (a downscale), so the renderer samples the oversized source down to size
+// instead of magnifying a small one. Downsampling a hi-res source stays crisp; upscaling a
+// low-res one is what produced the earlier aliased, blocky coins.
+const FRAME_SIZE = 192;
 const FRAME_COUNT = 12;
 const STRIP_WIDTH = FRAME_SIZE * FRAME_COUNT;
+const DISPLAY_SCALE = 0.5;
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -32,19 +37,23 @@ function createSpriteStrip(): HTMLCanvasElement {
   c.height = FRAME_SIZE;
   const ctx = c.getContext('2d')!;
 
+  // Geometry is expressed relative to a 64-unit design frame, then scaled to the actual
+  // source resolution so the coin artwork is identical in shape but drawn at full detail.
+  const k = FRAME_SIZE / 64;
+
   for (let i = 0; i < FRAME_COUNT; i++) {
     const cx = i * FRAME_SIZE + FRAME_SIZE / 2;
     const cy = FRAME_SIZE / 2;
     const phase = (i / FRAME_COUNT) * Math.PI * 2;
     const widthFactor = Math.abs(Math.cos(phase));
-    const rx = Math.max(2, 24 * widthFactor);
-    const ry = 24;
+    const rx = Math.max(2 * k, 24 * k * widthFactor);
+    const ry = 24 * k;
 
     const hue = 40 + widthFactor * 10;
     const lightness = 45 + widthFactor * 15;
     const highlightX = cx - rx * 0.3 * Math.sign(Math.cos(phase));
 
-    const grad = ctx.createRadialGradient(highlightX, cy - 4, 2, cx, cy, ry + 2);
+    const grad = ctx.createRadialGradient(highlightX, cy - 4 * k, 2 * k, cx, cy, ry + 2 * k);
     grad.addColorStop(0, `hsl(${hue}, 85%, ${lightness + 20}%)`);
     grad.addColorStop(0.5, `hsl(${hue}, 80%, ${lightness}%)`);
     grad.addColorStop(1, `hsl(${hue - 10}, 70%, ${lightness - 20}%)`);
@@ -57,14 +66,14 @@ function createSpriteStrip(): HTMLCanvasElement {
     if (widthFactor > 0.15) {
       const edgeX = cx + (Math.cos(phase) > 0 ? -1 : 1) * rx * 0.85;
       ctx.strokeStyle = `hsla(35, 60%, 30%, ${0.4 * widthFactor})`;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.5 * k;
       ctx.beginPath();
-      ctx.ellipse(edgeX, cy, 1.5, ry * 0.75, 0, 0, Math.PI * 2);
+      ctx.ellipse(edgeX, cy, 1.5 * k, ry * 0.75, 0, 0, Math.PI * 2);
       ctx.stroke();
     }
 
     ctx.strokeStyle = `hsl(${hue - 10}, 60%, ${lightness - 25}%)`;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * k;
     ctx.beginPath();
     ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
@@ -130,8 +139,8 @@ const bitmap1 = createBitmap();
 bitmap1.data.image = imageResource;
 bitmap1.x = 120;
 bitmap1.y = 140;
-bitmap1.scaleX = 3;
-bitmap1.scaleY = 3;
+bitmap1.scaleX = DISPLAY_SCALE;
+bitmap1.scaleY = DISPLAY_SCALE;
 invalidateNodeLocalTransform(bitmap1);
 addNodeChild(root, bitmap1);
 
@@ -144,8 +153,8 @@ const bitmap2 = createBitmap();
 bitmap2.data.image = imageResource;
 bitmap2.x = 370;
 bitmap2.y = 140;
-bitmap2.scaleX = 3;
-bitmap2.scaleY = 3;
+bitmap2.scaleX = DISPLAY_SCALE;
+bitmap2.scaleY = DISPLAY_SCALE;
 invalidateNodeLocalTransform(bitmap2);
 addNodeChild(root, bitmap2);
 
@@ -159,8 +168,8 @@ const bitmap3 = createBitmap();
 bitmap3.data.image = imageResource;
 bitmap3.x = 620;
 bitmap3.y = 140;
-bitmap3.scaleX = 3;
-bitmap3.scaleY = 3;
+bitmap3.scaleX = DISPLAY_SCALE;
+bitmap3.scaleY = DISPLAY_SCALE;
 invalidateNodeLocalTransform(bitmap3);
 addNodeChild(root, bitmap3);
 

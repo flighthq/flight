@@ -13,8 +13,7 @@ describe('computeTextFormatFontString', () => {
 
   it('uses defaults when size and font are omitted', () => {
     const font = computeTextFormatFontString({});
-    expect(font).toContain('12px');
-    expect(font).toContain('serif');
+    expect(font).toBe('normal normal 12px sans-serif');
   });
 
   it('uses italic style when italic is true', () => {

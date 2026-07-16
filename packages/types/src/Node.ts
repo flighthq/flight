@@ -2,6 +2,7 @@ import type { Adjustment } from './Adjustment';
 import type { ColorTransform } from './ColorTransform';
 import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from './Entity';
 import type { InteractionSignals } from './InteractionSignals';
+import type { NodeInteractionState } from './NodeInteractionState';
 import type { NodeSignals } from './NodeSignals';
 declare const NodeTraitsKey: unique symbol;
 export type NodeTraitsKey<T extends object> = symbol & {
@@ -45,6 +46,10 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   localTransformId: number;
   localTransformUsingLocalTransformId: number;
   nodeSignals: NodeSignals | null;
+  // Interaction subsystem slot (off the entity, like nodeSignals): per-node hit-test gating, hit-area
+  // proxy, rollover cursor, and focus/tab settings. `null` → all defaults (fully hit-testable, no
+  // cursor, not focusable). Owned and read by `@flighthq/interaction`.
+  interactionState: NodeInteractionState | null;
   parent: Node<Traits> | null;
   worldBoundsUsingLocalBoundsId: number;
   worldBoundsUsingWorldTransformId: number;

@@ -39,6 +39,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/camera": "*",
     "@flighthq/materials": "*",
     "typescript": "^5.3.0"
   },

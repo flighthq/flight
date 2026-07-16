@@ -17,6 +17,7 @@ import {
   createInteractionManager,
   createShape,
   createTextLabel,
+  createWebCursorBackend,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   playAudioResource,
@@ -25,6 +26,8 @@ import {
   setAudioBusGain,
   setAudioBusPan,
   setAudioMixerMasterGain,
+  setNodeCursor,
+  setNodeHitTestEnabled,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
@@ -81,11 +84,14 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-// Interaction setup: register hit test handlers and wire DOM events.
+// Interaction setup: register hit test handlers and wire DOM events. The manager gets a cursor
+// backend so a node's `setNodeCursor` shows through on rollover (the buttons/sliders below opt in).
 registerDefaultHitTestPoints();
-const interactionManager = createInteractionManager(root);
-const inputManager = createInputManager();
 const canvasElement = canvas;
+const interactionManager = createInteractionManager(root, {
+  cursorBackend: createWebCursorBackend(canvasElement),
+});
+const inputManager = createInputManager();
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, interactionManager, scale);
 
@@ -328,9 +334,11 @@ function drawPanSliders(): void {
   );
 }
 
-// Initialize scene graph: add buttons, sliders, and labels.
+// Initialize scene graph: add buttons, sliders, and labels. Each button shows the pointer
+// (hand) cursor on rollover via the manager's cursor backend.
 for (const btn of buttons) {
   addNodeChild(root, btn.shape);
+  setNodeCursor(btn.shape, 'pointer');
   drawButton(btn);
 }
 
@@ -345,6 +353,20 @@ addNodeChild(root, sfxPanTrack);
 addNodeChild(root, sfxPanFill);
 addNodeChild(root, musicPanTrack);
 addNodeChild(root, musicPanFill);
+
+// The fills and handle are drawn on top of their tracks, so as plain hit targets they would
+// swallow clicks on the filled half and you could never lower a fader. Mark them non-interactive
+// with `setNodeHitTestEnabled(node, false)`: the pointer passes through to the track underneath,
+// whose handler reads the click position — the whole bar stays draggable. Only the tracks below
+// keep their (default) interactivity and cursor.
+for (const overlay of [sliderFill, sliderHandle, sfxSliderFill, musicSliderFill, sfxPanFill, musicPanFill]) {
+  setNodeHitTestEnabled(overlay, false);
+}
+
+// Tracks show a horizontal-resize cursor on rollover to read as draggable.
+for (const track of [sliderTrack, sfxSliderTrack, musicSliderTrack, sfxPanTrack, musicPanTrack]) {
+  setNodeCursor(track, 'ew-resize');
+}
 
 drawMasterSlider();
 drawBusSliders();
@@ -367,7 +389,8 @@ instructionLabel.y = 65;
 invalidateNodeLocalTransform(instructionLabel);
 addNodeChild(root, instructionLabel);
 
-// Button labels.
+// Button labels sit on top of their button. They are marked non-interactive so a click on the
+// text passes through to the button beneath instead of being swallowed by the label.
 for (const btn of buttons) {
   const label = createTextLabel();
   label.data.text = btn.label;
@@ -375,6 +398,7 @@ for (const btn of buttons) {
   label.x = btn.x + 12;
   label.y = btn.y + btn.h / 2 - 8;
   invalidateNodeLocalTransform(label);
+  setNodeHitTestEnabled(label, false);
   addNodeChild(root, label);
 }
 
