@@ -25,6 +25,7 @@ import {
   enableInteractionSignals,
   getInteractionSignals,
   releaseInteractionPointer,
+  setInteractionConnectGuard,
 } from './interactionManager';
 import { setNodeCursor, setNodeHitTestEnabled } from './nodeInteractionState';
 
@@ -592,6 +593,22 @@ describe('releaseInteractionPointer', () => {
     releaseInteractionPointer(manager, 3);
     dispatchInteractionPointerMove(manager, 500, 500, 0, { pointerId: 3 });
     expect(fired).toBe(0);
+  });
+});
+
+describe('setInteractionConnectGuard', () => {
+  it('invokes the installed guard when a signal is connected, and stops after null', () => {
+    const root = createDisplayObject();
+    const manager = createInteractionManager(root);
+    const seen: string[] = [];
+    setInteractionConnectGuard((target, name) => {
+      void target;
+      seen.push(name);
+    });
+    connectInteractionSignal(manager, root, 'onPointerDown', () => {});
+    setInteractionConnectGuard(null);
+    connectInteractionSignal(manager, root, 'onPointerUp', () => {});
+    expect(seen).toEqual(['onPointerDown']);
   });
 });
 

@@ -35,12 +35,15 @@
     "@flighthq/geometry": "*",
     "@flighthq/node": "*",
     "@flighthq/displayobject": "*",
+    "@flighthq/log": "*",
     "@flighthq/path": "*",
+    "@flighthq/shape": "*",
+    "@flighthq/spatial": "*",
     "@flighthq/signals": "*",
+    "@flighthq/surface": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/shape": "*",
     "@flighthq/sprite": "*",
     "typescript": "^5.3.0"
   },

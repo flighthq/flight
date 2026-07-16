@@ -162,6 +162,18 @@ export function hitTestGraphPoint<Traits extends object>(
 }
 
 /**
+ * Tests one node's own hit region at world-space (x, y): its `hitArea` if set, else its kind-registered
+ * geometry. No eligibility check and no recursion — for callers (e.g. the broadphase) that already hold
+ * an eligible, atomic candidate and need only the precise per-node test.
+ **/
+export function hitTestNodeRegion(source: NodeAny, x: number, y: number, shapeFlag: boolean = false): boolean {
+  const hitArea = getNodeInteractionState(source)?.hitArea ?? null;
+  if (hitArea !== null) return hitAreaContainsPoint(source, hitArea, x, y, shapeFlag);
+  const hitTestSelf = hitTestPointRegistry.get(source.kind);
+  return hitTestSelf ? hitTestSelf(source, x, y, shapeFlag) : false;
+}
+
+/**
  * Registers the Tier-2 sub-index resolver for a node kind (tilemap tile, quad index, glyph). Consulted
  * only by `findGraphHitTargetDetailed`; opt-in per kind so the coarse path never carries the cost.
  **/
