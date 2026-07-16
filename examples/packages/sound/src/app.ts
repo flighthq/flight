@@ -17,6 +17,7 @@ import {
   createInteractionManager,
   createShape,
   createTextLabel,
+  createWebCursorBackend,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   playAudioResource,
@@ -25,6 +26,8 @@ import {
   setAudioBusGain,
   setAudioBusPan,
   setAudioMixerMasterGain,
+  setNodeCursor,
+  setNodeHitTestEnabled,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
@@ -81,11 +84,14 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-// Interaction setup: register hit test handlers and wire DOM events.
+// Interaction setup: register hit test handlers and wire DOM events. The manager gets a cursor
+// backend so a node's `setNodeCursor` shows through on rollover (the buttons/sliders below opt in).
 registerDefaultHitTestPoints();
-const interactionManager = createInteractionManager(root);
-const inputManager = createInputManager();
 const canvasElement = canvas;
+const interactionManager = createInteractionManager(root, {
+  cursorBackend: createWebCursorBackend(canvasElement),
+});
+const inputManager = createInputManager();
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, interactionManager, scale);
 
@@ -328,28 +334,39 @@ function drawPanSliders(): void {
   );
 }
 
-// Initialize scene graph: add buttons, sliders, and labels.
+// Initialize scene graph: add buttons, sliders, and labels. Each button shows the pointer
+// (hand) cursor on rollover via the manager's cursor backend.
 for (const btn of buttons) {
   addNodeChild(root, btn.shape);
+  setNodeCursor(btn.shape, 'pointer');
   drawButton(btn);
 }
 
-// Each fill/handle is a child of its track, not a sibling. The track carries the pointer
-// handler; parenting the overlay to it means a click anywhere on the slider — including the
-// filled portion that sits on top of the track — resolves to the overlay and then bubbles up
-// to the track, so the whole bar is draggable. As siblings layered above, the fills would
-// swallow clicks on the filled half and you could never lower a fader.
 addNodeChild(root, sliderTrack);
-addNodeChild(sliderTrack, sliderFill);
-addNodeChild(sliderTrack, sliderHandle);
+addNodeChild(root, sliderFill);
+addNodeChild(root, sliderHandle);
 addNodeChild(root, sfxSliderTrack);
-addNodeChild(sfxSliderTrack, sfxSliderFill);
+addNodeChild(root, sfxSliderFill);
 addNodeChild(root, musicSliderTrack);
-addNodeChild(musicSliderTrack, musicSliderFill);
+addNodeChild(root, musicSliderFill);
 addNodeChild(root, sfxPanTrack);
-addNodeChild(sfxPanTrack, sfxPanFill);
+addNodeChild(root, sfxPanFill);
 addNodeChild(root, musicPanTrack);
-addNodeChild(musicPanTrack, musicPanFill);
+addNodeChild(root, musicPanFill);
+
+// The fills and handle are drawn on top of their tracks, so as plain hit targets they would
+// swallow clicks on the filled half and you could never lower a fader. Mark them non-interactive
+// with `setNodeHitTestEnabled(node, false)`: the pointer passes through to the track underneath,
+// whose handler reads the click position — the whole bar stays draggable. Only the tracks below
+// keep their (default) interactivity and cursor.
+for (const overlay of [sliderFill, sliderHandle, sfxSliderFill, musicSliderFill, sfxPanFill, musicPanFill]) {
+  setNodeHitTestEnabled(overlay, false);
+}
+
+// Tracks show a horizontal-resize cursor on rollover to read as draggable.
+for (const track of [sliderTrack, sfxSliderTrack, musicSliderTrack, sfxPanTrack, musicPanTrack]) {
+  setNodeCursor(track, 'ew-resize');
+}
 
 drawMasterSlider();
 drawBusSliders();
@@ -372,9 +389,8 @@ instructionLabel.y = 65;
 invalidateNodeLocalTransform(instructionLabel);
 addNodeChild(root, instructionLabel);
 
-// Button labels are children of their button, not root siblings. The button owns the pointer
-// handler, so parenting the label to it lets a click on the text bubble up to the button; as a
-// sibling drawn on top, the label would intercept the click and it would never reach the button.
+// Button labels sit on top of their button. They are marked non-interactive so a click on the
+// text passes through to the button beneath instead of being swallowed by the label.
 for (const btn of buttons) {
   const label = createTextLabel();
   label.data.text = btn.label;
@@ -382,7 +398,8 @@ for (const btn of buttons) {
   label.x = btn.x + 12;
   label.y = btn.y + btn.h / 2 - 8;
   invalidateNodeLocalTransform(label);
-  addNodeChild(btn.shape, label);
+  setNodeHitTestEnabled(label, false);
+  addNodeChild(root, label);
 }
 
 const masterLabel = createTextLabel();
@@ -443,15 +460,12 @@ addNodeChild(root, statusLabel);
 
 // Wire interaction signals for sound buttons.
 for (const btn of buttons) {
-  // Roll-over/out (not over/out) so the button stays highlighted while the pointer is over its
-  // child label too: roll signals fire across the whole ancestor chain, whereas over/out fire
-  // only on the exact node under the pointer and would flicker as it crossed onto the label.
-  connectInteractionSignal(interactionManager, btn.shape, 'onPointerRollOver', () => {
+  connectInteractionSignal(interactionManager, btn.shape, 'onPointerOver', () => {
     hoveredButtons.add(btn);
     drawButton(btn);
   });
 
-  connectInteractionSignal(interactionManager, btn.shape, 'onPointerRollOut', () => {
+  connectInteractionSignal(interactionManager, btn.shape, 'onPointerOut', () => {
     hoveredButtons.delete(btn);
     drawButton(btn);
   });
