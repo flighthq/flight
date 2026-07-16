@@ -2,16 +2,16 @@ import { getNodeRuntime } from '@flighthq/node';
 import type { Cursor, HitArea, NodeAny, NodeInteractionState, NodeRuntime } from '@flighthq/types';
 
 /**
- * Allocates a `NodeInteractionState` with all fields at their defaults: fully hit-testable, no hit-area
- * proxy, no cursor, not focusable. Prefer this over an object literal so every field is set consistently.
+ * Allocates a `NodeInteractionState` with all fields at their defaults: NOT a hit candidate (hit
+ * testing is opt-in), no hit area, no cursor, not focusable. Prefer this over an object literal so
+ * every field is set consistently.
  */
 export function createNodeInteractionState(): NodeInteractionState {
   return {
     cursor: null,
     focusable: false,
     hitArea: null,
-    hitTestChildren: true,
-    hitTestEnabled: true,
+    hitTestEnabled: false,
     tabIndex: -1,
   };
 }
@@ -45,21 +45,14 @@ export function getNodeTabIndex(source: Readonly<NodeAny>): number {
   return getNodeInteractionState(source)?.tabIndex ?? -1;
 }
 
-/** Whether the hit-test walk descends into this node's subtree (default `true`). */
-export function hasNodeHitTestChildren(source: Readonly<NodeAny>): boolean {
-  const state = getNodeInteractionState(source);
-  return state === null ? true : state.hitTestChildren;
-}
-
 /** Whether this node is a keyboard focus target (default `false` — focus is opt-in). */
 export function isNodeFocusable(source: Readonly<NodeAny>): boolean {
   return getNodeInteractionState(source)?.focusable ?? false;
 }
 
-/** Whether this node registers a hit on its own geometry (default `true`). */
+/** Whether this node is a hit candidate. Default `false` — hit testing is opt-in per node. */
 export function isNodeHitTestEnabled(source: Readonly<NodeAny>): boolean {
-  const state = getNodeInteractionState(source);
-  return state === null ? true : state.hitTestEnabled;
+  return getNodeInteractionState(source)?.hitTestEnabled ?? false;
 }
 
 /** Sets the rollover cursor for this node; `null` clears it (inherits nearest ancestor / default). */
@@ -72,17 +65,16 @@ export function setNodeFocusable(source: NodeAny, focusable: boolean): void {
   enableNodeInteractionState(source).focusable = focusable;
 }
 
-/** Installs a hit-area proxy for this node; `null` restores own-geometry hit testing. */
+/**
+ * Sets the hit region this node presents; `null` restores own-geometry hit testing. Setting a hitArea
+ * makes the node an atomic hit unit (stops recursion into children, hit resolves here). See `HitArea`
+ * for the region forms (`Rectangle`/`Path`/`'bounds'` in local space, or a `Node` proxy in world space).
+ */
 export function setNodeHitArea(source: NodeAny, hitArea: HitArea | null): void {
   enableNodeInteractionState(source).hitArea = hitArea;
 }
 
-/** Enables or disables descent into this node's subtree during hit testing (the `mouseChildren` role). */
-export function setNodeHitTestChildren(source: NodeAny, enabled: boolean): void {
-  enableNodeInteractionState(source).hitTestChildren = enabled;
-}
-
-/** Enables or disables this node's own hit registration (the `mouseEnabled` role). */
+/** Opts this node into (or out of) hit testing. Default is out — a node is a candidate only once enabled. */
 export function setNodeHitTestEnabled(source: NodeAny, enabled: boolean): void {
   enableNodeInteractionState(source).hitTestEnabled = enabled;
 }
