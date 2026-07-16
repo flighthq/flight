@@ -334,10 +334,13 @@ function drawPanSliders(): void {
   );
 }
 
-// Initialize scene graph: add buttons, sliders, and labels. Each button shows the pointer
-// (hand) cursor on rollover via the manager's cursor backend.
+// Initialize scene graph: add buttons, sliders, and labels. Hit testing is opt-in — only the nodes
+// that call `setNodeHitTestEnabled(node, true)` are candidates, so the labels and slider fills drawn
+// on top of the buttons/tracks are transparent to the pointer for free (they never opt in). Each
+// button opts in and shows the pointer (hand) cursor on rollover via the manager's cursor backend.
 for (const btn of buttons) {
   addNodeChild(root, btn.shape);
+  setNodeHitTestEnabled(btn.shape, true);
   setNodeCursor(btn.shape, 'pointer');
   drawButton(btn);
 }
@@ -354,17 +357,11 @@ addNodeChild(root, sfxPanFill);
 addNodeChild(root, musicPanTrack);
 addNodeChild(root, musicPanFill);
 
-// The fills and handle are drawn on top of their tracks, so as plain hit targets they would
-// swallow clicks on the filled half and you could never lower a fader. Mark them non-interactive
-// with `setNodeHitTestEnabled(node, false)`: the pointer passes through to the track underneath,
-// whose handler reads the click position — the whole bar stays draggable. Only the tracks below
-// keep their (default) interactivity and cursor.
-for (const overlay of [sliderFill, sliderHandle, sfxSliderFill, musicSliderFill, sfxPanFill, musicPanFill]) {
-  setNodeHitTestEnabled(overlay, false);
-}
-
-// Tracks show a horizontal-resize cursor on rollover to read as draggable.
+// Only the tracks opt into hit testing; their fills/handle overlays never do, so a click on the
+// filled half passes through to the track underneath and the whole bar stays draggable. The tracks
+// also show a horizontal-resize cursor on rollover to read as draggable.
 for (const track of [sliderTrack, sfxSliderTrack, musicSliderTrack, sfxPanTrack, musicPanTrack]) {
+  setNodeHitTestEnabled(track, true);
   setNodeCursor(track, 'ew-resize');
 }
 
@@ -389,8 +386,8 @@ instructionLabel.y = 65;
 invalidateNodeLocalTransform(instructionLabel);
 addNodeChild(root, instructionLabel);
 
-// Button labels sit on top of their button. They are marked non-interactive so a click on the
-// text passes through to the button beneath instead of being swallowed by the label.
+// Button labels sit on top of their button. They never opt into hit testing, so a click on the text
+// passes straight through to the button beneath instead of being swallowed by the label.
 for (const btn of buttons) {
   const label = createTextLabel();
   label.data.text = btn.label;
@@ -398,7 +395,6 @@ for (const btn of buttons) {
   label.x = btn.x + 12;
   label.y = btn.y + btn.h / 2 - 8;
   invalidateNodeLocalTransform(label);
-  setNodeHitTestEnabled(label, false);
   addNodeChild(root, label);
 }
 
