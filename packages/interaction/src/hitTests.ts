@@ -6,7 +6,9 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldTransformMatrix,
 } from '@flighthq/node';
-import type { DisplayObject, HitTestFunction, Kind, Node, NodeAny } from '@flighthq/types';
+import type { DisplayObject, HitArea, HitTestFunction, Kind, Node, NodeAny } from '@flighthq/types';
+
+import { getNodeInteractionState } from './nodeInteractionState';
 
 /**
  * Walks the scene graph depth-first in reverse child order (front-to-back) and
@@ -21,16 +23,24 @@ export function findGraphHitTarget<Traits extends object>(
 ): Node<Traits> | null {
   if (!source.enabled) return null;
 
-  const children = getNodeRuntime(source).children;
-  if (children !== null) {
-    for (let i = children.length - 1; i >= 0; i--) {
-      const hit = findGraphHitTarget(children[i], x, y, shapeFlag);
-      if (hit !== null) return hit;
+  // `interactionState` gates participation: `hitTestChildren` controls subtree descent,
+  // `hitTestEnabled` controls self-hits, and `hitArea` swaps the self-hit geometry. An absent cell
+  // means all defaults (fully hit-testable), so the common path pays only one null read.
+  const state = getNodeInteractionState(source);
+
+  if (state === null || state.hitTestChildren) {
+    const children = getNodeRuntime(source).children;
+    if (children !== null) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        const hit = findGraphHitTarget(children[i], x, y, shapeFlag);
+        if (hit !== null) return hit;
+      }
     }
   }
 
-  const hitTestSelf = hitTestPointRegistry.get(source.kind);
-  if (hitTestSelf?.(source, x, y, shapeFlag)) return source;
+  if ((state === null || state.hitTestEnabled) && testNodeSelfHit(source, x, y, shapeFlag, state?.hitArea ?? null)) {
+    return source;
+  }
 
   return null;
 }
@@ -86,13 +96,21 @@ export function hitTestGraphPoint<Traits extends object>(
 ): boolean {
   if (!source.enabled) return false;
 
-  const hitTestSelf = hitTestPointRegistry.get(source.kind);
-  if (hitTestSelf?.(source as NodeAny, x, y, shapeFlag)) return true;
+  const state = getNodeInteractionState(source);
 
-  const children = getNodeRuntime(source).children;
-  if (children !== null) {
-    for (const child of children) {
-      if (hitTestGraphPoint(child as Node<Traits>, x, y, shapeFlag)) return true;
+  if (
+    (state === null || state.hitTestEnabled) &&
+    testNodeSelfHit(source as NodeAny, x, y, shapeFlag, state?.hitArea ?? null)
+  ) {
+    return true;
+  }
+
+  if (state === null || state.hitTestChildren) {
+    const children = getNodeRuntime(source).children;
+    if (children !== null) {
+      for (const child of children) {
+        if (hitTestGraphPoint(child as Node<Traits>, x, y, shapeFlag)) return true;
+      }
     }
   }
 
@@ -105,6 +123,25 @@ export function hitTestGraphPoint<Traits extends object>(
  **/
 export function registerHitTestPoint(kind: Kind, fn: HitTestFunction): void {
   hitTestPointRegistry.set(kind, fn);
+}
+
+/**
+ * Resolves a node's self-hit at world-space (x, y). With no `hitArea`, dispatches to the node's
+ * kind-registered hit function. A `hitArea` proxy overrides own geometry: a `Rectangle` is tested by
+ * world-space containment; a node proxy delegates to that node's own registered hit function (the
+ * `'kind'` field is present on nodes and absent on rectangles, so it discriminates the union).
+ **/
+function testNodeSelfHit(source: NodeAny, x: number, y: number, shapeFlag: boolean, hitArea: HitArea | null): boolean {
+  if (hitArea !== null) {
+    if ('kind' in hitArea) {
+      const proxyHit = hitTestPointRegistry.get(hitArea.kind);
+      return proxyHit ? proxyHit(hitArea, x, y, shapeFlag) : false;
+    }
+    return containsRectanglePointXY(hitArea, x, y);
+  }
+
+  const hitTestSelf = hitTestPointRegistry.get(source.kind);
+  return hitTestSelf ? hitTestSelf(source, x, y, shapeFlag) : false;
 }
 
 const hitTestLocalBoundsRectanglePoint = { x: 0, y: 0 };
