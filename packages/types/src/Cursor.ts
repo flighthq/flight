@@ -43,9 +43,10 @@ export type Cursor =
   | 'zoom-out'
   | (string & Record<never, never>);
 /**
- * Backend seam for resolving cursor changes driven by pointer rollover. The web
- * default backend sets `canvas.style.cursor`; native hosts register their own via
- * `setCursorBackend`. Returns a disposer that restores the previous cursor when called.
+ * Backend seam for applying cursor changes driven by pointer rollover. The web backend
+ * (`createWebCursorBackend`) sets `element.style.cursor`; native hosts provide their own. A backend
+ * is held per `InteractionManager` (`manager.cursorBackend`), not globally. `setCursor(null)` clears
+ * to the element/host default.
  */
 export interface CursorBackend {
   setCursor(cursor: Cursor | null): void;
