@@ -5,6 +5,7 @@ import {
   createInteractionManager,
   registerDefaultHitTestPoints,
   releaseInteractionPointer,
+  setNodeHitTestEnabled,
 } from '@flighthq/interaction';
 import type { PointerEventData, Shape } from '@flighthq/sdk';
 import {
@@ -158,6 +159,8 @@ function redrawShape(ds: DraggableShape): void {
 // Initialize shapes: add to scene, draw, and wire interaction signals.
 for (const ds of shapes) {
   addNodeChild(root, ds.shape);
+  // Hit testing is opt-in: each interactive shape volunteers itself as a candidate.
+  setNodeHitTestEnabled(ds.shape, true);
   redrawShape(ds);
 
   // Hover: pointerOver / pointerOut change the fill to a brighter shade.
