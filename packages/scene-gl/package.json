@@ -43,6 +43,7 @@
   "devDependencies": {
     "@flighthq/lighting": "*",
     "@flighthq/mesh": "*",
+    "@flighthq/particleemitter": "*",
     "@flighthq/scene": "*",
     "typescript": "^5.3.0"
   },
