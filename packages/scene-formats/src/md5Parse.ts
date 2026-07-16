@@ -5,7 +5,12 @@ import { createMesh, createScene, createSceneNode, setSceneNodeTransform } from 
 import type { SceneNode } from '@flighthq/types';
 
 import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
-import { CANONICAL_LAYOUT } from './shared';
+import {
+  CANONICAL_FLOATS_PER_VERTEX,
+  CANONICAL_LAYOUT,
+  convertPositionsZUpToYUp,
+  convertQuaternionsZUpToYUp,
+} from './shared';
 
 // Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. The ASCII line-oriented format
 // contains a skeleton (joints) and one or more mesh sections. Each mesh section becomes a
@@ -63,13 +68,30 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
     const skeletonRoot = createSceneNode(undefined, { name: 'skeleton' });
     const jointNodes: SceneNode[] = [];
 
+    // Convert joint positions and orientations from Z-up to Y-up.
+    const jointPositions: number[] = [];
+    const jointOrientations: number[] = [];
+    for (const joint of joints) {
+      jointPositions.push(joint.positionX, joint.positionY, joint.positionZ);
+      jointOrientations.push(joint.orientationX, joint.orientationY, joint.orientationZ, joint.orientationW);
+    }
+    convertPositionsZUpToYUp(jointPositions);
+    convertQuaternionsZUpToYUp(jointOrientations);
+
     for (let j = 0; j < joints.length; j++) {
       const joint = joints[j];
       const node = createSceneNode(undefined, { name: joint.name });
+      const pi = j * 3;
+      const qi = j * 4;
       setSceneNodeTransform(
         node,
-        { x: joint.positionX, y: joint.positionY, z: joint.positionZ },
-        { w: joint.orientationW, x: joint.orientationX, y: joint.orientationY, z: joint.orientationZ },
+        { x: jointPositions[pi], y: jointPositions[pi + 1], z: jointPositions[pi + 2] },
+        {
+          w: jointOrientations[qi + 3],
+          x: jointOrientations[qi],
+          y: jointOrientations[qi + 1],
+          z: jointOrientations[qi + 2],
+        },
         { x: 1, y: 1, z: 1 },
       );
       jointNodes.push(node);
@@ -151,7 +173,7 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
         pz += weight.bias * (joint.positionZ + rz);
       }
 
-      // Position (3 floats).
+      // Position (3 floats) in MD5's native Z-up space; batch-converted below.
       vertices.push(px, py, pz);
       // Normal (3 floats) — MD5 mesh does not carry normals; zero-filled.
       vertices.push(0, 0, 0);
@@ -160,6 +182,9 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       // UV (2 floats).
       vertices.push(vert.u, vert.v);
     }
+
+    // Convert vertex positions from Z-up to Y-up in the interleaved buffer.
+    convertPositionsZUpToYUp(vertices, CANONICAL_FLOATS_PER_VERTEX, 0);
 
     // Indices are stored directly.
     for (let t = 0; t < md5Mesh.indices.length; t++) {

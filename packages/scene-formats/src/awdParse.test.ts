@@ -233,7 +233,7 @@ describe('createSceneFromAwd', () => {
 
     const n = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexNormal(n, geometry, 0);
-    expect([n.x, n.y, n.z]).toEqual([0, 0, 1]);
+    expect([n.x, n.y, n.z]).toEqual([0, 0, -1]);
 
     const uv = { x: 0, y: 0 };
     getMeshGeometryVertexUv0(uv, geometry, 1);
@@ -320,7 +320,7 @@ describe('createSceneFromAwd', () => {
     const m = meshNode.localMatrix.m;
     expect(m[12]).toBeCloseTo(10);
     expect(m[13]).toBeCloseTo(20);
-    expect(m[14]).toBeCloseTo(30);
+    expect(m[14]).toBeCloseTo(-30);
     expect(m[0]).toBeCloseTo(1);
     expect(m[5]).toBeCloseTo(1);
     expect(m[10]).toBeCloseTo(1);
@@ -534,12 +534,12 @@ describe('parseAwdSkeletonAnimation', () => {
     sampleAnimationTrack(out, track, 1);
     expect(out[0]).toBeCloseTo(10);
     expect(out[1]).toBeCloseTo(20);
-    expect(out[2]).toBeCloseTo(30);
+    expect(out[2]).toBeCloseTo(-30);
 
     sampleAnimationTrack(out, track, 0.5);
     expect(out[0]).toBeCloseTo(5);
     expect(out[1]).toBeCloseTo(10);
-    expect(out[2]).toBeCloseTo(15);
+    expect(out[2]).toBeCloseTo(-15);
   });
 
   it('uses SceneAnimationTarget as channel targetRef', () => {

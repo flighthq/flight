@@ -137,8 +137,8 @@ describe('createSceneFromMd5Mesh', () => {
 
     getMeshGeometryVertexPosition(p, geometry, 2);
     expect(p.x).toBeCloseTo(0);
-    expect(p.y).toBeCloseTo(1);
-    expect(p.z).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(-1);
   });
 
   it('preserves UV coordinates', () => {
@@ -194,11 +194,12 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.y).toBeCloseTo(0);
     expect(p.z).toBeCloseTo(0);
 
-    // Vert 2: weight 2 references joint 2 (child_b at (0,1,0)), bias=1, offset (0,0,0) => (0,1,0)
+    // Vert 2: weight 2 references joint 2 (child_b at (0,1,0) in MD5), bias=1, offset (0,0,0)
+    // MD5 result (0,1,0) → Flight (0,0,-1)
     getMeshGeometryVertexPosition(p, geometry, 2);
     expect(p.x).toBeCloseTo(0);
-    expect(p.y).toBeCloseTo(1);
-    expect(p.z).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(-1);
   });
 
   it('blends vertex positions from multiple weighted joints', () => {
@@ -222,11 +223,11 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.y).toBeCloseTo(0);
     expect(p.z).toBeCloseTo(0);
 
-    // Vert 2: weight 3 (joint 1 at (10,0,0), bias 1, offset (0,1,0)) = 1*(10+0, 0+1, 0) = (10,1,0)
+    // Vert 2: weight 3 (joint 1 at (10,0,0), bias 1, offset (0,1,0)) MD5 result (10,1,0) → Flight (10,0,-1)
     getMeshGeometryVertexPosition(p, geometry, 2);
     expect(p.x).toBeCloseTo(10);
-    expect(p.y).toBeCloseTo(1);
-    expect(p.z).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(-1);
   });
 
   it('handles multiple mesh sections', () => {
@@ -448,23 +449,23 @@ describe('createSceneFromMd5Mesh', () => {
 
     const p = { x: 0, y: 0, z: 0 };
 
-    // With q = (0.5, 0.5, 0.5, -0.5), rotating (1,0,0) gives (0,0,1).
+    // With q = (0.5, 0.5, 0.5, -0.5), rotating (1,0,0) gives MD5 (0,0,1) → Flight (0,1,0).
     getMeshGeometryVertexPosition(p, geometry, 0);
     expect(p.x).toBeCloseTo(0);
-    expect(p.y).toBeCloseTo(0);
-    expect(p.z).toBeCloseTo(1);
+    expect(p.y).toBeCloseTo(1);
+    expect(p.z).toBeCloseTo(0);
 
-    // Rotating (0,1,0) by the same quaternion gives (1,0,0).
+    // Rotating (0,1,0) gives MD5 (1,0,0) → Flight (1,0,0).
     getMeshGeometryVertexPosition(p, geometry, 1);
     expect(p.x).toBeCloseTo(1);
     expect(p.y).toBeCloseTo(0);
     expect(p.z).toBeCloseTo(0);
 
-    // Rotating (0,0,1) by the same quaternion gives (0,1,0).
+    // Rotating (0,0,1) gives MD5 (0,1,0) → Flight (0,0,-1).
     getMeshGeometryVertexPosition(p, geometry, 2);
     expect(p.x).toBeCloseTo(0);
-    expect(p.y).toBeCloseTo(1);
-    expect(p.z).toBeCloseTo(0);
+    expect(p.y).toBeCloseTo(0);
+    expect(p.z).toBeCloseTo(-1);
   });
 
   it('warns on out-of-range weight joint index', () => {
@@ -529,10 +530,10 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.y).toBeCloseTo(0);
     expect(p.z).toBeCloseTo(0);
 
-    // Vert 1: weight 0, joint at (5,5,5), offset (0,0,0) => (5,5,5).
+    // Vert 1: weight 0, joint at (5,5,5) in MD5, offset (0,0,0) → MD5 (5,5,5) → Flight (5,5,-5).
     getMeshGeometryVertexPosition(p, geometry, 1);
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(5);
-    expect(p.z).toBeCloseTo(5);
+    expect(p.z).toBeCloseTo(-5);
   });
 });

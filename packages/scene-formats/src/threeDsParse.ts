@@ -4,7 +4,7 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import type { SceneNode } from '@flighthq/types';
 
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, swapPositionsYZ } from './shared';
 import type { ThreeDsMesh } from './threeDsSchema';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
@@ -23,8 +23,9 @@ import {
 // (0x4000), each of which may contain a triangle mesh (0x4100) with vertex, face, and UV sub-chunks.
 //
 // Each mesh becomes a Mesh scene node with the canonical PBR vertex layout. The 3DS coordinate
-// system is Z-up; positions and normals are converted to Y-up on import (Y and Z components are
-// swapped). Face winding is preserved as-is from the file.
+// system is left-handed Z-up; positions are converted to Flight's right-handed Y-up via
+// swapPositionsYZ. The Y↔Z reflection (det = -1) handles both the up-axis and handedness flip,
+// so face winding is preserved as-is from the file.
 //
 // The 3DS format limits each mesh to 65535 vertices (uint16 indices). Multiple mesh objects are
 // common in practice and each becomes a separate Mesh child of the scene.
@@ -252,13 +253,18 @@ function parseUvCoords(
 }
 
 // Builds a Mesh scene node from a parsed ThreeDsMesh descriptor. Vertex positions are converted
-// from Z-up to Y-up (swap Y and Z components). Face normals are computed per-face and averaged
+// from LH Z-up to RH Y-up via swapPositionsYZ. Face normals are computed per-face and averaged
 // at shared vertices to produce smooth normals.
 function buildMeshNode(mesh: Readonly<ThreeDsMesh>): SceneNode | null {
   const vertexCount = mesh.vertices.length / 3;
   const faceCount = mesh.faces.length / 3;
 
   if (vertexCount === 0 || faceCount === 0) return null;
+
+  // Convert positions from LH Z-up to RH Y-up before normal computation so all geometry
+  // operates in Flight's coordinate space.
+  const positions = Array.from(mesh.vertices);
+  swapPositionsYZ(positions);
 
   const vertices = new Float32Array(vertexCount * CANONICAL_FLOATS_PER_VERTEX);
   const normals = new Float32Array(vertexCount * 3);
@@ -269,16 +275,15 @@ function buildMeshNode(mesh: Readonly<ThreeDsMesh>): SceneNode | null {
     const i1 = mesh.faces[f * 3 + 1];
     const i2 = mesh.faces[f * 3 + 2];
 
-    // Read positions with Z-up to Y-up conversion (swap Y and Z).
-    const x0 = mesh.vertices[i0 * 3];
-    const y0 = mesh.vertices[i0 * 3 + 2];
-    const z0 = mesh.vertices[i0 * 3 + 1];
-    const x1 = mesh.vertices[i1 * 3];
-    const y1 = mesh.vertices[i1 * 3 + 2];
-    const z1 = mesh.vertices[i1 * 3 + 1];
-    const x2 = mesh.vertices[i2 * 3];
-    const y2 = mesh.vertices[i2 * 3 + 2];
-    const z2 = mesh.vertices[i2 * 3 + 1];
+    const x0 = positions[i0 * 3];
+    const y0 = positions[i0 * 3 + 1];
+    const z0 = positions[i0 * 3 + 2];
+    const x1 = positions[i1 * 3];
+    const y1 = positions[i1 * 3 + 1];
+    const z1 = positions[i1 * 3 + 2];
+    const x2 = positions[i2 * 3];
+    const y2 = positions[i2 * 3 + 1];
+    const z2 = positions[i2 * 3 + 2];
 
     // Cross product of edge vectors to get face normal.
     const e1x = x1 - x0;
@@ -306,10 +311,9 @@ function buildMeshNode(mesh: Readonly<ThreeDsMesh>): SceneNode | null {
   for (let v = 0; v < vertexCount; v++) {
     const o = v * CANONICAL_FLOATS_PER_VERTEX;
 
-    // Position with Z-up to Y-up conversion.
-    vertices[o] = mesh.vertices[v * 3];
-    vertices[o + 1] = mesh.vertices[v * 3 + 2];
-    vertices[o + 2] = mesh.vertices[v * 3 + 1];
+    vertices[o] = positions[v * 3];
+    vertices[o + 1] = positions[v * 3 + 1];
+    vertices[o + 2] = positions[v * 3 + 2];
 
     // Normalize the accumulated face normal.
     let nnx = normals[v * 3];

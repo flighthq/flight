@@ -14,7 +14,7 @@ import {
   MD2_TRIANGLE_SIZE,
   MD2_VERSION,
 } from './md2Schema';
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, convertPositionsZUpToYUp } from './shared';
 
 // Parses an id Software MD2 (Quake 2) binary model into a Scene. The first animation frame (frame 0)
 // is imported as a single Mesh node; subsequent frames are ignored. Compressed vertices are
@@ -137,10 +137,10 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
       if (idx === undefined) {
         idx = interleavedVertices.length / CANONICAL_FLOATS_PER_VERTEX;
 
-        // Position (3 floats).
+        // Position (3 floats) in MD2's native Z-up space; batch-converted below.
         interleavedVertices.push(posX[vertIdx], posY[vertIdx], posZ[vertIdx]);
 
-        // Normal (3 floats) from Anorms table.
+        // Normal (3 floats) from Anorms table in Z-up space; batch-converted below.
         const ni = normalIndices[vertIdx];
         if (ni < MD2_ANORMS.length) {
           const normal = MD2_ANORMS[ni];
@@ -165,6 +165,10 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
     warnings?.push('createSceneFromMd2: no valid triangle indices produced');
     return createScene();
   }
+
+  // Convert positions and normals from Z-up to Y-up in the interleaved buffer.
+  convertPositionsZUpToYUp(interleavedVertices, CANONICAL_FLOATS_PER_VERTEX, 0);
+  convertPositionsZUpToYUp(interleavedVertices, CANONICAL_FLOATS_PER_VERTEX, 3);
 
   const scene = createScene();
   const vertices = new Float32Array(interleavedVertices);

@@ -119,12 +119,12 @@ describe('parseMd5Anim', () => {
     expect(target.node).toBe(joints[0]);
     expect(target.path).toBe(SceneAnimationPathTranslation);
 
-    // Sample the translation at t=0. Baseframe (5, 10, 15) converted from Z-up to Y-up = (5, 15, 10).
+    // Baseframe (5, 10, 15) in Z-up → (5, 15, -10) in Y-up.
     const out = [0, 0, 0];
     sampleAnimationTrack(out, translationChannel.track, 0);
     expect(out[0]).toBeCloseTo(5);
     expect(out[1]).toBeCloseTo(15);
-    expect(out[2]).toBeCloseTo(10);
+    expect(out[2]).toBeCloseTo(-10);
   });
 
   it('produces rotation channels targeting SceneAnimationPathRotation', () => {
@@ -153,11 +153,11 @@ describe('parseMd5Anim', () => {
     expect(out[1]).toBeCloseTo(0);
     expect(out[2]).toBeCloseTo(0);
 
-    // Frame 1 at t=1/30: (10, 20, 30) Z-up -> (10, 30, 20) Y-up.
+    // Frame 1 at t=1/30: (10, 20, 30) Z-up → (10, 30, -20) Y-up.
     sampleAnimationTrack(out, rootTranslation.track, 1 / 30);
     expect(out[0]).toBeCloseTo(10);
     expect(out[1]).toBeCloseTo(30);
-    expect(out[2]).toBeCloseTo(20);
+    expect(out[2]).toBeCloseTo(-20);
   });
 
   it('uses baseframe values for unanimated joints', () => {
@@ -165,20 +165,20 @@ describe('parseMd5Anim', () => {
     const clip = parseMd5Anim(TWO_JOINT_TWO_FRAME, joints)!;
 
     // Second joint (child) has flags=0, so all values come from baseframe (1, 2, 3).
-    // Z-up to Y-up: (1, 3, 2).
+    // Z-up to Y-up: (1, 3, -2).
     const childTranslation = clip.channels[2];
     const out = [0, 0, 0];
 
     sampleAnimationTrack(out, childTranslation.track, 0);
     expect(out[0]).toBeCloseTo(1);
     expect(out[1]).toBeCloseTo(3);
-    expect(out[2]).toBeCloseTo(2);
+    expect(out[2]).toBeCloseTo(-2);
 
     // Same at frame 1 since no components are animated.
     sampleAnimationTrack(out, childTranslation.track, 1 / 30);
     expect(out[0]).toBeCloseTo(1);
     expect(out[1]).toBeCloseTo(3);
-    expect(out[2]).toBeCloseTo(2);
+    expect(out[2]).toBeCloseTo(-2);
   });
 
   it('animates rotation and reconstructs quaternion W', () => {
@@ -189,7 +189,7 @@ describe('parseMd5Anim', () => {
     const out = [0, 0, 0, 0];
 
     // Frame 0: orientation (0, 0, 0), W = -sqrt(1 - 0) = -1.
-    // Z-up to Y-up: swap qy and qz -> (0, 0, 0, -1).
+    // Z-up to Y-up: (qx, qy, qz, qw) → (qx, qz, -qy, qw) = (0, 0, 0, -1).
     sampleAnimationTrack(out, rotationChannel.track, 0);
     expect(out[0]).toBeCloseTo(0);
     expect(out[1]).toBeCloseTo(0);
@@ -197,11 +197,11 @@ describe('parseMd5Anim', () => {
     expect(out[3]).toBeCloseTo(-1);
 
     // Frame 1: orientation (0.5, 0.5, 0.5), W = -sqrt(1 - 0.75) = -0.5.
-    // Z-up to Y-up: swap qy and qz -> (0.5, 0.5, 0.5, -0.5).
+    // Z-up to Y-up: (qx, qy, qz, qw) → (qx, qz, -qy, qw) = (0.5, 0.5, -0.5, -0.5).
     sampleAnimationTrack(out, rotationChannel.track, 1 / 10);
     expect(out[0]).toBeCloseTo(0.5);
     expect(out[1]).toBeCloseTo(0.5);
-    expect(out[2]).toBeCloseTo(0.5);
+    expect(out[2]).toBeCloseTo(-0.5);
     expect(out[3]).toBeCloseTo(-0.5);
   });
 
@@ -320,12 +320,12 @@ describe('parseMd5Anim', () => {
     const clip = parseMd5Anim(source, joints)!;
     expect(clip).not.toBeNull();
 
-    // Translation: (100, 200, 300) Z-up -> (100, 300, 200) Y-up.
+    // Translation: (100, 200, 300) Z-up → (100, 300, -200) Y-up.
     const out = [0, 0, 0];
     sampleAnimationTrack(out, clip.channels[0].track, 0);
     expect(out[0]).toBeCloseTo(100);
     expect(out[1]).toBeCloseTo(300);
-    expect(out[2]).toBeCloseTo(200);
+    expect(out[2]).toBeCloseTo(-200);
   });
 
   it('skips comment lines inside blocks', () => {
@@ -364,9 +364,9 @@ describe('parseMd5Anim', () => {
     // Midpoint: t = 0.5 * (1/30).
     const midTime = 0.5 / 30;
     sampleAnimationTrack(out, rootTranslation.track, midTime);
-    // Halfway between (0,0,0) and (10,30,20) Y-up = (5, 15, 10).
+    // Halfway between (0,0,0) and (10,30,-20) Y-up = (5, 15, -10).
     expect(out[0]).toBeCloseTo(5);
     expect(out[1]).toBeCloseTo(15);
-    expect(out[2]).toBeCloseTo(10);
+    expect(out[2]).toBeCloseTo(-10);
   });
 });
