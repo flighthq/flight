@@ -7,6 +7,8 @@ export * from './interactionManager';
 export * from './interactionSpatialIndex';
 export * from './nodeInteractionState';
 export * from './registerAccurateBitmapHitTest';
+export * from './registerAccurateShapeHitTest';
+export * from './registerAccurateTextHitTest';
 export * from './registerDefaultHitTestPoints';
 export * from './spatialQuery';
 export * from './spriteHitTests';
