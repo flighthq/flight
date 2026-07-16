@@ -178,10 +178,18 @@ function getCoveredFunctions(testPath: string, fnNames: string[]): Set<string> {
 function getFunctionExports(project: Project, absPath: string): string[] {
   const sourceFile = project.addSourceFileAtPathIfExists(absPath) ?? project.addSourceFileAtPath(absPath);
   const names: string[] = [];
+  const normalizedAbsPath = absPath.replaceAll('\\', '/');
 
   for (const [name, declarations] of sourceFile.getExportedDeclarations()) {
     const declaration = declarations[0];
     if (!declaration) continue;
+
+    // Only count functions physically declared in THIS file. `getExportedDeclarations`
+    // resolves `export *` / `export { x } from './y'` re-exports to their origin, which would
+    // otherwise attribute every re-exported function to the re-exporting file — e.g. the
+    // `packages/sdk/src/*.ts` barrels would each be asked to colocate tests for the entire SDK.
+    // A re-exported function is tested where it is declared, not where it is forwarded.
+    if (declaration.getSourceFile().getFilePath().replaceAll('\\', '/') !== normalizedAbsPath) continue;
 
     if (
       Node.isFunctionDeclaration(declaration) ||
