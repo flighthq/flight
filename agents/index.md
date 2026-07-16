@@ -259,6 +259,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Materials (PBR) | `materials` (StandardPbrMaterial) | gl, wgpu | |
 | Materials (unlit) | `materials` (UnlitMaterial) | gl, wgpu | |
 | Materials (toon) | `materials` (ToonMaterial) | gl, wgpu | |
+| Billboards | `scene` (createBillboard + orientSceneBillboardsToCamera) | gl, wgpu | axisY/full/screenAligned; draws via mesh renderers |
 | Text | `text` | canvas, dom, gl, wgpu | TextLabel, RichText, NativeText |
 | Text (bitmap) | `bitmaptext` + `bitmapfont` | canvas, gl, wgpu | |
 | Text input | `textinput` | headless | |
