@@ -12,7 +12,7 @@ Sorted from the 2026-07-13 rereview (solid, 68/100). The dispatch layer is deep 
 
 Standing Approved rebuild (Tiers 2–3 of the 2026-07-02 approval — the design decisions are already settled by the ledger and charter Decisions #4/#5):
 
-- **Shape-accurate picking.** `defaultShapeHitTestPointHandler` honors `shapeFlag=true` via `getShapeFillRegions` (`@flighthq/shape`) + `containsPathPoint` (`@flighthq/path`); bounds fallback for gradient/bitmap fills. Promotes `@flighthq/shape` from devDependency and adds `@flighthq/path` — blessed by the Tier-3 approval.
+- **Shape-accurate picking.** `defaultShapeHitTestHandler` honors `shapeFlag=true` via `getShapeFillRegions` (`@flighthq/shape`) + `containsPathPoint` (`@flighthq/path`); bounds fallback for gradient/bitmap fills. Promotes `@flighthq/shape` from devDependency and adds `@flighthq/path` — blessed by the Tier-3 approval.
 - **Per-node interaction gating.** `setNodeInteractive`/`isNodeInteractive` (self-hit opt-out) and `setNodeChildrenInteractive`/`areNodeChildrenInteractive` (subtree opt-out), consulted by `findGraphHitTarget`/`hitTestGraphPoint`. State in a package-local `WeakMap`; distinct from `enabled`.
 - **`hitArea` proxy.** `setNodeHitArea`/`getNodeHitArea` over the existing (currently orphaned) `HitArea` type in `@flighthq/types`; `findGraphHitTarget` delegates to the proxy. (Sub-index semantics across a proxy stay Open direction #2 — the boolean path does not need them.)
 - **Detailed hit + sub-index.** `findGraphHitTargetDetailed(source, x, y, out, shapeFlag?)` filling the existing `HitTestResult` type; `registerHitTestDetailed(kind, fn)` registry; real Tilemap per-populated-tile and QuadBatch per-quad tests replacing the bounds fallbacks, with `resolveTilemapHitSubIndex`/`resolveQuadBatchHitSubIndex`.
@@ -22,9 +22,9 @@ Standing Approved rebuild (Tiers 2–3 of the 2026-07-02 approval — the design
 New sweep-safe items from the rereview:
 
 - **Document the bounds fallbacks** on every `_shapeFlag` handler (Decision #5 / North star #5 compliance: the fallback must be stated, not silent) and on `hitTestDisplayObjectsShape` (cross-center approximation + pointer to the exact path) and `getDisplayObjectOverlapRectangle` (empty-rect-on-disjoint contract).
-- **Fix doc slips**: `hitTestGraphPoint` comment says `registerHitTest` → `registerHitTestPoint`; `CursorBackend` doc in `@flighthq/types` claims a disposer against a `void` signature (types file, one line — pair with any Tier-2 types touch).
+- **Fix doc slips**: `hitTestGraphPoint` comment says `registerHitTest` → `registerHitTest`; `CursorBackend` doc in `@flighthq/types` claims a disposer against a `void` signature (types file, one line — pair with any Tier-2 types touch).
 - **Manifest hygiene**: move `@flighthq/displayobject` to `devDependencies` (only tests import it); extend the `package.json` description to mention pointer dispatch.
-- **Register `defaultTextInputHitTestPointHandler` or unexport it** — currently exported but wired to no kind; resolve within the registrar once the coverage-policy question (Open direction below) is answered, or drop the export as dead surface.
+- **Register `defaultTextInputHitTestHandler` or unexport it** — currently exported but wired to no kind; resolve within the registrar once the coverage-policy question (Open direction below) is answered, or drop the export as dead surface.
 
 ## Backlog
 
@@ -42,4 +42,4 @@ Parked — each with why:
 
 ## Approved
 
-- [2026-07-02 · picked] Tiers 1–3 integration: registerDefaultHitTestPoints, traversal-order doc, spatial queries, overlap family, HitTestResult + detailed hit, gating, hitArea, suppressTouchHover, shape-accurate picking, tilemap/quad-batch sub-index, clip-aware picking
+- [2026-07-02 · picked] Tiers 1–3 integration: registerDefaultHitTests, traversal-order doc, spatial queries, overlap family, HitTestResult + detailed hit, gating, hitArea, suppressTouchHover, shape-accurate picking, tilemap/quad-batch sub-index, clip-aware picking

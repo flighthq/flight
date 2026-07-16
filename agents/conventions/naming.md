@@ -14,9 +14,9 @@ No additional suffix needed — the noun makes the role clear.
 
 ### Hit-test handlers (`*Handler`)
 
-Functions registered into the hit-test-point registry via `registerHitTestPoint(kind, handler)`. Use the `Handler` suffix to signal "this is a value you register," not "this is a function you call directly."
+Functions registered into the hit-test-point registry via `registerHitTest(kind, handler)`. Use the `Handler` suffix to signal "this is a value you register," not "this is a function you call directly."
 
-Examples: `defaultBitmapHitTestPointHandler`, `defaultShapeHitTestPointHandler`, `defaultSpriteHitTestPointHandler`.
+Examples: `defaultBitmapHitTestHandler`, `defaultShapeHitTestHandler`, `defaultSpriteHitTestHandler`.
 
 ### Runtime trait callbacks (`*Callback`)
 

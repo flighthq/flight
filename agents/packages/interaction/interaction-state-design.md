@@ -59,27 +59,52 @@ math; they pick the space by picking the reference.
 subtree is approximated by one region — no per-child registration. When a handler needs *which* child,
 it makes the Tier-2 call.
 
-## Two-tier testing
+## Query & registration API (final shape, 2026-07-16)
 
-- **Tier 1 — default dispatch.** `findGraphHitTarget` / `hitTestGraphPoint`: eligibility gate, then a
-  coarse region test (`hitArea`, or the node's bounds via its kind handler). A node with a `hitArea`
-  consumes here; children are not descended. No path or pixel math ever runs on this path.
-- **Tier 2 — explicit refine.** `findGraphHitTargetDetailed(root, x, y, out, shapeFlag=true)` fills a
-  `HitTestResult { node, subIndex, localX, localY }`: it may recurse *into* a consumed unit, run the
-  shape-accurate per-kind test (`shapeFlag`), and resolve a sub-index via `registerHitTestDetailed(kind, fn)`
-  (tile index, list row, glyph). Broad-phase (AABB) rejects before any exact test. This is the home of
-  the `event.hitTarget` / sub-index information — obtained by *asking*, never auto-populated.
+Two independent axes, kept independent: **what the caller wants back** (a method) × **accuracy** (coarse
+vs precise — a `*Precise` sibling method, not a flag). There is no `shapeFlag` and no accuracy enum;
+precision *is* which function you call, which keeps cost greppable and each path distinct (also good for
+the C/C++ port).
 
-Per-kind accuracy is a **registered seam**, honest about its ceiling: Shape does true path winding
-(via `@flighthq/path`); bitmap-alpha (`@flighthq/surface`) and glyph (`@flighthq/textlayout`) land as
-those neighbors allow, documented as bounds fallbacks until then.
+```
+Coarse:   hitTestGraphPoint          findGraphHitTarget          findGraphHitTargets
+Precise:  hitTestGraphPointPrecise   findGraphHitTargetPrecise   findGraphHitTargetsPrecise
+Detail:   describeGraphHit(node, x, y, out)          // resolve sub-index + local coords on a known node
+```
+
+- **Coarse** = the bbox path (the `hitTestRegistry`). Cheap; used for move/hover/drag/spatial.
+- **Precise** = each node tested by its registered exact provider (the `hitTestExactRegistry`), **falling
+  back to bounds per kind** where none is registered — best-available, not an absolute guarantee (hence
+  `Precise`, not `Exact`). `enableInteractionGuards` can warn on the degrade.
+- **`findGraphHitTargets(Precise)`** is the hit-**stack** (all nodes under the point, front-to-back).
+- **`describeGraphHit`** resolves the sub-index (text char / tile / quad) on a node you already have — a
+  compute, not a walk. The exact provider returns `-1` (miss) / `0` (hit, no sub-element) / `n` (index),
+  so `Precise` reads "hit iff ≥ 0" and `describeGraphHit` reads the value.
+
+Registration is an open registry — register only what you need:
+
+```
+registerHitTest(kind, fn)          // coarse bbox handler for a kind (fn: (source,x,y) => boolean)
+registerHitTestPrecise(kind, fn)   // exact provider for a kind    (fn: (source,x,y) => number)
+registerDefaultHitTests()          // the built-in coarse bank for all kinds
+registerShapeHitTest()             // exact fill winding (pulls shape/path)
+registerBitmapHitTest(threshold)   // exact pixel alpha (pulls surface); bounds fallback where unreadable
+registerTextHitTest()              // exact char index (pulls text/textlayout)
+```
+
+Each per-kind exact registrar is a separate module, so its heavy dependency tree-shakes unless imported;
+`registerDefaultHitTests` stays bounds-only and dep-light.
 
 ## Dispatch
 
-`event.target` is the atomic unit the hit resolved to; `event.currentTarget` is the node whose handler
-is firing as it bubbles; the deep child (`hitTarget`) is a Tier-2 result, not a hot-path field.
-Bubbling, cancellation (a handler can stop the bubble), capture, click/double-click/`releaseOutside`,
-and rollover-chain diffing are unchanged.
+The primary user surface is **signals**, not these queries: you `connectInteractionSignal(node, …)` and a
+slot fires. `findGraph*` / `describeGraphHit` are the engine primitives dispatch runs. Precision is a
+first-class signal-path feature, not a query verb: `createInteractionManager(root, { precise: true })`
+flips dispatch from `findGraphHitTarget` to `findGraphHitTargetPrecise`, so a connected slot fires only on
+a real hit and bubbles normally. (A per-node `setNodeHitTestPrecise` is named for later, not yet built.)
+`event.target` is the node the hit resolved to; `event.currentTarget` is the node whose handler is firing
+as it bubbles. Bubbling, cancellation, capture, click/double-click/`releaseOutside`, rollover-chain
+diffing are unchanged.
 
 ## Performance posture (240 Hz)
 
@@ -106,24 +131,28 @@ index; the walk-but-test-only-volunteers baseline is order-correct and fine into
   (separately-imported, `@flighthq/log`). Warns once when a listener is connected to a node with no
   hit-testable subtree (the opt-in footgun). Core seam: `setInteractionConnectGuard`.
 **Tree-shaking rule for Tier-2 accuracy:** each kind's accurate/detailed hit test is a **separate opt-in
-`register*` per kind**, so its heavy dependency is pulled only when called. `registerDefaultHitTestPoints`
+`register*` per kind**, so its heavy dependency is pulled only when called. `registerDefaultHitTests`
 stays bounds-only and dependency-light (no shape/path/surface/text).
 
 - **Broadphase** — `InteractionManagerOptions.spatialIndex` (a `@flighthq/spatial` index) +
   `refreshInteractionSpatialIndex(manager)`; pointer dispatch queries it instead of walking the tree,
-  front-to-back-consistent with the linear pick. The 240 Hz acceleration.
-- **Shape-accurate Tier-2** — `registerAccurateShapeHitTest()` (opt-in, pulls `@flighthq/shape` +
-  `@flighthq/path`): winding test against fill regions under `shapeFlag` for Shape/Scale9Shape; Tier-1 stays
-  bounds. Fully unit-tested.
-- **Bitmap-alpha Tier-2** — `registerAccurateBitmapHitTest(threshold)` (opt-in, pulls `@flighthq/surface`):
-  pixel-alpha under `shapeFlag`, bounds fallback when pixels are unreadable. Positive path is functional-suite
-  territory (jsdom can't rasterize); unit tests cover wiring + fallback.
-- **Text glyph sub-index Tier-2** — `registerAccurateTextHitTest()` (opt-in, pulls `@flighthq/text` +
-  `@flighthq/textlayout`): registers a `registerHitTestDetailed` resolver for TextLabel/RichText that maps the
-  point to a **character index** via `getTextLayout` + `computeRichTextCharIndexAtPoint` (the generic
-  glyph-rect/char-index API that already existed on `TextLayoutResult`; `getRichTextCharBoundaries` gives the
-  rect). `-1` when no layout yet. Fully unit-tested (fake fixed-advance measure provider gives a real layout).
+  front-to-back-consistent with the linear pick (coarse or precise). The 240 Hz acceleration.
+- **Exact providers** (into `hitTestExactRegistry`, consulted by the `*Precise` queries + `describeGraphHit`):
+  `registerShapeHitTest()` (fill winding, pulls shape/path), `registerBitmapHitTest(threshold)` (pixel alpha,
+  pulls surface; bounds fallback where unreadable — jsdom can't rasterize, so its positive path is
+  functional-suite territory), `registerTextHitTest()` (char index via `getTextLayout` +
+  `computeRichTextCharIndexAtPoint` — the generic char-index/rect API already on `TextLayoutResult`; pulls
+  text/textlayout, fully unit-tested via a fake fixed-advance measure provider).
+- **Dispatch precise bit** — `InteractionManagerOptions.precise` flips dispatch to the precise walk (the
+  #5 "really clicked" ergonomic).
+
+Superseded by the "Query & registration API" section above: `shapeFlag`, `findGraphHitTargetDetailed`,
+`registerHitTestDetailed`, `registerHitTestPoint`/`registerDefaultHitTestPoints`, and the `registerAccurate*`
+names are all gone.
 
 ## Boundaries (still out)
 
-- A focus/tab navigation manager consuming `focusable`/`tabIndex` (fields exist; consumer deferred).
+- A focus/tab navigation manager consuming `focusable`/`tabIndex` (fields exist; consumer deferred); the
+  per-node `setNodeHitTestPrecise` bit (manager-level `precise` exists).
+- The precise-degrade guard warning (Precise falling back to bounds for an unregistered kind) — designed,
+  not yet wired into `enableInteractionGuards`.
