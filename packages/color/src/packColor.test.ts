@@ -1,9 +1,12 @@
 import {
   computeRgbHexString,
   createLinearColor,
+  getColorAlpha,
+  getColorRgb,
   packColor,
   packLinearToColor,
   packOpaqueColor,
+  setColorAlpha,
   unpackColorRgba,
   unpackColorToLinear,
 } from './packColor';
@@ -21,6 +24,25 @@ describe('computeRgbHexString', () => {
 describe('createLinearColor', () => {
   it('allocates a zeroed four-component color', () => {
     expect(createLinearColor()).toEqual([0, 0, 0, 0]);
+  });
+});
+
+describe('getColorAlpha', () => {
+  it('returns the alpha byte as a float in [0, 1]', () => {
+    expect(getColorAlpha(0x11223344)).toBeCloseTo(0x44 / 0xff);
+    expect(getColorAlpha(0xffffffff)).toBe(1);
+    expect(getColorAlpha(0xabcdef00)).toBe(0);
+  });
+});
+
+describe('getColorRgb', () => {
+  it('drops the alpha byte, returning the 24-bit RGB', () => {
+    expect(getColorRgb(0xff8800ff)).toBe(0xff8800);
+    expect(getColorRgb(0x11223344)).toBe(0x112233);
+  });
+
+  it('round-trips with packOpaqueColor', () => {
+    expect(getColorRgb(packOpaqueColor(0x3366cc))).toBe(0x3366cc);
   });
 });
 
@@ -78,6 +100,18 @@ describe('packOpaqueColor', () => {
 
   it('returns an unsigned 32-bit integer', () => {
     expect(packOpaqueColor(0xffffff)).toBeGreaterThan(0);
+  });
+});
+
+describe('setColorAlpha', () => {
+  it('replaces the alpha byte from a float in [0, 1], leaving RGB intact', () => {
+    expect(setColorAlpha(0xff8800ff, 0)).toBe(0xff880000);
+    expect(setColorAlpha(0xff880000, 1)).toBe(0xff8800ff);
+  });
+
+  it('clamps and rounds to 8 bits', () => {
+    expect(setColorAlpha(0x112233ff, 2)).toBe(0x112233ff);
+    expect(getColorAlpha(setColorAlpha(0x112233ff, 0.5))).toBeCloseTo(0.5, 2);
   });
 });
 
