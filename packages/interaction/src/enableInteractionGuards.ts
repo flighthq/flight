@@ -4,7 +4,7 @@ import type { InteractionSignalName, NodeAny } from '@flighthq/types';
 import { LogLevel } from '@flighthq/types';
 
 import { setInteractionConnectGuard } from './interactionManager';
-import { isNodeHitTestEnabled } from './nodeInteractionState';
+import { isNodeFocusable, isNodeHitTestEnabled } from './nodeInteractionState';
 
 /** Plain-data result of `explainInteractionHitEligibility`. */
 export interface InteractionHitEligibility {
@@ -53,9 +53,36 @@ function hasEligibleNodeInSubtree(node: Readonly<NodeAny>): boolean {
   return false;
 }
 
+function hasFocusableNodeInSubtree(node: Readonly<NodeAny>): boolean {
+  if (isNodeFocusable(node)) return true;
+  const children = getNodeRuntime(node).children;
+  if (children !== null) {
+    for (const child of children) {
+      if (hasFocusableNodeInSubtree(child)) return true;
+    }
+  }
+  return false;
+}
+
 function warnOnInertInteractionTarget(target: NodeAny, name: InteractionSignalName): void {
-  // Keyboard signals dispatch to the manager root regardless of hit eligibility, so they are exempt.
+  // Keyboard signals dispatch to the manager root regardless of eligibility, so they are exempt.
   if (name === 'onKeyDown' || name === 'onKeyUp') return;
+
+  // Focus signals dispatch from the focus manager based on `focusable`, not hit eligibility, so they get
+  // the symmetric check: warn when nothing in the subtree is a focus stop (forgot setNodeFocusable).
+  if (name === 'onFocusIn' || name === 'onFocusOut') {
+    if (hasFocusableNodeInSubtree(target)) return;
+    logOnce(
+      'interaction:focus-listener-on-non-focusable',
+      LogLevel.Warn,
+      {
+        message: `connectInteractionSignal('${name}'): target has no focusable node in its subtree — call setNodeFocusable(node, true) so it can receive focus events`,
+      },
+      'interaction',
+    );
+    return;
+  }
+
   if (hasEligibleNodeInSubtree(target)) return;
   logOnce(
     'interaction:listener-on-inert-node',

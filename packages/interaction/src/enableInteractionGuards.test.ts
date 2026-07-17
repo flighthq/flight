@@ -8,7 +8,7 @@ import {
   explainInteractionHitEligibility,
 } from './enableInteractionGuards';
 import { connectInteractionSignal, createInteractionManager } from './interactionManager';
-import { setNodeHitTestEnabled } from './nodeInteractionState';
+import { setNodeFocusable, setNodeHitTestEnabled } from './nodeInteractionState';
 
 afterEach(() => {
   disableInteractionGuards();
@@ -60,6 +60,28 @@ describe('enableInteractionGuards', () => {
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('setNodeHitTestEnabled');
+    } finally {
+      removeLogSink(sink.sink);
+    }
+  });
+
+  it('warns a focus listener toward setNodeFocusable, and stays silent once a focus stop exists', () => {
+    const root = createDisplayObject();
+    const manager = createInteractionManager(root);
+    enableInteractionGuards();
+    const sink = createMemoryLogSink(8);
+    addLogSink(sink.sink);
+    try {
+      connectInteractionSignal(manager, root, 'onFocusIn', () => {});
+      const entries = getMemoryLogSinkEntries(sink);
+      expect(entries.length).toBe(1);
+      expect(String((entries[0].data as Record<string, unknown>).message)).toContain('setNodeFocusable');
+
+      const focusable = createDisplayObject();
+      setNodeFocusable(focusable, true);
+      addNodeChild(root, focusable);
+      connectInteractionSignal(manager, root, 'onFocusOut', () => {});
+      expect(getMemoryLogSinkEntries(sink).length).toBe(1);
     } finally {
       removeLogSink(sink.sink);
     }
