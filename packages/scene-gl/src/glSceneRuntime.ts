@@ -64,6 +64,10 @@ export interface GlSceneDrawEntry {
 // One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
 export interface GlSceneRuntime {
   activeMeshProgram: GlMeshProgram | null;
+  // Whether the draw run currently being bound is skinned. drawGlScene sets it before each bind()
+  // so ensureGl*Program folds HAS_SKIN into the selected program variant without every material
+  // renderer threading a skin flag — skinned-ness is a geometry property orthogonal to the material.
+  activeSkinnedRun: boolean;
   blendedDrawList: GlSceneDrawEntry[];
   blendedPool: GlSceneDrawEntry[];
   environmentSourceCube: WebGLTexture | null;
@@ -149,6 +153,7 @@ export function getGlSceneRuntime(state: GlRenderState): GlSceneRuntime {
   if (scene === undefined) {
     scene = {
       activeMeshProgram: null,
+      activeSkinnedRun: false,
       blendedDrawList: [],
       blendedPool: [],
       environmentSourceCube: null,

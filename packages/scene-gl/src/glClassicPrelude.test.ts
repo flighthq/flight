@@ -23,9 +23,9 @@ const BLINNPHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'blinnphong'
 
 describe('buildGlClassicDefineKey', () => {
   it('encodes the lighting model first, then the feature flags', () => {
-    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l----');
-    expect(buildGlClassicDefineKey(PHONG)).toBe('p----');
-    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b----');
+    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l-----');
+    expect(buildGlClassicDefineKey(PHONG)).toBe('p-----');
+    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b-----');
     expect(
       buildGlClassicDefineKey({
         alphaMaskEnabled: true,
@@ -34,7 +34,12 @@ describe('buildGlClassicDefineKey', () => {
         hasSpecularMap: true,
         lightingModel: 'phong',
       }),
-    ).toBe('pmdsn');
+    ).toBe('pmdsn-');
+  });
+
+  it('sets the trailing skin flag so a skinned variant keys distinctly', () => {
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l----k');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
   });
 
   it('produces distinct strings per lighting model so they never collide', () => {
@@ -84,6 +89,17 @@ describe('ensureGlClassicProgram', () => {
     expect(phong).not.toBe(blinnPhong);
     expect(lambert).not.toBe(blinnPhong);
     expect(getGlSceneRuntime(state).programCache.size).toBe(3);
+  });
+
+  it('folds the render-state skinned-run flag into a distinct HAS_SKIN variant', () => {
+    const { state } = makeGlSceneState();
+    const rigid = ensureGlClassicProgram(state, LAMBERT);
+    getGlSceneRuntime(state).activeSkinnedRun = true;
+    const skinned = ensureGlClassicProgram(state, LAMBERT);
+
+    expect(skinned).not.toBe(rigid);
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('classic:l----k');
+    expect(skinned.locJointMatrices).not.toBeNull();
   });
 });
 
@@ -146,5 +162,21 @@ describe('getGlClassicVertexSourceForKey', () => {
     expect(source).toContain('v_tangent');
     expect(source).toContain('v_uv0');
     expect(source).toContain('#version 300 es');
+  });
+
+  it('injects the skin declarations and HAS_SKIN define only for the skinned variant', () => {
+    // The #ifdef HAS_SKIN guard lives in the body unconditionally; only the #define and the injected
+    // attribute/uniform declarations are skin-specific.
+    const rigid = getGlClassicVertexSourceForKey(LAMBERT);
+    expect(rigid).not.toContain('#define HAS_SKIN');
+    expect(rigid).not.toContain('a_joints0');
+    expect(rigid).not.toContain('mat4 skinMatrix()');
+
+    const skinned = getGlClassicVertexSourceForKey({ ...LAMBERT, hasSkin: true });
+    expect(skinned).toContain('#define HAS_SKIN');
+    expect(skinned).toContain('#define MAX_JOINTS');
+    expect(skinned).toContain('mat4 skinMatrix()');
+    expect(skinned).toContain('a_joints0');
+    expect(skinned).toContain('a_weights0');
   });
 });

@@ -3,7 +3,13 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import {
+  GL_MAX_SKIN_JOINTS,
+  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  compileGlProgram,
+  ensureGlSceneProgram,
+} from './glMeshProgram';
+import { getGlSceneRuntime } from './glSceneRuntime';
 
 // The shared Gl classic prelude: the GLSL 300 es vertex + fragment uber-shader for the three classic
 // lit mesh-material families — Lambert (diffuse only), Phong (reflection-vector specular), and
@@ -37,6 +43,9 @@ export interface GlClassicDefineKey {
   alphaMaskEnabled: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;
+  // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlClassicProgram
+  // from the render-state skinned-run flag, not by the material renderer — skinning keys off geometry.
+  hasSkin?: boolean;
   hasSpecularMap: boolean;
   lightingModel: GlClassicLightingModel;
 }
@@ -66,7 +75,7 @@ export function buildGlClassicDefineKey(key: Readonly<GlClassicDefineKey>): stri
   const model = key.lightingModel === 'phong' ? 'p' : key.lightingModel === 'blinnphong' ? 'b' : 'l';
   return `${model}${key.alphaMaskEnabled ? 'm' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${
     key.hasSpecularMap ? 's' : '-'
-  }${key.hasNormalMap ? 'n' : '-'}`;
+  }${key.hasNormalMap ? 'n' : '-'}${key.hasSkin ? 'k' : '-'}`;
 }
 
 // Compiles the classic uber-shader for a define key, links it, and resolves its uniform locations.
@@ -83,6 +92,7 @@ export function compileGlClassicProgram(
     ...resolveGlLitLocations(gl, program),
     program,
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
+    locJointMatrices: gl.getUniformLocation(program, 'u_jointMatrices'),
     locDiffuse: gl.getUniformLocation(program, 'u_diffuse'),
     locDiffuseMap: gl.getUniformLocation(program, 'u_diffuseMap'),
     locModel: gl.getUniformLocation(program, 'u_model'),
@@ -100,8 +110,11 @@ export function compileGlClassicProgram(
 // shared scene program cache under the `classic:` family namespace, so each model + feature variant
 // is compiled at most once per state and reused every frame.
 export function ensureGlClassicProgram(state: GlRenderState, key: Readonly<GlClassicDefineKey>): GlClassicProgram {
-  return ensureGlSceneProgram(state, `classic:${buildGlClassicDefineKey(key)}`, (gl) =>
-    compileGlClassicProgram(gl, key),
+  // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
+  // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
+  const fullKey: GlClassicDefineKey = { ...key, hasSkin: getGlSceneRuntime(state).activeSkinnedRun };
+  return ensureGlSceneProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
+    compileGlClassicProgram(gl, fullKey),
   );
 }
 
@@ -125,9 +138,12 @@ export function getGlClassicVertexSource(): string {
   return CLASSIC_VERTEX_BODY;
 }
 
-// The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
+// The full vertex source for a define key (define block + optional skin declarations + body), ready to
+// hand to the GL compiler. The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment
+// shader), so it is spliced here rather than into the shared define block.
 export function getGlClassicVertexSourceForKey(key: Readonly<GlClassicDefineKey>): string {
-  return buildGlClassicDefineSource(key) + CLASSIC_VERTEX_BODY;
+  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+  return buildGlClassicDefineSource(key) + skin + CLASSIC_VERTEX_BODY;
 }
 
 // Builds the leading "#version 300 es\n#define ..." block for a classic define key, to be prepended
@@ -141,6 +157,7 @@ function buildGlClassicDefineSource(key: Readonly<GlClassicDefineKey>): string {
   if (key.hasDiffuseMap) defines += '#define HAS_DIFFUSE_MAP\n';
   if (key.hasSpecularMap) defines += '#define HAS_SPECULAR_MAP\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
+  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
 
@@ -160,10 +177,20 @@ out vec4 v_tangent;
 out vec2 v_uv0;
 
 void main() {
-  vec4 worldPosition = u_model * vec4(a_position, 1.0);
+#ifdef HAS_SKIN
+  mat4 skin = skinMatrix();
+  vec4 localPosition = skin * vec4(a_position, 1.0);
+  vec3 localNormal = mat3(skin) * a_normal;
+  vec3 localTangent = mat3(skin) * a_tangent.xyz;
+#else
+  vec4 localPosition = vec4(a_position, 1.0);
+  vec3 localNormal = a_normal;
+  vec3 localTangent = a_tangent.xyz;
+#endif
+  vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
-  v_normal = u_normalMatrix * a_normal;
-  v_tangent = vec4(u_normalMatrix * a_tangent.xyz, a_tangent.w);
+  v_normal = u_normalMatrix * localNormal;
+  v_tangent = vec4(u_normalMatrix * localTangent, a_tangent.w);
   v_uv0 = a_uv0;
   gl_Position = u_viewProjection * worldPosition;
 }
