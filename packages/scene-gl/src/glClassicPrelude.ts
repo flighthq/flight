@@ -17,8 +17,9 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // compile-time define (LIGHTING_PHONG / LIGHTING_BLINNPHONG; Lambert sets neither and compiles out
 // the specular branch). One directional + one ambient light are read from the standard packed light
 // block (GL_MESH_LIGHT_BLOCK_GLSL), gated by the count uniforms, and the fragment stage outputs
-// LINEAR HDR radiance (no tonemap / gamma here — the effect pipeline's resolve pass owns that),
-// matching the rgba16f scene target.
+// LINEAR HDR radiance (no tonemap / gamma here), matching the rgba16f scene target. The linear->sRGB
+// encode happens at present via drawGlLinearToSrgbPass (presentGlScene, the no-effects path) — never in
+// a material shader.
 //
 // The specular models share the Lambert diffuse term and differ only in the specular geometry:
 // Phong raises max(dot(reflect(-L, N), V), 0) to the shininess exponent; BlinnPhong raises
