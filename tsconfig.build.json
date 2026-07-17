@@ -130,6 +130,7 @@
     { "path": "./packages/scene" },
     { "path": "./packages/scene-formats" },
     { "path": "./packages/scene-gl" },
+    { "path": "./packages/scene-resources" },
     { "path": "./packages/scene-wgpu" }
   ]
 }

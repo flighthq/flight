@@ -1,0 +1,44 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "references": [
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../loader"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../mesh"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../scene"
+    },
+    {
+      "path": "../scene-formats"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    }
+  ],
+  "include": ["src"]
+}

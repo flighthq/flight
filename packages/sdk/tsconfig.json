@@ -250,6 +250,9 @@
       "path": "../scene-gl"
     },
     {
+      "path": "../scene-resources"
+    },
+    {
       "path": "../scene-wgpu"
     },
     {
