@@ -71,6 +71,11 @@ export interface GlSceneRuntime {
   activeSkinnedRun: boolean;
   blendedDrawList: GlSceneDrawEntry[];
   blendedPool: GlSceneDrawEntry[];
+  // Opt-in color-space guard, null until enableGlSceneColorSpaceGuards installs it. drawGlScene reaches
+  // it only through this slot (so the base path references no message or @flighthq/log), calling it when
+  // the scene is drawn straight to the canvas with no target to declare 'linear' on — the output would
+  // then reach the canvas un-encoded (dark).
+  colorSpaceGuard?: (() => void) | null;
   environmentSourceCube: WebGLTexture | null;
   ibl: GlSceneIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;

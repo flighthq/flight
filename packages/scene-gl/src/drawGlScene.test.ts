@@ -7,7 +7,7 @@ import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createMesh, createScene } from '@flighthq/scene';
-import type { Camera, SceneLights } from '@flighthq/types';
+import type { Camera, GlRenderTarget, SceneLights } from '@flighthq/types';
 
 import { drawGlScene } from './drawGlScene';
 import { makeGlSceneState } from './glSceneTestHelper';
@@ -64,6 +64,21 @@ describe('drawGlScene', () => {
     drawGlScene(state, scene, makeCamera(), LIGHTS);
 
     expect(runtime.currentProgram).toBeNull();
+  });
+
+  it("declares the bound render target 'linear' (scene materials output linear HDR)", () => {
+    const { state } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+    const scene = createScene();
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
+
+    const runtime = getGlRenderStateRuntime(state);
+    const target = { colorSpace: 'srgb' } as GlRenderTarget;
+    runtime.currentRenderTarget = target;
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(target.colorSpace).toBe('linear');
   });
 
   it('does not draw a disabled mesh', () => {

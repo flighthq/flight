@@ -2,7 +2,7 @@ import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flig
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
-import { invalidateGlRenderStateCache } from '@flighthq/render-gl';
+import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import { getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type {
   Camera,
@@ -58,6 +58,12 @@ export function drawGlScene(
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;
   const runtime = getGlSceneRuntime(state);
+
+  // Scene materials output linear HDR radiance, so declare the target being rendered into as 'linear':
+  // the present (presentGlScene, or the effect pipeline's adapting present) reads that back and applies
+  // the single sRGB encode. Drawing straight to the canvas (no bound target) has no present pass to
+  // encode — the output reaches the canvas un-encoded (dark); the opt-in color-space guard flags it.
+  if (!declareGlRenderTargetColorSpace(state, 'linear')) runtime.colorSpaceGuard?.();
 
   // Partition visible mesh subsets into opaque and blended draw lists. Each entry carries everything
   // needed for the draw step so the two passes can iterate independently.
