@@ -108,6 +108,8 @@
       "@flighthq/clip/*": ["./packages/clip/src/*"],
       "@flighthq/clock": ["./packages/clock/src/index.ts"],
       "@flighthq/clock/*": ["./packages/clock/src/*"],
+      "@flighthq/color": ["./packages/color/src/index.ts"],
+      "@flighthq/color/*": ["./packages/color/src/*"],
       "@flighthq/collision": ["./packages/collision/src/index.ts"],
       "@flighthq/collision/*": ["./packages/collision/src/*"],
       "@flighthq/textureatlas-formats": ["./packages/textureatlas-formats/src/index.ts"],
