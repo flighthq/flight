@@ -714,7 +714,7 @@ export function createTorusMeshGeometry(
       const b = a + 1;
       const c = a + rowStride;
       const d = c + 1;
-      indices.push(a, c, b, b, c, d);
+      indices.push(a, b, c, b, d, c);
     }
   }
 
