@@ -46,6 +46,26 @@ endGlRenderEffectPipeline(state, pipeline, fx)     // resolve + tonemap/bloom ov
 
 `prepare*` lives in `@flighthq/render`; `drawScene` and the passes live in `scene-gl`/`scene-wgpu` (the pipeline in `effects-*` depends on `render-*`, never the reverse). 2D content draws after as an overlay (depth-test off). HDR/MSAA/depth are reused from the existing pipeline; depth feeds the existing depth-dependent effects.
 
+### Color space & gamma (decided 2026-07-17)
+
+3D `scene-*` writes **linear HDR**; 2D `displayobject-*` renders in **sRGB** (no linear decode). The
+single `linear→sRGB` OETF encode happens **once, at present, never in a material shader** (`glLinearToSrgbPass` in `render-gl`; `linearChannelToSrgb` in `@flighthq/color` is the reference). Two facts made this non-trivial: (1) for a long time *nobody* encoded — the earlier "the resolve pass owns gamma" claim was unimplemented, so all 3D output was silently dark; (2) the effect pipeline's present is **shared by 2D-sRGB and 3D-linear content** and the target *format* is not a signal (`displayobject-clip-contour-hdr` is 2D-sRGB in rgba16f), so a blanket encode double-gammas the 2D majority (51 2D-sRGB vs 39 3D-linear effect scenes).
+
+**Decision — color space is a declared property of the render TARGET; the present adapts.** A render
+target carries `colorSpace: 'linear' | 'srgb'` (declared at creation — a reliable signal, unlike
+format). `createGlRenderTarget` defaults to `'srgb'` (2D + existing callers unchanged); `presentGlScene`
+and 3D scene targets declare `'linear'`. The present reads it: `'linear'` → run the OETF encode,
+`'srgb'` → plain copy. A guard-layer warning fires on a mismatch (e.g. linear content in an `'srgb'`
+target → dark). Chosen over a `RenderEffectPipelineOptions.inputColorSpace` flag because a target-level
+declaration is one source of truth the pipeline obeys — structurally immune to a caller setting the
+pipeline inconsistently with the content.
+
+**North star (chartered later, NOT now):** a fully unified linear pipeline (2D decodes to linear
+internally, one encode at present) removes the flag entirely. Deferred because it would tax every
+2D-only app with a linear intermediate + resolve pass it doesn't need *and* change 2D blend/composite
+semantics (a full 2D re-baseline). Hard rule for when it is built: **2D stays sRGB-direct by default;
+linear/HDR is opt-in only.**
+
 **Camera and lights are draw-arguments, not scene members.** The governing principle:
 
 > `scene` = _what exists_. `camera` = _what are we rendering now?_
