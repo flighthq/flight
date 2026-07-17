@@ -8,6 +8,24 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-17 — builder2 (SDK-blocking issue #7: linear-HDR intensity helpers)
+
+**Outcome: added `lightIntensity.ts` — the first consumer of `LightUnit` — with three pure helpers, colocated tests, exported from index.**
+
+New APIs (`packages/lighting/src/lightIntensity.ts`):
+- `applyLightExposure(intensity, ev)` → `intensity * 2**ev`. Stops-based brightness dial for the linear-HDR contract below.
+- `getLightLinearIntensity(unit, value)` → the dimensionless linear multiplier the scene shaders expect, from a value in a `LightUnit`.
+- `convertLightIntensity(fromUnit, toUnit, value)` → restates a value between units, pivoting through the linear scale (round-trips).
+
+**Linear-HDR contract (authoring note).** scene-gl multiplies **linear** radiance and defers tonemap/gamma to the effect resolve pass (`packages/scene-gl/src/glClassicPrelude.ts`). So a light `intensity` authored in a gamma-space (sRgb/LDR) engine reads too dark here. Port it up in stops with `applyLightExposure`: directional lights empirically need ~+1.5–+3 EV (~3–8×), ambient ~+0.5–+1 EV (~1.5–2×).
+
+**Reference-normalization decision (surfaced, defaulted — revisit welcome).** A physically-exact photometric conversion needs geometry Flight doesn't have at this layer (illuminance ← distance; flux ← emission solid angle) and an absolute exposure it deliberately defers. So the photometric units are anchored as documented renderer defaults, NOT exact conversions:
+- `Unitless` ≡ 1:1 (the native linear scale) — unambiguous, safe.
+- `Lux` and `Candela` each anchor **100000 physical units = linear 1.0** (bright-daylight magnitude; memorable, lands typical values near 1). These two anchors are the arbitrary design call.
+- `Lumen` derives from `Candela` via the one genuine geometry-free identity: an isotropic point source emits `lumen = candela · 4π`.
+
+If a physically-based exposure model lands later, revisit the two anchor constants in `lightIntensity.ts` (`REFERENCE_PHOTOMETRIC_LEVEL`); `applyLightExposure` and the `Unitless` passthrough are exposure-independent and stable regardless.
+
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 
 **Outcome: nothing executed — assessment is stale relative to this worktree's source. All three Recommended items parked.**
