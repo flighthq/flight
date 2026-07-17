@@ -1,4 +1,6 @@
 import { destroyGlRenderTarget } from '@flighthq/render-gl';
+import { createModifierRegistry } from '@flighthq/shading';
+import type { ModifierRegistry } from '@flighthq/shading';
 import type {
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -55,7 +57,10 @@ export interface GlSceneDrawEntry {
 // `activeMeshProgram` is the bind()→draw() handoff: bind selects a family's program and stores it
 // here; draw reads it back. The draw-entry pools (`blendedPool`/`opaquePool`) and the per-frame
 // draw lists (`blendedDrawList`/`opaqueDrawList`) live here so two independent render states never
-// share allocation. One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
+// share allocation. `modifierSnippetRegistry` is the ShadedMaterial GL modifier-snippet registry
+// (backend-side GLSL emitters keyed by ModifierKind, opt-in via registerGlModifierSnippet);
+// `time` is the per-frame `time` uniform value animated modifiers scroll by (set by setGlSceneTime).
+// One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
 export interface GlSceneRuntime {
   activeMeshProgram: GlMeshProgram | null;
   blendedDrawList: GlSceneDrawEntry[];
@@ -64,11 +69,13 @@ export interface GlSceneRuntime {
   ibl: GlSceneIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
   materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
+  modifierSnippetRegistry: ModifierRegistry;
   opaqueDrawList: GlSceneDrawEntry[];
   opaquePool: GlSceneDrawEntry[];
   programCache: Map<string, GlMeshProgram>;
   shadow: GlSceneShadow | null;
   shadowTarget: GlRenderTarget | null;
+  time: number;
   uploadCache: WeakMap<MeshGeometry, GlMeshUpload>;
 }
 
@@ -147,11 +154,13 @@ export function getGlSceneRuntime(state: GlRenderState): GlSceneRuntime {
       ibl: null,
       iblBakeFramebuffer: null,
       materialRegistry: new Map(),
+      modifierSnippetRegistry: createModifierRegistry(),
       opaqueDrawList: [],
       opaquePool: [],
       programCache: new Map(),
       shadow: null,
       shadowTarget: null,
+      time: 0,
       uploadCache: new WeakMap(),
     };
     sceneRuntimes.set(state, scene);

@@ -13,6 +13,9 @@
       "path": "../camera"
     },
     {
+      "path": "../shading"
+    },
+    {
       "path": "../color"
     },
     {
