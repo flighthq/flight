@@ -199,20 +199,34 @@ export function resizeGlRenderTarget(
   const h = Math.max(1, Math.ceil(height));
   if (w === target.width && h === target.height) return;
 
+  // Capture the storage shape BEFORE teardown: the depth mode and color-attachment count are derived
+  // from the existing attachments, so they must be read before those fields are cleared. Reading them
+  // afterward (as the original did) always yields 'none'/1 — silently dropping the depth buffer and
+  // extra attachments on every resize, which breaks depth-tested 3D the frame after a canvas resize.
+  const depth = target.depthTexture
+    ? 'depth-stencil-sampled'
+    : target.depthStencilRenderbuffer
+      ? 'depth-stencil'
+      : 'none';
+  const attachments = Math.max(1, target.textures.length);
+
   const gl = state.gl;
   for (const texture of target.textures) gl.deleteTexture(texture);
   for (const rb of target.colorRenderbuffers) gl.deleteRenderbuffer(rb);
   if (target.depthTexture) gl.deleteTexture(target.depthTexture);
   if (target.depthStencilRenderbuffer) gl.deleteRenderbuffer(target.depthStencilRenderbuffer);
+  if (target.resolveFramebuffer && target.resolveFramebuffer !== target.framebuffer) {
+    gl.deleteFramebuffer(target.resolveFramebuffer);
+  }
   target.textures = [];
   target.colorRenderbuffers = [];
   target.depthTexture = null;
   target.depthStencilRenderbuffer = null;
+  target.resolveFramebuffer = null;
   target.width = w;
   target.height = h;
 
-  const depth = target.depthStencilRenderbuffer || target.depthTexture ? 'depth-stencil' : 'none';
-  allocateGlRenderTargetStorage(state, target, undefined, Math.max(1, target.textures.length || 1), depth);
+  allocateGlRenderTargetStorage(state, target, undefined, attachments, depth);
   getGlRenderStateRuntime(state).currentTexture = null;
 }
 
