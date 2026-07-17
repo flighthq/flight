@@ -6,14 +6,13 @@ import { createSkeleton3D } from '@flighthq/skeleton3d';
 import type { Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
 
 import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
-import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
-
-// The interleaved skinned-vertex record MD5 emits: position(3) + normal(3) + tangent(4) + uv0(2) +
-// joints0(4) + weights0(4) = 20 floats. Matches CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.
-const SKINNED_FLOATS_PER_VERTEX = 20;
-// The maximum joint influences per vertex the skinned layout carries (linear-blend skinning's
-// standard 4). MD5 vertices may reference more weights; the top four by bias are kept and renormalized.
-const MAX_INFLUENCES = 4;
+import type { SkinInfluence } from './shared';
+import {
+  convertPositionsZUpToYUp,
+  convertQuaternionsZUpToYUp,
+  packSkinInfluences,
+  SKINNED_FLOATS_PER_VERTEX,
+} from './shared';
 
 // Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. The ASCII line-oriented format
 // contains a skeleton (joints) and one or more mesh sections. Each mesh section becomes a
@@ -141,7 +140,7 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       let px = 0;
       let py = 0;
       let pz = 0;
-      const influences: Md5Influence[] = [];
+      const influences: SkinInfluence[] = [];
 
       for (let w = 0; w < vert.countWeights; w++) {
         const weightIndex = vert.startWeight + w;
@@ -190,10 +189,10 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
         px += weight.bias * (joint.positionX + rx);
         py += weight.bias * (joint.positionY + ry);
         pz += weight.bias * (joint.positionZ + rz);
-        influences.push({ bias: weight.bias, jointIndex: weight.jointIndex });
+        influences.push({ jointIndex: weight.jointIndex, weight: weight.bias });
       }
 
-      selectTopInfluences(influences, jointScratch, weightScratch);
+      packSkinInfluences(influences, jointScratch, weightScratch);
 
       // Position (3 floats) in MD5's native Z-up space; batch-converted below.
       vertices.push(px, py, pz);
@@ -233,33 +232,6 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
   }
 
   return scene;
-}
-
-// One joint influence on a vertex: the joint's index in the skeleton and its blend weight (bias).
-interface Md5Influence {
-  bias: number;
-  jointIndex: number;
-}
-
-// Reduces a vertex's influences to the 4-slot joints0/weights0 form linear-blend skinning consumes:
-// keeps the (up to) four highest-bias influences and renormalizes their weights to sum 1, so dropping
-// smaller influences does not dim the vertex. Writes joint indices into `outJoints` and weights into
-// `outWeights` (both length 4), zero-filling unused slots. A vertex with no valid influence stays at
-// its baked bind position (all weights zero).
-function selectTopInfluences(influences: Md5Influence[], outJoints: number[], outWeights: number[]): void {
-  for (let i = 0; i < MAX_INFLUENCES; i++) {
-    outJoints[i] = 0;
-    outWeights[i] = 0;
-  }
-  // Descending by bias; MD5 influence counts are tiny, so an insertion sort is simplest.
-  influences.sort((a, b) => b.bias - a.bias);
-  const kept = Math.min(influences.length, MAX_INFLUENCES);
-  let sum = 0;
-  for (let i = 0; i < kept; i++) sum += influences[i].bias;
-  for (let i = 0; i < kept; i++) {
-    outJoints[i] = influences[i].jointIndex;
-    outWeights[i] = sum > 0 ? influences[i].bias / sum : 0;
-  }
 }
 
 // Parses the joints { ... } block. Returns the line index after the closing brace.

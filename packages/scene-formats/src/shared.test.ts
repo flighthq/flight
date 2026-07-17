@@ -3,6 +3,7 @@ import {
   convertQuaternionsZUpToYUp,
   convertTransformLhToRh,
   negateVec3Z,
+  packSkinInfluences,
   reverseTriangleWinding,
   swapPositionsYZ,
 } from './shared';
@@ -99,6 +100,44 @@ describe('negateVec3Z', () => {
     negateVec3Z(values);
     expect(Object.is(values[2], -0)).toBe(false);
     expect(values[2]).toBe(0);
+  });
+});
+
+describe('packSkinInfluences', () => {
+  it('keeps the four highest-weight influences and renormalizes them to sum 1', () => {
+    const joints: number[] = [];
+    const weights: number[] = [];
+    packSkinInfluences(
+      [
+        { jointIndex: 5, weight: 0.1 },
+        { jointIndex: 2, weight: 0.4 },
+        { jointIndex: 9, weight: 0.05 },
+        { jointIndex: 1, weight: 0.3 },
+        { jointIndex: 7, weight: 0.15 },
+      ],
+      joints,
+      weights,
+    );
+    // Top four by weight: joints 2 (0.4), 1 (0.3), 7 (0.15), 5 (0.1); joint 9 (0.05) dropped.
+    expect(joints).toEqual([2, 1, 7, 5]);
+    expect(weights[0] + weights[1] + weights[2] + weights[3]).toBeCloseTo(1);
+    expect(weights[0]).toBeCloseTo(0.4 / 0.95);
+  });
+
+  it('zero-fills unused slots for fewer than four influences', () => {
+    const joints: number[] = [];
+    const weights: number[] = [];
+    packSkinInfluences([{ jointIndex: 3, weight: 0.5 }], joints, weights);
+    expect(joints).toEqual([3, 0, 0, 0]);
+    expect(weights).toEqual([1, 0, 0, 0]);
+  });
+
+  it('leaves all weights zero for a vertex with no influence', () => {
+    const joints: number[] = [];
+    const weights: number[] = [];
+    packSkinInfluences([], joints, weights);
+    expect(joints).toEqual([0, 0, 0, 0]);
+    expect(weights).toEqual([0, 0, 0, 0]);
   });
 });
 
