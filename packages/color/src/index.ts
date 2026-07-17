@@ -1,3 +1,4 @@
+export * from './colorFromKelvin';
 export * from './hslColor';
 export * from './hsvColor';
 export * from './lerpColor';

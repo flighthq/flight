@@ -1,6 +1,5 @@
 export * from './ambientLight';
 export * from './areaLight';
-export * from './colorFromKelvin';
 export * from './directionalLight';
 export * from './environment';
 export * from './hemisphereLight';
