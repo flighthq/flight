@@ -1,5 +1,6 @@
 import { ModifierSlot } from '@flighthq/types';
 
+import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 import type { GlModifierSnippet } from './glShadedModifierSnippet';
 import { registerGlModifierSnippet, resolveGlModifierSnippet } from './glShadedModifierSnippet';
@@ -14,6 +15,13 @@ function makeSnippet(overrides?: Partial<GlModifierSnippet>): GlModifierSnippet 
 }
 
 describe('registerGlModifierSnippet', () => {
+  it('leaves the modifier registry unallocated until the first registration', () => {
+    const { state } = makeGlSceneState();
+    expect(getGlSceneRuntime(state).modifierSnippetRegistry).toBeNull();
+    registerGlModifierSnippet(state, makeSnippet());
+    expect(getGlSceneRuntime(state).modifierSnippetRegistry).not.toBeNull();
+  });
+
   it('stores a snippet resolvable by its kind', () => {
     const { state } = makeGlSceneState();
     const snippet = makeSnippet();

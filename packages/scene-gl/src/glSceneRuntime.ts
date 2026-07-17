@@ -1,5 +1,4 @@
 import { destroyGlRenderTarget } from '@flighthq/render-gl';
-import { createModifierRegistry } from '@flighthq/shading';
 import type { ModifierRegistry } from '@flighthq/shading';
 import type {
   GlMeshMaterialRenderer,
@@ -58,7 +57,9 @@ export interface GlSceneDrawEntry {
 // here; draw reads it back. The draw-entry pools (`blendedPool`/`opaquePool`) and the per-frame
 // draw lists (`blendedDrawList`/`opaqueDrawList`) live here so two independent render states never
 // share allocation. `modifierSnippetRegistry` is the ShadedMaterial GL modifier-snippet registry
-// (backend-side GLSL emitters keyed by ModifierKind, opt-in via registerGlModifierSnippet);
+// (backend-side GLSL emitters keyed by ModifierKind, opt-in via registerGlModifierSnippet); it stays
+// `null` — allocating nothing and keeping @flighthq/shading's registry off a PBR/classic-only
+// bundle's path — until the first snippet is registered.
 // `time` is the per-frame `time` uniform value animated modifiers scroll by (set by setGlSceneTime).
 // One GlSceneRuntime is created lazily per state by getGlSceneRuntime.
 export interface GlSceneRuntime {
@@ -69,7 +70,7 @@ export interface GlSceneRuntime {
   ibl: GlSceneIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
   materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
-  modifierSnippetRegistry: ModifierRegistry;
+  modifierSnippetRegistry: ModifierRegistry | null;
   opaqueDrawList: GlSceneDrawEntry[];
   opaquePool: GlSceneDrawEntry[];
   programCache: Map<string, GlMeshProgram>;
@@ -154,7 +155,7 @@ export function getGlSceneRuntime(state: GlRenderState): GlSceneRuntime {
       ibl: null,
       iblBakeFramebuffer: null,
       materialRegistry: new Map(),
-      modifierSnippetRegistry: createModifierRegistry(),
+      modifierSnippetRegistry: null,
       opaqueDrawList: [],
       opaquePool: [],
       programCache: new Map(),

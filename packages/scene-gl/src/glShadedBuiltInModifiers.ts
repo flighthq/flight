@@ -1,6 +1,7 @@
 import type { LinearColor } from '@flighthq/materials';
 import { unpackColorToLinear } from '@flighthq/materials';
 import { bindGlTexture } from '@flighthq/render-gl';
+import { animatedNormalModifierDefinition, emissiveModifierDefinition, rimModifierDefinition } from '@flighthq/shading';
 import type {
   AnimatedNormalModifier,
   EmissiveModifier,
@@ -9,30 +10,24 @@ import type {
   RimModifier,
   Texture,
 } from '@flighthq/types';
-import {
-  AnimatedNormalModifierKind,
-  EmissiveModifierFacing,
-  EmissiveModifierKind,
-  ModifierSlot,
-  RimModifierKind,
-} from '@flighthq/types';
+import { EmissiveModifierFacing } from '@flighthq/types';
 
 import type { GlModifierBindContext, GlModifierSnippet } from './glShadedModifierSnippet';
 import { registerGlModifierSnippet } from './glShadedModifierSnippet';
 
 // The three v1 seed GL modifier snippets — AnimatedNormal (Normal slot), Emissive (Emissive slot),
 // and Rim (Effect slot) — the backend halves of @flighthq/shading's three built-in modifier
-// descriptors. Each pairs GLSL (declarations + a slot-hook contribution, names suffixed by the
-// modifier's stack index so repeated kinds never collide) with a per-draw uniform upload. They mirror
-// the framework's define-key signatures so a program keyed by a stack's define-key always matches the
-// GLSL assembled for it: Emissive `m`/`g`, AnimatedNormal `0`/`1`/`2`, Rim none.
+// descriptors. Each SPREADS the substrate-agnostic definition (kind/slot/getDefineSignature owned by
+// @flighthq/shading) and adds GLSL (declarations + a slot-hook contribution, names suffixed by the
+// modifier's stack index so repeated kinds never collide) plus a per-draw uniform upload. Reusing the
+// framework definition — rather than re-deriving the signature here — guarantees the program keyed by
+// a stack's define-key always matches the GLSL assembled for it: Emissive `m`/`g`, AnimatedNormal
+// `0`/`1`/`2`, Rim none.
 
 // A UV-panned normal map perturbing the shading normal, scrolled by u_time. Signature `0` (no map,
 // no GLSL), `1` single-layer, `2` dual-layer.
 export const animatedNormalGlModifierSnippet: GlModifierSnippet = {
-  kind: AnimatedNormalModifierKind,
-  slot: ModifierSlot.Normal,
-  getDefineSignature: getAnimatedNormalDefineSignature,
+  ...animatedNormalModifierDefinition,
   bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
     const animated = modifier as Readonly<AnimatedNormalModifier>;
     if (animated.map === null) return;
@@ -84,9 +79,7 @@ export const animatedNormalGlModifierSnippet: GlModifierSnippet = {
 // gated by surface facing (the night-side city-lights case). Signature `m` (masked), `g` (facing
 // gate), combined `mg`.
 export const emissiveGlModifierSnippet: GlModifierSnippet = {
-  kind: EmissiveModifierKind,
-  slot: ModifierSlot.Emissive,
-  getDefineSignature: getEmissiveDefineSignature,
+  ...emissiveModifierDefinition,
   bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
     const emissive = modifier as Readonly<EmissiveModifier>;
     const gl = context.state.gl;
@@ -139,8 +132,7 @@ export const emissiveGlModifierSnippet: GlModifierSnippet = {
 // A view-dependent Fresnel rim added to the shaded radiance at grazing angles. One program shape (no
 // signature — power/intensity/bias are uniforms).
 export const rimGlModifierSnippet: GlModifierSnippet = {
-  kind: RimModifierKind,
-  slot: ModifierSlot.Effect,
+  ...rimModifierDefinition,
   bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
     const rim = modifier as Readonly<RimModifier>;
     const gl = context.state.gl;
@@ -189,7 +181,9 @@ export function registerBuiltInGlModifierSnippets(state: GlRenderState): void {
 // Binds a modifier's texture on the next free modifier texture unit and points its sampler uniform at
 // it. Mirrors the base material's texture bind (activeTexture → bindGlTexture → uniform1i). A texture
 // with no loaded source leaves the sampler on that unit without an upload (the modifier renders as if
-// unmapped) rather than clobbering a base or shadow unit.
+// unmapped) rather than clobbering a base or shadow unit. When the allocator is exhausted (returns
+// -1), the sampler is left untouched — the excess modifier texture is dropped rather than binding
+// onto the shadow/IBL units.
 function bindGlModifierTexture(
   context: Readonly<GlModifierBindContext>,
   texture: Readonly<Texture>,
@@ -198,25 +192,12 @@ function bindGlModifierTexture(
   const state: GlRenderState = context.state;
   const gl = state.gl;
   const unit = context.acquireModifierTextureUnit();
+  if (unit < 0) return;
   gl.activeTexture(gl.TEXTURE0 + unit);
   const image = texture.image;
   if (image !== null && image.source !== null) bindGlTexture(state, image.source);
   gl.uniform1i(gl.getUniformLocation(context.program, uniformName), unit);
   gl.activeTexture(gl.TEXTURE0);
-}
-
-function getAnimatedNormalDefineSignature(modifier: Readonly<Modifier>): string {
-  const animated = modifier as Readonly<AnimatedNormalModifier>;
-  if (animated.map === null) return '0';
-  return animated.secondaryMap !== undefined ? '2' : '1';
-}
-
-function getEmissiveDefineSignature(modifier: Readonly<Modifier>): string {
-  const emissive = modifier as Readonly<EmissiveModifier>;
-  let signature = '';
-  if (emissive.mask !== undefined) signature += 'm';
-  if (isEmissiveGated(emissive)) signature += 'g';
-  return signature;
 }
 
 function isEmissiveGated(modifier: Readonly<EmissiveModifier>): boolean {

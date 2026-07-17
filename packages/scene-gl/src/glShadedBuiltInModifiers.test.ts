@@ -28,7 +28,6 @@ function makeContext(state: ReturnType<typeof makeGlSceneState>['state'], index 
     index,
     program: {} as WebGLProgram,
     state,
-    time: 0,
   };
 }
 
@@ -79,6 +78,20 @@ describe('animatedNormalGlModifierSnippet', () => {
     animatedNormalGlModifierSnippet.bind?.(modifier, makeContext(state));
     expect(countCalls(gl, 'uniform2f')).toBe(0);
     expect(countCalls(gl, 'uniform1i')).toBe(0);
+  });
+
+  it('drops the sampler (no bind) when the texture-unit allocator is exhausted', () => {
+    const { state, gl } = makeGlSceneState();
+    const modifier = createAnimatedNormalModifier({ map: UNLOADED_TEXTURE, scroll: { x: 0.2, y: 0.3 } });
+    const exhausted: GlModifierBindContext = {
+      acquireModifierTextureUnit: () => -1,
+      index: 0,
+      program: {} as WebGLProgram,
+      state,
+    };
+    animatedNormalGlModifierSnippet.bind?.(modifier, exhausted);
+    expect(countCalls(gl, 'uniform1i')).toBe(0);
+    expect(countCalls(gl, 'activeTexture')).toBe(0);
   });
 });
 
