@@ -7,7 +7,7 @@ import {
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh';
 import { getNodeChildren, getNodeParent } from '@flighthq/node';
-import { isMesh } from '@flighthq/scene';
+import { createSceneNode, isMesh } from '@flighthq/scene';
 import type {
   EmbeddedSceneResourceRef,
   ExternalSceneResourceRef,
@@ -38,6 +38,8 @@ import {
   AWD_MATERIAL_TYPE_TEXTURE,
   AWD_NAMESPACE_CORE,
   AWD_STREAM_INDICES,
+  AWD_STREAM_JOINT_INDICES,
+  AWD_STREAM_JOINT_WEIGHTS,
   AWD_STREAM_NORMALS,
   AWD_STREAM_POSITIONS,
   AWD_STREAM_UVS,
@@ -252,6 +254,54 @@ function concatBytes(...arrays: readonly Uint8Array[]): Uint8Array {
 }
 
 const IDENTITY_TRANSFORM = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
+
+// A complete skinned AWD: a 3-vertex sub-mesh with joint-index/weight streams (2 influences/vertex),
+// a 2-joint skeleton, a mesh instance, and a two-pose translation animation — enough to exercise the
+// full skin path (joints0/weights0 emit, mesh.skin binding) and the anim→skin identity. The joint
+// index stream declares float32 in its header (as real AWD exporters do) but is packed as uint16.
+const SKINNED_TRIANGLE_AWD = (() => {
+  const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]));
+  const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+  const jointIndexStream = buildStream(AWD_STREAM_JOINT_INDICES, AWD_DATA_FLOAT32, new Uint16Array([0, 1, 0, 1, 1, 0]));
+  const jointWeightStream = buildStream(
+    AWD_STREAM_JOINT_WEIGHTS,
+    AWD_DATA_FLOAT32,
+    new Float32Array([0.75, 0.25, 0.5, 0.5, 1, 0]),
+  );
+  const geomBody = buildTriangleGeometryBody('Skinned', [
+    { streams: [posStream, idxStream, jointIndexStream, jointWeightStream] },
+  ]);
+  const skelBody = buildSkeletonBody('Rig', [
+    { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
+    { name: 'Child', parentIndex: 1, transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0] },
+  ]);
+  const miBody = buildMeshInstanceBody('SkinnedMesh', 0, IDENTITY_TRANSFORM, 1);
+  const pose0Body = buildSkeletonPoseBody('P0', [IDENTITY_TRANSFORM, IDENTITY_TRANSFORM]);
+  const pose1Body = buildSkeletonPoseBody('P1', [
+    [1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0],
+    [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0],
+  ]);
+  const animBody = buildSkeletonAnimationBody('Walk', [
+    { duration: 500, poseBlockId: 5 },
+    { duration: 500, poseBlockId: 6 },
+  ]);
+
+  const body = concatBytes(
+    buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+    geomBody,
+    buildBlockHeader(2, AWD_BLOCK_SKELETON, skelBody.length),
+    skelBody,
+    buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+    miBody,
+    buildBlockHeader(5, AWD_BLOCK_SKELETON_POSE, pose0Body.length),
+    pose0Body,
+    buildBlockHeader(6, AWD_BLOCK_SKELETON_POSE, pose1Body.length),
+    pose1Body,
+    buildBlockHeader(7, AWD_BLOCK_SKELETON_ANIMATION, animBody.length),
+    animBody,
+  );
+  return concatBytes(buildAwdHeader(body.length), body);
+})();
 
 describe('createSceneFromAwd', () => {
   it('parses a single triangle with positions and indices', () => {
@@ -580,6 +630,80 @@ describe('createSceneFromAwd', () => {
     expect(ref.mimeType).toBe('image/png');
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);
   });
+
+  it('emits joints0/weights0 into the skinned layout and binds the skeleton via mesh.skin', () => {
+    const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
+    const mesh = getNodeChildren(scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    expect(mesh).toBeTruthy();
+
+    // Skinned records interleave joints0/weights0 past uv0 → 20-float (80-byte) stride.
+    expect(mesh.geometry.layout.stride).toBe(80);
+    const floatsPerVertex = mesh.geometry.layout.stride / 4;
+
+    // Vertex 0's two influences (joint 0 @ 0.75, joint 1 @ 0.25), highest-weight first.
+    expect(mesh.geometry.vertices[12]).toBe(0);
+    expect(mesh.geometry.vertices[13]).toBe(1);
+    expect(mesh.geometry.vertices[16]).toBeCloseTo(0.75);
+    expect(mesh.geometry.vertices[17]).toBeCloseTo(0.25);
+
+    // Every vertex's four weights renormalize to 1 (vertex 2 has a single influence).
+    for (let v = 0; v < 3; v++) {
+      const base = v * floatsPerVertex;
+      const weightSum =
+        mesh.geometry.vertices[base + 16] +
+        mesh.geometry.vertices[base + 17] +
+        mesh.geometry.vertices[base + 18] +
+        mesh.geometry.vertices[base + 19];
+      expect(weightSum).toBeCloseTo(1);
+    }
+
+    expect(mesh.skin).toBeTruthy();
+    expect(mesh.skin?.skeleton.joints).toHaveLength(2);
+    expect(mesh.skin?.skeleton.names).toEqual(['Root', 'Child']);
+    // The skeleton hierarchy hangs under the "skeleton" group added to the scene.
+    expect(mesh.skin?.skeletonRoot).toBe(getNodeChildren(scene).find((c) => !isMesh(c as SceneNode)));
+    expect(getNodeParent(mesh.skin!.skeleton.joints[1])).toBe(mesh.skin!.skeleton.joints[0]);
+  });
+
+  it('binds the animation clip to the same joint nodes the mesh skins from (identity)', () => {
+    const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
+    const mesh = getNodeChildren(scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const joints = mesh.skin!.skeleton.joints;
+
+    // The verify contract: parse the animation over the mesh's own skeleton joints, so posing the
+    // clip deforms the skinned mesh — the animation, skeleton, and skin share one joint hierarchy.
+    const clip = parseAwdSkeletonAnimation(SKINNED_TRIANGLE_AWD, joints)!;
+    expect(clip).not.toBeNull();
+    expect(clip.channels).toHaveLength(2);
+    expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
+    expect((clip.channels[1].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
+  });
+
+  it('leaves a non-skinned mesh with skin null even when the file carries a skeleton', () => {
+    const posStream = buildStream(
+      AWD_STREAM_POSITIONS,
+      AWD_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Rigid', [{ streams: [posStream, idxStream] }]);
+    const skelBody = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
+    const miBody = buildMeshInstanceBody('RigidMesh', 0, IDENTITY_TRANSFORM, 1);
+
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_SKELETON, skelBody.length),
+      skelBody,
+      buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+    const mesh = getNodeChildren(scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+
+    expect(mesh.geometry.layout.stride).toBe(48); // canonical (non-skinned) layout
+    expect(mesh.skin == null).toBe(true);
+  });
 });
 
 // Skeleton block body: name → jointCount(uint16) → NumAttrList → per joint:
@@ -662,7 +786,7 @@ function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: numbe
 }
 
 describe('parseAwdSkeletonAnimation', () => {
-  it('parses a skeleton with two joints into a Skeleton with joint hierarchy', () => {
+  it('binds channels to the provided joint nodes in skeleton order', () => {
     // parentIndex 0 = root (no parent); parentIndex 1 = parent is joint[0] (1-based).
     const skeletonBody = buildSkeletonBody('TestSkeleton', [
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
@@ -694,17 +818,14 @@ describe('parseAwdSkeletonAnimation', () => {
     );
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const result = parseAwdSkeletonAnimation(awd);
-    expect(result).not.toBeNull();
+    const joints = [createSceneNode(), createSceneNode()];
+    const clip = parseAwdSkeletonAnimation(awd, joints);
+    expect(clip).not.toBeNull();
 
-    const { clip, skeleton } = result!;
-    expect(skeleton.joints).toHaveLength(2);
-    expect(skeleton.names).toEqual(['Root', 'Child']);
-
-    expect(getNodeParent(skeleton.joints[1])).toBe(skeleton.joints[0]);
-
-    expect(clip.channels).toHaveLength(2);
-    expect(clip.duration).toBeCloseTo(1.0);
+    expect(clip!.channels).toHaveLength(2);
+    expect(clip!.duration).toBeCloseTo(1.0);
+    expect((clip!.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
+    expect((clip!.channels[1].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
   });
 
   it('samples animation clip translation values correctly', () => {
@@ -737,8 +858,8 @@ describe('parseAwdSkeletonAnimation', () => {
     );
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const result = parseAwdSkeletonAnimation(awd)!;
-    const track = result.clip.channels[0].track;
+    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()])!;
+    const track = clip.channels[0].track;
 
     const out = [0, 0, 0];
     sampleAnimationTrack(out, track, 0);
@@ -772,9 +893,10 @@ describe('parseAwdSkeletonAnimation', () => {
     const body = concatBytes(skeletonBlock, skeletonBody, poseBlock, poseBody, animBlock, animBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const result = parseAwdSkeletonAnimation(awd)!;
-    const target = result.clip.channels[0].targetRef as SceneAnimationTarget;
-    expect(target.node).toBe(result.skeleton.joints[0]);
+    const joints = [createSceneNode()];
+    const clip = parseAwdSkeletonAnimation(awd, joints)!;
+    const target = clip.channels[0].targetRef as SceneAnimationTarget;
+    expect(target.node).toBe(joints[0]);
     expect(target.path).toBe('Translation');
   });
 
@@ -793,17 +915,39 @@ describe('parseAwdSkeletonAnimation', () => {
     const body = concatBytes(skeletonBlock, skeletonBody, poseBlock, poseBody, animBlock, animBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const result = parseAwdSkeletonAnimation(awd)!;
+    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()])!;
     const out = [0, 0, 0];
-    sampleAnimationTrack(out, result.clip.channels[0].track, 0);
+    sampleAnimationTrack(out, clip.channels[0].track, 0);
     expect(out).toEqual([0, 0, 0]);
+  });
+
+  it('returns null and warns when the joints array is shorter than the skeleton', () => {
+    const skeletonBody = buildSkeletonBody('Skeleton', [
+      { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
+      { name: 'Child', parentIndex: 1, transform: IDENTITY_TRANSFORM },
+    ]);
+    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+
+    const poseBody = buildSkeletonPoseBody('P0', [IDENTITY_TRANSFORM, IDENTITY_TRANSFORM]);
+    const poseBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, poseBody.length);
+
+    const animBody = buildSkeletonAnimationBody('Anim', [{ duration: 100, poseBlockId: 2 }]);
+    const animBlock = buildBlockHeader(3, AWD_BLOCK_SKELETON_ANIMATION, animBody.length);
+
+    const body = concatBytes(skeletonBlock, skeletonBody, poseBlock, poseBody, animBlock, animBody);
+    const awd = concatBytes(buildAwdHeader(body.length), body);
+
+    const warnings: string[] = [];
+    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings);
+    expect(clip).toBeNull();
+    expect(warnings.some((w) => w.includes('1 nodes but skeleton has 2 joints'))).toBe(true);
   });
 
   it('returns null and warns when no skeleton blocks are found', () => {
     const awd = buildAwdHeader(0);
     const warnings: string[] = [];
-    const result = parseAwdSkeletonAnimation(awd, warnings);
-    expect(result).toBeNull();
+    const clip = parseAwdSkeletonAnimation(awd, [], warnings);
+    expect(clip).toBeNull();
     expect(warnings.some((w) => w.includes('no skeleton blocks'))).toBe(true);
   });
 
@@ -817,23 +961,23 @@ describe('parseAwdSkeletonAnimation', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const warnings: string[] = [];
-    const result = parseAwdSkeletonAnimation(awd, warnings);
-    expect(result).toBeNull();
+    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings);
+    expect(clip).toBeNull();
     expect(warnings.some((w) => w.includes('no skeleton animation blocks'))).toBe(true);
   });
 
   it('returns null and warns for truncated input', () => {
     const warnings: string[] = [];
-    const result = parseAwdSkeletonAnimation(new Uint8Array(4), warnings);
-    expect(result).toBeNull();
+    const clip = parseAwdSkeletonAnimation(new Uint8Array(4), [], warnings);
+    expect(clip).toBeNull();
     expect(warnings.some((w) => w.includes('header'))).toBe(true);
   });
 
   it('returns null and warns for invalid magic', () => {
     const bogus = new Uint8Array(12);
     const warnings: string[] = [];
-    const result = parseAwdSkeletonAnimation(bogus, warnings);
-    expect(result).toBeNull();
+    const clip = parseAwdSkeletonAnimation(bogus, [], warnings);
+    expect(clip).toBeNull();
     expect(warnings.some((w) => w.includes('magic'))).toBe(true);
   });
 
@@ -850,8 +994,8 @@ describe('parseAwdSkeletonAnimation', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const warnings: string[] = [];
-    const result = parseAwdSkeletonAnimation(awd, warnings);
-    expect(result).not.toBeNull();
+    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings);
+    expect(clip).not.toBeNull();
     expect(warnings.some((w) => w.includes('pose block 99'))).toBe(true);
   });
 
@@ -885,10 +1029,10 @@ describe('parseAwdSkeletonAnimation', () => {
     );
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const result = parseAwdSkeletonAnimation(awd)!;
-    expect(result.clip.duration).toBeCloseTo(1.0);
+    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()])!;
+    expect(clip.duration).toBeCloseTo(1.0);
 
-    const track = result.clip.channels[0].track;
+    const track = clip.channels[0].track;
     expect(track.times[0]).toBeCloseTo(0);
     expect(track.times[1]).toBeCloseTo(0.25);
   });

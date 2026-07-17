@@ -1,13 +1,13 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials';
-import { createMeshGeometry } from '@flighthq/mesh';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
 import { createTexture } from '@flighthq/texture';
-import type { AnimationClip, Material, SceneNode, Skeleton3D, Texture } from '@flighthq/types';
+import type { AnimationClip, Material, SceneNode, Skeleton3D, Skin, Texture } from '@flighthq/types';
 import { ResourceResolutionState, SceneAnimationPathTranslation, SceneResourceRefKind } from '@flighthq/types';
 
 import {
@@ -37,18 +37,23 @@ import {
   AWD_MATERIAL_PROP_DIFFUSE_TEXTURE,
   AWD_NAMESPACE_CORE,
   AWD_STREAM_INDICES,
+  AWD_STREAM_JOINT_INDICES,
+  AWD_STREAM_JOINT_WEIGHTS,
   AWD_STREAM_NORMALS,
   AWD_STREAM_POSITIONS,
   AWD_STREAM_TANGENTS,
   AWD_STREAM_UVS,
   AWD_TEXTURE_TYPE_EMBEDDED,
 } from './awdSchema';
+import type { SkinInfluence } from './shared';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
   convertTransformLhToRh,
   negateVec3Z,
+  packSkinInfluences,
   reverseTriangleWinding,
+  SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
 
 // Parses an Away3D AWD 2.x binary file into a Scene. The 12-byte header (magic `AWD`, version,
@@ -98,6 +103,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   const meshInstanceBlocks = new Map<number, ParsedMeshInstance>();
   const materialBlocks = new Map<number, ParsedMaterial>();
   const textureBlocks = new Map<number, ParsedTexture>();
+  const skeletonBlocks = new Map<number, ParsedSkeleton>();
 
   let offset = AWD_HEADER_BYTES;
   while (offset + AWD_BLOCK_HEADER_BYTES <= bodyEnd) {
@@ -153,6 +159,16 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
       } else if (blockType === AWD_BLOCK_TEXTURE) {
         const texture = parseTextureBlock(view, source, blockDataStart, blockDataStart + blockLength, warnings);
         if (texture !== null) textureBlocks.set(blockId, texture);
+      } else if (blockType === AWD_BLOCK_SKELETON) {
+        const skeleton = parseSkeletonBlock(
+          view,
+          source,
+          blockDataStart,
+          blockDataStart + blockLength,
+          matrixWide,
+          warnings,
+        );
+        if (skeleton !== null) skeletonBlocks.set(blockId, skeleton);
       }
     }
 
@@ -161,6 +177,23 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
 
   const scene = createScene();
   const sceneNodes = new Map<number, SceneNode>();
+
+  // Build the file's skeleton (if any) once and hang its joint hierarchy under the scene, so a skinned
+  // mesh binds to it via mesh.skin and its joint nodes are posable by the animation clip. AWD binds a
+  // mesh to a skeleton through an animator block Flight does not parse yet; with the common single-
+  // skeleton file (the shambler) every skinned mesh is bound to that one skeleton. The joint nodes are
+  // reachable as mesh.skin.skeleton.joints — the same handle parseAwdSkeletonAnimation binds against.
+  let skin: Skin | null = null;
+  if (skeletonBlocks.size > 0) {
+    const built = buildAwdSkeleton(skeletonBlocks.values().next().value!);
+    addNodeChild(scene, built.skeletonRoot);
+    skin = { skeleton: built.skeleton, skeletonRoot: built.skeletonRoot };
+    if (skeletonBlocks.size > 1) {
+      warnings?.push(
+        `createSceneFromAwd: file has ${skeletonBlocks.size} skeletons; every skinned mesh binds to the first`,
+      );
+    }
+  }
 
   for (const [blockId, container] of containerBlocks) {
     const node = createSceneNode(undefined, { name: container.name || undefined });
@@ -182,14 +215,15 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     let node: SceneNode;
     if (geometries !== undefined && geometries.length > 0) {
       if (geometries.length === 1) {
-        node = createMesh(geometries[0].geometry, materialForSubset(meshInst, 0)) as unknown as SceneNode;
+        const mesh = createMesh(geometries[0].geometry, materialForSubset(meshInst, 0));
+        if (skin !== null && geometries[0].skinned) mesh.skin = skin;
+        node = mesh as unknown as SceneNode;
       } else {
         node = createSceneNode(undefined, { name: meshInst.name || undefined });
         for (let i = 0; i < geometries.length; i++) {
-          addNodeChild(
-            node,
-            createMesh(geometries[i].geometry, materialForSubset(meshInst, i)) as unknown as SceneNode,
-          );
+          const mesh = createMesh(geometries[i].geometry, materialForSubset(meshInst, i));
+          if (skin !== null && geometries[i].skinned) mesh.skin = skin;
+          addNodeChild(node, mesh as unknown as SceneNode);
         }
       }
     } else {
@@ -233,14 +267,18 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   return scene;
 }
 
-// Parses AWD skeleton, skeleton-pose, and skeleton-animation blocks from the same AWD binary that
-// createSceneFromAwd handles. Returns the first parsed Skeleton (joints as a SceneNode hierarchy
-// with transforms applied), an AnimationClip whose channels drive each joint's translation per
-// keyframe, or null when no animation blocks are found.
+// Parses AWD skeleton-pose and skeleton-animation blocks into an AnimationClip that drives the given
+// joint SceneNodes — the joints createSceneFromAwd built and exposed as mesh.skin.skeleton.joints.
+// Binding to those same nodes (rather than freshly-created ones) is what lets the clip deform the
+// skinned mesh: the animation, the skeleton, and the skin all reference one joint hierarchy. This
+// mirrors parseMd5Anim(source, joints). Channels drive each joint's translation per keyframe. Returns
+// null when the header is invalid or no skeleton/animation blocks are found. The `joints` array must
+// be in AWD skeleton order (index j = joint j); a length mismatch with the file's skeleton warns.
 export function parseAwdSkeletonAnimation(
   bytes: Readonly<Uint8Array>,
+  joints: readonly SceneNode[],
   warnings?: string[],
-): { clip: AnimationClip; skeleton: Skeleton3D } | null {
+): AnimationClip | null {
   const source = bytes as Uint8Array;
   if (source.byteLength < AWD_HEADER_BYTES) {
     warnings?.push('parseAwdSkeletonAnimation: byte length is smaller than the 12-byte AWD header');
@@ -327,27 +365,14 @@ export function parseAwdSkeletonAnimation(
   const parsedSkeleton = skeletonBlocks.values().next().value!;
   const parsedAnimation = animationBlocks.values().next().value!;
 
-  const jointNodes: SceneNode[] = [];
-  const jointNames: string[] = [];
-  for (let j = 0; j < parsedSkeleton.joints.length; j++) {
-    const joint = parsedSkeleton.joints[j];
-    const node = createSceneNode(undefined, { name: joint.name || undefined });
-    applyAwdTransform(node, joint.transform);
-    jointNodes.push(node);
-    jointNames.push(joint.name);
+  if (joints.length < parsedSkeleton.joints.length) {
+    warnings?.push(
+      `parseAwdSkeletonAnimation: joints array has ${joints.length} nodes but skeleton has ${parsedSkeleton.joints.length} joints`,
+    );
+    return null;
   }
 
-  // Wire up parent-child relationships. Parent index is 1-based (0 = root / no parent).
-  for (let j = 0; j < parsedSkeleton.joints.length; j++) {
-    const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
-    if (parentIndex1 > 0 && parentIndex1 - 1 < jointNodes.length) {
-      addNodeChild(jointNodes[parentIndex1 - 1], jointNodes[j]);
-    }
-  }
-
-  const skeleton = createSkeleton3D(jointNodes, undefined, jointNames);
-
-  const jointCount = jointNodes.length;
+  const jointCount = parsedSkeleton.joints.length;
   const poseCount = parsedAnimation.poses.length;
 
   if (poseCount === 0) {
@@ -386,15 +411,53 @@ export function parseAwdSkeletonAnimation(
       times,
       values,
     });
-    channels.push(createAnimationChannel(track, { node: jointNodes[j], path: SceneAnimationPathTranslation }));
+    channels.push(createAnimationChannel(track, { node: joints[j], path: SceneAnimationPathTranslation }));
   }
 
-  const clip = createAnimationClip(channels, timeAccumulator);
-  return { clip, skeleton };
+  return createAnimationClip(channels, timeAccumulator);
+}
+
+// Builds the joint SceneNode hierarchy + Skeleton3D from a parsed AWD skeleton block, hung under a
+// "skeleton" group node so the whole rig can be attached to the scene as one child (the same shape
+// createSceneFromMd5Mesh uses). Joint local transforms are applied and the parent chain wired (AWD
+// parent index is 1-based, 0 = root; roots hang under the group). createSkeleton3D with no explicit
+// inverse-bind matrices captures the resulting world transforms as the rest pose, so the skinned mesh
+// renders undeformed until the animation poses the joints. Callers get the joint nodes back for
+// binding both the mesh skin and (via mesh.skin.skeleton.joints) the animation clip to one hierarchy.
+function buildAwdSkeleton(parsedSkeleton: Readonly<ParsedSkeleton>): {
+  jointNodes: SceneNode[];
+  skeleton: Skeleton3D;
+  skeletonRoot: SceneNode;
+} {
+  const skeletonRoot = createSceneNode(undefined, { name: 'skeleton' });
+  const jointNodes: SceneNode[] = [];
+  const jointNames: string[] = [];
+  for (let j = 0; j < parsedSkeleton.joints.length; j++) {
+    const joint = parsedSkeleton.joints[j];
+    const node = createSceneNode(undefined, { name: joint.name || undefined });
+    applyAwdTransform(node, joint.transform);
+    jointNodes.push(node);
+    jointNames.push(joint.name);
+  }
+
+  for (let j = 0; j < parsedSkeleton.joints.length; j++) {
+    const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
+    if (parentIndex1 > 0 && parentIndex1 - 1 < jointNodes.length) {
+      addNodeChild(jointNodes[parentIndex1 - 1], jointNodes[j]);
+    } else {
+      addNodeChild(skeletonRoot, jointNodes[j]);
+    }
+  }
+
+  const skeleton = createSkeleton3D(jointNodes, undefined, jointNames);
+  return { jointNodes, skeleton, skeletonRoot };
 }
 
 interface ParsedGeometry {
   geometry: ReturnType<typeof createMeshGeometry>;
+  // True when the sub-mesh carried joint-index/weight streams and emitted the skinned layout, so the
+  // mesh-instance pass knows to bind the file's skeleton to the produced Mesh via mesh.skin.
+  skinned: boolean;
 }
 
 interface ParsedContainer {
@@ -574,6 +637,8 @@ function parseTriangleGeometryBlock(
     let uvs: number[] | null = null;
     let normals: number[] | null = null;
     let tangents: number[] | null = null;
+    let jointIndices: number[] | null = null;
+    let jointWeights: number[] | null = null;
 
     // Read streams until we reach the sub-mesh byte boundary (leaving room for UserAttrList).
     while (offset + 6 <= subMeshEnd) {
@@ -587,6 +652,19 @@ function parseTriangleGeometryBlock(
       if (offset + streamByteLength > end) {
         warnings?.push('createSceneFromAwd: stream data runs past the end of the block');
         break;
+      }
+
+      // AWD stores per-vertex joint indices as uint16 (Away3D reads them with readUnsignedShort),
+      // regardless of the stream's declared data type — exporters write float32 in that field but
+      // pack the payload as tight uint16 indices. Read them as uint16 by byte length; the paired
+      // weight stream is genuine float32 and goes through the generic reader below.
+      if (streamType === AWD_STREAM_JOINT_INDICES) {
+        const jointCount = Math.floor(streamByteLength / 2);
+        const values: number[] = [];
+        for (let i = 0; i < jointCount; i++) values.push(dv.getUint16(offset + i * 2, true));
+        jointIndices = values;
+        offset += streamByteLength;
+        continue;
       }
 
       const elementSize = awdDataTypeByteSize(dataType);
@@ -614,6 +692,9 @@ function parseTriangleGeometryBlock(
         case AWD_STREAM_TANGENTS:
           tangents = values;
           break;
+        case AWD_STREAM_JOINT_WEIGHTS:
+          jointWeights = values;
+          break;
         default:
           break;
       }
@@ -627,17 +708,35 @@ function parseTriangleGeometryBlock(
       continue;
     }
 
-    // Convert from AWD's left-handed Y-up to Flight's right-handed Y-up.
+    // Convert from AWD's left-handed Y-up to Flight's right-handed Y-up. Joint indices/weights are
+    // index/scalar data — unaffected by the handedness flip, which the skeleton transforms mirror.
     negateVec3Z(positions);
     if (normals !== null) negateVec3Z(normals);
     if (tangents !== null) negateVec3Z(tangents);
     if (indices !== null) reverseTriangleWinding(indices);
 
     const vertexCount = positions.length / 3;
-    const vertices = new Float32Array(vertexCount * CANONICAL_FLOATS_PER_VERTEX);
+
+    // A sub-mesh is skinned when it carries both influence streams; it then emits the skinned layout
+    // (joints0/weights0 past uv0) and feeds the shared packSkinInfluences path. AWD lists an arbitrary
+    // number of influences per vertex (shambler uses 8); the top four by weight are kept, renormalized.
+    let jointsPerVertex = 0;
+    if (jointIndices !== null && jointWeights !== null && vertexCount > 0) {
+      jointsPerVertex = Math.floor(jointWeights.length / vertexCount);
+      if (jointsPerVertex < 1 || jointIndices.length < vertexCount * jointsPerVertex) {
+        warnings?.push('createSceneFromAwd: skin streams do not match vertex count; sub-mesh imported without skin');
+        jointsPerVertex = 0;
+      }
+    }
+    const skinned = jointsPerVertex > 0;
+
+    const floatsPerVertex = skinned ? SKINNED_FLOATS_PER_VERTEX : CANONICAL_FLOATS_PER_VERTEX;
+    const vertices = new Float32Array(vertexCount * floatsPerVertex);
+    const jointScratch = [0, 0, 0, 0];
+    const weightScratch = [0, 0, 0, 0];
 
     for (let v = 0; v < vertexCount; v++) {
-      const o = v * CANONICAL_FLOATS_PER_VERTEX;
+      const o = v * floatsPerVertex;
       vertices[o] = positions[v * 3];
       vertices[o + 1] = positions[v * 3 + 1];
       vertices[o + 2] = positions[v * 3 + 2];
@@ -658,11 +757,35 @@ function parseTriangleGeometryBlock(
         vertices[o + 10] = uvs[v * 2];
         vertices[o + 11] = uvs[v * 2 + 1];
       }
+
+      if (skinned) {
+        const influences: SkinInfluence[] = [];
+        for (let k = 0; k < jointsPerVertex; k++) {
+          const weight = jointWeights![v * jointsPerVertex + k];
+          if (weight > 0) influences.push({ jointIndex: jointIndices![v * jointsPerVertex + k], weight });
+        }
+        packSkinInfluences(influences, jointScratch, weightScratch);
+        vertices[o + 12] = jointScratch[0];
+        vertices[o + 13] = jointScratch[1];
+        vertices[o + 14] = jointScratch[2];
+        vertices[o + 15] = jointScratch[3];
+        vertices[o + 16] = weightScratch[0];
+        vertices[o + 17] = weightScratch[1];
+        vertices[o + 18] = weightScratch[2];
+        vertices[o + 19] = weightScratch[3];
+      }
     }
 
     const indexArray = indices !== null ? Uint32Array.from(indices) : undefined;
-    const geometry = createMeshGeometry({ indices: indexArray, layout: CANONICAL_LAYOUT, vertices });
-    geometries.push({ geometry });
+    const geometry = createMeshGeometry({
+      indices: indexArray,
+      layout: skinned ? CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT : CANONICAL_LAYOUT,
+      vertices,
+    });
+    // Regenerate normals only when the sub-mesh carried none, matching the shared emitter; authored
+    // AWD normals (present on skinned models like the shambler) are kept.
+    if (normals === null && indexArray !== undefined) computeMeshGeometryNormals(geometry, geometry);
+    geometries.push({ geometry, skinned });
   }
 
   return geometries;
