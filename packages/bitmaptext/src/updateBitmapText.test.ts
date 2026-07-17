@@ -1,4 +1,10 @@
 import { getDisplayObjectColorAdjustments } from '@flighthq/displayobject';
+import {
+  createGlyphAtlas,
+  createGlyphSourceFromGlyphAtlas,
+  createStubGlyphRasterizerBackend,
+  setGlyphRasterizerBackend,
+} from '@flighthq/glyphatlas';
 import type { ColorTransformAdjustment, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -44,6 +50,23 @@ function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: ImageRes
 }
 
 describe('updateBitmapText', () => {
+  it('emits non-empty glyph quads end-to-end from a stub-fed glyph atlas (headless, issue #8)', () => {
+    // The real headless path: glyphatlas → GlyphSource → bitmaptext, with the deterministic stub
+    // rasterizer standing in for a web font that is unavailable in jsdom/CI. Proves BitmapText renders
+    // non-blank without a loaded FontFace.
+    setGlyphRasterizerBackend(createStubGlyphRasterizerBackend());
+    try {
+      const atlas = createGlyphAtlas({ fontFamily: 'unavailable', fontSize: 24, height: 256, width: 256 });
+      const text = createBitmapText(createGlyphSourceFromGlyphAtlas(atlas), { text: 'Hi' });
+      updateBitmapText(text);
+      const batches = getBitmapTextQuadBatches(text);
+      expect(batches.length).toBeGreaterThan(0);
+      expect(batches[0]!.data.instanceCount).toBe(2);
+    } finally {
+      setGlyphRasterizerBackend(null);
+    }
+  });
+
   it('places each glyph at its cumulative advance, applying kerning', () => {
     const text = createBitmapText(createTestGlyphSource(), { text: 'AB' });
     updateBitmapText(text);

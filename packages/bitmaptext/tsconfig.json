@@ -12,6 +12,7 @@
     { "path": "../adjustments" },
     { "path": "../displayobject" },
     { "path": "../geometry" },
+    { "path": "../glyphatlas" },
     { "path": "../materials" },
     { "path": "../node" },
     { "path": "../sprite" },

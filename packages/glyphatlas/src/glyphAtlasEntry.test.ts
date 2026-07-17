@@ -4,10 +4,28 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasSurface } from './glyphAtlas';
 import { getGlyphAtlasEntry } from './glyphAtlasEntry';
-import { setGlyphRasterizerBackend } from './glyphRasterizerBackend';
+import { createStubGlyphRasterizerBackend, setGlyphRasterizerBackend } from './glyphRasterizerBackend';
 
 describe('getGlyphAtlasEntry', () => {
   afterEach(() => setGlyphRasterizerBackend(null));
+
+  it('produces a non-blank glyph in a headless env with the stub backend (issue #8)', () => {
+    // The web backend returns null in jsdom (no canvas) and renders blank in headless Chromium when
+    // the FontFace has not loaded. The stub backend is font- and canvas-independent, so this is the
+    // deterministic headless render path.
+    setGlyphRasterizerBackend(createStubGlyphRasterizerBackend());
+    const atlas = createGlyphAtlas({ fontFamily: 'unavailable', fontSize: 32, height: 256, width: 256 });
+
+    const entry = getGlyphAtlasEntry(atlas, 0x41)!;
+    expect(entry).not.toBeNull();
+    expect(entry.width).toBeGreaterThan(0);
+    expect(entry.height).toBeGreaterThan(0);
+
+    // A pixel inside the glyph rect is opaque white — the atlas surface is provably not blank.
+    const surface = getGlyphAtlasSurface(atlas);
+    const inside = getSurfacePixel(surface, entry.x + 1, entry.y + 1);
+    expect(inside & 0xff).toBe(0xff);
+  });
 
   it('rasterizes a missing glyph once and caches it', () => {
     const { backend, calls } = createMockRasterizerBackend();

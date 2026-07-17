@@ -1,5 +1,32 @@
 import type { GlyphRasterizedBitmap, GlyphRasterizeOptions, GlyphRasterizerBackend } from '@flighthq/types';
 
+// Builds a deterministic, font-independent rasterizer backend for headless/jsdom use. Every codepoint
+// rasterizes to a solid opaque-white box sized from the requested `fontSize` (never a font lookup, never
+// a canvas), so `updateBitmapText`/`getGlyphAtlasEntry` produce non-blank glyphs with no `FontFace`
+// loaded and no `whenFontsReady()` await. Install it with `setGlyphRasterizerBackend`. This is the
+// test/CI sibling of the web backend, using the same swappable seam a native host replaces — not a
+// production text renderer (every glyph is the same box; there are no real outlines).
+export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
+  return {
+    rasterize(_codepoint, options): GlyphRasterizedBitmap | null {
+      const size = Math.max(1, Math.round(options.fontSize));
+      const width = Math.max(1, Math.round(size * 0.6));
+      const height = Math.max(1, Math.round(size * 0.7));
+      // Fully opaque white so a text renderer can tint the box; straight-alpha RGBA, width*height*4.
+      const pixels = new Uint8ClampedArray(width * height * 4);
+      pixels.fill(255);
+      return {
+        advance: width + Math.max(1, Math.round(size * 0.1)),
+        bearingX: 0,
+        bearingY: height,
+        height,
+        pixels,
+        width,
+      };
+    },
+  };
+}
+
 // Builds the default web backend, which rasterizes a glyph on an offscreen canvas: it sets the font,
 // measures the glyph box + advance with `measureText`, fills the glyph with `fillText`, and reads the
 // pixels back with `getImageData`. Nothing touches the DOM at construction time — the canvas is
