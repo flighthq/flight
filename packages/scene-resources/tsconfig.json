@@ -37,6 +37,9 @@
       "path": "../texture"
     },
     {
+      "path": "../tween"
+    },
+    {
       "path": "../types"
     }
   ],
