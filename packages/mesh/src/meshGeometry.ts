@@ -3,6 +3,7 @@ import { createAabb } from '@flighthq/geometry';
 import type {
   MeshGeometry,
   MeshGeometryRuntime,
+  MeshSkinBindPose,
   MeshSubset,
   PrimitiveTopology,
   VertexAttributeLayout,
@@ -115,10 +116,37 @@ export function getMeshGeometryIndexCount(geometry: Readonly<MeshGeometry>): num
   return geometry.indices ? geometry.indices.length : 0;
 }
 
+// Returns the CPU-skinning bind pose cached on the geometry's runtime, or null before the first
+// skin capture. The deform subsystem (skeleton3d/scene) owns this slot; a rigid geometry never
+// fills it, so plain meshes pay nothing.
+export function getMeshGeometrySkinBindPose(geometry: Readonly<MeshGeometry>): MeshSkinBindPose | null {
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  return runtime ? runtime.skinBindPose : null;
+}
+
 // Returns the number of vertices, derived from the interleaved vertex stream and the layout
 // stride (stride is in bytes; a Float32 is 4 bytes).
 export function getMeshGeometryVertexCount(geometry: Readonly<MeshGeometry>): number {
   return getVertexCountFromLayout(geometry.vertices, geometry.layout);
+}
+
+// Returns true when the geometry's vertex layout carries the joints0 skinning channel — the signal
+// that it can be skeletally deformed (CPU via skinMeshGeometry, or the GPU HAS_SKIN shader variant).
+// The renderer selects the skinned program variant off this, exactly as it would off uv1.
+export function hasMeshGeometrySkin(geometry: Readonly<MeshGeometry>): boolean {
+  const attributes = geometry.layout.attributes;
+  for (let i = 0; i < attributes.length; i++) {
+    if (attributes[i].semantic === 'joints0') return true;
+  }
+  return false;
+}
+
+// Stores (or clears, with null) the CPU-skinning bind pose on the geometry's runtime. Called once
+// by the deform glue when a skinned geometry is first captured; pass null to force a recapture
+// (e.g. after the vertex layout or bind-pose data changes).
+export function setMeshGeometrySkinBindPose(geometry: Readonly<MeshGeometry>, bindPose: MeshSkinBindPose | null): void {
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  if (runtime) runtime.skinBindPose = bindPose;
 }
 
 // Allocates a MeshGeometry entity with a runtime carrying empty (null) GPU upload slots. This is
@@ -133,7 +161,7 @@ function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof En
     version: fields.version,
     vertices: fields.vertices,
   }) as MeshGeometry;
-  const runtime: MeshGeometryRuntime = { binding: null, webglData: null, webgpuData: null };
+  const runtime: MeshGeometryRuntime = { binding: null, skinBindPose: null, webglData: null, webgpuData: null };
   geometry[EntityRuntimeKey] = runtime;
   return geometry;
 }

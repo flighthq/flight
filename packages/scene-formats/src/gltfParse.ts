@@ -1,8 +1,9 @@
-import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
+import { addNodeChild, getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode, setSceneNodeTransform } from '@flighthq/scene';
-import type { MeshGeometry, SceneNode } from '@flighthq/types';
+import { createMesh, createScene, createSceneNode, isMesh, setSceneNodeTransform } from '@flighthq/scene';
+import { createSkeleton3D } from '@flighthq/skeleton3d';
+import type { Mesh, MeshGeometry, SceneNode, Skin } from '@flighthq/types';
 
 import type { GltfBuffer, GltfComponentType, GltfDocument, GltfNode, GltfPrimitive } from './gltfSchema';
 
@@ -21,9 +22,11 @@ export function createSceneFromGlb(bytes: Readonly<Uint8Array>, warnings?: strin
 // malformed JSON string returns an empty Scene and pushes a warning rather than throwing.
 //
 // Imported today: POSITION + optional NORMAL / TANGENT / TEXCOORD_0 + indices, interleaved into the
-// canonical PBR vertex layout; every `primitives[]` entry of a mesh (multi-primitive → sub-mesh
-// children); strided (`byteStride`) and normalized-integer accessors. Not yet imported (return to
-// these): materials/textures, animations/skins, sparse accessors, and external (`.bin`) buffer URIs.
+// canonical PBR vertex layout (or the skinned layout when JOINTS_0/WEIGHTS_0 are present); skins
+// (joint hierarchy + inverse-bind matrices bound to the mesh via `mesh.skin`); every `primitives[]`
+// entry of a mesh (multi-primitive → sub-mesh children); strided (`byteStride`) and normalized-integer
+// accessors. Not yet imported (return to these): materials/textures, animations, sparse accessors, and
+// external (`.bin`) buffer URIs.
 export function createSceneFromGltf(source: GltfDocument | string, warnings?: string[]): Scene {
   let doc: GltfDocument;
   if (typeof source === 'string') {
@@ -96,10 +99,87 @@ function buildSceneFromGltfDocument(
     }
   }
 
+  // Skin pass: a node carrying both `mesh` and `skin` instances a skinned mesh. Run it after every
+  // node exists (and its transform is applied) so the skin's joint references resolve to the built,
+  // rest-posed SceneNodes and their inverse-bind capture is correct.
+  for (let i = 0; i < gltfNodes.length; i++) {
+    const skinIndex = gltfNodes[i].skin;
+    if (skinIndex === undefined || gltfNodes[i].mesh === undefined) continue;
+    const skin = buildGltfSkin(doc, buffers, skinIndex, sceneNodes, warnings);
+    if (skin !== null) applySkinToMeshNodes(sceneNodes[i], skin);
+  }
+
   const scene = createScene();
   const roots = doc.scenes?.[doc.scene ?? 0]?.nodes ?? topLevelNodeIndices(gltfNodes);
   for (let r = 0; r < roots.length; r++) addNodeChild(scene, sceneNodes[roots[r]]);
   return scene;
+}
+
+// Attaches a skin to the Mesh node(s) a glTF node produced: directly when the node is itself a Mesh
+// (single-primitive), or to each Mesh child when it is the transform-only group of a multi-primitive
+// mesh. The skin object is shared across a multi-primitive mesh's parts — they share one skeleton.
+function applySkinToMeshNodes(node: SceneNode, skin: Readonly<Skin>): void {
+  if (isMesh(node)) {
+    (node as Mesh).skin = skin;
+    return;
+  }
+  const children = getNodeChildren(node);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i] as unknown as SceneNode;
+    if (isMesh(child)) (child as unknown as Mesh).skin = skin;
+  }
+}
+
+// Builds a Skin from a glTF `skins[]` entry: resolves the joint node indices to the constructed
+// SceneNodes, reads the inverse-bind matrices accessor (one column-major MAT4 per joint; identity per
+// the spec when absent), and carries the joint names + optional skeleton-root node. Returns null when
+// the skin index is out of range.
+function buildGltfSkin(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  skinIndex: number,
+  sceneNodes: readonly SceneNode[],
+  warnings?: string[],
+): Skin | null {
+  const gltfSkin = doc.skins?.[skinIndex];
+  if (gltfSkin === undefined) {
+    warnings?.push(`buildGltfSkin: skin ${skinIndex} not found in document`);
+    return null;
+  }
+
+  const joints: SceneNode[] = [];
+  const names: string[] = [];
+  for (let j = 0; j < gltfSkin.joints.length; j++) {
+    const jointNodeIndex = gltfSkin.joints[j];
+    const node = sceneNodes[jointNodeIndex];
+    if (node === undefined) {
+      warnings?.push(`buildGltfSkin: skin ${skinIndex} joint references missing node ${jointNodeIndex}`);
+      continue;
+    }
+    joints.push(node);
+    names.push(doc.nodes?.[jointNodeIndex]?.name ?? '');
+  }
+
+  const jointCount = joints.length;
+  let inverseBindMatrices: Float32Array;
+  if (gltfSkin.inverseBindMatrices !== undefined) {
+    inverseBindMatrices = Float32Array.from(readAccessor(doc, buffers, gltfSkin.inverseBindMatrices, warnings).data);
+  } else {
+    // Spec default: identity per joint (the joints are authored pre-transformed).
+    inverseBindMatrices = new Float32Array(jointCount * 16);
+    for (let j = 0; j < jointCount; j++) {
+      const base = j * 16;
+      inverseBindMatrices[base] = 1;
+      inverseBindMatrices[base + 5] = 1;
+      inverseBindMatrices[base + 10] = 1;
+      inverseBindMatrices[base + 15] = 1;
+    }
+  }
+
+  const hasNames = names.some((name) => name.length > 0);
+  const skeleton = createSkeleton3D(joints, inverseBindMatrices, hasNames ? names : null);
+  const skeletonRoot = gltfSkin.skeleton !== undefined ? (sceneNodes[gltfSkin.skeleton] ?? null) : null;
+  return { skeleton, skeletonRoot };
 }
 
 // Turns a mesh's per-primitive geometries into a scene node. A single-primitive mesh becomes the Mesh
@@ -213,9 +293,23 @@ function primitiveToGeometry(
       ? readAccessor(doc, buffers, primitive.attributes.TEXCOORD_0, warnings)
       : null;
 
-  const vertices = new Float32Array(vertexCount * CANONICAL_FLOATS_PER_VERTEX);
+  // A primitive is skinned when it carries both influence channels; it then emits the skinned layout
+  // (joints0/weights0 past uv0). JOINTS_0 is unsigned-integer indices (not normalized); WEIGHTS_0 is
+  // float or normalized-integer weights, renormalized per vertex so any quantization drift still sums 1.
+  const joints =
+    primitive.attributes.JOINTS_0 !== undefined
+      ? readAccessor(doc, buffers, primitive.attributes.JOINTS_0, warnings)
+      : null;
+  const weights =
+    primitive.attributes.WEIGHTS_0 !== undefined
+      ? readAccessor(doc, buffers, primitive.attributes.WEIGHTS_0, warnings)
+      : null;
+  const skinned = joints !== null && weights !== null;
+
+  const floatsPerVertex = skinned ? SKINNED_FLOATS_PER_VERTEX : CANONICAL_FLOATS_PER_VERTEX;
+  const vertices = new Float32Array(vertexCount * floatsPerVertex);
   for (let v = 0; v < vertexCount; v++) {
-    const o = v * CANONICAL_FLOATS_PER_VERTEX;
+    const o = v * floatsPerVertex;
     vertices[o] = position.data[v * 3];
     vertices[o + 1] = position.data[v * 3 + 1];
     vertices[o + 2] = position.data[v * 3 + 2];
@@ -234,6 +328,22 @@ function primitiveToGeometry(
       vertices[o + 10] = uv.data[v * 2];
       vertices[o + 11] = uv.data[v * 2 + 1];
     }
+    if (skinned) {
+      vertices[o + 12] = joints.data[v * 4];
+      vertices[o + 13] = joints.data[v * 4 + 1];
+      vertices[o + 14] = joints.data[v * 4 + 2];
+      vertices[o + 15] = joints.data[v * 4 + 3];
+      const w0 = weights.data[v * 4];
+      const w1 = weights.data[v * 4 + 1];
+      const w2 = weights.data[v * 4 + 2];
+      const w3 = weights.data[v * 4 + 3];
+      const sum = w0 + w1 + w2 + w3;
+      const inv = sum > 0 ? 1 / sum : 0;
+      vertices[o + 16] = w0 * inv;
+      vertices[o + 17] = w1 * inv;
+      vertices[o + 18] = w2 * inv;
+      vertices[o + 19] = w3 * inv;
+    }
   }
 
   // glTF index accessors are ubyte/ushort/uint; normalize to Uint32Array (createMeshGeometry promotes/
@@ -242,7 +352,11 @@ function primitiveToGeometry(
     primitive.indices !== undefined
       ? Uint32Array.from(readAccessor(doc, buffers, primitive.indices, warnings).data)
       : undefined;
-  return createMeshGeometry({ indices, layout: CANONICAL_LAYOUT, vertices });
+  return createMeshGeometry({
+    indices,
+    layout: skinned ? CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT : CANONICAL_LAYOUT,
+    vertices,
+  });
 }
 
 // Decodes a glTF accessor into a flat array, de-striding per `bufferView.byteStride` and decoding
@@ -412,3 +526,7 @@ const GLB_CHUNK_HEADER_BYTES = 8;
 
 // The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share:
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
+
+// Floats per vertex in the skinned record (position/normal/tangent/uv0/joints0/weights0), derived
+// from the shared skinned layout so the two never drift.
+const SKINNED_FLOATS_PER_VERTEX = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.stride / 4;

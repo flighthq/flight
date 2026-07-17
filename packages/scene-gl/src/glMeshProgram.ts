@@ -18,6 +18,10 @@ export interface GlMeshProgram {
   // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment stage
   // declares u_objectAlpha honors node opacity with no per-family factory edit.
   locObjectAlpha?: WebGLUniformLocation | null;
+  // The u_jointMatrices bone-palette array location — present (and non-null) only on a HAS_SKIN
+  // variant, so draw uploads the skin palette exactly when the compiled program consumes it. Optional
+  // because families not yet wired for GPU skinning omit it entirely (their skinned meshes draw rigid).
+  locJointMatrices?: WebGLUniformLocation | null;
   locModel: WebGLUniformLocation | null;
   locNormalMatrix: WebGLUniformLocation | null;
   locViewProjection: WebGLUniformLocation | null;
@@ -90,6 +94,14 @@ export function drawGlMeshSubset(
   }
   if (locObjectAlpha !== null) gl.uniform1f(locObjectAlpha, proxy.alpha ?? 1);
 
+  // GPU skinning: upload the mesh's bone palette to the HAS_SKIN variant. Only a skinned program has
+  // the location, and only a skinned mesh carries a palette; a mismatch (one without the other) simply
+  // skips the upload and the shader falls back to its rigid path.
+  const jointMatrices = proxy.jointMatrices;
+  if (program.locJointMatrices != null && jointMatrices != null) {
+    gl.uniformMatrix4fv(program.locJointMatrices, false, jointMatrices);
+  }
+
   const upload = ensureGlMeshUpload(state, geometry);
   const subset = proxy.subset;
 
@@ -146,6 +158,30 @@ export function setGlMeshViewProjection(
   getCameraViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
   gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
 }
+
+// The maximum joints one HAS_SKIN program's u_jointMatrices palette holds. 64 mat4s = 256 vec4 uniform
+// components, within WebGL2's guaranteed vertex-uniform budget alongside the light/material uniforms.
+// A skeleton with more joints than this exceeds the GPU palette; drive it through the CPU path
+// (updateMeshSkin) instead. Kept in sync with the shader's `#define MAX_JOINTS`.
+export const GL_MAX_SKIN_JOINTS = 64;
+
+// Vertex-stage GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
+// influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette uniform, and the
+// linear-blend `skinMatrix()` the body applies to position/normal/tangent. Vertex-only — never added to
+// a fragment source (the `in` attributes are illegal there). Depends on the `#define MAX_JOINTS` the
+// define block supplies.
+export const GL_SKIN_VERTEX_DECLARATIONS_GLSL = `
+layout(location = 6) in vec4 a_joints0;
+layout(location = 7) in vec4 a_weights0;
+uniform mat4 u_jointMatrices[MAX_JOINTS];
+
+mat4 skinMatrix() {
+  return a_weights0.x * u_jointMatrices[int(a_joints0.x)]
+       + a_weights0.y * u_jointMatrices[int(a_joints0.y)]
+       + a_weights0.z * u_jointMatrices[int(a_joints0.z)]
+       + a_weights0.w * u_jointMatrices[int(a_joints0.w)];
+}
+`;
 
 const scratchViewProjection = createMatrix4();
 const scratchInverseView = createMatrix4();

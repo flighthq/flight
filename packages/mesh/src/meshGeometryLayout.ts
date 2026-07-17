@@ -86,3 +86,23 @@ export const CANONICAL_MESH_GEOMETRY_LAYOUT: VertexAttributeLayout = {
   ],
   stride: 48,
 };
+
+// The canonical interleaved skinned-mesh layout: the PBR record above extended past uv0 with the
+// two 4-influence skinning channels — joints0 (the 4 influencing joint indices) and weights0 (their
+// blend weights) — for 20 floats / 80 bytes. Both are float32x4 so the whole record stays in one
+// Float32Array (geometry.vertices), the format CPU skinning reads directly and GPU skinning uploads
+// as float attributes at locations 6–7; the packed uint8x4/unorm8x4 formats remain available for a
+// later compaction pass but are not required. position/normal keep offsets 0/12, so normal/bounds
+// compute and the rigid draw path work unchanged — a skinned geometry differs only by carrying the
+// extra channels a skin reads. Pass to createMeshGeometry when building geometry a Skin will deform.
+export const CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT: VertexAttributeLayout = {
+  attributes: [
+    { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+    { byteOffset: 12, format: 'float32x3', semantic: 'normal' },
+    { byteOffset: 24, format: 'float32x4', semantic: 'tangent' },
+    { byteOffset: 40, format: 'float32x2', semantic: 'uv0' },
+    { byteOffset: 48, format: 'float32x4', semantic: 'joints0' },
+    { byteOffset: 64, format: 'float32x4', semantic: 'weights0' },
+  ],
+  stride: 80,
+};
