@@ -1,5 +1,5 @@
-import type { LinearColor } from '@flighthq/materials';
-import { unpackColorToLinear } from '@flighthq/materials';
+import type { LinearColor } from '@flighthq/color';
+import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   BlinnPhongMaterial,

@@ -1,3 +1,4 @@
+import { unpackColorToLinear } from '@flighthq/color';
 import type {
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterial,
@@ -5,7 +6,6 @@ import type {
 } from '@flighthq/types';
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types';
 
-import { unpackColorToLinear } from './color';
 import { createSurfaceMaterial } from './surfaceMaterial';
 
 // Converts a legacy specular-glossiness material to a metallic-roughness property block.

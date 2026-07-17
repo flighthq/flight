@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/materials';
+import { computeRgbHexString } from '@flighthq/color';
 import { createWgpuTextureEntry, drawWgpuQuad, updateWgpuTextureEntry } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { computeTextFormatFontString } from '@flighthq/text';

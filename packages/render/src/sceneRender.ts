@@ -1,3 +1,5 @@
+import type { LinearColor } from '@flighthq/color';
+import { unpackColorToLinear } from '@flighthq/color';
 import {
   createAabb,
   createFrustum,
@@ -9,8 +11,6 @@ import {
   setPerspectiveMatrix4,
   transformAabbByMatrix4,
 } from '@flighthq/geometry';
-import type { LinearColor } from '@flighthq/materials';
-import { unpackColorToLinear } from '@flighthq/materials';
 import { getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import type {
   Aabb,

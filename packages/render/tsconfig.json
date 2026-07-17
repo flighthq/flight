@@ -16,6 +16,9 @@
       "path": "../camera"
     },
     {
+      "path": "../color"
+    },
+    {
       "path": "../displayobject"
     },
     {

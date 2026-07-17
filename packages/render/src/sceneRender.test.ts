@@ -1,4 +1,5 @@
 import { createCamera, createPerspectiveProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
+import { unpackColorToLinear } from '@flighthq/color';
 import { createAabb } from '@flighthq/geometry';
 import {
   createAmbientLight,
@@ -7,7 +8,6 @@ import {
   createPointLight,
   createSpotLight,
 } from '@flighthq/lighting';
-import { unpackColorToLinear } from '@flighthq/materials';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createScene } from '@flighthq/scene';

@@ -9,129 +9,378 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../accessibility" },
-    { "path": "../adjustments" },
-    { "path": "../animation" },
-    { "path": "../app" },
-    { "path": "../application" },
-    { "path": "../assets" },
-    { "path": "../binpack" },
-    { "path": "../bitmapfont" },
-    { "path": "../bitmapfont-formats" },
-    { "path": "../bitmaptext" },
-    { "path": "../camera" },
-    { "path": "../camera2d" },
-    { "path": "../capture" },
-    { "path": "../clip" },
-    { "path": "../clipboard" },
-    { "path": "../clock" },
-    { "path": "../collision" },
-    { "path": "../debug" },
-    { "path": "../device" },
-    { "path": "../dialog" },
-    { "path": "../displayobject" },
-    { "path": "../displayobject-canvas" },
-    { "path": "../displayobject-dom" },
-    { "path": "../displayobject-gl" },
-    { "path": "../displayobject-wgpu" },
-    { "path": "../effects" },
-    { "path": "../effects-canvas" },
-    { "path": "../effects-gl" },
-    { "path": "../effects-wgpu" },
-    { "path": "../entity" },
-    { "path": "../filesystem" },
-    { "path": "../flow" },
-    { "path": "../geolocation" },
-    { "path": "../geometry" },
-    { "path": "../haptics" },
-    { "path": "../input" },
-    { "path": "../interaction" },
-    { "path": "../intl" },
-    { "path": "../ipc" },
-    { "path": "../keyboard" },
-    { "path": "../lifecycle" },
-    { "path": "../lighting" },
-    { "path": "../log" },
-    { "path": "../materials" },
-    { "path": "../math" },
-    { "path": "../media" },
-    { "path": "../mediasession" },
-    { "path": "../menu" },
-    { "path": "../mesh" },
-    { "path": "../motionpath" },
-    { "path": "../movieclip" },
-    { "path": "../net" },
-    { "path": "../connectivity" },
-    { "path": "../node" },
-    { "path": "../notification" },
-    { "path": "../particleemitter" },
-    { "path": "../particles" },
-    { "path": "../particles-formats" },
-    { "path": "../picking" },
-    { "path": "../path" },
-    { "path": "../path-boolean" },
-    { "path": "../path-formats" },
-    { "path": "../permissions" },
-    { "path": "../platform" },
-    { "path": "../power" },
-    { "path": "../protocol" },
-    { "path": "../render" },
-    { "path": "../render-gl" },
-    { "path": "../render-wgpu" },
-    { "path": "../textureatlas-formats" },
-    { "path": "../audio" },
-    { "path": "../font" },
-    { "path": "../glyphatlas" },
-    { "path": "../image" },
-    { "path": "../image-codec" },
-    { "path": "../video" },
-    { "path": "../loader" },
-    { "path": "../scene" },
-    { "path": "../scene-formats" },
-    { "path": "../scene-gl" },
-    { "path": "../scene-wgpu" },
-    { "path": "../screen" },
-    { "path": "../sensors" },
-    { "path": "../shape" },
-    { "path": "../shape-formats" },
-    { "path": "../share" },
-    { "path": "../shell" },
-    { "path": "../shortcut" },
-    { "path": "../signals" },
-    { "path": "../skeleton3d" },
-    { "path": "../snapshot" },
-    { "path": "../socket" },
-    { "path": "../spatial" },
-    { "path": "../spring" },
-    { "path": "../sprite" },
-    { "path": "../spritesheet" },
-    { "path": "../spritesheet-formats" },
-    { "path": "../statusbar" },
-    { "path": "../storage" },
-    { "path": "../surface" },
-    { "path": "../text" },
-    { "path": "../text-markup" },
-    { "path": "../textbidi" },
-    { "path": "../textinput" },
-    { "path": "../textlayout" },
-    { "path": "../textsegment" },
-    { "path": "../textshaper" },
-    { "path": "../textshaper-canvas" },
-    { "path": "../texture" },
-    { "path": "../texture-formats" },
-    { "path": "../textureatlas" },
-    { "path": "../tilemap-formats" },
-    { "path": "../tileset" },
-    { "path": "../timeline" },
-    { "path": "../tray" },
-    { "path": "../tween" },
-    { "path": "../easing" },
-    { "path": "../types" },
-    { "path": "../updater" },
-    { "path": "../useragent" },
-    { "path": "../velocity" },
-    { "path": "../webcam" },
-    { "path": "../xml" }
+    {
+      "path": "../accessibility"
+    },
+    {
+      "path": "../adjustments"
+    },
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../app"
+    },
+    {
+      "path": "../application"
+    },
+    {
+      "path": "../assets"
+    },
+    {
+      "path": "../audio"
+    },
+    {
+      "path": "../binpack"
+    },
+    {
+      "path": "../bitmapfont"
+    },
+    {
+      "path": "../bitmapfont-formats"
+    },
+    {
+      "path": "../bitmaptext"
+    },
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../camera2d"
+    },
+    {
+      "path": "../capture"
+    },
+    {
+      "path": "../clip"
+    },
+    {
+      "path": "../clipboard"
+    },
+    {
+      "path": "../clock"
+    },
+    {
+      "path": "../collision"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../connectivity"
+    },
+    {
+      "path": "../debug"
+    },
+    {
+      "path": "../device"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../displayobject-canvas"
+    },
+    {
+      "path": "../displayobject-dom"
+    },
+    {
+      "path": "../displayobject-gl"
+    },
+    {
+      "path": "../displayobject-wgpu"
+    },
+    {
+      "path": "../easing"
+    },
+    {
+      "path": "../effects"
+    },
+    {
+      "path": "../effects-canvas"
+    },
+    {
+      "path": "../effects-gl"
+    },
+    {
+      "path": "../effects-wgpu"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../flow"
+    },
+    {
+      "path": "../font"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../glyphatlas"
+    },
+    {
+      "path": "../haptics"
+    },
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../interaction"
+    },
+    {
+      "path": "../intl"
+    },
+    {
+      "path": "../ipc"
+    },
+    {
+      "path": "../keyboard"
+    },
+    {
+      "path": "../lifecycle"
+    },
+    {
+      "path": "../lighting"
+    },
+    {
+      "path": "../loader"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../media"
+    },
+    {
+      "path": "../mediasession"
+    },
+    {
+      "path": "../menu"
+    },
+    {
+      "path": "../mesh"
+    },
+    {
+      "path": "../motionpath"
+    },
+    {
+      "path": "../movieclip"
+    },
+    {
+      "path": "../net"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../notification"
+    },
+    {
+      "path": "../particleemitter"
+    },
+    {
+      "path": "../particles"
+    },
+    {
+      "path": "../particles-formats"
+    },
+    {
+      "path": "../path"
+    },
+    {
+      "path": "../path-boolean"
+    },
+    {
+      "path": "../path-formats"
+    },
+    {
+      "path": "../permissions"
+    },
+    {
+      "path": "../picking"
+    },
+    {
+      "path": "../platform"
+    },
+    {
+      "path": "../power"
+    },
+    {
+      "path": "../protocol"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../render-gl"
+    },
+    {
+      "path": "../render-wgpu"
+    },
+    {
+      "path": "../scene"
+    },
+    {
+      "path": "../scene-formats"
+    },
+    {
+      "path": "../scene-gl"
+    },
+    {
+      "path": "../scene-wgpu"
+    },
+    {
+      "path": "../screen"
+    },
+    {
+      "path": "../sensors"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../shape-formats"
+    },
+    {
+      "path": "../share"
+    },
+    {
+      "path": "../shell"
+    },
+    {
+      "path": "../shortcut"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../skeleton3d"
+    },
+    {
+      "path": "../snapshot"
+    },
+    {
+      "path": "../socket"
+    },
+    {
+      "path": "../spatial"
+    },
+    {
+      "path": "../spring"
+    },
+    {
+      "path": "../sprite"
+    },
+    {
+      "path": "../spritesheet"
+    },
+    {
+      "path": "../spritesheet-formats"
+    },
+    {
+      "path": "../statusbar"
+    },
+    {
+      "path": "../storage"
+    },
+    {
+      "path": "../surface"
+    },
+    {
+      "path": "../text"
+    },
+    {
+      "path": "../text-markup"
+    },
+    {
+      "path": "../textbidi"
+    },
+    {
+      "path": "../textinput"
+    },
+    {
+      "path": "../textlayout"
+    },
+    {
+      "path": "../textsegment"
+    },
+    {
+      "path": "../textshaper"
+    },
+    {
+      "path": "../textshaper-canvas"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../texture-formats"
+    },
+    {
+      "path": "../textureatlas"
+    },
+    {
+      "path": "../textureatlas-formats"
+    },
+    {
+      "path": "../tilemap-formats"
+    },
+    {
+      "path": "../tileset"
+    },
+    {
+      "path": "../timeline"
+    },
+    {
+      "path": "../tray"
+    },
+    {
+      "path": "../tween"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../updater"
+    },
+    {
+      "path": "../useragent"
+    },
+    {
+      "path": "../velocity"
+    },
+    {
+      "path": "../video"
+    },
+    {
+      "path": "../webcam"
+    },
+    {
+      "path": "../xml"
+    }
   ],
   "include": ["src"]
 }

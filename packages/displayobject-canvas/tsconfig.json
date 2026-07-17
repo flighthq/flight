@@ -9,20 +9,48 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../image" },
-    { "path": "../textureatlas" },
-    { "path": "../tileset" },
-    { "path": "../geometry" },
-    { "path": "../node" },
-    { "path": "../materials" },
-    { "path": "../render" },
-    { "path": "../displayobject" },
-    { "path": "../text" },
-    { "path": "../shape" },
-    { "path": "../sprite" },
-    { "path": "../textinput" },
-    { "path": "../textlayout" },
-    { "path": "../types" }
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../sprite"
+    },
+    {
+      "path": "../text"
+    },
+    {
+      "path": "../textinput"
+    },
+    {
+      "path": "../textlayout"
+    },
+    {
+      "path": "../textureatlas"
+    },
+    {
+      "path": "../tileset"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }
