@@ -120,7 +120,7 @@ describe('createSceneFromObj', () => {
     expect([p.x, p.y, p.z]).toEqual([0, 1, 0]);
   });
 
-  it('creates hierarchy nodes for groups', () => {
+  it('collapses each single-mesh group to a bare named Mesh', () => {
     const obj = [
       'v 0 0 0',
       'v 1 0 0',
@@ -138,24 +138,25 @@ describe('createSceneFromObj', () => {
     const roots = getNodeChildren(scene);
     expect(roots).toHaveLength(2);
 
+    // Each group holds a single mesh, so it collapses to the bare Mesh with the group name migrated
+    // onto it — getNodeChildren(scene) returns Mesh nodes, not transform-only wrappers.
     const groupA = roots[0] as SceneNode;
-    expect(isMesh(groupA)).toBe(false);
-    expect(getNodeChildren(groupA)).toHaveLength(1);
-    expect(isMesh(getNodeChildren(groupA)[0] as SceneNode)).toBe(true);
+    expect(isMesh(groupA)).toBe(true);
+    expect(groupA.name).toBe('GroupA');
 
     const groupB = roots[1] as SceneNode;
-    expect(isMesh(groupB)).toBe(false);
-    expect(getNodeChildren(groupB)).toHaveLength(1);
+    expect(isMesh(groupB)).toBe(true);
+    expect(groupB.name).toBe('GroupB');
   });
 
-  it('creates hierarchy nodes for objects', () => {
+  it('collapses a single-object group to a bare Mesh carrying the object name', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'o Cube', 'f 1 2 3'].join('\n');
 
     const scene = createSceneFromObj(obj);
     const roots = getNodeChildren(scene);
     expect(roots).toHaveLength(1);
-    expect(isMesh(roots[0] as SceneNode)).toBe(false);
-    expect(getNodeChildren(roots[0] as SceneNode)).toHaveLength(1);
+    expect(isMesh(roots[0] as SceneNode)).toBe(true);
+    expect((roots[0] as SceneNode).name).toBe('Cube');
   });
 
   it('splits faces by material into separate meshes', () => {
