@@ -1,11 +1,7 @@
-import type {
-  GlFullscreenProgram,
-  GlRenderState,
-  GlRenderTarget,
-} from "@flighthq/types";
+import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types';
 
-import { createGlProgram } from "./glProgram";
-import { getGlRenderStateRuntime } from "./glRenderState";
+import { createGlProgram } from './glProgram';
+import { getGlRenderStateRuntime } from './glRenderState';
 
 // The substrate-level fullscreen-pass primitive: draw a clip-space quad through a fragment shader,
 // reading N input textures and writing to a target (or the canvas). Filter and effect recipes draw
@@ -22,10 +18,7 @@ void main() {
 }`;
 
 /** Clears a render target to fully transparent and binds it as the current framebuffer. */
-export function clearGlRenderTarget(
-  state: GlRenderState,
-  target: GlRenderTarget,
-): void {
+export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   if (runtime.currentFramebuffer !== target.framebuffer) {
@@ -40,29 +33,21 @@ export function clearGlRenderTarget(
   runtime.currentBlendMode = null;
 }
 
-export function compileGlFullscreenProgram(
-  gl: WebGL2RenderingContext,
-  fragmentSource: string,
-): GlFullscreenProgram {
-  const program = createGlProgram(
-    gl,
-    FULLSCREEN_VERTEX_SRC,
-    fragmentSource,
-    "Fullscreen pass",
-  );
+export function compileGlFullscreenProgram(gl: WebGL2RenderingContext, fragmentSource: string): GlFullscreenProgram {
+  const program = createGlProgram(gl, FULLSCREEN_VERTEX_SRC, fragmentSource, 'Fullscreen pass');
 
   const textures: WebGLUniformLocation[] = [];
   for (let i = 0; i < 8; i++) {
     const loc = gl.getUniformLocation(program, `u_texture${i}`);
     if (loc) textures.push(loc);
   }
-  const single = gl.getUniformLocation(program, "u_texture");
+  const single = gl.getUniformLocation(program, 'u_texture');
   if (textures.length === 0 && single) textures.push(single);
 
   return {
     program,
-    locPosition: gl.getAttribLocation(program, "a_position"),
-    locTexCoord: gl.getAttribLocation(program, "a_texCoord"),
+    locPosition: gl.getAttribLocation(program, 'a_position'),
+    locTexCoord: gl.getAttribLocation(program, 'a_texCoord'),
     texture: textures[0] ?? single!,
     textures,
   };
@@ -78,10 +63,7 @@ export function drawGlFullscreenPass(
   program: Readonly<GlFullscreenProgram>,
   inputs: ReadonlyArray<WebGLTexture>,
   dest: Readonly<GlRenderTarget> | null,
-  setUniforms: (
-    gl: WebGL2RenderingContext,
-    program: Readonly<GlFullscreenProgram>,
-  ) => void,
+  setUniforms: (gl: WebGL2RenderingContext, program: Readonly<GlFullscreenProgram>) => void,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -99,9 +81,7 @@ export function drawGlFullscreenPass(
   const destWidth = dest?.width ?? state.canvas.width;
   const destHeight = dest?.height ?? state.canvas.height;
   gl.viewport(0, 0, destWidth, destHeight);
-  runtime.renderTargetViewport = dest
-    ? { width: destWidth, height: destHeight }
-    : null;
+  runtime.renderTargetViewport = dest ? { width: destWidth, height: destHeight } : null;
 
   for (let i = 0; i < inputs.length; i++) {
     gl.activeTexture(gl.TEXTURE0 + i);
@@ -128,10 +108,7 @@ export function drawGlFullscreenPass(
   gl.activeTexture(gl.TEXTURE0);
 }
 
-function drawGlFullscreenQuad(
-  state: GlRenderState,
-  program: Readonly<GlFullscreenProgram>,
-): void {
+function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscreenProgram>): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
 
