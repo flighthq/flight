@@ -277,6 +277,8 @@ uniform float u_transmission;
 uniform vec3 u_attenuationColor;
 #endif
 
+uniform float u_objectAlpha;
+
 out vec4 fragColor;
 
 const float PI = 3.14159265359;
@@ -551,5 +553,6 @@ void main() {
 #endif
 
   fragColor = vec4(radiance, alpha);
+  fragColor.a *= u_objectAlpha;
 }
 `;

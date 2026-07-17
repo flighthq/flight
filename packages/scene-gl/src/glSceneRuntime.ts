@@ -38,6 +38,7 @@ export interface GlSceneIbl {
 // per-frame allocation. Fields are set at partition time and consumed during the opaque/blended
 // passes; the pool is never exposed outside drawGlScene.
 export interface GlSceneDrawEntry {
+  alpha: number;
   clipW: number;
   material: object;
   mesh: object;

@@ -39,6 +39,7 @@
     "@flighthq/node": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
+    "@flighthq/scene": "*",
     "@flighthq/shading": "*",
     "@flighthq/types": "*"
   },
@@ -46,7 +47,6 @@
     "@flighthq/lighting": "*",
     "@flighthq/mesh": "*",
     "@flighthq/particleemitter": "*",
-    "@flighthq/scene": "*",
     "typescript": "^5.3.0"
   },
   "description": "WebGL2 3D scene renderer",

@@ -13,6 +13,11 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 // ones every family's vertex stage needs (model + normal matrix + view-projection); a family program
 // interface extends GlMeshProgram with whatever fragment/material uniforms it additionally binds.
 export interface GlMeshProgram {
+  // The per-object opacity uniform location, resolved lazily on first draw and cached: undefined = not
+  // yet resolved, null = this program's fragment shader has no u_objectAlpha (silent no-op), a location
+  // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment stage
+  // declares u_objectAlpha honors node opacity with no per-family factory edit.
+  locObjectAlpha?: WebGLUniformLocation | null;
   locModel: WebGLUniformLocation | null;
   locNormalMatrix: WebGLUniformLocation | null;
   locViewProjection: WebGLUniformLocation | null;
@@ -74,6 +79,16 @@ export function drawGlMeshSubset(
   const gl = state.gl;
   gl.uniformMatrix4fv(program.locModel, false, proxy.worldMatrix.m);
   if (program.locNormalMatrix !== null) gl.uniformMatrix3fv(program.locNormalMatrix, false, proxy.normalMatrix.m);
+
+  // Resolve u_objectAlpha once per program (undefined until first draw), then upload the resolved
+  // per-object opacity when the shader declares it. A program whose fragment stage lacks the uniform
+  // caches a null location and skips silently, so families without it cost nothing beyond one lookup.
+  let locObjectAlpha = program.locObjectAlpha;
+  if (locObjectAlpha === undefined) {
+    locObjectAlpha = gl.getUniformLocation(program.program, 'u_objectAlpha');
+    (program as GlMeshProgram).locObjectAlpha = locObjectAlpha;
+  }
+  if (locObjectAlpha !== null) gl.uniform1f(locObjectAlpha, proxy.alpha ?? 1);
 
   const upload = ensureGlMeshUpload(state, geometry);
   const subset = proxy.subset;

@@ -60,9 +60,12 @@ precision highp float;
 
 uniform vec4 u_color;
 
+uniform float u_objectAlpha;
+
 out vec4 fragColor;
 
 void main() {
   fragColor = u_color;
+  fragColor.a *= u_objectAlpha;
 }
 `;
