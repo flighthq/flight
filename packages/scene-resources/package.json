@@ -38,6 +38,7 @@
     "@flighthq/scene": "*",
     "@flighthq/scene-formats": "*",
     "@flighthq/signals": "*",
+    "@flighthq/tween": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

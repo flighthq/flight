@@ -2,6 +2,7 @@ export * from './getSceneResourceTextures';
 export * from './loadSceneFromAwd';
 export * from './resolveSceneResources';
 export * from './resolveSceneResourcesAndWait';
+export * from './revealSceneResourcesOnResolve';
 export * from './sceneMaterialTextureRegistry';
 export * from './sceneResourceFetch';
 export * from './sceneResourceResolver';
