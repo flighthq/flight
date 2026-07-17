@@ -87,6 +87,7 @@
     { "path": "./packages/screen" },
     { "path": "./packages/sdk" },
     { "path": "./packages/sensors" },
+    { "path": "./packages/shading" },
     { "path": "./packages/shape" },
     { "path": "./packages/shape-formats" },
     { "path": "./packages/share" },
