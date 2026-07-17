@@ -39,6 +39,7 @@
     "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
+    "@flighthq/skeleton3d": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

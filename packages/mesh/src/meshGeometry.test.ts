@@ -9,6 +9,7 @@ import {
   getMeshGeometryIndexCount,
   getMeshGeometrySkinBindPose,
   getMeshGeometryVertexCount,
+  hasMeshGeometrySkin,
   setMeshGeometrySkinBindPose,
 } from './meshGeometry';
 
@@ -160,6 +161,24 @@ describe('getMeshGeometryVertexCount', () => {
   it('derives the vertex count from stride', () => {
     const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(5) });
     expect(getMeshGeometryVertexCount(geometry)).toBe(5);
+  });
+});
+
+describe('hasMeshGeometrySkin', () => {
+  it('is false for the canonical (rigid) layout and true when joints0 is present', () => {
+    const rigid = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
+    expect(hasMeshGeometrySkin(rigid)).toBe(false);
+
+    const skinnedLayout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+        { byteOffset: 12, format: 'float32x4', semantic: 'joints0' },
+        { byteOffset: 28, format: 'float32x4', semantic: 'weights0' },
+      ],
+      stride: 44,
+    };
+    const skinned = createMeshGeometry({ layout: skinnedLayout, vertices: new Float32Array(11) });
+    expect(hasMeshGeometrySkin(skinned)).toBe(true);
   });
 });
 
