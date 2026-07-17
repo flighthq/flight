@@ -66,7 +66,7 @@ describe('enableGlColorAdjustmentGuards', () => {
     try {
       enableGlColorAdjustmentGuards(state);
       // Simulate the fold being installed so the dispatcher never reaches the guard branch.
-      runtime.glColorAdjustmentFold = { flush: () => false, record: () => {} };
+      runtime.glColorAdjustmentFold = { drawShapeMeshes: () => {}, flush: () => false, record: () => {} };
       recordGlSpriteBatchColorTransform(state, ct(), 0);
       expect(getMemoryLogSinkEntries(sink).length).toBe(0);
     } finally {

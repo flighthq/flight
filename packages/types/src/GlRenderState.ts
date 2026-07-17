@@ -4,6 +4,7 @@ import type { Kind } from './Entity';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
+import type { GlShapeMesh } from './GlShapeMesh';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
@@ -36,7 +37,11 @@ export type GlBlendEquation = 'FUNC_ADD' | 'FUNC_REVERSE_SUBTRACT' | 'MAX' | 'MI
 // and binds it, returning true when it drew a folded batch (false when the batch had no adjustment, so
 // the caller runs the lean material path). This is the generic capability seam — color transform is
 // its first consumer; later pointwise adjustments (brightness/hue/…) realize through the same fold.
+// `drawShapeMeshes` is the shape substrate's hook: the GPU-tessellated solid-fill path reaches it only
+// through this nullable slot when a node carries a color transform, so the base flat-color mesh shader
+// stays free of any tint branch and the tinted mesh program tree-shakes out with the rest of the fold.
 export interface GlColorAdjustmentFold {
+  drawShapeMeshes(state: GlRenderState, renderProxy: RenderProxy2D, meshes: readonly GlShapeMesh[]): void;
   flush(state: GlRenderState, count: number): boolean;
   record(runtime: GlRenderStateRuntime, colorTransform: ColorTransform | null | undefined, instanceIndex: number): void;
 }
@@ -69,6 +74,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // until the first folded flush; a state that never enables color adjustment carries neither.
   colorTransformInstancedShader?: GlColorTransformInstancedShader;
   uniformColorTransformShader?: GlUniformColorTransformShader;
+  shapeMeshColorTransformShader?: GlShapeMeshColorTransformShader;
   // The opt-in color-adjustment fold and its guard, both null until enableGlColorAdjustment /
   // enableDisplayObjectGlGuards installs them. recordGlSpriteBatchColorTransform reaches the fold only
   // through this slot, so the base batch statically references neither the fold's code nor a message.
@@ -188,6 +194,19 @@ export interface GlUniformColorTransformShader {
   locTexture: WebGLUniformLocation;
   locColorMultiplier: WebGLUniformLocation;
   locColorOffset: WebGLUniformLocation;
+}
+
+// Tinted solid-fill mesh shader — the flat-color mesh program plus color-transform uniforms
+// (u_ctMult/u_ctOff) applied in the fragment stage, in unpremultiplied space, byte-for-byte with the
+// quad-batch uniform path. A distinct program from the lean base mesh shader, compiled and reached
+// only through the opt-in color-adjustment fold, so a shape that never tints carries none of it.
+export interface GlShapeMeshColorTransformShader {
+  program: WebGLProgram;
+  positionLocation: number;
+  matrixLocation: WebGLUniformLocation | null;
+  colorLocation: WebGLUniformLocation | null;
+  colorMultiplierLocation: WebGLUniformLocation | null;
+  colorOffsetLocation: WebGLUniformLocation | null;
 }
 
 export interface GlScissorRect {

@@ -1,6 +1,6 @@
 import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState, RenderProxy2D } from '@flighthq/types';
+import type { GlRenderState, GlShapeMesh, RenderProxy2D } from '@flighthq/types';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 
@@ -10,38 +10,48 @@ import { flushGlSpriteBatch } from './glSpriteBatch';
 // transformed by the node world transform in the vertex shader so it stays crisp at any zoom. Gradient/
 // bitmap fills and strokes still take the raster path (see getShapeFillRegions returning null).
 
-export interface GlShapeMesh {
-  vertices: Float32Array;
-  indices: Uint16Array;
-  color: number;
-  alpha: number;
+// The GL resources for one solid-fill mesh draw: the compiled program, its shared vertex/index buffers,
+// and the attribute/uniform locations drawGlShapeMeshBatch drives. The base flat-color program and the
+// opt-in color-adjustment fold's tinted program are both expressed as bindings over the one driver.
+export interface GlShapeMeshBinding {
+  program: WebGLProgram;
+  vertexBuffer: WebGLBuffer;
+  indexBuffer: WebGLBuffer;
+  positionLocation: number;
+  matrixLocation: WebGLUniformLocation | null;
+  colorLocation: WebGLUniformLocation | null;
 }
 
-// Draws the shape's tessellated fill meshes. Flushes the sprite batch first (these go through a separate
-// program), honors the node blend mode and alpha, and is gated by any active clip stencil (GL state set
-// by the clip hooks is left untouched). Records the mesh program as currentProgram so the next content
-// draw re-binds its own program (same hazard the clip path guards against).
-export function drawGlShapeMeshes(
+// Draws the shape's tessellated fill meshes through `binding`. Flushes the sprite batch first (these go
+// through a separate program), honors the node blend mode and alpha, and is gated by any active clip
+// stencil (GL state set by the clip hooks is left untouched). Records the program as currentProgram so
+// the next content draw re-binds its own program (same hazard the clip path guards against). Uploads
+// premultiplied color per mesh for the standard ONE / ONE_MINUS_SRC_ALPHA blend. `onProgramBound` runs
+// after the program and matrix are set but before the draw loop, so a caller can upload extra uniforms
+// (the color-adjustment fold sets its tint there) without this base driver knowing about them.
+export function drawGlShapeMeshBatch(
   state: GlRenderState,
   renderProxy: RenderProxy2D,
   meshes: readonly GlShapeMesh[],
+  binding: Readonly<GlShapeMeshBinding>,
+  onProgramBound?: (state: GlRenderState) => void,
 ): void {
   if (meshes.length === 0) return;
   const runtime = getGlRenderStateRuntime(state);
   flushGlSpriteBatch(state);
 
   const gl = state.gl;
-  const program = ensureShapeMeshProgram(state);
-  gl.useProgram(program.program);
-  runtime.currentProgram = program.program;
+  gl.useProgram(binding.program);
+  runtime.currentProgram = binding.program;
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  gl.uniformMatrix3fv(program.matrixLocation, false, shapeMeshMatrix(state, renderProxy));
+  gl.uniformMatrix3fv(binding.matrixLocation, false, shapeMeshMatrix(state, renderProxy));
+  onProgramBound?.(state);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, program.vertexBuffer);
-  gl.enableVertexAttribArray(program.positionLocation);
-  gl.vertexAttribPointer(program.positionLocation, 2, gl.FLOAT, false, 0, 0);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, program.indexBuffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, binding.vertexBuffer);
+  gl.enableVertexAttribArray(binding.positionLocation);
+  gl.vertexAttribPointer(binding.positionLocation, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, binding.indexBuffer);
 
   const nodeAlpha = renderProxy.alpha;
   for (let i = 0; i < meshes.length; i++) {
@@ -53,22 +63,51 @@ export function drawGlShapeMeshes(
     const r = ((mesh.color >> 16) & 0xff) / 255;
     const g = ((mesh.color >> 8) & 0xff) / 255;
     const b = (mesh.color & 0xff) / 255;
-    gl.uniform4f(program.colorLocation, r * a, g * a, b * a, a);
+    gl.uniform4f(binding.colorLocation, r * a, g * a, b * a, a);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STREAM_DRAW);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STREAM_DRAW);
     gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
   }
 
-  gl.disableVertexAttribArray(program.positionLocation);
+  gl.disableVertexAttribArray(binding.positionLocation);
 }
 
-interface ShapeMeshProgram {
-  program: WebGLProgram;
-  vertexBuffer: WebGLBuffer;
-  indexBuffer: WebGLBuffer;
-  positionLocation: number;
-  matrixLocation: WebGLUniformLocation | null;
-  colorLocation: WebGLUniformLocation | null;
+// Draws the shape's tessellated fill meshes. Delegates to the opt-in color-adjustment fold when it is
+// installed AND the node carries a color transform, so solid-fill tint stays byte-for-byte with the
+// quad-batch path; otherwise runs the lean flat-color program, which never references the tint shader
+// (it tree-shakes out with the fold until enableGlColorAdjustment is called).
+export function drawGlShapeMeshes(
+  state: GlRenderState,
+  renderProxy: RenderProxy2D,
+  meshes: readonly GlShapeMesh[],
+): void {
+  if (meshes.length === 0) return;
+  const fold = getGlRenderStateRuntime(state).glColorAdjustmentFold;
+  if (fold != null && renderProxy.colorTransform != null) {
+    fold.drawShapeMeshes(state, renderProxy, meshes);
+    return;
+  }
+  drawGlShapeMeshBatch(state, renderProxy, meshes, ensureGlShapeMeshProgram(state));
+}
+
+// The lean flat-color mesh binding for `state`, compiled once per context. The base path and the fold's
+// tinted draw (which borrows these shared vertex/index buffers) resolve it here.
+export function ensureGlShapeMeshProgram(state: GlRenderState): GlShapeMeshBinding {
+  const gl = state.gl;
+  const existing = shapeMeshPrograms.get(gl);
+  if (existing !== undefined) return existing;
+
+  const program = compileShapeMeshProgram(gl);
+  const created: GlShapeMeshBinding = {
+    program,
+    vertexBuffer: gl.createBuffer()!,
+    indexBuffer: gl.createBuffer()!,
+    positionLocation: gl.getAttribLocation(program, 'a_position'),
+    matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
+    colorLocation: gl.getUniformLocation(program, 'u_color'),
+  };
+  shapeMeshPrograms.set(gl, created);
+  return created;
 }
 
 const VERTEX_SOURCE = `
@@ -86,25 +125,7 @@ uniform vec4 u_color;
 void main() { gl_FragColor = u_color; }
 `;
 
-const shapeMeshPrograms = new WeakMap<WebGLRenderingContext, ShapeMeshProgram>();
-
-function ensureShapeMeshProgram(state: GlRenderState): ShapeMeshProgram {
-  const gl = state.gl;
-  const existing = shapeMeshPrograms.get(gl);
-  if (existing !== undefined) return existing;
-
-  const program = compileShapeMeshProgram(gl);
-  const created: ShapeMeshProgram = {
-    program,
-    vertexBuffer: gl.createBuffer()!,
-    indexBuffer: gl.createBuffer()!,
-    positionLocation: gl.getAttribLocation(program, 'a_position'),
-    matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
-    colorLocation: gl.getUniformLocation(program, 'u_color'),
-  };
-  shapeMeshPrograms.set(gl, created);
-  return created;
-}
+const shapeMeshPrograms = new WeakMap<WebGLRenderingContext, GlShapeMeshBinding>();
 
 function compileShapeMeshProgram(gl: WebGL2RenderingContext): WebGLProgram {
   return createGlProgram(gl, VERTEX_SOURCE, FRAGMENT_SOURCE, 'Shape-mesh');
