@@ -5,6 +5,7 @@ import { resolveGlLitLocations } from './glLitProgram';
 import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 import type { GlPbrDefineKey } from './glPbrPrelude';
 import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
+import { getGlSceneRuntime } from './glSceneRuntime';
 
 // A compiled PBR uber-shader variant plus its resolved uniform locations. One of these exists per
 // distinct GlPbrDefineKey (maps-present / alpha-mask + extension-lobe combination), built once and
@@ -70,6 +71,7 @@ export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<Gl
     locIridescence: gl.getUniformLocation(program, 'u_iridescence'),
     locIridescenceIor: gl.getUniformLocation(program, 'u_iridescenceIor'),
     locIridescenceThickness: gl.getUniformLocation(program, 'u_iridescenceThickness'),
+    locJointMatrices: gl.getUniformLocation(program, 'u_jointMatrices'),
     locMetallic: gl.getUniformLocation(program, 'u_metallic'),
     locMetallicRoughnessMap: gl.getUniformLocation(program, 'u_metallicRoughnessMap'),
     locModel: gl.getUniformLocation(program, 'u_model'),
@@ -95,5 +97,8 @@ export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<Gl
 // the shared scene program cache under the `pbr:` family namespace, so each variant is compiled at
 // most once per state and reused every frame.
 export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefineKey>): GlPbrProgram {
-  return ensureGlSceneProgram(state, `pbr:${buildGlPbrDefineKey(key)}`, (gl) => compileGlPbrProgram(gl, key));
+  // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
+  // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
+  const fullKey: GlPbrDefineKey = { ...key, hasSkin: getGlSceneRuntime(state).activeSkinnedRun };
+  return ensureGlSceneProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) => compileGlPbrProgram(gl, fullKey));
 }

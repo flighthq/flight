@@ -49,11 +49,16 @@ const ALL = makeKey({
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('------:-------');
-    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe:-------');
-    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe:CSAIPUT');
-    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b----:-------');
-    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('------:C------');
+    expect(buildGlPbrDefineKey(NONE)).toBe('------:--------');
+    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe:--------');
+    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe:CSAIPUT-');
+    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b----:--------');
+    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('------:C-------');
+  });
+
+  it('encodes the HAS_SKIN variant as a distinct trailing slot', () => {
+    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('------:-------k');
+    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
   it('is identical for equal flag sets', () => {
@@ -136,6 +141,19 @@ describe('getGlPbrVertexSource', () => {
 });
 
 describe('getGlPbrVertexSourceForKey', () => {
+  it('injects the skin declarations and HAS_SKIN define only for the skinned variant', () => {
+    const rigid = getGlPbrVertexSourceForKey(NONE);
+    expect(rigid).not.toContain('#define HAS_SKIN');
+    expect(rigid).not.toContain('a_joints0');
+    expect(rigid).not.toContain('mat4 skinMatrix()');
+
+    const skinned = getGlPbrVertexSourceForKey(makeKey({ hasSkin: true }));
+    expect(skinned).toContain('#define HAS_SKIN');
+    expect(skinned).toContain('#define MAX_JOINTS');
+    expect(skinned).toContain('mat4 skinMatrix()');
+    expect(skinned).toContain('a_joints0');
+  });
+
   it('prepends the define block to the vertex body', () => {
     const src = getGlPbrVertexSourceForKey(NONE);
     expect(src.startsWith('#version 300 es')).toBe(true);

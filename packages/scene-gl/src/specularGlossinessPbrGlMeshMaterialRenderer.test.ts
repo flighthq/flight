@@ -75,8 +75,9 @@ describe('specularGlossinessPbrGlMeshMaterialRenderer', () => {
     expect(cache.size).toBe(1);
     const key = [...cache.keys()][0];
     expect(key.startsWith('pbr:')).toBe(true);
-    // The extension half of the key (after ':') is all dashes — no extension lobe enabled.
-    expect(key.split(':')[2]).toBe('-------');
+    // The extension half of the key (after ':') is all dashes — no extension lobe enabled, and the
+    // trailing dash is the (unset) skin flag.
+    expect(key.split(':')[2]).toBe('--------');
   });
 
   it('draw issues an indexed draw after bind', () => {

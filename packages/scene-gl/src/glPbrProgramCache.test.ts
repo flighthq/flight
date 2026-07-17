@@ -86,6 +86,17 @@ describe('ensureGlPbrProgram', () => {
     expect(getGlSceneRuntime(state).programCache.size).toBe(2);
   });
 
+  it('folds the render-state skinned-run flag into a distinct HAS_SKIN variant', () => {
+    const { state } = makeGlSceneState();
+    const rigid = ensureGlPbrProgram(state, KEY);
+    getGlSceneRuntime(state).activeSkinnedRun = true;
+    const skinned = ensureGlPbrProgram(state, KEY);
+
+    expect(skinned).not.toBe(rigid);
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('pbr:------:-------k');
+    expect(skinned.locJointMatrices).not.toBeNull();
+  });
+
   it('caches a distinct entry per extension define under the pbr: namespace', () => {
     const { state } = makeGlSceneState();
     ensureGlPbrProgram(state, makeKey({ clearcoatEnabled: true }));
