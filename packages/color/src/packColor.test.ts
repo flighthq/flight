@@ -3,6 +3,7 @@ import {
   createLinearColor,
   packColor,
   packLinearToColor,
+  packOpaqueColor,
   unpackColorRgba,
   unpackColorToLinear,
 } from './packColor';
@@ -61,6 +62,22 @@ describe('packLinearToColor', () => {
     const origR = (color >>> 24) & 0xff;
     const repR = (repacked >>> 24) & 0xff;
     expect(Math.abs(repR - origR)).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('packOpaqueColor', () => {
+  it('widens 24-bit RGB to 32-bit RGBA with full opacity', () => {
+    expect(packOpaqueColor(0x336699)).toBe(0x336699ff);
+    expect(packOpaqueColor(0x000000)).toBe(0x000000ff);
+    expect(packOpaqueColor(0xffffff)).toBe(0xffffffff);
+  });
+
+  it('masks off bits above 24 (ignores any alpha in the input)', () => {
+    expect(packOpaqueColor(0xaa336699)).toBe(0x336699ff);
+  });
+
+  it('returns an unsigned 32-bit integer', () => {
+    expect(packOpaqueColor(0xffffff)).toBeGreaterThan(0);
   });
 });
 

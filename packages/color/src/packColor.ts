@@ -38,6 +38,14 @@ export function packLinearToColor(color: Readonly<LinearColor>): number {
   return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
+// Widens a 24-bit RGB color (`0xRRGGBB`, e.g. an AwayJS/TextFormat hex) to Flight's 32-bit packed
+// `0xRRGGBBAA` with full opacity (alpha `0xff`). The value stays sRGB — Flight packed colors are
+// sRGB-encoded and decoded at render (`unpackColorToLinear`), so DO NOT pre-linearize a color before
+// packing it: that double-decodes and loses 8-bit precision. High bits above 24 are masked off.
+export function packOpaqueColor(rgb: number): number {
+  return (((rgb & 0xffffff) << 8) | 0xff) >>> 0;
+}
+
 // Converts a packed sRGB-space `0xRRGGBBAA` integer into four components in [0, 1] and
 // writes them to `out`. Does NOT gamma-decode — use `unpackColorToLinear` for linear space.
 export function unpackColorRgba(out: [number, number, number, number], color: number): void {
