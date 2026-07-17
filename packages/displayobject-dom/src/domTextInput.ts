@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/materials';
+import { computeRgbHexString } from '@flighthq/color';
 import { getRichTextRuntime } from '@flighthq/text';
 import {
   getTextInputCaretRectangle,

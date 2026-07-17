@@ -8,7 +8,6 @@ export * from './bokehDepthOfFieldEffect';
 export * from './boxBlurMath';
 export * from './cameraMotionBlurEffect';
 export * from './chromaticAberrationEffect';
-export * from './colorScienceMath';
 export * from './colorTemperatureMath';
 export * from './contactShadowsEffect';
 export * from './convolutionEffect';

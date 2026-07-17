@@ -32,18 +32,18 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/color": "*",
     "@flighthq/displayobject": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/materials": "*",
+    "@flighthq/image": "*",
     "@flighthq/node": "*",
     "@flighthq/render": "*",
-    "@flighthq/image": "*",
-    "@flighthq/textureatlas": "*",
-    "@flighthq/tileset": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
+    "@flighthq/textureatlas": "*",
+    "@flighthq/tileset": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

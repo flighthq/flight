@@ -1,4 +1,4 @@
-import type { LinearColor } from '@flighthq/materials';
+import type { LinearColor } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { Texture, WgpuRenderState } from '@flighthq/types';
 

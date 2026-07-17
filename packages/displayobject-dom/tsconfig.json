@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../color"
+    },
+    {
       "path": "../displayobject"
     },
     {
@@ -23,9 +26,6 @@
     },
     {
       "path": "../image"
-    },
-    {
-      "path": "../materials"
     },
     {
       "path": "../node"
