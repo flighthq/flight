@@ -26,6 +26,7 @@ function makeTarget(): GlRenderTarget {
     width: 256,
     height: 256,
     format: 'rgba16f',
+    colorSpace: 'linear',
     sampleCount: 1,
     framebuffer: { id: 'sceneFb' } as unknown as WebGLFramebuffer,
     resolveFramebuffer: null,
