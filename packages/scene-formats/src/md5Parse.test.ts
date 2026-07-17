@@ -141,6 +141,49 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.z).toBeCloseTo(-1);
   });
 
+  it('emits a skin binding the mesh to a skeleton over the parsed joints', () => {
+    const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
+    const meshNode = getNodeChildren(scene)[1] as unknown as Mesh;
+
+    expect(meshNode.skin).toBeTruthy();
+    // The skin's skeleton exposes the joint nodes parseMd5Anim needs, one per parsed joint.
+    expect(meshNode.skin?.skeleton.joints).toHaveLength(3);
+    expect(meshNode.skin?.skeleton.names).toEqual(['root', 'child_a', 'child_b']);
+    // The skeleton root is the "skeleton" group added to the scene (children[0]).
+    expect(meshNode.skin?.skeletonRoot).toBe(getNodeChildren(scene)[0]);
+  });
+
+  it('emits joints0/weights0 into an 80-byte skinned layout with weights renormalized to 1', () => {
+    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const geometry = (getNodeChildren(scene)[1] as unknown as Mesh).geometry;
+
+    expect(geometry.layout.stride).toBe(80);
+    const floatsPerVertex = geometry.layout.stride / 4;
+    // weights0 is the last float32x4 in the record; vertex 0's first weight is the full influence.
+    expect(geometry.vertices[16]).toBeCloseTo(1);
+    // Every vertex's four weights sum to 1 (renormalized), and joint index 0 is referenced.
+    for (let v = 0; v < 3; v++) {
+      const base = v * floatsPerVertex;
+      const weightSum =
+        geometry.vertices[base + 16] +
+        geometry.vertices[base + 17] +
+        geometry.vertices[base + 18] +
+        geometry.vertices[base + 19];
+      expect(weightSum).toBeCloseTo(1);
+    }
+  });
+
+  it('regenerates vertex normals the MD5 mesh does not carry', () => {
+    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const geometry = (getNodeChildren(scene)[1] as unknown as Mesh).geometry;
+    const floatsPerVertex = geometry.layout.stride / 4;
+    // Normal is at float offset 3; a flat triangle yields a unit face normal, not the zero-fill.
+    const nx = geometry.vertices[3];
+    const ny = geometry.vertices[4];
+    const nz = geometry.vertices[5];
+    expect(Math.hypot(nx, ny, nz)).toBeCloseTo(1);
+  });
+
   it('preserves UV coordinates', () => {
     const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
     const children = getNodeChildren(scene);

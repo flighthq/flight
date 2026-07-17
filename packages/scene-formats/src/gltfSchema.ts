@@ -14,6 +14,7 @@ export interface GltfDocument {
   accessors?: GltfAccessor[];
   bufferViews?: GltfBufferView[];
   buffers?: GltfBuffer[];
+  skins?: GltfSkin[];
   extensionsUsed?: string[];
   extensionsRequired?: string[];
 }
@@ -27,11 +28,23 @@ export interface GltfNode {
   name?: string;
   children?: number[];
   mesh?: number;
+  // Index into `GltfDocument.skins` — set on a node that instances `mesh` as a skinned mesh.
+  skin?: number;
   // A node carries EITHER a 16-element column-major `matrix` OR separate TRS components.
   matrix?: number[];
   translation?: number[];
   rotation?: number[];
   scale?: number[];
+}
+
+// A glTF skin: the ordered joint (bone) nodes, their inverse-bind matrices accessor (one MAT4 per
+// joint, column-major), and the optional common-root node the joints hang under. A primitive's
+// JOINTS_0 indices are positions into `joints`.
+export interface GltfSkin {
+  name?: string;
+  inverseBindMatrices?: number;
+  joints: number[];
+  skeleton?: number;
 }
 
 export interface GltfMesh {
@@ -40,7 +53,14 @@ export interface GltfMesh {
 }
 
 export interface GltfPrimitive {
-  attributes: { NORMAL?: number; POSITION?: number; TANGENT?: number; TEXCOORD_0?: number };
+  attributes: {
+    JOINTS_0?: number;
+    NORMAL?: number;
+    POSITION?: number;
+    TANGENT?: number;
+    TEXCOORD_0?: number;
+    WEIGHTS_0?: number;
+  };
   indices?: number;
   material?: number;
   // Primitive topology (GL constant). Absent means 4 (TRIANGLES).

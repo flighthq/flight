@@ -1,4 +1,5 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
+import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { invalidateGlRenderStateCache } from '@flighthq/render-gl';
@@ -113,19 +114,26 @@ export function drawGlScene(
   // Pass 1: opaque + mask subsets in scene-graph order. No blending; depth-write on (set by bind).
   let boundMaterial: Readonly<Material> | null | undefined = undefined;
   let boundRenderer: GlMeshMaterialRenderer | null = null;
+  let boundSkinned: boolean | undefined = undefined;
 
   for (let i = 0; i < opaqueDrawList.length; i++) {
     const entry = opaqueDrawList[i] as DrawEntry;
     const worldMatrix = entry.worldMatrix as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
-    if (entry.renderer !== boundRenderer || entry.material !== boundMaterial) {
+    // A skinned run selects the HAS_SKIN program variant; split runs on it (a rigid and a skinned mesh
+    // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
+    const skinned = entry.mesh.skin != null && hasMeshGeometrySkin(entry.mesh.geometry);
+    if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
+      runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, lightBlock, camera);
       boundRenderer = entry.renderer;
       boundMaterial = entry.material;
+      boundSkinned = skinned;
     }
 
     proxy.alpha = entry.alpha;
+    proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
     proxy.subset = entry.subset;
@@ -144,19 +152,24 @@ export function drawGlScene(
 
     boundMaterial = undefined;
     boundRenderer = null;
+    boundSkinned = undefined;
 
     for (let i = 0; i < blendedDrawList.length; i++) {
       const entry = blendedDrawList[i] as DrawEntry;
       const worldMatrix = entry.worldMatrix as Matrix4;
       setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
-      if (entry.renderer !== boundRenderer || entry.material !== boundMaterial) {
+      const skinned = entry.mesh.skin != null && hasMeshGeometrySkin(entry.mesh.geometry);
+      if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
+        runtime.activeSkinnedRun = skinned;
         entry.renderer.bind(state, entry.material, lightBlock, camera);
         boundRenderer = entry.renderer;
         boundMaterial = entry.material;
+        boundSkinned = skinned;
       }
 
       proxy.alpha = entry.alpha;
+      proxy.jointMatrices = skinned ? entry.mesh.skin!.skeleton.jointMatrices : null;
       proxy.material = entry.material;
       proxy.normalMatrix = scratchNormalMatrix;
       proxy.subset = entry.subset;
@@ -242,6 +255,7 @@ function createDrawEntry(): GlSceneDrawEntry {
 // The reused per-draw proxy handed to a renderer's draw. Owned by drawGlScene, valid only for the
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: SceneRenderProxy = {
+  jointMatrices: null,
   material: { kind: DefaultMaterialKind } as Material,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },

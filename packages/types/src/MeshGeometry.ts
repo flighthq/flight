@@ -1,5 +1,6 @@
 import type { Aabb } from './Aabb';
 import type { Entity, EntityRuntime } from './Entity';
+import type { MeshSkinBindPose } from './MeshSkinBindPose';
 
 // Handedness is pinned across the 3D suite: right-handed coordinates, CCW front-face, and the
 // tangent `w` component is the bitangent sign per glTF (bitangent = cross(normal, tangent.xyz)
@@ -75,8 +76,11 @@ export interface MeshGeometryWgpuData {
 
 // Package-private companion to a MeshGeometry. Each backend stores its named GPU upload slot
 // here, initialized to null and filled lazily on first draw; destroyMeshGeometryGPUData frees
-// them. Subsystems read/write only the slot they own.
+// them. `skinBindPose` is the CPU-skinning subsystem's slot: null until a skinned mesh is first
+// deformed, then the de-interleaved bind pose + scratch captureMeshSkinBindPose builds, reused
+// every frame by skinMeshGeometry. Subsystems read/write only the slot they own.
 export interface MeshGeometryRuntime extends EntityRuntime {
+  skinBindPose: MeshSkinBindPose | null;
   webglData: MeshGeometryGlData | null;
   webgpuData: MeshGeometryWgpuData | null;
 }

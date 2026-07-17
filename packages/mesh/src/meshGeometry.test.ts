@@ -1,4 +1,4 @@
-import type { MeshGeometryRuntime, VertexAttributeLayout } from '@flighthq/types';
+import type { MeshGeometryRuntime, MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
@@ -7,7 +7,10 @@ import {
   destroyMeshGeometryGlData,
   destroyMeshGeometryWgpuData,
   getMeshGeometryIndexCount,
+  getMeshGeometrySkinBindPose,
   getMeshGeometryVertexCount,
+  hasMeshGeometrySkin,
+  setMeshGeometrySkinBindPose,
 } from './meshGeometry';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
@@ -147,9 +150,54 @@ describe('getMeshGeometryIndexCount', () => {
   });
 });
 
+describe('getMeshGeometrySkinBindPose', () => {
+  it('returns null before any capture', () => {
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
+    expect(getMeshGeometrySkinBindPose(geometry)).toBeNull();
+  });
+});
+
 describe('getMeshGeometryVertexCount', () => {
   it('derives the vertex count from stride', () => {
     const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(5) });
     expect(getMeshGeometryVertexCount(geometry)).toBe(5);
+  });
+});
+
+describe('hasMeshGeometrySkin', () => {
+  it('is false for the canonical (rigid) layout and true when joints0 is present', () => {
+    const rigid = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
+    expect(hasMeshGeometrySkin(rigid)).toBe(false);
+
+    const skinnedLayout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+        { byteOffset: 12, format: 'float32x4', semantic: 'joints0' },
+        { byteOffset: 28, format: 'float32x4', semantic: 'weights0' },
+      ],
+      stride: 44,
+    };
+    const skinned = createMeshGeometry({ layout: skinnedLayout, vertices: new Float32Array(11) });
+    expect(hasMeshGeometrySkin(skinned)).toBe(true);
+  });
+});
+
+describe('setMeshGeometrySkinBindPose', () => {
+  it('stores and clears the skinning bind pose on the runtime slot', () => {
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
+    const bindPose: MeshSkinBindPose = {
+      joints: new Float32Array(4),
+      normals: new Float32Array(3),
+      positions: new Float32Array(3),
+      skinnedNormals: new Float32Array(3),
+      skinnedPositions: new Float32Array(3),
+      weights: new Float32Array(4),
+    };
+
+    setMeshGeometrySkinBindPose(geometry, bindPose);
+    expect(getMeshGeometrySkinBindPose(geometry)).toBe(bindPose);
+
+    setMeshGeometrySkinBindPose(geometry, null);
+    expect(getMeshGeometrySkinBindPose(geometry)).toBeNull();
   });
 });

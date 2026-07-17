@@ -12,6 +12,7 @@ import {
   transformAabbByMatrix4,
 } from '@flighthq/geometry';
 import { getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { computeSkeleton3DJointMatrices } from '@flighthq/skeleton3d';
 import type {
   Aabb,
   AmbientLight,
@@ -157,6 +158,16 @@ export function prepareSceneRender(
   prepared.meshes.length = 0;
   collectVisibleMeshes(scene, prepared.frustum, prepared.worldBounds, prepared.meshes, 1);
   list.meshCount = prepared.meshes.length;
+
+  // Refresh the GPU skin palette for every visible skinned mesh from its joints' current world
+  // transforms (jointWorld * inverseBind). The backend uploads skeleton.jointMatrices through the
+  // proxy and the HAS_SKIN vertex variant deforms from it, so the app poses the joints and this
+  // pass alone readies the palette — it need not call the CPU updateMeshSkin on a GPU backend
+  // (doing both would deform twice). Rigid meshes carry no skin and are skipped.
+  for (let m = 0; m < prepared.meshes.length; m++) {
+    const skin = prepared.meshes[m].skin;
+    if (skin != null) computeSkeleton3DJointMatrices(skin.skeleton);
+  }
 
   return list;
 }
