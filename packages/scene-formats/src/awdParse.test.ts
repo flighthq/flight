@@ -1,5 +1,4 @@
 import { sampleAnimationTrack } from '@flighthq/animation';
-import { registerImageDecoder } from '@flighthq/image-codec';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -9,8 +8,16 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren, getNodeParent } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Mesh, SceneAnimationTarget, SceneNode, StandardPbrMaterial, UnlitMaterial } from '@flighthq/types';
-import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
+import type {
+  EmbeddedSceneResourceRef,
+  ExternalSceneResourceRef,
+  Mesh,
+  SceneAnimationTarget,
+  SceneNode,
+  StandardPbrMaterial,
+  UnlitMaterial,
+} from '@flighthq/types';
+import { ResourceResolutionState, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
 
 import { createSceneFromAwd, parseAwdSkeletonAnimation } from './awdParse';
 import {
@@ -469,7 +476,13 @@ describe('createSceneFromAwd', () => {
     expect(material).not.toBeNull();
     expect(material!.kind).toBe(StandardPbrMaterialKind);
     expect(material!.baseColorMap).not.toBeNull();
-    expect(material!.baseColorMap!.image).not.toBeNull();
+    // The parser references, it does not decode: image stays null, a ref carries the source.
+    expect(material!.baseColorMap!.image).toBeNull();
+    const ref = material!.baseColorMap!.resource as EmbeddedSceneResourceRef;
+    expect(ref.kind).toBe('Embedded');
+    expect(ref.mimeType).toBe('image/png');
+    expect(ref.bytes).toEqual(FAKE_PNG_BYTES);
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
     expect(warnings).toHaveLength(0);
   });
 
@@ -500,7 +513,7 @@ describe('createSceneFromAwd', () => {
     expect(material!.baseColor).toBe(0x336699ff);
   });
 
-  it('warns and leaves the subset unmaterialed for an external-URL texture', () => {
+  it('emits an External SceneResourceRef for an external-URL texture', () => {
     const posStream = buildStream(
       AWD_STREAM_POSITIONS,
       AWD_DATA_FLOAT32,
@@ -525,17 +538,17 @@ describe('createSceneFromAwd', () => {
     const warnings: string[] = [];
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
 
-    expect((getNodeChildren(scene)[0] as Mesh).materials).toHaveLength(0);
-    expect(warnings.some((w) => w.includes('external URL'))).toBe(true);
+    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(material.kind).toBe(StandardPbrMaterialKind);
+    expect(material.baseColorMap!.image).toBeNull();
+    const ref = material.baseColorMap!.resource as ExternalSceneResourceRef;
+    expect(ref.kind).toBe('External');
+    expect(ref.uri).toBe('http://example.com/tex.png');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+    expect(warnings).toHaveLength(0);
   });
 
-  it('fills the texture ImageResource asynchronously once a decoder is registered', async () => {
-    registerImageDecoder('image/png', async () => ({
-      data: new Uint8ClampedArray([255, 0, 0, 255]),
-      height: 1,
-      width: 1,
-    }));
-
+  it('emits one Unresolved ref per shared texture and never decodes during parse', () => {
     const posStream = buildStream(
       AWD_STREAM_POSITIONS,
       AWD_DATA_FLOAT32,
@@ -559,12 +572,13 @@ describe('createSceneFromAwd', () => {
     );
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
 
-    const image = ((getNodeChildren(scene)[0] as Mesh).materials[0] as StandardPbrMaterial).baseColorMap!.image!;
-    expect(image.data).toBeNull(); // decode is deferred; the resource starts empty
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(image.data).not.toBeNull();
-    expect(image.width).toBe(1);
-    expect(image.height).toBe(1);
+    const texture = ((getNodeChildren(scene)[0] as Mesh).materials[0] as StandardPbrMaterial).baseColorMap!;
+    expect(texture.image).toBeNull(); // parse never allocates or fills an ImageResource
+    const ref = texture.resource as EmbeddedSceneResourceRef;
+    expect(ref.kind).toBe('Embedded');
+    expect(ref.bytes).toEqual(FAKE_PNG_BYTES);
+    expect(ref.mimeType).toBe('image/png');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
   });
 });
 

@@ -10,7 +10,6 @@
   },
   "references": [
     { "path": "../animation" },
-    { "path": "../image" },
     { "path": "../image-codec" },
     { "path": "../materials" },
     { "path": "../mesh" },
