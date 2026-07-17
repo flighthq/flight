@@ -1,0 +1,52 @@
+import { ResourceResolutionState } from './ResourceResolutionState';
+import type { EmbeddedSceneResourceRef, ExternalSceneResourceRef, SceneResourceRef } from './SceneResourceRef';
+import { SceneResourceRefKind } from './SceneResourceRef';
+
+describe('SceneResourceRef', () => {
+  describe('SceneResourceRefKind', () => {
+    it('names the two members as canonical PascalCase values', () => {
+      expect(SceneResourceRefKind.Embedded).toBe('Embedded');
+      expect(SceneResourceRefKind.External).toBe('External');
+    });
+  });
+
+  describe('descriptor shape', () => {
+    it('models an embedded ref carrying encoded bytes and a starting Unresolved state', () => {
+      const ref: EmbeddedSceneResourceRef = {
+        kind: 'Embedded',
+        bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+        mimeType: 'image/png',
+        state: ResourceResolutionState.Unresolved,
+      };
+      const base: SceneResourceRef = ref;
+      expect(base.kind).toBe('Embedded');
+      expect(ref.bytes.length).toBe(4);
+    });
+
+    it('models an external ref carrying a uri and optional basePath', () => {
+      const ref: ExternalSceneResourceRef = {
+        kind: 'External',
+        uri: 'textures/hull.png',
+        basePath: '/models/',
+        mimeType: null,
+        state: ResourceResolutionState.Unresolved,
+      };
+      const base: SceneResourceRef = ref;
+      expect(base.kind).toBe('External');
+      expect(ref.uri).toBe('textures/hull.png');
+    });
+
+    it('narrows on the kind discriminant', () => {
+      const ref: SceneResourceRef = {
+        kind: 'External',
+        uri: 'a.png',
+        basePath: null,
+        mimeType: null,
+        state: ResourceResolutionState.Loading,
+      };
+      if (ref.kind === 'External') {
+        expect(ref.uri).toBe('a.png');
+      }
+    });
+  });
+});
