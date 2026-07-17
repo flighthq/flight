@@ -18,6 +18,7 @@ import type {
   Camera,
   DirectionalLight,
   Frustum,
+  HasAppearance3D,
   HemisphereLight,
   Matrix4,
   Mesh,
@@ -154,7 +155,7 @@ export function prepareSceneRender(
   packSceneLightBlock(list.lights, lights);
 
   prepared.meshes.length = 0;
-  collectVisibleMeshes(scene, prepared.frustum, prepared.worldBounds, prepared.meshes);
+  collectVisibleMeshes(scene, prepared.frustum, prepared.worldBounds, prepared.meshes, 1);
   list.meshCount = prepared.meshes.length;
 
   return list;
@@ -165,10 +166,17 @@ function collectVisibleMeshes(
   frustum: Readonly<Frustum>,
   worldBounds: Aabb,
   out: Mesh[],
+  parentAlpha: number,
 ): void {
   if (!node.enabled) {
     return;
   }
+
+  // Fold parent×self opacity into this node's resolved worldAlpha (render state on the runtime), the
+  // 3D analog of the 2D render-proxy alpha propagation; the honoring renderer reads it per Mesh. A
+  // node missing the appearance trait reads as fully opaque.
+  const nodeAlpha = parentAlpha * ((node as unknown as HasAppearance3D).alpha ?? 1);
+  (getNodeRuntime(node) as unknown as { worldAlpha: number | null }).worldAlpha = nodeAlpha;
 
   // A node is a drawable Mesh (not a transform-only group) when it carries geometry. Structural,
   // so it holds for Meshes created with a custom kind, not just MeshKind.
@@ -180,7 +188,7 @@ function collectVisibleMeshes(
   const children = getNodeRuntime(node).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      collectVisibleMeshes(children[i], frustum, worldBounds, out);
+      collectVisibleMeshes(children[i], frustum, worldBounds, out, nodeAlpha);
     }
   }
 }
