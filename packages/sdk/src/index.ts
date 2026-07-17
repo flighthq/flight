@@ -15,6 +15,7 @@ export * from '@flighthq/capture';
 export * from '@flighthq/clip';
 export * from '@flighthq/clipboard';
 export * from '@flighthq/clock';
+export * from '@flighthq/color';
 export * from '@flighthq/collision';
 export * from '@flighthq/connectivity';
 export * from '@flighthq/debug';

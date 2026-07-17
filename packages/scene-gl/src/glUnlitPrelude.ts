@@ -1,4 +1,4 @@
-import type { LinearColor } from '@flighthq/materials';
+import type { LinearColor } from '@flighthq/color';
 import { bindGlTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 

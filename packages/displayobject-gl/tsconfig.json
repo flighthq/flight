@@ -9,23 +9,57 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../displayobject" },
-    { "path": "../displayobject-canvas" },
-    { "path": "../geometry" },
-    { "path": "../log" },
-    { "path": "../materials" },
-    { "path": "../node" },
-    { "path": "../particleemitter" },
-    { "path": "../path" },
-    { "path": "../render" },
-    { "path": "../render-gl" },
-    { "path": "../shape" },
-    { "path": "../sprite" },
-    { "path": "../text" },
-    { "path": "../textinput" },
-    { "path": "../textlayout" },
-    { "path": "../types" },
-    { "path": "../velocity" }
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../displayobject"
+    },
+    {
+      "path": "../displayobject-canvas"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../particleemitter"
+    },
+    {
+      "path": "../path"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../render-gl"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../sprite"
+    },
+    {
+      "path": "../text"
+    },
+    {
+      "path": "../textinput"
+    },
+    {
+      "path": "../textlayout"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../velocity"
+    }
   ],
   "include": ["src"]
 }

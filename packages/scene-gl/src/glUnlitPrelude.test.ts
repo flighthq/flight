@@ -1,4 +1,4 @@
-import type { LinearColor } from '@flighthq/materials';
+import type { LinearColor } from '@flighthq/color';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';

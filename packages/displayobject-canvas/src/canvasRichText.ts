@@ -1,4 +1,4 @@
-﻿import { computeRgbHexString } from '@flighthq/materials';
+﻿import { computeRgbHexString } from '@flighthq/color';
 import { noopRendererData } from '@flighthq/render';
 import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text';
 import {
