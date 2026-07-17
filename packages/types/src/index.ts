@@ -123,6 +123,8 @@ export * from './FileSystem';
 export * from './FilmEmulationEffect';
 export * from './FilmGrainEffect';
 export * from './FilmicToneMapOptions';
+export * from './FocusEventData';
+export * from './FocusManager';
 export * from './Font';
 export * from './FontMetrics';
 export * from './FontResource';

@@ -1,4 +1,5 @@
 import type { CursorBackend } from './Cursor';
+import type { FocusEventData } from './FocusEventData';
 import type { InputSignals } from './InputSignals';
 import type { InteractionSignals } from './InteractionSignals';
 import type { KeyboardEventData } from './KeyboardEventData';
@@ -7,7 +8,7 @@ import type { PointerEventData, PointerType } from './PointerEventData';
 import type { SpatialIndex } from './Spatial';
 
 export type InteractionSignalName = keyof InteractionSignals;
-export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData) => void;
+export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData | FocusEventData) => void;
 
 export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> {
   // Active cursor backend for this manager's canvas; `null` disables cursor resolution. Per-manager
