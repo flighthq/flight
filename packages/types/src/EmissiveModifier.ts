@@ -3,15 +3,17 @@ import type { Texture } from './Texture';
 
 // How an EmissiveModifier gates its contribution by surface facing. `Ignore` emits everywhere;
 // `AwayFromLight` emits where the surface faces away from the dominant light (the night-side case —
-// lit windows appear on the dark hemisphere); `TowardLight` is the complement. Open only in that it
-// is a small closed vocabulary owned here — canonical PascalCase values, serialized verbatim.
+// lit windows appear on the dark hemisphere); `TowardLight` is the complement. A small CLOSED
+// vocabulary owned here — canonical PascalCase values, serialized verbatim, with no vendor-extension
+// path — so it is a switch/typo-safe union (unlike the open `ModifierSlot` family), derived from the
+// const so the two never drift.
 export const EmissiveModifierFacing = {
   AwayFromLight: 'AwayFromLight',
   Ignore: 'Ignore',
   TowardLight: 'TowardLight',
 } as const;
 
-export type EmissiveModifierFacing = string;
+export type EmissiveModifierFacing = (typeof EmissiveModifierFacing)[keyof typeof EmissiveModifierFacing];
 
 // Adds a self-illuminating contribution to the shaded output (slot: Emissive), with an optional mask
 // and an optional facing gate. Generalizes the globe's night-side glow: emissive gated
