@@ -122,16 +122,22 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-17] Sync parse / async separate resolve is the model** — parsers emit plain-data `SceneResourceRef`s; the caller resolves on its schedule under a visibility/priority policy. Chosen over making parsers async / loading everything up front, because textures dwarf geometry and visibility should gate load. AWD's deferred-fill retro-fits onto this shared path.
 - **[2026-07-17] The resolver reports availability via an opt-in signal; transitions are composed from `tween`/`easing`, with an optional reveal policy convenience.** The resolver never animates. Motivating case (fade-in on stream, cancel on re-hide) is blessed as the progressive target's first rung.
 - **[2026-07-17] Building the mature architecture, not a stopgap** — v1 delivers the full seam + policy engine + availability/transition; only mip/low-res→full progressive cross-fade is deferred to phase 2.
+- **[2026-07-17] DELIVERED v1 Phases 1–3 (parcel builder-2afc1234), reviewed & approved.** `SceneResourceRef` (closed `Embedded|External`) + `ResourceResolutionState` (closed const-union) + additive `Texture.resource?` in types; AWD emits refs (drops the fire-and-forget decode + the `@flighthq/image` dep); the package = resolver (loader + image-codec + per-texture AbortController) + `resolveSceneResources(scene, resolver, {select?, priority?})` policy engine (all/visible/prioritized + cancel-on-drop + stale-settle identity guard) + `enableSceneResourceSignals` + eager `loadSceneFromAwd`/`resolveSceneResourcesAndWait`; texture discovery via an OPEN `SceneMaterialTextureRegistry` (touches neither `scene` nor `materials`). `npm run check` green, 43 tests.
+- **[2026-07-17] `@flighthq/assets` DEFERRED to the streaming phase (revises the option-B "composing assets" wording).** assets is id/manifest-centric (`acquireAsset(library, id)`); embedded byte-refs have no ids, so v1 dedups by `Texture` identity at the walk and assets' refcount/unload belongs to the progressive/streaming phase where external URIs carry natural ids. Well-justified worker call.
+- **[2026-07-17] glTF texture import DEFERRED (STOP-AND-ASK hit).** glTF has zero texture/material-texture wiring today, so it's net-new glTF material modeling, not a ref retrofit. AWD is the v1 embedded-path proof; glTF is a focused follow-up.
+- **[2026-07-17] The reveal hook is a MISSING PRIMITIVE, not a material field — reframed as "3D node opacity" and split out (being built separately).** 3D `SceneNode` has no alpha/opacity at all (only `HasTransform3D`); a reveal factor needs per-object opacity across the material shaders + blend phase. So: charter/build **3D node opacity** (alpha on the node + `prepareSceneRender` propagation + shaders honoring it) as its own primitive; reveal-fade = `tween`/`easing` driving `node.alpha` on availability, layered on top. Resolves Open direction #2. Coordinate its shader changes with the in-flight skinning track.
 
 ## Open directions
 
 1. **Name / scope** — confirm `@flighthq/scene-resources`; decide whether the descriptor + resolver are
    deliberately general enough that 2D display-bitmap streaming reuses them (then a more neutral name),
    or stay scene-scoped.
-2. **The reveal-factor renderer hook** — pin the exact `materials`/`scene-gl`/`scene-wgpu` opacity/reveal
-   input the fade drives; build it alongside v1 (it's the one hard cross-package dependency).
+2. ~~The reveal-factor renderer hook~~ — **resolved 2026-07-17:** it is the missing **3D node opacity**
+   primitive (built separately, coordinated with skinning), not a material field. Reveal-fade layers on
+   top via `tween`→`node.alpha`. See Decisions.
 3. **Progressive / mip streaming (phase 2)** — placeholder → low-res/mip → full with cross-fade; the
-   fully mature streaming path. Depends on `texture-formats` mip parsing + a low-res source.
+   fully mature streaming path. Depends on `texture-formats` mip parsing + a low-res source. This is
+   where `@flighthq/assets` refcount/unload lands (external URIs have natural ids).
 4. **External-fetch seam** — whether the fetch side rides `@flighthq/net` or a caller-supplied resolver
    only; native hosts replace it.
 5. **glTF as the proving ground** — glTF external `.bin` + images are the highest-value consumer; use it

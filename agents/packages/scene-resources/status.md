@@ -2,7 +2,23 @@
 
 Continuity log for `@flighthq/scene-resources`. See [charter](charter.md).
 
-## State: chartered, build NOT started (2026-07-17)
+## 2026-07-17 — DELIVERED v1 Phases 1–3 (builder, parcel builder-2afc1234) — reviewed & approved
+
+Built on the integrated color+shading HEAD; `npm run check` green (130 pkgs), 43 tests. Types
+(`SceneResourceRef` closed union + `ResourceResolutionState` closed const-union + additive
+`Texture.resource?`), AWD emits refs (drops decode + `@flighthq/image` dep), and the package
+(resolver + `resolveSceneResources` policy engine w/ cancel-on-drop + stale-settle guard +
+`enableSceneResourceSignals` + eager `loadSceneFromAwd` + open `SceneMaterialTextureRegistry`).
+Reviewer verified the cancellation semantics (identity guard, abort-vs-fail, revert-on-drop) correct.
+
+Delivered decisions (see charter › Decisions 2026-07-17): **assets deferred** to the streaming phase
+(id-centric vs embedded byte-refs); **glTF texture import deferred** (net-new modeling, STOP-AND-ASK);
+**reveal hook = the missing "3D node opacity" primitive**, split out and built separately (coordinate
+its shader changes with skinning). Not verified: browser visual capture (needs host run).
+
+## State (superseded — original plan below is historical)
+
+Original (2026-07-17):
 
 Chartered in a direction session with the user, out of the AWD-texture design call (#1): the
 deferred-fill builder shipped for AWD is the right tactic but the wrong thing to repeat per parser —
