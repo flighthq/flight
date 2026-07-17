@@ -49,11 +49,14 @@ function expectUnitTangents(geometry: Readonly<MeshGeometry>): void {
 function expectWindingMatchesNormals(geometry: Readonly<MeshGeometry>): void {
   const stride = 12;
   const p = (index: number, offset: number): number => geometry.vertices[index * stride + offset];
-  const indexCount = geometry.indices.length;
+  const indices = geometry.indices;
+  expect(indices).not.toBeNull();
+  if (indices === null) return;
+  const indexCount = indices.length;
   for (let t = 0; t + 2 < indexCount; t += 3) {
-    const i0 = geometry.indices[t];
-    const i1 = geometry.indices[t + 1];
-    const i2 = geometry.indices[t + 2];
+    const i0 = indices[t];
+    const i1 = indices[t + 1];
+    const i2 = indices[t + 2];
     // Right-hand rule over the winding order: (p1 - p0) × (p2 - p0) faces front for CCW triangles.
     const ex = [p(i1, 0) - p(i0, 0), p(i1, 1) - p(i0, 1), p(i1, 2) - p(i0, 2)];
     const ey = [p(i2, 0) - p(i0, 0), p(i2, 1) - p(i0, 1), p(i2, 2) - p(i0, 2)];
