@@ -130,6 +130,17 @@ export function getMeshGeometryVertexCount(geometry: Readonly<MeshGeometry>): nu
   return getVertexCountFromLayout(geometry.vertices, geometry.layout);
 }
 
+// Returns true when the geometry's vertex layout carries the joints0 skinning channel — the signal
+// that it can be skeletally deformed (CPU via skinMeshGeometry, or the GPU HAS_SKIN shader variant).
+// The renderer selects the skinned program variant off this, exactly as it would off uv1.
+export function hasMeshGeometrySkin(geometry: Readonly<MeshGeometry>): boolean {
+  const attributes = geometry.layout.attributes;
+  for (let i = 0; i < attributes.length; i++) {
+    if (attributes[i].semantic === 'joints0') return true;
+  }
+  return false;
+}
+
 // Stores (or clears, with null) the CPU-skinning bind pose on the geometry's runtime. Called once
 // by the deform glue when a skinned geometry is first captured; pass null to force a recapture
 // (e.g. after the vertex layout or bind-pose data changes).

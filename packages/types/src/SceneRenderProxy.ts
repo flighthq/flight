@@ -19,7 +19,13 @@ import type { MeshSubset } from './MeshGeometry';
 //
 // The proxy is a reused scratch record owned by drawScene, valid only for the duration of the draw
 // call it is passed to; a renderer must not retain it.
+// `jointMatrices` is the GPU skin palette for this draw — the source Mesh's skin skeleton's
+// `jointMatrices` (jointWorld * inverseBind per joint, column-major, 16 floats each). Absent or null
+// means the mesh is rigid: drawScene sets it only for a skinned mesh, and the HAS_SKIN shader
+// variant uploads it and deforms in the vertex stage. Optional because rigid draws — the common
+// case — carry no palette; a renderer reads it as `proxy.jointMatrices ?? null`.
 export interface SceneRenderProxy {
+  jointMatrices?: Readonly<Float32Array> | null;
   material: Readonly<Material>;
   normalMatrix: Readonly<Matrix3>;
   subset: Readonly<MeshSubset>;
