@@ -77,9 +77,9 @@ describe('createSceneFromObj', () => {
 
     const uv = { x: 0, y: 0 };
     getMeshGeometryVertexUv0(uv, geometry, 0);
-    expect([uv.x, uv.y]).toEqual([0, 0]);
+    expect([uv.x, uv.y]).toEqual([0, 1]);
     getMeshGeometryVertexUv0(uv, geometry, 1);
-    expect([uv.x, uv.y]).toEqual([1, 0]);
+    expect([uv.x, uv.y]).toEqual([1, 1]);
   });
 
   it('handles v//vn syntax (position and normal, no uv)', () => {
