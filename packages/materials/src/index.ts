@@ -6,5 +6,6 @@ export * from './materialPresets';
 export * from './materialValidation';
 export * from './pbrExtensionMaterials';
 export * from './pbrMaterials';
+export * from './phongToPbr';
 export * from './surfaceMaterial';
 export * from './unlitMaterials';
