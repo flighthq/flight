@@ -20,6 +20,10 @@ import type { MeshSubset } from './MeshGeometry';
 // The proxy is a reused scratch record owned by drawScene, valid only for the duration of the draw
 // call it is passed to; a renderer must not retain it.
 export interface SceneRenderProxy {
+  // The resolved per-object opacity in [0, 1] (parent×self worldAlpha). Absent/undefined means fully
+  // opaque (= 1); a honoring renderer multiplies its output alpha by this. Optional so existing proxy
+  // literals stay valid.
+  alpha?: number;
   material: Readonly<Material>;
   normalMatrix: Readonly<Matrix3>;
   subset: Readonly<MeshSubset>;

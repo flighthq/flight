@@ -151,6 +151,41 @@ describe('drawGlScene', () => {
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(false);
   });
 
+  it('routes a mesh with node alpha below 1 through the blended pass even with an opaque material', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    // Opaque material, but the node is faded (alpha < 1). prepareSceneRender (run inside drawGlScene)
+    // folds the authored alpha into worldAlpha, and drawGlScene must route the fading object through
+    // the blended pass so it composites correctly.
+    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    mesh.alpha = 0.5;
+    addNodeChild(scene, mesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
+    // The resolved node opacity was uploaded to u_objectAlpha (a uniform1f of 0.5).
+    expect(gl.calls.some((c) => c.name === 'uniform1f' && c.args[1] === 0.5)).toBe(true);
+  });
+
+  it('keeps a fully-opaque mesh (node alpha 1) in the opaque pass', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    mesh.alpha = 1;
+    addNodeChild(scene, mesh);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === 0x0be2)).toBe(false);
+    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
+  });
+
   it('skips a subset whose material has no registered renderer (no fallback)', () => {
     const { state, gl } = makeGlSceneState();
     // No registerStandardPbrGlMaterial: nothing resolves.

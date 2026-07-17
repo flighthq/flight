@@ -2,6 +2,7 @@ import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flig
 import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { invalidateGlRenderStateCache } from '@flighthq/render-gl';
+import { getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type {
   Camera,
   GlMeshMaterialRenderer,
@@ -80,14 +81,19 @@ export function drawGlScene(
     const vp = viewProjection.m;
     const clipW = vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15];
 
+    // Resolved per-object opacity (parent×self), constant across a mesh's subsets. A fading object
+    // (alpha < 1) must route through the blended pass so it composites over what is behind it.
+    const objectAlpha = getSceneNodeWorldAlpha(mesh);
+
     for (let s = 0; s < subsets.length; s++) {
       const material = resolveSubsetMaterial(mesh, s);
       const renderer = resolveGlMeshMaterialRenderer(state, material);
       if (renderer === null) continue;
 
       const resolvedMaterial = material ?? DEFAULT_MATERIAL;
-      const isBlended = isBlendedMaterial(resolvedMaterial);
+      const isBlended = isBlendedMaterial(resolvedMaterial) || objectAlpha < 1;
       const entry = isBlended ? acquireBlendedEntry(runtime.blendedPool) : acquireOpaqueEntry(runtime.opaquePool);
+      entry.alpha = objectAlpha;
       entry.clipW = clipW;
       entry.mesh = mesh;
       entry.material = resolvedMaterial;
@@ -119,6 +125,7 @@ export function drawGlScene(
       boundMaterial = entry.material;
     }
 
+    proxy.alpha = entry.alpha;
     proxy.material = entry.material;
     proxy.normalMatrix = scratchNormalMatrix;
     proxy.subset = entry.subset;
@@ -149,6 +156,7 @@ export function drawGlScene(
         boundMaterial = entry.material;
       }
 
+      proxy.alpha = entry.alpha;
       proxy.material = entry.material;
       proxy.normalMatrix = scratchNormalMatrix;
       proxy.subset = entry.subset;
@@ -197,6 +205,7 @@ function compareBlendedEntriesDescending(a: GlSceneDrawEntry, b: GlSceneDrawEntr
 // Typed alias for cast-free access inside drawGlScene; GlSceneDrawEntry uses `object` fields for
 // the header to remain free of scene-gl-internal types.
 interface DrawEntry {
+  alpha: number;
   clipW: number;
   material: Readonly<Material>;
   mesh: Mesh;
@@ -219,6 +228,7 @@ function acquireBlendedEntry(pool: GlSceneDrawEntry[]): GlSceneDrawEntry {
 
 function createDrawEntry(): GlSceneDrawEntry {
   return {
+    alpha: 1,
     clipW: 0,
     material: DEFAULT_MATERIAL,
     mesh: null!,

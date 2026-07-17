@@ -94,6 +94,86 @@ describe('drawGlMeshSubset', () => {
     expect(draw!.args[1]).toBe(proxy.subset.indexCount);
   });
 
+  it('uploads u_objectAlpha with the proxy alpha when the program has an object-alpha location', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram();
+    program.locObjectAlpha = { name: 'u_objectAlpha' } as WebGLUniformLocation;
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        alpha: 0.25,
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    expect(gl.calls.some((c) => c.name === 'uniform1f' && c.args[1] === 0.25)).toBe(true);
+  });
+
+  it('defaults u_objectAlpha to 1 when the proxy carries no alpha', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram();
+    program.locObjectAlpha = { name: 'u_objectAlpha' } as WebGLUniformLocation;
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    expect(gl.calls.some((c) => c.name === 'uniform1f' && c.args[1] === 1)).toBe(true);
+  });
+
+  it('is a no-op for object alpha when the program has no object-alpha location', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram();
+    program.locObjectAlpha = null; // resolved: this shader has no u_objectAlpha
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        alpha: 0.5,
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    expect(gl.calls.some((c) => c.name === 'uniform1f')).toBe(false);
+    // A null location is not re-resolved (no getUniformLocation for u_objectAlpha).
+    expect(gl.calls.some((c) => c.name === 'getUniformLocation' && c.args[0] === 'u_objectAlpha')).toBe(false);
+  });
+
+  it('resolves u_objectAlpha lazily on first draw when unresolved (undefined)', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram(); // locObjectAlpha undefined
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        alpha: 0.5,
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    expect(gl.calls.some((c) => c.name === 'getUniformLocation' && c.args[0] === 'u_objectAlpha')).toBe(true);
+  });
+
   it('skips the normal matrix when the program has no normal-matrix location', () => {
     const { state, gl } = makeGlSceneState();
     const geometry = createBoxMeshGeometry();

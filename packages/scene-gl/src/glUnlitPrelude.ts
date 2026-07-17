@@ -142,6 +142,8 @@ uniform sampler2D u_colorMap;
 uniform float u_alphaCutoff;
 #endif
 
+uniform float u_objectAlpha;
+
 out vec4 fragColor;
 
 // sRgb texels are gamma-encoded; decode to linear before use. u_color is already linear (decoded on
@@ -166,5 +168,6 @@ void main() {
   if (color.a < u_alphaCutoff) discard;
 #endif
   fragColor = vec4(color.rgb * u_intensity, color.a);
+  fragColor.a *= u_objectAlpha;
 }
 `;

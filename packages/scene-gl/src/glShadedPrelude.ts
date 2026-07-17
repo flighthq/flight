@@ -207,6 +207,8 @@ uniform sampler2D u_specularMap;
 uniform sampler2D u_normalMap;
 #endif
 
+uniform float u_objectAlpha;
+
 out vec4 fragColor;
 
 // sRgb albedo texels are gamma-encoded; decode to linear before lighting.
@@ -328,6 +330,7 @@ void main() {
   //@EFFECT
 
   fragColor = vec4(radiance, diffuse.a);
+  fragColor.a *= u_objectAlpha;
 }
 `;
 
