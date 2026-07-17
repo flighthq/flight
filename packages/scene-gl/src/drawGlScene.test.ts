@@ -4,6 +4,7 @@ import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
+import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createMesh, createScene } from '@flighthq/scene';
 import type { Camera, SceneLights } from '@flighthq/types';
@@ -185,5 +186,42 @@ describe('drawGlScene', () => {
 
     // Both blended meshes are drawn.
     expect(gl.calls.filter((c) => c.name === 'drawElements').length).toBe(2);
+  });
+
+  it('draws a ParticleEmitter3D node in the scene via the single drawGlScene call', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    // An emitter carries no geometry, so it never appears in the visible-mesh list; drawGlScene must
+    // run the emitter pass internally. The emitter's instanced pass is the only drawElementsInstanced
+    // caller, so its presence proves the emitter was drawn without a separate manual pass.
+    const emitter = createParticleEmitter3D();
+    reserveParticleEmitter3D(emitter, 2);
+    emitter.data.particleCount = 2;
+    for (let i = 0; i < 2; i++) {
+      emitter.data.transforms[i * 4 + 3] = 1;
+      emitter.data.alphas[i] = 1;
+      emitter.data.colors[i * 3] = 1;
+      emitter.data.colors[i * 3 + 1] = 1;
+      emitter.data.colors[i * 3 + 2] = 1;
+    }
+    addNodeChild(scene, emitter);
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(true);
+  });
+
+  it('does not draw an instanced particle pass when the scene has no emitters', () => {
+    const { state, gl } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createScene();
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
+
+    drawGlScene(state, scene, makeCamera(), LIGHTS);
+
+    expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
   });
 });
