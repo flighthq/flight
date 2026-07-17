@@ -1,4 +1,4 @@
-import type { LinearColor } from '@flighthq/materials';
+import type { LinearColor } from '@flighthq/color';
 
 import type { WgpuMatcapDefineKey } from './wgpuMatcapPrelude';
 import {

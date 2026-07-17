@@ -9,16 +9,39 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../camera" },
-    { "path": "../geometry" },
-    { "path": "../lighting" },
-    { "path": "../materials" },
-    { "path": "../mesh" },
-    { "path": "../node" },
-    { "path": "../render" },
-    { "path": "../render-wgpu" },
-    { "path": "../scene" },
-    { "path": "../types" }
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../lighting"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../mesh"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../render-wgpu"
+    },
+    {
+      "path": "../scene"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

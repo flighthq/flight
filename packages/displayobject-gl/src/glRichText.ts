@@ -1,4 +1,4 @@
-﻿import { computeRgbHexString } from '@flighthq/materials';
+﻿import { computeRgbHexString } from '@flighthq/color';
 import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl';
 import { resolveGlShader } from '@flighthq/render-gl';
 import { computeTextFormatFontString } from '@flighthq/text';

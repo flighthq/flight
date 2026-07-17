@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/materials';
+import { computeRgbHexString } from '@flighthq/color';
 import { getNodeLocalContentRevision } from '@flighthq/node';
 import { updateWgpuTextureEntry } from '@flighthq/render-wgpu';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';

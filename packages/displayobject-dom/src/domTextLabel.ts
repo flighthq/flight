@@ -1,5 +1,5 @@
-﻿import { createEntity } from '@flighthq/entity';
-import { computeRgbHexString } from '@flighthq/materials';
+import { computeRgbHexString } from '@flighthq/color';
+import { createEntity } from '@flighthq/entity';
 import { computeTextFormatFontString } from '@flighthq/text';
 import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
