@@ -36,6 +36,7 @@
     "@flighthq/color": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
+    "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
@@ -44,7 +45,6 @@
   },
   "devDependencies": {
     "@flighthq/lighting": "*",
-    "@flighthq/mesh": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/scene": "*",
     "typescript": "^5.3.0"
