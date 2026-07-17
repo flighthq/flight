@@ -1,3 +1,4 @@
+import type { FocusEventData } from './FocusEventData';
 import type { KeyboardEventData } from './KeyboardEventData';
 import type { PointerEventData } from './PointerEventData';
 import type { Signal } from './Signal';
@@ -6,6 +7,8 @@ export interface InteractionSignals {
   onClick: Signal<(data: Readonly<PointerEventData>) => void>;
   onContextMenu: Signal<(data: Readonly<PointerEventData>) => void>;
   onDoubleClick: Signal<(data: Readonly<PointerEventData>) => void>;
+  onFocusIn: Signal<(data: Readonly<FocusEventData>) => void>;
+  onFocusOut: Signal<(data: Readonly<FocusEventData>) => void>;
   onKeyDown: Signal<(data: Readonly<KeyboardEventData>) => void>;
   onKeyUp: Signal<(data: Readonly<KeyboardEventData>) => void>;
   onPointerCancel: Signal<(data: Readonly<PointerEventData>) => void>;
