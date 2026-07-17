@@ -104,10 +104,18 @@ interface GlParticle3DShader {
   locUvRect: number;
   locViewProjection: WebGLUniformLocation;
   program: WebGLProgram;
+  vao: WebGLVertexArrayObject;
 }
 
 function compileParticle3DShader(gl: WebGL2RenderingContext): GlParticle3DShader {
   const program = createGlProgram(gl, PARTICLE_3D_VS, PARTICLE_3D_FS, 'ParticleEmitter3D');
+
+  // Bind the emitter's dedicated VAO before creating buffers. This compile runs lazily inside the first
+  // particle draw — mid drawGlScene, with the last mesh's VAO still bound — so the ELEMENT_ARRAY_BUFFER
+  // binding below must land in this VAO, not in that mesh's cached VAO (which would leave it drawing
+  // against this 6-index quad buffer and reporting "Insufficient buffer size" on later frames).
+  const vao = gl.createVertexArray()!;
+  gl.bindVertexArray(vao);
 
   const cornerData = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
   const cornerBuffer = gl.createBuffer()!;
@@ -120,6 +128,8 @@ function compileParticle3DShader(gl: WebGL2RenderingContext): GlParticle3DShader
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
 
   const instanceBuffer = gl.createBuffer()!;
+
+  gl.bindVertexArray(null);
 
   return {
     cornerBuffer,
@@ -139,6 +149,7 @@ function compileParticle3DShader(gl: WebGL2RenderingContext): GlParticle3DShader
     locUvRect: 5,
     locViewProjection: gl.getUniformLocation(program, 'u_viewProjection')!,
     program,
+    vao,
   };
 }
 
@@ -259,6 +270,13 @@ function drawParticleEmitter3DNode(
 
   if (drawCount === 0) return;
 
+  // Bind a dedicated VAO before setting any buffer/attribute state. This instanced draw configures
+  // ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, pointers, and divisors; without its own VAO those writes land
+  // in whatever VAO is currently bound — typically the last mesh VAO left bound by drawGlScene — whose
+  // index buffer then becomes this 6-index quad buffer, so the mesh's next-frame drawElements reports
+  // "Insufficient buffer size". The VAO isolates all of it.
+  gl.bindVertexArray(shader.vao);
+
   gl.bindBuffer(gl.ARRAY_BUFFER, shader.instanceBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData, 0, drawCount * INSTANCE_FLOATS);
 
@@ -303,12 +321,9 @@ function drawParticleEmitter3DNode(
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shader.indexBuffer);
   gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0, drawCount);
 
-  gl.vertexAttribDivisor(shader.locPos, 0);
-  gl.vertexAttribDivisor(shader.locCosScale, 0);
-  gl.vertexAttribDivisor(shader.locSinScale, 0);
-  gl.vertexAttribDivisor(shader.locColor, 0);
-  gl.vertexAttribDivisor(shader.locUvRect, 0);
-  gl.vertexAttribDivisor(shader.locSize, 0);
+  // Restore the default VAO. The instance divisors set above are recorded in shader.vao, so isolating
+  // them here means a following mesh draw never inherits per-instance stepping on its attributes.
+  gl.bindVertexArray(null);
 }
 
 export function destroyGlParticleEmitter3DShader(state: GlRenderState): void {
