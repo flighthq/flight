@@ -20,6 +20,7 @@ export function emitParticleBurst3D(
   x: number,
   y: number,
   z: number,
+  tint?: number,
 ): number {
   const data = emitter.data;
   const liveCount = data.particleCount;
@@ -52,6 +53,16 @@ export function emitParticleBurst3D(
   const rotSpeedRange = config.rotationSpeedMax - config.rotationSpeedMin;
   const hasRotSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
   const random = state.random;
+
+  // Per-burst tint (packed 0xrrggbbaa) modulates the config-derived spawn color and alpha,
+  // so a white config × tint = tint (matching per-particle source-pixel sampling). A tint on
+  // top of a color curve only affects the spawn frame — the curve re-samples data.colors each
+  // step and washes it out; variance persists because colorBirth/colorDeath are modulated too.
+  const hasTint = tint !== undefined;
+  const tintR = hasTint ? ((tint! >>> 24) & 0xff) / 255 : 1;
+  const tintG = hasTint ? ((tint! >>> 16) & 0xff) / 255 : 1;
+  const tintB = hasTint ? ((tint! >>> 8) & 0xff) / 255 : 1;
+  const tintA = hasTint ? (tint! & 0xff) / 255 : 1;
 
   const dirLen = Math.sqrt(
     config.directionX * config.directionX +
@@ -191,6 +202,21 @@ export function emitParticleBurst3D(
       data.colors[ct] = colorStartR;
       data.colors[ct + 1] = colorStartG;
       data.colors[ct + 2] = colorStartB;
+    }
+
+    if (hasTint) {
+      data.colors[ct] *= tintR;
+      data.colors[ct + 1] *= tintG;
+      data.colors[ct + 2] *= tintB;
+      data.alphas[idx] *= tintA;
+      if (hasColorVariance) {
+        state.colorBirth[ct] *= tintR;
+        state.colorBirth[ct + 1] *= tintG;
+        state.colorBirth[ct + 2] *= tintB;
+        state.colorDeath[ct] *= tintR;
+        state.colorDeath[ct + 1] *= tintG;
+        state.colorDeath[ct + 2] *= tintB;
+      }
     }
 
     data.ids[idx] = regionIdMin + (config.frameCount > 1 ? 0 : regionRange > 0 ? (random() * regionRange) | 0 : 0);
