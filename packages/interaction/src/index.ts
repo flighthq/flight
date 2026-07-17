@@ -2,6 +2,7 @@ export * from './cursorBackend';
 export * from './displayHitTests';
 export * from './enableInteractionGuards';
 export * from './displayObjectOverlap';
+export * from './focusManager';
 export * from './hitTests';
 export * from './interactionManager';
 export * from './interactionSpatialIndex';

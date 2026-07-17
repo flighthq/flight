@@ -4,6 +4,7 @@ import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnec
 import type {
   AnyInteractionSignalSlot,
   Cursor,
+  FocusEventData,
   InputKeyboardData,
   InputPointerData,
   InteractionInputSource,
@@ -148,6 +149,8 @@ export function createInteractionSignals(): InteractionSignals {
     onClick: createSignal(),
     onContextMenu: createSignal(),
     onDoubleClick: createSignal(),
+    onFocusIn: createSignal(),
+    onFocusOut: createSignal(),
     onKeyDown: createSignal(),
     onKeyUp: createSignal(),
     onPointerCancel: createSignal(),
@@ -706,13 +709,16 @@ function isTransform2DNode(source: Readonly<NodeAny>): source is Transform2DNode
 }
 
 type KeyboardSignalName = 'onKeyDown' | 'onKeyUp';
-type PointerSignalName = Exclude<InteractionSignalName, KeyboardSignalName>;
+type FocusSignalName = 'onFocusIn' | 'onFocusOut';
+type PointerSignalName = Exclude<InteractionSignalName, KeyboardSignalName | FocusSignalName>;
 
 export type InteractionConnectGuard = (target: NodeAny, name: InteractionSignalName) => void;
 
 type InteractionSignalPayload<Name extends InteractionSignalName> = Name extends KeyboardSignalName
   ? Readonly<KeyboardEventData>
-  : Readonly<PointerEventData>;
+  : Name extends FocusSignalName
+    ? Readonly<FocusEventData>
+    : Readonly<PointerEventData>;
 type InteractionSignalSlot<Name extends InteractionSignalName> = (value: InteractionSignalPayload<Name>) => void;
 
 let interactionConnectGuard: InteractionConnectGuard | null = null;
