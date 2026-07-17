@@ -102,4 +102,36 @@ describe('emitParticleBurst3D', () => {
       expect(emitter.data.alphas[i]).toBeCloseTo(0.5);
     }
   });
+
+  it('modulates spawn color and alpha by a packed tint', () => {
+    const emitter = createParticleEmitter3D();
+    const state = createParticleEmitterState(seededRandom(42));
+    // Default config color is white, so a tint alone sets the per-particle color.
+    const config = createParticleEmitterConfig({ maxParticles: 10, alphaStart: 1 });
+    emitParticleBurst3D(emitter, state, config, 2, 0, 0, 0, 0x8040c0ff);
+    for (let i = 0; i < 2; i++) {
+      expect(emitter.data.colors[i * 3]).toBeCloseTo(0x80 / 255);
+      expect(emitter.data.colors[i * 3 + 1]).toBeCloseTo(0x40 / 255);
+      expect(emitter.data.colors[i * 3 + 2]).toBeCloseTo(0xc0 / 255);
+      expect(emitter.data.alphas[i]).toBeCloseTo(1);
+    }
+  });
+
+  it('multiplies a non-white config color by the tint (composes, not replaces)', () => {
+    const emitter = createParticleEmitter3D();
+    const state = createParticleEmitterState(seededRandom(42));
+    const config = createParticleEmitterConfig({
+      maxParticles: 10,
+      colorStartR: 0.5,
+      colorStartG: 1,
+      colorStartB: 0.25,
+      alphaStart: 1,
+    });
+    // Tint 0xffffff80: white RGB (no color change) with half alpha.
+    emitParticleBurst3D(emitter, state, config, 1, 0, 0, 0, 0xffffff80);
+    expect(emitter.data.colors[0]).toBeCloseTo(0.5);
+    expect(emitter.data.colors[1]).toBeCloseTo(1);
+    expect(emitter.data.colors[2]).toBeCloseTo(0.25);
+    expect(emitter.data.alphas[0]).toBeCloseTo(0x80 / 255);
+  });
 });

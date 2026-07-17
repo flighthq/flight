@@ -22,7 +22,12 @@ const TWO_PI = Math.PI * 2;
  *  emitter/state/config are completely independent of the parent.
  *
  *  Spawn randomness is drawn from `state.random`, so a seeded child state keeps
- *  sub-emitter output deterministic. */
+ *  sub-emitter output deterministic.
+ *
+ *  `tint` (packed 0xrrggbbaa, optional) modulates the config-derived spawn color
+ *  and alpha per particle — the seam for per-particle source-pixel coloring
+ *  (a white config × tint = tint). See {@link emitParticleBurst3D} for the tint
+ *  interaction with color curves and variance. */
 export function emitParticleBurst(
   emitter: ParticleEmitter,
   state: ParticleEmitterState,
@@ -30,6 +35,7 @@ export function emitParticleBurst(
   count: number,
   x: number,
   y: number,
+  tint?: number,
 ): number {
   const data = emitter.data;
   const liveCount = data.particleCount;
@@ -63,6 +69,16 @@ export function emitParticleBurst(
   const rotSpeedRange = config.rotationSpeedMax - config.rotationSpeedMin;
   const hasRotSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
   const random = state.random;
+
+  // Per-burst tint (packed 0xrrggbbaa) modulates the config-derived spawn color and alpha,
+  // so a white config × tint = tint (matching per-particle source-pixel sampling). A tint on
+  // top of a color curve only affects the spawn frame — the curve re-samples data.colors each
+  // step and washes it out; variance persists because colorBirth/colorDeath are modulated too.
+  const hasTint = tint !== undefined;
+  const tintR = hasTint ? ((tint! >>> 24) & 0xff) / 255 : 1;
+  const tintG = hasTint ? ((tint! >>> 16) & 0xff) / 255 : 1;
+  const tintB = hasTint ? ((tint! >>> 8) & 0xff) / 255 : 1;
+  const tintA = hasTint ? (tint! & 0xff) / 255 : 1;
 
   for (let sIdx = 0; sIdx < toSpawn; sIdx++) {
     const idx = liveCount + sIdx;
@@ -126,6 +142,21 @@ export function emitParticleBurst(
       data.colors[ct] = colorStartR;
       data.colors[ct + 1] = colorStartG;
       data.colors[ct + 2] = colorStartB;
+    }
+
+    if (hasTint) {
+      data.colors[ct] *= tintR;
+      data.colors[ct + 1] *= tintG;
+      data.colors[ct + 2] *= tintB;
+      data.alphas[idx] *= tintA;
+      if (hasColorVariance) {
+        state.colorBirth[ct] *= tintR;
+        state.colorBirth[ct + 1] *= tintG;
+        state.colorBirth[ct + 2] *= tintB;
+        state.colorDeath[ct] *= tintR;
+        state.colorDeath[ct + 1] *= tintG;
+        state.colorDeath[ct + 2] *= tintB;
+      }
     }
 
     data.ids[idx] = regionIdMin + (config.frameCount > 1 ? 0 : regionRange > 0 ? (random() * regionRange) | 0 : 0);
