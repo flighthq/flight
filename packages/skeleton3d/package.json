@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
+    "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/types": "*"
   },
