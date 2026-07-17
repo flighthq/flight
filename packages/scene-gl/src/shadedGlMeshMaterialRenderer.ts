@@ -1,5 +1,5 @@
-import type { LinearColor } from '@flighthq/materials';
-import { unpackColorToLinear } from '@flighthq/materials';
+import type { LinearColor } from '@flighthq/color';
+import { unpackColorToLinear } from '@flighthq/color';
 import { bindGlTexture } from '@flighthq/render-gl';
 import { orderModifierStack, resolveModifier } from '@flighthq/shading';
 import type { ModifierRegistry } from '@flighthq/shading';
