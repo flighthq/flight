@@ -6,6 +6,7 @@ import { getGlRenderStateRuntime } from './glRenderState';
 import {
   beginGlRenderTarget,
   createGlRenderTarget,
+  declareGlRenderTargetColorSpace,
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
   endGlRenderTarget,
@@ -125,6 +126,50 @@ describe('createGlRenderTarget', () => {
     runtime.currentTexture = {} as WebGLTexture;
     createGlRenderTarget(state, { width: 32, height: 32 });
     expect(runtime.currentTexture).toBeNull();
+  });
+
+  it("defaults colorSpace to 'srgb' when the descriptor omits it", () => {
+    const { state } = makeState();
+    const target = createGlRenderTarget(state, { width: 32, height: 32 });
+    expect(target.colorSpace).toBe('srgb');
+  });
+
+  it('honors an explicit colorSpace', () => {
+    const { state } = makeState();
+    const target = createGlRenderTarget(state, { width: 32, height: 32, colorSpace: 'linear' });
+    expect(target.colorSpace).toBe('linear');
+  });
+});
+
+describe('declareGlRenderTargetColorSpace', () => {
+  it('stamps the currently bound target and returns true', () => {
+    const { state } = makeState();
+    const target = createGlRenderTarget(state, { width: 64, height: 48 });
+    expect(target.colorSpace).toBe('srgb');
+    beginGlRenderTarget(state, target, createMatrix());
+    expect(declareGlRenderTargetColorSpace(state, 'linear')).toBe(true);
+    expect(target.colorSpace).toBe('linear');
+    endGlRenderTarget(state);
+  });
+
+  it('returns false when no target is bound (rendering to the canvas)', () => {
+    const { state } = makeState();
+    expect(declareGlRenderTargetColorSpace(state, 'linear')).toBe(false);
+  });
+
+  it('is restored to the outer target when a nested target ends', () => {
+    const { state } = makeState();
+    const outer = createGlRenderTarget(state, { width: 64, height: 48 });
+    const inner = createGlRenderTarget(state, { width: 32, height: 32 });
+    beginGlRenderTarget(state, outer, createMatrix());
+    beginGlRenderTarget(state, inner, createMatrix());
+    declareGlRenderTargetColorSpace(state, 'linear');
+    expect(inner.colorSpace).toBe('linear');
+    endGlRenderTarget(state);
+    // Back on `outer`: a declare now stamps it, not the popped inner target.
+    declareGlRenderTargetColorSpace(state, 'linear');
+    expect(outer.colorSpace).toBe('linear');
+    endGlRenderTarget(state);
   });
 });
 

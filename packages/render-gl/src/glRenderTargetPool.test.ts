@@ -27,6 +27,20 @@ describe('acquireGlRenderTarget', () => {
     expect(pool.free.length).toBe(0);
   });
 
+  it('re-stamps colorSpace on a reused target (not part of the physical reuse match)', () => {
+    const { state } = createGlState();
+    const pool = createGlRenderTargetPool();
+    const first = acquireGlRenderTarget(state, pool, { width: 64, height: 48, colorSpace: 'linear' });
+    expect(first.colorSpace).toBe('linear');
+    releaseGlRenderTarget(pool, first);
+
+    // Same dimensions/format/samples but a different color space: the pooled target is reused, so its
+    // stale 'linear' must be overwritten to avoid double-encoding sRGB content at present.
+    const reused = acquireGlRenderTarget(state, pool, { width: 64, height: 48, colorSpace: 'srgb' });
+    expect(reused).toBe(first);
+    expect(reused.colorSpace).toBe('srgb');
+  });
+
   it('allocates a new target when the free target has different dimensions', () => {
     const { state } = createGlState();
     const pool = createGlRenderTargetPool();

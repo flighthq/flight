@@ -19,6 +19,7 @@ function makeTarget(framebuffer: WebGLFramebuffer, width = 32, height = 16): GlR
     width,
     height,
     format: 'rgba8',
+    colorSpace: 'srgb',
     sampleCount: 1,
     framebuffer,
     resolveFramebuffer: null,
