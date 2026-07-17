@@ -140,13 +140,12 @@ describe('createSceneFrom3ds', () => {
     const children = getNodeChildren(scene);
     expect(children).toHaveLength(1);
 
-    // The named wrapper node contains the mesh.
-    const wrapper = children[0] as SceneNode;
-    const meshChildren = getNodeChildren(wrapper);
-    expect(meshChildren).toHaveLength(1);
-    expect(isMesh(meshChildren[0] as SceneNode)).toBe(true);
+    // A named 3DS object is returned as a bare Mesh carrying the name, not a transform wrapper.
+    const mesh = children[0] as SceneNode;
+    expect(isMesh(mesh)).toBe(true);
+    expect(mesh.name).toBe('Tri');
 
-    const geometry = (meshChildren[0] as Mesh).geometry;
+    const geometry = (mesh as Mesh).geometry;
     const p = { x: 0, y: 0, z: 0 };
 
     getMeshGeometryVertexPosition(p, geometry, 0);
@@ -167,11 +166,11 @@ describe('createSceneFrom3ds', () => {
     const children = getNodeChildren(scene);
     expect(children).toHaveLength(1);
 
-    const wrapper = children[0] as SceneNode;
-    const meshChildren = getNodeChildren(wrapper);
-    expect(meshChildren).toHaveLength(1);
+    const mesh = children[0] as SceneNode;
+    expect(isMesh(mesh)).toBe(true);
+    expect(mesh.name).toBe('Triangle');
 
-    const geometry = (meshChildren[0] as Mesh).geometry;
+    const geometry = (mesh as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     expect(getMeshGeometryIndexCount(geometry)).toBe(3);
   });
@@ -185,20 +184,17 @@ describe('createSceneFrom3ds', () => {
     const children = getNodeChildren(scene);
     expect(children).toHaveLength(2);
 
-    // Each wrapper node should contain one mesh.
-    for (let i = 0; i < children.length; i++) {
-      const wrapper = children[i] as SceneNode;
-      const meshChildren = getNodeChildren(wrapper);
-      expect(meshChildren).toHaveLength(1);
-      expect(isMesh(meshChildren[0] as SceneNode)).toBe(true);
-    }
+    // Each named object is a bare Mesh child of the scene, carrying its name.
+    expect(isMesh(children[0] as SceneNode)).toBe(true);
+    expect((children[0] as SceneNode).name).toBe('MeshA');
+    expect(isMesh(children[1] as SceneNode)).toBe(true);
+    expect((children[1] as SceneNode).name).toBe('MeshB');
   });
 
   it('parses UV coordinates', () => {
     const bytes = buildTriangle3ds('UvTri', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2], [0, 0, 1, 0, 0.5, 1]);
     const scene = createSceneFrom3ds(bytes);
-    const wrapper = getNodeChildren(scene)[0] as SceneNode;
-    const geometry = (getNodeChildren(wrapper)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
 
     const uv = { x: 0, y: 0 };
     getMeshGeometryVertexUv0(uv, geometry, 0);
@@ -213,8 +209,7 @@ describe('createSceneFrom3ds', () => {
     // A flat triangle in Z-up XY plane: normal should point +Z in Z-up → +Y in Y-up.
     const bytes = buildTriangle3ds('NormalTri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
     const scene = createSceneFrom3ds(bytes);
-    const wrapper = getNodeChildren(scene)[0] as SceneNode;
-    const geometry = (getNodeChildren(wrapper)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexNormal(n, geometry, 0);

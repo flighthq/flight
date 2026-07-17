@@ -1,7 +1,7 @@
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
+import { createMesh, createScene } from '@flighthq/scene';
 import type { SceneNode } from '@flighthq/types';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, swapPositionsYZ } from './shared';
@@ -342,16 +342,17 @@ function buildMeshNode(mesh: Readonly<ThreeDsMesh>): SceneNode | null {
 
   const indices = Uint32Array.from(mesh.faces);
   const geometry = createMeshGeometry({ indices, layout: CANONICAL_LAYOUT, vertices });
-  const meshNode = createMesh(geometry, []) as unknown as SceneNode;
 
-  // Attach the object name if present.
-  if (mesh.name.length > 0) {
-    const wrapper = createSceneNode(undefined, { name: mesh.name });
-    addNodeChild(wrapper, meshNode);
-    return wrapper;
-  }
-
-  return meshNode;
+  // A 3DS named object holds a single trimesh, so the name belongs on the Mesh node itself — the
+  // Mesh is a SceneNode and carries its own name. Wrapping it in a transform-only group would only
+  // hide the Mesh a level down (getNodeChildren returning geometry:null wrappers). Match glTF: a
+  // lone mesh is returned bare, named.
+  return createMesh(
+    geometry,
+    [],
+    undefined,
+    mesh.name.length > 0 ? { name: mesh.name } : undefined,
+  ) as unknown as SceneNode;
 }
 
 // Reads a null-terminated ASCII string starting at `offset`, stopping at the first null byte or at

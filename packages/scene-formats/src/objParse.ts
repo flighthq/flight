@@ -1,7 +1,7 @@
 import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
+import { addNodeChild, getNodeChildren, removeNodeChild, replaceNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
+import { createMesh, createScene, createSceneNode, isMesh } from '@flighthq/scene';
 import type { SceneNode } from '@flighthq/types';
 
 import type { ObjMaterialLibrary } from './objSchema';
@@ -148,10 +148,30 @@ export function createSceneFromObj(
   // Flush remaining buckets.
   flushBuckets(materialBuckets, currentGroup, scene);
 
-  // If the scene has exactly one group node and that group has no name, unwrap its children
-  // directly into the scene to avoid a pointless wrapper.
+  collapseSingleMeshGroups(scene);
 
   return scene;
+}
+
+// Collapses each top-level group wrapper that holds exactly one Mesh into that bare Mesh, migrating
+// the group's name onto the Mesh (OBJ groups are transform-only, so no transform is lost). A group
+// with several sub-meshes — one per material — is genuine grouping and stays wrapped. This keeps
+// getNodeChildren(scene) returning Mesh nodes for single-mesh objects rather than transform-only
+// wrappers with geometry:null, matching glTF's rule.
+function collapseSingleMeshGroups(scene: Scene): void {
+  for (const child of getNodeChildren(scene)) {
+    if (isMesh(child)) continue;
+
+    const grandchildren = getNodeChildren(child);
+    if (grandchildren.length !== 1 || !isMesh(grandchildren[0])) continue;
+
+    const mesh = grandchildren[0];
+    // Migrate the group's name onto the mesh, but only when the mesh has no name of its own.
+    if (!mesh.name && child.name) mesh.name = child.name;
+
+    removeNodeChild(child, mesh);
+    replaceNodeChild(scene, child, mesh);
+  }
 }
 
 // Accumulates interleaved vertex data and triangle indices for one material within a group.
