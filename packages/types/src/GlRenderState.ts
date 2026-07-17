@@ -3,6 +3,7 @@ import type { ColorTransform } from './ColorTransform';
 import type { Kind } from './Entity';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
+import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { Material } from './Material';
@@ -134,6 +135,13 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
    * can restore the previous binding without a gl.getParameter() call.
    */
   currentFramebuffer: WebGLFramebuffer | null;
+  /**
+   * The GlRenderTarget currently bound via beginGlRenderTarget, or null when rendering to the canvas.
+   * A producer stamps the color space of the content it draws onto this target (drawGlScene declares
+   * 'linear'); the present step then reads target.colorSpace to encode correctly. Restored by
+   * endGlRenderTarget alongside currentFramebuffer.
+   */
+  currentRenderTarget?: GlRenderTarget | null;
   /**
    * When rendering into a GlRenderTarget, overrides the canvas dimensions
    * used for clip-space projection and scissor rect computation. Null means

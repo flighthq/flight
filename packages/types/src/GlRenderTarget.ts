@@ -1,4 +1,4 @@
-import type { RenderTargetFormat } from './RenderTarget';
+import type { RenderTargetColorSpace, RenderTargetFormat } from './RenderTarget';
 
 // Gl realization of a RenderTargetDescriptor. MSAA in Gl2 cannot texture-attach a multisample
 // buffer: the scene draws into `framebuffer` (multisample renderbuffer-backed when sampleCount > 1),
@@ -13,6 +13,9 @@ export interface GlRenderTarget {
   width: number;
   height: number;
   format: RenderTargetFormat;
+  // Declared color space of the target's content (resolved from the descriptor; default 'srgb'). The
+  // present step reads this to run the linear->sRGB encode exactly once for 'linear' targets.
+  colorSpace: RenderTargetColorSpace;
   sampleCount: number;
   framebuffer: WebGLFramebuffer;
   resolveFramebuffer: WebGLFramebuffer | null;
