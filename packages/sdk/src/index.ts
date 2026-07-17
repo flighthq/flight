@@ -81,6 +81,7 @@ export * from '@flighthq/scene-gl';
 export * from '@flighthq/scene-wgpu';
 export * from '@flighthq/screen';
 export * from '@flighthq/sensors';
+export * from '@flighthq/shading';
 export * from '@flighthq/shape';
 export * from '@flighthq/shape-formats';
 export * from '@flighthq/share';

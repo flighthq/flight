@@ -167,6 +167,7 @@
     "@flighthq/scene-wgpu": "*",
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
+    "@flighthq/shading": "*",
     "@flighthq/shape": "*",
     "@flighthq/shape-formats": "*",
     "@flighthq/share": "*",

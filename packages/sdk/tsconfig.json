@@ -259,6 +259,9 @@
       "path": "../sensors"
     },
     {
+      "path": "../shading"
+    },
+    {
       "path": "../shape"
     },
     {

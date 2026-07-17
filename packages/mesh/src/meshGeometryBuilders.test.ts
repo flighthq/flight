@@ -42,6 +42,39 @@ function expectUnitTangents(geometry: Readonly<MeshGeometry>): void {
   }
 }
 
+// Asserts a triangle's geometric face normal agrees with its vertices' averaged shading normal, so
+// the winding (CCW front-facing) matches the outward-pointing normals the builder emits. A back-
+// facing wind would be culled and expose the interior surface instead. Scans from the first triangle
+// to the first non-degenerate one, skipping the zero-area pole triangles UV-sphere fans produce.
+function expectWindingMatchesNormals(geometry: Readonly<MeshGeometry>): void {
+  const stride = 12;
+  const p = (index: number, offset: number): number => geometry.vertices[index * stride + offset];
+  const indices = geometry.indices;
+  expect(indices).not.toBeNull();
+  if (indices === null) return;
+  const indexCount = indices.length;
+  for (let t = 0; t + 2 < indexCount; t += 3) {
+    const i0 = indices[t];
+    const i1 = indices[t + 1];
+    const i2 = indices[t + 2];
+    // Right-hand rule over the winding order: (p1 - p0) × (p2 - p0) faces front for CCW triangles.
+    const ex = [p(i1, 0) - p(i0, 0), p(i1, 1) - p(i0, 1), p(i1, 2) - p(i0, 2)];
+    const ey = [p(i2, 0) - p(i0, 0), p(i2, 1) - p(i0, 1), p(i2, 2) - p(i0, 2)];
+    const faceNormal = [ex[1] * ey[2] - ex[2] * ey[1], ex[2] * ey[0] - ex[0] * ey[2], ex[0] * ey[1] - ex[1] * ey[0]];
+    if (Math.hypot(faceNormal[0], faceNormal[1], faceNormal[2]) < 1e-6) continue;
+    const avgNormal = [0, 0, 0];
+    for (const index of [i0, i1, i2]) {
+      avgNormal[0] += p(index, 3);
+      avgNormal[1] += p(index, 4);
+      avgNormal[2] += p(index, 5);
+    }
+    const dot = faceNormal[0] * avgNormal[0] + faceNormal[1] * avgNormal[1] + faceNormal[2] * avgNormal[2];
+    expect(dot).toBeGreaterThan(0);
+    return;
+  }
+  throw new Error('no non-degenerate triangle found');
+}
+
 describe('createBoxMeshGeometry', () => {
   it('builds 24 vertices, 36 indices, and bounds at the half-extents', () => {
     const geometry = createBoxMeshGeometry(2, 4, 6);
@@ -190,6 +223,7 @@ describe('createSphereMeshGeometry', () => {
       expect(r).toBeCloseTo(1, 4);
     }
     expectUnitNormals(geometry);
+    expectWindingMatchesNormals(geometry);
   });
 });
 
@@ -216,5 +250,6 @@ describe('createTorusMeshGeometry', () => {
     expect(geometry.bounds!.max.x).toBeCloseTo(0.7, 2);
     expect(geometry.bounds!.max.z).toBeCloseTo(0.2, 2);
     expectUnitNormals(geometry);
+    expectWindingMatchesNormals(geometry);
   });
 });

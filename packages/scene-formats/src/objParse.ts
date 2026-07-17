@@ -94,7 +94,7 @@ export function createSceneFromObj(
           warnings?.push(`createSceneFromObj: vt on line ${i + 1} has non-numeric components`);
           break;
         }
-        uvs.push(u, v);
+        uvs.push(u, 1 - v);
         break;
       }
       case 'f': {
