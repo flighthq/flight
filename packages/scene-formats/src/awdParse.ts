@@ -1,6 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
-import { createImageResource, invalidateImageResource } from '@flighthq/image';
-import { decodeImage, detectImageMimeType } from '@flighthq/image-codec';
+import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
@@ -8,8 +7,8 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
 import { createTexture } from '@flighthq/texture';
-import type { AnimationClip, ImageResource, Material, SceneNode, Skeleton3D, Texture } from '@flighthq/types';
-import { SceneAnimationPathTranslation } from '@flighthq/types';
+import type { AnimationClip, Material, SceneNode, Skeleton3D, Texture } from '@flighthq/types';
+import { ResourceResolutionState, SceneAnimationPathTranslation, SceneResourceRefKind } from '@flighthq/types';
 
 import {
   AWD_BLOCK_CONTAINER,
@@ -59,11 +58,12 @@ import {
 // blocks by block ID; materials reference texture blocks the same way.
 //
 // A mesh instance's per-subset materials are resolved to Flight materials: a textured AWD material
-// becomes a StandardPbrMaterial whose baseColorMap wraps the referenced (embedded) texture; a flat
-// color material becomes an UnlitMaterial. Embedded texture payloads decode through the async
-// image-codec seam, so the ImageResource is attached immediately and its pixels fill in when the
-// decode resolves (deferred-fill, as with URL image loads) — the parse itself stays synchronous.
-// External-URL textures and unrecognized payloads warn and leave the subset unmaterialed.
+// becomes a StandardPbrMaterial whose baseColorMap references the AWD texture; a flat color material
+// becomes an UnlitMaterial. The parser does not decode: each texture's image source is emitted as an
+// unresolved SceneResourceRef on the Texture (`Texture.resource`, `image` left null) — embedded
+// payloads as an Embedded ref carrying the encoded bytes, external-URL textures as an External ref
+// carrying the URL. @flighthq/scene-resources resolves those refs on the caller's schedule. Only an
+// embedded payload of an unrecognized image format warns and leaves the subset unmaterialed.
 //
 // Only uncompressed AWD files are supported; compressed files (deflate or LZMA) push a warning
 // and return an empty scene. Malformed input pushes a warning and returns an empty scene rather
@@ -420,13 +420,16 @@ interface ParsedMaterial {
   name: string;
 }
 
-// A parsed AWD texture block (type 82). Either `bytes` (an embedded, self-describing image payload:
-// PNG/JPEG/...) with its detected `mimeType`, or neither when the block referenced an external URL
-// that Flight cannot fetch at parse time.
+// A parsed AWD texture block (type 82). Exactly one source form is populated: `bytes` (+ detected
+// `mimeType`) for an embedded, self-describing image payload (PNG/JPEG/…), or `url` for an external
+// reference (the block's name is the URL in AWD's external form). Both null when an embedded payload
+// was not a recognized image format (dropped). The parser emits these as a SceneResourceRef; it does
+// not fetch or decode.
 interface ParsedTexture {
   bytes: Uint8Array | null;
   mimeType: string | null;
   name: string;
+  url: string | null;
 }
 
 function readAwdString(
@@ -839,20 +842,19 @@ function parseTextureBlock(
   }
 
   if (texType !== AWD_TEXTURE_TYPE_EMBEDDED) {
-    warnings?.push(
-      `createSceneFromAwd: texture '${nameResult.value}' is an external URL reference; only embedded textures are resolved`,
-    );
-    return { bytes: null, mimeType: null, name: nameResult.value };
+    // AWD's external form carries the image URL as the block name; emit it as an External ref for
+    // the resolver to fetch, rather than dropping it.
+    return { bytes: null, mimeType: null, name: nameResult.value, url: nameResult.value };
   }
 
   const bytes = (source as Uint8Array).slice(offset, offset + dataLen);
   const mimeType = detectImageMimeType(bytes);
   if (mimeType === null) {
     warnings?.push(`createSceneFromAwd: texture '${nameResult.value}' payload is not a recognized image format`);
-    return { bytes: null, mimeType: null, name: nameResult.value };
+    return { bytes: null, mimeType: null, name: nameResult.value, url: null };
   }
 
-  return { bytes, mimeType, name: nameResult.value };
+  return { bytes, mimeType, name: nameResult.value, url: null };
 }
 
 // Reads an AWD typed-property list: a uint32 byte-length prefix followed by `uint16 key, uint32
@@ -929,8 +931,11 @@ function resolveAwdMaterial(
   return material;
 }
 
-// Resolves an AWD texture block id to a Flight Texture, or null when the texture is missing or its
-// payload was not an embedded, recognized image (the miss was already warned at parse time).
+// Resolves an AWD texture block id to a Flight Texture carrying an unresolved SceneResourceRef, or
+// null when the texture is missing or its embedded payload was an unrecognized image format. The
+// parser references — it does not decode: an embedded block emits an Embedded ref holding the encoded
+// bytes; an external block emits an External ref holding the URL. The Texture's `image` stays null
+// until @flighthq/scene-resources resolves the ref.
 function resolveAwdTexture(
   textureId: number,
   textureBlocks: Readonly<Map<number, ParsedTexture>>,
@@ -941,28 +946,28 @@ function resolveAwdTexture(
     warnings?.push(`createSceneFromAwd: material references texture block ${textureId} which was not found`);
     return null;
   }
-  if (parsed.bytes === null || parsed.mimeType === null) return null;
-  return createTexture({ image: createAwdImageResource(parsed.bytes, parsed.mimeType) });
-}
-
-// Wraps embedded image bytes in an ImageResource. The image-codec decode seam is async and
-// browser-backed, so the resource is returned immediately (empty) and its pixels are filled in when
-// the decode resolves — the same deferred-fill contract as loadImageResourceFromUrl, and the reason
-// createSceneFromAwd stays synchronous. Where no decoder is registered (a headless parse), the
-// resource simply stays empty; the Texture → ImageResource structure is still attached to the material.
-function createAwdImageResource(bytes: Readonly<Uint8Array>, mimeType: string): ImageResource {
-  const resource = createImageResource();
-  void decodeImage(bytes, mimeType)
-    .then((decoded) => {
-      if (decoded === null) return;
-      resource.data = decoded.data as Uint8ClampedArray<ArrayBuffer>;
-      resource.width = decoded.width;
-      resource.height = decoded.height;
-      resource.format = 'rgba8unorm';
-      invalidateImageResource(resource);
-    })
-    .catch(() => {});
-  return resource;
+  if (parsed.bytes !== null && parsed.mimeType !== null) {
+    return createTexture({
+      resource: {
+        kind: SceneResourceRefKind.Embedded,
+        bytes: parsed.bytes,
+        mimeType: parsed.mimeType,
+        state: ResourceResolutionState.Unresolved,
+      },
+    });
+  }
+  if (parsed.url !== null) {
+    return createTexture({
+      resource: {
+        kind: SceneResourceRefKind.External,
+        uri: parsed.url,
+        basePath: null,
+        mimeType: null,
+        state: ResourceResolutionState.Unresolved,
+      },
+    });
+  }
+  return null;
 }
 
 // AWD packs material color as 24-bit 0xrrggbb; Flight colors are 32-bit 0xrrggbbaa. Widen with a
