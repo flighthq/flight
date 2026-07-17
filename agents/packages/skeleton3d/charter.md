@@ -2,7 +2,7 @@
 package: '@flighthq/skeleton3d'
 crate: flighthq-skeleton3d
 draft: false
-lastDirection: 2026-07-15
+lastDirection: 2026-07-17
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -29,16 +29,71 @@ This is the 3D half of skeletal animation. 2D skeletal animation is `@flighthq/s
 - In scope: Skeleton entity, joint matrices, bind pose, SkinnedMesh node type, morph targets/blend shapes, IK constraints (long-term).
 - Non-goals: animation playback (that's `animation`), GPU skinning shaders (`scene-gl`/`scene-wgpu`), 2D skeletal animation (`skeleton2d`).
 
+## Skin import & deformation (blessed 2026-07-17) — committed through Phase 3
+
+Triggered by the MD5 investigation: parsers (MD5 confirmed, glTF declared) parse per-vertex joint
+weights but **bake a static bind pose and discard the skin** — so animation exists (the clip poses the
+joint nodes) but nothing deforms. The primitives already exist and work (`createSkeleton3D`,
+`computeSkeleton3DJointMatrices`, `skinVertices`); the GPU VAO slots (`joints0`/`weights0` at locations
+6–7) are wired but dead. The gap is import (emit the skin) + one explicit deform call, not new math.
+
+**The blessed shape (extends existing owners — no new package):**
+
+- **Skinning is a geometry-layout-driven shader *variant*, not a new node family.** So a nullable
+  **`Mesh.skin?: Skin | null`** field + a plain-data `Skin` descriptor live in `@flighthq/types` — **not**
+  a distinct `SkinnedMesh` kind (which would duplicate Mesh's whole surface and fork renderer
+  registration for zero gain, since GPU dispatch keys on *material* kind and the skin variant selects off
+  the *layout*, exactly like `HAS_UV1`). This resolves the long-standing "SkinnedMesh node type" open
+  question below. Per-mesh skinning scratch (de-interleaved bind pose, skinned output) lives on the
+  runtime tier, not the entity.
+- **CPU skinning is v1; GPU is an additive Phase-2 drop-in behind the same `Skeleton3D.jointMatrices`
+  palette seam.** CPU (`skinVertices`) already works, runs on *all* backends (incl. canvas/dom), is
+  jsdom-testable, and closes the gap now. CPU-vs-GPU is *which executor consumes the palette*, never a
+  fact in the data model.
+- **A shared skin-emit path in `scene-formats`** fed by per-format influence extraction: each parser
+  produces raw `(jointIndices, weights)` + joint nodes + inverse-bind its own way, then one emitter packs
+  4-influence `joints0`/`weights0` into an extended interleaved layout, builds `Skeleton3D`, regenerates
+  normals, and sets `mesh.skin`. Mirrors the `scene-resources` emit-then-execute spine. Closes the
+  joint-exposure gap for free: `mesh.skin.skeleton.joints` *is* the array `parseMd5Anim` needs.
+- **Explicit deform, no magic:** extract the example's hand-coded interleave/deform into
+  `skinMeshGeometry(geometry, skeleton, bindPose)` (in `skeleton3d`, scene-free) + a mesh-level
+  `updateMeshSkin(mesh)` (in `@flighthq/scene`, which already deps `animation`, so `skeleton3d` need not
+  dep `scene`), called each frame after `applyAnimationClipToScene`. Drop the example's `destroy*`-per-frame
+  re-upload hack for a non-destructive version-bump path.
+
+**Committed scope — Phases 1–3:**
+- **Phase 1 (v1, CPU, all backends):** `Skin` + `Mesh.skin` in types; extended skinned-vertex layout;
+  `skinMeshGeometry` + bind-pose helpers in `skeleton3d`; `updateMeshSkin` in `scene`; MD5 emits skin +
+  `Skeleton3D` + inverse-bind + normals and is wired mesh+anim end-to-end; the `skeleton` example
+  rewritten as the clean few-named-calls recipe.
+- **Phase 2 (GPU skinning):** `HAS_SKIN` vertex-shader variant + bone-palette UBO upload in `scene-gl`
+  and `scene-wgpu` (slots already VAO-wired); selected from layout like `HAS_UV1`; same palette seam.
+- **Phase 3 (glTF skins):** glTF `JOINTS_0`/`WEIGHTS_0` + `inverseBindMatrices` through the shared emit
+  path (FBX/others later, same path).
+
+**Phase 4 (morph targets / blend shapes; IK) is charted SEPARATELY — not in this commitment.** It is a
+distinct vertex-deformation family (morph targets are not skeletal; IK is a solver), tracked in Open
+directions and this package's North Star, to be chartered on its own when scheduled.
+
 ## Decisions
 
 All decisions from the original `skeleton` charter apply. See `agents/packages/skeleton/charter.md` for the full history.
 
 - **[2026-07-15] Rename from `skeleton` to `skeleton3d`.** Both 2D and 3D skeletal animation packages get explicit dimension suffixes for symmetry: `skeleton2d` and `skeleton3d`. User-directed.
+- **[2026-07-17] Skin binds via a nullable `Mesh.skin` field + a plain-data `Skin` descriptor in `@flighthq/types`, NOT a `SkinnedMesh` node kind.** Skinning is a layout-driven shader variant, not a node family; a SkinnedMesh kind would duplicate Mesh's surface and fork renderer registration for no gain. User-approved.
+- **[2026-07-17] Extend `skeleton3d` + `types` + `scene` + the GL/WGPU backends — no new `@flighthq/skinning` package.** The binding is small and splits cleanly across existing owners (data in types, deform math in skeleton3d, mesh glue in scene, GPU in the backends). User-approved.
+- **[2026-07-17] CPU skinning is v1; GPU is Phase 2 behind the shared `jointMatrices` palette seam.** User-approved.
+- **[2026-07-17] Commissioned through Phase 3 (CPU deform + GPU + MD5 & glTF import). Phase 4 (morph targets / IK) charted separately, not part of this commitment.** User-directed.
 
 ## Open directions
 
-Inherited from the original `skeleton` charter:
+- ~~SkinnedMesh node type design~~ — **resolved 2026-07-17:** no SkinnedMesh kind; skin is a nullable
+  `Mesh.skin` field (see the skin-import section above).
+- Within Phases 1–3, to pin at build time: normal regeneration on import; >4-influence handling and
+  weight normalization; confirming `updateMeshSkin` glue lives in `scene` (vs a `skeleton3d → scene` dep).
 
-- SkinnedMesh node type design: how does it compose with scene's hierarchy nodes?
+**Phase 4 — separate track (morph targets / blend shapes; IK), not committed here:**
+
 - Morph target data model: per-target attribute deltas vs interleaved blend shapes.
 - IK solver scope: CCD, FABRIK, or analytical two-bone? All three?
+- To be chartered on its own when scheduled — a distinct deformation family from skeletal skinning.
