@@ -78,6 +78,7 @@ export * from '@flighthq/render-wgpu';
 export * from '@flighthq/scene';
 export * from '@flighthq/scene-formats';
 export * from '@flighthq/scene-gl';
+export * from '@flighthq/scene-resources';
 export * from '@flighthq/scene-wgpu';
 export * from '@flighthq/screen';
 export * from '@flighthq/sensors';

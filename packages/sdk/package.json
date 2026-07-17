@@ -164,6 +164,7 @@
     "@flighthq/scene": "*",
     "@flighthq/scene-formats": "*",
     "@flighthq/scene-gl": "*",
+    "@flighthq/scene-resources": "*",
     "@flighthq/scene-wgpu": "*",
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
