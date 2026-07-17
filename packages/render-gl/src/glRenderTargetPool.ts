@@ -31,6 +31,10 @@ export function acquireGlRenderTarget(
       candidate.sampleCount === sampleCount
     ) {
       pool.free.splice(i, 1);
+      // colorSpace is a logical tag, not a physical allocation axis, so it is not part of the reuse
+      // match — re-stamp the reused target with the requested space (default 'srgb') so a scratch
+      // recycled from a linear frame does not carry a stale 'linear' into an sRGB one.
+      candidate.colorSpace = descriptor.colorSpace ?? 'srgb';
       clearGlRenderTarget(state, candidate);
       return candidate;
     }

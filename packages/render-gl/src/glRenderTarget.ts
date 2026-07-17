@@ -4,6 +4,7 @@ import type {
   GlRenderTarget,
   Matrix,
   RenderProxy2D,
+  RenderTargetColorSpace,
   RenderTargetDescriptor,
   RenderTargetFormat,
 } from '@flighthq/types';
@@ -14,6 +15,7 @@ import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './
 
 type SavedGlState = {
   framebuffer: WebGLFramebuffer | null;
+  renderTarget: GlRenderTarget | null;
   renderTargetViewport: { width: number; height: number } | null;
   renderTransform2D: Matrix | null;
 };
@@ -42,6 +44,7 @@ export function beginGlRenderTarget(
 
   stack.push({
     framebuffer: runtime.currentFramebuffer,
+    renderTarget: runtime.currentRenderTarget ?? null,
     renderTargetViewport: runtime.renderTargetViewport,
     renderTransform2D: state.renderTransform2D,
   });
@@ -50,6 +53,7 @@ export function beginGlRenderTarget(
   gl.viewport(0, 0, target.width, target.height);
 
   runtime.currentFramebuffer = target.framebuffer;
+  runtime.currentRenderTarget = target;
   runtime.renderTargetViewport = { width: target.width, height: target.height };
   // Force rebind on next draw — the framebuffer switch invalidates GL state assumptions.
   runtime.currentTexture = null;
@@ -84,6 +88,7 @@ export function createGlRenderTarget(
     width: w,
     height: h,
     format,
+    colorSpace: descriptor.colorSpace ?? 'srgb',
     sampleCount: maxSamples,
     framebuffer: gl.createFramebuffer()!,
     resolveFramebuffer: null,
@@ -100,6 +105,18 @@ export function createGlRenderTarget(
   gl.bindTexture(gl.TEXTURE_2D, null);
   runtime.currentTexture = null;
   return target;
+}
+
+// Stamps the color space of the render target currently bound via beginGlRenderTarget: the producer of
+// the pixels declares what space it writes (drawGlScene declares 'linear'), and the present step reads
+// it back off the target. Returns false when no target is bound — i.e. rendering straight to the canvas,
+// where linear content has no present pass to encode it — so a caller can flag that mismatch. A no-op
+// (returns false) in that case.
+export function declareGlRenderTargetColorSpace(state: GlRenderState, colorSpace: RenderTargetColorSpace): boolean {
+  const target = getGlRenderStateRuntime(state).currentRenderTarget;
+  if (target == null) return false;
+  target.colorSpace = colorSpace;
+  return true;
 }
 
 /** Deletes the GL resources owned by `target`. The target object must not be used after this call. */
@@ -164,6 +181,7 @@ export function endGlRenderTarget(state: GlRenderState): void {
   gl.viewport(0, 0, viewport.width, viewport.height);
 
   runtime.currentFramebuffer = saved.framebuffer;
+  runtime.currentRenderTarget = saved.renderTarget;
   runtime.renderTargetViewport = saved.renderTargetViewport;
   state.renderTransform2D = saved.renderTransform2D;
   runtime.currentTexture = null;

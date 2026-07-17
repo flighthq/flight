@@ -8,6 +8,7 @@ function makeTarget(overrides?: Partial<GlRenderTarget>): GlRenderTarget {
     width: 4,
     height: 4,
     format: 'rgba8',
+    colorSpace: 'srgb',
     sampleCount: 1,
     framebuffer: {} as WebGLFramebuffer,
     resolveFramebuffer: null,
