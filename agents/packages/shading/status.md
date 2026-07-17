@@ -1,15 +1,39 @@
 # shading — Status
 
-Continuity log for `@flighthq/shading`. See [charter](charter.md) (a **reserved** home) and [effect-adjustment-architecture](../../effect-adjustment-architecture.md).
+Continuity log for `@flighthq/shading`. See [charter](charter.md) and [effect-adjustment-architecture](../../effect-adjustment-architecture.md).
 
-## State: chartered, reserved, NOT built (2026-07-11)
+## State: v1 chartered, build triggered, code NOT started (2026-07-17)
 
-`@flighthq/shading` is the reserved home for the compiled **Material Feature / Modifier** tier — shader features (Fresnel/rim, dissolve, toon quantization, normal perturbation, fog, vertex displacement) that inject into the material shader and produce variants. It is deliberately **not built**: Flight ships complete materials today, so there is no consumer for a compiled-feature/shader-graph system, and building one now would be an unused dispatcher (plurality guard / fork B).
+The reserved build trigger — *≥2 real features must combine on one material* — is met. The AwayJS
+globe ([sdk-blocking-issues](../../sdk-blocking-issues.md) #4) stacks three features on one surface
+(night-side emissive, atmospheric Fresnel rim, animated ocean normal). Per a direction session with
+the user, the charter moved from **reserved** to **v1 triggered** and `draft: false`.
 
-The `draft: true` charter holds the name and the boundary (compiled features ≠ data-fed adjustments) so the three composition styles each have an address.
+### Blessed decisions (see charter › Decisions, 2026-07-17)
 
-## Build trigger (from the charter)
+- Build v1 now; the globe is the first real consumer.
+- `@flighthq/shading` owns its **own composable base lit material** (`ShadedMaterial`, working name),
+  a **third assembly over the shared light block** (`GL_MESH_LIGHT_BLOCK_GLSL` / `glLitProgram`) — not
+  a third light loop, and **not** injection into `materials`' PBR/classic kinds.
+- **v1 accepted cost:** modifiers do not stack on PBR-variant/classic materials; the modifier↔base
+  boundary is a contract over the slot taxonomy + shared light block, so "PBR + modifiers" stays an
+  additive future step.
 
-Build this when the first material augmentation is genuinely wanted as a **composable feature across materials** rather than a whole new material kind (e.g. "dissolve on any material", "rim light on any material") — i.e. when ≥2 real features must combine on one material. At that point it gains its bedrock: a `Modifier` descriptor, a composition/ordering contract, and the per-backend compiler that assembles base material + features into one program.
+### v1 deliverables (from the charter)
 
-## No code exists yet. Nothing to continue.
+1. `ShadedMaterial` composable base over the shared light block.
+2. `Modifier` descriptor + open registry keyed by feature kind.
+3. Slot taxonomy: `diffuse / specular / normal / emissive / effect` (ambient/shadow reserved).
+4. Composition/ordering contract (deterministic variant per feature-set).
+5. Per-backend compile path (assemble base + ordered modifiers, cache by feature-set define-key).
+6. Per-frame uniform seam (`time` first).
+7. Three seed modifiers: emissive-with-mask, rim/Fresnel, animated normal.
+8. Globe re-expressed as a composition of the three modifiers (validation).
+
+### Before dispatch — open items to pin (charter › Open directions)
+
+- Backend scope: recommend **gl-first** (`scene-gl`), backend-agnostic compile path, `scene-wgpu`
+  fast-follow. Needs the user's confirmation.
+- Names: `ShadedMaterial` / `Modifier` / slot strings / modifier-kind convention.
+
+## No code exists yet. Types (`@flighthq/types` header layer) come first, then `scene-gl` assembly.
