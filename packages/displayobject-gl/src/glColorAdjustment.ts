@@ -6,9 +6,14 @@ import type {
   GlColorTransformInstancedShader,
   GlRenderState,
   GlRenderStateRuntime,
+  GlShapeMesh,
+  GlShapeMeshColorTransformShader,
   GlUniformColorTransformShader,
+  RenderProxy2D,
 } from '@flighthq/types';
 
+import type { GlShapeMeshBinding } from './glShapeMesh';
+import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
 import {
   bindGlQuadBatchBaseAttributes,
   QUAD_BATCH_VS,
@@ -331,7 +336,100 @@ function writeGlColorTransformInstance(
   }
 }
 
+// Draws the GPU-tessellated solid-fill meshes tinted by the node's color transform. A single mesh is
+// one flat color and a shape shares one whole-node transform, so this is the uniform path (CT_MODE_
+// UNIFORM's mesh analogue): u_ctMult/u_ctOff uploaded once, no per-vertex tint data. Reuses the base
+// mesh draw driver and its shared vertex/index buffers — only the fragment program differs, so the
+// projection and per-mesh premultiplied color stay identical to the untinted path. Falls back to the
+// lean program when the node happens to carry no transform (the caller gates on non-null, but the fold
+// stays correct if reached directly).
+function drawGlShapeMeshesColorTransform(
+  state: GlRenderState,
+  renderProxy: RenderProxy2D,
+  meshes: readonly GlShapeMesh[],
+): void {
+  const colorTransform = renderProxy.colorTransform;
+  const base = ensureGlShapeMeshProgram(state);
+  if (colorTransform === null) {
+    drawGlShapeMeshBatch(state, renderProxy, meshes, base);
+    return;
+  }
+  const shader = ensureGlShapeMeshColorTransformShader(state);
+  const binding: GlShapeMeshBinding = {
+    program: shader.program,
+    vertexBuffer: base.vertexBuffer,
+    indexBuffer: base.indexBuffer,
+    positionLocation: shader.positionLocation,
+    matrixLocation: shader.matrixLocation,
+    colorLocation: shader.colorLocation,
+  };
+  drawGlShapeMeshBatch(state, renderProxy, meshes, binding, (bound) => {
+    const gl = bound.gl;
+    gl.uniform4f(
+      shader.colorMultiplierLocation,
+      colorTransform.redMultiplier,
+      colorTransform.greenMultiplier,
+      colorTransform.blueMultiplier,
+      colorTransform.alphaMultiplier,
+    );
+    gl.uniform4f(
+      shader.colorOffsetLocation,
+      colorTransform.redOffset / 255,
+      colorTransform.greenOffset / 255,
+      colorTransform.blueOffset / 255,
+      colorTransform.alphaOffset / 255,
+    );
+  });
+}
+
+function ensureGlShapeMeshColorTransformShader(state: GlRenderState): GlShapeMeshColorTransformShader {
+  const runtime = getGlRenderStateRuntime(state);
+  if (runtime.shapeMeshColorTransformShader) return runtime.shapeMeshColorTransformShader;
+
+  const gl = state.gl;
+  const program = createGlProgram(gl, SHAPE_MESH_CT_VS, SHAPE_MESH_CT_FS, 'Shape-mesh color transform');
+  runtime.shapeMeshColorTransformShader = {
+    program,
+    positionLocation: gl.getAttribLocation(program, 'a_position'),
+    matrixLocation: gl.getUniformLocation(program, 'u_matrix'),
+    colorLocation: gl.getUniformLocation(program, 'u_color'),
+    colorMultiplierLocation: gl.getUniformLocation(program, 'u_ctMult'),
+    colorOffsetLocation: gl.getUniformLocation(program, 'u_ctOff'),
+  };
+  return runtime.shapeMeshColorTransformShader;
+}
+
+// Mirrors the base flat-color mesh vertex shader (glShapeMesh's VERTEX_SOURCE): u_matrix is the shared
+// projection · world transform drawGlShapeMeshBatch uploads, so a tinted mesh lands pixel-aligned with
+// an untinted one.
+const SHAPE_MESH_CT_VS = `
+attribute vec2 a_position;
+uniform mat3 u_matrix;
+void main() {
+  vec3 p = u_matrix * vec3(a_position, 1.0);
+  gl_Position = vec4(p.xy, 0.0, 1.0);
+}
+`;
+
+// The tint fragment stage. u_color arrives premultiplied (the driver uploads color·alpha), so the math
+// un-premultiplies, applies the color transform (multiplier then /255-normalized offset), clamps, and
+// re-premultiplies — byte-for-byte with the quad-batch uniform/instanced color-transform shaders.
+const SHAPE_MESH_CT_FS = `
+precision mediump float;
+uniform vec4 u_color;
+uniform vec4 u_ctMult;
+uniform vec4 u_ctOff;
+void main() {
+  vec4 color = u_color;
+  if (color.a <= 0.0) discard;
+  color = vec4(color.rgb / color.a, color.a);
+  color = clamp(color * u_ctMult + u_ctOff, vec4(0.0), vec4(1.0));
+  gl_FragColor = vec4(color.rgb * color.a, color.a);
+}
+`;
+
 const glColorAdjustmentFold: GlColorAdjustmentFold = {
+  drawShapeMeshes: drawGlShapeMeshesColorTransform,
   flush: flushGlColorAdjustmentFold,
   record: recordGlColorAdjustment,
 };

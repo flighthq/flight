@@ -7,6 +7,7 @@ import { getShapeFillRegions } from '@flighthq/shape';
 import type {
   DisplayObjectRenderer,
   GlRenderState,
+  GlShapeMesh,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -14,7 +15,6 @@ import type {
 } from '@flighthq/types';
 import { BatchFormat } from '@flighthq/types';
 
-import type { GlShapeMesh } from './glShapeMesh';
 import { drawGlShapeMeshes } from './glShapeMesh';
 import {
   ensureGlQuadBatchShader,
