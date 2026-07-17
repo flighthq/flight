@@ -34,6 +34,7 @@ export * from './lambertGlMeshMaterialRenderer';
 export * from './matcapGlMeshMaterialRenderer';
 export * from './normalGlMeshMaterialRenderer';
 export * from './phongGlMeshMaterialRenderer';
+export * from './presentGlScene';
 export * from './registerStandardPbrGlMaterial';
 export * from './shadedGlMeshMaterialRenderer';
 export * from './sheenPbrGlMeshMaterialRenderer';

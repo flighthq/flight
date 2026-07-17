@@ -50,8 +50,12 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     BACK: 0x0405,
     DEPTH_TEST: 0x0b71,
     LESS: 0x0201,
+    ONE: 1,
     ONE_MINUS_SRC_ALPHA: 0x0303,
     SRC_ALPHA: 0x0302,
+    FRAMEBUFFER: 0x8d40,
+    COLOR_BUFFER_BIT: 0x4000,
+    DEPTH_BUFFER_BIT: 0x0100,
     createShader: record('createShader', {}),
     shaderSource: record('shaderSource'),
     compileShader: record('compileShader'),
@@ -86,10 +90,16 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     vertexAttrib4f: record('vertexAttrib4f'),
     vertexAttribDivisor: record('vertexAttribDivisor'),
     bufferSubData: record('bufferSubData'),
+    bindFramebuffer: record('bindFramebuffer'),
     blendFunc: record('blendFunc'),
+    clear: record('clear'),
+    clearColor: record('clearColor'),
+    clearDepth: record('clearDepth'),
     cullFace: record('cullFace'),
     depthFunc: record('depthFunc'),
     depthMask: record('depthMask'),
+    flush: record('flush'),
+    viewport: record('viewport'),
     disable: record('disable'),
     enable: record('enable'),
     drawElements: record('drawElements'),
@@ -133,10 +143,18 @@ export function makeGlSceneState(gl?: FakeGl2): { state: GlRenderState; gl: Fake
   const runtime = createGlRenderStateRuntime();
   Object.assign(runtime, {
     currentBlendMode: null,
+    currentFramebuffer: null,
+    currentProgram: null,
     currentTexture: null,
     renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
-  } satisfies Partial<GlRenderStateRuntime>);
+    // Fullscreen-pass scratch, so tests can drive present/resolve passes (drawGlFullscreenPass) that
+    // read the quad buffers and the default-shader slot alongside the mesh path.
+    quadVertexBuffer: {} as WebGLBuffer,
+    quadIndexBuffer: {} as WebGLBuffer,
+    quadVertexData: new Float32Array(16),
+    defaultBitmapShader: { locations: {}, program: {}, bind: () => {} },
+  } as unknown as Partial<GlRenderStateRuntime>);
   state[EntityRuntimeKey] = runtime;
 
   return { state, gl: context };
