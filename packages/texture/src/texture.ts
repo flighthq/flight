@@ -11,6 +11,7 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
   return createEntity({
     colorSpace: source.colorSpace,
     image: source.image,
+    resource: source.resource ?? null,
     sampler: cloneSampler(source.sampler),
     uvOffset: cloneVector2(source.uvOffset),
     uvRotation: source.uvRotation,
@@ -24,12 +25,14 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
 export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): void {
   const colorSpace = source.colorSpace;
   const image = source.image;
+  const resource = source.resource ?? null;
   const uvRotation = source.uvRotation;
   copySampler(out.sampler, source.sampler);
   copyVector2(out.uvOffset, source.uvOffset);
   copyVector2(out.uvScale, source.uvScale);
   out.colorSpace = colorSpace;
   out.image = image;
+  out.resource = resource;
   out.uvRotation = uvRotation;
 }
 
@@ -40,6 +43,7 @@ export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
   return createEntity({
     colorSpace: opts?.colorSpace ?? 'srgb',
     image: opts?.image ?? null,
+    resource: opts?.resource ?? null,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
     uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
     uvRotation: opts?.uvRotation ?? 0,

@@ -1,6 +1,7 @@
 import type { Entity, EntityWithoutRuntime } from './Entity';
 import type { ImageResource } from './ImageResource';
 import type { Sampler } from './Sampler';
+import type { SceneResourceRef } from './SceneResourceRef';
 import type { Vector2 } from './Vector2';
 
 // How the texture's pixels are interpreted at sample time. baseColor/emissive maps are 'srgb'
@@ -18,6 +19,11 @@ export type TextureColorSpace = 'linear' | 'srgb';
 export interface Texture extends Entity {
   colorSpace: TextureColorSpace;
   image: ImageResource | null;
+  // An unresolved reference to this texture's image, emitted by a scene-format parser so the parse
+  // stays synchronous while the heavy decode/fetch is deferred. Absent (`null`/undefined) for a
+  // texture whose image is already in hand or bound. @flighthq/scene-resources resolves it and
+  // fills `image`; the renderer may read `resource.state` to fade the surface in on availability.
+  resource?: SceneResourceRef | null;
   sampler: Sampler;
   uvOffset: Vector2;
   uvRotation: number;
