@@ -59,6 +59,7 @@ beforeAll(async () => {
           colorRenderbuffers: [],
           depthStencilRenderbuffer: null,
           format: 'rgba8',
+          colorSpace: 'srgb',
           sampleCount: 1,
           width: descriptor.width,
           height: descriptor.height,
