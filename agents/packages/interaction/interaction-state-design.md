@@ -150,9 +150,37 @@ Superseded by the "Query & registration API" section above: `shapeFlag`, `findGr
 `registerHitTestDetailed`, `registerHitTestPoint`/`registerDefaultHitTestPoints`, and the `registerAccurate*`
 names are all gone.
 
+## Focus / tab navigation (built, 2026-07-17)
+
+The keyboard/spatial-focus sibling of the pointer manager, consuming the long-dormant
+`focusable`/`tabIndex` cell. It is a **separate `FocusManager` primitive** (`{ root, focused, wrap }`),
+not a field on `InteractionManager`: the two only share the `root` and the per-node interaction-signal
+cell, so an app that never navigates by keyboard never allocates one and the focus logic tree-shakes out.
+
+- **Signals reuse the interaction group.** `onFocusIn` / `onFocusOut` are added to `InteractionSignals`
+  with a new `FocusEventData` payload (`target` / `currentTarget` / `relatedTarget`, DOM-`FocusEvent`
+  shaped), so users connect them through the *same* `connectInteractionSignal` API as pointer signals.
+  Focus dispatch **bubbles** to `root` (listen on a panel, hear any descendant focus) but is **not
+  cancelable** — a focus change has already happened. Dispatch lives in `focusManager.ts`, not on the hot
+  pointer path.
+- **Query & navigation:** `createFocusManager(root, { wrap? })`, `getFocusedNode`, `isNodeFocused`,
+  `setFocusedNode(manager, node|null)` (returns `false` for a non-focusable node; fires out/in with
+  `relatedTarget`), `clearFocus`, `focusNextNode` / `focusPreviousNode` (linear tab order, `wrap` cycles),
+  `focusNodeInDirection(manager, 'up'|'down'|'left'|'right')` (D-pad spatial nav by world-bounds-center
+  scoring), and `getFocusOrder(manager, out?)` — the engine primitive: focusable+enabled nodes, explicit
+  `tabIndex >= 0` ascending ahead of natural (`-1`) tree order, disabled subtrees skipped.
+- **Input wiring:** `connectFocusNavigation(input, manager, { arrowKeys? })` maps Tab → next, Shift+Tab →
+  previous, and (opt-in) arrows → directional; returns a disconnect. `input` is just `Pick<InputSignals,
+  'onKeyDown'>` (`FocusNavigationInput`).
+- **Guard symmetry:** `enableInteractionGuards` now routes `onFocusIn`/`onFocusOut` to a focusable-subtree
+  check — the "added a focus listener but forgot `setNodeFocusable`" footgun — mirroring the pointer
+  hit-eligibility warning.
+
 ## Boundaries (still out)
 
-- A focus/tab navigation manager consuming `focusable`/`tabIndex` (fields exist; consumer deferred); the
-  per-node `setNodeHitTestPrecise` bit (manager-level `precise` exists).
+- The per-node `setNodeHitTestPrecise` bit (manager-level `precise` exists).
 - The precise-degrade guard warning (Precise falling back to bounds for an unregistered kind) — designed,
   not yet wired into `enableInteractionGuards`.
+- Focus follow-ups: no automatic blur when the focused node is removed from the tree or made
+  non-focusable (navigation self-heals since `getFocusOrder` recomputes, but `focused` can dangle); no
+  focus-trap/scope containment; no default focus-ring rendering (an app draws it from `getFocusedNode`).
