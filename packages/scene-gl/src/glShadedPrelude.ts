@@ -1,4 +1,4 @@
-import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
+import { createModifierRegistry, getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading';
 import type { ModifierRegistry } from '@flighthq/shading';
 import type { GlRenderState, Modifier } from '@flighthq/types';
 import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types';
@@ -94,7 +94,10 @@ export function ensureGlShadedProgram(
   key: Readonly<GlShadedDefineKey>,
   modifiers: readonly Modifier[],
 ): GlShadedProgram {
-  const registry = getGlSceneRuntime(state).modifierSnippetRegistry;
+  // A null registry means no modifier snippet was ever registered (the lazy-allocation default); the
+  // shared empty registry then yields the coarse bare-kind define-key and no modifier GLSL — the same
+  // result an allocated-but-empty registry gives — without allocating on this per-bind path.
+  const registry = getGlSceneRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
   const ordered = orderModifierStack(modifiers);
   const cacheKey = buildGlShadedCacheKey(key, getModifierDefineKey(modifiers, registry));
   return ensureGlSceneProgram(state, cacheKey, (gl) => compileGlShadedProgram(gl, key, ordered, registry));
@@ -327,3 +330,7 @@ void main() {
   fragColor = vec4(radiance, diffuse.a);
 }
 `;
+
+// A shared frozen empty registry used as the no-snippets fallback when a state has never had a
+// modifier snippet registered, so ensureGlShadedProgram allocates nothing per bind.
+const EMPTY_MODIFIER_REGISTRY: Readonly<ModifierRegistry> = createModifierRegistry();

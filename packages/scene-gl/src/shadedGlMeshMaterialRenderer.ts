@@ -79,15 +79,18 @@ function bindGlShadedModifiers(
   program: Readonly<GlShadedProgram>,
   modifiers: readonly Modifier[],
 ): void {
-  const registry: Readonly<ModifierRegistry> = getGlSceneRuntime(state).modifierSnippetRegistry;
+  const registry: Readonly<ModifierRegistry> | null = getGlSceneRuntime(state).modifierSnippetRegistry;
+  if (registry === null) return;
   const ordered = orderModifierStack(modifiers);
   let nextTextureUnit = MODIFIER_TEXTURE_UNIT_BASE;
   const context: GlModifierBindContext = {
-    acquireModifierTextureUnit: () => nextTextureUnit++,
+    // Hand out modifier units in [BASE, LIMIT); return -1 once exhausted so an over-textured stack
+    // drops its excess samplers (bindGlModifierTexture leaves them unbound) instead of walking into
+    // the shadow/IBL units and corrupting shadow sampling.
+    acquireModifierTextureUnit: () => (nextTextureUnit < MODIFIER_TEXTURE_UNIT_LIMIT ? nextTextureUnit++ : -1),
     index: 0,
     program: program.program,
     state,
-    time: getGlSceneTime(state),
   };
   for (let index = 0; index < ordered.length; index++) {
     const modifier = ordered[index];
@@ -157,7 +160,9 @@ function defineKeyForMaterial(material: Readonly<ShadedMaterial> | null): GlShad
 
 // Modifier textures bind above the base material units (diffuse/specular/normal on 0/1/2) and below
 // the shadow map (unit 8) and IBL units (9/10/11), so a modifier's map never clobbers a base or
-// shadow binding.
+// shadow binding. LIMIT mirrors glLitProgram's SHADOW_MAP_TEXTURE_UNIT (8): units [3, 8) are the
+// five modifier-sampler slots; a stack asking for more gets -1 (dropped) rather than unit 8+.
 const MODIFIER_TEXTURE_UNIT_BASE = 3;
+const MODIFIER_TEXTURE_UNIT_LIMIT = 8;
 const EMPTY_MODIFIERS: readonly Modifier[] = [];
 const scratchRgba: LinearColor = [0, 0, 0, 0];
