@@ -56,14 +56,16 @@ joint nodes) but nothing deforms. The primitives already exist and work (`create
   normals, and sets `mesh.skin`. Mirrors the `scene-resources` emit-then-execute spine. Closes the
   joint-exposure gap for free: `mesh.skin.skeleton.joints` *is* the array `parseMd5Anim` needs.
 - **Explicit deform, no magic:** extract the example's hand-coded interleave/deform into
-  `skinMeshGeometry(geometry, skeleton, bindPose)` (in `skeleton3d`, scene-free) + a mesh-level
-  `updateMeshSkin(mesh)` (in `@flighthq/scene`, which already deps `animation`, so `skeleton3d` need not
-  dep `scene`), called each frame after `applyAnimationClipToScene`. Drop the example's `destroy*`-per-frame
-  re-upload hack for a non-destructive version-bump path.
+  `skinMeshGeometry(geometry, skeleton, bindPose)` + a mesh-level `updateMeshSkin(mesh)` — **both in
+  `@flighthq/skeleton3d` (which deps `@flighthq/mesh`)**, called each frame after
+  `applyAnimationClipToScene`. (Placing `updateMeshSkin` in `@flighthq/scene` was the initial lean, but
+  it created a project-reference dependency cycle; `skeleton3d` breaks it and is closer to the deform
+  feature anyway — see Decisions.) Drop the example's `destroy*`-per-frame re-upload hack for a
+  non-destructive version-bump path.
 
 **Committed scope — Phases 1–3:**
 - **Phase 1 (v1, CPU, all backends):** `Skin` + `Mesh.skin` in types; extended skinned-vertex layout;
-  `skinMeshGeometry` + bind-pose helpers in `skeleton3d`; `updateMeshSkin` in `scene`; MD5 emits skin +
+  `skinMeshGeometry` + bind-pose helpers + `updateMeshSkin` in `skeleton3d`; MD5 emits skin +
   `Skeleton3D` + inverse-bind + normals and is wired mesh+anim end-to-end; the `skeleton` example
   rewritten as the clean few-named-calls recipe.
 - **Phase 2 (GPU skinning):** `HAS_SKIN` vertex-shader variant + bone-palette UBO upload in `scene-gl`
@@ -84,13 +86,22 @@ All decisions from the original `skeleton` charter apply. See `agents/packages/s
 - **[2026-07-17] Extend `skeleton3d` + `types` + `scene` + the GL/WGPU backends — no new `@flighthq/skinning` package.** The binding is small and splits cleanly across existing owners (data in types, deform math in skeleton3d, mesh glue in scene, GPU in the backends). User-approved.
 - **[2026-07-17] CPU skinning is v1; GPU is Phase 2 behind the shared `jointMatrices` palette seam.** User-approved.
 - **[2026-07-17] Commissioned through Phase 3 (CPU deform + GPU + MD5 & glTF import). Phase 4 (morph targets / IK) charted separately, not part of this commitment.** User-directed.
+- **[2026-07-17] `updateMeshSkin` lives in `@flighthq/skeleton3d` (with a `mesh` dep), NOT `@flighthq/scene`** — reverses the earlier lean. Placing it in `scene` created a project-reference dependency cycle; `skeleton3d` breaks it and is closer to the deform feature anyway. `Skin = { skeleton, skeletonRoot? }`; bind pose on `MeshGeometryRuntime.skinBindPose`; float32x4 joints0/weights0 encoding; >4 influences → top-4 renormalized; MD5 normals regenerated, glTF normals parsed. User-approved (delivered parcel builder2-631cd71e; re-recorded after a sync dropped the original commit).
+- **[2026-07-17] GPU skin palette is computed centrally in `prepareSceneRender`; the joint-matrix variant is geometry-driven via a render-state `activeSkinnedRun` flag folded into each prelude's program-cache key — so the ~15 material renderers are untouched and all 5 gl families (classic/unlit/toon/pbr/shaded) skin on GPU.** Consequence (footgun to guard later): on a GPU backend the app must NOT also call `updateMeshSkin`, or the mesh is skinned twice (CPU over GPU).
 
 ## Open directions
 
 - ~~SkinnedMesh node type design~~ — **resolved 2026-07-17:** no SkinnedMesh kind; skin is a nullable
   `Mesh.skin` field (see the skin-import section above).
-- Within Phases 1–3, to pin at build time: normal regeneration on import; >4-influence handling and
-  weight normalization; confirming `updateMeshSkin` glue lives in `scene` (vs a `skeleton3d → scene` dep).
+- ~~`updateMeshSkin` placement~~ — **resolved 2026-07-17:** lives in `skeleton3d` (+`mesh` dep), not
+  `scene`, to break a project-reference cycle (see Decisions).
+- Within Phases 1–3, pinned at build time: normal regeneration on import (MD5 regen / glTF parse);
+  >4-influence handling (top-4 renormalized).
+- **GPU skinning shader work is structurally verified only** (jsdom mocks don't compile shaders) — the
+  MD5/glTF skinned render + GPU-vs-CPU parity need a host capture run. Tracked in the support matrix.
+- **Double-skin guard** — a caller-facing guard for "GPU backend + `updateMeshSkin` called" (skinned twice).
+- **wgpu GPU skinning deferred** to a host-GPU session — `maxBindGroups` forces the bone palette into a
+  2nd vertex-visible binding in group 1 + a skinned pipeline/layout variant; gl-side seams already feed it.
 
 **Phase 4 — separate track (morph targets / blend shapes; IK), not committed here:**
 
