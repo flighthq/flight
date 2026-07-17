@@ -26,6 +26,8 @@
 
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
+import { GL_MAX_SKIN_JOINTS, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
+
 // The feature flags that select an uber-shader variant. Each toggles an #ifdef in the prelude and
 // is hashed into the program-cache key (buildGlPbrDefineKey), so distinct flag sets compile and
 // cache as distinct programs. The `has*Map` flags enable the textured paths of the standard block;
@@ -42,6 +44,8 @@ export interface GlPbrDefineKey {
   hasMetallicRoughnessMap: boolean;
   hasNormalMap: boolean;
   hasOcclusionMap: boolean;
+  // Set by ensureGlPbrProgram from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
+  hasSkin?: boolean;
   iridescenceEnabled: boolean;
   sheenEnabled: boolean;
   specularEnabled: boolean;
@@ -66,7 +70,8 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
     `${key.iridescenceEnabled ? 'I' : '-'}` +
     `${key.specularEnabled ? 'P' : '-'}` +
     `${key.subsurfaceEnabled ? 'U' : '-'}` +
-    `${key.transmissionEnabled ? 'T' : '-'}`
+    `${key.transmissionEnabled ? 'T' : '-'}` +
+    `${key.hasSkin ? 'k' : '-'}`
   );
 }
 
@@ -88,6 +93,7 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   if (key.specularEnabled) defines += '#define SPECULAR_EXT\n';
   if (key.subsurfaceEnabled) defines += '#define SUBSURFACE\n';
   if (key.transmissionEnabled) defines += '#define TRANSMISSION\n';
+  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
 
@@ -111,9 +117,11 @@ export function getGlPbrVertexSource(): string {
   return PBR_VERTEX_BODY;
 }
 
-// The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
+// The full vertex source for a define key (define block + optional skin declarations + body), ready to
+// hand to the GL compiler. The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment
+// shader), so it is spliced here rather than into the shared define block.
 export function getGlPbrVertexSourceForKey(key: Readonly<GlPbrDefineKey>): string {
-  return buildGlPbrDefineSource(key) + PBR_VERTEX_BODY;
+  return buildGlPbrDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + PBR_VERTEX_BODY;
 }
 
 const PBR_VERTEX_BODY = `
@@ -132,10 +140,20 @@ out vec4 v_tangent;
 out vec2 v_uv0;
 
 void main() {
-  vec4 worldPosition = u_model * vec4(a_position, 1.0);
+#ifdef HAS_SKIN
+  mat4 skin = skinMatrix();
+  vec4 localPosition = skin * vec4(a_position, 1.0);
+  vec3 localNormal = mat3(skin) * a_normal;
+  vec3 localTangent = mat3(skin) * a_tangent.xyz;
+#else
+  vec4 localPosition = vec4(a_position, 1.0);
+  vec3 localNormal = a_normal;
+  vec3 localTangent = a_tangent.xyz;
+#endif
+  vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
-  v_normal = u_normalMatrix * a_normal;
-  v_tangent = vec4(u_normalMatrix * a_tangent.xyz, a_tangent.w);
+  v_normal = u_normalMatrix * localNormal;
+  v_tangent = vec4(u_normalMatrix * localTangent, a_tangent.w);
   v_uv0 = a_uv0;
   gl_Position = u_viewProjection * worldPosition;
 }

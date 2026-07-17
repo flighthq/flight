@@ -3,7 +3,13 @@ import { bindGlTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import {
+  GL_MAX_SKIN_JOINTS,
+  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  compileGlProgram,
+  ensureGlSceneProgram,
+} from './glMeshProgram';
+import { getGlSceneRuntime } from './glSceneRuntime';
 
 // The shared Gl unlit prelude: the GLSL 300 es vertex + fragment shader for every lighting-
 // independent flat-color material (Unlit, Emissive, VertexColor). All three output LINEAR color with
@@ -20,6 +26,9 @@ import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 export interface GlUnlitDefineKey {
   alphaMaskEnabled: boolean;
   hasColorMap: boolean;
+  // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlUnlitProgram
+  // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
+  hasSkin?: boolean;
   vertexColor: boolean;
 }
 
@@ -60,7 +69,9 @@ export function bindGlUnlitSurface(
 // A short, stable, order-independent string identity for an unlit define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
-  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.vertexColor ? 'v' : '-'}`;
+  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.vertexColor ? 'v' : '-'}${
+    key.hasSkin ? 'k' : '-'
+  }`;
 }
 
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -72,6 +83,7 @@ export function compileGlUnlitProgram(gl: WebGL2RenderingContext, key: Readonly<
     locColor: gl.getUniformLocation(program, 'u_color'),
     locColorMap: gl.getUniformLocation(program, 'u_colorMap'),
     locIntensity: gl.getUniformLocation(program, 'u_intensity'),
+    locJointMatrices: gl.getUniformLocation(program, 'u_jointMatrices'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: null,
     locViewProjection: gl.getUniformLocation(program, 'u_viewProjection'),
@@ -82,7 +94,12 @@ export function compileGlUnlitProgram(gl: WebGL2RenderingContext, key: Readonly<
 // Resolves the unlit program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `unlit:` family namespace.
 export function ensureGlUnlitProgram(state: GlRenderState, key: Readonly<GlUnlitDefineKey>): GlUnlitProgram {
-  return ensureGlSceneProgram(state, `unlit:${buildGlUnlitDefineKey(key)}`, (gl) => compileGlUnlitProgram(gl, key));
+  // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
+  // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
+  const fullKey: GlUnlitDefineKey = { ...key, hasSkin: getGlSceneRuntime(state).activeSkinnedRun };
+  return ensureGlSceneProgram(state, `unlit:${buildGlUnlitDefineKey(fullKey)}`, (gl) =>
+    compileGlUnlitProgram(gl, fullKey),
+  );
 }
 
 // The full fragment source for a define key (define block + body), ready to hand to the GL compiler.
@@ -92,7 +109,7 @@ export function getGlUnlitFragmentSourceForKey(key: Readonly<GlUnlitDefineKey>):
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlUnlitVertexSourceForKey(key: Readonly<GlUnlitDefineKey>): string {
-  return buildDefineSource(key) + UNLIT_VERTEX_BODY;
+  return buildDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + UNLIT_VERTEX_BODY;
 }
 
 function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
@@ -100,6 +117,7 @@ function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasColorMap) defines += '#define HAS_COLOR_MAP\n';
   if (key.vertexColor) defines += '#define VERTEX_COLOR\n';
+  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
 
@@ -121,7 +139,11 @@ void main() {
 #ifdef VERTEX_COLOR
   v_color0 = a_color0;
 #endif
+#ifdef HAS_SKIN
+  gl_Position = u_viewProjection * u_model * skinMatrix() * vec4(a_position, 1.0);
+#else
   gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);
+#endif
 }
 `;
 

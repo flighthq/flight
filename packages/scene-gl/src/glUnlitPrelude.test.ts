@@ -29,9 +29,14 @@ describe('bindGlUnlitSurface', () => {
 
 describe('buildGlUnlitDefineKey', () => {
   it('produces distinct stable strings per flag set', () => {
-    expect(buildGlUnlitDefineKey(FLAT)).toBe('---');
-    expect(buildGlUnlitDefineKey({ alphaMaskEnabled: true, hasColorMap: true, vertexColor: true })).toBe('mcv');
-    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('--v');
+    expect(buildGlUnlitDefineKey(FLAT)).toBe('----');
+    expect(buildGlUnlitDefineKey({ alphaMaskEnabled: true, hasColorMap: true, vertexColor: true })).toBe('mcv-');
+    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('--v-');
+  });
+
+  it('encodes the skinned variant with a trailing k and keys it distinctly', () => {
+    expect(buildGlUnlitDefineKey({ ...FLAT, hasSkin: true }).endsWith('k')).toBe(true);
+    expect(buildGlUnlitDefineKey({ ...FLAT, hasSkin: true })).not.toBe(buildGlUnlitDefineKey(FLAT));
   });
 });
 
@@ -56,6 +61,16 @@ describe('ensureGlUnlitProgram', () => {
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(links);
     expect([...getGlSceneRuntime(state).programCache.keys()].some((k) => k.startsWith('unlit:'))).toBe(true);
   });
+
+  it('compiles the skinned variant as a distinct cache entry', () => {
+    const { state } = makeGlSceneState();
+    ensureGlUnlitProgram(state, FLAT);
+    getGlSceneRuntime(state).activeSkinnedRun = true;
+    ensureGlUnlitProgram(state, FLAT);
+    const keys = [...getGlSceneRuntime(state).programCache.keys()];
+    expect(keys.some((k) => k.startsWith('unlit:') && k.endsWith('k'))).toBe(true);
+    expect(keys.filter((k) => k.startsWith('unlit:')).length).toBe(2);
+  });
 });
 
 describe('getGlUnlitFragmentSourceForKey', () => {
@@ -72,5 +87,16 @@ describe('getGlUnlitVertexSourceForKey', () => {
     expect(getGlUnlitVertexSourceForKey({ ...FLAT, vertexColor: true })).toContain('#define VERTEX_COLOR');
     // The color0 attribute lives behind the #ifdef, so it is present in the body string either way.
     expect(getGlUnlitVertexSourceForKey({ ...FLAT, vertexColor: true })).toContain('a_color0');
+  });
+
+  it('splices the skin declarations and HAS_SKIN defines only in the skinned variant', () => {
+    const skinned = getGlUnlitVertexSourceForKey({ ...FLAT, hasSkin: true });
+    expect(skinned).toContain('#define HAS_SKIN');
+    expect(skinned).toContain('#define MAX_JOINTS');
+    expect(skinned).toContain('mat4 skinMatrix()');
+    expect(skinned).toContain('a_joints0');
+    const flat = getGlUnlitVertexSourceForKey(FLAT);
+    expect(flat).not.toContain('#define HAS_SKIN');
+    expect(flat).not.toContain('a_joints0');
   });
 });

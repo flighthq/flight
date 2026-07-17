@@ -20,12 +20,25 @@ function fragmentSourceFrom(calls: { name: string; args: unknown[] }[]): string 
   return String(source?.args[1] ?? '');
 }
 
+function vertexSourceFrom(calls: { name: string; args: unknown[] }[]): string {
+  const source = calls.find(
+    (c) =>
+      c.name === 'shaderSource' && String(c.args[1]).includes('a_position') && !String(c.args[1]).includes('fragColor'),
+  );
+  return String(source?.args[1] ?? '');
+}
+
 describe('buildGlShadedCacheKey', () => {
   it('namespaces under shaded: and joins base flags with the modifier define-key', () => {
-    expect(buildGlShadedCacheKey(BASE_KEY, '')).toBe('shaded:----|');
+    expect(buildGlShadedCacheKey(BASE_KEY, '')).toBe('shaded:-----|');
     expect(buildGlShadedCacheKey({ ...BASE_KEY, hasDiffuseMap: true }, 'EmissiveModifier:m')).toBe(
-      'shaded:-d--|EmissiveModifier:m',
+      'shaded:-d---|EmissiveModifier:m',
     );
+  });
+
+  it('sets the trailing skin flag so a skinned variant keys distinctly from the rigid one', () => {
+    expect(buildGlShadedCacheKey({ ...BASE_KEY, hasSkin: true }, '')).toBe('shaded:----k|');
+    expect(buildGlShadedCacheKey({ ...BASE_KEY, hasSkin: true }, '')).not.toBe(buildGlShadedCacheKey(BASE_KEY, ''));
   });
 });
 
@@ -57,6 +70,27 @@ describe('compileGlShadedProgram', () => {
     // The shared block declares u_directional exactly once (no forked light loop).
     expect(fragment.split('uniform vec4 u_directional;').length - 1).toBe(1);
   });
+
+  it('injects the skin define + vertex declarations only into the skinned vertex source', () => {
+    const gl = makeFakeGl2();
+    compileGlShadedProgram(gl, { ...BASE_KEY, hasSkin: true }, [], createModifierRegistry());
+    const vertex = vertexSourceFrom(gl.calls);
+    expect(vertex).toContain('#define HAS_SKIN');
+    expect(vertex).toContain('#define MAX_JOINTS');
+    expect(vertex).toContain('mat4 skinMatrix()');
+    expect(vertex).toContain('a_joints0');
+    // Skinning is vertex-only — the fragment stage never sees the skin attributes.
+    expect(fragmentSourceFrom(gl.calls)).not.toContain('a_joints0');
+  });
+
+  it('leaves the rigid vertex source free of the skin define and declarations', () => {
+    const gl = makeFakeGl2();
+    compileGlShadedProgram(gl, BASE_KEY, [], createModifierRegistry());
+    const vertex = vertexSourceFrom(gl.calls);
+    expect(vertex).not.toContain('#define HAS_SKIN');
+    expect(vertex).not.toContain('a_joints0');
+    expect(fragmentSourceFrom(gl.calls)).not.toContain('a_joints0');
+  });
 });
 
 describe('ensureGlShadedProgram', () => {
@@ -67,6 +101,17 @@ describe('ensureGlShadedProgram', () => {
     expect(second).toBe(first);
     const keys = [...getGlSceneRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('shaded:'))).toBe(true);
+  });
+
+  it('folds the render-state skinned-run flag into a distinct HAS_SKIN variant', () => {
+    const { state } = makeGlSceneState();
+    const rigid = ensureGlShadedProgram(state, BASE_KEY, []);
+    getGlSceneRuntime(state).activeSkinnedRun = true;
+    const skinned = ensureGlShadedProgram(state, BASE_KEY, []);
+
+    expect(skinned).not.toBe(rigid);
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('shaded:----k|');
+    expect(skinned.locJointMatrices).not.toBeNull();
   });
 
   it('compiles distinct variants for distinct modifier feature-sets', () => {

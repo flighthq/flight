@@ -3,7 +3,13 @@ import type { GlRenderState } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import {
+  GL_MAX_SKIN_JOINTS,
+  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  compileGlProgram,
+  ensureGlSceneProgram,
+} from './glMeshProgram';
+import { getGlSceneRuntime } from './glSceneRuntime';
 
 // The shared Gl Toon (cel-shading) prelude: the GLSL 300 es vertex + fragment shader for the Toon
 // forward-lit path. One source string is specialized per material at compile time by a leading
@@ -33,6 +39,8 @@ export interface GlToonDefineKey {
   alphaMaskEnabled: boolean;
   hasBaseColorMap: boolean;
   hasRamp: boolean;
+  // Set by ensureGlToonProgram from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
+  hasSkin?: boolean;
 }
 
 // A compiled Toon uber-shader variant plus its resolved uniform locations. One exists per distinct
@@ -51,7 +59,9 @@ export interface GlToonProgram extends GlLitProgram {
 // A short, stable, order-independent string identity for a Toon define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {
-  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasBaseColorMap ? 'b' : '-'}${key.hasRamp ? 'r' : '-'}`;
+  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasBaseColorMap ? 'b' : '-'}${key.hasRamp ? 'r' : '-'}${
+    key.hasSkin ? 'k' : '-'
+  }`;
 }
 
 // Compiles the Toon uber-shader for a define key, links it, and resolves its uniform locations.
@@ -67,6 +77,7 @@ export function compileGlToonProgram(gl: WebGL2RenderingContext, key: Readonly<G
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locBaseColor: gl.getUniformLocation(program, 'u_baseColor'),
     locBaseColorMap: gl.getUniformLocation(program, 'u_baseColorMap'),
+    locJointMatrices: gl.getUniformLocation(program, 'u_jointMatrices'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: gl.getUniformLocation(program, 'u_normalMatrix'),
     locRamp: gl.getUniformLocation(program, 'u_ramp'),
@@ -79,7 +90,12 @@ export function compileGlToonProgram(gl: WebGL2RenderingContext, key: Readonly<G
 // shared scene program cache under the `toon:` family namespace, so each variant is compiled at most
 // once per state and reused every frame.
 export function ensureGlToonProgram(state: GlRenderState, key: Readonly<GlToonDefineKey>): GlToonProgram {
-  return ensureGlSceneProgram(state, `toon:${buildGlToonDefineKey(key)}`, (gl) => compileGlToonProgram(gl, key));
+  // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
+  // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
+  const fullKey: GlToonDefineKey = { ...key, hasSkin: getGlSceneRuntime(state).activeSkinnedRun };
+  return ensureGlSceneProgram(state, `toon:${buildGlToonDefineKey(fullKey)}`, (gl) =>
+    compileGlToonProgram(gl, fullKey),
+  );
 }
 
 // The full fragment source for a define key (define block + body), ready to hand to the GL compiler.
@@ -89,7 +105,8 @@ export function getGlToonFragmentSourceForKey(key: Readonly<GlToonDefineKey>): s
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlToonVertexSourceForKey(key: Readonly<GlToonDefineKey>): string {
-  return buildGlToonDefineSource(key) + TOON_VERTEX_BODY;
+  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+  return buildGlToonDefineSource(key) + skin + TOON_VERTEX_BODY;
 }
 
 // Builds the leading "#version 300 es\n#define ..." block for a define key, to be prepended to the
@@ -100,6 +117,7 @@ function buildGlToonDefineSource(key: Readonly<GlToonDefineKey>): string {
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasBaseColorMap) defines += '#define HAS_BASE_COLOR_MAP\n';
   if (key.hasRamp) defines += '#define HAS_RAMP\n';
+  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
 
@@ -117,9 +135,17 @@ out vec3 v_normal;
 out vec2 v_uv0;
 
 void main() {
-  vec4 worldPosition = u_model * vec4(a_position, 1.0);
+#ifdef HAS_SKIN
+  mat4 skin = skinMatrix();
+  vec4 localPosition = skin * vec4(a_position, 1.0);
+  vec3 localNormal = mat3(skin) * a_normal;
+#else
+  vec4 localPosition = vec4(a_position, 1.0);
+  vec3 localNormal = a_normal;
+#endif
+  vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
-  v_normal = u_normalMatrix * a_normal;
+  v_normal = u_normalMatrix * localNormal;
   v_uv0 = a_uv0;
   gl_Position = u_viewProjection * worldPosition;
 }

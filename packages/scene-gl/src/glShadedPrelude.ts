@@ -5,7 +5,12 @@ import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import {
+  GL_MAX_SKIN_JOINTS,
+  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  compileGlProgram,
+  ensureGlSceneProgram,
+} from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import type { GlModifierSnippet } from './glShadedModifierSnippet';
 
@@ -18,6 +23,9 @@ export interface GlShadedDefineKey {
   alphaMaskEnabled: boolean;
   hasDiffuseMap: boolean;
   hasNormalMap: boolean;
+  // Set by ensureGlShadedProgram from the render-state skinned-run flag, not the material renderer —
+  // skinning keys off geometry.
+  hasSkin?: boolean;
   hasSpecularMap: boolean;
 }
 
@@ -47,7 +55,7 @@ export interface GlShadedProgram extends GlLitProgram {
 export function buildGlShadedCacheKey(key: Readonly<GlShadedDefineKey>, modifierDefineKey: string): string {
   const base = `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${key.hasSpecularMap ? 's' : '-'}${
     key.hasNormalMap ? 'n' : '-'
-  }`;
+  }${key.hasSkin ? 'k' : '-'}`;
   return `shaded:${base}|${modifierDefineKey}`;
 }
 
@@ -63,7 +71,9 @@ export function compileGlShadedProgram(
   registry: Readonly<ModifierRegistry>,
 ): GlShadedProgram {
   const defineSource = buildGlShadedDefineSource(key);
-  const vertexSource = defineSource + SHADED_VERTEX_BODY;
+  // The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment shader), so it is
+  // spliced into the vertex source alone, never the fragment.
+  const vertexSource = defineSource + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + SHADED_VERTEX_BODY;
   const fragmentSource = defineSource + assembleGlShadedFragmentBody(orderedModifiers, registry);
   const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
@@ -72,6 +82,7 @@ export function compileGlShadedProgram(
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locDiffuse: gl.getUniformLocation(program, 'u_diffuse'),
     locDiffuseMap: gl.getUniformLocation(program, 'u_diffuseMap'),
+    locJointMatrices: gl.getUniformLocation(program, 'u_jointMatrices'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMap: gl.getUniformLocation(program, 'u_normalMap'),
     locNormalMatrix: gl.getUniformLocation(program, 'u_normalMatrix'),
@@ -99,8 +110,11 @@ export function ensureGlShadedProgram(
   // result an allocated-but-empty registry gives — without allocating on this per-bind path.
   const registry = getGlSceneRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
   const ordered = orderModifierStack(modifiers);
-  const cacheKey = buildGlShadedCacheKey(key, getModifierDefineKey(modifiers, registry));
-  return ensureGlSceneProgram(state, cacheKey, (gl) => compileGlShadedProgram(gl, key, ordered, registry));
+  // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
+  // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
+  const fullKey: GlShadedDefineKey = { ...key, hasSkin: getGlSceneRuntime(state).activeSkinnedRun };
+  const cacheKey = buildGlShadedCacheKey(fullKey, getModifierDefineKey(modifiers, registry));
+  return ensureGlSceneProgram(state, cacheKey, (gl) => compileGlShadedProgram(gl, fullKey, ordered, registry));
 }
 
 // Assembles the ShadedMaterial fragment body for an ordered modifier stack: each modifier's
@@ -148,6 +162,7 @@ function buildGlShadedDefineSource(key: Readonly<GlShadedDefineKey>): string {
   if (key.hasDiffuseMap) defines += '#define HAS_DIFFUSE_MAP\n';
   if (key.hasSpecularMap) defines += '#define HAS_SPECULAR_MAP\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
+  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
 
@@ -167,10 +182,20 @@ out vec4 v_tangent;
 out vec2 v_uv0;
 
 void main() {
-  vec4 worldPosition = u_model * vec4(a_position, 1.0);
+#ifdef HAS_SKIN
+  mat4 skin = skinMatrix();
+  vec4 localPosition = skin * vec4(a_position, 1.0);
+  vec3 localNormal = mat3(skin) * a_normal;
+  vec3 localTangent = mat3(skin) * a_tangent.xyz;
+#else
+  vec4 localPosition = vec4(a_position, 1.0);
+  vec3 localNormal = a_normal;
+  vec3 localTangent = a_tangent.xyz;
+#endif
+  vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
-  v_normal = u_normalMatrix * a_normal;
-  v_tangent = vec4(u_normalMatrix * a_tangent.xyz, a_tangent.w);
+  v_normal = u_normalMatrix * localNormal;
+  v_tangent = vec4(u_normalMatrix * localTangent, a_tangent.w);
   v_uv0 = a_uv0;
   gl_Position = u_viewProjection * worldPosition;
 }
