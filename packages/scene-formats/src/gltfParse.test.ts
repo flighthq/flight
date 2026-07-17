@@ -113,6 +113,47 @@ function makeParentChildGltf(): GltfDocument {
   };
 }
 
+// A skinned single-triangle mesh: node 0 instances mesh 0 with skin 0; node 1 is the lone joint.
+// JOINTS_0 (ubyte VEC4) and WEIGHTS_0 (float VEC4) weight every vertex fully to joint 0, and the skin
+// supplies an identity inverse-bind matrix. `inverseBind` false omits inverseBindMatrices to exercise
+// the spec's identity default.
+function makeSkinnedGltf(inverseBind = true): GltfDocument {
+  const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  const joints = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const weights = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]);
+  const ibm = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+  const uri = toDataUri(bytesOf(positions), bytesOf(joints), bytesOf(weights), bytesOf(ibm));
+
+  const positionsLen = positions.byteLength;
+  const jointsLen = joints.byteLength;
+  const weightsLen = weights.byteLength;
+  const doc: GltfDocument = {
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+      { bufferView: 1, componentType: 5121, count: 3, type: 'VEC4' },
+      { bufferView: 2, componentType: 5126, count: 3, type: 'VEC4' },
+      { bufferView: 3, componentType: 5126, count: 1, type: 'MAT4' },
+    ],
+    asset: { version: '2.0' },
+    bufferViews: [
+      { buffer: 0, byteLength: positionsLen, byteOffset: 0 },
+      { buffer: 0, byteLength: jointsLen, byteOffset: positionsLen },
+      { buffer: 0, byteLength: weightsLen, byteOffset: positionsLen + jointsLen },
+      { buffer: 0, byteLength: ibm.byteLength, byteOffset: positionsLen + jointsLen + weightsLen },
+    ],
+    buffers: [{ byteLength: positionsLen + jointsLen + weightsLen + ibm.byteLength, uri }],
+    meshes: [{ primitives: [{ attributes: { JOINTS_0: 1, POSITION: 0, WEIGHTS_0: 2 } }] }],
+    nodes: [
+      { mesh: 0, skin: 0 },
+      { name: 'joint', translation: [0, 0, 0] },
+    ],
+    scene: 0,
+    scenes: [{ nodes: [0, 1] }],
+    skins: [inverseBind ? { inverseBindMatrices: 3, joints: [1] } : { joints: [1] }],
+  };
+  return doc;
+}
+
 describe('createSceneFromGlb', () => {
   it('imports geometry from a GLB container whose buffer is backed by the BIN chunk', () => {
     const positions = new Float32Array([7, 8, 9, 1, 0, 0, 0, 1, 0]);
@@ -506,5 +547,51 @@ describe('createSceneFromGltf', () => {
     const warnings: string[] = [];
     createSceneFromGltf(doc, warnings);
     expect(warnings.some((w) => w.includes('KHR_draco_mesh_compression'))).toBe(true);
+  });
+
+  it('imports a skin binding the mesh to a skeleton over its joint nodes', () => {
+    const scene = createSceneFromGltf(makeSkinnedGltf());
+    const roots = getNodeChildren(scene);
+    const meshNode = roots[0] as unknown as Mesh;
+    const jointNode = roots[1] as SceneNode;
+
+    expect(isMesh(roots[0] as SceneNode)).toBe(true);
+    expect(meshNode.skin).toBeTruthy();
+    expect(meshNode.skin?.skeleton.joints).toHaveLength(1);
+    // The skin's joint resolves to the built SceneNode, and its name carries through.
+    expect(meshNode.skin?.skeleton.joints[0]).toBe(jointNode);
+    expect(meshNode.skin?.skeleton.names).toEqual(['joint']);
+  });
+
+  it('emits the skinned layout with renormalized weights for a skinned primitive', () => {
+    const scene = createSceneFromGltf(makeSkinnedGltf());
+    const geometry = (getNodeChildren(scene)[0] as unknown as Mesh).geometry;
+
+    expect(geometry.layout.stride).toBe(80);
+    // joints0 at float 12, weights0 at float 16; vertex 0 is fully weighted to joint 0.
+    expect(geometry.vertices[12]).toBe(0);
+    expect(geometry.vertices[16]).toBeCloseTo(1);
+  });
+
+  it('defaults inverse-bind matrices to identity when the skin omits them', () => {
+    const scene = createSceneFromGltf(makeSkinnedGltf(false));
+    const meshNode = getNodeChildren(scene)[0] as unknown as Mesh;
+    const inverseBind = meshNode.skin?.skeleton.inverseBindMatrices;
+
+    expect(inverseBind?.length).toBe(16);
+    // Identity: diagonal ones, off-diagonal zeros.
+    expect(inverseBind?.[0]).toBe(1);
+    expect(inverseBind?.[5]).toBe(1);
+    expect(inverseBind?.[10]).toBe(1);
+    expect(inverseBind?.[15]).toBe(1);
+    expect(inverseBind?.[1]).toBe(0);
+  });
+
+  it('leaves an unskinned primitive on the canonical layout with no skin', () => {
+    const scene = createSceneFromGltf(makeTriangleGltf());
+    const meshNode = getNodeChildren(scene)[0] as unknown as Mesh;
+
+    expect(meshNode.skin ?? null).toBeNull();
+    expect(meshNode.geometry.layout.stride).toBe(48);
   });
 });
