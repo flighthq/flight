@@ -4,7 +4,7 @@ export * from './createRimModifier';
 export * from './createShadedMaterial';
 export * from './getModifierDefineKey';
 export * from './getUnregisteredModifierKinds';
-export * from './isModifierSlot';
+export * from './isBuiltInModifierSlot';
 export * from './isModifierStackValid';
 export * from './modifierRegistry';
 export * from './orderModifierStack';
