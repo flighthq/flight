@@ -335,7 +335,7 @@ function buildMeshNode(mesh: Readonly<ThreeDsMesh>): SceneNode | null {
     // UV coordinates (2 floats).
     if (mesh.uvs !== null && v < mesh.uvs.length / 2) {
       vertices[o + 10] = mesh.uvs[v * 2];
-      vertices[o + 11] = mesh.uvs[v * 2 + 1];
+      vertices[o + 11] = 1 - mesh.uvs[v * 2 + 1];
     }
     // else: already 0 from Float32Array initialization.
   }

@@ -222,6 +222,8 @@
       "@flighthq/node/*": ["./packages/node/src/*"],
       "@flighthq/displayobject": ["./packages/displayobject/src/index.ts"],
       "@flighthq/displayobject/*": ["./packages/displayobject/src/*"],
+      "@flighthq/shading": ["./packages/shading/src/index.ts"],
+      "@flighthq/shading/*": ["./packages/shading/src/*"],
       "@flighthq/shape": ["./packages/shape/src/index.ts"],
       "@flighthq/shape/*": ["./packages/shape/src/*"],
       "@flighthq/shape-formats": ["./packages/shape-formats/src/index.ts"],

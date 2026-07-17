@@ -43,6 +43,9 @@
       "path": "../scene"
     },
     {
+      "shading": "../shading"
+    },
+    {
       "path": "../types"
     }
   ],

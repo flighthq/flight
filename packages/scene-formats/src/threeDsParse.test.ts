@@ -198,11 +198,11 @@ describe('createSceneFrom3ds', () => {
 
     const uv = { x: 0, y: 0 };
     getMeshGeometryVertexUv0(uv, geometry, 0);
-    expect([uv.x, uv.y]).toEqual([0, 0]);
+    expect([uv.x, uv.y]).toEqual([0, 1]);
     getMeshGeometryVertexUv0(uv, geometry, 1);
-    expect([uv.x, uv.y]).toEqual([1, 0]);
+    expect([uv.x, uv.y]).toEqual([1, 1]);
     getMeshGeometryVertexUv0(uv, geometry, 2);
-    expect([uv.x, uv.y]).toEqual([0.5, 1]);
+    expect([uv.x, uv.y]).toEqual([0.5, 0]);
   });
 
   it('computes face normals converted to Y-up', () => {
