@@ -22,6 +22,7 @@ import {
   enableSceneNodeSignals,
   getSceneNodeRuntime,
   getSceneNodeSignals,
+  getSceneNodeWorldAlpha,
   SceneNodeKind,
 } from './sceneNode';
 
@@ -55,6 +56,14 @@ describe('createSceneNode', () => {
     expect(node.enabled).toBe(false);
     expect(node.name).toBe('root');
   });
+
+  it('defaults alpha to 1 (fully opaque)', () => {
+    expect(createSceneNode().alpha).toBe(1);
+  });
+
+  it('accepts an initial alpha', () => {
+    expect(createSceneNode(SceneNodeKind, { alpha: 0.4 }).alpha).toBeCloseTo(0.4);
+  });
 });
 
 describe('createSceneNodeRuntime', () => {
@@ -69,6 +78,10 @@ describe('createSceneNodeRuntime', () => {
   it('initializes worldMatrix to null', () => {
     const runtime = createSceneNodeRuntime();
     expect(runtime.worldMatrix).toBeNull();
+  });
+
+  it('initializes worldAlpha to null (unresolved until prepared)', () => {
+    expect(createSceneNodeRuntime().worldAlpha).toBeNull();
   });
 });
 
@@ -112,6 +125,18 @@ describe('getSceneNodeSignals', () => {
     const signals = enableSceneNodeSignals(node);
     expect(getSceneNodeSignals(node)).toBe(signals);
     expect(getSceneNodeSignals(node)).toBe(getSceneNodeRuntime(node).nodeSignals);
+  });
+});
+
+describe('getSceneNodeWorldAlpha', () => {
+  it('returns 1 for a node not yet prepared (null worldAlpha)', () => {
+    expect(getSceneNodeWorldAlpha(createSceneNode())).toBe(1);
+  });
+
+  it('returns the resolved worldAlpha once set on the runtime', () => {
+    const node = createSceneNode();
+    getSceneNodeRuntime(node).worldAlpha = 0.75;
+    expect(getSceneNodeWorldAlpha(node)).toBeCloseTo(0.75);
   });
 });
 

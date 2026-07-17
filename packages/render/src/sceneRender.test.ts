@@ -10,7 +10,7 @@ import {
 } from '@flighthq/lighting';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createScene } from '@flighthq/scene';
+import { createMesh, createScene, getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type { Camera, Material, MeshGeometry, SceneLightBlock, SceneLights } from '@flighthq/types';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
@@ -280,6 +280,23 @@ describe('prepareSceneRender', () => {
     const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
     expect(list.meshCount).toBe(1);
     expect(list.visibleMeshes[0]).toBe(mesh);
+  });
+
+  it('folds parent x self alpha into each node resolved worldAlpha', () => {
+    const state = createRenderState();
+    const scene = createScene();
+    const group = createScene();
+    const mesh = createMesh(boundedBox(), [null]);
+    addNodeChild(group, mesh);
+    addNodeChild(scene, group);
+    scene.alpha = 0.5;
+    group.alpha = 0.5;
+    mesh.alpha = 0.5;
+
+    prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    expect(getSceneNodeWorldAlpha(scene)).toBeCloseTo(0.5);
+    expect(getSceneNodeWorldAlpha(group)).toBeCloseTo(0.25);
+    expect(getSceneNodeWorldAlpha(mesh)).toBeCloseTo(0.125);
   });
 
   it('reuses the same list per render state across calls', () => {
