@@ -1,4 +1,5 @@
 import { sampleAnimationTrack } from '@flighthq/animation';
+import { registerImageDecoder } from '@flighthq/image-codec';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -8,24 +9,33 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren, getNodeParent } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Mesh, SceneAnimationTarget, SceneNode } from '@flighthq/types';
+import type { Mesh, SceneAnimationTarget, SceneNode, StandardPbrMaterial, UnlitMaterial } from '@flighthq/types';
+import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
 
 import { createSceneFromAwd, parseAwdSkeletonAnimation } from './awdParse';
 import {
   AWD_BLOCK_CONTAINER,
+  AWD_BLOCK_MATERIAL,
   AWD_BLOCK_MESH_INSTANCE,
   AWD_BLOCK_SKELETON,
   AWD_BLOCK_SKELETON_ANIMATION,
   AWD_BLOCK_SKELETON_POSE,
+  AWD_BLOCK_TEXTURE,
   AWD_BLOCK_TRIANGLE_GEOMETRY,
   AWD_COMPRESSION_DEFLATE,
   AWD_DATA_FLOAT32,
   AWD_DATA_UINT16,
+  AWD_MATERIAL_PROP_COLOR,
+  AWD_MATERIAL_PROP_DIFFUSE_TEXTURE,
+  AWD_MATERIAL_TYPE_COLOR,
+  AWD_MATERIAL_TYPE_TEXTURE,
   AWD_NAMESPACE_CORE,
   AWD_STREAM_INDICES,
   AWD_STREAM_NORMALS,
   AWD_STREAM_POSITIONS,
   AWD_STREAM_UVS,
+  AWD_TEXTURE_TYPE_EMBEDDED,
+  AWD_TEXTURE_TYPE_EXTERNAL,
 } from './awdSchema';
 
 function buildAwdHeader(bodyLength: number, compression = 0, flags = 0): Uint8Array {
@@ -160,6 +170,67 @@ function buildMeshInstanceBody(name: string, parentId: number, transform: number
   result.set(userAttrList, offset);
   return result;
 }
+
+// MeshInstance with a material id per subset (numMaterials > 0), unlike buildMeshInstanceBody.
+function buildMeshInstanceBodyWithMaterials(
+  name: string,
+  parentId: number,
+  transform: number[],
+  geometryId: number,
+  materialIds: number[],
+): Uint8Array {
+  const nameBytes = buildAwdString(name);
+  const head = new Uint8Array(4 + 12 * 4 + nameBytes.length + 4);
+  const view = new DataView(head.buffer);
+  let offset = 0;
+  view.setUint32(offset, parentId, true);
+  offset += 4;
+  for (let i = 0; i < 12; i++) view.setFloat32(offset + i * 4, transform[i] ?? 0, true);
+  offset += 12 * 4;
+  head.set(nameBytes, offset);
+  offset += nameBytes.length;
+  view.setUint32(offset, geometryId, true);
+
+  const mats = new Uint8Array(2 + materialIds.length * 4);
+  const mv = new DataView(mats.buffer);
+  mv.setUint16(0, materialIds.length, true);
+  for (let i = 0; i < materialIds.length; i++) mv.setUint32(2 + i * 4, materialIds[i], true);
+
+  return concatBytes(head, mats, buildEmptyAttrList(), buildEmptyAttrList());
+}
+
+// Material layout: name(VarString) → matType(uint8) → numMethods(uint8) → PropertyList → UserAttrList.
+// Each property here is a uint32 value (key, value) — enough for the diffuse-texture and color keys.
+function buildMaterialBody(name: string, matType: number, props: Array<[number, number]>): Uint8Array {
+  const nameBytes = buildAwdString(name);
+  const recordSize = 2 + 4 + 4; // key(uint16) + fieldLength(uint32) + value(uint32)
+  const propList = new Uint8Array(4 + props.length * recordSize);
+  const pv = new DataView(propList.buffer);
+  pv.setUint32(0, props.length * recordSize, true);
+  let o = 4;
+  for (const [key, value] of props) {
+    pv.setUint16(o, key, true);
+    o += 2;
+    pv.setUint32(o, 4, true);
+    o += 4;
+    pv.setUint32(o, value, true);
+    o += 4;
+  }
+  return concatBytes(nameBytes, new Uint8Array([matType, 0]), propList, buildEmptyAttrList());
+}
+
+// Texture layout: name(VarString) → texType(uint8) → dataLen(uint32) → data → PropertyList → UserAttrList.
+function buildTextureBody(name: string, texType: number, imageBytes: Uint8Array): Uint8Array {
+  const nameBytes = buildAwdString(name);
+  const head = new Uint8Array(1 + 4);
+  head[0] = texType;
+  new DataView(head.buffer).setUint32(1, imageBytes.length, true);
+  return concatBytes(nameBytes, head, imageBytes, buildEmptyAttrList(), buildEmptyAttrList());
+}
+
+// A 4-byte PNG signature — enough for detectImageMimeType to type the payload 'image/png'. The
+// bytes never reach a decoder in these tests (none is registered), so a full image is unnecessary.
+const FAKE_PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 function concatBytes(...arrays: readonly Uint8Array[]): Uint8Array {
   let total = 0;
@@ -364,6 +435,136 @@ describe('createSceneFromAwd', () => {
     const scene = createSceneFromAwd(awd);
     const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+  });
+
+  it('attaches a textured StandardPbrMaterial from a material + embedded texture block', () => {
+    const posStream = buildStream(
+      AWD_STREAM_POSITIONS,
+      AWD_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const texBody = buildTextureBody('diffuse.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [[AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
+
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      texBody,
+      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const warnings: string[] = [];
+    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
+
+    const mesh = getNodeChildren(scene)[0] as Mesh;
+    expect(isMesh(mesh)).toBe(true);
+    expect(mesh.materials).toHaveLength(1);
+    const material = mesh.materials[0] as StandardPbrMaterial | null;
+    expect(material).not.toBeNull();
+    expect(material!.kind).toBe(StandardPbrMaterialKind);
+    expect(material!.baseColorMap).not.toBeNull();
+    expect(material!.baseColorMap!.image).not.toBeNull();
+    expect(warnings).toHaveLength(0);
+  });
+
+  it('attaches an UnlitMaterial from a flat-color material block, widening color to opaque rgba', () => {
+    const posStream = buildStream(
+      AWD_STREAM_POSITIONS,
+      AWD_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const matBody = buildMaterialBody('ColorMat', AWD_MATERIAL_TYPE_COLOR, [[AWD_MATERIAL_PROP_COLOR, 0x336699]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [2]);
+
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(3, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+
+    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as UnlitMaterial | null;
+    expect(material).not.toBeNull();
+    expect(material!.kind).toBe(UnlitMaterialKind);
+    expect(material!.baseColor).toBe(0x336699ff);
+  });
+
+  it('warns and leaves the subset unmaterialed for an external-URL texture', () => {
+    const posStream = buildStream(
+      AWD_STREAM_POSITIONS,
+      AWD_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const texBody = buildTextureBody('http://example.com/tex.png', AWD_TEXTURE_TYPE_EXTERNAL, new Uint8Array(0));
+    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [[AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
+
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      texBody,
+      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const warnings: string[] = [];
+    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
+
+    expect((getNodeChildren(scene)[0] as Mesh).materials).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('external URL'))).toBe(true);
+  });
+
+  it('fills the texture ImageResource asynchronously once a decoder is registered', async () => {
+    registerImageDecoder('image/png', async () => ({
+      data: new Uint8ClampedArray([255, 0, 0, 255]),
+      height: 1,
+      width: 1,
+    }));
+
+    const posStream = buildStream(
+      AWD_STREAM_POSITIONS,
+      AWD_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const texBody = buildTextureBody('diffuse.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const matBody = buildMaterialBody('Mat', AWD_MATERIAL_TYPE_TEXTURE, [[AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3]);
+
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      texBody,
+      buildBlockHeader(3, AWD_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(4, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+
+    const image = ((getNodeChildren(scene)[0] as Mesh).materials[0] as StandardPbrMaterial).baseColorMap!.image!;
+    expect(image.data).toBeNull(); // decode is deferred; the resource starts empty
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(image.data).not.toBeNull();
+    expect(image.width).toBe(1);
+    expect(image.height).toBe(1);
   });
 });
 

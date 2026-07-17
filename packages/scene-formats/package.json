@@ -33,10 +33,14 @@
   },
   "dependencies": {
     "@flighthq/animation": "*",
+    "@flighthq/image": "*",
+    "@flighthq/image-codec": "*",
+    "@flighthq/materials": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
     "@flighthq/scene": "*",
     "@flighthq/skeleton3d": "*",
+    "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

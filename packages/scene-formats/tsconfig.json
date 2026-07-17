@@ -10,10 +10,14 @@
   },
   "references": [
     { "path": "../animation" },
+    { "path": "../image" },
+    { "path": "../image-codec" },
+    { "path": "../materials" },
     { "path": "../mesh" },
     { "path": "../node" },
     { "path": "../scene" },
     { "path": "../skeleton3d" },
+    { "path": "../texture" },
     { "path": "../types" }
   ],
   "include": ["src"]

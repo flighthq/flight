@@ -1,19 +1,25 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
+import { createImageResource, invalidateImageResource } from '@flighthq/image';
+import { decodeImage, detectImageMimeType } from '@flighthq/image-codec';
+import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { AnimationClip, SceneNode, Skeleton3D } from '@flighthq/types';
+import { createTexture } from '@flighthq/texture';
+import type { AnimationClip, ImageResource, Material, SceneNode, Skeleton3D, Texture } from '@flighthq/types';
 import { SceneAnimationPathTranslation } from '@flighthq/types';
 
 import {
   AWD_BLOCK_CONTAINER,
   AWD_BLOCK_HEADER_BYTES,
+  AWD_BLOCK_MATERIAL,
   AWD_BLOCK_MESH_INSTANCE,
   AWD_BLOCK_SKELETON,
   AWD_BLOCK_SKELETON_ANIMATION,
   AWD_BLOCK_SKELETON_POSE,
+  AWD_BLOCK_TEXTURE,
   AWD_BLOCK_TRIANGLE_GEOMETRY,
   AWD_COMPRESSION_NONE,
   AWD_DATA_FLOAT32,
@@ -28,12 +34,15 @@ import {
   AWD_MAGIC_0,
   AWD_MAGIC_1,
   AWD_MAGIC_2,
+  AWD_MATERIAL_PROP_COLOR,
+  AWD_MATERIAL_PROP_DIFFUSE_TEXTURE,
   AWD_NAMESPACE_CORE,
   AWD_STREAM_INDICES,
   AWD_STREAM_NORMALS,
   AWD_STREAM_POSITIONS,
   AWD_STREAM_TANGENTS,
   AWD_STREAM_UVS,
+  AWD_TEXTURE_TYPE_EMBEDDED,
 } from './awdSchema';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
@@ -45,8 +54,16 @@ import {
 
 // Parses an Away3D AWD 2.x binary file into a Scene. The 12-byte header (magic `AWD`, version,
 // flags, compression, body length) is validated, then the block stream is walked to extract
-// geometry blocks (type 1), container blocks (type 22), and mesh-instance blocks (type 23).
-// Mesh instances reference geometry blocks by block ID.
+// geometry blocks (type 1), container blocks (type 22), mesh-instance blocks (type 23), material
+// blocks (type 81), and texture blocks (type 82). Mesh instances reference geometry and material
+// blocks by block ID; materials reference texture blocks the same way.
+//
+// A mesh instance's per-subset materials are resolved to Flight materials: a textured AWD material
+// becomes a StandardPbrMaterial whose baseColorMap wraps the referenced (embedded) texture; a flat
+// color material becomes an UnlitMaterial. Embedded texture payloads decode through the async
+// image-codec seam, so the ImageResource is attached immediately and its pixels fill in when the
+// decode resolves (deferred-fill, as with URL image loads) — the parse itself stays synchronous.
+// External-URL textures and unrecognized payloads warn and leave the subset unmaterialed.
 //
 // Only uncompressed AWD files are supported; compressed files (deflate or LZMA) push a warning
 // and return an empty scene. Malformed input pushes a warning and returns an empty scene rather
@@ -79,6 +96,8 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   const geometryBlocks = new Map<number, ParsedGeometry[]>();
   const containerBlocks = new Map<number, ParsedContainer>();
   const meshInstanceBlocks = new Map<number, ParsedMeshInstance>();
+  const materialBlocks = new Map<number, ParsedMaterial>();
+  const textureBlocks = new Map<number, ParsedTexture>();
 
   let offset = AWD_HEADER_BYTES;
   while (offset + AWD_BLOCK_HEADER_BYTES <= bodyEnd) {
@@ -128,6 +147,12 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
           warnings,
         );
         if (meshInst !== null) meshInstanceBlocks.set(blockId, meshInst);
+      } else if (blockType === AWD_BLOCK_MATERIAL) {
+        const material = parseMaterialBlock(view, source, blockDataStart, blockDataStart + blockLength, warnings);
+        if (material !== null) materialBlocks.set(blockId, material);
+      } else if (blockType === AWD_BLOCK_TEXTURE) {
+        const texture = parseTextureBlock(view, source, blockDataStart, blockDataStart + blockLength, warnings);
+        if (texture !== null) textureBlocks.set(blockId, texture);
       }
     }
 
@@ -143,16 +168,28 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     sceneNodes.set(blockId, node);
   }
 
+  // One Flight Material per AWD material block, shared across every subset that references it (and
+  // thus one Texture + one ImageResource per shared texture). Keyed by AWD material block id.
+  const resolvedMaterials = new Map<number, Material | null>();
+  const materialForSubset = (meshInst: ParsedMeshInstance, subsetIndex: number): (Material | null)[] => {
+    const materialId = subsetIndex < meshInst.materialIds.length ? meshInst.materialIds[subsetIndex] : 0;
+    const material = resolveAwdMaterial(materialId, materialBlocks, textureBlocks, resolvedMaterials, warnings);
+    return material !== null ? [material] : [];
+  };
+
   for (const [blockId, meshInst] of meshInstanceBlocks) {
     const geometries = geometryBlocks.get(meshInst.geometryId);
     let node: SceneNode;
     if (geometries !== undefined && geometries.length > 0) {
       if (geometries.length === 1) {
-        node = createMesh(geometries[0].geometry, []) as unknown as SceneNode;
+        node = createMesh(geometries[0].geometry, materialForSubset(meshInst, 0)) as unknown as SceneNode;
       } else {
         node = createSceneNode(undefined, { name: meshInst.name || undefined });
         for (let i = 0; i < geometries.length; i++) {
-          addNodeChild(node, createMesh(geometries[i].geometry, []) as unknown as SceneNode);
+          addNodeChild(
+            node,
+            createMesh(geometries[i].geometry, materialForSubset(meshInst, i)) as unknown as SceneNode,
+          );
         }
       }
     } else {
@@ -368,9 +405,28 @@ interface ParsedContainer {
 
 interface ParsedMeshInstance {
   geometryId: number;
+  materialIds: number[];
   name: string;
   parentId: number;
   transform: Float64Array;
+}
+
+// A parsed AWD material block (type 81). `diffuseTextureId`/`color` are the two paths Flight
+// realizes; 0 means "absent". Other AWD material properties (normal map, methods, blend flags) are
+// parsed past but not yet mapped.
+interface ParsedMaterial {
+  color: number | null;
+  diffuseTextureId: number;
+  name: string;
+}
+
+// A parsed AWD texture block (type 82). Either `bytes` (an embedded, self-describing image payload:
+// PNG/JPEG/...) with its detected `mimeType`, or neither when the block referenced an external URL
+// that Flight cannot fetch at parse time.
+interface ParsedTexture {
+  bytes: Uint8Array | null;
+  mimeType: string | null;
+  name: string;
 }
 
 function readAwdString(
@@ -693,17 +749,226 @@ function parseMeshInstanceBlock(
   const geometryId = dv.getUint32(offset, true);
   offset += 4;
 
+  // Material block ids, positional per geometry sub-mesh. Previously read-and-discarded; kept now so
+  // the diffuse material/texture for each subset can be resolved and attached.
+  const materialIds: number[] = [];
   if (offset + 2 <= end) {
     const numMaterials = dv.getUint16(offset, true);
     offset += 2;
-    offset += numMaterials * 4;
+    for (let i = 0; i < numMaterials && offset + 4 <= end; i++) {
+      materialIds.push(dv.getUint32(offset, true));
+      offset += 4;
+    }
   }
 
   // NumAttrList (block properties) and UserAttrList.
   offset = skipAwdAttrList(view, offset, end);
   offset = skipAwdAttrList(view, offset, end);
 
-  return { geometryId, name: nameResult.value, parentId, transform: transformResult.transform };
+  return { geometryId, materialIds, name: nameResult.value, parentId, transform: transformResult.transform };
+}
+
+// Parses a Material block (type 81). Layout:
+// name(VarString) → matType(uint8) → numMethods(uint8) → PropertyList → methods → UserAttrList.
+// Flight reads the diffuse texture id (property 2) and the flat color (property 1) — the properties
+// precede the methods, so the method/attr tail is left unread. Normal maps, shading methods, and
+// blend flags are not yet mapped.
+function parseMaterialBlock(
+  view: Readonly<DataView>,
+  source: Readonly<Uint8Array>,
+  start: number,
+  end: number,
+  warnings?: string[],
+): ParsedMaterial | null {
+  let offset = start;
+
+  if (offset + 2 > end) {
+    warnings?.push('createSceneFromAwd: material block truncated before name');
+    return null;
+  }
+  const nameResult = readAwdString(view, source, offset);
+  offset = nameResult.end;
+
+  if (offset + 2 > end) {
+    warnings?.push(`createSceneFromAwd: material '${nameResult.value}' truncated before type`);
+    return null;
+  }
+  offset += 1; // matType (uint8) — texture vs color is inferred from which properties are present
+  offset += 1; // numMethods (uint8)
+
+  const props = readAwdProperties(view, offset, end);
+  const diffuseTextureId = readAwdPropertyUint32(view, props.values, AWD_MATERIAL_PROP_DIFFUSE_TEXTURE) ?? 0;
+  const color = readAwdPropertyUint32(view, props.values, AWD_MATERIAL_PROP_COLOR);
+
+  return { color, diffuseTextureId, name: nameResult.value };
+}
+
+// Parses a Texture block (type 82). Layout:
+// name(VarString) → texType(uint8) → dataLen(uint32) → data(dataLen bytes) → PropertyList → UserAttrList.
+// The embedded form carries a self-describing image payload (PNG/JPEG/…); the external form stores a
+// URL Flight cannot fetch at parse time and is returned as an unresolved (byte-less) slot.
+function parseTextureBlock(
+  view: Readonly<DataView>,
+  source: Readonly<Uint8Array>,
+  start: number,
+  end: number,
+  warnings?: string[],
+): ParsedTexture | null {
+  const dv = view as DataView;
+  let offset = start;
+
+  if (offset + 2 > end) {
+    warnings?.push('createSceneFromAwd: texture block truncated before name');
+    return null;
+  }
+  const nameResult = readAwdString(view, source, offset);
+  offset = nameResult.end;
+
+  if (offset + 5 > end) {
+    warnings?.push(`createSceneFromAwd: texture '${nameResult.value}' truncated before payload`);
+    return null;
+  }
+  const texType = (source as Uint8Array)[offset];
+  offset += 1;
+  const dataLen = dv.getUint32(offset, true);
+  offset += 4;
+
+  if (offset + dataLen > end) {
+    warnings?.push(`createSceneFromAwd: texture '${nameResult.value}' declares ${dataLen} bytes but data is truncated`);
+    return null;
+  }
+
+  if (texType !== AWD_TEXTURE_TYPE_EMBEDDED) {
+    warnings?.push(
+      `createSceneFromAwd: texture '${nameResult.value}' is an external URL reference; only embedded textures are resolved`,
+    );
+    return { bytes: null, mimeType: null, name: nameResult.value };
+  }
+
+  const bytes = (source as Uint8Array).slice(offset, offset + dataLen);
+  const mimeType = detectImageMimeType(bytes);
+  if (mimeType === null) {
+    warnings?.push(`createSceneFromAwd: texture '${nameResult.value}' payload is not a recognized image format`);
+    return { bytes: null, mimeType: null, name: nameResult.value };
+  }
+
+  return { bytes, mimeType, name: nameResult.value };
+}
+
+// Reads an AWD typed-property list: a uint32 byte-length prefix followed by `uint16 key, uint32
+// fieldLength, <value>` records. Returns each key's value span so callers decode only the keys they
+// know; unknown keys are stepped over by their length.
+function readAwdProperties(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+): { end: number; values: Map<number, { length: number; offset: number }> } {
+  const dv = view as DataView;
+  const values = new Map<number, { length: number; offset: number }>();
+  if (offset + 4 > end) return { end: offset, values };
+
+  const listLength = dv.getUint32(offset, true);
+  offset += 4;
+  const listEnd = Math.min(offset + listLength, end);
+
+  while (offset + 6 <= listEnd) {
+    const key = dv.getUint16(offset, true);
+    offset += 2;
+    const fieldLength = dv.getUint32(offset, true);
+    offset += 4;
+    if (offset + fieldLength > listEnd) break;
+    values.set(key, { length: fieldLength, offset });
+    offset += fieldLength;
+  }
+
+  return { end: listEnd, values };
+}
+
+function readAwdPropertyUint32(
+  view: Readonly<DataView>,
+  values: Readonly<Map<number, { length: number; offset: number }>>,
+  key: number,
+): number | null {
+  const entry = values.get(key);
+  if (entry === undefined || entry.length < 4) return null;
+  return (view as DataView).getUint32(entry.offset, true);
+}
+
+// Resolves an AWD material block id to a Flight Material, memoized so a material shared by several
+// subsets yields one Material (and one Texture/ImageResource per shared texture). A textured material
+// becomes a StandardPbrMaterial with a baseColorMap; a flat-color material becomes an UnlitMaterial;
+// anything that resolves to neither returns null (a bare, unmaterialed subset).
+function resolveAwdMaterial(
+  materialId: number,
+  materialBlocks: Readonly<Map<number, ParsedMaterial>>,
+  textureBlocks: Readonly<Map<number, ParsedTexture>>,
+  cache: Map<number, Material | null>,
+  warnings?: string[],
+): Material | null {
+  if (materialId === 0) return null;
+  const cached = cache.get(materialId);
+  if (cached !== undefined) return cached;
+
+  const parsed = materialBlocks.get(materialId);
+  if (parsed === undefined) {
+    warnings?.push(`createSceneFromAwd: mesh references material block ${materialId} which was not found`);
+    cache.set(materialId, null);
+    return null;
+  }
+
+  let material: Material | null = null;
+  if (parsed.diffuseTextureId !== 0) {
+    const texture = resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, warnings);
+    if (texture !== null) material = createStandardPbrMaterial({ baseColorMap: texture }) as unknown as Material;
+  }
+  if (material === null && parsed.color !== null) {
+    material = createUnlitMaterial({ baseColor: awdColorToRgba(parsed.color) }) as unknown as Material;
+  }
+
+  cache.set(materialId, material);
+  return material;
+}
+
+// Resolves an AWD texture block id to a Flight Texture, or null when the texture is missing or its
+// payload was not an embedded, recognized image (the miss was already warned at parse time).
+function resolveAwdTexture(
+  textureId: number,
+  textureBlocks: Readonly<Map<number, ParsedTexture>>,
+  warnings?: string[],
+): Texture | null {
+  const parsed = textureBlocks.get(textureId);
+  if (parsed === undefined) {
+    warnings?.push(`createSceneFromAwd: material references texture block ${textureId} which was not found`);
+    return null;
+  }
+  if (parsed.bytes === null || parsed.mimeType === null) return null;
+  return createTexture({ image: createAwdImageResource(parsed.bytes, parsed.mimeType) });
+}
+
+// Wraps embedded image bytes in an ImageResource. The image-codec decode seam is async and
+// browser-backed, so the resource is returned immediately (empty) and its pixels are filled in when
+// the decode resolves — the same deferred-fill contract as loadImageResourceFromUrl, and the reason
+// createSceneFromAwd stays synchronous. Where no decoder is registered (a headless parse), the
+// resource simply stays empty; the Texture → ImageResource structure is still attached to the material.
+function createAwdImageResource(bytes: Readonly<Uint8Array>, mimeType: string): ImageResource {
+  const resource = createImageResource();
+  void decodeImage(bytes, mimeType)
+    .then((decoded) => {
+      if (decoded === null) return;
+      resource.data = decoded.data as Uint8ClampedArray<ArrayBuffer>;
+      resource.width = decoded.width;
+      resource.height = decoded.height;
+      resource.format = 'rgba8unorm';
+      invalidateImageResource(resource);
+    })
+    .catch(() => {});
+  return resource;
+}
+
+// AWD packs material color as 24-bit 0xrrggbb; Flight colors are 32-bit 0xrrggbbaa. Widen with a
+// fully-opaque alpha.
+function awdColorToRgba(color: number): number {
+  return ((color << 8) | 0xff) >>> 0;
 }
 
 // Parses a Skeleton block (type 101). Layout:
