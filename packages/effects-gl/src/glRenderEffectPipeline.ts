@@ -15,6 +15,7 @@ import {
   destroyGlRenderTarget,
   destroyGlRenderTargetPool,
   drawGlFullscreenPass,
+  drawGlLinearToSrgbPass,
   endGlRenderTarget,
   releaseGlRenderTarget,
   resizeGlRenderTarget,
@@ -49,6 +50,11 @@ export function beginGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRe
   } else {
     resizeGlRenderTarget(state, pipeline.sceneTarget, w, h);
   }
+  // Reset the declared color space each frame so the frame's producer re-declares it: drawGlScene stamps
+  // 'linear' while it draws (the present then encodes once); a 2D display-object frame leaves it 'srgb'
+  // (plain-copy present, byte-identical to before this seam existed). A reused pipeline never carries a
+  // stale space from a prior frame's content.
+  pipeline.sceneTarget.colorSpace = 'srgb';
   beginGlRenderTarget(state, pipeline.sceneTarget, state.renderTransform2D ?? createMatrix());
 }
 
@@ -93,7 +99,9 @@ export function endGlRenderEffectPipeline(
   resolveGlRenderTarget(state, scene);
 
   const format = pipeline.options.format ?? 'rgba8';
-  const descriptor = { width: scene.width, height: scene.height, format };
+  // Intermediate ping-pong targets carry the scene's declared color space, so after the last effect the
+  // final `source` still reports whether its content is linear (encode at present) or sRGB (plain copy).
+  const descriptor = { width: scene.width, height: scene.height, format, colorSpace: scene.colorSpace };
   let source: GlRenderTarget = scene;
   let scratchA: GlRenderTarget | null = null;
   let scratchB: GlRenderTarget | null = null;
@@ -168,8 +176,17 @@ export function setGlRenderEffectVelocityTexture(pipeline: GlRenderEffectPipelin
   pipeline.velocityTexture = texture;
 }
 
-// Blits the final effect result to the canvas (GL→GL, no orientation flip).
+// Presents the final effect result to the canvas, adapting to the source target's declared color space.
+// 'linear' content (a 3D scene declared its target linear) is sRGB-encoded once here via
+// drawGlLinearToSrgbPass — the single gamma encode, never in a material shader. 'srgb' content (2D
+// display objects, already encoded) is blitted as-is (GL→GL, no orientation flip), byte-identical to
+// before this seam existed. A tonemap effect, when present, stays a linear HDR→LDR step upstream and
+// never encodes gamma itself.
 function presentGlRenderEffectResult(state: GlRenderState, source: Readonly<GlRenderTarget>): void {
+  if (source.colorSpace === 'linear') {
+    drawGlLinearToSrgbPass(state, source, null);
+    return;
+  }
   const program = getGlEffectProgram(state, 'effect.present', PRESENT_FRAGMENT_SRC);
   drawGlFullscreenPass(state, program, [source.texture], null, () => {});
 }
