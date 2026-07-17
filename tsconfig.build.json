@@ -18,6 +18,7 @@
     { "path": "./packages/clip" },
     { "path": "./packages/clipboard" },
     { "path": "./packages/clock" },
+    { "path": "./packages/color" },
     { "path": "./packages/collision" },
     { "path": "./packages/debug" },
     { "path": "./packages/device" },
