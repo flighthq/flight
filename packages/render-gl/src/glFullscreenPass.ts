@@ -1,7 +1,11 @@
-import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types';
+import type {
+  GlFullscreenProgram,
+  GlRenderState,
+  GlRenderTarget,
+} from "@flighthq/types";
 
-import { createGlProgram } from './glProgram';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { createGlProgram } from "./glProgram";
+import { getGlRenderStateRuntime } from "./glRenderState";
 
 // The substrate-level fullscreen-pass primitive: draw a clip-space quad through a fragment shader,
 // reading N input textures and writing to a target (or the canvas). Filter and effect recipes draw
@@ -18,7 +22,10 @@ void main() {
 }`;
 
 /** Clears a render target to fully transparent and binds it as the current framebuffer. */
-export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget): void {
+export function clearGlRenderTarget(
+  state: GlRenderState,
+  target: GlRenderTarget,
+): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   if (runtime.currentFramebuffer !== target.framebuffer) {
@@ -33,21 +40,29 @@ export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget
   runtime.currentBlendMode = null;
 }
 
-export function compileGlFullscreenProgram(gl: WebGL2RenderingContext, fragmentSource: string): GlFullscreenProgram {
-  const program = createGlProgram(gl, FULLSCREEN_VERTEX_SRC, fragmentSource, 'Fullscreen pass');
+export function compileGlFullscreenProgram(
+  gl: WebGL2RenderingContext,
+  fragmentSource: string,
+): GlFullscreenProgram {
+  const program = createGlProgram(
+    gl,
+    FULLSCREEN_VERTEX_SRC,
+    fragmentSource,
+    "Fullscreen pass",
+  );
 
   const textures: WebGLUniformLocation[] = [];
   for (let i = 0; i < 8; i++) {
     const loc = gl.getUniformLocation(program, `u_texture${i}`);
     if (loc) textures.push(loc);
   }
-  const single = gl.getUniformLocation(program, 'u_texture');
+  const single = gl.getUniformLocation(program, "u_texture");
   if (textures.length === 0 && single) textures.push(single);
 
   return {
     program,
-    locPosition: gl.getAttribLocation(program, 'a_position'),
-    locTexCoord: gl.getAttribLocation(program, 'a_texCoord'),
+    locPosition: gl.getAttribLocation(program, "a_position"),
+    locTexCoord: gl.getAttribLocation(program, "a_texCoord"),
     texture: textures[0] ?? single!,
     textures,
   };
@@ -63,7 +78,10 @@ export function drawGlFullscreenPass(
   program: Readonly<GlFullscreenProgram>,
   inputs: ReadonlyArray<WebGLTexture>,
   dest: Readonly<GlRenderTarget> | null,
-  setUniforms: (gl: WebGL2RenderingContext, program: Readonly<GlFullscreenProgram>) => void,
+  setUniforms: (
+    gl: WebGL2RenderingContext,
+    program: Readonly<GlFullscreenProgram>,
+  ) => void,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -81,7 +99,9 @@ export function drawGlFullscreenPass(
   const destWidth = dest?.width ?? state.canvas.width;
   const destHeight = dest?.height ?? state.canvas.height;
   gl.viewport(0, 0, destWidth, destHeight);
-  runtime.renderTargetViewport = dest ? { width: destWidth, height: destHeight } : null;
+  runtime.renderTargetViewport = dest
+    ? { width: destWidth, height: destHeight }
+    : null;
 
   for (let i = 0; i < inputs.length; i++) {
     gl.activeTexture(gl.TEXTURE0 + i);
@@ -96,11 +116,38 @@ export function drawGlFullscreenPass(
 
   setUniforms(gl, program);
   drawGlFullscreenQuad(state, program);
+
+  // Unbind the sampled inputs. A fullscreen pass frequently reads a render target's own texture and
+  // presents it; leaving that texture bound lets the NEXT draw that renders back into that target form
+  // a framebuffer/active-texture feedback loop (e.g. a 3D scene re-rendered into a reused present
+  // target whose material leaves this unit untouched). The pass owns the hazard, so it clears it.
+  for (let i = 0; i < inputs.length; i++) {
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+  gl.activeTexture(gl.TEXTURE0);
 }
 
-function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscreenProgram>): void {
+function drawGlFullscreenQuad(
+  state: GlRenderState,
+  program: Readonly<GlFullscreenProgram>,
+): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
+
+  // Bind a dedicated VAO before touching buffer/attribute state. Without it the quad's ARRAY_BUFFER,
+  // ELEMENT_ARRAY_BUFFER, and vertexAttribPointer writes land in whatever VAO happens to be bound —
+  // typically the last mesh VAO left bound by a 3D scene draw — silently corrupting that cached VAO
+  // (its index buffer becomes this 6-index quad buffer). The next frame redraws that mesh through its
+  // poisoned VAO and gl.drawElements reports "Insufficient buffer size". Isolating to our own VAO keeps
+  // fullscreen state from leaking into (or out of) any caller's VAO.
+  let quadVao = _quadVaos.get(state);
+  if (quadVao === undefined) {
+    quadVao = gl.createVertexArray()!;
+    _quadVaos.set(state, quadVao);
+  }
+  gl.bindVertexArray(quadVao);
+
   const v = runtime.quadVertexData;
   // x, y, u, v per corner — a clip-space quad with bottom-left-origin texcoords.
   v[0] = -1;
@@ -129,5 +176,14 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   gl.vertexAttribPointer(program.locTexCoord, 2, gl.FLOAT, false, 16, 8);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
+  // Restore the default VAO so a later mesh draw that forgets to bind its own VAO cannot accidentally
+  // inherit the quad's attribute state, and so nothing observes our dedicated VAO as "current".
+  gl.bindVertexArray(null);
+
   runtime.shaderLoc = runtime.defaultBitmapShader.locations;
 }
+
+// Per-state dedicated VAO for the fullscreen quad, kept off the render-state runtime type and freed
+// with the state. Isolates the quad's buffer/attribute bindings so a fullscreen pass never mutates a
+// caller's (e.g. a mesh's) currently-bound VAO. See drawGlFullscreenQuad.
+const _quadVaos = new WeakMap<GlRenderState, WebGLVertexArrayObject>();
