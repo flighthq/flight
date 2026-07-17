@@ -50,6 +50,12 @@ export function getPbrRoughnessFromPhongShininess(shininess: number): number {
 // as bright for equal light radiance. This returns `log2(π)` (≈ 1.651 EV) — i.e. a ×π scale —
 // applied via `applyLightExposure(intensity, getPhongToPbrLightExposure())` from `@flighthq/lighting`.
 // Skipping it is the classic "ported scene is far too dark" failure.
+//
+// Assumed input, so it is applied exactly ONCE: light intensities already in Flight's LINEAR-radiance
+// Phong convention. This is the single Phong→PBR energy step; it is NOT a general "engine porting"
+// scale. Porting from a foreign engine whose lights are in a different space (e.g. a gamma-space LDR
+// source) is a separate, earlier conversion into Flight's linear Phong convention that belongs in the
+// importer, not here — do not fold that engine's own boost into this π, and do not apply this twice.
 export function getPhongToPbrLightExposure(): number {
   return Math.log2(Math.PI);
 }
