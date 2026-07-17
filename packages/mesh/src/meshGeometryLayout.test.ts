@@ -1,7 +1,11 @@
 import type { VertexAttributeLayout } from '@flighthq/types';
 
 import { createMeshGeometry } from './meshGeometry';
-import { CANONICAL_MESH_GEOMETRY_LAYOUT, convertMeshGeometryLayout } from './meshGeometryLayout';
+import {
+  CANONICAL_MESH_GEOMETRY_LAYOUT,
+  CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  convertMeshGeometryLayout,
+} from './meshGeometryLayout';
 
 // Minimal position-only layout: 3 floats / 12 bytes.
 const POSITION_ONLY_LAYOUT: VertexAttributeLayout = {
@@ -51,6 +55,28 @@ describe('CANONICAL_MESH_GEOMETRY_LAYOUT', () => {
     const pos = CANONICAL_MESH_GEOMETRY_LAYOUT.attributes.find((a) => a.semantic === 'position');
     expect(pos?.byteOffset).toBe(0);
     expect(pos?.format).toBe('float32x3');
+  });
+});
+
+describe('CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT', () => {
+  it('extends the canonical PBR record to stride 80', () => {
+    expect(CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.stride).toBe(80);
+  });
+  it('keeps position and normal at the canonical offsets so rigid compute still works', () => {
+    const attributes = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.attributes;
+    const position = attributes.find((a) => a.semantic === 'position');
+    const normal = attributes.find((a) => a.semantic === 'normal');
+    expect(position?.byteOffset).toBe(0);
+    expect(normal?.byteOffset).toBe(12);
+  });
+  it('adds joints0 and weights0 as float32x4 after uv0', () => {
+    const attributes = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.attributes;
+    const joints = attributes.find((a) => a.semantic === 'joints0');
+    const weights = attributes.find((a) => a.semantic === 'weights0');
+    expect(joints?.byteOffset).toBe(48);
+    expect(joints?.format).toBe('float32x4');
+    expect(weights?.byteOffset).toBe(64);
+    expect(weights?.format).toBe('float32x4');
   });
 });
 
