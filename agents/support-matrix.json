@@ -1,0 +1,1413 @@
+{
+  "generatedBy": "scripts/support.ts",
+  "note": "A backend fingerprint proves deterministic render + capture, not correctness. WebGPU is host-captured and not re-verifiable in the Docker Sbx sandbox.",
+  "backends": [
+    {
+      "key": "canvas",
+      "label": "Canvas",
+      "sandboxVerifiable": true
+    },
+    {
+      "key": "dom",
+      "label": "DOM",
+      "sandboxVerifiable": true
+    },
+    {
+      "key": "webgl",
+      "label": "WebGL",
+      "sandboxVerifiable": true
+    },
+    {
+      "key": "webgpu",
+      "label": "WebGPU",
+      "sandboxVerifiable": false
+    }
+  ],
+  "areas": [
+    {
+      "key": "bitmap",
+      "label": "Bitmaps",
+      "scenes": [
+        {
+          "scene": "bitmap-color-transform",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "bitmap-downscale-smoothing",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "bitmap-smoothing",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "bitmap-source-rect",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "bitmap-transparent-compositing",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "camera",
+      "label": "Camera",
+      "scenes": [
+        {
+          "scene": "camera-orthographic",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
+      "key": "clip",
+      "label": "Clipping",
+      "scenes": [
+        {
+          "scene": "clip-contour-hdr",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "label": "Color / Adjustments",
+      "scenes": [
+        {
+          "scene": "color-adjustment",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "displayobject",
+      "label": "Display Object",
+      "scenes": [
+        {
+          "scene": "displayobject-cache",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "displayobject-clip-contour",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "displayobject-clip-contour-hdr",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "displayobject-clip-rect",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "effect",
+      "label": "Effects",
+      "scenes": [
+        {
+          "scene": "effect-bloom",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-bokeh-dof",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-brightness-contrast",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-camera-motion-blur",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-chain",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-channel-mixer",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-chromatic-aberration",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-color-grade",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-crt",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-directional-blur",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-displacement",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-dither",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-empty-passthrough",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-exposure",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-film-grain",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-fxaa",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-glitch",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-god-rays",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-grayscale",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-halftone",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-hue-saturation",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-invert",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-kuwahara",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-lens-distortion",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-lens-flare",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-lensdirt",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-lift-gamma-gain",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-lut-grade",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-motion-blur",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-msaa",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-msaa-bloom",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-outline",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-pixelate",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-posterize",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-radial-blur",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-scanlines",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-screen-space-fog",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-sepia",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-sharpen",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-sketch",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-smaa",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-ssao",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-ssr",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-taa",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-tilt-shift",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-tone-map",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-vignette",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "effect-white-balance",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "env",
+      "label": "Environment / IBL",
+      "scenes": [
+        {
+          "scene": "env-ibl",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "env-skybox",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
+      "key": "light",
+      "label": "Lighting",
+      "scenes": [
+        {
+          "scene": "light-hemisphere",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "light-point",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "light-spot",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
+      "key": "material",
+      "label": "Materials (3D)",
+      "scenes": [
+        {
+          "scene": "material-anisotropy",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-blinn-phong",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-clearcoat",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-depth",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-emissive",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-iridescence",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-lambert",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-matcap",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-normal",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-phong",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-sheen",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-specular",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-specular-glossiness",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-standard-pbr",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-subsurface",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-toon",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-transmission-volume",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-unlit",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-vertex-color",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "material-wireframe",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "mesh",
+      "label": "Mesh (3D)",
+      "scenes": [
+        {
+          "scene": "mesh-cone",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-cylinder",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-geometry",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-hierarchy-parent-transform",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-multiple-depth",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-plane",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-transform-position",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-transform-rotation",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "mesh-transform-scale",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "particle",
+      "label": "Particles",
+      "scenes": [
+        {
+          "scene": "particle-emitter",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "particle-emitter-color",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "particle-motion-blur",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "quadbatch",
+      "label": "QuadBatch",
+      "scenes": [
+        {
+          "scene": "quadbatch-grid",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "quadbatch-matrix-transform",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "scale9",
+      "label": "Scale9",
+      "scenes": [
+        {
+          "scene": "scale9-stretch",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "node",
+      "label": "Scene Node",
+      "scenes": [
+        {
+          "scene": "node-alpha",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "node-blend-modes",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "node-blend-modes-advanced",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "node-hierarchy",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "node-transform",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "node-visibility",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "node-visibility-inheritance",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "shadow",
+      "label": "Shadows",
+      "scenes": [
+        {
+          "scene": "shadow-directional",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
+      "key": "shape",
+      "label": "Shapes / Vector",
+      "scenes": [
+        {
+          "scene": "shape-curves",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-fill-bitmap",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-fill-gradient",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-fill-radial",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-fill-solid",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-stroke",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-stroke-caps",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "shape-stroke-joints",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": false,
+            "webgpu": false
+          }
+        }
+      ]
+    },
+    {
+      "key": "sprite",
+      "label": "Sprites",
+      "scenes": [
+        {
+          "scene": "sprite-atlas",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "text",
+      "label": "Text",
+      "scenes": [
+        {
+          "scene": "text-align-center",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-align-right",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-background-box",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-basic",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-bold",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-border-box",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-italic",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-multiformat",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-native",
+          "backends": {
+            "canvas": false,
+            "dom": true,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "text-strikethrough",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": false,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "text-underline",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-vertical-align",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        },
+        {
+          "scene": "text-wrap",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "textlabel",
+      "label": "Text",
+      "scenes": [
+        {
+          "scene": "textlabel-basic",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "tilemap",
+      "label": "Tilemap",
+      "scenes": [
+        {
+          "scene": "tilemap-grid",
+          "backends": {
+            "canvas": true,
+            "dom": false,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "video",
+      "label": "Video",
+      "scenes": [
+        {
+          "scene": "video-frame",
+          "backends": {
+            "canvas": true,
+            "dom": true,
+            "webgl": true,
+            "webgpu": true
+          }
+        }
+      ]
+    }
+  ],
+  "declaredGaps": [
+    {
+      "area": "Model Import",
+      "capability": "glTF materials / textures / animations",
+      "status": "not-implemented",
+      "note": "glTF imports geometry + skins only; drops materials, textures, animation channels, external .bin (gltfParse.ts header)."
+    },
+    {
+      "area": "Model Import",
+      "capability": "OBJ / 3DS / MD2 / MD5 textures",
+      "status": "not-implemented",
+      "note": "Only AWD emits SceneResourceRefs; other parsers leave textures unresolved."
+    },
+    {
+      "area": "Model Import",
+      "capability": "FBX / USD / COLLADA / PLY / STL",
+      "status": "not-implemented",
+      "note": "No parser exists."
+    },
+    {
+      "area": "Skinning",
+      "capability": "GPU skinning — PBR / toon / unlit / matcap families",
+      "status": "not-implemented",
+      "note": "HAS_SKIN wired only for the classic prelude on WebGL; other families fall back to CPU deform. WebGPU: none."
+    },
+    {
+      "area": "Skinning",
+      "capability": "Morph targets / blend shapes / IK / blend trees",
+      "status": "not-implemented",
+      "note": "skeleton3d Phase 4, chartered separately, not built."
+    },
+    {
+      "area": "Resource lifecycle",
+      "capability": "Texture unload / eviction / streaming (mip/LOD)",
+      "status": "not-implemented",
+      "note": "scene-resources resolves but never releases; assets refcount wired to nothing; no progressive streaming."
+    },
+    {
+      "area": "Resource lifecycle",
+      "capability": "Compressed texture upload (KTX2 / DDS / Basis)",
+      "status": "not-implemented",
+      "note": "Containers parse to descriptors; no transcoder or compressed-GPU upload on any backend."
+    },
+    {
+      "area": "Effects",
+      "capability": "Screen-space effects (SSAO/SSR/TAA/motion-blur/contact-shadow/volumetric)",
+      "status": "implemented-unverified",
+      "note": "Effect pipeline is color-only (no depth/normal/velocity/history buffers) — these render a passthrough/approximate stub, so their baselines captured the STUB, not correct output."
+    },
+    {
+      "area": "Text",
+      "capability": "Bidi / complex-script shaping / MSDF",
+      "status": "not-implemented",
+      "note": "textbidi (UAX#9) + textsegment (UAX#29) ship but are wired into nothing; no real shaping backend (advances-only); MSDF parses, no shader. Non-Latin renders wrong."
+    },
+    {
+      "area": "Simulation",
+      "capability": "Physics / dynamics (rigid-body solver, swept/TOI, contacts)",
+      "status": "not-implemented",
+      "note": "collision is discrete overlap + MTV only; no solver, no world integration."
+    }
+  ]
+}
