@@ -2,6 +2,7 @@ export * from './glBackground';
 export * from './glDraw';
 export * from './glElement';
 export * from './glFullscreenPass';
+export * from './glLinearToSrgbPass';
 export * from './glMaterialRegistry';
 export * from './glProgram';
 export * from './glReadback';
