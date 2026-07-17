@@ -1,3 +1,4 @@
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh';
 import type { VertexAttributeLayout } from '@flighthq/types';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
@@ -10,6 +11,15 @@ export const CANONICAL_LAYOUT: VertexAttributeLayout = {
   ],
   stride: 48,
 };
+
+// Floats per vertex in the canonical skinned record (position/normal/tangent/uv0/joints0/weights0),
+// derived from the shared skinned layout so no importer's interleave stride can drift from it.
+export const SKINNED_FLOATS_PER_VERTEX = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.stride / 4;
+
+// The joint influences per vertex the skinned layout carries (linear-blend skinning's standard 4).
+// Source formats may list more influences per vertex (AWD's shambler uses 8); the top four by weight
+// are kept and renormalized. See packSkinInfluences.
+export const MAX_SKIN_INFLUENCES = 4;
 
 // Flight uses a right-handed Y-up coordinate system with CCW front faces. Importers for formats
 // that use different conventions apply the conversions below at parse time so every scene enters
@@ -61,6 +71,28 @@ export function negateVec3Z(values: number[]): void {
   }
 }
 
+// Reduces a vertex's joint influences to the 4-slot joints0/weights0 form linear-blend skinning
+// consumes: keeps the (up to) four highest-weight influences and renormalizes their weights to sum 1,
+// so dropping smaller influences does not dim the vertex. Writes joint indices into `outJoints` and
+// weights into `outWeights` (both length 4), zero-filling unused slots. A vertex with no influence
+// keeps all weights zero (it stays at its bind position). This is the single influence-packing seam
+// every skinned-mesh importer (MD5, AWD) feeds — per-format extraction differs, the emit is shared.
+export function packSkinInfluences(influences: SkinInfluence[], outJoints: number[], outWeights: number[]): void {
+  for (let i = 0; i < MAX_SKIN_INFLUENCES; i++) {
+    outJoints[i] = 0;
+    outWeights[i] = 0;
+  }
+  // Descending by weight; per-vertex influence counts are tiny, so Array.sort is simplest.
+  influences.sort((a, b) => b.weight - a.weight);
+  const kept = Math.min(influences.length, MAX_SKIN_INFLUENCES);
+  let sum = 0;
+  for (let i = 0; i < kept; i++) sum += influences[i].weight;
+  for (let i = 0; i < kept; i++) {
+    outJoints[i] = influences[i].jointIndex;
+    outWeights[i] = sum > 0 ? influences[i].weight / sum : 0;
+  }
+}
+
 export function reverseTriangleWinding(indices: number[]): void {
   for (let i = 0; i + 2 < indices.length; i += 3) {
     const tmp = indices[i + 1];
@@ -79,4 +111,11 @@ export function swapPositionsYZ(values: ArrayLike<number> & { [i: number]: numbe
     values[i + 1] = values[i + 2];
     values[i + 2] = y;
   }
+}
+
+// One joint influence on a vertex: the joint's index in the skeleton and its blend weight. The unit
+// packSkinInfluences reduces to the fixed 4-slot joints0/weights0 channels.
+export interface SkinInfluence {
+  jointIndex: number;
+  weight: number;
 }

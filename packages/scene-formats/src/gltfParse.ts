@@ -524,9 +524,6 @@ const GLB_BIN_CHUNK = 0x004e4942;
 const GLB_HEADER_BYTES = 12;
 const GLB_CHUNK_HEADER_BYTES = 8;
 
-// The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share:
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
-
-// Floats per vertex in the skinned record (position/normal/tangent/uv0/joints0/weights0), derived
-// from the shared skinned layout so the two never drift.
-const SKINNED_FLOATS_PER_VERTEX = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.stride / 4;
+// The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share,
+// plus the skinned record's floats-per-vertex — the same constants every scene-formats importer emits.
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, SKINNED_FLOATS_PER_VERTEX } from './shared';
