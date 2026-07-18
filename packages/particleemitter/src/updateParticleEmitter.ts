@@ -118,8 +118,8 @@ export function updateParticleEmitter(
         const tt = i * PARTICLE_TRANSFORM_STRIDE;
         const dx = data.transforms[tt];
         const dy = data.transforms[tt + 1];
-        onDeath?.(dx, dy);
-        signals?.onParticleDeath.emit(dx, dy);
+        onDeath?.(dx, dy, 0);
+        signals?.onParticleDeath.emit(dx, dy, 0);
       }
       liveCount--;
       if (i < liveCount) {
@@ -442,9 +442,9 @@ export function updateParticleEmitter(
         regionIdMin + (config.frameCount > 1 ? 0 : regionRange > 0 ? (state.random() * regionRange) | 0 : 0);
       state.rotationSpeeds[idx] = hasRotSpeed ? config.rotationSpeedMin + state.random() * rotSpeedRange : 0;
 
-      onSpawn?.(spawnX, spawnY);
+      onSpawn?.(spawnX, spawnY, 0);
       if (signals !== null) {
-        signals.onParticleSpawn.emit(spawnX, spawnY, state.velocities[vt], state.velocities[vt + 1]);
+        signals.onParticleSpawn.emit(spawnX, spawnY, 0, state.velocities[vt], state.velocities[vt + 1], 0);
       }
     }
     data.particleCount = newCount;

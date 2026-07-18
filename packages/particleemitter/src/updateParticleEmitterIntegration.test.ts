@@ -207,12 +207,14 @@ describe('onParticleDeath signal', () => {
       speedMax: 0,
     });
     const signals = enableParticleEmitterSignals(state);
-    const deaths: Array<[number, number]> = [];
-    signals.onParticleDeath.emit = (x: number, y: number) => deaths.push([x, y]);
+    const deaths: Array<[number, number, number]> = [];
+    signals.onParticleDeath.emit = (x: number, y: number, z: number) => deaths.push([x, y, z]);
     updateParticleEmitter(emitter, state, config, 1); // spawn
     updateParticleEmitter(emitter, state, config, 1.1); // age past lifetime → death
     expect(deaths.length).toBe(1);
     expect(Number.isFinite(deaths[0][0])).toBe(true);
+    // 2D emitters carry a zero z in the shared 3D-capable signal payload.
+    expect(deaths[0][2]).toBe(0);
   });
 });
 
@@ -228,13 +230,17 @@ describe('onParticleSpawn signal', () => {
       speedMax: 50,
     });
     const signals = enableParticleEmitterSignals(state);
-    const spawns: Array<[number, number, number, number]> = [];
-    signals.onParticleSpawn.emit = (x: number, y: number, vx: number, vy: number) => spawns.push([x, y, vx, vy]);
+    const spawns: Array<[number, number, number, number, number, number]> = [];
+    signals.onParticleSpawn.emit = (x: number, y: number, z: number, vx: number, vy: number, vz: number) =>
+      spawns.push([x, y, z, vx, vy, vz]);
     updateParticleEmitter(emitter, state, config, 1);
     expect(spawns.length).toBe(1);
-    const [, , vx, vy] = spawns[0];
+    const [, , z, vx, vy, vz] = spawns[0];
     // Speed must match config (allow sign variations by checking magnitude).
     expect(Math.sqrt(vx * vx + vy * vy)).toBeCloseTo(50, 0);
+    // 2D emitters carry zero on the z axis of the shared 3D-capable signal payload.
+    expect(z).toBe(0);
+    expect(vz).toBe(0);
   });
 });
 

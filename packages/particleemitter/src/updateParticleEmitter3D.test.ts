@@ -1,6 +1,11 @@
 import { createMatrix4, scaleMatrix4, translateMatrix4 } from '@flighthq/geometry';
-import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
+import {
+  createParticleEmitterConfig,
+  createParticleEmitterState,
+  enableParticleEmitterSignals,
+} from '@flighthq/particles';
 import { setSceneNodePosition } from '@flighthq/scene';
+import type { ParticleEmitterCallbacks } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createParticleEmitter3D } from './particleEmitter3D';
@@ -249,7 +254,7 @@ describe('updateParticleEmitter3D', () => {
     });
     const worldTransform = createMatrix4();
     translateMatrix4(worldTransform, worldTransform, 5, 7, 9);
-    updateParticleEmitter3D(emitter, state, config, 0.1, worldTransform);
+    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldTransform);
     expect(emitter.data.particleCount).toBe(1);
     expect(emitter.data.worldSpace).toBe(true);
     // point-shape spawn at the local origin, translated into world space by the transform.
@@ -273,7 +278,7 @@ describe('updateParticleEmitter3D', () => {
     // random sphere direction — so a local speed of 10 must become a world speed of 20.
     const worldTransform = createMatrix4();
     scaleMatrix4(worldTransform, worldTransform, 2, 2, 2);
-    updateParticleEmitter3D(emitter, state, config, 0.1, worldTransform);
+    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldTransform);
     expect(emitter.data.particleCount).toBeGreaterThan(0);
     const vx = state.velocities[0];
     const vy = state.velocities[1];
@@ -312,7 +317,7 @@ describe('updateParticleEmitter3D', () => {
     // Frame 1 at the origin seeds the previous world position without spawning.
     const idle = createParticleEmitterConfig({ maxParticles: 100, spawnRate: 0, worldSpace: true });
     const originTransform = createMatrix4();
-    updateParticleEmitter3D(emitter, state, idle, 0.1, originTransform);
+    updateParticleEmitter3D(emitter, state, idle, 0.1, undefined, originTransform);
     // Frame 2 bursts 5 particles while the emitter sits at x=10: they spread from the previous position
     // (0) to the current one (10), so particle 0 is at 0, the middle at 5, the last at 10.
     const burst = createParticleEmitterConfig({
@@ -328,11 +333,63 @@ describe('updateParticleEmitter3D', () => {
     });
     const movedTransform = createMatrix4();
     translateMatrix4(movedTransform, movedTransform, 10, 0, 0);
-    updateParticleEmitter3D(emitter, state, burst, 0.1, movedTransform);
+    updateParticleEmitter3D(emitter, state, burst, 0.1, undefined, movedTransform);
     expect(emitter.data.particleCount).toBe(5);
     expect(emitter.data.transforms[0]).toBeCloseTo(0);
     expect(emitter.data.transforms[8]).toBeCloseTo(5);
     expect(emitter.data.transforms[16]).toBeCloseTo(10);
+  });
+
+  it('emits the spawn signal with the full 3D position and velocity', () => {
+    const emitter = createParticleEmitter3D();
+    const state = createParticleEmitterState(seededRandom(42));
+    const signals = enableParticleEmitterSignals(state);
+    const spawns: number[][] = [];
+    signals.onParticleSpawn.emit = (x, y, z, vx, vy, vz) => spawns.push([x, y, z, vx, vy, vz]);
+    const config = createParticleEmitterConfig({
+      burstCount: 1,
+      burstInterval: 0,
+      emitterShape: 'sphere',
+      maxParticles: 10,
+      spawnRate: 0,
+      speedMax: 10,
+      speedMin: 10,
+    });
+    updateParticleEmitter3D(emitter, state, config, 0.1);
+    expect(spawns.length).toBe(1);
+    const [, , , vx, vy, vz] = spawns[0];
+    // A sphere direction distributes speed across all three axes — the signal must carry vz.
+    expect(Math.hypot(vx, vy, vz)).toBeCloseTo(10, 3);
+  });
+
+  it('invokes onSpawn and onDeath callbacks carrying the particle z', () => {
+    const emitter = createParticleEmitter3D();
+    const state = createParticleEmitterState(seededRandom(42));
+    const spawns: number[][] = [];
+    const deaths: number[][] = [];
+    const callbacks: ParticleEmitterCallbacks = {
+      onDeath: (x, y, z) => deaths.push([x, y, z]),
+      onSpawn: (x, y, z) => spawns.push([x, y, z]),
+    };
+    const config = createParticleEmitterConfig({
+      burstCount: 1,
+      burstInterval: 0,
+      emitterDepth: 10,
+      emitterShape: 'box',
+      lifetimeMax: 0.5,
+      lifetimeMin: 0.5,
+      maxParticles: 10,
+      spawnRate: 0,
+      speedMax: 0,
+      speedMin: 0,
+    });
+    updateParticleEmitter3D(emitter, state, config, 0.1, callbacks);
+    updateParticleEmitter3D(emitter, state, config, 1, callbacks);
+    expect(spawns.length).toBe(1);
+    expect(deaths.length).toBe(1);
+    // The box depth gives a non-trivial z that both callbacks report, and it survives to death.
+    expect(Number.isFinite(spawns[0][2])).toBe(true);
+    expect(deaths[0][2]).toBeCloseTo(spawns[0][2]);
   });
 
   it('stops spawning when finite duration elapses', () => {
