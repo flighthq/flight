@@ -4,8 +4,9 @@ import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
+import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createMesh, createScene } from '@flighthq/scene';
-import type { Camera, SceneLights } from '@flighthq/types';
+import type { Camera, ParticleEmitter3D, SceneLights } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
@@ -82,4 +83,39 @@ describe('drawWgpuScene', () => {
     drawWgpuScene(state, scene, makeCamera(), LIGHTS);
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
+
+  it('draws a scene ParticleEmitter3D as a final pass without a manual emitter call', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeParticleEmitter(3));
+    // No mesh and no manual drawWgpuSceneParticleEmitters — drawWgpuScene must render the emitter itself
+    // (a 6-index instanced quad draw), mirroring drawGlScene's automatic emitter pass.
+    drawWgpuScene(state, scene, makeCamera(), LIGHTS);
+    const draw = fake.calls.find((c) => c.name === 'drawIndexed');
+    expect(draw).toBeDefined();
+    expect(draw!.args[0]).toBe(6);
+    expect(draw!.args[1]).toBe(3);
+  });
 });
+
+function makeParticleEmitter(count: number): ParticleEmitter3D {
+  const emitter = createParticleEmitter3D();
+  reserveParticleEmitter3D(emitter, count);
+  const data = emitter.data;
+  data.particleCount = count;
+  for (let i = 0; i < count; i++) {
+    const tt = i * 4;
+    data.transforms[tt] = i;
+    data.transforms[tt + 1] = i;
+    data.transforms[tt + 2] = 0;
+    data.transforms[tt + 3] = 1;
+    data.positionsZ[i] = 0;
+    data.alphas[i] = 1;
+    const ct = i * 3;
+    data.colors[ct] = 1;
+    data.colors[ct + 1] = 1;
+    data.colors[ct + 2] = 1;
+    data.ids[i] = 0;
+  }
+  return emitter;
+}

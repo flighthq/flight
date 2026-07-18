@@ -15,6 +15,7 @@ import type {
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { drawWgpuSceneParticleEmitters } from './wgpuParticleEmitter3D';
 
 // Draws a prepared 3D scene on the Wgpu backend — the WGSL mirror of scene-gl's drawWgpuScene. The app
 // runs prepareSceneRender(state, scene, camera, lights) first (resolving world matrices, the camera
@@ -67,6 +68,14 @@ export function drawWgpuScene(
       renderer.draw(state, proxy, mesh.geometry);
     }
   }
+
+  // ParticleEmitter3D nodes carry no geometry, so prepareSceneRender never lists them among the
+  // visible meshes above. Draw them here as a final transparent instanced pass so the common
+  // drawWgpuScene path renders a scene's emitters without the caller also invoking the emitter pass
+  // by hand — mirroring drawGlScene. drawWgpuSceneParticleEmitters stays exported for manual ordering;
+  // it early-returns when the scene has no emitters, so the mesh-only path is unaffected. Runs inside
+  // this still-open render pass (it reads the pass off the render-state runtime).
+  drawWgpuSceneParticleEmitters(state, scene, camera, lights);
 }
 
 // Resolves the Material for a subset index: the positional materials[i] entry, or null when the
