@@ -1,6 +1,6 @@
 import { getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
-import { createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
+import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import type {
   Camera,
   GlRenderState,
@@ -77,12 +77,16 @@ uniform int u_hasTexture;
 
 out vec4 fragColor;
 
+// Both branches output premultiplied alpha (rgb already scaled by alpha), matching the codebase-wide
+// premultiplied convention the blend funcs in applyGlParticleBlendMode assume. The texture is uploaded
+// premultiplied by bindGlTexture, so tex.rgb is pre-scaled by tex.a; the trailing * v_color.a then
+// premultiplies the tint alpha. The untextured branch premultiplies v_color explicitly.
 void main() {
   if (u_hasTexture != 0) {
     vec4 tex = texture(u_texture, v_uv);
     fragColor = vec4(tex.rgb * v_color.rgb, tex.a) * v_color.a;
   } else {
-    fragColor = v_color;
+    fragColor = vec4(v_color.rgb * v_color.a, v_color.a);
   }
   if (fragColor.a <= 0.0) discard;
 }`;
@@ -184,9 +188,11 @@ function collectParticleEmitter3DNodes(node: Readonly<NodeAny>, out: ParticleEmi
   }
 }
 
-// Maps a ParticleBlendMode to a GL blend function. The particle fragment shader outputs rgb already
-// scaled by the particle alpha, so 'add' is a straight ONE/ONE sum (a black sprite background adds
-// nothing, fire brightens); 'normal' is the standard over-blend. Assumes gl.BLEND is already enabled.
+// Maps a ParticleBlendMode to a GL blend function. The particle fragment shader outputs premultiplied
+// rgb (already scaled by the particle alpha), so 'normal' is the premultiplied over-blend ONE /
+// ONE_MINUS_SRC_ALPHA (NOT SRC_ALPHA, which would double-apply alpha and darken), and 'add' is a
+// straight ONE/ONE sum (a black sprite background adds nothing, fire brightens). Assumes gl.BLEND is
+// already enabled.
 function applyGlParticleBlendMode(gl: WebGL2RenderingContext, mode: ParticleBlendMode): void {
   switch (mode) {
     case 'add':
@@ -199,16 +205,17 @@ function applyGlParticleBlendMode(gl: WebGL2RenderingContext, mode: ParticleBlen
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR);
       break;
     default:
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       break;
   }
 }
 
 function drawParticleEmitter3DNode(
-  gl: WebGL2RenderingContext,
+  state: GlRenderState,
   shader: GlParticle3DShader,
   emitter: Readonly<ParticleEmitter3D>,
 ): void {
+  const gl = state.gl;
   const data: Readonly<ParticleEmitterData> = emitter.data;
   const { alphas, atlas, colors, ids, particleCount, positionsZ, transforms } = data;
   if (particleCount === 0) return;
@@ -282,8 +289,14 @@ function drawParticleEmitter3DNode(
     instanceData[base + 10] = v0;
     instanceData[base + 11] = u1;
     instanceData[base + 12] = v1;
-    instanceData[base + 13] = regionW;
-    instanceData[base + 14] = regionH;
+    // The atlas region's pixel dimensions set the billboard's aspect ratio, not its world size: a
+    // 3D particle's world extent is its `scale` (folded into cosScale/sinScale above), so the base
+    // quad is normalized to a unit square with the larger axis = 1 (max dim is >= 1 since region
+    // dims default to 1 and non-positive regions were skipped). Using the raw pixel dims here would
+    // make a 64px sprite a 64-world-unit quad — screen-covering, with crippling overdraw.
+    const maxDim = regionW >= regionH ? regionW : regionH;
+    instanceData[base + 13] = regionW / maxDim;
+    instanceData[base + 14] = regionH / maxDim;
     instanceData[base + 15] = 0;
     base += INSTANCE_FLOATS;
     drawCount++;
@@ -303,8 +316,12 @@ function drawParticleEmitter3DNode(
 
   gl.uniform1i(shader.locHasTexture, hasAtlas ? 1 : 0);
   if (hasAtlas) {
+    // Upload (first use) and bind the atlas image to unit 0. Binding a null texture here instead —
+    // as this did — leaves an incomplete sampler that reads (0,0,0,1), turning every textured
+    // particle into a solid black quad. bindGlTexture premultiplies alpha on upload, matching the
+    // premultiplied output the fragment shader and blend funcs assume.
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, null);
+    bindGlTexture(state, atlas!.image!.source!);
     gl.uniform1i(shader.locTexture, 0);
   }
 
@@ -391,7 +408,7 @@ export function drawGlSceneParticleEmitters(
     // shader premultiplies rgb by alpha, so ONE/ONE brightens and a black sprite background adds
     // nothing). A hardcoded SRC_ALPHA over-blend instead makes an additive sprite darken the scene.
     applyGlParticleBlendMode(gl, emitter.blendMode);
-    drawParticleEmitter3DNode(gl, shader, emitter);
+    drawParticleEmitter3DNode(state, shader, emitter);
   }
 
   gl.depthMask(true);

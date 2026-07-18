@@ -44,6 +44,19 @@ function makeEmitterWithParticles(count: number): ParticleEmitter3D {
   return emitter;
 }
 
+// A single-particle emitter carrying a texture atlas whose sole region is regionWidth×regionHeight
+// pixels within a 128×128 image. Exercises the atlas draw path — texture upload/bind and quad-size
+// normalization — that the plain makeEmitterWithParticles (atlas === null) never reaches.
+function makeAtlasEmitter(regionWidth: number, regionHeight: number): ParticleEmitter3D {
+  const emitter = makeEmitterWithParticles(1);
+  const img = document.createElement('img');
+  emitter.data.atlas = {
+    image: { source: img, width: 128, height: 128 },
+    regions: [{ id: 0, x: 0, y: 0, width: regionWidth, height: regionHeight }],
+  } as unknown as NonNullable<ParticleEmitter3D['data']['atlas']>;
+  return emitter;
+}
+
 describe('destroyGlParticleEmitter3DShader', () => {
   it('is a no-op when no shader was created', () => {
     const { state } = makeGlSceneState();
@@ -118,7 +131,7 @@ describe('drawGlSceneParticleEmitters', () => {
     expect(gl.calls.some((c) => c.name === 'depthMask' && c.args[0] === false)).toBe(true);
   });
 
-  it('applies the emitter blend mode: additive for add, over-blend for normal', () => {
+  it('applies the emitter blend mode: additive for add, premultiplied over-blend for normal', () => {
     const { state, gl } = makeGlSceneState();
     const scene = createScene();
     const additive = makeEmitterWithParticles(1);
@@ -128,8 +141,60 @@ describe('drawGlSceneParticleEmitters', () => {
     addNodeChild(scene, normal);
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     const blendFuncs = gl.calls.filter((c) => c.name === 'blendFunc');
+    // add: straight ONE/ONE additive sum.
     expect(blendFuncs.some((c) => c.args[0] === gl.ONE && c.args[1] === gl.ONE)).toBe(true);
-    expect(blendFuncs.some((c) => c.args[0] === gl.SRC_ALPHA && c.args[1] === gl.ONE_MINUS_SRC_ALPHA)).toBe(true);
+    // normal: premultiplied over-blend (ONE, ONE_MINUS_SRC_ALPHA), NOT SRC_ALPHA — the fragment
+    // shader emits premultiplied color, so SRC_ALPHA would double-apply alpha and darken.
+    expect(blendFuncs.some((c) => c.args[0] === gl.ONE && c.args[1] === gl.ONE_MINUS_SRC_ALPHA)).toBe(true);
+    expect(blendFuncs.some((c) => c.args[0] === gl.SRC_ALPHA)).toBe(false);
+  });
+
+  it('uploads and binds the atlas image (never a null texture) for textured particles', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeAtlasEmitter(64, 32));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    // The atlas image is uploaded to a GL texture on first use.
+    expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
+    // Every texture bind targets a real texture object. Binding null here — as the bug did — leaves
+    // an incomplete sampler that reads (0,0,0,1), turning each particle into a solid black quad.
+    const textureBinds = gl.calls.filter((c) => c.name === 'bindTexture');
+    expect(textureBinds.length).toBeGreaterThan(0);
+    expect(textureBinds.every((c) => c.args[1] !== null)).toBe(true);
+    // u_hasTexture is signaled on so the fragment shader samples the atlas.
+    expect(
+      gl.calls.some(
+        (c) => c.name === 'uniform1i' && (c.args[0] as { name: string }).name === 'u_hasTexture' && c.args[1] === 1,
+      ),
+    ).toBe(true);
+  });
+
+  it('normalizes the particle quad to an aspect-ratio unit square, not the region pixel size', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    // A 64×32 region: the larger axis normalizes to 1, the shorter to its aspect ratio (0.5). The
+    // raw pixel dims would make a 64-world-unit quad — screen-covering, with crippling overdraw.
+    addNodeChild(scene, makeAtlasEmitter(64, 32));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const upload = gl.calls.find((c) => c.name === 'bufferSubData');
+    expect(upload).toBeDefined();
+    const instanceData = upload!.args[2] as Float32Array;
+    // a_size occupies instance floats [13] (width) and [14] (height) of the first particle.
+    expect(instanceData[13]).toBeCloseTo(1);
+    expect(instanceData[14]).toBeCloseTo(0.5);
+  });
+
+  it('does not upload a texture and signals u_hasTexture off for atlas-less emitters', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    addNodeChild(scene, makeEmitterWithParticles(1));
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(false);
+    expect(
+      gl.calls.some(
+        (c) => c.name === 'uniform1i' && (c.args[0] as { name: string }).name === 'u_hasTexture' && c.args[1] === 0,
+      ),
+    ).toBe(true);
   });
 
   it('restores depth write and disables blend after draw', () => {
