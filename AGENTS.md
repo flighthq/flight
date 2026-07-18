@@ -247,7 +247,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Area light | `lighting` | --- | Descriptor exists, renderer not wired |
 | IBL / Environment maps | `lighting` (createEnvironment) + `texture` (CubeTexture) | gl, wgpu |  |
 | Particles (2D) | `particles` (sim) + `particleemitter` (display node) | canvas, gl, wgpu |  |
-| Particles (3D) | --- | --- | Not yet implemented |
+| Particles (3D) | `particles` (sim) + `particleemitter` (`ParticleEmitter3D`) | gl, wgpu | Camera-facing billboards; wgpu is host-captured |
 | Collision (2D) | `collision` | headless | SAT narrow-phase |
 | Broadphase | `spatial` | headless | Uniform grid |
 | Custom shaders (post-process) | `effects` (CustomShaderEffect) | gl, wgpu |  |

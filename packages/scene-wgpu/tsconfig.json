@@ -34,6 +34,9 @@
       "path": "../node"
     },
     {
+      "path": "../particleemitter"
+    },
+    {
       "path": "../render"
     },
     {
