@@ -63,6 +63,21 @@ export function convertTransformLhToRh(transform: Float64Array): void {
   transform[11] = -transform[11] + 0;
 }
 
+// Wraps already-in-hand encoded image bytes (a payload carved out of a container, e.g. a PNG inside a
+// GLB buffer or an AWD texture block) as an Unresolved Embedded resource ref on a fresh Texture. The
+// parser carries the bytes but does not decode them — @flighthq/scene-resources decodes on resolve.
+// `mimeType` is null when the container did not declare one (the resolver sniffs it from the bytes).
+export function createEmbeddedTextureRef(bytes: Uint8Array, mimeType: string | null): Texture {
+  return createTexture({
+    resource: {
+      bytes,
+      kind: SceneResourceRefKind.Embedded,
+      mimeType,
+      state: ResourceResolutionState.Unresolved,
+    },
+  });
+}
+
 // Wraps a texture file path/URI declared by a model format as an Unresolved External resource ref on
 // a fresh Texture. The parser references the image, it does not load or decode it — @flighthq/scene-
 // resources resolves the ref later. Shared by the OBJ/MD5/3DS/MD2 material decoders.

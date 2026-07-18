@@ -8,10 +8,24 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Mesh, SceneNode } from '@flighthq/types';
+import type {
+  EmbeddedSceneResourceRef,
+  ExternalSceneResourceRef,
+  Mesh,
+  SceneNode,
+  StandardPbrMaterial,
+} from '@flighthq/types';
+import { StandardPbrMaterialKind } from '@flighthq/types';
 
 import { createSceneFromGlb, createSceneFromGltf } from './gltfParse';
 import type { GltfDocument } from './gltfSchema';
+
+// A base64 `data:` URI carrying `bytes` under an explicit image MIME type.
+function imageDataUri(mimeType: string, bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return `data:${mimeType};base64,${btoa(binary)}`;
+}
 
 // Concatenates raw byte segments into one buffer and returns its base64 `data:` URI.
 function toDataUri(...segments: readonly Uint8Array[]): string {
@@ -198,6 +212,109 @@ describe('createSceneFromGlb', () => {
 });
 
 describe('createSceneFromGltf', () => {
+  it('decodes a glTF material to a StandardPbrMaterial carrying its metallic-roughness factors', () => {
+    const doc = makeTriangleGltf();
+    doc.materials = [
+      {
+        alphaCutoff: 0.3,
+        alphaMode: 'MASK',
+        doubleSided: true,
+        emissiveFactor: [0, 1, 0],
+        pbrMetallicRoughness: { baseColorFactor: [1, 0, 0, 1], metallicFactor: 0.25, roughnessFactor: 0.75 },
+      },
+    ];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mesh = getNodeChildren(createSceneFromGltf(doc))[0] as Mesh;
+    expect(mesh.materials).toHaveLength(1);
+    const mat = mesh.materials[0] as StandardPbrMaterial;
+    expect(mat.kind).toBe(StandardPbrMaterialKind);
+    expect(mat.baseColor).toBe(0xff0000ff);
+    expect(mat.emissive).toBe(0x00ff00ff); // emissiveFactor widened to opaque
+    expect(mat.metallic).toBe(0.25);
+    expect(mat.roughness).toBe(0.75);
+    expect(mat.alphaMode).toBe('mask');
+    expect(mat.alphaCutoff).toBe(0.3);
+    expect(mat.doubleSided).toBe(true);
+  });
+
+  it('applies glTF metallic-roughness spec defaults when factors are absent', () => {
+    const doc = makeTriangleGltf();
+    doc.materials = [{}];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(mat.baseColor).toBe(0xffffffff); // default [1,1,1,1]
+    expect(mat.metallic).toBe(1);
+    expect(mat.roughness).toBe(1);
+    expect(mat.alphaMode).toBe('opaque');
+  });
+
+  it('resolves a baseColorTexture data-URI image to an Embedded texture ref', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
+    const doc = makeTriangleGltf();
+    doc.materials = [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }];
+    doc.textures = [{ source: 0 }];
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(mat.baseColorMap!.image).toBeNull();
+    const ref = mat.baseColorMap!.resource as EmbeddedSceneResourceRef;
+    expect(ref.kind).toBe('Embedded');
+    expect(ref.mimeType).toBe('image/png');
+    expect(Array.from(ref.bytes)).toEqual(Array.from(png));
+  });
+
+  it('resolves an external-URI image to an External texture ref', () => {
+    const doc = makeTriangleGltf();
+    doc.materials = [{ emissiveTexture: { index: 0 } }];
+    doc.textures = [{ source: 0 }];
+    doc.images = [{ uri: 'textures/emissive.png' }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const ref = mat.emissiveMap!.resource as ExternalSceneResourceRef;
+    expect(ref.kind).toBe('External');
+    expect(ref.uri).toBe('textures/emissive.png');
+  });
+
+  it('resolves a bufferView-embedded image to an Embedded texture ref and honors normalScale', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 7, 7, 7]);
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: positions.byteLength, byteOffset: 0 },
+        { buffer: 1, byteLength: png.length, byteOffset: 0 },
+      ],
+      buffers: [
+        { byteLength: positions.byteLength, uri: toDataUri(bytesOf(positions)) },
+        { byteLength: png.length, uri: toDataUri(png) },
+      ],
+      images: [{ bufferView: 1, mimeType: 'image/png' }],
+      materials: [{ normalTexture: { index: 0, scale: 2 } }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 }, material: 0 }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+      textures: [{ source: 0 }],
+    };
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(mat.normalScale).toBe(2);
+    const ref = mat.normalMap!.resource as EmbeddedSceneResourceRef;
+    expect(ref.kind).toBe('Embedded');
+    expect(ref.mimeType).toBe('image/png');
+    expect(Array.from(ref.bytes)).toEqual(Array.from(png));
+  });
+
+  it('leaves a primitive unmaterialed when it references no material', () => {
+    const mesh = getNodeChildren(createSceneFromGltf(makeTriangleGltf()))[0] as Mesh;
+    expect(mesh.materials).toHaveLength(0);
+  });
+
   it('accepts a JSON string as well as a parsed object', () => {
     const scene = createSceneFromGltf(JSON.stringify(makeTriangleGltf()));
     expect(getNodeChildren(scene)).toHaveLength(1);

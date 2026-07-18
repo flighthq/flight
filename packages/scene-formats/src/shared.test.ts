@@ -1,10 +1,11 @@
-import type { ExternalSceneResourceRef } from '@flighthq/types';
+import type { EmbeddedSceneResourceRef, ExternalSceneResourceRef } from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
 
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
   convertTransformLhToRh,
+  createEmbeddedTextureRef,
   createExternalTextureRef,
   negateVec3Z,
   packSkinInfluences,
@@ -89,6 +90,24 @@ describe('convertTransformLhToRh', () => {
     expect(transform[9]).toBe(10);
     expect(transform[10]).toBe(11);
     expect(transform[11]).toBe(-12);
+  });
+});
+
+describe('createEmbeddedTextureRef', () => {
+  it('wraps encoded bytes as an Unresolved Embedded resource ref without decoding them', () => {
+    const bytes = new Uint8Array([1, 2, 3, 4]);
+    const texture = createEmbeddedTextureRef(bytes, 'image/png');
+    expect(texture.image).toBeNull();
+    const ref = texture.resource as EmbeddedSceneResourceRef;
+    expect(ref.kind).toBe('Embedded');
+    expect(ref.bytes).toBe(bytes);
+    expect(ref.mimeType).toBe('image/png');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+  });
+
+  it('accepts a null mimeType for the resolver to sniff', () => {
+    const ref = createEmbeddedTextureRef(new Uint8Array([0]), null).resource as EmbeddedSceneResourceRef;
+    expect(ref.mimeType).toBeNull();
   });
 });
 
