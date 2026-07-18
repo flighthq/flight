@@ -7,14 +7,23 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Mesh, SceneNode } from '@flighthq/types';
+import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { createSceneFrom3ds } from './threeDsParse';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
+  THREE_DS_COLOR_BYTE,
   THREE_DS_EDITOR,
+  THREE_DS_FACE_MATERIAL,
   THREE_DS_FACES,
   THREE_DS_MAIN,
+  THREE_DS_MATERIAL,
+  THREE_DS_MATERIAL_DIFFUSE,
+  THREE_DS_MATERIAL_NAME,
+  THREE_DS_MATERIAL_SPECULAR,
+  THREE_DS_MATERIAL_TEXTURE_FILENAME,
+  THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
@@ -132,7 +141,110 @@ function buildMultiMesh3ds(
   return writeChunk(THREE_DS_MAIN, editor);
 }
 
+// Builds a COLOR_BYTE color sub-chunk (0x0011): 3 uint8 channels.
+function writeColorByte(r: number, g: number, b: number): Uint8Array {
+  return writeChunk(THREE_DS_COLOR_BYTE, new Uint8Array([r, g, b]));
+}
+
+// Builds a material block (0xAFFF) with a name, diffuse/specular color blocks, and an optional
+// diffuse texture map filename.
+function writeMaterial(opts: {
+  diffuse: readonly [number, number, number];
+  name: string;
+  specular?: readonly [number, number, number];
+  textureFilename?: string;
+}): Uint8Array {
+  const parts: Uint8Array[] = [
+    writeChunk(THREE_DS_MATERIAL_NAME, writeNullTerminatedString(opts.name)),
+    writeChunk(THREE_DS_MATERIAL_DIFFUSE, writeColorByte(...opts.diffuse)),
+  ];
+  if (opts.specular !== undefined) parts.push(writeChunk(THREE_DS_MATERIAL_SPECULAR, writeColorByte(...opts.specular)));
+  if (opts.textureFilename !== undefined) {
+    const filename = writeChunk(THREE_DS_MATERIAL_TEXTURE_FILENAME, writeNullTerminatedString(opts.textureFilename));
+    parts.push(writeChunk(THREE_DS_MATERIAL_TEXTURE_MAP, filename));
+  }
+  return writeChunk(THREE_DS_MATERIAL, concatBytes(...parts));
+}
+
+// Builds a face sub-chunk (0x4120) whose face array is followed by a FACE_MATERIAL sub-chunk (0x4130)
+// naming the material every face uses.
+function writeFacesWithMaterial(indices: readonly number[], materialName: string): Uint8Array {
+  const count = indices.length / 3;
+  const faceArray = new Uint8Array(2 + count * 4 * 2);
+  const faceView = new DataView(faceArray.buffer);
+  faceView.setUint16(0, count, true);
+  for (let i = 0; i < count; i++) {
+    const o = 2 + i * 8;
+    faceView.setUint16(o, indices[i * 3], true);
+    faceView.setUint16(o + 2, indices[i * 3 + 1], true);
+    faceView.setUint16(o + 4, indices[i * 3 + 2], true);
+    faceView.setUint16(o + 6, 0, true); // flags
+  }
+  const faceRefs = new Uint8Array(2 + count * 2);
+  const refView = new DataView(faceRefs.buffer);
+  refView.setUint16(0, count, true);
+  for (let i = 0; i < count; i++) refView.setUint16(2 + i * 2, i, true);
+  const faceMaterial = writeChunk(
+    THREE_DS_FACE_MATERIAL,
+    concatBytes(writeNullTerminatedString(materialName), faceRefs),
+  );
+  return writeChunk(THREE_DS_FACES, concatBytes(faceArray, faceMaterial));
+}
+
+// Builds a 3DS file with one material and one mesh whose faces reference it by name.
+function buildMaterialScene3ds(opts: {
+  faceMaterialName: string;
+  indices: readonly number[];
+  material: Uint8Array;
+  meshName: string;
+  positions: readonly number[];
+}): Uint8Array {
+  const trimeshPayload = concatBytes(
+    writeVertices(opts.positions),
+    writeFacesWithMaterial(opts.indices, opts.faceMaterialName),
+  );
+  const trimesh = writeChunk(THREE_DS_TRIMESH, trimeshPayload);
+  const object = writeChunk(THREE_DS_OBJECT, concatBytes(writeNullTerminatedString(opts.meshName), trimesh));
+  const editor = writeChunk(THREE_DS_EDITOR, concatBytes(opts.material, object));
+  return writeChunk(THREE_DS_MAIN, editor);
+}
+
 describe('createSceneFrom3ds', () => {
+  it('decodes a material to BlinnPhong and attaches it to the mesh that references it by name', () => {
+    const material = writeMaterial({
+      diffuse: [204, 102, 51],
+      name: 'Skin',
+      specular: [255, 255, 255],
+      textureFilename: 'skin.png',
+    });
+    const scene = createSceneFrom3ds(
+      buildMaterialScene3ds({
+        faceMaterialName: 'Skin',
+        indices: [0, 1, 2],
+        material,
+        meshName: 'Cube',
+        positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      }),
+    );
+
+    const mesh = getNodeChildren(scene)[0] as Mesh;
+    expect(mesh.materials).toHaveLength(1);
+    const mat = mesh.materials[0] as BlinnPhongMaterial;
+    expect(mat.kind).toBe(BlinnPhongMaterialKind);
+    expect(mat.diffuse).toBe(0xcc6633ff); // 204,102,51 → opaque
+    expect(mat.specular).toBe(0xffffffff);
+    // Texture filename is referenced, not decoded.
+    expect((mat.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('skin.png');
+    expect(mat.diffuseMap!.image).toBeNull();
+  });
+
+  it('leaves a mesh unmaterialed when it references no material', () => {
+    const mesh = getNodeChildren(
+      createSceneFrom3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])),
+    )[0] as Mesh;
+    expect(mesh.materials).toHaveLength(0);
+  });
+
   it('converts Z-up to Y-up coordinates', () => {
     // A triangle in 3DS Z-up: (0,0,0), (1,0,0), (0,0,1) → Y-up: (0,0,0), (1,0,0), (0,1,0)
     const bytes = buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2]);

@@ -45,8 +45,11 @@ export interface ThreeDsMaterial {
 }
 
 // A parsed 3DS triangle mesh descriptor (one per named object that contains a trimesh sub-chunk).
+// `materialNames` lists the materials the mesh's faces reference (via FACE_MATERIAL sub-chunks), in
+// file order, resolved against the file's material table by the caller.
 export interface ThreeDsMesh {
   faces: Uint16Array;
+  materialNames: readonly string[];
   name: string;
   uvs: Float32Array | null;
   vertices: Float32Array;
