@@ -5,7 +5,13 @@ import {
   sampleParticleColorCurve,
   sampleParticleCurve,
 } from '@flighthq/particles';
-import type { Matrix4, ParticleEmitter3D, ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
+import type {
+  Matrix4,
+  ParticleEmitter3D,
+  ParticleEmitterCallbacks,
+  ParticleEmitterConfig,
+  ParticleEmitterState,
+} from '@flighthq/types';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D';
 
@@ -30,6 +36,7 @@ export function updateParticleEmitter3D(
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
   deltaTime: number,
+  callbacks?: ParticleEmitterCallbacks,
   // When config.worldSpace is set, this is the emitter's world transform: new particles are baked into
   // world space at spawn (position through the full matrix, velocity through its rotation) so they stay
   // put as the emitter moves — the renderer then draws them without re-applying the emitter transform.
@@ -91,6 +98,8 @@ export function updateParticleEmitter3D(
   const hasRotationSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
   const hasFlipbook = config.frameCount > 1;
   const signals = getParticleEmitterSignals(state);
+  const onDeath = callbacks?.onDeath;
+  const onSpawn = callbacks?.onSpawn;
 
   let liveCount = data.particleCount;
   let i = 0;
@@ -98,9 +107,13 @@ export function updateParticleEmitter3D(
     const lt = i * 2;
     lifetimes[lt] += deltaTime;
     if (lifetimes[lt] >= lifetimes[lt + 1]) {
-      if (signals !== null) {
+      if (onDeath !== undefined || signals !== null) {
         const tt = i * PARTICLE_TRANSFORM_STRIDE;
-        signals.onParticleDeath.emit(data.transforms[tt], data.transforms[tt + 1]);
+        const dx = data.transforms[tt];
+        const dy = data.transforms[tt + 1];
+        const dz = positionsZ[i];
+        onDeath?.(dx, dy, dz);
+        signals?.onParticleDeath.emit(dx, dy, dz);
       }
       liveCount--;
       if (i < liveCount) {
@@ -410,8 +423,9 @@ export function updateParticleEmitter3D(
         regionIdMin + (config.frameCount > 1 ? 0 : regionRange > 0 ? (state.random() * regionRange) | 0 : 0);
       state.rotationSpeeds[idx] = hasRotSpeed ? config.rotationSpeedMin + state.random() * rotSpeedRange : 0;
 
+      onSpawn?.(spawnX, spawnY, spawnZ);
       if (signals !== null) {
-        signals.onParticleSpawn.emit(spawnX, spawnY, vx, vy);
+        signals.onParticleSpawn.emit(spawnX, spawnY, spawnZ, vx, vy, vz);
       }
     }
     data.particleCount = newCount;

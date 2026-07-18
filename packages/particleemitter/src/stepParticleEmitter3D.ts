@@ -4,6 +4,7 @@ import type {
   ParticleCollider,
   ParticleEmitter,
   ParticleEmitter3D,
+  ParticleEmitterCallbacks,
   ParticleEmitterConfig,
   ParticleEmitterState,
   ParticleForce,
@@ -18,6 +19,7 @@ export function stepParticleEmitter3D(
   deltaTime: number,
   forces?: ReadonlyArray<ParticleForce>,
   colliders?: ReadonlyArray<ParticleCollider>,
+  callbacks?: ParticleEmitterCallbacks,
   // Forwarded to updateParticleEmitter3D so world-space emitters bake spawns; see that function.
   worldTransform?: Readonly<Matrix4>,
 ): void {
@@ -27,7 +29,7 @@ export function stepParticleEmitter3D(
   if (forces != null && forces.length > 0) {
     applyParticleForces(asEmitter, state, forces, deltaTime);
   }
-  updateParticleEmitter3D(emitter, state, config, deltaTime, worldTransform);
+  updateParticleEmitter3D(emitter, state, config, deltaTime, callbacks, worldTransform);
   if (colliders != null && colliders.length > 0) {
     applyParticleCollisions(asEmitter, state, colliders);
   }
