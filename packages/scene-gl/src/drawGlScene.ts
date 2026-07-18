@@ -21,9 +21,22 @@ import type {
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { getGlSkinJointCapacity } from './glMeshProgram';
 import { drawGlSceneParticleEmitters } from './glParticleEmitter3D';
 import type { GlSceneDrawEntry } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
+
+// True when a mesh should be GPU-skinned this draw: it carries a skin, its geometry has the joints0/
+// weights0 channels, AND its skeleton fits the context's palette capacity. A skeleton larger than the
+// palette (e.g. a 110-joint MD5 model on hardware whose MAX_VERTEX_UNIFORM_VECTORS caps the palette
+// below that) returns false, so drawGlScene draws it rigid over the CPU-posed vertices updateMeshSkin
+// wrote — never GPU-skinning with an out-of-range joint index that would read past u_jointMatrices and
+// fling the vertex out. Keeps the gate and the shader's `#define MAX_JOINTS` on one capacity source.
+function isGpuSkinnedDraw(state: Readonly<GlRenderState>, mesh: Readonly<Mesh>): boolean {
+  const skin = mesh.skin;
+  if (skin == null || !hasMeshGeometrySkin(mesh.geometry)) return false;
+  return skin.skeleton.joints.length <= getGlSkinJointCapacity(state);
+}
 
 // Draws a prepared 3D scene on the Gl backend. The app runs prepareSceneRender(state, scene, camera,
 // lights) first (resolving world matrices, the camera view-projection, frustum culling, and the
@@ -129,7 +142,7 @@ export function drawGlScene(
 
     // A skinned run selects the HAS_SKIN program variant; split runs on it (a rigid and a skinned mesh
     // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
-    const skinned = entry.mesh.skin != null && hasMeshGeometrySkin(entry.mesh.geometry);
+    const skinned = isGpuSkinnedDraw(state, entry.mesh);
     if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
       runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, lightBlock, camera);
@@ -165,7 +178,7 @@ export function drawGlScene(
       const worldMatrix = entry.worldMatrix as Matrix4;
       setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
-      const skinned = entry.mesh.skin != null && hasMeshGeometrySkin(entry.mesh.geometry);
+      const skinned = isGpuSkinnedDraw(state, entry.mesh);
       if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
         runtime.activeSkinnedRun = skinned;
         entry.renderer.bind(state, entry.material, lightBlock, camera);

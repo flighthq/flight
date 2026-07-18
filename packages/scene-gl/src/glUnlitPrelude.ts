@@ -9,6 +9,7 @@ import {
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlSceneProgram,
+  getGlSkinJointCapacity,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
@@ -30,6 +31,9 @@ export interface GlUnlitDefineKey {
   // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlUnlitProgram
   // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
   hasSkin?: boolean;
+  // The palette size baked into `#define MAX_JOINTS` when hasSkin. Set by ensureGlUnlitProgram from
+  // getGlSkinJointCapacity; falls back to GL_MAX_SKIN_JOINTS. Must equal drawGlScene's GPU-skinning gate.
+  maxJoints?: number;
   // Whether the color map carries a non-identity uv transform (HAS_UV_TRANSFORM). Set only when
   // hasColorMap is also true, since the transform applies to the sampled map's coordinates.
   hasUvTransform: boolean;
@@ -100,7 +104,11 @@ export function compileGlUnlitProgram(gl: WebGL2RenderingContext, key: Readonly<
 export function ensureGlUnlitProgram(state: GlRenderState, key: Readonly<GlUnlitDefineKey>): GlUnlitProgram {
   // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
-  const fullKey: GlUnlitDefineKey = { ...key, hasSkin: getGlSceneRuntime(state).activeSkinnedRun };
+  const fullKey: GlUnlitDefineKey = {
+    ...key,
+    hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
+    maxJoints: getGlSkinJointCapacity(state),
+  };
   return ensureGlSceneProgram(state, `unlit:${buildGlUnlitDefineKey(fullKey)}`, (gl) =>
     compileGlUnlitProgram(gl, fullKey),
   );
@@ -122,7 +130,7 @@ function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
   if (key.hasColorMap) defines += '#define HAS_COLOR_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.vertexColor) defines += '#define VERTEX_COLOR\n';
-  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
+  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${key.maxJoints ?? GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
 

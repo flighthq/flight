@@ -86,6 +86,10 @@ export interface GlSceneRuntime {
   programCache: Map<string, GlMeshProgram>;
   shadow: GlSceneShadow | null;
   shadowTarget: GlRenderTarget | null;
+  // The GPU skin-palette capacity for this context, resolved lazily from MAX_VERTEX_UNIFORM_VECTORS by
+  // getGlSkinJointCapacity and cached here (one GL query). undefined until first resolved. Both the
+  // shader `#define MAX_JOINTS` and drawGlScene's GPU-skinning gate read it, so they never disagree.
+  skinJointCapacity?: number;
   time: number;
   uploadCache: WeakMap<MeshGeometry, GlMeshUpload>;
 }
@@ -98,6 +102,11 @@ export interface GlMeshUpload {
   indexBuffer: WebGLBuffer | null;
   indexCount: number;
   indexType: number;
+  // Set when this upload holds the STATIC bind pose of a GPU-skinned mesh (position/normal restored from
+  // the skin bind pose, not the per-frame CPU-posed geometry.vertices). While true the buffer is reused
+  // across frames even as geometry.version bumps — the GPU deforms the fixed bind vertices via the joint
+  // palette each frame, so re-uploading the CPU pose would double-skin. Absent/false = version-tracked.
+  skinBindUploaded?: boolean;
   vao: WebGLVertexArrayObject;
   version: number;
   vertexBuffer: WebGLBuffer;

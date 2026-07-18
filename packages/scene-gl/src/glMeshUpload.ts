@@ -1,4 +1,5 @@
-import type { GlRenderState, MeshGeometry, VertexAttribute } from '@flighthq/types';
+import { getMeshGeometrySkinBindPose } from '@flighthq/mesh';
+import type { GlRenderState, MeshGeometry, MeshSkinBindPose, VertexAttribute } from '@flighthq/types';
 
 import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -20,12 +21,30 @@ export function destroyGlMeshUpload(state: GlRenderState, upload: Readonly<GlMes
 // reusing the existing GL objects. The VAO binds only the canonical PBR attributes the shader
 // consumes (position/normal/tangent/uv0), read from geometry.layout so a custom-offset layout still
 // works. Leaves the VAO bound on return (the draw path issues its draws immediately after).
-export function ensureGlMeshUpload(state: GlRenderState, geometry: Readonly<MeshGeometry>): GlMeshUpload {
+//
+// `gpuSkinned` is true when the caller will GPU-skin this geometry (the HAS_SKIN shader deforms it via
+// the joint palette). In that case the uploaded buffer is the STATIC bind pose — position/normal
+// restored from the captured skin bind pose rather than the per-frame CPU-posed geometry.vertices that
+// updateMeshSkin writes — so the GPU deforms bind → pose exactly once, never double-skinning on top of a
+// CPU pose. The bind buffer is uploaded once and reused across frames (its version is ignored while
+// skinBindUploaded). Without a captured bind pose, geometry.vertices IS the bind pose, so it uploads
+// as-is. A rigid draw (not gpuSkinned) always uploads geometry.vertices — for an oversized skeleton that
+// falls back to CPU skinning, those are exactly the CPU-posed vertices it must draw.
+export function ensureGlMeshUpload(
+  state: GlRenderState,
+  geometry: Readonly<MeshGeometry>,
+  gpuSkinned = false,
+): GlMeshUpload {
   const gl = state.gl;
   const cache = getGlSceneRuntime(state).uploadCache;
   let upload = cache.get(geometry as MeshGeometry);
 
-  if (upload !== undefined && upload.version === geometry.version) {
+  const bindPose = gpuSkinned ? getMeshGeometrySkinBindPose(geometry) : null;
+
+  if (
+    upload !== undefined &&
+    (bindPose !== null ? upload.skinBindUploaded === true : upload.version === geometry.version)
+  ) {
     gl.bindVertexArray(upload.vao);
     return upload;
   }
@@ -45,7 +64,12 @@ export function ensureGlMeshUpload(state: GlRenderState, geometry: Readonly<Mesh
   gl.bindVertexArray(upload.vao);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, upload.vertexBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, geometry.vertices, gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    bindPose !== null ? buildSkinBindVertices(geometry, bindPose) : geometry.vertices,
+    gl.STATIC_DRAW,
+  );
+  upload.skinBindUploaded = bindPose !== null;
 
   const stride = geometry.layout.stride;
   for (let i = 0; i < geometry.layout.attributes.length; i++) {
@@ -81,12 +105,50 @@ export function hasGlMeshGeometryUv1(geometry: Readonly<MeshGeometry>): boolean 
   return false;
 }
 
+// Builds the STATIC bind-pose vertex buffer a GPU-skinned mesh uploads: a copy of the interleaved
+// buffer with position and normal restored from the captured skin bind pose. tangent/uv0/joints0/
+// weights0 are already static (updateMeshSkin rewrites only position/normal), so copying them straight
+// from geometry.vertices is correct. The GPU deforms this fixed buffer through the joint palette.
+function buildSkinBindVertices(geometry: Readonly<MeshGeometry>, bindPose: Readonly<MeshSkinBindPose>): Float32Array {
+  const out = geometry.vertices.slice();
+  const floatsPerVertex = geometry.layout.stride / 4;
+  const positionOffset = floatOffsetForSemantic(geometry, 'position');
+  const normalOffset = floatOffsetForSemantic(geometry, 'normal');
+  const { normals, positions } = bindPose;
+  const vertexCount = (positions.length / 3) | 0;
+  for (let v = 0; v < vertexCount; v++) {
+    const base = v * floatsPerVertex;
+    const s = v * 3;
+    if (positionOffset >= 0) {
+      out[base + positionOffset] = positions[s]!;
+      out[base + positionOffset + 1] = positions[s + 1]!;
+      out[base + positionOffset + 2] = positions[s + 2]!;
+    }
+    if (normalOffset >= 0) {
+      out[base + normalOffset] = normals[s]!;
+      out[base + normalOffset + 1] = normals[s + 1]!;
+      out[base + normalOffset + 2] = normals[s + 2]!;
+    }
+  }
+  return out;
+}
+
+// The float offset (byteOffset / 4) of a semantic within an interleaved vertex record, or -1 when the
+// layout does not carry it.
+function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: string): number {
+  const attributes = geometry.layout.attributes;
+  for (let i = 0; i < attributes.length; i++) {
+    if (attributes[i].semantic === semantic) return attributes[i].byteOffset / 4;
+  }
+  return -1;
+}
+
 // Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's
 // VAO wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
 // (position/normal/tangent/uv0); `color0` (location 4) is bound only when a geometry's layout carries
 // it (the VertexColor path); `uv1` (location 5) is the second UV set (occlusion/lightmap channel per
-// glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the skinning channels (reserved for a
-// future GPU-skinning pass). Semantics absent from a geometry's layout are simply left unbound.
+// glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the skinning channels the HAS_SKIN vertex
+// stage reads (see GL_SKIN_VERTEX_DECLARATIONS_GLSL). Semantics absent from a layout are left unbound.
 const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
   color0: 4,
   joints0: 6,
