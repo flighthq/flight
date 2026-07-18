@@ -160,6 +160,20 @@ describe('parseMd5Anim', () => {
     expect(out[2]).toBeCloseTo(-20);
   });
 
+  it('binds channels to joints by name, not array position', () => {
+    // Nodes named to match the hierarchy ("root", "child") but passed in REVERSED order. Index binding
+    // would bind the root channel to the child node; name binding must resolve each to its named node —
+    // the fix for a caller that collects joints in a different order than MD5 (e.g. depth-first over a
+    // nested skeleton, which reorders branches like finger chains).
+    const child = createSceneNode(undefined, { name: 'child' });
+    const root = createSceneNode(undefined, { name: 'root' });
+    const clip = parseMd5Anim(TWO_JOINT_TWO_FRAME, [child, root])!;
+
+    // Channels are [root-translation, root-rotation, child-translation, child-rotation] (hierarchy order).
+    expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(root);
+    expect((clip.channels[2].targetRef as SceneAnimationTarget).node).toBe(child);
+  });
+
   it('uses baseframe values for unanimated joints', () => {
     const joints = makeJoints(2);
     const clip = parseMd5Anim(TWO_JOINT_TWO_FRAME, joints)!;

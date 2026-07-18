@@ -7,7 +7,9 @@ import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 // Parses an id Tech 4 MD5 animation file (.md5anim) into an AnimationClip that drives the given
 // joint SceneNodes (produced by createSceneFromMd5Mesh). The ASCII line-oriented format declares a
 // skeleton hierarchy, a baseframe pose, and per-frame animated components selected by a bitmask.
-// Each joint produces up to two channels (translation and rotation) in the returned clip.
+// Each joint produces up to two channels (translation and rotation) in the returned clip. Channels
+// bind to their joint by NAME (falling back to array position for unnamed joints), so the caller may
+// pass the joint nodes in any order — see the name-binding note in buildAnimationClip.
 //
 // IMPORTANT: .md5anim baseframe/frame joint transforms are PARENT-RELATIVE (unlike the .md5mesh
 // joints, which are absolute). These relative values are driven straight onto the joints' LOCAL
@@ -144,6 +146,18 @@ function buildAnimationClip(
     times.push(f / frameRate);
   }
 
+  // Bind each animation channel to its joint by NAME, not array position. MD5 joint names are unique,
+  // and the caller may pass the joint nodes in any order — the mesh importer supplies them in MD5 skeleton
+  // order, but a consumer that re-collects them from the scene graph (e.g. a depth-first walk of a nested
+  // skeleton) yields a different order. Index binding silently mis-poses the joints whose two orders differ
+  // (worst at skeleton branches like finger chains); name binding is order-independent. Falls back to the
+  // positional joint when a hierarchy name has no matching node (e.g. unnamed nodes), preserving the old
+  // behavior for callers that pass MD5-ordered, possibly-unnamed joints.
+  const nodeByName = new Map<string, SceneNode>();
+  for (const joint of joints) {
+    if (joint.name) nodeByName.set(joint.name, joint);
+  }
+
   for (let j = 0; j < jointCount; j++) {
     const entry = hierarchy[j];
     const base = j < baseframe.length ? baseframe[j] : DEFAULT_BASEFRAME;
@@ -196,7 +210,7 @@ function buildAnimationClip(
     convertPositionsZUpToYUp(translationValues);
     convertQuaternionsZUpToYUp(rotationValues);
 
-    const node = joints[j];
+    const node = nodeByName.get(entry.name) ?? joints[j];
 
     const translationTrack = createAnimationTrack({
       components: 3,
