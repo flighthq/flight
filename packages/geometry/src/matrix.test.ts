@@ -944,7 +944,8 @@ describe('setMatrixFromMatrix3', () => {
   beforeEach(() => {
     // Setup a basic Matrix3x3 instance for testing
     mat3 = {
-      m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]), // 3x3 matrix3x2 (row-major)
+      // Column-major storage of rows [1,2,3],[4,5,6],[7,8,9].
+      m: new Float32Array([1, 4, 7, 2, 5, 8, 3, 6, 9]),
     };
     mat2D = createMatrix(); // Create a createMatrix instance
   });

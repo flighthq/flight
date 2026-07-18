@@ -30,6 +30,11 @@ import {
 } from '@flighthq/geometry';
 import type { Matrix3 } from '@flighthq/types';
 
+// Matrix3 storage is column-major: element (row r, column c) lives at m[3 * c + r], matching
+// Matrix4 and the GL/GLSL/WGSL uniform ABI. A matrix-like {m} built from a raw Float32Array below
+// therefore lists its values column-by-column. getMatrix3Element(r, c) / column / row accessors are
+// layout-agnostic, so those assertions double as storage-independent behavior locks.
+
 describe('cloneMatrix3', () => {
   it('should clone the matrix correctly', () => {
     const m1 = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
@@ -46,7 +51,8 @@ describe('cloneMatrix3', () => {
   });
 
   it('should also clone matrix-like objects', () => {
-    const obj = { m: new Float32Array([2, 3, 4, 5, 6, 7, 8, 9, 10]) };
+    // Column-major storage of rows [2,3,4],[5,6,7],[8,9,10].
+    const obj = { m: new Float32Array([2, 5, 8, 3, 6, 9, 4, 7, 10]) };
     const m2 = cloneMatrix3(obj);
     expect(getMatrix3Element(m2, 0, 0)).toBe(2);
     expect(getMatrix3Element(m2, 0, 1)).toBe(3);
@@ -60,7 +66,7 @@ describe('cloneMatrix3', () => {
   });
 
   it('should return a matrix instance', () => {
-    const obj = { m: new Float32Array([2, 3, 4, 5, 6, 7, 8, 9, 10]) };
+    const obj = { m: new Float32Array([2, 5, 8, 3, 6, 9, 4, 7, 10]) };
     const m2: Matrix3 = cloneMatrix3(obj);
     expect(m2).not.toBeNull();
   });
@@ -153,7 +159,8 @@ describe('copyMatrix3ColumnToVector3', () => {
   });
 
   it('should allow matrix-like and vector-like objects', () => {
-    const m = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
+    // Column-major storage of rows [1,2,3],[4,5,6],[7,8,9]; column 0 = (1,4,7).
+    const m = { m: new Float32Array([1, 4, 7, 2, 5, 8, 3, 6, 9]) };
     const v = { x: 0, y: 0, z: 0 };
     copyMatrix3ColumnToVector3(v, 0, m); // column 0
     expect(v.x).toBe(1);
@@ -190,10 +197,10 @@ describe('copyMatrix3RowFromVector3', () => {
   it('should allow matrix-like and vector-like objects', () => {
     const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
     const v = { x: 1, y: 2, z: 3 };
-    copyMatrix3RowFromVector3(m, 0, v); // row 0
+    copyMatrix3RowFromVector3(m, 0, v); // row 0 -> column-major indices 0, 3, 6
     expect(m.m[0]).toBe(1);
-    expect(m.m[1]).toBe(2);
-    expect(m.m[2]).toBe(3);
+    expect(m.m[3]).toBe(2);
+    expect(m.m[6]).toBe(3);
   });
 });
 
@@ -226,7 +233,8 @@ describe('copyMatrix3RowToVector3', () => {
   });
 
   it('should allow matrix-like and vector-like objects', () => {
-    const m = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
+    // Column-major storage of rows [1,2,3],[4,5,6],[7,8,9]; row 0 = (1,2,3).
+    const m = { m: new Float32Array([1, 4, 7, 2, 5, 8, 3, 6, 9]) };
     const v = { x: 0, y: 0, z: 0 };
     copyMatrix3RowToVector3(v, 0, m); // row 0
     expect(v.x).toBe(1); // m.a
@@ -247,6 +255,11 @@ describe('createMatrix3', () => {
     expect(getMatrix3Element(m, 2, 0)).toBe(8);
     expect(getMatrix3Element(m, 2, 1)).toBe(9);
     expect(getMatrix3Element(m, 2, 2)).toBe(10);
+  });
+
+  it('stores its (row, column) arguments column-major', () => {
+    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    expect(Array.from(m.m)).toEqual([1, 4, 7, 2, 5, 8, 3, 6, 9]);
   });
 
   it('should default to identity matrix when no values are provided', () => {
@@ -295,7 +308,8 @@ describe('equalsMatrix3', () => {
 
   it('should return true if one object is matrix-like and one is not', () => {
     const mat1 = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    const mat2 = { m: new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]) };
+    // Column-major storage of the same matrix.
+    const mat2 = { m: new Float32Array([1, 4, 7, 2, 5, 8, 3, 6, 9]) };
     expect(equalsMatrix3(mat1, mat2)).toBe(true);
   });
 
@@ -335,24 +349,19 @@ describe('getMatrix3Element', () => {
 
 describe('inverseMatrix3', () => {
   it('should invert the matrix correctly', () => {
-    // Create a matrix with scaling of 2 and translation of (5, 3)
+    // A scale of 2 with translation of (5, 3): rows [2,0,5],[0,2,3],[0,0,1].
     const m = createMatrix3(2, 0, 5, 0, 2, 3, 0, 0, 1);
 
-    // Apply inversion
-    let out = createMatrix3();
+    const out = createMatrix3();
     inverseMatrix3(out, m);
 
-    // Expected inverse matrix:
-    // Scaling should be 0.5 (inverse of 2)
-    // Translation should be -2.5 (inverse of 5 scaled by 0.5) and -1.5 (inverse of 3 scaled by 0.5)
-
-    // Assert the inverse matrix values
-    expect(out.m[0]).toBeCloseTo(0.5); // Inverse scaling on x
-    expect(out.m[1]).toBeCloseTo(0); // No shear on x
-    expect(out.m[3]).toBeCloseTo(0); // No shear on y
-    expect(out.m[4]).toBeCloseTo(0.5); // Inverse scaling on y
-    expect(out.m[2]).toBeCloseTo(-2.5); // Inverse translation on x
-    expect(out.m[5]).toBeCloseTo(-1.5); // Inverse translation on y
+    // Inverse: scale 0.5, translation (-2.5, -1.5). Column-major storage.
+    expect(out.m[0]).toBeCloseTo(0.5); // (0,0) inverse scale x
+    expect(out.m[1]).toBeCloseTo(0); // (1,0) no shear
+    expect(out.m[3]).toBeCloseTo(0); // (0,1) no shear
+    expect(out.m[4]).toBeCloseTo(0.5); // (1,1) inverse scale y
+    expect(out.m[6]).toBeCloseTo(-2.5); // (0,2) inverse translation x
+    expect(out.m[7]).toBeCloseTo(-1.5); // (1,2) inverse translation y
   });
 
   it('should not depend on initial out matrix values', () => {
@@ -364,22 +373,23 @@ describe('inverseMatrix3', () => {
     const result = createMatrix3();
     multiplyMatrix3(result, source, out);
 
-    expect(result.m[0]).toBeCloseTo(1);
-    expect(result.m[1]).toBeCloseTo(0);
-    expect(result.m[3]).toBeCloseTo(0);
-    expect(result.m[4]).toBeCloseTo(1);
+    expect(getMatrix3Element(result, 0, 0)).toBeCloseTo(1);
+    expect(getMatrix3Element(result, 0, 1)).toBeCloseTo(0);
+    expect(getMatrix3Element(result, 1, 0)).toBeCloseTo(0);
+    expect(getMatrix3Element(result, 1, 1)).toBeCloseTo(1);
   });
 
   it('should should allow matrix-like objects', () => {
-    const m = { m: new Float32Array([2, 0, 5, 0, 2, 3, 0, 0, 1]) };
-    let out = { m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]) };
+    // Column-major storage of the affine scale-2 translate-(5,3).
+    const m = { m: new Float32Array([2, 0, 0, 0, 2, 0, 5, 3, 1]) };
+    const out = { m: new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0]) };
     inverseMatrix3(out, m);
-    expect(out.m[0]).toBeCloseTo(0.5); // Inverse scaling on x
-    expect(out.m[1]).toBeCloseTo(0); // No shear on x
-    expect(out.m[3]).toBeCloseTo(0); // No shear on y
-    expect(out.m[4]).toBeCloseTo(0.5); // Inverse scaling on y
-    expect(out.m[2]).toBeCloseTo(-2.5); // Inverse translation on x
-    expect(out.m[5]).toBeCloseTo(-1.5); // Inverse translation on y
+    expect(out.m[0]).toBeCloseTo(0.5); // (0,0) inverse scale x
+    expect(out.m[1]).toBeCloseTo(0); // (1,0) no shear
+    expect(out.m[3]).toBeCloseTo(0); // (0,1) no shear
+    expect(out.m[4]).toBeCloseTo(0.5); // (1,1) inverse scale y
+    expect(out.m[6]).toBeCloseTo(-2.5); // (0,2) inverse translation x
+    expect(out.m[7]).toBeCloseTo(-1.5); // (1,2) inverse translation y
   });
 
   it('supports out === source for affine matrices', () => {
@@ -476,12 +486,22 @@ describe('multiplyMatrix3', () => {
     expect(equalsMatrix3(out, b)).toBe(true);
   });
 
-  it('should allow matrix-like objects', () => {
-    const a = { m: new Float32Array([2, 0, 0, 0, 2, 0, 0, 0, 1]) };
-    const b = { m: new Float32Array([1, 0, 5, 0, 1, 5, 0, 0, 1]) };
+  it('composes an affine scale then translate (row/column semantics)', () => {
+    // a = scale(2,2), b = translate(5,5). a * b applies b then a to a column vector.
+    const a = createMatrix3(2, 0, 0, 0, 2, 0, 0, 0, 1);
+    const b = createMatrix3(1, 0, 5, 0, 1, 5, 0, 0, 1);
     multiplyMatrix3(a, a, b);
-    expect(a.m[2]).toBe(10);
-    expect(a.m[5]).toBe(10);
+    expect(getMatrix3Element(a, 0, 2)).toBe(10);
+    expect(getMatrix3Element(a, 1, 2)).toBe(10);
+  });
+
+  it('should allow matrix-like objects', () => {
+    // Column-major: a = diag(2,2,1), b = translate(5,5).
+    const a = { m: new Float32Array([2, 0, 0, 0, 2, 0, 0, 0, 1]) };
+    const b = { m: new Float32Array([1, 0, 0, 0, 1, 0, 5, 5, 1]) };
+    multiplyMatrix3(a, a, b);
+    expect(a.m[6]).toBe(10); // (0,2)
+    expect(a.m[7]).toBe(10); // (1,2)
   });
 });
 
@@ -490,24 +510,24 @@ describe('rotateMatrix3', () => {
     const m = createMatrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
     const out = createMatrix3();
     rotateMatrix3(out, m, Math.PI / 2); // 90 degrees
-    expect(out.m[0]).toBeCloseTo(0);
-    expect(out.m[1]).toBeCloseTo(-1);
-    expect(out.m[3]).toBeCloseTo(1);
-    expect(out.m[4]).toBeCloseTo(0);
+    // Rotation (0,1)-plane: (0,0)=0, (0,1)=-1, (1,0)=1, (1,1)=0.
+    expect(getMatrix3Element(out, 0, 0)).toBeCloseTo(0);
+    expect(getMatrix3Element(out, 0, 1)).toBeCloseTo(-1);
+    expect(getMatrix3Element(out, 1, 0)).toBeCloseTo(1);
+    expect(getMatrix3Element(out, 1, 1)).toBeCloseTo(0);
   });
 
   it('should allow a matrix-like object', () => {
     const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
     const out = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
 
-    // Apply 90 degrees rotation (π/2 radians)
     rotateMatrix3(out, m, Math.PI / 2);
 
-    // Check that the resulting matrix corresponds to a 90-degree rotation matrix
-    expect(out.m[0]).toBeCloseTo(0); // a = cos(π/2) = 0
-    expect(out.m[1]).toBeCloseTo(-1); // b = -sin(π/2) = -1
-    expect(out.m[3]).toBeCloseTo(1); // c = sin(π/2) = 1
-    expect(out.m[4]).toBeCloseTo(0); // d = cos(π/2) = 0
+    // 90-degree rotation, column-major storage: (0,0)=0,(0,1)=-1,(1,0)=1,(1,1)=0.
+    expect(out.m[0]).toBeCloseTo(0); // (0,0)
+    expect(out.m[1]).toBeCloseTo(1); // (1,0)
+    expect(out.m[3]).toBeCloseTo(-1); // (0,1)
+    expect(out.m[4]).toBeCloseTo(0); // (1,1)
   });
 
   it('supports out === source', () => {
@@ -525,21 +545,21 @@ describe('scaleMatrix3', () => {
     const m = createMatrix3();
     const out = createMatrix3();
     scaleMatrix3(out, m, 2, 3);
-    expect(out.m[0]).toBe(2);
-    expect(out.m[4]).toBe(3);
+    expect(getMatrix3Element(out, 0, 0)).toBe(2);
+    expect(getMatrix3Element(out, 1, 1)).toBe(3);
   });
 
   it('should allow a matrix-like object', () => {
     const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
     const out = createMatrix3();
     scaleMatrix3(out, m, 2, 3);
-    expect(out.m[0]).toBe(2); // a
-    expect(out.m[4]).toBe(3); // d
+    expect(out.m[0]).toBe(2); // (0,0)
+    expect(out.m[4]).toBe(3); // (1,1)
   });
 });
 
 describe('setMatrix3', () => {
-  it('sets all 9 elements in row-major order', () => {
+  it('sets all 9 elements by (row, column)', () => {
     const m = createMatrix3();
     setMatrix3(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     for (let row = 0; row < 3; row++) {
@@ -547,6 +567,12 @@ describe('setMatrix3', () => {
         expect(getMatrix3Element(m, row, col)).toBe(row * 3 + col + 1);
       }
     }
+  });
+
+  it('stores its arguments column-major', () => {
+    const m = createMatrix3();
+    setMatrix3(m, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    expect(Array.from(m.m)).toEqual([1, 4, 7, 2, 5, 8, 3, 6, 9]);
   });
 });
 
@@ -583,36 +609,22 @@ describe('setMatrix3FromFloat32Array', () => {
 
 describe('setMatrix3FromMatrix', () => {
   it('should convert a Matrix3x2 to a Matrix3', () => {
-    // Define a matrix (6 values, row-major)
     const mat2D = createMatrix();
-
-    // Define an empty Matrix3 to store the result
     const mat = createMatrix3();
-
-    // Call the fromMatrix3x2 function
     setMatrix3FromMatrix(mat, mat2D);
 
-    // Expected result: Identity matrix for Matrix3
+    // Identity, column-major.
     const expectedMatrix3 = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-
-    // Assert that the result matches the expected outcome
     expect(mat.m).toEqual(expectedMatrix3);
   });
 
   it('should handle scaling and translation', () => {
-    // Define a matrix with scaling and translation
     const mat2D = createMatrix(2, 0, 0, 3, 5, 10); // Scaling by 2,3 and translation by (5,10)
-
-    // Define an empty Matrix3 to store the result
     const mat = createMatrix3();
-
-    // Call the fromMatrix3x2 function
     setMatrix3FromMatrix(mat, mat2D);
 
-    // Expected result: Scaling and translation in Matrix3
-    const expectedMatrix3 = new Float32Array([2, 0, 5, 0, 3, 10, 0, 0, 1]);
-
-    // Assert that the result matches the expected outcome
+    // Column-major storage of the affine scale-(2,3) translate-(5,10).
+    const expectedMatrix3 = new Float32Array([2, 0, 0, 0, 3, 0, 5, 10, 1]);
     expect(mat.m).toEqual(expectedMatrix3);
   });
 });
@@ -643,9 +655,7 @@ describe('setMatrix3FromMatrix4', () => {
     const mat = createMatrix3();
     setMatrix3FromMatrix4(mat, Matrix4x4);
 
-    // Expected result: Identity matrix for Matrix3
     const expectedMatrix3 = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-
     expect(mat.m).toEqual(expectedMatrix3);
   });
 
@@ -674,10 +684,19 @@ describe('setMatrix3FromMatrix4', () => {
     const mat = createMatrix3();
     setMatrix3FromMatrix4(mat, Matrix4x4);
 
-    // Expected result: Upper-left 3x3 part of Matrix4x4
     const expectedMatrix3 = new Float32Array([2, 0, 0, 0, 3, 0, 0, 0, 4]);
-
     expect(mat.m).toEqual(expectedMatrix3);
+  });
+
+  it('copies the upper-left 3x3 column-major (no transpose)', () => {
+    // Matrix4 columns [1,2,3,0],[4,5,6,0],[7,8,9,0],[0,0,0,1]; upper-left 3x3 is column-major
+    // [1,2,3, 4,5,6, 7,8,9] and copies straight through.
+    const m4 = { m: new Float32Array([1, 2, 3, 0, 4, 5, 6, 0, 7, 8, 9, 0, 0, 0, 0, 1]) };
+    const mat = createMatrix3();
+    setMatrix3FromMatrix4(mat, m4);
+    expect(Array.from(mat.m)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(getMatrix3Element(mat, 0, 1)).toBe(4);
+    expect(getMatrix3Element(mat, 1, 0)).toBe(2);
   });
 });
 
@@ -699,13 +718,24 @@ describe('setMatrix3NormalFromMatrix4', () => {
     const m4 = createMatrix4(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const out = createMatrix3();
     setMatrix3NormalFromMatrix4(out, m4);
-    // For a pure rotation, normal matrix == rotation. Row-major matrix3 of R (+x -> +y):
-    // [[0,-1,0],[1,0,0],[0,0,1]].
+    // For a pure rotation, normal matrix == rotation R (+x -> +y): (0,0)=0,(0,1)=-1,(1,0)=1,(1,1)=0.
+    expect(getMatrix3Element(out, 0, 0)).toBeCloseTo(0, 5);
+    expect(getMatrix3Element(out, 0, 1)).toBeCloseTo(-1, 5);
+    expect(getMatrix3Element(out, 1, 0)).toBeCloseTo(1, 5);
+    expect(getMatrix3Element(out, 1, 1)).toBeCloseTo(0, 5);
+    expect(getMatrix3Element(out, 2, 2)).toBeCloseTo(1, 5);
+  });
+
+  it('uploads column-major so a GL upload needs no transpose', () => {
+    // The whole point of the migration: the normal matrix' storage matches uniformMatrix3fv(false).
+    // 90-degree rotation about z, column-major storage: R = [[0,-1,0],[1,0,0],[0,0,1]] -> [0,1,0,-1,0,0,0,0,1].
+    const m4 = createMatrix4(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const out = createMatrix3();
+    setMatrix3NormalFromMatrix4(out, m4);
     expect(out.m[0]).toBeCloseTo(0, 5);
-    expect(out.m[1]).toBeCloseTo(-1, 5);
-    expect(out.m[3]).toBeCloseTo(1, 5);
+    expect(out.m[1]).toBeCloseTo(1, 5);
+    expect(out.m[3]).toBeCloseTo(-1, 5);
     expect(out.m[4]).toBeCloseTo(0, 5);
-    expect(out.m[8]).toBeCloseTo(1, 5);
   });
 
   it('keeps a normal perpendicular under non-uniform scale', () => {
@@ -714,9 +744,9 @@ describe('setMatrix3NormalFromMatrix4', () => {
     const normalMatrix = createMatrix3();
     setMatrix3NormalFromMatrix4(normalMatrix, m4);
     // Inverse-transpose of diag(2,1,1) = diag(0.5,1,1).
-    expect(normalMatrix.m[0]).toBeCloseTo(0.5, 5);
-    expect(normalMatrix.m[4]).toBeCloseTo(1, 5);
-    expect(normalMatrix.m[8]).toBeCloseTo(1, 5);
+    expect(getMatrix3Element(normalMatrix, 0, 0)).toBeCloseTo(0.5, 5);
+    expect(getMatrix3Element(normalMatrix, 1, 1)).toBeCloseTo(1, 5);
+    expect(getMatrix3Element(normalMatrix, 2, 2)).toBeCloseTo(1, 5);
   });
 });
 
@@ -725,16 +755,16 @@ describe('translateMatrix3', () => {
     const m = createMatrix3();
     const out = createMatrix3();
     translateMatrix3(out, m, 2, 3);
-    expect(out.m[2]).toBe(2);
-    expect(out.m[5]).toBe(3);
+    expect(getMatrix3Element(out, 0, 2)).toBe(2);
+    expect(getMatrix3Element(out, 1, 2)).toBe(3);
   });
 
   it('should allow a matrix-like object', () => {
     const m = { m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]) };
     const out = createMatrix3();
     translateMatrix3(out, m, 2, 3);
-    expect(out.m[2]).toBe(2); // tx
-    expect(out.m[5]).toBe(3); // ty
+    expect(out.m[6]).toBe(2); // (0,2) tx
+    expect(out.m[7]).toBe(3); // (1,2) ty
   });
 });
 
@@ -743,13 +773,17 @@ describe('transposeMatrix3', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const out = createMatrix3();
     transposeMatrix3(out, m);
-    expect(Array.from(out.m)).toEqual([1, 4, 7, 2, 5, 8, 3, 6, 9]);
+    // Transpose of rows [1,2,3],[4,5,6],[7,8,9] is rows [1,4,7],[2,5,8],[3,6,9];
+    // column-major storage of that is [1,2,3,4,5,6,7,8,9].
+    expect(Array.from(out.m)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(getMatrix3Element(out, 0, 1)).toBe(4);
+    expect(getMatrix3Element(out, 1, 0)).toBe(2);
   });
 
   it('supports out === source', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
     transposeMatrix3(m, m);
-    expect(Array.from(m.m)).toEqual([1, 4, 7, 2, 5, 8, 3, 6, 9]);
+    expect(Array.from(m.m)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
 
   it('transpose of identity is identity', () => {
@@ -765,7 +799,8 @@ describe('writeMatrix3ToFloat32Array', () => {
     const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const data = new Float32Array(10);
     writeMatrix3ToFloat32Array(data, 1, m);
-    expect(Array.from(data)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    // Column-major storage of the matrix, written verbatim.
+    expect(Array.from(data)).toEqual([0, 1, 4, 7, 2, 5, 8, 3, 6, 9]);
   });
 
   it('round-trips through setMatrix3FromFloat32Array', () => {
