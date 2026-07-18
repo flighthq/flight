@@ -100,6 +100,11 @@ describe('createParticleEmitter3D', () => {
     expect(emitter.localMatrix).toBeDefined();
     expect(emitter.localMatrix.m).toBeDefined();
   });
+
+  it('defaults blendMode to normal and accepts an override', () => {
+    expect(createParticleEmitter3D().blendMode).toBe('normal');
+    expect(createParticleEmitter3D({ blendMode: 'add' }).blendMode).toBe('add');
+  });
 });
 
 describe('getParticleEmitter3DCapacity', () => {

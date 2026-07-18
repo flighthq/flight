@@ -90,6 +90,7 @@ export function compactParticleEmitter3D(target: ParticleEmitter3D): void {
 export function createParticleEmitter3D(obj?: Readonly<PartialNode<ParticleEmitter3D>>): ParticleEmitter3D {
   const node = createSceneNode(ParticleEmitter3DKind, obj) as unknown as ParticleEmitter3D;
   node.data = createParticleEmitterData(obj?.data as Readonly<Partial<ParticleEmitterData>> | undefined);
+  node.blendMode = obj?.blendMode ?? 'normal';
   return node;
 }
 

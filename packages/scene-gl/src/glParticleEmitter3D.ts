@@ -6,6 +6,7 @@ import type {
   GlRenderState,
   Matrix4,
   NodeAny,
+  ParticleBlendMode,
   ParticleEmitter3D,
   ParticleEmitterData,
   SceneLights,
@@ -180,6 +181,26 @@ function collectParticleEmitter3DNodes(node: Readonly<NodeAny>, out: ParticleEmi
     for (let i = 0; i < children.length; i++) {
       collectParticleEmitter3DNodes(children[i], out);
     }
+  }
+}
+
+// Maps a ParticleBlendMode to a GL blend function. The particle fragment shader outputs rgb already
+// scaled by the particle alpha, so 'add' is a straight ONE/ONE sum (a black sprite background adds
+// nothing, fire brightens); 'normal' is the standard over-blend. Assumes gl.BLEND is already enabled.
+function applyGlParticleBlendMode(gl: WebGL2RenderingContext, mode: ParticleBlendMode): void {
+  switch (mode) {
+    case 'add':
+      gl.blendFunc(gl.ONE, gl.ONE);
+      break;
+    case 'multiply':
+      gl.blendFunc(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
+      break;
+    case 'screen':
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR);
+      break;
+    default:
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      break;
   }
 }
 
@@ -363,10 +384,14 @@ export function drawGlSceneParticleEmitters(
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(false);
   gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   for (let i = 0; i < emitterScratch.length; i++) {
-    drawParticleEmitter3DNode(gl, shader, emitterScratch[i]);
+    const emitter = emitterScratch[i];
+    // Each emitter picks its own blend func: 'add' is the canonical fire/glow mode (the fragment
+    // shader premultiplies rgb by alpha, so ONE/ONE brightens and a black sprite background adds
+    // nothing). A hardcoded SRC_ALPHA over-blend instead makes an additive sprite darken the scene.
+    applyGlParticleBlendMode(gl, emitter.blendMode);
+    drawParticleEmitter3DNode(gl, shader, emitter);
   }
 
   gl.depthMask(true);
