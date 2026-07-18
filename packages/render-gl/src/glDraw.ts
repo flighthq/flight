@@ -51,7 +51,13 @@ export function bindGlTexture(
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource as TexImageSource);
     textureCache.set(imageSource, texture);
     runtime.currentTexture = texture;
-  } else if (runtime.currentTexture !== texture) {
+  } else {
+    // Always rebind on a cache hit, never skip on runtime.currentTexture. That tracker is the last
+    // texture bound to whatever unit was active THEN, but callers change the active unit between binds
+    // (a material binds its maps to units 0..4 via gl.activeTexture). Binding one image source to two
+    // units — e.g. a map reused as both normal and metallic-roughness — would otherwise leave the
+    // second unit unbound. A rebind is one cheap GL call; the sprite batch binds once per batch, so the
+    // dropped skip costs nothing meaningful.
     gl.bindTexture(gl.TEXTURE_2D, texture);
     runtime.currentTexture = texture;
   }
@@ -170,10 +176,10 @@ export function setGlQuadMatrixFromOffset(
 export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, canvas: HTMLCanvasElement): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  if (runtime.currentTexture !== texture) {
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    runtime.currentTexture = texture;
-  }
+  // Always rebind before uploading — runtime.currentTexture is unit-blind (see bindGlTexture), so a
+  // skip could upload into whatever is bound on the currently-active unit instead of `texture`.
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  runtime.currentTexture = texture;
   // Browsers pass canvas pixel data to Gl as straight (unmultiplied) alpha.
   // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);

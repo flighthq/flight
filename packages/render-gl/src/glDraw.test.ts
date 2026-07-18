@@ -207,6 +207,21 @@ describe('bindGlTexture', () => {
     expect(runtime.currentTexture).toBe(texture);
   });
 
+  it('rebinds a cached texture even when it is already current, for multi-unit correctness', () => {
+    // The same image reused as two maps (e.g. normal + metallic-roughness) is bound to two active
+    // units in a row; currentTexture is unit-blind, so a skip would leave the second unit unbound.
+    const { state, gl } = createGlState();
+    const img = document.createElement('img');
+    const texture = bindGlTexture(state, img);
+    const g = gl as unknown as { TEXTURE_2D: number };
+    const bindsBefore = (gl.bindTexture as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[1] === texture).length;
+    // currentTexture === texture here; the second bind (a different active unit in practice) must not skip.
+    bindGlTexture(state, img);
+    const bindsAfter = (gl.bindTexture as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[1] === texture).length;
+    expect(bindsAfter).toBe(bindsBefore + 1);
+    expect(gl.bindTexture).toHaveBeenLastCalledWith(g.TEXTURE_2D, texture);
+  });
+
   it('defaults both wrap modes to clamp-to-edge', () => {
     const { state, gl } = createGlState();
     bindGlTexture(state, document.createElement('img'));
@@ -501,12 +516,14 @@ describe('updateGlTexture', () => {
     expect(runtime.currentTexture).toBe(texture);
   });
 
-  it('skips bindTexture when texture is already current', () => {
+  it('rebinds even when the texture is already current (currentTexture is unit-blind)', () => {
     const { state, gl } = createGlState();
     const texture = {} as WebGLTexture;
     getGlRenderStateRuntime(state).currentTexture = texture;
     updateGlTexture(state, texture, document.createElement('canvas'));
-    expect(gl.bindTexture).not.toHaveBeenCalled();
+    // Never skip on currentTexture: the active unit may have changed since it was set, so uploading
+    // without rebinding could target the wrong texture.
+    expect(gl.bindTexture).toHaveBeenCalledWith((gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D, texture);
   });
 
   it('always calls texImage2D to upload canvas data', () => {
