@@ -1,11 +1,22 @@
+import { detectImageMimeType } from '@flighthq/image-codec';
+import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, isMesh, setSceneNodeTransform } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { Mesh, MeshGeometry, SceneNode, Skin } from '@flighthq/types';
+import type { Material, Mesh, MeshGeometry, SceneNode, Skin, Texture } from '@flighthq/types';
 
-import type { GltfBuffer, GltfComponentType, GltfDocument, GltfNode, GltfPrimitive } from './gltfSchema';
+import type {
+  GltfBuffer,
+  GltfComponentType,
+  GltfDocument,
+  GltfImage,
+  GltfMaterial,
+  GltfNode,
+  GltfPrimitive,
+  GltfTextureInfo,
+} from './gltfSchema';
 
 // Parses a binary glTF (`.glb`) container into a Scene. The 12-byte header (magic `glTF`, version,
 // length) is validated, then the chunk stream is walked to extract the embedded JSON document and the
@@ -25,8 +36,8 @@ export function createSceneFromGlb(bytes: Readonly<Uint8Array>, warnings?: strin
 // canonical PBR vertex layout (or the skinned layout when JOINTS_0/WEIGHTS_0 are present); skins
 // (joint hierarchy + inverse-bind matrices bound to the mesh via `mesh.skin`); every `primitives[]`
 // entry of a mesh (multi-primitive → sub-mesh children); strided (`byteStride`) and normalized-integer
-// accessors. Not yet imported (return to these): materials/textures, animations, sparse accessors, and
-// external (`.bin`) buffer URIs.
+// accessors; materials (metallic-roughness PBR → StandardPbrMaterial, textures as Unresolved refs).
+// Not yet imported (return to these): animations, sparse accessors, and external (`.bin`) buffer URIs.
 export function createSceneFromGltf(source: GltfDocument | string, warnings?: string[]): Scene {
   let doc: GltfDocument;
   if (typeof source === 'string') {
@@ -86,9 +97,21 @@ function buildSceneFromGltfDocument(
     mesh.primitives.map((primitive) => primitiveToGeometry(doc, buffers, primitive, warnings)),
   );
 
+  // Resolve each glTF material to a StandardPbrMaterial once (memoized by index), then map each mesh's
+  // primitives to the material each references. glTF's shading model is metallic-roughness PBR, so it
+  // decodes to StandardPbrMaterial rather than the Blinn-Phong the classic formats use.
+  const resolvedMaterials = (doc.materials ?? []).map((material) => gltfMaterialToPbr(doc, buffers, material));
+  const meshMaterials = (doc.meshes ?? []).map((mesh) =>
+    mesh.primitives.map((primitive) =>
+      primitive.material !== undefined ? (resolvedMaterials[primitive.material] ?? null) : null,
+    ),
+  );
+
   const gltfNodes = doc.nodes ?? [];
   const sceneNodes: SceneNode[] = gltfNodes.map((node) =>
-    node.mesh !== undefined ? buildMeshSceneNode(meshGeometries[node.mesh]) : createSceneNode(),
+    node.mesh !== undefined
+      ? buildMeshSceneNode(meshGeometries[node.mesh], meshMaterials[node.mesh])
+      : createSceneNode(),
   );
 
   for (let i = 0; i < gltfNodes.length; i++) {
@@ -184,14 +207,109 @@ function buildGltfSkin(
 
 // Turns a mesh's per-primitive geometries into a scene node. A single-primitive mesh becomes the Mesh
 // node directly; a multi-primitive mesh becomes a transform-only group with one child Mesh per
-// primitive (each an independent drawable, so multi-material meshes keep every subset).
-function buildMeshSceneNode(geometries: readonly MeshGeometry[] | undefined): SceneNode {
+// primitive (each an independent drawable, so multi-material meshes keep every subset). Each primitive
+// carries the StandardPbrMaterial it references (empty when the primitive names no material).
+function buildMeshSceneNode(
+  geometries: readonly MeshGeometry[] | undefined,
+  materials: readonly (Material | null)[] | undefined,
+): SceneNode {
   if (geometries === undefined || geometries.length === 0) return createSceneNode();
-  if (geometries.length === 1) return createMesh(geometries[0], []) as unknown as SceneNode;
+  const materialsFor = (i: number): Material[] => {
+    const material = materials?.[i] ?? null;
+    return material !== null ? [material] : [];
+  };
+  if (geometries.length === 1) return createMesh(geometries[0], materialsFor(0)) as unknown as SceneNode;
   const group = createSceneNode();
   for (let i = 0; i < geometries.length; i++)
-    addNodeChild(group, createMesh(geometries[i], []) as unknown as SceneNode);
+    addNodeChild(group, createMesh(geometries[i], materialsFor(i)) as unknown as SceneNode);
   return group;
+}
+
+// Converts a glTF material to Flight's StandardPbrMaterial — glTF's own metallic-roughness model. The
+// pbrMetallicRoughness factors/textures, the normal/occlusion/emissive channels, and the alpha mode
+// map field-for-field; absent factors take the spec defaults. Textures resolve to Unresolved refs
+// (the parser references, it does not decode). This is the faithful decode: glTF is natively PBR, so
+// unlike the classic formats it is NOT reinterpreted into another shading model.
+function gltfMaterialToPbr(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  material: Readonly<GltfMaterial>,
+): Material {
+  const pbr = material.pbrMetallicRoughness ?? {};
+  const result = createStandardPbrMaterial({
+    baseColor: packGltfColor(pbr.baseColorFactor ?? [1, 1, 1, 1], 4),
+    baseColorMap: resolveGltfTexture(doc, buffers, pbr.baseColorTexture),
+    emissive: packGltfColor(material.emissiveFactor ?? [0, 0, 0], 3),
+    emissiveMap: resolveGltfTexture(doc, buffers, material.emissiveTexture),
+    metallic: pbr.metallicFactor ?? 1,
+    metallicRoughnessMap: resolveGltfTexture(doc, buffers, pbr.metallicRoughnessTexture),
+    normalMap: resolveGltfTexture(doc, buffers, material.normalTexture),
+    normalScale: material.normalTexture?.scale ?? 1,
+    occlusionMap: resolveGltfTexture(doc, buffers, material.occlusionTexture),
+    occlusionStrength: material.occlusionTexture?.strength ?? 1,
+    roughness: pbr.roughnessFactor ?? 1,
+  });
+  result.alphaMode = material.alphaMode === 'MASK' ? 'mask' : material.alphaMode === 'BLEND' ? 'blend' : 'opaque';
+  result.alphaCutoff = material.alphaCutoff ?? 0.5;
+  result.doubleSided = material.doubleSided ?? false;
+  return result as unknown as Material;
+}
+
+// Resolves a glTF material texture reference to a Flight Texture carrying an Unresolved resource ref:
+// a `data:` URI or bufferView-embedded image becomes an Embedded ref (bytes in hand), an external URI
+// becomes an External ref. Returns null when the reference or its image cannot be resolved.
+function resolveGltfTexture(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  info: Readonly<GltfTextureInfo> | undefined,
+): Texture | null {
+  if (info === undefined) return null;
+  const source = doc.textures?.[info.index]?.source;
+  if (source === undefined) return null;
+  const image = doc.images?.[source];
+  if (image === undefined) return null;
+  return gltfImageToTexture(doc, buffers, image);
+}
+
+// Builds a Texture from a glTF image: a `data:` URI decodes its base64 payload to an Embedded ref
+// (MIME from the URI header, the declared `mimeType`, or sniffed from the bytes); an external URI
+// becomes an External ref; a bufferView slices the encoded bytes out of its buffer as an Embedded ref.
+function gltfImageToTexture(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  image: Readonly<GltfImage>,
+): Texture | null {
+  if (image.uri !== undefined) {
+    if (image.uri.startsWith('data:')) {
+      const comma = image.uri.indexOf(',');
+      if (comma < 0) return null;
+      const semicolon = image.uri.indexOf(';');
+      const declared = semicolon > 5 ? image.uri.slice(5, semicolon) : (image.mimeType ?? null);
+      const bytes = decodeBase64(image.uri.slice(comma + 1));
+      return createEmbeddedTextureRef(bytes, declared ?? detectImageMimeType(bytes));
+    }
+    return createExternalTextureRef(image.uri);
+  }
+  if (image.bufferView !== undefined) {
+    const bufferView = doc.bufferViews?.[image.bufferView];
+    const buffer = bufferView !== undefined ? buffers[bufferView.buffer] : undefined;
+    if (bufferView === undefined || buffer === undefined) return null;
+    const start = bufferView.byteOffset ?? 0;
+    const bytes = buffer.slice(start, start + bufferView.byteLength);
+    return createEmbeddedTextureRef(bytes, image.mimeType ?? detectImageMimeType(bytes));
+  }
+  return null;
+}
+
+// Packs the first `channels` of a glTF sRGB-space color factor (each in [0,1]) into a 0xRRGGBBAA
+// integer. With 3 channels alpha is forced opaque; with 4 the 4th is the alpha.
+function packGltfColor(factor: readonly number[], channels: number): number {
+  const clamp = (value: number | undefined): number => Math.round(Math.min(1, Math.max(0, value ?? 0)) * 0xff);
+  const r = clamp(factor[0]);
+  const g = clamp(factor[1]);
+  const b = clamp(factor[2]);
+  const a = channels === 4 ? clamp(factor[3]) : 0xff;
+  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
 // Decodes a buffer into bytes. A `data:` URI base64-decodes; a buffer with no `uri` is backed by the
@@ -526,4 +644,10 @@ const GLB_CHUNK_HEADER_BYTES = 8;
 
 // The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share,
 // plus the skinned record's floats-per-vertex — the same constants every scene-formats importer emits.
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, SKINNED_FLOATS_PER_VERTEX } from './shared';
+import {
+  CANONICAL_FLOATS_PER_VERTEX,
+  CANONICAL_LAYOUT,
+  createEmbeddedTextureRef,
+  createExternalTextureRef,
+  SKINNED_FLOATS_PER_VERTEX,
+} from './shared';
