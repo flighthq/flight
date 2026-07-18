@@ -2,7 +2,7 @@ import { createCamera } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
-import { createScene } from '@flighthq/scene';
+import { createScene, setSceneNodePosition } from '@flighthq/scene';
 import type { ParticleEmitter3D, SceneLights } from '@flighthq/types';
 
 import { destroyGlParticleEmitter3DShader, drawGlSceneParticleEmitters } from './glParticleEmitter3D';
@@ -101,6 +101,42 @@ describe('drawGlSceneParticleEmitters', () => {
     const draw = gl.calls.find((c) => c.name === 'drawElementsInstanced');
     expect(draw).toBeDefined();
     expect(draw!.args[4]).toBe(5);
+  });
+
+  it('applies the emitter node world transform for local-space particles', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    const emitter = makeEmitterWithParticles(1);
+    emitter.data.transforms[0] = 1;
+    emitter.data.transforms[1] = 2;
+    emitter.data.positionsZ[0] = 3;
+    setSceneNodePosition(emitter, 10, 20, 30);
+    addNodeChild(scene, emitter);
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const instanceData = gl.calls.find((c) => c.name === 'bufferSubData')!.args[2] as Float32Array;
+    // Local particles ride the emitter node: local (1,2,3) + node translation (10,20,30).
+    expect(instanceData[0]).toBeCloseTo(11);
+    expect(instanceData[1]).toBeCloseTo(22);
+    expect(instanceData[2]).toBeCloseTo(33);
+  });
+
+  it('skips the node world transform for world-space particles already baked into world coordinates', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    const emitter = makeEmitterWithParticles(1);
+    emitter.data.transforms[0] = 1;
+    emitter.data.transforms[1] = 2;
+    emitter.data.positionsZ[0] = 3;
+    setSceneNodePosition(emitter, 10, 20, 30);
+    emitter.data.worldSpace = true;
+    addNodeChild(scene, emitter);
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const instanceData = gl.calls.find((c) => c.name === 'bufferSubData')!.args[2] as Float32Array;
+    // World-space particles already hold world coordinates, so the node translation must NOT be
+    // re-applied: the instance position stays at the baked (1,2,3).
+    expect(instanceData[0]).toBeCloseTo(1);
+    expect(instanceData[1]).toBeCloseTo(2);
+    expect(instanceData[2]).toBeCloseTo(3);
   });
 
   it('compiles the shader program on first call', () => {
