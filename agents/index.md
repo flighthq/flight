@@ -142,7 +142,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 **Skills** (`.claude/skills/`) — procedures, _invoked to do_. Claude Code surfaces these by intent; each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
 
 - [`functional-test`](../.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test: the current `createFunctionalTarget` single-`app.ts` pattern, the `kinds` declaration, the optional pixel oracle, and the capture→baseline loop.
-- [`visual-capture`](../.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples and functional tests; watch mode; screenshot baselines; and reading the `screenshot.png` / `logs.jsonl` / `status.json` output.
+- [`visual-capture`](../.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples, functional tests, and the external reference examples (`npm run capture:reference -- --filter <name>`, which auto-clones `flight-reference`); watch mode; screenshot baselines; and reading the `screenshot.png` / `logs.jsonl` / `status.json` output.
 
 ## Core Patterns
 

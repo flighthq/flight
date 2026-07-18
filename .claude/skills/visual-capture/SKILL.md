@@ -1,11 +1,11 @@
 ---
 name: visual-capture
-description: Capture screenshots and structured logs from Flight examples and functional tests, then read them back to verify rendering. Use when you need to SEE what a renderer drew (debug a visual bug, confirm a change looks right across backends), set or update a screenshot baseline, or interpret the screenshot.png / logs.jsonl / status.json output files. Covers one-shot capture, watch mode, baselines, and emitting logs from a scene.
+description: Capture screenshots and structured logs from Flight examples, functional tests, and the external reference examples (the OpenFL/Starling/AwayJS ports in the flight-reference repo), then read them back to verify rendering. Use when you need to SEE what a renderer drew (debug a visual bug, confirm a change looks right across backends, "test/capture the <name> reference example"), set or update a screenshot baseline, or interpret the screenshot.png / logs.jsonl / status.json output files. Covers one-shot capture, reference-example capture (auto-clones flight-reference), watch mode, baselines, and emitting logs from a scene.
 ---
 
 # Visual capture and agent feedback
 
-Two scripts turn examples and functional tests into screenshot + log output an agent can read directly. They require Playwright browsers (`npx playwright install chromium`) and a running Vite server (the scripts auto-start one unless `--url` is given). The tool name is `examples` or `functional`.
+These scripts turn examples, functional tests, and reference examples into screenshot + log output an agent can read directly. They run **in the agent sandbox** — Playwright installs and drives a headless browser here, no host needed; only _live_ viewing in a real browser (the `dev:*` servers) is for a human. They require Playwright Chromium (`npx playwright install chromium`, plus `sudo npx playwright install-deps chromium` on Linux) and a Vite server (auto-started unless `--url` is given). For the built-in tools the tool name is `examples` or `functional`; the external corpus is `reference` (below).
 
 ## One-shot capture
 
@@ -16,14 +16,30 @@ npm run capture:functional [-- --filter=name]
 
 `capture:<tool>` navigates to each matching entry, waits two animation frames, screenshots, collects logs, and exits. Output lands in `tools/output/{tool}/{name}/{renderer}/`.
 
-## Watch capture (host only — requires Playwright)
+## Reference examples (external OpenFL/Starling/AwayJS corpus)
+
+The reference examples live in a **separate** repo (`flight-reference`), not in this tree. When asked to "test/capture the `<name>` reference example" (e.g. `load-3ds`, `md5-animation`, `awd-suzanne`), use this — one command clones, builds against the local SDK, captures, and drops a PNG you read back:
+
+```
+npm run capture:reference -- --filter <name>   [--frames 2] [--fail-on-error] [--update-baseline] [--refresh]
+npm run list:reference                          # print the case names you can filter on
+```
+
+- **First run auto-clones + installs** `flight-reference` into `.cache/flight-reference` (needs network + a few minutes); later runs reuse it. Pass `--refresh` to pull latest and reinstall.
+- It starts flight-reference's Vite dev server pointed at **this** monorepo's source (`FLIGHT_REPO`), enumerates every framework/corpus/case with a Flight port, and captures the ones matching `--filter` (substring of `framework/corpus/case`, so `load-3ds` matches `awayjs/examples/basic-load-3ds`). Omit `--filter` to capture all.
+- **Prerequisite:** Playwright Chromium — `npx playwright install chromium` and, on Linux, `sudo npx playwright install-deps chromium`. If it's missing the command tells you and exits.
+- **Output** lands under `.artifacts/reference/{framework}/{corpus}/{case}/{renderer}/` (gitignored) — `screenshot.png` + `status.json`, same shape as below. Read the PNG with the `Read` tool.
+- **3D scenes** read back the WebGL frame in-page (via a registered functional target), which is why a headless/Docker capture isn't a black rectangle. If a 3D reference case _does_ come back black, that case likely hasn't registered a functional target yet (the shared `scene3d.ts` and the inline-GL apps each publish one) — that's a flight-reference-side gap, not a capture failure.
+- To view it live in a real browser instead (for a human — the agent uses capture): `npm run dev:reference -- <case>`.
+
+## Watch capture (long-running — requires Playwright)
 
 ```
 npm run capture:examples:watch [-- --filter=name --renderer=webgl]
 npm run capture:functional:watch
 ```
 
-`capture:<tool>:watch` does an initial capture of all matched entries, then watches source files and re-captures on change (800 ms debounce). An agent in a sandbox just reads the output files as they update — no polling, no watch loop in the agent.
+`capture:<tool>:watch` does an initial capture of all matched entries, then watches source files and re-captures on change (800 ms debounce). Run it as a background process (in the sandbox or on a host) and just read the output files as they update — no polling, no watch loop in the agent.
 
 ## Baselines
 
