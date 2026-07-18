@@ -167,8 +167,11 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
   });
 }
 
-// The root npm script that starts each tool's dev server, used in the manual-start tip.
+// The root npm script that starts each tool's dev server, used in the manual-start tip. 'reference'
+// runs its own dev server (flight-reference's Vite) via the reference-capture runner, not resolveServer,
+// so its entry is only here to satisfy the Tool map.
 const DEV_SCRIPT: Record<Tool, string> = {
   examples: 'dev:examples',
   functional: 'dev:functional',
+  reference: 'dev:reference',
 };

@@ -7,11 +7,18 @@ import { join } from 'node:path';
 import { discoverFunctionalScenes } from './functionalScenes.js';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-export type Tool = 'examples' | 'functional';
+// 'examples'/'functional' are the monorepo's own subjects (discoverEntries enumerates them). 'reference'
+// is an external subject (the flight-reference harness) whose entries are supplied by the caller with an
+// explicit `route`; it is a namespace for output/baseline paths, not something discoverEntries walks.
+export type Tool = 'examples' | 'functional' | 'reference';
 
 export interface Entry {
   name: string;
   renderers: string[];
+  // When set, overrides the tool-based URL construction: captureEntry loads `${baseUrl}/${route(renderer)}`.
+  // This is what lets an external subject (flight-reference's framework/corpus/case routes) reuse the same
+  // hardened capture path as the monorepo's flat examples/functional routes.
+  route?: (renderer: string) => string;
 }
 
 // A backend the environment cannot provide or sustain: WebGPU with no adapter/device, or a software
@@ -25,6 +32,9 @@ export const BACKEND_UNAVAILABLE =
   /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter|WebGPU is not supported|external Instance reference no longer exists|device (was )?lost|device is lost/i;
 
 export function discoverEntries(tool: Tool, root: string): Entry[] {
+  // 'reference' entries come from the external flight-reference harness (the reference runner supplies
+  // them with routes), not from a directory walk here.
+  if (tool === 'reference') return [];
   // Functional scenes are flat files under functional/scenes/; the shared discovery is the single
   // source of truth (also used by tools/functional/vite.config.ts).
   if (tool === 'functional') return discoverFunctionalScenes(join(root, 'functional', 'scenes'));

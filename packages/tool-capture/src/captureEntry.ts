@@ -69,6 +69,12 @@ export interface CaptureEntryOptions {
    * identifies its entry: `entry.name/renderer` rather than just `renderer`.
    */
   displayLabel?: string;
+  /**
+   * Forces (true) or disables (false) the in-page render-verification wait + surface readback. Defaults
+   * to `tool === 'functional'`. An external subject (reference) sets it true once its pages register a
+   * functional target, so its WebGL captures read the fingerprinted surface instead of a black canvas.
+   */
+  verify?: boolean;
 }
 
 export interface ParallelCaptureOptions {
@@ -84,6 +90,7 @@ export interface ParallelCaptureOptions {
   captureFrames?: number;
   failOnError?: boolean;
   isAborted?: () => boolean;
+  verify?: boolean;
   /** Number of Playwright pages to run concurrently. Default: 6. */
   workerCount?: number;
 }
@@ -126,6 +133,10 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     isAborted = () => false,
   } = opts;
   const { displayLabel } = opts;
+  // The in-page render verifier drives the surface readback (__ftRenderImage) that avoids Docker's
+  // compositor-only black WebGL screenshots. It is implicit for the functional tool; an external subject
+  // (reference) opts in via `verify` once its pages register a functional target.
+  const verify = opts.verify ?? tool === 'functional';
   let anyFailed = false;
   let anyChanged = false;
 
@@ -141,8 +152,9 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   for (const renderer of renderers) {
     // Stop launching pages once an interrupt has begun; the partial result is reported by the caller.
     if (isAborted()) break;
-    const urlPath =
-      tool === 'examples'
+    const urlPath = entry.route
+      ? entry.route(renderer)
+      : tool === 'examples'
         ? `examples/${entry.name}/${routeSegment(renderer)}/`
         : tool === 'functional'
           ? `tests/${entry.name}/${routeSegment(renderer)}/`
@@ -229,7 +241,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
       if (extraWait > 0) await page.waitForTimeout(extraWait);
 
-      const waitsForVerification = tool === 'functional';
+      const waitsForVerification = verify;
       if (waitsForVerification) await waitForRenderVerification(page);
 
       // Screenshot the render output only — not the full viewport — so all renderers produce the same
@@ -447,6 +459,7 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
         extraWait: opts.extraWait,
         captureFrames: opts.captureFrames,
         failOnError: opts.failOnError,
+        verify: opts.verify,
         isAborted: () => isAborted(),
       });
 

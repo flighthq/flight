@@ -164,11 +164,16 @@ if (!mode) {
 
 if (!ensureCheckout(refresh)) process.exit(1);
 
-// Capture also needs the tool-capture harness pointed at this monorepo (see ensureToolCaptureLink)
-// and a working Playwright browser — flag a missing install before starting the dev server.
+// Capture runs THIS monorepo's reference-capture runner (scripts/reference-capture.ts) — which starts
+// flight-reference's dev server and drives the shared tool-capture path — rather than flight-reference's
+// own capture script, so the hardened capture machinery lives here and improves for every subject at
+// once. Needs the tool-capture harness link (for the Vite @ft/* aliases) and a Playwright browser.
 if (modeName === 'capture') {
   ensureToolCaptureLink();
   if (!checkCapturePrereqs()) process.exit(1);
+  const runner = join(repoRoot, 'scripts', 'reference-capture.ts');
+  const exitCode = run('npx', ['tsx', runner, ...forwarded], repoRoot, { FLIGHT_REFERENCE_CHECKOUT: checkoutDir });
+  process.exit(exitCode);
 }
 
 // `dev` with no case opens flight-reference's browse gallery instead of erroring on a missing case.
