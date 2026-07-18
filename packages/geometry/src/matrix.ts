@@ -518,7 +518,8 @@ export function setMatrixFromFloat32Array(out: MatrixLike, offset: number, sourc
 
 export function setMatrixFromMatrix3(out: MatrixLike, source: Readonly<Matrix3Like>): void {
   const m = source.m;
-  setMatrix(out, m[0], m[1], m[3], m[4], m[2], m[5]);
+  // Column-major Matrix3: a=(0,0)=m[0], b=(0,1)=m[3], c=(1,0)=m[1], d=(1,1)=m[4], tx=(0,2)=m[6], ty=(1,2)=m[7].
+  setMatrix(out, m[0], m[3], m[1], m[4], m[6], m[7]);
 }
 
 export function setMatrixFromMatrix4(out: MatrixLike, source: Readonly<Matrix4Like>): void {

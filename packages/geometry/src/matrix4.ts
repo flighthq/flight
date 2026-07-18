@@ -987,9 +987,11 @@ export function setMatrix4FromMatrix(out: Matrix4Like, source: Readonly<MatrixLi
 export function setMatrix4FromMatrix3(out: Matrix4Like, source: Readonly<Matrix3Like>): void {
   const _out = out.m;
   const _source = source.m;
-  setMatrix4From2D(out, _source[0], _source[1], _source[3], _source[4], _source[2], _source[5]);
-  _out[2] = _source[6];
-  _out[6] = _source[7];
+  // Column-major Matrix3: linear/translation via (0,0),(0,1),(1,0),(1,1),(0,2),(1,2), then the bottom
+  // row (2,0),(2,1),(2,2) into Matrix4's z row.
+  setMatrix4From2D(out, _source[0], _source[3], _source[1], _source[4], _source[6], _source[7]);
+  _out[2] = _source[2];
+  _out[6] = _source[5];
   _out[10] = _source[8];
 }
 

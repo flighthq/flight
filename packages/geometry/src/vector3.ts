@@ -434,8 +434,8 @@ export function subtractVector3(out: Vector3Like, source: Readonly<Vector3Like>,
 }
 
 /**
- * Transforms a Vector3Like by a Matrix3 (column-major, row-major storage).
- * Useful for transforming normals by a normal matrix.
+ * Transforms a Vector3Like by a Matrix3 (column-major storage). Useful for transforming normals by a
+ * normal matrix.
  *
  * Safe when `out` aliases `source`.
  */
@@ -448,9 +448,9 @@ export function transformVector3ByMatrix3(
   const x = source.x,
     y = source.y,
     z = source.z;
-  out.x = m[0] * x + m[1] * y + m[2] * z;
-  out.y = m[3] * x + m[4] * y + m[5] * z;
-  out.z = m[6] * x + m[7] * y + m[8] * z;
+  out.x = m[0] * x + m[3] * y + m[6] * z;
+  out.y = m[1] * x + m[4] * y + m[7] * z;
+  out.z = m[2] * x + m[5] * y + m[8] * z;
 }
 
 /**
