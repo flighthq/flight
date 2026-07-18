@@ -71,6 +71,20 @@ describe('compactParticleEmitter3D', () => {
     expect(emitter.data.transforms[4]).toBe(30);
   });
 
+  it('carries the Z velocity lane when sliding survivors down', () => {
+    const emitter = createParticleEmitter3D();
+    appendParticleEmitter3DParticle(emitter, 1, 0, 0, 0, 0, 1);
+    appendParticleEmitter3DParticle(emitter, 2, 0, 0, 0, 0, 1);
+    setParticleEmitter3DParticleVelocity(emitter, 1, 4, 5, 6);
+    emitter.data.ids[0] = PARTICLE_EMITTER_3D_DELETED_ID;
+    compactParticleEmitter3D(emitter);
+    const out = { x: 0, y: 0, z: 0 };
+    getParticleEmitter3DParticleVelocity(out, emitter, 0);
+    expect(out.x).toBeCloseTo(4);
+    expect(out.y).toBeCloseTo(5);
+    expect(out.z).toBeCloseTo(6);
+  });
+
   it('no-ops on empty emitter', () => {
     const emitter = createParticleEmitter3D();
     compactParticleEmitter3D(emitter);
@@ -148,19 +162,20 @@ describe('getParticleEmitter3DParticleId', () => {
 });
 
 describe('getParticleEmitter3DParticleVelocity', () => {
-  it('writes velocity into out', () => {
+  it('writes the full 3D velocity into out', () => {
     const emitter = createParticleEmitter3D();
     appendParticleEmitter3DParticle(emitter, 1, 0, 0, 0, 0, 1);
-    setParticleEmitter3DParticleVelocity(emitter, 0, 3.5, -2.1);
-    const out = { x: 0, y: 0 };
+    setParticleEmitter3DParticleVelocity(emitter, 0, 3.5, -2.1, 7.7);
+    const out = { x: 0, y: 0, z: 0 };
     expect(getParticleEmitter3DParticleVelocity(out, emitter, 0)).toBe(true);
     expect(out.x).toBeCloseTo(3.5);
     expect(out.y).toBeCloseTo(-2.1);
+    expect(out.z).toBeCloseTo(7.7);
   });
 
   it('returns false for out-of-range', () => {
     const emitter = createParticleEmitter3D();
-    const out = { x: 0, y: 0 };
+    const out = { x: 0, y: 0, z: 0 };
     expect(getParticleEmitter3DParticleVelocity(out, emitter, 0)).toBe(false);
   });
 });
@@ -190,11 +205,16 @@ describe('removeParticleEmitter3DParticle', () => {
     appendParticleEmitter3DParticle(emitter, 1, 10, 0, 5, 0, 1);
     appendParticleEmitter3DParticle(emitter, 2, 20, 0, 15, 0, 1);
     appendParticleEmitter3DParticle(emitter, 3, 30, 0, 25, 0, 1);
+    setParticleEmitter3DParticleVelocity(emitter, 2, 7, 8, 9);
     removeParticleEmitter3DParticle(emitter, 0);
     expect(emitter.data.particleCount).toBe(2);
     expect(emitter.data.ids[0]).toBe(3);
     expect(emitter.data.transforms[0]).toBe(30);
     expect(emitter.data.positionsZ[0]).toBe(25);
+    // the swapped-in last particle keeps its full 3D velocity, Z included.
+    const out = { x: 0, y: 0, z: 0 };
+    getParticleEmitter3DParticleVelocity(out, emitter, 0);
+    expect(out.z).toBeCloseTo(9);
   });
 
   it('no-ops on out-of-range index', () => {
@@ -213,7 +233,7 @@ describe('reserveParticleEmitter3D', () => {
     expect(emitter.data.alphas.length).toBeGreaterThanOrEqual(100);
     expect(emitter.data.transforms.length).toBeGreaterThanOrEqual(400);
     expect(emitter.data.positionsZ.length).toBeGreaterThanOrEqual(100);
-    expect(emitter.data.velocities.length).toBeGreaterThanOrEqual(200);
+    expect(emitter.data.velocities.length).toBeGreaterThanOrEqual(300);
     expect(emitter.data.colors.length).toBeGreaterThanOrEqual(300);
   });
 
@@ -272,18 +292,19 @@ describe('setParticleEmitter3DParticleColor', () => {
 });
 
 describe('setParticleEmitter3DParticleVelocity', () => {
-  it('sets velocity for a valid index', () => {
+  it('sets the full 3D velocity for a valid index', () => {
     const emitter = createParticleEmitter3D();
     appendParticleEmitter3DParticle(emitter, 1, 0, 0, 0, 0, 1);
-    setParticleEmitter3DParticleVelocity(emitter, 0, 5.5, -3.2);
+    setParticleEmitter3DParticleVelocity(emitter, 0, 5.5, -3.2, 9.1);
     const vt = 0;
     expect(emitter.data.velocities[vt]).toBeCloseTo(5.5);
     expect(emitter.data.velocities[vt + 1]).toBeCloseTo(-3.2);
+    expect(emitter.data.velocities[vt + 2]).toBeCloseTo(9.1);
   });
 
   it('no-ops on out-of-range', () => {
     const emitter = createParticleEmitter3D();
-    setParticleEmitter3DParticleVelocity(emitter, 0, 1, 2);
+    setParticleEmitter3DParticleVelocity(emitter, 0, 1, 2, 3);
     expect(emitter.data.particleCount).toBe(0);
   });
 });
