@@ -230,6 +230,9 @@ function drawParticleEmitter3DNode(
 
   const worldMatrix = getNodeWorldTransformMatrix4(emitter as unknown as SceneNode) as Matrix4;
   const wm = worldMatrix.m;
+  // World-space particles are already baked into world coordinates at spawn (see updateParticleEmitter3D),
+  // so they must NOT be re-transformed by the emitter's world matrix here.
+  const worldSpace = data.worldSpace;
 
   const instanceData = shader.instanceData;
   let base = 0;
@@ -243,9 +246,9 @@ function drawParticleEmitter3DNode(
     const scale = transforms[tt + 3];
     const lz = positionsZ[i];
 
-    const wx = wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12];
-    const wy = wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13];
-    const wz = wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14];
+    const wx = worldSpace ? lx : wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12];
+    const wy = worldSpace ? ly : wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13];
+    const wz = worldSpace ? lz : wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14];
 
     const cosR = Math.cos(rotation) * scale;
     const sinR = Math.sin(rotation) * scale;
