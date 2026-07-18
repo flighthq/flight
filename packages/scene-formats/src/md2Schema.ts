@@ -10,6 +10,9 @@ export const MD2_VERSION = 8;
 // Fixed header size in bytes: 17 int32 fields = 68 bytes.
 export const MD2_HEADER_SIZE = 68;
 
+// Bytes per skin record: a fixed 64-byte null-padded ASCII texture path.
+export const MD2_SKIN_SIZE = 64;
+
 // Bytes per triangle record: 3 uint16 vertex indices + 3 uint16 texcoord indices = 12 bytes.
 export const MD2_TRIANGLE_SIZE = 12;
 

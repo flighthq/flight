@@ -1,8 +1,9 @@
+import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
-import type { SceneNode } from '@flighthq/types';
+import type { Material, SceneNode } from '@flighthq/types';
 
 import {
   MD2_ANORMS,
@@ -10,11 +11,17 @@ import {
   MD2_FRAME_HEADER_SIZE,
   MD2_HEADER_SIZE,
   MD2_MAGIC,
+  MD2_SKIN_SIZE,
   MD2_TEXCOORD_SIZE,
   MD2_TRIANGLE_SIZE,
   MD2_VERSION,
 } from './md2Schema';
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, convertPositionsZUpToYUp } from './shared';
+import {
+  CANONICAL_FLOATS_PER_VERTEX,
+  CANONICAL_LAYOUT,
+  convertPositionsZUpToYUp,
+  createExternalTextureRef,
+} from './shared';
 
 // Parses an id Software MD2 (Quake 2) binary model into a Scene. The first animation frame (frame 0)
 // is imported as a single Mesh node; subsequent frames are ignored. Compressed vertices are
@@ -49,10 +56,12 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
 
   const skinWidth = view.getInt32(8, true);
   const skinHeight = view.getInt32(12, true);
+  const numSkins = view.getInt32(20, true);
   const numVertices = view.getInt32(24, true);
   const numTexCoords = view.getInt32(28, true);
   const numTriangles = view.getInt32(32, true);
   const numFrames = view.getInt32(40, true);
+  const offSkins = view.getInt32(44, true);
   const offTexCoords = view.getInt32(48, true);
   const offTriangles = view.getInt32(52, true);
   const offFrames = view.getInt32(56, true);
@@ -170,12 +179,37 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
   convertPositionsZUpToYUp(interleavedVertices, CANONICAL_FLOATS_PER_VERTEX, 0);
   convertPositionsZUpToYUp(interleavedVertices, CANONICAL_FLOATS_PER_VERTEX, 3);
 
+  // MD2 has no lighting-model parameters — its material is the skin: a texture path. Decode the first
+  // skin (models commonly carry exactly one) to a BlinnPhongMaterial whose diffuseMap references that
+  // path; MD2's own shading is diffuse-textured. Extra skins are alternate textures for the same mesh,
+  // not additional materials, so only the first is attached.
+  const materials: Material[] = [];
+  if (numSkins >= 1 && offSkins + MD2_SKIN_SIZE <= bytes.length) {
+    const skinName = readMd2SkinName(bytes, offSkins);
+    if (skinName.length > 0) {
+      materials.push(
+        createBlinnPhongMaterial({ diffuseMap: createExternalTextureRef(skinName) }) as unknown as Material,
+      );
+    }
+  }
+
   const scene = createScene();
   const vertices = new Float32Array(interleavedVertices);
   const indexArray = Uint32Array.from(indices);
   const geometry = createMeshGeometry({ indices: indexArray, layout: CANONICAL_LAYOUT, vertices });
-  const meshNode = createMesh(geometry, []) as unknown as SceneNode;
+  const meshNode = createMesh(geometry, materials) as unknown as SceneNode;
   addNodeChild(scene, meshNode);
 
   return scene;
+}
+
+// Reads a fixed 64-byte null-padded ASCII skin path record starting at `offset`, stopping at the
+// first null terminator.
+function readMd2SkinName(bytes: Readonly<Uint8Array>, offset: number): string {
+  const limit = offset + MD2_SKIN_SIZE;
+  let end = offset;
+  while (end < limit && bytes[end] !== 0) end++;
+  let name = '';
+  for (let i = offset; i < end; i++) name += String.fromCharCode(bytes[i]);
+  return name;
 }

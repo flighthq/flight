@@ -7,7 +7,8 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Mesh, SceneNode } from '@flighthq/types';
+import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { createSceneFromMd2 } from './md2Parse';
 import { MD2_ANORMS } from './md2Schema';
@@ -19,6 +20,7 @@ function buildMd2(options: {
   magic?: number;
   numFrames?: number;
   scale?: readonly [number, number, number];
+  skin?: string;
   skinHeight?: number;
   skinWidth?: number;
   texCoords: readonly { s: number; t: number }[];
@@ -34,6 +36,7 @@ function buildMd2(options: {
     magic = 0x32504449,
     numFrames = 1,
     scale = [1, 1, 1],
+    skin,
     skinHeight = 64,
     skinWidth = 64,
     texCoords,
@@ -45,9 +48,11 @@ function buildMd2(options: {
   const numVertices = compressedVertices.length;
   const numTexCoords = texCoords.length;
   const numTriangles = triangles.length;
+  const numSkins = skin !== undefined ? 1 : 0;
 
-  // Compute offsets: header(68) + texcoords + triangles + frame(s).
-  const offTexCoords = 68;
+  // Compute offsets: header(68) + skins + texcoords + triangles + frame(s).
+  const offSkins = 68;
+  const offTexCoords = offSkins + numSkins * 64;
   const offTriangles = offTexCoords + numTexCoords * 4;
   const frameSize = 40 + numVertices * 4;
   const offFrames = offTriangles + numTriangles * 12;
@@ -63,18 +68,23 @@ function buildMd2(options: {
   view.setInt32(8, skinWidth, true);
   view.setInt32(12, skinHeight, true);
   view.setInt32(16, frameSize, true);
-  view.setInt32(20, 0, true); // numSkins
+  view.setInt32(20, numSkins, true);
   view.setInt32(24, numVertices, true);
   view.setInt32(28, numTexCoords, true);
   view.setInt32(32, numTriangles, true);
   view.setInt32(36, 0, true); // numGlCommands
   view.setInt32(40, numFrames, true);
-  view.setInt32(44, 0, true); // offSkins
+  view.setInt32(44, numSkins > 0 ? offSkins : 0, true);
   view.setInt32(48, offTexCoords, true);
   view.setInt32(52, offTriangles, true);
   view.setInt32(56, offFrames, true);
   view.setInt32(60, 0, true); // offGlCommands
   view.setInt32(64, offEnd, true);
+
+  // Skin record: a 64-byte null-padded ASCII path.
+  if (skin !== undefined) {
+    for (let i = 0; i < skin.length && i < 63; i++) bytes[offSkins + i] = skin.charCodeAt(i);
+  }
 
   // Texcoords: int16 s, int16 t.
   for (let i = 0; i < numTexCoords; i++) {
@@ -199,6 +209,50 @@ describe('createSceneFromMd2', () => {
     expect(p.x).toBeCloseTo(6, 5);
     expect(p.y).toBeCloseTo(18, 5);
     expect(p.z).toBeCloseTo(-12, 5);
+  });
+
+  it("decodes the model's skin to a BlinnPhongMaterial referencing the skin path as a diffuseMap", () => {
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      skin: 'players/hero/skin.pcx',
+      texCoords: [
+        { s: 0, t: 0 },
+        { s: 1, t: 0 },
+        { s: 0, t: 1 },
+      ],
+      triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
+    });
+
+    const mesh = getNodeChildren(createSceneFromMd2(md2))[0] as Mesh;
+    expect(mesh.materials).toHaveLength(1);
+    const material = mesh.materials[0] as BlinnPhongMaterial;
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    // The skin path is referenced, not decoded: an Unresolved External ref, image left null.
+    expect((material.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('players/hero/skin.pcx');
+    expect(material.diffuseMap!.image).toBeNull();
+  });
+
+  it('leaves the mesh unmaterialed when the model declares no skin', () => {
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      texCoords: [
+        { s: 0, t: 0 },
+        { s: 1, t: 0 },
+        { s: 0, t: 1 },
+      ],
+      triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
+    });
+
+    const mesh = getNodeChildren(createSceneFromMd2(md2))[0] as Mesh;
+    expect(mesh.materials).toHaveLength(0);
   });
 
   it('returns an empty scene for input shorter than the header', () => {
