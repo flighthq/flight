@@ -79,6 +79,9 @@ export interface WgpuSceneRuntime {
   pbrSampleShadowView: GPUTextureView | null;
   materialRegistry: Map<Kind, WgpuMeshMaterialRenderer>;
   pendingDrawOffset: number;
+  // Column-major mat3 uv transform staged by a family's bind() (stashWgpuUvTransform) and folded into the
+  // Draw uniform by the next writeWgpuDrawUniform, which resets it to identity after consuming.
+  pendingUvTransform: Float32Array;
   pipelineCache: Map<string, WgpuMeshPipeline>;
   placeholderView: GPUTextureView | null;
   // Directional shadow state (mirrors GlSceneRuntime.shadow/shadowTarget). `shadow` is the per-frame
@@ -152,6 +155,8 @@ export function getWgpuSceneRuntime(state: WgpuRenderState): WgpuSceneRuntime {
       pbrSampleShadowView: null,
       materialRegistry: new Map(),
       pendingDrawOffset: 0,
+      // Column-major identity mat3 (the untiled default until a family stashes a real transform).
+      pendingUvTransform: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]),
       pipelineCache: new Map(),
       placeholderView: null,
       shadow: null,

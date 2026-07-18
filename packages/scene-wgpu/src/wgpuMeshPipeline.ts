@@ -1,12 +1,14 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
-import { createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
+import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
 import { bindWgpuTexture, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type {
   Camera,
   MeshGeometry,
   SceneLightBlock,
   SceneRenderProxy,
   Texture,
+  TextureLike,
   WgpuRenderState,
 } from '@flighthq/types';
 import {
@@ -571,6 +573,32 @@ export function resolveWgpuMaterialTextureView(
   return ensureWgpuPlaceholderTextureView(state);
 }
 
+// Stashes a material's primary-texture uv transform for the next writeWgpuDrawUniform to fold into the
+// shared Draw uniform. A family's bind() calls this with its base/diffuse map; writeWgpuDrawUniform
+// consumes and resets the stash so a following draw whose family does not stash gets the untiled uv.
+// @flighthq/texture composes the KHR transform row-major; this transposes it into the column-major
+// layout WGSL reads, matching the CPU transformTextureUv reference. A null / identity / unbound texture
+// leaves the stash at identity (the vs_main multiply then reproduces the raw uv).
+export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<TextureLike> | null): void {
+  const out = getWgpuSceneRuntime(state).pendingUvTransform;
+  if (texture === null || texture.image === null || !hasTextureUvTransform(texture)) {
+    resetWgpuUvTransformStash(out);
+    return;
+  }
+  getTextureUvMatrix(scratchUvMatrix, texture);
+  const m = scratchUvMatrix.m;
+  // Transpose row-major → column-major (col-major[3c+r] = row-major[3r+c]).
+  out[0] = m[0];
+  out[1] = m[3];
+  out[2] = m[6];
+  out[3] = m[1];
+  out[4] = m[4];
+  out[5] = m[7];
+  out[6] = m[2];
+  out[7] = m[5];
+  out[8] = m[8];
+}
+
 // Allocates a draw slot from the render-state's uniform ring buffer, writes the Draw uniform (world
 // mat4x4f + normal mat3x3f padded to std140) into it, records the slot's byte offset on the scene
 // runtime (the draw path passes it as the bind group's dynamic offset), and returns the shared
@@ -608,6 +636,24 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
   u[floatOffset + 25] = n[7];
   u[floatOffset + 26] = n[8];
   u[floatOffset + 27] = 0;
+
+  // mat3x3f uv transform: three vec3 columns each padded to vec4 (std140) → floats 28..39. The stash
+  // (set by a family's bind() via stashWgpuUvTransform) is already column-major; consume and reset it to
+  // identity so a subsequent draw whose family does not stash a transform gets the untiled uv.
+  const uv = scene.pendingUvTransform;
+  u[floatOffset + 28] = uv[0];
+  u[floatOffset + 29] = uv[1];
+  u[floatOffset + 30] = uv[2];
+  u[floatOffset + 31] = 0;
+  u[floatOffset + 32] = uv[3];
+  u[floatOffset + 33] = uv[4];
+  u[floatOffset + 34] = uv[5];
+  u[floatOffset + 35] = 0;
+  u[floatOffset + 36] = uv[6];
+  u[floatOffset + 37] = uv[7];
+  u[floatOffset + 38] = uv[8];
+  u[floatOffset + 39] = 0;
+  resetWgpuUvTransformStash(scene.pendingUvTransform);
 
   scene.pendingDrawOffset = offset;
   stateRuntime.uniformOffset += stateRuntime.uniformStride;
@@ -711,6 +757,7 @@ struct Frame {
 struct Draw {
   world : mat4x4f,
   normalMatrix : mat3x3f,
+  uvTransform : mat3x3f,   // KHR_texture_transform of the material's primary map (identity when unused)
 };
 
 @group(0) @binding(0) var<uniform> frame : Frame;
@@ -736,7 +783,12 @@ struct VertexOutput {
   out.clipPosition = frame.viewProjection * world;
   out.worldNormal = draw.normalMatrix * normal;
   out.worldTangent = vec4f(draw.normalMatrix * tangent.xyz, tangent.w);
-  out.uv = uv;
+  // Apply the material's KHR_texture_transform to the uv. draw.uvTransform is identity for an untiled
+  // material (writeWgpuDrawUniform's default), so this is a no-op there — applied unconditionally rather
+  // than behind a pipeline const because this vs_main is shared by every family (classic/unlit/toon/
+  // matcap/debug/wireframe) and a const would have to thread through all of them; a per-vertex mat3
+  // multiply is negligible. The scene-gl mirror gates the equivalent branch via its #ifdef variant.
+  out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
   return out;
 }
 
@@ -764,9 +816,26 @@ const FRAME_COUNTS_OFFSET = FRAME_HEMISPHERE_OFFSET + SCENE_LIGHT_HEMISPHERE_STR
 // (16) = 784 bytes / 196 floats.
 const FRAME_UNIFORM_BYTES = (FRAME_COUNTS_OFFSET + 4) * 4;
 
-// Draw uniform: mat4x4f world (64) + mat3x3f normalMatrix as 3 padded vec4 (48) = 112; the ring buffer
-// rounds the per-slot stride up to the device's minUniformBufferOffsetAlignment.
-const DRAW_UNIFORM_BYTES = 112;
+// Draw uniform: mat4x4f world (64) + mat3x3f normalMatrix as 3 padded vec4 (48) + mat3x3f uvTransform as
+// 3 padded vec4 (48) = 160; the ring buffer rounds the per-slot stride up to the device's
+// minUniformBufferOffsetAlignment.
+const DRAW_UNIFORM_BYTES = 160;
+
+// Writes the column-major identity mat3 into a uv-transform stash buffer, the untiled default.
+function resetWgpuUvTransformStash(out: Float32Array): void {
+  out[0] = 1;
+  out[1] = 0;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = 1;
+  out[5] = 0;
+  out[6] = 0;
+  out[7] = 0;
+  out[8] = 1;
+}
+
+// Row-major uv matrix composed per stash, transposed into the column-major pendingUvTransform buffer.
+const scratchUvMatrix = createMatrix3();
 
 // The depth-stencil format the scene pass uses, matching render-wgpu's main-canvas / effect-target
 // depth attachment.
