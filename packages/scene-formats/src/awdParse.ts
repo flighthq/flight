@@ -1,6 +1,6 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { detectImageMimeType } from '@flighthq/image-codec';
-import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials';
+import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
@@ -67,9 +67,10 @@ import {
 // blocks (type 81), and texture blocks (type 82). Mesh instances reference geometry and material
 // blocks by block ID; materials reference texture blocks the same way.
 //
-// A mesh instance's per-subset materials are resolved to Flight materials: a textured AWD material
-// becomes a StandardPbrMaterial whose baseColorMap references the AWD texture; a flat color material
-// becomes an UnlitMaterial. The parser does not decode: each texture's image source is emitted as an
+// A mesh instance's per-subset materials are resolved to Flight materials: an AWD material becomes a
+// BlinnPhongMaterial (the format's own shading model — AwayJS MethodMaterial), carrying its flat
+// diffuse color and/or a diffuseMap referencing the AWD texture. The parser does not reinterpret into
+// PBR/Unlit — that is the caller's explicit choice. Each texture's image source is emitted as an
 // unresolved SceneResourceRef on the Texture (`Texture.resource`, `image` left null) — embedded
 // payloads as an Embedded ref carrying the encoded bytes, external-URL textures as an External ref
 // carrying the URL. @flighthq/scene-resources resolves those refs on the caller's schedule. Only an
@@ -1050,13 +1051,19 @@ function resolveAwdMaterial(
     return null;
   }
 
+  // AWD's material model is Blinn-Phong (AwayJS MethodMaterial), so decode to BlinnPhongMaterial —
+  // the format's own shading model — rather than reinterpreting into PBR/Unlit. The block carries a
+  // flat diffuse color (property 1) and/or a diffuse texture (property 2); map both faithfully. A
+  // caller wanting metallic-roughness converts explicitly downstream (getPbrRoughnessFromPhongShininess
+  // + getPhongToPbrLightExposure); the importer does not presume a PBR pipeline.
+  const diffuseTexture =
+    parsed.diffuseTextureId !== 0 ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, warnings) : null;
   let material: Material | null = null;
-  if (parsed.diffuseTextureId !== 0) {
-    const texture = resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, warnings);
-    if (texture !== null) material = createStandardPbrMaterial({ baseColorMap: texture }) as unknown as Material;
-  }
-  if (material === null && parsed.color !== null) {
-    material = createUnlitMaterial({ baseColor: awdColorToRgba(parsed.color) }) as unknown as Material;
+  if (diffuseTexture !== null || parsed.color !== null) {
+    material = createBlinnPhongMaterial({
+      diffuse: parsed.color !== null ? awdColorToRgba(parsed.color) : 0xffffffff,
+      diffuseMap: diffuseTexture,
+    }) as unknown as Material;
   }
 
   cache.set(materialId, material);

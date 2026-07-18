@@ -7,7 +7,8 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Mesh, SceneNode } from '@flighthq/types';
+import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseObjMaterialLibrary } from './mtlParse';
 import { createSceneFromObj } from './objParse';
@@ -236,15 +237,54 @@ describe('createSceneFromObj', () => {
     expect(getMeshGeometryVertexCount(geometry)).toBe(6);
   });
 
-  it('accepts materials library and usemtl without crashing', () => {
+  it('attaches a BlinnPhongMaterial resolved from the MTL library by usemtl name', () => {
     const mtl = 'newmtl RedMat\nKd 1 0 0\n';
     const lib = parseObjMaterialLibrary(mtl);
 
     const obj = ['mtllib materials.mtl', 'v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl RedMat', 'f 1 2 3'].join('\n');
 
     const scene = createSceneFromObj(obj, lib);
-    expect(getNodeChildren(scene)).toHaveLength(1);
-    expect(isMesh(getNodeChildren(scene)[0] as SceneNode)).toBe(true);
+    const mesh = getNodeChildren(scene)[0] as Mesh;
+    expect(isMesh(mesh)).toBe(true);
+    expect(mesh.materials).toHaveLength(1);
+    const material = mesh.materials[0] as BlinnPhongMaterial;
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    expect(material.diffuse).toBe(0xff0000ff); // Kd 1 0 0, opaque (d defaults to 1)
+  });
+
+  it("maps MTL's own Kd/Ks/Ns/d/maps onto BlinnPhong fields, referencing map filenames unresolved", () => {
+    const mtl = [
+      'newmtl Shiny',
+      'Kd 0.8 0.4 0.2',
+      'Ks 1 1 1',
+      'Ns 64',
+      'd 0.5',
+      'map_Kd wood.png',
+      'map_Ks spec.png',
+      'bump normal.png',
+    ].join('\n');
+    const lib = parseObjMaterialLibrary(mtl);
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Shiny', 'f 1 2 3'].join('\n');
+
+    const material = (getNodeChildren(createSceneFromObj(obj, lib))[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    expect(material.diffuse).toBe(0xcc6633_80 >>> 0); // Kd 0.8,0.4,0.2 with d=0.5 alpha
+    expect(material.specular).toBe(0xffffffff); // Ks 1,1,1 opaque
+    expect(material.shininess).toBe(64); // Ns
+    expect(material.alphaMode).toBe('blend'); // d < 1
+    // Texture maps are referenced by filename, not decoded.
+    expect((material.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('wood.png');
+    expect((material.specularMap!.resource as ExternalSceneResourceRef).uri).toBe('spec.png');
+    expect((material.normalMap!.resource as ExternalSceneResourceRef).uri).toBe('normal.png');
+    expect(material.diffuseMap!.image).toBeNull();
+  });
+
+  it('leaves a mesh unmaterialed when usemtl names a material absent from the library', () => {
+    const lib = parseObjMaterialLibrary('newmtl Known\nKd 1 1 1\n');
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Missing', 'f 1 2 3'].join('\n');
+
+    const mesh = getNodeChildren(createSceneFromObj(obj, lib))[0] as Mesh;
+    expect(mesh.materials).toHaveLength(0);
   });
 
   it('handles faces before any group or object (top-level geometry)', () => {

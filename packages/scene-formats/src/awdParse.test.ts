@@ -9,15 +9,14 @@ import {
 import { getNodeChildren, getNodeParent } from '@flighthq/node';
 import { createSceneNode, isMesh } from '@flighthq/scene';
 import type {
+  BlinnPhongMaterial,
   EmbeddedSceneResourceRef,
   ExternalSceneResourceRef,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
-  StandardPbrMaterial,
-  UnlitMaterial,
 } from '@flighthq/types';
-import { ResourceResolutionState, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
+import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
 import { createSceneFromAwd, parseAwdSkeletonAnimation } from './awdParse';
 import {
@@ -495,7 +494,7 @@ describe('createSceneFromAwd', () => {
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
   });
 
-  it('attaches a textured StandardPbrMaterial from a material + embedded texture block', () => {
+  it('attaches a textured BlinnPhongMaterial from a material + embedded texture block', () => {
     const posStream = buildStream(
       AWD_STREAM_POSITIONS,
       AWD_DATA_FLOAT32,
@@ -523,13 +522,13 @@ describe('createSceneFromAwd', () => {
     const mesh = getNodeChildren(scene)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
     expect(mesh.materials).toHaveLength(1);
-    const material = mesh.materials[0] as StandardPbrMaterial | null;
+    const material = mesh.materials[0] as BlinnPhongMaterial | null;
     expect(material).not.toBeNull();
-    expect(material!.kind).toBe(StandardPbrMaterialKind);
-    expect(material!.baseColorMap).not.toBeNull();
+    expect(material!.kind).toBe(BlinnPhongMaterialKind);
+    expect(material!.diffuseMap).not.toBeNull();
     // The parser references, it does not decode: image stays null, a ref carries the source.
-    expect(material!.baseColorMap!.image).toBeNull();
-    const ref = material!.baseColorMap!.resource as EmbeddedSceneResourceRef;
+    expect(material!.diffuseMap!.image).toBeNull();
+    const ref = material!.diffuseMap!.resource as EmbeddedSceneResourceRef;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
     expect(ref.bytes).toEqual(FAKE_PNG_BYTES);
@@ -537,7 +536,7 @@ describe('createSceneFromAwd', () => {
     expect(warnings).toHaveLength(0);
   });
 
-  it('attaches an UnlitMaterial from a flat-color material block, widening color to opaque rgba', () => {
+  it('attaches a BlinnPhongMaterial from a flat-color material block, widening color to opaque rgba', () => {
     const posStream = buildStream(
       AWD_STREAM_POSITIONS,
       AWD_DATA_FLOAT32,
@@ -558,10 +557,11 @@ describe('createSceneFromAwd', () => {
     );
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
 
-    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as UnlitMaterial | null;
+    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as BlinnPhongMaterial | null;
     expect(material).not.toBeNull();
-    expect(material!.kind).toBe(UnlitMaterialKind);
-    expect(material!.baseColor).toBe(0x336699ff);
+    expect(material!.kind).toBe(BlinnPhongMaterialKind);
+    expect(material!.diffuse).toBe(0x336699ff);
+    expect(material!.diffuseMap).toBeNull();
   });
 
   it('emits an External SceneResourceRef for an external-URL texture', () => {
@@ -589,10 +589,10 @@ describe('createSceneFromAwd', () => {
     const warnings: string[] = [];
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
 
-    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as StandardPbrMaterial;
-    expect(material.kind).toBe(StandardPbrMaterialKind);
-    expect(material.baseColorMap!.image).toBeNull();
-    const ref = material.baseColorMap!.resource as ExternalSceneResourceRef;
+    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    expect(material.diffuseMap!.image).toBeNull();
+    const ref = material.diffuseMap!.resource as ExternalSceneResourceRef;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('http://example.com/tex.png');
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);
@@ -623,7 +623,7 @@ describe('createSceneFromAwd', () => {
     );
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
 
-    const texture = ((getNodeChildren(scene)[0] as Mesh).materials[0] as StandardPbrMaterial).baseColorMap!;
+    const texture = ((getNodeChildren(scene)[0] as Mesh).materials[0] as BlinnPhongMaterial).diffuseMap!;
     expect(texture.image).toBeNull(); // parse never allocates or fills an ImageResource
     const ref = texture.resource as EmbeddedSceneResourceRef;
     expect(ref.kind).toBe('Embedded');
