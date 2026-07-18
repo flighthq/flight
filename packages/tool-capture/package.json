@@ -32,6 +32,9 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/render-wgpu": "*",
+    "@flighthq/surface": "*",
+    "@flighthq/types": "*",
     "@playwright/test": "^1.50.0",
     "picocolors": "^1.1.1"
   },

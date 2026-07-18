@@ -36,9 +36,9 @@ import {
   TilemapKind,
   VideoKind,
 } from '@flighthq/sdk';
+import { registerFunctionalTarget } from '@ft/verify';
 
 import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target';
-import { registerFunctionalTarget } from './verify';
 
 export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions>): Promise<FunctionalWgpuTarget> {
   const { width, height } = options;

@@ -23,9 +23,9 @@ import {
   TextLabelKind,
   VideoKind,
 } from '@flighthq/sdk';
+import { registerFunctionalTarget } from '@ft/verify';
 
 import type { FunctionalDomTarget, FunctionalTargetOptions } from './target';
-import { registerFunctionalTarget } from './verify';
 
 export function createDomTarget(options: Readonly<FunctionalTargetOptions>): FunctionalDomTarget {
   const { width, height } = options;

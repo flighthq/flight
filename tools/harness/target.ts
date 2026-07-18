@@ -1,5 +1,13 @@
-import type { CanvasRenderState, DomRenderState, GlRenderState, WgpuRenderState } from '@flighthq/sdk';
-import type { DisplayObject, SceneGraphSyncPolicy } from '@flighthq/sdk';
+import type { SceneGraphSyncPolicy } from '@flighthq/sdk';
+import type {
+  FunctionalCanvasTarget,
+  FunctionalDomTarget,
+  FunctionalGlTarget,
+  FunctionalTarget,
+  FunctionalWgpuTarget,
+} from '@ft/verify';
+
+export type { FunctionalCanvasTarget, FunctionalDomTarget, FunctionalGlTarget, FunctionalTarget, FunctionalWgpuTarget };
 
 export interface FunctionalTargetOptions {
   width: number;
@@ -12,41 +20,3 @@ export interface FunctionalTargetOptions {
   cache?: boolean;
   blend?: boolean;
 }
-
-export interface FunctionalCanvasTarget {
-  kind: 'canvas';
-  state: CanvasRenderState;
-  width: number;
-  height: number;
-  scale: number;
-  render(root: DisplayObject): void;
-}
-
-export interface FunctionalGlTarget {
-  kind: 'webgl';
-  state: GlRenderState;
-  width: number;
-  height: number;
-  scale: number;
-  render(root: DisplayObject): void;
-}
-
-export interface FunctionalWgpuTarget {
-  kind: 'webgpu';
-  state: WgpuRenderState;
-  width: number;
-  height: number;
-  scale: number;
-  render(root: DisplayObject): void;
-}
-
-export interface FunctionalDomTarget {
-  kind: 'dom';
-  state: DomRenderState;
-  width: number;
-  height: number;
-  scale: number;
-  render(root: DisplayObject): void;
-}
-
-export type FunctionalTarget = FunctionalCanvasTarget | FunctionalGlTarget | FunctionalWgpuTarget | FunctionalDomTarget;

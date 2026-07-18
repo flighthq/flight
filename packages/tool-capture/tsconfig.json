@@ -9,5 +9,6 @@
     "sourceMap": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "../render-wgpu" }, { "path": "../surface" }, { "path": "../types" }]
 }
