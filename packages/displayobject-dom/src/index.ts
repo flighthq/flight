@@ -6,6 +6,7 @@ export * from './domClipRectangle';
 export * from './domCSSFilterBinding';
 export * from './domDisplayObject';
 export { invalidateDomFontResource } from './domFontSource';
+export * from './domImageSource';
 export * from './domMaterials';
 export * from './domNativeText';
 export * from './domRenderState';

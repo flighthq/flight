@@ -37,6 +37,7 @@
     "@flighthq/displayobject-canvas": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/image": "*",
     "@flighthq/node": "*",
     "@flighthq/render": "*",
     "@flighthq/shape": "*",

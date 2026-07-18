@@ -1,4 +1,6 @@
+import { createImageResource } from './imageResource';
 import {
+  createCanvasFromImageResource,
   createImageResourceFromCanvas,
   createImageResourceFromImageBitmap,
   createImageResourceFromImageElement,
@@ -17,6 +19,32 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
+});
+
+describe('createCanvasFromImageResource', () => {
+  function makeDataResource(width: number, height: number) {
+    const resource = createImageResource();
+    resource.width = width;
+    resource.height = height;
+    resource.data = new Uint8ClampedArray(width * height * 4).fill(255);
+    return resource;
+  }
+
+  it('materializes a canvas sized to the resource', () => {
+    const canvas = createCanvasFromImageResource(makeDataResource(6, 5));
+    expect(canvas).toBeInstanceOf(HTMLCanvasElement);
+    expect(canvas!.width).toBe(6);
+    expect(canvas!.height).toBe(5);
+  });
+
+  it('returns a new canvas each call', () => {
+    const resource = makeDataResource(4, 4);
+    expect(createCanvasFromImageResource(resource)).not.toBe(createCanvasFromImageResource(resource));
+  });
+
+  it('returns null for an element-only resource with no data', () => {
+    expect(createCanvasFromImageResource(createImageResource(document.createElement('img')))).toBeNull();
+  });
 });
 
 describe('createImageResourceFromCanvas', () => {
