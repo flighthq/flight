@@ -6,10 +6,37 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import type {
+  BlinnPhongMaterial,
+  ExternalSceneResourceRef,
+  Mesh,
+  SceneAnimationTarget,
+  SceneNode,
+} from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFromMd5Mesh } from './md5Parse';
+import { createSceneFromMd5Mesh, importMd5Mesh } from './md5Parse';
+
+// A one-joint .md5anim matching SINGLE_TRIANGLE's single "root" joint, translating it per frame.
+const SINGLE_JOINT_ANIM = [
+  'MD5Version 10',
+  'commandline ""',
+  'numFrames 1',
+  'numJoints 1',
+  'frameRate 24',
+  'numAnimatedComponents 0',
+  'hierarchy {',
+  '  "root" -1 0 0',
+  '}',
+  'bounds {',
+  '  ( -1 -1 -1 ) ( 1 1 1 )',
+  '}',
+  'baseframe {',
+  '  ( 5 10 15 ) ( 0 0 0 )',
+  '}',
+  'frame 0 {',
+  '}',
+].join('\n');
 
 // Minimal valid MD5 mesh with a single joint at the origin (identity orientation) and a single
 // triangle whose three vertices each reference one weight with bias 1.0 at known positions.
@@ -589,5 +616,25 @@ describe('createSceneFromMd5Mesh', () => {
     expect(p.x).toBeCloseTo(5);
     expect(p.y).toBeCloseTo(5);
     expect(p.z).toBeCloseTo(-5);
+  });
+});
+
+describe('importMd5Mesh', () => {
+  it('returns the scene with empty animations when no anim source is given', () => {
+    const result = importMd5Mesh(SINGLE_TRIANGLE);
+    expect(result.scenes).toHaveLength(1);
+    expect(result.scene).toBe(result.scenes[0]);
+    expect(result.animations).toHaveLength(0);
+  });
+
+  it('folds a paired .md5anim into a clip bound to the scene’s own skeleton joints', () => {
+    const result = importMd5Mesh(SINGLE_TRIANGLE, SINGLE_JOINT_ANIM);
+    expect(result.animations).toHaveLength(1);
+
+    const mesh = getNodeChildren(result.scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const joints = mesh.skin!.skeleton.joints;
+    const channel = result.animations[0].channels[0];
+    // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
+    expect((channel.targetRef as SceneAnimationTarget).node).toBe(joints[0]);
   });
 });

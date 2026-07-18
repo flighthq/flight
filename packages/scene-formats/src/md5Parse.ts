@@ -4,14 +4,17 @@ import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, setSceneNodeTransform } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { Material, Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
+import type { AnimationClip, Material, Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
 
+import { parseMd5Anim } from './md5AnimParse';
 import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
+import type { SceneImport } from './sceneImport';
 import type { SkinInfluence } from './shared';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
   createExternalTextureRef,
+  findSceneSkeletonJoints,
   packSkinInfluences,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
@@ -241,6 +244,22 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
   }
 
   return scene;
+}
+
+// Imports an MD5 model as a whole: the mesh's scene (skeleton + skinned meshes) plus, when the paired
+// `.md5anim` source is supplied, its skeletal animation folded into one call. The assembly-tier sibling
+// of createSceneFromMd5Mesh. MD5 splits mesh and animation across two files, so `animSource` is a
+// separate argument (unlike AWD's single-file importAwd); when omitted, `animations` is empty. The clip
+// binds to the scene's own skeleton joints, so posing it deforms the skinned mesh with no caller
+// threading. MD5 declares a single scene, so `scenes` is a one-element array.
+export function importMd5Mesh(meshSource: string, animSource?: string, warnings?: string[]): SceneImport {
+  const scene = createSceneFromMd5Mesh(meshSource, warnings);
+  let clip: AnimationClip | null = null;
+  if (animSource !== undefined) {
+    const joints = findSceneSkeletonJoints(scene);
+    clip = joints !== null ? parseMd5Anim(animSource, joints, warnings) : null;
+  }
+  return { animations: clip !== null ? [clip] : [], scene, scenes: [scene] };
 }
 
 // Parses the joints { ... } block. Returns the line index after the closing brace.
