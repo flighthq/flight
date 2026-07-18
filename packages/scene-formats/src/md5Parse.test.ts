@@ -1,10 +1,11 @@
+import { getMatrix4Position } from '@flighthq/geometry';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh';
-import { getNodeChildren } from '@flighthq/node';
+import { getNodeChildren, getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type {
   BlinnPhongMaterial,
@@ -232,17 +233,53 @@ describe('createSceneFromMd5Mesh', () => {
     expect(uv.y).toBeCloseTo(1);
   });
 
-  it('builds joint hierarchy as SceneNode children', () => {
+  it('gives each joint a world transform equal to its own absolute MD5 transform, not accumulated', () => {
+    // Two joints where the child's PARENT sits away from the origin, so nesting-vs-flat is observable.
+    // MD5 joint transforms are absolute, so the child's world position must equal its own absolute
+    // (Z-up→Y-up: (x,y,z)→(x,z,-y)) value — NOT parent∘child, which the old nested build produced and
+    // which explodes the mesh under animation.
+    const chain = [
+      'MD5Version 10',
+      'numJoints 2',
+      'numMeshes 1',
+      'joints {',
+      '  "root" -1 ( 10 0 0 ) ( 0 0 0 )',
+      '  "child" 0 ( 10 5 0 ) ( 0 0 0 )',
+      '}',
+      'mesh {',
+      '  shader "t"',
+      '  numverts 1',
+      '  vert 0 ( 0 0 ) 0 1',
+      '  numtris 0',
+      '  numweights 1',
+      '  weight 0 1 1.0 ( 0 0 0 )',
+      '}',
+    ].join('\n');
+
+    const scene = createSceneFromMd5Mesh(chain);
+    const jointNodes = getNodeChildren(getNodeChildren(scene)[0] as SceneNode) as unknown as SceneNode[];
+    const child = jointNodes[1];
+
+    const world = { x: 0, y: 0, z: 0 };
+    getMatrix4Position(world, getNodeWorldTransformMatrix4(child));
+    // Absolute (10,5,0) → Y-up (10, 0, -5). Nested-under-a-(10,0,0)-parent would give (20,0,-5).
+    expect(world.x).toBeCloseTo(10);
+    expect(world.y).toBeCloseTo(0);
+    expect(world.z).toBeCloseTo(-5);
+  });
+
+  it('builds a flat skeleton — every joint directly under the skeleton root', () => {
+    // MD5 joint transforms are absolute (object-space), so the skeleton is flat: each joint's world
+    // transform equals its own absolute transform. Nesting joints parent-under-parent would treat the
+    // absolute transforms as parent-relative and explode the mesh under animation. So all three joints
+    // (root + two children) hang directly off the skeleton group, none nested under another joint.
     const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
     const skeleton = getNodeChildren(scene)[0] as SceneNode;
 
-    // The skeleton group should have one root joint.
-    const rootJoints = getNodeChildren(skeleton);
-    expect(rootJoints).toHaveLength(1);
-
-    // The root joint should have two children.
-    const rootChildren = getNodeChildren(rootJoints[0] as SceneNode);
-    expect(rootChildren).toHaveLength(2);
+    const jointNodes = getNodeChildren(skeleton);
+    expect(jointNodes).toHaveLength(3);
+    // No joint nests another joint under it.
+    for (const joint of jointNodes) expect(getNodeChildren(joint as SceneNode)).toHaveLength(0);
   });
 
   it('computes vertex positions from weights referencing different joints', () => {
