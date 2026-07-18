@@ -242,7 +242,14 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       if (extraWait > 0) await page.waitForTimeout(extraWait);
 
       const waitsForVerification = verify;
-      if (waitsForVerification) await waitForRenderVerification(page);
+      // The verification wait is the longest single step (up to 15s) and prints nothing while it
+      // polls, so a run can look hung right after "Ready at". A muted heartbeat marks that the entry
+      // is verifying, so the pause reads as progress rather than a stall.
+      if (waitsForVerification) {
+        console.log(statusLine('muted', renderer, 'verifying render…'));
+        await waitForRenderVerification(page);
+      }
+      const verificationTargetKind = waitsForVerification ? await getFunctionalTargetKind(page) : null;
 
       // Screenshot the render output only — not the full viewport — so all renderers produce the same
       // frame size and the gallery blink comparator has something meaningful to compare.
@@ -265,6 +272,14 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         } else {
           screenshotBuffer = await page.screenshot();
         }
+      } else if (backend === 'webgl' && waitsForVerification && verificationTargetKind === 'webgl') {
+        // The page registered a WebGL verification target but published no verified frame, so its
+        // readback was blank — a canvas screenshot here would be an all-black false pass (the exact
+        // shape that hid a real render bug: green ✓ over a black frame, missed even by --fail-on-error
+        // since a verify timeout logs nothing). Fail loudly instead, mirroring the WebGPU guard above.
+        // A page that registers no target is not making a verification claim and still falls through
+        // to the canvas-screenshot fallback below.
+        throw new Error('WebGL verifier did not produce a render image (blank or failed render)');
       } else if (backend === 'dom') {
         screenshotBuffer = await page
           .locator('body > div')
@@ -383,6 +398,16 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
 async function getRenderImageDataUrl(page: Page): Promise<string | null> {
   return page
     .evaluate(() => (window as unknown as { __ftRenderImage?: string }).__ftRenderImage ?? null)
+    .catch(() => null);
+}
+
+// The kind of functional target the page registered (webgl / webgpu / canvas / dom), or null if it
+// registered none. A registered target is the page's claim that it verifies its own render; the
+// screenshot selection uses it to tell "opted into verification but drew blank" (a failure) from
+// "never opted in" (the canvas-screenshot fallback is expected).
+async function getFunctionalTargetKind(page: Page): Promise<string | null> {
+  return page
+    .evaluate(() => (window as unknown as { __ftTarget?: { kind?: string } }).__ftTarget?.kind ?? null)
     .catch(() => null);
 }
 
