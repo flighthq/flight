@@ -1,16 +1,27 @@
+import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
-import type { SceneNode } from '@flighthq/types';
+import type { Material, SceneNode } from '@flighthq/types';
 
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, swapPositionsYZ } from './shared';
-import type { ThreeDsMesh } from './threeDsSchema';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef, swapPositionsYZ } from './shared';
+import type { ThreeDsMaterial, ThreeDsMesh } from './threeDsSchema';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
+  THREE_DS_COLOR_BYTE,
+  THREE_DS_COLOR_FLOAT,
   THREE_DS_EDITOR,
+  THREE_DS_FACE_MATERIAL,
   THREE_DS_FACES,
   THREE_DS_MAIN,
+  THREE_DS_MATERIAL,
+  THREE_DS_MATERIAL_AMBIENT,
+  THREE_DS_MATERIAL_DIFFUSE,
+  THREE_DS_MATERIAL_NAME,
+  THREE_DS_MATERIAL_SPECULAR,
+  THREE_DS_MATERIAL_TEXTURE_FILENAME,
+  THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
@@ -51,18 +62,29 @@ export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, warnings?: strin
     return scene;
   }
 
-  const meshes = collectMeshes(view, 0, warnings);
+  // The material table (0xAFFF chunks) and the meshes are siblings under the editor chunk, and a mesh
+  // references its materials by name via FACE_MATERIAL — so collect the whole table first, then
+  // resolve each mesh's referenced names against it.
+  const materials = new Map<string, ThreeDsMaterial>();
+  const meshes = collectMeshes(view, 0, materials, warnings);
+  const resolved = new Map<string, Material>();
   for (let i = 0; i < meshes.length; i++) {
-    const meshNode = buildMeshNode(meshes[i]);
+    const meshNode = buildMeshNode(meshes[i], materials, resolved);
     if (meshNode !== null) addNodeChild(scene, meshNode);
   }
 
   return scene;
 }
 
-// Recursively walks the chunk tree starting at `offset` and collects all trimesh descriptors found
-// within editor → object → trimesh sub-chunks.
-function collectMeshes(view: Readonly<DataView>, offset: number, warnings?: string[]): readonly ThreeDsMesh[] {
+// Recursively walks the chunk tree starting at `offset`, collecting all trimesh descriptors found
+// within editor → object → trimesh sub-chunks, and populating `materials` with every material block
+// (0xAFFF) found alongside them under the editor chunk.
+function collectMeshes(
+  view: Readonly<DataView>,
+  offset: number,
+  materials: Map<string, ThreeDsMaterial>,
+  warnings?: string[],
+): readonly ThreeDsMesh[] {
   const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
   const meshes: ThreeDsMesh[] = [];
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
@@ -80,11 +102,14 @@ function collectMeshes(view: Readonly<DataView>, offset: number, warnings?: stri
     }
 
     if (chunkId === THREE_DS_EDITOR || chunkId === THREE_DS_MAIN) {
-      const inner = collectMeshes(view, cursor, warnings);
+      const inner = collectMeshes(view, cursor, materials, warnings);
       for (let i = 0; i < inner.length; i++) meshes.push(inner[i]);
     } else if (chunkId === THREE_DS_OBJECT) {
       const mesh = parseObject(view, cursor, chunkEnd, warnings);
       if (mesh !== null) meshes.push(mesh);
+    } else if (chunkId === THREE_DS_MATERIAL) {
+      const material = parseMaterial(view, cursor, chunkEnd);
+      if (material.name.length > 0) materials.set(material.name, material);
     }
 
     cursor = chunkEnd;
@@ -133,6 +158,7 @@ function parseTrimesh(
   let vertices: Float32Array | null = null;
   let faces: Uint16Array | null = null;
   let uvs: Float32Array | null = null;
+  let materialNames: readonly string[] = [];
 
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
 
@@ -153,7 +179,11 @@ function parseTrimesh(
     if (chunkId === THREE_DS_VERTICES) {
       vertices = parseVertices(view, dataStart, chunkEnd, warnings);
     } else if (chunkId === THREE_DS_FACES) {
-      faces = parseFaces(view, dataStart, chunkEnd, warnings);
+      const parsed = parseFaces(view, dataStart, chunkEnd, warnings);
+      if (parsed !== null) {
+        faces = parsed.faces;
+        materialNames = parsed.materialNames;
+      }
     } else if (chunkId === THREE_DS_UV_COORDS) {
       uvs = parseUvCoords(view, dataStart, chunkEnd, warnings);
     }
@@ -168,7 +198,7 @@ function parseTrimesh(
     return null;
   }
 
-  return { faces, name, uvs, vertices };
+  return { faces, materialNames, name, uvs, vertices };
 }
 
 // Reads the vertex list sub-chunk (0x4110): uint16 count followed by count * 3 float32 values
@@ -200,15 +230,22 @@ function parseVertices(
 }
 
 // Reads the face list sub-chunk (0x4120): uint16 count followed by count * 4 uint16 values
-// (v0, v1, v2, flags per face). Only the first 3 values (triangle indices) are kept.
-function parseFaces(view: Readonly<DataView>, dataStart: number, end: number, warnings?: string[]): Uint16Array | null {
+// (v0, v1, v2, flags per face). Only the first 3 values (triangle indices) are kept. FACE_MATERIAL
+// (0x4130) sub-chunks follow the face array within the same chunk; their material names are collected
+// (each names a material the mesh's faces use). Returns both the triangle indices and those names.
+function parseFaces(
+  view: Readonly<DataView>,
+  dataStart: number,
+  end: number,
+  warnings?: string[],
+): { faces: Uint16Array; materialNames: readonly string[] } | null {
   if (dataStart + 2 > end) {
     warnings?.push('createSceneFrom3ds: face sub-chunk too small to read count');
     return null;
   }
   const count = view.getUint16(dataStart, true);
-  const bytesNeeded = dataStart + 2 + count * 4 * 2;
-  if (bytesNeeded > end) {
+  const facesEnd = dataStart + 2 + count * 4 * 2;
+  if (facesEnd > end) {
     warnings?.push(`createSceneFrom3ds: face sub-chunk declares ${count} faces but data is truncated`);
     return null;
   }
@@ -221,7 +258,24 @@ function parseFaces(view: Readonly<DataView>, dataStart: number, end: number, wa
     // Skip the 4th uint16 (flags).
     offset += 8;
   }
-  return faces;
+
+  // Sub-chunks (FACE_MATERIAL, SMOOTH_GROUP, …) follow the face array up to the chunk boundary.
+  const materialNames: string[] = [];
+  let cursor = facesEnd;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const subId = view.getUint16(cursor, true);
+    const subLength = readChunkLength(view, cursor);
+    const subEnd = cursor + subLength;
+    if (subLength < THREE_DS_CHUNK_HEADER_BYTES || subEnd > end) break;
+    if (subId === THREE_DS_FACE_MATERIAL) {
+      const dataOffset = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+      const materialName = readNullTerminatedString(view, dataOffset, subEnd);
+      if (materialName.length > 0) materialNames.push(materialName);
+    }
+    cursor = subEnd;
+  }
+
+  return { faces, materialNames };
 }
 
 // Reads the UV coordinate sub-chunk (0x4140): uint16 count followed by count * 2 float32 values
@@ -254,8 +308,13 @@ function parseUvCoords(
 
 // Builds a Mesh scene node from a parsed ThreeDsMesh descriptor. Vertex positions are converted
 // from LH Z-up to RH Y-up via swapPositionsYZ. Face normals are computed per-face and averaged
-// at shared vertices to produce smooth normals.
-function buildMeshNode(mesh: Readonly<ThreeDsMesh>): SceneNode | null {
+// at shared vertices to produce smooth normals. The materials the mesh's faces reference are resolved
+// against the file's material table (memoized in `resolved`) and attached to the Mesh node.
+function buildMeshNode(
+  mesh: Readonly<ThreeDsMesh>,
+  materials: Readonly<Map<string, ThreeDsMaterial>>,
+  resolved: Map<string, Material>,
+): SceneNode | null {
   const vertexCount = mesh.vertices.length / 3;
   const faceCount = mesh.faces.length / 3;
 
@@ -343,16 +402,138 @@ function buildMeshNode(mesh: Readonly<ThreeDsMesh>): SceneNode | null {
   const indices = Uint32Array.from(mesh.faces);
   const geometry = createMeshGeometry({ indices, layout: CANONICAL_LAYOUT, vertices });
 
+  // Resolve each distinct material name the mesh references to a BlinnPhongMaterial, memoized so a
+  // material shared across meshes yields one instance. 3DS assigns materials per face-subset, but this
+  // importer keeps the mesh geometry whole, so the referenced materials are attached in file order
+  // without splitting the geometry into subsets.
+  const meshMaterials: Material[] = [];
+  const seen = new Set<string>();
+  for (const materialName of mesh.materialNames) {
+    if (seen.has(materialName)) continue;
+    seen.add(materialName);
+    const parsed = materials.get(materialName);
+    if (parsed === undefined) continue;
+    let material = resolved.get(materialName);
+    if (material === undefined) {
+      material = threeDsMaterialToBlinnPhong(parsed);
+      resolved.set(materialName, material);
+    }
+    meshMaterials.push(material);
+  }
+
   // A 3DS named object holds a single trimesh, so the name belongs on the Mesh node itself — the
   // Mesh is a SceneNode and carries its own name. Wrapping it in a transform-only group would only
   // hide the Mesh a level down (getNodeChildren returning geometry:null wrappers). Match glTF: a
   // lone mesh is returned bare, named.
   return createMesh(
     geometry,
-    [],
+    meshMaterials,
     undefined,
     mesh.name.length > 0 ? { name: mesh.name } : undefined,
   ) as unknown as SceneNode;
+}
+
+// Converts a parsed 3DS material to Flight's BlinnPhongMaterial — 3DS's own diffuse/specular shading
+// model. The diffuse and specular colors map directly; the texture map filename becomes an Unresolved
+// External diffuseMap ref. The ambient color has no Blinn-Phong equivalent (ambient is a scene light
+// in Flight), so it is dropped; a caller wanting PBR converts explicitly.
+function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>): Material {
+  return createBlinnPhongMaterial({
+    diffuse: packThreeDsColor(material.diffuse),
+    diffuseMap: material.textureFilename !== null ? createExternalTextureRef(material.textureFilename) : null,
+    specular: packThreeDsColor(material.specular),
+  }) as unknown as Material;
+}
+
+// Parses a material block (0xAFFF): walks sub-chunks for the name, the diffuse/specular/ambient color
+// blocks, and the diffuse texture map's filename.
+function parseMaterial(view: Readonly<DataView>, offset: number, end: number): ThreeDsMaterial {
+  let name = '';
+  let ambient: readonly [number, number, number] = [0, 0, 0];
+  let diffuse: readonly [number, number, number] = [1, 1, 1];
+  let specular: readonly [number, number, number] = [1, 1, 1];
+  let textureFilename: string | null = null;
+
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkLength = readChunkLength(view, cursor);
+    const chunkEnd = cursor + chunkLength;
+    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+
+    if (chunkId === THREE_DS_MATERIAL_NAME) {
+      name = readNullTerminatedString(view, dataStart, chunkEnd);
+    } else if (chunkId === THREE_DS_MATERIAL_AMBIENT) {
+      ambient = parseColorChunk(view, dataStart, chunkEnd) ?? ambient;
+    } else if (chunkId === THREE_DS_MATERIAL_DIFFUSE) {
+      diffuse = parseColorChunk(view, dataStart, chunkEnd) ?? diffuse;
+    } else if (chunkId === THREE_DS_MATERIAL_SPECULAR) {
+      specular = parseColorChunk(view, dataStart, chunkEnd) ?? specular;
+    } else if (chunkId === THREE_DS_MATERIAL_TEXTURE_MAP) {
+      textureFilename = parseTextureFilename(view, dataStart, chunkEnd);
+    }
+
+    cursor = chunkEnd;
+  }
+
+  return { ambient, diffuse, name, specular, textureFilename };
+}
+
+// Reads the nested color sub-chunk of a material color block: COLOR_FLOAT (0x0010, 3 float32 in [0,1])
+// or COLOR_BYTE (0x0011, 3 uint8 in [0,255], normalized). Returns [r,g,b] in [0,1], or null if absent.
+function parseColorChunk(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+): readonly [number, number, number] | null {
+  let cursor = offset;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkLength = readChunkLength(view, cursor);
+    const chunkEnd = cursor + chunkLength;
+    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+
+    if (chunkId === THREE_DS_COLOR_FLOAT && dataStart + 12 <= chunkEnd) {
+      return [
+        view.getFloat32(dataStart, true),
+        view.getFloat32(dataStart + 4, true),
+        view.getFloat32(dataStart + 8, true),
+      ];
+    }
+    if (chunkId === THREE_DS_COLOR_BYTE && dataStart + 3 <= chunkEnd) {
+      return [view.getUint8(dataStart) / 255, view.getUint8(dataStart + 1) / 255, view.getUint8(dataStart + 2) / 255];
+    }
+
+    cursor = chunkEnd;
+  }
+  return null;
+}
+
+// Reads the diffuse texture map block (0xA200), returning its filename sub-chunk (0xA300) or null.
+function parseTextureFilename(view: Readonly<DataView>, offset: number, end: number): string | null {
+  let cursor = offset;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkLength = readChunkLength(view, cursor);
+    const chunkEnd = cursor + chunkLength;
+    if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES || chunkEnd > end) break;
+    if (chunkId === THREE_DS_MATERIAL_TEXTURE_FILENAME) {
+      const name = readNullTerminatedString(view, cursor + THREE_DS_CHUNK_HEADER_BYTES, chunkEnd);
+      return name.length > 0 ? name : null;
+    }
+    cursor = chunkEnd;
+  }
+  return null;
+}
+
+// Packs a 3DS sRGB-space [r,g,b] triple (each in [0,1]) into an opaque 0xRRGGBBAA integer.
+function packThreeDsColor(rgb: readonly [number, number, number]): number {
+  const r = Math.round(Math.min(1, Math.max(0, rgb[0])) * 0xff);
+  const g = Math.round(Math.min(1, Math.max(0, rgb[1])) * 0xff);
+  const b = Math.round(Math.min(1, Math.max(0, rgb[2])) * 0xff);
+  return ((r << 24) | (g << 16) | (b << 8) | 0xff) >>> 0;
 }
 
 // Reads a null-terminated ASCII string starting at `offset`, stopping at the first null byte or at
