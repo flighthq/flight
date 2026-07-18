@@ -2,13 +2,17 @@
 import type { Bitmap, CanvasRenderState, DisplayObjectRenderer, RenderProxy2D } from '@flighthq/types';
 
 import { drawCanvasDisplayObject } from './canvasDisplayObject';
+import { resolveCanvasImageSource } from './canvasImageSource';
 import { setCanvasTransform } from './canvasTransform';
 
 export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D): void {
   drawCanvasDisplayObject(state, bitmap);
   const source = bitmap.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource !== null && imageSource.source !== null) {
+  // Resolve to a drawable element, materializing one from raw pixels for a data-only Surface so it
+  // draws here instead of silently no-opping.
+  const drawable = imageSource !== null ? resolveCanvasImageSource(state, imageSource) : null;
+  if (imageSource !== null && drawable !== null) {
     const context = state.context;
 
     state.applyBlendMode?.(state, bitmap.blendMode);
@@ -23,10 +27,10 @@ export function drawCanvasBitmap(state: CanvasRenderState, bitmap: RenderProxy2D
     }
 
     if (sourceRectangle === null) {
-      context.drawImage(imageSource.source, 0, 0, imageSource.width, imageSource.height);
+      context.drawImage(drawable, 0, 0, imageSource.width, imageSource.height);
     } else {
       context.drawImage(
-        imageSource.source,
+        drawable,
         sourceRectangle.x,
         sourceRectangle.y,
         sourceRectangle.width,

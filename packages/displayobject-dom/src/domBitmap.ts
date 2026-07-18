@@ -9,6 +9,7 @@ import type {
   RenderState,
 } from '@flighthq/types';
 
+import { resolveDomImageSource } from './domImageSource';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
 
 interface DomBitmapData extends RendererData {
@@ -27,9 +28,11 @@ export function drawDomBitmap(state: DomRenderState, renderProxy: RenderProxy2D)
 
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource === null || imageSource.source === null) return;
+  if (imageSource === null) return;
+  // Resolve to a drawable element, materializing one from raw pixels for a data-only Surface.
+  const src = resolveDomImageSource(state, imageSource);
+  if (src === null) return;
 
-  const src = imageSource.source;
   const sr = source.data.sourceRectangle ?? null;
 
   if (sr === null && src instanceof HTMLImageElement) {

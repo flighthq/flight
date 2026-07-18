@@ -7,6 +7,7 @@ export * from './canvasCSSFilterBinding';
 export * from './canvasDisplayObject';
 export * from './canvasElement';
 export * from './canvasFillPattern';
+export * from './canvasImageSource';
 export * from './canvasMaterialRegistry';
 export * from './canvasMaterials';
 export * from './canvasParticleEmitter';

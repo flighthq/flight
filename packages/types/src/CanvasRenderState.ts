@@ -1,6 +1,7 @@
 import type { BlendMode } from './BlendMode';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
 import type { Kind } from './Entity';
+import type { ImageResource } from './ImageResource';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
 
@@ -25,6 +26,13 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   currentBlendMode: BlendMode | null;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
+  // Per-render-state cache of the drawable HTMLCanvasElement materialized from a data-only
+  // ImageResource (a generated Surface with no host `source` element), keyed on the resource and
+  // re-materialized when its `version` bumps. Renderer-owned derived state — the Canvas parallel to
+  // the GL backend's imageResourceTextureCache — so a data-only Surface draws with no manual element
+  // sync, while element-backed resources never touch this map. Absent (and tree-shaken) until the
+  // first data-only resolve; see resolveCanvasImageSource.
+  imageResourceElementCache?: WeakMap<ImageResource, { element: HTMLCanvasElement; version: number }>;
   // Per-material-kind canvas renderer registry. Absent (and tree-shaken) until a material renderer
   // is registered.
   materialRendererMap?: Map<Kind, CanvasMaterialRenderer>;
