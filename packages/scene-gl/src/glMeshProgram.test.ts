@@ -7,12 +7,15 @@ import type { Camera, ImageResource } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import {
+  GL_MAX_SKIN_JOINTS,
+  GL_SKIN_JOINT_HARD_CAP,
   beginGlMeshDraw,
   bindGlUvTransform,
   compileGlProgram,
   destroyGlMeshProgram,
   drawGlMeshSubset,
   ensureGlSceneProgram,
+  getGlSkinJointCapacity,
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
@@ -248,6 +251,48 @@ describe('ensureGlSceneProgram', () => {
     ensureGlSceneProgram(state, 'fam:b', makeProgram);
     // Two distinct keys → two cached entries (the shared programCache spans every family).
     ensureGlSceneProgram(state, 'fam:a', makeProgram);
+  });
+});
+
+describe('getGlSkinJointCapacity', () => {
+  it('derives the palette size from MAX_VERTEX_UNIFORM_VECTORS above the guaranteed floor', () => {
+    // The default fake context reports 1024 vectors → (1024 − 24) / 4 = 250 palette slots.
+    const { state } = makeGlSceneState();
+    expect(getGlSkinJointCapacity(state)).toBe(250);
+  });
+
+  it('clamps to the guaranteed 64 floor on a minimum-spec budget', () => {
+    const gl = makeFakeGl2();
+    gl.getParameter = (pname: number) => (pname === gl.MAX_VERTEX_UNIFORM_VECTORS ? 256 : 0);
+    const { state } = makeGlSceneState(gl);
+    expect(getGlSkinJointCapacity(state)).toBe(GL_MAX_SKIN_JOINTS);
+  });
+
+  it('clamps to the hard cap on a very large budget', () => {
+    const gl = makeFakeGl2();
+    gl.getParameter = (pname: number) => (pname === gl.MAX_VERTEX_UNIFORM_VECTORS ? 100_000 : 0);
+    const { state } = makeGlSceneState(gl);
+    expect(getGlSkinJointCapacity(state)).toBe(GL_SKIN_JOINT_HARD_CAP);
+  });
+
+  it('falls back to the floor when the context cannot report a budget', () => {
+    const gl = makeFakeGl2();
+    (gl as { getParameter?: unknown }).getParameter = undefined;
+    const { state } = makeGlSceneState(gl);
+    expect(getGlSkinJointCapacity(state)).toBe(GL_MAX_SKIN_JOINTS);
+  });
+
+  it('queries the GL budget once and caches it per state', () => {
+    const gl = makeFakeGl2();
+    let queries = 0;
+    gl.getParameter = (pname: number) => {
+      queries++;
+      return pname === gl.MAX_VERTEX_UNIFORM_VECTORS ? 1024 : 0;
+    };
+    const { state } = makeGlSceneState(gl);
+    getGlSkinJointCapacity(state);
+    getGlSkinJointCapacity(state);
+    expect(queries).toBe(1);
   });
 });
 

@@ -124,11 +124,14 @@ export function drawGlMeshSubset(
   // the location, and only a skinned mesh carries a palette; a mismatch (one without the other) simply
   // skips the upload and the shader falls back to its rigid path.
   const jointMatrices = proxy.jointMatrices;
-  if (program.locJointMatrices != null && jointMatrices != null) {
+  const gpuSkinned = program.locJointMatrices != null && jointMatrices != null;
+  if (gpuSkinned) {
     gl.uniformMatrix4fv(program.locJointMatrices, false, jointMatrices);
   }
 
-  const upload = ensureGlMeshUpload(state, geometry);
+  // A GPU-skinned draw uploads the static bind pose (the shader deforms it via the palette), so the
+  // per-frame CPU pose updateMeshSkin also writes to geometry.vertices is not re-applied on top.
+  const upload = ensureGlMeshUpload(state, geometry, gpuSkinned);
   const subset = proxy.subset;
 
   if (upload.indexBuffer !== null) {
@@ -159,6 +162,31 @@ export function ensureGlSceneProgram<T extends GlMeshProgram>(
   return program as T;
 }
 
+// The joint-palette size this context's shaders compile with and drawGlScene gates GPU skinning on,
+// derived once from MAX_VERTEX_UNIFORM_VECTORS: the budget minus the reserved vectors, in mat4s, clamped
+// to [GL_MAX_SKIN_JOINTS, GL_SKIN_JOINT_HARD_CAP]. The floor keeps behavior identical to the old fixed 64
+// on minimum-spec hardware; capable GPUs report far more, letting a 110-joint skeleton (e.g. an MD5
+// model) fit the palette rather than falling back to CPU skinning. Cached on the runtime — one GL query.
+// The shader `#define MAX_JOINTS` and the gate MUST use this same value so a passing joint index never
+// reads past the uniform array.
+export function getGlSkinJointCapacity(state: Readonly<GlRenderState>): number {
+  const runtime = getGlSceneRuntime(state);
+  let capacity = runtime.skinJointCapacity;
+  if (capacity === undefined) {
+    // Fall back to the guaranteed baseline when the context cannot report a budget (a partial test
+    // stub, or a driver returning nothing) — real WebGL2 always answers MAX_VERTEX_UNIFORM_VECTORS.
+    const gl = state.gl;
+    const pname = gl.MAX_VERTEX_UNIFORM_VECTORS;
+    const budget =
+      pname !== undefined && typeof gl.getParameter === 'function' ? (gl.getParameter(pname) as number) : 0;
+    const usable = Number.isFinite(budget) && budget > 0 ? budget : 256;
+    const fromBudget = Math.floor((usable - RESERVED_VERTEX_UNIFORM_VECTORS) / 4);
+    capacity = Math.max(GL_MAX_SKIN_JOINTS, Math.min(GL_SKIN_JOINT_HARD_CAP, fromBudget));
+    runtime.skinJointCapacity = capacity;
+  }
+  return capacity;
+}
+
 // The HAS_UV_TRANSFORM define-key predicate every map-sampling family shares: true only when the
 // material's primary map is bound (an image is present, so it is actually sampled) AND carries a
 // non-identity uv transform. Gating on both keeps an untiled or unbound surface on the identity shader
@@ -180,6 +208,23 @@ export function setGlMeshCameraPosition(
   gl.uniform3f(locCameraPosition, scratchCameraPosition.x, scratchCameraPosition.y, scratchCameraPosition.z);
 }
 
+// The guaranteed-safe joint-palette size: 64 mat4s = 256 vec4 uniform components, exactly WebGL2's
+// minimum vertex-uniform budget (MAX_VERTEX_UNIFORM_VECTORS ≥ 256). Used as the floor and the compile
+// fallback; the actual per-context capacity (getGlSkinJointCapacity) is derived from the real budget so
+// larger skeletons GPU-skin on capable hardware. A skeleton exceeding the resolved capacity falls back
+// to the CPU path (updateMeshSkin) — drawGlScene draws it rigid over those CPU-posed vertices.
+export const GL_MAX_SKIN_JOINTS = 64;
+
+// Upper bound on the resolved palette: 256 mat4s = 1024 vec4 components. Caps the vertex-uniform and
+// upload cost even on GPUs reporting a huge MAX_VERTEX_UNIFORM_VECTORS, and keeps the joints0 index a
+// vertex can carry (a float) well within exact-integer range.
+export const GL_SKIN_JOINT_HARD_CAP = 256;
+
+// Vertex-uniform vectors (vec4) the vertex stage spends on non-palette uniforms across the families —
+// u_model (4) + u_viewProjection (4) + u_normalMatrix (mat3 = 3) + u_uvTransform (mat3 = 3) plus varying
+// headroom. Reserved out of the budget before dividing the remainder into mat4 palette slots (4 each).
+const RESERVED_VERTEX_UNIFORM_VECTORS = 24;
+
 // Uploads the camera view-projection matrix to a program's u_viewProjection. Every family's vertex
 // stage shares this transform; the perspective aspect falls back to 1 when zero (degenerate camera)
 // so a malformed projection never divides by zero.
@@ -192,12 +237,6 @@ export function setGlMeshViewProjection(
   getCameraViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
   gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
 }
-
-// The maximum joints one HAS_SKIN program's u_jointMatrices palette holds. 64 mat4s = 256 vec4 uniform
-// components, within WebGL2's guaranteed vertex-uniform budget alongside the light/material uniforms.
-// A skeleton with more joints than this exceeds the GPU palette; drive it through the CPU path
-// (updateMeshSkin) instead. Kept in sync with the shader's `#define MAX_JOINTS`.
-export const GL_MAX_SKIN_JOINTS = 64;
 
 // Vertex-stage GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
 // influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette uniform, and the

@@ -2,7 +2,7 @@ import type { GlRenderState } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { resolveGlLitLocations } from './glLitProgram';
-import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram, getGlSkinJointCapacity } from './glMeshProgram';
 import type { GlPbrDefineKey } from './glPbrPrelude';
 import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -99,6 +99,10 @@ export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<Gl
 export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefineKey>): GlPbrProgram {
   // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
-  const fullKey: GlPbrDefineKey = { ...key, hasSkin: getGlSceneRuntime(state).activeSkinnedRun };
+  const fullKey: GlPbrDefineKey = {
+    ...key,
+    hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
+    maxJoints: getGlSkinJointCapacity(state),
+  };
   return ensureGlSceneProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) => compileGlPbrProgram(gl, fullKey));
 }

@@ -41,10 +41,15 @@ Ranked, worst first. Each is something a user assumes works and it does not.
 6. **Compressed textures (KTX2/DDS/Basis) are a mirage.** Five green-tested container parsers exist, but no
    transcoder and no compressed-GPU-upload path exists on any backend (`parseBasis.ts:20`) — a parsed `.ktx2`
    is a dead descriptor that never reaches a pixel.
-7. **Materials/textures evaporate on import for OBJ/3DS/MD2/MD5, and glTF imports nothing textured or
-   animated.** Five of six scene formats call `createMesh(geometry, [])` with an empty material array; OBJ's
-   `materials` argument is dead code (`objParse.ts:287`); glTF never reads `primitive.material` or animation
-   channels. AWD (the one good one) returns an empty scene for *compressed* files — Away3D's default export mode.
+7. **Imported material texture references are never resolved to pixels, and glTF/3DS/MD2 import nothing
+   textured.** OBJ *does* emit materials — `createSceneFromObj(source, parseObjMaterialLibrary(mtl))` builds one
+   `BlinnPhongMaterial` per `usemtl` with a `MeshSubset` per material and `map_Kd`/`map_Ks`/`bump` as external
+   texture refs (verified on the F14: 175 subsets, 16 distinct diffuse maps); MD5 likewise emits a BlinnPhong
+   material referencing its section `shader`. But those refs stay `Unresolved` (`image: null`) — decoding the
+   referenced bytes is the asset pipeline's job, which no scene-formats example wires, so a caller that ignores
+   the material argument (as the aircraft-demo does) renders untextured. glTF still never reads
+   `primitive.material` or animation channels; 3DS/MD2 still call `createMesh(geometry, [])`. AWD (the one good
+   one) returns an empty scene for *compressed* files — Away3D's default export mode.
 8. **There is no physics engine.** `physics2d`/`physics3d` are empty charters; `collision` returns an MTV but
    never resolves, integrates, or owns a world, and has no swept/TOI (fast movers tunnel) and no contact sets.
    "collision + spring + spatial" is detection, not dynamics — the user writes the entire solver.
@@ -131,27 +136,27 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
-| Textured/material-bearing meshes from OBJ/3DS/MD2/MD5 | All call `createMesh(geometry, [])` — empty material array (`objParse.ts:287`, `md2Parse.ts:177`, `md5Parse.ts:229`, `threeDsParse.ts:350`); only AWD emits materials | all (parse) | SURPRISE |
+| Textured/material-bearing meshes from OBJ/3DS/MD2/MD5 | OBJ + MD5 + AWD emit materials (OBJ: one BlinnPhong per `usemtl` with a subset each + `map_*` refs; MD5: BlinnPhong per section `shader`); 3DS/MD2 still `createMesh(geometry, [])` (`md2Parse.ts:177`, `threeDsParse.ts:350`). Emitted texture refs stay `Unresolved` until the asset pipeline decodes them | all (parse) | SURPRISE |
 | glTF import is comprehensive | Geometry + skins only; no materials/textures (never reads `primitive.material`), no animation channels, no sparse accessors, no external `.bin`/URIs, no cameras/lights/morph | all | SURPRISE |
 | AWD (the good one) opens real files | Compressed AWD unsupported → returns empty scene (`awdParse.ts:85-90`); Away3D defaults to LZMA/deflate. Emitted textures `Unresolved`, `image:null`, never decoded | all | SURPRISE |
-| OBJ+MTL attaches materials | `materials` param (`objParse.ts:23`) never read; MTL fully parsed into bespoke `ObjMaterial` that maps to nothing; `usemtl` is a no-op | all | SURPRISE |
+| OBJ+MTL attaches materials | Works: `createSceneFromObj(source, parseObjMaterialLibrary(mtl))` reads the library, resolves one `BlinnPhongMaterial` per `usemtl` (`flushGroup`/`resolveObjMaterial`), and emits a `MeshSubset` per material. Gap is downstream — the emitted `map_Kd` refs are `Unresolved` (no decode) and the aircraft-demo ignores the `materials` arg entirely | all | RESOLVED |
 | 3DS respects material + object placement | `MATERIAL`/`FACE_MATERIAL`/`TRANSFORM_MATRIX(0x4160)` defined in schema, never parsed → no materials, all meshes stack at origin; `ThreeDsMaterial` is dead | all | MAJOR |
 | MD2 (animated Quake2) imports animation | Only frame 0 kept (`md2Parse.ts:20-21`); skin/texture paths not even modeled | all | MAJOR |
 | Imports have ever been rendered | Zero example/functional coverage; skinned imports deform on gl only, wgpu unwired | gl/wgpu | MAJOR |
-| MD5 texture available | `shader` name parsed then dropped; `.md5anim`→clip works but only via hand-wired `parseMd5Anim` | all | MINOR |
+| MD5 texture available | `shader` name now emitted as a `BlinnPhongMaterial.diffuseMap` external ref (`md5Parse.ts`), not dropped — but `Unresolved` until decoded; `.md5anim`→clip via `parseMd5Anim` (or folded by `importMd5Mesh`) | all | MINOR |
 | USD/FBX/COLLADA/PLY/STL, Draco/meshopt, export direction | Absent; charter/map promise USD; all formats import-only | n/a | MINOR |
 
 ### Skeletal Animation & Skinning (`@flighthq/skeleton3d`)
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
-| Skinned glTF/PBR character GPU-skins | `HAS_SKIN` only in classic prelude (`glClassicPrelude.ts:180`); PBR/toon/unlit/matcap/debug have no skin variant; glTF emits PBR → renders bind pose, no warning | gl (classic only) | SURPRISE |
+| Skinned glTF/PBR character GPU-skins | Works on gl: `HAS_SKIN` variant in all five mesh preludes (classic/pbr/unlit/shaded/toon), so glTF's PBR GPU-skins; the draw uploads the static bind pose (not the CPU-posed vertices) so a redundant `updateMeshSkin` no longer double-skins. matcap/debug still have no skin variant. Pixel result is host-verify-only (jsdom can't read back) | gl | SURPRISE |
 | WebGPU skins skinned meshes | Zero skinning in scene-wgpu (grep → none); any material renders bind pose | wgpu | SURPRISE |
-| GPU skinning is verified | No functional skin scene; example uses CPU `updateMeshSkin` + PBR (the path that can't GPU-skin); gl variant proven only by jsdom shader-string tests | gl (unverified) | SURPRISE |
+| GPU skinning is verified | Still no functional skin scene; the gl bind-pose/palette/gate logic is unit-tested (jsdom), but the deformed pixels are host-verify-only. An app calling `updateMeshSkin` on a gl-rendered skinned mesh is now safe (bind-pose upload), but that coexistence isn't pixel-gated | gl (unverified) | SURPRISE |
 | 2D skeletal animation (Spine/DragonBones) exists | `skeleton2d` is a charter with zero code; no `packages/skeleton2d` | n/a | SURPRISE/MAJOR |
 | Feature Lookup "gl, wgpu" for skeletal | GPU skinning is gl-classic-only, absent on wgpu | — | MAJOR |
 | Animated character culls/picks correctly | Skinned bounds stay bind-pose (AABB never recomputed); frustum cull + raycast test rest bounds → mis-cull/mis-pick | all | MAJOR |
-| >64-joint rig works | Hard `GL_MAX_SKIN_JOINTS=64` cap (`glMeshProgram.ts:166`), no joint-count check/clamp/warn/CPU-fallback; Mixamo rigs run ~52-70 | gl | MAJOR |
+| >64-joint rig works | Fixed on gl: palette sized per-context from `MAX_VERTEX_UNIFORM_VECTORS` (64 floor, 256 cap) via `getGlSkinJointCapacity`, and `drawGlScene` gates GPU skinning on `jointCount ≤ capacity`, falling back to a rigid draw over the CPU-posed vertices (`updateMeshSkin`) when a rig exceeds it — no more out-of-range palette reads. wgpu still uncapped/unwired | gl (wgpu open) | RESOLVED |
 | Morph targets / IK / blend trees / DQS | Phase 4 absent; glTF morph targets dropped on import; LBS-only (candy-wrapper collapse); no retargeting | all | MAJOR/MINOR |
 | >4 influences | Fixed 4; glTF reads only JOINTS_0/WEIGHTS_0, JOINTS_1 dropped (renormalized, silent) | all | MINOR |
 
