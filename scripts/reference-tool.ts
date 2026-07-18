@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 // reused; pass `--refresh` to pull the latest and reinstall.
 //
 // Usage:
-//   npm run dev:reference -- <case> [--openfl|--starling|--awayjs] [--refresh]
+//   npm run get:reference  -- [--refresh]                                (warm the checkout: clone + install only)
+//   npm run dev:reference  -- <case> [--openfl|--starling|--awayjs] [--refresh]
 //   npm run test:reference -- [playwright args] [--refresh]
 
 interface Mode {
@@ -68,15 +69,24 @@ function ensureCheckout(refresh: boolean): boolean {
 }
 
 const [modeName, ...rest] = process.argv.slice(2);
+const refresh = rest.includes('--refresh');
+const forwarded = rest.filter((arg) => arg !== '--refresh');
+
+// `get` only warms the checkout (clone + install) so an agent can read or edit flight-reference
+// files without starting a server; the other modes ensure the checkout, then run its npm script.
+if (modeName === 'get') {
+  if (!ensureCheckout(refresh)) process.exit(1);
+  console.error(`[reference] ready at ${checkoutDir}`);
+  process.exit(0);
+}
+
 const mode = modeName ? MODES[modeName] : undefined;
 if (!mode) {
-  console.error(`Usage: tsx ./scripts/reference-tool.ts <${Object.keys(MODES).join('|')}> [args]`);
+  console.error(`Usage: tsx ./scripts/reference-tool.ts <get|${Object.keys(MODES).join('|')}> [args]`);
+  console.error('  get: [--refresh]   clone + install only');
   for (const [name, { usage }] of Object.entries(MODES)) console.error(`  ${name}: ${usage}`);
   process.exit(1);
 }
-
-const refresh = rest.includes('--refresh');
-const forwarded = rest.filter((arg) => arg !== '--refresh');
 
 if (!ensureCheckout(refresh)) process.exit(1);
 
