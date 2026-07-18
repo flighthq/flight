@@ -48,6 +48,8 @@ export async function launchBrowser(
         __flightCapture?: boolean;
         __flightCaptureVerify?: boolean;
         __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
+        __ftTarget?: { kind?: string };
+        __ftVerification?: { fingerprint?: string | null };
       };
       const { frames, verify } = args;
       flags.__flightCapture = true;
@@ -87,6 +89,15 @@ export async function launchBrowser(
         return realGetContext.call(this, type, attrs);
       } as typeof HTMLCanvasElement.prototype.getContext;
 
+      // A scene whose first frames render blank while it warms up (async mesh/texture upload, an IBL
+      // bake, a float render target) needs more than `frames` frames before its first non-blank frame.
+      // Freezing hard on frame N would then shoot black. So for a GPU verifier the halt treats `frames`
+      // as a minimum: once past it, keep advancing until the verifier publishes a real (non-blank) frame,
+      // up to this ceiling. Scenes already non-blank by frame N halt at exactly N (unchanged), so stable
+      // baselines are unaffected; only warm-up-slow scenes render the extra frames. A scene that stays
+      // blank to the ceiling still stops, and the verifier guard in captureEntry then fails it — no false
+      // green, no unbounded loop (captureEntry's own 15s wait is the outer bound either way).
+      const warmupCeiling = frames + 600;
       let count = 0;
       const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
       // Expose the un-hijacked rAF so the render verifier can await a genuine presented frame before it
@@ -95,9 +106,19 @@ export async function launchBrowser(
       flags.__ftRealRequestAnimationFrame = realRequestAnimationFrame;
       window.requestAnimationFrame = (callback: FrameRequestCallback): number =>
         realRequestAnimationFrame((time) => {
-          if (count >= frames) return; // halt: scene stops advancing on frame N
+          if (flags.__captureFramesReached) return; // halted: scene holds its last frame
+          if (count >= frames) {
+            const targetKind = flags.__ftTarget?.kind;
+            const gpuVerifying = verify && (targetKind === 'webgl' || targetKind === 'webgpu');
+            const haveRealFrame =
+              (flags.__ftVerification?.fingerprint ?? null) !== null || document.getElementById('ft-error') !== null;
+            if (!gpuVerifying || haveRealFrame || count >= warmupCeiling) {
+              flags.__captureFramesReached = true;
+              return; // halt: scene stops advancing
+            }
+            // else: still warming up — fall through to render another frame
+          }
           count++;
-          if (count >= frames) flags.__captureFramesReached = true;
           callback(time);
         });
     },
