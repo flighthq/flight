@@ -1,15 +1,17 @@
+import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, setSceneNodeTransform } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
+import type { Material, Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
 
 import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
 import type { SkinInfluence } from './shared';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
+  createExternalTextureRef,
   packSkinInfluences,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
@@ -225,7 +227,14 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       });
       // MD5 carries no normals; derive them from the Y-up bind-pose positions and winding.
       computeMeshGeometryNormals(geometry, geometry);
-      const meshNode: Mesh = createMesh(geometry, []);
+      // MD5's per-section `shader` names the material/texture the mesh uses. MD5 has no lighting-model
+      // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model)
+      // whose diffuseMap references the shader path; resolution of that path is the caller's step.
+      const materials: Material[] =
+        md5Mesh.shader.length > 0
+          ? [createBlinnPhongMaterial({ diffuseMap: createExternalTextureRef(md5Mesh.shader) }) as unknown as Material]
+          : [];
+      const meshNode: Mesh = createMesh(geometry, materials);
       if (skeleton !== null) meshNode.skin = { skeleton, skeletonRoot };
       addNodeChild(scene, meshNode as unknown as SceneNode);
     }

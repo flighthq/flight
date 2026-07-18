@@ -6,7 +6,8 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Mesh, SceneNode } from '@flighthq/types';
+import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { createSceneFromMd5Mesh } from './md5Parse';
 
@@ -316,6 +317,16 @@ describe('createSceneFromMd5Mesh', () => {
     expect(children).toHaveLength(3);
     expect(isMesh(children[1] as SceneNode)).toBe(true);
     expect(isMesh(children[2] as SceneNode)).toBe(true);
+  });
+
+  it("decodes each section's shader to a BlinnPhongMaterial referencing the shader path as a diffuseMap", () => {
+    const mesh = getNodeChildren(createSceneFromMd5Mesh(SINGLE_TRIANGLE))[1] as Mesh;
+    expect(mesh.materials).toHaveLength(1);
+    const material = mesh.materials[0] as BlinnPhongMaterial;
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    // The shader path is referenced, not decoded: an Unresolved External ref, image left null.
+    expect((material.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('textures/default');
+    expect(material.diffuseMap!.image).toBeNull();
   });
 
   it('returns an empty scene for empty input', () => {

@@ -1,5 +1,7 @@
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh';
-import type { VertexAttributeLayout } from '@flighthq/types';
+import { createTexture } from '@flighthq/texture';
+import type { Texture, VertexAttributeLayout } from '@flighthq/types';
+import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
 export const CANONICAL_LAYOUT: VertexAttributeLayout = {
@@ -59,6 +61,21 @@ export function convertTransformLhToRh(transform: Float64Array): void {
   transform[6] = -transform[6] + 0;
   transform[7] = -transform[7] + 0;
   transform[11] = -transform[11] + 0;
+}
+
+// Wraps a texture file path/URI declared by a model format as an Unresolved External resource ref on
+// a fresh Texture. The parser references the image, it does not load or decode it — @flighthq/scene-
+// resources resolves the ref later. Shared by the OBJ/MD5/3DS/MD2 material decoders.
+export function createExternalTextureRef(uri: string): Texture {
+  return createTexture({
+    resource: {
+      basePath: null,
+      kind: SceneResourceRefKind.External,
+      mimeType: null,
+      state: ResourceResolutionState.Unresolved,
+      uri,
+    },
+  });
 }
 
 // ---- Right-handed Z-up → Right-handed Y-up (MD2, MD5) ----
