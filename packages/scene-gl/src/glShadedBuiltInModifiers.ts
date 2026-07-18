@@ -195,7 +195,9 @@ function bindGlModifierTexture(
   if (unit < 0) return;
   gl.activeTexture(gl.TEXTURE0 + unit);
   const image = texture.image;
-  if (image !== null && image.source !== null) bindGlTexture(state, image.source);
+  if (image !== null && image.source !== null) {
+    bindGlTexture(state, image.source, texture.sampler.wrapU, texture.sampler.wrapV);
+  }
   gl.uniform1i(gl.getUniformLocation(context.program, uniformName), unit);
   gl.activeTexture(gl.TEXTURE0);
 }

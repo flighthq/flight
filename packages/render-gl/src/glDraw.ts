@@ -1,4 +1,4 @@
-import type { GlBitmapShader, GlBlendRealization, GlRenderState } from '@flighthq/types';
+import type { GlBitmapShader, GlBlendRealization, GlRenderState, TextureWrap } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -19,7 +19,19 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
   gl.blendFunc(gl[realization.src], gl[realization.dst]);
 }
 
-export function bindGlTexture(state: GlRenderState, imageSource: CanvasImageSource): WebGLTexture {
+// Binds (uploading + caching on first use) the GL texture for an image source and sets its wrap mode
+// to the sampler's wrapU/wrapV (default clamp-to-edge — 2D bitmap/text callers omit them). Wrap is
+// re-applied on every bind, not baked at creation, because the GL texture is cached by image source
+// alone: one image reused by two materials with different wraps (e.g. a map bound as both normal and
+// metallic-roughness with different sampling) shares one GL texture, so the wrap must follow the
+// current draw's sampler rather than whoever uploaded it first. WebGL2 allows REPEAT on NPOT textures,
+// so no power-of-two constraint applies. Translate wrap through glTextureWrapValue.
+export function bindGlTexture(
+  state: GlRenderState,
+  imageSource: CanvasImageSource,
+  wrapU: TextureWrap = 'clamp-to-edge',
+  wrapV: TextureWrap = wrapU,
+): WebGLTexture {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const textureCache = runtime.textureCache;
@@ -30,8 +42,6 @@ export function bindGlTexture(state: GlRenderState, imageSource: CanvasImageSour
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     // Both image and canvas sources present straight (un-premultiplied) alpha to texImage2D, so
     // premultiply on upload to match the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend used
     // everywhere — uploaded images, canvas-backed shapes/text, and render-target composites. (A
@@ -45,6 +55,10 @@ export function bindGlTexture(state: GlRenderState, imageSource: CanvasImageSour
     gl.bindTexture(gl.TEXTURE_2D, texture);
     runtime.currentTexture = texture;
   }
+  // texture is the active TEXTURE_2D binding in every path above; set wrap here so a cache hit picks up
+  // this draw's sampler wrap instead of the first uploader's.
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glTextureWrapValue(gl, wrapU));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glTextureWrapValue(gl, wrapV));
   return texture;
 }
 
@@ -175,6 +189,14 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
     state.gl.useProgram(program);
     runtime.currentProgram = program;
   }
+}
+
+// Maps a sampler wrap mode to its WebGL2 texture-wrap constant; clamp-to-edge is the fallback. REPEAT
+// tiles the sampled uv, which is what makes setTextureUvScale / a repeat sampler actually tile.
+function glTextureWrapValue(gl: WebGL2RenderingContext, wrap: TextureWrap): number {
+  if (wrap === 'repeat') return gl.REPEAT;
+  if (wrap === 'mirror-repeat') return gl.MIRRORED_REPEAT;
+  return gl.CLAMP_TO_EDGE;
 }
 
 const NORMAL_BLEND: GlBlendRealization = { src: 'ONE', dst: 'ONE_MINUS_SRC_ALPHA' };

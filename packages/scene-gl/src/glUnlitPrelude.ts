@@ -65,7 +65,7 @@ export function bindGlUnlitSurface(
 
   if (colorMap !== null && colorMap.image !== null && colorMap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, colorMap.image.source);
+    bindGlTexture(state, colorMap.image.source, colorMap.sampler.wrapU, colorMap.sampler.wrapV);
     gl.uniform1i(program.locColorMap, 0);
   }
 }
