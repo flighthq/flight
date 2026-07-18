@@ -59,9 +59,9 @@ export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshPr
 // Uploads a material's primary-texture uv transform to the HAS_UV_TRANSFORM vertex variant. Resolves
 // u_uvTransform lazily and caches it on the program (mirroring locObjectAlpha): a null location means
 // the compiled variant omits the uniform — the identity path — so this is a cheap no-op there, and a
-// null texture likewise skips. @flighthq/texture composes the KHR_texture_transform row-major; this
-// transposes it into the column-major layout GLSL reads with transpose=false, so
-// `u_uvTransform * vec3(uv, 1.0)` matches the CPU transformTextureUv reference.
+// null texture likewise skips. @flighthq/texture composes the KHR_texture_transform column-major, so
+// it uploads with transpose=false and `u_uvTransform * vec3(uv, 1.0)` matches the CPU
+// transformTextureUv reference.
 export function bindGlUvTransform(
   gl: WebGL2RenderingContext,
   program: Readonly<GlMeshProgram>,
@@ -74,18 +74,7 @@ export function bindGlUvTransform(
   }
   if (loc === null || texture === null) return;
   getTextureUvMatrix(scratchUvMatrix, texture);
-  const m = scratchUvMatrix.m;
-  // Transpose row-major → column-major (col-major[3c+r] = row-major[3r+c]).
-  scratchUvTransform[0] = m[0];
-  scratchUvTransform[1] = m[3];
-  scratchUvTransform[2] = m[6];
-  scratchUvTransform[3] = m[1];
-  scratchUvTransform[4] = m[4];
-  scratchUvTransform[5] = m[7];
-  scratchUvTransform[6] = m[2];
-  scratchUvTransform[7] = m[5];
-  scratchUvTransform[8] = m[8];
-  gl.uniformMatrix3fv(loc, false, scratchUvTransform);
+  gl.uniformMatrix3fv(loc, false, scratchUvMatrix.m);
 }
 
 // Compiles a vertex + fragment source pair into a linked GL program. Shared by every family's
@@ -246,7 +235,6 @@ mat4 skinMatrix() {
 const scratchViewProjection = createMatrix4();
 const scratchInverseView = createMatrix4();
 const scratchCameraPosition = { x: 0, y: 0, z: 0 };
-// Row-major uv matrix composed per bind, then transposed into the column-major upload buffer. Both are
-// reused across every bindGlUvTransform call (single-threaded GL draw path).
+// Column-major uv matrix composed per bind and uploaded directly; reused across every
+// bindGlUvTransform call (single-threaded GL draw path).
 const scratchUvMatrix = createMatrix3();
-const scratchUvTransform = new Float32Array(9);

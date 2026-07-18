@@ -88,8 +88,9 @@ export function getTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<Te
 }
 
 // Composes the KHR_texture_transform fields (uvOffset, uvRotation, uvScale) into the 3×3 matrix
-// a shader consumes at sample time. Row-major layout matching @flighthq/geometry Matrix3.
-// The resulting transform applies: scale → rotate → translate, per the KHR_texture_transform spec:
+// a shader consumes at sample time. Column-major layout matching @flighthq/geometry Matrix3, so it
+// uploads to a GL/WGSL mat3 uniform with no transpose. The resulting transform applies:
+// scale → rotate → translate, per the KHR_texture_transform spec:
 // row 0 = [sx*cos(r), -sy*sin(r), tx]; row 1 = [sx*sin(r), sy*cos(r), ty]; row 2 = [0, 0, 1].
 // Out-param form — write result into a pre-allocated Matrix3 to avoid per-call allocation.
 // Safe when out is an unrelated scratch; not intended for aliased input (no in-param here).
@@ -102,15 +103,15 @@ export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureLi
   const cosR = Math.cos(r);
   const sinR = Math.sin(r);
   const m = out.m;
-  m[0] = sx * cosR;
-  m[1] = -sy * sinR;
-  m[2] = tx;
-  m[3] = sx * sinR;
-  m[4] = sy * cosR;
-  m[5] = ty;
-  m[6] = 0;
-  m[7] = 0;
-  m[8] = 1;
+  m[0] = sx * cosR; // (0,0)
+  m[1] = sx * sinR; // (1,0)
+  m[2] = 0; // (2,0)
+  m[3] = -sy * sinR; // (0,1)
+  m[4] = sy * cosR; // (1,1)
+  m[5] = 0; // (2,1)
+  m[6] = tx; // (0,2)
+  m[7] = ty; // (1,2)
+  m[8] = 1; // (2,2)
 }
 
 // Returns the pixel width of the texture's bound image, or -1 when no image is bound.
