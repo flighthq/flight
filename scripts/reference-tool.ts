@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, symlinkSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,9 +11,10 @@ import { fileURLToPath } from 'node:url';
 // reused; pass `--refresh` to pull the latest and reinstall.
 //
 // Usage:
-//   npm run get:reference  -- [--refresh]                                (warm the checkout: clone + install only)
-//   npm run dev:reference  -- <case> [--openfl|--starling|--awayjs] [--refresh]
-//   npm run test:reference -- [playwright args] [--refresh]
+//   npm run get:reference     -- [--refresh]                                (warm the checkout: clone + install only)
+//   npm run dev:reference     -- <case> [--openfl|--starling|--awayjs] [--refresh]
+//   npm run test:reference    -- [playwright args] [--refresh]
+//   npm run capture:reference -- [--filter <case>] [--fail-on-error|--update-baseline] [--refresh]
 
 interface Mode {
   // The npm script to invoke inside the flight-reference checkout.
@@ -22,6 +23,7 @@ interface Mode {
 }
 
 const MODES: Readonly<Record<string, Mode>> = {
+  capture: { script: 'capture', usage: '[--filter <case>] [--fail-on-error|--update-baseline]' },
   dev: { script: 'dev', usage: '<case> [--openfl|--starling|--awayjs]' },
   test: { script: 'test:e2e', usage: '[playwright args]' },
 };
@@ -68,6 +70,17 @@ function ensureCheckout(refresh: boolean): boolean {
   return true;
 }
 
+// flight-reference's capture loads the `@flighthq/tool-capture` harness from its `.cache/flight-latest`
+// slot. flight is THIS monorepo, so point that slot here — the harness then matches the SDK the samples
+// render against (both this repo). Same spirit as FLIGHT_REPO, for the capture code path only.
+function ensureToolCaptureLink(): void {
+  const link = join(checkoutDir, '.cache', 'flight-latest');
+  if (existsSync(link)) return;
+  mkdirSync(dirname(link), { recursive: true });
+  symlinkSync(repoRoot, link, 'junction');
+  console.error(`[reference] linked ${link} -> ${repoRoot}`);
+}
+
 const [modeName, ...rest] = process.argv.slice(2);
 const refresh = rest.includes('--refresh');
 const forwarded = rest.filter((arg) => arg !== '--refresh');
@@ -89,6 +102,9 @@ if (!mode) {
 }
 
 if (!ensureCheckout(refresh)) process.exit(1);
+
+// Capture also needs the tool-capture harness pointed at this monorepo (see ensureToolCaptureLink).
+if (modeName === 'capture') ensureToolCaptureLink();
 
 // Point flight-reference at this monorepo so its Vite aliases resolve `@flighthq/*` to local source.
 const exitCode = run('npm', ['run', mode.script, '--', ...forwarded], checkoutDir, { FLIGHT_REPO: repoRoot });
