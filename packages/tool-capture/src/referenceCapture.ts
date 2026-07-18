@@ -1,5 +1,5 @@
 // The reference-subject capture driver: start flight-reference's Vite dev server (pointed at a Flight
-// checkout via FLIGHT_REPO + FLIGHT_SDK_SOURCE), enumerate its framework/corpus/case routes, and drive
+// checkout via FLIGHT_REPO), enumerate its framework/corpus/case routes, and drive
 // the shared captureEntry path with verify:true. This lives in tool-capture — beside the in-page
 // verifier (functionalVerify) and the capture core (captureEntry) — so BOTH ends of the reference
 // capture are contained in one package; scripts/reference-capture.ts is a thin CLI over runReferenceCapture.
@@ -121,8 +121,12 @@ export async function runReferenceCapture(options: Readonly<ReferenceCaptureOpti
 }
 
 // Spawns flight-reference's Vite dev server in the checkout, resolving once it logs its Local URL.
-// FLIGHT_REPO points its @flighthq/* aliases at the Flight source; FLIGHT_SDK_SOURCE=1 serves that source
-// over HMR so a fresh capture reflects local edits without a stale pre-bundle.
+// FLIGHT_REPO points its @flighthq/* aliases at the Flight source. We deliberately do NOT set
+// FLIGHT_SDK_SOURCE: that flag excludes @flighthq/sdk from Vite's dep pre-bundling to serve it as raw
+// source over HMR (for actively editing SDK internals) — which makes a cold page transform the entire SDK
+// module graph (~1700 modules, tens of seconds) and blow past the capture's page timeout. Capture renders
+// once and only needs the built result, so the pre-bundled path (esbuild-bundling the same local source
+// once) is both correct and far faster here.
 export function startReferenceDevServer(
   checkoutDir: string,
   repoRoot: string,
@@ -131,7 +135,7 @@ export function startReferenceDevServer(
     const child = spawn('npx', ['vite', '--host', '0.0.0.0'], {
       cwd: checkoutDir,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, FLIGHT_REPO: repoRoot, FLIGHT_SDK_SOURCE: '1' },
+      env: { ...process.env, FLIGHT_REPO: repoRoot },
     });
     let resolved = false;
     const timeout = setTimeout(() => {
