@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -71,17 +71,6 @@ function ensureCheckout(refresh: boolean): boolean {
   }
 
   return true;
-}
-
-// flight-reference's capture loads the `@flighthq/tool-capture` harness from its `.cache/flight-latest`
-// slot. flight is THIS monorepo, so point that slot here — the harness then matches the SDK the samples
-// render against (both this repo). Same spirit as FLIGHT_REPO, for the capture code path only.
-function ensureToolCaptureLink(): void {
-  const link = join(checkoutDir, '.cache', 'flight-latest');
-  if (existsSync(link)) return;
-  mkdirSync(dirname(link), { recursive: true });
-  symlinkSync(repoRoot, link, 'junction');
-  console.error(`[reference] linked ${link} -> ${repoRoot}`);
 }
 
 // The distinct case leaf names under content/frameworks/<framework>/<corpus>/<case> — the value you
@@ -167,9 +156,10 @@ if (!ensureCheckout(refresh)) process.exit(1);
 // Capture runs THIS monorepo's reference-capture runner (scripts/reference-capture.ts) — which starts
 // flight-reference's dev server and drives the shared tool-capture path — rather than flight-reference's
 // own capture script, so the hardened capture machinery lives here and improves for every subject at
-// once. Needs the tool-capture harness link (for the Vite @ft/* aliases) and a Playwright browser.
+// once. It imports @flighthq/tool-capture directly, so no in-checkout harness symlink is needed (an
+// earlier flight-latest -> repo link recursed through the nested checkout and could crash Vite). Needs a
+// Playwright browser, which runs in the agent sandbox as well as on a host.
 if (modeName === 'capture') {
-  ensureToolCaptureLink();
   if (!checkCapturePrereqs()) process.exit(1);
   const runner = join(repoRoot, 'scripts', 'reference-capture.ts');
   const exitCode = run('npx', ['tsx', runner, ...forwarded], repoRoot, { FLIGHT_REFERENCE_CHECKOUT: checkoutDir });
