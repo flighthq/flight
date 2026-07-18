@@ -221,6 +221,7 @@ describe('createSceneFromGltf', () => {
         alphaMode: 'MASK',
         doubleSided: true,
         emissiveFactor: [0, 1, 0],
+        name: 'Canopy',
         pbrMetallicRoughness: { baseColorFactor: [1, 0, 0, 1], metallicFactor: 0.25, roughnessFactor: 0.75 },
       },
     ];
@@ -237,6 +238,7 @@ describe('createSceneFromGltf', () => {
     expect(mat.alphaMode).toBe('mask');
     expect(mat.alphaCutoff).toBe(0.3);
     expect(mat.doubleSided).toBe(true);
+    expect(mat.name).toBe('Canopy'); // glTF material.name preserved as the authored identity
   });
 
   it('applies glTF metallic-roughness spec defaults when factors are absent', () => {
@@ -249,6 +251,7 @@ describe('createSceneFromGltf', () => {
     expect(mat.metallic).toBe(1);
     expect(mat.roughness).toBe(1);
     expect(mat.alphaMode).toBe('opaque');
+    expect(mat.name).toBeNull(); // no material.name → anonymous
   });
 
   it('resolves a baseColorTexture data-URI image to an Embedded texture ref', () => {

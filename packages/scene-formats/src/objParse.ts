@@ -366,6 +366,8 @@ function resolveObjMaterial(
 
   const parsed = library?.materials.get(name);
   const material = parsed !== undefined ? (objMaterialToBlinnPhong(parsed) as unknown as Material) : null;
+  // Preserve the MTL `newmtl` handle as the material's authored name (findSceneMaterialByName).
+  if (material !== null) material.name = name;
   cache.set(name, material);
   return material;
 }

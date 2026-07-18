@@ -291,10 +291,15 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       // MD5's per-section `shader` names the material/texture the mesh uses. MD5 has no lighting-model
       // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model)
       // whose diffuseMap references the shader path; resolution of that path is the caller's step.
-      const materials: Material[] =
-        md5Mesh.shader.length > 0
-          ? [createBlinnPhongMaterial({ diffuseMap: createExternalTextureRef(md5Mesh.shader) }) as unknown as Material]
-          : [];
+      const materials: Material[] = [];
+      if (md5Mesh.shader.length > 0) {
+        const material = createBlinnPhongMaterial({
+          diffuseMap: createExternalTextureRef(md5Mesh.shader),
+        }) as unknown as Material;
+        // MD5's shader path is the material's authored identity — preserve it as the name.
+        material.name = md5Mesh.shader;
+        materials.push(material);
+      }
       const meshNode: Mesh = createMesh(geometry, materials);
       if (skeleton !== null) meshNode.skin = { skeleton, skeletonRoot };
       addNodeChild(scene, meshNode as unknown as SceneNode);

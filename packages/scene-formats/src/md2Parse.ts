@@ -188,9 +188,12 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
   if (numSkins >= 1 && offSkins + MD2_SKIN_SIZE <= bytes.length) {
     const skinName = readMd2SkinName(bytes, offSkins);
     if (skinName.length > 0) {
-      materials.push(
-        createBlinnPhongMaterial({ diffuseMap: createExternalTextureRef(skinName) }) as unknown as Material,
-      );
+      const material = createBlinnPhongMaterial({
+        diffuseMap: createExternalTextureRef(skinName),
+      }) as unknown as Material;
+      // MD2's skin path is the material's authored identity — preserve it as the name.
+      material.name = skinName;
+      materials.push(material);
     }
   }
 
