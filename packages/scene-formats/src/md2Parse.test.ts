@@ -10,7 +10,7 @@ import { isMesh } from '@flighthq/scene';
 import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFromMd2 } from './md2Parse';
+import { createSceneFromMd2, importMd2 } from './md2Parse';
 import { MD2_ANORMS } from './md2Schema';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and
@@ -436,5 +436,28 @@ describe('createSceneFromMd2', () => {
     const scene = createSceneFromMd2(md2, warnings);
     expect(getNodeChildren(scene)).toHaveLength(1);
     expect(warnings.some((w) => w.includes('texcoord index') && w.includes('out of range'))).toBe(true);
+  });
+});
+
+describe('importMd2', () => {
+  it('wraps the scene with one scene and empty animations (morph animation deferred)', () => {
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 1, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 1, z: 0 },
+      ],
+      texCoords: [
+        { s: 0, t: 0 },
+        { s: 1, t: 0 },
+        { s: 0, t: 1 },
+      ],
+      triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
+    });
+    const result = importMd2(md2);
+    expect(result.scenes).toHaveLength(1);
+    expect(result.scene).toBe(result.scenes[0]);
+    expect(result.animations).toHaveLength(0);
+    expect(getNodeChildren(result.scene)).toHaveLength(1);
   });
 });

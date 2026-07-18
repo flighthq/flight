@@ -6,6 +6,7 @@ import { createMesh, createScene, createSceneNode, isMesh } from '@flighthq/scen
 import type { BlinnPhongMaterial, Material, SceneNode, Texture } from '@flighthq/types';
 
 import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
+import type { SceneImport } from './sceneImport';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
 // Parses a Wavefront OBJ text source into a Scene. Groups (`g`) and objects (`o`) become
@@ -156,6 +157,15 @@ export function createSceneFromObj(
   collapseSingleMeshGroups(scene);
 
   return scene;
+}
+
+// Imports a Wavefront OBJ as a whole file. The assembly-tier sibling of createSceneFromObj, present for
+// uniformity across the format importers — but OBJ carries no animation and one scene, so `animations`
+// is always empty and `scenes` a one-element array. `createSceneFromObj` already IS OBJ's complete
+// import; this exists only so a caller can treat every format's import<F> identically.
+export function importObj(source: string, materials?: Readonly<ObjMaterialLibrary>, warnings?: string[]): SceneImport {
+  const scene = createSceneFromObj(source, materials, warnings);
+  return { animations: [], scene, scenes: [scene] };
 }
 
 // Collapses each top-level group wrapper that holds exactly one Mesh into that bare Mesh, migrating

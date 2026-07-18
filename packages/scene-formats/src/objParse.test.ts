@@ -11,7 +11,7 @@ import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } fr
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseObjMaterialLibrary } from './mtlParse';
-import { createSceneFromObj } from './objParse';
+import { createSceneFromObj, importObj } from './objParse';
 
 describe('createSceneFromObj', () => {
   it('parses a single triangle with positions only', () => {
@@ -295,5 +295,16 @@ describe('createSceneFromObj', () => {
     const children = getNodeChildren(scene);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as SceneNode)).toBe(true);
+  });
+});
+
+describe('importObj', () => {
+  it('wraps the scene as a SceneImport with one scene and no animations', () => {
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
+    const result = importObj(obj);
+    expect(result.scenes).toHaveLength(1);
+    expect(result.scene).toBe(result.scenes[0]);
+    expect(result.animations).toHaveLength(0);
+    expect(isMesh(getNodeChildren(result.scene)[0] as SceneNode)).toBe(true);
   });
 });
