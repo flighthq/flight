@@ -7,8 +7,8 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 
 ## Legend
 
-- `✓` — a committed functional-baseline fingerprint exists for this scene×backend, and the backend is **re-verifiable in-sandbox** (Canvas/DOM/WebGL).
-- `✓ᴴ` — a fingerprint exists but was **host-captured**; WebGPU is blind in the Docker Sbx sandbox (software Vulkan, no GPU passthrough), so it cannot be re-verified by an agent here.
+- `✓` — a committed functional-baseline fingerprint exists for this scene×backend, and the backend is **re-verifiable in-sandbox**. Canvas/DOM/WebGL run natively; WebGPU runs via Playwright Chromium + the bundled SwiftShader software Vulkan adapter and the GPU-readback present path.
+- `✓ᴴ` — a fingerprint exists but was **host-captured** and is not re-verifiable in this sandbox. (None currently — all four backends re-verify here.)
 - `·` — no committed baseline for this scene on this backend.
 
 > **A fingerprint proves the scene renders deterministically and was captured — NOT that it renders _correctly_.** A stub/passthrough (e.g. a screen-space effect with no G-buffer) still yields a stable fingerprint. Correctness caveats are in *Declared gaps & caveats* below.
@@ -21,7 +21,7 @@ drift-gated by `npm run support:check` (part of `npm run check`).
 | --- | --- | --- | --- |
 | 91 / 133 | 39 / 133 | 128 / 133 | 120 / 133 |
 
-WebGPU counts are host-captured (`✓ᴴ`) and not re-verifiable in-sandbox.
+All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).
 
 ## Declared gaps & caveats
 
@@ -46,11 +46,11 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `bitmap-color-transform` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `bitmap-color-transform` | ✓ | ✓ | ✓ | ✓ |
 | `bitmap-downscale-smoothing` | ✓ | ✓ | · | · |
-| `bitmap-smoothing` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `bitmap-source-rect` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `bitmap-transparent-compositing` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `bitmap-smoothing` | ✓ | ✓ | ✓ | ✓ |
+| `bitmap-source-rect` | ✓ | ✓ | ✓ | ✓ |
+| `bitmap-transparent-compositing` | ✓ | ✓ | ✓ | ✓ |
 
 ### Camera
 
@@ -62,75 +62,75 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `clip-contour-hdr` | · | · | ✓ | ✓ᴴ |
+| `clip-contour-hdr` | · | · | ✓ | ✓ |
 
 ### Color / Adjustments
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `color-adjustment` | ✓ | · | ✓ | ✓ᴴ |
+| `color-adjustment` | ✓ | · | ✓ | ✓ |
 
 ### Display Object
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `displayobject-cache` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `displayobject-clip-contour` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `displayobject-clip-contour-hdr` | · | · | ✓ | ✓ᴴ |
-| `displayobject-clip-rect` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `displayobject-cache` | ✓ | ✓ | ✓ | ✓ |
+| `displayobject-clip-contour` | ✓ | ✓ | ✓ | ✓ |
+| `displayobject-clip-contour-hdr` | · | · | ✓ | ✓ |
+| `displayobject-clip-rect` | ✓ | ✓ | ✓ | ✓ |
 
 ### Effects
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `effect-bloom` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-bokeh-dof` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-brightness-contrast` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-camera-motion-blur` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-chain` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-channel-mixer` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-chromatic-aberration` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-color-grade` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-crt` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-directional-blur` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-displacement` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-dither` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-empty-passthrough` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-exposure` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-film-grain` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-fxaa` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-glitch` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-god-rays` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-grayscale` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-halftone` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-hue-saturation` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-invert` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-kuwahara` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-lens-distortion` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-lens-flare` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-lensdirt` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-lift-gamma-gain` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-lut-grade` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-motion-blur` | · | · | ✓ | ✓ᴴ |
-| `effect-msaa` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-msaa-bloom` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-outline` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-pixelate` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-posterize` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-radial-blur` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-scanlines` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-screen-space-fog` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-sepia` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-sharpen` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-sketch` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-smaa` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-ssao` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-ssr` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-taa` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-tilt-shift` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-tone-map` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-vignette` | ✓ | · | ✓ | ✓ᴴ |
-| `effect-white-balance` | ✓ | · | ✓ | ✓ᴴ |
+| `effect-bloom` | ✓ | · | ✓ | ✓ |
+| `effect-bokeh-dof` | ✓ | · | ✓ | ✓ |
+| `effect-brightness-contrast` | ✓ | · | ✓ | ✓ |
+| `effect-camera-motion-blur` | ✓ | · | ✓ | ✓ |
+| `effect-chain` | ✓ | · | ✓ | ✓ |
+| `effect-channel-mixer` | ✓ | · | ✓ | ✓ |
+| `effect-chromatic-aberration` | ✓ | · | ✓ | ✓ |
+| `effect-color-grade` | ✓ | · | ✓ | ✓ |
+| `effect-crt` | ✓ | · | ✓ | ✓ |
+| `effect-directional-blur` | ✓ | · | ✓ | ✓ |
+| `effect-displacement` | ✓ | · | ✓ | ✓ |
+| `effect-dither` | ✓ | · | ✓ | ✓ |
+| `effect-empty-passthrough` | ✓ | · | ✓ | ✓ |
+| `effect-exposure` | ✓ | · | ✓ | ✓ |
+| `effect-film-grain` | ✓ | · | ✓ | ✓ |
+| `effect-fxaa` | ✓ | · | ✓ | ✓ |
+| `effect-glitch` | ✓ | · | ✓ | ✓ |
+| `effect-god-rays` | ✓ | · | ✓ | ✓ |
+| `effect-grayscale` | ✓ | · | ✓ | ✓ |
+| `effect-halftone` | ✓ | · | ✓ | ✓ |
+| `effect-hue-saturation` | ✓ | · | ✓ | ✓ |
+| `effect-invert` | ✓ | · | ✓ | ✓ |
+| `effect-kuwahara` | ✓ | · | ✓ | ✓ |
+| `effect-lens-distortion` | ✓ | · | ✓ | ✓ |
+| `effect-lens-flare` | ✓ | · | ✓ | ✓ |
+| `effect-lensdirt` | ✓ | · | ✓ | ✓ |
+| `effect-lift-gamma-gain` | ✓ | · | ✓ | ✓ |
+| `effect-lut-grade` | ✓ | · | ✓ | ✓ |
+| `effect-motion-blur` | · | · | ✓ | ✓ |
+| `effect-msaa` | ✓ | · | ✓ | ✓ |
+| `effect-msaa-bloom` | ✓ | · | ✓ | ✓ |
+| `effect-outline` | ✓ | · | ✓ | ✓ |
+| `effect-pixelate` | ✓ | · | ✓ | ✓ |
+| `effect-posterize` | ✓ | · | ✓ | ✓ |
+| `effect-radial-blur` | ✓ | · | ✓ | ✓ |
+| `effect-scanlines` | ✓ | · | ✓ | ✓ |
+| `effect-screen-space-fog` | ✓ | · | ✓ | ✓ |
+| `effect-sepia` | ✓ | · | ✓ | ✓ |
+| `effect-sharpen` | ✓ | · | ✓ | ✓ |
+| `effect-sketch` | ✓ | · | ✓ | ✓ |
+| `effect-smaa` | ✓ | · | ✓ | ✓ |
+| `effect-ssao` | ✓ | · | ✓ | ✓ |
+| `effect-ssr` | ✓ | · | ✓ | ✓ |
+| `effect-taa` | ✓ | · | ✓ | ✓ |
+| `effect-tilt-shift` | ✓ | · | ✓ | ✓ |
+| `effect-tone-map` | ✓ | · | ✓ | ✓ |
+| `effect-vignette` | ✓ | · | ✓ | ✓ |
+| `effect-white-balance` | ✓ | · | ✓ | ✓ |
 
 ### Environment / IBL
 
@@ -151,73 +151,73 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `material-anisotropy` | · | · | ✓ | ✓ᴴ |
-| `material-blinn-phong` | · | · | ✓ | ✓ᴴ |
-| `material-clearcoat` | · | · | ✓ | ✓ᴴ |
-| `material-depth` | · | · | ✓ | ✓ᴴ |
-| `material-emissive` | · | · | ✓ | ✓ᴴ |
-| `material-iridescence` | · | · | ✓ | ✓ᴴ |
-| `material-lambert` | · | · | ✓ | ✓ᴴ |
-| `material-matcap` | · | · | ✓ | ✓ᴴ |
-| `material-normal` | · | · | ✓ | ✓ᴴ |
-| `material-phong` | · | · | ✓ | ✓ᴴ |
-| `material-sheen` | · | · | ✓ | ✓ᴴ |
-| `material-specular` | · | · | ✓ | ✓ᴴ |
-| `material-specular-glossiness` | · | · | ✓ | ✓ᴴ |
-| `material-standard-pbr` | · | · | ✓ | ✓ᴴ |
-| `material-subsurface` | · | · | ✓ | ✓ᴴ |
-| `material-toon` | · | · | ✓ | ✓ᴴ |
-| `material-transmission-volume` | · | · | ✓ | ✓ᴴ |
-| `material-unlit` | · | · | ✓ | ✓ᴴ |
-| `material-vertex-color` | · | · | ✓ | ✓ᴴ |
-| `material-wireframe` | · | · | ✓ | ✓ᴴ |
+| `material-anisotropy` | · | · | ✓ | ✓ |
+| `material-blinn-phong` | · | · | ✓ | ✓ |
+| `material-clearcoat` | · | · | ✓ | ✓ |
+| `material-depth` | · | · | ✓ | ✓ |
+| `material-emissive` | · | · | ✓ | ✓ |
+| `material-iridescence` | · | · | ✓ | ✓ |
+| `material-lambert` | · | · | ✓ | ✓ |
+| `material-matcap` | · | · | ✓ | ✓ |
+| `material-normal` | · | · | ✓ | ✓ |
+| `material-phong` | · | · | ✓ | ✓ |
+| `material-sheen` | · | · | ✓ | ✓ |
+| `material-specular` | · | · | ✓ | ✓ |
+| `material-specular-glossiness` | · | · | ✓ | ✓ |
+| `material-standard-pbr` | · | · | ✓ | ✓ |
+| `material-subsurface` | · | · | ✓ | ✓ |
+| `material-toon` | · | · | ✓ | ✓ |
+| `material-transmission-volume` | · | · | ✓ | ✓ |
+| `material-unlit` | · | · | ✓ | ✓ |
+| `material-vertex-color` | · | · | ✓ | ✓ |
+| `material-wireframe` | · | · | ✓ | ✓ |
 
 ### Mesh (3D)
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `mesh-cone` | · | · | ✓ | ✓ᴴ |
-| `mesh-cylinder` | · | · | ✓ | ✓ᴴ |
-| `mesh-geometry` | · | · | ✓ | ✓ᴴ |
-| `mesh-hierarchy-parent-transform` | · | · | ✓ | ✓ᴴ |
-| `mesh-multiple-depth` | · | · | ✓ | ✓ᴴ |
-| `mesh-plane` | · | · | ✓ | ✓ᴴ |
-| `mesh-transform-position` | · | · | ✓ | ✓ᴴ |
-| `mesh-transform-rotation` | · | · | ✓ | ✓ᴴ |
-| `mesh-transform-scale` | · | · | ✓ | ✓ᴴ |
+| `mesh-cone` | · | · | ✓ | ✓ |
+| `mesh-cylinder` | · | · | ✓ | ✓ |
+| `mesh-geometry` | · | · | ✓ | ✓ |
+| `mesh-hierarchy-parent-transform` | · | · | ✓ | ✓ |
+| `mesh-multiple-depth` | · | · | ✓ | ✓ |
+| `mesh-plane` | · | · | ✓ | ✓ |
+| `mesh-transform-position` | · | · | ✓ | ✓ |
+| `mesh-transform-rotation` | · | · | ✓ | ✓ |
+| `mesh-transform-scale` | · | · | ✓ | ✓ |
 
 ### Particles
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `particle-emitter` | ✓ | · | ✓ | ✓ᴴ |
-| `particle-emitter-color` | · | · | ✓ | ✓ᴴ |
-| `particle-motion-blur` | · | · | ✓ | ✓ᴴ |
+| `particle-emitter` | ✓ | · | ✓ | ✓ |
+| `particle-emitter-color` | · | · | ✓ | ✓ |
+| `particle-motion-blur` | · | · | ✓ | ✓ |
 
 ### QuadBatch
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `quadbatch-grid` | ✓ | · | ✓ | ✓ᴴ |
-| `quadbatch-matrix-transform` | ✓ | · | ✓ | ✓ᴴ |
+| `quadbatch-grid` | ✓ | · | ✓ | ✓ |
+| `quadbatch-matrix-transform` | ✓ | · | ✓ | ✓ |
 
 ### Scale9
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `scale9-stretch` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `scale9-stretch` | ✓ | ✓ | ✓ | ✓ |
 
 ### Scene Node
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `node-alpha` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `node-alpha` | ✓ | ✓ | ✓ | ✓ |
 | `node-blend-modes` | ✓ | ✓ | ✓ | · |
 | `node-blend-modes-advanced` | ✓ | ✓ | · | · |
-| `node-hierarchy` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `node-transform` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `node-visibility` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `node-visibility-inheritance` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `node-hierarchy` | ✓ | ✓ | ✓ | ✓ |
+| `node-transform` | ✓ | ✓ | ✓ | ✓ |
+| `node-visibility` | ✓ | ✓ | ✓ | ✓ |
+| `node-visibility-inheritance` | ✓ | ✓ | ✓ | ✓ |
 
 ### Shadows
 
@@ -229,54 +229,54 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `shape-curves` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `shape-fill-bitmap` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `shape-fill-gradient` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `shape-fill-radial` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `shape-fill-solid` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `shape-stroke` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `shape-stroke-caps` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `shape-curves` | ✓ | ✓ | ✓ | ✓ |
+| `shape-fill-bitmap` | ✓ | ✓ | ✓ | ✓ |
+| `shape-fill-gradient` | ✓ | ✓ | ✓ | ✓ |
+| `shape-fill-radial` | ✓ | ✓ | ✓ | ✓ |
+| `shape-fill-solid` | ✓ | ✓ | ✓ | ✓ |
+| `shape-stroke` | ✓ | ✓ | ✓ | ✓ |
+| `shape-stroke-caps` | ✓ | ✓ | ✓ | ✓ |
 | `shape-stroke-joints` | ✓ | ✓ | · | · |
 
 ### Sprites
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `sprite-atlas` | ✓ | · | ✓ | ✓ᴴ |
+| `sprite-atlas` | ✓ | · | ✓ | ✓ |
 
 ### Text
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `text-align-center` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-align-right` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-background-box` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-basic` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-bold` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-border-box` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-italic` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-multiformat` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `text-align-center` | ✓ | ✓ | ✓ | ✓ |
+| `text-align-right` | ✓ | ✓ | ✓ | ✓ |
+| `text-background-box` | ✓ | ✓ | ✓ | ✓ |
+| `text-basic` | ✓ | ✓ | ✓ | ✓ |
+| `text-bold` | ✓ | ✓ | ✓ | ✓ |
+| `text-border-box` | ✓ | ✓ | ✓ | ✓ |
+| `text-italic` | ✓ | ✓ | ✓ | ✓ |
+| `text-multiformat` | ✓ | ✓ | ✓ | ✓ |
 | `text-native` | · | ✓ | · | · |
 | `text-strikethrough` | ✓ | ✓ | · | · |
-| `text-underline` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-vertical-align` | ✓ | ✓ | ✓ | ✓ᴴ |
-| `text-wrap` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `text-underline` | ✓ | ✓ | ✓ | ✓ |
+| `text-vertical-align` | ✓ | ✓ | ✓ | ✓ |
+| `text-wrap` | ✓ | ✓ | ✓ | ✓ |
 
 ### Text
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `textlabel-basic` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `textlabel-basic` | ✓ | ✓ | ✓ | ✓ |
 
 ### Tilemap
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `tilemap-grid` | ✓ | · | ✓ | ✓ᴴ |
+| `tilemap-grid` | ✓ | · | ✓ | ✓ |
 
 ### Video
 
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
-| `video-frame` | ✓ | ✓ | ✓ | ✓ᴴ |
+| `video-frame` | ✓ | ✓ | ✓ | ✓ |
 

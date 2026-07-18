@@ -33,10 +33,12 @@ const BACKENDS = [
   { key: 'webgpu', label: 'WebGPU' },
 ] as const;
 
-// Backends an agent can re-verify inside the Docker Sbx sandbox today (proven 2026-07-17). WebGPU is
-// blind here — software Vulkan, no GPU passthrough — so its fingerprints are HOST-captured and cannot be
-// re-checked in-sandbox. Rendered into the doc so a green agent run never implies WebGPU was verified.
-const SANDBOX_VERIFIABLE = new Set(['canvas', 'dom', 'webgl']);
+// Backends an agent can re-verify inside the Docker Sbx sandbox. Canvas/DOM/WebGL run natively; WebGPU
+// runs via Playwright's Chromium with the bundled SwiftShader software Vulkan adapter
+// (--enable-unsafe-webgpu --use-webgpu-adapter=swiftshader) plus the GPU-readback present path — proven
+// re-verifiable in-sandbox 2026-07-18 (most functional scenes match host baselines exactly; a small set
+// exceed the fingerprint tolerance on software-vs-hardware antialiasing — see maturity-gaps).
+const SANDBOX_VERIFIABLE = new Set(['canvas', 'dom', 'webgl', 'webgpu']);
 
 // Human-readable area label per scene-id prefix (the first '-' segment). Unlisted prefixes title-case.
 const AREA_LABELS: Record<string, string> = {
@@ -211,10 +213,10 @@ function renderMarkdown(groups: AreaGroup[]): string {
   lines.push('## Legend');
   lines.push('');
   lines.push(
-    '- `✓` — a committed functional-baseline fingerprint exists for this scene×backend, and the backend is **re-verifiable in-sandbox** (Canvas/DOM/WebGL).',
+    '- `✓` — a committed functional-baseline fingerprint exists for this scene×backend, and the backend is **re-verifiable in-sandbox**. Canvas/DOM/WebGL run natively; WebGPU runs via Playwright Chromium + the bundled SwiftShader software Vulkan adapter and the GPU-readback present path.',
   );
   lines.push(
-    '- `✓ᴴ` — a fingerprint exists but was **host-captured**; WebGPU is blind in the Docker Sbx sandbox (software Vulkan, no GPU passthrough), so it cannot be re-verified by an agent here.',
+    '- `✓ᴴ` — a fingerprint exists but was **host-captured** and is not re-verifiable in this sandbox. (None currently — all four backends re-verify here.)',
   );
   lines.push('- `·` — no committed baseline for this scene on this backend.');
   lines.push('');
@@ -238,7 +240,9 @@ function renderMarkdown(groups: AreaGroup[]): string {
   lines.push(`| ${totals.map(() => '---').join(' | ')} |`);
   lines.push(`| ${totals.map((t) => `${t.n} / ${sceneCount}`).join(' | ')} |`);
   lines.push('');
-  lines.push('WebGPU counts are host-captured (`✓ᴴ`) and not re-verifiable in-sandbox.');
+  lines.push(
+    'All four backends re-verify in-sandbox — WebGPU via SwiftShader software Vulkan. A small set of WebGPU scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing differences; see [maturity-gaps](maturity-gaps.md).',
+  );
   lines.push('');
 
   lines.push('## Declared gaps & caveats');
@@ -274,7 +278,7 @@ function renderMarkdown(groups: AreaGroup[]): string {
 function renderJson(groups: AreaGroup[]): string {
   const payload = {
     generatedBy: 'scripts/support.ts',
-    note: 'A backend fingerprint proves deterministic render + capture, not correctness. WebGPU is host-captured and not re-verifiable in the Docker Sbx sandbox.',
+    note: 'A backend fingerprint proves deterministic render + capture, not correctness. WebGPU re-verifies in-sandbox via SwiftShader software Vulkan; a small set of scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing.',
     backends: BACKENDS.map((b) => ({ ...b, sandboxVerifiable: SANDBOX_VERIFIABLE.has(b.key) })),
     areas: groups.map((g) => ({
       key: g.key,

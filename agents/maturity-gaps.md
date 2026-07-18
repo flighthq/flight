@@ -18,10 +18,12 @@ capability gap a real app hits; **MINOR** = fidelity/edge-case hole or breadth g
 
 Ranked, worst first. Each is something a user assumes works and it does not.
 
-1. **The GPU test-confidence illusion.** Every gl/wgpu code path is unit-tested against a *mock* WebGL2
-   context in jsdom (`displayobject-gl/src/glTestHelper.ts:7`) and never executes on a real GPU in this
-   repo. "Renderer tests green" is a far weaker guarantee for the GPU backends than for Canvas — the real
-   parity gaps (joins, smoothing, tint, blend modes, skinning) are exactly what a mock can't catch.
+1. **The GPU unit-test-confidence illusion.** Every gl/wgpu code path is *unit*-tested against a *mock*
+   WebGL2 context in jsdom (`displayobject-gl/src/glTestHelper.ts:7`); a green unit run is a far weaker
+   guarantee for the GPU backends than for Canvas — the real parity gaps (joins, smoothing, tint, blend
+   modes, skinning) are exactly what a mock can't catch. Real-pixel verification does exist, but it lives
+   in the **functional capture harness** (Playwright + SwiftShader software Vulkan for wgpu — see Theme A),
+   not in the unit suite; don't read `npm run test` green as "the GPU renders correctly."
 2. **Screen-space & G-buffer effects are theater.** SSAO/SSR/TAA/motion-blur/contact-shadows/volumetric-light
    are descriptor-only or passthrough/approximate placeholders on *every* backend including gl/wgpu, because
    the effect pipeline is color-only (no depth/normal/velocity/history buffers). They pass regression baselines
@@ -61,11 +63,16 @@ Ranked, worst first. Each is something a user assumes works and it does not.
 These patterns recur across every area and matter more than any single gap.
 
 ### A. Visual-verification debt — "green but never rendered"
-The single largest theme. **No GPU code path in this repo has been verified against real pixels here.** GL
-tests use a mock context (`glTestHelper.ts:7`); wgpu has no in-sandbox execution at all. Real verification
-lives only in committed `functional/baselines/*.json` fingerprints captured once on some GPU host, and the
-regression tier is environment-coupled and non-reproducible in-sandbox. On top of that, whole feature classes
-have **no functional/example coverage at all**: scene-format imports (no `createSceneFrom*` anywhere under
+A large theme, but narrower than once believed. **Unit tests** for gl/wgpu use a mock context
+(`glTestHelper.ts:7`) and never touch a rasterizer — "renderer tests green" is weak on its own. But the
+**functional capture harness does render real pixels in-sandbox for all four backends**, including wgpu:
+Playwright's Chromium drives WebGL and — via the bundled SwiftShader software Vulkan adapter
+(`--enable-unsafe-webgpu --use-webgpu-adapter=swiftshader`) plus the GPU-readback present path — WebGPU,
+with no host GPU. Re-verified 2026-07-18: of the WebGPU functional scenes, the large majority match the
+committed host baselines exactly (`0.00`), and only a small set exceed the fingerprint tolerance on
+software-vs-hardware antialiasing. So the regression tier is mostly reproducible in-sandbox for wgpu, not
+blind. What remains genuine debt: whole feature classes have **no functional/example coverage at all**:
+scene-format imports (no `createSceneFrom*` anywhere under
 examples/functional), GPU skinning (no `*skin*` functional scene; the example exercises the CPU path),
 streaming/compressed-texture/resource-resolution, glyph/bitmaptext (headless only ever draws stub white
 boxes — `glyphatlas/status.md`), particle emitters, and camera2d view-matrix application
@@ -177,7 +184,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
-| Renderer tests green ⇒ GPU works | GL tests use mock WebGL2 (`glTestHelper.ts:7`); no draw touches a driver; wgpu no in-sandbox exec; regression baselines env-coupled | gl/wgpu | SURPRISE |
+| Unit tests green ⇒ GPU works | Unit tests use mock WebGL2 (`glTestHelper.ts:7`); no draw touches a rasterizer. Real-pixel checks live in the functional capture harness (wgpu runs there via SwiftShader software Vulkan, mostly reproducible in-sandbox) — not the unit suite | gl/wgpu | SURPRISE |
 | Orthographic camera on WebGPU | Renders blank — NDC-Z `[0,1]` vs `[-1,1]` remap missing; `camera-orthographic` scoped gl-only | wgpu | SURPRISE |
 | Overlay/HardLight/Difference/Invert blend | Map to `null`→Normal on gl+wgpu (`glDraw.ts:185`, `wgpuShader.ts:138`) — silently wrong, not no-op | gl/wgpu | SURPRISE |
 | Per-bitmap `smoothing` flag | Ignored on gl/wgpu; global filter, texture cached so first-draw filter sticks → pixel-art blurry | gl/wgpu | MAJOR |
