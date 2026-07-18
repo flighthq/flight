@@ -206,6 +206,58 @@ describe('bindGlTexture', () => {
     expect(gl.bindTexture).toHaveBeenCalledWith((gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D, texture);
     expect(runtime.currentTexture).toBe(texture);
   });
+
+  it('defaults both wrap modes to clamp-to-edge', () => {
+    const { state, gl } = createGlState();
+    bindGlTexture(state, document.createElement('img'));
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_WRAP_S: number;
+      TEXTURE_WRAP_T: number;
+      CLAMP_TO_EDGE: number;
+    };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+  });
+
+  it('applies the sampler wrap mode — repeat → REPEAT — so tiled uvs actually repeat', () => {
+    const { state, gl } = createGlState();
+    bindGlTexture(state, document.createElement('img'), 'repeat', 'repeat');
+    const g = gl as unknown as { TEXTURE_2D: number; TEXTURE_WRAP_S: number; TEXTURE_WRAP_T: number; REPEAT: number };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.REPEAT);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.REPEAT);
+  });
+
+  it('maps mirror-repeat to MIRRORED_REPEAT and defaults wrapV to wrapU', () => {
+    const { state, gl } = createGlState();
+    bindGlTexture(state, document.createElement('img'), 'mirror-repeat');
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_WRAP_S: number;
+      TEXTURE_WRAP_T: number;
+      MIRRORED_REPEAT: number;
+    };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.MIRRORED_REPEAT);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.MIRRORED_REPEAT);
+  });
+
+  it('re-applies wrap on a cache hit so a shared image follows the current draw sampler', () => {
+    // The torus in basic-shading reuses one jpg as both normal and metallic-roughness; if wrap were
+    // baked only at upload, the second material would inherit the first's wrap. Re-applying per bind
+    // means a repeat draw then a clamp draw each set their own wrap on the shared cached texture.
+    const { state, gl } = createGlState();
+    const img = document.createElement('img');
+    bindGlTexture(state, img, 'repeat');
+    bindGlTexture(state, img, 'clamp-to-edge');
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_WRAP_S: number;
+      REPEAT: number;
+      CLAMP_TO_EDGE: number;
+    };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.REPEAT);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+  });
 });
 
 describe('createGlTexture', () => {

@@ -53,7 +53,7 @@ export function bindGlDebugNormalMap(
 
   if (normalMap !== null && normalMap.image !== null && normalMap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, normalMap.image.source);
+    bindGlTexture(state, normalMap.image.source, normalMap.sampler.wrapU, normalMap.sampler.wrapV);
     gl.uniform1i(program.locNormalMap, 0);
   }
 }
