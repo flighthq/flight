@@ -177,6 +177,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // ignored to avoid HMR/info noise.
       const type = msg.type();
       if (type === 'error' || type === 'warning') {
+        if (type === 'warning' && isCaptureReadPixelsWarning(text)) return;
         logs.push({
           __flight: true,
           t: -1,
@@ -234,20 +235,20 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // Screenshot the render output only — not the full viewport — so all renderers produce the same
       // frame size and the gallery blink comparator has something meaningful to compare.
       //
-      // - webgpu: SwiftShader can't present to the swapchain, so the canvas is blank in a Playwright
-      //   screenshot. The functional verifier reads the frame back from the GPU and exposes it as a PNG
-      //   data URL (window.__ftRenderImage). Fall back to a full page screenshot if unavailable (e.g.
-      //   examples, which don't run the verifier).
+      // - functional raster renders: the verifier exposes the same surface it fingerprinted as a PNG
+      //   data URL (window.__ftRenderImage), avoiding compositor-only black screenshots in Docker.
+      // - webgpu examples: SwiftShader can't present to the swapchain, so the canvas is blank in a
+      //   Playwright screenshot. Functional captures require the verifier image; examples fall back.
       // - dom: no canvas; the renderer appends a sized <div> directly to <body>.
       // - canvas / webgl: a <canvas> is appended directly to <body>.
       // - fallback: full page screenshot when neither canvas nor div is found (unknown layout).
       let screenshotBuffer: Buffer;
       const backend = rendererBackend(renderer);
-      if (backend === 'webgpu') {
-        const dataUrl = await getRenderImageDataUrl(page);
-        if (dataUrl) {
-          screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
-        } else if (waitsForVerification) {
+      const dataUrl = waitsForVerification ? await getRenderImageDataUrl(page) : null;
+      if (dataUrl && backend !== 'dom') {
+        screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
+      } else if (backend === 'webgpu') {
+        if (waitsForVerification) {
           throw new Error('WebGPU verifier did not produce a render image');
         } else {
           screenshotBuffer = await page.screenshot();
@@ -378,6 +379,10 @@ function rendererBackend(renderer: string): string {
   return i === -1 ? renderer : renderer.slice(i + 1);
 }
 
+function isCaptureReadPixelsWarning(text: string): boolean {
+  return text.includes('GPU stall due to ReadPixels');
+}
+
 async function waitForRenderVerification(page: Page): Promise<RenderVerification | null> {
   await page
     .waitForFunction(
@@ -390,8 +395,7 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
         if (document.getElementById('ft-error') !== null) return true;
         if (verification === undefined) return false;
         if (verification.render === 'dom') return true;
-        if (verification.render === 'webgpu') return typeof w.__ftRenderImage === 'string' && w.__ftRenderImage !== '';
-        return verification.fingerprint !== null;
+        return verification.fingerprint !== null && typeof w.__ftRenderImage === 'string' && w.__ftRenderImage !== '';
       },
       null,
       { polling: 100, timeout: 15_000 },

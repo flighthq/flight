@@ -33,9 +33,9 @@ import {
   TilemapKind,
   VideoKind,
 } from '@flighthq/sdk';
+import { registerFunctionalTarget } from '@ft/verify';
 
 import type { FunctionalCanvasTarget, FunctionalTargetOptions } from './target';
-import { registerFunctionalTarget } from './verify';
 
 export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): FunctionalCanvasTarget {
   const { width, height } = options;

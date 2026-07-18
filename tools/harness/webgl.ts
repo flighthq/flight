@@ -34,9 +34,9 @@ import {
   TilemapKind,
   VideoKind,
 } from '@flighthq/sdk';
+import { registerFunctionalTarget } from '@ft/verify';
 
 import type { FunctionalGlTarget, FunctionalTargetOptions } from './target';
-import { registerFunctionalTarget } from './verify';
 
 export function createGlTarget(options: Readonly<FunctionalTargetOptions>): FunctionalGlTarget {
   const { width, height } = options;

@@ -60,7 +60,7 @@ function entryModule(name: string, backend: string): string {
     `setLogSink(createConsoleCaptureSink());`,
     `window.__ftBackend = ${JSON.stringify(backend)};`,
     `const __testModule = await import(${JSON.stringify(scenePath)});`,
-    `const { runRenderVerification } = await import(${JSON.stringify(join(harnessDir, 'verify.ts'))});`,
+    `const { runRenderVerification } = await import('@ft/verify');`,
     `await runRenderVerification(__testModule, ${JSON.stringify(backend)});`,
   ].join('\n');
 }
@@ -148,7 +148,7 @@ function functionalTestsPlugin(tests: FunctionalScene[]): Plugin[] {
         // The harness seams resolve to their real modules — no per-backend build-time redirect. The
         // backend is chosen at runtime via window.__ftBackend (set by the entry above).
         if (source === '@ft/render') return resolve(harnessDir, 'render.ts');
-        if (source === '@ft/verify') return resolve(harnessDir, 'verify.ts');
+        if (source === '@ft/verify') return resolve(projectRoot, 'packages/tool-capture/src/functionalVerify.ts');
       },
 
       load(id) {

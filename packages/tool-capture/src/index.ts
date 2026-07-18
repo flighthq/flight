@@ -7,3 +7,4 @@ export * from './captureInterrupt';
 export * from './captureRenderTarget';
 export * from './captureServer';
 export * from './functionalScenes';
+export * from './functionalVerify';
