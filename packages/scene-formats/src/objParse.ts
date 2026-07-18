@@ -3,12 +3,10 @@ import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, getNodeChildren, removeNodeChild, replaceNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, isMesh } from '@flighthq/scene';
-import { createTexture } from '@flighthq/texture';
 import type { BlinnPhongMaterial, Material, SceneNode, Texture } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
 
 import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
 // Parses a Wavefront OBJ text source into a Scene. Groups (`g`) and objects (`o`) become
 // transform-only SceneNode hierarchy containers; faces within each material group become a
@@ -332,16 +330,7 @@ function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>): BlinnPhongMat
 
 // Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
 function externalObjTexture(uri: string | null): Texture | null {
-  if (uri === null) return null;
-  return createTexture({
-    resource: {
-      basePath: null,
-      kind: SceneResourceRefKind.External,
-      mimeType: null,
-      state: ResourceResolutionState.Unresolved,
-      uri,
-    },
-  });
+  return uri === null ? null : createExternalTextureRef(uri);
 }
 
 // Packs an MTL sRGB-space [r,g,b] triple (each in [0,1]) plus an alpha into a 0xRRGGBBAA integer.

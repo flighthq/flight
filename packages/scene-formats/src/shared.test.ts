@@ -1,7 +1,11 @@
+import type { ExternalSceneResourceRef } from '@flighthq/types';
+import { ResourceResolutionState } from '@flighthq/types';
+
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
   convertTransformLhToRh,
+  createExternalTextureRef,
   negateVec3Z,
   packSkinInfluences,
   reverseTriangleWinding,
@@ -85,6 +89,17 @@ describe('convertTransformLhToRh', () => {
     expect(transform[9]).toBe(10);
     expect(transform[10]).toBe(11);
     expect(transform[11]).toBe(-12);
+  });
+});
+
+describe('createExternalTextureRef', () => {
+  it('wraps a filename as an Unresolved External resource ref without loading it', () => {
+    const texture = createExternalTextureRef('models/hero.png');
+    expect(texture.image).toBeNull();
+    const ref = texture.resource as ExternalSceneResourceRef;
+    expect(ref.kind).toBe('External');
+    expect(ref.uri).toBe('models/hero.png');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
   });
 });
 
