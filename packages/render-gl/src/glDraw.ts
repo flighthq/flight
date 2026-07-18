@@ -1,4 +1,12 @@
-import type { GlBitmapShader, GlBlendRealization, GlRenderState, TextureWrap } from '@flighthq/types';
+import type {
+  GlBitmapShader,
+  GlBlendRealization,
+  GlRenderState,
+  GlRenderStateRuntime,
+  SamplerLike,
+  TextureFilter,
+  TextureWrap,
+} from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -19,29 +27,27 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
   gl.blendFunc(gl[realization.src], gl[realization.dst]);
 }
 
-// Binds (uploading + caching on first use) the GL texture for an image source and sets its wrap mode
-// to the sampler's wrapU/wrapV (default clamp-to-edge — 2D bitmap/text callers omit them). Wrap is
-// re-applied on every bind, not baked at creation, because the GL texture is cached by image source
-// alone: one image reused by two materials with different wraps (e.g. a map bound as both normal and
-// metallic-roughness with different sampling) shares one GL texture, so the wrap must follow the
-// current draw's sampler rather than whoever uploaded it first. WebGL2 allows REPEAT on NPOT textures,
-// so no power-of-two constraint applies. Translate wrap through glTextureWrapValue.
+// Binds (uploading + caching on first use) the GL texture for an image source and applies the given
+// sampler's full sampling state — wrap, min/mag filter, anisotropy, and a generated mip chain — to
+// the bound texture. Sampler state is re-applied on every bind, not baked at creation, because the GL
+// texture is cached by image source alone: one image reused by two materials with different samplers
+// (e.g. a map bound as both normal and metallic-roughness with different sampling) shares one GL
+// texture, so its sampling must follow the current draw rather than whoever uploaded it first. WebGL2
+// allows REPEAT and mipmaps on NPOT textures, so no power-of-two constraint applies. Callers without a
+// sampler (2D bitmap/text/sprite) get the historical default: the state's allowSmoothing filter,
+// clamp-to-edge, and no mip chain. See applyGlSamplerState.
 export function bindGlTexture(
   state: GlRenderState,
   imageSource: CanvasImageSource,
-  wrapU: TextureWrap = 'clamp-to-edge',
-  wrapV: TextureWrap = wrapU,
+  sampler?: Readonly<SamplerLike> | null,
 ): WebGLTexture {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
   const textureCache = runtime.textureCache;
   let texture = textureCache.get(imageSource);
   if (!texture) {
-    const filter = state.allowSmoothing ? gl.LINEAR : gl.NEAREST;
     texture = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     // Both image and canvas sources present straight (un-premultiplied) alpha to texImage2D, so
     // premultiply on upload to match the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend used
     // everywhere — uploaded images, canvas-backed shapes/text, and render-target composites. (A
@@ -61,10 +67,9 @@ export function bindGlTexture(
     gl.bindTexture(gl.TEXTURE_2D, texture);
     runtime.currentTexture = texture;
   }
-  // texture is the active TEXTURE_2D binding in every path above; set wrap here so a cache hit picks up
-  // this draw's sampler wrap instead of the first uploader's.
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glTextureWrapValue(gl, wrapU));
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glTextureWrapValue(gl, wrapV));
+  // texture is the active TEXTURE_2D binding in every path above; apply this draw's sampler state here
+  // so a cache hit picks it up instead of the first uploader's.
+  applyGlSamplerState(state, runtime, texture, sampler ?? null);
   return texture;
 }
 
@@ -184,6 +189,10 @@ export function updateGlTexture(state: GlRenderState, texture: WebGLTexture, can
   // Premultiply on upload so the texture matches the (ONE, ONE_MINUS_SRC_ALPHA) blend mode.
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  // Refresh the mip chain if this texture carries one (a canvas/video that opted into mipmaps); the
+  // re-uploaded base level would otherwise leave stale lower mips. The 2D default has no chain, so
+  // the common per-frame canvas/video upload skips the cost.
+  if (runtime.mipmappedTextures?.has(texture)) gl.generateMipmap(gl.TEXTURE_2D);
 }
 
 export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): void {
@@ -195,6 +204,98 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
     state.gl.useProgram(program);
     runtime.currentProgram = program;
   }
+}
+
+// Applies a sampler's wrap, filtering, anisotropy, and mip chain to the currently-bound TEXTURE_2D.
+// Without a sampler it falls back to the state's allowSmoothing flag with clamp-to-edge and no mips —
+// the 2D bitmap/sprite default. With one, every field comes from the descriptor. The mip chain is
+// generated once per texture (tracked in runtime.mipmappedTextures) the first time a mip-sampling
+// filter asks for it, so a shared texture first bound without mips and later with them still generates
+// its chain. Filtering and wrap are set every bind (cheap) so a texture shared across samplers follows
+// the current draw; only the one-time mip generation is gated.
+function applyGlSamplerState(
+  state: GlRenderState,
+  runtime: GlRenderStateRuntime,
+  texture: WebGLTexture,
+  sampler: Readonly<SamplerLike> | null,
+): void {
+  const gl = state.gl;
+  if (!sampler) {
+    const filter = state.allowSmoothing ? gl.LINEAR : gl.NEAREST;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return;
+  }
+  const useMips = sampler.mipmaps && isGlMipmapFilter(sampler.minFilter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, glMinFilterValue(gl, sampler.minFilter, useMips));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, glMagFilterValue(gl, sampler.magFilter));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, glTextureWrapValue(gl, sampler.wrapU));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, glTextureWrapValue(gl, sampler.wrapV));
+  const ext = ensureGlAnisotropyExt(state, runtime);
+  if (ext) {
+    // Clamp the requested level to [1, hardware max]; 1 disables anisotropy and also resets a texture
+    // that a previous anisotropic sampler left elevated.
+    const level = Math.max(1, Math.min(sampler.anisotropy, runtime.maxAnisotropy ?? 1));
+    gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, level);
+  }
+  if (useMips) {
+    const mipped = (runtime.mipmappedTextures ??= new WeakSet<WebGLTexture>());
+    if (!mipped.has(texture)) {
+      gl.generateMipmap(gl.TEXTURE_2D);
+      mipped.add(texture);
+    }
+  }
+}
+
+// Resolves and caches EXT_texture_filter_anisotropic on the runtime: anisotropyExt is undefined until
+// first queried, then the extension object or null when unsupported, and maxAnisotropy caches the
+// hardware cap. Returns null when anisotropic filtering is unavailable.
+function ensureGlAnisotropyExt(
+  state: GlRenderState,
+  runtime: GlRenderStateRuntime,
+): EXT_texture_filter_anisotropic | null {
+  let ext = runtime.anisotropyExt;
+  if (ext === undefined) {
+    ext = state.gl.getExtension('EXT_texture_filter_anisotropic');
+    runtime.anisotropyExt = ext;
+    runtime.maxAnisotropy = ext ? (state.gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 1;
+  }
+  return ext;
+}
+
+// Maps a magnification TextureFilter to its WebGL2 constant. Magnification never samples mips, so the
+// mip-variant names collapse to their base LINEAR/NEAREST.
+function glMagFilterValue(gl: WebGL2RenderingContext, filter: TextureFilter): number {
+  return filter.startsWith('nearest') ? gl.NEAREST : gl.LINEAR;
+}
+
+// Maps a minification TextureFilter to its WebGL2 constant. When useMips is false (mipmaps disabled or
+// a non-mip filter) the mip-variant names collapse to their base LINEAR/NEAREST, so a filter that
+// names a mip level never selects an absent chain (which would render the texture black).
+function glMinFilterValue(gl: WebGL2RenderingContext, filter: TextureFilter, useMips: boolean): number {
+  if (!useMips) return filter.startsWith('nearest') ? gl.NEAREST : gl.LINEAR;
+  switch (filter) {
+    case 'linear-mipmap-linear':
+      return gl.LINEAR_MIPMAP_LINEAR;
+    case 'linear-mipmap-nearest':
+      return gl.LINEAR_MIPMAP_NEAREST;
+    case 'nearest-mipmap-linear':
+      return gl.NEAREST_MIPMAP_LINEAR;
+    case 'nearest-mipmap-nearest':
+      return gl.NEAREST_MIPMAP_NEAREST;
+    case 'nearest':
+      return gl.NEAREST;
+    default:
+      return gl.LINEAR;
+  }
+}
+
+// True for the mip-sampling minification filters; the two non-mip modes ('linear'/'nearest') sample
+// only the base level and need no mip chain.
+function isGlMipmapFilter(filter: TextureFilter): boolean {
+  return filter !== 'linear' && filter !== 'nearest';
 }
 
 // Maps a sampler wrap mode to its WebGL2 texture-wrap constant; clamp-to-edge is the fallback. REPEAT

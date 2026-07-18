@@ -53,7 +53,7 @@ export function bindGlMatcapSurface(
 
   if (matcap !== null && matcap.image !== null && matcap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, matcap.image.source, matcap.sampler.wrapU, matcap.sampler.wrapV);
+    bindGlTexture(state, matcap.image.source, matcap.sampler);
     gl.uniform1i(program.locMatcap, 0);
   }
 }

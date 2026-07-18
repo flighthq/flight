@@ -8,6 +8,7 @@ import type {
 } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
+import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
 
@@ -15,7 +16,17 @@ export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode 
   getWgpuRenderStateRuntime(state).currentBlendMode = blendMode;
 }
 
-export function bindWgpuTexture(state: WgpuRenderState, imageSource: CanvasImageSource): WgpuTextureEntry {
+// Uploads (and caches per image source) the GPU texture for an image, returning its texture, full view,
+// and a 2D bind group. With generateMips the texture is allocated with a full mip chain and its lower
+// levels are rendered via generateWgpuMipmaps — the material path opts in for its trilinear/anisotropic
+// samplers; the 2D bitmap path leaves it false for a single-level texture. Because WebGPU fixes
+// mipLevelCount at creation and the cache is keyed by source, the first caller decides whether a shared
+// image gets a chain; a mip sampler on a chainless texture simply samples the base level.
+export function bindWgpuTexture(
+  state: WgpuRenderState,
+  imageSource: CanvasImageSource,
+  generateMips = false,
+): WgpuTextureEntry {
   const runtime = getWgpuRenderStateRuntime(state);
   const cached = runtime.textureCache.get(imageSource);
   if (cached !== undefined) return cached;
@@ -43,9 +54,11 @@ export function bindWgpuTexture(state: WgpuRenderState, imageSource: CanvasImage
     height = imageSource.height || 1;
   }
 
+  const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
   const texture = device.createTexture({
     size: [width, height, 1],
     format: 'rgba8unorm',
+    mipLevelCount,
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
@@ -60,6 +73,10 @@ export function bindWgpuTexture(state: WgpuRenderState, imageSource: CanvasImage
     { texture, premultipliedAlpha: true },
     [width, height],
   );
+
+  // The copy fills level 0 only; render the remaining levels by downsampling (WebGPU has no
+  // generateMipmap). Skipped for a single-level texture (mipLevelCount === 1).
+  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
 
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;

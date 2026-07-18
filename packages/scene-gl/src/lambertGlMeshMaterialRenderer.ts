@@ -82,7 +82,7 @@ function bindGlLambertMaterialUniforms(
   const diffuseMap = material.diffuseMap;
   if (diffuseMap !== null && diffuseMap.image !== null && diffuseMap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, diffuseMap.image.source, diffuseMap.sampler.wrapU, diffuseMap.sampler.wrapV);
+    bindGlTexture(state, diffuseMap.image.source, diffuseMap.sampler);
     gl.uniform1i(program.locDiffuseMap, 0);
   }
   bindGlUvTransform(gl, program, diffuseMap);

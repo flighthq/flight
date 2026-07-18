@@ -196,28 +196,38 @@ export function getWgpuRenderStateRuntime(state: WgpuRenderState): WgpuRenderSta
   return state[EntityRuntimeKey] as WgpuRenderStateRuntime;
 }
 
-// Returns a cached GPUSampler for a filter + wrap combination, creating it on first use. A GPUSampler's
-// address mode is immutable, so a tiling material selects the matching sampler at bind-group creation
-// rather than mutating the shared clamp sampler. TextureWrap values ('clamp-to-edge'/'repeat'/
-// 'mirror-repeat') are exactly the GPUAddressMode strings, so they pass through untranslated. The
-// clamp-to-edge defaults still have their own pre-created linear/nearest samplers; this backs the
-// non-default (tiling) combinations material renderers ask for.
+// Returns a cached GPUSampler for a filter + wrap + mip-filter + anisotropy combination, creating it on
+// first use. A GPUSampler's address mode, mip filter, and anisotropy are all immutable, so a tiling or
+// mipmapped material selects the matching sampler at bind-group creation rather than mutating the shared
+// clamp sampler. TextureWrap values ('clamp-to-edge'/'repeat'/'mirror-repeat') are exactly the
+// GPUAddressMode strings, so they pass through untranslated. mipmapFilter undefined means no mip
+// sampling (the historical wrap-only behavior). WebGPU requires linear min/mag/mip filtering whenever
+// maxAnisotropy > 1, so an anisotropy request forces all three to linear. The clamp-to-edge defaults
+// keep their own pre-created linear/nearest samplers; this backs every non-default combination.
 export function getWgpuSampler(
   state: WgpuRenderState,
   filter: GPUFilterMode,
   wrapU: TextureWrap,
   wrapV: TextureWrap,
+  mipmapFilter?: GPUMipmapFilterMode,
+  maxAnisotropy = 1,
 ): GPUSampler {
   const runtime = getWgpuRenderStateRuntime(state);
-  const key = `${filter}|${wrapU}|${wrapV}`;
+  const anisotropy = Math.max(1, Math.floor(maxAnisotropy));
+  const effectiveFilter: GPUFilterMode = anisotropy > 1 ? 'linear' : filter;
+  const effectiveMipmapFilter = anisotropy > 1 ? 'linear' : mipmapFilter;
+  const key = `${effectiveFilter}|${wrapU}|${wrapV}|${effectiveMipmapFilter ?? 'none'}|${anisotropy}`;
   let sampler = runtime.samplerCache.get(key);
   if (sampler === undefined) {
-    sampler = state.device.createSampler({
-      minFilter: filter,
-      magFilter: filter,
+    const descriptor: GPUSamplerDescriptor = {
+      minFilter: effectiveFilter,
+      magFilter: effectiveFilter,
       addressModeU: wrapU,
       addressModeV: wrapV,
-    });
+    };
+    if (effectiveMipmapFilter !== undefined) descriptor.mipmapFilter = effectiveMipmapFilter;
+    if (anisotropy > 1) descriptor.maxAnisotropy = anisotropy;
+    sampler = state.device.createSampler(descriptor);
     runtime.samplerCache.set(key, sampler);
   }
   return sampler;

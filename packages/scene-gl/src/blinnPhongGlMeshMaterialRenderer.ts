@@ -93,21 +93,21 @@ function bindGlBlinnPhongMaterialUniforms(
   const diffuseMap = material.diffuseMap;
   if (diffuseMap !== null && diffuseMap.image !== null && diffuseMap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, diffuseMap.image.source, diffuseMap.sampler.wrapU, diffuseMap.sampler.wrapV);
+    bindGlTexture(state, diffuseMap.image.source, diffuseMap.sampler);
     gl.uniform1i(program.locDiffuseMap, 0);
   }
 
   const specularMap = material.specularMap;
   if (specularMap !== null && specularMap.image !== null && specularMap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlTexture(state, specularMap.image.source, specularMap.sampler.wrapU, specularMap.sampler.wrapV);
+    bindGlTexture(state, specularMap.image.source, specularMap.sampler);
     gl.uniform1i(program.locSpecularMap, 1);
   }
 
   const normalMap = material.normalMap;
   if (normalMap !== null && normalMap.image !== null && normalMap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE2);
-    bindGlTexture(state, normalMap.image.source, normalMap.sampler.wrapU, normalMap.sampler.wrapV);
+    bindGlTexture(state, normalMap.image.source, normalMap.sampler);
     gl.uniform1i(program.locNormalMap, 2);
   }
 

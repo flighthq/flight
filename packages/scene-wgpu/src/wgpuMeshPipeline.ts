@@ -550,15 +550,24 @@ export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGro
   return scene.shadowSampleLayout;
 }
 
-// Selects the GPUSampler a material bind group uses from its primary map's wrap: a tiling (repeat/
-// mirror-repeat) map gets the matching cached sampler so setTextureUvScale actually tiles on wgpu,
-// mirroring scene-gl's per-texture wrap. A null/absent map falls back to the shared clamp sampler.
-// Material textures use linear filtering (the wgpu material path has always sampled linear). Because a
-// GPUSampler is immutable and baked into the cached bind group, this reads the primary map's wrap at
-// bind-group creation — the same lifetime as the resolved texture views.
+// Selects the GPUSampler a material bind group uses from its primary map's full sampler descriptor:
+// wrap (a tiling repeat/mirror-repeat map gets the matching cached sampler so setTextureUvScale tiles),
+// min/mag filter, a mip filter when the map requests a mip chain (paired with the mip chain
+// generateWgpuMipmaps builds on upload), and anisotropy — mirroring scene-gl's applyGlSamplerState. A
+// null/absent map falls back to the shared clamp sampler. Because a GPUSampler is immutable and baked
+// into the cached bind group, this reads the descriptor at bind-group creation — the same lifetime as
+// the resolved texture views.
 export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): GPUSampler {
   if (texture === null) return getWgpuRenderStateRuntime(state).linearSampler;
-  return getWgpuSampler(state, 'linear', texture.sampler.wrapU, texture.sampler.wrapV);
+  const sampler = texture.sampler;
+  const filter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const useMips = sampler.mipmaps && sampler.minFilter !== 'linear' && sampler.minFilter !== 'nearest';
+  const mipmapFilter: GPUMipmapFilterMode | undefined = useMips
+    ? sampler.minFilter.endsWith('nearest')
+      ? 'nearest'
+      : 'linear'
+    : undefined;
+  return getWgpuSampler(state, filter, sampler.wrapU, sampler.wrapV, mipmapFilter, sampler.anisotropy);
 }
 
 // True when a material map texture is present AND carries a GPU-uploadable image source. Families call
@@ -579,7 +588,9 @@ export function resolveWgpuMaterialTextureView(
   texture: Readonly<Texture> | null,
 ): GPUTextureView {
   if (texture !== null && texture.image !== null && texture.image.source !== null) {
-    return bindWgpuTexture(state, texture.image.source).view;
+    // Request a mip chain when the map's sampler asks for mipmaps, so getWgpuMaterialSampler's mip
+    // filter has levels to sample; the shared placeholder and 2D path stay single-level.
+    return bindWgpuTexture(state, texture.image.source, texture.sampler.mipmaps).view;
   }
   return ensureWgpuPlaceholderTextureView(state);
 }

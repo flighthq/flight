@@ -150,6 +150,15 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   renderTargetViewport: { width: number; height: number } | null;
   shaderLoc: GlShaderLocations;
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
+  // Textures whose mip chain has been generated via gl.generateMipmap, so a mip-sampling bind
+  // generates the chain exactly once and updateGlTexture can refresh it after a re-upload. Keyed by
+  // the GL texture (parallel to textureCache), lazily created on the first mip-sampled bind.
+  mipmappedTextures?: WeakSet<WebGLTexture>;
+  // The resolved EXT_texture_filter_anisotropic extension and the hardware anisotropy cap, both
+  // resolved once on the first anisotropic bind. anisotropyExt is undefined until queried, then the
+  // extension object or null when the GPU does not support anisotropic filtering.
+  anisotropyExt?: EXT_texture_filter_anisotropic | null;
+  maxAnisotropy?: number;
   quadVertexBuffer: WebGLBuffer;
   quadIndexBuffer: WebGLBuffer;
   quadVertexData: Float32Array;
