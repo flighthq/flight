@@ -9,7 +9,17 @@ import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 // and the "no complete cube" sentinel path callers depend on to no-op — mirroring scene-gl's cube test.
 
 function completeEnvironment(): Environment {
-  const face = { source: {} as CanvasImageSource, width: 4, height: 4 } as ImageResource;
+  const face = { source: {} as CanvasImageSource, data: null, width: 4, height: 4 } as ImageResource;
+  const cube = {
+    colorSpace: 'srgb',
+    faces: [face, face, face, face, face, face],
+    sampler: {},
+  } as unknown as CubeTexture;
+  return { environment: cube, intensity: 1 } as Environment;
+}
+
+function dataOnlyEnvironment(): Environment {
+  const face = { source: null, data: new Uint8ClampedArray(4 * 4 * 4), width: 4, height: 4 } as ImageResource;
   const cube = {
     colorSpace: 'srgb',
     faces: [face, face, face, face, face, face],
@@ -30,6 +40,18 @@ describe('ensureWgpuEnvironmentSourceCube', () => {
     expect(view).not.toBe(null);
     expect(fake.calls.filter((c) => c.name === 'copyExternalImageToTexture').length).toBe(6);
     expect(getWgpuSceneRuntime(state).environmentSourceCube).not.toBe(null);
+  });
+
+  it('uploads a data-only cube through queue.writeTexture', () => {
+    const { fake, state } = makeWgpuSceneState();
+    const view = ensureWgpuEnvironmentSourceCube(state, dataOnlyEnvironment());
+    expect(view).not.toBe(null);
+    const writes = fake.calls.filter((c) => c.name === 'writeTexture');
+    expect(writes.length).toBe(6);
+    expect(fake.calls.filter((c) => c.name === 'copyExternalImageToTexture').length).toBe(0);
+    // rgba8unorm data face: tightly-packed rows of width*4 bytes.
+    expect((writes[0].args[2] as { bytesPerRow: number }).bytesPerRow).toBe(16);
+    expect(writes[0].args[1]).toBeInstanceOf(Uint8ClampedArray);
   });
 
   it('re-uses the cached cube view without re-uploading', () => {

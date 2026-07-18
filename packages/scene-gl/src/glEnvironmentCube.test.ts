@@ -1,17 +1,47 @@
-import type { Environment } from '@flighthq/types';
+import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
 import { makeGlSceneState } from './glSceneTestHelper';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` capture (jsdom has no real
-// WebGL2 cubemap). These cover the CPU-side guards: the face-target arithmetic and the "no complete
-// cube" sentinel path that callers depend on to no-op.
+// WebGL2 cubemap). These cover the CPU-side guards: the face-target arithmetic, the "no complete
+// cube" sentinel path that callers depend on to no-op, and the data-only face upload path.
+
+function dataFace(size: number): ImageResource {
+  return { source: null, data: new Uint8ClampedArray(size * size * 4), width: size, height: size } as ImageResource;
+}
+
+function dataOnlyEnvironment(size: number): Environment {
+  const face = dataFace(size);
+  const cube = {
+    colorSpace: 'srgb',
+    faces: [face, face, face, face, face, face],
+    sampler: {},
+  } as unknown as CubeTexture;
+  return { environment: cube, intensity: 1 } as Environment;
+}
 
 describe('ensureGlEnvironmentSourceCube', () => {
   it('returns null when the environment has no source cube', () => {
     const { state } = makeGlSceneState();
     const environment = { environment: null, intensity: 1 } as Environment;
     expect(ensureGlEnvironmentSourceCube(state, environment)).toBe(null);
+  });
+
+  it('uploads a data-only cube through the raw-pixel texImage2D overload', () => {
+    const { state, gl } = makeGlSceneState();
+    const environment = dataOnlyEnvironment(4);
+    const texture = ensureGlEnvironmentSourceCube(state, environment);
+    expect(texture).not.toBe(null);
+    const uploads = gl.calls.filter((c) => c.name === 'texImage2D');
+    expect(uploads.length).toBe(6);
+    // The raw-pixel overload passes width/height/border and the data buffer (9 args), not an element (6 args).
+    for (const upload of uploads) {
+      expect(upload.args.length).toBe(9);
+      expect(upload.args[3]).toBe(4);
+      expect(upload.args[4]).toBe(4);
+      expect(upload.args[8]).toBeInstanceOf(Uint8ClampedArray);
+    }
   });
 });
 
