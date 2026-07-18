@@ -8,3 +8,4 @@ export * from './captureRenderTarget';
 export * from './captureServer';
 export * from './functionalScenes';
 export * from './functionalVerify';
+export * from './referenceCapture';
