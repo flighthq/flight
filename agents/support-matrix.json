@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/support.ts",
-  "note": "A backend fingerprint proves deterministic render + capture, not correctness. WebGPU is host-captured and not re-verifiable in the Docker Sbx sandbox.",
+  "note": "A backend fingerprint proves deterministic render + capture, not correctness. WebGPU re-verifies in-sandbox via SwiftShader software Vulkan; a small set of scenes exceed the fingerprint tolerance on software-vs-hardware antialiasing.",
   "backends": [
     {
       "key": "canvas",
@@ -20,7 +20,7 @@
     {
       "key": "webgpu",
       "label": "WebGPU",
-      "sandboxVerifiable": false
+      "sandboxVerifiable": true
     }
   ],
   "areas": [
