@@ -223,7 +223,7 @@ describe('getTextureUvMatrix', () => {
 
     getTextureUvMatrix(out, texture);
 
-    // Row-major: identity = [1,0,0; 0,1,0; 0,0,1]
+    // Identity = [1,0,0; 0,1,0; 0,0,1]
     expect(out.m[0]).toBeCloseTo(1);
     expect(out.m[1]).toBeCloseTo(0);
     expect(out.m[2]).toBeCloseTo(0);
@@ -242,8 +242,9 @@ describe('getTextureUvMatrix', () => {
 
     getTextureUvMatrix(out, texture);
 
-    expect(out.m[2]).toBeCloseTo(0.25); // tx
-    expect(out.m[5]).toBeCloseTo(0.75); // ty
+    // Column-major: the translation column is m[6], m[7].
+    expect(out.m[6]).toBeCloseTo(0.25); // tx
+    expect(out.m[7]).toBeCloseTo(0.75); // ty
   });
 
   it('encodes scale in the diagonal', () => {
@@ -268,12 +269,13 @@ describe('getTextureUvMatrix', () => {
 
     const cosR = Math.cos(r);
     const sinR = Math.sin(r);
-    expect(out.m[0]).toBeCloseTo(2 * cosR); // sx*cos(r)
-    expect(out.m[1]).toBeCloseTo(-2 * sinR); // -sy*sin(r)
-    expect(out.m[2]).toBeCloseTo(0.1); // tx
-    expect(out.m[3]).toBeCloseTo(2 * sinR); // sx*sin(r)
-    expect(out.m[4]).toBeCloseTo(2 * cosR); // sy*cos(r)
-    expect(out.m[5]).toBeCloseTo(0.2); // ty
+    // Column-major storage of rows [sx·cos, -sy·sin, tx], [sx·sin, sy·cos, ty], [0,0,1].
+    expect(out.m[0]).toBeCloseTo(2 * cosR); // (0,0) sx*cos(r)
+    expect(out.m[1]).toBeCloseTo(2 * sinR); // (1,0) sx*sin(r)
+    expect(out.m[3]).toBeCloseTo(-2 * sinR); // (0,1) -sy*sin(r)
+    expect(out.m[4]).toBeCloseTo(2 * cosR); // (1,1) sy*cos(r)
+    expect(out.m[6]).toBeCloseTo(0.1); // (0,2) tx
+    expect(out.m[7]).toBeCloseTo(0.2); // (1,2) ty
   });
 });
 
@@ -434,8 +436,9 @@ describe('transformTextureUv', () => {
     const u = 0.3;
     const v = 0.8;
     const m = matrix.m;
-    const expectedX = m[0] * u + m[1] * v + m[2];
-    const expectedY = m[3] * u + m[4] * v + m[5];
+    // Column-major: row 0 = m[0], m[3], m[6]; row 1 = m[1], m[4], m[7].
+    const expectedX = m[0] * u + m[3] * v + m[6];
+    const expectedY = m[1] * u + m[4] * v + m[7];
     const out = createVector2(0, 0);
 
     transformTextureUv(out, texture, u, v);

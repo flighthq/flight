@@ -576,9 +576,9 @@ export function resolveWgpuMaterialTextureView(
 // Stashes a material's primary-texture uv transform for the next writeWgpuDrawUniform to fold into the
 // shared Draw uniform. A family's bind() calls this with its base/diffuse map; writeWgpuDrawUniform
 // consumes and resets the stash so a following draw whose family does not stash gets the untiled uv.
-// @flighthq/texture composes the KHR transform row-major; this transposes it into the column-major
-// layout WGSL reads, matching the CPU transformTextureUv reference. A null / identity / unbound texture
-// leaves the stash at identity (the vs_main multiply then reproduces the raw uv).
+// @flighthq/texture composes the KHR transform column-major, the layout WGSL reads, matching the CPU
+// transformTextureUv reference. A null / identity / unbound texture leaves the stash at identity (the
+// vs_main multiply then reproduces the raw uv).
 export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<TextureLike> | null): void {
   const out = getWgpuSceneRuntime(state).pendingUvTransform;
   if (texture === null || texture.image === null || !hasTextureUvTransform(texture)) {
@@ -587,16 +587,7 @@ export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<T
   }
   getTextureUvMatrix(scratchUvMatrix, texture);
   const m = scratchUvMatrix.m;
-  // Transpose row-major → column-major (col-major[3c+r] = row-major[3r+c]).
-  out[0] = m[0];
-  out[1] = m[3];
-  out[2] = m[6];
-  out[3] = m[1];
-  out[4] = m[4];
-  out[5] = m[7];
-  out[6] = m[2];
-  out[7] = m[5];
-  out[8] = m[8];
+  for (let i = 0; i < 9; i++) out[i] = m[i];
 }
 
 // Allocates a draw slot from the render-state's uniform ring buffer, writes the Draw uniform (world
