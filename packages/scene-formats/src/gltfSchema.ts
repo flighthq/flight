@@ -139,6 +139,17 @@ export interface GltfAccessor {
   count: number;
   normalized?: boolean;
   type: 'MAT2' | 'MAT3' | 'MAT4' | 'SCALAR' | 'VEC2' | 'VEC3' | 'VEC4';
+  // Sparse storage: `count` elements at `indices` are overridden by `values`, on top of the base data
+  // the `bufferView` provides (or a zero-filled base when `bufferView` is absent).
+  sparse?: GltfAccessorSparse;
+}
+
+// The sparse block of an accessor. `indices` (an unsigned-integer accessor-less bufferView slice) lists
+// which elements to override; `values` holds the replacement elements in the accessor's own type.
+export interface GltfAccessorSparse {
+  count: number;
+  indices: { bufferView: number; byteOffset?: number; componentType: 5121 | 5123 | 5125 };
+  values: { bufferView: number; byteOffset?: number };
 }
 
 export interface GltfBufferView {
