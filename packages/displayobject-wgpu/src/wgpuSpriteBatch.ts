@@ -1,7 +1,8 @@
-import { bindWgpuTexture } from '@flighthq/render-wgpu';
+import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   ColorTransform,
+  ImageResource,
   Material,
   MaterialData,
   WgpuMaterialRenderer,
@@ -178,7 +179,7 @@ export function flushWgpuSpriteBatch(state: WgpuRenderState): void {
   }
 
   state.applyBlendMode?.(state, blendMode);
-  const textureEntry = bindWgpuTexture(state, texture);
+  const textureEntry = bindWgpuImageResourceTexture(state, texture);
 
   const uniformOffset = writeWgpuSpriteBatchUniforms(state);
 
@@ -299,7 +300,7 @@ export function packWgpuSpriteBatchMaterialInstance(
 // packWgpuSpriteBatchMaterialInstance per instance.
 export function prepareWgpuSpriteBatchWrite(
   state: WgpuRenderState,
-  texture: CanvasImageSource,
+  texture: Readonly<ImageResource>,
   blendMode: BlendMode | null,
   material: Material | null,
   materialRenderer: WgpuMaterialRenderer,

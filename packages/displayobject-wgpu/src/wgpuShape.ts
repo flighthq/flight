@@ -1,12 +1,13 @@
 import { renderCanvasShapeCommands } from '@flighthq/displayobject-canvas';
+import { createImageResource, setImageResourceSource } from '@flighthq/image';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
 import { tessellatePath } from '@flighthq/path';
-import { updateWgpuTextureEntry } from '@flighthq/render-wgpu';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { getShapeFillRegions } from '@flighthq/shape';
 import type {
   DisplayObjectRenderer,
+  ImageResource,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -30,6 +31,10 @@ import {
 interface WgpuShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  // The canvas wrapped as an ImageResource (its `source`) so the shared sprite batch treats a canvas-backed
+  // shape uniformly with bitmaps; re-rendering bumps the version, which the batch's version-aware cache
+  // re-uploads on (recreating the GPU texture, covering both content and size changes).
+  image: ImageResource;
   lastContentId: number;
   lastW: number;
   lastH: number;
@@ -49,6 +54,7 @@ function createWgpuShapeData(_state: RenderState, _source: Renderable): Renderer
   return createWgpuRendererData<WgpuShapeData>({
     canvas,
     ctx,
+    image: createImageResource(canvas),
     lastContentId: -1,
     lastW: 0,
     lastH: 0,
@@ -71,11 +77,10 @@ function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData): void 
   const runtime = getWgpuRenderStateRuntime(state);
   const shapeData = getWgpuRendererData<WgpuShapeData>(data);
   if (shapeData === null) return;
-  const { canvas } = shapeData;
-  const entry = runtime.textureCache.get(canvas);
+  const entry = runtime.imageResourceTextureCache.get(shapeData.image);
   if (entry !== undefined) {
     entry.texture.destroy();
-    runtime.textureCache.delete(canvas);
+    runtime.imageResourceTextureCache.delete(shapeData.image);
   }
   const b = shapeData.meshBuffers;
   b.vertexBuffer?.destroy();
@@ -131,7 +136,6 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   if (w <= 0 || h <= 0) return;
 
   if (version !== shapeData.lastContentId || w !== shapeData.lastW || h !== shapeData.lastH) {
-    const sizeChanged = w !== shapeData.lastW || h !== shapeData.lastH;
     shapeData.canvas.width = w;
     shapeData.canvas.height = h;
     const ctx = shapeData.ctx;
@@ -140,18 +144,9 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
     ctx.translate(-bounds.x, -bounds.y);
     renderCanvasShapeCommands(ctx, commands);
     ctx.restore();
-
-    const cached = runtime.textureCache.get(shapeData.canvas);
-    if (cached !== undefined) {
-      if (sizeChanged) {
-        // Physical size changed: destroy old GPU texture, let the batch create a new one.
-        cached.texture.destroy();
-        runtime.textureCache.delete(shapeData.canvas);
-      } else {
-        // Same size: update content in-place.
-        updateWgpuTextureEntry(state, cached, shapeData.canvas);
-      }
-    }
+    // Re-read the canvas dimensions and bump the resource version so the batch's version-aware cache
+    // re-uploads (recreating the GPU texture, which covers a size change too).
+    setImageResourceSource(shapeData.image, shapeData.canvas);
     shapeData.lastContentId = version;
     shapeData.lastW = w;
     shapeData.lastH = h;
@@ -166,7 +161,7 @@ export function drawWgpuShape(state: WgpuRenderState, renderProxy: RenderProxy2D
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
     state,
-    shapeData.canvas,
+    shapeData.image,
     renderProxy.blendMode,
     material,
     materialRenderer,

@@ -24,6 +24,9 @@
       "path": "../geometry"
     },
     {
+      "path": "../image"
+    },
+    {
       "path": "../log"
     },
     {

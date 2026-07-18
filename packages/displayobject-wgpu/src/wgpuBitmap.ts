@@ -1,5 +1,6 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
-import { bindWgpuTexture } from '@flighthq/render-wgpu';
+import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { resolveWgpuShader } from '@flighthq/render-wgpu';
@@ -20,14 +21,14 @@ export function drawWgpuBitmap(state: WgpuRenderState, renderProxy: RenderProxy2
 
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource === null || imageSource.source === null) return;
+  if (imageSource === null || !hasImageResourcePixels(imageSource)) return;
 
   // Custom per-node shader: flush pending batch to preserve painter's order, then draw immediately.
   const shader = resolveWgpuShader(state, renderProxy);
   if (shader !== null) {
     flushWgpuSpriteBatch(state);
     state.applyBlendMode?.(state, renderProxy.blendMode);
-    bindWgpuTexture(state, imageSource.source);
+    bindWgpuImageResourceTexture(state, imageSource);
     shader.bind(state, renderProxy);
     return;
   }
@@ -64,14 +65,7 @@ export function drawWgpuBitmap(state: WgpuRenderState, renderProxy: RenderProxy2
   }
 
   const startCount = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(
-    state,
-    imageSource.source,
-    renderProxy.blendMode,
-    material,
-    materialRenderer,
-    1,
-  );
+  const base = prepareWgpuSpriteBatchWrite(state, imageSource, renderProxy.blendMode, material, materialRenderer, 1);
   const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;

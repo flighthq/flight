@@ -1,10 +1,12 @@
 import { createBitmap } from '@flighthq/displayobject';
 import { getOrCreateRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
+import type { ImageResource } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import {
   applyWgpuBlendMode,
+  bindWgpuImageResourceTexture,
   bindWgpuTexture,
   buildWgpuRenderTargetBindGroup,
   createWgpuTextureEntry,
@@ -34,6 +36,56 @@ describe('applyWgpuBlendMode', () => {
     const state = await createWgpuRenderStateForTest();
     applyWgpuBlendMode(state, null);
     expect(getWgpuRenderStateRuntime(state).currentBlendMode).toBeNull();
+  });
+});
+
+describe('bindWgpuImageResourceTexture', () => {
+  function dataResource(size: number, version: number): ImageResource {
+    return {
+      source: null,
+      data: new Uint8ClampedArray(size * size * 4),
+      width: size,
+      height: size,
+      version,
+      alphaType: 'straight',
+    } as unknown as ImageResource;
+  }
+
+  it('uploads a data-only ImageResource (a generated Surface) via writeTexture', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
+    const entry = bindWgpuImageResourceTexture(state, dataResource(4, 1));
+    expect(entry.texture).toBeDefined();
+    expect(writeTexture).toHaveBeenCalled();
+  });
+
+  it('uploads an element-backed ImageResource via copyExternalImageToTexture', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const copy = vi.spyOn(state.device.queue, 'copyExternalImageToTexture');
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 4;
+    const image = {
+      source: canvas,
+      data: null,
+      width: 4,
+      height: 4,
+      version: 1,
+      alphaType: 'straight',
+    } as unknown as ImageResource;
+    bindWgpuImageResourceTexture(state, image);
+    expect(copy).toHaveBeenCalled();
+  });
+
+  it('caches by resource identity and re-uploads only when the version changes', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const image = dataResource(2, 1);
+    const first = bindWgpuImageResourceTexture(state, image);
+    expect(bindWgpuImageResourceTexture(state, image)).toBe(first);
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    image.version = 2;
+    bindWgpuImageResourceTexture(state, image);
+    expect(createTexture).toHaveBeenCalled();
   });
 });
 

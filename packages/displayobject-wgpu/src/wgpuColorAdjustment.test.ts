@@ -1,3 +1,4 @@
+import { createImageResource } from '@flighthq/image';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
@@ -106,7 +107,7 @@ describe('enableWgpuColorAdjustment', () => {
     enableWgpuColorAdjustment(state);
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex = document.createElement('img');
+    const tex = createImageResource(document.createElement('img'));
     prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 2);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 0);
     recordWgpuSpriteBatchColorTransform(state, ct(0.5), 1);

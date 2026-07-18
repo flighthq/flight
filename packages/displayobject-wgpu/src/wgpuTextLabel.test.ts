@@ -1,3 +1,4 @@
+import { createImageResource } from '@flighthq/image';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
@@ -46,7 +47,17 @@ function makeTextData() {
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastContentId: -1, lastPixelRatio: 0, logW: 0, logH: 0, lastPW: 0, lastPH: 0 };
+  return {
+    canvas,
+    ctx,
+    image: createImageResource(canvas),
+    lastContentId: -1,
+    lastPixelRatio: 0,
+    logW: 0,
+    logH: 0,
+    lastPW: 0,
+    lastPH: 0,
+  };
 }
 
 function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {

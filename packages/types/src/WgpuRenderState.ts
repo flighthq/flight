@@ -1,6 +1,7 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
 import type { Kind } from './Entity';
+import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { RenderProxy2D } from './RenderProxy2D';
@@ -82,8 +83,12 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   mipmapPipeline?: GPURenderPipeline | null;
   mipmapBindGroupLayout?: GPUBindGroupLayout | null;
 
-  // Texture cache: image source → entry with texture, view, bind group
+  // Raw-element texture cache: a canvas/video/image element uploaded directly, keyed by the element.
   textureCache: WeakMap<CanvasImageSource, WgpuTextureEntry>;
+  // ImageResource texture cache: content-backed images (bitmaps, atlases, material maps), element-backed OR
+  // a data-only generated Surface. Keyed by the resource entity so a data-only Surface caches too, with the
+  // uploaded `version` tracked so bindWgpuImageResourceTexture re-uploads when the pixels change.
+  imageResourceTextureCache: WeakMap<ImageResource, WgpuImageResourceTextureEntry>;
 
   // Custom shader (default bitmap shader; can be replaced via registerWgpuBitmapShader)
   defaultBitmapShader: WgpuBitmapShader | null;
@@ -110,7 +115,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // active material's packInstance. Separate from the base instance data so the base layout carries
   // no material concern.
   spriteBatchMaterialData: Float32Array;
-  spriteBatchTexture: CanvasImageSource | null;
+  spriteBatchTexture: ImageResource | null;
   // Color-adjustment fold state for the active sprite batch, owned by the opt-in
   // enableWgpuColorAdjustment (absent until then, so a state that never tints allocates none of it).
   // Orthogonal to the material and never a flush key, so tinted and untinted nodes with the same
@@ -307,4 +312,10 @@ export interface WgpuTextureEntry {
   bindGroup: GPUBindGroup;
   texture: GPUTexture;
   view: GPUTextureView;
+}
+
+// A WgpuTextureEntry cached per ImageResource, carrying the uploaded content `version` so
+// bindWgpuImageResourceTexture re-uploads (recreating the GPU texture) when the pixels change.
+export interface WgpuImageResourceTextureEntry extends WgpuTextureEntry {
+  version: number;
 }

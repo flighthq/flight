@@ -1,3 +1,4 @@
+import { createImageResource } from '@flighthq/image';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
@@ -80,7 +81,7 @@ describe('flushWgpuSpriteBatch', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex = document.createElement('img');
+    const tex = createImageResource(document.createElement('img'));
 
     prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
@@ -99,8 +100,8 @@ describe('flushWgpuSpriteBatch', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex1 = document.createElement('img');
-    const tex2 = document.createElement('img');
+    const tex1 = createImageResource(document.createElement('img'));
+    const tex2 = createImageResource(document.createElement('img'));
 
     prepareWgpuSpriteBatchWrite(state, tex1, null, null, defaultWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
@@ -148,7 +149,7 @@ describe('packWgpuSpriteBatchMaterialInstance', () => {
 describe('prepareWgpuSpriteBatchWrite', () => {
   it('returns float index 0 for an empty batch', async () => {
     const state = await createWgpuRenderStateForTest();
-    const tex = document.createElement('img');
+    const tex = createImageResource(document.createElement('img'));
 
     const base = prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
     expect(base).toBe(0);
@@ -158,8 +159,8 @@ describe('prepareWgpuSpriteBatchWrite', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex1 = document.createElement('img');
-    const tex2 = document.createElement('img');
+    const tex1 = createImageResource(document.createElement('img'));
+    const tex2 = createImageResource(document.createElement('img'));
 
     prepareWgpuSpriteBatchWrite(state, tex1, null, null, defaultWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;
@@ -174,7 +175,7 @@ describe('prepareWgpuSpriteBatchWrite', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex = document.createElement('img');
+    const tex = createImageResource(document.createElement('img'));
     const materialA = makeMaterial();
     const materialB = makeMaterial();
 
@@ -216,7 +217,7 @@ describe('recordWgpuSpriteBatchColorTransform', () => {
     enableWgpuColorAdjustment(state);
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex = document.createElement('img');
+    const tex = createImageResource(document.createElement('img'));
     prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
     recordWgpuSpriteBatchColorTransform(state, null, 0);
     runtime.spriteBatchCount = 1;
@@ -230,7 +231,7 @@ describe('resetWgpuSpriteBatchBufferPool', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    const tex = document.createElement('img');
+    const tex = createImageResource(document.createElement('img'));
 
     prepareWgpuSpriteBatchWrite(state, tex, null, null, defaultWgpuMaterialRenderer, 1);
     runtime.spriteBatchCount = 1;

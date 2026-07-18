@@ -1,6 +1,6 @@
 import { computeRgbHexString } from '@flighthq/color';
+import { createImageResource, setImageResourceSource } from '@flighthq/image';
 import { getNodeLocalContentRevision } from '@flighthq/node';
-import { updateWgpuTextureEntry } from '@flighthq/render-wgpu';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { computeTextFormatFontString } from '@flighthq/text';
@@ -8,6 +8,7 @@ import { getTextLabelRuntime } from '@flighthq/text';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout';
 import type {
   DisplayObjectRenderer,
+  ImageResource,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -30,6 +31,9 @@ import {
 interface WgpuTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  // The canvas wrapped as an ImageResource (its `source`) so the shared sprite batch treats canvas-backed
+  // text uniformly with bitmaps; re-rasterizing bumps the version, which the batch cache re-uploads on.
+  image: ImageResource;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
   // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
   // appearance-only changes such as alpha.
@@ -49,6 +53,7 @@ function createWgpuTextLabelData(_state: RenderState, _source: Renderable): Rend
   return createWgpuRendererData<WgpuTextLabelData>({
     canvas,
     ctx,
+    image: createImageResource(canvas),
     lastContentId: -1,
     lastPixelRatio: 0,
     logW: 0,
@@ -63,11 +68,10 @@ function destroyWgpuTextLabelData(state: WgpuRenderState, data: RendererData): v
   const runtime = getWgpuRenderStateRuntime(state);
   const textLabelData = getWgpuRendererData<WgpuTextLabelData>(data);
   if (textLabelData === null) return;
-  const { canvas } = textLabelData;
-  const entry = runtime.textureCache.get(canvas);
+  const entry = runtime.imageResourceTextureCache.get(textLabelData.image);
   if (entry !== undefined) {
     entry.texture.destroy();
-    runtime.textureCache.delete(canvas);
+    runtime.imageResourceTextureCache.delete(textLabelData.image);
   }
 }
 
@@ -145,18 +149,9 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
       ctx.fillText(slice, group.offsetX, group.offsetY + group.ascent * 0.815);
     }
 
-    // Update or invalidate the GPU texture.
-    const cached = runtime.textureCache.get(textData.canvas);
-    if (cached !== undefined) {
-      if (pw === textData.lastPW && ph === textData.lastPH) {
-        // Same physical size: update content in-place.
-        updateWgpuTextureEntry(state, cached, textData.canvas);
-      } else {
-        // Physical size changed: destroy old GPU texture, let the batch create a new one.
-        cached.texture.destroy();
-        runtime.textureCache.delete(textData.canvas);
-      }
-    }
+    // Bump the resource version so the batch's version-aware cache re-uploads (recreating the GPU texture,
+    // which covers a physical-size change too).
+    setImageResourceSource(textData.image, textData.canvas);
 
     textData.logW = w;
     textData.logH = h;
@@ -169,14 +164,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   ensureWgpuQuadBatchResources(state);
 
   const startCount = runtime.spriteBatchCount;
-  const base = prepareWgpuSpriteBatchWrite(
-    state,
-    textData.canvas,
-    renderProxy.blendMode,
-    material,
-    materialRenderer,
-    1,
-  );
+  const base = prepareWgpuSpriteBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
   const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
