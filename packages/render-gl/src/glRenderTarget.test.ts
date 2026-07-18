@@ -139,6 +139,23 @@ describe('createGlRenderTarget', () => {
     const target = createGlRenderTarget(state, { width: 32, height: 32, colorSpace: 'linear' });
     expect(target.colorSpace).toBe('linear');
   });
+
+  it('falls back a float format to rgba8 when EXT_color_buffer_float is unavailable', () => {
+    const { state, gl } = makeState();
+    // Simulate GL without float-render support (e.g. headless SwiftShader): a float target would be
+    // framebuffer-incomplete and render black, so the effective format degrades to the renderable rgba8.
+    (gl as unknown as { getExtension: (n: string) => unknown }).getExtension = (name: string) =>
+      name === 'EXT_color_buffer_float' ? null : {};
+    const target = createGlRenderTarget(state, { width: 32, height: 32, format: 'rgba16f' });
+    expect(target.format).toBe('rgba8');
+  });
+
+  it('keeps a float format when EXT_color_buffer_float is available', () => {
+    const { state, gl } = makeState();
+    (gl as unknown as { getExtension: (n: string) => unknown }).getExtension = () => ({});
+    const target = createGlRenderTarget(state, { width: 32, height: 32, format: 'rgba16f' });
+    expect(target.format).toBe('rgba16f');
+  });
 });
 
 describe('declareGlRenderTargetColorSpace', () => {

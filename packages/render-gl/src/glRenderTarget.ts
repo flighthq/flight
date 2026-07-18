@@ -78,7 +78,11 @@ export function createGlRenderTarget(
 
   const w = Math.max(1, Math.ceil(descriptor.width));
   const h = Math.max(1, Math.ceil(descriptor.height));
-  const format = descriptor.format ?? 'rgba8';
+  // Substitute a renderable format when a float target is requested on GL that lacks float-render
+  // support (see resolveRenderableFormat); target.format carries the effective format so readback and
+  // the present/tonemap path treat it consistently, and resize reuses it.
+  const format = resolveRenderableFormat(gl, descriptor.format ?? 'rgba8');
+  const colorFormats = descriptor.colorFormats?.map((f) => resolveRenderableFormat(gl, f));
   const attachments = Math.max(1, descriptor.colorAttachments ?? 1);
   const sampleCount = Math.max(1, descriptor.sampleCount ?? 1);
   const depth = descriptor.depth ?? 'none';
@@ -99,7 +103,7 @@ export function createGlRenderTarget(
     depthStencilRenderbuffer: null,
   };
 
-  allocateGlRenderTargetStorage(state, target, descriptor.colorFormats, attachments, depth);
+  allocateGlRenderTargetStorage(state, target, colorFormats, attachments, depth);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   gl.bindTexture(gl.TEXTURE_2D, null);
@@ -362,6 +366,17 @@ function buildSingleDrawBuffer(gl: WebGL2RenderingContext, index: number, count:
 
 function isFloatRenderTargetFormat(format: RenderTargetFormat): boolean {
   return format === 'rgba16f' || format === 'rgba32f';
+}
+
+// A float color format (rgba16f/rgba32f) is only color-renderable when EXT_color_buffer_float is
+// available. On GL2 implementations that lack it — notably headless SwiftShader (the Docker sandbox's
+// software WebGL) — an rgba16f framebuffer is incomplete and every draw/clear into it silently no-ops,
+// so the whole HDR scene renders BLACK. Rather than fail that way, fall back to the renderable rgba8:
+// the scene draws in LDR (banding/clipping possible in the tonemap, but visible) instead of nothing. On
+// hardware with float render targets this is a no-op, so full HDR precision is unaffected there.
+function resolveRenderableFormat(gl: WebGL2RenderingContext, format: RenderTargetFormat): RenderTargetFormat {
+  if (isFloatRenderTargetFormat(format) && gl.getExtension('EXT_color_buffer_float') === null) return 'rgba8';
+  return format;
 }
 
 function mapGlFormat(
