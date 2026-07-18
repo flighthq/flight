@@ -1,5 +1,6 @@
 import { createMatrix4, scaleMatrix4, translateMatrix4 } from '@flighthq/geometry';
 import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
+import { setSceneNodePosition } from '@flighthq/scene';
 import { describe, expect, it } from 'vitest';
 
 import { createParticleEmitter3D } from './particleEmitter3D';
@@ -278,6 +279,60 @@ describe('updateParticleEmitter3D', () => {
     const vy = state.velocities[1];
     const vz = state.velocities[2];
     expect(Math.hypot(vx, vy, vz)).toBeCloseTo(20, 4);
+  });
+
+  it('blends the emitter motion into new particles via velocity inheritance', () => {
+    const emitter = createParticleEmitter3D();
+    const state = createParticleEmitterState(seededRandom(42));
+    const config = createParticleEmitterConfig({
+      lifetimeMax: 100,
+      lifetimeMin: 100,
+      maxParticles: 100,
+      spawnRate: 10,
+      speedMax: 0,
+      speedMin: 0,
+      velocityInheritance: 0.5,
+    });
+    // Frame 1 seeds the previous emitter position (no inheritance yet — nothing to derive velocity from).
+    updateParticleEmitter3D(emitter, state, config, 0.1);
+    // Move the emitter node, then step again: the node travelled 2 over dt=0.1 → emitter velocity 20,
+    // and the new particle (base speed 0) inherits half of it along X.
+    setSceneNodePosition(emitter, 2, 0, 0);
+    updateParticleEmitter3D(emitter, state, config, 0.1);
+    const newIdx = emitter.data.particleCount - 1;
+    const vt = newIdx * 3;
+    expect(state.velocities[vt]).toBeCloseTo(10, 3);
+    expect(state.velocities[vt + 1]).toBeCloseTo(0, 3);
+    expect(state.velocities[vt + 2]).toBeCloseTo(0, 3);
+  });
+
+  it('distributes world-space spawns along the emitter path (trail interpolation)', () => {
+    const emitter = createParticleEmitter3D();
+    const state = createParticleEmitterState(seededRandom(42));
+    // Frame 1 at the origin seeds the previous world position without spawning.
+    const idle = createParticleEmitterConfig({ maxParticles: 100, spawnRate: 0, worldSpace: true });
+    const originTransform = createMatrix4();
+    updateParticleEmitter3D(emitter, state, idle, 0.1, originTransform);
+    // Frame 2 bursts 5 particles while the emitter sits at x=10: they spread from the previous position
+    // (0) to the current one (10), so particle 0 is at 0, the middle at 5, the last at 10.
+    const burst = createParticleEmitterConfig({
+      burstCount: 5,
+      burstInterval: 0,
+      lifetimeMax: 100,
+      lifetimeMin: 100,
+      maxParticles: 100,
+      spawnRate: 0,
+      speedMax: 0,
+      speedMin: 0,
+      worldSpace: true,
+    });
+    const movedTransform = createMatrix4();
+    translateMatrix4(movedTransform, movedTransform, 10, 0, 0);
+    updateParticleEmitter3D(emitter, state, burst, 0.1, movedTransform);
+    expect(emitter.data.particleCount).toBe(5);
+    expect(emitter.data.transforms[0]).toBeCloseTo(0);
+    expect(emitter.data.transforms[8]).toBeCloseTo(5);
+    expect(emitter.data.transforms[16]).toBeCloseTo(10);
   });
 
   it('stops spawning when finite duration elapses', () => {

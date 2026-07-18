@@ -45,6 +45,23 @@ export function updateParticleEmitter3D(
 
   if (deltaTime <= 0) return;
 
+  // Emitter origin this frame: the world translation when baking to world space, else the node's local
+  // translation. Tracked frame-to-frame (state.prev*) to derive the emitter's own velocity for velocity
+  // inheritance and to spread world-space spawns along the emitter's path (trail interpolation).
+  const lm = emitter.localMatrix.m;
+  const trackX = worldM !== null ? worldM[12] : lm[12];
+  const trackY = worldM !== null ? worldM[13] : lm[13];
+  const trackZ = worldM !== null ? worldM[14] : lm[14];
+  const hasVelInherit = config.velocityInheritance !== 0;
+  let emitterVelX = 0;
+  let emitterVelY = 0;
+  let emitterVelZ = 0;
+  if (!isNaN(state.prevX)) {
+    emitterVelX = (trackX - state.prevX) / deltaTime;
+    emitterVelY = (trackY - state.prevY) / deltaTime;
+    emitterVelZ = (trackZ - state.prevZ) / deltaTime;
+  }
+
   const lifetimes = state.lifetimes;
   const velocities = state.velocities;
   const scales = state.scales;
@@ -213,6 +230,14 @@ export function updateParticleEmitter3D(
     const dirNy = dirLen > 1e-6 ? config.directionY / dirLen : -1;
     const dirNz = dirLen > 1e-6 ? config.directionZ / dirLen : 0;
 
+    // World-space trail: distribute this frame's spawn origins along the path prevPos → currentPos so a
+    // fast-moving emitter lays a continuous ribbon instead of one clump per frame. Only in world space
+    // (where particles are left behind) and only once a previous position exists (not the first frame).
+    const doTrail = worldM !== null && !isNaN(state.prevX);
+    const prevPathX = doTrail ? state.prevX : trackX;
+    const prevPathY = doTrail ? state.prevY : trackY;
+    const prevPathZ = doTrail ? state.prevZ : trackZ;
+
     for (let sIdx = 0; sIdx < toSpawn; sIdx++) {
       const idx = liveCount + sIdx;
 
@@ -306,13 +331,18 @@ export function updateParticleEmitter3D(
         }
       }
 
-      // World-space: bake the spawn position (through the full matrix) and velocity (through its
-      // rotation) into world space so the particle no longer rides the emitter's transform.
+      // World-space: bake the spawn position and velocity into world space so the particle no longer
+      // rides the emitter's transform. The shape offset goes through the rotation+scale (upper 3×3); the
+      // origin is the interpolated trail point, which collapses to the current position when not trailing.
       if (worldM !== null) {
         const m = worldM;
-        const px = m[0] * spawnX + m[4] * spawnY + m[8] * spawnZ + m[12];
-        const py = m[1] * spawnX + m[5] * spawnY + m[9] * spawnZ + m[13];
-        const pz = m[2] * spawnX + m[6] * spawnY + m[10] * spawnZ + m[14];
+        const t = toSpawn > 1 ? sIdx / (toSpawn - 1) : 1;
+        const originX = prevPathX + (trackX - prevPathX) * t;
+        const originY = prevPathY + (trackY - prevPathY) * t;
+        const originZ = prevPathZ + (trackZ - prevPathZ) * t;
+        const px = m[0] * spawnX + m[4] * spawnY + m[8] * spawnZ + originX;
+        const py = m[1] * spawnX + m[5] * spawnY + m[9] * spawnZ + originY;
+        const pz = m[2] * spawnX + m[6] * spawnY + m[10] * spawnZ + originZ;
         const wvx = m[0] * vx + m[4] * vy + m[8] * vz;
         const wvy = m[1] * vx + m[5] * vy + m[9] * vz;
         const wvz = m[2] * vx + m[6] * vy + m[10] * vz;
@@ -322,6 +352,14 @@ export function updateParticleEmitter3D(
         vx = wvx;
         vy = wvy;
         vz = wvz;
+      }
+
+      // Velocity inheritance: blend a fraction of the emitter's own motion into the new particle, so
+      // particles shed from a moving emitter carry its momentum.
+      if (hasVelInherit && !isNaN(state.prevX)) {
+        vx += emitterVelX * config.velocityInheritance;
+        vy += emitterVelY * config.velocityInheritance;
+        vz += emitterVelZ * config.velocityInheritance;
       }
 
       const vt = idx * PARTICLE_VELOCITY_STRIDE;
@@ -379,14 +417,17 @@ export function updateParticleEmitter3D(
     data.particleCount = newCount;
   }
 
-  // Mirror sim velocities (stride-3) into render data (stride-2).
-  const liveRenderVelocityCount = data.particleCount * 2;
-  if (data.velocities.length >= liveRenderVelocityCount) {
-    for (let vi = 0; vi < data.particleCount; vi++) {
-      const src = vi * PARTICLE_VELOCITY_STRIDE;
-      const dst = vi * 2;
-      data.velocities[dst] = state.velocities[src];
-      data.velocities[dst + 1] = state.velocities[src + 1];
+  // Remember the emitter origin for next frame's velocity/trail derivation.
+  state.prevX = trackX;
+  state.prevY = trackY;
+  state.prevZ = trackZ;
+
+  // Mirror the simulated velocities into the emitter's own buffer so getParticleEmitter3DParticleVelocity
+  // and manual entity ops observe them. Both are stride-3 (vx, vy, vz).
+  const liveVelocityCount = data.particleCount * PARTICLE_VELOCITY_STRIDE;
+  if (data.velocities.length >= liveVelocityCount) {
+    for (let vi = 0; vi < liveVelocityCount; vi++) {
+      data.velocities[vi] = state.velocities[vi];
     }
   }
 
