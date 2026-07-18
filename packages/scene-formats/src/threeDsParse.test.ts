@@ -317,18 +317,33 @@ describe('createSceneFrom3ds', () => {
     expect([uv.x, uv.y]).toEqual([0.5, 0]);
   });
 
-  it('computes face normals converted to Y-up', () => {
-    // A flat triangle in Z-up XY plane: normal should point +Z in Z-up → +Y in Y-up.
+  it('computes face normals facing outward, not inverted', () => {
+    // A flat triangle wound CCW in the Z-up XY plane: its outward normal is +Z in Z-up, which
+    // must become +Y after the -90°-about-X rotation. A reflection-based conversion would flip the
+    // winding and produce -Y — the "holes into the model" / inverted-lighting symptom — so this
+    // asserts the sign, not just the magnitude.
     const bytes = buildTriangle3ds('NormalTri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
     const scene = createSceneFrom3ds(bytes);
     const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexNormal(n, geometry, 0);
-    // After Z→Y conversion, the normal of a Z-up XY-plane triangle points in the Y direction.
-    // The exact direction depends on winding; just verify it has a dominant component.
-    const len = Math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
-    expect(len).toBeGreaterThan(0.9);
+    expect(n.y).toBeGreaterThan(0.9);
+    expect(Math.abs(n.x)).toBeLessThan(0.1);
+    expect(Math.abs(n.z)).toBeLessThan(0.1);
+  });
+
+  it('converts Z-up to Y-up by rotation, not reflection', () => {
+    // A vertex with a non-zero Y (forward) component distinguishes a rotation from a mirror: the
+    // rotation (x, y, z) → (x, z, -y) negates the forward axis, whereas a Y↔Z swap would keep it
+    // positive and mirror the model. Vertex (0, 1, 0) in 3DS Z-up must land at (0, 0, -1).
+    const bytes = buildTriangle3ds('RotTri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
+    const scene = createSceneFrom3ds(bytes);
+    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 2);
+    expect([p.x, p.y, p.z]).toEqual([0, 0, -1]);
   });
 
   it('returns an empty scene for empty input', () => {

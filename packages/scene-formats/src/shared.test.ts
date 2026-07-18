@@ -16,7 +16,6 @@ import {
   negateVec3Z,
   packSkinInfluences,
   reverseTriangleWinding,
-  swapPositionsYZ,
 } from './shared';
 
 describe('convertPositionsZUpToYUp', () => {
@@ -219,25 +218,5 @@ describe('reverseTriangleWinding', () => {
     const indices = [10, 20, 30];
     reverseTriangleWinding(indices);
     expect(indices).toEqual([10, 30, 20]);
-  });
-});
-
-describe('swapPositionsYZ', () => {
-  it('swaps Y and Z components for packed vec3 data', () => {
-    const values = [1, 2, 3, 4, 5, 6];
-    swapPositionsYZ(values);
-    expect(values).toEqual([1, 3, 2, 4, 6, 5]);
-  });
-
-  it('handles interleaved data with stride and offset', () => {
-    const values = [1, 2, 3, 10, 20, 30];
-    swapPositionsYZ(values, 6, 0);
-    expect(values).toEqual([1, 3, 2, 10, 20, 30]);
-  });
-
-  it('handles an empty array', () => {
-    const values: number[] = [];
-    swapPositionsYZ(values);
-    expect(values).toEqual([]);
   });
 });

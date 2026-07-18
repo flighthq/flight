@@ -5,7 +5,12 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import type { Material, SceneNode } from '@flighthq/types';
 
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef, swapPositionsYZ } from './shared';
+import {
+  CANONICAL_FLOATS_PER_VERTEX,
+  CANONICAL_LAYOUT,
+  convertPositionsZUpToYUp,
+  createExternalTextureRef,
+} from './shared';
 import type { ThreeDsMaterial, ThreeDsMesh } from './threeDsSchema';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
@@ -34,9 +39,10 @@ import {
 // (0x4000), each of which may contain a triangle mesh (0x4100) with vertex, face, and UV sub-chunks.
 //
 // Each mesh becomes a Mesh scene node with the canonical PBR vertex layout. The 3DS coordinate
-// system is left-handed Z-up; positions are converted to Flight's right-handed Y-up via
-// swapPositionsYZ. The Y↔Z reflection (det = -1) handles both the up-axis and handedness flip,
-// so face winding is preserved as-is from the file.
+// system is right-handed Z-up (like MD2/MD5); positions are converted to Flight's right-handed
+// Y-up via convertPositionsZUpToYUp, a -90° rotation about X ((x, y, z) → (x, z, -y), det = +1).
+// Because the conversion is a rotation, not a reflection, triangle winding and computed normals
+// are preserved as-is from the file — no winding reversal is needed.
 //
 // The 3DS format limits each mesh to 65535 vertices (uint16 indices). Multiple mesh objects are
 // common in practice and each becomes a separate Mesh child of the scene.
@@ -307,9 +313,9 @@ function parseUvCoords(
 }
 
 // Builds a Mesh scene node from a parsed ThreeDsMesh descriptor. Vertex positions are converted
-// from LH Z-up to RH Y-up via swapPositionsYZ. Face normals are computed per-face and averaged
-// at shared vertices to produce smooth normals. The materials the mesh's faces reference are resolved
-// against the file's material table (memoized in `resolved`) and attached to the Mesh node.
+// from RH Z-up to RH Y-up via convertPositionsZUpToYUp. Face normals are computed per-face and
+// averaged at shared vertices to produce smooth normals. The materials the mesh's faces reference
+// are resolved against the file's material table (memoized in `resolved`) and attached to the Mesh node.
 function buildMeshNode(
   mesh: Readonly<ThreeDsMesh>,
   materials: Readonly<Map<string, ThreeDsMaterial>>,
@@ -320,10 +326,11 @@ function buildMeshNode(
 
   if (vertexCount === 0 || faceCount === 0) return null;
 
-  // Convert positions from LH Z-up to RH Y-up before normal computation so all geometry
-  // operates in Flight's coordinate space.
+  // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry
+  // operates in Flight's coordinate space. The rotation preserves winding, so computed normals
+  // come out facing outward and front faces are not culled.
   const positions = Array.from(mesh.vertices);
-  swapPositionsYZ(positions);
+  convertPositionsZUpToYUp(positions);
 
   const vertices = new Float32Array(vertexCount * CANONICAL_FLOATS_PER_VERTEX);
   const normals = new Float32Array(vertexCount * 3);
