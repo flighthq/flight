@@ -3,7 +3,7 @@
 //   node agents/packages/scaffold.mjs
 //
 // For every packages/<name>, ensures agents/packages/<name>/ exists and writes a
-// charter.md + status.md stub if absent. Never overwrites an existing file (the incoming status
+// charter.md + status.md stub if absent. Never overwrites an existing file (existing status
 // docs and any authored charter are safe). "What it is" in the charter is seeded from the prior
 // depth review's Domain line — words already vetted as accurate — and marked as needing your voice.
 //

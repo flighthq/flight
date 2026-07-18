@@ -167,16 +167,6 @@ tools/site/
 # Workflows are .js — re-include them past the global *.js ignore above.
 !.claude/workflows/*.js
 
-# get:worktree incoming review bundles
-/incoming/
-
-# assign:worktree outbound staging + worker assignment inbox (ephemeral host-transmitted guidance)
-/outgoing/
-/agents/assignments/
-
-# flat worker status drop (distributed into packages/<name>/status.md on ingest; not committed)
-/agents/status/
-
 # generated review/audit reports (ephemeral; ingested into packages/, then discarded)
 /reports/
 /agents/reviews/

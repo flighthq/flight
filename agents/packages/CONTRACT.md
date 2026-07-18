@@ -50,7 +50,7 @@ basedOn: ./review.md # the review revision this assessment reasoned over
 
 ### `status.md`
 
-The **merged continuity log**: transient unfinished-work tidbits (half-done threads, gotchas, what to watch), written by the ingest/review pass as a _verified merge_ of worker reports — not a raw worker dump. It is the home for the transient notes that would otherwise rot as inline `TODO` comments; durable semantic comments stay in the code. Append-only, newest entry on top.
+The **continuity log**: transient unfinished-work tidbits (half-done threads, gotchas, what to watch), appended by the developer or review pass. It is the home for the transient notes that would otherwise rot as inline `TODO` comments; durable semantic comments stay in the code. Append-only, newest entry on top.
 
 ```yaml
 package: '@flighthq/<name>'
