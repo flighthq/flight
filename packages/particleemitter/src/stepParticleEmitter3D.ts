@@ -1,5 +1,6 @@
 import { applyParticleCollisions, applyParticleForces } from '@flighthq/particles';
 import type {
+  Matrix4,
   ParticleCollider,
   ParticleEmitter,
   ParticleEmitter3D,
@@ -17,6 +18,8 @@ export function stepParticleEmitter3D(
   deltaTime: number,
   forces?: ReadonlyArray<ParticleForce>,
   colliders?: ReadonlyArray<ParticleCollider>,
+  // Forwarded to updateParticleEmitter3D so world-space emitters bake spawns; see that function.
+  worldTransform?: Readonly<Matrix4>,
 ): void {
   // applyParticleForces/Collisions are typed against ParticleEmitter but only
   // access emitter.data (ParticleEmitterData), which ParticleEmitter3D shares.
@@ -24,7 +27,7 @@ export function stepParticleEmitter3D(
   if (forces != null && forces.length > 0) {
     applyParticleForces(asEmitter, state, forces, deltaTime);
   }
-  updateParticleEmitter3D(emitter, state, config, deltaTime);
+  updateParticleEmitter3D(emitter, state, config, deltaTime, worldTransform);
   if (colliders != null && colliders.length > 0) {
     applyParticleCollisions(asEmitter, state, colliders);
   }
