@@ -6,6 +6,7 @@ import type { GlMeshProgram } from './glMeshProgram';
 import {
   GL_MAX_SKIN_JOINTS,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlSceneProgram,
 } from './glMeshProgram';
@@ -29,6 +30,9 @@ export interface GlUnlitDefineKey {
   // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlUnlitProgram
   // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
   hasSkin?: boolean;
+  // Whether the color map carries a non-identity uv transform (HAS_UV_TRANSFORM). Set only when
+  // hasColorMap is also true, since the transform applies to the sampled map's coordinates.
+  hasUvTransform: boolean;
   vertexColor: boolean;
 }
 
@@ -70,8 +74,8 @@ export function bindGlUnlitSurface(
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
   return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasColorMap ? 'c' : '-'}${key.vertexColor ? 'v' : '-'}${
-    key.hasSkin ? 'k' : '-'
-  }`;
+    key.hasUvTransform ? 'u' : '-'
+  }${key.hasSkin ? 'k' : '-'}`;
 }
 
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -116,6 +120,7 @@ function buildDefineSource(key: Readonly<GlUnlitDefineKey>): string {
   let defines = '#version 300 es\n';
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasColorMap) defines += '#define HAS_COLOR_MAP\n';
+  if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.vertexColor) defines += '#define VERTEX_COLOR\n';
   if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
@@ -131,11 +136,11 @@ out vec4 v_color0;
 
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
-
+${GL_UV_TRANSFORM_VERTEX_GLSL}
 out vec2 v_uv0;
 
 void main() {
-  v_uv0 = a_uv0;
+  v_uv0 = applyUvTransform(a_uv0);
 #ifdef VERTEX_COLOR
   v_color0 = a_color0;
 #endif

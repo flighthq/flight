@@ -16,6 +16,7 @@ const LAMBERT: GlClassicDefineKey = {
   hasDiffuseMap: false,
   hasNormalMap: false,
   hasSpecularMap: false,
+  hasUvTransform: false,
   lightingModel: 'lambert',
 };
 const PHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'phong' };
@@ -23,22 +24,28 @@ const BLINNPHONG: GlClassicDefineKey = { ...LAMBERT, lightingModel: 'blinnphong'
 
 describe('buildGlClassicDefineKey', () => {
   it('encodes the lighting model first, then the feature flags', () => {
-    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l-----');
-    expect(buildGlClassicDefineKey(PHONG)).toBe('p-----');
-    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b-----');
+    expect(buildGlClassicDefineKey(LAMBERT)).toBe('l------');
+    expect(buildGlClassicDefineKey(PHONG)).toBe('p------');
+    expect(buildGlClassicDefineKey(BLINNPHONG)).toBe('b------');
     expect(
       buildGlClassicDefineKey({
         alphaMaskEnabled: true,
         hasDiffuseMap: true,
         hasNormalMap: true,
         hasSpecularMap: true,
+        hasUvTransform: true,
         lightingModel: 'phong',
       }),
-    ).toBe('pmdsn-');
+    ).toBe('pmdsnu-');
+  });
+
+  it('encodes a non-identity uv transform in the u slot ahead of skin', () => {
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).toBe('l----u-');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasUvTransform: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
   });
 
   it('sets the trailing skin flag so a skinned variant keys distinctly', () => {
-    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l----k');
+    expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).toBe('l-----k');
     expect(buildGlClassicDefineKey({ ...LAMBERT, hasSkin: true })).not.toBe(buildGlClassicDefineKey(LAMBERT));
   });
 
@@ -98,7 +105,7 @@ describe('ensureGlClassicProgram', () => {
     const skinned = ensureGlClassicProgram(state, LAMBERT);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('classic:l----k');
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('classic:l-----k');
     expect(skinned.locJointMatrices).not.toBeNull();
   });
 });

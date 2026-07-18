@@ -43,6 +43,7 @@
     "@flighthq/render-gl": "*",
     "@flighthq/scene": "*",
     "@flighthq/shading": "*",
+    "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

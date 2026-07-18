@@ -18,7 +18,14 @@ import { ShadedMaterialKind } from '@flighthq/types';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshCameraPosition,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { getGlSceneTime } from './glSceneTime';
 import type { GlModifierBindContext, GlModifierSnippet } from './glShadedModifierSnippet';
@@ -144,6 +151,8 @@ function bindGlShadedMaterialUniforms(
     bindGlTexture(state, normalMap.image.source);
     gl.uniform1i(program.locNormalMap, 2);
   }
+
+  bindGlUvTransform(gl, program, diffuseMap);
 }
 
 // The base-material feature flags for a ShadedMaterial: which optional maps are present and whether
@@ -155,6 +164,7 @@ function defineKeyForMaterial(material: Readonly<ShadedMaterial> | null): GlShad
     hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
     hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.image !== null,
     hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.image !== null,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
   };
 }
 

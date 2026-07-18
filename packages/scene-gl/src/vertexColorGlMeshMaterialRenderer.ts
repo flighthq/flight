@@ -67,6 +67,8 @@ function defineKeyForMaterial(material: Readonly<VertexColorMaterial> | null): G
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasColorMap: false,
+    // VertexColor samples no map, so the uv transform never applies.
+    hasUvTransform: false,
     vertexColor: true,
   };
 }

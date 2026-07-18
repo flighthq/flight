@@ -15,7 +15,14 @@ import { ToonMaterialKind } from '@flighthq/types';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshCameraPosition,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import type { GlToonDefineKey, GlToonProgram } from './glToonPrelude';
 import { ensureGlToonProgram } from './glToonPrelude';
@@ -69,6 +76,7 @@ function defineKeyForMaterial(material: Readonly<ToonMaterial> | null): GlToonDe
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasBaseColorMap: material !== null && material.baseColorMap !== null && material.baseColorMap.image !== null,
     hasRamp: material !== null && material.ramp !== null && material.ramp.image !== null,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.baseColorMap : null),
   };
 }
 
@@ -103,6 +111,8 @@ function bindGlToonMaterialUniforms(
     bindGlTexture(state, ramp.image.source);
     gl.uniform1i(program.locRamp, 1);
   }
+
+  bindGlUvTransform(gl, program, baseColorMap);
 }
 
 const scratchRgba: LinearColor = [0, 0, 0, 0];

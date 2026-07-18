@@ -18,7 +18,14 @@ import type { GlClassicProgram } from './glClassicPrelude';
 import { ensureGlClassicProgram } from './glClassicPrelude';
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshCameraPosition,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // The built-in classic Phong forward-lit mesh-material renderer (GlMeshMaterialRenderer for
@@ -101,6 +108,8 @@ function bindGlPhongMaterialUniforms(
     bindGlTexture(state, normalMap.image.source);
     gl.uniform1i(program.locNormalMap, 2);
   }
+
+  bindGlUvTransform(gl, program, diffuseMap);
 }
 
 // The feature define key for a Phong material: the fixed `phong` lighting model plus which optional
@@ -111,6 +120,7 @@ function defineKeyForMaterial(material: Readonly<PhongMaterial> | null): GlClass
     hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
     hasNormalMap: material !== null && material.normalMap !== null && material.normalMap.image !== null,
     hasSpecularMap: material !== null && material.specularMap !== null && material.specularMap.image !== null,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
     lightingModel: 'phong',
   };
 }

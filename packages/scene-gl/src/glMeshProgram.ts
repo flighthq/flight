@@ -1,7 +1,8 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
-import { createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
+import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
 import { createGlProgram } from '@flighthq/render-gl';
-import type { Camera, GlRenderState, MeshGeometry, SceneRenderProxy } from '@flighthq/types';
+import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
+import type { Camera, GlRenderState, MeshGeometry, SceneRenderProxy, TextureLike } from '@flighthq/types';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -24,6 +25,10 @@ export interface GlMeshProgram {
   locJointMatrices?: WebGLUniformLocation | null;
   locModel: WebGLUniformLocation | null;
   locNormalMatrix: WebGLUniformLocation | null;
+  // The u_uvTransform mat3 location, resolved lazily by bindGlUvTransform (undefined = unresolved,
+  // null = a HAS_UV_TRANSFORM-less variant that omits the uniform → cheap no-op, a location = present).
+  // Lazy like locObjectAlpha so only a material whose primary texture is non-identity ever binds it.
+  locUvTransform?: WebGLUniformLocation | null;
   locViewProjection: WebGLUniformLocation | null;
   program: WebGLProgram;
 }
@@ -49,6 +54,38 @@ export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshPr
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
   }
+}
+
+// Uploads a material's primary-texture uv transform to the HAS_UV_TRANSFORM vertex variant. Resolves
+// u_uvTransform lazily and caches it on the program (mirroring locObjectAlpha): a null location means
+// the compiled variant omits the uniform — the identity path — so this is a cheap no-op there, and a
+// null texture likewise skips. @flighthq/texture composes the KHR_texture_transform row-major; this
+// transposes it into the column-major layout GLSL reads with transpose=false, so
+// `u_uvTransform * vec3(uv, 1.0)` matches the CPU transformTextureUv reference.
+export function bindGlUvTransform(
+  gl: WebGL2RenderingContext,
+  program: Readonly<GlMeshProgram>,
+  texture: Readonly<TextureLike> | null,
+): void {
+  let loc = program.locUvTransform;
+  if (loc === undefined) {
+    loc = gl.getUniformLocation(program.program, 'u_uvTransform');
+    (program as GlMeshProgram).locUvTransform = loc;
+  }
+  if (loc === null || texture === null) return;
+  getTextureUvMatrix(scratchUvMatrix, texture);
+  const m = scratchUvMatrix.m;
+  // Transpose row-major → column-major (col-major[3c+r] = row-major[3r+c]).
+  scratchUvTransform[0] = m[0];
+  scratchUvTransform[1] = m[3];
+  scratchUvTransform[2] = m[6];
+  scratchUvTransform[3] = m[1];
+  scratchUvTransform[4] = m[4];
+  scratchUvTransform[5] = m[7];
+  scratchUvTransform[6] = m[2];
+  scratchUvTransform[7] = m[5];
+  scratchUvTransform[8] = m[8];
+  gl.uniformMatrix3fv(loc, false, scratchUvTransform);
 }
 
 // Compiles a vertex + fragment source pair into a linked GL program. Shared by every family's
@@ -133,6 +170,14 @@ export function ensureGlSceneProgram<T extends GlMeshProgram>(
   return program as T;
 }
 
+// The HAS_UV_TRANSFORM define-key predicate every map-sampling family shares: true only when the
+// material's primary map is bound (an image is present, so it is actually sampled) AND carries a
+// non-identity uv transform. Gating on both keeps an untiled or unbound surface on the identity shader
+// variant, so it never pays for the uv-transform uniform or the extra vertex multiply.
+export function hasGlUvTransform(texture: Readonly<TextureLike> | null): boolean {
+  return texture !== null && texture.image !== null && hasTextureUvTransform(texture);
+}
+
 // Uploads the camera world position (the translation of the inverse view matrix) to a lit family's
 // u_cameraPosition. Lighting-independent families (unlit/debug) skip this — only families whose
 // fragment stage needs a view vector resolve and bind a camera-position location.
@@ -170,6 +215,21 @@ export const GL_MAX_SKIN_JOINTS = 64;
 // linear-blend `skinMatrix()` the body applies to position/normal/tangent. Vertex-only — never added to
 // a fragment source (the `in` attributes are illegal there). Depends on the `#define MAX_JOINTS` the
 // define block supplies.
+// Vertex-stage GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the
+// guarded u_uvTransform uniform and an applyUvTransform() the body calls on a_uv0 instead of passing
+// it through. HAS_UV_TRANSFORM — set by a family's define block only when its primary texture carries a
+// non-identity transform (see hasTextureUvTransform) — gates both the uniform and the mat3 multiply, so
+// an untiled surface compiles the identity branch (inlined away) and pays nothing: the assembly never
+// taxes the primitive. u_uvTransform is column-major (see bindGlUvTransform).
+export const GL_UV_TRANSFORM_VERTEX_GLSL = `
+#ifdef HAS_UV_TRANSFORM
+uniform mat3 u_uvTransform;
+vec2 applyUvTransform(vec2 uv) { return (u_uvTransform * vec3(uv, 1.0)).xy; }
+#else
+vec2 applyUvTransform(vec2 uv) { return uv; }
+#endif
+`;
+
 export const GL_SKIN_VERTEX_DECLARATIONS_GLSL = `
 layout(location = 6) in vec4 a_joints0;
 layout(location = 7) in vec4 a_weights0;
@@ -186,3 +246,7 @@ mat4 skinMatrix() {
 const scratchViewProjection = createMatrix4();
 const scratchInverseView = createMatrix4();
 const scratchCameraPosition = { x: 0, y: 0, z: 0 };
+// Row-major uv matrix composed per bind, then transposed into the column-major upload buffer. Both are
+// reused across every bindGlUvTransform call (single-threaded GL draw path).
+const scratchUvMatrix = createMatrix3();
+const scratchUvTransform = new Float32Array(9);

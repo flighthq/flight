@@ -13,7 +13,13 @@ import type {
 import { EmissiveMaterialKind } from '@flighthq/types';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import type { GlUnlitDefineKey } from './glUnlitPrelude';
 import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
@@ -48,6 +54,7 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
       emissive.emissiveMap,
       emissive.alphaCutoff,
     );
+    bindGlUvTransform(gl, program, emissive.emissiveMap);
   },
 
   draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
@@ -68,6 +75,7 @@ function defineKeyForMaterial(material: Readonly<EmissiveMaterial> | null): GlUn
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasColorMap: material !== null && material.emissiveMap !== null && material.emissiveMap.image !== null,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.emissiveMap : null),
     vertexColor: false,
   };
 }
