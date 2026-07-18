@@ -1,13 +1,14 @@
+import { createImageResource } from '@flighthq/image';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ColorTransform } from '@flighthq/types';
+import type { ColorTransform, ImageResource } from '@flighthq/types';
 
 import { enableGlColorAdjustment } from './glColorAdjustment';
 import { defaultGlMaterialRenderer } from './glDefaultMaterial';
 import { flushGlSpriteBatch, prepareGlSpriteBatchWrite, recordGlSpriteBatchColorTransform } from './glSpriteBatch';
 import { createGlState } from './glTestHelper';
 
-function makeTexture(): HTMLImageElement {
-  return document.createElement('img');
+function makeTexture(): ImageResource {
+  return createImageResource(document.createElement('img'));
 }
 
 function ct(

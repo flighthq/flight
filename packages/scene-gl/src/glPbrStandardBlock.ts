@@ -1,6 +1,7 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { hasTextureUvTransform } from '@flighthq/texture';
 import type { GlRenderState, StandardPbrMaterialProperties, Texture } from '@flighthq/types';
 
@@ -85,7 +86,7 @@ export function bindGlPbrStandardTexture(
   if (!isGlTextureReady(texture)) return;
   const gl = state.gl;
   gl.activeTexture(gl.TEXTURE0 + unit);
-  bindGlTexture(state, texture!.image!.source!, texture!.sampler);
+  bindGlImageResourceTexture(state, texture!.image!, texture!.sampler);
   gl.uniform1i(location, unit);
 }
 
@@ -123,7 +124,7 @@ export function buildGlPbrStandardDefineKey(
 // The single predicate the define-key builder and the bind path share, so "map present" means the
 // same thing in both places.
 export function isGlTextureReady(texture: Readonly<Texture> | null): boolean {
-  return texture !== null && texture.image !== null && texture.image.source !== null;
+  return texture !== null && texture.image !== null && hasImageResourcePixels(texture.image);
 }
 
 const scratchRgba: LinearColor = [0, 0, 0, 0];

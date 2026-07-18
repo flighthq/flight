@@ -1,3 +1,4 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
@@ -15,7 +16,7 @@ function submitGlSpriteNode(state: GlRenderState, spriteNode: RenderProxy2D): vo
   const runtime = getGlRenderStateRuntime(state);
   const source = spriteNode.source as Sprite;
   const { atlas, id } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
+  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image)) return;
 
   const regions = atlas.regions;
   if (id < 0 || id >= regions.length) return;
@@ -32,14 +33,7 @@ function submitGlSpriteNode(state: GlRenderState, spriteNode: RenderProxy2D): vo
   const material = spriteNode.material;
   const materialRenderer = resolveGlMaterialRenderer(state, material);
   if (materialRenderer === null) return;
-  const base = prepareGlSpriteBatchWrite(
-    state,
-    atlas.image.source,
-    spriteNode.blendMode,
-    material,
-    materialRenderer,
-    1,
-  );
+  const base = prepareGlSpriteBatchWrite(state, atlas.image, spriteNode.blendMode, material, materialRenderer, 1);
   const instanceIndex = runtime.spriteBatchCount;
   const d = runtime.spriteBatchInstanceData;
   d[base] = t.a;

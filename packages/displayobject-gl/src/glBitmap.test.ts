@@ -23,8 +23,8 @@ function makeRenderProxy(image: unknown = null, rendererData: unknown = makeBitm
   } as unknown as RenderProxy2D;
 }
 
-function makeImageResource(source: unknown = null, width = 32, height = 32) {
-  return { source, width, height };
+function makeImageResource(source: unknown = null, width = 32, height = 32, data: Uint8ClampedArray | null = null) {
+  return { source, data, width, height, version: 1, alphaType: 'straight' };
 }
 
 describe('defaultGlBitmapRenderer', () => {
@@ -53,11 +53,19 @@ describe('drawGlBitmap', () => {
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
   });
 
-  it('returns early without writing to batch when image.source is null', () => {
+  it('returns early without writing to batch when the image has neither source nor data', () => {
     const { state } = createGlState();
     registerDefaultGlMaterial(state);
     drawGlBitmap(state, makeRenderProxy(makeImageResource(null)));
     expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(0);
+  });
+
+  it('writes one instance for a data-only image (a generated Surface with no element)', () => {
+    const { state } = createGlState();
+    registerDefaultGlMaterial(state);
+    const data = new Uint8ClampedArray(32 * 32 * 4);
+    drawGlBitmap(state, makeRenderProxy(makeImageResource(null, 32, 32, data)));
+    expect(getGlRenderStateRuntime(state).spriteBatchCount).toBe(1);
   });
 
   it('writes one instance to the sprite batch when image is valid', () => {

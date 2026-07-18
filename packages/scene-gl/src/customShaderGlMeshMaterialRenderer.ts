@@ -1,4 +1,5 @@
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type {
   Camera,
   CustomShaderMaterial,
@@ -182,11 +183,11 @@ function uploadCustomShaderMaterialTextures(
   let unit = 0;
   for (const name of Object.keys(textures)) {
     const texture: Readonly<Texture> = textures[name];
-    if (texture.image === null || texture.image.source === null) continue;
+    if (texture.image === null || !hasImageResourcePixels(texture.image)) continue;
     const location = gl.getUniformLocation(program, name);
     if (location === null) continue;
     gl.activeTexture(gl.TEXTURE0 + unit);
-    bindGlTexture(state, texture.image.source, texture.sampler);
+    bindGlImageResourceTexture(state, texture.image, texture.sampler);
     gl.uniform1i(location, unit);
     unit++;
   }

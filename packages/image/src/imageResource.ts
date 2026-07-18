@@ -53,6 +53,15 @@ export function hasImageResourceData(resource: Readonly<ImageResource>): boolean
   return resource.data !== null;
 }
 
+// True when the resource carries pixels in either representation — a decoded `source` element or raw CPU
+// `data`. The upload-readiness predicate for backends that can consume both: an element-only load, a
+// data-only generated Surface, or a resource holding both are all uploadable. Prefer this over
+// hasImageResourceSource at any gate that feeds a source-or-data uploader (bindGlTexture, bindWgpuTexture),
+// so a memory-generated Surface is not rejected for lacking an element.
+export function hasImageResourcePixels(resource: Readonly<ImageResource>): boolean {
+  return resource.source !== null || resource.data !== null;
+}
+
 export function hasImageResourceSource(resource: Readonly<ImageResource>): boolean {
   return resource.source !== null;
 }

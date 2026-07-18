@@ -3,6 +3,7 @@ import type {
   GlBlendRealization,
   GlRenderState,
   GlRenderStateRuntime,
+  ImageResource,
   SamplerLike,
   TextureFilter,
   TextureWrap,
@@ -11,6 +12,7 @@ import { BlendMode } from '@flighthq/types';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlMatrixFromValues } from './glShader';
+import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload';
 
 // Applies the blend mode's registered fixed-function realization to the GL context, skipping the
 // work when the mode is unchanged. A mode with no registered realization (an unregistered vendor
@@ -25,6 +27,36 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
   const realization = (blendMode !== null ? runtime.glBlendModeRegistry?.get(blendMode) : null) ?? NORMAL_BLEND;
   gl.blendEquation(gl[realization.equation ?? 'FUNC_ADD']);
   gl.blendFunc(gl[realization.src], gl[realization.dst]);
+}
+
+// Binds (uploading + caching on first use, re-uploading when the pixels change) the GL texture for an
+// ImageResource — a bitmap, sprite atlas, or material map — and applies the sampler's full state. The
+// resource-level sibling of bindGlTexture (which takes a raw element): it accepts an element-backed OR a
+// data-only generated Surface (source-or-data upload via uploadGlDisplayTexture), and caches by the
+// resource entity in imageResourceTextureCache, keyed with the uploaded `version` so an in-place Surface
+// edit (which bumps version) re-uploads without the caller tracking it. Sampler state is re-applied every
+// bind so a resource reused by two materials with different samplers follows the current draw.
+export function bindGlImageResourceTexture(
+  state: GlRenderState,
+  image: Readonly<ImageResource>,
+  sampler?: Readonly<SamplerLike> | null,
+): WebGLTexture {
+  const runtime = getGlRenderStateRuntime(state);
+  const gl = state.gl;
+  const cache = runtime.imageResourceTextureCache;
+  let entry = cache.get(image);
+  if (entry === undefined) {
+    entry = { texture: gl.createTexture()!, version: -1 };
+    cache.set(image, entry);
+  }
+  gl.bindTexture(gl.TEXTURE_2D, entry.texture);
+  runtime.currentTexture = entry.texture;
+  if (entry.version !== image.version) {
+    uploadGlDisplayTexture(gl, image);
+    entry.version = image.version;
+  }
+  applyGlSamplerState(state, runtime, entry.texture, sampler ?? null);
+  return entry.texture;
 }
 
 // Binds (uploading + caching on first use) the GL texture for an image source and applies the given
@@ -204,6 +236,36 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
     state.gl.useProgram(program);
     runtime.currentProgram = program;
   }
+}
+
+// Uploads an ImageResource into the currently-bound TEXTURE_2D for the premultiplied 2D display pipeline.
+// An element upload premultiplies via UNPACK_PREMULTIPLY_ALPHA_WEBGL (straight-alpha element under a
+// premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend would otherwise blow a 40%-white shape to opaque white).
+// That flag is ignored for raw-data (ArrayBufferView) uploads, so straight-alpha `data` is premultiplied
+// on the CPU first; opaque data (alpha 255, e.g. a normal/roughness map) premultiplies to itself, so this
+// is a no-op there. The data path is what makes a memory-generated Surface a first-class 2D texture.
+function uploadGlDisplayTexture(gl: WebGL2RenderingContext, image: Readonly<ImageResource>): void {
+  if (image.source !== null) {
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    uploadGlTextureElement(gl, gl.TEXTURE_2D, image.source as TexImageSource);
+    return;
+  }
+  const data = image.alphaType === 'straight' ? premultiplyStraightRgba8(image.data!) : image.data!;
+  uploadGlTextureData(gl, gl.TEXTURE_2D, image.width, image.height, data);
+}
+
+// Returns a new premultiplied rgba8 buffer from a straight-alpha one (rgb *= a/255). Allocates, but runs
+// only on a texture upload (cache miss or content change), never in the per-frame draw path.
+function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
+  const out = new Uint8ClampedArray(data.length);
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    out[i] = (data[i] * a) / 255;
+    out[i + 1] = (data[i + 1] * a) / 255;
+    out[i + 2] = (data[i + 2] * a) / 255;
+    out[i + 3] = a;
+  }
+  return out;
 }
 
 // Applies a sampler's wrap, filtering, anisotropy, and mip chain to the currently-bound TEXTURE_2D.

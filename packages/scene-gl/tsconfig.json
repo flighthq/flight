@@ -19,6 +19,9 @@
       "path": "../geometry"
     },
     {
+      "path": "../image"
+    },
+    {
       "path": "../lighting"
     },
     {

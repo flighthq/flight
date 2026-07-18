@@ -1,4 +1,5 @@
 import { renderCanvasShapeCommands } from '@flighthq/displayobject-canvas';
+import { createImageResource, setImageResourceSource } from '@flighthq/image';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node';
 import { tessellatePath } from '@flighthq/path';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
@@ -8,6 +9,7 @@ import type {
   DisplayObjectRenderer,
   GlRenderState,
   GlShapeMesh,
+  ImageResource,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -30,6 +32,10 @@ import {
 interface GlShapeData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  // The canvas wrapped as an ImageResource (its `source`), so the shared sprite batch treats a
+  // canvas-backed shape uniformly with bitmaps and atlases. Re-rendering the canvas bumps the resource's
+  // version (setImageResourceSource), which the batch's version-aware cache uses to re-upload.
+  image: ImageResource;
   lastContentId: number;
   lastW: number;
   lastH: number;
@@ -55,6 +61,7 @@ function createGlShapeData(_state: GlRenderState, _source: Renderable): Renderer
   return toGlShapeRendererData({
     canvas,
     ctx,
+    image: createImageResource(canvas),
     lastContentId: -1,
     lastW: 0,
     lastH: 0,
@@ -63,15 +70,15 @@ function createGlShapeData(_state: GlRenderState, _source: Renderable): Renderer
   });
 }
 
-// The batch uploads this shape's canvas into the shared texture cache; free that GPU texture when
-// the shape is torn down so it does not leak past the canvas it was keyed on.
+// The batch uploads this shape's canvas-backed resource into the shared cache; free that GPU texture when
+// the shape is torn down so it does not leak past the resource it was keyed on.
 function destroyGlShapeData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { canvas } = getGlShapeData(data);
-  const texture = runtime.textureCache.get(canvas);
-  if (texture !== undefined) {
-    state.gl.deleteTexture(texture);
-    runtime.textureCache.delete(canvas);
+  const { image } = getGlShapeData(data);
+  const entry = runtime.imageResourceTextureCache.get(image);
+  if (entry !== undefined) {
+    state.gl.deleteTexture(entry.texture);
+    runtime.imageResourceTextureCache.delete(image);
   }
 }
 
@@ -123,8 +130,9 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
     ctx.translate(-bounds.x, -bounds.y);
     renderCanvasShapeCommands(ctx, commands);
     ctx.restore();
-    // Invalidate the cached GPU texture so the batch re-uploads from the updated canvas.
-    runtime.textureCache.delete(shapeData.canvas);
+    // Re-reads the canvas dimensions and bumps the resource version so the batch's version-aware cache
+    // re-uploads from the updated canvas.
+    setImageResourceSource(shapeData.image, shapeData.canvas);
     shapeData.lastContentId = version;
     shapeData.lastW = w;
     shapeData.lastH = h;
@@ -137,7 +145,7 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
   const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(state, shapeData.canvas, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareGlSpriteBatchWrite(state, shapeData.image, renderProxy.blendMode, material, materialRenderer, 1);
   const d = runtime.spriteBatchInstanceData;
   d[base] = t.a;
   d[base + 1] = t.b;

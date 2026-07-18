@@ -1,6 +1,7 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { animatedNormalModifierDefinition, emissiveModifierDefinition, rimModifierDefinition } from '@flighthq/shading';
 import type {
   AnimatedNormalModifier,
@@ -179,7 +180,7 @@ export function registerBuiltInGlModifierSnippets(state: GlRenderState): void {
 }
 
 // Binds a modifier's texture on the next free modifier texture unit and points its sampler uniform at
-// it. Mirrors the base material's texture bind (activeTexture → bindGlTexture → uniform1i). A texture
+// it. Mirrors the base material's texture bind (activeTexture → bindGlImageResourceTexture → uniform1i). A texture
 // with no loaded source leaves the sampler on that unit without an upload (the modifier renders as if
 // unmapped) rather than clobbering a base or shadow unit. When the allocator is exhausted (returns
 // -1), the sampler is left untouched — the excess modifier texture is dropped rather than binding
@@ -195,8 +196,8 @@ function bindGlModifierTexture(
   if (unit < 0) return;
   gl.activeTexture(gl.TEXTURE0 + unit);
   const image = texture.image;
-  if (image !== null && image.source !== null) {
-    bindGlTexture(state, image.source, texture.sampler);
+  if (image !== null && hasImageResourcePixels(image)) {
+    bindGlImageResourceTexture(state, image, texture.sampler);
   }
   gl.uniform1i(gl.getUniformLocation(context.program, uniformName), unit);
   gl.activeTexture(gl.TEXTURE0);

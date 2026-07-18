@@ -1,6 +1,7 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type {
   Camera,
   GlMeshMaterialRenderer,
@@ -99,16 +100,16 @@ function bindGlToonMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const baseColorMap = material.baseColorMap;
-  if (baseColorMap !== null && baseColorMap.image !== null && baseColorMap.image.source !== null) {
+  if (baseColorMap !== null && baseColorMap.image !== null && hasImageResourcePixels(baseColorMap.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, baseColorMap.image.source, baseColorMap.sampler);
+    bindGlImageResourceTexture(state, baseColorMap.image, baseColorMap.sampler);
     gl.uniform1i(program.locBaseColorMap, 0);
   }
 
   const ramp = material.ramp;
-  if (ramp !== null && ramp.image !== null && ramp.image.source !== null) {
+  if (ramp !== null && ramp.image !== null && hasImageResourcePixels(ramp.image)) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlTexture(state, ramp.image.source, ramp.sampler);
+    bindGlImageResourceTexture(state, ramp.image, ramp.sampler);
     gl.uniform1i(program.locRamp, 1);
   }
 

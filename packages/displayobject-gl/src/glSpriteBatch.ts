@@ -1,4 +1,4 @@
-import { bindGlTexture } from '@flighthq/render-gl';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
@@ -7,6 +7,7 @@ import type {
   GlMaterialRenderer,
   GlQuadBatchShader,
   GlRenderState,
+  ImageResource,
   Material,
   MaterialData,
 } from '@flighthq/types';
@@ -163,7 +164,7 @@ export function flushGlSpriteBatch(state: GlRenderState): void {
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, runtime.spriteBatchInstanceData, 0, count * SPRITE_INSTANCE_FLOATS);
 
   state.applyBlendMode?.(state, blendMode);
-  bindGlTexture(state, texture);
+  bindGlImageResourceTexture(state, texture);
 
   // The color-adjustment fold is opt-in (enableGlColorAdjustment): when installed it selects and binds
   // its program for a tinted batch, returning true; when absent, or for an untinted batch, the lean
@@ -219,7 +220,7 @@ export function packGlSpriteBatchMaterialInstance(
 // base instance data; the caller increments state.spriteBatchCount and records per-instance data.
 export function prepareGlSpriteBatchWrite(
   state: GlRenderState,
-  texture: CanvasImageSource,
+  texture: Readonly<ImageResource>,
   blendMode: BlendMode | null,
   material: Material | null,
   materialRenderer: GlMaterialRenderer,

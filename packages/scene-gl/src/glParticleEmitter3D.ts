@@ -1,3 +1,4 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
@@ -222,7 +223,7 @@ function drawParticleEmitter3DNode(
 
   ensureInstanceCapacity(shader, gl, particleCount);
 
-  const hasAtlas = atlas !== null && atlas.image !== null && atlas.image.source !== null;
+  const hasAtlas = atlas !== null && atlas.image !== null && hasImageResourcePixels(atlas.image);
   const regions = hasAtlas ? atlas!.regions : null;
   const numRegions = regions !== null ? regions.length : 0;
   const iw = hasAtlas ? 1 / (atlas!.image!.width || 1) : 0;

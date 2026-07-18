@@ -1,4 +1,5 @@
 import { computeRgbHexString } from '@flighthq/color';
+import { createImageResource, setImageResourceSource } from '@flighthq/image';
 import { getNodeLocalContentRevision } from '@flighthq/node';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
@@ -10,6 +11,7 @@ import type {
   GlRenderState,
   Renderable,
   RendererData,
+  ImageResource,
   RenderProxy2D,
   TextFormat,
   TextLabel,
@@ -31,6 +33,9 @@ import {
 interface GlTextLabelData {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  // The canvas wrapped as an ImageResource (its `source`) so the shared sprite batch treats canvas-backed
+  // text uniformly with bitmaps; re-rasterizing bumps the version, which the batch cache re-uploads on.
+  image: ImageResource;
   // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
   // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
   // appearance-only changes such as alpha.
@@ -53,17 +58,25 @@ function createGlTextLabelData(_state: GlRenderState, _source: Renderable): Rend
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return toGlTextLabelRendererData({ canvas, ctx, lastContentId: -1, lastPixelRatio: 0, logW: 0, logH: 0 });
+  return toGlTextLabelRendererData({
+    canvas,
+    ctx,
+    image: createImageResource(canvas),
+    lastContentId: -1,
+    lastPixelRatio: 0,
+    logW: 0,
+    logH: 0,
+  });
 }
 
-// Free the GPU texture the batch uploaded for this node's canvas when the text node is torn down.
+// Free the GPU texture the batch uploaded for this node's canvas-backed resource when it is torn down.
 function destroyGlTextLabelData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { canvas } = getGlTextLabelData(data);
-  const texture = runtime.textureCache.get(canvas);
-  if (texture !== undefined) {
-    state.gl.deleteTexture(texture);
-    runtime.textureCache.delete(canvas);
+  const { image } = getGlTextLabelData(data);
+  const entry = runtime.imageResourceTextureCache.get(image);
+  if (entry !== undefined) {
+    state.gl.deleteTexture(entry.texture);
+    runtime.imageResourceTextureCache.delete(image);
   }
 }
 
@@ -135,8 +148,8 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
       ctx.fillText(slice, group.offsetX, group.offsetY + group.ascent * 0.815);
     }
 
-    // Invalidate cached GPU texture so the batch re-uploads from the updated canvas.
-    runtime.textureCache.delete(textData.canvas);
+    // Re-read canvas dimensions and bump the resource version so the batch's version-aware cache re-uploads.
+    setImageResourceSource(textData.image, textData.canvas);
     textData.logW = w;
     textData.logH = h;
   }
@@ -146,7 +159,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   ensureGlQuadBatchShader(state);
 
   const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(state, textData.canvas, renderProxy.blendMode, material, materialRenderer, 1);
+  const base = prepareGlSpriteBatchWrite(state, textData.image, renderProxy.blendMode, material, materialRenderer, 1);
   const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;
