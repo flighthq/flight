@@ -2,6 +2,7 @@ import {
   createWgpuRenderStateRuntime,
   destroyWgpuRenderState,
   getWgpuRenderStateRuntime,
+  getWgpuSampler,
   isWgpuSupported,
 } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -78,6 +79,25 @@ describe('getWgpuRenderStateRuntime', () => {
   it('resolves the same runtime object on repeated calls', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(getWgpuRenderStateRuntime(state)).toBe(getWgpuRenderStateRuntime(state));
+  });
+});
+
+describe('getWgpuSampler', () => {
+  it('caches a sampler per filter+wrap key and reuses it', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const a = getWgpuSampler(state, 'linear', 'repeat', 'repeat');
+    const b = getWgpuSampler(state, 'linear', 'repeat', 'repeat');
+    expect(a).toBe(b);
+    expect(getWgpuRenderStateRuntime(state).samplerCache.get('linear|repeat|repeat')).toBe(a);
+  });
+
+  it('returns a distinct sampler for a different wrap or filter', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const repeat = getWgpuSampler(state, 'linear', 'repeat', 'repeat');
+    const clamp = getWgpuSampler(state, 'linear', 'clamp-to-edge', 'clamp-to-edge');
+    const nearest = getWgpuSampler(state, 'nearest', 'repeat', 'repeat');
+    expect(repeat).not.toBe(clamp);
+    expect(repeat).not.toBe(nearest);
   });
 });
 

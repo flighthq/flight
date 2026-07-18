@@ -4,7 +4,7 @@ import {
   createRenderStateRuntime,
   setRenderStateBackgroundColor,
 } from '@flighthq/render';
-import type { WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
+import type { TextureWrap, WgpuRenderOptions, WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { warmWgpuPipelines } from './wgpuDraw';
@@ -114,6 +114,7 @@ export async function createWgpuRenderState(
   runtime.pipelineCache = new Map();
   runtime.linearSampler = linearSampler;
   runtime.nearestSampler = nearestSampler;
+  runtime.samplerCache = new Map();
   runtime.textureCache = new WeakMap();
   runtime.defaultBitmapShader = null;
 
@@ -193,6 +194,33 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
 // render path writes its fields every frame.
 export function getWgpuRenderStateRuntime(state: WgpuRenderState): WgpuRenderStateRuntime {
   return state[EntityRuntimeKey] as WgpuRenderStateRuntime;
+}
+
+// Returns a cached GPUSampler for a filter + wrap combination, creating it on first use. A GPUSampler's
+// address mode is immutable, so a tiling material selects the matching sampler at bind-group creation
+// rather than mutating the shared clamp sampler. TextureWrap values ('clamp-to-edge'/'repeat'/
+// 'mirror-repeat') are exactly the GPUAddressMode strings, so they pass through untranslated. The
+// clamp-to-edge defaults still have their own pre-created linear/nearest samplers; this backs the
+// non-default (tiling) combinations material renderers ask for.
+export function getWgpuSampler(
+  state: WgpuRenderState,
+  filter: GPUFilterMode,
+  wrapU: TextureWrap,
+  wrapV: TextureWrap,
+): GPUSampler {
+  const runtime = getWgpuRenderStateRuntime(state);
+  const key = `${filter}|${wrapU}|${wrapV}`;
+  let sampler = runtime.samplerCache.get(key);
+  if (sampler === undefined) {
+    sampler = state.device.createSampler({
+      minFilter: filter,
+      magFilter: filter,
+      addressModeU: wrapU,
+      addressModeV: wrapV,
+    });
+    runtime.samplerCache.set(key, sampler);
+  }
+  return sampler;
 }
 
 export function isWgpuSupported(): boolean {

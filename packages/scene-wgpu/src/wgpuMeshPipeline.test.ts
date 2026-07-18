@@ -20,6 +20,7 @@ import {
   ensureWgpuScenePipeline,
   ensureWgpuShadowSampleBindGroup,
   ensureWgpuShadowSampleLayout,
+  getWgpuMaterialSampler,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
@@ -335,6 +336,26 @@ describe('ensureWgpuShadowSampleLayout', () => {
     const b = ensureWgpuShadowSampleLayout(state);
     expect(a).toBe(b);
     expect(fake.calls.filter((c) => c.name === 'createBindGroupLayout').length).toBe(made);
+  });
+});
+
+describe('getWgpuMaterialSampler', () => {
+  it('returns the shared clamp sampler for a null map', () => {
+    const { state } = makeWgpuSceneState();
+    expect(getWgpuMaterialSampler(state, null)).toBe(getWgpuRenderStateRuntime(state).linearSampler);
+  });
+
+  it('derives a wrap-specific sampler for a tiling map', () => {
+    const { state } = makeWgpuSceneState();
+    const texture = createTexture({ image: {} as ImageResource });
+    texture.sampler.wrapU = 'repeat';
+    texture.sampler.wrapV = 'repeat';
+
+    const sampler = getWgpuMaterialSampler(state, texture);
+
+    // A non-clamp map goes through the sampler cache, not the shared clamp sampler.
+    expect(sampler).not.toBe(getWgpuRenderStateRuntime(state).linearSampler);
+    expect(getWgpuRenderStateRuntime(state).samplerCache.get('linear|repeat|repeat')).toBe(sampler);
   });
 });
 

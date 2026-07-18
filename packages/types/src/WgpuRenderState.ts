@@ -68,9 +68,12 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Pipeline cache keyed by blend mode + stencil mode + color transform flag
   pipelineCache: Map<string, GPURenderPipeline>;
 
-  // Samplers
+  // Samplers. linear/nearest are the clamp-to-edge defaults for the 2D bitmap path; material textures
+  // that tile go through samplerCache, keyed by `${filter}|${wrapU}|${wrapV}`, since a GPUSampler's
+  // address mode is immutable and must be chosen at bind-group creation.
   linearSampler: GPUSampler;
   nearestSampler: GPUSampler;
+  samplerCache: Map<string, GPUSampler>;
 
   // Texture cache: image source → entry with texture, view, bind group
   textureCache: WeakMap<CanvasImageSource, WgpuTextureEntry>;

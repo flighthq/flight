@@ -1,6 +1,6 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
-import { bindWgpuTexture, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { bindWgpuTexture, getWgpuRenderStateRuntime, getWgpuSampler } from '@flighthq/render-wgpu';
 import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type {
   Camera,
@@ -548,6 +548,17 @@ export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGro
     });
   }
   return scene.shadowSampleLayout;
+}
+
+// Selects the GPUSampler a material bind group uses from its primary map's wrap: a tiling (repeat/
+// mirror-repeat) map gets the matching cached sampler so setTextureUvScale actually tiles on wgpu,
+// mirroring scene-gl's per-texture wrap. A null/absent map falls back to the shared clamp sampler.
+// Material textures use linear filtering (the wgpu material path has always sampled linear). Because a
+// GPUSampler is immutable and baked into the cached bind group, this reads the primary map's wrap at
+// bind-group creation — the same lifetime as the resolved texture views.
+export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): GPUSampler {
+  if (texture === null) return getWgpuRenderStateRuntime(state).linearSampler;
+  return getWgpuSampler(state, 'linear', texture.sampler.wrapU, texture.sampler.wrapV);
 }
 
 // True when a material map texture is present AND carries a GPU-uploadable image source. Families call

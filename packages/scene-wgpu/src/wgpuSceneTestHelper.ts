@@ -118,6 +118,7 @@ export function makeWgpuSceneState(): { fake: FakeWgpu; state: WgpuRenderState }
     currentColorFormat: 'bgra8unorm',
     linearSampler: {} as GPUSampler,
     nearestSampler: {} as GPUSampler,
+    samplerCache: new Map(),
     renderPass,
     renderTargetViewport: null,
     uniformBuffer: { destroy: () => {} } as unknown as GPUBuffer,
