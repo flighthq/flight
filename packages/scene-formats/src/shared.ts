@@ -1,6 +1,9 @@
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh';
+import { getNodeChildren } from '@flighthq/node';
+import type { Scene } from '@flighthq/scene';
+import { isMesh } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
-import type { Texture, VertexAttributeLayout } from '@flighthq/types';
+import type { Mesh, SceneNode, Texture, VertexAttributeLayout } from '@flighthq/types';
 import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
@@ -91,6 +94,23 @@ export function createExternalTextureRef(uri: string): Texture {
       uri,
     },
   });
+}
+
+// Walks a built scene for the first skinned mesh and returns its skeleton's joints — the same node
+// handles the skin was bound to, so a clip bound to them deforms the mesh. Null when the scene has no
+// skinned mesh. Shared by the AWD and MD5 whole-file importers, which fold a skeleton animation onto the
+// joints the scene already holds rather than making the caller re-thread them.
+export function findSceneSkeletonJoints(scene: Readonly<Scene>): readonly SceneNode[] | null {
+  const stack: SceneNode[] = [...getNodeChildren(scene as unknown as SceneNode)];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (isMesh(node)) {
+      const skin = (node as unknown as Mesh).skin;
+      if (skin != null) return skin.skeleton.joints;
+    }
+    stack.push(...getNodeChildren(node));
+  }
+  return null;
 }
 
 // ---- Right-handed Z-up → Right-handed Y-up (MD2, MD5) ----
