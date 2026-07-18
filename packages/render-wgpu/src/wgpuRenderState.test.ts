@@ -83,12 +83,12 @@ describe('getWgpuRenderStateRuntime', () => {
 });
 
 describe('getWgpuSampler', () => {
-  it('caches a sampler per filter+wrap key and reuses it', async () => {
+  it('caches a sampler per filter+wrap+mip+anisotropy key and reuses it', async () => {
     const state = await createWgpuRenderStateForTest();
     const a = getWgpuSampler(state, 'linear', 'repeat', 'repeat');
     const b = getWgpuSampler(state, 'linear', 'repeat', 'repeat');
     expect(a).toBe(b);
-    expect(getWgpuRenderStateRuntime(state).samplerCache.get('linear|repeat|repeat')).toBe(a);
+    expect(getWgpuRenderStateRuntime(state).samplerCache.get('linear|repeat|repeat|none|1')).toBe(a);
   });
 
   it('returns a distinct sampler for a different wrap or filter', async () => {
@@ -98,6 +98,32 @@ describe('getWgpuSampler', () => {
     const nearest = getWgpuSampler(state, 'nearest', 'repeat', 'repeat');
     expect(repeat).not.toBe(clamp);
     expect(repeat).not.toBe(nearest);
+  });
+
+  it('keys the mip filter separately so a trilinear sampler differs from a non-mip one', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const noMip = getWgpuSampler(state, 'linear', 'repeat', 'repeat');
+    const trilinear = getWgpuSampler(state, 'linear', 'repeat', 'repeat', 'linear');
+    expect(noMip).not.toBe(trilinear);
+    expect(getWgpuRenderStateRuntime(state).samplerCache.has('linear|repeat|repeat|linear|1')).toBe(true);
+  });
+
+  it('forces linear filtering and a linear mip filter when anisotropy exceeds 1', async () => {
+    // WebGPU rejects maxAnisotropy > 1 unless min/mag/mip are all linear, so a nearest+aniso request
+    // collapses to the linear anisotropic key.
+    const state = await createWgpuRenderStateForTest();
+    const sampler = getWgpuSampler(state, 'nearest', 'clamp-to-edge', 'clamp-to-edge', undefined, 8);
+    const cache = getWgpuRenderStateRuntime(state).samplerCache;
+    expect(cache.get('linear|clamp-to-edge|clamp-to-edge|linear|8')).toBe(sampler);
+    expect(cache.has('nearest|clamp-to-edge|clamp-to-edge|none|8')).toBe(false);
+  });
+
+  it('floors and clamps the anisotropy level into the cache key', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const a = getWgpuSampler(state, 'linear', 'repeat', 'repeat', 'linear', 4.9);
+    const b = getWgpuSampler(state, 'linear', 'repeat', 'repeat', 'linear', 4);
+    expect(a).toBe(b);
+    expect(getWgpuRenderStateRuntime(state).samplerCache.has('linear|repeat|repeat|linear|4')).toBe(true);
   });
 });
 

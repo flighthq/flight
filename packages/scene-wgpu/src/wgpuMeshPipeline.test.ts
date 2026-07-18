@@ -345,7 +345,7 @@ describe('getWgpuMaterialSampler', () => {
     expect(getWgpuMaterialSampler(state, null)).toBe(getWgpuRenderStateRuntime(state).linearSampler);
   });
 
-  it('derives a wrap-specific sampler for a tiling map', () => {
+  it('derives a wrap- and mip-specific sampler for a tiling map', () => {
     const { state } = makeWgpuSceneState();
     const texture = createTexture({ image: {} as ImageResource });
     texture.sampler.wrapU = 'repeat';
@@ -353,9 +353,30 @@ describe('getWgpuMaterialSampler', () => {
 
     const sampler = getWgpuMaterialSampler(state, texture);
 
-    // A non-clamp map goes through the sampler cache, not the shared clamp sampler.
+    // A non-clamp map goes through the sampler cache, not the shared clamp sampler. The default sampler
+    // is trilinear (mipmaps + linear-mipmap-linear), so the derived key names a linear mip filter.
     expect(sampler).not.toBe(getWgpuRenderStateRuntime(state).linearSampler);
-    expect(getWgpuRenderStateRuntime(state).samplerCache.get('linear|repeat|repeat')).toBe(sampler);
+    expect(getWgpuRenderStateRuntime(state).samplerCache.get('linear|repeat|repeat|linear|1')).toBe(sampler);
+  });
+
+  it('drops the mip filter when the map disables mipmaps', () => {
+    const { state } = makeWgpuSceneState();
+    const texture = createTexture({ image: {} as ImageResource });
+    texture.sampler.mipmaps = false;
+
+    getWgpuMaterialSampler(state, texture);
+
+    expect(getWgpuRenderStateRuntime(state).samplerCache.has('linear|clamp-to-edge|clamp-to-edge|none|1')).toBe(true);
+  });
+
+  it('carries the map anisotropy into the derived sampler key', () => {
+    const { state } = makeWgpuSceneState();
+    const texture = createTexture({ image: {} as ImageResource });
+    texture.sampler.anisotropy = 8;
+
+    getWgpuMaterialSampler(state, texture);
+
+    expect(getWgpuRenderStateRuntime(state).samplerCache.has('linear|clamp-to-edge|clamp-to-edge|linear|8')).toBe(true);
   });
 });
 

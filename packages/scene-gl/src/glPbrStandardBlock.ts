@@ -85,7 +85,7 @@ export function bindGlPbrStandardTexture(
   if (!isGlTextureReady(texture)) return;
   const gl = state.gl;
   gl.activeTexture(gl.TEXTURE0 + unit);
-  bindGlTexture(state, texture!.image!.source!, texture!.sampler.wrapU, texture!.sampler.wrapV);
+  bindGlTexture(state, texture!.image!.source!, texture!.sampler);
   gl.uniform1i(location, unit);
 }
 

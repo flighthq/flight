@@ -1,3 +1,4 @@
+import type { SamplerLike } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import {
@@ -16,6 +17,20 @@ import {
 import { getGlRenderStateRuntime } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState } from './glTestHelper';
+
+// A plain SamplerLike with the AAA sampling defaults (clamp/linear/trilinear/mips, anisotropy off),
+// mirroring createSampler in @flighthq/texture without pulling that package into render-gl's tests.
+function makeSampler(overrides?: Partial<SamplerLike>): SamplerLike {
+  return {
+    anisotropy: 1,
+    magFilter: 'linear',
+    minFilter: 'linear-mipmap-linear',
+    mipmaps: true,
+    wrapU: 'clamp-to-edge',
+    wrapV: 'clamp-to-edge',
+    ...overrides,
+  };
+}
 
 describe('applyGlBlendMode', () => {
   it('does not call blendFunc when blend mode has not changed', () => {
@@ -237,15 +252,19 @@ describe('bindGlTexture', () => {
 
   it('applies the sampler wrap mode — repeat → REPEAT — so tiled uvs actually repeat', () => {
     const { state, gl } = createGlState();
-    bindGlTexture(state, document.createElement('img'), 'repeat', 'repeat');
+    bindGlTexture(state, document.createElement('img'), makeSampler({ wrapU: 'repeat', wrapV: 'repeat' }));
     const g = gl as unknown as { TEXTURE_2D: number; TEXTURE_WRAP_S: number; TEXTURE_WRAP_T: number; REPEAT: number };
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.REPEAT);
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.REPEAT);
   });
 
-  it('maps mirror-repeat to MIRRORED_REPEAT and defaults wrapV to wrapU', () => {
+  it('maps mirror-repeat to MIRRORED_REPEAT', () => {
     const { state, gl } = createGlState();
-    bindGlTexture(state, document.createElement('img'), 'mirror-repeat');
+    bindGlTexture(
+      state,
+      document.createElement('img'),
+      makeSampler({ wrapU: 'mirror-repeat', wrapV: 'mirror-repeat' }),
+    );
     const g = gl as unknown as {
       TEXTURE_2D: number;
       TEXTURE_WRAP_S: number;
@@ -262,8 +281,8 @@ describe('bindGlTexture', () => {
     // means a repeat draw then a clamp draw each set their own wrap on the shared cached texture.
     const { state, gl } = createGlState();
     const img = document.createElement('img');
-    bindGlTexture(state, img, 'repeat');
-    bindGlTexture(state, img, 'clamp-to-edge');
+    bindGlTexture(state, img, makeSampler({ wrapU: 'repeat', wrapV: 'repeat' }));
+    bindGlTexture(state, img, makeSampler({ wrapU: 'clamp-to-edge', wrapV: 'clamp-to-edge' }));
     const g = gl as unknown as {
       TEXTURE_2D: number;
       TEXTURE_WRAP_S: number;
@@ -272,6 +291,81 @@ describe('bindGlTexture', () => {
     };
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.REPEAT);
     expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+  });
+
+  it('falls back to the allowSmoothing LINEAR filter and clamp-to-edge when no sampler is given', () => {
+    // The 2D bitmap/sprite path passes no sampler and must keep its historical bilinear, no-mip,
+    // clamp default — a material sampler never leaks into it.
+    const { state, gl } = createGlState({ allowSmoothing: true });
+    bindGlTexture(state, document.createElement('img'));
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_MIN_FILTER: number;
+      TEXTURE_MAG_FILTER: number;
+      TEXTURE_WRAP_S: number;
+      LINEAR: number;
+      CLAMP_TO_EDGE: number;
+    };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+    expect(gl.generateMipmap).not.toHaveBeenCalled();
+  });
+
+  it('applies the sampler min/mag filter and generates a mip chain for a trilinear sampler', () => {
+    const { state, gl } = createGlState({ allowSmoothing: false });
+    bindGlTexture(state, document.createElement('img'), makeSampler());
+    const g = gl as unknown as {
+      TEXTURE_2D: number;
+      TEXTURE_MIN_FILTER: number;
+      TEXTURE_MAG_FILTER: number;
+      LINEAR: number;
+      LINEAR_MIPMAP_LINEAR: number;
+    };
+    // Sampler filters win over the state's allowSmoothing flag for material textures.
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR_MIPMAP_LINEAR);
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    expect(gl.generateMipmap).toHaveBeenCalledWith(g.TEXTURE_2D);
+  });
+
+  it('collapses a mip-named min filter to LINEAR and skips mip generation when mipmaps is false', () => {
+    // minFilter names a mip level but mipmaps is off: selecting an absent chain would render black, so
+    // the filter must fall back to the base level and generateMipmap must not run.
+    const { state, gl } = createGlState();
+    bindGlTexture(state, document.createElement('img'), makeSampler({ mipmaps: false }));
+    const g = gl as unknown as { TEXTURE_2D: number; TEXTURE_MIN_FILTER: number; LINEAR: number };
+    expect(gl.texParameteri).toHaveBeenCalledWith(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
+    expect(gl.generateMipmap).not.toHaveBeenCalled();
+  });
+
+  it('generates the mip chain only once for a texture bound repeatedly', () => {
+    const { state, gl } = createGlState();
+    const img = document.createElement('img');
+    bindGlTexture(state, img, makeSampler());
+    bindGlTexture(state, img, makeSampler());
+    expect((gl.generateMipmap as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
+  });
+
+  it('applies clamped anisotropy through EXT_texture_filter_anisotropic when supported', () => {
+    const { state, gl } = createGlState();
+    const ext = { TEXTURE_MAX_ANISOTROPY_EXT: 0x84fe, MAX_TEXTURE_MAX_ANISOTROPY_EXT: 0x84ff };
+    (gl.getExtension as ReturnType<typeof vi.fn>).mockImplementation((name: string) =>
+      name === 'EXT_texture_filter_anisotropic' ? ext : null,
+    );
+    (gl.getParameter as ReturnType<typeof vi.fn>).mockImplementation((p: number) =>
+      p === ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT ? 8 : undefined,
+    );
+    bindGlTexture(state, document.createElement('img'), makeSampler({ anisotropy: 16 }));
+    const g = gl as unknown as { TEXTURE_2D: number };
+    // Requested 16 clamps to the hardware max of 8.
+    expect(gl.texParameterf).toHaveBeenCalledWith(g.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 8);
+  });
+
+  it('skips anisotropy setup when the extension is unavailable', () => {
+    const { state, gl } = createGlState();
+    (gl.getExtension as ReturnType<typeof vi.fn>).mockImplementation(() => null);
+    bindGlTexture(state, document.createElement('img'), makeSampler({ anisotropy: 16 }));
+    expect(gl.texParameterf).not.toHaveBeenCalled();
   });
 });
 

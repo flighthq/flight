@@ -101,14 +101,14 @@ function bindGlToonMaterialUniforms(
   const baseColorMap = material.baseColorMap;
   if (baseColorMap !== null && baseColorMap.image !== null && baseColorMap.image.source !== null) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, baseColorMap.image.source, baseColorMap.sampler.wrapU, baseColorMap.sampler.wrapV);
+    bindGlTexture(state, baseColorMap.image.source, baseColorMap.sampler);
     gl.uniform1i(program.locBaseColorMap, 0);
   }
 
   const ramp = material.ramp;
   if (ramp !== null && ramp.image !== null && ramp.image.source !== null) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlTexture(state, ramp.image.source, ramp.sampler.wrapU, ramp.sampler.wrapV);
+    bindGlTexture(state, ramp.image.source, ramp.sampler);
     gl.uniform1i(program.locRamp, 1);
   }
 

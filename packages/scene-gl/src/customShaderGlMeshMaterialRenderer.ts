@@ -186,7 +186,7 @@ function uploadCustomShaderMaterialTextures(
     const location = gl.getUniformLocation(program, name);
     if (location === null) continue;
     gl.activeTexture(gl.TEXTURE0 + unit);
-    bindGlTexture(state, texture.image.source, texture.sampler.wrapU, texture.sampler.wrapV);
+    bindGlTexture(state, texture.image.source, texture.sampler);
     gl.uniform1i(location, unit);
     unit++;
   }

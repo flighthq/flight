@@ -48,6 +48,29 @@ describe('bindWgpuTexture', () => {
     expect(entry.texture).toBeDefined();
     expect(bindWgpuTexture(state, canvas)).toBe(entry);
   });
+
+  it('allocates a single mip level and generates no chain by default', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    bindWgpuTexture(state, canvas);
+    expect(createTexture).toHaveBeenCalledWith(expect.objectContaining({ mipLevelCount: 1 }));
+  });
+
+  it('allocates a full mip chain and generates it when generateMips is true', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    const submit = vi.spyOn(state.device.queue, 'submit');
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    bindWgpuTexture(state, canvas, true);
+    // 8x8 → 4 mip levels; the lower 3 are rendered via generateWgpuMipmaps (a queue submit).
+    expect(createTexture).toHaveBeenCalledWith(expect.objectContaining({ mipLevelCount: 4 }));
+    expect(submit).toHaveBeenCalled();
+  });
 });
 
 describe('buildWgpuRenderTargetBindGroup', () => {
