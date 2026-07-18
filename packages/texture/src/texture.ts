@@ -118,6 +118,20 @@ export function getTextureWidth(texture: Readonly<TextureLike>): number {
   return texture.image !== null ? texture.image.width : -1;
 }
 
+// True when the texture carries a non-identity KHR_texture_transform — any non-unit scale, non-zero
+// offset, or non-zero rotation. GPU material renderers gate the HAS_UV_TRANSFORM shader variant on
+// this so an untiled surface pays nothing for the uv-transform uniform or the extra vertex multiply;
+// only a texture that actually remaps its uv compiles the transforming path.
+export function hasTextureUvTransform(texture: Readonly<TextureLike>): boolean {
+  return (
+    texture.uvScale.x !== 1 ||
+    texture.uvScale.y !== 1 ||
+    texture.uvOffset.x !== 0 ||
+    texture.uvOffset.y !== 0 ||
+    texture.uvRotation !== 0
+  );
+}
+
 // True once the texture references a pixel source. A texture with a null image is treated as an
 // absent slot by materials, so this is the gate a material samples behind.
 export function isTextureReady(texture: Readonly<TextureLike>): boolean {

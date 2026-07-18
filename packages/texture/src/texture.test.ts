@@ -11,6 +11,7 @@ import {
   getTextureInverseUvMatrix,
   getTextureUvMatrix,
   getTextureWidth,
+  hasTextureUvTransform,
   isTextureReady,
   resetTextureUvTransform,
   setTextureImage,
@@ -287,6 +288,41 @@ describe('getTextureWidth', () => {
     const texture = createTexture();
 
     expect(getTextureWidth(texture)).toStrictEqual(-1);
+  });
+});
+
+describe('hasTextureUvTransform', () => {
+  it('is false for a freshly created identity-transform texture', () => {
+    expect(hasTextureUvTransform(createTexture())).toBe(false);
+  });
+
+  it('is true when the scale is non-unit', () => {
+    const texture = createTexture();
+    setTextureUvScale(texture, 2, 2);
+
+    expect(hasTextureUvTransform(texture)).toBe(true);
+  });
+
+  it('is true when the offset is non-zero', () => {
+    const texture = createTexture();
+    setTextureUvOffset(texture, 0.25, 0);
+
+    expect(hasTextureUvTransform(texture)).toBe(true);
+  });
+
+  it('is true when the rotation is non-zero', () => {
+    const texture = createTexture();
+    setTextureUvRotation(texture, 0.5);
+
+    expect(hasTextureUvTransform(texture)).toBe(true);
+  });
+
+  it('is false again after resetTextureUvTransform', () => {
+    const texture = createTexture();
+    setTextureUvScale(texture, 3, 4);
+    resetTextureUvTransform(texture);
+
+    expect(hasTextureUvTransform(texture)).toBe(false);
   });
 });
 
