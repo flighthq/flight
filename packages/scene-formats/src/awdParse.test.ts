@@ -18,7 +18,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
-import { createSceneFromAwd, parseAwdSkeletonAnimation } from './awdParse';
+import { createSceneFromAwd, importAwd, parseAwdSkeletonAnimation } from './awdParse';
 import {
   AWD_BLOCK_CONTAINER,
   AWD_BLOCK_MATERIAL,
@@ -785,6 +785,43 @@ function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: numbe
 
   return concatBytes(...parts);
 }
+
+describe('importAwd', () => {
+  it('returns the scene plus the skeleton animation bound to the scene’s own joints', () => {
+    const result = importAwd(SKINNED_TRIANGLE_AWD);
+    expect(result.scenes).toHaveLength(1);
+    expect(result.scene).toBe(result.scenes[0]);
+    expect(result.animations).toHaveLength(1);
+
+    // The clip binds the SAME joint nodes the imported scene's mesh skins from — no caller threading.
+    const mesh = getNodeChildren(result.scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const joints = mesh.skin!.skeleton.joints;
+    const clip = result.animations[0];
+    expect(clip.channels).toHaveLength(2);
+    expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
+    expect((clip.channels[1].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
+  });
+
+  it('returns no animations for a static AWD with no skeleton', () => {
+    const posStream = buildStream(
+      AWD_STREAM_POSITIONS,
+      AWD_DATA_FLOAT32,
+      new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+    );
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, idxStream] }]);
+    const miBody = buildMeshInstanceBody('Mesh', 0, IDENTITY_TRANSFORM, 1);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+    const result = importAwd(concatBytes(buildAwdHeader(body.length), body));
+    expect(result.animations).toHaveLength(0);
+    expect(getNodeChildren(result.scene).length).toBeGreaterThan(0);
+  });
+});
 
 describe('parseAwdSkeletonAnimation', () => {
   it('binds channels to the provided joint nodes in skeleton order', () => {

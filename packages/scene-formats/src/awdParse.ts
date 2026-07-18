@@ -2,12 +2,12 @@ import { createAnimationChannel, createAnimationClip, createAnimationTrack } fro
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { addNodeChild, getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
+import { createMesh, createScene, createSceneNode, isMesh } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
 import { createTexture } from '@flighthq/texture';
-import type { AnimationClip, Material, SceneNode, Skeleton3D, Skin, Texture } from '@flighthq/types';
+import type { AnimationClip, Material, Mesh, SceneNode, Skeleton3D, Skin, Texture } from '@flighthq/types';
 import {
   MeshKind,
   ResourceResolutionState,
@@ -50,6 +50,7 @@ import {
   AWD_STREAM_UVS,
   AWD_TEXTURE_TYPE_EMBEDDED,
 } from './awdSchema';
+import type { SceneImport } from './sceneImport';
 import type { SkinInfluence } from './shared';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
@@ -275,6 +276,34 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   }
 
   return scene;
+}
+
+// Imports an AWD file as a whole: the scene plus its skeleton animation clip, folded into one call so
+// the caller never re-threads the joint handle. The assembly-tier sibling of createSceneFromAwd —
+// builds the scene, then binds the file's skeleton animation to the joints that scene already holds
+// (createSceneFromAwd exposes them as mesh.skin.skeleton.joints). AWD declares a single scene, so
+// `scenes` is a one-element array; `animations` is empty when the file carries no skeleton animation.
+export function importAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneImport {
+  const scene = createSceneFromAwd(bytes, warnings);
+  const joints = findAwdSkeletonJoints(scene);
+  const clip = joints !== null ? parseAwdSkeletonAnimation(bytes, joints, warnings) : null;
+  return { animations: clip !== null ? [clip] : [], scene, scenes: [scene] };
+}
+
+// Walks the scene for the first skinned mesh and returns its skeleton's joints — the same node handles
+// createSceneFromAwd bound the skin to, so a clip bound to them deforms the mesh. Null when the scene
+// has no skinned mesh (a static file with no skeleton animation to bind).
+function findAwdSkeletonJoints(scene: Readonly<Scene>): readonly SceneNode[] | null {
+  const stack: SceneNode[] = [...getNodeChildren(scene as unknown as SceneNode)];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (isMesh(node)) {
+      const skin = (node as unknown as Mesh).skin;
+      if (skin != null) return skin.skeleton.joints;
+    }
+    stack.push(...getNodeChildren(node));
+  }
+  return null;
 }
 
 // Parses AWD skeleton-pose and skeleton-animation blocks into an AnimationClip that drives the given

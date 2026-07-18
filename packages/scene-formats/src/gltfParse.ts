@@ -1,3 +1,4 @@
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
@@ -5,10 +6,23 @@ import { addNodeChild, getNodeChildren, invalidateNodeLocalTransform } from '@fl
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, isMesh, setSceneNodeTransform } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { Material, Mesh, MeshGeometry, SceneNode, Skin, Texture } from '@flighthq/types';
+import type {
+  AnimationChannel,
+  AnimationClip,
+  AnimationInterpolation,
+  Material,
+  Mesh,
+  MeshGeometry,
+  SceneAnimationPath,
+  SceneNode,
+  Skin,
+  Texture,
+} from '@flighthq/types';
+import { SceneAnimationPathRotation, SceneAnimationPathScale, SceneAnimationPathTranslation } from '@flighthq/types';
 
 import type {
   GltfAccessor,
+  GltfAnimation,
   GltfBuffer,
   GltfComponentType,
   GltfDocument,
@@ -18,6 +32,7 @@ import type {
   GltfPrimitive,
   GltfTextureInfo,
 } from './gltfSchema';
+import type { SceneImport } from './sceneImport';
 
 // Parses a binary glTF (`.glb`) container into a Scene. The 12-byte header (magic `glTF`, version,
 // length) is validated, then the chunk stream is walked to extract the embedded JSON document and the
@@ -54,6 +69,35 @@ export function createSceneFromGltf(source: GltfDocument | string, warnings?: st
   return buildSceneFromGltfDocument(doc, null, warnings);
 }
 
+// Imports a binary glTF (`.glb`) container as a whole file: every scene plus every animation clip,
+// with clip channels bound to the same SceneNode instances the scenes hold. The assembly-tier sibling
+// of createSceneFromGlb — reach for it when the file carries animations or multiple scenes.
+export function importGlb(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneImport {
+  const container = readGlbContainer(bytes, warnings);
+  if (container === null) return emptySceneImport();
+  return importGltfDocument(container.document, container.binary, warnings);
+}
+
+// Imports a glTF 2.0 document as a whole file: `{ scene, scenes, animations }`. `scene` is the default
+// scene (`doc.scene`), `scenes` every scene the file declares (all sharing one node pool), and
+// `animations` a clip per `animations[]` entry with channels bound to the built nodes. The assembly-tier
+// sibling of createSceneFromGltf; the geometry-only primitive stays separate so a scene-only caller
+// tree-shakes the animation code out.
+export function importGltf(source: GltfDocument | string, warnings?: string[]): SceneImport {
+  let doc: GltfDocument;
+  if (typeof source === 'string') {
+    try {
+      doc = JSON.parse(source) as GltfDocument;
+    } catch {
+      warnings?.push('importGltf: source is not valid JSON; returning empty import');
+      return emptySceneImport();
+    }
+  } else {
+    doc = source;
+  }
+  return importGltfDocument(doc, null, warnings);
+}
+
 function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void {
   if (gltfNode.matrix !== undefined) {
     node.localMatrix.m.set(gltfNode.matrix);
@@ -72,15 +116,32 @@ function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void
   );
 }
 
-// Builds the scene from a parsed document plus an optional GLB binary chunk (null for the JSON path).
+// Builds the default scene from a parsed document plus an optional GLB binary chunk (null for the JSON
+// path). This is the geometry-only primitive's core: it deliberately never references the animation
+// builder, so a caller using only createSceneFrom* tree-shakes the animation code out of its bundle.
 function buildSceneFromGltfDocument(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
   warnings?: string[],
 ): Scene {
+  const pool = buildGltfNodePool(doc, binary, warnings);
+  if (pool === null) return createScene();
+  return assembleGltfScene(doc, pool.sceneNodes, doc.scene ?? 0);
+}
+
+// The document's shared node pool: every `nodes[]` entry built into a SceneNode (with geometry,
+// materials, transform, hierarchy, and skins applied), plus the decoded buffers the animation reader
+// needs. Every glTF scene is a view of root indices into this one pool, and animation channels target
+// its nodes by index — so both the scene assembly and the animation binding read from here, and node
+// identity never leaves the importer. Returns null when the document is not a usable object.
+function buildGltfNodePool(
+  doc: Readonly<GltfDocument>,
+  binary: Readonly<Uint8Array> | null,
+  warnings?: string[],
+): { buffers: readonly Uint8Array[]; sceneNodes: SceneNode[] } | null {
   if (doc === null || typeof doc !== 'object') {
     warnings?.push('createSceneFromGltf: document is not an object; returning empty scene');
-    return createScene();
+    return null;
   }
   const version = doc.asset?.version;
   if (version === undefined || !isSupportedGltfVersion(version)) {
@@ -133,10 +194,95 @@ function buildSceneFromGltfDocument(
     if (skin !== null) applySkinToMeshNodes(sceneNodes[i], skin);
   }
 
+  return { buffers, sceneNodes };
+}
+
+// Assembles one glTF scene (by index into `scenes[]`) into a Flight Scene, parenting the built nodes
+// for that scene's roots. Falls back to the document's top-level nodes when `scenes` is absent.
+function assembleGltfScene(doc: Readonly<GltfDocument>, sceneNodes: readonly SceneNode[], sceneIndex: number): Scene {
   const scene = createScene();
-  const roots = doc.scenes?.[doc.scene ?? 0]?.nodes ?? topLevelNodeIndices(gltfNodes);
-  for (let r = 0; r < roots.length; r++) addNodeChild(scene, sceneNodes[roots[r]]);
+  const roots = doc.scenes?.[sceneIndex]?.nodes ?? topLevelNodeIndices(doc.nodes ?? []);
+  for (let r = 0; r < roots.length; r++) {
+    const node = sceneNodes[roots[r]];
+    if (node !== undefined) addNodeChild(scene, node);
+  }
   return scene;
+}
+
+// Shared whole-file import for both the JSON and GLB entry points: builds the node pool once, then
+// every scene (as a view of that pool) and every animation clip (bound to that pool's nodes).
+function importGltfDocument(
+  doc: Readonly<GltfDocument>,
+  binary: Readonly<Uint8Array> | null,
+  warnings?: string[],
+): SceneImport {
+  const pool = buildGltfNodePool(doc, binary, warnings);
+  if (pool === null) return emptySceneImport();
+
+  const sceneCount = doc.scenes?.length ?? 0;
+  const scenes: Scene[] = [];
+  for (let i = 0; i < sceneCount; i++) scenes.push(assembleGltfScene(doc, pool.sceneNodes, i));
+  const defaultIndex = doc.scene ?? 0;
+  // With no `scenes[]` at all, still surface the top-level-node fallback scene as the primary.
+  const scene = scenes[defaultIndex] ?? assembleGltfScene(doc, pool.sceneNodes, defaultIndex);
+  if (scenes.length === 0) scenes.push(scene);
+
+  const animations = (doc.animations ?? [])
+    .map((animation) => buildGltfAnimationClip(doc, pool.buffers, pool.sceneNodes, animation, warnings))
+    .filter((clip): clip is AnimationClip => clip !== null);
+
+  return { animations, scene, scenes };
+}
+
+// Builds one AnimationClip from a glTF animation: each channel becomes an AnimationChannel whose track
+// samples the channel's sampler (keyframe times + values) and whose targetRef binds the driven node and
+// its TRS path. Rotation is a quaternion track (slerped on Linear); CUBICSPLINE maps to the Cubic
+// interpolation the AnimationTrack already models (in-tangent, value, out-tangent per key). 'weights'
+// (morph-target) channels are skipped — morph targets are not imported. Returns null when the animation
+// yields no bindable channel.
+function buildGltfAnimationClip(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  sceneNodes: readonly SceneNode[],
+  animation: Readonly<GltfAnimation>,
+  warnings?: string[],
+): AnimationClip | null {
+  const channels: AnimationChannel[] = [];
+  for (const channel of animation.channels) {
+    const path = GLTF_ANIMATION_PATHS[channel.target.path];
+    if (path === undefined) {
+      if (channel.target.path !== 'weights') {
+        warnings?.push(`buildGltfAnimationClip: unsupported animation target path '${channel.target.path}'`);
+      }
+      continue;
+    }
+    const targetNodeIndex = channel.target.node;
+    const node = targetNodeIndex !== undefined ? sceneNodes[targetNodeIndex] : undefined;
+    if (node === undefined) continue;
+
+    const sampler = animation.samplers[channel.sampler];
+    if (sampler === undefined) {
+      warnings?.push(`buildGltfAnimationClip: channel references missing sampler ${channel.sampler}`);
+      continue;
+    }
+    const times = readAccessor(doc, buffers, sampler.input, warnings).data;
+    const values = readAccessor(doc, buffers, sampler.output, warnings).data;
+    const quaternion = path === SceneAnimationPathRotation;
+    const track = createAnimationTrack({
+      components: quaternion ? 4 : 3,
+      interpolation: GLTF_SAMPLER_INTERPOLATIONS[sampler.interpolation ?? 'LINEAR'],
+      quaternion,
+      times,
+      values,
+    });
+    channels.push(createAnimationChannel(track, { node, path }));
+  }
+  return channels.length > 0 ? createAnimationClip(channels) : null;
+}
+
+function emptySceneImport(): SceneImport {
+  const scene = createScene();
+  return { animations: [], scene, scenes: [scene] };
 }
 
 // Attaches a skin to the Mesh node(s) a glTF node produced: directly when the node is itself a Mesh
@@ -692,6 +838,22 @@ function createComponentArray(componentType: GltfComponentType, length: number):
 
 const COMPONENT_BYTE_SIZE: Record<GltfComponentType, number> = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 };
 const TYPE_COMPONENTS: Record<string, number> = { MAT2: 4, MAT3: 9, MAT4: 16, SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
+
+// glTF animation target paths → Flight SceneAnimationPath. 'weights' (morph targets) has no mapping and
+// is skipped by the caller.
+const GLTF_ANIMATION_PATHS: Record<string, SceneAnimationPath | undefined> = {
+  rotation: SceneAnimationPathRotation,
+  scale: SceneAnimationPathScale,
+  translation: SceneAnimationPathTranslation,
+};
+
+// glTF sampler interpolation → Flight AnimationInterpolation (same three modes, same CUBICSPLINE
+// in-tangent/value/out-tangent layout).
+const GLTF_SAMPLER_INTERPOLATIONS: Record<string, AnimationInterpolation> = {
+  CUBICSPLINE: 'Cubic',
+  LINEAR: 'Linear',
+  STEP: 'Step',
+};
 
 // GLB container constants: the header magic (`glTF` little-endian), chunk-type tags (`JSON` and
 // `BIN\0` little-endian), and the fixed header/chunk-header byte sizes.
