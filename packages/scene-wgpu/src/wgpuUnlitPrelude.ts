@@ -7,6 +7,7 @@ import {
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
   resolveWgpuMaterialTextureView,
+  stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
 import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
@@ -79,6 +80,8 @@ export function bindWgpuUnlitSurface(
   _scratch[6] = 0;
   _scratch[7] = 0;
   state.device.queue.writeBuffer(binding.buffer, 0, _scratch.buffer, 0, UNLIT_UNIFORM_BYTES);
+  // The color map's uv transform drives the shared vertex-stage uv the fragment samples.
+  stashWgpuUvTransform(state, colorMap);
   return binding.bindGroup;
 }
 

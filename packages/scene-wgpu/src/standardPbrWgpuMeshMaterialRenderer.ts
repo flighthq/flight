@@ -19,6 +19,7 @@ import {
   drawWgpuMeshSubset,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
+  stashWgpuUvTransform,
   writeWgpuFrameUniform,
 } from './wgpuMeshPipeline';
 import type { WgpuPbrPipeline } from './wgpuPbrPipelineCache';
@@ -110,6 +111,9 @@ export function ensureWgpuPbrMaterialBindGroup(
     binding = { bindGroup, buffer };
     scene.materialBindGroups.set(key, binding);
   }
+  // The base-color map's uv transform drives the shared vertex-stage uv every standard map samples.
+  // Runs every bind (standard + each extension routes through here), so the stash is always fresh.
+  stashWgpuUvTransform(state, standard !== null ? standard.baseColorMap : null);
   return binding;
 }
 

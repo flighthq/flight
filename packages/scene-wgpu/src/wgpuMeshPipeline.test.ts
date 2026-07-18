@@ -2,7 +2,9 @@ import { createCamera } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera, SceneLightBlock, SceneRenderProxy, Texture } from '@flighthq/types';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
+import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture';
+import type { Camera, ImageResource, SceneLightBlock, SceneRenderProxy, Texture } from '@flighthq/types';
 
 import {
   beginWgpuMeshDraw,
@@ -20,6 +22,7 @@ import {
   ensureWgpuShadowSampleLayout,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
+  stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
@@ -353,12 +356,51 @@ describe('resolveWgpuMaterialTextureView', () => {
   });
 });
 
+describe('stashWgpuUvTransform', () => {
+  it('stores the column-major transform for a bound non-identity texture', () => {
+    const { state } = makeWgpuSceneState();
+    const texture = createTexture({ image: {} as ImageResource });
+    setTextureUvScale(texture, 2, 3);
+    setTextureUvOffset(texture, 0.5, 0.25);
+
+    stashWgpuUvTransform(state, texture);
+
+    // Column-major: col0 = scaled U axis, col1 = scaled V axis, col2 = translation.
+    const stash = Array.from(getWgpuSceneRuntime(state).pendingUvTransform).map((n) => n + 0);
+    expect(stash).toEqual([2, 0, 0, 0, 3, 0, 0.5, 0.25, 1]);
+  });
+
+  it('resets to identity for a null texture', () => {
+    const { state } = makeWgpuSceneState();
+    const texture = createTexture({ image: {} as ImageResource });
+    setTextureUvScale(texture, 4, 4);
+    stashWgpuUvTransform(state, texture);
+
+    stashWgpuUvTransform(state, null);
+
+    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  });
+
+  it('resets to identity for an identity-transform texture', () => {
+    const { state } = makeWgpuSceneState();
+
+    stashWgpuUvTransform(state, createTexture({ image: {} as ImageResource }));
+
+    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  });
+});
+
 describe('WGPU_MESH_PRELUDE_WGSL', () => {
   it('declares the shared Frame + Draw structs and the vertex entry', () => {
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('struct Frame');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('struct Draw');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('fn vs_main');
     expect(WGPU_MESH_PRELUDE_WGSL).toContain('srgbToLinear');
+  });
+
+  it('applies the uv transform in the shared vertex stage', () => {
+    expect(WGPU_MESH_PRELUDE_WGSL).toContain('uvTransform : mat3x3f');
+    expect(WGPU_MESH_PRELUDE_WGSL).toContain('draw.uvTransform * vec3f(uv, 1.0)');
   });
 });
 
@@ -368,6 +410,22 @@ describe('writeWgpuDrawUniform', () => {
     const group = writeWgpuDrawUniform(state, makeProxy());
     expect(group).toBeDefined();
     expect(getWgpuSceneRuntime(state).pendingDrawOffset).toBe(0);
+  });
+
+  it('folds the stashed uv transform into the draw uniform then resets the stash to identity', () => {
+    const { state } = makeWgpuSceneState();
+    const texture = createTexture({ image: {} as ImageResource });
+    setTextureUvScale(texture, 2, 3);
+    stashWgpuUvTransform(state, texture);
+
+    writeWgpuDrawUniform(state, makeProxy());
+
+    // The uvTransform occupies floats 28..39 (3 padded vec4) after world (0..15) + normalMatrix (16..27).
+    const u = getWgpuRenderStateRuntime(state).uniformData;
+    expect([u[28], u[29], u[30]].map((n) => n + 0)).toEqual([2, 0, 0]);
+    expect([u[32], u[33], u[34]].map((n) => n + 0)).toEqual([0, 3, 0]);
+    // Consumed: the stash is back to identity so a following draw without a stash gets the untiled uv.
+    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
   });
 });
 

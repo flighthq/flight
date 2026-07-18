@@ -139,6 +139,7 @@ struct Frame {
 struct Draw {
   world : mat4x4f,
   normalMatrix : mat3x3f,
+  uvTransform : mat3x3f,   // KHR_texture_transform of the base-color map (identity when unused)
 };
 
 // The 48-float MaterialBlock: the base StandardPbr block (vec4 0..3) plus one vec4 slot per extension
@@ -226,7 +227,9 @@ struct VertexOutput {
   out.clipPosition = frame.viewProjection * world;
   out.worldNormal = draw.normalMatrix * normal;
   out.worldTangent = vec4f(draw.normalMatrix * tangent.xyz, tangent.w);
-  out.uv = uv;
+  // draw.uvTransform is identity for an untiled material, so this reproduces the raw uv; see the shared
+  // vs_main in wgpuMeshPipeline for why the KHR transform is applied unconditionally rather than gated.
+  out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
   return out;
 }
 

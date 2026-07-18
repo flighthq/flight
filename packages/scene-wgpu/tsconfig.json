@@ -40,6 +40,9 @@
       "path": "../scene"
     },
     {
+      "path": "../texture"
+    },
+    {
       "path": "../types"
     }
   ],
