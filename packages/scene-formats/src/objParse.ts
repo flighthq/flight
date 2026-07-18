@@ -1,17 +1,21 @@
+import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, getNodeChildren, removeNodeChild, replaceNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, isMesh } from '@flighthq/scene';
-import type { SceneNode } from '@flighthq/types';
+import { createTexture } from '@flighthq/texture';
+import type { BlinnPhongMaterial, Material, SceneNode, Texture } from '@flighthq/types';
+import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
 
-import type { ObjMaterialLibrary } from './objSchema';
+import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
 
 // Parses a Wavefront OBJ text source into a Scene. Groups (`g`) and objects (`o`) become
 // transform-only SceneNode hierarchy containers; faces within each material group become a
-// separate Mesh child (one Mesh per material, using the canonical PBR vertex layout). The
-// optional `materials` argument supplies the material library referenced by `mtllib`/`usemtl`
-// directives; without it material directives are acknowledged but no material data is attached.
+// separate Mesh child (one Mesh per material, using the canonical vertex layout). The optional
+// `materials` argument supplies the material library referenced by `mtllib`/`usemtl` directives;
+// each named material becomes a BlinnPhongMaterial (MTL's own Kd/Ks/Ns shading model) attached to
+// its mesh. Without the library, material directives are acknowledged but meshes stay unmaterialed.
 //
 // Supported directives: `v`, `vn`, `vt`, `f`, `g`, `o`, `mtllib`, `usemtl`. Faces may be
 // triangles, quads, or N-gons (fan-triangulated). Face vertex references support independent
@@ -37,6 +41,9 @@ export function createSceneFromObj(
   // group scope.
   let materialBuckets = new Map<string, MaterialBucket>();
   let activeMaterial = '';
+
+  // One Flight material per MTL material name, shared across every mesh (and group) that uses it.
+  const resolvedMaterials = new Map<string, Material | null>();
 
   const lines = source.split('\n');
   for (let i = 0; i < lines.length; i++) {
@@ -124,7 +131,7 @@ export function createSceneFromObj(
       case 'g':
       case 'o': {
         // Flush current material buckets into the current group before starting a new one.
-        flushBuckets(materialBuckets, currentGroup, scene);
+        flushBuckets(materialBuckets, currentGroup, scene, materials, resolvedMaterials);
         materialBuckets = new Map<string, MaterialBucket>();
         activeMaterial = '';
 
@@ -146,7 +153,7 @@ export function createSceneFromObj(
   }
 
   // Flush remaining buckets.
-  flushBuckets(materialBuckets, currentGroup, scene);
+  flushBuckets(materialBuckets, currentGroup, scene, materials, resolvedMaterials);
 
   collapseSingleMeshGroups(scene);
 
@@ -276,15 +283,23 @@ function parseFaceVertex(
 }
 
 // Flushes all non-empty material buckets as Mesh children of `parent` (or of `scene` when parent
-// is null). Each bucket becomes one Mesh node with its own MeshGeometry.
-function flushBuckets(buckets: Readonly<Map<string, MaterialBucket>>, parent: SceneNode | null, scene: Scene): void {
-  for (const [, bucket] of buckets) {
+// is null). Each bucket becomes one Mesh node with its own MeshGeometry, carrying the BlinnPhong
+// material its `usemtl` name resolves to (empty when the name is unknown or no library was supplied).
+function flushBuckets(
+  buckets: Readonly<Map<string, MaterialBucket>>,
+  parent: SceneNode | null,
+  scene: Scene,
+  library: Readonly<ObjMaterialLibrary> | undefined,
+  resolvedMaterials: Map<string, Material | null>,
+): void {
+  for (const [materialName, bucket] of buckets) {
     if (bucket.indices.length === 0) continue;
 
     const vertices = new Float32Array(bucket.vertices);
     const indices = Uint32Array.from(bucket.indices);
     const geometry = createMeshGeometry({ indices, layout: CANONICAL_LAYOUT, vertices });
-    const meshNode = createMesh(geometry, []) as unknown as SceneNode;
+    const material = resolveObjMaterial(materialName, library, resolvedMaterials);
+    const meshNode = createMesh(geometry, material !== null ? [material] : []) as unknown as SceneNode;
 
     if (parent !== null) {
       addNodeChild(parent, meshNode);
@@ -292,4 +307,69 @@ function flushBuckets(buckets: Readonly<Map<string, MaterialBucket>>, parent: Sc
       addNodeChild(scene, meshNode);
     }
   }
+}
+
+// Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.
+// Kd → diffuse, Ks → specular, Ns → shininess, d (dissolve) → diffuse alpha plus blend mode, and the
+// map_Kd/map_Ks/bump filenames → Unresolved External texture refs (the parser references, it does not
+// load). Ka/map_Ka and the illum model have no Blinn-Phong equivalent — ambient is a scene light in
+// Flight, not a material property — so they are dropped; a caller wanting metallic-roughness PBR
+// converts explicitly downstream.
+function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>): BlinnPhongMaterial {
+  const result = createBlinnPhongMaterial({
+    diffuse: packObjColor(material.diffuse, material.dissolve),
+    diffuseMap: externalObjTexture(material.mapDiffuse),
+    normalMap: externalObjTexture(material.mapBump),
+    shininess: material.specularExponent,
+    specular: packObjColor(material.specular, 1),
+    specularMap: externalObjTexture(material.mapSpecular),
+  });
+  // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
+  // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only.
+  if (material.dissolve < 1) result.alphaMode = 'blend';
+  return result;
+}
+
+// Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
+function externalObjTexture(uri: string | null): Texture | null {
+  if (uri === null) return null;
+  return createTexture({
+    resource: {
+      basePath: null,
+      kind: SceneResourceRefKind.External,
+      mimeType: null,
+      state: ResourceResolutionState.Unresolved,
+      uri,
+    },
+  });
+}
+
+// Packs an MTL sRGB-space [r,g,b] triple (each in [0,1]) plus an alpha into a 0xRRGGBBAA integer.
+function packObjColor(rgb: readonly [number, number, number], alpha: number): number {
+  const r = clampChannel(rgb[0]);
+  const g = clampChannel(rgb[1]);
+  const b = clampChannel(rgb[2]);
+  const a = clampChannel(alpha);
+  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
+}
+
+function clampChannel(value: number): number {
+  return Math.round(Math.min(1, Math.max(0, value)) * 0xff);
+}
+
+// Resolves an MTL material name to a Flight material, memoizing so a name shared across meshes yields
+// one material instance. Empty name (no `usemtl`) or unknown name → null (mesh left unmaterialed).
+function resolveObjMaterial(
+  name: string,
+  library: Readonly<ObjMaterialLibrary> | undefined,
+  cache: Map<string, Material | null>,
+): Material | null {
+  if (name === '') return null;
+  const cached = cache.get(name);
+  if (cached !== undefined) return cached;
+
+  const parsed = library?.materials.get(name);
+  const material = parsed !== undefined ? (objMaterialToBlinnPhong(parsed) as unknown as Material) : null;
+  cache.set(name, material);
+  return material;
 }
