@@ -118,6 +118,20 @@ describe('drawGlSceneParticleEmitters', () => {
     expect(gl.calls.some((c) => c.name === 'depthMask' && c.args[0] === false)).toBe(true);
   });
 
+  it('applies the emitter blend mode: additive for add, over-blend for normal', () => {
+    const { state, gl } = makeGlSceneState();
+    const scene = createScene();
+    const additive = makeEmitterWithParticles(1);
+    additive.blendMode = 'add';
+    const normal = makeEmitterWithParticles(1);
+    addNodeChild(scene, additive);
+    addNodeChild(scene, normal);
+    drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    const blendFuncs = gl.calls.filter((c) => c.name === 'blendFunc');
+    expect(blendFuncs.some((c) => c.args[0] === gl.ONE && c.args[1] === gl.ONE)).toBe(true);
+    expect(blendFuncs.some((c) => c.args[0] === gl.SRC_ALPHA && c.args[1] === gl.ONE_MINUS_SRC_ALPHA)).toBe(true);
+  });
+
   it('restores depth write and disables blend after draw', () => {
     const { state, gl } = makeGlSceneState();
     const scene = createScene();
