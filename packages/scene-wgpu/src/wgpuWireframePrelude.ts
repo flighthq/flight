@@ -2,7 +2,12 @@ import type { LinearColor } from '@flighthq/color';
 import type { WgpuRenderState } from '@flighthq/types';
 
 import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
-import { createWgpuMeshPipeline, ensureWgpuScenePipeline, WGPU_MESH_PRELUDE_WGSL } from './wgpuMeshPipeline';
+import {
+  createWgpuMeshPipeline,
+  ensureWgpuScenePipeline,
+  stashWgpuUvTransform,
+  WGPU_MESH_PRELUDE_WGSL,
+} from './wgpuMeshPipeline';
 import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
@@ -43,6 +48,9 @@ export function bindWgpuWireframeColor(
   _scratch[2] = color[2];
   _scratch[3] = color[3];
   state.device.queue.writeBuffer(binding.buffer, 0, _scratch.buffer, 0, WIREFRAME_UNIFORM_BYTES);
+  // Wireframe draws untextured lines, so stash identity to keep the shared Draw uniform authoritative —
+  // a prior tiled material's transform must not persist into this bind.
+  stashWgpuUvTransform(state, null);
   return binding.bindGroup;
 }
 

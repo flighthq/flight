@@ -6,6 +6,7 @@ import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScenePipeline,
+  stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
 import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
@@ -97,6 +98,9 @@ export function bindWgpuToonSurface(
   _scratch[6] = 0;
   _scratch[7] = 0;
   state.device.queue.writeBuffer(binding.buffer, 0, _scratch.buffer, 0, TOON_UNIFORM_BYTES);
+  // Toon does not yet sample its base-color map, so stash identity to keep the shared Draw uniform
+  // authoritative — a prior tiled material's transform must not persist into this bind.
+  stashWgpuUvTransform(state, null);
   return binding.bindGroup;
 }
 
