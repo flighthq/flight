@@ -121,7 +121,7 @@ describe('createSceneFromObj', () => {
     expect([p.x, p.y, p.z]).toEqual([0, 1, 0]);
   });
 
-  it('collapses each single-mesh group to a bare named Mesh', () => {
+  it('emits each single-material group as a bare named Mesh', () => {
     const obj = [
       'v 0 0 0',
       'v 1 0 0',
@@ -139,8 +139,8 @@ describe('createSceneFromObj', () => {
     const roots = getNodeChildren(scene);
     expect(roots).toHaveLength(2);
 
-    // Each group holds a single mesh, so it collapses to the bare Mesh with the group name migrated
-    // onto it — getNodeChildren(scene) returns Mesh nodes, not transform-only wrappers.
+    // Each single-material group becomes one bare Mesh carrying the group name —
+    // getNodeChildren(scene) returns Mesh nodes, not transform-only wrappers.
     const groupA = roots[0] as SceneNode;
     expect(isMesh(groupA)).toBe(true);
     expect(groupA.name).toBe('GroupA');
@@ -150,7 +150,7 @@ describe('createSceneFromObj', () => {
     expect(groupB.name).toBe('GroupB');
   });
 
-  it('collapses a single-object group to a bare Mesh carrying the object name', () => {
+  it('emits a single-object group as a bare Mesh carrying the object name', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'o Cube', 'f 1 2 3'].join('\n');
 
     const scene = createSceneFromObj(obj);
@@ -160,7 +160,7 @@ describe('createSceneFromObj', () => {
     expect((roots[0] as SceneNode).name).toBe('Cube');
   });
 
-  it('splits faces by material into separate meshes', () => {
+  it('emits a multi-material group as one Mesh with a subset per material', () => {
     const obj = [
       'v 0 0 0',
       'v 1 0 0',
@@ -176,13 +176,21 @@ describe('createSceneFromObj', () => {
     ].join('\n');
 
     const scene = createSceneFromObj(obj);
-    // One group node "Body" with two mesh children (one per material).
-    const group = getNodeChildren(scene)[0] as SceneNode;
-    expect(isMesh(group)).toBe(false);
-    const meshes = getNodeChildren(group);
-    expect(meshes).toHaveLength(2);
-    expect(isMesh(meshes[0] as SceneNode)).toBe(true);
-    expect(isMesh(meshes[1] as SceneNode)).toBe(true);
+    // The group "Body" is one bare Mesh, not a wrapper over per-material child meshes.
+    const roots = getNodeChildren(scene);
+    expect(roots).toHaveLength(1);
+    const mesh = roots[0] as Mesh;
+    expect(isMesh(mesh)).toBe(true);
+    expect(mesh.name).toBe('Body');
+
+    // One MeshSubset per material, each addressing that material's contiguous index range, plus a
+    // positional materials slot per subset (null here — no library supplied).
+    const subsets = mesh.geometry.subsets;
+    expect(subsets).toHaveLength(2);
+    expect(subsets[0]).toEqual({ indexCount: 3, indexOffset: 0 });
+    expect(subsets[1]).toEqual({ indexCount: 3, indexOffset: 3 });
+    expect(mesh.materials).toEqual([null, null]);
+    expect(getMeshGeometryIndexCount(mesh.geometry)).toBe(6);
   });
 
   it('returns an empty scene for empty input', () => {
@@ -279,12 +287,38 @@ describe('createSceneFromObj', () => {
     expect(material.diffuseMap!.image).toBeNull();
   });
 
-  it('leaves a mesh unmaterialed when usemtl names a material absent from the library', () => {
+  it('leaves a subset slot null when usemtl names a material absent from the library', () => {
     const lib = parseObjMaterialLibrary('newmtl Known\nKd 1 1 1\n');
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Missing', 'f 1 2 3'].join('\n');
 
     const mesh = getNodeChildren(createSceneFromObj(obj, lib))[0] as Mesh;
-    expect(mesh.materials).toHaveLength(0);
+    // One subset, one positional slot — null (resolves to DefaultMaterialKind at draw time).
+    expect(mesh.materials).toEqual([null]);
+  });
+
+  it('persists the active material across a group boundary (g/o does not reset usemtl)', () => {
+    const lib = parseObjMaterialLibrary('newmtl RedMat\nKd 1 0 0\n');
+    const obj = [
+      'v 0 0 0',
+      'v 1 0 0',
+      'v 0 1 0',
+      'v 2 0 0',
+      'v 2 1 0',
+      'v 3 0 0',
+      'usemtl RedMat',
+      'g A',
+      'f 1 2 3',
+      'g B',
+      'f 4 5 6',
+    ].join('\n');
+
+    const roots = getNodeChildren(createSceneFromObj(obj, lib));
+    expect(roots).toHaveLength(2);
+    // Group B declares no usemtl of its own; per the OBJ spec it inherits RedMat set before group A.
+    const groupB = roots[1] as Mesh;
+    const material = groupB.materials[0] as BlinnPhongMaterial;
+    expect(material.kind).toBe(BlinnPhongMaterialKind);
+    expect(material.diffuse).toBe(0xff0000ff);
   });
 
   it('handles faces before any group or object (top-level geometry)', () => {

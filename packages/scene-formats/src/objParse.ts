@@ -1,20 +1,23 @@
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeChildren, removeNodeChild, replaceNodeChild } from '@flighthq/node';
+import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode, isMesh } from '@flighthq/scene';
-import type { BlinnPhongMaterial, Material, SceneNode, Texture } from '@flighthq/types';
+import { createMesh, createScene, MeshKind } from '@flighthq/scene';
+import type { BlinnPhongMaterial, Material, MeshSubset, Texture } from '@flighthq/types';
 
 import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
 import type { SceneImport } from './sceneImport';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
-// Parses a Wavefront OBJ text source into a Scene. Groups (`g`) and objects (`o`) become
-// transform-only SceneNode hierarchy containers; faces within each material group become a
-// separate Mesh child (one Mesh per material, using the canonical vertex layout). The optional
-// `materials` argument supplies the material library referenced by `mtllib`/`usemtl` directives;
-// each named material becomes a BlinnPhongMaterial (MTL's own Kd/Ks/Ns shading model) attached to
-// its mesh. Without the library, material directives are acknowledged but meshes stay unmaterialed.
+// Parses a Wavefront OBJ text source into a Scene. Each group (`g`) or object (`o`) — and any
+// top-level faces before the first group — becomes one Mesh, using the canonical vertex layout. A
+// group that spans several `usemtl` materials becomes a single Mesh with one MeshSubset per
+// material (contiguous index ranges) and a positional `materials` array — not a wrapper over
+// per-material child meshes — so `getNodeChildren(scene)` returns the drawable Mesh nodes directly.
+// The optional `materials` argument supplies the material library referenced by `mtllib`/`usemtl`;
+// each named material becomes a BlinnPhongMaterial (MTL's own Kd/Ks/Ns shading model) in the
+// subset's positional slot. Without the library, material directives are acknowledged but each
+// subset's slot stays null (resolving to DefaultMaterialKind at draw time).
 //
 // Supported directives: `v`, `vn`, `vt`, `f`, `g`, `o`, `mtllib`, `usemtl`. Faces may be
 // triangles, quads, or N-gons (fan-triangulated). Face vertex references support independent
@@ -32,12 +35,12 @@ export function createSceneFromObj(
 
   const scene = createScene();
 
-  // Current hierarchy node for group/object scope. Null means top-level (faces attach to scene).
-  let currentGroup: SceneNode | null = null;
+  // Name of the current group/object scope (undefined for top-level faces before the first group).
+  let currentGroupName: string | undefined;
 
-  // Material-keyed face collectors. Each key is a material name (or '' for default). The value
-  // accumulates interleaved vertex data and triangle indices for that material within the current
-  // group scope.
+  // Material-keyed face collectors for the current group. Each key is a material name (or '' for
+  // no active material). The value accumulates interleaved vertex data and triangle indices for
+  // that material within the current group scope; each key becomes one subset of the group's Mesh.
   let materialBuckets = new Map<string, MaterialBucket>();
   let activeMaterial = '';
 
@@ -129,13 +132,12 @@ export function createSceneFromObj(
       }
       case 'g':
       case 'o': {
-        // Flush current material buckets into the current group before starting a new one.
-        flushBuckets(materialBuckets, currentGroup, scene, materials, resolvedMaterials);
+        // A group/object boundary flushes the accumulated faces as one Mesh (one subset per
+        // material) and starts a fresh group. `usemtl` state persists across the boundary per the
+        // OBJ spec — `g`/`o` name geometry, they do not reset the active material.
+        flushGroup(materialBuckets, currentGroupName, scene, materials, resolvedMaterials);
         materialBuckets = new Map<string, MaterialBucket>();
-        activeMaterial = '';
-
-        currentGroup = createSceneNode(undefined, { name: args || undefined });
-        addNodeChild(scene, currentGroup);
+        currentGroupName = args || undefined;
         break;
       }
       case 'usemtl': {
@@ -151,10 +153,8 @@ export function createSceneFromObj(
     }
   }
 
-  // Flush remaining buckets.
-  flushBuckets(materialBuckets, currentGroup, scene, materials, resolvedMaterials);
-
-  collapseSingleMeshGroups(scene);
+  // Flush the final group's accumulated faces.
+  flushGroup(materialBuckets, currentGroupName, scene, materials, resolvedMaterials);
 
   return scene;
 }
@@ -166,27 +166,6 @@ export function createSceneFromObj(
 export function importObj(source: string, materials?: Readonly<ObjMaterialLibrary>, warnings?: string[]): SceneImport {
   const scene = createSceneFromObj(source, materials, warnings);
   return { animations: [], scene, scenes: [scene] };
-}
-
-// Collapses each top-level group wrapper that holds exactly one Mesh into that bare Mesh, migrating
-// the group's name onto the Mesh (OBJ groups are transform-only, so no transform is lost). A group
-// with several sub-meshes — one per material — is genuine grouping and stays wrapped. This keeps
-// getNodeChildren(scene) returning Mesh nodes for single-mesh objects rather than transform-only
-// wrappers with geometry:null, matching glTF's rule.
-function collapseSingleMeshGroups(scene: Scene): void {
-  for (const child of getNodeChildren(scene)) {
-    if (isMesh(child)) continue;
-
-    const grandchildren = getNodeChildren(child);
-    if (grandchildren.length !== 1 || !isMesh(grandchildren[0])) continue;
-
-    const mesh = grandchildren[0];
-    // Migrate the group's name onto the mesh, but only when the mesh has no name of its own.
-    if (!mesh.name && child.name) mesh.name = child.name;
-
-    removeNodeChild(child, mesh);
-    replaceNodeChild(scene, child, mesh);
-  }
 }
 
 // Accumulates interleaved vertex data and triangle indices for one material within a group.
@@ -290,31 +269,49 @@ function parseFaceVertex(
   return vertexIndex;
 }
 
-// Flushes all non-empty material buckets as Mesh children of `parent` (or of `scene` when parent
-// is null). Each bucket becomes one Mesh node with its own MeshGeometry, carrying the BlinnPhong
-// material its `usemtl` name resolves to (empty when the name is unknown or no library was supplied).
-function flushBuckets(
+// Flushes a group's accumulated material buckets as ONE Mesh: the buckets' vertex records are
+// concatenated into a single interleaved buffer and their triangles into a single index buffer,
+// with one MeshSubset per non-empty bucket addressing that material's contiguous index range. The
+// Mesh's positional `materials` array carries one entry per subset — the Flight material the
+// bucket's `usemtl` name resolves to, or null when the name is unknown or no library was supplied
+// (a null slot resolves to DefaultMaterialKind at draw time). A single-material group is one Mesh
+// with one subset spanning the whole buffer; a multi-material group is one Mesh with several
+// subsets, never a wrapper over per-material child meshes. A group with no faces adds nothing.
+function flushGroup(
   buckets: Readonly<Map<string, MaterialBucket>>,
-  parent: SceneNode | null,
+  name: string | undefined,
   scene: Scene,
   library: Readonly<ObjMaterialLibrary> | undefined,
   resolvedMaterials: Map<string, Material | null>,
 ): void {
+  const vertices: number[] = [];
+  const indices: number[] = [];
+  const subsets: MeshSubset[] = [];
+  const materials: (Material | null)[] = [];
+
   for (const [materialName, bucket] of buckets) {
     if (bucket.indices.length === 0) continue;
 
-    const vertices = new Float32Array(bucket.vertices);
-    const indices = Uint32Array.from(bucket.indices);
-    const geometry = createMeshGeometry({ indices, layout: CANONICAL_LAYOUT, vertices });
-    const material = resolveObjMaterial(materialName, library, resolvedMaterials);
-    const meshNode = createMesh(geometry, material !== null ? [material] : []) as unknown as SceneNode;
+    // Rebase this bucket's local indices onto the combined vertex buffer (its vertices are appended
+    // after everything already collected), then record its contiguous index range as one subset.
+    const vertexBase = vertices.length / CANONICAL_FLOATS_PER_VERTEX;
+    const indexOffset = indices.length;
+    for (let k = 0; k < bucket.indices.length; k++) indices.push(bucket.indices[k] + vertexBase);
+    for (let k = 0; k < bucket.vertices.length; k++) vertices.push(bucket.vertices[k]);
 
-    if (parent !== null) {
-      addNodeChild(parent, meshNode);
-    } else {
-      addNodeChild(scene, meshNode);
-    }
+    subsets.push({ indexCount: bucket.indices.length, indexOffset });
+    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials));
   }
+
+  if (subsets.length === 0) return;
+
+  const geometry = createMeshGeometry({
+    indices: Uint32Array.from(indices),
+    layout: CANONICAL_LAYOUT,
+    subsets,
+    vertices: new Float32Array(vertices),
+  });
+  addNodeChild(scene, createMesh(geometry, materials, MeshKind, { name }));
 }
 
 // Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.
