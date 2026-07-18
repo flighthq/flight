@@ -6,7 +6,7 @@ import type {
   ParticleEmitterData,
   PartialNode,
   SceneNode,
-  Vector2Like,
+  Vector3Like,
 } from '@flighthq/types';
 import { ParticleEmitter3DKind } from '@flighthq/types';
 
@@ -14,7 +14,9 @@ import { createParticleEmitterData } from './particleEmitter';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
 const PARTICLE_COLOR_STRIDE = 3;
-const PARTICLE_VELOCITY_STRIDE = 2;
+// 3D particle velocities are (vx, vy, vz) — matching @flighthq/particles PARTICLE_VELOCITY_STRIDE. The Z
+// lane must be carried by every entity op below or manual add/remove/compact silently drops it.
+const PARTICLE_VELOCITY_STRIDE = 3;
 
 export const PARTICLE_EMITTER_3D_DELETED_ID = 0xffff;
 
@@ -49,6 +51,7 @@ export function appendParticleEmitter3DParticle(
   const vt = index * PARTICLE_VELOCITY_STRIDE;
   target.data.velocities[vt] = 0;
   target.data.velocities[vt + 1] = 0;
+  target.data.velocities[vt + 2] = 0;
   return index;
 }
 
@@ -80,6 +83,7 @@ export function compactParticleEmitter3D(target: ParticleEmitter3D): void {
       const vts = read * PARTICLE_VELOCITY_STRIDE;
       data.velocities[vt] = data.velocities[vts];
       data.velocities[vt + 1] = data.velocities[vts + 1];
+      data.velocities[vt + 2] = data.velocities[vts + 2];
       data.positionsZ[write] = data.positionsZ[read];
     }
     write++;
@@ -111,7 +115,7 @@ export function getParticleEmitter3DParticleId(source: Readonly<ParticleEmitter3
 }
 
 export function getParticleEmitter3DParticleVelocity(
-  out: Vector2Like,
+  out: Vector3Like,
   source: Readonly<ParticleEmitter3D>,
   index: number,
 ): boolean {
@@ -119,6 +123,7 @@ export function getParticleEmitter3DParticleVelocity(
   const vt = index * PARTICLE_VELOCITY_STRIDE;
   out.x = source.data.velocities[vt];
   out.y = source.data.velocities[vt + 1];
+  out.z = source.data.velocities[vt + 2];
   return true;
 }
 
@@ -152,6 +157,7 @@ export function removeParticleEmitter3DParticle(target: ParticleEmitter3D, index
     const vts = last * PARTICLE_VELOCITY_STRIDE;
     data.velocities[vt] = data.velocities[vts];
     data.velocities[vt + 1] = data.velocities[vts + 1];
+    data.velocities[vt + 2] = data.velocities[vts + 2];
     data.positionsZ[index] = data.positionsZ[last];
   }
   data.particleCount = last;
@@ -213,9 +219,11 @@ export function setParticleEmitter3DParticleVelocity(
   index: number,
   vx: number,
   vy: number,
+  vz: number,
 ): void {
   if (index < 0 || index >= target.data.particleCount) return;
   const vt = index * PARTICLE_VELOCITY_STRIDE;
   target.data.velocities[vt] = vx;
   target.data.velocities[vt + 1] = vy;
+  target.data.velocities[vt + 2] = vz;
 }
