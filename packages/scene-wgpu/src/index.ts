@@ -28,6 +28,7 @@ export * from './wgpuMatcapPrelude';
 export * from './wgpuMeshMaterialRegistry';
 export * from './wgpuMeshPipeline';
 export * from './wgpuMeshUpload';
+export * from './wgpuParticleEmitter3D';
 export * from './wgpuPbrPipelineCache';
 export * from './wgpuPbrPrelude';
 export * from './wgpuSceneRuntime';
