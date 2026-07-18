@@ -3,6 +3,7 @@ export * from './billboardCamera';
 export * from './mesh';
 export * from './scene';
 export * from './sceneAnimation';
+export * from './sceneMaterial';
 export * from './sceneNode';
 export * from './sceneNodeBounds';
 export * from './sceneNodeCulling';
