@@ -16,6 +16,7 @@ import {
   MD2_TRIANGLE_SIZE,
   MD2_VERSION,
 } from './md2Schema';
+import type { SceneImport } from './sceneImport';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
@@ -201,6 +202,16 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
   addNodeChild(scene, meshNode);
 
   return scene;
+}
+
+// Imports an MD2 model as a whole file. The assembly-tier sibling of createSceneFromMd2, present for
+// uniformity across the format importers. `animations` is empty today: MD2's animation is vertex-morph
+// across frames (createSceneFromMd2 imports frame 0 only), which needs the morph-target deformer Flight
+// does not yet have — see agents/morph-target-animation.md, where MD2 is the legacy validation case.
+// It is left honestly empty rather than faked into a TRS clip. `scenes` is a one-element array.
+export function importMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneImport {
+  const scene = createSceneFromMd2(bytes, warnings);
+  return { animations: [], scene, scenes: [scene] };
 }
 
 // Reads a fixed 64-byte null-padded ASCII skin path record starting at `offset`, stopping at the

@@ -1,15 +1,15 @@
 ---
 feature: "morph-target animation"
-draft: true
+draft: false
 lastDirection: 2026-07-18
 spans: ["@flighthq/types", "@flighthq/mesh", "@flighthq/scene", "@flighthq/animation", "@flighthq/scene-gl", "@flighthq/scene-wgpu", "@flighthq/scene-formats"]
 ---
 
 # Morph-Target Animation — Charter
 
-> **DRAFT — pending the user's blessing.** This is the design of record for a not-yet-built,
-> cross-package feature. It exists so the work is scoped and the decisions are captured before any
-> code lands. No package should start building against it until the `draft` flag is cleared.
+> **Blessed design of record; build deferred.** The architecture below is approved. No code has landed
+> yet — this is the plan the work will follow when morph animation is scheduled. Until then,
+> `importGltf`/`importMd2` deliberately emit empty animation (honest, not faked into TRS).
 
 ## What it is
 
