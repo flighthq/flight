@@ -9,6 +9,13 @@ import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
 // skeleton hierarchy, a baseframe pose, and per-frame animated components selected by a bitmask.
 // Each joint produces up to two channels (translation and rotation) in the returned clip.
 //
+// IMPORTANT: .md5anim baseframe/frame joint transforms are PARENT-RELATIVE (unlike the .md5mesh
+// joints, which are absolute). These relative values are driven straight onto the joints' LOCAL
+// transforms, and the NESTED skeleton createSceneFromMd5Mesh builds (which converts its absolute bind
+// pose to parent-relative locals) composes parent × child back to the correct absolute world pose.
+// The two files are coupled: a flat skeleton, or one that kept absolute bind locals, would deform the
+// mesh wrongly. Do not "compose to absolute" here — the scene graph does that.
+//
 // Joint positions and orientations are converted from MD5's right-handed Z-up coordinate system
 // to Flight's right-handed Y-up system via convertPositionsZUpToYUp and
 // convertQuaternionsZUpToYUp. Quaternion W is reconstructed from XYZ.

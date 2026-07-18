@@ -5,7 +5,7 @@ import {
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh';
-import { getNodeChildren, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type {
   BlinnPhongMaterial,
@@ -233,11 +233,12 @@ describe('createSceneFromMd5Mesh', () => {
     expect(uv.y).toBeCloseTo(1);
   });
 
-  it('gives each joint a world transform equal to its own absolute MD5 transform, not accumulated', () => {
-    // Two joints where the child's PARENT sits away from the origin, so nesting-vs-flat is observable.
-    // MD5 joint transforms are absolute, so the child's world position must equal its own absolute
-    // (Z-up→Y-up: (x,y,z)→(x,z,-y)) value — NOT parent∘child, which the old nested build produced and
-    // which explodes the mesh under animation.
+  it('converts an absolute .md5mesh joint to a parent-relative local transform', () => {
+    // Two joints where the child's PARENT sits away from the origin. .md5mesh joints are ABSOLUTE, but
+    // a nested joint's LOCAL transform must be parent-relative so parent × child rebuilds the absolute.
+    // Absolute child (10,5,0) → Y-up (10,0,-5); parent (10,0,0) → Y-up (10,0,0); so the child's local
+    // position is the difference (0,0,-5). The bug this guards against set the absolute (10,0,-5)
+    // directly as the local, which double-accumulates through the parent and explodes under animation.
     const chain = [
       'MD5Version 10',
       'numJoints 2',
@@ -257,29 +258,32 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const scene = createSceneFromMd5Mesh(chain);
-    const jointNodes = getNodeChildren(getNodeChildren(scene)[0] as SceneNode) as unknown as SceneNode[];
-    const child = jointNodes[1];
+    // Nested: skeleton → root → child.
+    const root = getNodeChildren(getNodeChildren(scene)[0] as SceneNode)[0] as SceneNode;
+    const child = getNodeChildren(root)[0] as SceneNode;
 
-    const world = { x: 0, y: 0, z: 0 };
-    getMatrix4Position(world, getNodeWorldTransformMatrix4(child));
-    // Absolute (10,5,0) → Y-up (10, 0, -5). Nested-under-a-(10,0,0)-parent would give (20,0,-5).
-    expect(world.x).toBeCloseTo(10);
-    expect(world.y).toBeCloseTo(0);
-    expect(world.z).toBeCloseTo(-5);
+    const rootLocal = { x: 0, y: 0, z: 0 };
+    const childLocal = { x: 0, y: 0, z: 0 };
+    getMatrix4Position(rootLocal, root.localMatrix);
+    getMatrix4Position(childLocal, child.localMatrix);
+    // Root keeps its absolute transform; child is parent-relative.
+    expect([rootLocal.x, rootLocal.y, rootLocal.z]).toEqual([10, 0, 0]);
+    expect(childLocal.x).toBeCloseTo(0);
+    expect(childLocal.y).toBeCloseTo(0);
+    expect(childLocal.z).toBeCloseTo(-5);
   });
 
-  it('builds a flat skeleton — every joint directly under the skeleton root', () => {
-    // MD5 joint transforms are absolute (object-space), so the skeleton is flat: each joint's world
-    // transform equals its own absolute transform. Nesting joints parent-under-parent would treat the
-    // absolute transforms as parent-relative and explode the mesh under animation. So all three joints
-    // (root + two children) hang directly off the skeleton group, none nested under another joint.
+  it('nests joints by parent index — child joints under their parent', () => {
+    // The skeleton is a real nested hierarchy: parent × child composition rebuilds each joint's
+    // absolute world transform from the parent-relative locals the bind conversion produced. The
+    // .md5anim frames (parent-relative) then drive these same nested joints. MULTI_JOINT_HIERARCHY has
+    // root (parent -1) with child_a and child_b both parented to root.
     const scene = createSceneFromMd5Mesh(MULTI_JOINT_HIERARCHY);
     const skeleton = getNodeChildren(scene)[0] as SceneNode;
 
-    const jointNodes = getNodeChildren(skeleton);
-    expect(jointNodes).toHaveLength(3);
-    // No joint nests another joint under it.
-    for (const joint of jointNodes) expect(getNodeChildren(joint as SceneNode)).toHaveLength(0);
+    const rootJoints = getNodeChildren(skeleton);
+    expect(rootJoints).toHaveLength(1);
+    expect(getNodeChildren(rootJoints[0] as SceneNode)).toHaveLength(2);
   });
 
   it('computes vertex positions from weights referencing different joints', () => {

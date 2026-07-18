@@ -1,3 +1,9 @@
+import {
+  conjugateQuaternion,
+  createQuaternion,
+  multiplyQuaternion,
+  rotateVector3ByQuaternion,
+} from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
@@ -21,12 +27,12 @@ import {
 
 // Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. The ASCII line-oriented format
 // contains a skeleton (joints) and one or more mesh sections. Each mesh section becomes a
-// separate Mesh child of the scene root. MD5 joint transforms are ABSOLUTE (object-space), so the
-// skeleton is FLAT — every joint is a direct SceneNode child of a "skeleton" group node, its
-// absolute position/orientation applied as its local transform (world == local for a flat skeleton).
-// Joints are deliberately not nested by parent index: nesting would treat the absolute transforms as
-// parent-relative and double-accumulate down the chain, exploding the mesh under animation (the
-// .md5anim frames drive absolute transforms too). See the flat-parenting note below.
+// separate Mesh child of the scene root. The joints form a nested SceneNode hierarchy under a
+// "skeleton" group. The subtlety that MD5 skinning gets wrong: .md5mesh joint transforms are
+// ABSOLUTE (object-space), but .md5anim frames are parent-RELATIVE — so the bind pose here is
+// converted absolute→relative before nesting (so parent × child rebuilds the absolute world), while
+// parseMd5Anim drives its already-relative values onto the same nested joints. Both then pose one
+// consistent hierarchy. See the absolute→relative conversion in the skeleton build below.
 //
 // Vertex positions are computed from weighted joint influences: for each vertex, the final
 // position is the sum of each weight's bias multiplied by the joint-space-transformed weight
@@ -91,39 +97,77 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
     convertPositionsZUpToYUp(jointPositions);
     convertQuaternionsZUpToYUp(jointOrientations);
 
+    // The .md5mesh joints are ABSOLUTE (object-space) transforms, but the SceneNode hierarchy composes
+    // parent × child, so each joint's LOCAL transform must be its transform relative to its parent:
+    // localQuat = parentAbsQuat⁻¹ · absQuat, localPos = parentAbsQuat⁻¹ · (absPos − parentAbsPos). This
+    // is the crux MD5 skinning gets wrong two ways: setting the absolute transform directly as the local
+    // (double-accumulates → explodes under animation), or flattening the skeleton (breaks the .md5anim
+    // frames, which are parent-RELATIVE and rely on the hierarchy to compose to absolute — see
+    // parseMd5Anim). With bind converted to relative here and anim already relative, both pose the same
+    // nested joints consistently. Roots (parentIndex < 0) keep their absolute transform as local.
+    const parentConj = createQuaternion();
+    const relPos = { x: 0, y: 0, z: 0 };
+    const relQuat = createQuaternion();
     for (let j = 0; j < joints.length; j++) {
       const joint = joints[j];
       const node = createSceneNode(undefined, { name: joint.name });
       const pi = j * 3;
       const qi = j * 4;
+      const parentIndex = joint.parentIndex;
+      let localPx = jointPositions[pi];
+      let localPy = jointPositions[pi + 1];
+      let localPz = jointPositions[pi + 2];
+      let localQx = jointOrientations[qi];
+      let localQy = jointOrientations[qi + 1];
+      let localQz = jointOrientations[qi + 2];
+      let localQw = jointOrientations[qi + 3];
+      if (parentIndex >= 0 && parentIndex < joints.length) {
+        const ppi = parentIndex * 3;
+        const pqi = parentIndex * 4;
+        conjugateQuaternion(parentConj, {
+          w: jointOrientations[pqi + 3],
+          x: jointOrientations[pqi],
+          y: jointOrientations[pqi + 1],
+          z: jointOrientations[pqi + 2],
+        });
+        rotateVector3ByQuaternion(
+          relPos,
+          {
+            x: localPx - jointPositions[ppi],
+            y: localPy - jointPositions[ppi + 1],
+            z: localPz - jointPositions[ppi + 2],
+          },
+          parentConj,
+        );
+        multiplyQuaternion(relQuat, parentConj, { w: localQw, x: localQx, y: localQy, z: localQz });
+        localPx = relPos.x;
+        localPy = relPos.y;
+        localPz = relPos.z;
+        localQx = relQuat.x;
+        localQy = relQuat.y;
+        localQz = relQuat.z;
+        localQw = relQuat.w;
+      } else if (parentIndex >= joints.length) {
+        warnings?.push(`createSceneFromMd5Mesh: joint ${j} has out-of-range parent index ${parentIndex}`);
+      }
       setSceneNodeTransform(
         node,
-        { x: jointPositions[pi], y: jointPositions[pi + 1], z: jointPositions[pi + 2] },
-        {
-          w: jointOrientations[qi + 3],
-          x: jointOrientations[qi],
-          y: jointOrientations[qi + 1],
-          z: jointOrientations[qi + 2],
-        },
+        { x: localPx, y: localPy, z: localPz },
+        { w: localQw, x: localQx, y: localQy, z: localQz },
         { x: 1, y: 1, z: 1 },
       );
       jointNodes.push(node);
     }
 
-    // MD5 stores every joint's transform in ABSOLUTE object space (not parent-relative) — in both the
-    // .md5mesh joints block above and the .md5anim frames. So each joint hangs directly under the
-    // skeleton root (a flat skeleton), making its world transform equal its own absolute transform.
-    // Nesting joints parent-under-parent would treat each absolute transform as parent-relative and
-    // double-accumulate down the chain: harmless at the bind pose (the skin palette is identity there
-    // regardless) but it explodes the mesh the moment the animation — which also drives absolute
-    // transforms — poses the joints. The parent index is retained on the parsed joints for reference
-    // but is deliberately not used to nest the scene nodes.
+    // Nest by parent index so parent × child composition reconstructs each joint's absolute world
+    // transform from the parent-relative locals set above; roots hang under the skeleton group.
     for (let j = 0; j < joints.length; j++) {
       const parentIndex = joints[j].parentIndex;
-      if (parentIndex >= joints.length) {
-        warnings?.push(`createSceneFromMd5Mesh: joint ${j} has out-of-range parent index ${parentIndex}`);
+      if (parentIndex >= 0 && parentIndex < jointNodes.length) {
+        addNodeChild(jointNodes[parentIndex], jointNodes[j]);
+      } else {
+        addNodeChild(skeletonRoot, jointNodes[j]);
       }
-      addNodeChild(skeletonRoot, jointNodes[j]);
     }
 
     addNodeChild(scene, skeletonRoot);
