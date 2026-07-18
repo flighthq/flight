@@ -315,6 +315,50 @@ describe('createSceneFromGltf', () => {
     expect(mesh.materials).toHaveLength(0);
   });
 
+  it('applies a sparse accessor override on top of the base values', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const sparseIndices = new Uint16Array([1]); // override vertex 1
+    const sparseValues = new Float32Array([9, 9, 9]);
+    const posLen = positions.byteLength;
+    const idxLen = sparseIndices.byteLength;
+    const doc: GltfDocument = {
+      accessors: [
+        {
+          bufferView: 0,
+          componentType: 5126,
+          count: 3,
+          sparse: { count: 1, indices: { bufferView: 1, componentType: 5123 }, values: { bufferView: 2 } },
+          type: 'VEC3',
+        },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: posLen, byteOffset: 0 },
+        { buffer: 0, byteLength: idxLen, byteOffset: posLen },
+        { buffer: 0, byteLength: sparseValues.byteLength, byteOffset: posLen + idxLen },
+      ],
+      buffers: [
+        {
+          byteLength: posLen + idxLen + sparseValues.byteLength,
+          uri: toDataUri(bytesOf(positions), bytesOf(sparseIndices), bytesOf(sparseValues)),
+        },
+      ],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+
+    const geometry = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).geometry;
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 0);
+    expect([p.x, p.y, p.z]).toEqual([0, 0, 0]);
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect([p.x, p.y, p.z]).toEqual([9, 9, 9]); // overridden by the sparse block
+    getMeshGeometryVertexPosition(p, geometry, 2);
+    expect([p.x, p.y, p.z]).toEqual([0, 1, 0]);
+  });
+
   it('accepts a JSON string as well as a parsed object', () => {
     const scene = createSceneFromGltf(JSON.stringify(makeTriangleGltf()));
     expect(getNodeChildren(scene)).toHaveLength(1);

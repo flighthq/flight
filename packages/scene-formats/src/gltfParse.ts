@@ -8,6 +8,7 @@ import { createSkeleton3D } from '@flighthq/skeleton3d';
 import type { Material, Mesh, MeshGeometry, SceneNode, Skin, Texture } from '@flighthq/types';
 
 import type {
+  GltfAccessor,
   GltfBuffer,
   GltfComponentType,
   GltfDocument,
@@ -36,8 +37,8 @@ export function createSceneFromGlb(bytes: Readonly<Uint8Array>, warnings?: strin
 // canonical PBR vertex layout (or the skinned layout when JOINTS_0/WEIGHTS_0 are present); skins
 // (joint hierarchy + inverse-bind matrices bound to the mesh via `mesh.skin`); every `primitives[]`
 // entry of a mesh (multi-primitive → sub-mesh children); strided (`byteStride`) and normalized-integer
-// accessors; materials (metallic-roughness PBR → StandardPbrMaterial, textures as Unresolved refs).
-// Not yet imported (return to these): animations, sparse accessors, and external (`.bin`) buffer URIs.
+// accessors; sparse accessors; materials (metallic-roughness PBR → StandardPbrMaterial, textures as
+// Unresolved refs). Not yet imported (return to these): animations and external (`.bin`) buffer URIs.
 export function createSceneFromGltf(source: GltfDocument | string, warnings?: string[]): Scene {
   let doc: GltfDocument;
   if (typeof source === 'string') {
@@ -493,36 +494,94 @@ function readAccessor(
     warnings?.push(`readAccessor: accessor ${accessorIndex} not found in document`);
     return { count: 0, data: new Float32Array(0) };
   }
-  const bufferViewIndex = accessor.bufferView ?? -1;
-  const view = bufferViewIndex >= 0 ? doc.bufferViews?.[bufferViewIndex] : undefined;
-  if (view === undefined) {
-    warnings?.push(`readAccessor: bufferView ${bufferViewIndex} not found for accessor ${accessorIndex}`);
-    return { count: 0, data: new Float32Array(0) };
-  }
-  const bytes = buffers[view.buffer];
-  if (bytes === undefined) {
-    warnings?.push(`readAccessor: buffer ${view.buffer} not found for accessor ${accessorIndex}`);
-    return { count: 0, data: new Float32Array(0) };
-  }
 
   const componentCount = TYPE_COMPONENTS[accessor.type];
   const componentByteSize = COMPONENT_BYTE_SIZE[accessor.componentType];
-  const elementByteSize = componentCount * componentByteSize;
-  const stride = view.byteStride !== undefined && view.byteStride > 0 ? view.byteStride : elementByteSize;
-  const baseOffset = bytes.byteOffset + (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
-  const dataView = new DataView(bytes.buffer);
   const normalize = accessor.normalized === true && accessor.componentType !== 5126;
   const total = accessor.count * componentCount;
   const out = normalize ? new Float32Array(total) : createComponentArray(accessor.componentType, total);
 
-  for (let i = 0; i < accessor.count; i++) {
-    const elementOffset = baseOffset + i * stride;
+  // Base values from the accessor's bufferView. A sparse accessor may omit the bufferView entirely, in
+  // which case the base is a valid zero-fill that `sparse` then overrides at specific indices.
+  const bufferViewIndex = accessor.bufferView ?? -1;
+  const view = bufferViewIndex >= 0 ? doc.bufferViews?.[bufferViewIndex] : undefined;
+  if (view !== undefined) {
+    const bytes = buffers[view.buffer];
+    if (bytes === undefined) {
+      warnings?.push(`readAccessor: buffer ${view.buffer} not found for accessor ${accessorIndex}`);
+      return { count: 0, data: new Float32Array(0) };
+    }
+    const elementByteSize = componentCount * componentByteSize;
+    const stride = view.byteStride !== undefined && view.byteStride > 0 ? view.byteStride : elementByteSize;
+    const baseOffset = bytes.byteOffset + (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
+    const dataView = new DataView(bytes.buffer);
+    for (let i = 0; i < accessor.count; i++) {
+      const elementOffset = baseOffset + i * stride;
+      for (let c = 0; c < componentCount; c++) {
+        const raw = readComponent(dataView, accessor.componentType, elementOffset + c * componentByteSize);
+        out[i * componentCount + c] = normalize ? normalizeComponent(accessor.componentType, raw) : raw;
+      }
+    }
+  } else if (accessor.sparse === undefined) {
+    warnings?.push(`readAccessor: bufferView ${bufferViewIndex} not found for accessor ${accessorIndex}`);
+    return { count: 0, data: new Float32Array(0) };
+  }
+
+  if (accessor.sparse !== undefined) {
+    applyAccessorSparse(
+      doc,
+      buffers,
+      accessor.sparse,
+      accessor.componentType,
+      componentCount,
+      normalize,
+      out,
+      warnings,
+    );
+  }
+
+  return { count: accessor.count, data: out };
+}
+
+// Applies an accessor's sparse override in place: reads `sparse.count` element indices and the matching
+// replacement elements, writing each element (componentCount values) over the base `out` array. Indices
+// and values are tightly packed in their own bufferViews (no byteStride, per the spec).
+function applyAccessorSparse(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  sparse: NonNullable<GltfAccessor['sparse']>,
+  valueComponentType: GltfComponentType,
+  componentCount: number,
+  normalize: boolean,
+  out: { [index: number]: number },
+  warnings?: string[],
+): void {
+  const indicesView = doc.bufferViews?.[sparse.indices.bufferView];
+  const valuesView = doc.bufferViews?.[sparse.values.bufferView];
+  if (indicesView === undefined || valuesView === undefined) {
+    warnings?.push('applyAccessorSparse: sparse indices or values bufferView not found; sparse override skipped');
+    return;
+  }
+  const indexBytes = buffers[indicesView.buffer];
+  const valueBytes = buffers[valuesView.buffer];
+  if (indexBytes === undefined || valueBytes === undefined) {
+    warnings?.push('applyAccessorSparse: sparse indices or values buffer not found; sparse override skipped');
+    return;
+  }
+  const indexView = new DataView(indexBytes.buffer);
+  const valueView = new DataView(valueBytes.buffer);
+  const indexSize = COMPONENT_BYTE_SIZE[sparse.indices.componentType];
+  const indexBase = indexBytes.byteOffset + (indicesView.byteOffset ?? 0) + (sparse.indices.byteOffset ?? 0);
+  const valueSize = COMPONENT_BYTE_SIZE[valueComponentType];
+  const valueBase = valueBytes.byteOffset + (valuesView.byteOffset ?? 0) + (sparse.values.byteOffset ?? 0);
+
+  for (let s = 0; s < sparse.count; s++) {
+    const targetIndex = readComponent(indexView, sparse.indices.componentType, indexBase + s * indexSize);
     for (let c = 0; c < componentCount; c++) {
-      const raw = readComponent(dataView, accessor.componentType, elementOffset + c * componentByteSize);
-      out[i * componentCount + c] = normalize ? normalizeComponent(accessor.componentType, raw) : raw;
+      const raw = readComponent(valueView, valueComponentType, valueBase + (s * componentCount + c) * valueSize);
+      out[targetIndex * componentCount + c] = normalize ? normalizeComponent(valueComponentType, raw) : raw;
     }
   }
-  return { count: accessor.count, data: out };
 }
 
 // Reads one component at a byte offset, little-endian per the glTF spec.
