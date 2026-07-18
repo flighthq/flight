@@ -5,7 +5,7 @@ import {
   sampleParticleColorCurve,
   sampleParticleCurve,
 } from '@flighthq/particles';
-import type { ParticleEmitter3D, ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
+import type { Matrix4, ParticleEmitter3D, ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D';
 
@@ -30,9 +30,15 @@ export function updateParticleEmitter3D(
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
   deltaTime: number,
+  // When config.worldSpace is set, this is the emitter's world transform: new particles are baked into
+  // world space at spawn (position through the full matrix, velocity through its rotation) so they stay
+  // put as the emitter moves — the renderer then draws them without re-applying the emitter transform.
+  // Omit it (or leave config.worldSpace false) for the default emitter-local behavior.
+  worldMatrix?: Readonly<Matrix4>,
 ): void {
   const data = emitter.data;
-  data.worldSpace = false;
+  data.worldSpace = config.worldSpace;
+  const worldM = config.worldSpace && worldMatrix != null ? worldMatrix.m : null;
 
   if (deltaTime <= 0) return;
 
@@ -295,6 +301,24 @@ export function updateParticleEmitter3D(
           spawnX = (state.random() - 0.5) * config.emitterWidth;
           spawnY = (state.random() - 0.5) * config.emitterHeight;
         }
+      }
+
+      // World-space: bake the spawn position (through the full matrix) and velocity (through its
+      // rotation) into world space so the particle no longer rides the emitter's transform.
+      if (worldM !== null) {
+        const m = worldM;
+        const px = m[0] * spawnX + m[4] * spawnY + m[8] * spawnZ + m[12];
+        const py = m[1] * spawnX + m[5] * spawnY + m[9] * spawnZ + m[13];
+        const pz = m[2] * spawnX + m[6] * spawnY + m[10] * spawnZ + m[14];
+        const wvx = m[0] * vx + m[4] * vy + m[8] * vz;
+        const wvy = m[1] * vx + m[5] * vy + m[9] * vz;
+        const wvz = m[2] * vx + m[6] * vy + m[10] * vz;
+        spawnX = px;
+        spawnY = py;
+        spawnZ = pz;
+        vx = wvx;
+        vy = wvy;
+        vz = wvz;
       }
 
       const vt = idx * PARTICLE_VELOCITY_STRIDE;
