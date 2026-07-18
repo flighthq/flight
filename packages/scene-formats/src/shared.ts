@@ -145,8 +145,10 @@ export function packSkinInfluences(influences: SkinInfluence[], outJoints: numbe
   }
 }
 
-// Reverses each triangle's winding (swaps v1 and v2). Pair with a det = -1 reflection such as
-// negateVec3Z so front faces stay front-facing after a handedness change.
+// Reverses each triangle's winding (swaps v1 and v2). Use whenever a source's front-face winding is
+// opposite to Flight's counter-clockwise-front convention: either paired with a det = -1 reflection
+// such as negateVec3Z (AWD/Stage3D) or on its own for a format whose native winding is clockwise
+// (MD5/id Tech 4, whose Z-up→Y-up rotation preserves the source's clockwise winding).
 export function reverseTriangleWinding(indices: number[]): void {
   for (let i = 0; i + 2 < indices.length; i += 3) {
     const tmp = indices[i + 1];

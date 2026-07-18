@@ -211,6 +211,21 @@ describe('createSceneFromMd5Mesh', () => {
     const ny = geometry.vertices[4];
     const nz = geometry.vertices[5];
     expect(Math.hypot(nx, ny, nz)).toBeCloseTo(1);
+    // With triangle winding reversed to Flight's CCW-front convention, the derived normal points
+    // −Y for this triangle (v0=(0,0,0), v1=(1,0,0), v2=(0,0,−1) in Y-up): (v2−v0)×(v1−v0) = (0,−1,0).
+    // Without the reversal it would point +Y (inward for a real model — the winding bug).
+    expect(nx).toBeCloseTo(0);
+    expect(ny).toBeCloseTo(-1);
+    expect(nz).toBeCloseTo(0);
+  });
+
+  it('reverses MD5 triangle winding to Flight CCW-front (front faces stay front under culling)', () => {
+    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const geometry = (getNodeChildren(scene)[1] as unknown as Mesh).geometry;
+    // MD5 declares "tri 0 0 1 2"; id Tech 4 winds clockwise, and the Z-up→Y-up conversion is a
+    // determinant-+1 rotation that preserves winding, so the parser reverses each triangle (swaps
+    // v1/v2) to land CCW-front. The index buffer therefore reads 0, 2, 1 rather than 0, 1, 2.
+    expect(Array.from(geometry.indices!)).toEqual([0, 2, 1]);
   });
 
   it('preserves UV coordinates', () => {

@@ -22,6 +22,7 @@ import {
   createExternalTextureRef,
   findSceneSkeletonJoints,
   packSkinInfluences,
+  reverseTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
 
@@ -268,10 +269,16 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
     // stride walk skips the other channels).
     convertPositionsZUpToYUp(vertices, SKINNED_FLOATS_PER_VERTEX, 0);
 
-    // Indices are stored directly.
     for (let t = 0; t < md5Mesh.indices.length; t++) {
       indices.push(md5Mesh.indices[t]);
     }
+
+    // id Tech 4 winds MD5 triangles clockwise (front-facing under D3's convention); the Z-up→Y-up
+    // position conversion is a rotation (determinant +1) so it preserves that winding, leaving the
+    // triangles clockwise in Flight's counter-clockwise-front space. Reverse them here so front faces
+    // stay front (backface culling) and computeMeshGeometryNormals — which crosses (v1−v0)×(v2−v0),
+    // the CCW convention — derives outward normals rather than inward. Mirrors the AWD importer.
+    reverseTriangleWinding(indices);
 
     if (indices.length > 0) {
       const geometry = createMeshGeometry({
