@@ -17,7 +17,9 @@ export function copyMaterial(out: Material, source: Readonly<Material>): void {
 }
 
 export function createMaterial(kind: Kind): Material {
-  return createEntity({ kind });
+  const material = createEntity({ kind }) as Material;
+  material.name = null;
+  return material;
 }
 
 // Structural equality for dedup, pooling, and serialization round-trips — NOT the batch

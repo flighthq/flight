@@ -27,6 +27,11 @@ describe('cloneMaterial', () => {
     const clone = cloneMaterial(original);
     expect(equalsMaterial(original, clone)).toBe(true);
   });
+  it('carries the authored name onto the clone', () => {
+    const original = createMaterial(TestMaterialKind);
+    original.name = 'canopy';
+    expect(cloneMaterial(original).name).toBe('canopy');
+  });
 });
 
 describe('copyMaterial', () => {
@@ -49,6 +54,10 @@ describe('createMaterial', () => {
   it('creates a material carrying the given kind', () => {
     const material = createMaterial(TestMaterialKind);
     expect(material.kind).toBe(TestMaterialKind);
+  });
+
+  it('defaults the authored name to null', () => {
+    expect(createMaterial(TestMaterialKind).name).toBeNull();
   });
 });
 
