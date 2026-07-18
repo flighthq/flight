@@ -323,6 +323,7 @@ describe('createSceneFromAwd', () => {
     const children = getNodeChildren(scene);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as SceneNode)).toBe(true);
+    expect((children[0] as SceneNode).name).toBe('TriMesh');
 
     const geometry = (children[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);

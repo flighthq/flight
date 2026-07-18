@@ -8,7 +8,12 @@ import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
 import { createTexture } from '@flighthq/texture';
 import type { AnimationClip, Material, SceneNode, Skeleton3D, Skin, Texture } from '@flighthq/types';
-import { ResourceResolutionState, SceneAnimationPathTranslation, SceneResourceRefKind } from '@flighthq/types';
+import {
+  MeshKind,
+  ResourceResolutionState,
+  SceneAnimationPathTranslation,
+  SceneResourceRefKind,
+} from '@flighthq/types';
 
 import {
   AWD_BLOCK_CONTAINER,
@@ -215,7 +220,11 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     let node: SceneNode;
     if (geometries !== undefined && geometries.length > 0) {
       if (geometries.length === 1) {
-        const mesh = createMesh(geometries[0].geometry, materialForSubset(meshInst, 0));
+        // node = mesh here, so the mesh carries the instance name directly; the multi-geometry
+        // branch instead names the wrapping container (its subset meshes stay anonymous parts).
+        const mesh = createMesh(geometries[0].geometry, materialForSubset(meshInst, 0), MeshKind, {
+          name: meshInst.name || undefined,
+        });
         if (skin !== null && geometries[0].skinned) mesh.skin = skin;
         node = mesh as unknown as SceneNode;
       } else {
