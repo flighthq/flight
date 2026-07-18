@@ -15,10 +15,10 @@ Gather everything that exists for `<package>` and read it fully:
 - `agents/packages/<name>/charter.md` — the current (likely stub) charter. (The cell lives under `agents/packages/`, **not** the repo-root `packages/` source tree — they collide by name; always full-path the cell artifacts.)
 - `agents/packages/<name>/review.md` — the current review: present capabilities, gaps.
 - `agents/packages/<name>/assessment.md` — the current assessment: Recommended, Backlog, Approved.
-- the worker report — `incoming/<bundle>/head/agents/status/<name>.md` (`incoming/` is at the repo root). **As-claimed** — verify against the diff before repeating any claim (e.g. a self-reported score) as fact.
-- the diff — `incoming/<bundle>/changes.patch` filtered to `packages/<name>/`, with `incoming/<bundle>/head/packages/<name>/` for current source. (Or the live tree, if not from a bundle.)
+- `agents/packages/<name>/status.md` — the developer handoff. **As-claimed** — verify against the source before repeating any claim (e.g. a self-reported score) as fact.
+- the live source — `packages/<name>/src/` (plus its git diff where relevant) for current state.
 
-Synthesize a **short briefing** (a synthesis, not a dump): what the package is, what the worker just did and _claimed_ (flag unverified claims), the most important gaps the review names, and — the point of the session — the **open questions only the user can answer**: boundaries, North star, which assessment items are wanted, and any design forks.
+Synthesize a **short briefing** (a synthesis, not a dump): what the package is, what was recently done and _claimed_ (flag unverified claims), the most important gaps the review names, and — the point of the session — the **open questions only the user can answer**: boundaries, North star, which assessment items are wanted, and any design forks.
 
 ## 2. Discuss direction, interactively
 

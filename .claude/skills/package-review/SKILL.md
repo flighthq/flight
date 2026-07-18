@@ -1,29 +1,20 @@
 ---
 name: package-review
 description: >-
-  Survey one Flight package and write its review.md — the independent observation layer of the per-package knowledge tree under agents/packages/<name>/. Reads evidence from EITHER the live worktree OR an incoming bundle under incoming/<worktree>-<sha>/, ingests the status.md, source and tests, and reasons against the package's charter.md and the contract (falling back to the codebase-map AAA standard where the charter is silent). Surfaces both how well the package lives up to the contract and where the contract/admin docs themselves need revising. Use when asked to "review a package", "survey <package>", "review the incoming bundle", "ingest the status docs", or to (re)generate review.md before assessment/approval. Read agents/packages/index.md first.
+  Survey one Flight package and write its review.md — the independent observation layer of the per-package knowledge tree under agents/packages/<name>/. Reads the package's live source, tests, and status.md, and reasons against its charter.md and the contract (falling back to the codebase-map AAA standard where the charter is silent). Surfaces both how well the package lives up to the contract and where the contract/admin docs themselves need revising. Use when asked to "review a package", "survey <package>", "ingest the status docs", or to (re)generate review.md before assessment/approval. Read agents/packages/index.md first.
 ---
 
 # Package Review
 
 You are the **survey layer**. Your output is `agents/packages/<name>/review.md`: a clear, honest observation of where the package is. You **observe**; you do not decide what to do next (that is the assessment layer) and you do not set vision (that is the charter). Read `agents/packages/index.md` and `CONTRACT.md` once before starting.
 
-## Evidence source — live or bundle
-
-Decide where the package's code evidence comes from before you start:
-
-- **Live worktree** (default): read `packages/<name>/src/` directly. Use when reviewing work that is already in this worktree.
-- **Incoming bundle** (`incoming/` is at the repo root, _not_ under `agents/`): when reviewing work pulled from another worktree, read from `incoming/<worktree>-<sha>/head/packages/<name>/` and the bundle's `changes.patch` instead of the live tree. The bundle is git-free and self-contained; its `MANIFEST.json › packages` tells you which packages changed and which carry a status doc, and `head/packages/<name>/dist/*.d.ts` is the realized public API surface. Reference findings as `<sha>:<path>`.
-
-Everything below is identical either way — only the root of the source paths changes.
-
 ## Inputs to ingest
 
 Read all of these before writing a word:
 
 1. **`agents/packages/<name>/charter.md`** — the rubric. The vision, North star, Boundaries, Decisions, and Open directions. This is what you judge the package _against_.
-2. **the status doc** — `agents/packages/<name>/status.md` (live) or `head/agents/status/<name>.md` (bundle). The developer handoff: what was just changed, what is in-flight, what to watch. A primary signal, not gospel — verify its claims against the source.
-3. **the source** — `packages/<name>/src/` (live) or `incoming/<worktree>-<sha>/head/packages/<name>/` (bundle), plus colocated `*.test.ts`. Ground every claim here.
+2. **the status doc** — `agents/packages/<name>/status.md`. The developer handoff: what was just changed, what is in-flight, what to watch. A primary signal, not gospel — verify its claims against the source.
+3. **the source** — `packages/<name>/src/`, plus colocated `*.test.ts`. Ground every claim here.
 4. **`agents/packages/CONTRACT.md`** and **`index.md`** — the artifact contract and architecture. You judge the package against the charter _and_ against these.
 
 ## The rubric rule

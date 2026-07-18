@@ -218,7 +218,7 @@ if (noItems.length > 0) {
 
 lines.push('## Liveness — which stage each stale cell needs next');
 lines.push('');
-lines.push('Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; workers can ignore it.');
+lines.push('Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.');
 lines.push('');
 const liveness = [
   ['Needs a direction session (charter stub or never directed)', needsDirection.map((n) => `\`${n}\``)],

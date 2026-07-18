@@ -12,7 +12,7 @@ You write a FIRST-PASS, UNBLESSED charter so the user **edits** rather than auth
 
 - `agents/packages/<name>/review.md` — the verified observation (identity, capabilities, gaps, contract-fit findings, candidate open directions). Your primary source.
 - `agents/packages/structural-forks.md` — the SDK-wide forks the charter must reflect where they touch this package (source-data/node, registry-by-default, the subject triad, bedrock, 2D/3D additivity).
-- the package source (incoming bundle head, or live) — for the domain framing.
+- the package source (`packages/<name>/src/`) — for the domain framing.
 
 ## Output: a DRAFT `charter.md`
 
