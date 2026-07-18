@@ -1,3 +1,4 @@
+import { createAabb } from '@flighthq/geometry';
 import { ParticleEmitter3DKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -5,7 +6,9 @@ import {
   PARTICLE_EMITTER_3D_DELETED_ID,
   appendParticleEmitter3DParticle,
   clearParticleEmitter3D,
+  cloneParticleEmitter3D,
   compactParticleEmitter3D,
+  computeParticleEmitter3DLocalBoundsAabb,
   createParticleEmitter3D,
   getParticleEmitter3DCapacity,
   getParticleEmitter3DParticleAlpha,
@@ -56,6 +59,27 @@ describe('clearParticleEmitter3D', () => {
   });
 });
 
+describe('cloneParticleEmitter3D', () => {
+  it('deep-copies particle buffers and preserves blendMode and worldSpace', () => {
+    const emitter = createParticleEmitter3D({ blendMode: 'add' });
+    emitter.data.worldSpace = true;
+    appendParticleEmitter3DParticle(emitter, 7, 1, 2, 3, 0.5, 2);
+    setParticleEmitter3DParticleVelocity(emitter, 0, 4, 5, 6);
+    const clone = cloneParticleEmitter3D(emitter);
+    expect(clone.blendMode).toBe('add');
+    expect(clone.data.worldSpace).toBe(true);
+    expect(clone.data.particleCount).toBe(1);
+    expect(clone.data.transforms[0]).toBe(1);
+    expect(clone.data.positionsZ[0]).toBe(3);
+    const out = { x: 0, y: 0, z: 0 };
+    getParticleEmitter3DParticleVelocity(out, clone, 0);
+    expect(out.z).toBeCloseTo(6);
+    // Buffers are sliced, not shared: mutating the clone leaves the source untouched.
+    clone.data.transforms[0] = 99;
+    expect(emitter.data.transforms[0]).toBe(1);
+  });
+});
+
 describe('compactParticleEmitter3D', () => {
   it('removes deleted particles and preserves order', () => {
     const emitter = createParticleEmitter3D();
@@ -89,6 +113,31 @@ describe('compactParticleEmitter3D', () => {
     const emitter = createParticleEmitter3D();
     compactParticleEmitter3D(emitter);
     expect(emitter.data.particleCount).toBe(0);
+  });
+});
+
+describe('computeParticleEmitter3DLocalBoundsAabb', () => {
+  it('is an empty box for an emitter with no particles', () => {
+    const emitter = createParticleEmitter3D();
+    const out = createAabb();
+    computeParticleEmitter3DLocalBoundsAabb(out, emitter);
+    expect(out.min.x).toBe(0);
+    expect(out.max.z).toBe(0);
+  });
+
+  it('bounds every particle center expanded by the billboard radius', () => {
+    const emitter = createParticleEmitter3D();
+    appendParticleEmitter3DParticle(emitter, 1, 0, 0, 0, 0, 2);
+    appendParticleEmitter3DParticle(emitter, 2, 10, -4, 6, 0, 2);
+    const out = createAabb();
+    computeParticleEmitter3DLocalBoundsAabb(out, emitter);
+    const r = Math.SQRT1_2 * 2;
+    expect(out.min.x).toBeCloseTo(-r);
+    expect(out.min.y).toBeCloseTo(-4 - r);
+    expect(out.min.z).toBeCloseTo(-r);
+    expect(out.max.x).toBeCloseTo(10 + r);
+    expect(out.max.y).toBeCloseTo(r);
+    expect(out.max.z).toBeCloseTo(6 + r);
   });
 });
 

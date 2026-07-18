@@ -1,6 +1,7 @@
 import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry';
 import { createSceneNode, getSceneNodeRuntime } from '@flighthq/scene';
 import type {
+  AabbLike,
   ParticleEmitter3D,
   ParticleEmitter3DRuntime,
   ParticleEmitterData,
@@ -59,6 +60,24 @@ export function clearParticleEmitter3D(target: ParticleEmitter3D): void {
   target.data.particleCount = 0;
 }
 
+export function cloneParticleEmitter3D(source: Readonly<ParticleEmitter3D>): ParticleEmitter3D {
+  const src = source.data;
+  return createParticleEmitter3D({
+    blendMode: source.blendMode,
+    data: {
+      alphas: src.alphas.slice(),
+      atlas: src.atlas,
+      colors: src.colors.slice(),
+      ids: src.ids.slice(),
+      particleCount: src.particleCount,
+      positionsZ: src.positionsZ.slice(),
+      transforms: src.transforms.slice(),
+      velocities: src.velocities.slice(),
+      worldSpace: src.worldSpace,
+    },
+  });
+}
+
 export function compactParticleEmitter3D(target: ParticleEmitter3D): void {
   const data = target.data;
   if (data.particleCount === 0) return;
@@ -89,6 +108,47 @@ export function compactParticleEmitter3D(target: ParticleEmitter3D): void {
     write++;
   }
   data.particleCount = write;
+}
+
+export function computeParticleEmitter3DLocalBoundsAabb(out: AabbLike, source: Readonly<ParticleEmitter3D>): void {
+  const { particleCount, positionsZ, transforms } = source.data;
+  if (particleCount === 0) {
+    out.min.x = 0;
+    out.min.y = 0;
+    out.min.z = 0;
+    out.max.x = 0;
+    out.max.y = 0;
+    out.max.z = 0;
+    return;
+  }
+  let minX = Infinity;
+  let minY = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let maxZ = -Infinity;
+  for (let i = 0; i < particleCount; i++) {
+    const tt = i * PARTICLE_TRANSFORM_STRIDE;
+    const px = transforms[tt];
+    const py = transforms[tt + 1];
+    const pz = positionsZ[i];
+    // Particles render as camera-facing billboards, so bound each by a conservative axis-aligned box
+    // around its center: half the diagonal of a unit-max quad (0.5·√2 = SQRT1_2) times the particle scale.
+    const scale = transforms[tt + 3];
+    const r = Math.SQRT1_2 * (scale < 0 ? -scale : scale);
+    if (px - r < minX) minX = px - r;
+    if (py - r < minY) minY = py - r;
+    if (pz - r < minZ) minZ = pz - r;
+    if (px + r > maxX) maxX = px + r;
+    if (py + r > maxY) maxY = py + r;
+    if (pz + r > maxZ) maxZ = pz + r;
+  }
+  out.min.x = minX;
+  out.min.y = minY;
+  out.min.z = minZ;
+  out.max.x = maxX;
+  out.max.y = maxY;
+  out.max.z = maxZ;
 }
 
 export function createParticleEmitter3D(obj?: Readonly<PartialNode<ParticleEmitter3D>>): ParticleEmitter3D {
