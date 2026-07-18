@@ -13,6 +13,7 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     hasMetallicRoughnessMap: false,
     hasNormalMap: false,
     hasOcclusionMap: false,
+    hasUvTransform: false,
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
@@ -93,7 +94,7 @@ describe('ensureGlPbrProgram', () => {
     const skinned = ensureGlPbrProgram(state, KEY);
 
     expect(skinned).not.toBe(rigid);
-    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('pbr:------:-------k');
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('pbr:-------:-------k');
     expect(skinned.locJointMatrices).not.toBeNull();
   });
 

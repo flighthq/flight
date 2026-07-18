@@ -1,8 +1,10 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import { bindGlTexture } from '@flighthq/render-gl';
+import { hasTextureUvTransform } from '@flighthq/texture';
 import type { GlRenderState, StandardPbrMaterialProperties, Texture } from '@flighthq/types';
 
+import { bindGlUvTransform } from './glMeshProgram';
 import type { GlPbrDefineKey } from './glPbrPrelude';
 import type { GlPbrProgram } from './glPbrProgramCache';
 
@@ -66,6 +68,8 @@ export function bindGlPbrStandardBlock(
   );
   bindGlPbrStandardTexture(state, standard.occlusionMap, program.locOcclusionMap, GL_PBR_OCCLUSION_TEXTURE_UNIT);
   bindGlPbrStandardTexture(state, standard.emissiveMap, program.locEmissiveMap, GL_PBR_EMISSIVE_TEXTURE_UNIT);
+  // The base-color map's uv transform drives the shared v_uv0 that every standard map samples.
+  bindGlUvTransform(gl, program, standard.baseColorMap);
 }
 
 // Binds one texture to a numbered unit and points its sampler uniform there, if the slot has
@@ -94,15 +98,19 @@ export function buildGlPbrStandardDefineKey(
   standard: Readonly<StandardPbrMaterialProperties> | null,
   alphaMaskEnabled: boolean,
 ): GlPbrDefineKey {
+  const baseColorMap = standard?.baseColorMap ?? null;
   return {
     alphaMaskEnabled,
     anisotropyEnabled: false,
     clearcoatEnabled: false,
-    hasBaseColorMap: isGlTextureReady(standard?.baseColorMap ?? null),
+    hasBaseColorMap: isGlTextureReady(baseColorMap),
     hasEmissiveMap: isGlTextureReady(standard?.emissiveMap ?? null),
     hasMetallicRoughnessMap: isGlTextureReady(standard?.metallicRoughnessMap ?? null),
     hasNormalMap: isGlTextureReady(standard?.normalMap ?? null),
     hasOcclusionMap: isGlTextureReady(standard?.occlusionMap ?? null),
+    // Gated on the same readiness test as hasBaseColorMap so the transforming variant compiles only
+    // when the base map is actually bound and carries a non-identity transform.
+    hasUvTransform: baseColorMap !== null && isGlTextureReady(baseColorMap) && hasTextureUvTransform(baseColorMap),
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,

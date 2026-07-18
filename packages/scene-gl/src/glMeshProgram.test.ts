@@ -2,15 +2,18 @@ import { createCamera } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera } from '@flighthq/types';
+import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture';
+import type { Camera, ImageResource } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import {
   beginGlMeshDraw,
+  bindGlUvTransform,
   compileGlProgram,
   destroyGlMeshProgram,
   drawGlMeshSubset,
   ensureGlSceneProgram,
+  hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
@@ -42,6 +45,37 @@ describe('beginGlMeshDraw', () => {
     const { state, gl } = makeGlSceneState();
     beginGlMeshDraw(state, makeProgram(), true);
     expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+  });
+});
+
+describe('bindGlUvTransform', () => {
+  it('uploads the KHR transform as a column-major mat3 with transpose=false', () => {
+    const gl = makeFakeGl2();
+    const program = makeProgram();
+    const texture = createTexture();
+    setTextureUvScale(texture, 2, 3);
+    // Exactly-representable float32 offsets so the upload buffer compares without rounding slop.
+    setTextureUvOffset(texture, 0.5, 0.25);
+
+    bindGlUvTransform(gl, program, texture);
+
+    const call = gl.calls.find((c) => c.name === 'uniformMatrix3fv');
+    expect(call).toBeDefined();
+    // transpose=false: the buffer is already column-major (col0 = U axis, col1 = V axis, col2 = xlate).
+    expect(call?.args[1]).toBe(false);
+    // `+ 0` normalizes the -0 from -sy*sin(0) to +0 so the column-major buffer compares cleanly.
+    const uploaded = Array.from(call?.args[2] as Float32Array).map((n) => n + 0);
+    expect(uploaded).toEqual([2, 0, 0, 0, 3, 0, 0.5, 0.25, 1]);
+  });
+
+  it('resolves the location once and skips the upload for a null texture', () => {
+    const gl = makeFakeGl2();
+    const program = makeProgram();
+
+    bindGlUvTransform(gl, program, null);
+
+    expect(gl.calls.filter((c) => c.name === 'getUniformLocation' && c.args[0] === 'u_uvTransform').length).toBe(1);
+    expect(gl.calls.some((c) => c.name === 'uniformMatrix3fv')).toBe(false);
   });
 });
 
@@ -214,6 +248,30 @@ describe('ensureGlSceneProgram', () => {
     ensureGlSceneProgram(state, 'fam:b', makeProgram);
     // Two distinct keys → two cached entries (the shared programCache spans every family).
     ensureGlSceneProgram(state, 'fam:a', makeProgram);
+  });
+});
+
+describe('hasGlUvTransform', () => {
+  it('is false for a null texture', () => {
+    expect(hasGlUvTransform(null)).toBe(false);
+  });
+
+  it('is false for an identity transform even with a bound image', () => {
+    expect(hasGlUvTransform(createTexture({ image: {} as ImageResource }))).toBe(false);
+  });
+
+  it('is false for a non-identity transform whose image is unbound', () => {
+    const texture = createTexture();
+    setTextureUvScale(texture, 2, 2);
+
+    expect(hasGlUvTransform(texture)).toBe(false);
+  });
+
+  it('is true only when a bound image carries a non-identity transform', () => {
+    const texture = createTexture({ image: {} as ImageResource });
+    setTextureUvScale(texture, 2, 2);
+
+    expect(hasGlUvTransform(texture)).toBe(true);
   });
 });
 

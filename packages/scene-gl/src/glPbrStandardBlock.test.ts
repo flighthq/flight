@@ -53,6 +53,7 @@ describe('buildGlPbrStandardDefineKey', () => {
     expect(key.hasEmissiveMap).toBe(false);
     expect(key.hasMetallicRoughnessMap).toBe(false);
     expect(key.hasOcclusionMap).toBe(false);
+    expect(key.hasUvTransform).toBe(false);
     expect(key.transmissionEnabled).toBe(false);
   });
 });

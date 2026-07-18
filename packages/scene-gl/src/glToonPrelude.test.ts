@@ -9,17 +9,29 @@ import {
   getGlToonVertexSourceForKey,
 } from './glToonPrelude';
 
-const FLAT: GlToonDefineKey = { alphaMaskEnabled: false, hasBaseColorMap: false, hasRamp: false };
+const FLAT: GlToonDefineKey = {
+  alphaMaskEnabled: false,
+  hasBaseColorMap: false,
+  hasRamp: false,
+  hasUvTransform: false,
+};
 
 describe('buildGlToonDefineKey', () => {
   it('produces distinct stable strings per flag set', () => {
-    expect(buildGlToonDefineKey(FLAT)).toBe('----');
-    expect(buildGlToonDefineKey({ alphaMaskEnabled: true, hasBaseColorMap: true, hasRamp: true })).toBe('mbr-');
-    expect(buildGlToonDefineKey({ ...FLAT, hasRamp: true })).toBe('--r-');
+    expect(buildGlToonDefineKey(FLAT)).toBe('-----');
+    expect(
+      buildGlToonDefineKey({ alphaMaskEnabled: true, hasBaseColorMap: true, hasRamp: true, hasUvTransform: true }),
+    ).toBe('mbru-');
+    expect(buildGlToonDefineKey({ ...FLAT, hasRamp: true })).toBe('--r--');
+  });
+
+  it('encodes a non-identity uv transform in the u slot ahead of skin', () => {
+    expect(buildGlToonDefineKey({ ...FLAT, hasUvTransform: true })).toBe('---u-');
+    expect(buildGlToonDefineKey({ ...FLAT, hasUvTransform: true })).not.toBe(buildGlToonDefineKey(FLAT));
   });
 
   it('appends a skinned flag that differs from the rigid key', () => {
-    expect(buildGlToonDefineKey({ ...FLAT, hasSkin: true })).toBe('---k');
+    expect(buildGlToonDefineKey({ ...FLAT, hasSkin: true })).toBe('----k');
     expect(buildGlToonDefineKey({ ...FLAT, hasSkin: true })).not.toBe(buildGlToonDefineKey(FLAT));
   });
 });

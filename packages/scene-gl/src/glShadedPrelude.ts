@@ -8,6 +8,7 @@ import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram'
 import {
   GL_MAX_SKIN_JOINTS,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlSceneProgram,
 } from './glMeshProgram';
@@ -27,6 +28,10 @@ export interface GlShadedDefineKey {
   // skinning keys off geometry.
   hasSkin?: boolean;
   hasSpecularMap: boolean;
+  // Whether the diffuse map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
+  // shared v_uv0 the diffuse/specular/normal maps and modifier snippets sample. Set only when
+  // hasDiffuseMap is also true.
+  hasUvTransform: boolean;
 }
 
 // A compiled ShadedMaterial program plus its resolved uniform locations. Extends GlLitProgram (the
@@ -55,7 +60,7 @@ export interface GlShadedProgram extends GlLitProgram {
 export function buildGlShadedCacheKey(key: Readonly<GlShadedDefineKey>, modifierDefineKey: string): string {
   const base = `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasDiffuseMap ? 'd' : '-'}${key.hasSpecularMap ? 's' : '-'}${
     key.hasNormalMap ? 'n' : '-'
-  }${key.hasSkin ? 'k' : '-'}`;
+  }${key.hasUvTransform ? 'u' : '-'}${key.hasSkin ? 'k' : '-'}`;
   return `shaded:${base}|${modifierDefineKey}`;
 }
 
@@ -162,6 +167,7 @@ function buildGlShadedDefineSource(key: Readonly<GlShadedDefineKey>): string {
   if (key.hasDiffuseMap) defines += '#define HAS_DIFFUSE_MAP\n';
   if (key.hasSpecularMap) defines += '#define HAS_SPECULAR_MAP\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
+  if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
@@ -175,7 +181,7 @@ layout(location = 3) in vec2 a_uv0;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
 uniform mat3 u_normalMatrix;
-
+${GL_UV_TRANSFORM_VERTEX_GLSL}
 out vec3 v_worldPosition;
 out vec3 v_normal;
 out vec4 v_tangent;
@@ -196,7 +202,7 @@ void main() {
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
   v_tangent = vec4(u_normalMatrix * localTangent, a_tangent.w);
-  v_uv0 = a_uv0;
+  v_uv0 = applyUvTransform(a_uv0);
   gl_Position = u_viewProjection * worldPosition;
 }
 `;

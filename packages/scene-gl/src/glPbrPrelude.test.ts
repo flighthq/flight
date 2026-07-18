@@ -18,6 +18,7 @@ function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
     hasMetallicRoughnessMap: false,
     hasNormalMap: false,
     hasOcclusionMap: false,
+    hasUvTransform: false,
     iridescenceEnabled: false,
     sheenEnabled: false,
     specularEnabled: false,
@@ -49,15 +50,20 @@ const ALL = makeKey({
 
 describe('buildGlPbrDefineKey', () => {
   it('produces a stable, distinct string per flag set', () => {
-    expect(buildGlPbrDefineKey(NONE)).toBe('------:--------');
-    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe:--------');
-    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe:CSAIPUT-');
-    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b----:--------');
-    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('------:C-------');
+    expect(buildGlPbrDefineKey(NONE)).toBe('-------:--------');
+    expect(buildGlPbrDefineKey(STANDARD_ALL)).toBe('mbnroe-:--------');
+    expect(buildGlPbrDefineKey(ALL)).toBe('mbnroe-:CSAIPUT-');
+    expect(buildGlPbrDefineKey(makeKey({ hasBaseColorMap: true }))).toBe('-b-----:--------');
+    expect(buildGlPbrDefineKey(makeKey({ clearcoatEnabled: true }))).toBe('-------:C-------');
+  });
+
+  it('encodes the HAS_UV_TRANSFORM variant as a distinct standard-block slot', () => {
+    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).toBe('------u:--------');
+    expect(buildGlPbrDefineKey(makeKey({ hasUvTransform: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 
   it('encodes the HAS_SKIN variant as a distinct trailing slot', () => {
-    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('------:-------k');
+    expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).toBe('-------:-------k');
     expect(buildGlPbrDefineKey(makeKey({ hasSkin: true }))).not.toBe(buildGlPbrDefineKey(NONE));
   });
 

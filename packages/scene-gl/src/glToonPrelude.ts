@@ -6,6 +6,7 @@ import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram'
 import {
   GL_MAX_SKIN_JOINTS,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+  GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlSceneProgram,
 } from './glMeshProgram';
@@ -41,6 +42,9 @@ export interface GlToonDefineKey {
   hasRamp: boolean;
   // Set by ensureGlToonProgram from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
   hasSkin?: boolean;
+  // Whether the base-color map carries a non-identity uv transform (HAS_UV_TRANSFORM). Set only when
+  // hasBaseColorMap is also true, since the transform applies to the sampled albedo tint.
+  hasUvTransform: boolean;
 }
 
 // A compiled Toon uber-shader variant plus its resolved uniform locations. One exists per distinct
@@ -60,8 +64,8 @@ export interface GlToonProgram extends GlLitProgram {
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {
   return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasBaseColorMap ? 'b' : '-'}${key.hasRamp ? 'r' : '-'}${
-    key.hasSkin ? 'k' : '-'
-  }`;
+    key.hasUvTransform ? 'u' : '-'
+  }${key.hasSkin ? 'k' : '-'}`;
 }
 
 // Compiles the Toon uber-shader for a define key, links it, and resolves its uniform locations.
@@ -117,6 +121,7 @@ function buildGlToonDefineSource(key: Readonly<GlToonDefineKey>): string {
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasBaseColorMap) defines += '#define HAS_BASE_COLOR_MAP\n';
   if (key.hasRamp) defines += '#define HAS_RAMP\n';
+  if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${GL_MAX_SKIN_JOINTS}\n`;
   return defines;
 }
@@ -129,7 +134,7 @@ layout(location = 3) in vec2 a_uv0;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
 uniform mat3 u_normalMatrix;
-
+${GL_UV_TRANSFORM_VERTEX_GLSL}
 out vec3 v_worldPosition;
 out vec3 v_normal;
 out vec2 v_uv0;
@@ -146,7 +151,7 @@ void main() {
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
-  v_uv0 = a_uv0;
+  v_uv0 = applyUvTransform(a_uv0);
   gl_Position = u_viewProjection * worldPosition;
 }
 `;

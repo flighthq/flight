@@ -12,7 +12,12 @@ import {
   getGlUnlitVertexSourceForKey,
 } from './glUnlitPrelude';
 
-const FLAT: GlUnlitDefineKey = { alphaMaskEnabled: false, hasColorMap: false, vertexColor: false };
+const FLAT: GlUnlitDefineKey = {
+  alphaMaskEnabled: false,
+  hasColorMap: false,
+  hasUvTransform: false,
+  vertexColor: false,
+};
 const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
 
 describe('bindGlUnlitSurface', () => {
@@ -29,9 +34,16 @@ describe('bindGlUnlitSurface', () => {
 
 describe('buildGlUnlitDefineKey', () => {
   it('produces distinct stable strings per flag set', () => {
-    expect(buildGlUnlitDefineKey(FLAT)).toBe('----');
-    expect(buildGlUnlitDefineKey({ alphaMaskEnabled: true, hasColorMap: true, vertexColor: true })).toBe('mcv-');
-    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('--v-');
+    expect(buildGlUnlitDefineKey(FLAT)).toBe('-----');
+    expect(
+      buildGlUnlitDefineKey({ alphaMaskEnabled: true, hasColorMap: true, hasUvTransform: true, vertexColor: true }),
+    ).toBe('mcvu-');
+    expect(buildGlUnlitDefineKey({ ...FLAT, vertexColor: true })).toBe('--v--');
+  });
+
+  it('encodes a non-identity uv transform with a u slot and keys it distinctly', () => {
+    expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).toBe('---u-');
+    expect(buildGlUnlitDefineKey({ ...FLAT, hasUvTransform: true })).not.toBe(buildGlUnlitDefineKey(FLAT));
   });
 
   it('encodes the skinned variant with a trailing k and keys it distinctly', () => {
@@ -87,6 +99,15 @@ describe('getGlUnlitVertexSourceForKey', () => {
     expect(getGlUnlitVertexSourceForKey({ ...FLAT, vertexColor: true })).toContain('#define VERTEX_COLOR');
     // The color0 attribute lives behind the #ifdef, so it is present in the body string either way.
     expect(getGlUnlitVertexSourceForKey({ ...FLAT, vertexColor: true })).toContain('a_color0');
+  });
+
+  it('defines HAS_UV_TRANSFORM and applies the transform only in the uv-transform variant', () => {
+    // applyUvTransform is always in the body (identity when undefined); the define + uniform are gated.
+    expect(getGlUnlitVertexSourceForKey(FLAT)).not.toContain('#define HAS_UV_TRANSFORM');
+    const transformed = getGlUnlitVertexSourceForKey({ ...FLAT, hasColorMap: true, hasUvTransform: true });
+    expect(transformed).toContain('#define HAS_UV_TRANSFORM');
+    expect(transformed).toContain('uniform mat3 u_uvTransform');
+    expect(transformed).toContain('v_uv0 = applyUvTransform(a_uv0)');
   });
 
   it('splices the skin declarations and HAS_SKIN defines only in the skinned variant', () => {

@@ -13,7 +13,13 @@ import type {
 import { UnlitMaterialKind } from '@flighthq/types';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 import type { GlUnlitDefineKey } from './glUnlitPrelude';
 import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
@@ -41,6 +47,7 @@ export const unlitGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     }
     unpackColorToLinear(scratchRgba, unlit.baseColor);
     bindGlUnlitSurface(state, program, scratchRgba, 1, unlit.baseColorMap, unlit.alphaCutoff);
+    bindGlUvTransform(gl, program, unlit.baseColorMap);
   },
 
   draw(state: GlRenderState, proxy: Readonly<SceneRenderProxy>, geometry: Readonly<MeshGeometry>): void {
@@ -60,6 +67,7 @@ function defineKeyForMaterial(material: Readonly<UnlitMaterial> | null): GlUnlit
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     hasColorMap: material !== null && material.baseColorMap !== null && material.baseColorMap.image !== null,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.baseColorMap : null),
     vertexColor: false,
   };
 }

@@ -18,7 +18,13 @@ import type { GlClassicProgram } from './glClassicPrelude';
 import { ensureGlClassicProgram } from './glClassicPrelude';
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
+import {
+  beginGlMeshDraw,
+  bindGlUvTransform,
+  drawGlMeshSubset,
+  hasGlUvTransform,
+  setGlMeshViewProjection,
+} from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
 // The built-in classic Lambert forward-lit mesh-material renderer (GlMeshMaterialRenderer for
@@ -79,6 +85,7 @@ function bindGlLambertMaterialUniforms(
     bindGlTexture(state, diffuseMap.image.source);
     gl.uniform1i(program.locDiffuseMap, 0);
   }
+  bindGlUvTransform(gl, program, diffuseMap);
 }
 
 // The feature define key for a Lambert material: the fixed `lambert` lighting model plus which optional
@@ -89,6 +96,7 @@ function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): GlCla
     hasDiffuseMap: material !== null && material.diffuseMap !== null && material.diffuseMap.image !== null,
     hasNormalMap: false,
     hasSpecularMap: false,
+    hasUvTransform: hasGlUvTransform(material !== null ? material.diffuseMap : null),
     lightingModel: 'lambert',
   };
 }

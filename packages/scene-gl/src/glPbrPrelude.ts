@@ -26,7 +26,7 @@
 
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
-import { GL_MAX_SKIN_JOINTS, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
+import { GL_MAX_SKIN_JOINTS, GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
 
 // The feature flags that select an uber-shader variant. Each toggles an #ifdef in the prelude and
 // is hashed into the program-cache key (buildGlPbrDefineKey), so distinct flag sets compile and
@@ -46,6 +46,9 @@ export interface GlPbrDefineKey {
   hasOcclusionMap: boolean;
   // Set by ensureGlPbrProgram from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
   hasSkin?: boolean;
+  // Whether the base-color map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
+  // shared v_uv0 every standard map samples. Set only when hasBaseColorMap is also true.
+  hasUvTransform: boolean;
   iridescenceEnabled: boolean;
   sheenEnabled: boolean;
   specularEnabled: boolean;
@@ -64,6 +67,7 @@ export function buildGlPbrDefineKey(key: Readonly<GlPbrDefineKey>): string {
     `${key.hasMetallicRoughnessMap ? 'r' : '-'}` +
     `${key.hasOcclusionMap ? 'o' : '-'}` +
     `${key.hasEmissiveMap ? 'e' : '-'}` +
+    `${key.hasUvTransform ? 'u' : '-'}` +
     `:${key.clearcoatEnabled ? 'C' : '-'}` +
     `${key.sheenEnabled ? 'S' : '-'}` +
     `${key.anisotropyEnabled ? 'A' : '-'}` +
@@ -82,6 +86,7 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   let defines = `#version 300 es\n#define MAX_FORWARD_LIGHTS ${MAX_FORWARD_LIGHTS}\n`;
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasBaseColorMap) defines += '#define HAS_BASE_COLOR_MAP\n';
+  if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
   if (key.hasMetallicRoughnessMap) defines += '#define HAS_METALLIC_ROUGHNESS_MAP\n';
   if (key.hasOcclusionMap) defines += '#define HAS_OCCLUSION_MAP\n';
@@ -133,7 +138,7 @@ layout(location = 3) in vec2 a_uv0;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
 uniform mat3 u_normalMatrix;
-
+${GL_UV_TRANSFORM_VERTEX_GLSL}
 out vec3 v_worldPosition;
 out vec3 v_normal;
 out vec4 v_tangent;
@@ -154,7 +159,7 @@ void main() {
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
   v_tangent = vec4(u_normalMatrix * localTangent, a_tangent.w);
-  v_uv0 = a_uv0;
+  v_uv0 = applyUvTransform(a_uv0);
   gl_Position = u_viewProjection * worldPosition;
 }
 `;
