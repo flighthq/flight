@@ -1,6 +1,6 @@
 import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
-import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
+import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget, updateGlEnvironmentCubeFace } from './glEnvironmentCube';
 import { makeGlSceneState } from './glSceneTestHelper';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` capture (jsdom has no real
@@ -50,5 +50,22 @@ describe('getGlCubeFaceTarget', () => {
     const gl = { TEXTURE_CUBE_MAP_POSITIVE_X: 0x8515 } as WebGL2RenderingContext;
     expect(getGlCubeFaceTarget(gl, 0)).toBe(0x8515);
     expect(getGlCubeFaceTarget(gl, 5)).toBe(0x851a);
+  });
+});
+
+describe('updateGlEnvironmentCubeFace', () => {
+  it('returns false when no source cube has been built yet', () => {
+    const { state, gl } = makeGlSceneState();
+    expect(updateGlEnvironmentCubeFace(state, 2, dataFace(4))).toBe(false);
+    expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(false);
+  });
+
+  it('restamps a single face of the built cube without rebuilding the other five', () => {
+    const { state, gl } = makeGlSceneState();
+    ensureGlEnvironmentSourceCube(state, dataOnlyEnvironment(4));
+    const afterBuild = gl.calls.filter((c) => c.name === 'texImage2D').length;
+    expect(afterBuild).toBe(6);
+    expect(updateGlEnvironmentCubeFace(state, 2, dataFace(4))).toBe(true);
+    expect(gl.calls.filter((c) => c.name === 'texImage2D').length).toBe(afterBuild + 1);
   });
 });
