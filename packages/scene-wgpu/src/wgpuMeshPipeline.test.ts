@@ -412,7 +412,7 @@ describe('writeWgpuDrawUniform', () => {
     expect(getWgpuSceneRuntime(state).pendingDrawOffset).toBe(0);
   });
 
-  it('folds the stashed uv transform into the draw uniform then resets the stash to identity', () => {
+  it('folds the stashed uv transform into the draw uniform', () => {
     const { state } = makeWgpuSceneState();
     const texture = createTexture({ image: {} as ImageResource });
     setTextureUvScale(texture, 2, 3);
@@ -424,8 +424,28 @@ describe('writeWgpuDrawUniform', () => {
     const u = getWgpuRenderStateRuntime(state).uniformData;
     expect([u[28], u[29], u[30]].map((n) => n + 0)).toEqual([2, 0, 0]);
     expect([u[32], u[33], u[34]].map((n) => n + 0)).toEqual([0, 3, 0]);
-    // Consumed: the stash is back to identity so a following draw without a stash gets the untiled uv.
-    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  });
+
+  it('persists the stash across draws so a material shared by many meshes tiles every one', () => {
+    // Regression: drawWgpuScene binds once per material then draws many meshes. The stash must survive
+    // each writeWgpuDrawUniform (not be consumed), or only the first mesh under a bind would tile.
+    const { state } = makeWgpuSceneState();
+    const texture = createTexture({ image: {} as ImageResource });
+    setTextureUvScale(texture, 2, 3);
+    stashWgpuUvTransform(state, texture);
+
+    writeWgpuDrawUniform(state, makeProxy());
+    // Not consumed — the stash still holds the transform for the next mesh under the same bind.
+    expect(Array.from(getWgpuSceneRuntime(state).pendingUvTransform).map((n) => n + 0)).toEqual([
+      2, 0, 0, 0, 3, 0, 0, 0, 1,
+    ]);
+
+    // The second draw (no re-stash) folds the same transform into its own ring slot.
+    const secondBase = getWgpuRenderStateRuntime(state).uniformOffset / 4;
+    writeWgpuDrawUniform(state, makeProxy());
+    const u = getWgpuRenderStateRuntime(state).uniformData;
+    // col0.x = scaleX at +28, col1.y = scaleY at +33.
+    expect([u[secondBase + 28], u[secondBase + 33]].map((n) => n + 0)).toEqual([2, 3]);
   });
 });
 

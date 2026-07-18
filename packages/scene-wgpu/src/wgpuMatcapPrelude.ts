@@ -7,6 +7,7 @@ import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScenePipeline,
+  stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
 import type { WgpuMaterialBinding } from './wgpuSceneRuntime';
@@ -72,6 +73,9 @@ export function bindWgpuMatcapSurface(
   _scratch[6] = 0;
   _scratch[7] = 0;
   state.device.queue.writeBuffer(binding.buffer, 0, _scratch.buffer, 0, MATCAP_UNIFORM_BYTES);
+  // Matcap samples by view-space normal, not a uv map, so stash identity to keep the shared Draw uniform
+  // authoritative — a prior tiled material's transform must not persist into this bind.
+  stashWgpuUvTransform(state, null);
   return binding.bindGroup;
 }
 
