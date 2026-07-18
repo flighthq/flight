@@ -14,12 +14,34 @@ export interface GltfDocument {
   materials?: GltfMaterial[];
   textures?: GltfTexture[];
   images?: GltfImage[];
+  animations?: GltfAnimation[];
   accessors?: GltfAccessor[];
   bufferViews?: GltfBufferView[];
   buffers?: GltfBuffer[];
   skins?: GltfSkin[];
   extensionsUsed?: string[];
   extensionsRequired?: string[];
+}
+
+// A glTF animation: a bundle of channels, each pairing a sampler (the keyframe curve) with a target
+// (which node's TRS component it drives). Maps to one Flight AnimationClip.
+export interface GltfAnimation {
+  name?: string;
+  channels: GltfAnimationChannel[];
+  samplers: GltfAnimationSampler[];
+}
+
+export interface GltfAnimationChannel {
+  sampler: number;
+  target: { node?: number; path: 'rotation' | 'scale' | 'translation' | 'weights' };
+}
+
+// A sampler's `input` accessor holds ascending keyframe times (SCALAR); `output` holds the values
+// (VEC3 for translation/scale, VEC4 quaternion for rotation; 3× that count for CUBICSPLINE tangents).
+export interface GltfAnimationSampler {
+  input: number;
+  output: number;
+  interpolation?: 'CUBICSPLINE' | 'LINEAR' | 'STEP';
 }
 
 // A glTF material. Its metallic-roughness block and the normal/occlusion/emissive channels map onto

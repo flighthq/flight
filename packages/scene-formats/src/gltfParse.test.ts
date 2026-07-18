@@ -12,12 +12,13 @@ import type {
   EmbeddedSceneResourceRef,
   ExternalSceneResourceRef,
   Mesh,
+  SceneAnimationTarget,
   SceneNode,
   StandardPbrMaterial,
 } from '@flighthq/types';
 import { StandardPbrMaterialKind } from '@flighthq/types';
 
-import { createSceneFromGlb, createSceneFromGltf } from './gltfParse';
+import { createSceneFromGlb, createSceneFromGltf, importGlb, importGltf } from './gltfParse';
 import type { GltfDocument } from './gltfSchema';
 
 // A base64 `data:` URI carrying `bytes` under an explicit image MIME type.
@@ -754,5 +755,117 @@ describe('createSceneFromGltf', () => {
 
     expect(meshNode.skin ?? null).toBeNull();
     expect(meshNode.geometry.layout.stride).toBe(48);
+  });
+});
+
+// A document with two nodes (each instancing a positions-only mesh) split across two scenes, plus one
+// animation rotating node 1. Exercises multi-scene assembly and animation binding together.
+function makeAnimatedMultiSceneGltf(): GltfDocument {
+  const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  const times = new Float32Array([0, 1]);
+  // Two keyframe quaternions: identity, then 90° about Y.
+  const rotations = new Float32Array([0, 0, 0, 1, 0, 0.7071, 0, 0.7071]);
+  const posLen = positions.byteLength;
+  const timesLen = times.byteLength;
+  const uri = toDataUri(bytesOf(positions), bytesOf(times), bytesOf(rotations));
+
+  return {
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }, // positions
+      { bufferView: 1, componentType: 5126, count: 2, type: 'SCALAR' }, // times
+      { bufferView: 2, componentType: 5126, count: 2, type: 'VEC4' }, // rotation quats
+    ],
+    animations: [
+      {
+        channels: [{ sampler: 0, target: { node: 1, path: 'rotation' } }],
+        name: 'spin',
+        samplers: [{ input: 1, interpolation: 'LINEAR', output: 2 }],
+      },
+    ],
+    asset: { version: '2.0' },
+    bufferViews: [
+      { buffer: 0, byteLength: posLen, byteOffset: 0 },
+      { buffer: 0, byteLength: timesLen, byteOffset: posLen },
+      { buffer: 0, byteLength: rotations.byteLength, byteOffset: posLen + timesLen },
+    ],
+    buffers: [{ byteLength: posLen + timesLen + rotations.byteLength, uri }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+    nodes: [{ mesh: 0 }, { mesh: 0 }],
+    scene: 0,
+    scenes: [{ nodes: [0] }, { nodes: [1] }],
+  };
+}
+
+describe('importGlb', () => {
+  it('imports scenes and animations from a GLB container', () => {
+    const glb = buildGlb(makeAnimatedMultiSceneGltf(), new Uint8Array(0));
+    const result = importGlb(glb);
+    expect(result.scenes).toHaveLength(2);
+    expect(result.animations).toHaveLength(1);
+  });
+
+  it('returns an empty single-scene import for a malformed container', () => {
+    const result = importGlb(new Uint8Array([1, 2, 3]));
+    expect(result.scenes).toHaveLength(1);
+    expect(getNodeChildren(result.scene)).toHaveLength(0);
+    expect(result.animations).toHaveLength(0);
+  });
+});
+
+describe('importGltf', () => {
+  it('returns every scene the document declares, with scene pointing at the default', () => {
+    const result = importGltf(makeAnimatedMultiSceneGltf());
+    expect(result.scenes).toHaveLength(2);
+    // Default scene (index 0) holds node 0; its one mesh child is the primary scene.
+    expect(result.scene).toBe(result.scenes[0]);
+    expect(getNodeChildren(result.scene)).toHaveLength(1);
+    expect(getNodeChildren(result.scenes[1])).toHaveLength(1);
+  });
+
+  it('builds an AnimationClip whose channel binds the driven node and its rotation path', () => {
+    const result = importGltf(makeAnimatedMultiSceneGltf());
+    expect(result.animations).toHaveLength(1);
+    const clip = result.animations[0];
+    expect(clip.channels).toHaveLength(1);
+    expect(clip.duration).toBe(1); // max keyframe time
+
+    const channel = clip.channels[0];
+    const target = channel.targetRef as SceneAnimationTarget;
+    expect(target.path).toBe('Rotation');
+    // The channel binds the SAME node instance that lives in scene 1 (node 1), not a fresh copy.
+    expect(target.node).toBe(getNodeChildren(result.scenes[1])[0]);
+    // Rotation tracks are quaternion tracks (4 components, slerped).
+    expect(channel.track.quaternion).toBe(true);
+    expect(channel.track.components).toBe(4);
+    expect(channel.track.interpolation).toBe('Linear');
+    expect(Array.from(channel.track.times)).toEqual([0, 1]);
+  });
+
+  it('skips morph-target (weights) channels without warning', () => {
+    const doc = makeAnimatedMultiSceneGltf();
+    doc.animations![0].channels.push({ sampler: 0, target: { node: 1, path: 'weights' } });
+    const warnings: string[] = [];
+    const result = importGltf(doc, warnings);
+    // Only the rotation channel survives; the weights channel is silently skipped.
+    expect(result.animations[0].channels).toHaveLength(1);
+    expect(warnings.filter((w) => w.includes('weights'))).toHaveLength(0);
+  });
+
+  it('imports translation and scale channels as 3-component non-quaternion tracks', () => {
+    const doc = makeAnimatedMultiSceneGltf();
+    doc.animations![0].channels[0].target.path = 'translation';
+    const clip = importGltf(doc).animations[0];
+    expect((clip.channels[0].targetRef as SceneAnimationTarget).path).toBe('Translation');
+    expect(clip.channels[0].track.quaternion).toBe(false);
+    expect(clip.channels[0].track.components).toBe(3);
+  });
+
+  it('returns an empty single-scene import for invalid input', () => {
+    const warnings: string[] = [];
+    const result = importGltf('{ not json', warnings);
+    expect(result.scenes).toHaveLength(1);
+    expect(getNodeChildren(result.scene)).toHaveLength(0);
+    expect(result.animations).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
   });
 });
