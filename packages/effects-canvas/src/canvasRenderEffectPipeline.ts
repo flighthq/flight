@@ -6,12 +6,11 @@ import {
   isColorLutAdjustment,
 } from '@flighthq/adjustments';
 import {
-  beginCanvasRenderTarget,
+  beginCanvasRenderPass,
   createCanvasRenderTarget,
-  endCanvasRenderTarget,
+  endCanvasRenderPass,
   resizeCanvasRenderTarget,
 } from '@flighthq/displayobject-canvas';
-import { createMatrix } from '@flighthq/geometry';
 import type {
   Adjustment,
   CanvasRenderEffectPipeline,
@@ -58,10 +57,9 @@ export function beginCanvasRenderEffectPipeline(state: CanvasRenderState, pipeli
   } else {
     resizeCanvasRenderTarget(pipeline.sceneTarget, w, h);
   }
-  // Clear the offscreen scene canvas before redirecting render into it; resize already clears on the
-  // grow path, but an unchanged size keeps last frame's pixels otherwise.
-  pipeline.sceneTarget.context.clearRect(0, 0, pipeline.sceneTarget.width, pipeline.sceneTarget.height);
-  beginCanvasRenderTarget(state, pipeline.sceneTarget, state.renderTransform2D ?? createMatrix());
+  // beginCanvasRenderPass clears the offscreen scene canvas by default (an unchanged size would keep last
+  // frame's pixels otherwise); the current 2D transform is inherited rather than passed.
+  beginCanvasRenderPass(state, pipeline.sceneTarget);
 }
 
 export function createCanvasRenderEffectPipeline(
@@ -101,7 +99,7 @@ export function endCanvasRenderEffectPipeline(
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
 
-  endCanvasRenderTarget(state);
+  endCanvasRenderPass(state);
 
   const pool = pipeline.pool;
   let source: CanvasRenderTarget = scene;

@@ -1,4 +1,4 @@
-import { acquireMatrix, copyMatrix, createMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
+import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry';
 import type {
   GlRenderState,
   GlRenderTarget,
@@ -12,57 +12,6 @@ import type {
 import { drawGlQuad, useGlProgram } from './glDraw';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader';
-
-type SavedGlState = {
-  framebuffer: WebGLFramebuffer | null;
-  renderTarget: GlRenderTarget | null;
-  renderTargetViewport: { width: number; height: number } | null;
-  renderTransform2D: Matrix | null;
-};
-
-/**
- * Redirects subsequent Gl rendering into `target`'s framebuffer. Saves the current framebuffer
- * binding, renderTargetViewport, and renderTransform2D so they can be fully restored by
- * `endGlRenderTarget`. Supports nesting.
- *
- * The caller must set the desired `renderTransform` (via this function) before rendering into the
- * target to ensure the render tree's transform2D values are correct.
- */
-export function beginGlRenderTarget(
-  state: GlRenderState,
-  target: GlRenderTarget,
-  renderTransform: Readonly<Matrix>,
-): void {
-  const runtime = getGlRenderStateRuntime(state);
-  const gl = state.gl;
-
-  let stack = _targetStack.get(state);
-  if (stack === undefined) {
-    stack = [];
-    _targetStack.set(state, stack);
-  }
-
-  stack.push({
-    framebuffer: runtime.currentFramebuffer,
-    renderTarget: runtime.currentRenderTarget ?? null,
-    renderTargetViewport: runtime.renderTargetViewport,
-    renderTransform2D: state.renderTransform2D,
-  });
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
-  gl.viewport(0, 0, target.width, target.height);
-
-  runtime.currentFramebuffer = target.framebuffer;
-  runtime.currentRenderTarget = target;
-  runtime.renderTargetViewport = { width: target.width, height: target.height };
-  // Force rebind on next draw — the framebuffer switch invalidates GL state assumptions.
-  runtime.currentTexture = null;
-  runtime.currentBlendMode = null;
-
-  const newTransform = createMatrix();
-  copyMatrix(newTransform, renderTransform);
-  state.renderTransform2D = newTransform;
-}
 
 /**
  * Allocates a render target realizing `descriptor`'s axes (format, MSAA sampleCount, MRT
@@ -93,6 +42,8 @@ export function createGlRenderTarget(
     height: h,
     format,
     colorSpace: descriptor.colorSpace ?? 'srgb',
+    clearColors: descriptor.clearColors ? [...descriptor.clearColors] : [],
+    clearDepth: descriptor.clearDepth ?? 1,
     sampleCount: maxSamples,
     framebuffer: gl.createFramebuffer()!,
     resolveFramebuffer: null,
@@ -111,7 +62,7 @@ export function createGlRenderTarget(
   return target;
 }
 
-// Stamps the color space of the render target currently bound via beginGlRenderTarget: the producer of
+// Stamps the color space of the render target currently bound via beginGlRenderPass: the producer of
 // the pixels declares what space it writes (drawGlScene declares 'linear'), and the present step reads
 // it back off the target. Returns false when no target is bound — i.e. rendering straight to the canvas,
 // where linear content has no present pass to encode it — so a caller can flag that mismatch. A no-op
@@ -167,29 +118,6 @@ export function drawGlRenderTargetResult(
   releaseMatrix(quadTransform);
 
   drawGlQuad(state, 0, 0, target.width, target.height, 0, 1, 1, 0);
-}
-
-/**
- * Restores the framebuffer, viewport, renderTargetViewport, and renderTransform2D saved by the
- * matching `beginGlRenderTarget` call.
- */
-export function endGlRenderTarget(state: GlRenderState): void {
-  const runtime = getGlRenderStateRuntime(state);
-  const gl = state.gl;
-
-  const saved = _targetStack.get(state)?.pop();
-  if (saved === undefined) return;
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, saved.framebuffer);
-  const viewport = saved.renderTargetViewport ?? state.canvas;
-  gl.viewport(0, 0, viewport.width, viewport.height);
-
-  runtime.currentFramebuffer = saved.framebuffer;
-  runtime.currentRenderTarget = saved.renderTarget;
-  runtime.renderTargetViewport = saved.renderTargetViewport;
-  state.renderTransform2D = saved.renderTransform2D;
-  runtime.currentTexture = null;
-  runtime.currentBlendMode = null;
 }
 
 /** Reallocates the storage backing `target` to the new pixel dimensions, preserving its axes. */
@@ -392,5 +320,3 @@ function mapGlFormat(
       return { internalFormat: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE };
   }
 }
-
-const _targetStack = new WeakMap<GlRenderState, SavedGlState[]>();

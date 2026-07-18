@@ -137,10 +137,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
    */
   currentFramebuffer: WebGLFramebuffer | null;
   /**
-   * The GlRenderTarget currently bound via beginGlRenderTarget, or null when rendering to the canvas.
+   * The GlRenderTarget currently bound via beginGlRenderPass, or null when rendering to the canvas.
    * A producer stamps the color space of the content it draws onto this target (drawGlScene declares
    * 'linear'); the present step then reads target.colorSpace to encode correctly. Restored by
-   * endGlRenderTarget alongside currentFramebuffer.
+   * endGlRenderPass alongside currentFramebuffer.
    */
   currentRenderTarget?: GlRenderTarget | null;
   /**

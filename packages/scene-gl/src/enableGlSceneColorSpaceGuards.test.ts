@@ -48,7 +48,7 @@ describe('enableGlSceneColorSpaceGuards', () => {
     addLogSink(sink.sink);
     try {
       enableGlSceneColorSpaceGuards(state);
-      // No beginGlRenderTarget: currentRenderTarget is null, so the scene draws straight to the canvas.
+      // No beginGlRenderPass: currentRenderTarget is null, so the scene draws straight to the canvas.
       drawGlScene(state, scene, makeCamera(), LIGHTS);
       const entries = getMemoryLogSinkEntries(sink);
       expect(entries.length).toBe(1);

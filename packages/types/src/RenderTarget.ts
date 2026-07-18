@@ -33,4 +33,11 @@ export interface RenderTargetDescriptor {
   // unchanged: presented as-is). Producers of linear content (the 3D scene path) declare 'linear' so
   // the present applies the single sRGB encode.
   colorSpace?: RenderTargetColorSpace;
+  // Packed-RGBA (0xRRGGBBAA) clear color per color attachment, applied when a pass clears that
+  // attachment. Fixed per target — a pass decides only WHETHER to clear (RenderPassPreserve), never to
+  // what. Index i covers attachment location i; a single-entry array covers attachment 0. Attachments
+  // with no entry fall back to the render state's background color.
+  clearColors?: ReadonlyArray<number>;
+  // Depth clear value applied when a pass clears depth. Default 1 (the far plane).
+  clearDepth?: number;
 }

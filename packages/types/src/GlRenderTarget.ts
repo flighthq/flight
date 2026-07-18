@@ -16,6 +16,11 @@ export interface GlRenderTarget {
   // Declared color space of the target's content (resolved from the descriptor; default 'srgb'). The
   // present step reads this to run the linear->sRGB encode exactly once for 'linear' targets.
   colorSpace: RenderTargetColorSpace;
+  // Clear policy resolved from the descriptor: packed-RGBA (0xRRGGBBAA) per color attachment (empty ==
+  // fall back to the render state's background color) and the depth clear value. Read by beginGlRenderPass
+  // when a pass clears; fixed per target, since only the clear-or-keep choice varies per pass.
+  clearColors: number[];
+  clearDepth: number;
   sampleCount: number;
   framebuffer: WebGLFramebuffer;
   resolveFramebuffer: WebGLFramebuffer | null;

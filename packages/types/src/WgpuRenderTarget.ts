@@ -6,6 +6,11 @@ export type WgpuRenderTarget = {
   // 'rgba16float'. The pool matches reusable targets on this so an 8-bit and an HDR target never alias.
   format: GPUTextureFormat;
   height: number;
+  // Clear policy resolved from creation: packed-RGBA (0xRRGGBBAA) per color attachment (empty == a
+  // transparent clear, the render-target default) and the depth clear value. Read by beginWgpuRenderPass
+  // to build the pass load op; fixed per target, since only the clear-or-keep choice varies per pass.
+  clearColors: number[];
+  clearDepth: number;
   texture: GPUTexture;
   view: GPUTextureView;
   width: number;

@@ -2,14 +2,13 @@ import { createDisplayObject } from '@flighthq/displayobject';
 import { createMatrix } from '@flighthq/geometry';
 import { getOrCreateRenderProxy2D } from '@flighthq/render';
 
+import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
 import { getGlRenderStateRuntime } from './glRenderState';
 import {
-  beginGlRenderTarget,
   createGlRenderTarget,
   declareGlRenderTargetColorSpace,
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
-  endGlRenderTarget,
   resizeGlRenderTarget,
   resolveGlRenderTarget,
 } from './glRenderTarget';
@@ -39,57 +38,6 @@ function makeState() {
 
   return { state, gl };
 }
-
-describe('beginGlRenderTarget', () => {
-  it('binds the target framebuffer', () => {
-    const { state, gl } = makeState();
-    const target = createGlRenderTarget(state, { width: 64, height: 48 });
-    vi.clearAllMocks();
-
-    beginGlRenderTarget(state, target, createMatrix());
-
-    expect(vi.mocked(gl.bindFramebuffer)).toHaveBeenCalledWith(
-      (gl as unknown as { FRAMEBUFFER: number }).FRAMEBUFFER,
-      target.framebuffer,
-    );
-  });
-
-  it('sets renderTargetViewport to the target dimensions', () => {
-    const { state } = makeState();
-    const target = createGlRenderTarget(state, { width: 64, height: 48 });
-
-    beginGlRenderTarget(state, target, createMatrix());
-
-    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 64, height: 48 });
-  });
-
-  it('sets renderTransform2D to the provided transform', () => {
-    const { state } = makeState();
-    const target = createGlRenderTarget(state, { width: 64, height: 48 });
-    const renderTransform = createMatrix();
-    renderTransform.tx = 10;
-    renderTransform.ty = 20;
-
-    beginGlRenderTarget(state, target, renderTransform);
-
-    expect(state.renderTransform2D!.tx).toBe(10);
-    expect(state.renderTransform2D!.ty).toBe(20);
-  });
-
-  it('supports nested begin calls', () => {
-    const { state } = makeState();
-    const targetA = createGlRenderTarget(state, { width: 64, height: 48 });
-    const targetB = createGlRenderTarget(state, { width: 32, height: 32 });
-
-    beginGlRenderTarget(state, targetA, createMatrix());
-    beginGlRenderTarget(state, targetB, createMatrix());
-
-    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 32, height: 32 });
-
-    endGlRenderTarget(state);
-    expect(getGlRenderStateRuntime(state).renderTargetViewport).toEqual({ width: 64, height: 48 });
-  });
-});
 
 describe('createGlRenderTarget', () => {
   it('returns a render target with the requested dimensions', () => {
@@ -163,10 +111,10 @@ describe('declareGlRenderTargetColorSpace', () => {
     const { state } = makeState();
     const target = createGlRenderTarget(state, { width: 64, height: 48 });
     expect(target.colorSpace).toBe('srgb');
-    beginGlRenderTarget(state, target, createMatrix());
+    beginGlRenderPass(state, target);
     expect(declareGlRenderTargetColorSpace(state, 'linear')).toBe(true);
     expect(target.colorSpace).toBe('linear');
-    endGlRenderTarget(state);
+    endGlRenderPass(state);
   });
 
   it('returns false when no target is bound (rendering to the canvas)', () => {
@@ -178,15 +126,15 @@ describe('declareGlRenderTargetColorSpace', () => {
     const { state } = makeState();
     const outer = createGlRenderTarget(state, { width: 64, height: 48 });
     const inner = createGlRenderTarget(state, { width: 32, height: 32 });
-    beginGlRenderTarget(state, outer, createMatrix());
-    beginGlRenderTarget(state, inner, createMatrix());
+    beginGlRenderPass(state, outer);
+    beginGlRenderPass(state, inner);
     declareGlRenderTargetColorSpace(state, 'linear');
     expect(inner.colorSpace).toBe('linear');
-    endGlRenderTarget(state);
+    endGlRenderPass(state);
     // Back on `outer`: a declare now stamps it, not the popped inner target.
     declareGlRenderTargetColorSpace(state, 'linear');
     expect(outer.colorSpace).toBe('linear');
-    endGlRenderTarget(state);
+    endGlRenderPass(state);
   });
 });
 
@@ -237,51 +185,6 @@ describe('drawGlRenderTargetResult', () => {
       (gl as unknown as { TEXTURE_2D: number }).TEXTURE_2D,
       target.texture,
     );
-  });
-});
-
-describe('endGlRenderTarget', () => {
-  it('restores the previous framebuffer', () => {
-    const { state, gl } = makeState();
-    const target = createGlRenderTarget(state, { width: 64, height: 48 });
-
-    beginGlRenderTarget(state, target, createMatrix());
-    vi.clearAllMocks();
-    endGlRenderTarget(state);
-
-    expect(vi.mocked(gl.bindFramebuffer)).toHaveBeenCalledWith(
-      (gl as unknown as { FRAMEBUFFER: number }).FRAMEBUFFER,
-      null,
-    );
-  });
-
-  it('restores renderTargetViewport to null', () => {
-    const { state } = makeState();
-    const target = createGlRenderTarget(state, { width: 64, height: 48 });
-
-    beginGlRenderTarget(state, target, createMatrix());
-    endGlRenderTarget(state);
-
-    expect(getGlRenderStateRuntime(state).renderTargetViewport).toBeNull();
-  });
-
-  it('restores the original renderTransform2D', () => {
-    const { state } = makeState();
-    const originalTransform = state.renderTransform2D;
-    const target = createGlRenderTarget(state, { width: 64, height: 48 });
-    const renderTransform = createMatrix();
-    renderTransform.tx = 99;
-
-    beginGlRenderTarget(state, target, renderTransform);
-    endGlRenderTarget(state);
-
-    expect(state.renderTransform2D).toBe(originalTransform);
-  });
-
-  it('without a matching begin is a no-op', () => {
-    const { state, gl } = makeState();
-    expect(() => endGlRenderTarget(state)).not.toThrow();
-    expect(vi.mocked(gl.bindFramebuffer)).not.toHaveBeenCalled();
   });
 });
 

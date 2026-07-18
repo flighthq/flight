@@ -47,7 +47,8 @@ beforeAll(async () => {
     const actual = await importOriginal<typeof GlRenderGlModule>();
     return {
       ...actual,
-      beginGlRenderTarget: vi.fn(),
+      beginGlRenderPass: vi.fn(),
+      setGlRenderTransform2D: vi.fn(),
       createGlRenderTarget: vi.fn((_state: unknown, descriptor: { width: number; height: number }): GlRenderTarget => {
         const texture = {} as WebGLTexture;
         return {
@@ -60,6 +61,8 @@ beforeAll(async () => {
           depthStencilRenderbuffer: null,
           format: 'rgba8',
           colorSpace: 'srgb',
+          clearColors: [],
+          clearDepth: 1,
           sampleCount: 1,
           width: descriptor.width,
           height: descriptor.height,
@@ -67,7 +70,7 @@ beforeAll(async () => {
       }),
       destroyGlRenderTarget: vi.fn(),
       drawGlRenderTargetResult: vi.fn(),
-      endGlRenderTarget: vi.fn(),
+      endGlRenderPass: vi.fn(),
       resizeGlRenderTarget: vi.fn((_state: unknown, target: GlRenderTarget, width: number, height: number) => {
         target.width = width;
         target.height = height;

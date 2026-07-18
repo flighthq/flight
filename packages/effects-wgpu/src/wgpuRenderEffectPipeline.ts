@@ -5,15 +5,14 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments';
-import { createMatrix } from '@flighthq/geometry';
 import {
   acquireWgpuRenderTarget,
-  beginWgpuRenderTarget,
+  beginWgpuRenderPass,
   createWgpuRenderTarget,
   createWgpuRenderTargetPool,
   destroyWgpuRenderTarget,
   destroyWgpuRenderTargetPool,
-  endWgpuRenderTarget,
+  endWgpuRenderPass,
   getWgpuRenderStateRuntime,
   releaseWgpuRenderTarget,
   resizeWgpuRenderTarget,
@@ -56,11 +55,12 @@ export function beginWgpuRenderEffectPipeline(state: WgpuRenderState, pipeline: 
   }
   // Clear the scene target to the background colour (not transparent) so the background is part of the
   // image the effects process and the replace-blend present composites — mirroring the Gl pipeline,
-  // where renderGlBackground draws into the scene target. Without this the present overwrites the bg.
+  // where renderGlBackground draws into the scene target. The clear color is a target property now, so
+  // set it from the background before begin (default clear); the transform is inherited from the current
+  // pass rather than passed.
   const rgba = state.backgroundColorRgba;
-  const clearColor =
-    rgba !== undefined && rgba.length >= 4 ? { r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] } : undefined;
-  beginWgpuRenderTarget(state, pipeline.sceneTarget, state.renderTransform2D ?? createMatrix(), clearColor);
+  pipeline.sceneTarget.clearColors = rgba !== undefined && rgba.length >= 4 ? [packBackgroundClearColor(rgba)] : [];
+  beginWgpuRenderPass(state, pipeline.sceneTarget);
 }
 
 export function createWgpuRenderEffectPipeline(
@@ -100,7 +100,7 @@ export function endWgpuRenderEffectPipeline(
   if (scene === null) return;
 
   // Pop the scene render target; restores the canvas pass (loadOp 'load').
-  endWgpuRenderTarget(state);
+  endWgpuRenderPass(state);
 
   const format = scene.format;
   const descriptor = { width: scene.width, height: scene.height, format };
@@ -185,6 +185,15 @@ function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<
   if (runtime.commandEncoder === null) return;
   const pipeline = getWgpuEffectPipeline(state, 'effect.present', PRESENT_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, null, pipeline, () => {});
+}
+
+// Packs a linear 0..1 RGBA background into the 0xRRGGBBAA integer WgpuRenderTarget.clearColors holds.
+function packBackgroundClearColor(rgba: ReadonlyArray<number>): number {
+  const r = Math.round((rgba[0] ?? 0) * 255) & 0xff;
+  const g = Math.round((rgba[1] ?? 0) * 255) & 0xff;
+  const b = Math.round((rgba[2] ?? 0) * 255) & 0xff;
+  const a = Math.round((rgba[3] ?? 0) * 255) & 0xff;
+  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
 const PRESENT_FRAGMENT_WGSL = /* wgsl */ `

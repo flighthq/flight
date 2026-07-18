@@ -3,12 +3,13 @@ import { createMatrix } from '@flighthq/geometry';
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
-  beginWgpuRenderTarget,
+  beginWgpuRenderPass,
   createWgpuRenderTarget,
   destroyWgpuRenderTarget,
   drawWgpuRenderTargetResult,
-  endWgpuRenderTarget,
+  endWgpuRenderPass,
   resizeWgpuRenderTarget,
+  setWgpuRenderTransform2D,
 } from './wgpuRenderTarget';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -16,31 +17,28 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-describe('beginWgpuRenderTarget', () => {
+describe('beginWgpuRenderPass', () => {
   it('sets the render target viewport', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const target = createWgpuRenderTarget(state, 64, 64);
-    beginWgpuRenderTarget(state, target, createMatrix());
+    beginWgpuRenderPass(state, target);
     expect(getWgpuRenderStateRuntime(state).renderTargetViewport?.width).toBe(64);
-    endWgpuRenderTarget(state);
+    endWgpuRenderPass(state);
     submitWgpuRenderPass(state);
   });
-});
 
-describe('beginWgpuRenderTarget / endWgpuRenderTarget', () => {
-  it('switches the render target and restores it', async () => {
+  it('switches the render target and restores it on end', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
 
     const target = createWgpuRenderTarget(state, 128, 128);
-    const transform = createMatrix();
-    beginWgpuRenderTarget(state, target, transform);
+    beginWgpuRenderPass(state, target);
 
     const runtime = getWgpuRenderStateRuntime(state);
     expect(runtime.renderTargetViewport?.width).toBe(128);
 
-    endWgpuRenderTarget(state);
+    endWgpuRenderPass(state);
     expect(runtime.renderTargetViewport).toBeNull();
 
     submitWgpuRenderPass(state);
@@ -94,13 +92,13 @@ describe('drawWgpuRenderTargetResult', () => {
   });
 });
 
-describe('endWgpuRenderTarget', () => {
+describe('endWgpuRenderPass', () => {
   it('restores null renderTargetViewport', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const target = createWgpuRenderTarget(state, 32, 32);
-    beginWgpuRenderTarget(state, target, createMatrix());
-    endWgpuRenderTarget(state);
+    beginWgpuRenderPass(state, target);
+    endWgpuRenderPass(state);
     expect(getWgpuRenderStateRuntime(state).renderTargetViewport).toBeNull();
     submitWgpuRenderPass(state);
   });
@@ -116,5 +114,25 @@ describe('resizeWgpuRenderTarget', () => {
     expect(target.height).toBe(150);
     expect(target.bindGroup).toBeDefined();
     expect(target.bindGroup).not.toBe(previousBindGroup);
+  });
+});
+
+describe('setWgpuRenderTransform2D', () => {
+  it('installs a copy of the transform, restored by the enclosing pass', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    const original = state.renderTransform2D;
+    const target = createWgpuRenderTarget(state, 32, 32);
+    const bake = createMatrix();
+    bake.tx = 42;
+
+    beginWgpuRenderPass(state, target);
+    setWgpuRenderTransform2D(state, bake);
+    expect(state.renderTransform2D?.tx).toBe(42);
+    expect(state.renderTransform2D).not.toBe(bake);
+    endWgpuRenderPass(state);
+
+    expect(state.renderTransform2D).toBe(original);
+    submitWgpuRenderPass(state);
   });
 });

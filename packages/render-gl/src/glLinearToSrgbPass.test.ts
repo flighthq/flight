@@ -9,6 +9,8 @@ function makeTarget(framebuffer: WebGLFramebuffer, texture: WebGLTexture, width 
     height,
     format: 'rgba16f',
     colorSpace: 'linear',
+    clearColors: [],
+    clearDepth: 1,
     sampleCount: 1,
     framebuffer,
     resolveFramebuffer: null,

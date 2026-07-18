@@ -56,6 +56,8 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     FRAMEBUFFER: 0x8d40,
     COLOR_BUFFER_BIT: 0x4000,
     DEPTH_BUFFER_BIT: 0x0100,
+    COLOR: 0x1800,
+    DEPTH_STENCIL: 0x84f9,
     MAX_VERTEX_UNIFORM_VECTORS: 0x8dfb,
     // Reports 1024 vertex-uniform vectors by default (a typical desktop/SwiftShader budget) so
     // getGlSkinJointCapacity resolves a palette well above 64; a test can override to probe the clamp.
@@ -99,6 +101,8 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     clear: record('clear'),
     clearColor: record('clearColor'),
     clearDepth: record('clearDepth'),
+    clearBufferfv: record('clearBufferfv'),
+    clearBufferfi: record('clearBufferfi'),
     cullFace: record('cullFace'),
     depthFunc: record('depthFunc'),
     depthMask: record('depthMask'),

@@ -1,4 +1,4 @@
-import { copyMatrix, createMatrix, createRectangle } from '@flighthq/geometry';
+import { createMatrix, createRectangle } from '@flighthq/geometry';
 import { computeNodeBoundsRectangle } from '@flighthq/node';
 import {
   computeDisplayObjectRenderTargetTransform,
@@ -24,7 +24,7 @@ import type {
 
 import { renderCanvasDisplayObject } from './canvasDisplayObject';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
-import { createCanvasRenderTarget, resizeCanvasRenderTarget } from './canvasRenderTarget';
+import { createCanvasRenderTarget, resizeCanvasRenderTarget, setCanvasRenderTransform2D } from './canvasRenderTarget';
 import { setCanvasTransform } from './canvasTransform';
 
 // Writable view of the readonly canvas/context handles. refreshCanvasRenderCache redirects the
@@ -142,7 +142,7 @@ export function refreshCanvasRenderCache(
   handles.context = target.context;
   handles.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
   handles.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
-  copyMatrix(handles.renderTransform2D as Matrix, _renderTransform);
+  setCanvasRenderTransform2D(cacheState, _renderTransform);
 
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
