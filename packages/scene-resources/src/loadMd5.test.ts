@@ -3,70 +3,63 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
-import { createSceneFromAwd, importAwd } from '@flighthq/scene-formats';
+import { createSceneFromMd5Mesh, importMd5Mesh } from '@flighthq/scene-formats';
 import { createTexture } from '@flighthq/texture';
 import type { ImageResource, SceneResourceRef } from '@flighthq/types';
 import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { loadAwd, loadSceneFromAwd } from './loadSceneFromAwd';
+import { loadMd5, loadSceneFromMd5Mesh } from './loadMd5';
 import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 vi.mock('@flighthq/scene-formats', () => ({
-  createSceneFromAwd: vi.fn(),
-  importAwd: vi.fn(),
+  createSceneFromMd5Mesh: vi.fn(),
+  importMd5Mesh: vi.fn(),
 }));
 
-const parseAwd = vi.mocked(createSceneFromAwd);
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
-function externalRef(): SceneResourceRef {
-  return {
+function sceneWithTexture(): { scene: Scene; texture: ReturnType<typeof createTexture> } {
+  const ref: SceneResourceRef = {
     basePath: null,
     kind: SceneResourceRefKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
-    uri: 'leaf.png',
+    uri: 'skin.png',
   };
-}
-
-function fakeParsedScene(texture: ReturnType<typeof createTexture>): Scene {
+  const texture = createTexture({ resource: ref });
   const scene = createScene();
   addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
-  return scene as Scene;
+  return { scene: scene as Scene, texture };
 }
 
 afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('loadAwd', () => {
-  it('imports AWD as a SceneImport and resolves its textures', async () => {
-    const texture = createTexture({ resource: externalRef() });
-    const scene = fakeParsedScene(texture);
-    vi.mocked(importAwd).mockReturnValue({ animations: [], scene, scenes: [scene] });
+describe('loadMd5', () => {
+  it('imports the mesh (+ optional anim) and resolves its shader textures', async () => {
+    const { scene, texture } = sceneWithTexture();
+    vi.mocked(importMd5Mesh).mockReturnValue({ animations: [], scene, scenes: [scene] });
     const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
 
-    const result = await loadAwd(new Uint8Array([1, 2, 3]), { resolver });
+    await loadMd5('meshsrc', 'animsrc', { resolver });
 
-    expect(vi.mocked(importAwd)).toHaveBeenCalledOnce();
-    expect(result.scene).toBe(scene);
+    expect(vi.mocked(importMd5Mesh)).toHaveBeenCalledWith('meshsrc', 'animsrc');
     expect(texture.resource?.state).toBe(ResourceResolutionState.Resolved);
     disposeSceneResourceResolver(resolver);
   });
 });
 
-describe('loadSceneFromAwd', () => {
-  it('parses then eagerly resolves the scene resources through a supplied resolver', async () => {
-    const texture = createTexture({ resource: externalRef() });
-    parseAwd.mockReturnValue(fakeParsedScene(texture));
+describe('loadSceneFromMd5Mesh', () => {
+  it('parses the mesh into a scene and resolves its shader textures', async () => {
+    const { scene, texture } = sceneWithTexture();
+    vi.mocked(createSceneFromMd5Mesh).mockReturnValue(scene);
     const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
 
-    const scene = await loadSceneFromAwd(new Uint8Array([1, 2, 3]), { resolver });
+    const loaded = await loadSceneFromMd5Mesh('meshsrc', { resolver });
 
-    expect(parseAwd).toHaveBeenCalledOnce();
-    expect(scene).toBeDefined();
-    expect(texture.image).toBe(fakeImage);
+    expect(loaded).toBe(scene);
     expect(texture.resource?.state).toBe(ResourceResolutionState.Resolved);
     disposeSceneResourceResolver(resolver);
   });

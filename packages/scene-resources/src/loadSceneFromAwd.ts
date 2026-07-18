@@ -1,14 +1,17 @@
 import type { Scene } from '@flighthq/scene';
-import { createSceneFromAwd } from '@flighthq/scene-formats';
+import { createSceneFromAwd, importAwd } from '@flighthq/scene-formats';
+import type { SceneImport } from '@flighthq/scene-formats';
 
-import { resolveSceneResourcesAndWait } from './resolveSceneResourcesAndWait';
-import type { SceneResourceResolver } from './sceneResourceResolver';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import type { LoadSceneOptions } from './loadSceneOptions';
+import { resolveScenesWithOptions } from './loadSceneOptions';
 
-export interface LoadSceneOptions {
-  // Reuse a caller-owned resolver (shared registry/fetch/loader); omit it and a private resolver is
-  // created for this load and disposed when the scene is fully resolved.
-  resolver?: SceneResourceResolver;
+// The whole-file sibling of loadSceneFromAwd: imports AWD as a SceneImport (scene + skeleton animation)
+// and resolves its textures. Animations pass through untouched — a clip is plain node-bound data with
+// nothing to fetch; only the scene's textures resolve.
+export async function loadAwd(bytes: Uint8Array, options?: Readonly<LoadSceneOptions>): Promise<SceneImport> {
+  const result = importAwd(bytes);
+  await resolveScenesWithOptions(result.scenes, options);
+  return result;
 }
 
 // Parse-and-resolve convenience over @flighthq/scene-formats: parses AWD bytes into a Scene, then
@@ -17,11 +20,6 @@ export interface LoadSceneOptions {
 // left open for the caller to keep driving or dispose.
 export async function loadSceneFromAwd(bytes: Uint8Array, options?: Readonly<LoadSceneOptions>): Promise<Scene> {
   const scene = createSceneFromAwd(bytes);
-  const resolver = options?.resolver ?? createSceneResourceResolver();
-  try {
-    await resolveSceneResourcesAndWait(scene, resolver);
-  } finally {
-    if (options?.resolver === undefined) disposeSceneResourceResolver(resolver);
-  }
+  await resolveScenesWithOptions([scene], options);
   return scene;
 }
