@@ -27,14 +27,16 @@ function makeTarget(): GlRenderTarget {
     height: 256,
     format: 'rgba16f',
     colorSpace: 'linear',
+    clearColors: [],
+    clearDepth: 1,
     sampleCount: 1,
     framebuffer: { id: 'sceneFb' } as unknown as WebGLFramebuffer,
     resolveFramebuffer: null,
-    textures: [],
+    textures: [{ id: 'sceneTex' } as unknown as WebGLTexture],
     texture: { id: 'sceneTex' } as unknown as WebGLTexture,
     depthTexture: null,
     colorRenderbuffers: [],
-    depthStencilRenderbuffer: null,
+    depthStencilRenderbuffer: { id: 'sceneDepth' } as unknown as WebGLRenderbuffer,
   };
 }
 
@@ -68,9 +70,12 @@ describe('presentGlScene', () => {
 
     presentGlScene(state, makeTarget(), scene, makeCamera(), LIGHTS);
 
-    expect(gl.calls.some((c) => c.name === 'clearColor')).toBe(true);
-    const clears = gl.calls.filter((c) => c.name === 'clear');
-    expect(clears.some((c) => c.args[0] === gl.DEPTH_BUFFER_BIT)).toBe(true);
+    // beginGlRenderPass clears per-attachment (clearBufferfv for color location 0) and the depth/stencil
+    // buffer (clearBufferfi), the WebGL2 path that lets each MRT attachment carry its own clear value.
+    const colorClears = gl.calls.filter((c) => c.name === 'clearBufferfv' && c.args[0] === gl.COLOR);
+    expect(colorClears.some((c) => c.args[1] === 0)).toBe(true);
+    const depthClears = gl.calls.filter((c) => c.name === 'clearBufferfi' && c.args[0] === gl.DEPTH_STENCIL);
+    expect(depthClears.length).toBeGreaterThan(0);
   });
 
   it('presents to the canvas after the scene draw, so the encode reads the rendered target', () => {

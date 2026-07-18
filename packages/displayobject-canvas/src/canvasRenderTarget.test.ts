@@ -2,39 +2,41 @@ import { createMatrix } from '@flighthq/geometry';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import {
-  beginCanvasRenderTarget,
+  beginCanvasRenderPass,
   createCanvasRenderTarget,
   destroyCanvasRenderTarget,
-  endCanvasRenderTarget,
+  endCanvasRenderPass,
   resizeCanvasRenderTarget,
+  setCanvasRenderTransform2D,
 } from './canvasRenderTarget';
 
 function makeState() {
   return createCanvasRenderState(document.createElement('canvas'));
 }
 
-describe('beginCanvasRenderTarget', () => {
+describe('beginCanvasRenderPass', () => {
   it('switches the state canvas to the target canvas', () => {
     const state = makeState();
     const target = createCanvasRenderTarget(64, 48);
-    const renderTransform = createMatrix();
 
-    beginCanvasRenderTarget(state, target, renderTransform);
+    beginCanvasRenderPass(state, target);
 
     expect(state.canvas).toBe(target.canvas);
   });
 
-  it('sets renderTransform2D to the provided transform', () => {
+  it('clears the target by default and preserves it with preserveColor', () => {
     const state = makeState();
     const target = createCanvasRenderTarget(64, 48);
-    const renderTransform = createMatrix();
-    renderTransform.tx = 10;
-    renderTransform.ty = 20;
+    const clearRect = vi.spyOn(target.context, 'clearRect');
 
-    beginCanvasRenderTarget(state, target, renderTransform);
+    beginCanvasRenderPass(state, target);
+    expect(clearRect).toHaveBeenCalledWith(0, 0, target.width, target.height);
+    endCanvasRenderPass(state);
 
-    expect(state.renderTransform2D!.tx).toBe(10);
-    expect(state.renderTransform2D!.ty).toBe(20);
+    clearRect.mockClear();
+    beginCanvasRenderPass(state, target, { preserveColor: true });
+    expect(clearRect).not.toHaveBeenCalled();
+    endCanvasRenderPass(state);
   });
 
   it('supports nested pairs', () => {
@@ -43,16 +45,16 @@ describe('beginCanvasRenderTarget', () => {
     const targetA = createCanvasRenderTarget(64, 48);
     const targetB = createCanvasRenderTarget(32, 32);
 
-    beginCanvasRenderTarget(state, targetA, createMatrix());
+    beginCanvasRenderPass(state, targetA);
     expect(state.canvas).toBe(targetA.canvas);
 
-    beginCanvasRenderTarget(state, targetB, createMatrix());
+    beginCanvasRenderPass(state, targetB);
     expect(state.canvas).toBe(targetB.canvas);
 
-    endCanvasRenderTarget(state);
+    endCanvasRenderPass(state);
     expect(state.canvas).toBe(targetA.canvas);
 
-    endCanvasRenderTarget(state);
+    endCanvasRenderPass(state);
     expect(state.canvas).toBe(outerCanvas);
   });
 });
@@ -95,49 +97,22 @@ describe('destroyCanvasRenderTarget', () => {
   });
 });
 
-describe('endCanvasRenderTarget', () => {
+describe('endCanvasRenderPass', () => {
   it('restores the original canvas', () => {
     const state = makeState();
     const originalCanvas = state.canvas;
     const target = createCanvasRenderTarget(64, 48);
 
-    beginCanvasRenderTarget(state, target, createMatrix());
-    endCanvasRenderTarget(state);
+    beginCanvasRenderPass(state, target);
+    endCanvasRenderPass(state);
 
     expect(state.canvas).toBe(originalCanvas);
-  });
-
-  it('restores the original renderTransform2D', () => {
-    const state = makeState();
-    const originalTx = state.renderTransform2D?.tx ?? 0;
-    const target = createCanvasRenderTarget(64, 48);
-    const renderTransform = createMatrix();
-    renderTransform.tx = 99;
-
-    beginCanvasRenderTarget(state, target, renderTransform);
-    endCanvasRenderTarget(state);
-
-    expect(state.renderTransform2D?.tx).toBe(originalTx);
-  });
-
-  it('does not mutate the outer renderTransform2D matrix', () => {
-    const state = makeState();
-    const outerTransform = state.renderTransform2D!;
-    const target = createCanvasRenderTarget(64, 48);
-    const renderTransform = createMatrix();
-    renderTransform.tx = 50;
-
-    beginCanvasRenderTarget(state, target, renderTransform);
-    endCanvasRenderTarget(state);
-
-    expect(state.renderTransform2D).toBe(outerTransform);
-    expect(outerTransform.tx).not.toBe(50);
   });
 
   it('without a matching begin is a no-op', () => {
     const state = makeState();
     const original = state.canvas;
-    expect(() => endCanvasRenderTarget(state)).not.toThrow();
+    expect(() => endCanvasRenderPass(state)).not.toThrow();
     expect(state.canvas).toBe(original);
   });
 });
@@ -150,5 +125,38 @@ describe('resizeCanvasRenderTarget', () => {
     expect(target.canvas.height).toBe(128);
     expect(target.width).toBe(256);
     expect(target.height).toBe(128);
+  });
+});
+
+describe('setCanvasRenderTransform2D', () => {
+  it('installs a copy of the transform, restored by the enclosing pass', () => {
+    const state = makeState();
+    const original = state.renderTransform2D;
+    const target = createCanvasRenderTarget(64, 48);
+    const transform = createMatrix();
+    transform.tx = 99;
+
+    beginCanvasRenderPass(state, target);
+    setCanvasRenderTransform2D(state, transform);
+    expect(state.renderTransform2D?.tx).toBe(99);
+    expect(state.renderTransform2D).not.toBe(transform);
+    endCanvasRenderPass(state);
+
+    expect(state.renderTransform2D).toBe(original);
+  });
+
+  it('does not mutate the outer transform matrix', () => {
+    const state = makeState();
+    const outer = state.renderTransform2D!;
+    const target = createCanvasRenderTarget(64, 48);
+    const transform = createMatrix();
+    transform.tx = 50;
+
+    beginCanvasRenderPass(state, target);
+    setCanvasRenderTransform2D(state, transform);
+    endCanvasRenderPass(state);
+
+    expect(state.renderTransform2D).toBe(outer);
+    expect(outer.tx).not.toBe(50);
   });
 });

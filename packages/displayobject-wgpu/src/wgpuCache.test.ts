@@ -47,7 +47,8 @@ beforeAll(async () => {
     const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
     return {
       ...actual,
-      beginWgpuRenderTarget: vi.fn(),
+      beginWgpuRenderPass: vi.fn(),
+      setWgpuRenderTransform2D: vi.fn(),
       createWgpuRenderTarget: vi.fn(
         (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
           bindGroup: {} as GPUBindGroup,
@@ -56,13 +57,15 @@ beforeAll(async () => {
           texture: {} as GPUTexture,
           view: {} as GPUTextureView,
           format: 'bgra8unorm',
+          clearColors: [],
+          clearDepth: 1,
           width,
           height,
         }),
       ),
       destroyWgpuRenderTarget: vi.fn(),
       drawWgpuRenderTargetResult: vi.fn(),
-      endWgpuRenderTarget: vi.fn(),
+      endWgpuRenderPass: vi.fn(),
       resizeWgpuRenderTarget: vi.fn((_state: unknown, target: WgpuRenderTarget, width: number, height: number) => {
         target.width = width;
         target.height = height;

@@ -64,7 +64,7 @@ export function destroyWgpuFullscreenPipeline(_state: WgpuRenderState, _pipeline
 // Binds `inputs[i]` as texture @group(1+i) @binding(0), calls `setUniforms` for per-pass
 // uploads (pass null if the shader declares no uniforms), then draws 3 vertices.
 //
-// Requires an open render pass (renderWgpuBackground or beginWgpuRenderTarget must have been
+// Requires an open render pass (renderWgpuBackground or beginWgpuRenderPass must have been
 // called first). When `dest` is null the current open pass is used as-is; when `dest` is
 // provided, its bind group is set via the caller's render pass.
 export function drawWgpuFullscreenPass(

@@ -5,10 +5,9 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments';
-import { createMatrix } from '@flighthq/geometry';
 import {
   acquireGlRenderTarget,
-  beginGlRenderTarget,
+  beginGlRenderPass,
   clearGlRenderTarget,
   createGlRenderTarget,
   createGlRenderTargetPool,
@@ -16,10 +15,9 @@ import {
   destroyGlRenderTargetPool,
   drawGlFullscreenPass,
   drawGlLinearToSrgbPass,
-  endGlRenderTarget,
+  endGlRenderPass,
   releaseGlRenderTarget,
   resizeGlRenderTarget,
-  resolveGlRenderTarget,
 } from '@flighthq/render-gl';
 import type {
   Adjustment,
@@ -55,7 +53,9 @@ export function beginGlRenderEffectPipeline(state: GlRenderState, pipeline: GlRe
   // (plain-copy present, byte-identical to before this seam existed). A reused pipeline never carries a
   // stale space from a prior frame's content.
   pipeline.sceneTarget.colorSpace = 'srgb';
-  beginGlRenderTarget(state, pipeline.sceneTarget, state.renderTransform2D ?? createMatrix());
+  // Preserve, don't clear: the frame's scene render fills the target (matching the pre-pass behavior),
+  // and the current 2D render transform is inherited — begin no longer sets it.
+  beginGlRenderPass(state, pipeline.sceneTarget, { preserveColor: true, preserveDepth: true });
 }
 
 export function createGlRenderEffectPipeline(
@@ -95,8 +95,7 @@ export function endGlRenderEffectPipeline(
   const scene = pipeline.sceneTarget;
   if (scene === null) return;
 
-  endGlRenderTarget(state);
-  resolveGlRenderTarget(state, scene);
+  endGlRenderPass(state);
 
   const format = pipeline.options.format ?? 'rgba8';
   // Intermediate ping-pong targets carry the scene's declared color space, so after the last effect the

@@ -13,12 +13,13 @@ import {
 } from '@flighthq/render';
 import { createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import {
-  beginWgpuRenderTarget,
+  beginWgpuRenderPass,
   createWgpuRenderTarget,
   destroyWgpuRenderTarget,
   drawWgpuRenderTargetResult,
-  endWgpuRenderTarget,
+  endWgpuRenderPass,
   resizeWgpuRenderTarget,
+  setWgpuRenderTransform2D,
 } from '@flighthq/render-wgpu';
 import type {
   DisplayObject,
@@ -220,15 +221,17 @@ export function refreshWgpuRenderCache(
   // Reclaim the bake state's buffer pool from the start of this bake; the previous bake's submit
   // has been queued, so its slots are safe to reuse.
   cacheRuntime.spriteBatchBufferCursor = 0;
-  beginWgpuRenderTarget(cacheState, target, _bakeTransform);
+  // The pass clears to transparent by default (target.clearColors is empty); the Y-inverted bake
+  // transform is a display-object draw concern, set explicitly rather than carried by the pass.
+  beginWgpuRenderPass(cacheState, target);
+  setWgpuRenderTransform2D(cacheState, _bakeTransform);
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
-    // The render-target pass begins with a 'clear' load op, so the target starts transparent.
     renderWgpuDisplayObject(cacheState, source);
   }
-  endWgpuRenderTarget(cacheState);
+  endWgpuRenderPass(cacheState);
 
-  // endWgpuRenderTarget reopened a fresh canvas pass on the cache state — hand the live encoder
+  // endWgpuRenderPass reopened a fresh canvas pass on the cache state — hand the live encoder
   // and pass back to the screen state so its subsequent draws continue in the same frame.
   screenRuntime.commandEncoder = cacheRuntime.commandEncoder;
   screenRuntime.renderPass = cacheRuntime.renderPass;

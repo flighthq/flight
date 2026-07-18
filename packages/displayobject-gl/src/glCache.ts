@@ -13,12 +13,13 @@ import {
 } from '@flighthq/render';
 import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl';
 import {
-  beginGlRenderTarget,
+  beginGlRenderPass,
   createGlRenderTarget,
   destroyGlRenderTarget,
   drawGlRenderTargetResult,
-  endGlRenderTarget,
+  endGlRenderPass,
   resizeGlRenderTarget,
+  setGlRenderTransform2D,
 } from '@flighthq/render-gl';
 import type {
   DisplayObject,
@@ -167,7 +168,11 @@ export function refreshGlRenderCache(
   computeDisplayObjectRenderTargetTransform(_renderTransform, source, _bounds, padding, padding);
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
-  beginGlRenderTarget(cacheState, target, _renderTransform);
+  // Preserve on begin — the bake below clears and redraws only when dirty; clearing here would wipe the
+  // retained cache content on the not-dirty path. The cache's local-space transform is set explicitly,
+  // since a pass no longer carries one.
+  beginGlRenderPass(cacheState, target, { preserveColor: true, preserveDepth: true });
+  setGlRenderTransform2D(cacheState, _renderTransform);
   const dirty = prepareDisplayObjectRender(cacheState, source);
   if (dirty || resized) {
     const cacheRuntime = getGlRenderStateRuntime(cacheState);
@@ -183,7 +188,7 @@ export function refreshGlRenderCache(
     cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
     renderGlDisplayObject(cacheState, source);
   }
-  endGlRenderTarget(cacheState);
+  endGlRenderPass(cacheState);
 
   const screenRuntime = getGlRenderStateRuntime(screenState);
   screenRuntime.currentBlendMode = null;

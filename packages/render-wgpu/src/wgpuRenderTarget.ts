@@ -1,10 +1,10 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { Material, Matrix, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
+import type { Material, Matrix, RenderPassPreserve, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types';
 
 import { buildWgpuRenderTargetBindGroup, drawWgpuQuadWithTransform } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
-function beginWgpuRenderPass(
+function beginWgpuRenderPassEncoder(
   state: WgpuRenderState,
   colorView: GPUTextureView,
   depthStencilView: GPUTextureView,
@@ -12,14 +12,16 @@ function beginWgpuRenderPass(
   height: number,
   loadOp: GPULoadOp,
   clearColor: GPUColor = { r: 0, g: 0, b: 0, a: 0 },
+  depthLoadOp: GPULoadOp = 'clear',
+  depthClearValue = 1.0,
 ): GPURenderPassEncoder {
   const runtime = getWgpuRenderStateRuntime(state);
   const pass = runtime.commandEncoder!.beginRenderPass({
     colorAttachments: [{ view: colorView, loadOp, storeOp: 'store', clearValue: clearColor }],
     depthStencilAttachment: {
       view: depthStencilView,
-      depthClearValue: 1.0,
-      depthLoadOp: 'clear',
+      depthClearValue,
+      depthLoadOp,
       depthStoreOp: 'discard',
       stencilClearValue: 0,
       stencilLoadOp: 'clear',
@@ -30,11 +32,16 @@ function beginWgpuRenderPass(
   return pass;
 }
 
-export function beginWgpuRenderTarget(
+// Begins a render pass into `target`: opens a wgpu render pass encoder that CLEARS every aspect by
+// default (the loadOp 'clear' the pass previously always used). `preserve` switches an aspect's
+// loadOp to 'load'; the clear VALUES are fixed on the target (WgpuRenderTarget.clearColors / clearDepth).
+// Pair with endWgpuRenderPass. Carries no 2D transform — that is a display-object draw concern; a 2D pass
+// that needs a specific root transform calls setWgpuRenderTransform2D after begin (saved/restored by the
+// bracket). Mirrors beginGlRenderPass.
+export function beginWgpuRenderPass(
   state: WgpuRenderState,
   target: WgpuRenderTarget,
-  renderTransform: Readonly<Matrix>,
-  clearColor?: GPUColor,
+  preserve?: Readonly<RenderPassPreserve>,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
 
@@ -57,24 +64,24 @@ export function beginWgpuRenderTarget(
   // Scene pipelines drawn into this target must match its color format (e.g. rgba16float for HDR).
   runtime.currentColorFormat = target.format;
 
-  const newTransform = createMatrix();
-  copyMatrix(newTransform, renderTransform);
-  state.renderTransform2D = newTransform;
-
   // Reset mask/clip state for the new pass
   runtime.currentMaskDepth = 0;
   runtime.maskWriteMode = false;
   runtime.currentScissorRect = null;
   runtime.scissorStack = [];
 
-  runtime.renderPass = beginWgpuRenderPass(
+  const colorLoadOp: GPULoadOp = isWgpuColorPreserved(preserve?.preserveColor ?? false, 0) ? 'load' : 'clear';
+  const depthLoadOp: GPULoadOp = preserve?.preserveDepth === true ? 'load' : 'clear';
+  runtime.renderPass = beginWgpuRenderPassEncoder(
     state,
     target.view,
     target.depthStencilView,
     target.width,
     target.height,
-    'clear',
-    clearColor,
+    colorLoadOp,
+    resolveWgpuClearColor(target),
+    depthLoadOp,
+    target.clearDepth,
   );
 }
 
@@ -105,7 +112,18 @@ export function createWgpuRenderTarget(
   });
   const depthStencilView = depthStencilTexture.createView();
 
-  return { bindGroup, texture, view, depthStencilTexture, depthStencilView, format, width: w, height: h };
+  return {
+    bindGroup,
+    texture,
+    view,
+    depthStencilTexture,
+    depthStencilView,
+    format,
+    clearColors: [],
+    clearDepth: 1,
+    width: w,
+    height: h,
+  };
 }
 
 export function destroyWgpuRenderTarget(_state: WgpuRenderState, target: WgpuRenderTarget): void {
@@ -157,7 +175,11 @@ export function drawWgpuRenderTargetResult(
   );
 }
 
-export function endWgpuRenderTarget(state: WgpuRenderState): void {
+// Ends the pass opened by beginWgpuRenderPass: closes the encoder, restores the saved canvas view,
+// viewport, color format, and 2D transform, and reopens the canvas pass (loadOp 'load') so the frame
+// continues. Mirrors endGlRenderPass / endCanvasRenderPass — no target argument. A call with no matching
+// begin is a no-op.
+export function endWgpuRenderPass(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
 
   if (runtime.renderPass !== null) {
@@ -181,7 +203,7 @@ export function endWgpuRenderTarget(state: WgpuRenderState): void {
   runtime.scissorStack = [];
 
   if (saved.canvasTextureView !== null) {
-    runtime.renderPass = beginWgpuRenderPass(
+    runtime.renderPass = beginWgpuRenderPassEncoder(
       state,
       saved.canvasTextureView,
       saved.depthStencilView ?? runtime.depthStencilView!,
@@ -224,4 +246,35 @@ export function resizeWgpuRenderTarget(
   });
   target.depthStencilTexture = newDepth;
   target.depthStencilView = newDepth.createView();
+}
+
+// True when color attachment `index` should be preserved (loadOp 'load') rather than cleared. A boolean
+// applies to every attachment; an array is indexed by attachment location, missing entries defaulting to
+// clear. Wgpu targets are single-attachment today, so index is always 0.
+function isWgpuColorPreserved(preserve: boolean | ReadonlyArray<boolean>, index: number): boolean {
+  if (typeof preserve === 'boolean') return preserve;
+  return preserve[index] === true;
+}
+
+// Unpacks the target's packed-RGBA (0xRRGGBBAA) clear color for attachment 0 into a GPUColor; an empty
+// clearColors means a transparent clear (the render-target default).
+function resolveWgpuClearColor(target: Readonly<WgpuRenderTarget>): GPUColor {
+  const packed = target.clearColors[0];
+  if (packed === undefined) return { r: 0, g: 0, b: 0, a: 0 };
+  return {
+    r: ((packed >>> 24) & 0xff) / 255,
+    g: ((packed >>> 16) & 0xff) / 255,
+    b: ((packed >>> 8) & 0xff) / 255,
+    a: (packed & 0xff) / 255,
+  };
+}
+
+// Sets the 2D root device transform the display-object update pass reads. Call after beginWgpuRenderPass
+// when a 2D pass renders into a target with its own coordinate system (the render cache); the value is
+// restored by the matching endWgpuRenderPass. Allocates a fresh matrix so the bracket's saved reference
+// stays intact for restore. Mirrors setGlRenderTransform2D.
+export function setWgpuRenderTransform2D(state: WgpuRenderState, transform: Readonly<Matrix>): void {
+  const next = createMatrix();
+  copyMatrix(next, transform);
+  state.renderTransform2D = next;
 }

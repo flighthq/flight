@@ -1,5 +1,5 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import type { CanvasRenderState, CanvasRenderTarget, Matrix } from '@flighthq/types';
+import type { CanvasRenderState, CanvasRenderTarget, Matrix, RenderPassPreserve } from '@flighthq/types';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
@@ -20,14 +20,17 @@ type SavedCanvasState = {
 const _targetStack = new WeakMap<CanvasRenderState, SavedCanvasState[]>();
 
 /**
- * Redirects subsequent canvas rendering into `target`. Saves the state's current
- * canvas, context, and renderTransform2D so they can be fully restored by
- * `endCanvasRenderTarget`. Supports nesting — each begin/end pair is independent.
+ * Begins a render pass into `target`: redirects subsequent canvas rendering into it (saving the state's
+ * current canvas, context, and 2D transform for restore, so passes nest) and CLEARS it by default.
+ * `preserve` keeps the target's pixels instead. Canvas clears by erasing (clearRect), so there is no
+ * colored render-target clear here; a colored backdrop is drawn as content. Carries no transform — a 2D
+ * pass that needs a specific root transform calls setCanvasRenderTransform2D after begin. Pair with
+ * endCanvasRenderPass. Mirrors beginGlRenderPass / beginWgpuRenderPass.
  */
-export function beginCanvasRenderTarget(
+export function beginCanvasRenderPass(
   state: CanvasRenderState,
   target: CanvasRenderTarget,
-  renderTransform: Readonly<Matrix>,
+  preserve?: Readonly<RenderPassPreserve>,
 ): void {
   const handles = state as CanvasRenderStateHandles;
   const runtime = getCanvasRenderStateRuntime(state);
@@ -49,11 +52,9 @@ export function beginCanvasRenderTarget(
   handles.context.imageSmoothingEnabled = runtime.imageSmoothingEnabled;
   handles.context.imageSmoothingQuality = runtime.imageSmoothingQuality;
 
-  // Always create a new matrix for this target so restoring the saved reference
-  // on end leaves the outer renderTransform2D unmodified.
-  const newTransform = createMatrix();
-  copyMatrix(newTransform, renderTransform);
-  handles.renderTransform2D = newTransform;
+  const preserveColor = preserve?.preserveColor;
+  const preserved = typeof preserveColor === 'boolean' ? preserveColor : preserveColor?.[0] === true;
+  if (!preserved) handles.context.clearRect(0, 0, target.width, target.height);
 }
 
 export function createCanvasRenderTarget(width: number, height: number): CanvasRenderTarget {
@@ -74,10 +75,10 @@ export function destroyCanvasRenderTarget(target: CanvasRenderTarget): void {
 }
 
 /**
- * Restores the canvas, context, and renderTransform2D saved by the matching
- * `beginCanvasRenderTarget` call.
+ * Ends the pass opened by beginCanvasRenderPass: restores the canvas, context, and 2D transform saved at
+ * begin. A call with no matching begin is a no-op. Mirrors endGlRenderPass / endWgpuRenderPass.
  */
-export function endCanvasRenderTarget(state: CanvasRenderState): void {
+export function endCanvasRenderPass(state: CanvasRenderState): void {
   const handles = state as CanvasRenderStateHandles;
   const saved = _targetStack.get(state)?.pop();
   if (saved === undefined) return;
@@ -91,4 +92,17 @@ export function resizeCanvasRenderTarget(target: CanvasRenderTarget, width: numb
   target.canvas.height = Math.max(1, Math.ceil(height));
   target.width = target.canvas.width;
   target.height = target.canvas.height;
+}
+
+/**
+ * Sets the 2D root device transform the display-object update pass reads to place nodes with no parent.
+ * Call after beginCanvasRenderPass when a 2D pass renders into a target with its own coordinate system;
+ * the value is restored by the matching endCanvasRenderPass. Allocates a fresh matrix so the bracket's
+ * saved reference stays intact for restore. Mirrors setGlRenderTransform2D / setWgpuRenderTransform2D.
+ */
+export function setCanvasRenderTransform2D(state: CanvasRenderState, transform: Readonly<Matrix>): void {
+  const handles = state as CanvasRenderStateHandles;
+  const next = createMatrix();
+  copyMatrix(next, transform);
+  handles.renderTransform2D = next;
 }
