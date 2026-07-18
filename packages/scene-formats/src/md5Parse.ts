@@ -21,9 +21,12 @@ import {
 
 // Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. The ASCII line-oriented format
 // contains a skeleton (joints) and one or more mesh sections. Each mesh section becomes a
-// separate Mesh child of the scene root. Joint hierarchy is represented as a tree of SceneNode
-// children under a "skeleton" group node, with each joint's local-space position and orientation
-// applied as transforms.
+// separate Mesh child of the scene root. MD5 joint transforms are ABSOLUTE (object-space), so the
+// skeleton is FLAT — every joint is a direct SceneNode child of a "skeleton" group node, its
+// absolute position/orientation applied as its local transform (world == local for a flat skeleton).
+// Joints are deliberately not nested by parent index: nesting would treat the absolute transforms as
+// parent-relative and double-accumulate down the chain, exploding the mesh under animation (the
+// .md5anim frames drive absolute transforms too). See the flat-parenting note below.
 //
 // Vertex positions are computed from weighted joint influences: for each vertex, the final
 // position is the sum of each weight's bias multiplied by the joint-space-transformed weight
@@ -107,16 +110,20 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       jointNodes.push(node);
     }
 
+    // MD5 stores every joint's transform in ABSOLUTE object space (not parent-relative) — in both the
+    // .md5mesh joints block above and the .md5anim frames. So each joint hangs directly under the
+    // skeleton root (a flat skeleton), making its world transform equal its own absolute transform.
+    // Nesting joints parent-under-parent would treat each absolute transform as parent-relative and
+    // double-accumulate down the chain: harmless at the bind pose (the skin palette is identity there
+    // regardless) but it explodes the mesh the moment the animation — which also drives absolute
+    // transforms — poses the joints. The parent index is retained on the parsed joints for reference
+    // but is deliberately not used to nest the scene nodes.
     for (let j = 0; j < joints.length; j++) {
       const parentIndex = joints[j].parentIndex;
-      if (parentIndex < 0) {
-        addNodeChild(skeletonRoot, jointNodes[j]);
-      } else if (parentIndex < jointNodes.length) {
-        addNodeChild(jointNodes[parentIndex], jointNodes[j]);
-      } else {
+      if (parentIndex >= joints.length) {
         warnings?.push(`createSceneFromMd5Mesh: joint ${j} has out-of-range parent index ${parentIndex}`);
-        addNodeChild(skeletonRoot, jointNodes[j]);
       }
+      addNodeChild(skeletonRoot, jointNodes[j]);
     }
 
     addNodeChild(scene, skeletonRoot);
