@@ -6,10 +6,60 @@ import {
   getNodeWorldTransformMatrix4,
   invalidateNodeLocalTransform,
 } from '@flighthq/node';
+import type { Skin } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { createMesh, enableMeshSignals, getMeshRuntime, getMeshSignals, isMesh, MeshKind } from './mesh';
+import { cloneMesh, createMesh, enableMeshSignals, getMeshRuntime, getMeshSignals, isMesh, MeshKind } from './mesh';
 import { createSceneNode } from './sceneNode';
+
+describe('cloneMesh', () => {
+  it('shares the geometry by reference', () => {
+    const geometry = createBoxMeshGeometry();
+    const source = createMesh(geometry, [createStandardPbrMaterial()]);
+    expect(cloneMesh(source).geometry).toBe(geometry);
+  });
+
+  it('copies the materials array but shares its entries', () => {
+    const material = createStandardPbrMaterial();
+    const source = createMesh(createBoxMeshGeometry(), [material]);
+    const clone = cloneMesh(source);
+    expect(clone.materials).not.toBe(source.materials);
+    expect(clone.materials[0]).toBe(material);
+  });
+
+  it('copies the transform into a distinct matrix', () => {
+    const source = createMesh(createBoxMeshGeometry(), []);
+    source.localMatrix.m[12] = 5;
+    source.localMatrix.m[13] = -2;
+    const clone = cloneMesh(source);
+    expect(clone.localMatrix).not.toBe(source.localMatrix);
+    expect(clone.localMatrix.m[12]).toBe(5);
+    expect(clone.localMatrix.m[13]).toBe(-2);
+  });
+
+  it('copies alpha, enabled, name, and kind', () => {
+    const source = createMesh(createBoxMeshGeometry(), [], 'Custom', { enabled: false, name: 'hero' });
+    source.alpha = 0.25;
+    const clone = cloneMesh(source);
+    expect(clone.alpha).toBe(0.25);
+    expect(clone.enabled).toBe(false);
+    expect(clone.name).toBe('hero');
+    expect(clone.kind).toBe('Custom');
+  });
+
+  it('shares the skin by reference when present', () => {
+    const skin = {} as Skin;
+    const source = createMesh(createBoxMeshGeometry(), []);
+    source.skin = skin;
+    expect(cloneMesh(source).skin).toBe(skin);
+  });
+
+  it('does not copy children', () => {
+    const source = createMesh(createBoxMeshGeometry(), []);
+    addNodeChild(source, createMesh(createBoxMeshGeometry(), []));
+    expect(getNodeChildCount(cloneMesh(source))).toBe(0);
+  });
+});
 
 describe('createMesh', () => {
   it('uses MeshKind by default', () => {
