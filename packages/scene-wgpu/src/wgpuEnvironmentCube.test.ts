@@ -1,6 +1,6 @@
 import type { CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
-import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
+import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
@@ -18,8 +18,12 @@ function completeEnvironment(): Environment {
   return { environment: cube, intensity: 1 } as Environment;
 }
 
+function dataFace(): ImageResource {
+  return { source: null, data: new Uint8ClampedArray(4 * 4 * 4), width: 4, height: 4 } as ImageResource;
+}
+
 function dataOnlyEnvironment(): Environment {
-  const face = { source: null, data: new Uint8ClampedArray(4 * 4 * 4), width: 4, height: 4 } as ImageResource;
+  const face = dataFace();
   const cube = {
     colorSpace: 'srgb',
     faces: [face, face, face, face, face, face],
@@ -61,5 +65,22 @@ describe('ensureWgpuEnvironmentSourceCube', () => {
     const again = ensureWgpuEnvironmentSourceCube(state, completeEnvironment());
     expect(again).toBe(view);
     expect(fake.calls.filter((c) => c.name === 'copyExternalImageToTexture').length).toBe(uploads);
+  });
+});
+
+describe('updateWgpuEnvironmentCubeFace', () => {
+  it('returns false when no source cube has been built yet', () => {
+    const { fake, state } = makeWgpuSceneState();
+    expect(updateWgpuEnvironmentCubeFace(state, 2, dataFace())).toBe(false);
+    expect(fake.calls.some((c) => c.name === 'writeTexture')).toBe(false);
+  });
+
+  it('restamps a single face of the built cube without rebuilding the other five', () => {
+    const { fake, state } = makeWgpuSceneState();
+    ensureWgpuEnvironmentSourceCube(state, dataOnlyEnvironment());
+    const afterBuild = fake.calls.filter((c) => c.name === 'writeTexture').length;
+    expect(afterBuild).toBe(6);
+    expect(updateWgpuEnvironmentCubeFace(state, 2, dataFace())).toBe(true);
+    expect(fake.calls.filter((c) => c.name === 'writeTexture').length).toBe(afterBuild + 1);
   });
 });

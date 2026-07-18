@@ -1,4 +1,5 @@
-import type { CubeTexture, Environment, WgpuRenderState } from '@flighthq/types';
+import { uploadWgpuTextureImageResource } from '@flighthq/render-wgpu';
+import type { CubeTexture, Environment, ImageResource, WgpuRenderState } from '@flighthq/types';
 
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 
@@ -35,28 +36,30 @@ export function ensureWgpuEnvironmentSourceCube(
   // Each face uploads into its array layer, in the canonical +X, -X, +Y, -Y, +Z, -Z order (the array-layer
   // index IS the face index — the wgpu counterpart of GL's CUBE_MAP_POSITIVE_X + face).
   for (let face = 0; face < 6; face++) {
-    const image = cube.faces[face]!;
-    if (image.source !== null) {
-      device.queue.copyExternalImageToTexture(
-        { source: image.source as GPUCopyExternalImageSource },
-        { texture, origin: [0, 0, face] },
-        [image.width, image.height, 1],
-      );
-    } else {
-      // rgba8unorm is 4 bytes/texel; a data-only face is a tightly-packed rgba8 Surface.
-      device.queue.writeTexture(
-        { texture, origin: [0, 0, face] },
-        image.data!,
-        { bytesPerRow: image.width * 4, rowsPerImage: image.height },
-        [image.width, image.height, 1],
-      );
-    }
+    uploadWgpuTextureImageResource(device, texture, [0, 0, face], cube.faces[face]!);
   }
 
   const view = texture.createView({ dimension: 'cube' });
   scene.environmentSourceCube = texture;
   scene.environmentSourceCubeView = view;
   return view;
+}
+
+// Restamps a single face of the already-built source cube in place, uploading whichever representation the
+// image carries (element or generated `data`). The incremental counterpart of the all-six
+// ensureWgpuEnvironmentSourceCube — for dynamic cube content (reflection probes, a live sky face, or a
+// generated data face mixed into loaded ones) without dropping and rebuilding the whole cube. `face` is the
+// CubeFace* index (+X, -X, +Y, -Y, +Z, -Z). Returns false when no cube has been built yet — the caller
+// must call ensureWgpuEnvironmentSourceCube first.
+export function updateWgpuEnvironmentCubeFace(
+  state: WgpuRenderState,
+  face: number,
+  image: Readonly<ImageResource>,
+): boolean {
+  const texture = getWgpuSceneRuntime(state).environmentSourceCube;
+  if (texture === null) return false;
+  uploadWgpuTextureImageResource(state.device, texture, [0, 0, face], image);
+  return true;
 }
 
 // A face is uploadable when it carries pixels in either representation: a decoded `source` element or

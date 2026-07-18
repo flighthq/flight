@@ -1,4 +1,5 @@
-import type { CubeTexture, Environment, GlRenderState } from '@flighthq/types';
+import { uploadGlTextureImageResource } from '@flighthq/render-gl';
+import type { CubeTexture, Environment, GlRenderState, ImageResource } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 
@@ -25,13 +26,7 @@ export function ensureGlEnvironmentSourceCube(
   const texture = gl.createTexture()!;
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
   for (let face = 0; face < 6; face++) {
-    const image = cube.faces[face]!;
-    const target = getGlCubeFaceTarget(gl, face);
-    if (image.source !== null) {
-      gl.texImage2D(target, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image.source as TexImageSource);
-    } else {
-      gl.texImage2D(target, 0, gl.RGBA, image.width, image.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image.data);
-    }
+    uploadGlTextureImageResource(gl, getGlCubeFaceTarget(gl, face), cube.faces[face]!);
   }
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -48,6 +43,26 @@ export function ensureGlEnvironmentSourceCube(
 // gl.TEXTURE_CUBE_MAP_POSITIVE_X + face. Face loops call this rather than hardcoding the GL enum math.
 export function getGlCubeFaceTarget(gl: WebGL2RenderingContext, face: number): number {
   return gl.TEXTURE_CUBE_MAP_POSITIVE_X + face;
+}
+
+// Restamps a single face of the already-built source cube in place, uploading whichever representation the
+// image carries (element or generated `data`). This is the incremental counterpart of the all-six
+// ensureGlEnvironmentSourceCube — for dynamic cube content (reflection probes, a live sky face, or a
+// generated data face mixed into loaded ones) without dropping and rebuilding the whole cube. `face` is the
+// CubeFace* index (+X, -X, +Y, -Y, +Z, -Z). Returns false when no cube has been built yet — the caller
+// must call ensureGlEnvironmentSourceCube first.
+export function updateGlEnvironmentCubeFace(
+  state: GlRenderState,
+  face: number,
+  image: Readonly<ImageResource>,
+): boolean {
+  const texture = getGlSceneRuntime(state).environmentSourceCube;
+  if (texture === null) return false;
+  const gl = state.gl;
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+  uploadGlTextureImageResource(gl, getGlCubeFaceTarget(gl, face), image);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+  return true;
 }
 
 // A face is uploadable when it carries pixels in either representation: a decoded `source` element or
