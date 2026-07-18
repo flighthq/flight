@@ -1,4 +1,5 @@
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
@@ -51,9 +52,9 @@ export function bindGlDebugNormalMap(
   const gl = state.gl;
   gl.uniform1f(program.locNormalScale, normalScale);
 
-  if (normalMap !== null && normalMap.image !== null && normalMap.image.source !== null) {
+  if (normalMap !== null && normalMap.image !== null && hasImageResourcePixels(normalMap.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, normalMap.image.source, normalMap.sampler);
+    bindGlImageResourceTexture(state, normalMap.image, normalMap.sampler);
     gl.uniform1i(program.locNormalMap, 0);
   }
 }

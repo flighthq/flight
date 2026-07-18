@@ -35,6 +35,7 @@
     "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/image": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/mesh": "*",

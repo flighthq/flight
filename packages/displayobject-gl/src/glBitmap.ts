@@ -1,9 +1,11 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type {
   Bitmap,
   DisplayObjectRenderer,
   GlRenderState,
+  ImageResource,
   Renderable,
   RendererData,
   RenderProxy2D,
@@ -18,24 +20,24 @@ import {
 } from './glSpriteBatch';
 
 interface GlBitmapData {
-  lastSrc: CanvasImageSource | null;
-  lastVersion: number;
+  image: ImageResource | null;
 }
 
 function createGlBitmapData(_state: GlRenderState, _source: Renderable): RendererData | null {
-  return { lastSrc: null, lastVersion: -1 } as unknown as RendererData;
+  return { image: null } as unknown as RendererData;
 }
 
 // Deletes the cached GPU texture when this bitmap is torn down. Prevents textures from leaking when
-// a bitmap is removed from the scene via disposeDisplayObjectRender.
+// a bitmap is removed from the scene via disposeDisplayObjectRender. Content-change re-upload is handled
+// by bindGlTexture's version-aware cache, so this only frees on teardown.
 function destroyGlBitmapData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { lastSrc } = data as unknown as GlBitmapData;
-  if (lastSrc === null) return;
-  const texture = runtime.textureCache.get(lastSrc);
-  if (texture !== undefined) {
-    state.gl.deleteTexture(texture);
-    runtime.textureCache.delete(lastSrc);
+  const { image } = data as unknown as GlBitmapData;
+  if (image === null) return;
+  const entry = runtime.imageResourceTextureCache.get(image);
+  if (entry !== undefined) {
+    state.gl.deleteTexture(entry.texture);
+    runtime.imageResourceTextureCache.delete(image);
   }
 }
 
@@ -43,31 +45,12 @@ export function drawGlBitmap(state: GlRenderState, renderProxy: RenderProxy2D): 
   const runtime = getGlRenderStateRuntime(state);
   const source = renderProxy.source as Bitmap;
   const imageSource = source.data.image;
-  if (imageSource === null || imageSource.source === null) return;
+  if (imageSource === null || !hasImageResourcePixels(imageSource)) return;
   if (renderProxy.rendererData === null) return;
 
-  const bitmapData = renderProxy.rendererData as unknown as GlBitmapData;
-  const src = imageSource.source;
-  const version = imageSource.version;
-
-  // Invalidate the cached GPU texture when the image content changes in place (Surface edits) or
-  // when the element reference is replaced (setBitmapImage). Both cases bump imageSource.version.
-  if (bitmapData.lastVersion !== version || bitmapData.lastSrc !== src) {
-    if (bitmapData.lastSrc !== null && bitmapData.lastSrc !== src) {
-      const oldTexture = runtime.textureCache.get(bitmapData.lastSrc);
-      if (oldTexture !== undefined) {
-        state.gl.deleteTexture(oldTexture);
-        runtime.textureCache.delete(bitmapData.lastSrc);
-      }
-    }
-    const staleTexture = runtime.textureCache.get(src);
-    if (staleTexture !== undefined) {
-      state.gl.deleteTexture(staleTexture);
-      runtime.textureCache.delete(src);
-    }
-    bitmapData.lastSrc = src;
-    bitmapData.lastVersion = version;
-  }
+  // Recorded so teardown can free the resource's cached GPU texture; re-upload on content change is the
+  // cache's job (keyed by the resource, version-aware), not this node's.
+  (renderProxy.rendererData as unknown as GlBitmapData).image = imageSource;
 
   const material = renderProxy.material;
   const materialRenderer = resolveGlMaterialRenderer(state, material);
@@ -101,14 +84,7 @@ export function drawGlBitmap(state: GlRenderState, renderProxy: RenderProxy2D): 
   }
 
   const startCount = runtime.spriteBatchCount;
-  const base = prepareGlSpriteBatchWrite(
-    state,
-    imageSource.source,
-    renderProxy.blendMode,
-    material,
-    materialRenderer,
-    1,
-  );
+  const base = prepareGlSpriteBatchWrite(state, imageSource, renderProxy.blendMode, material, materialRenderer, 1);
   const d = runtime.spriteBatchInstanceData;
   const t = renderProxy.transform2D;
   d[base] = t.a;

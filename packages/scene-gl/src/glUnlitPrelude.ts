@@ -1,5 +1,6 @@
 import type { LinearColor } from '@flighthq/color';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
@@ -67,9 +68,9 @@ export function bindGlUnlitSurface(
   gl.uniform1f(program.locIntensity, intensity);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 
-  if (colorMap !== null && colorMap.image !== null && colorMap.image.source !== null) {
+  if (colorMap !== null && colorMap.image !== null && hasImageResourcePixels(colorMap.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, colorMap.image.source, colorMap.sampler);
+    bindGlImageResourceTexture(state, colorMap.image, colorMap.sampler);
     gl.uniform1i(program.locColorMap, 0);
   }
 }

@@ -1,3 +1,4 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
@@ -24,7 +25,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
+  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || instanceCount === 0) return;
 
   ensureGlQuadBatchShader(state);
 
@@ -38,7 +39,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   const startCount = runtime.spriteBatchCount;
   const base = prepareGlSpriteBatchWrite(
     state,
-    atlas.image.source,
+    atlas.image,
     quadBatch.blendMode,
     material,
     materialRenderer,

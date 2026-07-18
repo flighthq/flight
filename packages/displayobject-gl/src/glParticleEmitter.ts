@@ -1,5 +1,6 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import type { GlRenderState, ParticleEmitter, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
@@ -125,13 +126,13 @@ export function drawGlParticleEmitter(state: GlRenderState, renderProxy: RenderP
   const runtime = getGlRenderStateRuntime(state);
   const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
+  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || particleCount === 0) return;
 
   const shader = ensureParticleShader(state);
   ensureInstanceCapacity(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  bindGlTexture(state, atlas.image.source);
+  bindGlImageResourceTexture(state, atlas.image);
 
   const gl = state.gl;
   const regions = atlas.regions;

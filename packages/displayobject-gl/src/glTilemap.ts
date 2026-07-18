@@ -1,3 +1,4 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveGlMaterialRenderer } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
@@ -20,7 +21,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
+  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image)) return;
   if (columns === 0 || rows === 0) return;
 
   ensureGlQuadBatchShader(state);
@@ -35,7 +36,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   const startCount = runtime.spriteBatchCount;
   const base = prepareGlSpriteBatchWrite(
     state,
-    atlas.image.source,
+    atlas.image,
     tilemapNode.blendMode,
     material,
     materialRenderer,

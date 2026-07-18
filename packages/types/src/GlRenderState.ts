@@ -6,6 +6,7 @@ import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
+import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
@@ -109,7 +110,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   spriteBatchCount: number;
   spriteBatchInstanceBuffer: WebGLBuffer | null;
   spriteBatchInstanceData: Float32Array;
-  spriteBatchTexture: CanvasImageSource | null;
+  spriteBatchTexture: ImageResource | null;
   // Color-transform fold state for the active sprite batch. Orthogonal to the material and never a
   // flush key, so tinted and untinted nodes with the same texture+blend share one batch. Mode 0 =
   // no tint (lean base shader), 1 = one uniform tint for the whole batch (u_ctMult/u_ctOff), 2 =
@@ -149,7 +150,15 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
    */
   renderTargetViewport: { width: number; height: number } | null;
   shaderLoc: GlShaderLocations;
+  // Raw-element texture cache: a canvas/video/image element uploaded directly (video frames, canvas-backed
+  // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
+  // ImageResource texture cache: content-backed images (bitmaps, sprite atlases, material maps), which may
+  // be element-backed OR a data-only generated Surface. Keyed by the resource entity (stable identity) so a
+  // data-only Surface caches too, with the uploaded `version` tracked so bindGlImageResourceTexture
+  // re-uploads in place when the pixels change — subsuming the per-node manual invalidation nodes used to
+  // open-code. See bindGlImageResourceTexture.
+  imageResourceTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
   // Textures whose mip chain has been generated via gl.generateMipmap, so a mip-sampling bind
   // generates the chain exactly once and updateGlTexture can refresh it after a re-upload. Keyed by
   // the GL texture (parallel to textureCache), lazily created on the first mip-sampled bind.

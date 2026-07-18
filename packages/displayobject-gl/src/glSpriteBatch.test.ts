@@ -1,5 +1,6 @@
+import { createImageResource } from '@flighthq/image';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { ColorTransform, Material } from '@flighthq/types';
+import type { ColorTransform, ImageResource, Material } from '@flighthq/types';
 
 import { enableGlColorAdjustment } from './glColorAdjustment';
 import { defaultGlMaterialRenderer } from './glDefaultMaterial';
@@ -15,8 +16,8 @@ import {
 } from './glSpriteBatch';
 import { createGlState } from './glTestHelper';
 
-function makeTexture(): HTMLImageElement {
-  return document.createElement('img');
+function makeTexture(): ImageResource {
+  return createImageResource(document.createElement('img'));
 }
 
 function makeMaterial(): Material {

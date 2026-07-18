@@ -1,8 +1,9 @@
-import type { SamplerLike } from '@flighthq/types';
+import type { ImageResource, SamplerLike } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
 import {
   applyGlBlendMode,
+  bindGlImageResourceTexture,
   bindGlTexture,
   createGlTexture,
   drawGlQuad,
@@ -153,6 +154,53 @@ describe('applyGlBlendMode', () => {
     applyGlBlendMode(state, BlendMode.Normal);
     applyGlBlendMode(state, BlendMode.Add);
     expect(gl.blendFunc).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('bindGlImageResourceTexture', () => {
+  function dataResource(size: number, version: number): ImageResource {
+    return {
+      source: null,
+      data: new Uint8ClampedArray(size * size * 4),
+      width: size,
+      height: size,
+      version,
+      alphaType: 'straight',
+    } as unknown as ImageResource;
+  }
+
+  it('uploads a data-only ImageResource (a generated Surface) via the raw-pixel path', () => {
+    const { state, gl } = createGlState();
+    bindGlImageResourceTexture(state, dataResource(4, 1));
+    expect(gl.createTexture).toHaveBeenCalled();
+    expect(gl.texImage2D).toHaveBeenCalled();
+  });
+
+  it('uploads an element-backed ImageResource via the element path', () => {
+    const { state, gl } = createGlState();
+    const image = {
+      source: document.createElement('img'),
+      data: null,
+      width: 1,
+      height: 1,
+      version: 1,
+      alphaType: 'straight',
+    } as unknown as ImageResource;
+    bindGlImageResourceTexture(state, image);
+    expect(gl.texImage2D).toHaveBeenCalled();
+  });
+
+  it('caches by resource identity and re-uploads only when the version changes', () => {
+    const { state, gl } = createGlState();
+    const image = dataResource(1, 1);
+    const t1 = bindGlImageResourceTexture(state, image);
+    const uploads = (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length;
+    const t2 = bindGlImageResourceTexture(state, image);
+    expect(t2).toBe(t1);
+    expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads);
+    image.version = 2;
+    bindGlImageResourceTexture(state, image);
+    expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
   });
 });
 

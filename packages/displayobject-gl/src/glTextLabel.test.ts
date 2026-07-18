@@ -1,3 +1,4 @@
+import { createImageResource } from '@flighthq/image';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createTextLabel, setTextLabelString } from '@flighthq/text';
 import type { RenderProxy2D, TextLabel } from '@flighthq/types';
@@ -45,7 +46,7 @@ function makeTextData() {
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastHash: '', logW: 0, logH: 0 };
+  return { canvas, ctx, image: createImageResource(canvas), lastHash: '', logW: 0, logH: 0 };
 }
 
 function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
@@ -118,34 +119,38 @@ describe('drawGlTextLabel', () => {
   it('skips layout and rasterization on repeated calls when the content version is unchanged', () => {
     const { state } = createGlState();
     registerDefaultGlMaterial(state);
-    const proxy = makeTextProxy('hello', makeTextData());
-    const deleteSpy = vi.spyOn(getGlRenderStateRuntime(state).textureCache, 'delete');
+    const data = makeTextData();
+    const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
+    // Rasterization bumps the canvas resource's version (setImageResourceSource); a skipped raster leaves
+    // it untouched. First draw rasterizes (version → 1); the repeat is skipped.
+    const rasterized = data.image.version;
     drawGlTextLabel(state, proxy);
-    // textureCache.delete only happens during rasterization (first call); skipped on second.
-    expect(deleteSpy).toHaveBeenCalledTimes(1);
+    expect(data.image.version).toBe(rasterized);
   });
 
   it('re-rasterizes when the content version is bumped', () => {
     const { state } = createGlState();
     registerDefaultGlMaterial(state);
-    const proxy = makeTextProxy('hello', makeTextData());
-    const deleteSpy = vi.spyOn(getGlRenderStateRuntime(state).textureCache, 'delete');
+    const data = makeTextData();
+    const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
+    const rasterized = data.image.version;
     setTextLabelString(proxy.source as TextLabel, 'world');
     drawGlTextLabel(state, proxy);
-    expect(deleteSpy).toHaveBeenCalledTimes(2);
+    expect(data.image.version).toBeGreaterThan(rasterized);
   });
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
     const { state } = createGlState();
     registerDefaultGlMaterial(state);
-    const proxy = makeTextProxy('hello', makeTextData());
-    const deleteSpy = vi.spyOn(getGlRenderStateRuntime(state).textureCache, 'delete');
+    const data = makeTextData();
+    const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
+    const rasterized = data.image.version;
     proxy.alpha = 0.5;
     drawGlTextLabel(state, proxy);
-    // Alpha is applied per-instance in the batch; the expensive raster cache is untouched.
-    expect(deleteSpy).toHaveBeenCalledTimes(1);
+    // Alpha is applied per-instance in the batch; the expensive raster (and its version bump) is untouched.
+    expect(data.image.version).toBe(rasterized);
   });
 });

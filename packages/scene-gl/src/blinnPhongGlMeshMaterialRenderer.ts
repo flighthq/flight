@@ -1,6 +1,7 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type {
   BlinnPhongMaterial,
   Camera,
@@ -91,23 +92,23 @@ function bindGlBlinnPhongMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.image !== null && diffuseMap.image.source !== null) {
+  if (diffuseMap !== null && diffuseMap.image !== null && hasImageResourcePixels(diffuseMap.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, diffuseMap.image.source, diffuseMap.sampler);
+    bindGlImageResourceTexture(state, diffuseMap.image, diffuseMap.sampler);
     gl.uniform1i(program.locDiffuseMap, 0);
   }
 
   const specularMap = material.specularMap;
-  if (specularMap !== null && specularMap.image !== null && specularMap.image.source !== null) {
+  if (specularMap !== null && specularMap.image !== null && hasImageResourcePixels(specularMap.image)) {
     gl.activeTexture(gl.TEXTURE1);
-    bindGlTexture(state, specularMap.image.source, specularMap.sampler);
+    bindGlImageResourceTexture(state, specularMap.image, specularMap.sampler);
     gl.uniform1i(program.locSpecularMap, 1);
   }
 
   const normalMap = material.normalMap;
-  if (normalMap !== null && normalMap.image !== null && normalMap.image.source !== null) {
+  if (normalMap !== null && normalMap.image !== null && hasImageResourcePixels(normalMap.image)) {
     gl.activeTexture(gl.TEXTURE2);
-    bindGlTexture(state, normalMap.image.source, normalMap.sampler);
+    bindGlImageResourceTexture(state, normalMap.image, normalMap.sampler);
     gl.uniform1i(program.locNormalMap, 2);
   }
 

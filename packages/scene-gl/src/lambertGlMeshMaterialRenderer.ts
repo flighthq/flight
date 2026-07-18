@@ -1,6 +1,7 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type {
   Camera,
   GlMeshMaterialRenderer,
@@ -80,9 +81,9 @@ function bindGlLambertMaterialUniforms(
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
-  if (diffuseMap !== null && diffuseMap.image !== null && diffuseMap.image.source !== null) {
+  if (diffuseMap !== null && diffuseMap.image !== null && hasImageResourcePixels(diffuseMap.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, diffuseMap.image.source, diffuseMap.sampler);
+    bindGlImageResourceTexture(state, diffuseMap.image, diffuseMap.sampler);
     gl.uniform1i(program.locDiffuseMap, 0);
   }
   bindGlUvTransform(gl, program, diffuseMap);

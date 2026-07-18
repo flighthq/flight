@@ -40,6 +40,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
     currentTexture: null,
     renderTargetViewport: null,
     textureCache: new WeakMap<CanvasImageSource, WebGLTexture>(),
+    imageResourceTextureCache: new WeakMap(),
     shaderLoc,
     defaultBitmapShader: { locations: shaderLoc, program: shaderLoc.program, bind: vi.fn() },
     quadVertexBuffer: {} as WebGLBuffer,

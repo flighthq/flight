@@ -1,5 +1,6 @@
 import type { LinearColor } from '@flighthq/color';
-import { bindGlTexture } from '@flighthq/render-gl';
+import { hasImageResourcePixels } from '@flighthq/image';
+import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type { GlRenderState, Texture } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
@@ -51,9 +52,9 @@ export function bindGlMatcapSurface(
   gl.uniform4f(program.locTint, tint[0], tint[1], tint[2], tint[3]);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 
-  if (matcap !== null && matcap.image !== null && matcap.image.source !== null) {
+  if (matcap !== null && matcap.image !== null && hasImageResourcePixels(matcap.image)) {
     gl.activeTexture(gl.TEXTURE0);
-    bindGlTexture(state, matcap.image.source, matcap.sampler);
+    bindGlImageResourceTexture(state, matcap.image, matcap.sampler);
     gl.uniform1i(program.locMatcap, 0);
   }
 }
