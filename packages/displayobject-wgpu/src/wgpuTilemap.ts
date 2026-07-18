@@ -1,3 +1,4 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
@@ -23,7 +24,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
 
   if (tileset === null) return;
   const atlas = tileset.atlas;
-  if (atlas === null || atlas.image === null || atlas.image.source === null) return;
+  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image)) return;
   if (columns === 0 || rows === 0) return;
 
   const material = tilemapNode.material;
@@ -36,7 +37,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
     state,
-    atlas.image.source,
+    atlas.image,
     tilemapNode.blendMode,
     material,
     materialRenderer,

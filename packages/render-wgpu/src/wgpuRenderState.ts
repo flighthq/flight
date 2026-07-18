@@ -116,6 +116,7 @@ export async function createWgpuRenderState(
   runtime.nearestSampler = nearestSampler;
   runtime.samplerCache = new Map();
   runtime.textureCache = new WeakMap();
+  runtime.imageResourceTextureCache = new WeakMap();
   runtime.defaultBitmapShader = null;
 
   runtime.particleInstanceBuffer = null;

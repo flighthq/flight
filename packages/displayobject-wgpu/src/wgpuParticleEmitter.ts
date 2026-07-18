@@ -1,5 +1,6 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
-import { bindWgpuTexture } from '@flighthq/render-wgpu';
+import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { ParticleEmitter, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
 
@@ -186,13 +187,13 @@ export function drawWgpuParticleEmitter(state: WgpuRenderState, renderProxy: Ren
 
   const source = renderProxy.source as ParticleEmitter;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null || particleCount === 0) return;
+  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || particleCount === 0) return;
 
   const resources = ensureParticleResources(state);
   ensureParticleInstanceBuffer(state, particleCount);
 
   state.applyBlendMode?.(state, renderProxy.blendMode);
-  const textureEntry = bindWgpuTexture(state, atlas.image.source);
+  const textureEntry = bindWgpuImageResourceTexture(state, atlas.image);
 
   const regions = atlas.regions;
   const numRegions = regions.length;

@@ -1,8 +1,10 @@
 import type {
   ColorTransform,
   HasColorTransform,
+  ImageResource,
   RenderProxy,
   RenderProxy2D,
+  WgpuImageResourceTextureEntry,
   WgpuRenderState,
   WgpuTextureEntry,
 } from '@flighthq/types';
@@ -14,6 +16,36 @@ import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from '.
 
 export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode | null): void {
   getWgpuRenderStateRuntime(state).currentBlendMode = blendMode;
+}
+
+// The resource-level sibling of bindWgpuTexture: uploads and caches the GPU texture for an ImageResource
+// — a bitmap, sprite atlas, or material map — accepting an element-backed OR a data-only generated Surface.
+// Keyed by the resource entity in imageResourceTextureCache with the uploaded content version, so an
+// in-place Surface edit (which bumps version) re-uploads (recreating the GPU texture). Textures are stored
+// premultiplied to match the premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend: an element copies with
+// premultipliedAlpha, and straight-alpha `data` is premultiplied on the CPU (writeTexture does no alpha
+// conversion). Returns the texture, view, and 2D bind group.
+export function bindWgpuImageResourceTexture(
+  state: WgpuRenderState,
+  image: Readonly<ImageResource>,
+  generateMips = false,
+): WgpuTextureEntry {
+  const cache = getWgpuRenderStateRuntime(state).imageResourceTextureCache;
+  const cached = cache.get(image);
+  if (cached !== undefined && cached.version === image.version) return cached;
+
+  const built = uploadWgpuImageResourceEntry(state, image, generateMips);
+  if (cached !== undefined) {
+    cached.texture.destroy();
+    cached.texture = built.texture;
+    cached.view = built.view;
+    cached.bindGroup = built.bindGroup;
+    cached.version = image.version;
+    return cached;
+  }
+  const entry: WgpuImageResourceTextureEntry = { ...built, version: image.version };
+  cache.set(image, entry);
+  return entry;
 }
 
 // Uploads (and caches per image source) the GPU texture for an image, returning its texture, full view,
@@ -256,4 +288,61 @@ export function updateWgpuTextureEntry(
 export function warmWgpuPipelines(state: WgpuRenderState): void {
   getWgpuPipeline(state, BlendMode.Normal, 'normal');
   getWgpuPipeline(state, BlendMode.Add, 'normal');
+}
+
+// Returns a new premultiplied rgba8 buffer from a straight-alpha one (rgb *= a/255). Allocates, but runs
+// only on a texture upload (cache miss or content change), never in the per-frame draw path.
+function premultiplyStraightRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
+  const out = new Uint8ClampedArray(data.length);
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    out[i] = (data[i] * a) / 255;
+    out[i + 1] = (data[i + 1] * a) / 255;
+    out[i + 2] = (data[i + 2] * a) / 255;
+    out[i + 3] = a;
+  }
+  return out;
+}
+
+// Allocates a GPU texture for an ImageResource and uploads its pixels through whichever representation it
+// carries — an element via copyExternalImageToTexture (premultipliedAlpha) or data via writeTexture (CPU
+// premultiply for straight alpha) — then builds the view + 2D bind group. The per-upload half of
+// bindWgpuImageResourceTexture, split out so the cache/version bracket stays legible.
+function uploadWgpuImageResourceEntry(
+  state: WgpuRenderState,
+  image: Readonly<ImageResource>,
+  generateMips: boolean,
+): WgpuTextureEntry {
+  const runtime = getWgpuRenderStateRuntime(state);
+  const { device } = state;
+  const width = image.width || 1;
+  const height = image.height || 1;
+  const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
+  const texture = device.createTexture({
+    size: [width, height, 1],
+    format: 'rgba8unorm',
+    mipLevelCount,
+    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+  if (image.source !== null) {
+    device.queue.copyExternalImageToTexture(
+      { source: image.source as GPUCopyExternalImageSource, flipY: false },
+      { texture, premultipliedAlpha: true },
+      [width, height],
+    );
+  } else {
+    const data = image.alphaType === 'straight' ? premultiplyStraightRgba8(image.data!) : image.data!;
+    device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
+  }
+  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
+  const view = texture.createView();
+  const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
+  const bindGroup = device.createBindGroup({
+    layout: runtime.textureBindGroupLayout,
+    entries: [
+      { binding: 0, resource: view },
+      { binding: 1, resource: sampler },
+    ],
+  });
+  return { texture, view, bindGroup };
 }

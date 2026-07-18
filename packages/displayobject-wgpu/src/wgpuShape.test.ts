@@ -1,3 +1,4 @@
+import { createImageResource } from '@flighthq/image';
 import type * as FlightNodeModule from '@flighthq/node';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
@@ -34,7 +35,7 @@ function makeShapeData() {
   canvas.width = 1;
   canvas.height = 1;
   const ctx = canvas.getContext('2d')!;
-  return { canvas, ctx, lastContentId: -1, lastW: 0, lastH: 0 };
+  return { canvas, ctx, image: createImageResource(canvas), lastContentId: -1, lastW: 0, lastH: 0 };
 }
 
 function makeShapeProxy(data: Record<string, unknown> = {}, rendererData: unknown = null): RenderProxy2D {

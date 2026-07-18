@@ -1,3 +1,4 @@
+import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
@@ -28,7 +29,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const source = quadBatch.source as QuadBatch;
   const data = source.data;
   const { atlas, instanceCount, ids, transforms } = data;
-  if (atlas === null || atlas.image === null || atlas.image.source === null || instanceCount === 0) return;
+  if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || instanceCount === 0) return;
 
   const material = quadBatch.material;
   const materialRenderer = resolveWgpuMaterialRenderer(state, material);
@@ -40,7 +41,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   const startCount = runtime.spriteBatchCount;
   const base = prepareWgpuSpriteBatchWrite(
     state,
-    atlas.image.source,
+    atlas.image,
     quadBatch.blendMode,
     material,
     materialRenderer,
