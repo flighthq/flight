@@ -399,6 +399,7 @@ function gltfMaterialToPbr(
   result.alphaMode = material.alphaMode === 'MASK' ? 'mask' : material.alphaMode === 'BLEND' ? 'blend' : 'opaque';
   result.alphaCutoff = material.alphaCutoff ?? 0.5;
   result.doubleSided = material.doubleSided ?? false;
+  result.name = material.name ?? null;
   return result as unknown as Material;
 }
 

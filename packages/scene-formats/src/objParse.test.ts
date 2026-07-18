@@ -258,6 +258,7 @@ describe('createSceneFromObj', () => {
     const material = mesh.materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.diffuse).toBe(0xff0000ff); // Kd 1 0 0, opaque (d defaults to 1)
+    expect(material.name).toBe('RedMat'); // MTL newmtl name preserved as the authored identity
   });
 
   it("maps MTL's own Kd/Ks/Ns/d/maps onto BlinnPhong fields, referencing map filenames unresolved", () => {

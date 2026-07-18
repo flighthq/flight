@@ -233,6 +233,7 @@ describe('createSceneFrom3ds', () => {
     expect(mat.kind).toBe(BlinnPhongMaterialKind);
     expect(mat.diffuse).toBe(0xcc6633ff); // 204,102,51 → opaque
     expect(mat.specular).toBe(0xffffffff);
+    expect(mat.name).toBe('Skin'); // 3DS material chunk name preserved as the authored identity
     // Texture filename is referenced, not decoded.
     expect((mat.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('skin.png');
     expect(mat.diffuseMap!.image).toBeNull();

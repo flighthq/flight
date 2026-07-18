@@ -445,11 +445,14 @@ function buildMeshNode(
 // External diffuseMap ref. The ambient color has no Blinn-Phong equivalent (ambient is a scene light
 // in Flight), so it is dropped; a caller wanting PBR converts explicitly.
 function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>): Material {
-  return createBlinnPhongMaterial({
+  const result = createBlinnPhongMaterial({
     diffuse: packThreeDsColor(material.diffuse),
     diffuseMap: material.textureFilename !== null ? createExternalTextureRef(material.textureFilename) : null,
     specular: packThreeDsColor(material.specular),
   }) as unknown as Material;
+  // Preserve the 3DS material chunk name as the material's authored name (empty → anonymous).
+  result.name = material.name.length > 0 ? material.name : null;
+  return result;
 }
 
 // Parses a material block (0xAFFF): walks sub-chunks for the name, the diffuse/specular/ambient color

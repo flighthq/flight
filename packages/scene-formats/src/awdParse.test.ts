@@ -525,6 +525,7 @@ describe('createSceneFromAwd', () => {
     const material = mesh.materials[0] as BlinnPhongMaterial | null;
     expect(material).not.toBeNull();
     expect(material!.kind).toBe(BlinnPhongMaterialKind);
+    expect(material!.name).toBe('Mat'); // AWD material block name preserved as the authored identity
     expect(material!.diffuseMap).not.toBeNull();
     // The parser references, it does not decode: image stays null, a ref carries the source.
     expect(material!.diffuseMap!.image).toBeNull();

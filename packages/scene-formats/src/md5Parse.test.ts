@@ -407,6 +407,7 @@ describe('createSceneFromMd5Mesh', () => {
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
+    expect(material.name).toBe('textures/default'); // MD5 shader path preserved as the authored identity
     // The shader path is referenced, not decoded: an Unresolved External ref, image left null.
     expect((material.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('textures/default');
     expect(material.diffuseMap!.image).toBeNull();

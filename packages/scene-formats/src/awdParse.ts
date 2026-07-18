@@ -1078,6 +1078,8 @@ function resolveAwdMaterial(
       diffuse: parsed.color !== null ? awdColorToRgba(parsed.color) : 0xffffffff,
       diffuseMap: diffuseTexture,
     }) as unknown as Material;
+    // Preserve the AWD material block name as the material's authored name (empty → anonymous).
+    material.name = parsed.name.length > 0 ? parsed.name : null;
   }
 
   cache.set(materialId, material);
