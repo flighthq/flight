@@ -17,6 +17,7 @@ import type {
 import {
   beginWgpuMeshDraw,
   drawWgpuMeshSubset,
+  getWgpuMaterialSampler,
   isWgpuTextureReady,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
@@ -79,7 +80,6 @@ export function ensureWgpuPbrMaterialBindGroup(
   const scene = getWgpuSceneRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(key);
   if (binding === undefined) {
-    const stateRuntime = getWgpuRenderStateRuntime(state);
     const buffer = state.device.createBuffer({
       size: WGPU_PBR_MATERIAL_UNIFORM_FLOATS * 4,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -88,7 +88,7 @@ export function ensureWgpuPbrMaterialBindGroup(
       layout: pipeline.materialBindGroupLayout,
       entries: [
         { binding: 0, resource: { buffer } },
-        { binding: 1, resource: stateRuntime.linearSampler },
+        { binding: 1, resource: getWgpuMaterialSampler(state, standard !== null ? standard.baseColorMap : null) },
         {
           binding: 2,
           resource: resolveWgpuMaterialTextureView(state, standard !== null ? standard.baseColorMap : null),

@@ -1,11 +1,11 @@
 import type { LinearColor } from '@flighthq/color';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type { Texture, WgpuRenderState } from '@flighthq/types';
 
 import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
+  getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
@@ -54,7 +54,6 @@ export function bindWgpuUnlitSurface(
   const scene = getWgpuSceneRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
-    const stateRuntime = getWgpuRenderStateRuntime(state);
     const buffer = state.device.createBuffer({
       size: UNLIT_UNIFORM_BYTES,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -63,7 +62,7 @@ export function bindWgpuUnlitSurface(
       layout: pipeline.materialBindGroupLayout,
       entries: [
         { binding: 0, resource: { buffer } },
-        { binding: 1, resource: stateRuntime.linearSampler },
+        { binding: 1, resource: getWgpuMaterialSampler(state, colorMap) },
         { binding: 2, resource: resolveWgpuMaterialTextureView(state, colorMap) },
       ],
     });
