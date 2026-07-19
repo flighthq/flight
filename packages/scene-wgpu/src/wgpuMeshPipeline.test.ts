@@ -384,7 +384,9 @@ describe('isWgpuTextureReady', () => {
   it('is true when the texture carries pixels (element or data), false otherwise', () => {
     expect(isWgpuTextureReady(null)).toBe(false);
     expect(isWgpuTextureReady({ image: null } as unknown as Texture)).toBe(false);
-    expect(isWgpuTextureReady({ image: { source: null, data: null } } as unknown as Texture)).toBe(false);
+    expect(isWgpuTextureReady({ image: { source: null, data: null, compressed: null } } as unknown as Texture)).toBe(
+      false,
+    );
     expect(isWgpuTextureReady({ image: { source: {} } } as unknown as Texture)).toBe(true);
     expect(isWgpuTextureReady({ image: { source: null, data: new Uint8ClampedArray(4) } } as unknown as Texture)).toBe(
       true,
