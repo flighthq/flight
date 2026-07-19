@@ -76,7 +76,12 @@ export function applyInnerGlowEffectToGl(
   applyGlEffectInvertTintPass(state, src, s0, color, alpha, strength);
 
   // Pass 2: blur → s1 (s2 is ping-pong temp)
-  applyGlEffectBoxBlur(state, s0, s1, s2, { blurX: effect.blurX ?? 6, blurY: effect.blurY ?? 6, passes: quality });
+  applyGlEffectBoxBlur(state, s0, s1, s2, {
+    blurX: effect.blurX ?? 6,
+    blurY: effect.blurY ?? 6,
+    edgeColor: getInvertTintEdgeColor(color, alpha, strength),
+    passes: quality,
+  });
 
   // Pass 3: clip blurred glow (s1) to source alpha, output to s0 (s1 no longer needed).
   // s0 still holds pass-1 content; clear it so the blend doesn't retain the exterior red.
@@ -120,4 +125,18 @@ function getClipShader(state: GlRenderState): InnerClipLocations {
     clipShaders.set(state, loc);
   }
   return loc;
+}
+
+function getInvertTintEdgeColor(
+  color: number,
+  alpha: number,
+  strength: number,
+): readonly [number, number, number, number] {
+  const edgeAlpha = Math.min(1, alpha * strength);
+  return [
+    (((color >> 16) & 0xff) / 255) * edgeAlpha,
+    (((color >> 8) & 0xff) / 255) * edgeAlpha,
+    ((color & 0xff) / 255) * edgeAlpha,
+    edgeAlpha,
+  ];
 }
