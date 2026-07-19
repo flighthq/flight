@@ -6,6 +6,7 @@ import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScenePipeline,
+  ensureWgpuShadowSampleLayout,
   stashWgpuUvTransform,
   WGPU_MESH_PRELUDE_WGSL,
 } from './wgpuMeshPipeline';
@@ -130,7 +131,15 @@ export function compileWgpuToonPipeline(
       { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  return createWgpuMeshPipeline(state, { doubleSided: key.doubleSided, format, materialBindGroupLayout, module });
+  // group(3) shadow-sample layout opts the toon pipeline into directional shadow reception; the shared
+  // shadow group is bound each draw by beginWgpuMeshDraw (real depth map or a gated-off 1x1 dummy).
+  return createWgpuMeshPipeline(state, {
+    doubleSided: key.doubleSided,
+    format,
+    materialBindGroupLayout,
+    module,
+    shadowBindGroupLayout: ensureWgpuShadowSampleLayout(state),
+  });
 }
 
 // Resolves the Toon pipeline for a define key + color format, compiling and caching it on first use
@@ -173,6 +182,43 @@ struct ToonMaterial {
 @group(2) @binding(2) var baseColorTexture : texture_2d<f32>;
 @group(2) @binding(3) var rampTexture : texture_2d<f32>;
 
+// The directional shadow inputs (group 3), the shared shadow-sample layout ensureWgpuShadowSampleLayout
+// builds and beginWgpuMeshDraw binds. matrix is the light view-projection (world -> shadow clip);
+// params.x is the enabled flag. The WGSL mirror of scene-gl's shadow uniforms and wgpuPbrPrelude's Shadow.
+struct Shadow {
+  matrix : mat4x4f,
+  params : vec4f,   // x = enabled (0 or 1)
+};
+
+@group(3) @binding(0) var<uniform> shadow : Shadow;
+@group(3) @binding(1) var shadowMap : texture_depth_2d;
+@group(3) @binding(2) var shadowSampler : sampler_comparison;
+
+// Directional shadow factor with 3x3 PCF — identical to wgpuPbrPrelude's copy. UV flips Y (WebGPU
+// top-left origin), depthRef remaps GL-convention clip Z (-1..1) into WebGPU's 0..1 range; the comparison
+// sampler ('less-equal') yields "current <= closest" per tap. Outside the frustum / no map bound = lit.
+fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
+  if (shadow.params.x < 0.5) {
+    return 1.0;
+  }
+  let clip = shadow.matrix * vec4f(worldPos, 1.0);
+  let ndc = clip.xyz / clip.w;
+  let uv = vec2f(ndc.x * 0.5 + 0.5, 1.0 - (ndc.y * 0.5 + 0.5));
+  let depthRef = ndc.z * 0.5 + 0.5 - 0.0025;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
+    return 1.0;
+  }
+  let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
+  var sum = 0.0;
+  for (var x = -1; x <= 1; x = x + 1) {
+    for (var y = -1; y <= 1; y = y + 1) {
+      let offset = vec2f(f32(x), f32(y)) * texel;
+      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
+    }
+  }
+  return sum / 9.0;
+}
+
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var baseColor = material.baseColor;
   if (HAS_BASE_COLOR_MAP) {
@@ -194,18 +240,21 @@ struct ToonMaterial {
 
   // Directional light: -direction is the surface-to-light vector (light travels along direction). The
   // raw N·L is quantized into cel bands — a 1D ramp lookup when bound, else a stepped floor over steps —
-  // then scales the base color and the directional radiance.
+  // then scales the base color and the directional radiance. The banded contribution is shadow-mapped
+  // like the classic/PBR directional term; sampleDirectionalShadow is 1.0 when no map is bound.
   if (frame.lightDirection.w > 0.5) {
     let lightDir = normalize(-frame.lightDirection.xyz);
     let nDotL = clamp(dot(normal, lightDir), 0.0, 1.0);
+    var direct = vec3f(0.0);
     if (HAS_RAMP) {
       let band = textureSample(rampTexture, materialSampler, vec2f(nDotL, 0.5)).rgb;
-      radiance = radiance + baseColor.rgb * band * frame.directionalRadiance.rgb;
+      direct = baseColor.rgb * band * frame.directionalRadiance.rgb;
     } else {
       let steps = material.params.x;
       let band = floor(nDotL * steps) / max(steps, 1.0);
-      radiance = radiance + baseColor.rgb * band * frame.directionalRadiance.rgb;
+      direct = baseColor.rgb * band * frame.directionalRadiance.rgb;
     }
+    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
   }
 
   // Ambient term: flat irradiance over the base color (unbanded).

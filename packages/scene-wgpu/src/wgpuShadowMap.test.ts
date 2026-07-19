@@ -153,7 +153,7 @@ describe('wgpuPbrPrelude shadow sampling', () => {
     expect(code).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
   });
 
-  it('classic prelude does not sample the shadow map (mirrors scene-gl classic)', () => {
+  it('classic prelude samples the shadow map on the directional term (mirrors scene-gl classic)', () => {
     const code = getWgpuClassicModuleSourceForKey({
       alphaMaskEnabled: false,
       doubleSided: false,
@@ -162,7 +162,8 @@ describe('wgpuPbrPrelude shadow sampling', () => {
       hasSpecularMap: false,
       lightingModel: 'lambert',
     });
-    expect(code).not.toContain('sampleDirectionalShadow');
-    expect(code).not.toContain('@group(3)');
+    expect(code).toContain('@group(3) @binding(1) var shadowMap : texture_depth_2d');
+    expect(code).toContain('fn sampleDirectionalShadow');
+    expect(code).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
   });
 });

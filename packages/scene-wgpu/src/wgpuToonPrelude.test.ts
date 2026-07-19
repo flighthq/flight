@@ -79,4 +79,14 @@ describe('getWgpuToonModuleSourceForKey', () => {
     expect(source).toContain('frame.directionalRadiance');
     expect(source).toContain('fn fs_main');
   });
+
+  it('declares the group(3) shadow bindings and shadow-maps the banded directional term', () => {
+    for (const key of [FLAT, { ...FLAT, hasRamp: true }]) {
+      const source = getWgpuToonModuleSourceForKey(key);
+      expect(source).toContain('@group(3) @binding(1) var shadowMap : texture_depth_2d;');
+      expect(source).toContain('@group(3) @binding(2) var shadowSampler : sampler_comparison;');
+      expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
+      expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition\)/g)).toHaveLength(1);
+    }
+  });
 });

@@ -5,6 +5,7 @@ import type { WgpuMeshPipeline } from './wgpuMeshPipeline';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScenePipeline,
+  ensureWgpuShadowSampleLayout,
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
@@ -141,7 +142,16 @@ export function compileWgpuClassicPipeline(
       { binding: 4, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
-  return createWgpuMeshPipeline(state, { doubleSided: key.doubleSided, format, materialBindGroupLayout, module });
+  // The group(3) shadow-sample layout opts this pipeline into directional shadow reception: the pipeline
+  // layout gains [Frame, Draw, Material, Shadow] and beginWgpuMeshDraw binds the shared shadow group each
+  // draw (the real depth map when drawWgpuSceneShadowMap ran this frame, else a gated-off 1x1 dummy).
+  return createWgpuMeshPipeline(state, {
+    doubleSided: key.doubleSided,
+    format,
+    materialBindGroupLayout,
+    module,
+    shadowBindGroupLayout: ensureWgpuShadowSampleLayout(state),
+  });
 }
 
 // Resolves the classic pipeline for a define key + color format, compiling and caching it on first use
@@ -190,6 +200,45 @@ struct ClassicMaterial {
 @group(2) @binding(3) var specularTexture : texture_2d<f32>;
 @group(2) @binding(4) var normalTexture : texture_2d<f32>;
 
+// The directional shadow inputs (group 3), the shared shadow-sample layout ensureWgpuShadowSampleLayout
+// builds and beginWgpuMeshDraw binds. matrix is the light view-projection (world -> shadow clip);
+// params.x is the enabled flag (0 or 1). The WGSL mirror of scene-gl's u_shadowMap / u_shadowMatrix /
+// u_shadowEnabled and wgpuPbrPrelude's Shadow.
+struct Shadow {
+  matrix : mat4x4f,
+  params : vec4f,   // x = enabled (0 or 1)
+};
+
+@group(3) @binding(0) var<uniform> shadow : Shadow;
+@group(3) @binding(1) var shadowMap : texture_depth_2d;
+@group(3) @binding(2) var shadowSampler : sampler_comparison;
+
+// Directional shadow factor at a world position: 1.0 fully lit, 0.0 fully shadowed, with 3x3 PCF —
+// identical to wgpuPbrPrelude's copy. UV flips Y (WebGPU top-left origin), depthRef remaps GL-convention
+// clip Z (-1..1) into WebGPU's 0..1 range; the comparison sampler ('less-equal') yields "current <=
+// closest" per tap. Fragments outside the shadow frustum, or when no map is bound, read as lit.
+fn sampleDirectionalShadow(worldPos : vec3f) -> f32 {
+  if (shadow.params.x < 0.5) {
+    return 1.0;
+  }
+  let clip = shadow.matrix * vec4f(worldPos, 1.0);
+  let ndc = clip.xyz / clip.w;
+  let uv = vec2f(ndc.x * 0.5 + 0.5, 1.0 - (ndc.y * 0.5 + 0.5));
+  let depthRef = ndc.z * 0.5 + 0.5 - 0.0025;
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 || depthRef > 1.0) {
+    return 1.0;
+  }
+  let texel = 1.0 / vec2f(textureDimensions(shadowMap, 0));
+  var sum = 0.0;
+  for (var x = -1; x <= 1; x = x + 1) {
+    for (var y = -1; y <= 1; y = y + 1) {
+      let offset = vec2f(f32(x), f32(y)) * texel;
+      sum = sum + textureSampleCompareLevel(shadowMap, shadowSampler, uv + offset, depthRef);
+    }
+  }
+  return sum / 9.0;
+}
+
 @fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
   var diffuse = material.diffuse;
   if (HAS_DIFFUSE_MAP) {
@@ -229,10 +278,12 @@ struct ClassicMaterial {
   var radiance = vec3f(0.0);
 
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
+  // The whole directional contribution (diffuse + specular) is PCF shadow-mapped, mirroring the PBR path;
+  // sampleDirectionalShadow returns 1.0 when no shadow map is bound, so an unshadowed scene is unchanged.
   if (frame.lightDirection.w > 0.5) {
     let lightDir = normalize(-frame.lightDirection.xyz);
     let nDotL = max(dot(normal, lightDir), 0.0);
-    radiance = radiance + diffuse.rgb * nDotL * frame.directionalRadiance.rgb;
+    var direct = diffuse.rgb * nDotL * frame.directionalRadiance.rgb;
 
     if ((LIGHTING_PHONG || LIGHTING_BLINNPHONG) && nDotL > 0.0) {
       let viewDir = normalize(frame.cameraPosition.xyz - in.worldPosition);
@@ -247,8 +298,10 @@ struct ClassicMaterial {
         specAngle = max(dot(normal, halfVec), 0.0);
       }
       let specular = pow(specAngle, max(material.params.x, 1.0));
-      radiance = radiance + specular * specularColor * frame.directionalRadiance.rgb;
+      direct = direct + specular * specularColor * frame.directionalRadiance.rgb;
     }
+
+    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition);
   }
 
   // Ambient term: flat irradiance over the diffuse albedo.
