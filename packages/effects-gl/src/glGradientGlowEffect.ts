@@ -14,7 +14,7 @@ import type {
   GlRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyGlEffectBlitPass } from './glEffectBlitShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { createGlEffectGradientRampTexture } from './glEffectGradientRamp';
 import { applyGlEffectTintPass } from './glEffectTintShader';
@@ -43,7 +43,7 @@ const lookupShaders = new WeakMap<GlRenderState, GradientLookupLocations>();
 // inlined multi-pass recipe, then releases them. The gradient ramp is built each call from
 // `effect.colors`, `effect.alphas`, and `effect.ratios` (a temporary `WebGLTexture` per call).
 //
-// Compositing order: gradient glow → source on top.
+// Compositing order follows `sourceMode`: gradient glow, then source draw/hide/knockout treatment.
 export function applyGradientGlowEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -61,6 +61,7 @@ export function applyGradientGlowEffectToGl(
 
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
   const strength = effect.strength ?? 1;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   const gl = state.gl;
 
@@ -75,7 +76,11 @@ export function applyGradientGlowEffectToGl(
 
   clearGlRenderTarget(state, dst);
   applyGlEffectBlitPass(state, s0, dst);
-  applyGlEffectBlitPass(state, src, dst);
+  if (sourceMode === 'knockout') {
+    applyGlEffectErasePass(state, src, dst);
+  } else if (sourceMode === 'draw') {
+    applyGlEffectBlitPass(state, src, dst);
+  }
 
   releaseGlRenderTarget(pool, s0);
   releaseGlRenderTarget(pool, s1);

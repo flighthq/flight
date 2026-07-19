@@ -1,6 +1,7 @@
+import type { EffectSourceMode } from './EffectSourceMode';
 import type { RenderEffect } from './RenderEffect';
 
-// Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth.
+// Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth, then sourceMode decides source compositing.
 // Full-frame composite effect over the scene's alpha silhouette; colors are packed RGB integers with a
 // separate alpha field (mirrors the Tier-1 filter recipe this realizes), angles are degrees.
 export interface GradientBevelEffect extends RenderEffect {
@@ -14,5 +15,6 @@ export interface GradientBevelEffect extends RenderEffect {
   distance?: number;
   quality?: number;
   ratios: ReadonlyArray<number>;
+  sourceMode?: EffectSourceMode;
   strength?: number;
 }

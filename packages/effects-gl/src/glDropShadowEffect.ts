@@ -7,7 +7,7 @@ import type {
   GlRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass } from './glEffectBlitShader';
+import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { applyGlEffectTintPass } from './glEffectTintShader';
 
@@ -15,8 +15,8 @@ import { applyGlEffectTintPass } from './glEffectTintShader';
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // inlined multi-pass recipe, then releases them.
 //
-// Compositing order: shadow at offset → source (unless `hideObject` is true).
-// `knockout` and `hideObject` both composite the shadow alone, omitting the source object.
+// Compositing order depends on `sourceMode`: 'draw' composites shadow → source, 'hide' composites
+// shadow only, and 'knockout' composites shadow then erases the un-offset source silhouette.
 export function applyDropShadowEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -40,8 +40,7 @@ export function applyDropShadowEffectToGl(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
-  const hideObject = effect.hideObject ?? false;
-  const knockout = effect.knockout ?? false;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   const tintStrength = Math.min(1, strength);
   const shadowPasses = Math.max(1, Math.floor(strength));
@@ -60,7 +59,9 @@ export function applyDropShadowEffectToGl(
     applyGlEffectBlitOffsetPass(state, blurred, dst, dx, dy);
   }
 
-  if (!hideObject && !knockout) {
+  if (sourceMode === 'knockout') {
+    applyGlEffectErasePass(state, src, dst);
+  } else if (sourceMode === 'draw') {
     applyGlEffectBlitPass(state, src, dst);
   }
 

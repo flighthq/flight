@@ -9,10 +9,7 @@ describe('createInnerShadowEffect', () => {
     expect(createInnerShadowEffect({ strength: 2 })).toMatchObject({ strength: 2 });
   });
 
-  it('carries object visibility flags', () => {
-    expect(createInnerShadowEffect({ hideObject: true, knockout: true })).toMatchObject({
-      hideObject: true,
-      knockout: true,
-    });
+  it('carries source mode', () => {
+    expect(createInnerShadowEffect({ sourceMode: 'hide' })).toMatchObject({ sourceMode: 'hide' });
   });
 });

@@ -6,6 +6,9 @@ describe('createBevelEffect', () => {
   });
 
   it('carries options', () => {
-    expect(createBevelEffect({ strength: 2 })).toMatchObject({ strength: 2 });
+    expect(createBevelEffect({ sourceMode: 'knockout', strength: 2 })).toMatchObject({
+      sourceMode: 'knockout',
+      strength: 2,
+    });
   });
 });

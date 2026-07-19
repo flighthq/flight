@@ -33,10 +33,18 @@ const REPLACE_BLEND: GPUBlendState = {
   alpha: { srcFactor: 'one', dstFactor: 'zero', operation: 'add' },
 };
 
+// Destination-out erase blend: dst.rgb/a *= (1 - src.a).
+const ERASE_BLEND: GPUBlendState = {
+  color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+  alpha: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+};
+
+export type WgpuEffectBlendMode = 'premul' | 'replace' | 'erase';
+
 export type WgpuEffectPipeline = {
   // The default variant, compiled for the canvas format (state.format).
   pipeline: GPURenderPipeline;
-  blendMode: 'premul' | 'replace';
+  blendMode: WgpuEffectBlendMode;
   // Compiles a variant of this pipeline targeting `format`. A render pipeline's color target format must
   // match the attachment it draws into, so drawing into a non-canvas-format target (an HDR
   // rgba16float effect target) needs a matching variant; the draw path resolves and caches it per format.
@@ -229,7 +237,7 @@ export function clearWgpuEffectTarget(state: WgpuRenderState, target: WgpuRender
 export function createWgpuDualSourceEffectPipeline(
   state: WgpuRenderState,
   fragmentWGSL: string,
-  blend: 'premul' | 'replace' = 'premul',
+  blend: WgpuEffectBlendMode = 'premul',
 ): WgpuDualSourceEffectPipeline {
   const fs = getOrCreateEffectPassState(state);
   const { device } = state;
@@ -246,7 +254,7 @@ export function createWgpuDualSourceEffectPipeline(
       fragment: {
         module: shaderModule,
         entryPoint: 'fs_main',
-        targets: [{ format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
+        targets: [{ format, blend: getBlendState(blend) }],
       },
       primitive: { topology: 'triangle-list' },
     });
@@ -258,7 +266,7 @@ export function createWgpuDualSourceEffectPipeline(
 export function createWgpuEffectPipeline(
   state: WgpuRenderState,
   fragmentWGSL: string,
-  blend: 'premul' | 'replace' = 'premul',
+  blend: WgpuEffectBlendMode = 'premul',
 ): WgpuEffectPipeline {
   const fs = getOrCreateEffectPassState(state);
   const { device } = state;
@@ -275,12 +283,18 @@ export function createWgpuEffectPipeline(
       fragment: {
         module: shaderModule,
         entryPoint: 'fs_main',
-        targets: [{ format, blend: blend === 'premul' ? PREMUL_BLEND : REPLACE_BLEND }],
+        targets: [{ format, blend: getBlendState(blend) }],
       },
       primitive: { topology: 'triangle-list' },
     });
 
   return { pipeline: compileForFormat(fs.format), blendMode: blend, compileForFormat, variants: new Map() };
+}
+
+function getBlendState(blend: WgpuEffectBlendMode): GPUBlendState {
+  if (blend === 'replace') return REPLACE_BLEND;
+  if (blend === 'erase') return ERASE_BLEND;
+  return PREMUL_BLEND;
 }
 
 /**

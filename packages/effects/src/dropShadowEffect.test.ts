@@ -6,6 +6,9 @@ describe('createDropShadowEffect', () => {
   });
 
   it('carries options', () => {
-    expect(createDropShadowEffect({ strength: 2 })).toMatchObject({ strength: 2 });
+    expect(createDropShadowEffect({ sourceMode: 'knockout', strength: 2 })).toMatchObject({
+      sourceMode: 'knockout',
+      strength: 2,
+    });
   });
 });

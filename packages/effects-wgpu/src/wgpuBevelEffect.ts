@@ -7,7 +7,7 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import type { WgpuDualSourceEffectPipeline } from './wgpuEffectPass';
 import {
@@ -17,7 +17,7 @@ import {
 } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
 
-// Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType and composited over the source.
+// Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // multi-pass recipe (neutral tint → box blur → directional-gradient composite), then releases them.
 export function applyBevelEffectToWgpu(
@@ -45,7 +45,7 @@ export function applyBevelEffectToWgpu(
   const highlightAlpha = effect.highlightAlpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
-  const knockout = effect.knockout ?? false;
+  const sourceMode = effect.sourceMode ?? 'draw';
   const bevelType = effect.bevelType ?? 'inner';
 
   // Blurred alpha field (neutral white tint, strength 1 — strength is the gradient
@@ -58,7 +58,7 @@ export function applyBevelEffectToWgpu(
   });
 
   clearWgpuEffectTarget(state, dst);
-  if (!knockout) applyWgpuEffectBlitPass(state, src, dst);
+  if (sourceMode === 'draw') applyWgpuEffectBlitPass(state, src, dst);
 
   applyWgpuBevelCompositePass(state, blurred, src, dst, {
     offsetX: offsetX / source.width,
@@ -73,6 +73,8 @@ export function applyBevelEffectToWgpu(
     clipMode: bevelType === 'inner' ? 1 : bevelType === 'outer' ? 2 : 0,
   });
 
+  if (sourceMode === 'knockout') applyWgpuEffectErasePass(state, src, dst);
+
   releaseWgpuRenderTarget(pool, tinted);
   releaseWgpuRenderTarget(pool, blurred);
   releaseWgpuRenderTarget(pool, blurTemp);
@@ -83,7 +85,7 @@ export const defaultWgpuBevelEffectRunner: WgpuRenderEffectRunner = (ctx, effect
 };
 
 // Reads the blurred alpha field (group 1) and source (group 2); writes the tinted, clipped bevel
-// mask, premultiplied, blended over `dest` (which already holds the source unless knockout).
+// mask, premultiplied, blended over `dest` (which already holds the source when sourceMode is 'draw').
 const BEVEL_COMPOSITE_WGSL = /* wgsl */ `
 struct Uniforms {
   highlight : vec4f,

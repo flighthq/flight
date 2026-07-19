@@ -75,8 +75,9 @@ export function registerColorGradeCanvasRenderEffects(state: CanvasRenderState):
 }
 
 // Registers the composite-family default runners realizable on Canvas 2D: DropShadowEffect and
-// OuterGlowEffect, both drawn via a CSS `drop-shadow()` filter chain. The other former-filter
-// composites (bevel, inner glow/shadow, gradient glow/bevel) have no Canvas 2D realization — they
+// OuterGlowEffect. Their simple draw mode uses CSS `drop-shadow()`, while hide/knockout use explicit
+// Canvas compositing. The other former-filter composites (bevel, inner glow/shadow, gradient glow/bevel)
+// have no Canvas 2D realization — they
 // require the multi-target tint/blur/offset GPU recipe — so they are intentionally omitted here (the
 // pipeline skips unregistered kinds). Symmetric with registerCompositeGlRenderEffects.
 export function registerCompositeCanvasRenderEffects(state: CanvasRenderState): void {

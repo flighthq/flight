@@ -1,3 +1,7 @@
+vi.hoisted(() => {
+  vi.resetModules();
+});
+
 vi.mock('@flighthq/render-wgpu', () => {
   let nextTargetId = 0;
   return {
@@ -46,26 +50,13 @@ describe('applyInnerShadowEffectToWgpu', () => {
     expect(applyWgpuEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
   });
 
-  it('omits the source composite when hideObject is true', () => {
+  it('omits the source composite when sourceMode is hide', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
     applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), {
       kind: 'InnerShadowEffect',
-      hideObject: true,
-    });
-
-    expect(applyWgpuEffectBlitPass).toHaveBeenCalledTimes(1);
-    expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
-  });
-
-  it('omits the source composite when knockout is true', () => {
-    const source = createTarget('source');
-    const dest = createTarget('dest');
-
-    applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), {
-      kind: 'InnerShadowEffect',
-      knockout: true,
+      sourceMode: 'hide',
     });
 
     expect(applyWgpuEffectBlitPass).toHaveBeenCalledTimes(1);
@@ -81,6 +72,15 @@ describe('defaultWgpuInnerShadowEffectRunner', () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+afterAll(() => {
+  vi.doUnmock('@flighthq/render-wgpu');
+  vi.doUnmock('./wgpuEffectBlitShader');
+  vi.doUnmock('./wgpuEffectBoxBlur');
+  vi.doUnmock('./wgpuEffectPass');
+  vi.doUnmock('./wgpuEffectTintShader');
+  vi.resetModules();
 });
 
 function createState(): never {

@@ -34,6 +34,19 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   return textureSampleLevel(tex, smp, uv, 0.0);
 }`;
 
+// Emits source alpha for a destination-out erase pass; blend state supplies the coverage operator.
+const ERASE_WGSL = /* wgsl */ `
+struct Uniforms { _u : f32, _pad0 : f32, _pad1 : f32, _pad2 : f32, }
+@group(0) @binding(0) var<uniform> uni : Uniforms;
+@group(1) @binding(0) var tex : texture_2d<f32>;
+@group(1) @binding(1) var smp : sampler;
+
+@fragment
+fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
+  let a = textureSampleLevel(tex, smp, uv, 0.0).a;
+  return vec4f(0.0, 0.0, 0.0, a);
+}`;
+
 /**
  * Blits source into dest at a pixel offset (dx, dy in screen-space Y-down).
  * Pixels sampling outside the source bounds produce transparent output.
@@ -68,6 +81,16 @@ export function applyWgpuEffectBlitPass(
   drawWgpuEffectPass(state, source, dest, pipeline, () => {});
 }
 
+/** Erases dest by the source alpha mask, equivalent to destination-out compositing. */
+export function applyWgpuEffectErasePass(
+  state: WgpuRenderState,
+  source: WgpuRenderTarget,
+  dest: WgpuRenderTarget,
+): void {
+  const pipeline = getWgpuEraseShader(state);
+  drawWgpuEffectPass(state, source, dest, pipeline, () => {});
+}
+
 function getWgpuBlitOffsetShader(state: WgpuRenderState): WgpuEffectPipeline {
   let p = blitOffsetPipelines.get(state);
   if (p === undefined) {
@@ -86,5 +109,15 @@ function getWgpuBlitShader(state: WgpuRenderState): WgpuEffectPipeline {
   return p;
 }
 
+function getWgpuEraseShader(state: WgpuRenderState): WgpuEffectPipeline {
+  let p = erasePipelines.get(state);
+  if (p === undefined) {
+    p = createWgpuEffectPipeline(state, ERASE_WGSL, 'erase');
+    erasePipelines.set(state, p);
+  }
+  return p;
+}
+
 const blitOffsetPipelines = new WeakMap<WgpuRenderState, WgpuEffectPipeline>();
 const blitPipelines = new WeakMap<WgpuRenderState, WgpuEffectPipeline>();
+const erasePipelines = new WeakMap<WgpuRenderState, WgpuEffectPipeline>();

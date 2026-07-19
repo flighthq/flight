@@ -14,7 +14,7 @@ import type {
   GlRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyGlEffectBlitPass } from './glEffectBlitShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { applyGlEffectTintPass } from './glEffectTintShader';
 
@@ -59,7 +59,7 @@ export function applyBevelEffectToGl(
   const highlightAlpha = effect.highlightAlpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
-  const knockout = effect.knockout ?? false;
+  const sourceMode = effect.sourceMode ?? 'draw';
   const bevelType = effect.bevelType ?? 'inner';
 
   const [tinted, blurred, blurTemp] = [s0, s1, s2];
@@ -74,7 +74,7 @@ export function applyBevelEffectToGl(
   });
 
   clearGlRenderTarget(state, dst);
-  if (!knockout) applyGlEffectBlitPass(state, src, dst);
+  if (sourceMode === 'draw') applyGlEffectBlitPass(state, src, dst);
 
   applyGlBevelCompositePass(state, blurred, src, dst, {
     offsetX: offsetX / src.width,
@@ -88,6 +88,8 @@ export function applyBevelEffectToGl(
     clipMode: bevelType === 'inner' ? 1 : bevelType === 'outer' ? 2 : 0,
   });
 
+  if (sourceMode === 'knockout') applyGlEffectErasePass(state, src, dst);
+
   releaseGlRenderTarget(pool, s0);
   releaseGlRenderTarget(pool, s1);
   releaseGlRenderTarget(pool, s2);
@@ -98,7 +100,7 @@ export const defaultGlBevelEffectRunner: GlRenderEffectRunner = (ctx, effect) =>
 };
 
 // Reads the blurred alpha field (unit 0) and source (unit 1); writes the tinted, clipped bevel mask,
-// premultiplied, blended over `dest` (which already holds the source unless knockout).
+// premultiplied, blended over `dest` (which already holds the source when sourceMode is 'draw').
 const BEVEL_COMPOSITE_FRAGMENT_SRC = `#version 300 es
 precision mediump float;
 in vec2 v_texCoord;

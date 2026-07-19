@@ -7,14 +7,14 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
 import type { WgpuEffectPipeline } from './wgpuEffectPass';
 import { clearWgpuEffectTarget, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
 
-// Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha.
+// Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // multi-pass recipe (neutral tint → box blur → gradient lookup → composite), then releases them.
 export function applyGradientGlowEffectToWgpu(
@@ -33,6 +33,7 @@ export function applyGradientGlowEffectToWgpu(
 
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
   const strength = effect.strength ?? 1;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   const { device } = state;
   const fs = getWgpuEffectPassState(state);
@@ -74,7 +75,11 @@ export function applyGradientGlowEffectToWgpu(
 
   clearWgpuEffectTarget(state, dst);
   applyWgpuEffectBlitPass(state, s0, dst);
-  applyWgpuEffectBlitPass(state, src, dst);
+  if (sourceMode === 'knockout') {
+    applyWgpuEffectErasePass(state, src, dst);
+  } else if (sourceMode === 'draw') {
+    applyWgpuEffectBlitPass(state, src, dst);
+  }
 
   releaseWgpuRenderTarget(pool, s0);
   releaseWgpuRenderTarget(pool, s1);

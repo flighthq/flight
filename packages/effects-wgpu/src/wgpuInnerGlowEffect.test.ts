@@ -1,3 +1,7 @@
+vi.hoisted(() => {
+  vi.resetModules();
+});
+
 vi.mock('@flighthq/render-wgpu', () => {
   let nextTargetId = 0;
   return {
@@ -45,11 +49,14 @@ describe('applyInnerGlowEffectToWgpu', () => {
     expect(applyWgpuEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
   });
 
-  it('omits the source composite when knockout is true', () => {
+  it('omits the source composite when sourceMode is hide', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerGlowEffectToWgpu(createState(), source, dest, createPool(), { kind: 'InnerGlowEffect', knockout: true });
+    applyInnerGlowEffectToWgpu(createState(), source, dest, createPool(), {
+      kind: 'InnerGlowEffect',
+      sourceMode: 'hide',
+    });
 
     expect(applyWgpuEffectBlitPass).toHaveBeenCalledTimes(1);
     expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
@@ -64,6 +71,15 @@ describe('defaultWgpuInnerGlowEffectRunner', () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+afterAll(() => {
+  vi.doUnmock('@flighthq/render-wgpu');
+  vi.doUnmock('./wgpuEffectBlitShader');
+  vi.doUnmock('./wgpuEffectBoxBlur');
+  vi.doUnmock('./wgpuEffectPass');
+  vi.doUnmock('./wgpuEffectTintShader');
+  vi.resetModules();
 });
 
 function createState(): never {

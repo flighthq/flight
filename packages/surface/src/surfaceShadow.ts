@@ -49,10 +49,11 @@ export interface SurfaceInnerShadowOptions extends SurfaceShadowBlurOptions {
  * `out`. The result is a tinted, blurred alpha mask derived from `source`.
  *
  * To complete the effect, composite `out` onto the destination at the shadow
- * offset, then optionally composite the original source on top:
+ * offset, then apply source compositing:
  *
  *   compositeSurfacePixels(destRegion, out);   // shadow at (dx+offsetX, dy+offsetY)
- *   compositeSurfaceRegion(destRegion, source); // omit if hideObject
+ *   compositeSurfaceRegion(destRegion, source); // sourceMode 'draw'
+ *   // sourceMode 'hide': omit source; sourceMode 'knockout': destination-out source alpha.
  *
  * `scratch` must be at least `source.width * source.height * 4` bytes.
  * Its contents are undefined after the call.
@@ -75,10 +76,11 @@ export function dropShadowSurface(
  * The result is a tinted, blurred alpha mask derived from `source`.
  *
  * To complete the effect, composite `out` onto the destination, then
- * optionally composite the original source on top:
+ * apply source compositing:
  *
  *   compositeSurfacePixels(destRegion, out);   // glow
- *   compositeSurfaceRegion(destRegion, source); // omit if knockout
+ *   compositeSurfaceRegion(destRegion, source); // sourceMode 'draw'
+ *   // sourceMode 'hide': omit source; sourceMode 'knockout': destination-out source alpha.
  *
  * `scratch` must be at least `source.width * source.height * 4` bytes.
  * Its contents are undefined after the call.

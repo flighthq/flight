@@ -12,7 +12,7 @@ import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { clearWgpuEffectTarget } from './wgpuEffectPass';
 import { applyWgpuEffectInnerClipPass, applyWgpuEffectInvertTintPass } from './wgpuEffectTintShader';
 
-// Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then composite over the source.
+// Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then apply draw/hide source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // multi-pass recipe (invert-tint → box blur → offset → inner clip → composite), then releases them.
 export function applyInnerShadowEffectToWgpu(
@@ -37,8 +37,7 @@ export function applyInnerShadowEffectToWgpu(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
-  const hideObject = effect.hideObject ?? false;
-  const knockout = effect.knockout ?? false;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   applyWgpuEffectInvertTintPass(state, src, s0, color, alpha, strength);
   applyWgpuEffectBoxBlur(state, s0, s1, s2, {
@@ -50,7 +49,7 @@ export function applyInnerShadowEffectToWgpu(
   applyWgpuEffectInnerClipPass(state, s0, src, s1);
 
   clearWgpuEffectTarget(state, dst);
-  if (!hideObject && !knockout) {
+  if (sourceMode === 'draw') {
     applyWgpuEffectBlitPass(state, src, dst);
   }
   applyWgpuEffectBlitPass(state, s1, dst);

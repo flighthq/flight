@@ -14,7 +14,7 @@ import type {
   GlRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyGlEffectBlitPass } from './glEffectBlitShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { createGlEffectGradientRampTexture } from './glEffectGradientRamp';
 import { applyGlEffectTintPass } from './glEffectTintShader';
@@ -86,6 +86,7 @@ export function applyGradientBevelEffectToGl(
   const distance = effect.distance ?? 4;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
   const strength = effect.strength ?? 1;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   const gl = state.gl;
 
@@ -106,10 +107,13 @@ export function applyGradientBevelEffectToGl(
   gl.deleteTexture(ramp);
 
   clearGlRenderTarget(state, dst);
-  if (!(effect.bevelType && effect.bevelType !== 'full')) {
+  if (sourceMode === 'draw') {
     applyGlEffectBlitPass(state, src, dst);
   }
   applyGlEffectBlitPass(state, s1, dst);
+  if (sourceMode === 'knockout') {
+    applyGlEffectErasePass(state, src, dst);
+  }
 
   releaseGlRenderTarget(pool, s0);
   releaseGlRenderTarget(pool, s1);

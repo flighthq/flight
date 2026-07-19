@@ -7,7 +7,7 @@ import type {
   GlRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyGlEffectBlitPass } from './glEffectBlitShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { applyGlEffectTintPass } from './glEffectTintShader';
 
@@ -15,7 +15,8 @@ import { applyGlEffectTintPass } from './glEffectTintShader';
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // inlined multi-pass recipe, then releases them.
 //
-// Compositing order: glow (centered, no offset) → source (unless `knockout`).
+// Compositing order depends on `sourceMode`: 'draw' composites glow → source, 'hide' composites glow
+// only, and 'knockout' composites glow then erases the source silhouette.
 export function applyOuterGlowEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -35,7 +36,7 @@ export function applyOuterGlowEffectToGl(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
-  const knockout = effect.knockout ?? false;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   const tintStrength = Math.min(1, strength);
   const glowPasses = Math.max(1, Math.floor(strength));
@@ -54,7 +55,9 @@ export function applyOuterGlowEffectToGl(
     applyGlEffectBlitPass(state, blurred, dst);
   }
 
-  if (!knockout) {
+  if (sourceMode === 'knockout') {
+    applyGlEffectErasePass(state, src, dst);
+  } else if (sourceMode === 'draw') {
     applyGlEffectBlitPass(state, src, dst);
   }
 

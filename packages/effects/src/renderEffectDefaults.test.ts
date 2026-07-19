@@ -19,6 +19,15 @@ describe('getRenderEffectDefaults', () => {
     expect(d.operator).toBe('aces');
     expect(d.exposure).toBe(0);
   });
+  it('returns sourceMode draw for composite source-mode effects', () => {
+    expect(getRenderEffectDefaults('DropShadowEffect').sourceMode).toBe('draw');
+    expect(getRenderEffectDefaults('OuterGlowEffect').sourceMode).toBe('draw');
+    expect(getRenderEffectDefaults('InnerGlowEffect').sourceMode).toBe('draw');
+    expect(getRenderEffectDefaults('InnerShadowEffect').sourceMode).toBe('draw');
+    expect(getRenderEffectDefaults('BevelEffect').sourceMode).toBe('draw');
+    expect(getRenderEffectDefaults('GradientGlowEffect').sourceMode).toBe('draw');
+    expect(getRenderEffectDefaults('GradientBevelEffect').sourceMode).toBe('draw');
+  });
   it('returns a fresh copy each call (mutations do not persist)', () => {
     const d1 = getRenderEffectDefaults('BloomEffect');
     const d2 = getRenderEffectDefaults('BloomEffect');
