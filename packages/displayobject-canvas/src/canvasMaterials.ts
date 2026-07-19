@@ -12,18 +12,11 @@ import { getCanvasRenderStateRuntime } from './canvasRenderState';
 // as a node property.
 const CANVAS_BLEND_MODE: Record<BlendMode, GlobalCompositeOperation | null> = {
   [BlendMode.Add]: 'lighter',
-  [BlendMode.Alpha]: 'destination-in',
   [BlendMode.Darken]: 'darken',
-  [BlendMode.Erase]: 'destination-out',
-  [BlendMode.Invert]: null,
   [BlendMode.Lighten]: 'lighten',
   [BlendMode.Multiply]: 'multiply',
-  // No per-node Canvas2D equivalent ('copy' clears the whole canvas, not just the covered region),
-  // so no-blend degrades to normal compositing — identical for the opaque content None targets.
-  [BlendMode.None]: null,
   [BlendMode.Normal]: 'source-over',
   [BlendMode.Screen]: 'screen',
-  [BlendMode.Subtract]: null,
   [AdvancedBlendMode.Color]: 'color',
   [AdvancedBlendMode.ColorBurn]: 'color-burn',
   [AdvancedBlendMode.ColorDodge]: 'color-dodge',

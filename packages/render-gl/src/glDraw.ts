@@ -415,12 +415,14 @@ function glTextureWrapValue(gl: WebGL2RenderingContext, wrap: TextureWrap): numb
 const NORMAL_BLEND: GlBlendRealization = { src: 'ONE', dst: 'ONE_MINUS_SRC_ALPHA' };
 
 // The built-in blend modes registerDefaultGlBlendModes installs, each with its fixed-function
-// realization. Overlay/HardLight/Difference/Invert are deliberately absent — they have no
-// fixed-function equivalent and need a shader pass.
+// realization — the cheap fixed-function set. The Porter-Duff coverage operators (Erase/Alpha/None/…) are
+// a CompositeEffect, the destination-reading blends (Overlay/HardLight/…) a BlendEffect, and rare
+// equations like Subtract are wired on demand via registerGlBlendMode — none belong in the node-property
+// set. Darken/Lighten are exact only for an opaque backdrop (MIN/MAX cannot carry the coverage-restore
+// term); realize them as a BlendEffect for transparent-edge correctness.
 const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization])[] = [
   [BlendMode.Add, { src: 'ONE', dst: 'ONE' }],
   [BlendMode.Darken, { src: 'ONE', dst: 'ONE', equation: 'MIN' }],
-  [BlendMode.Erase, { src: 'ZERO', dst: 'ONE_MINUS_SRC_ALPHA' }],
   [BlendMode.Lighten, { src: 'ONE', dst: 'ONE', equation: 'MAX' }],
   // Premultiplied multiply: result = src.rgb*dst + dst*(1-src.a). The (1-src.a) term restores the
   // destination where the source is transparent or partially covered (antialiased edges, the quad's
@@ -428,11 +430,6 @@ const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization]
   // toward black — the straight-alpha (DST_COLOR, ZERO) form fringes there because this pipeline
   // uploads and shades premultiplied. Exact for an opaque backdrop.
   [BlendMode.Multiply, { src: 'DST_COLOR', dst: 'ONE_MINUS_SRC_ALPHA' }],
-  // No blending: result = src (the premultiplied source replaces the destination). For opaque
-  // content this matches Normal; unlike Normal it does not composite, so semi-transparent source
-  // pixels overwrite the backdrop instead of blending over it.
-  [BlendMode.None, { src: 'ONE', dst: 'ZERO' }],
   [BlendMode.Normal, NORMAL_BLEND],
   [BlendMode.Screen, { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' }],
-  [BlendMode.Subtract, { src: 'ONE', dst: 'ONE', equation: 'FUNC_REVERSE_SUBTRACT' }],
 ];

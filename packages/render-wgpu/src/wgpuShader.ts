@@ -131,28 +131,21 @@ type StencilMode = 'normal' | 'masked' | 'maskwrite';
 
 const NORMAL_BLEND: GPUBlendState = createWgpuBlendState('one', 'one-minus-src-alpha');
 
-// The fixed-function realizations, mirroring render-gl's DEFAULT_GL_BLEND_MODES. Both channels share
-// one component (WebGPU reads the alpha part of a color factor in the alpha slot, so a single factor
-// reproduces GL's non-separate blendFunc). Alpha and Invert stay null — they have no
-// fixed-function equivalent and degrade to normal premultiplied compositing. The destination-reading
-// advanced modes (Overlay/HardLight/SoftLight/Difference/Exclusion/ColorDodge/ColorBurn/HSL) are not in
-// the fixed-function BlendMode enum at all — they are a BlendEffect composite recipe, not a node
-// property, so there is nothing to map here.
+// The fixed-function realizations, mirroring render-gl's DEFAULT_GL_BLEND_MODES — the cheap fixed-function
+// set. Both channels share one component (WebGPU reads the alpha part of a color factor in the alpha slot,
+// so a single factor reproduces GL's non-separate blendFunc). The Porter-Duff coverage operators
+// (Erase/Alpha/None/…) are a CompositeEffect and the destination-reading advanced modes
+// (Overlay/HardLight/…/HSL) a BlendEffect — neither is in the node-property BlendMode enum, so there is
+// nothing to map here.
 const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.Add]: createWgpuBlendState('one', 'one'),
-  [BlendMode.Alpha]: null,
   [BlendMode.Darken]: createWgpuBlendState('one', 'one', 'min'),
-  [BlendMode.Erase]: createWgpuBlendState('zero', 'one-minus-src-alpha'),
-  [BlendMode.Invert]: null,
   [BlendMode.Lighten]: createWgpuBlendState('one', 'one', 'max'),
   // Premultiplied multiply: src.rgb*dst + dst*(1-src.a), so transparent/partial pixels leave the
   // backdrop untouched instead of multiplying it toward black. Matches render-gl.
   [BlendMode.Multiply]: createWgpuBlendState('dst', 'one-minus-src-alpha'),
-  // No blending: the source replaces the destination (matches Normal for opaque content).
-  [BlendMode.None]: createWgpuBlendState('one', 'zero'),
   [BlendMode.Normal]: NORMAL_BLEND,
   [BlendMode.Screen]: createWgpuBlendState('one', 'one-minus-src'),
-  [BlendMode.Subtract]: createWgpuBlendState('one', 'one', 'reverse-subtract'),
 };
 
 // ---- Pipeline creation ----

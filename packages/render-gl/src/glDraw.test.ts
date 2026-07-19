@@ -95,14 +95,6 @@ describe('applyGlBlendMode', () => {
     expect(gl.blendFunc).toHaveBeenCalledWith(g.DST_COLOR, g.ONE_MINUS_SRC_ALPHA);
   });
 
-  it('sets (ONE, ZERO) for BlendMode.None', () => {
-    const { state, gl } = createGlState();
-    registerDefaultGlBlendModes(state);
-    applyGlBlendMode(state, BlendMode.None);
-    const g = gl as unknown as { ONE: number; ZERO: number };
-    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ZERO);
-  });
-
   it('sets (ONE, ONE_MINUS_SRC_COLOR) for BlendMode.Screen', () => {
     const { state, gl } = createGlState();
     registerDefaultGlBlendModes(state);
@@ -127,23 +119,6 @@ describe('applyGlBlendMode', () => {
     const g = gl as unknown as { ONE: number; MAX: number };
     expect(gl.blendEquation).toHaveBeenCalledWith(g.MAX);
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
-  });
-
-  it('sets the reverse-subtract equation with (ONE, ONE) for BlendMode.Subtract', () => {
-    const { state, gl } = createGlState();
-    registerDefaultGlBlendModes(state);
-    applyGlBlendMode(state, BlendMode.Subtract);
-    const g = gl as unknown as { ONE: number; FUNC_REVERSE_SUBTRACT: number };
-    expect(gl.blendEquation).toHaveBeenCalledWith(g.FUNC_REVERSE_SUBTRACT);
-    expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE);
-  });
-
-  it('sets (ZERO, ONE_MINUS_SRC_ALPHA) for BlendMode.Erase', () => {
-    const { state, gl } = createGlState();
-    registerDefaultGlBlendModes(state);
-    applyGlBlendMode(state, BlendMode.Erase);
-    const g = gl as unknown as { ZERO: number; ONE_MINUS_SRC_ALPHA: number };
-    expect(gl.blendFunc).toHaveBeenCalledWith(g.ZERO, g.ONE_MINUS_SRC_ALPHA);
   });
 
   it('resets the blend equation to FUNC_ADD for a mode that does not carry one', () => {
@@ -679,8 +654,6 @@ describe('registerDefaultGlBlendModes', () => {
       BlendMode.Screen,
       BlendMode.Darken,
       BlendMode.Lighten,
-      BlendMode.Subtract,
-      BlendMode.Erase,
     ]) {
       expect(isBlendModeSupported(state, mode)).toBe(true);
     }
@@ -689,12 +662,7 @@ describe('registerDefaultGlBlendModes', () => {
   it('does not register the shader-composited or unary modes', () => {
     const { state } = createGlState();
     registerDefaultGlBlendModes(state);
-    for (const mode of [
-      AdvancedBlendMode.Overlay,
-      AdvancedBlendMode.HardLight,
-      AdvancedBlendMode.Difference,
-      BlendMode.Invert,
-    ]) {
+    for (const mode of [AdvancedBlendMode.Overlay, AdvancedBlendMode.HardLight, AdvancedBlendMode.Difference]) {
       expect(isBlendModeSupported(state, mode)).toBe(false);
     }
   });
