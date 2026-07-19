@@ -29,7 +29,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Scale9 (nine-slice) | ✓ | ✓ | ✓ | ✓ | dom needed a barrel fix (now exported) |
 | Video (display object) | ✓ | ✓ | ✓ | ✓ |  |
 | Video **texture** (dynamic, per-frame GL upload) | ✗ | ✗ | ✓ | ✗ | `@flighthq/texture` `VideoTexture` + `render-gl` `uploadGlTextureVideoFrame` (frameId-gated element upload). Scene texture + 2D bitmap fill. **gl-only** — no wgpu / canvas / dom per-frame upload path (canvas/dom draw the `<video>` element directly, not a `VideoTexture`) |
-| Compressed textures (BCn/ETC/ASTC/PVRTC/ATF native upload) | ✗ | ✗ | ✓ | ✗ | `render-gl` `uploadGlCompressedTextureContainer` over `WEBGL_compressed_texture_*` + `detectGlCompressedTextureSupport` capability detect + RGBA decode fallback seam. **gl-only** — no wgpu compressed upload; Basis-Universal transcode spec-only ([basis-transcode.md](basis-transcode.md)) |
+| Compressed textures (BCn/ETC/ASTC/PVRTC/ATF native upload) | ✗ | ✗ | ✓ | ✗ | `render-gl` `uploadGlCompressedTextureContainer` over `WEBGL_compressed_texture_*` + `detectGlCompressedTextureSupport` capability detect + RGBA decode fallback seam. **Opt-in**: install with `registerGlCompressedTextureUpload` so a plain-bitmap GL bundle sheds the ~40-format enum table; the display draw path skips a compressed-only resource when it is unregistered. **gl-only** — no wgpu compressed upload; Basis-Universal transcode spec-only ([basis-transcode.md](basis-transcode.md)) |
 
 ## 3D capability matrix (gl / wgpu only — canvas/dom are 2D)
 
