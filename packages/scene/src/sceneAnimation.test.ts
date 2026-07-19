@@ -1,7 +1,15 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { createQuaternion, createVector3 } from '@flighthq/geometry';
-import { SceneAnimationPathRotation, SceneAnimationPathScale, SceneAnimationPathTranslation } from '@flighthq/types';
+import { createBoxMeshGeometry } from '@flighthq/mesh';
+import type { MeshMorph } from '@flighthq/types';
+import {
+  SceneAnimationPathRotation,
+  SceneAnimationPathScale,
+  SceneAnimationPathTranslation,
+  SceneAnimationPathWeights,
+} from '@flighthq/types';
 
+import { createMesh } from './mesh';
 import { applyAnimationClipToScene } from './sceneAnimation';
 import { createSceneNode } from './sceneNode';
 import { getSceneNodePosition, getSceneNodeRotationQuaternion, getSceneNodeScale } from './sceneNodeTransform';
@@ -54,6 +62,34 @@ describe('applyAnimationClipToScene', () => {
     expect(out.x).toBeCloseTo(3);
     expect(out.y).toBeCloseTo(3);
     expect(out.z).toBeCloseTo(3);
+  });
+
+  it('drives a mesh morph weight array from a Weights channel', () => {
+    const morph: MeshMorph = {
+      targets: [
+        { normalDeltas: null, positionDeltas: new Float32Array(0), tangentDeltas: null },
+        { normalDeltas: null, positionDeltas: new Float32Array(0), tangentDeltas: null },
+      ],
+      weights: new Float32Array([0, 0]),
+    };
+    const mesh = createMesh(createBoxMeshGeometry(), []);
+    mesh.morph = morph;
+    // A 2-wide weights track: at t=0.5 it interpolates halfway between [0,0] and [1,0.5].
+    const track = createAnimationTrack({ components: 2, times: [0, 1], values: [0, 0, 1, 0.5] });
+    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: SceneAnimationPathWeights })]);
+
+    applyAnimationClipToScene(clip, 0.5);
+
+    expect(morph.weights[0]).toBeCloseTo(0.5);
+    expect(morph.weights[1]).toBeCloseTo(0.25);
+  });
+
+  it('skips a Weights channel whose target mesh carries no morph', () => {
+    const mesh = createMesh(createBoxMeshGeometry(), []);
+    const track = createAnimationTrack({ components: 1, times: [0, 1], values: [0, 1] });
+    const clip = createAnimationClip([createAnimationChannel(track, { node: mesh, path: SceneAnimationPathWeights })]);
+    // No morph on the mesh — the channel is skipped without throwing.
+    expect(() => applyAnimationClipToScene(clip, 1)).not.toThrow();
   });
 
   it('skips channels whose targetRef is not a scene target', () => {

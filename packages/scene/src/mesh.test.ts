@@ -6,10 +6,19 @@ import {
   getNodeWorldTransformMatrix4,
   invalidateNodeLocalTransform,
 } from '@flighthq/node';
-import type { Skin } from '@flighthq/types';
+import type { MeshMorph, Skin } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { cloneMesh, createMesh, enableMeshSignals, getMeshRuntime, getMeshSignals, isMesh, MeshKind } from './mesh';
+import {
+  cloneMesh,
+  createMesh,
+  enableMeshSignals,
+  getMeshDeformer,
+  getMeshRuntime,
+  getMeshSignals,
+  isMesh,
+  MeshKind,
+} from './mesh';
 import { createSceneNode } from './sceneNode';
 
 describe('cloneMesh', () => {
@@ -52,6 +61,13 @@ describe('cloneMesh', () => {
     const source = createMesh(createBoxMeshGeometry(), []);
     source.skin = skin;
     expect(cloneMesh(source).skin).toBe(skin);
+  });
+
+  it('shares the morph by reference when present', () => {
+    const morph: MeshMorph = { targets: [], weights: new Float32Array(0) };
+    const source = createMesh(createBoxMeshGeometry(), []);
+    source.morph = morph;
+    expect(cloneMesh(source).morph).toBe(morph);
   });
 
   it('does not copy children', () => {
@@ -134,6 +150,31 @@ describe('enableMeshSignals', () => {
   it('returns the same object on subsequent calls', () => {
     const mesh = createMesh(createBoxMeshGeometry(), []);
     expect(enableMeshSignals(mesh)).toBe(enableMeshSignals(mesh));
+  });
+});
+
+describe('getMeshDeformer', () => {
+  it('reports none for a rigid mesh', () => {
+    expect(getMeshDeformer(createMesh(createBoxMeshGeometry(), []))).toBe('none');
+  });
+
+  it('reports skeletal when the mesh carries a skin', () => {
+    const mesh = createMesh(createBoxMeshGeometry(), []);
+    mesh.skin = {} as Skin;
+    expect(getMeshDeformer(mesh)).toBe('skeletal');
+  });
+
+  it('reports morph when the mesh carries a morph set', () => {
+    const mesh = createMesh(createBoxMeshGeometry(), []);
+    mesh.morph = { targets: [], weights: new Float32Array(0) };
+    expect(getMeshDeformer(mesh)).toBe('morph');
+  });
+
+  it('reports skeletal for the composed skin+morph case (skin is the outer deform)', () => {
+    const mesh = createMesh(createBoxMeshGeometry(), []);
+    mesh.skin = {} as Skin;
+    mesh.morph = { targets: [], weights: new Float32Array(0) };
+    expect(getMeshDeformer(mesh)).toBe('skeletal');
   });
 });
 

@@ -9,3 +9,4 @@ export * from './sceneNodeBounds';
 export * from './sceneNodeCulling';
 export * from './sceneNodeDispose';
 export * from './sceneNodeTransform';
+export * from './updateMeshMorph';
