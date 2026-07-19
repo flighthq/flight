@@ -1,6 +1,7 @@
 import type { GlRenderState } from '@flighthq/types';
 
 import { defaultGlBevelEffectRunner } from './glBevelEffect';
+import { defaultGlBlendEffectRunner } from './glBlendEffect';
 import { defaultGlBloomEffectRunner } from './glBloomEffect';
 import { defaultGlBlurEffectRunner } from './glBlurEffect';
 import { defaultGlBokehDepthOfFieldEffectRunner } from './glBokehDepthOfFieldEffect';
@@ -123,12 +124,15 @@ export function registerColorGradeGlRenderEffects(state: GlRenderState): void {
   registerColorGlRenderEffects(state);
 }
 
-// Composite band: BevelEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
-// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former Tier-1 filter composite ops,
-// now full-frame composite effects: each chains tint/blur/offset passes and bounces through pooled
-// offscreen targets over the scene silhouette. Symmetric with Wgpu's registerCompositeWgpuRenderEffects.
+// Composite band: BevelEffect, BlendEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
+// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former Tier-1 filter composite ops (plus the
+// advanced-blend recipe), now full-frame composite effects: each bounces through pooled offscreen
+// targets. BlendEffect is the advanced/HSL blend the fixed-function BlendMode enum deliberately excludes,
+// realized as an explicit layer-over-backdrop composite (register the backdrop with
+// registerGlBlendEffectBackdrop). Symmetric with Wgpu's registerCompositeWgpuRenderEffects.
 export function registerCompositeGlRenderEffects(state: GlRenderState): void {
   registerGlRenderEffect(state, 'BevelEffect', defaultGlBevelEffectRunner);
+  registerGlRenderEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
   registerGlRenderEffect(state, 'DropShadowEffect', defaultGlDropShadowEffectRunner);
   registerGlRenderEffect(state, 'GradientBevelEffect', defaultGlGradientBevelEffectRunner);
   registerGlRenderEffect(state, 'GradientGlowEffect', defaultGlGradientGlowEffectRunner);
@@ -204,6 +208,7 @@ export function registerStylizeGlRenderEffects(state: GlRenderState): void {
 // Single source of truth for registerDefaultGlRenderEffects and getGlRenderEffectKinds.
 const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'BevelEffect',
+  'BlendEffect',
   'BloomEffect',
   'BlurEffect',
   'BokehDepthOfFieldEffect',

@@ -65,11 +65,11 @@ describe('blendNonSeparableRgb', () => {
 });
 
 describe('getAdvancedBlendRgb', () => {
-  it('routes separable modes through the per-channel path', () => {
+  it('falls through to the source triple for a non-advanced mode', () => {
     const out: [number, number, number] = [0, 0, 0];
-    getAdvancedBlendRgb(AdvancedBlendMode.Multiply as never, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, out);
-    // Multiply is not an AdvancedBlendMode, so it falls through to Normal (source) per channel.
-    expect(out).toEqual([0.5, 0.5, 0.5]);
+    // A fixed-function mode name is not an AdvancedBlendMode, so it takes the separable Normal path.
+    getAdvancedBlendRgb('Multiply', 0.5, 0.5, 0.5, 0.2, 0.3, 0.4, out);
+    expect(out).toEqual([0.2, 0.3, 0.4]);
   });
 
   it('computes Difference per channel', () => {
