@@ -50,7 +50,7 @@ const clipShaders = new WeakMap<GlRenderState, InnerClipLocations>();
 //   1. Invert-tint pass: extracts inverted alpha, tinted with glow color.
 //   2. Blur pass: spreads the inverted tint toward the interior.
 //   3. Clip pass: multiplies the blurred glow by the source alpha to confine it inside the shape.
-//   4. Composite: source + clipped glow.
+//   4. Composite: source (unless `knockout`) + clipped glow.
 export function applyInnerGlowEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -70,6 +70,7 @@ export function applyInnerGlowEffectToGl(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
+  const knockout = effect.knockout ?? false;
 
   // Pass 1: invert source alpha and tint with glow color → s0
   applyGlEffectInvertTintPass(state, src, s0, color, alpha, strength);
@@ -82,9 +83,11 @@ export function applyInnerGlowEffectToGl(
   clearGlRenderTarget(state, s0);
   applyGlInnerClipPass(state, s1, src, s0);
 
-  // Final composite: source first, then clipped glow on top
+  // Final composite: source first, unless knockout hides it, then clipped glow on top.
   clearGlRenderTarget(state, dst);
-  applyGlEffectBlitPass(state, src, dst);
+  if (!knockout) {
+    applyGlEffectBlitPass(state, src, dst);
+  }
   applyGlEffectBlitPass(state, s0, dst);
 
   releaseGlRenderTarget(pool, s0);

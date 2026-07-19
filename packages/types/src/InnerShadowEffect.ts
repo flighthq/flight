@@ -11,6 +11,8 @@ export interface InnerShadowEffect extends RenderEffect {
   blurY?: number;
   color?: number;
   distance?: number;
+  hideObject?: boolean;
+  knockout?: boolean;
   quality?: number;
   strength?: number;
 }

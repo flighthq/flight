@@ -37,6 +37,8 @@ export function applyInnerShadowEffectToWgpu(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
+  const hideObject = effect.hideObject ?? false;
+  const knockout = effect.knockout ?? false;
 
   applyWgpuEffectInvertTintPass(state, src, s0, color, alpha, strength);
   applyWgpuEffectBoxBlur(state, s0, s1, s2, {
@@ -48,7 +50,9 @@ export function applyInnerShadowEffectToWgpu(
   applyWgpuEffectInnerClipPass(state, s0, src, s1);
 
   clearWgpuEffectTarget(state, dst);
-  applyWgpuEffectBlitPass(state, src, dst);
+  if (!hideObject && !knockout) {
+    applyWgpuEffectBlitPass(state, src, dst);
+  }
   applyWgpuEffectBlitPass(state, s1, dst);
 
   releaseWgpuRenderTarget(pool, s0);

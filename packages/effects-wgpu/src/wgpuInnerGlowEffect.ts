@@ -33,6 +33,7 @@ export function applyInnerGlowEffectToWgpu(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
+  const knockout = effect.knockout ?? false;
 
   applyWgpuEffectInvertTintPass(state, src, s0, color, alpha, strength);
   applyWgpuEffectBoxBlur(state, s0, s1, s2, {
@@ -43,7 +44,9 @@ export function applyInnerGlowEffectToWgpu(
   applyWgpuEffectInnerClipPass(state, s1, src, s0);
 
   clearWgpuEffectTarget(state, dst);
-  applyWgpuEffectBlitPass(state, src, dst);
+  if (!knockout) {
+    applyWgpuEffectBlitPass(state, src, dst);
+  }
   applyWgpuEffectBlitPass(state, s0, dst);
 
   releaseWgpuRenderTarget(pool, s0);

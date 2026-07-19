@@ -8,4 +8,8 @@ describe('createInnerGlowEffect', () => {
   it('carries options', () => {
     expect(createInnerGlowEffect({ strength: 2 })).toMatchObject({ strength: 2 });
   });
+
+  it('carries knockout', () => {
+    expect(createInnerGlowEffect({ knockout: true })).toMatchObject({ knockout: true });
+  });
 });
