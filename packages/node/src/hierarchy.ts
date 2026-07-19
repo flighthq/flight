@@ -4,7 +4,7 @@ import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types
 
 import { getNodeRuntime } from './node';
 import { invalidateNodeLocalTransform, invalidateNodeParentReference } from './revision';
-import { ensureNodeWorldTransformMatrix, getNodeWorldTransformMatrix } from './transform2d';
+import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './transform2d';
 
 /**
  * Adds a child Node instance to this Node
@@ -330,13 +330,13 @@ export function reparentNode<Traits extends object>(
   child: Transform2DNode<Traits>,
   newParent: Transform2DNode<Traits>,
 ): NodeOf<Traits> {
-  ensureNodeWorldTransformMatrix(child);
+  ensureNodeWorldMatrix(child);
   const oldWorld = acquireMatrix();
   const localM = acquireMatrix();
   try {
-    copyMatrix(oldWorld, getNodeWorldTransformMatrix(child));
+    copyMatrix(oldWorld, getNodeWorldMatrix(child));
     addNodeChild(newParent, child);
-    inverseMatrix(localM, getNodeWorldTransformMatrix(newParent));
+    inverseMatrix(localM, getNodeWorldMatrix(newParent));
     multiplyMatrix(localM, localM, oldWorld);
 
     const a = localM.a;

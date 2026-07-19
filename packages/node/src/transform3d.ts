@@ -19,7 +19,7 @@ export function convertNodeVector3GlobalToLocal<Traits extends object>(
 ): void {
   // Acquire from pool instead of allocating to avoid hot-path GC pressure.
   const inv = acquireMatrix4();
-  inverseMatrix4(inv, getNodeWorldTransformMatrix4(source));
+  inverseMatrix4(inv, getNodeWorldMatrix4(source));
   matrix4TransformPoint(out, inv, point);
   releaseMatrix4(inv);
 }
@@ -29,10 +29,10 @@ export function convertNodeVector3LocalToGlobal<Traits extends object>(
   source: Transform3DNode<Traits>,
   point: Readonly<Vector3Like>,
 ): void {
-  matrix4TransformPoint(out, getNodeWorldTransformMatrix4(source), point);
+  matrix4TransformPoint(out, getNodeWorldMatrix4(source), point);
 }
 
-export function ensureNodeWorldTransformMatrix4<Traits extends object>(target: Transform3DNode<Traits>): void {
+export function ensureNodeWorldMatrix4<Traits extends object>(target: Transform3DNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform3DRuntime;
   const parent = runtime.parent as Transform3DNode<Traits> | null;
 
@@ -40,7 +40,7 @@ export function ensureNodeWorldTransformMatrix4<Traits extends object>(target: T
   let parentWorldTransformId = 0;
 
   if (parent !== null) {
-    ensureNodeWorldTransformMatrix4(parent);
+    ensureNodeWorldMatrix4(parent);
     parentRuntime = getEntityRuntime(parent) as NodeRuntime<Traits> & HasTransform3DRuntime;
     parentWorldTransformId = parentRuntime.worldTransformId;
   }
@@ -53,10 +53,8 @@ export function ensureNodeWorldTransformMatrix4<Traits extends object>(target: T
   }
 }
 
-export function getNodeWorldTransformMatrix4<Traits extends object>(
-  target: Transform3DNode<Traits>,
-): Readonly<Matrix4Like> {
-  ensureNodeWorldTransformMatrix4(target);
+export function getNodeWorldMatrix4<Traits extends object>(target: Transform3DNode<Traits>): Readonly<Matrix4Like> {
+  ensureNodeWorldMatrix4(target);
   return (getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform3DRuntime).worldMatrix!;
 }
 

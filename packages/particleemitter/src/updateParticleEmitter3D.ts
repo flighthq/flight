@@ -41,7 +41,7 @@ export function updateParticleEmitter3D(
   // world space at spawn (position through the full matrix, velocity through its rotation) so they stay
   // put as the emitter moves — the renderer then draws them without re-applying the emitter transform.
   // Omit it (or leave config.worldSpace false) for the default emitter-local behavior. Named to match the
-  // 3D scene node's worldMatrix (getNodeWorldTransformMatrix4); the 2D updateParticleEmitter's affine
+  // 3D scene node's worldMatrix (getNodeWorldMatrix4); the 2D updateParticleEmitter's affine
   // WorldTransform2D counterpart stays worldTransform.
   worldMatrix?: Readonly<Matrix4>,
 ): void {

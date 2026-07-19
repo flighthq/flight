@@ -1,6 +1,6 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix3, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
-import { forEachNodeDescendant, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
   Camera,
@@ -109,7 +109,7 @@ export function drawWgpuSceneShadowMap(
     // The depth VS multiplies position by draw.world alone (no separate view-projection uniform), so bake
     // the light view-projection into the per-mesh world matrix here (lightMatrix * nodeWorld). Cheaper than
     // a second bind group and functionally identical to GL's separate u_viewProjection · u_model.
-    const world = getNodeWorldTransformMatrix4(mesh) as Matrix4;
+    const world = getNodeWorldMatrix4(mesh) as Matrix4;
     multiplyMatrix4(_shadowProxy.worldMatrix, lightMatrix, world);
     const drawBindGroup = writeWgpuDrawUniform(state, _shadowProxy);
     _dynamicOffsets[0] = sceneRuntime.pendingDrawOffset;

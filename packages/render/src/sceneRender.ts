@@ -11,7 +11,7 @@ import {
   setPerspectiveMatrix4,
   transformAabbByMatrix4,
 } from '@flighthq/geometry';
-import { getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { computeSkeleton3DJointMatrices } from '@flighthq/skeleton3d';
 import type {
   Aabb,
@@ -251,7 +251,7 @@ function isMeshVisible(mesh: Readonly<Mesh>, frustum: Readonly<Frustum>, worldBo
     // No cached local bounds: cannot cull, so conservatively keep the mesh.
     return true;
   }
-  transformAabbByMatrix4(worldBounds, bounds, getNodeWorldTransformMatrix4(mesh));
+  transformAabbByMatrix4(worldBounds, bounds, getNodeWorldMatrix4(mesh));
   return isFrustumIntersectingAabb(frustum, worldBounds);
 }
 

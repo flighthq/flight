@@ -8,10 +8,10 @@ import { invalidateNodeLocalTransform } from './revision';
 import {
   convertNodeVector2GlobalToLocal,
   convertNodeVector2LocalToGlobal,
-  ensureNodeLocalTransformMatrix,
-  ensureNodeWorldTransformMatrix,
-  getNodeLocalTransformMatrix,
-  getNodeWorldTransformMatrix,
+  ensureNodeLocalMatrix,
+  ensureNodeWorldMatrix,
+  getNodeLocalMatrix,
+  getNodeWorldMatrix,
 } from './transform2d';
 
 function createTestNode(): TestNode {
@@ -139,48 +139,48 @@ describe('convertNodeVector2LocalToGlobal', () => {
   });
 });
 
-describe('ensureNodeLocalTransformMatrix', () => {
+describe('ensureNodeLocalMatrix', () => {
   it('computes local transform the first time', () => {
     const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
-    expect(runtime.localTransform2D).toBeNull();
-    ensureNodeLocalTransformMatrix(node);
-    expect(runtime.localTransform2D).not.toBeNull();
+    expect(runtime.localMatrix).toBeNull();
+    ensureNodeLocalMatrix(node);
+    expect(runtime.localMatrix).not.toBeNull();
   });
 
   it('recomputes if the local transform ID has changed', () => {
     const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
-    ensureNodeLocalTransformMatrix(node);
-    const cache = cloneAndInvalidateMatrix(runtime.localTransform2D);
+    ensureNodeLocalMatrix(node);
+    const cache = cloneAndInvalidateMatrix(runtime.localMatrix);
     runtime.localTransformId++;
-    ensureNodeLocalTransformMatrix(node);
-    expect(equalsMatrix(runtime.localTransform2D, cache)).toBe(true);
+    ensureNodeLocalMatrix(node);
+    expect(equalsMatrix(runtime.localMatrix, cache)).toBe(true);
   });
 });
 
-describe('ensureNodeWorldTransformMatrix', () => {
+describe('ensureNodeWorldMatrix', () => {
   it('computes world transform the first time', () => {
     const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
-    expect(runtime.worldTransform2D).toBeNull();
-    ensureNodeWorldTransformMatrix(node);
-    expect(runtime.worldTransform2D).not.toBeNull();
+    expect(runtime.worldMatrix).toBeNull();
+    ensureNodeWorldMatrix(node);
+    expect(runtime.worldMatrix).not.toBeNull();
   });
 
   it('computes world transform for a parent for the first time', () => {
     const parent = createTestNode();
     addNodeChild(parent, node);
     const parentState = getEntityRuntime(node) as HasTransform2DRuntime;
-    expect(parentState.worldTransform2D).toBeNull();
-    ensureNodeWorldTransformMatrix(node);
-    expect(parentState.worldTransform2D).not.toBeNull();
+    expect(parentState.worldMatrix).toBeNull();
+    ensureNodeWorldMatrix(node);
+    expect(parentState.worldMatrix).not.toBeNull();
   });
 
   it('recomputes if the local transform ID has changed', () => {
     const runtime = getEntityRuntime(node) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
-    ensureNodeWorldTransformMatrix(node);
-    const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
+    ensureNodeWorldMatrix(node);
+    const cache = cloneAndInvalidateMatrix(runtime.worldMatrix);
     runtime.localTransformId++;
-    ensureNodeWorldTransformMatrix(node);
-    expect(equalsMatrix(runtime.worldTransform2D, cache)).toBe(true);
+    ensureNodeWorldMatrix(node);
+    expect(equalsMatrix(runtime.worldMatrix, cache)).toBe(true);
   });
 
   it('recomputes if the parent transform ID has changed', () => {
@@ -188,25 +188,25 @@ describe('ensureNodeWorldTransformMatrix', () => {
     addNodeChild(parent, node);
     const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
     const parentState = getEntityRuntime(parent) as NodeRuntime<HasTransform2D> & HasTransform2DRuntime;
-    ensureNodeWorldTransformMatrix(node);
-    const cache = cloneAndInvalidateMatrix(runtime.worldTransform2D);
+    ensureNodeWorldMatrix(node);
+    const cache = cloneAndInvalidateMatrix(runtime.worldMatrix);
     parentState.worldTransformId++;
-    ensureNodeWorldTransformMatrix(node);
-    expect(equalsMatrix(runtime.worldTransform2D, cache)).toBe(true);
+    ensureNodeWorldMatrix(node);
+    expect(equalsMatrix(runtime.worldMatrix, cache)).toBe(true);
   });
 });
 
-describe('getNodeLocalTransformMatrix', () => {
+describe('getNodeLocalMatrix', () => {
   it('ensures local transform', () => {
     const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
-    expect(runtime.localTransform2D).toBeNull();
-    getNodeLocalTransformMatrix(node);
-    expect(runtime.localTransform2D).not.toBeNull();
+    expect(runtime.localMatrix).toBeNull();
+    getNodeLocalMatrix(node);
+    expect(runtime.localMatrix).not.toBeNull();
   });
 
   it('returns local transform', () => {
-    const transform = getNodeLocalTransformMatrix(node);
-    expect(transform).equals((getEntityRuntime(node) as HasTransform2DRuntime).localTransform2D);
+    const transform = getNodeLocalMatrix(node);
+    expect(transform).equals((getEntityRuntime(node) as HasTransform2DRuntime).localMatrix);
   });
 
   it('offsets translation by the pivot so the pivot point lands at (x, y)', () => {
@@ -214,7 +214,7 @@ describe('getNodeLocalTransformMatrix', () => {
     node.y = 50;
     node.pivotX = 10;
     node.pivotY = 20;
-    const transform = getNodeLocalTransformMatrix(node);
+    const transform = getNodeLocalMatrix(node);
     expect(transform.tx).toBeCloseTo(90); // 100 - 1 * 10
     expect(transform.ty).toBeCloseTo(30); // 50 - 1 * 20
   });
@@ -224,23 +224,23 @@ describe('getNodeLocalTransformMatrix', () => {
     node.scaleY = 3;
     node.pivotX = 10;
     node.pivotY = 10;
-    const transform = getNodeLocalTransformMatrix(node);
+    const transform = getNodeLocalMatrix(node);
     expect(transform.tx).toBeCloseTo(-20); // 0 - 2 * 10
     expect(transform.ty).toBeCloseTo(-30); // 0 - 3 * 10
   });
 });
 
-describe('getNodeWorldTransformMatrix', () => {
+describe('getNodeWorldMatrix', () => {
   it('ensures world transform', () => {
     const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
-    expect(runtime.worldTransform2D).toBeNull();
-    getNodeWorldTransformMatrix(node);
-    expect(runtime.worldTransform2D).not.toBeNull();
+    expect(runtime.worldMatrix).toBeNull();
+    getNodeWorldMatrix(node);
+    expect(runtime.worldMatrix).not.toBeNull();
   });
 
   it('returns local transform', () => {
-    const transform = getNodeWorldTransformMatrix(node);
-    expect(transform).equals((getEntityRuntime(node) as HasTransform2DRuntime).worldTransform2D);
+    const transform = getNodeWorldMatrix(node);
+    expect(transform).equals((getEntityRuntime(node) as HasTransform2DRuntime).worldMatrix);
   });
 });
 
@@ -262,8 +262,8 @@ describe('skew', () => {
     withoutSkew.scaleY = 3;
     invalidateNodeLocalTransform(withoutSkew);
 
-    const mSkew = getNodeLocalTransformMatrix(withSkew);
-    const mNoSkew = getNodeLocalTransformMatrix(withoutSkew);
+    const mSkew = getNodeLocalMatrix(withSkew);
+    const mNoSkew = getNodeLocalMatrix(withoutSkew);
     expect(mSkew.a).toBeCloseTo(mNoSkew.a);
     expect(mSkew.b).toBeCloseTo(mNoSkew.b);
     expect(mSkew.c).toBeCloseTo(mNoSkew.c);
@@ -280,7 +280,7 @@ describe('skew', () => {
     node.rotation = 0;
     invalidateNodeLocalTransform(node);
 
-    const m = getNodeLocalTransformMatrix(node);
+    const m = getNodeLocalMatrix(node);
     const radX = 45 * DEG_TO_RAD;
     expect(m.a).toBeCloseTo(1);
     expect(m.b).toBeCloseTo(0);
@@ -296,7 +296,7 @@ describe('skew', () => {
     node.rotation = 0;
     invalidateNodeLocalTransform(node);
 
-    const m = getNodeLocalTransformMatrix(node);
+    const m = getNodeLocalMatrix(node);
     const radY = 30 * DEG_TO_RAD;
     expect(m.a).toBeCloseTo(Math.cos(radY));
     expect(m.b).toBeCloseTo(Math.sin(radY));
@@ -312,7 +312,7 @@ describe('skew', () => {
     node.scaleY = 1;
     invalidateNodeLocalTransform(node);
 
-    const m = getNodeLocalTransformMatrix(node);
+    const m = getNodeLocalMatrix(node);
     const radY = (45 + 20) * DEG_TO_RAD;
     const radX = (45 + 15) * DEG_TO_RAD;
     expect(m.a).toBeCloseTo(Math.cos(radY));
@@ -337,12 +337,12 @@ describe('skew', () => {
 
     addNodeChild(parent, child);
 
-    const parentLocal = getNodeLocalTransformMatrix(parent);
-    const childLocal = getNodeLocalTransformMatrix(child);
+    const parentLocal = getNodeLocalMatrix(parent);
+    const childLocal = getNodeLocalMatrix(child);
     const expected = createMatrix();
     multiplyMatrix(expected, parentLocal, childLocal);
 
-    const world = getNodeWorldTransformMatrix(child);
+    const world = getNodeWorldMatrix(child);
     expect(world.a).toBeCloseTo(expected.a);
     expect(world.b).toBeCloseTo(expected.b);
     expect(world.c).toBeCloseTo(expected.c);
@@ -363,7 +363,7 @@ describe('skew', () => {
     node.rotation = 0;
     invalidateNodeLocalTransform(node);
 
-    const m = getNodeLocalTransformMatrix(node);
+    const m = getNodeLocalMatrix(node);
     const radY = 45 * DEG_TO_RAD;
     const radX = 30 * DEG_TO_RAD;
     const a = Math.cos(radY) * 2;

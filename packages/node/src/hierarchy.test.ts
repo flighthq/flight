@@ -31,7 +31,7 @@ import {
 } from './hierarchy';
 import { createNode, enableNodeSignals, getNodeRuntime } from './node';
 import { invalidateNodeLocalTransform } from './revision';
-import { getNodeWorldTransformMatrix } from './transform2d';
+import { getNodeWorldMatrix } from './transform2d';
 
 let container: Node<NodeTraits>;
 let childA: Node<NodeTraits>;
@@ -650,7 +650,7 @@ describe('reparentNode', () => {
     invalidateNodeLocalTransform(child);
     addNodeChild(parentA, child);
 
-    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+    const before = cloneMatrix(getNodeWorldMatrix(child));
 
     const parentB = createTransformNode();
     parentB.x = 200;
@@ -658,7 +658,7 @@ describe('reparentNode', () => {
     invalidateNodeLocalTransform(parentB);
 
     reparentNode(child, parentB);
-    const after = getNodeWorldTransformMatrix(child);
+    const after = getNodeWorldMatrix(child);
 
     expect(after.a).toBeCloseTo(before.a, 10);
     expect(after.b).toBeCloseTo(before.b, 10);
@@ -680,13 +680,13 @@ describe('reparentNode', () => {
     invalidateNodeLocalTransform(child);
     addNodeChild(parentA, child);
 
-    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+    const before = cloneMatrix(getNodeWorldMatrix(child));
 
     const parentB = createTransformNode();
     invalidateNodeLocalTransform(parentB);
 
     reparentNode(child, parentB);
-    const after = getNodeWorldTransformMatrix(child);
+    const after = getNodeWorldMatrix(child);
 
     expect(after.a).toBeCloseTo(before.a, 10);
     expect(after.b).toBeCloseTo(before.b, 10);
@@ -733,14 +733,14 @@ describe('reparentNode', () => {
     invalidateNodeLocalTransform(child);
     addNodeChild(parentA, child);
 
-    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+    const before = cloneMatrix(getNodeWorldMatrix(child));
 
     const parentB = createTransformNode();
     parentB.x = 200;
     invalidateNodeLocalTransform(parentB);
 
     reparentNode(child, parentB);
-    const after = getNodeWorldTransformMatrix(child);
+    const after = getNodeWorldMatrix(child);
 
     expect(after.a).toBeCloseTo(before.a, 10);
     expect(after.b).toBeCloseTo(before.b, 10);
@@ -758,7 +758,7 @@ describe('reparentNode', () => {
     child.scaleX = 1.5;
     invalidateNodeLocalTransform(child);
 
-    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+    const before = cloneMatrix(getNodeWorldMatrix(child));
 
     const parentB = createTransformNode();
     parentB.x = 50;
@@ -767,7 +767,7 @@ describe('reparentNode', () => {
     invalidateNodeLocalTransform(parentB);
 
     reparentNode(child, parentB);
-    const after = getNodeWorldTransformMatrix(child);
+    const after = getNodeWorldMatrix(child);
 
     expect(after.a).toBeCloseTo(before.a, 10);
     expect(after.b).toBeCloseTo(before.b, 10);
@@ -789,14 +789,14 @@ describe('reparentNode', () => {
     invalidateNodeLocalTransform(child);
     addNodeChild(parentA, child);
 
-    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+    const before = cloneMatrix(getNodeWorldMatrix(child));
 
     const parentB = createTransformNode();
     parentB.x = 100;
     invalidateNodeLocalTransform(parentB);
 
     reparentNode(child, parentB);
-    const after = getNodeWorldTransformMatrix(child);
+    const after = getNodeWorldMatrix(child);
 
     expect(after.a).toBeCloseTo(before.a, 10);
     expect(after.b).toBeCloseTo(before.b, 10);
@@ -821,13 +821,13 @@ describe('reparentNode', () => {
     invalidateNodeLocalTransform(child);
     addNodeChild(parentA, child);
 
-    const before = cloneMatrix(getNodeWorldTransformMatrix(child));
+    const before = cloneMatrix(getNodeWorldMatrix(child));
 
     const identityParent = createTransformNode();
     invalidateNodeLocalTransform(identityParent);
 
     reparentNode(child, identityParent);
-    const after = getNodeWorldTransformMatrix(child);
+    const after = getNodeWorldMatrix(child);
 
     expect(after.a).toBeCloseTo(before.a, 10);
     expect(after.b).toBeCloseTo(before.b, 10);

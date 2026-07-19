@@ -1,5 +1,5 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
-import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import type {
   Camera,
@@ -45,7 +45,7 @@ export function drawWgpuScene(
   for (let m = 0; m < list.meshCount; m++) {
     const mesh = list.visibleMeshes[m];
     const subsets = mesh.geometry.subsets;
-    const worldMatrix = getNodeWorldTransformMatrix4(mesh) as Matrix4;
+    const worldMatrix = getNodeWorldMatrix4(mesh) as Matrix4;
     setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
     for (let s = 0; s < subsets.length; s++) {

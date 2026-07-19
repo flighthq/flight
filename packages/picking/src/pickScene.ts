@@ -10,7 +10,7 @@ import {
   inverseMatrix4,
 } from '@flighthq/geometry';
 import { getMeshGeometryTriangleCount, getMeshGeometryVertexPosition } from '@flighthq/mesh';
-import { ensureNodeWorldTransformMatrix4, getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { getSceneNodeWorldBounds, isMesh } from '@flighthq/scene';
 import type { Camera, Mesh, Ray3D, SceneHit, SceneNode, Vector3 } from '@flighthq/types';
@@ -223,8 +223,8 @@ function intersectMeshTriangles(
   getSceneNodeWorldBounds(_worldBounds, mesh);
   if (intersectRay3DAabb(ray, _worldBounds) < 0) return;
 
-  ensureNodeWorldTransformMatrix4(mesh);
-  const worldMatrix = getNodeWorldTransformMatrix4(mesh);
+  ensureNodeWorldMatrix4(mesh);
+  const worldMatrix = getNodeWorldMatrix4(mesh);
   if (!inverseMatrix4(_inverseWorld, worldMatrix)) return;
   transformPointByMatrix4(_localRay.origin, ray.origin, _inverseWorld.m);
   transformDirectionByMatrix4(_localRay.direction, ray.direction, _inverseWorld.m);

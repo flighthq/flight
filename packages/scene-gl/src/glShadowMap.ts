@@ -1,7 +1,7 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
-import { forEachNodeDescendant, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
 import { updateMeshMorph } from '@flighthq/scene';
 import type { Camera, GlRenderState, Mesh, SceneNode, SceneNodeTraits } from '@flighthq/types';
@@ -90,7 +90,7 @@ export function drawGlSceneShadowMap(
       gl.uniformMatrix4fv(program.locViewProjection, false, matrix.m);
       boundProgram = program;
     }
-    gl.uniformMatrix4fv(program.locModel, false, getNodeWorldTransformMatrix4(mesh).m);
+    gl.uniformMatrix4fv(program.locModel, false, getNodeWorldMatrix4(mesh).m);
 
     if (skinned) {
       // Upload the mesh's bone palette into the shared RGBA32F skin texture and bind it, exactly as

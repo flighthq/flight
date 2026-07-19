@@ -1,11 +1,11 @@
 import { setMatrix4Identity } from '@flighthq/geometry';
 import {
   addNodeChild,
-  ensureNodeWorldTransformMatrix4,
+  ensureNodeWorldMatrix4,
   getNodeChildCount,
   getNodeParent,
   getNodeRoot,
-  getNodeWorldTransformMatrix4,
+  getNodeWorldMatrix4,
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
   invalidateNodeLocalTransform,
@@ -244,7 +244,7 @@ describe('worldTransform', () => {
     node.localMatrix.m[14] = 30;
     invalidateNodeLocalTransform(node);
 
-    const world = getNodeWorldTransformMatrix4(node);
+    const world = getNodeWorldMatrix4(node);
     expect(world.m[12]).toBe(10);
     expect(world.m[13]).toBe(20);
     expect(world.m[14]).toBe(30);
@@ -261,20 +261,20 @@ describe('worldTransform', () => {
     child.localMatrix.m[12] = 3;
     invalidateNodeLocalTransform(child);
 
-    const world = getNodeWorldTransformMatrix4(child);
+    const world = getNodeWorldMatrix4(child);
     expect(world.m[12]).toBeCloseTo(8);
   });
 
   it('world matrix is recomputed after localMatrix changes', () => {
     const node = createTransformNode();
     invalidateNodeLocalTransform(node);
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const first = getSceneNodeRuntime(node).worldTransformId;
 
     node.localMatrix.m[12] = 99;
     invalidateNodeLocalTransform(node);
 
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const second = getSceneNodeRuntime(node).worldTransformId;
 
     expect(second).not.toBe(first);
@@ -282,9 +282,9 @@ describe('worldTransform', () => {
 
   it('world matrix is cached when nothing changes', () => {
     const node = createTransformNode();
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const id1 = getSceneNodeRuntime(node).worldTransformId;
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const id2 = getSceneNodeRuntime(node).worldTransformId;
     expect(id1).toBe(id2);
   });
@@ -302,7 +302,7 @@ describe('worldTransform', () => {
     parent.localMatrix.m[12] = 7;
     invalidateNodeLocalTransform(parent);
 
-    const world = getNodeWorldTransformMatrix4(child);
+    const world = getNodeWorldMatrix4(child);
     expect(world.m[12]).toBeCloseTo(7);
   });
 });

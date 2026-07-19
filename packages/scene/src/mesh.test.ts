@@ -1,11 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import {
-  addNodeChild,
-  getNodeChildCount,
-  getNodeWorldTransformMatrix4,
-  invalidateNodeLocalTransform,
-} from '@flighthq/node';
+import { addNodeChild, getNodeChildCount, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { MeshMorph, Skin } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -135,7 +130,7 @@ describe('createMesh', () => {
     child.localMatrix.m[12] = 3;
     invalidateNodeLocalTransform(child);
     expect(getNodeChildCount(parent)).toBe(1);
-    expect(getNodeWorldTransformMatrix4(child).m[12]).toBeCloseTo(7);
+    expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(7);
   });
 });
 

@@ -4,11 +4,11 @@ export function initTransform2DRuntimeTrait(
   target: HasTransform2DRuntime,
   _methods?: Readonly<Partial<MethodsOf<HasTransform2DRuntime>>>,
 ): void {
-  target.localTransform2D = null;
+  target.localMatrix = null;
   target.rotationAngle = 0;
   target.rotationCosine = 1;
   target.rotationSine = 0;
-  target.worldTransform2D = null;
+  target.worldMatrix = null;
 }
 
 export function initTransform2DTrait(target: HasTransform2D, obj?: Readonly<Partial<HasTransform2D>>): void {

@@ -1,5 +1,5 @@
 import { copyMatrix4, createMatrix4, inverseMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
-import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { getNodeWorldMatrix4 } from '@flighthq/node';
 import type { Matrix4Like, SceneNode, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
@@ -18,7 +18,7 @@ export function computeSkeleton3DJointMatrices(skeleton: Readonly<Skeleton3D>): 
   for (let j = 0; j < joints.length; j++) {
     const base = j * 16;
     for (let i = 0; i < 16; i++) _invBind.m[i] = inverseBindMatrices[base + i];
-    multiplyMatrix4(_result, getNodeWorldTransformMatrix4(joints[j]), _invBind);
+    multiplyMatrix4(_result, getNodeWorldMatrix4(joints[j]), _invBind);
     jointMatrices.set(_result.m, base);
   }
 }
@@ -74,7 +74,7 @@ export function getSkeleton3DJointWorldMatrix(
 ): boolean {
   const { joints } = skeleton;
   if (jointIndex < 0 || jointIndex >= joints.length) return false;
-  copyMatrix4(out, getNodeWorldTransformMatrix4(joints[jointIndex]));
+  copyMatrix4(out, getNodeWorldMatrix4(joints[jointIndex]));
   return true;
 }
 
@@ -89,7 +89,7 @@ export function getSkeleton3DJointWorldMatrixByName(
 export function setSkeleton3DBindPose(skeleton: Readonly<Skeleton3D>): void {
   const { inverseBindMatrices, joints } = skeleton;
   for (let j = 0; j < joints.length; j++) {
-    inverseMatrix4(_result, getNodeWorldTransformMatrix4(joints[j]));
+    inverseMatrix4(_result, getNodeWorldMatrix4(joints[j]));
     inverseBindMatrices.set(_result.m, j * 16);
   }
 }

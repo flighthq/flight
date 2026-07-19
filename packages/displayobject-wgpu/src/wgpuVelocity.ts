@@ -1,10 +1,10 @@
 import {
   ensureNodeWorldBoundsRectangle,
-  ensureNodeWorldTransformMatrix,
+  ensureNodeWorldMatrix,
   getNodeChildAt,
   getNodeChildCount,
   getNodeWorldBoundsRectangle,
-  getNodeWorldTransformMatrix,
+  getNodeWorldMatrix,
 } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderTarget } from '@flighthq/render-wgpu';
@@ -76,8 +76,8 @@ export const defaultWgpuParticleEmitterVelocityWriter: WgpuVelocityWriter = (ctx
   let wtx = 0;
   let wty = 0;
   if (!worldSpace) {
-    ensureNodeWorldTransformMatrix(node as unknown as Transform2DNode);
-    const transform = getNodeWorldTransformMatrix(node as unknown as Transform2DNode);
+    ensureNodeWorldMatrix(node as unknown as Transform2DNode);
+    const transform = getNodeWorldMatrix(node as unknown as Transform2DNode);
     wa = transform.a;
     wb = transform.b;
     wc = transform.c;
@@ -143,8 +143,8 @@ export const defaultWgpuQuadBatchVelocityWriter: WgpuVelocityWriter = (ctx, node
   if (instanceVelocities !== null && atlas !== null && instanceCount > 0) {
     const regions = atlas.regions;
     const numRegions = regions.length;
-    ensureNodeWorldTransformMatrix(node as unknown as Transform2DNode);
-    const transform = getNodeWorldTransformMatrix(node as unknown as Transform2DNode);
+    ensureNodeWorldMatrix(node as unknown as Transform2DNode);
+    const transform = getNodeWorldMatrix(node as unknown as Transform2DNode);
     const pa = transform.a;
     const pb = transform.b;
     const pc = transform.c;
