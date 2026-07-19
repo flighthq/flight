@@ -1,4 +1,4 @@
-import { BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 import { renderWgpuBackground } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -95,12 +95,12 @@ describe('getWgpuPipeline', () => {
         ...(getWgpuPipeline(state, mode, 'normal') as unknown as { __descriptor: GPURenderPipelineDescriptor })
           .__descriptor.fragment!.targets,
       ][0]!.blend!.color;
-    expect(blendOf(BlendMode.Overlay)).toEqual({
+    expect(blendOf(AdvancedBlendMode.Overlay)).toEqual({
       srcFactor: 'one',
       dstFactor: 'one-minus-src-alpha',
       operation: 'add',
     });
-    expect(blendOf(BlendMode.HardLight)).toEqual({
+    expect(blendOf(AdvancedBlendMode.HardLight)).toEqual({
       srcFactor: 'one',
       dstFactor: 'one-minus-src-alpha',
       operation: 'add',

@@ -1,18 +1,20 @@
 import type { CanvasRenderState } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
 // Auditable map from a blend-mode intent to the Canvas2D globalCompositeOperation
 // that realizes it. `null` means there is no faithful Canvas2D equivalent, so the
-// mode degrades to normal ('source-over') compositing.
+// mode degrades to normal ('source-over') compositing. Canvas2D is the one backend that natively
+// realizes the destination-reading AdvancedBlendMode set too (via globalCompositeOperation), so those
+// keys are carried here — a caller can hand a display object either a fixed-function BlendMode or an
+// AdvancedBlendMode string and Canvas resolves both, even though only the fixed-function set is exposed
+// as a node property.
 const CANVAS_BLEND_MODE: Record<BlendMode, GlobalCompositeOperation | null> = {
   [BlendMode.Add]: 'lighter',
   [BlendMode.Alpha]: 'destination-in',
   [BlendMode.Darken]: 'darken',
-  [BlendMode.Difference]: 'difference',
   [BlendMode.Erase]: 'destination-out',
-  [BlendMode.HardLight]: 'hard-light',
   [BlendMode.Invert]: null,
   [BlendMode.Layer]: 'source-over',
   [BlendMode.Lighten]: 'lighten',
@@ -21,10 +23,20 @@ const CANVAS_BLEND_MODE: Record<BlendMode, GlobalCompositeOperation | null> = {
   // so no-blend degrades to normal compositing — identical for the opaque content None targets.
   [BlendMode.None]: null,
   [BlendMode.Normal]: 'source-over',
-  [BlendMode.Overlay]: 'overlay',
   [BlendMode.Screen]: 'screen',
   [BlendMode.Shader]: null,
   [BlendMode.Subtract]: null,
+  [AdvancedBlendMode.Color]: 'color',
+  [AdvancedBlendMode.ColorBurn]: 'color-burn',
+  [AdvancedBlendMode.ColorDodge]: 'color-dodge',
+  [AdvancedBlendMode.Difference]: 'difference',
+  [AdvancedBlendMode.Exclusion]: 'exclusion',
+  [AdvancedBlendMode.HardLight]: 'hard-light',
+  [AdvancedBlendMode.Hue]: 'hue',
+  [AdvancedBlendMode.Luminosity]: 'luminosity',
+  [AdvancedBlendMode.Overlay]: 'overlay',
+  [AdvancedBlendMode.Saturation]: 'saturation',
+  [AdvancedBlendMode.SoftLight]: 'soft-light',
 };
 
 export function applyCanvasBlendMode(state: CanvasRenderState, value: BlendMode | null): void {

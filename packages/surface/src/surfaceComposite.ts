@@ -1,6 +1,6 @@
 import { invalidateImageResource } from '@flighthq/image';
 import type { SurfaceRegion } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 /**
  * Alpha-composites `pixels` over `dest`. `pixels` must be at least
@@ -200,17 +200,36 @@ function blendChannel(mode: BlendMode, cb: number, cs: number): number {
       return Math.min(cb, cs);
     case BlendMode.Lighten:
       return Math.max(cb, cs);
-    case BlendMode.Difference:
+    case AdvancedBlendMode.Difference:
       return Math.abs(cb - cs);
-    case BlendMode.Overlay:
+    case AdvancedBlendMode.Exclusion:
+      return cb + cs - (2 * cb * cs) / 255;
+    case AdvancedBlendMode.Overlay:
       return cb < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
-    case BlendMode.HardLight:
+    case AdvancedBlendMode.HardLight:
       return cs < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
+    case AdvancedBlendMode.SoftLight:
+      return softLightChannel(cb, cs);
+    case AdvancedBlendMode.ColorDodge:
+      return cs >= 255 ? 255 : Math.min(255, (cb * 255) / (255 - cs));
+    case AdvancedBlendMode.ColorBurn:
+      return cs <= 0 ? 0 : 255 - Math.min(255, ((255 - cb) * 255) / cs);
     case BlendMode.Invert:
       return 255 - cb;
     default:
       return cs;
   }
+}
+
+// W3C soft-light per channel on 0..255 (the Photoshop/CSS pegtop-free formula). `cb` = backdrop,
+// `cs` = source; both 0..255. The two-branch D(cb) form used by the spec, evaluated in normalized
+// 0..1 space then scaled back.
+function softLightChannel(cb: number, cs: number): number {
+  const b = cb / 255;
+  const s = cs / 255;
+  const d = b <= 0.25 ? ((16 * b - 12) * b + 4) * b : Math.sqrt(b);
+  const out = s <= 0.5 ? b - (1 - 2 * s) * b * (1 - b) : b + (2 * s - 1) * (d - b);
+  return out * 255;
 }
 
 function compositePixelInto(

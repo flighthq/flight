@@ -1,5 +1,5 @@
 import type { ImageResource, SamplerLike } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 import {
   applyGlBlendMode,
@@ -129,7 +129,7 @@ describe('applyGlBlendMode', () => {
   it('falls back to normal blend for a mode with no registered realization', () => {
     const { state, gl } = createGlState();
     registerDefaultGlBlendModes(state);
-    applyGlBlendMode(state, BlendMode.Overlay);
+    applyGlBlendMode(state, AdvancedBlendMode.Overlay);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
@@ -555,10 +555,10 @@ describe('isBlendModeSupported', () => {
     expect(isBlendModeSupported(state, BlendMode.Screen)).toBe(true);
   });
 
-  it('returns false for a built-in with no fixed-function realization', () => {
+  it('returns false for an advanced mode with no fixed-function realization', () => {
     const { state } = createGlState();
     registerDefaultGlBlendModes(state);
-    expect(isBlendModeSupported(state, BlendMode.Overlay)).toBe(false);
+    expect(isBlendModeSupported(state, AdvancedBlendMode.Overlay)).toBe(false);
   });
 
   it('returns true for a custom registered mode', () => {
@@ -587,10 +587,15 @@ describe('registerDefaultGlBlendModes', () => {
     }
   });
 
-  it('does not register the shader-only modes', () => {
+  it('does not register the shader-composited or unary modes', () => {
     const { state } = createGlState();
     registerDefaultGlBlendModes(state);
-    for (const mode of [BlendMode.Overlay, BlendMode.HardLight, BlendMode.Difference, BlendMode.Invert]) {
+    for (const mode of [
+      AdvancedBlendMode.Overlay,
+      AdvancedBlendMode.HardLight,
+      AdvancedBlendMode.Difference,
+      BlendMode.Invert,
+    ]) {
       expect(isBlendModeSupported(state, mode)).toBe(false);
     }
   });

@@ -1,4 +1,4 @@
-import { BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 import { applyDomBlendMode, enableDomBlendModeSupport, getDomBlendModeFidelity } from './domMaterials';
 import { createDomRenderState } from './domRenderState';
@@ -20,13 +20,13 @@ describe('applyDomBlendMode', () => {
     expect(el.style.mixBlendMode).toBe('darken');
   });
 
-  it('sets mixBlendMode to "difference" for BlendMode.Difference', () => {
-    applyDomBlendMode(el, BlendMode.Difference);
+  it('sets mixBlendMode to "difference" for AdvancedBlendMode.Difference', () => {
+    applyDomBlendMode(el, AdvancedBlendMode.Difference);
     expect(el.style.mixBlendMode).toBe('difference');
   });
 
-  it('sets mixBlendMode to "hard-light" for BlendMode.HardLight', () => {
-    applyDomBlendMode(el, BlendMode.HardLight);
+  it('sets mixBlendMode to "hard-light" for AdvancedBlendMode.HardLight', () => {
+    applyDomBlendMode(el, AdvancedBlendMode.HardLight);
     expect(el.style.mixBlendMode).toBe('hard-light');
   });
 
@@ -40,8 +40,8 @@ describe('applyDomBlendMode', () => {
     expect(el.style.mixBlendMode).toBe('multiply');
   });
 
-  it('sets mixBlendMode to "overlay" for BlendMode.Overlay', () => {
-    applyDomBlendMode(el, BlendMode.Overlay);
+  it('sets mixBlendMode to "overlay" for AdvancedBlendMode.Overlay', () => {
+    applyDomBlendMode(el, AdvancedBlendMode.Overlay);
     expect(el.style.mixBlendMode).toBe('overlay');
   });
 
