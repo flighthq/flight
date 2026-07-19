@@ -1,5 +1,13 @@
 import { getEntityRuntime } from '@flighthq/entity';
-import { cloneMatrix, createMatrix, createVector2, equalsMatrix, multiplyMatrix, setMatrix } from '@flighthq/geometry';
+import {
+  cloneMatrix,
+  createMatrix,
+  createTransform2D,
+  createVector2,
+  equalsMatrix,
+  multiplyMatrix,
+  setMatrix,
+} from '@flighthq/geometry';
 import { addNodeChild, createNode } from '@flighthq/node';
 import type { HasTransform2D, HasTransform2DRuntime, Matrix, Node, NodeRuntime } from '@flighthq/types';
 
@@ -11,7 +19,10 @@ import {
   ensureNodeLocalMatrix,
   ensureNodeWorldMatrix,
   getNodeLocalMatrix,
+  getNodeTransform2D,
   getNodeWorldMatrix,
+  setNodeLocalMatrix,
+  setNodeTransform2D,
 } from './transform2d';
 
 function createTestNode(): TestNode {
@@ -230,6 +241,19 @@ describe('getNodeLocalMatrix', () => {
   });
 });
 
+describe('getNodeTransform2D', () => {
+  it('reads the node fields into a carrier', () => {
+    node.x = 3;
+    node.y = 4;
+    node.rotation = 30;
+    node.scaleX = 2;
+    node.skewY = 5;
+    const out = createTransform2D();
+    getNodeTransform2D(out, node);
+    expect(out).toMatchObject({ rotation: 30, scaleX: 2, skewY: 5, x: 3, y: 4 });
+  });
+});
+
 describe('getNodeWorldMatrix', () => {
   it('ensures world transform', () => {
     const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
@@ -241,6 +265,44 @@ describe('getNodeWorldMatrix', () => {
   it('returns local transform', () => {
     const transform = getNodeWorldMatrix(node);
     expect(transform).equals((getEntityRuntime(node) as HasTransform2DRuntime).worldMatrix);
+  });
+});
+
+describe('setNodeLocalMatrix', () => {
+  it('round-trips the effective transform through the local matrix', () => {
+    setNodeLocalMatrix(node, createMatrix(2, 0, 0, 3, 10, 20));
+    expect(node.scaleX).toBeCloseTo(2);
+    expect(node.scaleY).toBeCloseTo(3);
+    expect(node.x).toBeCloseTo(10);
+    expect(node.y).toBeCloseTo(20);
+    const m = getNodeLocalMatrix(node);
+    expect(m.a).toBeCloseTo(2);
+    expect(m.d).toBeCloseTo(3);
+    expect(m.tx).toBeCloseTo(10);
+    expect(m.ty).toBeCloseTo(20);
+  });
+
+  it('resets pivot and absorbs its offset into translation', () => {
+    node.pivotX = 5;
+    node.pivotY = 5;
+    invalidateNodeLocalTransform(node);
+    setNodeLocalMatrix(node, createMatrix(1, 0, 0, 1, 7, 8));
+    expect(node.pivotX).toBe(0);
+    expect(node.pivotY).toBe(0);
+    expect(node.x).toBeCloseTo(7);
+    expect(node.y).toBeCloseTo(8);
+  });
+});
+
+describe('setNodeTransform2D', () => {
+  it('copies carrier fields into the node and rebuilds the matrix', () => {
+    setNodeTransform2D(node, createTransform2D(10, 20, 0, 2, 4));
+    expect(node).toMatchObject({ scaleX: 2, scaleY: 4, x: 10, y: 20 });
+    const m = getNodeLocalMatrix(node);
+    expect(m.a).toBeCloseTo(2);
+    expect(m.d).toBeCloseTo(4);
+    expect(m.tx).toBeCloseTo(10);
+    expect(m.ty).toBeCloseTo(20);
   });
 });
 
