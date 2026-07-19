@@ -89,4 +89,14 @@ describe('getWgpuClassicModuleSourceForKey', () => {
     expect(lambert).toContain('const LIGHTING_PHONG : bool = false;');
     expect(lambert).toContain('const LIGHTING_BLINNPHONG : bool = false;');
   });
+
+  it('declares the group(3) shadow bindings and shadow-maps the directional term', () => {
+    const source = getWgpuClassicModuleSourceForKey(makeKey('blinnphong'));
+    expect(source).toContain('@group(3) @binding(0) var<uniform> shadow : Shadow;');
+    expect(source).toContain('@group(3) @binding(1) var shadowMap : texture_depth_2d;');
+    expect(source).toContain('@group(3) @binding(2) var shadowSampler : sampler_comparison;');
+    // The whole directional contribution is scaled by the PCF factor; ambient stays unshadowed.
+    expect(source).toContain('direct * sampleDirectionalShadow(in.worldPosition)');
+    expect(source.match(/direct \* sampleDirectionalShadow\(in\.worldPosition\)/g)).toHaveLength(1);
+  });
 });
