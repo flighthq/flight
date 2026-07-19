@@ -7,9 +7,19 @@ spans: ["@flighthq/types", "@flighthq/mesh", "@flighthq/scene", "@flighthq/anima
 
 # Morph-Target Animation — Charter
 
-> **Blessed design of record; build deferred.** The architecture below is approved. No code has landed
-> yet — this is the plan the work will follow when morph animation is scheduled. Until then,
-> `importGltf`/`importMd2` deliberately emit empty animation (honest, not faked into TRS).
+> **Blessed design of record; BUILT (GL path).** The architecture below is approved and implemented on
+> the GL backend: `Weights` is a `SceneAnimationPath`; `Mesh.morph` carries a `MeshMorph` (targets +
+> weight array); `@flighthq/mesh` blends base + Σ wᵢ·targetᵢ (`blendMeshGeometryMorph`/
+> `captureMeshMorphBindPose`); `@flighthq/scene` routes `Weights` channels into the weight array
+> (`applyAnimationClipToScene`) and drives the deform (`updateMeshMorph`), with `getMeshDeformer`
+> naming the `none`/`skeletal`/`morph` tag; `scene-gl` runs the morph in `drawGlScene` via
+> CPU-blend-then-upload; and `importGltf`/`importMd2` now emit morph (glTF `primitives[].targets` +
+> `weights` channels; MD2 vertex frames as morph targets + a `weights` clip). Deferred: the GPU
+> vertex-attribute/texture-packed morph strategies (below) and the composed skin+morph GPU upload
+> (pure-morph and CPU-morph work today; a GPU-skinned mesh uploads its bind pose once, so morph over
+> GPU skinning is not yet re-blended into that upload). The MD2 evaluator uses the generic weight-track
+> (hat-function) realization, not the specialized two-frame evaluator (choice B), which stays a
+> memory optimization for very-high-frame-count models.
 
 ## What it is
 
