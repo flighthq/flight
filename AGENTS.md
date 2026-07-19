@@ -238,7 +238,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 
 | Feature | Package(s) | Backend | Notes |
 | --- | --- | --- | --- |
-| Shadows (directional) | `lighting` + `scene-gl` + `scene-wgpu` | gl, wgpu | DirectionalLight ShadowConfig |
+| Shadows (directional) | `lighting` + `scene-gl` | gl | Received by all lit families (PBR/classic/toon). wgpu depth pass unrunnable — `renderWgpuBackground` opens a pass the shadow pass can't nest under; see [wgpu-3d-parity-spec](agents/wgpu-3d-parity-spec.md) |
 | Fog | `effects` (ScreenSpaceFogEffect) | canvas, gl, wgpu | Post-process effect |
 | Ambient light | `lighting` | gl, wgpu |  |
 | Directional light | `lighting` | gl, wgpu | Supports shadow config |
