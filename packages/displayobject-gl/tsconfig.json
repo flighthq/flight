@@ -58,6 +58,9 @@
       "path": "../textlayout"
     },
     {
+      "path": "../texture"
+    },
+    {
       "path": "../types"
     },
     {
