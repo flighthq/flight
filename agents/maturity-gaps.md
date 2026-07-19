@@ -36,13 +36,15 @@ Ranked, worst first. Each is something a user assumes works and it does not.
    that captured the stub output.
 3. **~~Skinned glTF/PBR characters render in bind pose on the GPU.~~ CLOSED ON GL; WGPU OPEN.** The 2026-07
    GL workflow wired `HAS_SKIN` across **all five** real material families on gl (classic/pbr/toon/unlit/
-   shaded — grep `HAS_SKIN` in scene-gl), a per-context capacity gate (`getGlSkinJointCapacity`) with a CPU
-   fallback above capacity (`isGpuSkinnedDraw`, `drawGlScene.ts:35`), and the CPU kernel in
-   `@flighthq/skeleton3d` for bounds/picking, so a PBR glTF character GPU-skins on gl. **WebGPU still has
-   zero GPU skinning** (grep confirms no joint/skin path in scene-wgpu) — a skinned mesh renders in bind
-   pose on wgpu. The un-postpone plan is [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3. Note the
-   shipped GL palette is a **uniform mat4 array**, not the bone-palette data texture the design decision
-   named; the spec carries the data-texture/storage-buffer target for the wgpu port.
+   shaded — grep `HAS_SKIN` in scene-gl). The bone palette is a **RGBA32F data texture read via `texelFetch`**
+   (the carrier the design decision named): `GlSkinPaletteTexture` / `uploadGlSkinPaletteTexture` in
+   `@flighthq/render-gl`, one mat4 = four texels, per-state `skinPalette` grown to the largest skeleton.
+   Because it is a texture, the joint count is bounded by MAX_TEXTURE_SIZE — the old per-context
+   uniform-budget capacity gate and CPU fallback are **gone** (`isGpuSkinnedDraw` now GPU-skins any skinned
+   mesh with `joints0`/`weights0`). The CPU kernel in `@flighthq/skeleton3d` is retained for bounds/picking
+   only. **WebGPU still has zero GPU skinning** (grep confirms no joint/skin path in scene-wgpu) — a skinned
+   mesh renders in bind pose on wgpu. The un-postpone plan is [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md)
+   §3 (mirror the GL data texture with a `texture_2d<f32>` + `textureLoad`).
 4. **Non-Latin text is fundamentally broken, not just unstyled.** `textbidi` (UAX #9) and `textsegment`
    (UAX #29) ship as packages but are wired into nothing — layout does no bidi reorder, no grapheme
    segmentation, and line-breaks on `\n`+ASCII-space only. Arabic/Hebrew/Indic/CJK/Thai render wrong. There is
@@ -185,12 +187,12 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
 | Skinned glTF/PBR character GPU-skins | Works on gl: `HAS_SKIN` variant in all five mesh preludes (classic/pbr/unlit/shaded/toon), so glTF's PBR GPU-skins; the draw uploads the static bind pose (not the CPU-posed vertices) so a redundant `updateMeshSkin` no longer double-skins. matcap/debug still have no skin variant. Pixel result is host-verify-only (jsdom can't read back) | gl | SURPRISE |
-| WebGPU skins skinned meshes | Still zero skinning in scene-wgpu (grep → none); any material renders bind pose. Un-postpone plan: [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 (palette bind group, capacity gate + CPU fallback, HAS_SKIN pipeline variant per family) | wgpu | SURPRISE |
+| WebGPU skins skinned meshes | Still zero skinning in scene-wgpu (grep → none); any material renders bind pose. Un-postpone plan: [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 (bone-palette data texture + `textureLoad`, HAS_SKIN pipeline variant per family — no capacity gate / CPU fallback, matching GL) | wgpu | SURPRISE |
 | GPU skinning is verified | Still no functional skin scene; the gl bind-pose/palette/gate logic is unit-tested (jsdom), but the deformed pixels are host-verify-only. An app calling `updateMeshSkin` on a gl-rendered skinned mesh is now safe (bind-pose upload), but that coexistence isn't pixel-gated | gl (unverified) | SURPRISE |
 | 2D skeletal animation (Spine/DragonBones) exists | `skeleton2d` is a charter with zero code; no `packages/skeleton2d` | n/a | SURPRISE/MAJOR |
 | Feature Lookup "gl, wgpu" for skeletal | GPU skinning now spans all five gl families (not gl-classic-only), but is absent on wgpu — the "wgpu" claim is aspirational until [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 lands | — | MAJOR (wgpu) |
 | Animated character culls/picks correctly | Skinned bounds stay bind-pose (AABB never recomputed); frustum cull + raycast test rest bounds → mis-cull/mis-pick | all | MAJOR |
-| >64-joint rig works | Fixed on gl: palette sized per-context from `MAX_VERTEX_UNIFORM_VECTORS` (64 floor, 256 cap) via `getGlSkinJointCapacity`, and `drawGlScene` gates GPU skinning on `jointCount ≤ capacity`, falling back to a rigid draw over the CPU-posed vertices (`updateMeshSkin`) when a rig exceeds it — no more out-of-range palette reads. wgpu still uncapped/unwired | gl (wgpu open) | RESOLVED |
+| >64-joint rig works | Fixed on gl: the bone palette is an RGBA32F **data texture** read via `texelFetch`, so the joint count is bounded by MAX_TEXTURE_SIZE (thousands of joints) — no uniform-budget cap, no capacity gate, no CPU fallback. `isGpuSkinnedDraw` GPU-skins any skinned mesh with `joints0`/`weights0`. wgpu still unwired | gl (wgpu open) | RESOLVED |
 | Morph targets / IK / blend trees / DQS | Morph/blend-shape deformer now built on gl (mesh CPU-blends base + Σ wᵢ·targetᵢ, `updateMeshMorph`; glTF/MD2 import emit morph); wgpu morph unbuilt. IK / blend trees / DQS still absent; LBS-only; no retargeting | gl (morph); all (rest) | RESOLVED (morph, gl) |
 | >4 influences | Fixed 4; glTF reads only JOINTS_0/WEIGHTS_0, JOINTS_1 dropped (renormalized, silent) | all | MINOR |
 
@@ -306,10 +308,10 @@ silent-wrong cases, then fill the biggest capability holes.
    parity is evidenced. Each spec item is a translation of a shipped GL file.
 
 4. **~~Make skinned characters actually deform on the GPU (Exec #3).~~ DONE ON GL.** `HAS_SKIN` now spans all
-   five gl families (classic/pbr/toon/unlit/shaded), the palette is per-context capacity-gated with a CPU
-   fallback above capacity, and the CPU kernel + skinned bounds live in `@flighthq/skeleton3d`. Remaining: the
-   wgpu port (folded into item 3 above) and a functional skin scene that exercises the GPU path, not the CPU
-   crutch.
+   five gl families (classic/pbr/toon/unlit/shaded), the palette is an RGBA32F **data texture read via
+   `texelFetch`** (bounded by MAX_TEXTURE_SIZE — no capacity gate, no CPU fallback), and the CPU kernel +
+   skinned bounds live in `@flighthq/skeleton3d` for bounds/picking only. Remaining: the wgpu port (folded
+   into item 3 above) and a functional skin scene that exercises the GPU path, not the CPU crutch.
 
 5. **Wire the effect G-buffer (Theme, Exec #2).** Feed depth/normal/velocity/history buffers so SSAO/SSR/TAA/
    motion-blur/fog stop being placeholders. This unblocks the largest "looks AAA, does nothing" cluster. Then

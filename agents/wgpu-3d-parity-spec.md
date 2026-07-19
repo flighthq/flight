@@ -166,49 +166,49 @@ warning fires.
 GL shipped **HAS_SKIN across all five real mesh families** — classic, PBR, toon, unlit, and
 ShadedMaterial (grep: `glClassicPrelude.ts`, `glPbrProgramCache.ts`, `glToonPrelude.ts`,
 `glUnlitPrelude.ts`, `glShadedPrelude.ts` all carry the HAS_SKIN define; matcap/debug/wireframe do not).
-The shipped mechanism is a **uniform mat4 palette array**, not the bone-palette data texture the original
-design decision named:
+The shipped mechanism is a **bone-palette RGBA32F data texture** read with `texelFetch` — the carrier the
+original design decision named — one mat4 packed as four consecutive texels:
 
 ```glsl
-uniform mat4 u_jointMatrices[MAX_JOINTS];   // glMeshProgram.ts:264
-skinMatrix = w.x*u_jointMatrices[int(j.x)] + w.y*u_jointMatrices[int(j.y)] + …   // :267–270
+uniform highp sampler2D u_jointTexture;   // glMeshProgram.ts (GL_SKIN_VERTEX_DECLARATIONS_GLSL)
+// fetchJointMatrix(j) = mat4(texelFetch(u_jointTexture, ivec2(j*4 + c, 0), 0) for c in 0..3)
+skinMatrix = w.x*fetchJointMatrix(int(j.x)) + w.y*fetchJointMatrix(int(j.y)) + …
 ```
 
-`MAX_JOINTS` is **per-context**, derived once from `MAX_VERTEX_UNIFORM_VECTORS` by
-`getGlSkinJointCapacity` (`glMeshProgram.ts:172`), clamped to `[GL_MAX_SKIN_JOINTS(64),
-GL_SKIN_JOINT_HARD_CAP(256)]`. `drawGlScene`'s `isGpuSkinnedDraw` gate (`drawGlScene.ts:35`) GPU-skins
-**only** when the mesh carries a skin, its geometry has `joints0`/`weights0`, **and** the skeleton fits
-that capacity — otherwise it falls back to a rigid draw over the CPU-posed vertices `updateMeshSkin`
-wrote, never emitting an out-of-range joint index. A skinned run selects the HAS_SKIN program variant and
-splits the bind run on `skinned` (`drawGlScene.ts:155–162`); the palette pointer flows through
-`SceneRenderProxy.jointMatrices` (`glMeshProgram.ts:126–129` uploads `u_jointMatrices` via
-`uniformMatrix4fv`). The CPU kernel that both feeds the fallback and computes bounds/picking already
-exists in `@flighthq/skeleton3d`: `skinVertices` / `skinMeshGeometry` / `updateMeshSkin`.
+The palette texture is per-state (`GlSceneRuntime.skinPalette`, a `GlSkinPaletteTexture` created lazily by
+`ensureGlSkinPalette` and grown to the largest skeleton seen), uploaded per draw by
+`uploadGlSkinPaletteTexture` (`@flighthq/render-gl`) into an RGBA32F single-row texture on the
+`SKIN_PALETTE_TEXTURE_UNIT` (12). Because the palette is a **texture read with texelFetch (GLSL ES 3.0
+core — no float-filter extension)**, the joint count is bounded by `MAX_TEXTURE_SIZE` (thousands of
+joints), so there is **no per-context uniform-budget capacity cap and no CPU-skinning fallback** — the old
+`getGlSkinJointCapacity` + `isGpuSkinnedDraw` capacity gate is gone. `drawGlScene`'s `isGpuSkinnedDraw`
+gate (`drawGlScene.ts`) now GPU-skins whenever the mesh carries a skin and its geometry has
+`joints0`/`weights0`. A skinned run selects the HAS_SKIN program variant and splits the bind run on
+`skinned`; the palette pointer flows through `SceneRenderProxy.jointMatrices` (`drawGlMeshSubset` uploads
+it into `u_jointTexture`). The CPU kernel in `@flighthq/skeleton3d` (`skinVertices` / `skinMeshGeometry` /
+`updateMeshSkin`) is retained **only for bounds/picking**, not as a draw fallback.
 
 ### wgpu implementation
 
-Mirror the GL path, choosing the WebGPU-native palette carrier:
+Mirror the GL path, using the bone-palette **data texture** carrier the LOCKED decision names (a
+`texture_2d<f32>` sampled by `textureLoad(jointTexture, vec2(j*4 + c, 0), 0)` — the WGSL analog of GL's
+`texelFetch`):
 
-1. **Palette as a storage buffer (the WebGPU form of the GL uniform array).** WebGPU's per-stage uniform
-   size is too small for a large `array<mat4>`, so upload the joint palette as a **read-only storage
-   buffer** bound in a dedicated skin bind group (a new group beyond Frame/Draw/Material — note the
-   `maxBindGroups=4` floor, so skin must share/replace a group; simplest is to fold the palette into an
-   extended **Draw** group bound only for skinned pipelines, or add it as group(4) only on families that
-   don't already use group(3)/group(4) for shadow+IBL — PBR does, so skinned-PBR needs the palette packed
-   into the Draw group). The WGSL reads it with `palette[joints.x]` indexing — the storage-buffer analog
-   of `texelFetch`; a `texture_2d<f32>` data texture sampled by `textureLoad` is an equally valid carrier
-   and matches the original design decision's "bone-palette data texture" wording, but a storage buffer
-   is the simpler, lower-overhead WGSL mirror of the GL uniform array. Pick one and document it inline.
+1. **Palette as an RGBA32F data texture.** Upload the joint palette into a single-row `rgba32float`
+   texture (one mat4 = four texels), the wgpu mirror of `GlSkinPaletteTexture` / `uploadGlSkinPaletteTexture`.
+   Bind it in the skin bind group (fold into the Draw group bound only for skinned pipelines, respecting
+   the `maxBindGroups=4` floor). `textureLoad` needs no sampler and no float-filterable feature, so the
+   joint count is bounded by `maxTextureDimension1D`/`2D` rather than a uniform/storage-buffer size — the
+   same MAX_TEXTURE_SIZE reach as GL, and no capacity cap.
 2. **HAS_SKIN pipeline variant per family.** Each family compiles a skinned pipeline permutation (extra
    vertex attributes `joints0` (uint) + `weights0` (float), an extended `VERTEX_BUFFER_LAYOUTS`, and the
    skin bind group in the layout). Key the variant into the pipeline cache the same way item 1's
    `|blend`/`|opaque` does — append `|skin` so skinned and rigid pipelines of the same family coexist and
    the rigid draw pays nothing.
-3. **Capacity gate + CPU fallback.** Port `getGlSkinJointCapacity` → `getWgpuSkinJointCapacity` off the
-   device's `maxStorageBufferBindingSize` (or the texture-dimension cap if a data texture is chosen), and
-   port `isGpuSkinnedDraw` → `isWgpuGpuSkinnedDraw`. Above capacity, draw rigid over the CPU-posed
-   vertices `updateMeshSkin` already writes — identical fallback to GL. Wire `activeSkinnedRun` on
-   `WgpuSceneRuntime` and split the bind run on `skinned` exactly as `drawGlScene` does.
+3. **No capacity gate, no CPU fallback.** GL dropped both when it moved to the data texture; wgpu matches —
+   `isWgpuGpuSkinnedDraw` GPU-skins whenever the mesh carries a skin and its geometry has
+   `joints0`/`weights0` (mirror `isGpuSkinnedDraw`). Wire `activeSkinnedRun` on `WgpuSceneRuntime` and
+   split the bind run on `skinned` exactly as `drawGlScene` does.
 4. **Skinned bounds for cull/pick** are a `@flighthq/skeleton3d` CPU-kernel concern shared with GL (not
    wgpu-specific): the conservative joint-swept AABB (default) and exact-CPU-skinned bounds option. wgpu
    consumes whatever the shared kernel produces; no wgpu-specific bounds code.
@@ -216,7 +216,8 @@ Mirror the GL path, choosing the WebGPU-native palette carrier:
 ### Verification
 
 `.webgpu.ts` baseline for a skinned mesh posed away from bind pose (the same scene GL should get). The
-deformed silhouette must match the GL capture. Add a >capacity-joint scene to exercise the CPU fallback.
+deformed silhouette must match the GL capture. A large-skeleton scene (e.g. an MD5/AWD rig well past 64
+joints) verifies the no-cap data-texture path renders rather than falling back.
 
 ---
 

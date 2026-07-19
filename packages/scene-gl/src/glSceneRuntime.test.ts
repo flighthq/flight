@@ -3,7 +3,7 @@ import { EntityRuntimeKey } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import type { GlSceneIbl } from './glSceneRuntime';
-import { destroyGlSceneRuntime, getGlSceneRuntime } from './glSceneRuntime';
+import { destroyGlSceneRuntime, ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 
 describe('destroyGlSceneRuntime', () => {
@@ -39,12 +39,14 @@ describe('destroyGlSceneRuntime', () => {
       textures: [],
     } as unknown as GlRenderTarget;
     scene.shadow = { matrix: {} as Matrix4, texture: depthTexture };
+    scene.skinPalette = { jointCapacity: 4, texture: {} as WebGLTexture };
 
     destroyGlSceneRuntime(state);
 
     expect(gl.calls.filter((c) => c.name === 'deleteProgram').length).toBe(2);
-    // 3 IBL textures + the environment source cube + the shadow depth texture (owned by the target).
-    expect(gl.calls.filter((c) => c.name === 'deleteTexture').length).toBe(5);
+    // 3 IBL textures + the environment source cube + the shadow depth texture (owned by the target) +
+    // the skin-palette data texture.
+    expect(gl.calls.filter((c) => c.name === 'deleteTexture').length).toBe(6);
     // The IBL bake framebuffer + the shadow target's framebuffer.
     expect(gl.calls.filter((c) => c.name === 'deleteFramebuffer').length).toBe(2);
 
@@ -55,6 +57,21 @@ describe('destroyGlSceneRuntime', () => {
     expect(scene.environmentSourceCube).toBeNull();
     expect(scene.shadowTarget).toBeNull();
     expect(scene.shadow).toBeNull();
+    expect(scene.skinPalette).toBeNull();
+  });
+});
+
+describe('ensureGlSkinPalette', () => {
+  it('creates the palette texture lazily on first call and reuses it after', () => {
+    const { state } = makeGlSceneState();
+    expect(getGlSceneRuntime(state).skinPalette).toBeNull();
+
+    const first = ensureGlSkinPalette(state);
+    expect(first).toBe(getGlSceneRuntime(state).skinPalette);
+    expect(first.jointCapacity).toBe(0);
+
+    const second = ensureGlSkinPalette(state);
+    expect(second).toBe(first);
   });
 });
 

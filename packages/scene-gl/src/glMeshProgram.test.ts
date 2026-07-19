@@ -7,15 +7,13 @@ import type { Camera, ImageResource } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import {
-  GL_MAX_SKIN_JOINTS,
-  GL_SKIN_JOINT_HARD_CAP,
+  SKIN_PALETTE_TEXTURE_UNIT,
   beginGlMeshDraw,
   bindGlUvTransform,
   compileGlProgram,
   destroyGlMeshProgram,
   drawGlMeshSubset,
   ensureGlSceneProgram,
-  getGlSkinJointCapacity,
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
@@ -229,6 +227,73 @@ describe('drawGlMeshSubset', () => {
     );
     expect(gl.calls.some((c) => c.name === 'uniformMatrix3fv')).toBe(false);
   });
+
+  it('uploads the bone palette into the data texture and binds the skin unit for a skinned draw', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram();
+    program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;
+    // Two joints' palette (32 floats) → texture width = 2 joints * 4 = 8 texels.
+    const jointMatrices = new Float32Array(2 * 16);
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        jointMatrices,
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+
+    // The palette allocates RGBA32F storage on the skin-palette unit and the sampler is set to it.
+    expect(
+      gl.calls.some((c) => c.name === 'activeTexture' && c.args[0] === gl.TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT),
+    ).toBe(true);
+    const alloc = gl.calls.find((c) => c.name === 'texImage2D');
+    expect(alloc?.args[3]).toBe(8); // width = 2 joints * 4 texels
+    expect(gl.calls.some((c) => c.name === 'uniform1i' && c.args[1] === SKIN_PALETTE_TEXTURE_UNIT)).toBe(true);
+  });
+
+  it('skips the skin upload when the program has no joint-texture location', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram(); // locJointTexture undefined → not a skinned program
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        jointMatrices: new Float32Array(16),
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(false);
+  });
+
+  it('skips the skin upload for a skinned program drawing a rigid (paletteless) mesh', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram();
+    program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(false);
+  });
 });
 
 describe('ensureGlSceneProgram', () => {
@@ -251,48 +316,6 @@ describe('ensureGlSceneProgram', () => {
     ensureGlSceneProgram(state, 'fam:b', makeProgram);
     // Two distinct keys → two cached entries (the shared programCache spans every family).
     ensureGlSceneProgram(state, 'fam:a', makeProgram);
-  });
-});
-
-describe('getGlSkinJointCapacity', () => {
-  it('derives the palette size from MAX_VERTEX_UNIFORM_VECTORS above the guaranteed floor', () => {
-    // The default fake context reports 1024 vectors → (1024 − 24) / 4 = 250 palette slots.
-    const { state } = makeGlSceneState();
-    expect(getGlSkinJointCapacity(state)).toBe(250);
-  });
-
-  it('clamps to the guaranteed 64 floor on a minimum-spec budget', () => {
-    const gl = makeFakeGl2();
-    gl.getParameter = (pname: number) => (pname === gl.MAX_VERTEX_UNIFORM_VECTORS ? 256 : 0);
-    const { state } = makeGlSceneState(gl);
-    expect(getGlSkinJointCapacity(state)).toBe(GL_MAX_SKIN_JOINTS);
-  });
-
-  it('clamps to the hard cap on a very large budget', () => {
-    const gl = makeFakeGl2();
-    gl.getParameter = (pname: number) => (pname === gl.MAX_VERTEX_UNIFORM_VECTORS ? 100_000 : 0);
-    const { state } = makeGlSceneState(gl);
-    expect(getGlSkinJointCapacity(state)).toBe(GL_SKIN_JOINT_HARD_CAP);
-  });
-
-  it('falls back to the floor when the context cannot report a budget', () => {
-    const gl = makeFakeGl2();
-    (gl as { getParameter?: unknown }).getParameter = undefined;
-    const { state } = makeGlSceneState(gl);
-    expect(getGlSkinJointCapacity(state)).toBe(GL_MAX_SKIN_JOINTS);
-  });
-
-  it('queries the GL budget once and caches it per state', () => {
-    const gl = makeFakeGl2();
-    let queries = 0;
-    gl.getParameter = (pname: number) => {
-      queries++;
-      return pname === gl.MAX_VERTEX_UNIFORM_VECTORS ? 1024 : 0;
-    };
-    const { state } = makeGlSceneState(gl);
-    getGlSkinJointCapacity(state);
-    getGlSkinJointCapacity(state);
-    expect(queries).toBe(1);
   });
 });
 

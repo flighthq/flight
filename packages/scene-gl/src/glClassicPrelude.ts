@@ -4,12 +4,10 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 import type { GlLitProgram } from './glLitProgram';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import {
-  GL_MAX_SKIN_JOINTS,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlSceneProgram,
-  getGlSkinJointCapacity,
 } from './glMeshProgram';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
@@ -50,9 +48,6 @@ export interface GlClassicDefineKey {
   // from the render-state skinned-run flag, not by the material renderer — skinning keys off geometry.
   hasSkin?: boolean;
   hasSpecularMap: boolean;
-  // The palette size baked into `#define MAX_JOINTS` when hasSkin. Set by ensureGlClassicProgram from
-  // getGlSkinJointCapacity; falls back to GL_MAX_SKIN_JOINTS. Must equal drawGlScene's GPU-skinning gate.
-  maxJoints?: number;
   // Whether the diffuse map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
   // shared v_uv0 that the diffuse/specular/normal maps sample. Set only when hasDiffuseMap is also true.
   hasUvTransform: boolean;
@@ -101,7 +96,7 @@ export function compileGlClassicProgram(
     ...resolveGlLitLocations(gl, program),
     program,
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
-    locJointMatrices: gl.getUniformLocation(program, 'u_jointMatrices'),
+    locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locDiffuse: gl.getUniformLocation(program, 'u_diffuse'),
     locDiffuseMap: gl.getUniformLocation(program, 'u_diffuseMap'),
     locModel: gl.getUniformLocation(program, 'u_model'),
@@ -124,7 +119,6 @@ export function ensureGlClassicProgram(state: GlRenderState, key: Readonly<GlCla
   const fullKey: GlClassicDefineKey = {
     ...key,
     hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
-    maxJoints: getGlSkinJointCapacity(state),
   };
   return ensureGlSceneProgram(state, `classic:${buildGlClassicDefineKey(fullKey)}`, (gl) =>
     compileGlClassicProgram(gl, fullKey),
@@ -171,7 +165,7 @@ function buildGlClassicDefineSource(key: Readonly<GlClassicDefineKey>): string {
   if (key.hasSpecularMap) defines += '#define HAS_SPECULAR_MAP\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
   if (key.hasUvTransform) defines += '#define HAS_UV_TRANSFORM\n';
-  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${key.maxJoints ?? GL_MAX_SKIN_JOINTS}\n`;
+  if (key.hasSkin) defines += '#define HAS_SKIN\n';
   return defines;
 }
 

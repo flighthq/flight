@@ -2,7 +2,7 @@ import type { GlRenderState } from '@flighthq/types';
 
 import type { GlLitProgram } from './glLitProgram';
 import { resolveGlLitLocations } from './glLitProgram';
-import { compileGlProgram, ensureGlSceneProgram, getGlSkinJointCapacity } from './glMeshProgram';
+import { compileGlProgram, ensureGlSceneProgram } from './glMeshProgram';
 import type { GlPbrDefineKey } from './glPbrPrelude';
 import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -71,7 +71,7 @@ export function compileGlPbrProgram(gl: WebGL2RenderingContext, key: Readonly<Gl
     locIridescence: gl.getUniformLocation(program, 'u_iridescence'),
     locIridescenceIor: gl.getUniformLocation(program, 'u_iridescenceIor'),
     locIridescenceThickness: gl.getUniformLocation(program, 'u_iridescenceThickness'),
-    locJointMatrices: gl.getUniformLocation(program, 'u_jointMatrices'),
+    locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locMetallic: gl.getUniformLocation(program, 'u_metallic'),
     locMetallicRoughnessMap: gl.getUniformLocation(program, 'u_metallicRoughnessMap'),
     locModel: gl.getUniformLocation(program, 'u_model'),
@@ -102,7 +102,6 @@ export function ensureGlPbrProgram(state: GlRenderState, key: Readonly<GlPbrDefi
   const fullKey: GlPbrDefineKey = {
     ...key,
     hasSkin: getGlSceneRuntime(state).activeSkinnedRun,
-    maxJoints: getGlSkinJointCapacity(state),
   };
   return ensureGlSceneProgram(state, `pbr:${buildGlPbrDefineKey(fullKey)}`, (gl) => compileGlPbrProgram(gl, fullKey));
 }

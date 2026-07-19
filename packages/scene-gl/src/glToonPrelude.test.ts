@@ -95,7 +95,9 @@ describe('getGlToonVertexSourceForKey', () => {
   it('injects the skin declarations only for the skinned variant', () => {
     const skinned = getGlToonVertexSourceForKey({ ...FLAT, hasSkin: true });
     expect(skinned).toContain('#define HAS_SKIN');
-    expect(skinned).toContain('#define MAX_JOINTS');
+    expect(skinned).not.toContain('#define MAX_JOINTS');
+    expect(skinned).toContain('sampler2D u_jointTexture');
+    expect(skinned).toContain('texelFetch');
     expect(skinned).toContain('mat4 skinMatrix()');
     expect(skinned).toContain('a_joints0');
     const rigid = getGlToonVertexSourceForKey(FLAT);

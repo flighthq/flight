@@ -164,6 +164,7 @@ export * from './GlRenderTarget';
 export * from './GlShader';
 export * from './GlShaderLocations';
 export * from './GlShapeMesh';
+export * from './GlSkinPaletteTexture';
 export * from './GlTextureDescriptor';
 export * from './GlTextureFilterKind';
 export * from './GlTextureWrapKind';

@@ -1,10 +1,11 @@
-import { destroyGlRenderTarget } from '@flighthq/render-gl';
+import { createGlSkinPaletteTexture, destroyGlRenderTarget, destroyGlSkinPaletteTexture } from '@flighthq/render-gl';
 import type { ModifierRegistry } from '@flighthq/shading';
 import type {
   GlMeshMaterialRenderer,
   GlRenderState,
   GlRenderStateRuntime,
   GlRenderTarget,
+  GlSkinPaletteTexture,
   Kind,
   Matrix4,
   MeshGeometry,
@@ -92,10 +93,10 @@ export interface GlSceneRuntime {
   programCache: Map<string, GlMeshProgram>;
   shadow: GlSceneShadow | null;
   shadowTarget: GlRenderTarget | null;
-  // The GPU skin-palette capacity for this context, resolved lazily from MAX_VERTEX_UNIFORM_VECTORS by
-  // getGlSkinJointCapacity and cached here (one GL query). undefined until first resolved. Both the
-  // shader `#define MAX_JOINTS` and drawGlScene's GPU-skinning gate read it, so they never disagree.
-  skinJointCapacity?: number;
+  // The per-state GPU skin bone-palette data texture (RGBA32F), created lazily by ensureGlSkinPalette on
+  // the first skinned draw and grown to the largest skeleton seen. Every skinned mesh reuses this one
+  // texture: the palette is re-uploaded per draw, so no per-mesh texture is retained. null until first use.
+  skinPalette: GlSkinPaletteTexture | null;
   time: number;
   uploadCache: WeakMap<MeshGeometry, GlMeshUpload>;
 }
@@ -159,10 +160,28 @@ export function destroyGlSceneRuntime(state: GlRenderState): void {
   }
   scene.shadow = null;
 
+  if (scene.skinPalette !== null) {
+    destroyGlSkinPaletteTexture(gl, scene.skinPalette);
+    scene.skinPalette = null;
+  }
+
   scene.blendedDrawList.length = 0;
   scene.opaqueDrawList.length = 0;
   scene.blendedPool.length = 0;
   scene.opaquePool.length = 0;
+}
+
+// Resolves the per-state GPU skin bone-palette data texture, creating it lazily on the first skinned
+// draw. Every skinned mesh shares this one RGBA32F texture — the palette is re-uploaded per draw
+// (uploadGlSkinPaletteTexture grows it to the largest skeleton seen), so no per-mesh texture is retained.
+export function ensureGlSkinPalette(state: GlRenderState): GlSkinPaletteTexture {
+  const scene = getGlSceneRuntime(state);
+  let palette = scene.skinPalette;
+  if (palette === null) {
+    palette = createGlSkinPaletteTexture(state.gl);
+    scene.skinPalette = palette;
+  }
+  return palette;
 }
 
 // Resolves scene-gl's private runtime for a GlRenderState, allocating it (and wiring the header
@@ -187,6 +206,7 @@ export function getGlSceneRuntime(state: GlRenderState): GlSceneRuntime {
       programCache: new Map(),
       shadow: null,
       shadowTarget: null,
+      skinPalette: null,
       time: 0,
       uploadCache: new WeakMap(),
     };

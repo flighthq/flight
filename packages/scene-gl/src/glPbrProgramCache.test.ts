@@ -95,7 +95,7 @@ describe('ensureGlPbrProgram', () => {
 
     expect(skinned).not.toBe(rigid);
     expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('pbr:-------:-------k');
-    expect(skinned.locJointMatrices).not.toBeNull();
+    expect(skinned.locJointTexture).not.toBeNull();
   });
 
   it('caches a distinct entry per extension define under the pbr: namespace', () => {

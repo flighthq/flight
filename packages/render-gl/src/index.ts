@@ -14,6 +14,7 @@ export * from './glRenderTarget';
 export * from './glRenderTargetPool';
 export * from './glShader';
 export * from './glShaderBinding';
+export * from './glSkinPaletteTexture';
 export * from './glTextureUpload';
 export * from './glTextureVideoUpload';
 export type { GlRenderTarget } from '@flighthq/types';

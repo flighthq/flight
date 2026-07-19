@@ -21,21 +21,17 @@ import type {
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlSkinJointCapacity } from './glMeshProgram';
 import { drawGlSceneParticleEmitters } from './glParticleEmitter3D';
 import type { GlSceneDrawEntry } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
-// True when a mesh should be GPU-skinned this draw: it carries a skin, its geometry has the joints0/
-// weights0 channels, AND its skeleton fits the context's palette capacity. A skeleton larger than the
-// palette (e.g. a 110-joint MD5 model on hardware whose MAX_VERTEX_UNIFORM_VECTORS caps the palette
-// below that) returns false, so drawGlScene draws it rigid over the CPU-posed vertices updateMeshSkin
-// wrote — never GPU-skinning with an out-of-range joint index that would read past u_jointMatrices and
-// fling the vertex out. Keeps the gate and the shader's `#define MAX_JOINTS` on one capacity source.
-function isGpuSkinnedDraw(state: Readonly<GlRenderState>, mesh: Readonly<Mesh>): boolean {
-  const skin = mesh.skin;
-  if (skin == null || !hasMeshGeometrySkin(mesh.geometry)) return false;
-  return skin.skeleton.joints.length <= getGlSkinJointCapacity(state);
+// True when a mesh should be GPU-skinned this draw: it carries a skin and its geometry has the joints0/
+// weights0 channels. The bone palette is an RGBA32F data texture read via texelFetch, so the joint count
+// is bounded by MAX_TEXTURE_SIZE (thousands of joints) rather than the vertex-uniform budget — there is
+// no per-context capacity cap and no CPU fallback for large skeletons. The CPU skinning kernel in
+// @flighthq/skeleton3d is retained only for bounds/picking, not as a draw fallback.
+function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
+  return mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
 }
 
 // Draws a prepared 3D scene on the Gl backend. The app runs prepareSceneRender(state, scene, camera,
@@ -152,7 +148,7 @@ export function drawGlScene(
 
     // A skinned run selects the HAS_SKIN program variant; split runs on it (a rigid and a skinned mesh
     // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
-    const skinned = isGpuSkinnedDraw(state, entry.mesh);
+    const skinned = isGpuSkinnedDraw(entry.mesh);
     if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
       runtime.activeSkinnedRun = skinned;
       entry.renderer.bind(state, entry.material, lightBlock, camera);
@@ -188,7 +184,7 @@ export function drawGlScene(
       const worldMatrix = entry.worldMatrix as Matrix4;
       setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
-      const skinned = isGpuSkinnedDraw(state, entry.mesh);
+      const skinned = isGpuSkinnedDraw(entry.mesh);
       if (entry.renderer !== boundRenderer || entry.material !== boundMaterial || skinned !== boundSkinned) {
         runtime.activeSkinnedRun = skinned;
         entry.renderer.bind(state, entry.material, lightBlock, camera);
