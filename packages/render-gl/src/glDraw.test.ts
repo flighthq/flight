@@ -1,6 +1,7 @@
 import type { ImageResource, SamplerLike, VideoTexture } from '@flighthq/types';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
+import { registerGlCompressedTextureDecoder } from './glCompressedTexture';
 import {
   applyGlBlendMode,
   bindGlImageResourceTexture,
@@ -202,6 +203,41 @@ describe('bindGlImageResourceTexture', () => {
     image.version = 2;
     bindGlImageResourceTexture(state, image);
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
+  });
+
+  it('routes a compressed-only ImageResource through the compressed upload path (decode fallback)', () => {
+    // The device mock exposes no block extension, so the compressed container falls back to the
+    // registered RGBA decoder and uploads via texImage2D — proving the real bind/draw path reaches
+    // uploadGlCompressedTextureContainer, not just the raw data/element branches.
+    const { state, gl } = createGlState();
+    const rgba = new Uint8ClampedArray(4 * 4 * 4);
+    const decode = vi.fn(() => rgba);
+    registerGlCompressedTextureDecoder(state, decode);
+    const image = {
+      source: null,
+      data: null,
+      compressed: {
+        container: {
+          format: 'bc3',
+          width: 4,
+          height: 4,
+          depth: 1,
+          mipLevels: 1,
+          layers: 1,
+          faces: 1,
+          supercompression: 'None',
+          levels: [{ byteOffset: 0, byteLength: 16, width: 4, height: 4 }],
+        },
+        payload: new Uint8Array(16),
+      },
+      width: 4,
+      height: 4,
+      version: 1,
+      alphaType: 'straight',
+    } as unknown as ImageResource;
+    bindGlImageResourceTexture(state, image);
+    expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
+    expect(gl.texImage2D).toHaveBeenCalled();
   });
 });
 

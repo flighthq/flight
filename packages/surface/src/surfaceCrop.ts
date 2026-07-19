@@ -36,6 +36,7 @@ export function cropSurface(source: Readonly<Surface>, rect: Readonly<RectangleL
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
+    compressed: null,
     data,
     format: source.format,
     height: rh,
@@ -109,6 +110,7 @@ export function extendSurface(
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
+    compressed: null,
     data,
     format: source.format,
     height: dh,
@@ -147,6 +149,7 @@ export function trimSurface(source: Readonly<Surface>): Surface {
     return createEntity({
       alphaType: source.alphaType,
       colorSpace: source.colorSpace,
+      compressed: null,
       data: new Uint8ClampedArray(4),
       format: source.format,
       height: 1,

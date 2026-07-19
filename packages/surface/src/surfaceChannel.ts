@@ -134,6 +134,7 @@ function makeSurface(
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
+    compressed: null,
     data,
     format: source.format,
     height,

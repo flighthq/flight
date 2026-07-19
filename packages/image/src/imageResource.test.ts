@@ -1,5 +1,8 @@
+import type { ImageResourceCompressed } from '@flighthq/types';
+
 import {
   cloneImageResource,
+  createCompressedImageResource,
   createImageResource,
   disposeImageResource,
   getImageResourceByteSize,
@@ -10,6 +13,24 @@ import {
   isImageResourceEmpty,
   setImageResourceSource,
 } from './imageResource';
+
+// A minimal single-mip bc3 4x4 compressed payload stand-in for the resource wrapper tests.
+function makeCompressed(): ImageResourceCompressed {
+  return {
+    container: {
+      format: 'bc3',
+      width: 4,
+      height: 4,
+      depth: 1,
+      mipLevels: 1,
+      layers: 1,
+      faces: 1,
+      supercompression: 'None',
+      levels: [{ byteOffset: 0, byteLength: 16, width: 4, height: 4 }],
+    },
+    payload: new Uint8Array(16),
+  };
+}
 
 describe('cloneImageResource', () => {
   it('copies fields, shares the element, and gives an independent identity', () => {
@@ -41,6 +62,25 @@ describe('cloneImageResource', () => {
     expect(copy.format).toStrictEqual('bgra8unorm');
     expect(copy.alphaType).toStrictEqual('premultiplied');
   });
+
+  it('shares the compressed payload by reference', () => {
+    const resource = createCompressedImageResource(makeCompressed());
+    const copy = cloneImageResource(resource);
+    expect(copy.compressed).toBe(resource.compressed);
+  });
+});
+
+describe('createCompressedImageResource', () => {
+  it('wraps the container, mirrors its base dimensions, and leaves source/data null', () => {
+    const compressed = makeCompressed();
+    const resource = createCompressedImageResource(compressed);
+    expect(resource.compressed).toBe(compressed);
+    expect(resource.width).toStrictEqual(4);
+    expect(resource.height).toStrictEqual(4);
+    expect(resource.source).toBeNull();
+    expect(resource.data).toBeNull();
+    expect(resource.version).toStrictEqual(0);
+  });
 });
 
 describe('createImageResource', () => {
@@ -70,15 +110,17 @@ describe('createImageResource', () => {
 });
 
 describe('disposeImageResource', () => {
-  it('releases the element and data and marks the resource changed', () => {
+  it('releases the element, data, and compressed payload and marks the resource changed', () => {
     const resource = createImageResource({ width: 4, height: 5 } as HTMLImageElement);
     resource.data = new Uint8ClampedArray(4 * 5 * 4);
+    resource.compressed = makeCompressed();
     const before = resource.version;
 
     disposeImageResource(resource);
 
     expect(resource.source).toBeNull();
     expect(resource.data).toBeNull();
+    expect(resource.compressed).toBeNull();
     expect(resource.version).toStrictEqual(before + 1);
   });
 });
@@ -128,6 +170,10 @@ describe('hasImageResourcePixels', () => {
     expect(hasImageResourcePixels(createImageResource({ width: 1, height: 1 } as HTMLImageElement))).toStrictEqual(
       true,
     );
+  });
+
+  it('is true for a compressed-only resource (a parsed container)', () => {
+    expect(hasImageResourcePixels(createCompressedImageResource(makeCompressed()))).toStrictEqual(true);
   });
 });
 

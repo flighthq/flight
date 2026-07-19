@@ -22,6 +22,7 @@ export function createCanvasFromImageResource(image: Readonly<ImageResource>): H
 export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   return createEntity({
     alphaType: 'straight',
+    compressed: null,
     data: null,
     format: 'rgba8unorm',
     height: canvas.height,
@@ -34,6 +35,7 @@ export function createImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageR
 export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
   return createEntity({
     alphaType: 'straight',
+    compressed: null,
     data: null,
     format: 'rgba8unorm',
     height: bitmap.height,
@@ -46,6 +48,7 @@ export function createImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageRe
 export function createImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
   return createEntity({
     alphaType: 'straight',
+    compressed: null,
     data: null,
     format: 'rgba8unorm',
     height: img.height,

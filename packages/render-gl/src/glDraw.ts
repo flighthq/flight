@@ -11,6 +11,7 @@ import type {
 } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
+import { uploadGlCompressedTextureContainer } from './glCompressedTexture';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlMatrixFromValues } from './glShader';
 import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload';
@@ -54,7 +55,7 @@ export function bindGlImageResourceTexture(
   gl.bindTexture(gl.TEXTURE_2D, entry.texture);
   runtime.currentTexture = entry.texture;
   if (entry.version !== image.version) {
-    uploadGlDisplayTexture(gl, image);
+    uploadGlDisplayTexture(state, image);
     entry.version = image.version;
   }
   applyGlSamplerState(state, runtime, entry.texture, sampler ?? null);
@@ -271,16 +272,25 @@ export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): voi
   }
 }
 
-// Uploads an ImageResource into the currently-bound TEXTURE_2D for the premultiplied 2D display pipeline.
-// An element upload premultiplies via UNPACK_PREMULTIPLY_ALPHA_WEBGL (straight-alpha element under a
-// premultiplied (ONE, ONE_MINUS_SRC_ALPHA) blend would otherwise blow a 40%-white shape to opaque white).
-// That flag is ignored for raw-data (ArrayBufferView) uploads, so straight-alpha `data` is premultiplied
-// on the CPU first; opaque data (alpha 255, e.g. a normal/roughness map) premultiplies to itself, so this
-// is a no-op there. The data path is what makes a memory-generated Surface a first-class 2D texture.
-function uploadGlDisplayTexture(gl: WebGL2RenderingContext, image: Readonly<ImageResource>): void {
+// Uploads an ImageResource into the currently-bound texture for the 2D display pipeline. The element
+// fast-path premultiplies via UNPACK_PREMULTIPLY_ALPHA_WEBGL (straight-alpha element under a premultiplied
+// (ONE, ONE_MINUS_SRC_ALPHA) blend would otherwise blow a 40%-white shape to opaque white). That flag is
+// ignored for raw-data (ArrayBufferView) uploads, so straight-alpha `data` is premultiplied on the CPU
+// first; opaque data (alpha 255, e.g. a normal/roughness map) premultiplies to itself, so this is a no-op
+// there. The data path is what makes a memory-generated Surface a first-class 2D texture. A resource that
+// carries only a block-`compressed` payload (no element or data) uploads through the GPU-native compressed
+// path — falling back to the state's registered RGBA decoder when the device lacks the block format.
+function uploadGlDisplayTexture(state: GlRenderState, image: Readonly<ImageResource>): void {
+  const gl = state.gl;
   if (image.source !== null) {
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     uploadGlTextureElement(gl, gl.TEXTURE_2D, image.source as TexImageSource);
+    return;
+  }
+  if (image.data === null && image.compressed !== null) {
+    const compressed = image.compressed;
+    const decode = getGlRenderStateRuntime(state).compressedTextureDecoder ?? undefined;
+    uploadGlCompressedTextureContainer(gl, compressed.container, compressed.payload, decode);
     return;
   }
   const data = image.alphaType === 'straight' ? premultiplyStraightRgba8(image.data!) : image.data!;

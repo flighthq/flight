@@ -1,4 +1,12 @@
-import type { GlCompressedTextureSupport, TextureContainer, TextureContainerFormat } from '@flighthq/types';
+import type {
+  GlCompressedTextureDecoder,
+  GlCompressedTextureSupport,
+  GlRenderState,
+  TextureContainer,
+  TextureContainerFormat,
+} from '@flighthq/types';
+
+import { getGlRenderStateRuntime } from './glRenderState';
 
 // GPU-native block-compressed texture upload for WebGL2: hand a parsed TextureContainer (KTX2 / DDS /
 // ATF) plus its byte payload and this pushes every mip level straight to the GPU with
@@ -11,17 +19,6 @@ import type { GlCompressedTextureSupport, TextureContainer, TextureContainerForm
 // mapping reads the live extension objects, so the enum constants come from the browser, not a baked
 // table. Basis intermediate formats (`etc1s`/`uastc`) are NOT uploaded here — they must be transcoded
 // to a concrete BCn/ETC/ASTC format first (see the deferred `@flighthq/texture-transcode` seam).
-
-// A caller-provided RGBA fallback: decode one compressed level (the block bytes and its pixel
-// dimensions) into a straight-alpha rgba8 buffer uploaded through the plain `texImage2D` path. Supplied by a codec seam
-// (a `flight-rs`/WASM block decoder), never implemented in render-gl. Return `null` if this decoder
-// cannot handle the format, so the container upload reports failure rather than uploading garbage.
-export type GlCompressedTextureDecoder = (
-  format: TextureContainerFormat,
-  width: number,
-  height: number,
-  data: Readonly<Uint8Array>,
-) => Uint8ClampedArray<ArrayBuffer> | null;
 
 // Probes which block-compressed families the WebGL2 context can upload natively, from its
 // `WEBGL_compressed_texture_*` extensions. Call once per context and cache the result; each `getExtension`
@@ -53,8 +50,8 @@ export function getGlCompressedTextureFormat(gl: WebGL2RenderingContext, format:
   const etc = gl.getExtension('WEBGL_compressed_texture_etc') as Record<string, number> | null;
   const astc = gl.getExtension('WEBGL_compressed_texture_astc') as Record<string, number> | null;
   const pvrtc = gl.getExtension('WEBGL_compressed_texture_pvrtc') as Record<string, number> | null;
-  const enumFromExt = (ext: Record<string, number> | null, key: string): number =>
-    ext !== null && typeof ext[key] === 'number' ? ext[key] : -1;
+  const enumFromExt = (ext: Record<string, number> | null | undefined, key: string): number =>
+    typeof ext?.[key] === 'number' ? ext[key] : -1;
 
   switch (format) {
     case 'bc1':
@@ -195,35 +192,94 @@ export function hasGlCompressedTextureFormat(
   }
 }
 
-// Uploads every 2D mip level of a compressed container to the texture bound at gl.TEXTURE_2D. Takes the
-// GPU-native `compressedTexImage2D` path when the device supports the container's format; otherwise, if
-// a `decode` seam is supplied, decompresses each level to RGBA and uploads it through the portable
-// pixel path. Returns `true` when the container was uploaded (either path), `false` when the format is
-// neither natively supported nor decodable — a sentinel, not a throw, so a caller falls back to a
-// different asset. The caller owns creating/binding the texture and setting sampler/mip state; this
-// uploads only the container's own levels (a full pre-built mip chain uploads all of them).
+// Installs the RGBA fallback decoder used when the device cannot upload a compressed container's format
+// natively — the seam that lets an S3TC/BPTC asset still render on mobile ETC2/ASTC hardware (and vice
+// versa) by decoding each level to plain pixels. Opt-in and last-write-wins: a state that never draws a
+// compressed texture the device lacks never installs one, so the decoder (and any WASM block-codec it
+// wraps) tree-shakes out. Pass null to clear a previously installed decoder.
+export function registerGlCompressedTextureDecoder(
+  state: GlRenderState,
+  decode: GlCompressedTextureDecoder | null,
+): void {
+  getGlRenderStateRuntime(state).compressedTextureDecoder = decode;
+}
+
+// Uploads every stored sub-image of a compressed container to the texture the caller has bound. Takes
+// the GPU-native `compressedTexImage2D`/`compressedTexImage3D` path when the device supports the
+// container's format; otherwise, if a `decode` seam is supplied, decompresses each 2D level to RGBA and
+// uploads it through the portable pixel path. Returns `true` when the container was uploaded (either
+// path), `false` when the format is neither natively supported nor decodable, or when the container is
+// still supercompressed (`supercompression !== 'None'`) — a sentinel, not a throw, so a caller falls
+// back to a different asset (or inflates/transcodes first). The caller owns creating/binding the
+// texture (to gl.TEXTURE_2D, gl.TEXTURE_CUBE_MAP, or gl.TEXTURE_2D_ARRAY per the container's shape) and
+// setting sampler/mip state; this uploads only the container's own sub-images.
+//
+// `container.levels` is the flat subresource list in `mip + (face + layer * faces) * mipLevels` order;
+// each flat index is decoded back to (mip, face, layer) so a cubemap's six faces land on
+// gl.TEXTURE_CUBE_MAP_POSITIVE_X + face and an array's layers slice into a gl.TEXTURE_2D_ARRAY. The
+// RGBA decode fallback covers only the plain 2D case (faces === 1, layers === 1); a compressed cubemap
+// or array with no native support reports failure rather than a partial 2D upload.
 export function uploadGlCompressedTextureContainer(
   gl: WebGL2RenderingContext,
   container: Readonly<TextureContainer>,
   payload: Readonly<Uint8Array>,
   decode?: GlCompressedTextureDecoder,
 ): boolean {
+  // A still-wrapped supercompressed payload (Zstd/ZLIB deflate or BasisLZ transcode) is not block data;
+  // uploading it as if it were would push corrupt pixels. Fail the sentinel and let the caller inflate
+  // or transcode through the deferred seam first.
+  if (container.supercompression !== 'None') return false;
+
   const nativeFormat = getGlCompressedTextureFormat(gl, container.format);
+  const faces = container.faces;
+  const layers = container.layers;
+  const mipLevels = container.mipLevels;
+
   if (nativeFormat !== -1) {
-    for (let level = 0; level < container.levels.length; level += 1) {
-      const entry = container.levels[level];
+    // An array texture is immutable storage: allocate the whole mip chain × depth once with
+    // texStorage3D, then blit each layer's slice into its depth slot (layers are non-contiguous in the
+    // layer-major flat list, so per-subresource upload is required; compressedTexImage3D cannot
+    // allocate a null store the way the 2D path does).
+    if (layers > 1) {
+      gl.texStorage3D(gl.TEXTURE_2D_ARRAY, mipLevels, nativeFormat, container.width, container.height, layers);
+    }
+    for (let index = 0; index < container.levels.length; index += 1) {
+      const entry = container.levels[index];
       const view = new Uint8Array(payload.buffer, payload.byteOffset + entry.byteOffset, entry.byteLength);
-      gl.compressedTexImage2D(gl.TEXTURE_2D, level, nativeFormat, entry.width, entry.height, 0, view);
+      const mip = index % mipLevels;
+      const faceLayer = (index - mip) / mipLevels;
+      const face = faceLayer % faces;
+      const layer = (faceLayer - face) / faces;
+      if (layers > 1) {
+        gl.compressedTexSubImage3D(
+          gl.TEXTURE_2D_ARRAY,
+          mip,
+          0,
+          0,
+          layer,
+          entry.width,
+          entry.height,
+          1,
+          nativeFormat,
+          view,
+        );
+      } else {
+        const target = faces === 6 ? gl.TEXTURE_CUBE_MAP_POSITIVE_X + face : gl.TEXTURE_2D;
+        gl.compressedTexImage2D(target, mip, nativeFormat, entry.width, entry.height, 0, view);
+      }
     }
     return true;
   }
-  if (decode === undefined) return false;
-  for (let level = 0; level < container.levels.length; level += 1) {
-    const entry = container.levels[level];
+
+  // RGBA decode fallback: plain 2D only. A cubemap/array with no native block support is not decoded
+  // face-by-face here — report failure so the caller supplies a different encoding.
+  if (decode === undefined || faces !== 1 || layers !== 1) return false;
+  for (let mip = 0; mip < container.levels.length; mip += 1) {
+    const entry = container.levels[mip];
     const view = new Uint8Array(payload.buffer, payload.byteOffset + entry.byteOffset, entry.byteLength);
     const rgba = decode(container.format, entry.width, entry.height, view);
     if (rgba === null) return false;
-    gl.texImage2D(gl.TEXTURE_2D, level, gl.RGBA, entry.width, entry.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+    gl.texImage2D(gl.TEXTURE_2D, mip, gl.RGBA, entry.width, entry.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
   }
   return true;
 }

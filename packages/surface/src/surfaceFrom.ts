@@ -26,6 +26,7 @@ export function createSurfaceFromCanvas(
   return createEntity({
     alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
+    compressed: null,
     data: raw.data,
     format: 'rgba8unorm',
     height: raw.height,
@@ -44,6 +45,7 @@ export function createSurfaceFromImageResource(resource: Readonly<ImageResource>
     return createEntity({
       alphaType: resource.alphaType,
       colorSpace: 'srgb' as const,
+      compressed: null,
       data:
         resource.data !== null
           ? new Uint8ClampedArray(resource.data)
@@ -61,6 +63,7 @@ export function createSurfaceFromImageResource(resource: Readonly<ImageResource>
   return createEntity({
     alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
+    compressed: null,
     data: raw.data,
     format: 'rgba8unorm',
     height: resource.height,
@@ -88,6 +91,7 @@ export function createSurfaceFromImageSource(source: CanvasImageSource, width: n
   return createEntity({
     alphaType: 'straight',
     colorSpace: raw.colorSpace as 'srgb' | 'display-p3',
+    compressed: null,
     data: raw.data,
     format: 'rgba8unorm',
     height,
