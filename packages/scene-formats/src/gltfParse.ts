@@ -1,11 +1,12 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { packLinearToColor } from '@flighthq/color';
+import { setQuaternion, setVector3 } from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeChildren, setNodeLocalMatrix4 } from '@flighthq/node';
+import { addNodeChild, getNodeChildren, invalidateNodeLocalTransform, setNodeLocalMatrix4 } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode, isMesh, setSceneNodeTransform } from '@flighthq/scene';
+import { createMesh, createScene, createSceneNode, isMesh } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
 import type {
   AnimationChannel,
@@ -143,12 +144,10 @@ function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void
   const r = gltfNode.rotation;
   const s = gltfNode.scale;
   if (t === undefined && r === undefined && s === undefined) return;
-  setSceneNodeTransform(
-    node,
-    { x: t?.[0] ?? 0, y: t?.[1] ?? 0, z: t?.[2] ?? 0 },
-    { w: r?.[3] ?? 1, x: r?.[0] ?? 0, y: r?.[1] ?? 0, z: r?.[2] ?? 0 },
-    { x: s?.[0] ?? 1, y: s?.[1] ?? 1, z: s?.[2] ?? 1 },
-  );
+  setVector3(node.position, t?.[0] ?? 0, t?.[1] ?? 0, t?.[2] ?? 0);
+  setQuaternion(node.rotation, r?.[0] ?? 0, r?.[1] ?? 0, r?.[2] ?? 0, r?.[3] ?? 1);
+  setVector3(node.scale, s?.[0] ?? 1, s?.[1] ?? 1, s?.[2] ?? 1);
+  invalidateNodeLocalTransform(node);
 }
 
 // Builds the default scene from a parsed document plus an optional GLB binary chunk (null for the JSON

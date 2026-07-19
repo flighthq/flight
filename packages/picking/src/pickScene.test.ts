@@ -4,18 +4,19 @@ import {
   createPerspectiveProjection,
   setCameraViewMatrix4FromLookAt,
 } from '@flighthq/camera';
-import { createQuaternion, createRay3D, createVector3, setQuaternionFromAxisAngle, setRay3D } from '@flighthq/geometry';
-import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
-import type { Scene } from '@flighthq/scene';
 import {
-  createMesh,
-  createScene,
-  createSceneNode,
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
-  setSceneNodeScale,
-} from '@flighthq/scene';
+  copyQuaternion,
+  createQuaternion,
+  createRay3D,
+  createVector3,
+  setQuaternionFromAxisAngle,
+  setRay3D,
+  setVector3,
+} from '@flighthq/geometry';
+import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import type { Scene } from '@flighthq/scene';
+import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import type { Camera, Mesh, Ray3D, SceneHit } from '@flighthq/types';
 
 import { createSceneHit, pickScene, pickSceneAll, pickSceneAllWithRay3D, pickSceneWithRay3D } from './pickScene';
@@ -161,7 +162,8 @@ describe('pickScene', () => {
     // meshNear is shifted to z = 2: front face at z = 3, back face at z = 1.
     // The camera ray hits its front face first (distance ≈ 2 vs ≈ 4 for meshFar).
     const meshNear = createMesh(createBoxMeshGeometry(2, 2, 2), []);
-    setSceneNodePosition(meshNear, 0, 0, 2);
+    setVector3(meshNear.position, 0, 0, 2);
+    invalidateNodeLocalTransform(meshNear);
     addNodeChild(scene, meshNear);
 
     const out = createSceneHit();
@@ -203,7 +205,8 @@ describe('pickScene', () => {
     const meshFar = createMesh(createBoxMeshGeometry(2, 2, 2), []);
     addNodeChild(scene, meshFar);
     const meshNear = createMesh(createBoxMeshGeometry(2, 2, 2), []);
-    setSceneNodePosition(meshNear, 0, 0, 2);
+    setVector3(meshNear.position, 0, 0, 2);
+    invalidateNodeLocalTransform(meshNear);
     addNodeChild(scene, meshNear);
     const out = createSceneHit();
 
@@ -229,7 +232,8 @@ describe('pickScene', () => {
     // A 2x2x2 box centred at x = 3 spans x in [2, 4], within the horizontal extent but well outside
     // the vertical one — so a square (aspect = 1) mismap of screenX would miss it.
     const mesh = createMesh(createBoxMeshGeometry(2, 2, 2), []);
-    setSceneNodePosition(mesh, 3, 0, 0);
+    setVector3(mesh.position, 3, 0, 0);
+    invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);
     const out = createSceneHit();
 
@@ -250,10 +254,12 @@ describe('pickScene', () => {
     // Non-uniform scale (z doubled) plus a rotation about the Z axis. The +Z face stays on-axis, so
     // its world position is z = 1 * 2 = 2 while the surrounding geometry is rotated — exercising the
     // inverse-transform narrow phase.
-    setSceneNodeScale(mesh, 1.5, 1.5, 2);
+    setVector3(mesh.scale, 1.5, 1.5, 2);
+    invalidateNodeLocalTransform(mesh);
     const q = createQuaternion();
     setQuaternionFromAxisAngle(q, createVector3(0, 0, 1), Math.PI / 4);
-    setSceneNodeRotationQuaternion(mesh, q);
+    copyQuaternion(mesh.rotation, q);
+    invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);
     const out = createSceneHit();
 
@@ -274,7 +280,8 @@ describe('pickSceneAll', () => {
     const meshFar = createMesh(createBoxMeshGeometry(2, 2, 2), []);
     addNodeChild(scene, meshFar);
     const meshNear = createMesh(createBoxMeshGeometry(2, 2, 2), []);
-    setSceneNodePosition(meshNear, 0, 0, 2);
+    setVector3(meshNear.position, 0, 0, 2);
+    invalidateNodeLocalTransform(meshNear);
     addNodeChild(scene, meshNear);
     const outArray: SceneHit[] = [];
 

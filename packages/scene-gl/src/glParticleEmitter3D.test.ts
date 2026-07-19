@@ -1,8 +1,8 @@
 import { createCamera } from '@flighthq/camera';
-import { createMatrix4 } from '@flighthq/geometry';
-import { addNodeChild } from '@flighthq/node';
+import { createMatrix4, setVector3 } from '@flighthq/geometry';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
-import { createScene, setSceneNodePosition } from '@flighthq/scene';
+import { createScene } from '@flighthq/scene';
 import type { ParticleEmitter3D, SceneLights } from '@flighthq/types';
 
 import { destroyGlParticleEmitter3DShader, drawGlSceneParticleEmitters } from './glParticleEmitter3D';
@@ -110,7 +110,8 @@ describe('drawGlSceneParticleEmitters', () => {
     emitter.data.transforms[0] = 1;
     emitter.data.transforms[1] = 2;
     emitter.data.positionsZ[0] = 3;
-    setSceneNodePosition(emitter, 10, 20, 30);
+    setVector3(emitter.position, 10, 20, 30);
+    invalidateNodeLocalTransform(emitter);
     addNodeChild(scene, emitter);
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     const instanceData = gl.calls.find((c) => c.name === 'bufferSubData')!.args[2] as Float32Array;
@@ -127,7 +128,8 @@ describe('drawGlSceneParticleEmitters', () => {
     emitter.data.transforms[0] = 1;
     emitter.data.transforms[1] = 2;
     emitter.data.positionsZ[0] = 3;
-    setSceneNodePosition(emitter, 10, 20, 30);
+    setVector3(emitter.position, 10, 20, 30);
+    invalidateNodeLocalTransform(emitter);
     emitter.data.worldSpace = true;
     addNodeChild(scene, emitter);
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());

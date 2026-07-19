@@ -15,6 +15,7 @@ import {
   normalizeQuaternion,
   rotateVector3ByQuaternion,
   setMatrix4FromQuaternion,
+  setQuaternion,
   setQuaternionFromAxisAngle,
   setQuaternionFromEuler,
   setQuaternionFromMatrix4,
@@ -356,6 +357,14 @@ describe('setMatrix4FromQuaternion', () => {
     expect(out.x).toBeCloseTo(3, 6);
     expect(out.y).toBeCloseTo(5, 6);
     expect(out.z).toBeCloseTo(7, 6);
+  });
+});
+
+describe('setQuaternion', () => {
+  it('sets the components directly', () => {
+    const out = createQuaternion();
+    setQuaternion(out, 0.1, 0.2, 0.3, 0.4);
+    expect(out).toMatchObject({ w: 0.4, x: 0.1, y: 0.2, z: 0.3 });
   });
 });
 

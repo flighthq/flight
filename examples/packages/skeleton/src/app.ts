@@ -17,8 +17,8 @@ import {
   normalizeVector3,
   setCameraViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
+  copyQuaternion,
+  invalidateNodeLocalTransform,
   updateMeshSkin,
 } from '@flighthq/sdk';
 
@@ -129,10 +129,12 @@ const jointNodes: SceneNode[] = [];
 for (let j = 0; j < JOINT_COUNT; j++) {
   const node = createSceneNode();
   if (j === 0) {
-    setSceneNodePosition(node, 0, -TOTAL_HEIGHT / 2, 0);
+    node.position.y = -TOTAL_HEIGHT / 2;
+    invalidateNodeLocalTransform(node);
     addNodeChild(scene, node);
   } else {
-    setSceneNodePosition(node, 0, jointSpacing, 0);
+    node.position.y = jointSpacing;
+    invalidateNodeLocalTransform(node);
     addNodeChild(jointNodes[j - 1], node);
   }
   jointNodes.push(node);
@@ -168,7 +170,8 @@ function animate(time: number): void {
   // Pose each joint with a sinusoidal Z-axis rotation; a per-joint phase offset gives a traveling wave.
   for (let j = 0; j < JOINT_COUNT; j++) {
     setQuaternionFromAxisAngle(q, zAxis, Math.sin(t * 2 + j * 1.2) * 0.3);
-    setSceneNodeRotationQuaternion(jointNodes[j], q);
+    copyQuaternion(jointNodes[j].rotation, q);
+    invalidateNodeLocalTransform(jointNodes[j]);
   }
 
   // One call deforms the mesh from the posed skeleton and marks the geometry for re-upload.

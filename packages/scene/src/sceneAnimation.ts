@@ -1,7 +1,7 @@
 import { sampleAnimationTrack } from '@flighthq/animation';
-import type { AnimationClip, Mesh, QuaternionLike, SceneAnimationTarget } from '@flighthq/types';
-
-import { setSceneNodePosition, setSceneNodeRotationQuaternion, setSceneNodeScale } from './sceneNodeTransform';
+import { setQuaternion, setVector3 } from '@flighthq/geometry';
+import { invalidateNodeLocalTransform } from '@flighthq/node';
+import type { AnimationClip, Mesh, SceneAnimationTarget } from '@flighthq/types';
 
 // Samples every channel of `clip` at `time` and applies it to its target's sink — the 3D binding layer
 // over the target-free @flighthq/animation core (the core samples values; this maps a channel's opaque
@@ -26,19 +26,16 @@ export function applyAnimationClipToScene(clip: Readonly<AnimationClip>, time: n
       continue;
     }
     sampleAnimationTrack(_scratch, channel.track, time);
+    const node = target.node;
     if (target.path === 'Translation') {
-      setSceneNodePosition(target.node, _scratch[0], _scratch[1], _scratch[2]);
+      setVector3(node.position, _scratch[0], _scratch[1], _scratch[2]);
     } else if (target.path === 'Scale') {
-      setSceneNodeScale(target.node, _scratch[0], _scratch[1], _scratch[2]);
+      setVector3(node.scale, _scratch[0], _scratch[1], _scratch[2]);
     } else {
-      _scratchQuat.x = _scratch[0];
-      _scratchQuat.y = _scratch[1];
-      _scratchQuat.z = _scratch[2];
-      _scratchQuat.w = _scratch[3];
-      setSceneNodeRotationQuaternion(target.node, _scratchQuat);
+      setQuaternion(node.rotation, _scratch[0], _scratch[1], _scratch[2], _scratch[3]);
     }
+    invalidateNodeLocalTransform(node);
   }
 }
 
 const _scratch = [0, 0, 0, 0];
-const _scratchQuat: QuaternionLike = { w: 1, x: 0, y: 0, z: 0 };

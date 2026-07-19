@@ -12,5 +12,5 @@ export function initTransform3DRuntimeTrait(target: HasTransform3DRuntime): void
 export function initTransform3DTrait(target: HasTransform3D, obj?: Readonly<Partial<HasTransform3D>>): void {
   target.rotation = obj?.rotation ?? createQuaternion();
   target.scale = obj?.scale ?? createVector3(1, 1, 1);
-  target.translation = obj?.translation ?? createVector3();
+  target.position = obj?.position ?? createVector3();
 }

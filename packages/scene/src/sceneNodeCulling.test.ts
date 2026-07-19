@@ -1,12 +1,11 @@
-import { createFrustum, createMatrix4 } from '@flighthq/geometry';
+import { createFrustum, createMatrix4, setVector3 } from '@flighthq/geometry';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 
 import { createMesh } from './mesh';
 import { createScene } from './scene';
 import { createSceneNode } from './sceneNode';
 import { buildSceneFrustum, cullSceneNodeByFrustum } from './sceneNodeCulling';
-import { setSceneNodePosition } from './sceneNodeTransform';
 
 // Builds a simple box geometry centered at origin with side 2 (bounds [-1,-1,-1] to [1,1,1]).
 function makeBoxGeometry() {
@@ -64,7 +63,8 @@ describe('cullSceneNodeByFrustum', () => {
   it('collects a mesh at the origin that is in frustum', () => {
     const root = createScene();
     const mesh = createMesh(makeBoxGeometry(), []);
-    setSceneNodePosition(mesh, 0, 0, -5); // in front of camera
+    setVector3(mesh.position, 0, 0, -5); // in front of camera
+    invalidateNodeLocalTransform(mesh);
     addNodeChild(root, mesh);
     const frustum = createFrustum();
     buildSceneFrustum(frustum, makeViewProjection());
@@ -77,7 +77,8 @@ describe('cullSceneNodeByFrustum', () => {
     const parent = createSceneNode();
     parent.enabled = false;
     const mesh = createMesh(makeBoxGeometry(), []);
-    setSceneNodePosition(mesh, 0, 0, -5);
+    setVector3(mesh.position, 0, 0, -5);
+    invalidateNodeLocalTransform(mesh);
     addNodeChild(parent, mesh);
     addNodeChild(root, parent);
     const frustum = createFrustum();
@@ -90,7 +91,8 @@ describe('cullSceneNodeByFrustum', () => {
   it('excludes meshes behind the camera', () => {
     const root = createScene();
     const mesh = createMesh(makeBoxGeometry(), []);
-    setSceneNodePosition(mesh, 0, 0, 50); // behind camera (positive Z in RH)
+    setVector3(mesh.position, 0, 0, 50); // behind camera (positive Z in RH)
+    invalidateNodeLocalTransform(mesh);
     addNodeChild(root, mesh);
     const frustum = createFrustum();
     buildSceneFrustum(frustum, makeViewProjection());
@@ -101,7 +103,8 @@ describe('cullSceneNodeByFrustum', () => {
   it('does not clear out before appending', () => {
     const root = createScene();
     const mesh = createMesh(makeBoxGeometry(), []);
-    setSceneNodePosition(mesh, 0, 0, -5);
+    setVector3(mesh.position, 0, 0, -5);
+    invalidateNodeLocalTransform(mesh);
     addNodeChild(root, mesh);
     const frustum = createFrustum();
     buildSceneFrustum(frustum, makeViewProjection());

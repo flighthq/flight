@@ -42,7 +42,8 @@ export function getSceneNodeWorldAlpha(source: Readonly<SceneNode>): number {
 }
 
 // Sets the node's own opacity and invalidates its appearance so the resolved worldAlpha (and its
-// descendants') recomputes on next access. The appearance analog of setSceneNodePosition.
+// descendants') recomputes on next access. The appearance counterpart of writing a transform field
+// and calling invalidateNodeLocalTransform.
 export function setSceneNodeAlpha(source: SceneNode, alpha: number): void {
   source.alpha = alpha;
   invalidateNodeAppearance(source);

@@ -297,6 +297,15 @@ export function rotateVector3ByQuaternion(
  *
  * Safe when `out` aliases `axis`.
  */
+// Sets the quaternion components directly. The reference-completeness counterpart to `setVector3` — no
+// normalization; the caller supplies a unit quaternion (or normalizes after).
+export function setQuaternion(out: QuaternionLike, x: number, y: number, z: number, w: number): void {
+  out.x = x;
+  out.y = y;
+  out.z = z;
+  out.w = w;
+}
+
 export function setQuaternionFromAxisAngle(out: QuaternionLike, axis: Readonly<Vector3Like>, angle: number): void {
   const half = angle * 0.5;
   const s = Math.sin(half);

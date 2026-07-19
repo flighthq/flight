@@ -8,7 +8,7 @@ import { createVector3 } from './vector3';
 describe('composeMatrix4FromTransform3D', () => {
   it('composes translation, rotation, and scale into a matrix', () => {
     const t = createTransform3D();
-    t.translation = createVector3(4, 5, 6);
+    t.position = createVector3(4, 5, 6);
     t.scale = createVector3(2, 2, 2);
     const out = createMatrix4();
     composeMatrix4FromTransform3D(out, t);
@@ -25,7 +25,7 @@ describe('composeMatrix4FromTransform3D', () => {
 describe('createTransform3D', () => {
   it('defaults to identity: zero translation, identity rotation, unit scale', () => {
     const t = createTransform3D();
-    expect(t.translation).toMatchObject({ x: 0, y: 0, z: 0 });
+    expect(t.position).toMatchObject({ x: 0, y: 0, z: 0 });
     expect(t.rotation).toMatchObject({ x: 0, y: 0, z: 0, w: 1 });
     expect(t.scale).toMatchObject({ x: 1, y: 1, z: 1 });
   });
@@ -34,7 +34,7 @@ describe('createTransform3D', () => {
 describe('decomposeMatrix4ToTransform3D', () => {
   it('round-trips a shear-free compose', () => {
     const source = createTransform3D();
-    source.translation = createVector3(1, 2, 3);
+    source.position = createVector3(1, 2, 3);
     source.rotation = createQuaternion(0, 0, 0, 1);
     source.scale = createVector3(2, 3, 4);
     const m = createMatrix4();
@@ -42,7 +42,7 @@ describe('decomposeMatrix4ToTransform3D', () => {
 
     const out = createTransform3D();
     decomposeMatrix4ToTransform3D(out, m);
-    expect(out.translation).toMatchObject({ x: 1, y: 2, z: 3 });
+    expect(out.position).toMatchObject({ x: 1, y: 2, z: 3 });
     expect(out.scale.x).toBeCloseTo(2);
     expect(out.scale.y).toBeCloseTo(3);
     expect(out.scale.z).toBeCloseTo(4);

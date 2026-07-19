@@ -227,9 +227,9 @@ describe('worldHierarchy', () => {
 describe('worldTransform', () => {
   it('worldMatrix equals localMatrix for a root node', () => {
     const node = createTransformNode();
-    node.translation.x = 10;
-    node.translation.y = 20;
-    node.translation.z = 30;
+    node.position.x = 10;
+    node.position.y = 20;
+    node.position.z = 30;
     invalidateNodeLocalTransform(node);
 
     const world = getNodeWorldMatrix4(node);
@@ -243,10 +243,10 @@ describe('worldTransform', () => {
     const child = createTransformNode();
     addNodeChild(parent, child);
 
-    parent.translation.x = 5;
+    parent.position.x = 5;
     invalidateNodeLocalTransform(parent);
 
-    child.translation.x = 3;
+    child.position.x = 3;
     invalidateNodeLocalTransform(child);
 
     const world = getNodeWorldMatrix4(child);
@@ -259,7 +259,7 @@ describe('worldTransform', () => {
     ensureNodeWorldMatrix4(node);
     const first = getSceneNodeRuntime(node).worldTransformId;
 
-    node.translation.x = 99;
+    node.position.x = 99;
     invalidateNodeLocalTransform(node);
 
     ensureNodeWorldMatrix4(node);
@@ -282,7 +282,7 @@ describe('worldTransform', () => {
     const child = createTransformNode();
     addNodeChild(parent, child);
 
-    parent.translation.x = 7;
+    parent.position.x = 7;
     invalidateNodeLocalTransform(parent);
 
     const world = getNodeWorldMatrix4(child);
