@@ -1,9 +1,17 @@
-import { createMatrix4, createQuaternion, createTransform3D, createVector3 } from '@flighthq/geometry';
+import {
+  composeMatrix4,
+  createMatrix4,
+  createQuaternion,
+  createTransform3D,
+  createVector3,
+  multiplyMatrix4,
+  setQuaternionFromAxisAngle,
+} from '@flighthq/geometry';
 import type { HasTransform3D, HasTransform3DRuntime, NodeRuntime, Transform3DNode, Vector3Like } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
-import { addNodeChild } from './hierarchy';
+import { addNodeChild, removeNodeChild } from './hierarchy';
 import { createNode, getNodeRuntime } from './node';
 import { invalidateNodeLocalTransform } from './revision';
 import {
@@ -38,6 +46,22 @@ function setNodeTranslation(node: TestNode, x: number, y: number, z: number): vo
   node.position.z = z;
   invalidateNodeLocalTransform(node);
 }
+
+// Rotate about +Z so a child offset along +X swings toward +Y — an order-sensitive case pure
+// translation cannot expose.
+function setNodeRotationZ(node: TestNode, radians: number): void {
+  setQuaternionFromAxisAngle(node.rotation, _zAxis, radians);
+  invalidateNodeLocalTransform(node);
+}
+
+function setNodeScale(node: TestNode, x: number, y: number, z: number): void {
+  node.scale.x = x;
+  node.scale.y = y;
+  node.scale.z = z;
+  invalidateNodeLocalTransform(node);
+}
+
+const _zAxis = { x: 0, y: 0, z: 1 } as Vector3Like;
 
 function translationMatrix(x: number, y: number, z: number) {
   const m = createMatrix4();
@@ -128,6 +152,21 @@ describe('ensureNodeWorldMatrix4', () => {
     ensureNodeWorldMatrix4(node);
     expect(runtime.worldMatrix4).toBe(first);
   });
+
+  it('propagates a mid-chain parent change down to an already-cached grandchild', () => {
+    const root = createTestNode();
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(root, parent);
+    addNodeChild(parent, child);
+    setNodeTranslation(root, 1, 0, 0);
+    setNodeTranslation(parent, 2, 0, 0);
+    setNodeTranslation(child, 3, 0, 0);
+    expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(6);
+    // Mutating the middle node must invalidate the grandchild's cached world through the chain.
+    setNodeTranslation(parent, 20, 0, 0);
+    expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(24);
+  });
 });
 
 describe('getNodeLocalMatrix4', () => {
@@ -167,6 +206,100 @@ describe('getNodeWorldMatrix4', () => {
     getNodeWorldMatrix4(child);
     setNodeTranslation(parent, 7, 0, 0);
     expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(7);
+  });
+
+  it('rotates a child offset by the parent rotation (world = parentWorld × local)', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setNodeRotationZ(parent, Math.PI / 2); // +90° about +Z maps +X -> +Y
+    setNodeTranslation(child, 1, 0, 0);
+    // The child sits at local +X; under the parent's rotation its world position swings to +Y.
+    // A reversed multiply order (local × parentWorld) would instead leave it at +X — this pins the order.
+    const world = getNodeWorldMatrix4(child);
+    expect(world.m[12]).toBeCloseTo(0);
+    expect(world.m[13]).toBeCloseTo(1);
+    expect(world.m[14]).toBeCloseTo(0);
+  });
+
+  it('composes parent translation after rotation onto a child offset', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setNodeTranslation(parent, 10, 0, 0);
+    setNodeRotationZ(parent, Math.PI / 2);
+    setNodeTranslation(child, 1, 0, 0);
+    // parentWorld = T(10)·R(90°); child offset (1,0,0) rotates to (0,1,0) then translates to (10,1,0).
+    const world = getNodeWorldMatrix4(child);
+    expect(world.m[12]).toBeCloseTo(10);
+    expect(world.m[13]).toBeCloseTo(1);
+    expect(world.m[14]).toBeCloseTo(0);
+  });
+
+  it('scales a child offset and scale by the parent scale', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setNodeScale(parent, 2, 2, 2);
+    setNodeTranslation(child, 3, 0, 0);
+    const world = getNodeWorldMatrix4(child);
+    expect(world.m[12]).toBeCloseTo(6); // parent scale multiplies the child's position
+    expect(world.m[0]).toBeCloseTo(2); // and its scale
+  });
+
+  it('composes a three-level translation/rotation/scale chain', () => {
+    const root = createTestNode();
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(root, parent);
+    addNodeChild(parent, child);
+
+    setNodeTranslation(root, 1, 2, 3);
+    setNodeRotationZ(root, Math.PI / 6);
+    setNodeScale(root, 2, 2, 2);
+    setNodeTranslation(parent, 4, 0, 0);
+    setNodeRotationZ(parent, Math.PI / 4);
+    setNodeTranslation(child, 0, 5, 0);
+    setNodeScale(child, 3, 1, 1);
+
+    // Oracle: world = local(root) × local(parent) × local(child), built from the same geometry
+    // primitives the implementation composes, so the test pins the wiring and order, not the math.
+    const localRoot = createMatrix4();
+    composeMatrix4(localRoot, root.position, root.rotation, root.scale);
+    const localParent = createMatrix4();
+    composeMatrix4(localParent, parent.position, parent.rotation, parent.scale);
+    const localChild = createMatrix4();
+    composeMatrix4(localChild, child.position, child.rotation, child.scale);
+    const rootTimesParent = createMatrix4();
+    multiplyMatrix4(rootTimesParent, localRoot, localParent);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, rootTimesParent, localChild);
+
+    const world = getNodeWorldMatrix4(child);
+    for (let i = 0; i < 16; i++) {
+      expect(world.m[i]).toBeCloseTo(expected.m[i]);
+    }
+  });
+
+  it('recomputes the world matrix after reparenting to a different parent', () => {
+    const parentA = createTestNode();
+    const parentB = createTestNode();
+    const child = createTestNode();
+    setNodeTranslation(parentA, 10, 0, 0);
+    setNodeTranslation(parentB, 0, 20, 0);
+    setNodeTranslation(child, 1, 0, 0);
+
+    addNodeChild(parentA, child);
+    expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(11);
+    expect(getNodeWorldMatrix4(child).m[13]).toBeCloseTo(0);
+
+    // parentA and parentB carry the same local revision, so their composite worldTransformId
+    // collides; correct reparenting relies on invalidateNodeParentReference, not the id compare.
+    removeNodeChild(parentA, child);
+    addNodeChild(parentB, child);
+    const world = getNodeWorldMatrix4(child);
+    expect(world.m[12]).toBeCloseTo(1);
+    expect(world.m[13]).toBeCloseTo(20);
   });
 });
 
