@@ -1,4 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
+import { packLinearToColor } from '@flighthq/color';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
@@ -476,7 +477,10 @@ function buildMeshSceneNode(
 // map field-for-field; absent factors take the spec defaults. Textures resolve to Unresolved refs
 // carrying their sampler, color space, and KHR_texture_transform (the parser references, it does not
 // decode). baseColor/emissive maps are sampled in 'srgb'; the data maps (normal/metallic-roughness/
-// occlusion) in 'linear', so a shader does not gamma-decode data channels. This is the faithful
+// occlusion) in 'linear', so a shader does not gamma-decode data channels. glTF's baseColorFactor and
+// emissiveFactor are LINEAR, but StandardPbrMaterial.baseColor/emissive are packed sRGB (scene-gl
+// gamma-decodes them via unpackColorToLinear), so the linear factor is sRGB-encoded with
+// packLinearToColor before packing — the documented inverse of that decode. This is the faithful
 // decode: glTF is natively PBR, so unlike the classic formats it is NOT reinterpreted.
 function gltfMaterialToPbr(
   doc: Readonly<GltfDocument>,
@@ -486,9 +490,9 @@ function gltfMaterialToPbr(
 ): Material {
   const pbr = material.pbrMetallicRoughness ?? {};
   const result = createStandardPbrMaterial({
-    baseColor: packGltfColor(pbr.baseColorFactor ?? [1, 1, 1, 1], 4),
+    baseColor: packGltfLinearColor(pbr.baseColorFactor ?? [1, 1, 1, 1], 4),
     baseColorMap: resolveGltfTexture(doc, buffers, pbr.baseColorTexture, 'srgb', options),
-    emissive: packGltfColor(material.emissiveFactor ?? [0, 0, 0], 3),
+    emissive: packGltfLinearColor(material.emissiveFactor ?? [0, 0, 0], 3),
     emissiveMap: resolveGltfTexture(doc, buffers, material.emissiveTexture, 'srgb', options),
     metallic: pbr.metallicFactor ?? 1,
     metallicRoughnessMap: resolveGltfTexture(doc, buffers, pbr.metallicRoughnessTexture, 'linear', options),
@@ -595,15 +599,13 @@ function gltfImageToTexture(
   return null;
 }
 
-// Packs the first `channels` of a glTF sRGB-space color factor (each in [0,1]) into a 0xRRGGBBAA
-// integer. With 3 channels alpha is forced opaque; with 4 the 4th is the alpha.
-function packGltfColor(factor: readonly number[], channels: number): number {
-  const clamp = (value: number | undefined): number => Math.round(Math.min(1, Math.max(0, value ?? 0)) * 0xff);
-  const r = clamp(factor[0]);
-  const g = clamp(factor[1]);
-  const b = clamp(factor[2]);
-  const a = channels === 4 ? clamp(factor[3]) : 0xff;
-  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
+// Packs the first `channels` of a glTF LINEAR-space color factor (each in [0,1]) into a 0xRRGGBBAA
+// integer, sRGB-encoding the RGB channels so scene-gl's unpackColorToLinear gamma-decode recovers the
+// authored linear value (packLinearToColor is the documented inverse of that decode). With 3 channels
+// alpha is forced opaque; with 4 the 4th is the (linear coverage) alpha, passed through unencoded.
+function packGltfLinearColor(factor: readonly number[], channels: number): number {
+  const a = channels === 4 ? (factor[3] ?? 0) : 1;
+  return packLinearToColor([factor[0] ?? 0, factor[1] ?? 0, factor[2] ?? 0, a]);
 }
 
 // Decodes a buffer into bytes. A `data:` URI base64-decodes; a buffer with no `uri` is backed by the
