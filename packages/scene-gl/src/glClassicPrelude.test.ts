@@ -137,6 +137,15 @@ describe('getGlClassicFragmentSourceForKey', () => {
     expect(source).toContain('u_cameraPosition');
   });
 
+  it('shadow-maps the directional term (and only the directional term)', () => {
+    const source = getGlClassicFragmentSourceForKey(LAMBERT);
+    // The shared light block already declares the shadow uniforms + sampleDirectionalShadow; the classic
+    // path multiplies its directional contribution by that factor, matching the PBR family.
+    expect(source).toContain('sampleDirectionalShadow(v_worldPosition)');
+    // Exactly one call — point/spot/ambient stay unshadowed, so the helper appears once in main().
+    expect(source.match(/sampleDirectionalShadow\(v_worldPosition\)/g)).toHaveLength(1);
+  });
+
   it('uses reflect() for Phong and the half vector for BlinnPhong', () => {
     expect(getGlClassicFragmentSourceForKey(PHONG)).toContain('reflect(');
     expect(getGlClassicFragmentSourceForKey(BLINNPHONG)).toContain('normalize(lightDir + viewDir)');

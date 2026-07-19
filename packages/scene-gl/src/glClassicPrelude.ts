@@ -303,9 +303,13 @@ void main() {
   vec3 radiance = vec3(0.0);
 
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
+  // Only the directional term is shadow-mapped (mirrors the PBR path); point/spot/ambient stay unshadowed.
+  // sampleDirectionalShadow returns 1.0 when no shadow map is bound (u_shadowEnabled == 0), so a classic
+  // scene that never calls drawGlSceneShadowMap is unchanged.
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
-    radiance += shadeClassicLight(normal, lightDir, u_directionalRadiance.rgb, diffuse.rgb);
+    radiance += shadeClassicLight(normal, lightDir, u_directionalRadiance.rgb, diffuse.rgb)
+                * sampleDirectionalShadow(v_worldPosition);
   }
 
   // Point lights: surface->light direction with a smooth inverse-square range falloff.
