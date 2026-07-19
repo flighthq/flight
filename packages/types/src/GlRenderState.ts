@@ -2,6 +2,7 @@ import type { BlendMode } from './BlendMode';
 import type { ColorTransform } from './ColorTransform';
 import type { Kind } from './Entity';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
+import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlRenderTarget } from './GlRenderTarget';
@@ -164,8 +165,15 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined
-  // until registered; uploadGlDisplayTexture reads it as the decode seam for a compressed resource.
+  // until registered; the compressed uploader reads it as the decode seam for a compressed resource.
   compressedTextureDecoder?: GlCompressedTextureDecoder | null;
+  // Optional block-compressed upload seam. Installed per-state by registerGlCompressedTextureUpload
+  // (opt-in), so a state that only ever draws element- or data-backed bitmaps never pulls the
+  // ~40-format compressed-container upload path into the bundle — the bundle-cost gate the runtime
+  // compressedTextureDecoder branch alone cannot provide. Undefined until registered; when unset,
+  // uploadGlDisplayTexture skips a compressed-only resource (leaving its texture empty) rather than
+  // uploading garbage. See registerGlCompressedTextureUpload.
+  compressedTextureUpload?: GlCompressedTextureUploader | null;
   // VideoTexture cache: a dynamic VideoResource-backed source (bindGlVideoTexture). Keyed by the
   // VideoTexture entity so its GL texture persists across frames, with `uploadedFrameId` tracking the
   // last frame put on the GPU so uploadGlTextureVideoFrame re-uploads only when `frameId` advances — a

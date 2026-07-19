@@ -2,6 +2,7 @@ import type {
   GlCompressedTextureDecoder,
   GlCompressedTextureSupport,
   GlRenderState,
+  ImageResource,
   TextureContainer,
   TextureContainerFormat,
 } from '@flighthq/types';
@@ -204,6 +205,17 @@ export function registerGlCompressedTextureDecoder(
   getGlRenderStateRuntime(state).compressedTextureDecoder = decode;
 }
 
+// Installs the block-compressed upload seam on a render state, opting the ~40-format
+// uploadGlCompressedTextureContainer path into the bundle only for a state that actually draws a
+// compressed texture. The 2D display draw path (uploadGlDisplayTexture) reads the installed handler off
+// the runtime and skips a compressed-only resource when none is registered, so a plain element/data
+// bitmap never carries the compression enum table. Opt-in and last-write-wins; pass null to clear a
+// previously installed uploader. The installed handler bridges a compressed ImageResource to
+// uploadGlCompressedTextureContainer, threading through any registered RGBA decode fallback.
+export function registerGlCompressedTextureUpload(state: GlRenderState, uploader?: null): void {
+  getGlRenderStateRuntime(state).compressedTextureUpload = uploader === null ? null : uploadGlCompressedImageResource;
+}
+
 // Uploads every stored sub-image of a compressed container to the texture the caller has bound. Takes
 // the GPU-native `compressedTexImage2D`/`compressedTexImage3D` path when the device supports the
 // container's format; otherwise, if a `decode` seam is supplied, decompresses each 2D level to RGBA and
@@ -286,4 +298,17 @@ export function uploadGlCompressedTextureContainer(
 
 function isAstcFormat(format: TextureContainerFormat): boolean {
   return format.startsWith('astc');
+}
+
+// The installed GlCompressedTextureUploader: bridges a compressed ImageResource to the container upload,
+// threading through any registered RGBA decode fallback. Returns false when the resource carries no
+// compressed payload so the display path leaves the texture as-is rather than uploading garbage.
+function uploadGlCompressedImageResource(
+  gl: WebGL2RenderingContext,
+  image: Readonly<ImageResource>,
+  decode: GlCompressedTextureDecoder | null,
+): boolean {
+  const compressed = image.compressed;
+  if (compressed === null) return false;
+  return uploadGlCompressedTextureContainer(gl, compressed.container, compressed.payload, decode ?? undefined);
 }
