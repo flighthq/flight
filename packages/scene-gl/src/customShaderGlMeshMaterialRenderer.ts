@@ -58,6 +58,7 @@ export const customShaderGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     }
 
     const program = ensureGlCustomShaderProgram(state, custom.shaderKey, source);
+    getGlSceneRuntime(state).customShaderGuard?.(state, program.program, custom.shaderKey);
     beginGlMeshDraw(state, program, custom.doubleSided);
     setGlMeshViewProjection(state.gl, program.locViewProjection, camera);
     setGlMeshCameraPosition(state.gl, program.locCameraPosition, camera);
@@ -92,8 +93,13 @@ export function registerCustomShaderGlMaterial(state: GlRenderState): void {
 // Registers a vertex + fragment shader source pair under `shaderKey` for this state, so a
 // CustomShaderMaterial naming that key compiles and runs it. The vertex stage receives the
 // standard mesh attributes (a_position loc 0, a_normal loc 1, a_tangent loc 2, a_uv0 loc 3)
-// and must declare the four built-in uniforms (u_viewProjection, u_model, u_normalMatrix,
-// u_cameraPosition). Last write wins for the source lookup, but the compiled program is cached
+// and must declare the four built-in uniforms with these exact types: `mat4 u_viewProjection`,
+// `mat4 u_model`, `mat3 u_normalMatrix` (NOT mat4 — the renderer uploads it with glUniformMatrix3fv,
+// so a mat4 declaration raises a silent GL_INVALID_OPERATION and the mesh draws nothing;
+// enableGlSceneCustomShaderGuards catches this), and `vec3 u_cameraPosition`. When the material's
+// alphaMode is 'blend', drawGlScene composites with glBlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA), so
+// the fragment stage must output straight (non-premultiplied) alpha. Last write wins for the source
+// lookup, but the compiled program is cached
 // by shaderKey, so re-registering a different source under the same key keeps running the
 // already-compiled program. Register edited source under a new key to force a recompile.
 export function registerGlCustomMaterialShader(
