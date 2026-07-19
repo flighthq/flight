@@ -25,6 +25,8 @@ This is what the old "filter vs effect" split was groping at (and getting wrong 
 - **Adjustments fuse and fold.** Pointwise value ops compose by data (matrix multiply / LUT bake) into a single artifact, then fold into whatever draw is already happening. They never allocate an offscreen and never break a batch.
 - **Effects chain and bounce.** Spatial/composite ops can't read a neighbor they haven't rendered, so they require the subject as a sampled texture — an offscreen bounce — and stack as sequential passes.
 
+The **advanced blend modes** are the canonical *composite* effect: the destination-reading and non-separable modes (Overlay/HardLight/SoftLight/Difference/Exclusion/ColorDodge/ColorBurn and the HSL Hue/Saturation/Color/Luminosity) can't be a fixed-function `BlendMode` node property, so they live as an `AdvancedBlendMode` vocabulary applied through a `BlendEffect` — a composite pass that samples the layer **plus a backdrop** (`@flighthq/effects` `blendModeMath` is the substrate-agnostic ground truth; `@flighthq/effects-gl` `applyBlendEffectToGl` is the GL bounce over a registered backdrop). This is the "data folds, code bounces" line drawn through blending itself: the fixed-function set folds into blend state, the advanced set bounces through an offscreen.
+
 The intrinsic property that decides the tier is **pointwise vs neighbor-sampling/composite**, declared on the descriptor. It is backend-invariant.
 
 ## The three realization shapes
