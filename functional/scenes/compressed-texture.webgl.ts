@@ -23,6 +23,7 @@ import {
   getSurfacePixelRgb,
   invalidateNodeLocalTransform,
   registerGlCompressedTextureDecoder,
+  registerGlCompressedTextureUpload,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -48,9 +49,12 @@ const target = await createFunctionalTarget({
   kinds: [BitmapKind],
 });
 
-// The RGBA decode fallback: paint the level solid blue (matching the BC1 block's native decode). Used
-// only when the adapter lacks the s3tc extension; installed only on the GL state.
+// The compressed upload path is an opt-in seam (so a plain-bitmap GL bundle never carries its
+// ~40-format enum table); this scene draws a compressed texture, so it installs the uploader plus an
+// RGBA decode fallback that paints the level solid blue (matching the BC1 block's native decode). The
+// fallback is used only when the adapter lacks the s3tc extension; both are installed only on the GL state.
 if (target.kind === 'webgl') {
+  registerGlCompressedTextureUpload(target.state);
   registerGlCompressedTextureDecoder(target.state, (_format, w, h) => {
     const rgba = new Uint8ClampedArray(w * h * 4);
     for (let i = 0; i < rgba.length; i += 4) {

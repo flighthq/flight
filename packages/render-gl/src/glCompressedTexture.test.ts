@@ -1,10 +1,11 @@
-import type { GlCompressedTextureSupport, TextureContainer } from '@flighthq/types';
+import type { GlCompressedTextureSupport, ImageResource, TextureContainer } from '@flighthq/types';
 
 import {
   detectGlCompressedTextureSupport,
   getGlCompressedTextureFormat,
   hasGlCompressedTextureFormat,
   registerGlCompressedTextureDecoder,
+  registerGlCompressedTextureUpload,
   uploadGlCompressedTextureContainer,
 } from './glCompressedTexture';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -43,6 +44,19 @@ function makeContainer(): TextureContainer {
     supercompression: 'None',
     levels: [{ byteOffset: 0, byteLength: 16, width: 4, height: 4 }],
   };
+}
+
+// A compressed-only ImageResource wrapping makeContainer, for exercising the installed upload seam.
+function uploadableCompressedImage(): ImageResource {
+  return {
+    source: null,
+    data: null,
+    compressed: { container: makeContainer(), payload: new Uint8Array(16) },
+    width: 4,
+    height: 4,
+    version: 1,
+    alphaType: 'straight',
+  } as unknown as ImageResource;
 }
 
 describe('detectGlCompressedTextureSupport', () => {
@@ -114,6 +128,36 @@ describe('registerGlCompressedTextureDecoder', () => {
     expect(getGlRenderStateRuntime(state).compressedTextureDecoder).toBe(decode);
     registerGlCompressedTextureDecoder(state, null);
     expect(getGlRenderStateRuntime(state).compressedTextureDecoder).toBeNull();
+  });
+});
+
+describe('registerGlCompressedTextureUpload', () => {
+  it('installs the compressed upload seam on the render-state runtime and clears it with null', () => {
+    const { state } = createGlState();
+    registerGlCompressedTextureUpload(state);
+    expect(getGlRenderStateRuntime(state).compressedTextureUpload).toBeTypeOf('function');
+    registerGlCompressedTextureUpload(state, null);
+    expect(getGlRenderStateRuntime(state).compressedTextureUpload).toBeNull();
+  });
+
+  it('uploads a compressed-only ImageResource once installed, threading the registered decoder', () => {
+    const { state, gl } = createGlState();
+    const rgba = new Uint8ClampedArray(4 * 4 * 4);
+    const decode = vi.fn(() => rgba);
+    registerGlCompressedTextureUpload(state);
+    registerGlCompressedTextureDecoder(state, decode);
+    const uploader = getGlRenderStateRuntime(state).compressedTextureUpload!;
+    const ok = uploader(gl, uploadableCompressedImage(), decode);
+    expect(ok).toBe(true);
+    expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
+  });
+
+  it('reports false for a resource with no compressed payload', () => {
+    const { state, gl } = createGlState();
+    registerGlCompressedTextureUpload(state);
+    const uploader = getGlRenderStateRuntime(state).compressedTextureUpload!;
+    const plain = { source: null, data: null, compressed: null } as unknown as ImageResource;
+    expect(uploader(gl, plain, null)).toBe(false);
   });
 });
 

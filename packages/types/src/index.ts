@@ -149,6 +149,7 @@ export * from './Geolocation';
 export * from './GlCapabilities';
 export * from './GlCompressedTextureDecoder';
 export * from './GlCompressedTextureSupport';
+export * from './GlCompressedTextureUploader';
 export * from './GlContextLoss';
 export * from './GlCullFaceKind';
 export * from './GlDepthFuncKind';

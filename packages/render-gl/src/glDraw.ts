@@ -11,7 +11,6 @@ import type {
 } from '@flighthq/types';
 import { BlendMode } from '@flighthq/types';
 
-import { uploadGlCompressedTextureContainer } from './glCompressedTexture';
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlMatrixFromValues } from './glShader';
 import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload';
@@ -288,9 +287,11 @@ function uploadGlDisplayTexture(state: GlRenderState, image: Readonly<ImageResou
     return;
   }
   if (image.data === null && image.compressed !== null) {
-    const compressed = image.compressed;
-    const decode = getGlRenderStateRuntime(state).compressedTextureDecoder ?? undefined;
-    uploadGlCompressedTextureContainer(gl, compressed.container, compressed.payload, decode);
+    // The compressed-container upload path is an opt-in seam (registerGlCompressedTextureUpload), so a
+    // state that only draws element/data bitmaps never carries its ~40-format enum table. When unset,
+    // skip rather than upload garbage — the texture stays empty until an uploader is registered.
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.compressedTextureUpload?.(gl, image, runtime.compressedTextureDecoder ?? null);
     return;
   }
   const data = image.alphaType === 'straight' ? premultiplyStraightRgba8(image.data!) : image.data!;

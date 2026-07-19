@@ -1,7 +1,7 @@
 import type { ImageResource, SamplerLike, VideoTexture } from '@flighthq/types';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
-import { registerGlCompressedTextureDecoder } from './glCompressedTexture';
+import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import {
   applyGlBlendMode,
   bindGlImageResourceTexture,
@@ -20,6 +20,33 @@ import {
 import { getGlRenderStateRuntime } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState } from './glTestHelper';
+
+// A compressed-only ImageResource (single 4×4 bc3 level, no element/data) for exercising the opt-in
+// compressed upload seam.
+function compressedBc3ImageResource(): ImageResource {
+  return {
+    source: null,
+    data: null,
+    compressed: {
+      container: {
+        format: 'bc3',
+        width: 4,
+        height: 4,
+        depth: 1,
+        mipLevels: 1,
+        layers: 1,
+        faces: 1,
+        supercompression: 'None',
+        levels: [{ byteOffset: 0, byteLength: 16, width: 4, height: 4 }],
+      },
+      payload: new Uint8Array(16),
+    },
+    width: 4,
+    height: 4,
+    version: 1,
+    alphaType: 'straight',
+  } as unknown as ImageResource;
+}
 
 // A plain SamplerLike with the AAA sampling defaults (clamp/linear/trilinear/mips, anisotropy off),
 // mirroring createSampler in @flighthq/texture without pulling that package into render-gl's tests.
@@ -205,39 +232,29 @@ describe('bindGlImageResourceTexture', () => {
     expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
   });
 
-  it('routes a compressed-only ImageResource through the compressed upload path (decode fallback)', () => {
+  it('routes a compressed-only ImageResource through the registered compressed upload seam (decode fallback)', () => {
     // The device mock exposes no block extension, so the compressed container falls back to the
-    // registered RGBA decoder and uploads via texImage2D — proving the real bind/draw path reaches
-    // uploadGlCompressedTextureContainer, not just the raw data/element branches.
+    // registered RGBA decoder and uploads via texImage2D — proving the real bind/draw path reaches the
+    // installed compressed uploader, not just the raw data/element branches.
     const { state, gl } = createGlState();
     const rgba = new Uint8ClampedArray(4 * 4 * 4);
     const decode = vi.fn(() => rgba);
+    registerGlCompressedTextureUpload(state);
     registerGlCompressedTextureDecoder(state, decode);
-    const image = {
-      source: null,
-      data: null,
-      compressed: {
-        container: {
-          format: 'bc3',
-          width: 4,
-          height: 4,
-          depth: 1,
-          mipLevels: 1,
-          layers: 1,
-          faces: 1,
-          supercompression: 'None',
-          levels: [{ byteOffset: 0, byteLength: 16, width: 4, height: 4 }],
-        },
-        payload: new Uint8Array(16),
-      },
-      width: 4,
-      height: 4,
-      version: 1,
-      alphaType: 'straight',
-    } as unknown as ImageResource;
+    const image = compressedBc3ImageResource();
     bindGlImageResourceTexture(state, image);
     expect(decode).toHaveBeenCalledWith('bc3', 4, 4, expect.any(Uint8Array));
     expect(gl.texImage2D).toHaveBeenCalled();
+  });
+
+  it('skips a compressed-only ImageResource when no compressed uploader is registered', () => {
+    // The compressed path is an opt-in seam: without registerGlCompressedTextureUpload, a compressed
+    // resource uploads nothing (the enum table tree-shakes out of a bitmap-only bundle) rather than
+    // reaching texImage2D.
+    const { state, gl } = createGlState();
+    bindGlImageResourceTexture(state, compressedBc3ImageResource());
+    expect(gl.texImage2D).not.toHaveBeenCalled();
+    expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
   });
 });
 
