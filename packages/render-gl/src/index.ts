@@ -1,4 +1,5 @@
 export * from './glBackground';
+export * from './glCompressedTexture';
 export * from './glDraw';
 export * from './glElement';
 export * from './glFullscreenPass';
@@ -14,4 +15,5 @@ export * from './glRenderTargetPool';
 export * from './glShader';
 export * from './glShaderBinding';
 export * from './glTextureUpload';
+export * from './glTextureVideoUpload';
 export type { GlRenderTarget } from '@flighthq/types';
