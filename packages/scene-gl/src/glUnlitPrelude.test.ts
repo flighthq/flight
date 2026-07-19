@@ -1,16 +1,26 @@
 import type { LinearColor } from '@flighthq/color';
+import type { VideoTexture } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 import type { GlUnlitDefineKey } from './glUnlitPrelude';
 import {
   bindGlUnlitSurface,
+  bindGlUnlitVideoSurface,
   buildGlUnlitDefineKey,
   compileGlUnlitProgram,
   ensureGlUnlitProgram,
   getGlUnlitFragmentSourceForKey,
   getGlUnlitVertexSourceForKey,
 } from './glUnlitPrelude';
+
+function makeReadyVideoTexture(frameId: number): VideoTexture {
+  return {
+    frameId,
+    sampler: null,
+    source: { element: { readyState: 4, videoWidth: 320, videoHeight: 240 } as unknown as HTMLVideoElement },
+  } as unknown as VideoTexture;
+}
 
 const FLAT: GlUnlitDefineKey = {
   alphaMaskEnabled: false,
@@ -29,6 +39,29 @@ describe('bindGlUnlitSurface', () => {
     expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(2);
     // No color map → no texture bind.
     expect(gl.calls.some((c) => c.name === 'bindTexture')).toBe(false);
+  });
+});
+
+describe('bindGlUnlitVideoSurface', () => {
+  it('uploads the color/intensity/cutoff and binds the video map on unit 0', () => {
+    const { state, gl } = makeGlSceneState();
+    const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
+    bindGlUnlitVideoSurface(state, program, COLOR, 1, makeReadyVideoTexture(2), 0.5);
+    expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
+    // Live frame uploaded and the map sampler set to unit 0.
+    expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'bindTexture')).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'uniform1i')).toBe(true);
+  });
+
+  it('does not upload a frame that has not advanced (the dirty-gate)', () => {
+    const { state, gl } = makeGlSceneState();
+    const program = compileGlUnlitProgram(gl, { ...FLAT, hasColorMap: true });
+    const videoMap = makeReadyVideoTexture(3);
+    bindGlUnlitVideoSurface(state, program, COLOR, 1, videoMap, 0.5);
+    const uploads = gl.calls.filter((c) => c.name === 'texImage2D').length;
+    bindGlUnlitVideoSurface(state, program, COLOR, 1, videoMap, 0.5);
+    expect(gl.calls.filter((c) => c.name === 'texImage2D').length).toBe(uploads);
   });
 });
 
