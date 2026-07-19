@@ -267,6 +267,19 @@ describe('prepareSceneRender', () => {
     expect(list.meshCount).toBe(0);
   });
 
+  it('skips a hidden subtree (visible=false propagates to descendants)', () => {
+    const state = createRenderState();
+    const scene = createScene();
+    const group = createScene();
+    group.visible = false;
+    const mesh = createMesh(boundedBox(), [null]);
+    addNodeChild(group, mesh);
+    addNodeChild(scene, group);
+
+    const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
+    expect(list.meshCount).toBe(0);
+  });
+
   it('resolves world transforms through nested groups', () => {
     const state = createRenderState();
     const scene = createScene();

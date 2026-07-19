@@ -1,5 +1,5 @@
 import { getNodeAppearanceRevision } from '@flighthq/node';
-import type { HasAppearance, Node, RenderProxy, RenderState } from '@flighthq/types';
+import type { HasAppearance, HasBlendMode, Node, RenderProxy, RenderState } from '@flighthq/types';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -17,7 +17,7 @@ export function updateRenderProxyAppearance(state: RenderState, data: RenderProx
 }
 
 function recalculateAppearance(state: RenderState, data: RenderProxy, parentData?: RenderProxy) {
-  const source = data.source as unknown as HasAppearance;
+  const source = data.source as unknown as HasAppearance & HasBlendMode;
   if (parentData !== undefined) {
     data.visible = source.visible && parentData.visible;
     if (!data.visible) return;

@@ -19,6 +19,7 @@ import type {
   Camera,
   DirectionalLight,
   Frustum,
+  HasAppearance,
   HemisphereLight,
   Matrix4,
   Mesh,
@@ -179,7 +180,9 @@ function collectVisibleMeshes(
   worldBounds: Aabb,
   out: Mesh[],
 ): void {
-  if (!node.enabled) {
+  // `enabled` gates graph participation; `visible` gates rendering. A hidden subtree is skipped whole,
+  // so `visible` propagates (a hidden group hides its descendants) without a resolved-visibility cache.
+  if (!node.enabled || !(node as unknown as HasAppearance).visible) {
     return;
   }
 

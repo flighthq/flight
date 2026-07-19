@@ -1,4 +1,5 @@
 import type { HasAppearance } from './HasAppearance';
+import type { HasBlendMode } from './HasBlendMode';
 import type { HasBoundsRectangle, HasBoundsRectangleRuntime } from './HasBoundsRectangle';
 import type { HasClip } from './HasClip';
 import type { HasMaterial } from './HasMaterial';
@@ -9,7 +10,7 @@ export type DisplayObject = Node<DisplayObjectTraits> & DisplayObjectTraits;
 // the node runtime (`NodeRuntime.colorAdjustments`, a generic `readonly Adjustment[] | null`), set via
 // `setDisplayObjectColorAdjustments`; the render walk resolves that stack onto `RenderProxy.colorTransform`.
 export interface DisplayObjectTraits
-  extends NodeTraits, HasAppearance, HasBoundsRectangle, HasClip, HasMaterial, HasTransform2D {
+  extends NodeTraits, HasAppearance, HasBlendMode, HasBoundsRectangle, HasClip, HasMaterial, HasTransform2D {
   data: DisplayObjectData | null;
 }
 export interface DisplayObjectData extends NodeData {}

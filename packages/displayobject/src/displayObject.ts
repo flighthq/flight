@@ -10,6 +10,7 @@ import {
   createNodeRuntime,
   getNodeRuntime,
   initAppearanceTrait,
+  initBlendModeTrait,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
   initClipTrait,
@@ -64,6 +65,7 @@ export function createDisplayObjectGeneric<R extends DisplayObjectRuntime>(
   initTransform2DTrait(out, obj);
   initBoundsRectangleTrait(out, obj);
   initAppearanceTrait(out, obj);
+  initBlendModeTrait(out, obj);
   initMaterialTrait(out, obj);
   initClipTrait(out, obj);
   return out;
