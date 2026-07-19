@@ -1,5 +1,6 @@
 import type { Material } from './Material';
 import type { MeshGeometry } from './MeshGeometry';
+import type { MeshMorph } from './MorphTarget';
 import type { SceneNode, SceneNodeRuntime } from './SceneNode';
 import type { Skin } from './Skin';
 
@@ -16,9 +17,15 @@ import type { Skin } from './Skin';
 // a Skin drives per-frame vertex deformation from the geometry's joints0/weights0 channels
 // (updateMeshSkin on CPU, the HAS_SKIN shader variant on GPU). Skinning is a layout-driven variant,
 // not a separate node kind, so it is a field here rather than a SkinnedMesh type.
+//
+// `morph` is the sibling deformer: a set of blend-shape targets plus a live weight array (MeshMorph),
+// null/absent for a non-morphed mesh. updateMeshMorph blends base + Σ wᵢ·targetᵢ into geometry.vertices
+// each frame; a `Weights` animation channel drives the weights. Like skin it is a field, not a node
+// kind, and the two compose (corrective morph over skinning) — see MeshDeformer.
 export interface Mesh extends SceneNode {
   geometry: MeshGeometry;
   materials: (Material | null)[];
+  morph?: MeshMorph | null;
   skin?: Skin | null;
 }
 

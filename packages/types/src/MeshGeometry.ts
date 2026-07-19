@@ -1,5 +1,6 @@
 import type { Aabb } from './Aabb';
 import type { Entity, EntityRuntime } from './Entity';
+import type { MeshMorphBindPose } from './MeshMorphBindPose';
 import type { MeshSkinBindPose } from './MeshSkinBindPose';
 
 // Handedness is pinned across the 3D suite: right-handed coordinates, CCW front-face, and the
@@ -78,8 +79,11 @@ export interface MeshGeometryWgpuData {
 // here, initialized to null and filled lazily on first draw; destroyMeshGeometryGPUData frees
 // them. `skinBindPose` is the CPU-skinning subsystem's slot: null until a skinned mesh is first
 // deformed, then the de-interleaved bind pose + scratch captureMeshSkinBindPose builds, reused
-// every frame by skinMeshGeometry. Subsystems read/write only the slot they own.
+// every frame by skinMeshGeometry. `morphBindPose` is the sibling morph slot: null until a morphed
+// mesh is first blended, then the de-interleaved base pose + scratch captureMeshMorphBindPose builds,
+// reused every frame by blendMeshGeometryMorph. Subsystems read/write only the slot they own.
 export interface MeshGeometryRuntime extends EntityRuntime {
+  morphBindPose: MeshMorphBindPose | null;
   skinBindPose: MeshSkinBindPose | null;
   webglData: MeshGeometryGlData | null;
   webgpuData: MeshGeometryWgpuData | null;
