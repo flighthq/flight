@@ -167,6 +167,15 @@
       "label": "Effects",
       "scenes": [
         {
+          "scene": "effect-blend-advanced",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "effect-bloom",
           "backends": {
             "canvas": true,
@@ -998,6 +1007,30 @@
             "dom": true,
             "webgl": true,
             "webgpu": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "scene",
+      "label": "Scene",
+      "scenes": [
+        {
+          "scene": "scene-morph",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
+          "scene": "scene-skinning",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
           }
         }
       ]

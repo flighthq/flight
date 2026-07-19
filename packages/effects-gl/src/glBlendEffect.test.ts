@@ -11,7 +11,8 @@ import {
 } from './glBlendEffect';
 
 // The backdrop registry is a plain WeakMap keyed by the render state, with no GL calls, so a bare object
-// stands in for a state. The compile/draw path is exercised by the functional render suite.
+// stands in for a state. The compile/draw path is exercised pixel-for-pixel by the
+// functional/scenes/effect-blend-advanced.webgl.ts scene (Difference blend of a layer over a backdrop).
 function makeState(): GlRenderState {
   return {} as GlRenderState;
 }
