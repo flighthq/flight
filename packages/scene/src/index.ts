@@ -5,6 +5,7 @@ export * from './scene';
 export * from './sceneAnimation';
 export * from './sceneMaterial';
 export * from './sceneNode';
+export * from './sceneNodeAppearance';
 export * from './sceneNodeBounds';
 export * from './sceneNodeCulling';
 export * from './sceneNodeDispose';

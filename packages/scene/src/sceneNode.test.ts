@@ -23,7 +23,6 @@ import {
   enableSceneNodeSignals,
   getSceneNodeRuntime,
   getSceneNodeSignals,
-  getSceneNodeWorldAlpha,
   SceneNodeKind,
 } from './sceneNode';
 
@@ -126,18 +125,6 @@ describe('getSceneNodeSignals', () => {
     const signals = enableSceneNodeSignals(node);
     expect(getSceneNodeSignals(node)).toBe(signals);
     expect(getSceneNodeSignals(node)).toBe(getSceneNodeRuntime(node).nodeSignals);
-  });
-});
-
-describe('getSceneNodeWorldAlpha', () => {
-  it('returns 1 for a node not yet prepared (null worldAlpha)', () => {
-    expect(getSceneNodeWorldAlpha(createSceneNode())).toBe(1);
-  });
-
-  it('returns the resolved worldAlpha once set on the runtime', () => {
-    const node = createSceneNode();
-    getSceneNodeRuntime(node).worldAlpha = 0.75;
-    expect(getSceneNodeWorldAlpha(node)).toBeCloseTo(0.75);
   });
 });
 

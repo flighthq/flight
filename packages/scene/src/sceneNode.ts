@@ -27,6 +27,9 @@ export function createSceneNodeRuntime(): SceneNodeRuntime {
   const out = createNodeRuntime<SceneNodeTraits>() as SceneNodeRuntime;
   out.traits = SceneNodeTraitsKey;
   out.worldAlpha = null;
+  out.worldAlphaUsingAppearanceId = -1;
+  out.worldAlphaUsingParentAppearanceId = -1;
+  out.worldAppearanceId = 0;
   initTransform3DRuntimeTrait(out);
   return out;
 }
@@ -41,11 +44,4 @@ export function getSceneNodeRuntime(source: Readonly<SceneNode>): SceneNodeRunti
 
 export function getSceneNodeSignals(source: SceneNode): NodeSignals | null {
   return getNodeSignals(source);
-}
-
-// The resolved parent×self opacity prepareSceneRender folded onto this node this frame, or 1 when
-// the node has not been prepared yet (so an unprepared node reads as fully opaque). Render state,
-// not authoring data — read the node's `alpha` field for its own authored opacity.
-export function getSceneNodeWorldAlpha(source: Readonly<SceneNode>): number {
-  return getSceneNodeRuntime(source).worldAlpha ?? 1;
 }
