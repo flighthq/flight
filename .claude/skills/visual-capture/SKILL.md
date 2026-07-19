@@ -16,6 +16,16 @@ npm run capture:functional [-- --filter=name]
 
 `capture:<tool>` navigates to each matching entry, waits two animation frames, screenshots, collects logs, and exits. Output lands in `tools/output/{tool}/{name}/{renderer}/`.
 
+### Capture produced no output? Install the browser's system libraries — you have sudo
+
+If a `capture:*` run stops **right after `Ready at http://…`** with no `screenshot.png`, an empty log, and often a **signal exit (130/144)** instead of a clear error, it is almost never your scene and almost never resource pressure — headless Chromium failed to launch because its **system libraries are missing** (`chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file`, Chromium exits 127, and the harness aborts). `capture:functional` / `capture:examples` do **not** surface this — it reads like a hang, which is a real misdiagnosis trap. Confirm in one line with a tiny Playwright launch (`chromium.launch()` logs the `libglib` error), then fix it **in this sandbox** (it grants sudo/install — do not defer baseline capture to the host):
+
+```
+sudo npx playwright install-deps chromium
+```
+
+After that, capture runs fully in-sandbox, **including WebGPU** (SwiftShader software Vulkan) — a `.webgpu.ts` scene reads back its frame the same as WebGL. If only the WebGPU leg then fails with "did not produce a render image" while an existing scene (e.g. `material-toon`) captures both legs, the fault is your scene's wgpu wiring, not the environment.
+
 ## Reference examples (external OpenFL/Starling/AwayJS corpus)
 
 The reference examples live in a **separate** repo (`flight-reference`), not in this tree. When asked to "test/capture the `<name>` reference example" (e.g. `load-3ds`, `md5-animation`, `awd-suzanne`), use this — one command clones, builds against the local SDK, captures, and drops a PNG you read back:
