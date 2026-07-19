@@ -106,7 +106,9 @@ function applyGlInnerClipPass(
   dest: GlRenderTarget,
 ): void {
   const loc = getClipShader(state);
-  drawGlFullscreenPass(state, loc, [glow.texture, source.texture], dest, () => {});
+  drawGlFullscreenPass(state, loc, [glow.texture, source.texture], dest, (gl) => {
+    gl.blendFunc(gl.ONE, gl.ZERO);
+  });
 }
 
 function getClipShader(state: GlRenderState): InnerClipLocations {

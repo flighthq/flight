@@ -96,7 +96,7 @@ export function applyWgpuEffectTintPass(
 function getWgpuInnerClipShader(state: WgpuRenderState): WgpuDualSourceEffectPipeline {
   let p = innerClipPipelines.get(state);
   if (p === undefined) {
-    p = createWgpuDualSourceEffectPipeline(state, INNER_CLIP_WGSL);
+    p = createWgpuDualSourceEffectPipeline(state, INNER_CLIP_WGSL, 'replace');
     innerClipPipelines.set(state, p);
   }
   return p;
@@ -105,7 +105,7 @@ function getWgpuInnerClipShader(state: WgpuRenderState): WgpuDualSourceEffectPip
 function getWgpuInvertTintShader(state: WgpuRenderState): WgpuEffectPipeline {
   let p = invertTintPipelines.get(state);
   if (p === undefined) {
-    p = createWgpuEffectPipeline(state, INVERT_TINT_WGSL);
+    p = createWgpuEffectPipeline(state, INVERT_TINT_WGSL, 'replace');
     invertTintPipelines.set(state, p);
   }
   return p;
@@ -114,7 +114,7 @@ function getWgpuInvertTintShader(state: WgpuRenderState): WgpuEffectPipeline {
 function getWgpuTintShader(state: WgpuRenderState): WgpuEffectPipeline {
   let p = tintPipelines.get(state);
   if (p === undefined) {
-    p = createWgpuEffectPipeline(state, TINT_WGSL);
+    p = createWgpuEffectPipeline(state, TINT_WGSL, 'replace');
     tintPipelines.set(state, p);
   }
   return p;
