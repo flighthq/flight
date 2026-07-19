@@ -1,7 +1,8 @@
 import { ModifierSlot } from './ModifierSlot';
 
 describe('ModifierSlot', () => {
-  it('exposes the v1 slot taxonomy as canonical PascalCase values', () => {
+  it('exposes the slot taxonomy as canonical PascalCase values', () => {
+    expect(ModifierSlot.Vertex).toBe('Vertex');
     expect(ModifierSlot.Diffuse).toBe('Diffuse');
     expect(ModifierSlot.Specular).toBe('Specular');
     expect(ModifierSlot.Normal).toBe('Normal');
