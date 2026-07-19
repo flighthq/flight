@@ -517,6 +517,8 @@ export * from './TimelineSource';
 export * from './ToneMapEffect';
 export * from './ToonMaterial';
 export * from './ToonModifier';
+export * from './Transform2D';
+export * from './Transform3D';
 export * from './TransmissionVolumePbrMaterial';
 export * from './Tray';
 export * from './TriangleCulling';

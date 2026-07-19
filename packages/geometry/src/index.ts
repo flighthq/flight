@@ -15,6 +15,8 @@ export * from './quaternionPool';
 export * from './ray3d';
 export * from './rectangle';
 export * from './rectanglePool';
+export * from './transform2d';
+export * from './transform3d';
 export * from './typedarray';
 export * from './vector2';
 export * from './vector2Pool';
