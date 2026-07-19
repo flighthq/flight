@@ -25,6 +25,10 @@ export const MD2_COMPRESSED_VERTEX_SIZE = 4;
 // Bytes for the per-frame header (scale + translate + name): 3*float32 + 3*float32 + 16 chars = 40.
 export const MD2_FRAME_HEADER_SIZE = 40;
 
+// The frame playback rate MD2 animation is authored against (Quake 2 plays model frames at ~10 fps).
+// Used to derive the morph keyframe times (frameIndex / fps) when building the vertex-morph clip.
+export const MD2_FRAME_FPS = 10;
+
 // The 162-entry Anorms table of pre-computed unit normals used by Quake 2 MD2 models. Each
 // compressed vertex stores an 8-bit index into this table. Values are the standard id Software
 // anorms table (quake2/anorms.h).
