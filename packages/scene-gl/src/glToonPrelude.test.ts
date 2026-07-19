@@ -80,6 +80,16 @@ describe('getGlToonFragmentSourceForKey', () => {
     expect(getGlToonFragmentSourceForKey({ ...FLAT, hasRamp: true })).toContain('#define HAS_RAMP');
     expect(getGlToonFragmentSourceForKey({ ...FLAT, alphaMaskEnabled: true })).toContain('#define ALPHA_MASK');
   });
+
+  it('shadow-maps the banded directional term (and only the directional term)', () => {
+    // The banded directional contribution is multiplied by the shared sampleDirectionalShadow factor,
+    // matching the classic/PBR families; ambient stays unshadowed, so the helper appears once.
+    for (const key of [FLAT, { ...FLAT, hasRamp: true }]) {
+      const source = getGlToonFragmentSourceForKey(key);
+      expect(source).toContain('sampleDirectionalShadow(v_worldPosition)');
+      expect(source.match(/sampleDirectionalShadow\(v_worldPosition\)/g)).toHaveLength(1);
+    }
+  });
 });
 
 describe('getGlToonVertexSourceForKey', () => {

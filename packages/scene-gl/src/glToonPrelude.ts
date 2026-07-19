@@ -207,17 +207,20 @@ void main() {
 
   // Directional light: -direction is the surface-to-light vector (light travels along direction).
   // The raw N·L is quantized into cel bands — via a 1D ramp lookup or a stepped floor — then scales
-  // the base color and the directional radiance.
+  // the base color and the directional radiance. The banded contribution is shadow-mapped like the
+  // classic/PBR directional term; sampleDirectionalShadow is 1.0 when no shadow map is bound, so a toon
+  // scene that never calls drawGlSceneShadowMap is unchanged.
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
     float nDotL = clamp(dot(normal, lightDir), 0.0, 1.0);
 #ifdef HAS_RAMP
     vec3 band = texture(u_ramp, vec2(nDotL, 0.5)).rgb;
-    radiance += baseColor.rgb * band * u_directionalRadiance.rgb;
+    vec3 direct = baseColor.rgb * band * u_directionalRadiance.rgb;
 #else
     float band = floor(nDotL * u_steps) / max(u_steps, 1.0);
-    radiance += baseColor.rgb * band * u_directionalRadiance.rgb;
+    vec3 direct = baseColor.rgb * band * u_directionalRadiance.rgb;
 #endif
+    radiance += direct * sampleDirectionalShadow(v_worldPosition);
   }
 
   // Ambient term: flat irradiance over the base color (unbanded).
