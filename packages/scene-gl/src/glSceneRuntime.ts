@@ -76,6 +76,12 @@ export interface GlSceneRuntime {
   // the scene is drawn straight to the canvas with no target to declare 'linear' on — the output would
   // then reach the canvas un-encoded (dark).
   colorSpaceGuard?: (() => void) | null;
+  // Opt-in custom-shader guard, null until enableGlSceneCustomShaderGuards installs it. The custom-shader
+  // material renderer reaches it only through this slot when it binds a program (so the base path
+  // references no message or @flighthq/log). It introspects the bound program's built-in uniform types
+  // and warns once per shader when one mismatches what the renderer uploads — most importantly
+  // u_normalMatrix, which the renderer uploads as mat3, so a shader declaring it mat4 draws nothing.
+  customShaderGuard?: ((state: GlRenderState, program: WebGLProgram, shaderKey: string) => void) | null;
   environmentSourceCube: WebGLTexture | null;
   ibl: GlSceneIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;

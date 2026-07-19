@@ -15,9 +15,14 @@ export interface FakeGl2 extends WebGL2RenderingContext {
 
 // Builds a fresh fake WebGL2 context. compileOk/linkOk control the COMPILE_STATUS/LINK_STATUS the
 // stub reports, so a test can assert the program-cache throws on a shader failure.
-export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean }): FakeGl2 {
+export function makeFakeGl2(options?: {
+  activeUniforms?: readonly { name: string; type: number }[];
+  compileOk?: boolean;
+  linkOk?: boolean;
+}): FakeGl2 {
   const compileOk = options?.compileOk ?? true;
   const linkOk = options?.linkOk ?? true;
+  const activeUniforms = options?.activeUniforms ?? [];
   const calls: { name: string; args: unknown[] }[] = [];
 
   const record =
@@ -45,6 +50,13 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     FRAGMENT_SHADER: 0x8b30,
     COMPILE_STATUS: 0x8b81,
     LINK_STATUS: 0x8b82,
+    ACTIVE_UNIFORMS: 0x8b86,
+    FLOAT_VEC2: 0x8b50,
+    FLOAT_VEC3: 0x8b51,
+    FLOAT_VEC4: 0x8b52,
+    FLOAT_MAT2: 0x8b5a,
+    FLOAT_MAT3: 0x8b5b,
+    FLOAT_MAT4: 0x8b5c,
     BLEND: 0x0be2,
     CULL_FACE: 0x0b44,
     BACK: 0x0405,
@@ -71,7 +83,15 @@ export function makeFakeGl2(options?: { compileOk?: boolean; linkOk?: boolean })
     createProgram: record('createProgram', {}),
     attachShader: record('attachShader'),
     linkProgram: record('linkProgram'),
-    getProgramParameter: record('getProgramParameter', linkOk),
+    getProgramParameter: (_program: unknown, pname: number) => {
+      calls.push({ name: 'getProgramParameter', args: [pname] });
+      return pname === 0x8b86 ? activeUniforms.length : linkOk;
+    },
+    getActiveUniform: (_program: unknown, index: number) => {
+      calls.push({ name: 'getActiveUniform', args: [index] });
+      const info = activeUniforms[index];
+      return info === undefined ? null : { name: info.name, size: 1, type: info.type };
+    },
     getProgramInfoLog: record('getProgramInfoLog', ''),
     useProgram: record('useProgram'),
     getUniformLocation: (_program: unknown, name: string) => {

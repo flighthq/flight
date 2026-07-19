@@ -6,6 +6,7 @@ export * from './depthGlMeshMaterialRenderer';
 export * from './drawGlScene';
 export * from './emissiveGlMeshMaterialRenderer';
 export * from './enableGlSceneColorSpaceGuards';
+export * from './enableGlSceneCustomShaderGuards';
 export * from './glClassicPrelude';
 export * from './glDebugPrelude';
 export * from './glEnvironmentCube';
