@@ -1,19 +1,19 @@
 import type { AlphaType } from './AlphaType';
 import type { Entity } from './Entity';
+import type { ImageResourceCompressed } from './ImageResourceCompressed';
 import type { PixelFormat } from './PixelFormat';
 
 /**
  * A backend-agnostic image resource: pixel dimensions, a monotonically increasing version, and up to
- * two interchangeable representations of the same pixels — an `source` element the GPU/Canvas backends
- * draw or upload directly, and raw CPU `data` for the portable / generated path. Either may be null;
- * a freshly loaded image is element-only, a freshly generated `Surface` is data-only, and a resource
- * may carry both once one is derived from the other. Renderers own the GPU texture derived from this
- * resource (keyed per render state); the resource itself holds no GPU handle. After the underlying
- * pixels change, bump `version` (see `invalidateImageResource`) so backends know to re-upload.
- * `Surface` narrows `data` to non-null and adds `colorSpace` plus the pixel-manipulation API.
- *
- * Reserved (not yet added): a `compressed` slot for KTX2/Basis compressed payloads, which `data`
- * (uncompressed `Uint8ClampedArray`) cannot represent.
+ * three interchangeable representations of the same pixels — an `source` element the GPU/Canvas
+ * backends draw or upload directly, raw CPU `data` for the portable / generated path, and a
+ * `compressed` block-compressed payload a GPU backend uploads to a compressed texture. Any may be
+ * null; a freshly loaded image is element-only, a freshly generated `Surface` is data-only, a parsed
+ * KTX2/DDS/Basis container is compressed-only, and a resource may carry more than one once one is
+ * derived from another. Renderers own the GPU texture derived from this resource (keyed per render
+ * state); the resource itself holds no GPU handle. After the underlying pixels change, bump `version`
+ * (see `invalidateImageResource`) so backends know to re-upload. `Surface` narrows `data` to non-null
+ * and adds `colorSpace` plus the pixel-manipulation API.
  */
 export interface ImageResource extends Entity {
   /**
@@ -21,6 +21,12 @@ export interface ImageResource extends Entity {
    * browsers and the surface pixel API produce; renderers premultiply on GPU upload. See `AlphaType`.
    */
   alphaType: AlphaType;
+  /**
+   * A block-compressed (KTX2/DDS/Basis) pixel payload — the representation `data` cannot hold. Null
+   * for the common uncompressed resource. A GPU backend uploads it to a compressed texture; a
+   * Canvas/DOM backend has no compressed path and ignores it. See `ImageResourceCompressed`.
+   */
+  compressed: ImageResourceCompressed | null;
   /**
    * Raw pixel bytes laid out per `format`, or null for an element-only resource whose pixels live in
    * `source`. Owned by the resource; `disposeImageResource` releases it for GC.

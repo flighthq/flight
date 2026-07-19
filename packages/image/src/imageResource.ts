@@ -1,13 +1,14 @@
 import { createEntity } from '@flighthq/entity';
-import type { ImageResource } from '@flighthq/types';
+import type { ImageResource, ImageResourceCompressed } from '@flighthq/types';
 
-// Allocates a new resource identity over the SAME underlying pixels. The element and the `data` array
-// are shared by reference, not duplicated — clone gives you an independent version counter and entity
-// identity over the same pixels, e.g. to upload one image into two render states with separate
-// invalidation. Use a Surface copy when you need the pixels themselves duplicated.
+// Allocates a new resource identity over the SAME underlying pixels. The element, the `data` array, and
+// the `compressed` payload are shared by reference, not duplicated — clone gives you an independent
+// version counter and entity identity over the same pixels, e.g. to upload one image into two render
+// states with separate invalidation. Use a Surface copy when you need the pixels themselves duplicated.
 export function cloneImageResource(resource: Readonly<ImageResource>): ImageResource {
   return createEntity({
     alphaType: resource.alphaType,
+    compressed: resource.compressed,
     data: resource.data,
     format: resource.format,
     height: resource.height,
@@ -17,9 +18,27 @@ export function cloneImageResource(resource: Readonly<ImageResource>): ImageReso
   });
 }
 
+// Wraps a parsed block-compressed (KTX2/DDS/Basis) payload as an ImageResource. `width`/`height` mirror
+// the container's base-mip dimensions so the same 2D draw path sizes the quad; `source`/`data` stay null
+// (a GPU backend uploads the `compressed` payload instead, and a Canvas/DOM backend ignores it). The
+// caller owns the payload bytes the container's level ranges index into.
+export function createCompressedImageResource(compressed: Readonly<ImageResourceCompressed>): ImageResource {
+  return createEntity({
+    alphaType: 'straight',
+    compressed,
+    data: null,
+    format: 'rgba8unorm',
+    height: compressed.container.height,
+    source: null,
+    version: 0,
+    width: compressed.container.width,
+  });
+}
+
 export function createImageResource(image?: CanvasImageSource): ImageResource {
   const resource: ImageResource = createEntity({
     alphaType: 'straight',
+    compressed: null,
     data: null,
     format: 'rgba8unorm',
     height: 0,
@@ -36,6 +55,7 @@ export function createImageResource(image?: CanvasImageSource): ImageResource {
 // backend's destroy*Texture) and does NOT close an owned ImageBitmap (ownership is ambiguous; close it
 // explicitly if you own it). Dimensions are left intact; setImageResourceSource repopulates the resource.
 export function disposeImageResource(resource: ImageResource): void {
+  resource.compressed = null;
   resource.data = null;
   resource.source = null;
   invalidateImageResource(resource);
@@ -53,13 +73,14 @@ export function hasImageResourceData(resource: Readonly<ImageResource>): boolean
   return resource.data !== null;
 }
 
-// True when the resource carries pixels in either representation — a decoded `source` element or raw CPU
-// `data`. The upload-readiness predicate for backends that can consume both: an element-only load, a
-// data-only generated Surface, or a resource holding both are all uploadable. Prefer this over
-// hasImageResourceSource at any gate that feeds a source-or-data uploader (bindGlTexture, bindWgpuTexture),
-// so a memory-generated Surface is not rejected for lacking an element.
+// True when the resource carries pixels in any representation — a decoded `source` element, raw CPU
+// `data`, or a block-`compressed` payload. The upload-readiness predicate for backends that can consume
+// any of them: an element-only load, a data-only generated Surface, a compressed-only parsed container,
+// or a resource holding several are all uploadable. Prefer this over hasImageResourceSource at any gate
+// that feeds a source-or-data uploader (bindGlTexture, bindWgpuTexture), so a memory-generated Surface
+// or a compressed container is not rejected for lacking an element.
 export function hasImageResourcePixels(resource: Readonly<ImageResource>): boolean {
-  return resource.source !== null || resource.data !== null;
+  return resource.source !== null || resource.data !== null || resource.compressed !== null;
 }
 
 export function hasImageResourceSource(resource: Readonly<ImageResource>): boolean {

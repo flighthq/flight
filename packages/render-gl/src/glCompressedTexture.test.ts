@@ -4,8 +4,11 @@ import {
   detectGlCompressedTextureSupport,
   getGlCompressedTextureFormat,
   hasGlCompressedTextureFormat,
+  registerGlCompressedTextureDecoder,
   uploadGlCompressedTextureContainer,
 } from './glCompressedTexture';
+import { getGlRenderStateRuntime } from './glRenderState';
+import { createGlState } from './glTestHelper';
 
 // The subset of extension enum constants the tests exercise (BC3 via s3tc, ASTC 4x4).
 const S3TC_EXT = { COMPRESSED_RGBA_S3TC_DXT5_EXT: 0x83f3 };
@@ -18,8 +21,12 @@ function makeGl(available: Readonly<Record<string, Record<string, number>>>): We
     RGBA: 0x1908,
     UNSIGNED_BYTE: 0x1401,
     TEXTURE_2D: 0x0de1,
+    TEXTURE_2D_ARRAY: 0x8c1a,
+    TEXTURE_CUBE_MAP_POSITIVE_X: 0x8515,
     getExtension: vi.fn((name: string) => available[name] ?? null),
     compressedTexImage2D: vi.fn(),
+    compressedTexSubImage3D: vi.fn(),
+    texStorage3D: vi.fn(),
     texImage2D: vi.fn(),
   } as unknown as WebGL2RenderingContext;
 }
@@ -99,6 +106,17 @@ describe('hasGlCompressedTextureFormat', () => {
   });
 });
 
+describe('registerGlCompressedTextureDecoder', () => {
+  it('installs the decoder on the render-state runtime and clears it with null', () => {
+    const { state } = createGlState();
+    const decode = vi.fn(() => new Uint8ClampedArray(4));
+    registerGlCompressedTextureDecoder(state, decode);
+    expect(getGlRenderStateRuntime(state).compressedTextureDecoder).toBe(decode);
+    registerGlCompressedTextureDecoder(state, null);
+    expect(getGlRenderStateRuntime(state).compressedTextureDecoder).toBeNull();
+  });
+});
+
 describe('uploadGlCompressedTextureContainer', () => {
   it('drives compressedTexImage2D per level on the native path', () => {
     const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
@@ -152,5 +170,63 @@ describe('uploadGlCompressedTextureContainer', () => {
     const view = secondCall[6] as Uint8Array;
     expect(view.byteOffset).toBe(16);
     expect(view.byteLength).toBe(8);
+  });
+
+  it('returns false without uploading when the container is still supercompressed', () => {
+    const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
+    const container: TextureContainer = { ...makeContainer(), supercompression: 'Zstd' };
+    expect(uploadGlCompressedTextureContainer(gl, container, new Uint8Array(16))).toBe(false);
+    expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
+    expect(gl.texImage2D).not.toHaveBeenCalled();
+  });
+
+  it('targets each cube face from the flat mip+face index', () => {
+    const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
+    // A single-mip cubemap: six faces, flat index === face since mipLevels === 1.
+    const levels = Array.from({ length: 6 }, (_unused, face) => ({
+      byteOffset: face * 16,
+      byteLength: 16,
+      width: 4,
+      height: 4,
+    }));
+    const container: TextureContainer = { ...makeContainer(), faces: 6, levels };
+    uploadGlCompressedTextureContainer(gl, container, new Uint8Array(6 * 16));
+    expect(gl.compressedTexImage2D).toHaveBeenCalledTimes(6);
+    const calls = (gl.compressedTexImage2D as ReturnType<typeof vi.fn>).mock.calls;
+    for (let face = 0; face < 6; face += 1) {
+      expect(calls[face][0]).toBe(gl.TEXTURE_CUBE_MAP_POSITIVE_X + face);
+      expect(calls[face][1]).toBe(0);
+    }
+    expect(gl.texStorage3D).not.toHaveBeenCalled();
+  });
+
+  it('allocates immutable storage once and sub-uploads each layer of an array into TEXTURE_2D_ARRAY', () => {
+    const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
+    // A single-mip, two-layer array (layer-major): flat index 0 = layer 0, index 1 = layer 1.
+    const container: TextureContainer = {
+      ...makeContainer(),
+      layers: 2,
+      levels: [
+        { byteOffset: 0, byteLength: 16, width: 4, height: 4 },
+        { byteOffset: 16, byteLength: 16, width: 4, height: 4 },
+      ],
+    };
+    uploadGlCompressedTextureContainer(gl, container, new Uint8Array(32));
+    expect(gl.texStorage3D).toHaveBeenCalledTimes(1);
+    expect(gl.texStorage3D).toHaveBeenCalledWith(gl.TEXTURE_2D_ARRAY, 1, 0x83f3, 4, 4, 2);
+    expect(gl.compressedTexSubImage3D).toHaveBeenCalledTimes(2);
+    const subCalls = (gl.compressedTexSubImage3D as ReturnType<typeof vi.fn>).mock.calls;
+    expect(subCalls[0][4]).toBe(0);
+    expect(subCalls[1][4]).toBe(1);
+    expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
+  });
+
+  it('returns false for a cubemap the device cannot upload natively (no face-by-face decode)', () => {
+    const gl = makeGl({});
+    const container: TextureContainer = { ...makeContainer(), faces: 6 };
+    const decode = vi.fn(() => new Uint8ClampedArray(4 * 4 * 4));
+    expect(uploadGlCompressedTextureContainer(gl, container, new Uint8Array(6 * 16), decode)).toBe(false);
+    expect(decode).not.toHaveBeenCalled();
+    expect(gl.texImage2D).not.toHaveBeenCalled();
   });
 });

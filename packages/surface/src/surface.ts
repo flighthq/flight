@@ -6,6 +6,7 @@ export function cloneSurface(source: Readonly<Surface>): Surface {
   return createEntity({
     alphaType: source.alphaType,
     colorSpace: source.colorSpace,
+    compressed: null,
     data: new Uint8ClampedArray(source.data),
     format: source.format,
     height: source.height,
@@ -74,6 +75,7 @@ export function createSurface(width: number, height: number, color: number = 0):
   return createEntity({
     alphaType: 'straight',
     colorSpace: 'srgb' as const,
+    compressed: null,
     data,
     format: 'rgba8unorm',
     height,
