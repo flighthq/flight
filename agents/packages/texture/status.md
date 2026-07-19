@@ -148,3 +148,17 @@ This is the largest remaining item and should be tracked in the conformance map.
 2. **Gold uv-transform helpers** (`getTextureInverseUvMatrix`, `transformTextureUv`, `resetTextureUvTransform`) can be added in a follow-up session without any design gates — purely in-package math.
 3. **Rust parity** for all new additions. The crate exists; port the 15+ new functions and the `CUBE_FACE_*` consts, add a conformance map entry.
 4. **`texture-formats` neighbor package** once `ImageResource.compressed` lands — KTX2/Basis container parsers as a tree-shakable `@flighthq/texture-formats` package.
+
+## VideoTexture (dynamic per-frame source) — added 2026-07-19
+
+`@flighthq/texture` now owns the dynamic `VideoTexture` alongside the settled `Texture`. Shape: a
+`VideoResource`-backed source carrying the same sampler/colorSpace/uv-transform state a Texture does,
+plus a monotonic `frameId` (starts -1) that a GPU uploader watches to skip re-upload on unchanged
+frames. Functions (all in `videoTexture.ts`, colocated test): `advanceVideoTexture` (bump frameId when
+the element reports a fresh decoded frame), `create/clone/copyVideoTexture`, `getVideoTextureWidth/
+Height` (read the live element, -1 until a frame decodes), `getVideoTextureUvMatrix/InverseUvMatrix`
+(same column-major layout as `getTextureUvMatrix` so a material samples through one path),
+`isVideoTextureFrameReady` (readyState >= HAVE_CURRENT_DATA + known dims), `resetVideoTextureFrame`
+(force re-upload after context loss), `setVideoTextureSource`. No new package dep — `VideoResource` is
+read from `@flighthq/types`. The per-frame GL upload lives in `render-gl` (`uploadGlTextureVideoFrame`,
+frameId dirty-gated). Rust parity + a `VideoTexture` display/material binding are follow-ups.
