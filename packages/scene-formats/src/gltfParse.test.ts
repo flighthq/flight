@@ -169,6 +169,68 @@ function makeSkinnedGltf(inverseBind = true): GltfDocument {
   return doc;
 }
 
+// A single-triangle mesh carrying one morph target (POSITION + NORMAL deltas) and a weights animation
+// channel driving it from 0 → 1 over t∈[0,1]. mesh.weights seeds the initial weight.
+function makeMorphGltf(): GltfDocument {
+  const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+  const posDeltas = new Float32Array([0, 10, 0, 0, 10, 0, 0, 10, 0]);
+  const nrmDeltas = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+  const times = new Float32Array([0, 1]);
+  const weightValues = new Float32Array([0, 1]); // 1 target → 1 weight per keyframe
+  const uri = toDataUri(
+    bytesOf(positions),
+    bytesOf(normals),
+    bytesOf(posDeltas),
+    bytesOf(nrmDeltas),
+    bytesOf(times),
+    bytesOf(weightValues),
+  );
+  let o = 0;
+  const view = (len: number) => {
+    const bv = { buffer: 0, byteLength: len, byteOffset: o };
+    o += len;
+    return bv;
+  };
+
+  return {
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }, // 0 base position
+      { bufferView: 1, componentType: 5126, count: 3, type: 'VEC3' }, // 1 base normal
+      { bufferView: 2, componentType: 5126, count: 3, type: 'VEC3' }, // 2 position deltas
+      { bufferView: 3, componentType: 5126, count: 3, type: 'VEC3' }, // 3 normal deltas
+      { bufferView: 4, componentType: 5126, count: 2, type: 'SCALAR' }, // 4 times
+      { bufferView: 5, componentType: 5126, count: 2, type: 'SCALAR' }, // 5 weight values
+    ],
+    animations: [
+      {
+        channels: [{ sampler: 0, target: { node: 0, path: 'weights' } }],
+        name: 'blink',
+        samplers: [{ input: 4, interpolation: 'LINEAR', output: 5 }],
+      },
+    ],
+    asset: { version: '2.0' },
+    bufferViews: [
+      view(positions.byteLength),
+      view(normals.byteLength),
+      view(posDeltas.byteLength),
+      view(nrmDeltas.byteLength),
+      view(times.byteLength),
+      view(weightValues.byteLength),
+    ],
+    buffers: [{ byteLength: o, uri }],
+    meshes: [
+      {
+        primitives: [{ attributes: { NORMAL: 1, POSITION: 0 }, targets: [{ NORMAL: 3, POSITION: 2 }] }],
+        weights: [0],
+      },
+    ],
+    nodes: [{ mesh: 0 }],
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+  };
+}
+
 describe('createSceneFromGlb', () => {
   it('imports geometry from a GLB container whose buffer is backed by the BIN chunk', () => {
     const positions = new Float32Array([7, 8, 9, 1, 0, 0, 0, 1, 0]);
@@ -844,14 +906,14 @@ describe('importGltf', () => {
     expect(Array.from(channel.track.times)).toEqual([0, 1]);
   });
 
-  it('skips morph-target (weights) channels without warning', () => {
+  it('drops a weights channel targeting a node with no morphable mesh, with a warning', () => {
     const doc = makeAnimatedMultiSceneGltf();
+    // Node 1's mesh has no morph targets, so the weights channel cannot bind and is dropped.
     doc.animations![0].channels.push({ sampler: 0, target: { node: 1, path: 'weights' } });
     const warnings: string[] = [];
     const result = importGltf(doc, warnings);
-    // Only the rotation channel survives; the weights channel is silently skipped.
-    expect(result.animations[0].channels).toHaveLength(1);
-    expect(warnings.filter((w) => w.includes('weights'))).toHaveLength(0);
+    expect(result.animations[0].channels).toHaveLength(1); // only the rotation channel survives
+    expect(warnings.some((w) => w.includes('no morphable mesh'))).toBe(true);
   });
 
   it('imports translation and scale channels as 3-component non-quaternion tracks', () => {
@@ -870,5 +932,30 @@ describe('importGltf', () => {
     expect(getNodeChildren(result.scene)).toHaveLength(0);
     expect(result.animations).toHaveLength(0);
     expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
+  });
+
+  it('reads primitives[].targets into the mesh morph set with seeded weights', () => {
+    const result = importGltf(makeMorphGltf());
+    const mesh = getNodeChildren(result.scene)[0] as Mesh;
+    expect(mesh.morph).not.toBeNull();
+    expect(mesh.morph!.targets).toHaveLength(1);
+    expect(Array.from(mesh.morph!.targets[0].positionDeltas)).toEqual([0, 10, 0, 0, 10, 0, 0, 10, 0]);
+    expect(Array.from(mesh.morph!.targets[0].normalDeltas!)).toEqual([0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    expect(mesh.morph!.targets[0].tangentDeltas).toBeNull();
+    // mesh.weights: [0] seeds the initial weight.
+    expect(Array.from(mesh.morph!.weights)).toEqual([0]);
+  });
+
+  it('imports a weights channel bound to the mesh morph, its width the target count', () => {
+    const result = importGltf(makeMorphGltf());
+    expect(result.animations).toHaveLength(1);
+    const clip = result.animations[0];
+    expect(clip.channels).toHaveLength(1);
+    const channel = clip.channels[0];
+    const target = channel.targetRef as SceneAnimationTarget;
+    expect(target.path).toBe('Weights');
+    expect(target.node).toBe(getNodeChildren(result.scene)[0]);
+    expect(channel.track.components).toBe(1); // one morph target → one weight component
+    expect(Array.from(channel.track.times)).toEqual([0, 1]);
   });
 });

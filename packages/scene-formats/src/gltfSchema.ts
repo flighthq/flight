@@ -134,6 +134,18 @@ export interface GltfSkin {
 export interface GltfMesh {
   name?: string;
   primitives: GltfPrimitive[];
+  // Default morph-target weights, one per entry in each primitive's `targets`. The mesh's initial
+  // weight array; a `weights` animation channel overrides it at runtime.
+  weights?: number[];
+}
+
+// One morph target's attribute deltas: POSITION always, NORMAL/TANGENT optionally. Each value is an
+// accessor index into VEC3 (POSITION/NORMAL) or VEC3 (TANGENT — morph tangent deltas are 3-component,
+// the handedness `w` is not morphed) delta data aligned index-for-index with the base attributes.
+export interface GltfMorphTarget {
+  NORMAL?: number;
+  POSITION?: number;
+  TANGENT?: number;
 }
 
 export interface GltfPrimitive {
@@ -149,6 +161,8 @@ export interface GltfPrimitive {
   material?: number;
   // Primitive topology (GL constant). Absent means 4 (TRIANGLES).
   mode?: number;
+  // Morph targets: one entry per blend shape, each a set of POSITION/NORMAL/TANGENT delta accessors.
+  targets?: GltfMorphTarget[];
 }
 
 // glTF accessor `componentType` values (GL constants).
