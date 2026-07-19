@@ -3,6 +3,7 @@ import { createAabb } from '@flighthq/geometry';
 import type {
   MeshGeometry,
   MeshGeometryRuntime,
+  MeshMorphBindPose,
   MeshSkinBindPose,
   MeshSubset,
   PrimitiveTopology,
@@ -116,6 +117,14 @@ export function getMeshGeometryIndexCount(geometry: Readonly<MeshGeometry>): num
   return geometry.indices ? geometry.indices.length : 0;
 }
 
+// Returns the CPU-morph base pose cached on the geometry's runtime, or null before the first morph
+// capture. The morph deform subsystem (mesh/scene) owns this slot; a non-morphed geometry never fills
+// it, so plain meshes pay nothing. Sibling of getMeshGeometrySkinBindPose.
+export function getMeshGeometryMorphBindPose(geometry: Readonly<MeshGeometry>): MeshMorphBindPose | null {
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  return runtime ? runtime.morphBindPose : null;
+}
+
 // Returns the CPU-skinning bind pose cached on the geometry's runtime, or null before the first
 // skin capture. The deform subsystem (skeleton3d/scene) owns this slot; a rigid geometry never
 // fills it, so plain meshes pay nothing.
@@ -141,6 +150,17 @@ export function hasMeshGeometrySkin(geometry: Readonly<MeshGeometry>): boolean {
   return false;
 }
 
+// Stores (or clears, with null) the CPU-morph base pose on the geometry's runtime. Called once by the
+// morph deform glue when a morphed geometry is first captured; pass null to force a recapture (e.g.
+// after the vertex layout or base data changes). Sibling of setMeshGeometrySkinBindPose.
+export function setMeshGeometryMorphBindPose(
+  geometry: Readonly<MeshGeometry>,
+  bindPose: MeshMorphBindPose | null,
+): void {
+  const runtime = geometry[EntityRuntimeKey] as MeshGeometryRuntime | undefined;
+  if (runtime) runtime.morphBindPose = bindPose;
+}
+
 // Stores (or clears, with null) the CPU-skinning bind pose on the geometry's runtime. Called once
 // by the deform glue when a skinned geometry is first captured; pass null to force a recapture
 // (e.g. after the vertex layout or bind-pose data changes).
@@ -161,7 +181,13 @@ function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof En
     version: fields.version,
     vertices: fields.vertices,
   }) as MeshGeometry;
-  const runtime: MeshGeometryRuntime = { binding: null, skinBindPose: null, webglData: null, webgpuData: null };
+  const runtime: MeshGeometryRuntime = {
+    binding: null,
+    morphBindPose: null,
+    skinBindPose: null,
+    webglData: null,
+    webgpuData: null,
+  };
   geometry[EntityRuntimeKey] = runtime;
   return geometry;
 }
