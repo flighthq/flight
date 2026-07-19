@@ -83,6 +83,7 @@ function applyBlurBlit(state: GlRenderState, source: GlRenderTarget, dest: GlRen
     gl.uniform2f(loc.locTexelSize, 0, 0);
     gl.uniform1f(loc.locRadius, 0);
     gl.uniform2f(loc.locDirection, 0, 0);
+    gl.blendFunc(gl.ONE, gl.ZERO);
   });
 }
 
@@ -99,6 +100,7 @@ function applyBoxBlurPass(
     gl.uniform2f(loc.locTexelSize, 1 / source.width, 1 / source.height);
     gl.uniform1f(loc.locRadius, radius);
     gl.uniform2f(loc.locDirection, dirX, dirY);
+    gl.blendFunc(gl.ONE, gl.ZERO);
   });
 }
 

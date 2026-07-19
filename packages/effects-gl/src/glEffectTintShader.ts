@@ -55,6 +55,7 @@ export function applyGlEffectInvertTintPass(
     gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
     gl.uniform1f(loc.locAlpha, alpha);
     gl.uniform1f(loc.locStrength, strength);
+    gl.blendFunc(gl.ONE, gl.ZERO);
   });
 }
 
@@ -72,6 +73,7 @@ export function applyGlEffectTintPass(
     gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
     gl.uniform1f(loc.locAlpha, alpha);
     gl.uniform1f(loc.locStrength, strength);
+    gl.blendFunc(gl.ONE, gl.ZERO);
   });
 }
 

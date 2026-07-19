@@ -103,6 +103,7 @@ function applyGradientLookupPass(
     gl.bindTexture(gl.TEXTURE_2D, ramp);
     gl.uniform1i(loc.locRamp, 1);
     gl.activeTexture(gl.TEXTURE0);
+    gl.blendFunc(gl.ONE, gl.ZERO);
   });
 }
 

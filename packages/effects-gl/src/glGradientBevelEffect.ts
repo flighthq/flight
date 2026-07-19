@@ -140,6 +140,7 @@ function applyBevelApplyPass(
     gl.bindTexture(gl.TEXTURE_2D, source.texture);
     gl.uniform1i(loc.locSource, 2);
     gl.activeTexture(gl.TEXTURE0);
+    gl.blendFunc(gl.ONE, gl.ZERO);
   });
 }
 
@@ -153,6 +154,7 @@ function applyBevelEncodePass(
   const loc = getEncodeShader(state);
   drawGlFullscreenPass(state, loc, [blurred.texture], dest, (gl) => {
     gl.uniform2f(loc.locOffset, dx, dy);
+    gl.blendFunc(gl.ONE, gl.ZERO);
   });
 }
 

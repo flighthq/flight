@@ -30,6 +30,8 @@ vi.mock('./glEffectTintShader', () => ({
   applyGlEffectInvertTintPass: vi.fn(),
 }));
 
+import { drawGlFullscreenPass } from '@flighthq/render-gl';
+
 import { applyGlEffectBlitPass } from './glEffectBlitShader';
 import { applyInnerShadowEffectToGl, defaultGlInnerShadowEffectRunner } from './glInnerShadowEffect';
 
@@ -59,6 +61,36 @@ describe('applyInnerShadowEffectToGl', () => {
 
     expect(applyGlEffectBlitPass).toHaveBeenCalledTimes(1);
     expect(applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    const finalComposite = vi.mocked(applyGlEffectBlitPass).mock.calls[0];
+    expect(finalComposite[1]).not.toBe(source);
+    expect(finalComposite[2]).toBe(dest);
+  });
+
+  it('preserves the clipped shadow pass when sourceMode is hide', () => {
+    const source = createTarget('source');
+    const dest = createTarget('dest');
+    const sourceTexture = (source as unknown as { texture: unknown }).texture;
+
+    applyInnerShadowEffectToGl(createState(), source, dest, createPool(), {
+      kind: 'InnerShadowEffect',
+      sourceMode: 'hide',
+    });
+
+    expect(drawGlFullscreenPass).toHaveBeenCalledTimes(1);
+    expect(drawGlFullscreenPass).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      expect.anything(),
+      [expect.anything(), sourceTexture],
+      expect.anything(),
+      expect.any(Function),
+    );
+
+    const gl = { ONE: 1, ZERO: 0, blendFunc: vi.fn() };
+    const setClipUniforms = vi.mocked(drawGlFullscreenPass).mock.calls[0][4];
+    setClipUniforms(gl as never, {} as never);
+
+    expect(gl.blendFunc).toHaveBeenCalledWith(gl.ONE, gl.ZERO);
   });
 });
 

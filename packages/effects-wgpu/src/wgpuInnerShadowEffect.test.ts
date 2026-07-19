@@ -33,6 +33,7 @@ vi.mock('./wgpuEffectTintShader', () => ({
 }));
 
 import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import { applyWgpuEffectInnerClipPass } from './wgpuEffectTintShader';
 import { applyInnerShadowEffectToWgpu, defaultWgpuInnerShadowEffectRunner } from './wgpuInnerShadowEffect';
 
 describe('applyInnerShadowEffectToWgpu', () => {
@@ -61,6 +62,26 @@ describe('applyInnerShadowEffectToWgpu', () => {
 
     expect(applyWgpuEffectBlitPass).toHaveBeenCalledTimes(1);
     expect(applyWgpuEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
+    const finalComposite = vi.mocked(applyWgpuEffectBlitPass).mock.calls[0];
+    expect(finalComposite[1]).not.toBe(source);
+    expect(finalComposite[2]).toBe(dest);
+  });
+
+  it('clips the hidden-source shadow against the source alpha', () => {
+    const source = createTarget('source');
+    const dest = createTarget('dest');
+
+    applyInnerShadowEffectToWgpu(createState(), source, dest, createPool(), {
+      kind: 'InnerShadowEffect',
+      sourceMode: 'hide',
+    });
+
+    expect(applyWgpuEffectInnerClipPass).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      source,
+      expect.anything(),
+    );
   });
 });
 
