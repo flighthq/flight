@@ -68,12 +68,14 @@ export function createToonMaterial(opts?: Readonly<Partial<ToonMaterial>>): Toon
   return material;
 }
 
-// Lighting-independent flat-color material. `baseColor` defaults to white, `baseColorMap` to
-// null. Full fidelity on every backend including Canvas2D.
+// Lighting-independent flat-color material. `baseColor` defaults to white, `baseColorMap` and
+// `baseColorVideoMap` to null. Full fidelity on every backend including Canvas2D; a bound
+// `baseColorVideoMap` (live video stream) is sampled only on the GL backend today.
 export function createUnlitMaterial(opts?: Readonly<Partial<UnlitMaterial>>): UnlitMaterial {
   const material = createSurfaceMaterial(UnlitMaterialKind) as UnlitMaterial;
   material.baseColor = opts?.baseColor ?? 0xffffffff;
   material.baseColorMap = opts?.baseColorMap ?? null;
+  material.baseColorVideoMap = opts?.baseColorVideoMap ?? null;
   return material;
 }
 

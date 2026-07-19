@@ -1,6 +1,13 @@
 import { createEntity } from '@flighthq/entity';
 import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry';
-import type { ImageResource, Matrix3Like, Texture, TextureLike, Vector2Like } from '@flighthq/types';
+import type {
+  ImageResource,
+  Matrix3Like,
+  Texture,
+  TextureLike,
+  TextureUvTransform,
+  Vector2Like,
+} from '@flighthq/types';
 
 import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
 
@@ -94,7 +101,7 @@ export function getTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<Te
 // row 0 = [sx*cos(r), -sy*sin(r), tx]; row 1 = [sx*sin(r), sy*cos(r), ty]; row 2 = [0, 0, 1].
 // Out-param form — write result into a pre-allocated Matrix3 to avoid per-call allocation.
 // Safe when out is an unrelated scratch; not intended for aliased input (no in-param here).
-export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureLike>): void {
+export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUvTransform>): void {
   const r = texture.uvRotation;
   const sx = texture.uvScale.x;
   const sy = texture.uvScale.y;
@@ -123,7 +130,7 @@ export function getTextureWidth(texture: Readonly<TextureLike>): number {
 // offset, or non-zero rotation. GPU material renderers gate the HAS_UV_TRANSFORM shader variant on
 // this so an untiled surface pays nothing for the uv-transform uniform or the extra vertex multiply;
 // only a texture that actually remaps its uv compiles the transforming path.
-export function hasTextureUvTransform(texture: Readonly<TextureLike>): boolean {
+export function hasTextureUvTransform(texture: Readonly<TextureUvTransform>): boolean {
   return (
     texture.uvScale.x !== 1 ||
     texture.uvScale.y !== 1 ||
