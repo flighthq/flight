@@ -8,17 +8,11 @@ import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 // only the fixed-function BlendMode set is exposed as a node property.
 const DOM_BLEND_MODE: Record<BlendMode, string | null> = {
   [BlendMode.Add]: 'screen',
-  [BlendMode.Alpha]: null,
   [BlendMode.Darken]: 'darken',
-  [BlendMode.Erase]: null,
-  [BlendMode.Invert]: null,
   [BlendMode.Lighten]: 'lighten',
   [BlendMode.Multiply]: 'multiply',
-  // No-blend has no CSS mix-blend-mode equivalent; degrades to normal (identical for opaque content).
-  [BlendMode.None]: null,
   [BlendMode.Normal]: '',
   [BlendMode.Screen]: 'screen',
-  [BlendMode.Subtract]: null,
   [AdvancedBlendMode.Color]: 'color',
   [AdvancedBlendMode.ColorBurn]: 'color-burn',
   [AdvancedBlendMode.ColorDodge]: 'color-dodge',
@@ -39,16 +33,11 @@ const DOM_BLEND_MODE: Record<BlendMode, string | null> = {
 // 'unsupported' — no CSS equivalent; falls back to normal compositing.
 const DOM_BLEND_MODE_FIDELITY: Record<BlendMode, DomBlendModeFidelity> = {
   [BlendMode.Add]: 'approximate', // screen ≈ add for moderate values; clamps differently
-  [BlendMode.Alpha]: 'unsupported',
   [BlendMode.Darken]: 'exact',
-  [BlendMode.Erase]: 'unsupported',
-  [BlendMode.Invert]: 'unsupported',
   [BlendMode.Lighten]: 'exact',
   [BlendMode.Multiply]: 'exact',
-  [BlendMode.None]: 'unsupported',
   [BlendMode.Normal]: 'exact',
   [BlendMode.Screen]: 'exact',
-  [BlendMode.Subtract]: 'unsupported',
   [AdvancedBlendMode.Color]: 'exact',
   [AdvancedBlendMode.ColorBurn]: 'exact',
   [AdvancedBlendMode.ColorDodge]: 'exact',

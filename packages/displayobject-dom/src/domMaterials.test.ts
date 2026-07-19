@@ -50,12 +50,6 @@ describe('applyDomBlendMode', () => {
     expect(el.style.mixBlendMode).toBe('screen');
   });
 
-  it('clears mixBlendMode for BlendMode.None (no CSS equivalent)', () => {
-    el.style.mixBlendMode = 'multiply';
-    applyDomBlendMode(el, BlendMode.None);
-    expect(el.style.mixBlendMode).toBe('');
-  });
-
   it('clears mixBlendMode for null (default)', () => {
     el.style.mixBlendMode = 'multiply';
     applyDomBlendMode(el, null);
@@ -99,23 +93,8 @@ describe('getDomBlendModeFidelity', () => {
     expect(getDomBlendModeFidelity(BlendMode.Normal)).toBe('exact');
   });
 
-  it('returns "unsupported" for BlendMode.Alpha', () => {
-    expect(getDomBlendModeFidelity(BlendMode.Alpha)).toBe('unsupported');
-  });
-
-  it('returns "unsupported" for BlendMode.Erase', () => {
-    expect(getDomBlendModeFidelity(BlendMode.Erase)).toBe('unsupported');
-  });
-
-  it('returns "unsupported" for BlendMode.Invert', () => {
-    expect(getDomBlendModeFidelity(BlendMode.Invert)).toBe('unsupported');
-  });
-
-  it('returns "unsupported" for BlendMode.None', () => {
-    expect(getDomBlendModeFidelity(BlendMode.None)).toBe('unsupported');
-  });
-
-  it('returns "unsupported" for BlendMode.Subtract', () => {
-    expect(getDomBlendModeFidelity(BlendMode.Subtract)).toBe('unsupported');
+  it('returns "exact" for the advanced modes CSS realizes natively', () => {
+    expect(getDomBlendModeFidelity(AdvancedBlendMode.Overlay)).toBe('exact');
+    expect(getDomBlendModeFidelity(AdvancedBlendMode.SoftLight)).toBe('exact');
   });
 });
