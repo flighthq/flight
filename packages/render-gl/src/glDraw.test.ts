@@ -674,7 +674,6 @@ describe('registerDefaultGlBlendModes', () => {
     registerDefaultGlBlendModes(state);
     for (const mode of [
       BlendMode.Normal,
-      BlendMode.Layer,
       BlendMode.Add,
       BlendMode.Multiply,
       BlendMode.Screen,

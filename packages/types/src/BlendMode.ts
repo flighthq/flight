@@ -16,7 +16,6 @@ export const BlendMode = {
   Darken: 'Darken',
   Erase: 'Erase',
   Invert: 'Invert',
-  Layer: 'Layer',
   Lighten: 'Lighten',
   Multiply: 'Multiply',
   // No blending: the source overwrites the destination (no alpha compositing). The GPU-oriented
@@ -25,7 +24,6 @@ export const BlendMode = {
   None: 'None',
   Normal: 'Normal',
   Screen: 'Screen',
-  Shader: 'Shader',
   Subtract: 'Subtract',
 } as const;
 

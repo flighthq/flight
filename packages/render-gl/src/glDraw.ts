@@ -421,7 +421,6 @@ const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization]
   [BlendMode.Add, { src: 'ONE', dst: 'ONE' }],
   [BlendMode.Darken, { src: 'ONE', dst: 'ONE', equation: 'MIN' }],
   [BlendMode.Erase, { src: 'ZERO', dst: 'ONE_MINUS_SRC_ALPHA' }],
-  [BlendMode.Layer, NORMAL_BLEND],
   [BlendMode.Lighten, { src: 'ONE', dst: 'ONE', equation: 'MAX' }],
   // Premultiplied multiply: result = src.rgb*dst + dst*(1-src.a). The (1-src.a) term restores the
   // destination where the source is transparent or partially covered (antialiased edges, the quad's
