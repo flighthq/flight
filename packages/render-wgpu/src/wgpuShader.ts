@@ -133,7 +133,7 @@ const NORMAL_BLEND: GPUBlendState = createWgpuBlendState('one', 'one-minus-src-a
 
 // The fixed-function realizations, mirroring render-gl's DEFAULT_GL_BLEND_MODES. Both channels share
 // one component (WebGPU reads the alpha part of a color factor in the alpha slot, so a single factor
-// reproduces GL's non-separate blendFunc). Alpha, Invert, and Shader stay null — they have no
+// reproduces GL's non-separate blendFunc). Alpha and Invert stay null — they have no
 // fixed-function equivalent and degrade to normal premultiplied compositing. The destination-reading
 // advanced modes (Overlay/HardLight/SoftLight/Difference/Exclusion/ColorDodge/ColorBurn/HSL) are not in
 // the fixed-function BlendMode enum at all — they are a BlendEffect composite recipe, not a node
@@ -144,7 +144,6 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.Darken]: createWgpuBlendState('one', 'one', 'min'),
   [BlendMode.Erase]: createWgpuBlendState('zero', 'one-minus-src-alpha'),
   [BlendMode.Invert]: null,
-  [BlendMode.Layer]: NORMAL_BLEND,
   [BlendMode.Lighten]: createWgpuBlendState('one', 'one', 'max'),
   // Premultiplied multiply: src.rgb*dst + dst*(1-src.a), so transparent/partial pixels leave the
   // backdrop untouched instead of multiplying it toward black. Matches render-gl.
@@ -153,7 +152,6 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.None]: createWgpuBlendState('one', 'zero'),
   [BlendMode.Normal]: NORMAL_BLEND,
   [BlendMode.Screen]: createWgpuBlendState('one', 'one-minus-src'),
-  [BlendMode.Shader]: null,
   [BlendMode.Subtract]: createWgpuBlendState('one', 'one', 'reverse-subtract'),
 };
 

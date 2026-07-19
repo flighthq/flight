@@ -103,7 +103,6 @@ describe('compositeSurfacePixels', () => {
   it('throws for blend modes with no surface meaning', () => {
     const dest = createSurface(1, 1);
     const pixels = new Uint8ClampedArray([0, 0, 0, 255]);
-    expect(() => compositeSurfacePixels(region(dest), pixels, BlendMode.Shader)).toThrow(/not supported/);
     expect(() => compositeSurfacePixels(region(dest), pixels, BlendMode.Alpha)).toThrow(/not supported/);
   });
 });

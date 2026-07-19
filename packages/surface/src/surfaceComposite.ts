@@ -178,7 +178,7 @@ export function writeSurfacePixels32(dest: Readonly<SurfaceRegion>, pixels: Read
 // Throws once, up front, for blend modes that have no surface-compositing meaning,
 // rather than silently degrading to Normal mid-loop.
 function assertCompositeBlendMode(blendMode: BlendMode): void {
-  if (blendMode === BlendMode.Alpha || blendMode === BlendMode.Shader) {
+  if (blendMode === BlendMode.Alpha) {
     throw new Error(`BlendMode.${blendMode} is not supported by surface compositing`);
   }
 }
