@@ -2,12 +2,23 @@ import { getEntityRuntime } from '@flighthq/entity';
 import {
   copyMatrix,
   createMatrix,
+  decomposeMatrixToTransform2D,
   inverseMatrixTransformPointXY,
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry';
 import { computeNodeWorldTransformRevision } from '@flighthq/node';
-import type { HasTransform2DRuntime, Matrix, NodeRuntime, Transform2DNode, Vector2Like } from '@flighthq/types';
+import type {
+  HasTransform2DRuntime,
+  Matrix,
+  MatrixLike,
+  NodeRuntime,
+  Transform2DLike,
+  Transform2DNode,
+  Vector2Like,
+} from '@flighthq/types';
+
+import { invalidateNodeLocalTransform } from './revision';
 
 /**
  * Converts the `vector` object from the Stage (global) coordinates
@@ -66,9 +77,50 @@ export function getNodeLocalMatrix<Traits extends object>(target: Transform2DNod
   return (getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime).localMatrix!;
 }
 
+// Reads the node's decomposed local transform fields into `out`.
+export function getNodeTransform2D<Traits extends object>(out: Transform2DLike, source: Transform2DNode<Traits>): void {
+  out.pivotX = source.pivotX;
+  out.pivotY = source.pivotY;
+  out.rotation = source.rotation;
+  out.scaleX = source.scaleX;
+  out.scaleY = source.scaleY;
+  out.skewX = source.skewX;
+  out.skewY = source.skewY;
+  out.x = source.x;
+  out.y = source.y;
+}
+
 export function getNodeWorldMatrix<Traits extends object>(target: Transform2DNode<Traits>): Readonly<Matrix> {
   ensureNodeWorldMatrix(target);
   return (getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime).worldMatrix!;
+}
+
+// Sets the node's local transform directly from a matrix, decomposing it into the transform fields.
+// Lossless: 2D is 6-DOF complete, so the effective transform round-trips. Pivot resets to the origin
+// (a matrix cannot carry pivot; `x`/`y` absorb the offset). The matrix cache rebuilds from the fields.
+export function setNodeLocalMatrix<Traits extends object>(
+  target: Transform2DNode<Traits>,
+  source: Readonly<MatrixLike>,
+): void {
+  decomposeMatrixToTransform2D(target, source);
+  invalidateNodeLocalTransform(target);
+}
+
+// Sets the node's local transform from a decomposed carrier. The matrix cache rebuilds from the fields.
+export function setNodeTransform2D<Traits extends object>(
+  target: Transform2DNode<Traits>,
+  source: Readonly<Transform2DLike>,
+): void {
+  target.pivotX = source.pivotX;
+  target.pivotY = source.pivotY;
+  target.rotation = source.rotation;
+  target.scaleX = source.scaleX;
+  target.scaleY = source.scaleY;
+  target.skewX = source.skewX;
+  target.skewY = source.skewY;
+  target.x = source.x;
+  target.y = source.y;
+  invalidateNodeLocalTransform(target);
 }
 
 function recomputeLocalTransform2D<Traits extends object>(
