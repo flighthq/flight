@@ -1109,6 +1109,15 @@
       "label": "Shadows",
       "scenes": [
         {
+          "scene": "shadow-classic",
+          "backends": {
+            "canvas": false,
+            "dom": false,
+            "webgl": true,
+            "webgpu": false
+          }
+        },
+        {
           "scene": "shadow-directional",
           "backends": {
             "canvas": false,

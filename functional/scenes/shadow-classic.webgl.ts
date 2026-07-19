@@ -36,6 +36,12 @@ import {
 // This is the exact family the downstream scene used (metals render black without IBL, so it fell back to
 // Blinn-Phong) — the reason classic shadow reception was wired.
 //
+// webgl-only: the wgpu classic/toon preludes DO sample the shadow map (group(3)), but the wgpu directional
+// shadow *depth pass* is not runnable today — renderWgpuBackground creates the command encoder and opens
+// the main render pass atomically, so drawWgpuSceneShadowMap can never get the "encoder with no open pass"
+// it requires (WebGPU errors "encoder locked while a RenderPassEncoder is open"). That is a pre-existing
+// render-wgpu frame-API gap affecting the PBR shadow path too — see agents/wgpu-3d-parity-spec.md.
+//
 // createScene / drawGlScene collide in the @flighthq/sdk barrel (both scene + scene-gl re-export them) —
 // import the Gl 3D ones directly. Pipeline wiring mirrors shadow-directional.
 
