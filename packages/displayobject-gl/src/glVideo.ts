@@ -1,6 +1,11 @@
-﻿import { createGlTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl';
-import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { resolveGlShader } from '@flighthq/render-gl';
+import {
+  bindGlVideoTexture,
+  drawGlQuad,
+  getGlRenderStateRuntime,
+  resolveGlShader,
+  useGlProgram,
+} from '@flighthq/render-gl';
+import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture';
 import type {
   DisplayObjectRenderer,
   GlRenderState,
@@ -8,69 +13,75 @@ import type {
   RendererData,
   RenderProxy2D,
   Video,
+  VideoResource,
+  VideoTexture,
 } from '@flighthq/types';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
 
-// Records the video element whose GPU texture (held in the shared textureCache, keyed by element)
-// this node last uploaded, so destroyGlVideoData can free it on teardown.
+// Holds the VideoTexture this node draws through, bound to the video stream it last saw. The
+// VideoTexture carries the frameId dirty-gate the GPU uploader watches (bindGlVideoTexture), so a
+// paused stream re-uploads nothing. `source` is the VideoResource the texture wraps — when the node's
+// resource swaps, the texture is rebuilt so the new stream's frames upload.
 interface GlVideoData {
-  lastElement: HTMLVideoElement | null;
+  source: VideoResource | null;
+  videoTexture: VideoTexture | null;
 }
 
 export function createGlVideoData(_state: GlRenderState, _source: Renderable): RendererData {
-  return { lastElement: null } as unknown as RendererData;
+  return { source: null, videoTexture: null } as unknown as RendererData;
 }
 
-// Frees the GPU texture uploaded for this video's element when the node is torn down via
-// disposeDisplayObjectRender. The element-keyed textureCache entry would otherwise leak.
+// Frees the GPU texture the VideoTexture uploaded through when the node is torn down via
+// disposeDisplayObjectRender. The VideoTexture-keyed videoTextureCache entry would otherwise leak.
 export function destroyGlVideoData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { lastElement } = data as unknown as GlVideoData;
-  if (lastElement === null) return;
-  const texture = runtime.textureCache.get(lastElement);
-  if (texture !== undefined) {
-    state.gl.deleteTexture(texture);
-    runtime.textureCache.delete(lastElement);
+  const { videoTexture } = data as unknown as GlVideoData;
+  if (videoTexture === null) return;
+  const cache = runtime.videoTextureCache;
+  const entry = cache?.get(videoTexture);
+  if (entry !== undefined) {
+    state.gl.deleteTexture(entry.texture);
+    cache!.delete(videoTexture);
   }
 }
 
 export function drawGlVideo(state: GlRenderState, renderProxy: RenderProxy2D): void {
-  const runtime = getGlRenderStateRuntime(state);
   flushGlSpriteBatch(state);
   const source = renderProxy.source as Video;
-  const element = source.data.source?.element;
-  if (element === undefined || element === null || element.readyState < 2) return;
+  const resource = source.data.source ?? null;
+  const element = resource?.element ?? null;
+  if (resource === null || element === null || element.readyState < 2) return;
 
   const vw = element.videoWidth;
   const vh = element.videoHeight;
   if (vw === 0 || vh === 0) return;
 
-  if (renderProxy.rendererData !== null) {
-    (renderProxy.rendererData as unknown as GlVideoData).lastElement = element;
+  const data = renderProxy.rendererData as unknown as GlVideoData | null;
+  // Rebuild the VideoTexture when the node's stream swaps (or on the first draw), so the new stream's
+  // frameId gate starts fresh and its first frame uploads.
+  let videoTexture: VideoTexture;
+  if (data !== null && data.videoTexture !== null && data.source === resource) {
+    videoTexture = data.videoTexture;
+  } else {
+    videoTexture = createVideoTexture(resource);
+    if (data !== null) {
+      data.source = resource;
+      data.videoTexture = videoTexture;
+    }
   }
-
-  const gl = state.gl;
-  const { textureCache } = runtime;
+  // The element decodes a new frame each rendered tick; bump the revision so bindGlVideoTexture's gate
+  // re-uploads this frame. A frame that has not advanced (a driver that only bumps on a real decode)
+  // would skip the upload — here the display node advances every draw to match the element's live pixels.
+  advanceVideoTexture(videoTexture);
 
   const shader = resolveGlShader(state, renderProxy);
   useGlProgram(state, shader);
   state.applyBlendMode?.(state, renderProxy.blendMode);
 
-  let texture = textureCache.get(element);
-  if (!texture) {
-    texture = createGlTexture(state);
-    textureCache.set(element, texture);
-  } else {
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    runtime.currentTexture = texture;
-  }
+  bindGlVideoTexture(state, videoTexture);
 
-  // Upload current frame every time â€” video content changes each frame.
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
-
-  shader.bind(gl, state, renderProxy);
+  shader.bind(state.gl, state, renderProxy);
   drawGlQuad(state, 0, 0, vw, vh, 0, 0, 1, 1);
 }
 
