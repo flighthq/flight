@@ -2,28 +2,43 @@ import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
-import { animatedNormalModifierDefinition, emissiveModifierDefinition, rimModifierDefinition } from '@flighthq/shading';
+import {
+  animatedNormalModifierDefinition,
+  dissolveModifierDefinition,
+  emissiveModifierDefinition,
+  envReflectModifierDefinition,
+  fogModifierDefinition,
+  rimModifierDefinition,
+  toonModifierDefinition,
+  vertexDisplaceModifierDefinition,
+} from '@flighthq/shading';
 import type {
   AnimatedNormalModifier,
+  DissolveModifier,
   EmissiveModifier,
+  EnvReflectModifier,
+  FogModifier,
   GlRenderState,
   Modifier,
   RimModifier,
   Texture,
+  ToonModifier,
+  VertexDisplaceModifier,
 } from '@flighthq/types';
-import { EmissiveModifierFacing } from '@flighthq/types';
+import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types';
 
 import type { GlModifierBindContext, GlModifierSnippet } from './glShadedModifierSnippet';
 import { registerGlModifierSnippet } from './glShadedModifierSnippet';
 
-// The three v1 seed GL modifier snippets — AnimatedNormal (Normal slot), Emissive (Emissive slot),
-// and Rim (Effect slot) — the backend halves of @flighthq/shading's three built-in modifier
-// descriptors. Each SPREADS the substrate-agnostic definition (kind/slot/getDefineSignature owned by
-// @flighthq/shading) and adds GLSL (declarations + a slot-hook contribution, names suffixed by the
-// modifier's stack index so repeated kinds never collide) plus a per-draw uniform upload. Reusing the
-// framework definition — rather than re-deriving the signature here — guarantees the program keyed by
-// a stack's define-key always matches the GLSL assembled for it: Emissive `m`/`g`, AnimatedNormal
-// `0`/`1`/`2`, Rim none.
+// The built-in GL modifier snippets — the backend halves of @flighthq/shading's eight built-in
+// modifier descriptors, across all six slots: VertexDisplace (Vertex), AnimatedNormal (Normal),
+// Emissive (Emissive), and Rim/EnvReflect/Fog/Dissolve/Toon (Effect). Each SPREADS the
+// substrate-agnostic definition (kind/slot/getDefineSignature owned by @flighthq/shading) and adds
+// GLSL (declarations + a slot-hook contribution, names suffixed by the modifier's stack index so
+// repeated kinds never collide) plus a per-draw uniform upload. Reusing the framework definition —
+// rather than re-deriving the signature here — guarantees the program keyed by a stack's define-key
+// always matches the GLSL assembled for it: Emissive `m`/`g`, AnimatedNormal `0`/`1`/`2`, Fog
+// `l`/`e`/`x`, Dissolve ``/`m`, VertexDisplace `s`/`h`(+`a`), Rim/EnvReflect/Toon none.
 
 // A UV-panned normal map perturbing the shading normal, scrolled by u_time. Signature `0` (no map,
 // no GLSL), `1` single-layer, `2` dual-layer.
@@ -169,14 +184,256 @@ export const rimGlModifierSnippet: GlModifierSnippet = {
   },
 };
 
+// A clip/burn dissolve of the shaded output, discarding fragments below a noise threshold and tinting
+// the burn edge. Signature `` (procedural value noise over v_uv0) or `m` (sampled from a noise map).
+export const dissolveGlModifierSnippet: GlModifierSnippet = {
+  ...dissolveModifierDefinition,
+  bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
+    const dissolve = modifier as Readonly<DissolveModifier>;
+    const gl = context.state.gl;
+    const suffix = `_${context.index}`;
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_dissolveThreshold${suffix}`), dissolve.threshold);
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_dissolveEdgeWidth${suffix}`), dissolve.edgeWidth ?? 0.05);
+    unpackColorToLinear(scratchRgba, dissolve.edgeColor);
+    gl.uniform3f(
+      gl.getUniformLocation(context.program, `u_dissolveEdgeColor${suffix}`),
+      scratchRgba[0],
+      scratchRgba[1],
+      scratchRgba[2],
+    );
+    if (dissolve.map !== undefined) bindGlModifierTexture(context, dissolve.map, `u_dissolveMap${suffix}`);
+    else gl.uniform1f(gl.getUniformLocation(context.program, `u_dissolveScale${suffix}`), dissolve.scale ?? 8);
+  },
+  contribution(modifier: Readonly<Modifier>, index: number): string {
+    const dissolve = modifier as Readonly<DissolveModifier>;
+    const suffix = `_${index}`;
+    const noise =
+      dissolve.map !== undefined
+        ? `  float dissolveNoise = texture(u_dissolveMap${suffix}, v_uv0).r;\n`
+        : `  float dissolveNoise = shadedValueNoise(v_uv0 * u_dissolveScale${suffix});\n`;
+    return (
+      `{\n` +
+      noise +
+      `  if (dissolveNoise < u_dissolveThreshold${suffix}) discard;\n` +
+      `  float dissolveEdge = 1.0 - smoothstep(u_dissolveThreshold${suffix}, u_dissolveThreshold${suffix} + max(u_dissolveEdgeWidth${suffix}, 1e-4), dissolveNoise);\n` +
+      `  radiance = mix(radiance, u_dissolveEdgeColor${suffix}, dissolveEdge);\n` +
+      `}`
+    );
+  },
+  declarations(modifier: Readonly<Modifier>, index: number): string {
+    const dissolve = modifier as Readonly<DissolveModifier>;
+    const suffix = `_${index}`;
+    let source =
+      `uniform float u_dissolveThreshold${suffix};\n` +
+      `uniform float u_dissolveEdgeWidth${suffix};\n` +
+      `uniform vec3 u_dissolveEdgeColor${suffix};\n`;
+    source +=
+      dissolve.map !== undefined
+        ? `uniform sampler2D u_dissolveMap${suffix};\n`
+        : `uniform float u_dissolveScale${suffix};\n`;
+    return source;
+  },
+};
+
+// A view-dependent reflection of the scene's baked environment cubemap, Fresnel-blended into the
+// shaded radiance. One program shape (all params are uniforms). It samples the SAME prefiltered
+// environment (u_iblPrefiltered on the IBL unit) the lit block already binds, so it declares those
+// shared uniforms itself — a scene without a baked environment leaves u_iblEnabled at 0 and the term
+// falls back to the reflection tint.
+export const envReflectGlModifierSnippet: GlModifierSnippet = {
+  ...envReflectModifierDefinition,
+  bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
+    const reflect = modifier as Readonly<EnvReflectModifier>;
+    const gl = context.state.gl;
+    const suffix = `_${context.index}`;
+    unpackColorToLinear(scratchRgba, reflect.tint);
+    gl.uniform3f(
+      gl.getUniformLocation(context.program, `u_envReflectTint${suffix}`),
+      scratchRgba[0],
+      scratchRgba[1],
+      scratchRgba[2],
+    );
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_envReflectIntensity${suffix}`), reflect.intensity ?? 1);
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_envReflectFresnel${suffix}`), reflect.fresnelBias ?? 0.04);
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_envReflectRoughness${suffix}`), reflect.roughness ?? 0);
+  },
+  contribution(_modifier: Readonly<Modifier>, index: number): string {
+    const suffix = `_${index}`;
+    return (
+      `{\n` +
+      `  vec3 envReflectDir = reflect(-viewDir, normal);\n` +
+      `  float envReflectMip = clamp(u_envReflectRoughness${suffix}, 0.0, 1.0) * max(u_iblMaxMip, 0.0);\n` +
+      `  vec3 envReflectSample = u_iblEnabled > 0.5 ? textureLod(u_iblPrefiltered, envReflectDir, envReflectMip).rgb : u_envReflectTint${suffix};\n` +
+      `  float envReflectFresnel = u_envReflectFresnel${suffix} + (1.0 - u_envReflectFresnel${suffix}) * pow(1.0 - max(dot(normal, viewDir), 0.0), 5.0);\n` +
+      `  radiance += envReflectSample * u_envReflectTint${suffix} * (u_envReflectIntensity${suffix} * envReflectFresnel);\n` +
+      `}`
+    );
+  },
+  declarations(_modifier: Readonly<Modifier>, index: number): string {
+    const suffix = `_${index}`;
+    return (
+      `uniform samplerCube u_iblPrefiltered;\n` +
+      `uniform float u_iblEnabled;\n` +
+      `uniform float u_iblMaxMip;\n` +
+      `uniform vec3 u_envReflectTint${suffix};\n` +
+      `uniform float u_envReflectIntensity${suffix};\n` +
+      `uniform float u_envReflectFresnel${suffix};\n` +
+      `uniform float u_envReflectRoughness${suffix};\n`
+    );
+  },
+};
+
+// A per-material distance fog blending the shaded output toward a color. Signature `l` (linear
+// near/far ramp), `e` (exponential), `x` (exponential-squared) — each emits a different factor.
+export const fogGlModifierSnippet: GlModifierSnippet = {
+  ...fogModifierDefinition,
+  bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
+    const fog = modifier as Readonly<FogModifier>;
+    const gl = context.state.gl;
+    const suffix = `_${context.index}`;
+    unpackColorToLinear(scratchRgba, fog.color);
+    gl.uniform3f(
+      gl.getUniformLocation(context.program, `u_fogColor${suffix}`),
+      scratchRgba[0],
+      scratchRgba[1],
+      scratchRgba[2],
+    );
+    if (fog.mode === undefined || fog.mode === FogModifierMode.Linear) {
+      gl.uniform1f(gl.getUniformLocation(context.program, `u_fogNear${suffix}`), fog.near ?? 0);
+      gl.uniform1f(gl.getUniformLocation(context.program, `u_fogFar${suffix}`), fog.far ?? 1);
+    } else {
+      gl.uniform1f(gl.getUniformLocation(context.program, `u_fogDensity${suffix}`), fog.density ?? 1);
+    }
+  },
+  contribution(modifier: Readonly<Modifier>, index: number): string {
+    const fog = modifier as Readonly<FogModifier>;
+    const suffix = `_${index}`;
+    let factor: string;
+    if (fog.mode === FogModifierMode.Exponential) {
+      factor = `  float fogFactor = 1.0 - exp(-u_fogDensity${suffix} * fogDist);\n`;
+    } else if (fog.mode === FogModifierMode.Exponential2) {
+      factor = `  float fogTerm = u_fogDensity${suffix} * fogDist;\n  float fogFactor = 1.0 - exp(-fogTerm * fogTerm);\n`;
+    } else {
+      factor = `  float fogFactor = clamp((fogDist - u_fogNear${suffix}) / max(u_fogFar${suffix} - u_fogNear${suffix}, 1e-4), 0.0, 1.0);\n`;
+    }
+    return (
+      `{\n` +
+      `  float fogDist = length(u_cameraPosition - v_worldPosition);\n` +
+      factor +
+      `  radiance = mix(radiance, u_fogColor${suffix}, clamp(fogFactor, 0.0, 1.0));\n` +
+      `}`
+    );
+  },
+  declarations(modifier: Readonly<Modifier>, index: number): string {
+    const fog = modifier as Readonly<FogModifier>;
+    const suffix = `_${index}`;
+    let source = `uniform vec3 u_fogColor${suffix};\n`;
+    source +=
+      fog.mode === undefined || fog.mode === FogModifierMode.Linear
+        ? `uniform float u_fogNear${suffix};\nuniform float u_fogFar${suffix};\n`
+        : `uniform float u_fogDensity${suffix};\n`;
+    return source;
+  },
+};
+
+// Quantizes the shaded radiance into flat cel bands. One program shape (steps/smoothness are
+// uniforms).
+export const toonGlModifierSnippet: GlModifierSnippet = {
+  ...toonModifierDefinition,
+  bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
+    const toon = modifier as Readonly<ToonModifier>;
+    const gl = context.state.gl;
+    const suffix = `_${context.index}`;
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_toonSteps${suffix}`), Math.max(toon.steps, 2));
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_toonSmoothness${suffix}`), toon.smoothness ?? 0);
+  },
+  contribution(_modifier: Readonly<Modifier>, index: number): string {
+    const suffix = `_${index}`;
+    return (
+      `{\n` +
+      `  float toonLum = dot(radiance, vec3(0.2126, 0.7152, 0.0722));\n` +
+      `  float toonSteps = max(u_toonSteps${suffix}, 2.0);\n` +
+      `  float toonScaled = toonLum * toonSteps;\n` +
+      `  float toonBand = floor(toonScaled);\n` +
+      `  float toonFrac = toonScaled - toonBand;\n` +
+      `  float toonSoft = max(u_toonSmoothness${suffix}, 1e-4);\n` +
+      `  float toonQuant = (toonBand + smoothstep(0.5 - toonSoft, 0.5 + toonSoft, toonFrac)) / toonSteps;\n` +
+      `  radiance *= toonLum > 1e-4 ? toonQuant / toonLum : 1.0;\n` +
+      `}`
+    );
+  },
+  declarations(_modifier: Readonly<Modifier>, index: number): string {
+    const suffix = `_${index}`;
+    return `uniform float u_toonSteps${suffix};\nuniform float u_toonSmoothness${suffix};\n`;
+  },
+};
+
+// The one VERTEX-stage snippet: displaces the local vertex along its normal (or a fixed axis) before
+// the model transform. Signature `s` (Sine procedural wave, animated by u_time) or `h` (HeightMap red
+// channel), optionally `+a` when a fixed push axis replaces the surface normal.
+export const vertexDisplaceGlModifierSnippet: GlModifierSnippet = {
+  ...vertexDisplaceModifierDefinition,
+  bind(modifier: Readonly<Modifier>, context: Readonly<GlModifierBindContext>): void {
+    const displace = modifier as Readonly<VertexDisplaceModifier>;
+    const gl = context.state.gl;
+    const suffix = `_${context.index}`;
+    gl.uniform1f(gl.getUniformLocation(context.program, `u_vDisplaceAmplitude${suffix}`), displace.amplitude);
+    if (displace.axis !== undefined) {
+      gl.uniform3f(
+        gl.getUniformLocation(context.program, `u_vDisplaceAxis${suffix}`),
+        displace.axis.x,
+        displace.axis.y,
+        displace.axis.z,
+      );
+    }
+    if (displace.source === VertexDisplaceModifierSource.HeightMap) {
+      if (displace.map !== undefined) bindGlModifierTexture(context, displace.map, `u_vDisplaceMap${suffix}`);
+    } else {
+      gl.uniform1f(gl.getUniformLocation(context.program, `u_vDisplaceFrequency${suffix}`), displace.frequency ?? 1);
+      gl.uniform1f(gl.getUniformLocation(context.program, `u_vDisplaceSpeed${suffix}`), displace.speed ?? 1);
+      const dir = displace.direction ?? { x: 1, y: 0, z: 0 };
+      gl.uniform3f(gl.getUniformLocation(context.program, `u_vDisplaceDir${suffix}`), dir.x, dir.y, dir.z);
+    }
+  },
+  contribution(modifier: Readonly<Modifier>, index: number): string {
+    const displace = modifier as Readonly<VertexDisplaceModifier>;
+    const suffix = `_${index}`;
+    const axis =
+      displace.axis !== undefined
+        ? `  vec3 vDisplaceAxis = normalize(u_vDisplaceAxis${suffix});\n`
+        : `  vec3 vDisplaceAxis = normalize(localNormal);\n`;
+    const amount =
+      displace.source === VertexDisplaceModifierSource.HeightMap
+        ? `  float vDisplaceAmount = texture(u_vDisplaceMap${suffix}, vertexUv).r * u_vDisplaceAmplitude${suffix};\n`
+        : `  float vDisplacePhase = dot(localPosition.xyz, normalize(u_vDisplaceDir${suffix})) * u_vDisplaceFrequency${suffix} + u_time * u_vDisplaceSpeed${suffix};\n  float vDisplaceAmount = sin(vDisplacePhase) * u_vDisplaceAmplitude${suffix};\n`;
+    return `{\n` + axis + amount + `  localPosition.xyz += vDisplaceAxis * vDisplaceAmount;\n` + `}`;
+  },
+  declarations(modifier: Readonly<Modifier>, index: number): string {
+    const displace = modifier as Readonly<VertexDisplaceModifier>;
+    const suffix = `_${index}`;
+    let source = `uniform float u_vDisplaceAmplitude${suffix};\n`;
+    if (displace.axis !== undefined) source += `uniform vec3 u_vDisplaceAxis${suffix};\n`;
+    source +=
+      displace.source === VertexDisplaceModifierSource.HeightMap
+        ? `uniform sampler2D u_vDisplaceMap${suffix};\n`
+        : `uniform float u_vDisplaceFrequency${suffix};\nuniform float u_vDisplaceSpeed${suffix};\nuniform vec3 u_vDisplaceDir${suffix};\n`;
+    return source;
+  },
+};
+
 // Registers the three built-in GL modifier snippets on this state. Opt-in (no top-level side effect)
 // and separate from registerShadedGlMaterial so a plain ShadedMaterial pays nothing for modifier
 // snippets it does not use — a caller registers this once alongside any vendor-prefixed snippets
 // before drawing a ShadedMaterial that carries modifiers.
 export function registerBuiltInGlModifierSnippets(state: GlRenderState): void {
   registerGlModifierSnippet(state, animatedNormalGlModifierSnippet);
+  registerGlModifierSnippet(state, dissolveGlModifierSnippet);
   registerGlModifierSnippet(state, emissiveGlModifierSnippet);
+  registerGlModifierSnippet(state, envReflectGlModifierSnippet);
+  registerGlModifierSnippet(state, fogGlModifierSnippet);
   registerGlModifierSnippet(state, rimGlModifierSnippet);
+  registerGlModifierSnippet(state, toonGlModifierSnippet);
+  registerGlModifierSnippet(state, vertexDisplaceGlModifierSnippet);
 }
 
 // Binds a modifier's texture on the next free modifier texture unit and points its sampler uniform at
