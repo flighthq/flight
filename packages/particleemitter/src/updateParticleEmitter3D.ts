@@ -37,15 +37,16 @@ export function updateParticleEmitter3D(
   config: Readonly<ParticleEmitterConfig>,
   deltaTime: number,
   callbacks?: ParticleEmitterCallbacks,
-  // When config.worldSpace is set, this is the emitter's world transform: new particles are baked into
+  // When config.worldSpace is set, this is the emitter node's world matrix: new particles are baked into
   // world space at spawn (position through the full matrix, velocity through its rotation) so they stay
   // put as the emitter moves — the renderer then draws them without re-applying the emitter transform.
-  // Omit it (or leave config.worldSpace false) for the default emitter-local behavior. Named to mirror
-  // the 2D updateParticleEmitter's worldTransform; the 3D transform is a full Matrix4.
-  worldTransform?: Readonly<Matrix4>,
+  // Omit it (or leave config.worldSpace false) for the default emitter-local behavior. Named to match the
+  // 3D scene node's worldMatrix (getNodeWorldTransformMatrix4); the 2D updateParticleEmitter's affine
+  // WorldTransform2D counterpart stays worldTransform.
+  worldMatrix?: Readonly<Matrix4>,
 ): void {
   const data = emitter.data;
-  const worldM = config.worldSpace && worldTransform != null ? worldTransform.m : null;
+  const worldM = config.worldSpace && worldMatrix != null ? worldMatrix.m : null;
   // Only claim world-space to the renderer when spawns are actually baked. Setting it from config alone
   // would tell the renderer to skip the node transform while particles were never baked — misplacing them.
   data.worldSpace = worldM !== null;
