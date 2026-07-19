@@ -11,6 +11,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createMatrix4,
   createMesh,
   createPerspectiveProjection,
   createUnlitMaterial,
@@ -23,6 +24,7 @@ import {
   registerUnlitGlMaterial,
   renderGlBackground,
   setCameraViewMatrix4FromLookAt,
+  setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -99,13 +101,17 @@ const scene = createScene();
 
 // FAR box: shifted LEFT and pushed to -z (away from the eye). Its right flank reaches into the center.
 const farMesh = createMesh(farGeometry, [farMaterial]);
-translateMatrix4(farMesh.localMatrix, farMesh.localMatrix, -0.35, 0, -0.6);
+const farLocal = createMatrix4();
+translateMatrix4(farLocal, farLocal, -0.35, 0, -0.6);
+setNodeLocalMatrix4(farMesh, farLocal);
 addNodeChild(scene, farMesh);
 
 // NEAR box: shifted RIGHT and pulled to +z (toward the eye). Its left flank overlaps the far box's
 // right flank around screen center; the depth test must let the near box win that overlap.
 const nearMesh = createMesh(nearGeometry, [nearMaterial]);
-translateMatrix4(nearMesh.localMatrix, nearMesh.localMatrix, 0.35, 0, 0.6);
+const nearLocal = createMatrix4();
+translateMatrix4(nearLocal, nearLocal, 0.35, 0, 0.6);
+setNodeLocalMatrix4(nearMesh, nearLocal);
 addNodeChild(scene, nearMesh);
 
 // Straight-on view from +z so depth maps cleanly to the z translations above. Eye ~ (0,0,4).

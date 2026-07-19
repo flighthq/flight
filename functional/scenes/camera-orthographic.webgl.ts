@@ -11,6 +11,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createMatrix4,
   createMesh,
   createOrthographicProjection,
   createUnlitMaterial,
@@ -22,6 +23,7 @@ import {
   registerUnlitGlMaterial,
   renderGlBackground,
   setCameraViewMatrix4FromLookAt,
+  setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -103,13 +105,17 @@ const scene = createScene();
 
 // LEFT box: NEAR the camera (+z), shifted left.
 const leftMesh = createMesh(leftGeometry, [leftMaterial]);
-translateMatrix4(leftMesh.localMatrix, leftMesh.localMatrix, -1.2, 0, 1.5);
+const leftLocal = createMatrix4();
+translateMatrix4(leftLocal, leftLocal, -1.2, 0, 1.5);
+setNodeLocalMatrix4(leftMesh, leftLocal);
 addNodeChild(scene, leftMesh);
 
 // RIGHT box: FAR from the camera (-z), shifted right by the same amount. Under perspective it would
 // project smaller; under ortho it stays the same on-screen size as the left box.
 const rightMesh = createMesh(rightGeometry, [rightMaterial]);
-translateMatrix4(rightMesh.localMatrix, rightMesh.localMatrix, 1.2, 0, -1.5);
+const rightLocal = createMatrix4();
+translateMatrix4(rightLocal, rightLocal, 1.2, 0, -1.5);
+setNodeLocalMatrix4(rightMesh, rightLocal);
 addNodeChild(scene, rightMesh);
 
 // Orthographic frustum sized to frame both boxes (centers at x = ±1.2, each box ±0.5 wide) with margin.
