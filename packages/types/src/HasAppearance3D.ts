@@ -10,11 +10,17 @@ export interface HasAppearance3D {
   alpha: number;
 }
 
-// Render state paired with HasAppearance3D. `worldAlpha` is the resolved parent×self opacity that
-// prepareSceneRender folds down the hierarchy each frame (null until first prepared) — the 3D analog
-// of the resolved 2D RenderProxy alpha. Runtime tier: render state, not authoring data.
+// Render state paired with HasAppearance3D. `worldAlpha` is the resolved parent×self opacity, lazily
+// ensured on access (getSceneNodeWorldAlpha) and cached — the 3D analog of the resolved 2D RenderProxy
+// alpha, mirroring the transform's ensure-on-access world matrix. `null` until first resolved. The
+// `*UsingAppearanceId` fields gate the cache (self appearance revision + parent's `worldAppearanceId`),
+// and `worldAppearanceId` propagates a change down the hierarchy exactly like `worldTransformId`.
+// Runtime tier: render state, not authoring data.
 export interface HasAppearance3DRuntime extends EntityRuntime {
   worldAlpha: number | null;
+  worldAlphaUsingAppearanceId: number;
+  worldAlphaUsingParentAppearanceId: number;
+  worldAppearanceId: number;
 }
 
 export type Appearance3DNode<Traits extends object = NodeTraits> = Node<Traits> & HasAppearance3D;
