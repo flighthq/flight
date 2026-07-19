@@ -7,7 +7,7 @@ import {
   getMeshGeometryVertexTangent,
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh';
-import { getNodeChildren } from '@flighthq/node';
+import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type {
   EmbeddedSceneResourceRef,
@@ -598,7 +598,7 @@ describe('createSceneFromGltf', () => {
 
     const meshNode = children[0] as SceneNode;
     expect(isMesh(meshNode)).toBe(true);
-    expect(meshNode.localMatrix.m[12]).toBeCloseTo(5); // translation x
+    expect(getNodeLocalMatrix4(meshNode).m[12]).toBeCloseTo(5); // translation x
 
     const geometry = (meshNode as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
@@ -799,7 +799,7 @@ describe('createSceneFromGltf', () => {
       scenes: [{ nodes: [0] }],
     };
     const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
-    const m = meshNode.localMatrix.m;
+    const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[12]).toBeCloseTo(10);
     expect(m[13]).toBeCloseTo(20);
     expect(m[14]).toBeCloseTo(30);
@@ -826,7 +826,7 @@ describe('createSceneFromGltf', () => {
       scenes: [{ nodes: [0] }],
     };
     const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
-    const m = meshNode.localMatrix.m;
+    const m = getNodeLocalMatrix4(meshNode).m;
     // After 90-degree Z rotation: col0 ≈ [0, 1, 0], col1 ≈ [-1, 0, 0].
     expect(m[0]).toBeCloseTo(0);
     expect(m[1]).toBeCloseTo(1);
@@ -849,7 +849,7 @@ describe('createSceneFromGltf', () => {
       scenes: [{ nodes: [0] }],
     };
     const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
-    const m = meshNode.localMatrix.m;
+    const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[0]).toBeCloseTo(2);
     expect(m[5]).toBeCloseTo(3);
     expect(m[10]).toBeCloseTo(4);

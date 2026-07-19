@@ -1,37 +1,36 @@
-import type { HasTransform3D, HasTransform3DRuntime, Matrix4 } from '@flighthq/types';
+import { createQuaternion, createVector3 } from '@flighthq/geometry';
+import type { HasTransform3D, HasTransform3DRuntime } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
 
 describe('initTransform3DRuntimeTrait', () => {
-  it('sets worldMatrix to null', () => {
+  it('nulls the matrix caches and clears the detached flag', () => {
     const runtime = {} as HasTransform3DRuntime;
     initTransform3DRuntimeTrait(runtime);
-    expect(runtime.worldMatrix).toBeNull();
+    expect(runtime.localMatrix4).toBeNull();
+    expect(runtime.worldMatrix4).toBeNull();
+    expect(runtime.localMatrix4Detached).toBe(false);
   });
 });
 
 describe('initTransform3DTrait', () => {
-  it('creates an identity localMatrix by default', () => {
+  it('defaults to identity translation/rotation/scale', () => {
     const node = {} as HasTransform3D;
     initTransform3DTrait(node);
-    expect(node.localMatrix).toBeDefined();
-    const m = node.localMatrix.m;
-    expect(m[0]).toBe(1);
-    expect(m[5]).toBe(1);
-    expect(m[10]).toBe(1);
-    expect(m[15]).toBe(1);
-    expect(m[12]).toBe(0);
-    expect(m[13]).toBe(0);
-    expect(m[14]).toBe(0);
+    expect(node.translation).toMatchObject({ x: 0, y: 0, z: 0 });
+    expect(node.rotation).toMatchObject({ x: 0, y: 0, z: 0, w: 1 });
+    expect(node.scale).toMatchObject({ x: 1, y: 1, z: 1 });
   });
 
-  it('accepts an existing localMatrix', () => {
+  it('accepts existing translation/rotation/scale', () => {
     const node = {} as HasTransform3D;
-    const existing = { m: new Float32Array(16) } as unknown as Matrix4;
-    existing.m[12] = 7;
-    initTransform3DTrait(node, { localMatrix: existing });
-    expect(node.localMatrix).toBe(existing);
-    expect(node.localMatrix.m[12]).toBe(7);
+    const translation = createVector3(7, 0, 0);
+    const rotation = createQuaternion();
+    const scale = createVector3(2, 2, 2);
+    initTransform3DTrait(node, { rotation, scale, translation });
+    expect(node.translation).toBe(translation);
+    expect(node.rotation).toBe(rotation);
+    expect(node.scale).toBe(scale);
   });
 });

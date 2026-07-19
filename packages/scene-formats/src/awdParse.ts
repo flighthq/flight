@@ -10,7 +10,7 @@ import {
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { addNodeChild, setNodeLocalMatrix4 } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
@@ -536,16 +536,16 @@ function buildAwdSkeleton(parsedSkeleton: Readonly<ParsedSkeleton>): {
   }
 
   const invParent = createMatrix4();
+  const local = createMatrix4();
   for (let j = 0; j < jointCount; j++) {
     const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
-    const local = jointNodes[j].localMatrix;
     if (parentIndex1 > 0 && parentIndex1 - 1 < jointCount) {
       inverseMatrix4(invParent, bindWorld[parentIndex1 - 1]);
       multiplyMatrix4(local, invParent, bindWorld[j]);
     } else {
       copyMatrix4(local, bindWorld[j]);
     }
-    invalidateNodeLocalTransform(jointNodes[j]);
+    setNodeLocalMatrix4(jointNodes[j], local);
   }
 
   const skeleton = createSkeleton3D(jointNodes, inverseBindMatrices, jointNames);
@@ -622,11 +622,13 @@ function readAwdTransform(
   return { end: offset + 12 * floatSize, transform };
 }
 
-// Writes an AWD 12-float column-major transform into a node's local matrix, then invalidates it.
+// Writes an AWD 12-float column-major transform into a node's local matrix (authored directly).
 function applyAwdTransform(node: SceneNode, transform: Readonly<Float64Array>): void {
-  awdTransformToMatrix4(node.localMatrix, transform);
-  invalidateNodeLocalTransform(node);
+  awdTransformToMatrix4(_awdTransformScratch, transform);
+  setNodeLocalMatrix4(node, _awdTransformScratch);
 }
+
+const _awdTransformScratch = createMatrix4();
 
 // AWD stores transforms as 12 column-major floats: [c0x,c0y,c0z, c1x,c1y,c1z, c2x,c2y,c2z, tx,ty,tz] →
 // 4×4 column-major with w-column [0,0,0,1]. Lifts one into `out` (its runtime binding is left intact).

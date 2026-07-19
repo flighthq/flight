@@ -1,4 +1,5 @@
 import { createAabb } from '@flighthq/geometry';
+import { getNodeLocalMatrix4 } from '@flighthq/node';
 import { ParticleEmitter3DKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -160,8 +161,8 @@ describe('createParticleEmitter3D', () => {
 
   it('has a localMatrix (scene node)', () => {
     const emitter = createParticleEmitter3D();
-    expect(emitter.localMatrix).toBeDefined();
-    expect(emitter.localMatrix.m).toBeDefined();
+    expect(getNodeLocalMatrix4(emitter)).toBeDefined();
+    expect(getNodeLocalMatrix4(emitter).m).toBeDefined();
   });
 
   it('defaults blendMode to normal and accepts an override', () => {

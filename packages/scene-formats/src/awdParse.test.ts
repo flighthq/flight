@@ -6,7 +6,7 @@ import {
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh';
-import { getNodeChildren, getNodeParent } from '@flighthq/node';
+import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node';
 import { createSceneNode, isMesh } from '@flighthq/scene';
 import type {
   AnimationClip,
@@ -446,7 +446,7 @@ describe('createSceneFromAwd', () => {
 
     const scene = createSceneFromAwd(awd);
     const meshNode = getNodeChildren(scene)[0] as SceneNode;
-    const m = meshNode.localMatrix.m;
+    const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[12]).toBeCloseTo(10);
     expect(m[13]).toBeCloseTo(20);
     expect(m[14]).toBeCloseTo(-30);

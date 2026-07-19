@@ -1,8 +1,8 @@
-import { setMatrix4Identity } from '@flighthq/geometry';
 import {
   addNodeChild,
   ensureNodeWorldMatrix4,
   getNodeChildCount,
+  getNodeLocalMatrix4,
   getNodeParent,
   getNodeRoot,
   getNodeWorldMatrix4,
@@ -11,6 +11,7 @@ import {
   invalidateNodeLocalTransform,
   invalidateNodeParentReference,
   removeNodeChild,
+  setNodeLocalMatrix4,
 } from '@flighthq/node';
 import type { Matrix4, SceneNode } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
@@ -77,7 +78,7 @@ describe('createSceneNodeRuntime', () => {
 
   it('initializes worldMatrix to null', () => {
     const runtime = createSceneNodeRuntime();
-    expect(runtime.worldMatrix).toBeNull();
+    expect(runtime.worldMatrix4).toBeNull();
   });
 
   it('initializes worldAlpha to null (unresolved until prepared)', () => {
@@ -143,7 +144,7 @@ describe('getSceneNodeWorldAlpha', () => {
 describe('initTransform3DTrait', () => {
   it('sets an identity localMatrix by default', () => {
     const node = createTransformNode();
-    const m = node.localMatrix.m;
+    const m = getNodeLocalMatrix4(node).m;
     expect(m[0]).toBe(1);
     expect(m[5]).toBe(1);
     expect(m[10]).toBe(1);
@@ -157,8 +158,8 @@ describe('initTransform3DTrait', () => {
     const node = createSceneNode();
     const existing = { m: new Float32Array(16) } as unknown as Matrix4;
     existing.m[12] = 42;
-    initTransform3DTrait(node, { localMatrix: existing });
-    expect(node.localMatrix.m[12]).toBe(42);
+    setNodeLocalMatrix4(node, existing);
+    expect(getNodeLocalMatrix4(node).m[12]).toBe(42);
   });
 });
 
@@ -186,7 +187,7 @@ describe('SceneNodeRuntime', () => {
     const runtime = getSceneNodeRuntime(node) as SceneNodeRuntime;
     expect(runtime.parent).toBe(null);
     expect(runtime.children).toBe(null);
-    expect(runtime.worldMatrix).toBe(null);
+    expect(runtime.worldMatrix4).toBe(null);
   });
 });
 
@@ -239,9 +240,9 @@ describe('worldHierarchy', () => {
 describe('worldTransform', () => {
   it('worldMatrix equals localMatrix for a root node', () => {
     const node = createTransformNode();
-    node.localMatrix.m[12] = 10;
-    node.localMatrix.m[13] = 20;
-    node.localMatrix.m[14] = 30;
+    node.translation.x = 10;
+    node.translation.y = 20;
+    node.translation.z = 30;
     invalidateNodeLocalTransform(node);
 
     const world = getNodeWorldMatrix4(node);
@@ -255,10 +256,10 @@ describe('worldTransform', () => {
     const child = createTransformNode();
     addNodeChild(parent, child);
 
-    parent.localMatrix.m[12] = 5;
+    parent.translation.x = 5;
     invalidateNodeLocalTransform(parent);
 
-    child.localMatrix.m[12] = 3;
+    child.translation.x = 3;
     invalidateNodeLocalTransform(child);
 
     const world = getNodeWorldMatrix4(child);
@@ -271,7 +272,7 @@ describe('worldTransform', () => {
     ensureNodeWorldMatrix4(node);
     const first = getSceneNodeRuntime(node).worldTransformId;
 
-    node.localMatrix.m[12] = 99;
+    node.translation.x = 99;
     invalidateNodeLocalTransform(node);
 
     ensureNodeWorldMatrix4(node);
@@ -294,12 +295,7 @@ describe('worldTransform', () => {
     const child = createTransformNode();
     addNodeChild(parent, child);
 
-    setMatrix4Identity(parent.localMatrix);
-    setMatrix4Identity(child.localMatrix);
-    invalidateNodeLocalTransform(parent);
-    invalidateNodeLocalTransform(child);
-
-    parent.localMatrix.m[12] = 7;
+    parent.translation.x = 7;
     invalidateNodeLocalTransform(parent);
 
     const world = getNodeWorldMatrix4(child);

@@ -1,3 +1,4 @@
+import { getNodeLocalMatrix4 } from '@flighthq/node';
 import {
   PARTICLE_VELOCITY_STRIDE,
   ensureParticleEmitterStateCapacity,
@@ -11,6 +12,7 @@ import type {
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
   ParticleEmitterState,
+  SceneNode,
 } from '@flighthq/types';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D';
@@ -56,7 +58,7 @@ export function updateParticleEmitter3D(
   // Emitter origin this frame: the world translation when baking to world space, else the node's local
   // translation. Tracked frame-to-frame (state.prev*) to derive the emitter's own velocity for velocity
   // inheritance and to spread world-space spawns along the emitter's path (trail interpolation).
-  const lm = emitter.localMatrix.m;
+  const lm = getNodeLocalMatrix4(emitter as unknown as SceneNode).m;
   const trackX = worldM !== null ? worldM[12] : lm[12];
   const trackY = worldM !== null ? worldM[13] : lm[13];
   const trackZ = worldM !== null ? worldM[14] : lm[14];

@@ -1,50 +1,36 @@
-import { composeMatrix4, createQuaternion, createVector3, decomposeMatrix4 } from '@flighthq/geometry';
-import { invalidateNodeLocalTransform } from '@flighthq/node';
+import { createMatrix4 } from '@flighthq/geometry';
+import { invalidateNodeLocalTransform, setNodeLocalMatrix4 } from '@flighthq/node';
 import type { Quaternion, QuaternionLike, SceneNode, Vector3, Vector3Like } from '@flighthq/types';
 
-// Decomposes the node's `localMatrix` and writes the translation component into `out`.
-// Alias-safe: reads the matrix before writing to `out`.
+// Reads the node's translation into `out`. Alias-safe.
 export function getSceneNodePosition(out: Vector3, node: Readonly<SceneNode>): void {
-  const m = node.localMatrix.m;
-  // Read all three translation components before any write so alias-safe.
-  const tx = m[12];
-  const ty = m[13];
-  const tz = m[14];
-  out.x = tx;
-  out.y = ty;
-  out.z = tz;
+  out.x = node.translation.x;
+  out.y = node.translation.y;
+  out.z = node.translation.z;
 }
 
-// Decomposes the node's `localMatrix` and writes the rotation quaternion into `out`.
-// Alias-safe: internally reads the full matrix before writing to `out`.
+// Reads the node's rotation quaternion into `out`. Dormant if the local matrix is detached — call
+// syncNodeTransform3DFromMatrix4 first to reflect a directly-set matrix. Alias-safe.
 export function getSceneNodeRotationQuaternion(out: Quaternion, node: Readonly<SceneNode>): void {
-  const _scratch = _scratchVec3a;
-  const _scratchQ = _scratchQuat;
-  const _scratchS = _scratchVec3b;
-  decomposeMatrix4(_scratch, _scratchQ, _scratchS, node.localMatrix);
-  out.x = _scratchQ.x;
-  out.y = _scratchQ.y;
-  out.z = _scratchQ.z;
-  out.w = _scratchQ.w;
+  out.x = node.rotation.x;
+  out.y = node.rotation.y;
+  out.z = node.rotation.z;
+  out.w = node.rotation.w;
 }
 
-// Decomposes the node's `localMatrix` and writes the scale component into `out`.
-// Alias-safe: internally reads the full matrix before writing to `out`.
+// Reads the node's scale into `out`. Dormant if the local matrix is detached. Alias-safe.
 export function getSceneNodeScale(out: Vector3, node: Readonly<SceneNode>): void {
-  const _scratch = _scratchVec3a;
-  const _scratchQ = _scratchQuat;
-  const _scratchS = _scratchVec3b;
-  decomposeMatrix4(_scratch, _scratchQ, _scratchS, node.localMatrix);
-  out.x = _scratchS.x;
-  out.y = _scratchS.y;
-  out.z = _scratchS.z;
+  out.x = node.scale.x;
+  out.y = node.scale.y;
+  out.z = node.scale.z;
 }
 
-// Sets the node's `localMatrix` to a model-space look-at transform that places the node at `eye`,
-// oriented so its local -Z axis points toward `target`, with the given `up` hint vector. The
+// Sets the node's local matrix directly to a model-space look-at transform that places the node at
+// `eye`, oriented so its local -Z axis points toward `target`, with the given `up` hint vector. The
 // resulting matrix has unit scale and no shear. This is a **model** matrix (position = eye,
 // rotation = orientation toward target); it is NOT a view matrix — use getCameraViewMatrix4 for
-// camera view transforms. Marks the local transform dirty.
+// camera view transforms. Because it authors the matrix directly, the node's TRS fields go dormant
+// (detached) until reattached.
 //
 // Note: geometry's setMatrix4LookAt is a view matrix (inverted). This function builds the model
 // matrix directly: basis vectors are the same but the translation is eye, not -dot(axis, eye).
@@ -84,7 +70,7 @@ export function setSceneNodeLookAt(
   const yy = zz * xx - zx * xz;
   const yz = zx * xy - zy * xx;
   // Column-major model matrix: [X|Y|Z|translation].
-  const m = node.localMatrix.m;
+  const m = _scratchMatrix.m;
   m[0] = xx;
   m[1] = xy;
   m[2] = xz;
@@ -101,56 +87,67 @@ export function setSceneNodeLookAt(
   m[13] = eyeY;
   m[14] = eyeZ;
   m[15] = 1;
-  invalidateNodeLocalTransform(node);
+  setNodeLocalMatrix4(node, _scratchMatrix);
 }
 
-// Sets the translation component of the node's `localMatrix` (position only; rotation and scale
-// are preserved by decompose–recompose) and marks the local transform dirty. For a plain
-// translation-only edit when the matrix is known to be identity-rotation and uniform-scale, use
-// `setSceneNodePosition` which is faster.
+// Sets the node's translation and marks the local transform dirty. Reattaches TRS authoring.
 export function setSceneNodePosition(node: SceneNode, x: number, y: number, z: number): void {
-  // Fast path: just stomp the translation column; rotation and scale columns are unchanged.
-  const m = node.localMatrix.m;
-  m[12] = x;
-  m[13] = y;
-  m[14] = z;
+  node.translation.x = x;
+  node.translation.y = y;
+  node.translation.z = z;
   invalidateNodeLocalTransform(node);
 }
 
-// Sets the rotation component of the node's `localMatrix` via decompose–recompose with the
-// existing position and scale, then marks the local transform dirty.
+// Sets the node's rotation quaternion and marks the local transform dirty. Reattaches TRS authoring.
 export function setSceneNodeRotationQuaternion(node: SceneNode, q: Readonly<QuaternionLike>): void {
-  // Read position and scale before recompose (alias-safe even if q is somehow derived from node).
-  decomposeMatrix4(_scratchVec3a, _scratchQuat, _scratchVec3b, node.localMatrix);
-  composeMatrix4(node.localMatrix, _scratchVec3a, q, _scratchVec3b);
+  const qx = q.x,
+    qy = q.y,
+    qz = q.z,
+    qw = q.w;
+  node.rotation.x = qx;
+  node.rotation.y = qy;
+  node.rotation.z = qz;
+  node.rotation.w = qw;
   invalidateNodeLocalTransform(node);
 }
 
-// Sets the scale component of the node's `localMatrix` via decompose–recompose with the existing
-// position and rotation, then marks the local transform dirty.
+// Sets the node's scale and marks the local transform dirty. Reattaches TRS authoring.
 export function setSceneNodeScale(node: SceneNode, x: number, y: number, z: number): void {
-  _scratchVec3b.x = x;
-  _scratchVec3b.y = y;
-  _scratchVec3b.z = z;
-  decomposeMatrix4(_scratchVec3a, _scratchQuat, _scratchVec3b2, node.localMatrix);
-  composeMatrix4(node.localMatrix, _scratchVec3a, _scratchQuat, _scratchVec3b);
+  node.scale.x = x;
+  node.scale.y = y;
+  node.scale.z = z;
   invalidateNodeLocalTransform(node);
 }
 
-// Recomposes the node's `localMatrix` from separate position, rotation (quaternion), and scale
-// vectors, then marks the local transform dirty. Alias-safe: each argument is read before any
-// matrix element is written.
+// Sets the node's translation, rotation, and scale together and marks the local transform dirty.
+// Alias-safe: each argument is read before any node field is written.
 export function setSceneNodeTransform(
   node: SceneNode,
   position: Readonly<Vector3Like>,
   rotation: Readonly<QuaternionLike>,
   scale: Readonly<Vector3Like>,
 ): void {
-  composeMatrix4(node.localMatrix, position, rotation, scale);
+  const px = position.x,
+    py = position.y,
+    pz = position.z;
+  const rx = rotation.x,
+    ry = rotation.y,
+    rz = rotation.z,
+    rw = rotation.w;
+  const sx = scale.x,
+    sy = scale.y,
+    sz = scale.z;
+  node.translation.x = px;
+  node.translation.y = py;
+  node.translation.z = pz;
+  node.rotation.x = rx;
+  node.rotation.y = ry;
+  node.rotation.z = rz;
+  node.rotation.w = rw;
+  node.scale.x = sx;
+  node.scale.y = sy;
+  node.scale.z = sz;
   invalidateNodeLocalTransform(node);
 }
 
-const _scratchVec3a = createVector3();
-const _scratchVec3b = createVector3();
-const _scratchVec3b2 = createVector3();
-const _scratchQuat = createQuaternion(0, 0, 0, 1);
+const _scratchMatrix = createMatrix4();

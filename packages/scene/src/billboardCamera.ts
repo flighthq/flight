@@ -7,7 +7,7 @@ import {
   inverseMatrix4,
   multiplyMatrix4,
 } from '@flighthq/geometry';
-import { getNodeParent, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
+import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node';
 import type { Billboard, BillboardMode, Camera, Matrix4, SceneNode } from '@flighthq/types';
 
 import { isBillboard } from './billboard';
@@ -48,18 +48,19 @@ function applyBillboardFacing(billboard: Billboard): void {
 
   const parent = getNodeParent(billboard as SceneNode) as SceneNode | null;
   if (parent === null) {
-    copyMatrix4(billboard.localMatrix, _facingWorld);
+    copyMatrix4(_localScratch, _facingWorld);
   } else {
     const parentWorld = getNodeWorldMatrix4(parent) as Readonly<Matrix4>;
     if (inverseMatrix4(_inverseParentWorld, parentWorld)) {
-      multiplyMatrix4(billboard.localMatrix, _inverseParentWorld, _facingWorld);
+      multiplyMatrix4(_localScratch, _inverseParentWorld, _facingWorld);
     } else {
       // Degenerate (non-invertible) parent world: fall back to treating the facing matrix as local.
-      copyMatrix4(billboard.localMatrix, _facingWorld);
+      copyMatrix4(_localScratch, _facingWorld);
     }
   }
 
-  invalidateNodeLocalTransform(billboard);
+  // A billboard orients by a computed matrix, not TRS, so author it directly (leaves the node detached).
+  setNodeLocalMatrix4(billboard, _localScratch);
 }
 
 function orientBillboardSubtree(node: Readonly<SceneNode>): void {
@@ -238,6 +239,7 @@ const FACING_EPSILON = 1e-6;
 const _cameraWorld = createMatrix4();
 const _inverseParentWorld = createMatrix4();
 const _facingWorld = createMatrix4();
+const _localScratch = createMatrix4();
 const _position = createVector3();
 const _scale = createVector3();
 const _rotationScratch = createQuaternion(0, 0, 0, 1);

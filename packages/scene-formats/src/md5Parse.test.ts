@@ -5,7 +5,7 @@ import {
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
 } from '@flighthq/mesh';
-import { getNodeChildren } from '@flighthq/node';
+import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type {
   BlinnPhongMaterial,
@@ -279,8 +279,8 @@ describe('createSceneFromMd5Mesh', () => {
 
     const rootLocal = { x: 0, y: 0, z: 0 };
     const childLocal = { x: 0, y: 0, z: 0 };
-    getMatrix4Position(rootLocal, root.localMatrix);
-    getMatrix4Position(childLocal, child.localMatrix);
+    getMatrix4Position(rootLocal, getNodeLocalMatrix4(root));
+    getMatrix4Position(childLocal, getNodeLocalMatrix4(child));
     // Root keeps its absolute transform; child is parent-relative.
     expect([rootLocal.x, rootLocal.y, rootLocal.z]).toEqual([10, 0, 0]);
     expect(childLocal.x).toBeCloseTo(0);

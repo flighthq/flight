@@ -8,7 +8,12 @@ describe('HasAppearance3D', () => {
   });
 
   it('is a trait of every SceneNode (SceneNodeTraits extends it)', () => {
-    const traits: SceneNodeTraits = { alpha: 1, localMatrix: undefined as unknown as SceneNodeTraits['localMatrix'] };
+    const traits: SceneNodeTraits = {
+      alpha: 1,
+      rotation: undefined as unknown as SceneNodeTraits['rotation'],
+      scale: undefined as unknown as SceneNodeTraits['scale'],
+      translation: undefined as unknown as SceneNodeTraits['translation'],
+    };
     const appearance: HasAppearance3D = traits;
     expect(appearance.alpha).toBe(1);
   });

@@ -128,7 +128,7 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
 
 // The per-frame preparation pass for a 3D scene, the 3D analog of prepareDisplayObjectRender. It is
 // backend-agnostic (no GPU context): it walks the SceneNode hierarchy rooted at `scene`, propagating
-// each node's worldMatrix (parentWorld x localMatrix, resolved lazily on the node runtime and
+// each node's world matrix (parentWorld x local matrix, resolved lazily on the node runtime and
 // alias-safe), computes the draw camera's view-projection, frustum-culls every Mesh against its
 // world-space bounds, and packs `lights` into the shared SceneLightBlock (sRgb->linear at pack time).
 // The returned SceneRenderList is the render-ready frame the backend drawScene consumes — it only

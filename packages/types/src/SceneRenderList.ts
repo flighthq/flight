@@ -9,7 +9,7 @@ import type { SceneLightBlock } from './SceneLightBlock';
 //
 // `visibleMeshes` is the subset of the scene's Mesh nodes whose world-space bounds intersect the
 // camera frustum, in scene-graph (front-to-back-agnostic) order; their world matrices are resolved
-// on the node runtime (HasTransform3DRuntime.worldMatrix). `viewProjection` is projection × view
+// on the node runtime (HasTransform3DRuntime.worldMatrix4). `viewProjection` is projection × view
 // for the draw camera. `lights` is the packed light environment. `meshCount` is the live length of
 // `visibleMeshes` — the array is a reused scratch buffer owned by the producer that may be longer
 // than the visible count, so consumers must iterate to `meshCount`, not `visibleMeshes.length`.
