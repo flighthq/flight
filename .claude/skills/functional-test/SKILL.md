@@ -93,7 +93,7 @@ Logs land in `logs.jsonl` after capture; the harness installs the capture sink b
 
 ## Validate, then baseline
 
-1. `npm run capture:functional -- --filter={name}` (auto-starts the server).
+1. `npm run capture:functional -- --filter={name}` (auto-starts the server). If this stops right after `Ready at …` with no `screenshot.png` and a signal exit, headless Chromium's system libs are missing — run `sudo npx playwright install-deps chromium` (the sandbox grants sudo) and retry; see the `visual-capture` skill. Capture — including WebGPU — then runs in-sandbox, so do not defer baselining to the host.
 2. Read `tools/output/functional/{name}/{backend}/screenshot.png` — confirm it looks right on each backend.
 3. Read `tools/output/functional/{name}/{backend}/logs.jsonl` — check for `pageerror` entries.
 4. When correct, set the baseline: `npm run capture:functional:baseline -- --filter={name}`.
