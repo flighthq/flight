@@ -11,13 +11,13 @@ export function prewarmParticleEmitter3D(
   stepDeltaTime = 1 / 60,
   callbacks?: ParticleEmitterCallbacks,
   // Forwarded to updateParticleEmitter3D so world-space emitters bake spawns; see that function.
-  worldTransform?: Readonly<Matrix4>,
+  worldMatrix?: Readonly<Matrix4>,
 ): void {
   const step = stepDeltaTime > 0 ? stepDeltaTime : duration;
   let elapsed = 0;
   while (elapsed < duration) {
     const deltaTime = Math.min(step, duration - elapsed);
-    updateParticleEmitter3D(emitter, state, config, deltaTime, callbacks, worldTransform);
+    updateParticleEmitter3D(emitter, state, config, deltaTime, callbacks, worldMatrix);
     elapsed += deltaTime;
   }
 }

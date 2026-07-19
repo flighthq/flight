@@ -218,7 +218,7 @@ describe('updateParticleEmitter3D', () => {
     expect(emitter.data.worldSpace).toBe(false);
   });
 
-  it('leaves worldSpace false and does not bake when config.worldSpace is set but no worldTransform is given', () => {
+  it('leaves worldSpace false and does not bake when config.worldSpace is set but no worldMatrix is given', () => {
     // Guards the trap: claiming world-space without a matrix would tell the renderer to skip the node
     // transform while spawns were never baked. Without a transform the spawn stays at the local origin.
     const emitter = createParticleEmitter3D();
@@ -240,7 +240,7 @@ describe('updateParticleEmitter3D', () => {
     expect(emitter.data.positionsZ[0]).toBeCloseTo(0);
   });
 
-  it('bakes the spawn position through the world transform when world-space', () => {
+  it('bakes the spawn position through the world matrix when world-space', () => {
     const emitter = createParticleEmitter3D();
     const state = createParticleEmitterState(seededRandom(42));
     const config = createParticleEmitterConfig({
@@ -252,9 +252,9 @@ describe('updateParticleEmitter3D', () => {
       speedMax: 0,
       worldSpace: true,
     });
-    const worldTransform = createMatrix4();
-    translateMatrix4(worldTransform, worldTransform, 5, 7, 9);
-    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldTransform);
+    const worldMatrix = createMatrix4();
+    translateMatrix4(worldMatrix, worldMatrix, 5, 7, 9);
+    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldMatrix);
     expect(emitter.data.particleCount).toBe(1);
     expect(emitter.data.worldSpace).toBe(true);
     // point-shape spawn at the local origin, translated into world space by the transform.
@@ -263,7 +263,7 @@ describe('updateParticleEmitter3D', () => {
     expect(emitter.data.positionsZ[0]).toBeCloseTo(9);
   });
 
-  it('bakes velocity through the world transform rotation and scale when world-space', () => {
+  it('bakes velocity through the world matrix rotation and scale when world-space', () => {
     const emitter = createParticleEmitter3D();
     const state = createParticleEmitterState(seededRandom(42));
     const config = createParticleEmitterConfig({
@@ -276,9 +276,9 @@ describe('updateParticleEmitter3D', () => {
     });
     // Uniform scale of 2 leaves velocity direction alone but doubles its magnitude, independent of the
     // random sphere direction — so a local speed of 10 must become a world speed of 20.
-    const worldTransform = createMatrix4();
-    scaleMatrix4(worldTransform, worldTransform, 2, 2, 2);
-    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldTransform);
+    const worldMatrix = createMatrix4();
+    scaleMatrix4(worldMatrix, worldMatrix, 2, 2, 2);
+    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldMatrix);
     expect(emitter.data.particleCount).toBeGreaterThan(0);
     const vx = state.velocities[0];
     const vy = state.velocities[1];
