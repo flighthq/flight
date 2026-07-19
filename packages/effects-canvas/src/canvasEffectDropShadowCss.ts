@@ -1,10 +1,10 @@
 import type { DropShadowEffect, OuterGlowEffect } from '@flighthq/types';
 
 // Drop-shadow composite effect as a CSS `drop-shadow()` string (the same string the DOM backend emits).
-// Knockout and anisotropic-blur (blurX !== blurY) variants have no CSS equivalent and return null.
+// Knockout, hideObject, and anisotropic-blur (blurX !== blurY) variants have no CSS equivalent and return null.
 // Offset is derived from angle (degrees, default 45) and distance (default 4), rounded to whole pixels.
 export function computeDropShadowEffectCss(effect: Readonly<DropShadowEffect>): string | null {
-  if (effect.knockout) return null;
+  if (effect.hideObject || effect.knockout) return null;
   const blurX = effect.blurX ?? 4;
   const blurY = effect.blurY ?? 4;
   if (blurX !== blurY) return null;
