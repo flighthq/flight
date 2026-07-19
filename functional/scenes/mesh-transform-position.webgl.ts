@@ -11,6 +11,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createMatrix4,
   createMesh,
   createPerspectiveProjection,
   createUnlitMaterial,
@@ -23,6 +24,7 @@ import {
   registerUnlitGlMaterial,
   renderGlBackground,
   setCameraViewMatrix4FromLookAt,
+  setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -89,9 +91,12 @@ const scene = createScene();
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
-// THE FEATURE UNDER TEST: shift the mesh off-center via its localMatrix. translateMatrix4 is out-param
-// style — translateMatrix4(out, source, tx, ty, tz) — applied in place to the mesh's identity localMatrix.
-translateMatrix4(mesh.localMatrix, mesh.localMatrix, 1.3, 0.7, 0);
+// THE FEATURE UNDER TEST: shift the mesh off-center via its local matrix. translateMatrix4 is out-param
+// style — translateMatrix4(out, source, tx, ty, tz) — applied to a fresh identity matrix, then set on the
+// mesh via setNodeLocalMatrix4 (the author-the-matrix-directly escape hatch).
+const meshLocal = createMatrix4();
+translateMatrix4(meshLocal, meshLocal, 1.3, 0.7, 0);
+setNodeLocalMatrix4(mesh, meshLocal);
 
 // Head-on camera at (0,0,4): world +x → screen right, world +y → screen up. fovY = PI/4.
 const camera = createCamera({

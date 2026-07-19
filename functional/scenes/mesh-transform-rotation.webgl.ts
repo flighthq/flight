@@ -11,6 +11,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createMatrix4,
   createMesh,
   createPerspectiveProjection,
   createUnlitMaterial,
@@ -24,6 +25,7 @@ import {
   renderGlBackground,
   rotateMatrix4,
   setCameraViewMatrix4FromLookAt,
+  setNodeLocalMatrix4,
 } from '@flighthq/sdk';
 
 // drawGlScene exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
@@ -90,10 +92,13 @@ const scene = createScene();
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
-// THE FEATURE UNDER TEST: rotate the bar 90° about world +Z via its localMatrix. rotateMatrix4 is out-param
-// style and takes RADIANS — rotateMatrix4(out, source, axis, radians) — applied in place to the identity.
+// THE FEATURE UNDER TEST: rotate the bar 90° about world +Z via its local matrix. rotateMatrix4 is out-param
+// style and takes RADIANS — rotateMatrix4(out, source, axis, radians) — applied to a fresh identity matrix,
+// then set on the mesh via setNodeLocalMatrix4 (the author-the-matrix-directly escape hatch).
 const zAxis = createVector3(0, 0, 1);
-rotateMatrix4(mesh.localMatrix, mesh.localMatrix, zAxis, Math.PI / 2);
+const meshLocal = createMatrix4();
+rotateMatrix4(meshLocal, meshLocal, zAxis, Math.PI / 2);
+setNodeLocalMatrix4(mesh, meshLocal);
 
 // Head-on camera at (0,0,4): the X bar lies in the screen plane; a Z rotation rotates it within the screen.
 const camera = createCamera({

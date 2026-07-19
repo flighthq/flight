@@ -11,6 +11,7 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createMatrix4,
   createMesh,
   createPerspectiveProjection,
   createUnlitMaterial,
@@ -23,6 +24,7 @@ import {
   registerUnlitGlMaterial,
   renderGlBackground,
   setCameraViewMatrix4FromLookAt,
+  setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
 
@@ -93,7 +95,9 @@ const scene = createScene();
 
 // Transform-only parent: translated up-and-right. The child inherits this through world composition.
 const parent = createSceneNode();
-translateMatrix4(parent.localMatrix, parent.localMatrix, 1.3, 0.7, 0);
+const parentLocal = createMatrix4();
+translateMatrix4(parentLocal, parentLocal, 1.3, 0.7, 0);
+setNodeLocalMatrix4(parent, parentLocal);
 addNodeChild(scene, parent);
 
 // Child mesh at the parent's LOCAL origin (identity localMatrix). Its on-screen position is entirely

@@ -8,6 +8,7 @@ import {
   createBoxMeshGeometry,
   createCamera,
   createDirectionalLight,
+  createMatrix4,
   createMesh,
   createPerspectiveProjection,
   createUnlitMaterial,
@@ -24,6 +25,7 @@ import {
   renderWgpuBackground,
   scaleMatrix4,
   setCameraViewMatrix4FromLookAt,
+  setNodeLocalMatrix4,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -87,9 +89,12 @@ const scene = createScene();
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
-// THE FEATURE UNDER TEST: enlarge the mesh 2× via its localMatrix. scaleMatrix4 is out-param style —
-// scaleMatrix4(out, source, sx, sy, sz) — applied in place to the mesh's identity localMatrix.
-scaleMatrix4(mesh.localMatrix, mesh.localMatrix, 2, 2, 2);
+// THE FEATURE UNDER TEST: enlarge the mesh 2× via its local matrix. scaleMatrix4 is out-param style —
+// scaleMatrix4(out, source, sx, sy, sz) — applied to a fresh identity matrix, then set on the mesh via
+// setNodeLocalMatrix4 (the author-the-matrix-directly escape hatch).
+const meshLocal = createMatrix4();
+scaleMatrix4(meshLocal, meshLocal, 2, 2, 2);
+setNodeLocalMatrix4(mesh, meshLocal);
 
 // Head-on camera at (0,0,4): screen-space size scales directly with world size, easy to reason about.
 const camera = createCamera({
