@@ -5,6 +5,7 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import type { Material, SceneNode } from '@flighthq/types';
 
+import type { SceneImport } from './sceneImport';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
@@ -80,6 +81,16 @@ export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, warnings?: strin
   }
 
   return scene;
+}
+
+// Imports a 3DS file as the assembly-tier SceneImport, the sibling of importGltf/importAwd so every
+// format is reachable through one uniform `import<Format>` shape. 3DS carries no animation, so
+// `animations` is always empty and `scenes` is the one-element array holding the single scene the file
+// declares; the geometry itself is createSceneFrom3ds. A caller wanting only the scene tree-shakes to
+// createSceneFrom3ds directly.
+export function import3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneImport {
+  const scene = createSceneFrom3ds(bytes, warnings);
+  return { animations: [], scene, scenes: [scene] };
 }
 
 // Recursively walks the chunk tree starting at `offset`, collecting all trimesh descriptors found

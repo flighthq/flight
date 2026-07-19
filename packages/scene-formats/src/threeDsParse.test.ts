@@ -10,7 +10,7 @@ import { isMesh } from '@flighthq/scene';
 import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFrom3ds } from './threeDsParse';
+import { createSceneFrom3ds, import3ds } from './threeDsParse';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -393,5 +393,27 @@ describe('createSceneFrom3ds', () => {
     const scene = createSceneFrom3ds(bytes, warnings);
     expect(getNodeChildren(scene)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('missing'))).toBe(true);
+  });
+});
+
+describe('import3ds', () => {
+  it('wraps the parsed scene with no animation and a one-element scenes array', () => {
+    const bytes = buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
+    const result = import3ds(bytes);
+
+    expect(result.animations).toHaveLength(0);
+    expect(result.scenes).toHaveLength(1);
+    expect(result.scenes[0]).toBe(result.scene);
+    expect(getNodeChildren(result.scene)).toHaveLength(1);
+  });
+
+  it('returns an empty import (no scene children) for non-3DS input', () => {
+    const warnings: string[] = [];
+    const result = import3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), warnings);
+
+    expect(result.animations).toHaveLength(0);
+    expect(result.scenes).toHaveLength(1);
+    expect(getNodeChildren(result.scene)).toHaveLength(0);
+    expect(warnings.length).toBeGreaterThan(0);
   });
 });
