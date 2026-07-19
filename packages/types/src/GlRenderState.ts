@@ -10,6 +10,7 @@ import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { VideoTexture } from './VideoTexture';
 
 export interface GlRenderState extends RenderState {
   applyBlendMode: ((state: GlRenderState, blendMode: BlendMode | null) => void) | null;
@@ -159,6 +160,12 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // re-uploads in place when the pixels change — subsuming the per-node manual invalidation nodes used to
   // open-code. See bindGlImageResourceTexture.
   imageResourceTextureCache: WeakMap<ImageResource, { texture: WebGLTexture; version: number }>;
+  // VideoTexture cache: a dynamic VideoResource-backed source (bindGlVideoTexture). Keyed by the
+  // VideoTexture entity so its GL texture persists across frames, with `uploadedFrameId` tracking the
+  // last frame put on the GPU so uploadGlTextureVideoFrame re-uploads only when `frameId` advances — a
+  // paused stream costs no re-upload. Undefined until the first video bind, so a state that never draws
+  // video carries no cache. See bindGlVideoTexture.
+  videoTextureCache?: WeakMap<VideoTexture, { texture: WebGLTexture; uploadedFrameId: number }>;
   // Textures whose mip chain has been generated via gl.generateMipmap, so a mip-sampling bind
   // generates the chain exactly once and updateGlTexture can refresh it after a re-upload. Keyed by
   // the GL texture (parallel to textureCache), lazily created on the first mip-sampled bind.
