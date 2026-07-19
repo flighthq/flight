@@ -9,6 +9,7 @@ export interface InnerGlowEffect extends RenderEffect {
   blurX?: number;
   blurY?: number;
   color?: number;
+  knockout?: boolean;
   quality?: number;
   strength?: number;
 }

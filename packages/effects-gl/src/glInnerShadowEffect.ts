@@ -49,7 +49,7 @@ const clipShaders = new WeakMap<GlRenderState, InnerClipLocations>();
 //   2. Blur pass.
 //   3. Offset pass: shifts the blurred shadow by the angle/distance.
 //   4. Clip pass: clips the offset shadow to source alpha (keeps shadow inside shape).
-//   5. Composite: source + clipped shadow.
+//   5. Composite: source (unless `hideObject` or `knockout`) + clipped shadow.
 export function applyInnerShadowEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -73,6 +73,8 @@ export function applyInnerShadowEffectToGl(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
+  const hideObject = effect.hideObject ?? false;
+  const knockout = effect.knockout ?? false;
 
   // Pass 1: invert source alpha and tint with shadow color → s0
   applyGlEffectInvertTintPass(state, src, s0, color, alpha, strength);
@@ -90,9 +92,11 @@ export function applyInnerShadowEffectToGl(
   clearGlRenderTarget(state, s1);
   applyGlInnerClipPass(state, s0, src, s1);
 
-  // Final composite: source first, then clipped shadow on top
+  // Final composite: source first, unless hidden, then clipped shadow on top.
   clearGlRenderTarget(state, dst);
-  applyGlEffectBlitPass(state, src, dst);
+  if (!hideObject && !knockout) {
+    applyGlEffectBlitPass(state, src, dst);
+  }
   applyGlEffectBlitPass(state, s1, dst);
 
   releaseGlRenderTarget(pool, s0);
