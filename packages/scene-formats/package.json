@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@flighthq/animation": "*",
+    "@flighthq/color": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image-codec": "*",
     "@flighthq/materials": "*",

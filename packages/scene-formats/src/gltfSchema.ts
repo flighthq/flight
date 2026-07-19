@@ -66,7 +66,8 @@ export interface GltfMaterial {
 }
 
 export interface GltfPbrMetallicRoughness {
-  // sRGB-albedo RGBA in [0,1]; spec default [1,1,1,1].
+  // Linear-albedo RGBA in [0,1]; spec default [1,1,1,1]. (Per the glTF spec the factor is linear; the
+  // baseColorTexture is sRGB-encoded, but the factor is not — the importer sRGB-encodes it when packing.)
   baseColorFactor?: number[];
   baseColorTexture?: GltfTextureInfo;
   // Spec default 1.

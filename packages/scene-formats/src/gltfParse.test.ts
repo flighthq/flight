@@ -1,3 +1,4 @@
+import { linearChannelToSrgb } from '@flighthq/color';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -293,6 +294,7 @@ describe('createSceneFromGltf', () => {
     expect(mesh.materials).toHaveLength(1);
     const mat = mesh.materials[0] as StandardPbrMaterial;
     expect(mat.kind).toBe(StandardPbrMaterialKind);
+    // 0/1 factors are sRGB-encoding fixed points (srgb(0)==0, srgb(1)==1), so the packed bytes match.
     expect(mat.baseColor).toBe(0xff0000ff);
     expect(mat.emissive).toBe(0x00ff00ff); // emissiveFactor widened to opaque
     expect(mat.metallic).toBe(0.25);
@@ -301,6 +303,24 @@ describe('createSceneFromGltf', () => {
     expect(mat.alphaCutoff).toBe(0.3);
     expect(mat.doubleSided).toBe(true);
     expect(mat.name).toBe('Canopy'); // glTF material.name preserved as the authored identity
+  });
+
+  it('sRGB-encodes a mid-range linear baseColorFactor so the shader gamma-decode recovers it', () => {
+    // glTF factors are LINEAR; StandardPbrMaterial.baseColor is packed sRGB (scene-gl gamma-decodes it),
+    // so a linear 0.5 must pack as its sRGB byte (~0.735 → 0xbb), NOT as 0.5→0x80. Packing raw would
+    // gamma-decode a second time in the shader and darken the material.
+    const doc = makeTriangleGltf();
+    doc.materials = [
+      { emissiveFactor: [0.5, 0.5, 0.5], pbrMetallicRoughness: { baseColorFactor: [0.5, 0.5, 0.5, 1] } },
+    ];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const srgbByte = Math.round(linearChannelToSrgb(0.5) * 0xff);
+    const expected = ((srgbByte << 24) | (srgbByte << 16) | (srgbByte << 8)) >>> 0;
+    expect(mat.baseColor).toBe((expected | 0xff) >>> 0);
+    expect(mat.emissive).toBe((expected | 0xff) >>> 0);
+    expect(srgbByte).not.toBe(0x80); // proves a non-trivial encode happened
   });
 
   it('applies glTF metallic-roughness spec defaults when factors are absent', () => {
