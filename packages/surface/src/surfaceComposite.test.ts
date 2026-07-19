@@ -1,4 +1,4 @@
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
+import { SurfaceCompositeMode } from '@flighthq/types';
 
 import { createSurface } from './surface';
 import {
@@ -49,7 +49,7 @@ describe('compositeSurfacePixels', () => {
   it('multiply blend mode multiplies source and destination channels', () => {
     const dest = createSurface(1, 1, 0xff0000ff); // RGBA: opaque red
     const pixels = new Uint8ClampedArray([128, 128, 128, 255]);
-    compositeSurfacePixels(region(dest), pixels, BlendMode.Multiply);
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.Multiply);
     expect(dest.data[0]).toBe(128); // 255 * 128 / 255
     expect(dest.data[1]).toBe(0); // 0 * 128 / 255
     expect(dest.data[2]).toBe(0);
@@ -59,7 +59,7 @@ describe('compositeSurfacePixels', () => {
   it('add blend mode clamps the sum of channels', () => {
     const dest = createSurface(1, 1, 0x640000ff); // RGBA: opaque dark red (R=100)
     const pixels = new Uint8ClampedArray([200, 0, 0, 255]);
-    compositeSurfacePixels(region(dest), pixels, BlendMode.Add);
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.Add);
     expect(dest.data[0]).toBe(255); // min(255, 100 + 200)
   });
 
@@ -74,36 +74,46 @@ describe('compositeSurfacePixels', () => {
   it('overlay blend mode darkens on dark backdrops', () => {
     const dest = createSurface(1, 1, 0x400000ff); // RGBA: R=64
     const pixels = new Uint8ClampedArray([200, 0, 0, 255]);
-    compositeSurfacePixels(region(dest), pixels, AdvancedBlendMode.Overlay);
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.Overlay);
     expect(dest.data[0]).toBe(100); // 2 * 64 * 200 / 255
   });
 
   it('hardlight blend mode is overlay with operands swapped', () => {
     const dest = createSurface(1, 1, 0xc80000ff); // RGBA: R=200
     const pixels = new Uint8ClampedArray([64, 0, 0, 255]);
-    compositeSurfacePixels(region(dest), pixels, AdvancedBlendMode.HardLight);
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.HardLight);
     expect(dest.data[0]).toBe(100); // 2 * 200 * 64 / 255
   });
 
   it('invert blend mode inverts the backdrop, ignoring source color', () => {
     const dest = createSurface(1, 1, 0xc80000ff); // RGBA: R=200
     const pixels = new Uint8ClampedArray([0, 0, 0, 255]);
-    compositeSurfacePixels(region(dest), pixels, BlendMode.Invert);
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.Invert);
     expect(dest.data[0]).toBe(55); // 255 - 200
   });
 
-  it('erase blend mode knocks alpha out of the backdrop, keeping color', () => {
+  it('DestinationOut (erase) knocks alpha out of the backdrop, keeping color', () => {
     const dest = createSurface(1, 1, 0xff0000ff); // RGBA: opaque red
     const pixels = new Uint8ClampedArray([0, 0, 0, 128]);
-    compositeSurfacePixels(region(dest), pixels, BlendMode.Erase);
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.DestinationOut);
     expect(dest.data[0]).toBe(255); // color untouched
     expect(dest.data[3]).toBe(127); // 255 * (1 - 128/255)
   });
 
-  it('throws for blend modes with no surface meaning', () => {
-    const dest = createSurface(1, 1);
-    const pixels = new Uint8ClampedArray([0, 0, 0, 255]);
-    expect(() => compositeSurfacePixels(region(dest), pixels, BlendMode.Alpha)).toThrow(/not supported/);
+  it('DestinationIn (alpha) masks the backdrop to the source coverage', () => {
+    const dest = createSurface(1, 1, 0xff0000ff); // RGBA: opaque red
+    const pixels = new Uint8ClampedArray([0, 0, 0, 128]);
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.DestinationIn);
+    expect(dest.data[0]).toBe(255); // backdrop color kept
+    expect(dest.data[3]).toBe(128); // 255 * (128/255)
+  });
+
+  it('Copy overwrites the backdrop with the source', () => {
+    const dest = createSurface(1, 1, 0xff0000ff); // opaque red
+    const pixels = new Uint8ClampedArray([0, 0, 255, 128]); // semi-transparent blue
+    compositeSurfacePixels(region(dest), pixels, SurfaceCompositeMode.Copy);
+    expect(dest.data[2]).toBe(255);
+    expect(dest.data[3]).toBe(128); // source alpha replaces, no source-over
   });
 });
 
@@ -127,7 +137,7 @@ describe('compositeSurfaceRegion', () => {
   it('applies the blend mode to the source region', () => {
     const source = createSurface(1, 1, 0x808080ff); // RGBA: opaque gray
     const dest = createSurface(1, 1, 0xff0000ff); // RGBA: opaque red
-    compositeSurfaceRegion(region(dest), region(source), BlendMode.Multiply);
+    compositeSurfaceRegion(region(dest), region(source), SurfaceCompositeMode.Multiply);
     expect(dest.data[0]).toBe(128); // 255 * 128 / 255
     expect(dest.data[1]).toBe(0);
   });
