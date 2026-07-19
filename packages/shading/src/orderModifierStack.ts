@@ -2,9 +2,10 @@ import type { Modifier } from '@flighthq/types';
 import { ModifierSlot } from '@flighthq/types';
 
 // Orders a modifier stack into the deterministic feature-set the compile path assembles: modifiers
-// are grouped by the canonical slot pipeline order (Normal perturbs the normal before lighting, then
-// Diffuse/Specular contribute at shading, then Emissive adds, then Effect runs last on the shaded
-// output), and within one slot the caller's authoring order is preserved. Because the result depends
+// are grouped by the canonical slot pipeline order (Vertex deforms the geometry first, then Normal
+// perturbs the normal before lighting, then Diffuse/Specular contribute at shading, then Emissive
+// adds, then Effect runs last on the shaded output), and within one slot the caller's authoring order
+// is preserved. Because the result depends
 // only on the SET of modifiers and their per-slot order — never on cross-slot authoring order — two
 // stacks with the same features produce the same feature-set and therefore the same define-key, so
 // they batch together. Reserved and vendor-prefixed slots outside the built-in taxonomy sort after
@@ -29,9 +30,10 @@ function getModifierSlotRank(slot: ModifierSlot): number {
 }
 
 const SLOT_RANK = new Map<ModifierSlot, number>([
-  [ModifierSlot.Normal, 0],
-  [ModifierSlot.Diffuse, 1],
-  [ModifierSlot.Specular, 2],
-  [ModifierSlot.Emissive, 3],
-  [ModifierSlot.Effect, 4],
+  [ModifierSlot.Vertex, 0],
+  [ModifierSlot.Normal, 1],
+  [ModifierSlot.Diffuse, 2],
+  [ModifierSlot.Specular, 3],
+  [ModifierSlot.Emissive, 4],
+  [ModifierSlot.Effect, 5],
 ]);
