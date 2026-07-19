@@ -7,6 +7,7 @@ import { defaultGlBlurEffectRunner } from './glBlurEffect';
 import { defaultGlBokehDepthOfFieldEffectRunner } from './glBokehDepthOfFieldEffect';
 import { defaultGlCameraMotionBlurEffectRunner } from './glCameraMotionBlurEffect';
 import { defaultGlChromaticAberrationEffectRunner } from './glChromaticAberrationEffect';
+import { defaultGlCompositeEffectRunner } from './glCompositeEffect';
 import { defaultGlConvolutionEffectRunner } from './glConvolutionEffect';
 import { defaultGlCrtEffectRunner } from './glCrtEffect';
 import { defaultGlCustomShaderEffectRunner } from './glCustomShaderEffect';
@@ -124,15 +125,18 @@ export function registerColorGradeGlRenderEffects(state: GlRenderState): void {
   registerColorGlRenderEffects(state);
 }
 
-// Composite band: BevelEffect, BlendEffect, DropShadowEffect, GradientBevelEffect, GradientGlowEffect,
-// InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former Tier-1 filter composite ops (plus the
-// advanced-blend recipe), now full-frame composite effects: each bounces through pooled offscreen
-// targets. BlendEffect is the advanced/HSL blend the fixed-function BlendMode enum deliberately excludes,
-// realized as an explicit layer-over-backdrop composite (register the backdrop with
-// registerGlBlendEffectBackdrop). Symmetric with Wgpu's registerCompositeWgpuRenderEffects.
+// Composite band: BevelEffect, BlendEffect, CompositeEffect, DropShadowEffect, GradientBevelEffect,
+// GradientGlowEffect, InnerGlowEffect, InnerShadowEffect, OuterGlowEffect. The former Tier-1 filter
+// composite ops (plus the advanced-blend recipe), now full-frame composite effects: each bounces through
+// pooled offscreen targets. BlendEffect is the advanced/HSL blend the fixed-function BlendMode enum
+// deliberately excludes; CompositeEffect is the fixed-function-cost Porter-Duff coverage combine (Erase =
+// DestinationOut, Alpha = DestinationIn, etc.). Both realize as an explicit layer-over-backdrop composite
+// (register the backdrop with registerGlBlendEffectBackdrop). Symmetric with Wgpu's
+// registerCompositeWgpuRenderEffects.
 export function registerCompositeGlRenderEffects(state: GlRenderState): void {
   registerGlRenderEffect(state, 'BevelEffect', defaultGlBevelEffectRunner);
   registerGlRenderEffect(state, 'BlendEffect', defaultGlBlendEffectRunner);
+  registerGlRenderEffect(state, 'CompositeEffect', defaultGlCompositeEffectRunner);
   registerGlRenderEffect(state, 'DropShadowEffect', defaultGlDropShadowEffectRunner);
   registerGlRenderEffect(state, 'GradientBevelEffect', defaultGlGradientBevelEffectRunner);
   registerGlRenderEffect(state, 'GradientGlowEffect', defaultGlGradientGlowEffectRunner);
@@ -214,6 +218,7 @@ const ALL_GL_EFFECT_KINDS: ReadonlyArray<string> = [
   'BokehDepthOfFieldEffect',
   'CameraMotionBlurEffect',
   'ChromaticAberrationEffect',
+  'CompositeEffect',
   'ConvolutionEffect',
   'CrtEffect',
   'CustomShaderEffect',
