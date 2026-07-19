@@ -1,9 +1,9 @@
 import { createCamera, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createVector3, setMatrix4Identity } from '@flighthq/geometry';
+import { createVector3 } from '@flighthq/geometry';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
 import { createMesh, createScene } from '@flighthq/scene';
@@ -221,14 +221,14 @@ describe('drawGlScene', () => {
     blendedMaterial.alphaMode = 'blend';
 
     // Place two meshes at different Z depths: far (z=-3) and near (z=-1). The far mesh should be
-    // drawn first (larger clip-W, farthest from camera) in the blended pass. Set localMatrix
-    // directly — the 3D transform is a raw Matrix4 (column 3 carries the world translation).
+    // drawn first (larger clip-W, farthest from camera) in the blended pass. Author the depth via the
+    // node's translation z — the translation column of the composed local matrix.
     const farMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
     const nearMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
-    setMatrix4Identity(farMesh.localMatrix);
-    farMesh.localMatrix.m[14] = -3;
-    setMatrix4Identity(nearMesh.localMatrix);
-    nearMesh.localMatrix.m[14] = -1;
+    farMesh.translation.z = -3;
+    invalidateNodeLocalTransform(farMesh);
+    nearMesh.translation.z = -1;
+    invalidateNodeLocalTransform(nearMesh);
     addNodeChild(scene, nearMesh);
     addNodeChild(scene, farMesh);
 

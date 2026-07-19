@@ -3,7 +3,7 @@ import { packLinearToColor } from '@flighthq/color';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node';
+import { addNodeChild, getNodeChildren, setNodeLocalMatrix4 } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode, isMesh, setSceneNodeTransform } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
@@ -135,8 +135,8 @@ export function importGltf(
 
 function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void {
   if (gltfNode.matrix !== undefined) {
-    node.localMatrix.m.set(gltfNode.matrix);
-    invalidateNodeLocalTransform(node);
+    // glTF node matrix is column-major 16-float; author it directly (leaves the node detached).
+    setNodeLocalMatrix4(node, { m: new Float32Array(gltfNode.matrix) });
     return;
   }
   const t = gltfNode.translation;

@@ -53,7 +53,7 @@ describe('getBillboardRuntime', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null]);
     const runtime = getBillboardRuntime(billboard);
     expect(runtime).toBe(getBillboardRuntime(billboard));
-    expect(runtime.worldMatrix).toBeNull();
+    expect(runtime.worldMatrix4).toBeNull();
   });
 });
 

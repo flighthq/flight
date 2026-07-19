@@ -1,6 +1,12 @@
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeChildCount, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
+import {
+  addNodeChild,
+  getNodeChildCount,
+  getNodeLocalMatrix4,
+  getNodeWorldMatrix4,
+  invalidateNodeLocalTransform,
+} from '@flighthq/node';
 import type { MeshMorph, Skin } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -33,12 +39,12 @@ describe('cloneMesh', () => {
 
   it('copies the transform into a distinct matrix', () => {
     const source = createMesh(createBoxMeshGeometry(), []);
-    source.localMatrix.m[12] = 5;
-    source.localMatrix.m[13] = -2;
+    source.translation.x = 5;
+    source.translation.y = -2;
     const clone = cloneMesh(source);
-    expect(clone.localMatrix).not.toBe(source.localMatrix);
-    expect(clone.localMatrix.m[12]).toBe(5);
-    expect(clone.localMatrix.m[13]).toBe(-2);
+    expect(clone.translation).not.toBe(source.translation);
+    expect(getNodeLocalMatrix4(clone).m[12]).toBe(5);
+    expect(getNodeLocalMatrix4(clone).m[13]).toBe(-2);
   });
 
   it('copies alpha, enabled, name, and kind', () => {
@@ -115,19 +121,19 @@ describe('createMesh', () => {
 
   it('starts with an identity localMatrix', () => {
     const mesh = createMesh(createBoxMeshGeometry(), []);
-    expect(mesh.localMatrix.m[0]).toBe(1);
-    expect(mesh.localMatrix.m[5]).toBe(1);
-    expect(mesh.localMatrix.m[10]).toBe(1);
-    expect(mesh.localMatrix.m[15]).toBe(1);
+    expect(getNodeLocalMatrix4(mesh).m[0]).toBe(1);
+    expect(getNodeLocalMatrix4(mesh).m[5]).toBe(1);
+    expect(getNodeLocalMatrix4(mesh).m[10]).toBe(1);
+    expect(getNodeLocalMatrix4(mesh).m[15]).toBe(1);
   });
 
   it('participates in the SceneNode hierarchy and world transform', () => {
     const parent = createMesh(createBoxMeshGeometry(), []);
     const child = createMesh(createBoxMeshGeometry(), []);
     addNodeChild(parent, child);
-    parent.localMatrix.m[12] = 4;
+    parent.translation.x = 4;
     invalidateNodeLocalTransform(parent);
-    child.localMatrix.m[12] = 3;
+    child.translation.x = 3;
     invalidateNodeLocalTransform(child);
     expect(getNodeChildCount(parent)).toBe(1);
     expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(7);
@@ -179,7 +185,7 @@ describe('getMeshRuntime', () => {
     const runtime = getMeshRuntime(mesh);
     expect(runtime.children).toBeNull();
     expect(runtime.parent).toBeNull();
-    expect(runtime.worldMatrix).toBeNull();
+    expect(runtime.worldMatrix4).toBeNull();
   });
 });
 

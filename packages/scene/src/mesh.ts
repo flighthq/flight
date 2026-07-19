@@ -1,5 +1,11 @@
-import { copyMatrix4 } from '@flighthq/geometry';
-import { enableNodeSignals, getNodeSignals } from '@flighthq/node';
+import {
+  enableNodeSignals,
+  getNodeLocalMatrix4,
+  getNodeSignals,
+  isNodeLocalMatrix4Detached,
+  setNodeLocalMatrix4,
+  setNodeTransform3D,
+} from '@flighthq/node';
 import type {
   Kind,
   Material,
@@ -33,7 +39,9 @@ export function cloneMesh(source: Readonly<Mesh>): Mesh {
     name: source.name,
   });
   clone.alpha = source.alpha;
-  copyMatrix4(clone.localMatrix, source.localMatrix);
+  // Copy the authored TRS; if the source authored its matrix directly, carry that detached matrix too.
+  setNodeTransform3D(clone, source);
+  if (isNodeLocalMatrix4Detached(source)) setNodeLocalMatrix4(clone, getNodeLocalMatrix4(source));
   if (source.skin != null) clone.skin = source.skin;
   if (source.morph != null) clone.morph = source.morph;
   return clone;

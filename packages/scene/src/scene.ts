@@ -14,7 +14,7 @@ export type Scene = SceneNode;
 
 // Allocates a Scene root node. Defaults to SceneNodeKind so it participates in the SceneNode
 // hierarchy family; pass a custom kind to introduce a custom root node type, and optional initial
-// `enabled`/`name`. The returned node has an identity localMatrix and no children.
+// `enabled`/`name`. The returned node has an identity transform and no children.
 export function createScene(obj?: Readonly<Partial<Pick<Scene, 'enabled' | 'name'>>>): Scene {
   return createSceneNode(SceneNodeKind, obj);
 }

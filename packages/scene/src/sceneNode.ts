@@ -1,5 +1,12 @@
-import { createMatrix4 } from '@flighthq/geometry';
-import { createNode, createNodeRuntime, enableNodeSignals, getNodeRuntime, getNodeSignals } from '@flighthq/node';
+import {
+  createNode,
+  createNodeRuntime,
+  enableNodeSignals,
+  getNodeRuntime,
+  getNodeSignals,
+  initTransform3DRuntimeTrait,
+  initTransform3DTrait,
+} from '@flighthq/node';
 import type { Kind, NodeSignals, SceneNode, SceneNodeRuntime, SceneNodeTraits } from '@flighthq/types';
 import { SceneNodeKind, SceneNodeTraitsKey } from '@flighthq/types';
 
@@ -12,7 +19,7 @@ export function createSceneNode(
 ): SceneNode {
   const node = createNode<SceneNodeTraits>(kind, obj, undefined, createSceneNodeRuntime);
   node.alpha = obj?.alpha ?? 1;
-  node.localMatrix = createMatrix4();
+  initTransform3DTrait(node);
   return node as SceneNode;
 }
 
@@ -20,7 +27,7 @@ export function createSceneNodeRuntime(): SceneNodeRuntime {
   const out = createNodeRuntime<SceneNodeTraits>() as SceneNodeRuntime;
   out.traits = SceneNodeTraitsKey;
   out.worldAlpha = null;
-  out.worldMatrix = null;
+  initTransform3DRuntimeTrait(out);
   return out;
 }
 

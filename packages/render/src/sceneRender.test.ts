@@ -234,7 +234,7 @@ describe('prepareSceneRender', () => {
     const state = createRenderState();
     const scene = createScene();
     const mesh = createMesh(boundedBox(), [null]);
-    mesh.localMatrix.m[14] = 1000;
+    mesh.translation.z = 1000;
     invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);
 
@@ -247,7 +247,7 @@ describe('prepareSceneRender', () => {
     const scene = createScene();
     const mesh = createMesh(createBoxMeshGeometry(), [null]);
     mesh.geometry.bounds = null;
-    mesh.localMatrix.m[14] = 1000;
+    mesh.translation.z = 1000;
     invalidateNodeLocalTransform(mesh);
     addNodeChild(scene, mesh);
 
@@ -274,7 +274,7 @@ describe('prepareSceneRender', () => {
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
-    group.localMatrix.m[12] = 1;
+    group.translation.x = 1;
     invalidateNodeLocalTransform(group);
 
     const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());

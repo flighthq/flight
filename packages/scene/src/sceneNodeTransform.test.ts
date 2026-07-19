@@ -1,4 +1,5 @@
 import { createQuaternion, createVector3 } from '@flighthq/geometry';
+import { getNodeLocalMatrix4 } from '@flighthq/node';
 
 import { createSceneNode } from './sceneNode';
 import {
@@ -15,9 +16,9 @@ import {
 describe('getSceneNodePosition', () => {
   it('reads the translation from the localMatrix', () => {
     const node = createSceneNode();
-    node.localMatrix.m[12] = 3;
-    node.localMatrix.m[13] = 5;
-    node.localMatrix.m[14] = 7;
+    node.translation.x = 3;
+    node.translation.y = 5;
+    node.translation.z = 7;
     const out = createVector3();
     getSceneNodePosition(out, node);
     expect(out.x).toBeCloseTo(3);
@@ -89,7 +90,7 @@ describe('setSceneNodeLookAt', () => {
     const up = createVector3(0, 1, 0);
     setSceneNodeLookAt(node, eye, target, up);
     // Model-matrix translation column = eye.
-    const m = node.localMatrix.m;
+    const m = getNodeLocalMatrix4(node).m;
     expect(m[12]).toBeCloseTo(3);
     expect(m[13]).toBeCloseTo(4);
     expect(m[14]).toBeCloseTo(5);
@@ -99,7 +100,7 @@ describe('setSceneNodeLookAt', () => {
     const node = createSceneNode();
     setSceneNodeLookAt(node, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
     // normalize(eye - target) = (0,0,1) → m[8]=0, m[9]=0, m[10]=1
-    const m = node.localMatrix.m;
+    const m = getNodeLocalMatrix4(node).m;
     expect(m[8]).toBeCloseTo(0);
     expect(m[9]).toBeCloseTo(0);
     expect(m[10]).toBeCloseTo(1);
@@ -108,7 +109,7 @@ describe('setSceneNodeLookAt', () => {
   it('preserves w = 1 and last column padding', () => {
     const node = createSceneNode();
     setSceneNodeLookAt(node, createVector3(1, 2, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
-    const m = node.localMatrix.m;
+    const m = getNodeLocalMatrix4(node).m;
     expect(m[3]).toBe(0);
     expect(m[7]).toBe(0);
     expect(m[11]).toBe(0);
@@ -120,22 +121,22 @@ describe('setSceneNodePosition', () => {
   it('sets the translation component', () => {
     const node = createSceneNode();
     setSceneNodePosition(node, 1, 2, 3);
-    expect(node.localMatrix.m[12]).toBe(1);
-    expect(node.localMatrix.m[13]).toBe(2);
-    expect(node.localMatrix.m[14]).toBe(3);
+    expect(getNodeLocalMatrix4(node).m[12]).toBe(1);
+    expect(getNodeLocalMatrix4(node).m[13]).toBe(2);
+    expect(getNodeLocalMatrix4(node).m[14]).toBe(3);
   });
 
   it('preserves rotation and scale columns', () => {
     const node = createSceneNode();
     // Set a non-trivial matrix before.
     setSceneNodeScale(node, 2, 3, 4);
-    const m00Before = node.localMatrix.m[0];
-    const m05Before = node.localMatrix.m[5];
-    const m10Before = node.localMatrix.m[10];
+    const m00Before = getNodeLocalMatrix4(node).m[0];
+    const m05Before = getNodeLocalMatrix4(node).m[5];
+    const m10Before = getNodeLocalMatrix4(node).m[10];
     setSceneNodePosition(node, 10, 20, 30);
-    expect(node.localMatrix.m[0]).toBeCloseTo(m00Before);
-    expect(node.localMatrix.m[5]).toBeCloseTo(m05Before);
-    expect(node.localMatrix.m[10]).toBeCloseTo(m10Before);
+    expect(getNodeLocalMatrix4(node).m[0]).toBeCloseTo(m00Before);
+    expect(getNodeLocalMatrix4(node).m[5]).toBeCloseTo(m05Before);
+    expect(getNodeLocalMatrix4(node).m[10]).toBeCloseTo(m10Before);
   });
 });
 
@@ -145,9 +146,9 @@ describe('setSceneNodeRotationQuaternion', () => {
     setSceneNodePosition(node, 5, 6, 7);
     const q = createQuaternion(0, 0, 0, 1); // identity
     setSceneNodeRotationQuaternion(node, q);
-    expect(node.localMatrix.m[12]).toBeCloseTo(5);
-    expect(node.localMatrix.m[13]).toBeCloseTo(6);
-    expect(node.localMatrix.m[14]).toBeCloseTo(7);
+    expect(getNodeLocalMatrix4(node).m[12]).toBeCloseTo(5);
+    expect(getNodeLocalMatrix4(node).m[13]).toBeCloseTo(6);
+    expect(getNodeLocalMatrix4(node).m[14]).toBeCloseTo(7);
   });
 
   it('aliased out: safe when q is derived from node', () => {
@@ -155,7 +156,7 @@ describe('setSceneNodeRotationQuaternion', () => {
     const q = createQuaternion(0, 0, 0, 1);
     setSceneNodeRotationQuaternion(node, q);
     // Should not throw or produce NaN.
-    expect(node.localMatrix.m[0]).not.toBeNaN();
+    expect(getNodeLocalMatrix4(node).m[0]).not.toBeNaN();
   });
 });
 
@@ -174,9 +175,9 @@ describe('setSceneNodeScale', () => {
     const node = createSceneNode();
     setSceneNodePosition(node, 1, 2, 3);
     setSceneNodeScale(node, 2, 2, 2);
-    expect(node.localMatrix.m[12]).toBeCloseTo(1);
-    expect(node.localMatrix.m[13]).toBeCloseTo(2);
-    expect(node.localMatrix.m[14]).toBeCloseTo(3);
+    expect(getNodeLocalMatrix4(node).m[12]).toBeCloseTo(1);
+    expect(getNodeLocalMatrix4(node).m[13]).toBeCloseTo(2);
+    expect(getNodeLocalMatrix4(node).m[14]).toBeCloseTo(3);
   });
 });
 
@@ -205,6 +206,6 @@ describe('setSceneNodeTransform', () => {
     const q = createQuaternion(0, 0, 0, 1);
     // position and scale share the same object — reads before writes
     setSceneNodeTransform(node, v, q, v);
-    expect(node.localMatrix.m[0]).not.toBeNaN();
+    expect(getNodeLocalMatrix4(node).m[0]).not.toBeNaN();
   });
 });

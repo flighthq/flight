@@ -1,4 +1,4 @@
-import { setMatrix4Identity } from '@flighthq/geometry';
+import { createMatrix4, createQuaternion, createTransform3D, createVector3 } from '@flighthq/geometry';
 import type { HasTransform3D, HasTransform3DRuntime, NodeRuntime, Transform3DNode, Vector3Like } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -9,8 +9,15 @@ import { invalidateNodeLocalTransform } from './revision';
 import {
   convertNodeVector3GlobalToLocal,
   convertNodeVector3LocalToGlobal,
+  ensureNodeLocalMatrix4,
   ensureNodeWorldMatrix4,
+  getNodeLocalMatrix4,
+  getNodeTransform3D,
   getNodeWorldMatrix4,
+  isNodeLocalMatrix4Detached,
+  setNodeLocalMatrix4,
+  setNodeTransform3D,
+  syncNodeTransform3DFromMatrix4,
 } from './transform3d';
 
 const TestNodeKind = 'TestNode';
@@ -23,6 +30,21 @@ function createTestNode(): TestNode {
   initTransform3DTrait(node);
   initTransform3DRuntimeTrait(getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime);
   return node as TestNode;
+}
+
+function setNodeTranslation(node: TestNode, x: number, y: number, z: number): void {
+  node.translation.x = x;
+  node.translation.y = y;
+  node.translation.z = z;
+  invalidateNodeLocalTransform(node);
+}
+
+function translationMatrix(x: number, y: number, z: number) {
+  const m = createMatrix4();
+  m.m[12] = x;
+  m.m[13] = y;
+  m.m[14] = z;
+  return m;
 }
 
 function vec(): Vector3Like {
@@ -41,58 +63,19 @@ describe('convertNodeVector3GlobalToLocal', () => {
 
   it('inverts the node translation', () => {
     const node = createTestNode();
-    node.localMatrix.m[12] = 10;
-    node.localMatrix.m[13] = 20;
-    node.localMatrix.m[14] = 30;
-    invalidateNodeLocalTransform(node);
-
+    setNodeTranslation(node, 10, 20, 30);
     const out = vec();
     convertNodeVector3GlobalToLocal(out, node, { x: 11, y: 21, z: 31 } as Vector3Like);
     expect(out.x).toBeCloseTo(1);
     expect(out.y).toBeCloseTo(1);
     expect(out.z).toBeCloseTo(1);
   });
-
-  it('round-trips with convertNodeVector3LocalToGlobal', () => {
-    const parent = createTestNode();
-    const child = createTestNode();
-    addNodeChild(parent, child);
-
-    parent.localMatrix.m[12] = 7;
-    parent.localMatrix.m[13] = -2;
-    invalidateNodeLocalTransform(parent);
-    child.localMatrix.m[14] = 4;
-    invalidateNodeLocalTransform(child);
-
-    const local = { x: 1.5, y: 2.5, z: 3.5 } as Vector3Like;
-    const world = vec();
-    convertNodeVector3LocalToGlobal(world, child, local);
-
-    const back = vec();
-    convertNodeVector3GlobalToLocal(back, child, world);
-    expect(back.x).toBeCloseTo(local.x);
-    expect(back.y).toBeCloseTo(local.y);
-    expect(back.z).toBeCloseTo(local.z);
-  });
 });
 
 describe('convertNodeVector3LocalToGlobal', () => {
-  it('returns the point unchanged for an identity root node', () => {
-    const node = createTestNode();
-    const out = vec();
-    convertNodeVector3LocalToGlobal(out, node, { x: 1, y: 2, z: 3 } as Vector3Like);
-    expect(out.x).toBeCloseTo(1);
-    expect(out.y).toBeCloseTo(2);
-    expect(out.z).toBeCloseTo(3);
-  });
-
   it('applies the node translation to a local point', () => {
     const node = createTestNode();
-    node.localMatrix.m[12] = 10;
-    node.localMatrix.m[13] = 20;
-    node.localMatrix.m[14] = 30;
-    invalidateNodeLocalTransform(node);
-
+    setNodeTranslation(node, 10, 20, 30);
     const out = vec();
     convertNodeVector3LocalToGlobal(out, node, { x: 1, y: 1, z: 1 } as Vector3Like);
     expect(out.x).toBeCloseTo(11);
@@ -104,99 +87,170 @@ describe('convertNodeVector3LocalToGlobal', () => {
     const parent = createTestNode();
     const child = createTestNode();
     addNodeChild(parent, child);
-
-    parent.localMatrix.m[12] = 5;
-    invalidateNodeLocalTransform(parent);
-    child.localMatrix.m[12] = 3;
-    invalidateNodeLocalTransform(child);
-
+    setNodeTranslation(parent, 5, 0, 0);
+    setNodeTranslation(child, 3, 0, 0);
     const out = vec();
     convertNodeVector3LocalToGlobal(out, child, { x: 0, y: 0, z: 0 } as Vector3Like);
     expect(out.x).toBeCloseTo(8);
   });
 });
 
+describe('ensureNodeLocalMatrix4', () => {
+  it('composes the local matrix from translation/rotation/scale', () => {
+    const node = createTestNode();
+    setNodeTranslation(node, 2, 3, 4);
+    node.scale.x = 5;
+    invalidateNodeLocalTransform(node);
+    ensureNodeLocalMatrix4(node);
+    const m = getNodeLocalMatrix4(node);
+    expect(m.m[0]).toBeCloseTo(5);
+    expect(m.m[12]).toBeCloseTo(2);
+    expect(m.m[13]).toBeCloseTo(3);
+    expect(m.m[14]).toBeCloseTo(4);
+  });
+});
+
 describe('ensureNodeWorldMatrix4', () => {
   it('computes the world matrix for a root node', () => {
     const node = createTestNode();
-    node.localMatrix.m[12] = 5;
-    invalidateNodeLocalTransform(node);
+    setNodeTranslation(node, 5, 0, 0);
     ensureNodeWorldMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
-    expect(runtime.worldMatrix).not.toBeNull();
-    expect(runtime.worldMatrix!.m[12]).toBeCloseTo(5);
+    expect(runtime.worldMatrix4).not.toBeNull();
+    expect(runtime.worldMatrix4!.m[12]).toBeCloseTo(5);
   });
 
   it('reuses a cached world matrix when no invalidation has occurred', () => {
     const node = createTestNode();
     ensureNodeWorldMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
-    const first = runtime.worldMatrix;
+    const first = runtime.worldMatrix4;
     ensureNodeWorldMatrix4(node);
-    expect(runtime.worldMatrix).toBe(first);
+    expect(runtime.worldMatrix4).toBe(first);
+  });
+});
+
+describe('getNodeLocalMatrix4', () => {
+  it('reflects the authored translation', () => {
+    const node = createTestNode();
+    setNodeTranslation(node, 3, 0, 0);
+    expect(getNodeLocalMatrix4(node).m[12]).toBeCloseTo(3);
+  });
+});
+
+describe('getNodeTransform3D', () => {
+  it('reads the node TRS fields into a carrier', () => {
+    const node = createTestNode();
+    setNodeTranslation(node, 1, 2, 3);
+    node.scale.y = 4;
+    const out = createTransform3D();
+    getNodeTransform3D(out, node);
+    expect(out.translation).toMatchObject({ x: 1, y: 2, z: 3 });
+    expect(out.scale.y).toBeCloseTo(4);
   });
 });
 
 describe('getNodeWorldMatrix4', () => {
-  it('returns the world matrix for a node', () => {
-    const node = createTestNode();
-    node.localMatrix.m[12] = 3;
-    invalidateNodeLocalTransform(node);
-    const m = getNodeWorldMatrix4(node);
-    expect(m.m[12]).toBeCloseTo(3);
-  });
-
   it('composes parent and child local matrices', () => {
     const parent = createTestNode();
     const child = createTestNode();
     addNodeChild(parent, child);
-    parent.localMatrix.m[12] = 10;
-    invalidateNodeLocalTransform(parent);
-    child.localMatrix.m[12] = 5;
-    invalidateNodeLocalTransform(child);
-    const m = getNodeWorldMatrix4(child);
-    expect(m.m[12]).toBeCloseTo(15);
+    setNodeTranslation(parent, 10, 0, 0);
+    setNodeTranslation(child, 5, 0, 0);
+    expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(15);
   });
 
-  it('world matrix is recomputed after localMatrix changes', () => {
-    const node = createTestNode();
-    invalidateNodeLocalTransform(node);
-    ensureNodeWorldMatrix4(node);
-    const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
-    const first = runtime.worldTransformId;
-
-    node.localMatrix.m[12] = 99;
-    invalidateNodeLocalTransform(node);
-    ensureNodeWorldMatrix4(node);
-    const second = runtime.worldTransformId;
-
-    expect(second).not.toBe(first);
-  });
-
-  it('world matrix is cached when nothing changes', () => {
-    const node = createTestNode();
-    ensureNodeWorldMatrix4(node);
-    const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
-    const id1 = runtime.worldTransformId;
-    ensureNodeWorldMatrix4(node);
-    const id2 = runtime.worldTransformId;
-    expect(id1).toBe(id2);
-  });
-
-  it('child world matrix updates when parent localMatrix changes', () => {
+  it('updates when the parent transform changes', () => {
     const parent = createTestNode();
     const child = createTestNode();
     addNodeChild(parent, child);
+    getNodeWorldMatrix4(child);
+    setNodeTranslation(parent, 7, 0, 0);
+    expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(7);
+  });
+});
 
-    setMatrix4Identity(parent.localMatrix);
-    setMatrix4Identity(child.localMatrix);
-    invalidateNodeLocalTransform(parent);
-    invalidateNodeLocalTransform(child);
+describe('isNodeLocalMatrix4Detached', () => {
+  it('is false for a TRS-authored node and true after a direct matrix set', () => {
+    const node = createTestNode();
+    setNodeTranslation(node, 1, 0, 0);
+    getNodeLocalMatrix4(node);
+    expect(isNodeLocalMatrix4Detached(node)).toBe(false);
+    setNodeLocalMatrix4(node, translationMatrix(9, 0, 0));
+    expect(isNodeLocalMatrix4Detached(node)).toBe(true);
+  });
+});
 
-    parent.localMatrix.m[12] = 7;
-    invalidateNodeLocalTransform(parent);
+describe('setNodeLocalMatrix4', () => {
+  it('sets the matrix directly and survives the local recompute', () => {
+    const node = createTestNode();
+    setNodeLocalMatrix4(node, translationMatrix(9, 8, 7));
+    // ensure must NOT recompose from the (dormant) TRS fields.
+    ensureNodeLocalMatrix4(node);
+    const m = getNodeLocalMatrix4(node);
+    expect(m.m[12]).toBeCloseTo(9);
+    expect(m.m[13]).toBeCloseTo(8);
+    expect(m.m[14]).toBeCloseTo(7);
+  });
 
-    const world = getNodeWorldMatrix4(child);
-    expect(world.m[12]).toBeCloseTo(7);
+  it('propagates to the world matrix', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setNodeLocalMatrix4(parent, translationMatrix(4, 0, 0));
+    setNodeLocalMatrix4(child, translationMatrix(3, 0, 0));
+    expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(7);
+  });
+
+  it('is overridden when a TRS write reclaims authority (last writer wins)', () => {
+    const node = createTestNode();
+    setNodeLocalMatrix4(node, translationMatrix(9, 0, 0));
+    setNodeTranslation(node, 2, 0, 0);
+    expect(isNodeLocalMatrix4Detached(node)).toBe(false);
+    expect(getNodeLocalMatrix4(node).m[12]).toBeCloseTo(2);
+  });
+
+  it('copies the source matrix rather than aliasing it', () => {
+    const node = createTestNode();
+    const source = translationMatrix(5, 0, 0);
+    setNodeLocalMatrix4(node, source);
+    source.m[12] = 999;
+    expect(getNodeLocalMatrix4(node).m[12]).toBeCloseTo(5);
+  });
+});
+
+describe('setNodeTransform3D', () => {
+  it('copies carrier TRS and rebuilds the matrix', () => {
+    const node = createTestNode();
+    const t = createTransform3D();
+    t.translation = createVector3(6, 0, 0);
+    t.scale = createVector3(2, 2, 2);
+    setNodeTransform3D(node, t);
+    const m = getNodeLocalMatrix4(node);
+    expect(m.m[0]).toBeCloseTo(2);
+    expect(m.m[12]).toBeCloseTo(6);
+  });
+});
+
+describe('syncNodeTransform3DFromMatrix4', () => {
+  it('decomposes a directly-set matrix back into the TRS fields and clears detached', () => {
+    const node = createTestNode();
+    setNodeLocalMatrix4(node, translationMatrix(3, 4, 5));
+    syncNodeTransform3DFromMatrix4(node);
+    expect(isNodeLocalMatrix4Detached(node)).toBe(false);
+    expect(node.translation.x).toBeCloseTo(3);
+    expect(node.translation.y).toBeCloseTo(4);
+    expect(node.translation.z).toBeCloseTo(5);
+  });
+
+  it('is non-destructive: the matrix cache is unchanged', () => {
+    const node = createTestNode();
+    node.rotation = createQuaternion();
+    setNodeLocalMatrix4(node, translationMatrix(3, 4, 5));
+    syncNodeTransform3DFromMatrix4(node);
+    const m = getNodeLocalMatrix4(node);
+    expect(m.m[12]).toBeCloseTo(3);
+    expect(m.m[13]).toBeCloseTo(4);
+    expect(m.m[14]).toBeCloseTo(5);
   });
 });

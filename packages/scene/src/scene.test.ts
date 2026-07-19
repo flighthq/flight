@@ -1,4 +1,4 @@
-import { addNodeChild, getNodeChildCount, getNodeRoot } from '@flighthq/node';
+import { addNodeChild, getNodeChildCount, getNodeLocalMatrix4, getNodeRoot } from '@flighthq/node';
 import { SceneNodeKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -25,11 +25,11 @@ describe('createScene', () => {
 
   it('starts with an identity localMatrix and a null worldMatrix slot', () => {
     const scene = createScene();
-    expect(scene.localMatrix.m[0]).toBe(1);
-    expect(scene.localMatrix.m[5]).toBe(1);
-    expect(scene.localMatrix.m[10]).toBe(1);
-    expect(scene.localMatrix.m[15]).toBe(1);
-    expect(getSceneNodeRuntime(scene).worldMatrix).toBeNull();
+    expect(getNodeLocalMatrix4(scene).m[0]).toBe(1);
+    expect(getNodeLocalMatrix4(scene).m[5]).toBe(1);
+    expect(getNodeLocalMatrix4(scene).m[10]).toBe(1);
+    expect(getNodeLocalMatrix4(scene).m[15]).toBe(1);
+    expect(getSceneNodeRuntime(scene).worldMatrix4).toBeNull();
   });
 
   it('starts with no children', () => {
