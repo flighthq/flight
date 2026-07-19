@@ -1,11 +1,37 @@
 import { createCamera, createOrthographicProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
-import { createScene } from '@flighthq/scene';
+import { createMeshGeometry } from '@flighthq/mesh';
+import { addNodeChild } from '@flighthq/node';
+import { createMesh, createScene } from '@flighthq/scene';
+import type { Skin, VertexAttributeLayout } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 import { drawGlSceneShadowMap } from './glShadowMap';
+
+const POSITION_LAYOUT: VertexAttributeLayout = {
+  attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+  stride: 12,
+};
+
+// A layout carrying joints0 (what hasMeshGeometrySkin keys off) so a mesh with a skin GPU-skins.
+const SKINNED_LAYOUT: VertexAttributeLayout = {
+  attributes: [
+    { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+    { byteOffset: 12, format: 'float32x4', semantic: 'joints0' },
+    { byteOffset: 28, format: 'float32x4', semantic: 'weights0' },
+  ],
+  stride: 44,
+};
+
+function lastUploadedVertices(calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array {
+  const data = calls
+    .filter((c) => c.name === 'bufferData')
+    .map((c) => c.args[1])
+    .filter((d): d is Float32Array => d instanceof Float32Array);
+  return data[data.length - 1]!;
+}
 
 function makeShadowState() {
   const { state, gl } = makeGlSceneState();
@@ -125,6 +151,50 @@ describe('drawGlSceneShadowMap', () => {
     const cullFaceConstant = (gl as unknown as Record<string, number>)['CULL_FACE'];
     const enableCullFaceCall = gl.calls.find((c) => c.name === 'enable' && c.args[0] === cullFaceConstant);
     expect(enableCullFaceCall).toBeDefined();
+  });
+
+  it('applies the vertex morph to a caster before recording its depth', () => {
+    const { state, gl } = makeShadowState();
+    const scene = createScene();
+    const geometry = createMeshGeometry({ layout: POSITION_LAYOUT, vertices: new Float32Array([0, 0, 0, 1, 0, 0]) });
+    const mesh = createMesh(geometry, []);
+    // Weight 1 on a target that raises y by 5: the depth pass must upload the blended pose, not the base.
+    mesh.morph = {
+      targets: [{ normalDeltas: null, positionDeltas: new Float32Array([0, 5, 0, 0, 5, 0]), tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    addNodeChild(scene, mesh);
+
+    drawGlSceneShadowMap(state, scene, makeShadowCamera());
+
+    const uploaded = lastUploadedVertices(gl.calls);
+    expect(uploaded[1]).toBe(5);
+    expect(uploaded[4]).toBe(5);
+  });
+
+  it('draws a GPU-skinned caster through the HAS_SKIN depth variant', () => {
+    const { state } = makeShadowState();
+    const scene = createScene();
+    const geometry = createMeshGeometry({
+      layout: SKINNED_LAYOUT,
+      vertices: new Float32Array([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
+    });
+    const mesh = createMesh(geometry, []);
+    const skin: Skin = {
+      skeleton: {
+        inverseBindMatrices: new Float32Array(16),
+        jointMatrices: new Float32Array(16),
+        joints: [],
+        names: null,
+      },
+    };
+    mesh.skin = skin;
+    addNodeChild(scene, mesh);
+
+    drawGlSceneShadowMap(state, scene, makeShadowCamera());
+
+    // A skinned caster compiles + uses the dedicated HAS_SKIN depth program rather than the rigid one.
+    expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('shadow:depth:skin');
   });
 
   it('restores the previous framebuffer after the depth pass', () => {
