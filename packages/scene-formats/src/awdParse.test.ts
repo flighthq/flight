@@ -676,9 +676,10 @@ describe('createSceneFromAwd', () => {
     // clip deforms the skinned mesh — the animation, skeleton, and skin share one joint hierarchy.
     const clip = parseAwdSkeletonAnimation(SKINNED_TRIANGLE_AWD, joints)!;
     expect(clip).not.toBeNull();
-    expect(clip.channels).toHaveLength(2);
+    // Each joint gets a translation channel and a rotation channel, in joint order.
+    expect(clip.channels).toHaveLength(4);
     expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
-    expect((clip.channels[1].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
+    expect((clip.channels[2].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
   });
 
   it('leaves a non-skinned mesh with skin null even when the file carries a skeleton', () => {
@@ -798,9 +799,10 @@ describe('importAwd', () => {
     const mesh = getNodeChildren(result.scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
     const joints = mesh.skin!.skeleton.joints;
     const clip = result.animations[0];
-    expect(clip.channels).toHaveLength(2);
+    // Each joint gets a translation channel and a rotation channel, in joint order.
+    expect(clip.channels).toHaveLength(4);
     expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
-    expect((clip.channels[1].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
+    expect((clip.channels[2].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
   });
 
   it('returns no animations for a static AWD with no skeleton', () => {
@@ -861,10 +863,13 @@ describe('parseAwdSkeletonAnimation', () => {
     const clip = parseAwdSkeletonAnimation(awd, joints);
     expect(clip).not.toBeNull();
 
-    expect(clip!.channels).toHaveLength(2);
+    // Each joint gets a translation channel and a rotation channel, in joint order.
+    expect(clip!.channels).toHaveLength(4);
     expect(clip!.duration).toBeCloseTo(1.0);
     expect((clip!.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
-    expect((clip!.channels[1].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
+    expect((clip!.channels[0].targetRef as SceneAnimationTarget).path).toBe('Translation');
+    expect((clip!.channels[1].targetRef as SceneAnimationTarget).path).toBe('Rotation');
+    expect((clip!.channels[2].targetRef as SceneAnimationTarget).node).toBe(joints[1]);
   });
 
   it('samples animation clip translation values correctly', () => {

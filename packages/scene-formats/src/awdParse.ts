@@ -1,4 +1,12 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
+import {
+  copyMatrix4,
+  createMatrix4,
+  createQuaternion,
+  inverseMatrix4,
+  multiplyMatrix4,
+  setQuaternionFromMatrix4,
+} from '@flighthq/geometry';
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
@@ -7,10 +15,11 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
 import { createTexture } from '@flighthq/texture';
-import type { AnimationClip, Material, SceneNode, Skeleton3D, Skin, Texture } from '@flighthq/types';
+import type { AnimationClip, Material, Matrix4, SceneNode, Skeleton3D, Skin, Texture } from '@flighthq/types';
 import {
   MeshKind,
   ResourceResolutionState,
+  SceneAnimationPathRotation,
   SceneAnimationPathTranslation,
   SceneResourceRefKind,
 } from '@flighthq/types';
@@ -411,9 +420,16 @@ export function parseAwdSkeletonAnimation(
     timeAccumulator += parsedAnimation.poses[p].duration / 1000;
   }
 
+  // Each AWD pose carries a full local joint matrix (rotation + translation). A skeletal animation is
+  // driven mostly by joint rotation; emitting only translation leaves every joint at its bind-pose
+  // orientation, which compounds down the chain into a wildly deformed mesh. So decompose each pose's
+  // 3×3 into a quaternion and drive both the joint's rotation and translation.
+  const rotationMatrix = createMatrix4();
+  const rotationQuat = createQuaternion();
   const channels = [];
   for (let j = 0; j < jointCount; j++) {
-    const values: number[] = [];
+    const translationValues: number[] = [];
+    const rotationValues: number[] = [];
     for (let p = 0; p < poseCount; p++) {
       const poseBlockId = parsedAnimation.poses[p].poseBlockId;
       const pose = poseBlocks.get(poseBlockId);
@@ -421,21 +437,36 @@ export function parseAwdSkeletonAnimation(
         warnings?.push(
           `parseAwdSkeletonAnimation: pose block ${poseBlockId} referenced by animation not found; using identity`,
         );
-        values.push(0, 0, 0);
+        translationValues.push(0, 0, 0);
+        rotationValues.push(0, 0, 0, 1);
       } else if (j < pose.jointTransforms.length && pose.jointTransforms[j] !== null) {
         const transform = pose.jointTransforms[j]!;
-        values.push(transform[9], transform[10], transform[11]);
+        translationValues.push(transform[9], transform[10], transform[11]);
+        // Read the unit quaternion from the pose's 3×3 basis (setQuaternionFromMatrix4 ignores the
+        // translation column, so the lifted matrix's translation is irrelevant).
+        awdTransformToMatrix4(rotationMatrix, transform);
+        setQuaternionFromMatrix4(rotationQuat, rotationMatrix);
+        rotationValues.push(rotationQuat.x, rotationQuat.y, rotationQuat.z, rotationQuat.w);
       } else {
-        values.push(0, 0, 0);
+        translationValues.push(0, 0, 0);
+        rotationValues.push(0, 0, 0, 1);
       }
     }
 
-    const track = createAnimationTrack({
+    const translationTrack = createAnimationTrack({
       components: 3,
       times,
-      values,
+      values: translationValues,
     });
-    channels.push(createAnimationChannel(track, { node: joints[j], path: SceneAnimationPathTranslation }));
+    channels.push(createAnimationChannel(translationTrack, { node: joints[j], path: SceneAnimationPathTranslation }));
+
+    const rotationTrack = createAnimationTrack({
+      components: 4,
+      quaternion: true,
+      times,
+      values: rotationValues,
+    });
+    channels.push(createAnimationChannel(rotationTrack, { node: joints[j], path: SceneAnimationPathRotation }));
   }
 
   return createAnimationClip(channels, timeAccumulator);
@@ -443,28 +474,28 @@ export function parseAwdSkeletonAnimation(
 
 // Builds the joint SceneNode hierarchy + Skeleton3D from a parsed AWD skeleton block, hung under a
 // "skeleton" group node so the whole rig can be attached to the scene as one child (the same shape
-// createSceneFromMd5Mesh uses). Joint local transforms are applied and the parent chain wired (AWD
-// parent index is 1-based, 0 = root; roots hang under the group). createSkeleton3D with no explicit
-// inverse-bind matrices captures the resulting world transforms as the rest pose, so the skinned mesh
-// renders undeformed until the animation poses the joints. Callers get the joint nodes back for
-// binding both the mesh skin and (via mesh.skin.skeleton.joints) the animation clip to one hierarchy.
+// createSceneFromMd5Mesh uses). The parent chain is wired (AWD parent index is 1-based, 0 = root;
+// roots hang under the group). The AWD skeleton joint matrix is the inverse bind pose, so it is passed
+// to createSkeleton3D as the explicit inverse-bind palette and each joint's local transform is seeded
+// to the bind pose, so the skinned mesh renders undeformed until the animation poses the joints.
+// Callers get the joint nodes back for binding both the mesh skin and (via mesh.skin.skeleton.joints)
+// the animation clip to one hierarchy.
 function buildAwdSkeleton(parsedSkeleton: Readonly<ParsedSkeleton>): {
   jointNodes: SceneNode[];
   skeleton: Skeleton3D;
   skeletonRoot: SceneNode;
 } {
+  const jointCount = parsedSkeleton.joints.length;
   const skeletonRoot = createSceneNode(undefined, { name: 'skeleton' });
   const jointNodes: SceneNode[] = [];
   const jointNames: string[] = [];
-  for (let j = 0; j < parsedSkeleton.joints.length; j++) {
+  for (let j = 0; j < jointCount; j++) {
     const joint = parsedSkeleton.joints[j];
-    const node = createSceneNode(undefined, { name: joint.name || undefined });
-    applyAwdTransform(node, joint.transform);
-    jointNodes.push(node);
+    jointNodes.push(createSceneNode(undefined, { name: joint.name || undefined }));
     jointNames.push(joint.name);
   }
 
-  for (let j = 0; j < parsedSkeleton.joints.length; j++) {
+  for (let j = 0; j < jointCount; j++) {
     const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
     if (parentIndex1 > 0 && parentIndex1 - 1 < jointNodes.length) {
       addNodeChild(jointNodes[parentIndex1 - 1], jointNodes[j]);
@@ -473,7 +504,38 @@ function buildAwdSkeleton(parsedSkeleton: Readonly<ParsedSkeleton>): {
     }
   }
 
-  const skeleton = createSkeleton3D(jointNodes, undefined, jointNames);
+  // The AWD skeleton joint matrix is the joint's INVERSE bind pose (model→joint at bind), not a local
+  // transform — see the AWD format and AwayJS's AWDParser (joint.inverseBindPose). So store it as the
+  // skeleton's explicit inverse-bind palette, and seed each joint's LOCAL transform to the bind pose so
+  // the rig renders undeformed until the animation poses the joints. Bind world = inverseBind⁻¹, and a
+  // joint's bind-local = parentBindWorld⁻¹ · jointBindWorld (roots use bind world directly). The
+  // animation clip then overrides these locals per frame; the skinning palette is jointWorld ·
+  // inverseBind, which is identity at bind (undeformed) and the pose delta once animated.
+  const inverseBindMatrices = new Float32Array(jointCount * 16);
+  const bindWorld: Matrix4[] = [];
+  const invBind = createMatrix4();
+  for (let j = 0; j < jointCount; j++) {
+    awdTransformToMatrix4(invBind, parsedSkeleton.joints[j].transform);
+    inverseBindMatrices.set(invBind.m, j * 16);
+    const bw = createMatrix4();
+    inverseMatrix4(bw, invBind);
+    bindWorld.push(bw);
+  }
+
+  const invParent = createMatrix4();
+  for (let j = 0; j < jointCount; j++) {
+    const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
+    const local = jointNodes[j].localMatrix;
+    if (parentIndex1 > 0 && parentIndex1 - 1 < jointCount) {
+      inverseMatrix4(invParent, bindWorld[parentIndex1 - 1]);
+      multiplyMatrix4(local, invParent, bindWorld[j]);
+    } else {
+      copyMatrix4(local, bindWorld[j]);
+    }
+    invalidateNodeLocalTransform(jointNodes[j]);
+  }
+
+  const skeleton = createSkeleton3D(jointNodes, inverseBindMatrices, jointNames);
   return { jointNodes, skeleton, skeletonRoot };
 }
 
@@ -547,10 +609,16 @@ function readAwdTransform(
   return { end: offset + 12 * floatSize, transform };
 }
 
-// AWD stores transforms as 12 column-major floats: [c0x,c0y,c0z, c1x,c1y,c1z,
-// c2x,c2y,c2z, tx,ty,tz] → 4×4 column-major with w-column [0,0,0,1].
+// Writes an AWD 12-float column-major transform into a node's local matrix, then invalidates it.
 function applyAwdTransform(node: SceneNode, transform: Readonly<Float64Array>): void {
-  const m = node.localMatrix.m;
+  awdTransformToMatrix4(node.localMatrix, transform);
+  invalidateNodeLocalTransform(node);
+}
+
+// AWD stores transforms as 12 column-major floats: [c0x,c0y,c0z, c1x,c1y,c1z, c2x,c2y,c2z, tx,ty,tz] →
+// 4×4 column-major with w-column [0,0,0,1]. Lifts one into `out` (its runtime binding is left intact).
+function awdTransformToMatrix4(out: Matrix4, transform: Readonly<Float64Array>): void {
+  const m = out.m;
   m[0] = transform[0];
   m[1] = transform[1];
   m[2] = transform[2];
@@ -567,7 +635,6 @@ function applyAwdTransform(node: SceneNode, transform: Readonly<Float64Array>): 
   m[13] = transform[10];
   m[14] = transform[11];
   m[15] = 1;
-  invalidateNodeLocalTransform(node);
 }
 
 function awdDataTypeByteSize(dataType: number): number {
