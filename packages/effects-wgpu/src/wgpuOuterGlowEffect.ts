@@ -7,12 +7,12 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { clearWgpuEffectTarget } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
 
-// Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then composite the source over the glow.
+// Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // multi-pass recipe (tint → box blur → composite), then releases them.
 export function applyOuterGlowEffectToWgpu(
@@ -33,7 +33,7 @@ export function applyOuterGlowEffectToWgpu(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
-  const knockout = effect.knockout ?? false;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   const tintStrength = Math.min(1, strength);
   const glowPasses = Math.max(1, Math.floor(strength));
@@ -50,7 +50,9 @@ export function applyOuterGlowEffectToWgpu(
     applyWgpuEffectBlitPass(state, blurred, dst);
   }
 
-  if (!knockout) {
+  if (sourceMode === 'knockout') {
+    applyWgpuEffectErasePass(state, src, dst);
+  } else if (sourceMode === 'draw') {
     applyWgpuEffectBlitPass(state, src, dst);
   }
 

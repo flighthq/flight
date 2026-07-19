@@ -118,6 +118,7 @@ export * from './DomRenderState';
 export * from './DomStageRectangle';
 export * from './DragForce';
 export * from './DropShadowEffect';
+export * from './EffectSourceMode';
 export * from './EasingFunction';
 export * from './EasingSegment';
 export * from './EmissiveMaterial';

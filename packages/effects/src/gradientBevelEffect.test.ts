@@ -9,7 +9,13 @@ describe('createGradientBevelEffect', () => {
 
   it('carries options', () => {
     expect(
-      createGradientBevelEffect({ colors: [0xff0000, 0x00ff00], alphas: [1, 1], ratios: [0, 255], strength: 2 }),
-    ).toMatchObject({ strength: 2 });
+      createGradientBevelEffect({
+        colors: [0xff0000, 0x00ff00],
+        alphas: [1, 1],
+        ratios: [0, 255],
+        sourceMode: 'hide',
+        strength: 2,
+      }),
+    ).toMatchObject({ sourceMode: 'hide', strength: 2 });
   });
 });

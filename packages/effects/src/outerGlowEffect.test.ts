@@ -6,6 +6,9 @@ describe('createOuterGlowEffect', () => {
   });
 
   it('carries options', () => {
-    expect(createOuterGlowEffect({ strength: 2 })).toMatchObject({ strength: 2 });
+    expect(createOuterGlowEffect({ sourceMode: 'hide', strength: 2 })).toMatchObject({
+      sourceMode: 'hide',
+      strength: 2,
+    });
   });
 });

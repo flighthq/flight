@@ -9,12 +9,12 @@ describe('computeDropShadowEffectCss', () => {
     expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect' })).toBe('drop-shadow(3px 3px 4px rgba(0,0,0,1.000))');
   });
 
-  it('returns null for hideObject because CSS drop-shadow includes the source object', () => {
-    expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect', hideObject: true })).toBeNull();
+  it('returns null for hide because CSS drop-shadow includes the source object', () => {
+    expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect', sourceMode: 'hide' })).toBeNull();
   });
 
   it('returns null for knockout because CSS drop-shadow includes the source object', () => {
-    expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect', knockout: true })).toBeNull();
+    expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect', sourceMode: 'knockout' })).toBeNull();
   });
 });
 
@@ -25,5 +25,10 @@ describe('computeOuterGlowEffectCss', () => {
 
   it('emits the default outer-glow string', () => {
     expect(computeOuterGlowEffectCss({ kind: 'OuterGlowEffect' })).toBe('drop-shadow(0px 0px 6px rgba(255,0,0,1.000))');
+  });
+
+  it('returns null for non-draw source modes', () => {
+    expect(computeOuterGlowEffectCss({ kind: 'OuterGlowEffect', sourceMode: 'hide' })).toBeNull();
+    expect(computeOuterGlowEffectCss({ kind: 'OuterGlowEffect', sourceMode: 'knockout' })).toBeNull();
   });
 });

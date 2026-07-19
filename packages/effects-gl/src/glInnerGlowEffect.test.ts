@@ -1,3 +1,7 @@
+vi.hoisted(() => {
+  vi.resetModules();
+});
+
 vi.mock('@flighthq/render-gl', () => {
   let nextTargetId = 0;
   return {
@@ -43,11 +47,14 @@ describe('applyInnerGlowEffectToGl', () => {
     expect(applyGlEffectBlitPass).toHaveBeenNthCalledWith(1, expect.anything(), source, dest);
   });
 
-  it('omits the source composite when knockout is true', () => {
+  it('omits the source composite when sourceMode is hide', () => {
     const source = createTarget('source');
     const dest = createTarget('dest');
 
-    applyInnerGlowEffectToGl(createState(), source, dest, createPool(), { kind: 'InnerGlowEffect', knockout: true });
+    applyInnerGlowEffectToGl(createState(), source, dest, createPool(), {
+      kind: 'InnerGlowEffect',
+      sourceMode: 'hide',
+    });
 
     expect(applyGlEffectBlitPass).toHaveBeenCalledTimes(1);
     expect(applyGlEffectBlitPass).not.toHaveBeenCalledWith(expect.anything(), source, dest);
@@ -62,6 +69,14 @@ describe('defaultGlInnerGlowEffectRunner', () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+afterAll(() => {
+  vi.doUnmock('@flighthq/render-gl');
+  vi.doUnmock('./glEffectBlitShader');
+  vi.doUnmock('./glEffectBoxBlur');
+  vi.doUnmock('./glEffectTintShader');
+  vi.resetModules();
 });
 
 function createState(): never {

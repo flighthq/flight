@@ -9,7 +9,7 @@ describe('createInnerGlowEffect', () => {
     expect(createInnerGlowEffect({ strength: 2 })).toMatchObject({ strength: 2 });
   });
 
-  it('carries knockout', () => {
-    expect(createInnerGlowEffect({ knockout: true })).toMatchObject({ knockout: true });
+  it('carries source mode', () => {
+    expect(createInnerGlowEffect({ sourceMode: 'hide' })).toMatchObject({ sourceMode: 'hide' });
   });
 });

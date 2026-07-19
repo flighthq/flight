@@ -7,12 +7,16 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types';
 
-import { applyWgpuEffectBlitOffsetPass, applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import {
+  applyWgpuEffectBlitOffsetPass,
+  applyWgpuEffectBlitPass,
+  applyWgpuEffectErasePass,
+} from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { clearWgpuEffectTarget } from './wgpuEffectPass';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
 
-// Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then composite the source over the shadow.
+// Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
 // multi-pass recipe (tint → box blur → offset → composite), then releases them.
 export function applyDropShadowEffectToWgpu(
@@ -22,8 +26,6 @@ export function applyDropShadowEffectToWgpu(
   pool: WgpuRenderTargetPool,
   effect: Readonly<DropShadowEffect>,
 ): void {
-  if (effect.knockout) return;
-
   const src = source as WgpuRenderTarget;
   const dst = dest as WgpuRenderTarget;
   const descriptor = { width: source.width, height: source.height, format: source.format };
@@ -39,7 +41,7 @@ export function applyDropShadowEffectToWgpu(
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
-  const hideObject = effect.hideObject ?? false;
+  const sourceMode = effect.sourceMode ?? 'draw';
 
   const tintStrength = Math.min(1, strength);
   const shadowPasses = Math.max(1, Math.floor(strength));
@@ -56,7 +58,9 @@ export function applyDropShadowEffectToWgpu(
     applyWgpuEffectBlitOffsetPass(state, blurred, dst, dx, dy);
   }
 
-  if (!hideObject) {
+  if (sourceMode === 'knockout') {
+    applyWgpuEffectErasePass(state, src, dst);
+  } else if (sourceMode === 'draw') {
     applyWgpuEffectBlitPass(state, src, dst);
   }
 
