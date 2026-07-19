@@ -24,7 +24,7 @@ function makeRenderProxy(image: unknown = null, rendererData: unknown = makeBitm
 }
 
 function makeImageResource(source: unknown = null, width = 32, height = 32, data: Uint8ClampedArray | null = null) {
-  return { source, data, width, height, version: 1, alphaType: 'straight' };
+  return { source, data, compressed: null, width, height, version: 1, alphaType: 'straight' };
 }
 
 describe('defaultGlBitmapRenderer', () => {
