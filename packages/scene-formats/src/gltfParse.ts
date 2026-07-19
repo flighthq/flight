@@ -19,6 +19,9 @@ import type {
   SceneNode,
   Skin,
   Texture,
+  TextureColorSpace,
+  TextureFilter,
+  TextureWrap,
 } from '@flighthq/types';
 import {
   SceneAnimationPathRotation,
@@ -34,22 +37,29 @@ import type {
   GltfComponentType,
   GltfDocument,
   GltfImage,
+  GltfImportOptions,
   GltfMaterial,
   GltfMorphTarget,
   GltfNode,
   GltfPrimitive,
+  GltfSampler,
   GltfTextureInfo,
 } from './gltfSchema';
 import type { SceneImport } from './sceneImport';
 
 // Parses a binary glTF (`.glb`) container into a Scene. The 12-byte header (magic `glTF`, version,
 // length) is validated, then the chunk stream is walked to extract the embedded JSON document and the
-// optional BIN chunk; the BIN chunk backs any buffer that has no `uri`. Malformed containers return an
-// empty Scene and push a warning rather than throwing.
-export function createSceneFromGlb(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
+// optional BIN chunk; the BIN chunk backs any buffer that has no `uri`. `options` supplies external
+// buffer bytes and a base path for any external URIs the GLB still references. Malformed containers
+// return an empty Scene and push a warning rather than throwing.
+export function createSceneFromGlb(
+  bytes: Readonly<Uint8Array>,
+  warnings?: string[],
+  options?: Readonly<GltfImportOptions>,
+): Scene {
   const container = readGlbContainer(bytes, warnings);
   if (container === null) return createScene();
-  return buildSceneFromGltfDocument(container.document, container.binary, warnings);
+  return buildSceneFromGltfDocument(container.document, container.binary, options, warnings);
 }
 
 // Parses a glTF 2.0 document (JSON string or already-parsed object) into a Scene: the node hierarchy
@@ -60,9 +70,15 @@ export function createSceneFromGlb(bytes: Readonly<Uint8Array>, warnings?: strin
 // canonical PBR vertex layout (or the skinned layout when JOINTS_0/WEIGHTS_0 are present); skins
 // (joint hierarchy + inverse-bind matrices bound to the mesh via `mesh.skin`); every `primitives[]`
 // entry of a mesh (multi-primitive → sub-mesh children); strided (`byteStride`) and normalized-integer
-// accessors; sparse accessors; materials (metallic-roughness PBR → StandardPbrMaterial, textures as
-// Unresolved refs). Not yet imported (return to these): animations and external (`.bin`) buffer URIs.
-export function createSceneFromGltf(source: GltfDocument | string, warnings?: string[]): Scene {
+// accessors; sparse accessors; materials (metallic-roughness PBR → StandardPbrMaterial); textures with
+// their sampler (wrap/filter), color space (srgb for baseColor/emissive, linear for data maps), and
+// KHR_texture_transform UV remap, resolving embedded bytes to Embedded refs and external URIs to
+// External refs (against `options.basePath`); external (`.bin`) buffers via `options.externalBuffers`.
+export function createSceneFromGltf(
+  source: GltfDocument | string,
+  warnings?: string[],
+  options?: Readonly<GltfImportOptions>,
+): Scene {
   let doc: GltfDocument;
   if (typeof source === 'string') {
     try {
@@ -74,24 +90,34 @@ export function createSceneFromGltf(source: GltfDocument | string, warnings?: st
   } else {
     doc = source;
   }
-  return buildSceneFromGltfDocument(doc, null, warnings);
+  return buildSceneFromGltfDocument(doc, null, options, warnings);
 }
 
 // Imports a binary glTF (`.glb`) container as a whole file: every scene plus every animation clip,
-// with clip channels bound to the same SceneNode instances the scenes hold. The assembly-tier sibling
-// of createSceneFromGlb — reach for it when the file carries animations or multiple scenes.
-export function importGlb(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneImport {
+// with clip channels bound to the same SceneNode instances the scenes hold. `options` supplies any
+// external buffer bytes and base path the container still references. The assembly-tier sibling of
+// createSceneFromGlb — reach for it when the file carries animations or multiple scenes.
+export function importGlb(
+  bytes: Readonly<Uint8Array>,
+  warnings?: string[],
+  options?: Readonly<GltfImportOptions>,
+): SceneImport {
   const container = readGlbContainer(bytes, warnings);
   if (container === null) return emptySceneImport();
-  return importGltfDocument(container.document, container.binary, warnings);
+  return importGltfDocument(container.document, container.binary, options, warnings);
 }
 
 // Imports a glTF 2.0 document as a whole file: `{ scene, scenes, animations }`. `scene` is the default
 // scene (`doc.scene`), `scenes` every scene the file declares (all sharing one node pool), and
-// `animations` a clip per `animations[]` entry with channels bound to the built nodes. The assembly-tier
-// sibling of createSceneFromGltf; the geometry-only primitive stays separate so a scene-only caller
-// tree-shakes the animation code out.
-export function importGltf(source: GltfDocument | string, warnings?: string[]): SceneImport {
+// `animations` a clip per `animations[]` entry with channels bound to the built nodes. `options`
+// supplies external buffer bytes and a base path for external URIs. The assembly-tier sibling of
+// createSceneFromGltf; the geometry-only primitive stays separate so a scene-only caller tree-shakes
+// the animation code out.
+export function importGltf(
+  source: GltfDocument | string,
+  warnings?: string[],
+  options?: Readonly<GltfImportOptions>,
+): SceneImport {
   let doc: GltfDocument;
   if (typeof source === 'string') {
     try {
@@ -103,7 +129,7 @@ export function importGltf(source: GltfDocument | string, warnings?: string[]): 
   } else {
     doc = source;
   }
-  return importGltfDocument(doc, null, warnings);
+  return importGltfDocument(doc, null, options, warnings);
 }
 
 function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void {
@@ -130,9 +156,10 @@ function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void
 function buildSceneFromGltfDocument(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
+  options: Readonly<GltfImportOptions> | undefined,
   warnings?: string[],
 ): Scene {
-  const pool = buildGltfNodePool(doc, binary, warnings);
+  const pool = buildGltfNodePool(doc, binary, options, warnings);
   if (pool === null) return createScene();
   return assembleGltfScene(doc, pool.sceneNodes, doc.scene ?? 0);
 }
@@ -145,6 +172,7 @@ function buildSceneFromGltfDocument(
 function buildGltfNodePool(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
+  options: Readonly<GltfImportOptions> | undefined,
   warnings?: string[],
 ): { buffers: readonly Uint8Array[]; sceneNodes: SceneNode[] } | null {
   if (doc === null || typeof doc !== 'object') {
@@ -161,7 +189,7 @@ function buildGltfNodePool(
     }
   }
 
-  const buffers = (doc.buffers ?? []).map((buffer) => decodeGltfBuffer(buffer, binary, warnings));
+  const buffers = (doc.buffers ?? []).map((buffer) => decodeGltfBuffer(buffer, binary, options, warnings));
   // Each mesh maps to the list of geometries built from its primitives (one geometry per primitive).
   const meshGeometries = (doc.meshes ?? []).map((mesh) =>
     mesh.primitives.map((primitive) => primitiveToGeometry(doc, buffers, primitive, warnings)),
@@ -175,7 +203,7 @@ function buildGltfNodePool(
   // Resolve each glTF material to a StandardPbrMaterial once (memoized by index), then map each mesh's
   // primitives to the material each references. glTF's shading model is metallic-roughness PBR, so it
   // decodes to StandardPbrMaterial rather than the Blinn-Phong the classic formats use.
-  const resolvedMaterials = (doc.materials ?? []).map((material) => gltfMaterialToPbr(doc, buffers, material));
+  const resolvedMaterials = (doc.materials ?? []).map((material) => gltfMaterialToPbr(doc, buffers, material, options));
   const meshMaterials = (doc.meshes ?? []).map((mesh) =>
     mesh.primitives.map((primitive) =>
       primitive.material !== undefined ? (resolvedMaterials[primitive.material] ?? null) : null,
@@ -227,9 +255,10 @@ function assembleGltfScene(doc: Readonly<GltfDocument>, sceneNodes: readonly Sce
 function importGltfDocument(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
+  options: Readonly<GltfImportOptions> | undefined,
   warnings?: string[],
 ): SceneImport {
-  const pool = buildGltfNodePool(doc, binary, warnings);
+  const pool = buildGltfNodePool(doc, binary, options, warnings);
   if (pool === null) return emptySceneImport();
 
   const sceneCount = doc.scenes?.length ?? 0;
@@ -445,24 +474,27 @@ function buildMeshSceneNode(
 // Converts a glTF material to Flight's StandardPbrMaterial — glTF's own metallic-roughness model. The
 // pbrMetallicRoughness factors/textures, the normal/occlusion/emissive channels, and the alpha mode
 // map field-for-field; absent factors take the spec defaults. Textures resolve to Unresolved refs
-// (the parser references, it does not decode). This is the faithful decode: glTF is natively PBR, so
-// unlike the classic formats it is NOT reinterpreted into another shading model.
+// carrying their sampler, color space, and KHR_texture_transform (the parser references, it does not
+// decode). baseColor/emissive maps are sampled in 'srgb'; the data maps (normal/metallic-roughness/
+// occlusion) in 'linear', so a shader does not gamma-decode data channels. This is the faithful
+// decode: glTF is natively PBR, so unlike the classic formats it is NOT reinterpreted.
 function gltfMaterialToPbr(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   material: Readonly<GltfMaterial>,
+  options: Readonly<GltfImportOptions> | undefined,
 ): Material {
   const pbr = material.pbrMetallicRoughness ?? {};
   const result = createStandardPbrMaterial({
     baseColor: packGltfColor(pbr.baseColorFactor ?? [1, 1, 1, 1], 4),
-    baseColorMap: resolveGltfTexture(doc, buffers, pbr.baseColorTexture),
+    baseColorMap: resolveGltfTexture(doc, buffers, pbr.baseColorTexture, 'srgb', options),
     emissive: packGltfColor(material.emissiveFactor ?? [0, 0, 0], 3),
-    emissiveMap: resolveGltfTexture(doc, buffers, material.emissiveTexture),
+    emissiveMap: resolveGltfTexture(doc, buffers, material.emissiveTexture, 'srgb', options),
     metallic: pbr.metallicFactor ?? 1,
-    metallicRoughnessMap: resolveGltfTexture(doc, buffers, pbr.metallicRoughnessTexture),
-    normalMap: resolveGltfTexture(doc, buffers, material.normalTexture),
+    metallicRoughnessMap: resolveGltfTexture(doc, buffers, pbr.metallicRoughnessTexture, 'linear', options),
+    normalMap: resolveGltfTexture(doc, buffers, material.normalTexture, 'linear', options),
     normalScale: material.normalTexture?.scale ?? 1,
-    occlusionMap: resolveGltfTexture(doc, buffers, material.occlusionTexture),
+    occlusionMap: resolveGltfTexture(doc, buffers, material.occlusionTexture, 'linear', options),
     occlusionStrength: material.occlusionTexture?.strength ?? 1,
     roughness: pbr.roughnessFactor ?? 1,
   });
@@ -473,29 +505,73 @@ function gltfMaterialToPbr(
   return result as unknown as Material;
 }
 
-// Resolves a glTF material texture reference to a Flight Texture carrying an Unresolved resource ref:
-// a `data:` URI or bufferView-embedded image becomes an Embedded ref (bytes in hand), an external URI
-// becomes an External ref. Returns null when the reference or its image cannot be resolved.
+// Resolves a glTF material texture reference to a Flight Texture carrying an Unresolved resource ref
+// plus its sampled state: a `data:` URI or bufferView-embedded image becomes an Embedded ref (bytes in
+// hand), an external URI becomes an External ref against `options.basePath`. The referenced glTF
+// `sampler` (wrap/filter) maps onto the Texture's Sampler + wrap; `colorSpace` sets whether the shader
+// gamma-decodes it (srgb for color maps, linear for data maps); a KHR_texture_transform on the
+// textureInfo sets the Texture's uvOffset/uvRotation/uvScale. Returns null when the reference or its
+// image cannot be resolved.
 function resolveGltfTexture(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   info: Readonly<GltfTextureInfo> | undefined,
+  colorSpace: TextureColorSpace,
+  options: Readonly<GltfImportOptions> | undefined,
 ): Texture | null {
   if (info === undefined) return null;
-  const source = doc.textures?.[info.index]?.source;
-  if (source === undefined) return null;
-  const image = doc.images?.[source];
+  const texture = doc.textures?.[info.index];
+  if (texture?.source === undefined) return null;
+  const image = doc.images?.[texture.source];
   if (image === undefined) return null;
-  return gltfImageToTexture(doc, buffers, image);
+  const result = gltfImageToTexture(doc, buffers, image, options);
+  if (result === null) return null;
+
+  result.colorSpace = colorSpace;
+  applyGltfSampler(result, texture.sampler !== undefined ? doc.samplers?.[texture.sampler] : undefined);
+  applyGltfTextureTransform(result, info.extensions?.KHR_texture_transform);
+  return result;
+}
+
+// Maps a glTF sampler's GL wrap/filter enums onto the Texture's Sampler and wrap fields. Absent
+// samplers/fields take the Flight sampler defaults (createTexture already supplied them). Mip-aware
+// glTF min filters imply a generated mip chain (Sampler.mipmaps = true); the non-mip nearest/linear
+// filters imply none. Anisotropy is not a glTF concept, so it stays at the default.
+function applyGltfSampler(texture: Texture, sampler: Readonly<GltfSampler> | undefined): void {
+  if (sampler === undefined) return;
+  if (sampler.wrapS !== undefined) texture.sampler.wrapU = GLTF_TEXTURE_WRAP[sampler.wrapS];
+  if (sampler.wrapT !== undefined) texture.sampler.wrapV = GLTF_TEXTURE_WRAP[sampler.wrapT];
+  if (sampler.magFilter !== undefined) texture.sampler.magFilter = GLTF_TEXTURE_FILTER[sampler.magFilter];
+  if (sampler.minFilter !== undefined) {
+    texture.sampler.minFilter = GLTF_TEXTURE_FILTER[sampler.minFilter];
+    texture.sampler.mipmaps = GLTF_MIN_FILTER_MIPMAPS[sampler.minFilter];
+  }
+}
+
+// Applies a KHR_texture_transform block to the Texture's KHR_texture_transform fields (the identity is
+// already in place from createTexture). offset → uvOffset, rotation (radians) → uvRotation, scale →
+// uvScale. Absent sub-fields take the extension's spec defaults ([0,0] / 0 / [1,1]).
+function applyGltfTextureTransform(
+  texture: Texture,
+  transform: NonNullable<GltfTextureInfo['extensions']>['KHR_texture_transform'] | undefined,
+): void {
+  if (transform === undefined) return;
+  texture.uvOffset.x = transform.offset?.[0] ?? 0;
+  texture.uvOffset.y = transform.offset?.[1] ?? 0;
+  texture.uvRotation = transform.rotation ?? 0;
+  texture.uvScale.x = transform.scale?.[0] ?? 1;
+  texture.uvScale.y = transform.scale?.[1] ?? 1;
 }
 
 // Builds a Texture from a glTF image: a `data:` URI decodes its base64 payload to an Embedded ref
 // (MIME from the URI header, the declared `mimeType`, or sniffed from the bytes); an external URI
-// becomes an External ref; a bufferView slices the encoded bytes out of its buffer as an Embedded ref.
+// becomes an External ref against `options.basePath`; a bufferView slices the encoded bytes out of its
+// buffer as an Embedded ref.
 function gltfImageToTexture(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   image: Readonly<GltfImage>,
+  options: Readonly<GltfImportOptions> | undefined,
 ): Texture | null {
   if (image.uri !== undefined) {
     if (image.uri.startsWith('data:')) {
@@ -506,7 +582,7 @@ function gltfImageToTexture(
       const bytes = decodeBase64(image.uri.slice(comma + 1));
       return createEmbeddedTextureRef(bytes, declared ?? detectImageMimeType(bytes));
     }
-    return createExternalTextureRef(image.uri);
+    return createExternalTextureRef(image.uri, options?.basePath ?? null);
   }
   if (image.bufferView !== undefined) {
     const bufferView = doc.bufferViews?.[image.bufferView];
@@ -531,11 +607,13 @@ function packGltfColor(factor: readonly number[], channels: number): number {
 }
 
 // Decodes a buffer into bytes. A `data:` URI base64-decodes; a buffer with no `uri` is backed by the
-// GLB binary chunk when present. External (`.bin`) URIs and uri-less buffers without a binary chunk are
-// unsupported today and decode to empty with a warning.
+// GLB binary chunk when present. An external (`.bin`) URI is served from `options.externalBuffers`
+// (the caller fetched it, since parse is synchronous), keyed by the exact `uri` string. A URI missing
+// from that map, or a uri-less buffer with no binary chunk, decodes to empty with a warning.
 function decodeGltfBuffer(
   buffer: Readonly<GltfBuffer>,
   binary: Readonly<Uint8Array> | null,
+  options: Readonly<GltfImportOptions> | undefined,
   warnings?: string[],
 ): Uint8Array {
   const uri = buffer.uri;
@@ -545,11 +623,15 @@ function decodeGltfBuffer(
     return new Uint8Array(0);
   }
   const comma = uri.indexOf(',');
-  if (!uri.startsWith('data:') || comma < 0) {
-    warnings?.push('decodeGltfBuffer: only embedded data-URI buffers are supported; returning empty buffer');
-    return new Uint8Array(0);
+  if (uri.startsWith('data:') && comma >= 0) {
+    return decodeBase64(uri.slice(comma + 1));
   }
-  return decodeBase64(uri.slice(comma + 1));
+  const supplied = options?.externalBuffers?.[uri];
+  if (supplied !== undefined) return Uint8Array.from(supplied);
+  warnings?.push(
+    `decodeGltfBuffer: external buffer '${uri}' was not supplied via options.externalBuffers; returning empty buffer`,
+  );
+  return new Uint8Array(0);
 }
 
 // Portable base64 decode that works in Node.js (Vitest) and browsers alike, avoiding the
@@ -773,6 +855,13 @@ function readAccessor(
     const elementByteSize = componentCount * componentByteSize;
     const stride = view.byteStride !== undefined && view.byteStride > 0 ? view.byteStride : elementByteSize;
     const baseOffset = bytes.byteOffset + (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0);
+    // A truncated or unsupplied (empty) backing buffer would read past the DataView; guard the last
+    // component's end against the buffer's real length and bail with empty rather than throwing.
+    const lastByteEnd = accessor.count > 0 ? baseOffset + (accessor.count - 1) * stride + elementByteSize : baseOffset;
+    if (lastByteEnd > bytes.byteOffset + bytes.byteLength) {
+      warnings?.push(`readAccessor: accessor ${accessorIndex} runs past its buffer; returning empty`);
+      return { count: 0, data: new Float32Array(0) };
+    }
     const dataView = new DataView(bytes.buffer);
     for (let i = 0; i < accessor.count; i++) {
       const elementOffset = baseOffset + i * stride;
@@ -967,6 +1056,37 @@ const GLTF_SAMPLER_INTERPOLATIONS: Record<string, AnimationInterpolation> = {
   CUBICSPLINE: 'Cubic',
   LINEAR: 'Linear',
   STEP: 'Step',
+};
+
+// glTF sampler min/mag filter GL enums → Flight TextureFilter. glTF's mip-aware min filters
+// (LINEAR_MIPMAP_LINEAR etc.) map onto Flight's mip-aware filter names; the mag filter is always a
+// non-mip mode (NEAREST/LINEAR).
+const GLTF_TEXTURE_FILTER: Record<number, TextureFilter> = {
+  9728: 'nearest',
+  9729: 'linear',
+  9984: 'nearest-mipmap-nearest',
+  9985: 'linear-mipmap-nearest',
+  9986: 'nearest-mipmap-linear',
+  9987: 'linear-mipmap-linear',
+};
+
+// Whether a glTF min-filter GL enum implies a sampled mip chain — the four *_MIPMAP_* modes do, the
+// plain NEAREST/LINEAR do not. Sets Sampler.mipmaps so a non-mip filter does not force mip generation.
+const GLTF_MIN_FILTER_MIPMAPS: Record<number, boolean> = {
+  9728: false,
+  9729: false,
+  9984: true,
+  9985: true,
+  9986: true,
+  9987: true,
+};
+
+// glTF sampler wrap GL enums → Flight TextureWrap. REPEAT (10497), CLAMP_TO_EDGE (33071),
+// MIRRORED_REPEAT (33648).
+const GLTF_TEXTURE_WRAP: Record<number, TextureWrap> = {
+  10497: 'repeat',
+  33071: 'clamp-to-edge',
+  33648: 'mirror-repeat',
 };
 
 // GLB container constants: the header magic (`glTF` little-endian), chunk-type tags (`JSON` and
