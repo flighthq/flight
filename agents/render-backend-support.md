@@ -43,7 +43,7 @@ Findings are empirical (surfaced building the per-primitive functional suite, 20
 | Ambient + Directional lights | ✓ | ✓ |  |
 | Point / Spot / Hemisphere lights | ✓ | ✓ | forward punctual lighting wired on both gl and wgpu |
 | Transparent (blend-alphaMode / faded) meshes composite correctly | ✓ | ✗ | see gap #11 — **wgpu draws every mesh opaque** (single-pass, no blend state, no back-to-front sort). gl is two-phased (`drawGlScene.ts`) |
-| GPU skeletal skinning | ✓ | ✗ | **gl** = `HAS_SKIN` across classic/pbr/toon/unlit/shaded (uniform mat4 palette, per-context capacity-gated, CPU fallback above capacity). **wgpu** = none — bind pose. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 |
+| GPU skeletal skinning | ✓ | ✗ | **gl** = `HAS_SKIN` across classic/pbr/toon/unlit/shaded (bone-palette RGBA32F **data texture** read via `texelFetch`; joint count bounded by MAX_TEXTURE_SIZE — no uniform-budget cap, no CPU fallback). **wgpu** = none — bind pose. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §3 |
 | Morph / blend-shape deformation | ✓ | ✗ | **gl** CPU-blend-then-upload (glTF/MD2 import). **wgpu** = none. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) |
 | ShadedMaterial modifier stack (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) | ✓ | ✗ | **gl** `shadedGlMeshMaterialRenderer` (+ working tangent-space normal map). **wgpu** = no ShadedMaterial renderer → subset skipped (draws nothing). [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4 |
 

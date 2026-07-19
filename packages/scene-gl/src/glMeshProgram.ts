@@ -1,11 +1,11 @@
 import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
-import { createGlProgram } from '@flighthq/render-gl';
+import { createGlProgram, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
 import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type { Camera, GlRenderState, MeshGeometry, SceneRenderProxy, TextureLike } from '@flighthq/types';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
-import { getGlSceneRuntime } from './glSceneRuntime';
+import { ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
 
 // The minimal handoff every mesh-material family shares between a renderer's bind() and draw(). bind
 // compiles/selects the family's program (extending this base with its own material uniform
@@ -19,10 +19,12 @@ export interface GlMeshProgram {
   // = present (drawGlMeshSubset uploads proxy.alpha to it). Lazy so any family whose fragment stage
   // declares u_objectAlpha honors node opacity with no per-family factory edit.
   locObjectAlpha?: WebGLUniformLocation | null;
-  // The u_jointMatrices bone-palette array location — present (and non-null) only on a HAS_SKIN
-  // variant, so draw uploads the skin palette exactly when the compiled program consumes it. Optional
-  // because families not yet wired for GPU skinning omit it entirely (their skinned meshes draw rigid).
-  locJointMatrices?: WebGLUniformLocation | null;
+  // The u_jointTexture bone-palette sampler location — present (and non-null) only on a HAS_SKIN
+  // variant, so draw uploads and binds the skin palette data texture exactly when the compiled program
+  // consumes it. Optional because families not yet wired for GPU skinning omit it entirely (their
+  // skinned meshes draw rigid). The palette is an RGBA32F texture read via texelFetch, not a uniform
+  // array, so the joint count is bounded by MAX_TEXTURE_SIZE rather than the vertex-uniform budget.
+  locJointTexture?: WebGLUniformLocation | null;
   locModel: WebGLUniformLocation | null;
   locNormalMatrix: WebGLUniformLocation | null;
   // The u_uvTransform mat3 location, resolved lazily by bindGlUvTransform (undefined = unresolved,
@@ -120,13 +122,17 @@ export function drawGlMeshSubset(
   }
   if (locObjectAlpha !== null) gl.uniform1f(locObjectAlpha, proxy.alpha ?? 1);
 
-  // GPU skinning: upload the mesh's bone palette to the HAS_SKIN variant. Only a skinned program has
-  // the location, and only a skinned mesh carries a palette; a mismatch (one without the other) simply
-  // skips the upload and the shader falls back to its rigid path.
+  // GPU skinning: upload the mesh's bone palette into the per-state RGBA32F data texture and bind it on
+  // the skin-palette texture unit for the HAS_SKIN variant. Only a skinned program has the location, and
+  // only a skinned mesh carries a palette; a mismatch (one without the other) simply skips the upload and
+  // the shader falls back to its rigid path. The joint count is the palette length / 16 (16 floats/mat4).
   const jointMatrices = proxy.jointMatrices;
-  const gpuSkinned = program.locJointMatrices != null && jointMatrices != null;
+  const gpuSkinned = program.locJointTexture != null && jointMatrices != null;
   if (gpuSkinned) {
-    gl.uniformMatrix4fv(program.locJointMatrices, false, jointMatrices);
+    const palette = ensureGlSkinPalette(state);
+    gl.activeTexture(gl.TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT);
+    uploadGlSkinPaletteTexture(gl, palette, jointMatrices, (jointMatrices.length / 16) | 0);
+    gl.uniform1i(program.locJointTexture, SKIN_PALETTE_TEXTURE_UNIT);
   }
 
   // A GPU-skinned draw uploads the static bind pose (the shader deforms it via the palette), so the
@@ -162,31 +168,6 @@ export function ensureGlSceneProgram<T extends GlMeshProgram>(
   return program as T;
 }
 
-// The joint-palette size this context's shaders compile with and drawGlScene gates GPU skinning on,
-// derived once from MAX_VERTEX_UNIFORM_VECTORS: the budget minus the reserved vectors, in mat4s, clamped
-// to [GL_MAX_SKIN_JOINTS, GL_SKIN_JOINT_HARD_CAP]. The floor keeps behavior identical to the old fixed 64
-// on minimum-spec hardware; capable GPUs report far more, letting a 110-joint skeleton (e.g. an MD5
-// model) fit the palette rather than falling back to CPU skinning. Cached on the runtime — one GL query.
-// The shader `#define MAX_JOINTS` and the gate MUST use this same value so a passing joint index never
-// reads past the uniform array.
-export function getGlSkinJointCapacity(state: Readonly<GlRenderState>): number {
-  const runtime = getGlSceneRuntime(state);
-  let capacity = runtime.skinJointCapacity;
-  if (capacity === undefined) {
-    // Fall back to the guaranteed baseline when the context cannot report a budget (a partial test
-    // stub, or a driver returning nothing) — real WebGL2 always answers MAX_VERTEX_UNIFORM_VECTORS.
-    const gl = state.gl;
-    const pname = gl.MAX_VERTEX_UNIFORM_VECTORS;
-    const budget =
-      pname !== undefined && typeof gl.getParameter === 'function' ? (gl.getParameter(pname) as number) : 0;
-    const usable = Number.isFinite(budget) && budget > 0 ? budget : 256;
-    const fromBudget = Math.floor((usable - RESERVED_VERTEX_UNIFORM_VECTORS) / 4);
-    capacity = Math.max(GL_MAX_SKIN_JOINTS, Math.min(GL_SKIN_JOINT_HARD_CAP, fromBudget));
-    runtime.skinJointCapacity = capacity;
-  }
-  return capacity;
-}
-
 // The HAS_UV_TRANSFORM define-key predicate every map-sampling family shares: true only when the
 // material's primary map is bound (an image is present, so it is actually sampled) AND carries a
 // non-identity uv transform. Gating on both keeps an untiled or unbound surface on the identity shader
@@ -208,23 +189,6 @@ export function setGlMeshCameraPosition(
   gl.uniform3f(locCameraPosition, scratchCameraPosition.x, scratchCameraPosition.y, scratchCameraPosition.z);
 }
 
-// The guaranteed-safe joint-palette size: 64 mat4s = 256 vec4 uniform components, exactly WebGL2's
-// minimum vertex-uniform budget (MAX_VERTEX_UNIFORM_VECTORS ≥ 256). Used as the floor and the compile
-// fallback; the actual per-context capacity (getGlSkinJointCapacity) is derived from the real budget so
-// larger skeletons GPU-skin on capable hardware. A skeleton exceeding the resolved capacity falls back
-// to the CPU path (updateMeshSkin) — drawGlScene draws it rigid over those CPU-posed vertices.
-export const GL_MAX_SKIN_JOINTS = 64;
-
-// Upper bound on the resolved palette: 256 mat4s = 1024 vec4 components. Caps the vertex-uniform and
-// upload cost even on GPUs reporting a huge MAX_VERTEX_UNIFORM_VECTORS, and keeps the joints0 index a
-// vertex can carry (a float) well within exact-integer range.
-export const GL_SKIN_JOINT_HARD_CAP = 256;
-
-// Vertex-uniform vectors (vec4) the vertex stage spends on non-palette uniforms across the families —
-// u_model (4) + u_viewProjection (4) + u_normalMatrix (mat3 = 3) + u_uvTransform (mat3 = 3) plus varying
-// headroom. Reserved out of the budget before dividing the remainder into mat4 palette slots (4 each).
-const RESERVED_VERTEX_UNIFORM_VECTORS = 24;
-
 // Uploads the camera view-projection matrix to a program's u_viewProjection. Every family's vertex
 // stage shares this transform; the perspective aspect falls back to 1 when zero (degenerate camera)
 // so a malformed projection never divides by zero.
@@ -238,11 +202,6 @@ export function setGlMeshViewProjection(
   gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
 }
 
-// Vertex-stage GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
-// influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette uniform, and the
-// linear-blend `skinMatrix()` the body applies to position/normal/tangent. Vertex-only — never added to
-// a fragment source (the `in` attributes are illegal there). Depends on the `#define MAX_JOINTS` the
-// define block supplies.
 // Vertex-stage GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the
 // guarded u_uvTransform uniform and an applyUvTransform() the body calls on a_uv0 instead of passing
 // it through. HAS_UV_TRANSFORM — set by a family's define block only when its primary texture carries a
@@ -258,16 +217,39 @@ vec2 applyUvTransform(vec2 uv) { return uv; }
 #endif
 `;
 
+// The GPU skin-palette bone texture is read from this texture unit — above the material maps (0–4), the
+// directional shadow map (8), and the IBL set (9/10/11), so a skinned lit draw never collides with any of
+// them. drawGlMeshSubset binds the palette texture here and sets u_jointTexture to this unit.
+export const SKIN_PALETTE_TEXTURE_UNIT = 12;
+
+// Vertex-stage GLSL the HAS_SKIN variant prepends before the family's vertex body: the joints0/weights0
+// influence attributes (locations 6/7, wired by ensureGlMeshUpload), the bone-palette DATA TEXTURE, and
+// the linear-blend `skinMatrix()` the body applies to position/normal/tangent. The palette is an RGBA32F
+// texture read with texelFetch (GLSL ES 3.0 core — no float-filter extension), one mat4 packed as four
+// consecutive texels (column 0..3) so joint j's column c is at texel (j*4 + c, 0). Replaces the old
+// `uniform mat4 u_jointMatrices[MAX_JOINTS]` array: the joint count is bounded by MAX_TEXTURE_SIZE, so
+// there is no `#define MAX_JOINTS` cap and no CPU fallback above a uniform-budget capacity. Vertex-only —
+// never added to a fragment source (the `in` attributes are illegal there).
 export const GL_SKIN_VERTEX_DECLARATIONS_GLSL = `
 layout(location = 6) in vec4 a_joints0;
 layout(location = 7) in vec4 a_weights0;
-uniform mat4 u_jointMatrices[MAX_JOINTS];
+uniform highp sampler2D u_jointTexture;
+
+mat4 fetchJointMatrix(int joint) {
+  int x = joint * 4;
+  return mat4(
+    texelFetch(u_jointTexture, ivec2(x, 0), 0),
+    texelFetch(u_jointTexture, ivec2(x + 1, 0), 0),
+    texelFetch(u_jointTexture, ivec2(x + 2, 0), 0),
+    texelFetch(u_jointTexture, ivec2(x + 3, 0), 0)
+  );
+}
 
 mat4 skinMatrix() {
-  return a_weights0.x * u_jointMatrices[int(a_joints0.x)]
-       + a_weights0.y * u_jointMatrices[int(a_joints0.y)]
-       + a_weights0.z * u_jointMatrices[int(a_joints0.z)]
-       + a_weights0.w * u_jointMatrices[int(a_joints0.w)];
+  return a_weights0.x * fetchJointMatrix(int(a_joints0.x))
+       + a_weights0.y * fetchJointMatrix(int(a_joints0.y))
+       + a_weights0.z * fetchJointMatrix(int(a_joints0.z))
+       + a_weights0.w * fetchJointMatrix(int(a_joints0.w));
 }
 `;
 

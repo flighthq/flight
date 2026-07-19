@@ -100,7 +100,9 @@ describe('compileGlShadedProgram', () => {
     compileGlShadedProgram(gl, { ...BASE_KEY, hasSkin: true }, [], createModifierRegistry());
     const vertex = vertexSourceFrom(gl.calls);
     expect(vertex).toContain('#define HAS_SKIN');
-    expect(vertex).toContain('#define MAX_JOINTS');
+    expect(vertex).not.toContain('#define MAX_JOINTS');
+    expect(vertex).toContain('sampler2D u_jointTexture');
+    expect(vertex).toContain('texelFetch');
     expect(vertex).toContain('mat4 skinMatrix()');
     expect(vertex).toContain('a_joints0');
     // Skinning is vertex-only — the fragment stage never sees the skin attributes.
@@ -162,7 +164,7 @@ describe('ensureGlShadedProgram', () => {
 
     expect(skinned).not.toBe(rigid);
     expect([...getGlSceneRuntime(state).programCache.keys()]).toContain('shaded:-----k|');
-    expect(skinned.locJointMatrices).not.toBeNull();
+    expect(skinned.locJointTexture).not.toBeNull();
   });
 
   it('compiles distinct variants for distinct modifier feature-sets', () => {

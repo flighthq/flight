@@ -26,7 +26,7 @@
 
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types';
 
-import { GL_MAX_SKIN_JOINTS, GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
 
 // The feature flags that select an uber-shader variant. Each toggles an #ifdef in the prelude and
 // is hashed into the program-cache key (buildGlPbrDefineKey), so distinct flag sets compile and
@@ -49,9 +49,6 @@ export interface GlPbrDefineKey {
   // Whether the base-color map carries a non-identity uv transform (HAS_UV_TRANSFORM); it drives the
   // shared v_uv0 every standard map samples. Set only when hasBaseColorMap is also true.
   hasUvTransform: boolean;
-  // Palette size baked into `#define MAX_JOINTS` when hasSkin. Set by ensureGlPbrProgram from
-  // getGlSkinJointCapacity; falls back to GL_MAX_SKIN_JOINTS. Must equal drawGlScene's GPU-skinning gate.
-  maxJoints?: number;
   iridescenceEnabled: boolean;
   sheenEnabled: boolean;
   specularEnabled: boolean;
@@ -101,7 +98,7 @@ export function buildGlPbrDefineSource(key: Readonly<GlPbrDefineKey>): string {
   if (key.specularEnabled) defines += '#define SPECULAR_EXT\n';
   if (key.subsurfaceEnabled) defines += '#define SUBSURFACE\n';
   if (key.transmissionEnabled) defines += '#define TRANSMISSION\n';
-  if (key.hasSkin) defines += `#define HAS_SKIN\n#define MAX_JOINTS ${key.maxJoints ?? GL_MAX_SKIN_JOINTS}\n`;
+  if (key.hasSkin) defines += '#define HAS_SKIN\n';
   return defines;
 }
 

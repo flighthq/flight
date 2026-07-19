@@ -71,8 +71,13 @@ export function makeFakeGl2(options?: {
     COLOR: 0x1800,
     DEPTH_STENCIL: 0x84f9,
     MAX_VERTEX_UNIFORM_VECTORS: 0x8dfb,
-    // Reports 1024 vertex-uniform vectors by default (a typical desktop/SwiftShader budget) so
-    // getGlSkinJointCapacity resolves a palette well above 64; a test can override to probe the clamp.
+    RGBA32F: 0x8814,
+    NEAREST: 0x2600,
+    CLAMP_TO_EDGE: 0x812f,
+    TEXTURE_MIN_FILTER: 0x2801,
+    TEXTURE_MAG_FILTER: 0x2800,
+    TEXTURE_WRAP_S: 0x2802,
+    TEXTURE_WRAP_T: 0x2803,
     getParameter: (pname: number) => (pname === 0x8dfb ? 1024 : 0),
     createShader: record('createShader', {}),
     shaderSource: record('shaderSource'),
@@ -138,6 +143,7 @@ export function makeFakeGl2(options?: {
     createTexture: record('createTexture', {}),
     texParameteri: record('texParameteri'),
     texImage2D: record('texImage2D'),
+    texSubImage2D: record('texSubImage2D'),
     pixelStorei: record('pixelStorei'),
     uniform1i: record('uniform1i'),
     uniform1f: record('uniform1f'),
