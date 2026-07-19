@@ -8,6 +8,14 @@ describe('computeDropShadowEffectCss', () => {
   it('emits the default drop-shadow string', () => {
     expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect' })).toBe('drop-shadow(3px 3px 4px rgba(0,0,0,1.000))');
   });
+
+  it('returns null for hideObject because CSS drop-shadow includes the source object', () => {
+    expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect', hideObject: true })).toBeNull();
+  });
+
+  it('returns null for knockout because CSS drop-shadow includes the source object', () => {
+    expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect', knockout: true })).toBeNull();
+  });
 });
 
 describe('computeOuterGlowEffectCss', () => {
