@@ -1,7 +1,16 @@
 import { copyMatrix4 } from '@flighthq/geometry';
 import { enableNodeSignals, getNodeSignals } from '@flighthq/node';
-import type { Kind, Material, Mesh, MeshGeometry, MeshRuntime, NodeSignals, SceneNode } from '@flighthq/types';
-import { MeshKind } from '@flighthq/types';
+import type {
+  Kind,
+  Material,
+  Mesh,
+  MeshDeformer,
+  MeshGeometry,
+  MeshRuntime,
+  NodeSignals,
+  SceneNode,
+} from '@flighthq/types';
+import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal, MeshKind } from '@flighthq/types';
 
 import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
 
@@ -9,9 +18,11 @@ export type { Mesh, MeshRuntime } from '@flighthq/types';
 export { MeshKind } from '@flighthq/types';
 
 // Clones a Mesh node: a new node carrying a COPY of the source's transform (so an authored
-// orientation rides onto the clone) while sharing `geometry`, the `materials` entries, and `skin`
-// by reference — the same share semantics as createMesh, so N clones of one model still cost one
-// geometry. `alpha`, `enabled`, `name`, and `kind` are copied. Only the mesh node itself is cloned;
+// orientation rides onto the clone) while sharing `geometry`, the `materials` entries, `skin`, and
+// `morph` by reference — the same share semantics as createMesh, so N clones of one model still cost
+// one geometry. Sharing `morph` means the clones share one live weight array (like a shared skeleton
+// pose); clone and reassign a fresh MeshMorph for independently-animated morph. `alpha`, `enabled`,
+// `name`, and `kind` are copied. Only the mesh node itself is cloned;
 // its children are not (a Mesh is a drawable leaf — clone each node you need explicitly). There is
 // no general cloneSceneNode: not every node kind can be duplicated (some own GPU/native resources
 // or runtime bindings that cannot alias), so cloning is a per-type capability, defined here where
@@ -24,6 +35,7 @@ export function cloneMesh(source: Readonly<Mesh>): Mesh {
   clone.alpha = source.alpha;
   copyMatrix4(clone.localMatrix, source.localMatrix);
   if (source.skin != null) clone.skin = source.skin;
+  if (source.morph != null) clone.morph = source.morph;
   return clone;
 }
 
@@ -46,6 +58,18 @@ export function createMesh(
 
 export function enableMeshSignals(source: Mesh): NodeSignals {
   return enableNodeSignals(source);
+}
+
+// The deformer a mesh runs each frame, derived from which deform field is populated: 'skeletal' when
+// it carries a skin, 'morph' when it carries a morph target set, 'none' when neither (rigid). A mesh
+// carrying both (corrective morph over skinning) reports 'skeletal' — the skin is the outer deform,
+// applied over the morph-blended base (see updateMeshMorph then updateMeshSkin) — so this single tag
+// names the outermost deform for a renderer or bounds pass; query mesh.skin/mesh.morph directly for the
+// composed case. Renderers branch on this rather than duplicating the field checks.
+export function getMeshDeformer(source: Readonly<Mesh>): MeshDeformer {
+  if (source.skin != null) return MeshDeformerSkeletal;
+  if (source.morph != null) return MeshDeformerMorph;
+  return MeshDeformerNone;
 }
 
 export function getMeshRuntime(source: Readonly<Mesh>): MeshRuntime {
