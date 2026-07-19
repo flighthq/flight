@@ -1,4 +1,4 @@
-import type { MeshGeometryRuntime, MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/types';
+import type { MeshGeometryRuntime, MeshMorphBindPose, MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
@@ -7,9 +7,11 @@ import {
   destroyMeshGeometryGlData,
   destroyMeshGeometryWgpuData,
   getMeshGeometryIndexCount,
+  getMeshGeometryMorphBindPose,
   getMeshGeometrySkinBindPose,
   getMeshGeometryVertexCount,
   hasMeshGeometrySkin,
+  setMeshGeometryMorphBindPose,
   setMeshGeometrySkinBindPose,
 } from './meshGeometry';
 
@@ -150,6 +152,13 @@ describe('getMeshGeometryIndexCount', () => {
   });
 });
 
+describe('getMeshGeometryMorphBindPose', () => {
+  it('returns null before any capture', () => {
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
+    expect(getMeshGeometryMorphBindPose(geometry)).toBeNull();
+  });
+});
+
 describe('getMeshGeometrySkinBindPose', () => {
   it('returns null before any capture', () => {
     const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
@@ -179,6 +188,26 @@ describe('hasMeshGeometrySkin', () => {
     };
     const skinned = createMeshGeometry({ layout: skinnedLayout, vertices: new Float32Array(11) });
     expect(hasMeshGeometrySkin(skinned)).toBe(true);
+  });
+});
+
+describe('setMeshGeometryMorphBindPose', () => {
+  it('stores and clears the morph base pose on the runtime slot', () => {
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
+    const bindPose: MeshMorphBindPose = {
+      blendedNormals: new Float32Array(9),
+      blendedPositions: new Float32Array(9),
+      blendedTangents: new Float32Array(9),
+      normals: new Float32Array(9),
+      positions: new Float32Array(9),
+      tangents: new Float32Array(9),
+    };
+
+    setMeshGeometryMorphBindPose(geometry, bindPose);
+    expect(getMeshGeometryMorphBindPose(geometry)).toBe(bindPose);
+
+    setMeshGeometryMorphBindPose(geometry, null);
+    expect(getMeshGeometryMorphBindPose(geometry)).toBeNull();
   });
 });
 
