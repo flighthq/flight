@@ -279,7 +279,11 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Tilemap | `sprite` + `tilemap-formats` | canvas, gl, wgpu | Tiled TMX/TMJ |
 | Asset loading | `assets` + `loader` | runtime | Ref-counted, concurrent |
 | glTF import | `scene-formats` | parser | JSON + GLB; PBR materials, textures (sampler/color-space/UV-transform), skins, morph, all animation channels, sparse accessors, external .bin/URIs |
-| OBJ/3DS/FBX import | --- | --- | Chartered, not implemented |
+| OBJ / MTL import | `scene-formats` | parser | `importObj`/`createSceneFromObj` — groups, usemtl subsets, BlinnPhong |
+| 3DS import | `scene-formats` | parser | `import3ds`/`createSceneFrom3ds` — meshes, per-face materials, textures |
+| MD5 import | `scene-formats` | parser | `importMd5Mesh` — mesh + skeleton + `.md5anim` skeletal animation |
+| AWD import | `scene-formats` | parser | `importAwd` — AwayJS binary: meshes, skins, skeleton animation, materials |
+| FBX import | --- | --- | Chartered, not implemented |
 | Flow / game states | `flow` | headless |  |
 | Snapshot / undo | `snapshot` | headless |  |
 | Input | `input` | web | Keyboard/pointer/wheel/gamepad |
