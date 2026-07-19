@@ -1,23 +1,23 @@
 import { invalidateImageResource } from '@flighthq/image';
 import type { SurfaceRegion } from '@flighthq/types';
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
+import { SurfaceCompositeMode } from '@flighthq/types';
 
 /**
  * Alpha-composites `pixels` over `dest`. `pixels` must be at least
  * `dest.width * dest.height * 4` bytes in row-major RGBA order.
  *
- * `blendMode` selects how the source combines with the backdrop. Separable
- * blends applied before the Porter-Duff source-over: Normal (default) and Layer
- * (= Normal), Multiply, Screen, Add, Subtract, Darken, Lighten, Difference,
- * Overlay, Hardlight, Invert. Erase is a destination-out knockout. Alpha and
- * Shader are display-list concepts with no surface meaning and throw.
+ * `mode` is a SurfaceCompositeMode — surface's single vocabulary spanning both the color-blend functions
+ * (Normal (default), Multiply, Screen, Add, Subtract, Darken, Lighten, Difference, Exclusion, Overlay,
+ * HardLight, SoftLight, ColorDodge, ColorBurn, Invert) and the Porter-Duff coverage operators (SourceOver,
+ * DestinationOut = erase, DestinationIn = alpha mask, Copy, Clear, Xor, and the atop/in/out set). A
+ * color-blend mode composites source-over; a coverage operator applies its factors with a Normal blend. An
+ * unknown mode composites source-over.
  */
 export function compositeSurfacePixels(
   dest: Readonly<SurfaceRegion>,
   pixels: Readonly<Uint8ClampedArray>,
-  blendMode: BlendMode = BlendMode.Normal,
+  mode: SurfaceCompositeMode = SurfaceCompositeMode.Normal,
 ): void {
-  assertCompositeBlendMode(blendMode);
   for (let py = 0; py < dest.height; py++) {
     const y = dest.y + py;
     if (y < 0 || y >= dest.surface.height) continue;
@@ -32,7 +32,7 @@ export function compositeSurfacePixels(
         pixels[si + 1],
         pixels[si + 2],
         pixels[si + 3],
-        blendMode,
+        mode,
       );
     }
   }
@@ -41,14 +41,13 @@ export function compositeSurfacePixels(
 
 /**
  * Alpha-composites `source` over `dest`. See `compositeSurfacePixels` for the
- * `blendMode` semantics.
+ * `mode` semantics.
  */
 export function compositeSurfaceRegion(
   dest: Readonly<SurfaceRegion>,
   source: Readonly<SurfaceRegion>,
-  blendMode: BlendMode = BlendMode.Normal,
+  mode: SurfaceCompositeMode = SurfaceCompositeMode.Normal,
 ): void {
-  assertCompositeBlendMode(blendMode);
   const sw = Math.min(dest.width, source.width);
   const sh = Math.min(dest.height, source.height);
   for (let py = 0; py < sh; py++) {
@@ -67,7 +66,7 @@ export function compositeSurfaceRegion(
         source.surface.data[si + 1],
         source.surface.data[si + 2],
         source.surface.data[si + 3],
-        blendMode,
+        mode,
       );
     }
   }
@@ -175,46 +174,70 @@ export function writeSurfacePixels32(dest: Readonly<SurfaceRegion>, pixels: Read
   invalidateImageResource(dest.surface);
 }
 
-// Throws once, up front, for blend modes that have no surface-compositing meaning,
-// rather than silently degrading to Normal mid-loop.
-function assertCompositeBlendMode(blendMode: BlendMode): void {
-  if (blendMode === BlendMode.Alpha) {
-    throw new Error(`BlendMode.${blendMode} is not supported by surface compositing`);
+// Premultiplied-free Porter-Duff coverage factors [Fa, Fb] for a SurfaceCompositeMode, applied to the
+// source and backdrop contributions respectively (out = Fa·αs·Cs' + Fb·αb·Cb over αo = Fa·αs + Fb·αb). The
+// color-blend modes and any unknown mode composite source-over ([1, 1−αs]); the coverage operators pick
+// their own factor pair. surface owns this Porter-Duff kernel (it does not depend on @flighthq/effects) so
+// it stays self-contained for the WASM port.
+function porterDuffFactors(mode: SurfaceCompositeMode, srcA: number, dstA: number): [number, number] {
+  switch (mode) {
+    case SurfaceCompositeMode.DestinationOver:
+      return [1 - dstA, 1];
+    case SurfaceCompositeMode.SourceIn:
+      return [dstA, 0];
+    case SurfaceCompositeMode.DestinationIn:
+      return [0, srcA];
+    case SurfaceCompositeMode.SourceOut:
+      return [1 - dstA, 0];
+    case SurfaceCompositeMode.DestinationOut:
+      return [0, 1 - srcA];
+    case SurfaceCompositeMode.SourceAtop:
+      return [dstA, 1 - srcA];
+    case SurfaceCompositeMode.DestinationAtop:
+      return [1 - dstA, srcA];
+    case SurfaceCompositeMode.Xor:
+      return [1 - dstA, 1 - srcA];
+    case SurfaceCompositeMode.Copy:
+      return [1, 0];
+    case SurfaceCompositeMode.Clear:
+      return [0, 0];
+    default:
+      return [1, 1 - srcA];
   }
 }
 
-// Separable per-channel blend on 0..255 values. Normal/Layer (and any mode not
-// listed) return the source channel unchanged, reducing the composite to
-// source-over.
-function blendChannel(mode: BlendMode, cb: number, cs: number): number {
+// Separable per-channel color blend on 0..255 values. The coverage operators, Normal, and any unlisted
+// mode return the source channel unchanged, so the composite reduces to the operator's Porter-Duff combine
+// with no color mixing.
+function blendChannel(mode: SurfaceCompositeMode, cb: number, cs: number): number {
   switch (mode) {
-    case BlendMode.Multiply:
+    case SurfaceCompositeMode.Multiply:
       return (cb * cs) / 255;
-    case BlendMode.Screen:
+    case SurfaceCompositeMode.Screen:
       return cb + cs - (cb * cs) / 255;
-    case BlendMode.Add:
+    case SurfaceCompositeMode.Add:
       return Math.min(255, cb + cs);
-    case BlendMode.Subtract:
+    case SurfaceCompositeMode.Subtract:
       return Math.max(0, cb - cs);
-    case BlendMode.Darken:
+    case SurfaceCompositeMode.Darken:
       return Math.min(cb, cs);
-    case BlendMode.Lighten:
+    case SurfaceCompositeMode.Lighten:
       return Math.max(cb, cs);
-    case AdvancedBlendMode.Difference:
+    case SurfaceCompositeMode.Difference:
       return Math.abs(cb - cs);
-    case AdvancedBlendMode.Exclusion:
+    case SurfaceCompositeMode.Exclusion:
       return cb + cs - (2 * cb * cs) / 255;
-    case AdvancedBlendMode.Overlay:
+    case SurfaceCompositeMode.Overlay:
       return cb < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
-    case AdvancedBlendMode.HardLight:
+    case SurfaceCompositeMode.HardLight:
       return cs < 128 ? (2 * cb * cs) / 255 : 255 - (2 * (255 - cb) * (255 - cs)) / 255;
-    case AdvancedBlendMode.SoftLight:
+    case SurfaceCompositeMode.SoftLight:
       return softLightChannel(cb, cs);
-    case AdvancedBlendMode.ColorDodge:
+    case SurfaceCompositeMode.ColorDodge:
       return cs >= 255 ? 255 : Math.min(255, (cb * 255) / (255 - cs));
-    case AdvancedBlendMode.ColorBurn:
+    case SurfaceCompositeMode.ColorBurn:
       return cs <= 0 ? 0 : 255 - Math.min(255, ((255 - cb) * 255) / cs);
-    case BlendMode.Invert:
+    case SurfaceCompositeMode.Invert:
       return 255 - cb;
     default:
       return cs;
@@ -239,23 +262,16 @@ function compositePixelInto(
   g: number,
   b: number,
   a: number,
-  blendMode: BlendMode,
+  mode: SurfaceCompositeMode,
 ): void {
   const srcA = a / 255;
   const dstA = dest[di + 3] / 255;
-  // Erase is a destination-out knockout: the source alpha carves into the
-  // backdrop's alpha, leaving its color untouched.
-  if (blendMode === BlendMode.Erase) {
-    const eraseA = dstA * (1 - srcA);
-    if (eraseA <= 0) {
-      dest[di] = 0;
-      dest[di + 1] = 0;
-      dest[di + 2] = 0;
-    }
-    dest[di + 3] = Math.round(eraseA * 255);
-    return;
-  }
-  const outA = srcA + dstA * (1 - srcA);
+  // W3C compositing: αo = Fa·αs + Fb·αb, Co = (Fa·αs·Cs' + Fb·αb·Cb) / αo, where Cs' is the blended source
+  // color and (Fa, Fb) are the mode's Porter-Duff factors. Source-over + a blend function covers the color
+  // modes; the coverage operators (Erase = DestinationOut, Alpha = DestinationIn, …) fall out of the same
+  // formula with a Normal blend. Read backdrop channels before writing any of them.
+  const [fa, fb] = porterDuffFactors(mode, srcA, dstA);
+  const outA = fa * srcA + fb * dstA;
   if (outA <= 0) {
     dest[di] = 0;
     dest[di + 1] = 0;
@@ -263,16 +279,14 @@ function compositePixelInto(
     dest[di + 3] = 0;
     return;
   }
-  // W3C compositing: mix the blended color into the source by the backdrop alpha,
-  // then source-over. Read backdrop channels before writing any of them.
   const cbR = dest[di];
   const cbG = dest[di + 1];
   const cbB = dest[di + 2];
-  const csR = (1 - dstA) * r + dstA * blendChannel(blendMode, cbR, r);
-  const csG = (1 - dstA) * g + dstA * blendChannel(blendMode, cbG, g);
-  const csB = (1 - dstA) * b + dstA * blendChannel(blendMode, cbB, b);
-  dest[di] = Math.round((csR * srcA + cbR * dstA * (1 - srcA)) / outA);
-  dest[di + 1] = Math.round((csG * srcA + cbG * dstA * (1 - srcA)) / outA);
-  dest[di + 2] = Math.round((csB * srcA + cbB * dstA * (1 - srcA)) / outA);
+  const csR = (1 - dstA) * r + dstA * blendChannel(mode, cbR, r);
+  const csG = (1 - dstA) * g + dstA * blendChannel(mode, cbG, g);
+  const csB = (1 - dstA) * b + dstA * blendChannel(mode, cbB, b);
+  dest[di] = Math.round((fa * srcA * csR + fb * dstA * cbR) / outA);
+  dest[di + 1] = Math.round((fa * srcA * csG + fb * dstA * cbG) / outA);
+  dest[di + 2] = Math.round((fa * srcA * csB + fb * dstA * cbB) / outA);
   dest[di + 3] = Math.round(outA * 255);
 }

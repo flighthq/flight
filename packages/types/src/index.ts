@@ -457,6 +457,7 @@ export * from './Storage';
 export * from './StrokeStyle';
 export * from './SubsurfacePbrMaterial';
 export * from './Surface';
+export * from './SurfaceCompositeMode';
 export * from './SurfaceEdgeMode';
 export * from './SurfaceFingerprint';
 export * from './SurfaceHistogram';
