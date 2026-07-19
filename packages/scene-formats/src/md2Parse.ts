@@ -1,14 +1,17 @@
+import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
+import { addNodeChild, getNodeChildren } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene } from '@flighthq/scene';
-import type { Material, SceneNode } from '@flighthq/types';
+import { createMesh, createScene, isMesh } from '@flighthq/scene';
+import type { AnimationChannel, Material, Mesh, MeshMorph, MorphTarget, SceneNode } from '@flighthq/types';
+import { SceneAnimationPathWeights } from '@flighthq/types';
 
 import {
   MD2_ANORMS,
   MD2_COMPRESSED_VERTEX_SIZE,
   MD2_FRAME_HEADER_SIZE,
+  MD2_FRAME_FPS,
   MD2_HEADER_SIZE,
   MD2_MAGIC,
   MD2_SKIN_SIZE,
@@ -17,22 +20,21 @@ import {
   MD2_VERSION,
 } from './md2Schema';
 import type { SceneImport } from './sceneImport';
-import {
-  CANONICAL_FLOATS_PER_VERTEX,
-  CANONICAL_LAYOUT,
-  convertPositionsZUpToYUp,
-  createExternalTextureRef,
-} from './shared';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
-// Parses an id Software MD2 (Quake 2) binary model into a Scene. The first animation frame (frame 0)
-// is imported as a single Mesh node; subsequent frames are ignored. Compressed vertices are
-// decompressed using the per-frame scale and translate vectors, and normals are resolved from the
-// 162-entry Anorms lookup table. UV coordinates are scaled from integer texture-space values to 0-1
-// using the header's skinWidth and skinHeight.
+// Parses an id Software MD2 (Quake 2) binary model into a Scene. Frame 0 is the base pose of a single
+// Mesh node; every subsequent frame becomes a morph target (position/normal deltas from frame 0), so
+// the mesh carries a MeshMorph for its vertex-frame animation (importMd2 builds the clip that drives it
+// — see agents/morph-target-animation.md, where MD2 is the legacy validation case for the morph
+// deformer). Compressed vertices are decompressed using each frame's scale and translate vectors, and
+// normals are resolved from the 162-entry Anorms lookup table. UV coordinates are scaled from integer
+// texture-space values to 0-1 using the header's skinWidth and skinHeight.
 //
 // Because MD2 triangles reference vertex and texcoord indices independently (like OBJ), the parser
 // re-indexes using a dedup map keyed by "vertIdx/texIdx" to build the canonical interleaved vertex
-// buffer.
+// buffer, remembering each deduped vertex's source MD2 vertex index so the per-frame morph deltas map
+// through the same re-indexing. MD2's oddities — byte-quantized frames, the normal LUT, and the Z-up→
+// Y-up reflection — stay quarantined here; the emitted morph targets are plain Y-up float deltas.
 //
 // Malformed input pushes a warning and returns an empty Scene rather than throwing.
 export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
@@ -77,12 +79,14 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
     return createScene();
   }
 
-  // Validate that the buffer contains the data regions we need.
+  // Validate that the buffer contains the data regions we need — including every frame (each frame is
+  // its own header + compressed-vertex block, laid contiguously from offFrames).
+  const frameStride = MD2_FRAME_HEADER_SIZE + numVertices * MD2_COMPRESSED_VERTEX_SIZE;
   const texCoordsEnd = offTexCoords + numTexCoords * MD2_TEXCOORD_SIZE;
   const trianglesEnd = offTriangles + numTriangles * MD2_TRIANGLE_SIZE;
-  const frame0VerticesEnd = offFrames + MD2_FRAME_HEADER_SIZE + numVertices * MD2_COMPRESSED_VERTEX_SIZE;
+  const allFramesEnd = offFrames + numFrames * frameStride;
 
-  if (texCoordsEnd > bytes.length || trianglesEnd > bytes.length || frame0VerticesEnd > bytes.length) {
+  if (texCoordsEnd > bytes.length || trianglesEnd > bytes.length || allFramesEnd > bytes.length) {
     warnings?.push('createSceneFromMd2: input is truncated; data regions extend past end of buffer');
     return createScene();
   }
@@ -98,33 +102,19 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
     texT[i] = view.getInt16(base + 2, true) * uvScaleT;
   }
 
-  // Read frame 0: scale (3 float32), translate (3 float32), name (16 chars), then compressed vertices.
-  const frameBase = offFrames;
-  const scaleX = view.getFloat32(frameBase, true);
-  const scaleY = view.getFloat32(frameBase + 4, true);
-  const scaleZ = view.getFloat32(frameBase + 8, true);
-  const translateX = view.getFloat32(frameBase + 12, true);
-  const translateY = view.getFloat32(frameBase + 16, true);
-  const translateZ = view.getFloat32(frameBase + 20, true);
-
-  // Decompress vertices: position = (compressed * scale) + translate.
-  const verticesBase = frameBase + MD2_FRAME_HEADER_SIZE;
-  const posX = new Float32Array(numVertices);
-  const posY = new Float32Array(numVertices);
-  const posZ = new Float32Array(numVertices);
-  const normalIndices = new Uint8Array(numVertices);
-  for (let i = 0; i < numVertices; i++) {
-    const base = verticesBase + i * MD2_COMPRESSED_VERTEX_SIZE;
-    posX[i] = bytes[base] * scaleX + translateX;
-    posY[i] = bytes[base + 1] * scaleY + translateY;
-    posZ[i] = bytes[base + 2] * scaleZ + translateZ;
-    normalIndices[i] = bytes[base + 3];
-  }
+  // Decompress every frame into per-vertex Y-up positions + Anorms-decoded normals. Frame 0 is the base
+  // pose; the rest become morph targets. Each frame carries its own quantization scale/translate, so
+  // dequantization is per-frame; the Z-up→Y-up reflection is applied here so the morph deltas below are
+  // computed entirely in Flight's Y-up space.
+  const frames: readonly Md2Frame[] = readMd2Frames(bytes, view, offFrames, numFrames, numVertices, frameStride);
+  const base = frames[0];
 
   // Re-index triangles. Each MD2 triangle has 3 vertex indices and 3 texcoord indices (independent
-  // indexing like OBJ). Build a dedup map keyed by "vertIdx/texIdx".
+  // indexing like OBJ). Build a dedup map keyed by "vertIdx/texIdx", remembering each deduped vertex's
+  // source MD2 vertex index so the per-frame morph deltas map through the same re-indexing.
   const dedup = new Map<string, number>();
   const interleavedVertices: number[] = [];
+  const sourceVertexIndices: number[] = [];
   const indices: number[] = [];
 
   for (let t = 0; t < numTriangles; t++) {
@@ -146,25 +136,17 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
       let idx = dedup.get(key);
       if (idx === undefined) {
         idx = interleavedVertices.length / CANONICAL_FLOATS_PER_VERTEX;
-
-        // Position (3 floats) in MD2's native Z-up space; batch-converted below.
-        interleavedVertices.push(posX[vertIdx], posY[vertIdx], posZ[vertIdx]);
-
-        // Normal (3 floats) from Anorms table in Z-up space; batch-converted below.
-        const ni = normalIndices[vertIdx];
-        if (ni < MD2_ANORMS.length) {
-          const normal = MD2_ANORMS[ni];
-          interleavedVertices.push(normal[0], normal[1], normal[2]);
-        } else {
-          interleavedVertices.push(0, 0, 0);
-        }
-
+        const p = vertIdx * 3;
+        // Position (3 floats), base-frame Y-up.
+        interleavedVertices.push(base.positions[p], base.positions[p + 1], base.positions[p + 2]);
+        // Normal (3 floats), base-frame Y-up.
+        interleavedVertices.push(base.normals[p], base.normals[p + 1], base.normals[p + 2]);
         // Tangent (4 floats) — MD2 does not carry tangents; zero-filled.
         interleavedVertices.push(0, 0, 0, 0);
-
         // UV (2 floats).
         interleavedVertices.push(texS[texIdx], texT[texIdx]);
 
+        sourceVertexIndices.push(vertIdx);
         dedup.set(key, idx);
       }
       indices.push(idx);
@@ -175,10 +157,6 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
     warnings?.push('createSceneFromMd2: no valid triangle indices produced');
     return createScene();
   }
-
-  // Convert positions and normals from Z-up to Y-up in the interleaved buffer.
-  convertPositionsZUpToYUp(interleavedVertices, CANONICAL_FLOATS_PER_VERTEX, 0);
-  convertPositionsZUpToYUp(interleavedVertices, CANONICAL_FLOATS_PER_VERTEX, 3);
 
   // MD2 has no lighting-model parameters — its material is the skin: a texture path. Decode the first
   // skin (models commonly carry exactly one) to a BlinnPhongMaterial whose diffuseMap references that
@@ -201,20 +179,146 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
   const vertices = new Float32Array(interleavedVertices);
   const indexArray = Uint32Array.from(indices);
   const geometry = createMeshGeometry({ indices: indexArray, layout: CANONICAL_LAYOUT, vertices });
-  const meshNode = createMesh(geometry, materials) as unknown as SceneNode;
-  addNodeChild(scene, meshNode);
+  const mesh = createMesh(geometry, materials);
+  const morph = buildMd2Morph(frames, sourceVertexIndices);
+  if (morph !== null) mesh.morph = morph;
+  addNodeChild(scene, mesh as unknown as SceneNode);
 
   return scene;
 }
 
-// Imports an MD2 model as a whole file. The assembly-tier sibling of createSceneFromMd2, present for
-// uniformity across the format importers. `animations` is empty today: MD2's animation is vertex-morph
-// across frames (createSceneFromMd2 imports frame 0 only), which needs the morph-target deformer Flight
-// does not yet have — see agents/morph-target-animation.md, where MD2 is the legacy validation case.
-// It is left honestly empty rather than faked into a TRS clip. `scenes` is a one-element array.
+// Imports an MD2 model as a whole file: the scene (a morph-carrying mesh, from createSceneFromMd2) plus
+// one AnimationClip driving the vertex-frame animation. MD2's frames are semantically a two-frame lerp
+// at each instant; the clip realizes that on the generic morph substrate as a per-frame weight track
+// where exactly the two adjacent frames' weights are non-zero (a hat function), so `weights` sampling
+// blends frame i → i+1 over the frame interval. Keyframe times are frameIndex / MD2_FRAME_FPS. A
+// single-frame model has no motion and yields an empty `animations`. This is the honest realization of
+// MD2 morph on the shared deformer; the charter's specialized two-frame evaluator (choice B) remains a
+// memory optimization for very-high-frame-count models. `scenes` is a one-element array.
 export function importMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneImport {
   const scene = createSceneFromMd2(bytes, warnings);
-  return { animations: [], scene, scenes: [scene] };
+  const clip = buildMd2MorphClip(scene);
+  return { animations: clip !== null ? [clip] : [], scene, scenes: [scene] };
+}
+
+// One decompressed MD2 frame in Flight's Y-up space: `positions` and `normals` are 3 floats per source
+// MD2 vertex (indexed by the raw MD2 vertex index, before triangle re-indexing).
+interface Md2Frame {
+  normals: Float32Array;
+  positions: Float32Array;
+}
+
+// Decompresses every MD2 frame into Y-up positions + Anorms-decoded normals, indexed by the raw MD2
+// vertex index. Each frame carries its own byte-quantization scale/translate (position = compressed *
+// scale + translate); normals are the 162-entry Anorms unit vectors. Both are reflected Z-up→Y-up
+// (x, y, z) → (x, z, -y) so all downstream morph math is in Flight's space. This is where MD2's three
+// quantization/LUT/handedness oddities are quarantined.
+function readMd2Frames(
+  bytes: Readonly<Uint8Array>,
+  view: Readonly<DataView>,
+  offFrames: number,
+  numFrames: number,
+  numVertices: number,
+  frameStride: number,
+): Md2Frame[] {
+  const frames: Md2Frame[] = [];
+  for (let f = 0; f < numFrames; f++) {
+    const frameBase = offFrames + f * frameStride;
+    const scaleX = view.getFloat32(frameBase, true);
+    const scaleY = view.getFloat32(frameBase + 4, true);
+    const scaleZ = view.getFloat32(frameBase + 8, true);
+    const translateX = view.getFloat32(frameBase + 12, true);
+    const translateY = view.getFloat32(frameBase + 16, true);
+    const translateZ = view.getFloat32(frameBase + 20, true);
+
+    const verticesBase = frameBase + MD2_FRAME_HEADER_SIZE;
+    const positions = new Float32Array(numVertices * 3);
+    const normals = new Float32Array(numVertices * 3);
+    for (let i = 0; i < numVertices; i++) {
+      const b = verticesBase + i * MD2_COMPRESSED_VERTEX_SIZE;
+      const px = bytes[b] * scaleX + translateX;
+      const py = bytes[b + 1] * scaleY + translateY;
+      const pz = bytes[b + 2] * scaleZ + translateZ;
+      const p = i * 3;
+      // Z-up → Y-up: (x, y, z) → (x, z, -y).
+      positions[p] = px;
+      positions[p + 1] = pz;
+      positions[p + 2] = -py;
+
+      const ni = bytes[b + 3];
+      if (ni < MD2_ANORMS.length) {
+        const n = MD2_ANORMS[ni];
+        normals[p] = n[0];
+        normals[p + 1] = n[2];
+        normals[p + 2] = -n[1];
+      }
+    }
+    frames.push({ normals, positions });
+  }
+  return frames;
+}
+
+// Builds a MeshMorph whose targets are frames 1..N as position/normal deltas from frame 0 (the base),
+// re-indexed to the deduped vertex order via `sourceVertexIndices`. Returns null for a single-frame
+// model (no motion, so no morph). The weight array starts all-zero (the base pose); importMd2's clip
+// drives it. tangentDeltas is always null — MD2 carries no tangents.
+function buildMd2Morph(frames: readonly Md2Frame[], sourceVertexIndices: readonly number[]): MeshMorph | null {
+  if (frames.length < 2) return null;
+  const base = frames[0];
+  const vertexCount = sourceVertexIndices.length;
+  const targets: MorphTarget[] = [];
+  for (let f = 1; f < frames.length; f++) {
+    const frame = frames[f];
+    const positionDeltas = new Float32Array(vertexCount * 3);
+    const normalDeltas = new Float32Array(vertexCount * 3);
+    for (let v = 0; v < vertexCount; v++) {
+      const src = sourceVertexIndices[v] * 3;
+      const dst = v * 3;
+      positionDeltas[dst] = frame.positions[src] - base.positions[src];
+      positionDeltas[dst + 1] = frame.positions[src + 1] - base.positions[src + 1];
+      positionDeltas[dst + 2] = frame.positions[src + 2] - base.positions[src + 2];
+      normalDeltas[dst] = frame.normals[src] - base.normals[src];
+      normalDeltas[dst + 1] = frame.normals[src + 1] - base.normals[src + 1];
+      normalDeltas[dst + 2] = frame.normals[src + 2] - base.normals[src + 2];
+    }
+    targets.push({ normalDeltas, positionDeltas, tangentDeltas: null });
+  }
+  return { targets, weights: new Float32Array(targets.length) };
+}
+
+// Builds the vertex-morph AnimationClip for the mesh createSceneFromMd2 produced, or null when it has no
+// morph (a single-frame model, or no mesh). Frame 0 is the base pose; each morph target is frame i+1.
+// The clip is a single `weights` track whose value block per keyframe is the full weight vector: at
+// keyframe for frame k it sets weight[k-1] = 1 and all others 0 (frame 0 = all-zero base). Linear
+// interpolation between adjacent keyframes then blends frame i → i+1 — the two-frame lerp MD2 semantics
+// call for, realized as a hat function over the shared generic morph sink. Times are k / MD2_FRAME_FPS.
+function buildMd2MorphClip(scene: Readonly<Scene>): ReturnType<typeof createAnimationClip> | null {
+  const mesh = findMd2Mesh(scene);
+  if (mesh === null || mesh.morph == null) return null;
+  const targetCount = mesh.morph.targets.length;
+  if (targetCount === 0) return null;
+
+  const frameCount = targetCount + 1; // targets are frames 1..N; frame 0 is the base
+  const times = new Float32Array(frameCount);
+  const values = new Float32Array(frameCount * targetCount);
+  for (let k = 0; k < frameCount; k++) {
+    times[k] = k / MD2_FRAME_FPS;
+    // Frame k activates target index k-1 (frame 0 leaves all weights zero — the base pose).
+    if (k >= 1) values[k * targetCount + (k - 1)] = 1;
+  }
+  const track = createAnimationTrack({ components: targetCount, interpolation: 'Linear', times, values });
+  const channel: AnimationChannel = createAnimationChannel(track, { node: mesh, path: SceneAnimationPathWeights });
+  return createAnimationClip([channel]);
+}
+
+// The first Mesh node directly under a scene (createSceneFromMd2 parents exactly one), or null.
+function findMd2Mesh(scene: Readonly<Scene>): Mesh | null {
+  const children = getNodeChildren(scene);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i] as unknown as SceneNode;
+    if (isMesh(child)) return child as unknown as Mesh;
+  }
+  return null;
 }
 
 // Reads a fixed 64-byte null-padded ASCII skin path record starting at `offset`, stopping at the

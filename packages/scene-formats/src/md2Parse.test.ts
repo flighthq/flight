@@ -7,7 +7,13 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import type {
+  BlinnPhongMaterial,
+  ExternalSceneResourceRef,
+  Mesh,
+  SceneAnimationTarget,
+  SceneNode,
+} from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { createSceneFromMd2, importMd2 } from './md2Parse';
@@ -17,6 +23,9 @@ import { MD2_ANORMS } from './md2Schema';
 // texcoords. All offsets are computed from the data sizes.
 function buildMd2(options: {
   compressedVertices: readonly { normalIndex: number; x: number; y: number; z: number }[];
+  // Optional per-frame vertex data for frames 1..N (frame 0 always uses `compressedVertices`). When
+  // omitted, extra frames are zero-filled. Length should be numFrames-1 when provided.
+  extraFrames?: readonly (readonly { normalIndex: number; x: number; y: number; z: number }[])[];
   magic?: number;
   numFrames?: number;
   scale?: readonly [number, number, number];
@@ -33,6 +42,7 @@ function buildMd2(options: {
 }): Uint8Array {
   const {
     compressedVertices,
+    extraFrames = [],
     magic = 0x32504449,
     numFrames = 1,
     scale = [1, 1, 1],
@@ -104,22 +114,25 @@ function buildMd2(options: {
     }
   }
 
-  // Frame 0: scale(3 float32) + translate(3 float32) + name(16 chars) + compressed vertices.
-  if (numFrames > 0) {
-    const frameBase = offFrames;
+  // Each frame: scale(3 float32) + translate(3 float32) + name(16 chars) + compressed vertices. Frame 0
+  // uses `compressedVertices`; frames 1..N use `extraFrames` when supplied (zero-filled otherwise). All
+  // frames share the same scale/translate here (the fixtures exercise deltas, not per-frame requant).
+  for (let f = 0; f < numFrames; f++) {
+    const frameBase = offFrames + f * frameSize;
     view.setFloat32(frameBase, scale[0], true);
     view.setFloat32(frameBase + 4, scale[1], true);
     view.setFloat32(frameBase + 8, scale[2], true);
     view.setFloat32(frameBase + 12, translate[0], true);
     view.setFloat32(frameBase + 16, translate[1], true);
     view.setFloat32(frameBase + 20, translate[2], true);
-    // Name is left as zeros (null-terminated empty string).
+    const frameVerts = f === 0 ? compressedVertices : (extraFrames[f - 1] ?? null);
+    if (frameVerts === null) continue; // zero-filled frame
     for (let i = 0; i < numVertices; i++) {
       const vBase = frameBase + 40 + i * 4;
-      bytes[vBase] = compressedVertices[i].x;
-      bytes[vBase + 1] = compressedVertices[i].y;
-      bytes[vBase + 2] = compressedVertices[i].z;
-      bytes[vBase + 3] = compressedVertices[i].normalIndex;
+      bytes[vBase] = frameVerts[i].x;
+      bytes[vBase + 1] = frameVerts[i].y;
+      bytes[vBase + 2] = frameVerts[i].z;
+      bytes[vBase + 3] = frameVerts[i].normalIndex;
     }
   }
 
@@ -441,24 +454,81 @@ describe('createSceneFromMd2', () => {
 });
 
 describe('importMd2', () => {
-  it('wraps the scene with one scene and empty animations (morph animation deferred)', () => {
+  const singleTriangleFrame0 = [
+    { normalIndex: 0, x: 0, y: 0, z: 0 },
+    { normalIndex: 0, x: 1, y: 0, z: 0 },
+    { normalIndex: 0, x: 0, y: 1, z: 0 },
+  ] as const;
+  const singleTriangleTexCoords = [
+    { s: 0, t: 0 },
+    { s: 1, t: 0 },
+    { s: 0, t: 1 },
+  ] as const;
+  const singleTriangle = [{ texIndices: [0, 1, 2] as const, vertIndices: [0, 1, 2] as const }] as const;
+
+  it('yields empty animations for a single-frame model (no vertex motion)', () => {
     const md2 = buildMd2({
-      compressedVertices: [
-        { normalIndex: 0, x: 0, y: 0, z: 0 },
-        { normalIndex: 0, x: 1, y: 0, z: 0 },
-        { normalIndex: 0, x: 0, y: 1, z: 0 },
-      ],
-      texCoords: [
-        { s: 0, t: 0 },
-        { s: 1, t: 0 },
-        { s: 0, t: 1 },
-      ],
-      triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
+      compressedVertices: singleTriangleFrame0,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
     });
     const result = importMd2(md2);
     expect(result.scenes).toHaveLength(1);
     expect(result.scene).toBe(result.scenes[0]);
     expect(result.animations).toHaveLength(0);
     expect(getNodeChildren(result.scene)).toHaveLength(1);
+  });
+
+  it('builds a mesh morph with one target per non-base frame (frame 1 delta from frame 0)', () => {
+    // Frame 1 shifts vertex 1 from x=1 to x=3 (delta +2 in x, which is +2 in Y-up x).
+    const md2 = buildMd2({
+      compressedVertices: singleTriangleFrame0,
+      extraFrames: [
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 0 },
+          { normalIndex: 0, x: 3, y: 0, z: 0 },
+          { normalIndex: 0, x: 0, y: 1, z: 0 },
+        ],
+      ],
+      numFrames: 2,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+    const mesh = getNodeChildren(createSceneFromMd2(md2))[0] as Mesh;
+    expect(mesh.morph).not.toBeNull();
+    expect(mesh.morph!.targets).toHaveLength(1);
+    // The deduped vertex for source vertex 1 carries a +2 x position delta.
+    const posDeltas = mesh.morph!.targets[0].positionDeltas;
+    const hasShiftedVertex = Array.from({ length: posDeltas.length / 3 }, (_, v) => posDeltas[v * 3]).some(
+      (dx) => Math.abs(dx - 2) < 1e-5,
+    );
+    expect(hasShiftedVertex).toBe(true);
+  });
+
+  it('builds a weights clip whose track width is the frame-target count and times step by 1/fps', () => {
+    const md2 = buildMd2({
+      compressedVertices: singleTriangleFrame0,
+      extraFrames: [
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 0 },
+          { normalIndex: 0, x: 3, y: 0, z: 0 },
+          { normalIndex: 0, x: 0, y: 1, z: 0 },
+        ],
+      ],
+      numFrames: 2,
+      texCoords: singleTriangleTexCoords,
+      triangles: singleTriangle,
+    });
+    const result = importMd2(md2);
+    expect(result.animations).toHaveLength(1);
+    const clip = result.animations[0];
+    expect(clip.channels).toHaveLength(1);
+    const channel = clip.channels[0];
+    expect((channel.targetRef as SceneAnimationTarget).path).toBe('Weights');
+    expect(channel.track.components).toBe(1); // one non-base frame → one target weight
+    // Two frames → times [0, 0.1] at 10 fps.
+    expect(channel.track.times).toHaveLength(2);
+    expect(channel.track.times[0]).toBeCloseTo(0);
+    expect(channel.track.times[1]).toBeCloseTo(0.1);
   });
 });
