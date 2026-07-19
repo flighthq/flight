@@ -278,7 +278,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Hit testing | `interaction` | runtime |  |
 | Tilemap | `sprite` + `tilemap-formats` | canvas, gl, wgpu | Tiled TMX/TMJ |
 | Asset loading | `assets` + `loader` | runtime | Ref-counted, concurrent |
-| glTF import | `scene-formats` | parser | JSON + GLB |
+| glTF import | `scene-formats` | parser | JSON + GLB; PBR materials, textures (sampler/color-space/UV-transform), skins, morph, all animation channels, sparse accessors, external .bin/URIs |
 | OBJ/3DS/FBX import | --- | --- | Chartered, not implemented |
 | Flow / game states | `flow` | headless |  |
 | Snapshot / undo | `snapshot` | headless |  |
