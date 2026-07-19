@@ -4,6 +4,7 @@ import {
   enableNodeSignals,
   getNodeRuntime,
   getNodeSignals,
+  initAppearanceTrait,
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
 } from '@flighthq/node';
@@ -15,10 +16,10 @@ export { SceneNodeKind } from '@flighthq/types';
 
 export function createSceneNode(
   kind: Kind = SceneNodeKind,
-  obj?: Readonly<Partial<Pick<SceneNode, 'alpha' | 'enabled' | 'name'>>>,
+  obj?: Readonly<Partial<Pick<SceneNode, 'alpha' | 'enabled' | 'name' | 'visible'>>>,
 ): SceneNode {
   const node = createNode<SceneNodeTraits>(kind, obj, undefined, createSceneNodeRuntime);
-  node.alpha = obj?.alpha ?? 1;
+  initAppearanceTrait(node, obj);
   initTransform3DTrait(node);
   return node as SceneNode;
 }

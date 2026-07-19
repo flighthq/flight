@@ -1,5 +1,6 @@
 export * from './boundsRectangle';
 export * from './hasAppearance';
+export * from './hasBlendMode';
 export * from './hasBoundsRectangle';
 export * from './hasClip';
 export * from './hasMaterial';

@@ -182,7 +182,7 @@ export * from './Group';
 export * from './HalftoneEffect';
 export * from './Haptics';
 export * from './HasAppearance';
-export * from './HasAppearance3D';
+export * from './HasBlendMode';
 export * from './HasBoundsRectangle';
 export * from './HasClip';
 export * from './HasColorTransform';
