@@ -13,12 +13,19 @@ import type {
   Material,
   Mesh,
   MeshGeometry,
+  MeshMorph,
+  MorphTarget,
   SceneAnimationPath,
   SceneNode,
   Skin,
   Texture,
 } from '@flighthq/types';
-import { SceneAnimationPathRotation, SceneAnimationPathScale, SceneAnimationPathTranslation } from '@flighthq/types';
+import {
+  SceneAnimationPathRotation,
+  SceneAnimationPathScale,
+  SceneAnimationPathTranslation,
+  SceneAnimationPathWeights,
+} from '@flighthq/types';
 
 import type {
   GltfAccessor,
@@ -28,6 +35,7 @@ import type {
   GltfDocument,
   GltfImage,
   GltfMaterial,
+  GltfMorphTarget,
   GltfNode,
   GltfPrimitive,
   GltfTextureInfo,
@@ -158,6 +166,11 @@ function buildGltfNodePool(
   const meshGeometries = (doc.meshes ?? []).map((mesh) =>
     mesh.primitives.map((primitive) => primitiveToGeometry(doc, buffers, primitive, warnings)),
   );
+  // Each mesh maps to the per-primitive morph (targets + initial weights), or null when a primitive
+  // carries no `targets`. Parallel to meshGeometries so buildMeshSceneNode attaches the matching morph.
+  const meshMorphs = (doc.meshes ?? []).map((mesh) =>
+    mesh.primitives.map((primitive) => buildGltfMorph(doc, buffers, primitive, mesh.weights, warnings)),
+  );
 
   // Resolve each glTF material to a StandardPbrMaterial once (memoized by index), then map each mesh's
   // primitives to the material each references. glTF's shading model is metallic-roughness PBR, so it
@@ -172,7 +185,7 @@ function buildGltfNodePool(
   const gltfNodes = doc.nodes ?? [];
   const sceneNodes: SceneNode[] = gltfNodes.map((node) =>
     node.mesh !== undefined
-      ? buildMeshSceneNode(meshGeometries[node.mesh], meshMaterials[node.mesh])
+      ? buildMeshSceneNode(meshGeometries[node.mesh], meshMaterials[node.mesh], meshMorphs[node.mesh])
       : createSceneNode(),
   );
 
@@ -236,10 +249,11 @@ function importGltfDocument(
 
 // Builds one AnimationClip from a glTF animation: each channel becomes an AnimationChannel whose track
 // samples the channel's sampler (keyframe times + values) and whose targetRef binds the driven node and
-// its TRS path. Rotation is a quaternion track (slerped on Linear); CUBICSPLINE maps to the Cubic
-// interpolation the AnimationTrack already models (in-tangent, value, out-tangent per key). 'weights'
-// (morph-target) channels are skipped — morph targets are not imported. Returns null when the animation
-// yields no bindable channel.
+// its path. Rotation is a quaternion track (slerped on Linear); CUBICSPLINE maps to the Cubic
+// interpolation the AnimationTrack already models (in-tangent, value, out-tangent per key). A 'weights'
+// (morph-target) channel binds to the target Mesh node's morph weight array — its track width is the
+// mesh's morph-target count, read off the built mesh's MeshMorph — closing the double gap where the
+// importer previously dropped morph. Returns null when the animation yields no bindable channel.
 function buildGltfAnimationClip(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
@@ -249,13 +263,6 @@ function buildGltfAnimationClip(
 ): AnimationClip | null {
   const channels: AnimationChannel[] = [];
   for (const channel of animation.channels) {
-    const path = GLTF_ANIMATION_PATHS[channel.target.path];
-    if (path === undefined) {
-      if (channel.target.path !== 'weights') {
-        warnings?.push(`buildGltfAnimationClip: unsupported animation target path '${channel.target.path}'`);
-      }
-      continue;
-    }
     const targetNodeIndex = channel.target.node;
     const node = targetNodeIndex !== undefined ? sceneNodes[targetNodeIndex] : undefined;
     if (node === undefined) continue;
@@ -267,6 +274,17 @@ function buildGltfAnimationClip(
     }
     const times = readAccessor(doc, buffers, sampler.input, warnings).data;
     const values = readAccessor(doc, buffers, sampler.output, warnings).data;
+
+    if (channel.target.path === 'weights') {
+      appendGltfWeightsChannels(channels, node, times, values, sampler.interpolation, warnings);
+      continue;
+    }
+
+    const path = GLTF_ANIMATION_PATHS[channel.target.path];
+    if (path === undefined) {
+      warnings?.push(`buildGltfAnimationClip: unsupported animation target path '${channel.target.path}'`);
+      continue;
+    }
     const quaternion = path === SceneAnimationPathRotation;
     const track = createAnimationTrack({
       components: quaternion ? 4 : 3,
@@ -278,6 +296,51 @@ function buildGltfAnimationClip(
     channels.push(createAnimationChannel(track, { node, path }));
   }
   return channels.length > 0 ? createAnimationClip(channels) : null;
+}
+
+// Appends a Weights morph channel for each Mesh under a glTF animation-target node. A single-primitive
+// mesh is itself the Mesh; a multi-primitive mesh is a group of child Meshes that share one glTF morph
+// (glTF weights are per-mesh, applied to every primitive), so each child gets its own channel bound to
+// its own morph weight array. The track's component width is the mesh's morph-target count, so the
+// per-keyframe value block (targetCount weights) samples straight into morph.weights. A node with no
+// morphable Mesh yields no channel (the morph channel is silently dropped).
+function appendGltfWeightsChannels(
+  channels: AnimationChannel[],
+  node: Readonly<SceneNode>,
+  times: ArrayLike<number>,
+  values: ArrayLike<number>,
+  interpolation: string | undefined,
+  warnings?: string[],
+): void {
+  const meshes = isMesh(node) ? [node as unknown as Mesh] : collectMorphableChildMeshes(node);
+  let bound = 0;
+  for (let i = 0; i < meshes.length; i++) {
+    const morph = meshes[i].morph;
+    if (morph == null || morph.targets.length === 0) continue;
+    const track = createAnimationTrack({
+      components: morph.targets.length,
+      interpolation: GLTF_SAMPLER_INTERPOLATIONS[interpolation ?? 'LINEAR'],
+      times,
+      values,
+    });
+    channels.push(createAnimationChannel(track, { node: meshes[i], path: SceneAnimationPathWeights }));
+    bound++;
+  }
+  if (bound === 0) {
+    warnings?.push('buildGltfAnimationClip: weights channel targets a node with no morphable mesh; skipped');
+  }
+}
+
+// The morphable Mesh children of a multi-primitive mesh group (each primitive is a child Mesh). Used to
+// fan a per-mesh glTF weights channel out to every primitive's own morph weight array.
+function collectMorphableChildMeshes(node: Readonly<SceneNode>): Mesh[] {
+  const out: Mesh[] = [];
+  const children = getNodeChildren(node);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i] as unknown as SceneNode;
+    if (isMesh(child)) out.push(child as unknown as Mesh);
+  }
+  return out;
 }
 
 function emptySceneImport(): SceneImport {
@@ -355,20 +418,27 @@ function buildGltfSkin(
 // Turns a mesh's per-primitive geometries into a scene node. A single-primitive mesh becomes the Mesh
 // node directly; a multi-primitive mesh becomes a transform-only group with one child Mesh per
 // primitive (each an independent drawable, so multi-material meshes keep every subset). Each primitive
-// carries the StandardPbrMaterial it references (empty when the primitive names no material).
+// carries the StandardPbrMaterial it references (empty when the primitive names no material) and its
+// morph target set (null when the primitive has no `targets`).
 function buildMeshSceneNode(
   geometries: readonly MeshGeometry[] | undefined,
   materials: readonly (Material | null)[] | undefined,
+  morphs: readonly (MeshMorph | null)[] | undefined,
 ): SceneNode {
   if (geometries === undefined || geometries.length === 0) return createSceneNode();
   const materialsFor = (i: number): Material[] => {
     const material = materials?.[i] ?? null;
     return material !== null ? [material] : [];
   };
-  if (geometries.length === 1) return createMesh(geometries[0], materialsFor(0)) as unknown as SceneNode;
+  const buildMesh = (i: number): Mesh => {
+    const mesh = createMesh(geometries[i], materialsFor(i));
+    const morph = morphs?.[i] ?? null;
+    if (morph !== null) mesh.morph = morph;
+    return mesh;
+  };
+  if (geometries.length === 1) return buildMesh(0) as unknown as SceneNode;
   const group = createSceneNode();
-  for (let i = 0; i < geometries.length; i++)
-    addNodeChild(group, createMesh(geometries[i], materialsFor(i)) as unknown as SceneNode);
+  for (let i = 0; i < geometries.length; i++) addNodeChild(group, buildMesh(i) as unknown as SceneNode);
   return group;
 }
 
@@ -625,6 +695,48 @@ function primitiveToGeometry(
   });
 }
 
+// Builds a MeshMorph from a primitive's `targets` (blend shapes), or null when the primitive carries
+// none. Each target's POSITION delta accessor (always present) plus optional NORMAL/TANGENT delta
+// accessors are read into de-interleaved Float32Array delta buffers aligned with the base vertices —
+// the SoA shape blendMeshGeometryMorph consumes. glTF morph tangent deltas are VEC3 (the handedness
+// `w` is not morphed), so the tangent delta is copied as 3 floats per vertex. `weights` seeds the live
+// weight array from the mesh's default weights (spec: mesh.weights), zero-filled when absent; a
+// `weights` animation channel overrides it at runtime.
+function buildGltfMorph(
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  primitive: Readonly<GltfPrimitive>,
+  meshWeights: readonly number[] | undefined,
+  warnings?: string[],
+): MeshMorph | null {
+  const gltfTargets = primitive.targets;
+  if (gltfTargets === undefined || gltfTargets.length === 0) return null;
+
+  const targets: MorphTarget[] = [];
+  for (let t = 0; t < gltfTargets.length; t++) {
+    const target: Readonly<GltfMorphTarget> = gltfTargets[t];
+    if (target.POSITION === undefined) {
+      warnings?.push(`buildGltfMorph: morph target ${t} has no POSITION delta; skipped`);
+      continue;
+    }
+    const positionDeltas = Float32Array.from(readAccessor(doc, buffers, target.POSITION, warnings).data);
+    const normalDeltas =
+      target.NORMAL !== undefined ? Float32Array.from(readAccessor(doc, buffers, target.NORMAL, warnings).data) : null;
+    const tangentDeltas =
+      target.TANGENT !== undefined
+        ? Float32Array.from(readAccessor(doc, buffers, target.TANGENT, warnings).data)
+        : null;
+    targets.push({ normalDeltas, positionDeltas, tangentDeltas });
+  }
+  if (targets.length === 0) return null;
+
+  const weights = new Float32Array(targets.length);
+  if (meshWeights !== undefined) {
+    for (let i = 0; i < weights.length && i < meshWeights.length; i++) weights[i] = meshWeights[i];
+  }
+  return { targets, weights };
+}
+
 // Decodes a glTF accessor into a flat array, de-striding per `bufferView.byteStride` and decoding
 // `normalized` integer attributes to their float ranges. Reads through a DataView (little-endian, as
 // the spec mandates) so unaligned accessor/bufferView offsets are safe. Normalized accessors return a
@@ -840,8 +952,9 @@ function createComponentArray(componentType: GltfComponentType, length: number):
 const COMPONENT_BYTE_SIZE: Record<GltfComponentType, number> = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 };
 const TYPE_COMPONENTS: Record<string, number> = { MAT2: 4, MAT3: 9, MAT4: 16, SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
 
-// glTF animation target paths → Flight SceneAnimationPath. 'weights' (morph targets) has no mapping and
-// is skipped by the caller.
+// glTF TRS animation target paths → Flight SceneAnimationPath. The 'weights' (morph) path is handled
+// separately by the caller (appendGltfWeightsChannels), because it binds to a mesh's weight array with a
+// mesh-specific track width rather than a fixed-width transform component, so it is not in this map.
 const GLTF_ANIMATION_PATHS: Record<string, SceneAnimationPath | undefined> = {
   rotation: SceneAnimationPathRotation,
   scale: SceneAnimationPathScale,
