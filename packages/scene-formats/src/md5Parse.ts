@@ -3,12 +3,14 @@ import {
   createQuaternion,
   multiplyQuaternion,
   rotateVector3ByQuaternion,
+  setQuaternion,
+  setVector3,
 } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
+import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode, setSceneNodeTransform } from '@flighthq/scene';
+import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
 import type { AnimationClip, Material, Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
 
@@ -151,12 +153,9 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       } else if (parentIndex >= joints.length) {
         warnings?.push(`createSceneFromMd5Mesh: joint ${j} has out-of-range parent index ${parentIndex}`);
       }
-      setSceneNodeTransform(
-        node,
-        { x: localPx, y: localPy, z: localPz },
-        { w: localQw, x: localQx, y: localQy, z: localQz },
-        { x: 1, y: 1, z: 1 },
-      );
+      setVector3(node.position, localPx, localPy, localPz);
+      setQuaternion(node.rotation, localQx, localQy, localQz, localQw);
+      invalidateNodeLocalTransform(node);
       jointNodes.push(node);
     }
 

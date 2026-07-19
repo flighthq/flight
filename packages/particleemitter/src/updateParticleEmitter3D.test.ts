@@ -1,10 +1,10 @@
-import { createMatrix4, scaleMatrix4, translateMatrix4 } from '@flighthq/geometry';
+import { createMatrix4, scaleMatrix4, setVector3, translateMatrix4 } from '@flighthq/geometry';
+import { invalidateNodeLocalTransform } from '@flighthq/node';
 import {
   createParticleEmitterConfig,
   createParticleEmitterState,
   enableParticleEmitterSignals,
 } from '@flighthq/particles';
-import { setSceneNodePosition } from '@flighthq/scene';
 import type { ParticleEmitterCallbacks } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -302,7 +302,8 @@ describe('updateParticleEmitter3D', () => {
     updateParticleEmitter3D(emitter, state, config, 0.1);
     // Move the emitter node, then step again: the node travelled 2 over dt=0.1 → emitter velocity 20,
     // and the new particle (base speed 0) inherits half of it along X.
-    setSceneNodePosition(emitter, 2, 0, 0);
+    setVector3(emitter.position, 2, 0, 0);
+    invalidateNodeLocalTransform(emitter);
     updateParticleEmitter3D(emitter, state, config, 0.1);
     const newIdx = emitter.data.particleCount - 1;
     const vt = newIdx * 3;

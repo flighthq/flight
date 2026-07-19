@@ -1,11 +1,10 @@
-import { createAabb } from '@flighthq/geometry';
+import { createAabb, setVector3 } from '@flighthq/geometry';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 
 import { createMesh } from './mesh';
 import { createSceneNode } from './sceneNode';
 import { getSceneNodeWorldBounds } from './sceneNodeBounds';
-import { setSceneNodePosition } from './sceneNodeTransform';
 
 describe('getSceneNodeWorldBounds', () => {
   it('sets an empty box when the node has no Mesh geometry', () => {
@@ -40,7 +39,7 @@ describe('getSceneNodeWorldBounds', () => {
 
   it('translates bounds when the Mesh is offset', () => {
     const mesh = createMesh(createBoxMeshGeometry(), []);
-    setSceneNodePosition(mesh, 10, 0, 0);
+    setVector3(mesh.position, 10, 0, 0);
     invalidateNodeLocalTransform(mesh);
     const out = createAabb();
     getSceneNodeWorldBounds(out, mesh);
@@ -52,9 +51,9 @@ describe('getSceneNodeWorldBounds', () => {
     const root = createSceneNode();
     const meshA = createMesh(createBoxMeshGeometry(), []);
     const meshB = createMesh(createBoxMeshGeometry(), []);
-    setSceneNodePosition(meshA, -5, 0, 0);
+    setVector3(meshA.position, -5, 0, 0);
     invalidateNodeLocalTransform(meshA);
-    setSceneNodePosition(meshB, 5, 0, 0);
+    setVector3(meshB.position, 5, 0, 0);
     invalidateNodeLocalTransform(meshB);
     addNodeChild(root, meshA);
     addNodeChild(root, meshB);
@@ -68,7 +67,7 @@ describe('getSceneNodeWorldBounds', () => {
     const root = createSceneNode();
     const group = createSceneNode();
     const leaf = createMesh(createBoxMeshGeometry(), []);
-    setSceneNodePosition(leaf, 3, 0, 0);
+    setVector3(leaf.position, 3, 0, 0);
     invalidateNodeLocalTransform(leaf);
     addNodeChild(root, group);
     addNodeChild(group, leaf);

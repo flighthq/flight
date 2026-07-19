@@ -1,5 +1,7 @@
+import { setVector3 } from '@flighthq/geometry';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
-import { createSceneNode, setSceneNodePosition } from '@flighthq/scene';
+import { invalidateNodeLocalTransform } from '@flighthq/node';
+import { createSceneNode } from '@flighthq/scene';
 import type { MeshGeometry } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -64,7 +66,8 @@ describe('skinMeshGeometry', () => {
     // Bind pose is captured with the joint at the origin (inverse-bind = identity), then the joint moves.
     const skeleton = createSkeleton3D([joint]);
     const bindPose = captureMeshSkinBindPose(geometry);
-    setSceneNodePosition(joint, 0, 5, 0);
+    setVector3(joint.position, 0, 5, 0);
+    invalidateNodeLocalTransform(joint);
 
     computeSkeleton3DJointMatrices(skeleton);
     skinMeshGeometry(geometry, skeleton, bindPose);

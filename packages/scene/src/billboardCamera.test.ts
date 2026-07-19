@@ -1,7 +1,7 @@
 import { createCamera, createPerspectiveProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createQuaternion, setQuaternionFromAxisAngle } from '@flighthq/geometry';
+import { copyQuaternion, createQuaternion, setQuaternionFromAxisAngle, setVector3 } from '@flighthq/geometry';
 import { createPlaneMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeWorldMatrix4 } from '@flighthq/node';
+import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Camera } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -9,7 +9,6 @@ import { createBillboard } from './billboard';
 import { orientBillboardToCamera, orientSceneBillboardsToCamera } from './billboardCamera';
 import { createMesh } from './mesh';
 import { createSceneNode } from './sceneNode';
-import { setSceneNodePosition, setSceneNodeRotationQuaternion, setSceneNodeScale } from './sceneNodeTransform';
 
 // A camera at (ex,ey,ez) looking at the world origin with world +Y up.
 function cameraLookingFrom(ex: number, ey: number, ez: number): Camera {
@@ -34,7 +33,8 @@ describe('orientBillboardToCamera', () => {
 
   it('full mode points the normal at the camera eye and preserves world position', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
-    setSceneNodePosition(billboard, 3, 0, 0);
+    setVector3(billboard.position, 3, 0, 0);
+    invalidateNodeLocalTransform(billboard);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
     const m = getNodeWorldMatrix4(billboard).m;
     // Position preserved.
@@ -50,7 +50,8 @@ describe('orientBillboardToCamera', () => {
 
   it('full mode preserves world scale in the facing basis', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
-    setSceneNodeScale(billboard, 2, 2, 2);
+    setVector3(billboard.scale, 2, 2, 2);
+    invalidateNodeLocalTransform(billboard);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
     const m = getNodeWorldMatrix4(billboard).m;
     expect(Math.hypot(m[0], m[1], m[2])).toBeCloseTo(2, 5);
@@ -75,7 +76,8 @@ describe('orientBillboardToCamera', () => {
 
   it('screenAligned mode adopts the camera basis regardless of position', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'screenAligned');
-    setSceneNodePosition(billboard, 5, 3, 0);
+    setVector3(billboard.position, 5, 3, 0);
+    invalidateNodeLocalTransform(billboard);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
     const m = getNodeWorldMatrix4(billboard).m;
     expect(m[0]).toBeCloseTo(1, 5);
@@ -88,8 +90,10 @@ describe('orientBillboardToCamera', () => {
 
   it('is stable across repeated orientation (no scale or position drift)', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
-    setSceneNodePosition(billboard, 3, 0, 0);
-    setSceneNodeScale(billboard, 2, 2, 2);
+    setVector3(billboard.position, 3, 0, 0);
+    invalidateNodeLocalTransform(billboard);
+    setVector3(billboard.scale, 2, 2, 2);
+    invalidateNodeLocalTransform(billboard);
     const camera = cameraLookingFrom(0, 0, 10);
     orientBillboardToCamera(billboard, camera);
     orientBillboardToCamera(billboard, camera);
@@ -105,7 +109,8 @@ describe('orientSceneBillboardsToCamera', () => {
   it('orients billboards in a subtree and leaves non-billboards untouched', () => {
     const root = createSceneNode();
     const mesh = createMesh(createPlaneMeshGeometry(), [null]);
-    setSceneNodePosition(mesh, 7, 0, 0);
+    setVector3(mesh.position, 7, 0, 0);
+    invalidateNodeLocalTransform(mesh);
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
     addNodeChild(root, mesh);
     addNodeChild(root, billboard);
@@ -125,7 +130,8 @@ describe('orientSceneBillboardsToCamera', () => {
     const parent = createSceneNode();
     const rotation = createQuaternion(0, 0, 0, 1);
     setQuaternionFromAxisAngle(rotation, { x: 0, y: 1, z: 0 }, Math.PI / 2);
-    setSceneNodeRotationQuaternion(parent, rotation);
+    copyQuaternion(parent.rotation, rotation);
+    invalidateNodeLocalTransform(parent);
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
     addNodeChild(parent, billboard);
 

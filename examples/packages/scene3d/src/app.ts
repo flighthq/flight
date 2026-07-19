@@ -14,7 +14,7 @@ import {
   createVector3,
   normalizeVector3,
   setCameraViewMatrix4FromLookAt,
-  setSceneNodePosition,
+  invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -52,15 +52,18 @@ const blueMaterial = createStandardPbrMaterial({
 const scene = createScene();
 
 const boxMesh = createMesh(boxGeometry, [redMaterial]);
-setSceneNodePosition(boxMesh, -2, 0, 0);
+// A node's transform is authored via its `position`/`rotation`/`scale` fields; invalidate after editing.
+boxMesh.position.x = -2;
+invalidateNodeLocalTransform(boxMesh);
 addNodeChild(scene, boxMesh);
 
+// sphereMesh stays at the origin — a fresh node's position defaults to (0, 0, 0).
 const sphereMesh = createMesh(sphereGeometry, [grayMetallicMaterial]);
-setSceneNodePosition(sphereMesh, 0, 0, 0);
 addNodeChild(scene, sphereMesh);
 
 const coneMesh = createMesh(coneGeometry, [blueMaterial]);
-setSceneNodePosition(coneMesh, 2, 0, 0);
+coneMesh.position.x = 2;
+invalidateNodeLocalTransform(coneMesh);
 addNodeChild(scene, coneMesh);
 
 // Perspective camera viewing the scene from a 3/4 angle.

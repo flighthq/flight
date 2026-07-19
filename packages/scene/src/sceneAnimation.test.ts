@@ -1,5 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
-import { createQuaternion, createVector3 } from '@flighthq/geometry';
+import { copyQuaternion, copyVector3, createQuaternion, createVector3 } from '@flighthq/geometry';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import type { MeshMorph } from '@flighthq/types';
 import {
@@ -12,7 +12,6 @@ import {
 import { createMesh } from './mesh';
 import { applyAnimationClipToScene } from './sceneAnimation';
 import { createSceneNode } from './sceneNode';
-import { getSceneNodePosition, getSceneNodeRotationQuaternion, getSceneNodeScale } from './sceneNodeTransform';
 
 describe('applyAnimationClipToScene', () => {
   it('drives a node translation from a Vector3 channel', () => {
@@ -23,7 +22,7 @@ describe('applyAnimationClipToScene', () => {
     applyAnimationClipToScene(clip, 0.5);
 
     const out = createVector3();
-    getSceneNodePosition(out, node);
+    copyVector3(out, node.position);
     expect(out.x).toBeCloseTo(5);
     expect(out.y).toBeCloseTo(10);
     expect(out.z).toBeCloseTo(15);
@@ -43,7 +42,7 @@ describe('applyAnimationClipToScene', () => {
     applyAnimationClipToScene(clip, 1);
 
     const out = createQuaternion();
-    getSceneNodeRotationQuaternion(out, node);
+    copyQuaternion(out, node.rotation);
     expect(out.x).toBeCloseTo(0);
     expect(out.y).toBeCloseTo(0);
     expect(out.z).toBeCloseTo(s);
@@ -58,7 +57,7 @@ describe('applyAnimationClipToScene', () => {
     applyAnimationClipToScene(clip, 1);
 
     const out = createVector3();
-    getSceneNodeScale(out, node);
+    copyVector3(out, node.scale);
     expect(out.x).toBeCloseTo(3);
     expect(out.y).toBeCloseTo(3);
     expect(out.z).toBeCloseTo(3);
@@ -100,7 +99,7 @@ describe('applyAnimationClipToScene', () => {
     applyAnimationClipToScene(clip, 1);
 
     const out = createVector3();
-    getSceneNodePosition(out, node);
+    copyVector3(out, node.position);
     expect(out.x).toBe(0);
   });
 });

@@ -39,10 +39,10 @@ describe('cloneMesh', () => {
 
   it('copies the transform into a distinct matrix', () => {
     const source = createMesh(createBoxMeshGeometry(), []);
-    source.translation.x = 5;
-    source.translation.y = -2;
+    source.position.x = 5;
+    source.position.y = -2;
     const clone = cloneMesh(source);
-    expect(clone.translation).not.toBe(source.translation);
+    expect(clone.position).not.toBe(source.position);
     expect(getNodeLocalMatrix4(clone).m[12]).toBe(5);
     expect(getNodeLocalMatrix4(clone).m[13]).toBe(-2);
   });
@@ -131,9 +131,9 @@ describe('createMesh', () => {
     const parent = createMesh(createBoxMeshGeometry(), []);
     const child = createMesh(createBoxMeshGeometry(), []);
     addNodeChild(parent, child);
-    parent.translation.x = 4;
+    parent.position.x = 4;
     invalidateNodeLocalTransform(parent);
-    child.translation.x = 3;
+    child.position.x = 3;
     invalidateNodeLocalTransform(child);
     expect(getNodeChildCount(parent)).toBe(1);
     expect(getNodeWorldMatrix4(child).m[12]).toBeCloseTo(7);

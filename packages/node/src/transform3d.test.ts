@@ -33,9 +33,9 @@ function createTestNode(): TestNode {
 }
 
 function setNodeTranslation(node: TestNode, x: number, y: number, z: number): void {
-  node.translation.x = x;
-  node.translation.y = y;
-  node.translation.z = z;
+  node.position.x = x;
+  node.position.y = y;
+  node.position.z = z;
   invalidateNodeLocalTransform(node);
 }
 
@@ -145,7 +145,7 @@ describe('getNodeTransform3D', () => {
     node.scale.y = 4;
     const out = createTransform3D();
     getNodeTransform3D(out, node);
-    expect(out.translation).toMatchObject({ x: 1, y: 2, z: 3 });
+    expect(out.position).toMatchObject({ x: 1, y: 2, z: 3 });
     expect(out.scale.y).toBeCloseTo(4);
   });
 });
@@ -223,7 +223,7 @@ describe('setNodeTransform3D', () => {
   it('copies carrier TRS and rebuilds the matrix', () => {
     const node = createTestNode();
     const t = createTransform3D();
-    t.translation = createVector3(6, 0, 0);
+    t.position = createVector3(6, 0, 0);
     t.scale = createVector3(2, 2, 2);
     setNodeTransform3D(node, t);
     const m = getNodeLocalMatrix4(node);
@@ -238,9 +238,9 @@ describe('syncNodeTransform3DFromMatrix4', () => {
     setNodeLocalMatrix4(node, translationMatrix(3, 4, 5));
     syncNodeTransform3DFromMatrix4(node);
     expect(isNodeLocalMatrix4Detached(node)).toBe(false);
-    expect(node.translation.x).toBeCloseTo(3);
-    expect(node.translation.y).toBeCloseTo(4);
-    expect(node.translation.z).toBeCloseTo(5);
+    expect(node.position.x).toBeCloseTo(3);
+    expect(node.position.y).toBeCloseTo(4);
+    expect(node.position.z).toBeCloseTo(5);
   });
 
   it('is non-destructive: the matrix cache is unchanged', () => {

@@ -8,9 +8,9 @@ import type { Vector3 } from './Vector3';
 // shear, since quaternion-TRS (9 DOF) cannot represent a general affine's 12 DOF. `rotation` is a unit
 // quaternion (radians-equivalent, no euler-order ambiguity).
 export interface Transform3D extends Entity {
+  position: Vector3;
   rotation: Quaternion;
   scale: Vector3;
-  translation: Vector3;
 }
 
 export type Transform3DLike = EntityWithoutRuntime<Transform3D>;

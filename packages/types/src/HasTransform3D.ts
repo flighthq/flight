@@ -4,14 +4,15 @@ import type { Node, NodeTraits } from './Node';
 import type { Quaternion } from './Quaternion';
 import type { Vector3 } from './Vector3';
 
-// The scene node's authored local transform is decomposed translation/rotation/scale. The local
-// matrix is a runtime cache composed from these (see `localMatrix4`), or set directly as an escape
-// hatch (see `localMatrix4Detached`). Mirrors the 2D `HasTransform2D` split of authored fields +
-// cached matrix; `rotation` is a unit quaternion (no euler-order ambiguity).
+// The scene node's authored local transform is decomposed position/rotation/scale. The local matrix
+// is a runtime cache composed from these (see `localMatrix4`), or set directly as an escape hatch
+// (see `localMatrix4Detached`). Mirrors the 2D `HasTransform2D` split of authored fields + cached
+// matrix; `rotation` is a unit quaternion (no euler-order ambiguity). `position` matches the geometry
+// compose API (`composeMatrix4(out, position, …)`) and the Unity/three authoring name.
 export interface HasTransform3D {
+  position: Vector3;
   rotation: Quaternion;
   scale: Vector3;
-  translation: Vector3;
 }
 
 export interface HasTransform3DRuntime extends EntityRuntime {

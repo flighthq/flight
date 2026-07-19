@@ -15,21 +15,21 @@ describe('initTransform3DRuntimeTrait', () => {
 });
 
 describe('initTransform3DTrait', () => {
-  it('defaults to identity translation/rotation/scale', () => {
+  it('defaults to identity position/rotation/scale', () => {
     const node = {} as HasTransform3D;
     initTransform3DTrait(node);
-    expect(node.translation).toMatchObject({ x: 0, y: 0, z: 0 });
+    expect(node.position).toMatchObject({ x: 0, y: 0, z: 0 });
     expect(node.rotation).toMatchObject({ x: 0, y: 0, z: 0, w: 1 });
     expect(node.scale).toMatchObject({ x: 1, y: 1, z: 1 });
   });
 
-  it('accepts existing translation/rotation/scale', () => {
+  it('accepts existing position/rotation/scale', () => {
     const node = {} as HasTransform3D;
-    const translation = createVector3(7, 0, 0);
+    const position = createVector3(7, 0, 0);
     const rotation = createQuaternion();
     const scale = createVector3(2, 2, 2);
-    initTransform3DTrait(node, { rotation, scale, translation });
-    expect(node.translation).toBe(translation);
+    initTransform3DTrait(node, { position, rotation, scale });
+    expect(node.position).toBe(position);
     expect(node.rotation).toBe(rotation);
     expect(node.scale).toBe(scale);
   });

@@ -1,9 +1,11 @@
+import { setVector3 } from '@flighthq/geometry';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
   getMeshGeometrySkinBindPose,
 } from '@flighthq/mesh';
-import { createMesh, createSceneNode, setSceneNodePosition } from '@flighthq/scene';
+import { invalidateNodeLocalTransform } from '@flighthq/node';
+import { createMesh, createSceneNode } from '@flighthq/scene';
 import { describe, expect, it } from 'vitest';
 
 import { createSkeleton3D } from './skeleton3d';
@@ -23,7 +25,8 @@ describe('updateMeshSkin', () => {
     const mesh = createOneVertexSkinnedMesh();
     const joint = createSceneNode();
     mesh.skin = { skeleton: createSkeleton3D([joint]) };
-    setSceneNodePosition(joint, 0, 5, 0);
+    setVector3(joint.position, 0, 5, 0);
+    invalidateNodeLocalTransform(joint);
     const versionBefore = mesh.geometry.version;
 
     expect(getMeshGeometrySkinBindPose(mesh.geometry)).toBeNull();

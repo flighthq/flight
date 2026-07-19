@@ -225,9 +225,9 @@ describe('drawGlScene', () => {
     // node's translation z — the translation column of the composed local matrix.
     const farMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
     const nearMesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
-    farMesh.translation.z = -3;
+    farMesh.position.z = -3;
     invalidateNodeLocalTransform(farMesh);
-    nearMesh.translation.z = -1;
+    nearMesh.position.z = -1;
     invalidateNodeLocalTransform(nearMesh);
     addNodeChild(scene, nearMesh);
     addNodeChild(scene, farMesh);

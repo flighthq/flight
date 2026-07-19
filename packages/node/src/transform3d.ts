@@ -83,7 +83,7 @@ export function getNodeLocalMatrix4<Traits extends object>(target: Transform3DNo
 // matrix is detached (set directly), these fields are dormant; call syncNodeTransform3DFromMatrix4
 // first to reflect the matrix.
 export function getNodeTransform3D<Traits extends object>(out: Transform3DLike, source: Transform3DNode<Traits>): void {
-  copyVector3(out.translation, source.translation);
+  copyVector3(out.position, source.position);
   copyQuaternion(out.rotation, source.rotation);
   copyVector3(out.scale, source.scale);
 }
@@ -123,7 +123,7 @@ export function setNodeTransform3D<Traits extends object>(
   target: Transform3DNode<Traits>,
   source: Readonly<Transform3DLike>,
 ): void {
-  copyVector3(target.translation, source.translation);
+  copyVector3(target.position, source.position);
   copyQuaternion(target.rotation, source.rotation);
   copyVector3(target.scale, source.scale);
   invalidateNodeLocalTransform(target);
@@ -135,7 +135,7 @@ export function setNodeTransform3D<Traits extends object>(
 export function syncNodeTransform3DFromMatrix4<Traits extends object>(target: Transform3DNode<Traits>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform3DRuntime;
   ensureNodeLocalMatrix4(target);
-  decomposeMatrix4(target.translation, target.rotation, target.scale, runtime.localMatrix4!);
+  decomposeMatrix4(target.position, target.rotation, target.scale, runtime.localMatrix4!);
   runtime.localMatrix4Detached = false;
 }
 
@@ -144,7 +144,7 @@ function recomputeLocalTransform3D<Traits extends object>(
   runtime: NodeRuntime<Traits> & HasTransform3DRuntime,
 ): void {
   if (runtime.localMatrix4 === null) runtime.localMatrix4 = createMatrix4();
-  composeMatrix4(runtime.localMatrix4, target.translation, target.rotation, target.scale);
+  composeMatrix4(runtime.localMatrix4, target.position, target.rotation, target.scale);
   runtime.localMatrix4Detached = false;
   runtime.localTransformUsingLocalTransformId = runtime.localTransformId;
 }
