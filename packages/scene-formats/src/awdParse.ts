@@ -307,10 +307,13 @@ export function importAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): Sce
 // mirrors parseMd5Anim(source, joints). Channels drive each joint's translation per keyframe. Returns
 // null when the header is invalid or no skeleton/animation blocks are found. The `joints` array must
 // be in AWD skeleton order (index j = joint j); a length mismatch with the file's skeleton warns.
+// A file may carry several named animation blocks (idle/walk/attack); `animationName` selects one by
+// name, defaulting to the first block in file order and warning when a requested name is absent.
 export function parseAwdSkeletonAnimation(
   bytes: Readonly<Uint8Array>,
   joints: readonly SceneNode[],
   warnings?: string[],
+  animationName?: string,
 ): AnimationClip | null {
   const source = bytes as Uint8Array;
   if (source.byteLength < AWD_HEADER_BYTES) {
@@ -396,7 +399,17 @@ export function parseAwdSkeletonAnimation(
   }
 
   const parsedSkeleton = skeletonBlocks.values().next().value!;
-  const parsedAnimation = animationBlocks.values().next().value!;
+  // A file can carry several named animations (e.g. idle/walk/attack); select by name when asked,
+  // otherwise use the first block in file order. A requested name that is absent warns and falls back.
+  let parsedAnimation = animationBlocks.values().next().value!;
+  if (animationName !== undefined) {
+    const named = [...animationBlocks.values()].find((a) => a.name === animationName);
+    if (named !== undefined) {
+      parsedAnimation = named;
+    } else {
+      warnings?.push(`parseAwdSkeletonAnimation: no animation block named "${animationName}"; using the first block`);
+    }
+  }
 
   if (joints.length < parsedSkeleton.joints.length) {
     warnings?.push(

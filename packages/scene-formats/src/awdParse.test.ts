@@ -9,6 +9,7 @@ import {
 import { getNodeChildren, getNodeParent } from '@flighthq/node';
 import { createSceneNode, isMesh } from '@flighthq/scene';
 import type {
+  AnimationClip,
   BlinnPhongMaterial,
   EmbeddedSceneResourceRef,
   ExternalSceneResourceRef,
@@ -1079,5 +1080,56 @@ describe('parseAwdSkeletonAnimation', () => {
     const track = clip.channels[0].track;
     expect(track.times[0]).toBeCloseTo(0);
     expect(track.times[1]).toBeCloseTo(0.25);
+  });
+
+  it('selects an animation block by name, defaulting to the first and warning on an absent name', () => {
+    const skeletonBody = buildSkeletonBody('Skeleton', [
+      { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
+    ]);
+    const skeletonBlock = buildBlockHeader(1, AWD_BLOCK_SKELETON, skeletonBody.length);
+
+    // Two poses at distinct X so each animation's sampled translation is distinguishable.
+    const idlePoseBody = buildSkeletonPoseBody('IdlePose', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 0]]);
+    const idlePoseBlock = buildBlockHeader(2, AWD_BLOCK_SKELETON_POSE, idlePoseBody.length);
+    const attackPoseBody = buildSkeletonPoseBody('AttackPose', [[1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0]]);
+    const attackPoseBlock = buildBlockHeader(3, AWD_BLOCK_SKELETON_POSE, attackPoseBody.length);
+
+    // 'idle' first in file order, 'attack' second — order is what default selection falls back to.
+    const idleAnimBody = buildSkeletonAnimationBody('idle', [{ duration: 100, poseBlockId: 2 }]);
+    const idleAnimBlock = buildBlockHeader(4, AWD_BLOCK_SKELETON_ANIMATION, idleAnimBody.length);
+    const attackAnimBody = buildSkeletonAnimationBody('attack', [{ duration: 100, poseBlockId: 3 }]);
+    const attackAnimBlock = buildBlockHeader(5, AWD_BLOCK_SKELETON_ANIMATION, attackAnimBody.length);
+
+    const body = concatBytes(
+      skeletonBlock,
+      skeletonBody,
+      idlePoseBlock,
+      idlePoseBody,
+      attackPoseBlock,
+      attackPoseBody,
+      idleAnimBlock,
+      idleAnimBody,
+      attackAnimBlock,
+      attackAnimBody,
+    );
+    const awd = concatBytes(buildAwdHeader(body.length), body);
+
+    const sampleX = (clip: AnimationClip): number => {
+      const out = [0, 0, 0];
+      sampleAnimationTrack(out, clip.channels[0].track, 0);
+      return out[0];
+    };
+
+    // No name → first block in file order ('idle', X=3).
+    expect(sampleX(parseAwdSkeletonAnimation(awd, [createSceneNode()])!)).toBeCloseTo(3);
+
+    // Named → the matching block's poses ('attack', X=9).
+    expect(sampleX(parseAwdSkeletonAnimation(awd, [createSceneNode()], undefined, 'attack')!)).toBeCloseTo(9);
+
+    // Absent name → warns and falls back to the first block ('idle', X=3).
+    const warnings: string[] = [];
+    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings, 'missing')!;
+    expect(sampleX(clip)).toBeCloseTo(3);
+    expect(warnings.some((w) => w.includes('no animation block named "missing"'))).toBe(true);
   });
 });
