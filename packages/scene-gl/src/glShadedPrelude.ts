@@ -81,8 +81,12 @@ export function compileGlShadedProgram(
 ): GlShadedProgram {
   const defineSource = buildGlShadedDefineSource(key);
   // The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment shader), so it is
-  // spliced into the vertex source alone, never the fragment.
-  const vertexSource = defineSource + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + SHADED_VERTEX_BODY;
+  // spliced into the vertex source alone, never the fragment. The Vertex-slot modifiers are likewise
+  // vertex-only — they deform the geometry — so they inject into the vertex body, not the fragment.
+  const vertexSource =
+    defineSource +
+    (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') +
+    assembleGlShadedVertexBody(orderedModifiers, registry);
   const fragmentSource = defineSource + assembleGlShadedFragmentBody(orderedModifiers, registry);
   const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {
@@ -130,12 +134,13 @@ export function ensureGlShadedProgram(
   return ensureGlSceneProgram(state, cacheKey, (gl) => compileGlShadedProgram(gl, fullKey, ordered, registry));
 }
 
-// Assembles the ShadedMaterial fragment body for an ordered modifier stack: each modifier's
-// declarations are collected at the top, and each contribution is injected at the hook for its slot
-// (Normal perturbs the normal before lighting, Diffuse/Specular adjust the surface terms, Emissive
-// adds self-illumination, Effect post-processes the shaded radiance). A modifier whose kind has no
-// registered GL snippet contributes nothing. An empty stack leaves every hook empty, yielding the
-// lean plain-ShadedMaterial variant that pays nothing for modifiers it does not carry.
+// Assembles the ShadedMaterial fragment body for an ordered modifier stack: each FRAGMENT-slot
+// modifier's declarations are collected at the top, and each contribution is injected at the hook for
+// its slot (Normal perturbs the normal before lighting, Diffuse/Specular adjust the surface terms,
+// Emissive adds self-illumination, Effect post-processes the shaded radiance). Vertex-slot modifiers
+// are skipped here — they inject into the vertex body (assembleGlShadedVertexBody). A modifier whose
+// kind has no registered GL snippet contributes nothing. An empty stack leaves every hook empty,
+// yielding the lean plain-ShadedMaterial variant that pays nothing for modifiers it does not carry.
 function assembleGlShadedFragmentBody(
   orderedModifiers: readonly Modifier[],
   registry: Readonly<ModifierRegistry>,
@@ -149,7 +154,7 @@ function assembleGlShadedFragmentBody(
   for (let index = 0; index < orderedModifiers.length; index++) {
     const modifier = orderedModifiers[index];
     const snippet = resolveModifier(registry, modifier.kind) as GlModifierSnippet | null;
-    if (snippet === null) continue;
+    if (snippet === null || snippet.slot === ModifierSlot.Vertex) continue;
     if (snippet.declarations !== undefined) declarations += `${snippet.declarations(modifier, index)}\n`;
     const contribution = `${snippet.contribution(modifier, index)}\n`;
     if (snippet.slot === ModifierSlot.Normal) normal += contribution;
@@ -158,12 +163,59 @@ function assembleGlShadedFragmentBody(
     else if (snippet.slot === ModifierSlot.Emissive) emissive += contribution;
     else if (snippet.slot === ModifierSlot.Effect) effect += contribution;
   }
-  return SHADED_FRAGMENT_TEMPLATE.replace('//@DECLARATIONS', declarations)
+  return SHADED_FRAGMENT_TEMPLATE.replace('//@DECLARATIONS', dedupeGlShadedDeclarations(declarations))
     .replace('//@NORMAL', normal)
     .replace('//@DIFFUSE', diffuse)
     .replace('//@SPECULAR', specular)
     .replace('//@EMISSIVE', emissive)
     .replace('//@EFFECT', effect);
+}
+
+// Assembles the ShadedMaterial vertex body for an ordered modifier stack: only the VERTEX-slot
+// modifiers contribute here (they deform the geometry). Their declarations go at the top-level
+// //@VERTEX_DECLARATIONS hook and their contributions at the //@VERTEX hook — after localPosition/
+// localNormal are computed (post-skin) but before the model transform, so displacement composes with
+// skinning. Non-vertex slots are skipped (they inject into the fragment body). An empty vertex set
+// leaves both hooks empty, yielding the plain vertex program.
+function assembleGlShadedVertexBody(
+  orderedModifiers: readonly Modifier[],
+  registry: Readonly<ModifierRegistry>,
+): string {
+  let declarations = '';
+  let vertex = '';
+  for (let index = 0; index < orderedModifiers.length; index++) {
+    const modifier = orderedModifiers[index];
+    const snippet = resolveModifier(registry, modifier.kind) as GlModifierSnippet | null;
+    if (snippet === null || snippet.slot !== ModifierSlot.Vertex) continue;
+    if (snippet.declarations !== undefined) declarations += `${snippet.declarations(modifier, index)}\n`;
+    vertex += `${snippet.contribution(modifier, index)}\n`;
+  }
+  return SHADED_VERTEX_BODY.replace('//@VERTEX_DECLARATIONS', dedupeGlShadedDeclarations(declarations)).replace(
+    '//@VERTEX',
+    vertex,
+  );
+}
+
+// Collapses duplicate declaration lines in an assembled modifier declaration block, preserving the
+// order of first appearance and dropping later exact repeats. Per-instance uniforms are unique (each
+// name carries its stack-index suffix, e.g. `u_fogColor_2`), so they always survive; the SHARED
+// un-suffixed lines a snippet declares — the IBL environment samplers an env-reflect modifier reads,
+// or the value-noise helper a procedural dissolve declares — collapse to one when two modifiers of the
+// same kind appear in one stack, avoiding a GLSL redefinition error. Blank lines are kept verbatim so
+// helper-function bodies (whose braces span lines) stay intact.
+function dedupeGlShadedDeclarations(declarations: string): string {
+  const seen = new Set<string>();
+  let result = '';
+  for (const line of declarations.split('\n')) {
+    const trimmed = line.trim();
+    const isSharedDeclaration = trimmed.startsWith('uniform ') && !/_\d+\b/.test(trimmed);
+    if (isSharedDeclaration) {
+      if (seen.has(trimmed)) continue;
+      seen.add(trimmed);
+    }
+    result += `${line}\n`;
+  }
+  return result;
 }
 
 // Builds the leading "#version 300 es\n#define ..." block shared by the vertex and fragment stages
@@ -189,11 +241,14 @@ layout(location = 3) in vec2 a_uv0;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
 uniform mat3 u_normalMatrix;
+uniform float u_time;
 ${GL_UV_TRANSFORM_VERTEX_GLSL}
 out vec3 v_worldPosition;
 out vec3 v_normal;
 out vec4 v_tangent;
 out vec2 v_uv0;
+
+//@VERTEX_DECLARATIONS
 
 void main() {
 #ifdef HAS_SKIN
@@ -206,6 +261,12 @@ void main() {
   vec3 localNormal = a_normal;
   vec3 localTangent = a_tangent.xyz;
 #endif
+  vec2 vertexUv = a_uv0;
+
+  // Vertex slot: read/write \`localPosition\` (the pre-model local vertex) and \`localNormal\`; the
+  // procedural cases scroll by \`u_time\` and read \`vertexUv\` (the raw uv, before the uv transform).
+  //@VERTEX
+
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
@@ -257,6 +318,23 @@ vec3 srgbToLinear(vec3 c) {
   return mix(lo, hi, step(0.04045, c));
 }
 
+// Deterministic 2D value noise, declared in the base so any Effect-slot modifier (the procedural
+// dissolve mask) can call it without redeclaring a function — a GLSL compiler drops it when no
+// modifier references it, so a plain ShadedMaterial pays nothing for it.
+float shadedHashNoise(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+float shadedValueNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = shadedHashNoise(i + vec2(0.0, 0.0));
+  float b = shadedHashNoise(i + vec2(1.0, 0.0));
+  float c = shadedHashNoise(i + vec2(0.0, 1.0));
+  float d = shadedHashNoise(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
 // Diffuse + half-vector (BlinnPhong) specular for ONE light. Every light type routes through this so
 // they never fork the shading model — the caller supplies the surface->light direction and the
 // (attenuated) radiance.
@@ -284,7 +362,11 @@ void main() {
 
   vec3 geometricNormal = normalize(v_normal);
   if (!gl_FrontFacing) geometricNormal = -geometricNormal;
-  vec3 tangent = normalize(v_tangent.xyz);
+  // Gram-Schmidt-reorthogonalize the interpolated tangent against the interpolated normal before
+  // building the TBN: linear interpolation across a triangle leaves v_tangent no longer perpendicular
+  // to v_normal, and skipping this step skews the tangent frame — the normal-map artifact this base
+  // shader previously exhibited. Mirrors the PBR prelude's TBN construction exactly.
+  vec3 tangent = normalize(v_tangent.xyz - geometricNormal * dot(v_tangent.xyz, geometricNormal));
   vec3 bitangent = cross(geometricNormal, tangent) * v_tangent.w;
   mat3 tbn = mat3(tangent, bitangent, geometricNormal);
 

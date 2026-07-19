@@ -1,10 +1,17 @@
-import { createEmissiveModifier, createModifierRegistry, registerModifier } from '@flighthq/shading';
+import {
+  createEmissiveModifier,
+  createEnvReflectModifier,
+  createModifierRegistry,
+  createVertexDisplaceModifier,
+  registerModifier,
+} from '@flighthq/shading';
 import type { Modifier } from '@flighthq/types';
+import { VertexDisplaceModifierSource } from '@flighthq/types';
 
 import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
-import { emissiveGlModifierSnippet } from './glShadedBuiltInModifiers';
-import { registerBuiltInGlModifierSnippets } from './glShadedBuiltInModifiers';
+import { emissiveGlModifierSnippet, envReflectGlModifierSnippet } from './glShadedBuiltInModifiers';
+import { registerBuiltInGlModifierSnippets, vertexDisplaceGlModifierSnippet } from './glShadedBuiltInModifiers';
 import type { GlShadedDefineKey } from './glShadedPrelude';
 import { buildGlShadedCacheKey, compileGlShadedProgram, ensureGlShadedProgram } from './glShadedPrelude';
 
@@ -71,6 +78,15 @@ describe('compileGlShadedProgram', () => {
     expect(fragment).toContain('emissive += emissiveTerm;');
   });
 
+  it('Gram-Schmidt-reorthogonalizes the tangent frame before sampling the normal map', () => {
+    const gl = makeFakeGl2();
+    compileGlShadedProgram(gl, { ...BASE_KEY, hasNormalMap: true }, [], createModifierRegistry());
+    const fragment = fragmentSourceFrom(gl.calls);
+    // The interpolated tangent is projected off the normal (the fix for the skewed-TBN normal-map bug).
+    expect(fragment).toContain('v_tangent.xyz - geometricNormal * dot(v_tangent.xyz, geometricNormal)');
+    expect(fragment).toContain('normal = normalize(tbn * baseTangentNormal);');
+  });
+
   it('reuses GL_MESH_LIGHT_BLOCK_GLSL rather than declaring a second light block', () => {
     const gl = makeFakeGl2();
     compileGlShadedProgram(gl, BASE_KEY, [], createModifierRegistry());
@@ -98,6 +114,33 @@ describe('compileGlShadedProgram', () => {
     expect(vertex).not.toContain('#define HAS_SKIN');
     expect(vertex).not.toContain('a_joints0');
     expect(fragmentSourceFrom(gl.calls)).not.toContain('a_joints0');
+  });
+
+  it('injects a Vertex-slot modifier into the vertex source, never the fragment', () => {
+    const gl = makeFakeGl2();
+    const registry = createModifierRegistry();
+    registerModifier(registry, vertexDisplaceGlModifierSnippet);
+    const modifiers: readonly Modifier[] = [
+      createVertexDisplaceModifier({ source: VertexDisplaceModifierSource.Sine, amplitude: 0.2 }),
+    ];
+    compileGlShadedProgram(gl, BASE_KEY, modifiers, registry);
+    const vertex = vertexSourceFrom(gl.calls);
+    expect(vertex).toContain('localPosition.xyz += vDisplaceAxis * vDisplaceAmount;');
+    expect(vertex).toContain('uniform float u_vDisplaceAmplitude_0;');
+    expect(fragmentSourceFrom(gl.calls)).not.toContain('u_vDisplaceAmplitude_0');
+  });
+
+  it('dedupes the shared IBL environment declaration across two env-reflect modifiers', () => {
+    const gl = makeFakeGl2();
+    const registry = createModifierRegistry();
+    registerModifier(registry, envReflectGlModifierSnippet);
+    const modifiers: readonly Modifier[] = [createEnvReflectModifier(), createEnvReflectModifier()];
+    compileGlShadedProgram(gl, BASE_KEY, modifiers, registry);
+    const fragment = fragmentSourceFrom(gl.calls);
+    // The shared samplerCube declares once (deduped), while the per-instance tints stay distinct.
+    expect(fragment.split('uniform samplerCube u_iblPrefiltered;').length - 1).toBe(1);
+    expect(fragment).toContain('u_envReflectTint_0');
+    expect(fragment).toContain('u_envReflectTint_1');
   });
 });
 
