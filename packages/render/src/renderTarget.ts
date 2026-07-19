@@ -1,5 +1,5 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry';
-import { getNodeLocalTransformMatrix } from '@flighthq/node';
+import { getNodeLocalMatrix } from '@flighthq/node';
 import type { DisplayObject, MatrixLike, RectangleLike } from '@flighthq/types';
 
 export type RenderTargetSizeOptions = {
@@ -19,7 +19,7 @@ export function computeDisplayObjectRenderTargetTransform(
   contentX: number = 0,
   contentY: number = 0,
 ): void {
-  const localTransform = getNodeLocalTransformMatrix(source);
+  const localTransform = getNodeLocalMatrix(source);
   inverseMatrix(_tempInvLocal, localTransform);
   _tempTranslation.a = 1;
   _tempTranslation.b = 0;

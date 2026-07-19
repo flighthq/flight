@@ -1,5 +1,5 @@
 import { hasImageResourcePixels } from '@flighthq/image';
-import { getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import type {
@@ -229,7 +229,7 @@ function drawParticleEmitter3DNode(
   const iw = hasAtlas ? 1 / (atlas!.image!.width || 1) : 0;
   const ih = hasAtlas ? 1 / (atlas!.image!.height || 1) : 0;
 
-  const worldMatrix = getNodeWorldTransformMatrix4(emitter as unknown as SceneNode) as Matrix4;
+  const worldMatrix = getNodeWorldMatrix4(emitter as unknown as SceneNode) as Matrix4;
   const wm = worldMatrix.m;
   // World-space particles are already baked into world coordinates at spawn (see updateParticleEmitter3D),
   // so they must NOT be re-transformed by the emitter's world matrix here.

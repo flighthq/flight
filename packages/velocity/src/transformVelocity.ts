@@ -1,10 +1,5 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry';
-import {
-  ensureNodeWorldTransformMatrix,
-  getNodeChildAt,
-  getNodeChildCount,
-  getNodeWorldTransformMatrix,
-} from '@flighthq/node';
+import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from '@flighthq/node';
 import type { Transform2DNode, VelocityField } from '@flighthq/types';
 
 import { ensureVelocitySample } from './velocityField';
@@ -30,8 +25,8 @@ function visitTransformVelocity<Traits extends object>(
   node: Readonly<Transform2DNode<Traits>>,
 ): void {
   const mutableNode = node as Transform2DNode<Traits>;
-  ensureNodeWorldTransformMatrix(mutableNode);
-  const world = getNodeWorldTransformMatrix(mutableNode);
+  ensureNodeWorldMatrix(mutableNode);
+  const world = getNodeWorldMatrix(mutableNode);
   const sample = ensureVelocitySample(field, node);
 
   if (sample.explicitFrameId !== field.frameId) {

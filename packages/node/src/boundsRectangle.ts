@@ -21,11 +21,7 @@ import type {
 import { getNodeChildCount, getNodeParent } from './hierarchy';
 import { getNodeRuntime } from './node';
 import { invalidateNodeLocalTransform } from './revision';
-import {
-  ensureNodeWorldTransformMatrix,
-  getNodeLocalTransformMatrix,
-  getNodeWorldTransformMatrix,
-} from './transform2d';
+import { ensureNodeWorldMatrix, getNodeLocalMatrix, getNodeWorldMatrix } from './transform2d';
 
 /**
  * Writes a rectangle which defines the area of the scene node
@@ -55,7 +51,7 @@ export function computeNodeBoundsRectangle<Traits extends object>(
     // translate world bounds into target coordinate space
     const worldBounds = getNodeWorldBoundsRectangle(source);
     const transform = acquireMatrix();
-    inverseMatrix(transform, getNodeWorldTransformMatrix(targetCoordinateSpace));
+    inverseMatrix(transform, getNodeWorldMatrix(targetCoordinateSpace));
     matrixTransformRectangle(out, transform, worldBounds);
     releaseMatrix(transform);
   } else {
@@ -89,7 +85,7 @@ export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Sp
     if (tryFastRecomputeWorldBoundsRectangle(target, runtime)) return;
     forceRecompute = true;
   }
-  ensureNodeWorldTransformMatrix(target);
+  ensureNodeWorldMatrix(target);
   if (forceRecompute || localBoundsInvalid || runtime.worldBoundsUsingWorldTransformId !== runtime.worldTransformId) {
     recomputeWorldBoundsRectangle(target, runtime);
   }
@@ -156,11 +152,7 @@ function recomputeNodeBoundsRectangle<Traits extends object>(
   runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime,
 ): void {
   if (runtime.boundsRectangle === null) runtime.boundsRectangle = createRectangle();
-  matrixTransformRectangle(
-    runtime.boundsRectangle,
-    getNodeLocalTransformMatrix(target),
-    getNodeLocalBoundsRectangle(target),
-  );
+  matrixTransformRectangle(runtime.boundsRectangle, getNodeLocalMatrix(target), getNodeLocalBoundsRectangle(target));
   runtime.boundsUsingLocalBoundsId = runtime.localBoundsId;
   runtime.boundsUsingLocalTransformId = runtime.localTransformId;
 }
@@ -181,7 +173,7 @@ function recomputeWorldBoundsRectangle<Traits extends object>(
   if (runtime.worldBoundsRectangle === null) runtime.worldBoundsRectangle = createRectangle();
   matrixTransformRectangle(
     runtime.worldBoundsRectangle,
-    getNodeWorldTransformMatrix(target),
+    getNodeWorldMatrix(target),
     getNodeLocalBoundsRectangle(target),
   );
   const children = getNodeRuntime(target).children;
@@ -202,10 +194,10 @@ function tryFastRecomputeWorldBoundsRectangle<Traits extends object>(
   target: Spatial2DNode<Traits>,
   runtime: HasBoundsRectangleRuntime & HasTransform2DRuntime,
 ): boolean {
-  if (runtime.worldBoundsRectangle !== null && runtime.worldTransform2D !== null) {
-    const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = runtime.worldTransform2D;
-    ensureNodeWorldTransformMatrix(target);
-    const { a, b, c, d, tx, ty } = runtime.worldTransform2D;
+  if (runtime.worldBoundsRectangle !== null && runtime.worldMatrix !== null) {
+    const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = runtime.worldMatrix;
+    ensureNodeWorldMatrix(target);
+    const { a, b, c, d, tx, ty } = runtime.worldMatrix;
     // check for unchanged rotation and scale
     if (a === _a && b === _b && c === _c && d === _d) {
       // offset only

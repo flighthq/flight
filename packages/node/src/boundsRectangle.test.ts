@@ -9,7 +9,7 @@ import {
 import {
   addNodeChild,
   createNode,
-  ensureNodeLocalTransformMatrix,
+  ensureNodeLocalMatrix,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
   invalidateNodeLocalTransform,
@@ -332,7 +332,7 @@ describe('ensureNodeWorldBoundsRectangle', () => {
     const cache = cloneRectangle(runtime.worldBoundsRectangle!);
     parent.scaleX = 2;
     invalidateNodeLocalTransform(parent);
-    ensureNodeLocalTransformMatrix(parent);
+    ensureNodeLocalMatrix(parent);
     ensureNodeWorldBoundsRectangle(child);
     expect(runtime.worldBoundsRectangle).not.toEqual(cache);
     expect(equalsRectangle(runtime.worldBoundsRectangle, { x: 0, y: 0, width: 20, height: 0 })).toBe(true);

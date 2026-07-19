@@ -1,6 +1,6 @@
 import { createAabb, setAabb, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry';
 import { computeMeshGeometryBounds } from '@flighthq/mesh';
-import { ensureNodeWorldTransformMatrix4, getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import type { AabbLike, SceneNode } from '@flighthq/types';
 
 import { isMesh } from './mesh';
@@ -39,8 +39,8 @@ function _accumulateWorldBounds(out: AabbLike, node: Readonly<SceneNode>): void 
     }
     // Only add a non-empty local bounds to the world accumulator.
     if (localBounds.min.x <= localBounds.max.x) {
-      ensureNodeWorldTransformMatrix4(node);
-      const worldMatrix = getNodeWorldTransformMatrix4(node);
+      ensureNodeWorldMatrix4(node);
+      const worldMatrix = getNodeWorldMatrix4(node);
       transformAabbByMatrix4(_scratchWorldAabb, localBounds, worldMatrix);
       unionAabb(out, out, _scratchWorldAabb);
     }

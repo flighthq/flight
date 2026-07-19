@@ -20,11 +20,11 @@ export interface HasTransform2D extends Entity {
 }
 
 export interface HasTransform2DRuntime extends EntityRuntime {
-  localTransform2D: Matrix | null;
+  localMatrix: Matrix | null;
   rotationAngle: number;
   rotationCosine: number;
   rotationSine: number;
-  worldTransform2D: Matrix | null;
+  worldMatrix: Matrix | null;
 }
 
 export type Transform2DNode<Traits extends object = NodeTraits> = Node<Traits> & HasTransform2D;

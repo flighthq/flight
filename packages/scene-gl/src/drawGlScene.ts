@@ -1,6 +1,6 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
-import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import { getSceneNodeWorldAlpha, updateMeshMorph } from '@flighthq/scene';
@@ -94,7 +94,7 @@ export function drawGlScene(
   for (let m = 0; m < list.meshCount; m++) {
     const mesh = list.visibleMeshes[m];
     const subsets = mesh.geometry.subsets;
-    const worldMatrix = getNodeWorldTransformMatrix4(mesh) as Matrix4;
+    const worldMatrix = getNodeWorldMatrix4(mesh) as Matrix4;
 
     // Compute the mesh origin's clip-space W (a proxy for view-depth). The world origin is
     // (worldMatrix.m[12], worldMatrix.m[13], worldMatrix.m[14]). We only need the W component of

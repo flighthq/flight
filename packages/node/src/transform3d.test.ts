@@ -9,8 +9,8 @@ import { invalidateNodeLocalTransform } from './revision';
 import {
   convertNodeVector3GlobalToLocal,
   convertNodeVector3LocalToGlobal,
-  ensureNodeWorldTransformMatrix4,
-  getNodeWorldTransformMatrix4,
+  ensureNodeWorldMatrix4,
+  getNodeWorldMatrix4,
 } from './transform3d';
 
 const TestNodeKind = 'TestNode';
@@ -116,12 +116,12 @@ describe('convertNodeVector3LocalToGlobal', () => {
   });
 });
 
-describe('ensureNodeWorldTransformMatrix4', () => {
+describe('ensureNodeWorldMatrix4', () => {
   it('computes the world matrix for a root node', () => {
     const node = createTestNode();
     node.localMatrix.m[12] = 5;
     invalidateNodeLocalTransform(node);
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     expect(runtime.worldMatrix).not.toBeNull();
     expect(runtime.worldMatrix!.m[12]).toBeCloseTo(5);
@@ -129,20 +129,20 @@ describe('ensureNodeWorldTransformMatrix4', () => {
 
   it('reuses a cached world matrix when no invalidation has occurred', () => {
     const node = createTestNode();
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     const first = runtime.worldMatrix;
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     expect(runtime.worldMatrix).toBe(first);
   });
 });
 
-describe('getNodeWorldTransformMatrix4', () => {
+describe('getNodeWorldMatrix4', () => {
   it('returns the world matrix for a node', () => {
     const node = createTestNode();
     node.localMatrix.m[12] = 3;
     invalidateNodeLocalTransform(node);
-    const m = getNodeWorldTransformMatrix4(node);
+    const m = getNodeWorldMatrix4(node);
     expect(m.m[12]).toBeCloseTo(3);
   });
 
@@ -154,20 +154,20 @@ describe('getNodeWorldTransformMatrix4', () => {
     invalidateNodeLocalTransform(parent);
     child.localMatrix.m[12] = 5;
     invalidateNodeLocalTransform(child);
-    const m = getNodeWorldTransformMatrix4(child);
+    const m = getNodeWorldMatrix4(child);
     expect(m.m[12]).toBeCloseTo(15);
   });
 
   it('world matrix is recomputed after localMatrix changes', () => {
     const node = createTestNode();
     invalidateNodeLocalTransform(node);
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     const first = runtime.worldTransformId;
 
     node.localMatrix.m[12] = 99;
     invalidateNodeLocalTransform(node);
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const second = runtime.worldTransformId;
 
     expect(second).not.toBe(first);
@@ -175,10 +175,10 @@ describe('getNodeWorldTransformMatrix4', () => {
 
   it('world matrix is cached when nothing changes', () => {
     const node = createTestNode();
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const runtime = getNodeRuntime(node) as NodeRuntime<TestTraits> & HasTransform3DRuntime;
     const id1 = runtime.worldTransformId;
-    ensureNodeWorldTransformMatrix4(node);
+    ensureNodeWorldMatrix4(node);
     const id2 = runtime.worldTransformId;
     expect(id1).toBe(id2);
   });
@@ -196,7 +196,7 @@ describe('getNodeWorldTransformMatrix4', () => {
     parent.localMatrix.m[12] = 7;
     invalidateNodeLocalTransform(parent);
 
-    const world = getNodeWorldTransformMatrix4(child);
+    const world = getNodeWorldMatrix4(child);
     expect(world.m[12]).toBeCloseTo(7);
   });
 });

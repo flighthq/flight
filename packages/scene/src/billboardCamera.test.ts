@@ -1,7 +1,7 @@
 import { createCamera, createPerspectiveProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createQuaternion, setQuaternionFromAxisAngle } from '@flighthq/geometry';
 import { createPlaneMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { addNodeChild, getNodeWorldMatrix4 } from '@flighthq/node';
 import type { Camera } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -22,7 +22,7 @@ describe('orientBillboardToCamera', () => {
   it('full mode at the origin faces a +Z camera with an identity basis', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
-    const m = getNodeWorldTransformMatrix4(billboard).m;
+    const m = getNodeWorldMatrix4(billboard).m;
     // right = +X, up = +Y, normal(+Z) toward the camera.
     expect(m[0]).toBeCloseTo(1, 5);
     expect(m[5]).toBeCloseTo(1, 5);
@@ -36,7 +36,7 @@ describe('orientBillboardToCamera', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
     setSceneNodePosition(billboard, 3, 0, 0);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
-    const m = getNodeWorldTransformMatrix4(billboard).m;
+    const m = getNodeWorldMatrix4(billboard).m;
     // Position preserved.
     expect(m[12]).toBeCloseTo(3, 5);
     expect(m[13]).toBeCloseTo(0, 5);
@@ -52,7 +52,7 @@ describe('orientBillboardToCamera', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
     setSceneNodeScale(billboard, 2, 2, 2);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
-    const m = getNodeWorldTransformMatrix4(billboard).m;
+    const m = getNodeWorldMatrix4(billboard).m;
     expect(Math.hypot(m[0], m[1], m[2])).toBeCloseTo(2, 5);
     expect(Math.hypot(m[4], m[5], m[6])).toBeCloseTo(2, 5);
     expect(Math.hypot(m[8], m[9], m[10])).toBeCloseTo(2, 5);
@@ -61,7 +61,7 @@ describe('orientBillboardToCamera', () => {
   it('axisY mode yaws about world +Y and stays upright', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'axisY');
     orientBillboardToCamera(billboard, cameraLookingFrom(10, 5, 0));
-    const m = getNodeWorldTransformMatrix4(billboard).m;
+    const m = getNodeWorldMatrix4(billboard).m;
     // Normal projected onto XZ toward the camera = +X; up stays world +Y; right = up x normal = -Z.
     expect(m[8]).toBeCloseTo(1, 5);
     expect(m[9]).toBeCloseTo(0, 5);
@@ -77,7 +77,7 @@ describe('orientBillboardToCamera', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'screenAligned');
     setSceneNodePosition(billboard, 5, 3, 0);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
-    const m = getNodeWorldTransformMatrix4(billboard).m;
+    const m = getNodeWorldMatrix4(billboard).m;
     expect(m[0]).toBeCloseTo(1, 5);
     expect(m[5]).toBeCloseTo(1, 5);
     expect(m[10]).toBeCloseTo(1, 5);
@@ -94,7 +94,7 @@ describe('orientBillboardToCamera', () => {
     orientBillboardToCamera(billboard, camera);
     orientBillboardToCamera(billboard, camera);
     orientBillboardToCamera(billboard, camera);
-    const m = getNodeWorldTransformMatrix4(billboard).m;
+    const m = getNodeWorldMatrix4(billboard).m;
     expect(m[12]).toBeCloseTo(3, 5);
     expect(Math.hypot(m[0], m[1], m[2])).toBeCloseTo(2, 5);
     expect(Math.hypot(m[8], m[9], m[10])).toBeCloseTo(2, 5);
@@ -113,11 +113,11 @@ describe('orientSceneBillboardsToCamera', () => {
     orientSceneBillboardsToCamera(root, cameraLookingFrom(0, 0, 10));
 
     // Billboard faces the camera.
-    const b = getNodeWorldTransformMatrix4(billboard).m;
+    const b = getNodeWorldMatrix4(billboard).m;
     expect(b[0]).toBeCloseTo(1, 5);
     expect(b[10]).toBeCloseTo(1, 5);
     // Mesh is untouched: its authored position is intact.
-    const meshMatrix = getNodeWorldTransformMatrix4(mesh).m;
+    const meshMatrix = getNodeWorldMatrix4(mesh).m;
     expect(meshMatrix[12]).toBeCloseTo(7, 5);
   });
 
@@ -132,7 +132,7 @@ describe('orientSceneBillboardsToCamera', () => {
     orientSceneBillboardsToCamera(parent, cameraLookingFrom(0, 0, 10));
 
     // Parent is yawed 90°, but the billboard's world basis still faces the camera (identity).
-    const m = getNodeWorldTransformMatrix4(billboard).m;
+    const m = getNodeWorldMatrix4(billboard).m;
     expect(m[0]).toBeCloseTo(1, 5);
     expect(m[5]).toBeCloseTo(1, 5);
     expect(m[10]).toBeCloseTo(1, 5);

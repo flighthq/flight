@@ -13,11 +13,11 @@ describe('initTransform2DRuntimeTrait', () => {
   it('initializes default values', () => {
     initTransform2DRuntimeTrait(runtime);
 
-    expect(runtime.localTransform2D).toBeNull();
+    expect(runtime.localMatrix).toBeNull();
     expect(runtime.rotationAngle).toStrictEqual(0);
     expect(runtime.rotationCosine).toStrictEqual(1);
     expect(runtime.rotationSine).toStrictEqual(0);
-    expect(runtime.worldTransform2D).toBeNull();
+    expect(runtime.worldMatrix).toBeNull();
 
     // inherited graph runtime fields
     expect(runtime.appearanceId).toStrictEqual(0);

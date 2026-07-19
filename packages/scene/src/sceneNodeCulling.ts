@@ -5,7 +5,7 @@ import {
   transformAabbByMatrix4,
 } from '@flighthq/geometry';
 import { computeMeshGeometryBounds } from '@flighthq/mesh';
-import { ensureNodeWorldTransformMatrix4, getNodeRuntime, getNodeWorldTransformMatrix4 } from '@flighthq/node';
+import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import type { FrustumLike, Matrix4Like, SceneNode } from '@flighthq/types';
 
 import { isMesh } from './mesh';
@@ -52,8 +52,8 @@ function _cullNode(out: SceneNode[], node: Readonly<SceneNode>, frustum: Readonl
       localBounds = _scratchLocalAabb;
     }
     if (localBounds.min.x <= localBounds.max.x) {
-      ensureNodeWorldTransformMatrix4(node);
-      const worldMatrix = getNodeWorldTransformMatrix4(node);
+      ensureNodeWorldMatrix4(node);
+      const worldMatrix = getNodeWorldMatrix4(node);
       transformAabbByMatrix4(_scratchWorldAabb, localBounds, worldMatrix);
       if (isFrustumIntersectingAabb(frustum, _scratchWorldAabb)) {
         out.push(node as SceneNode);

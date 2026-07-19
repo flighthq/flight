@@ -4,7 +4,7 @@ import {
   getNodeParent,
   getNodeRuntime,
   getNodeWorldBoundsRectangle,
-  getNodeWorldTransformMatrix,
+  getNodeWorldMatrix,
 } from '@flighthq/node';
 import { containsPathPoint } from '@flighthq/path';
 import type {
@@ -30,7 +30,7 @@ import { getNodeInteractionState } from './nodeInteractionState';
  **/
 export function describeGraphHit(node: NodeAny, x: number, y: number, out: HitTestResult): void {
   out.node = node;
-  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldTransformMatrix(node as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(node as DisplayObject), x, y);
   out.localX = hitTestScratchPoint.x;
   out.localY = hitTestScratchPoint.y;
   const exact = hitTestExactRegistry.get(node.kind);
@@ -106,7 +106,7 @@ export function hitTestDisplayObjects(source: DisplayObject, other: DisplayObjec
  * after inverting through the node's world transform.
  **/
 export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
-  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldTransformMatrix(source as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(source as DisplayObject), x, y);
   return containsRectanglePointXY(
     getNodeLocalBoundsRectangle(source as DisplayObject),
     hitTestScratchPoint.x,
@@ -241,7 +241,7 @@ function hitAreaContainsPoint(node: NodeAny, hitArea: HitArea, x: number, y: num
     return proxyHit ? proxyHit(proxy, x, y) : hitTestGraphLocalBounds(proxy, x, y);
   }
 
-  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldTransformMatrix(node as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(node as DisplayObject), x, y);
   const lx = hitTestScratchPoint.x;
   const ly = hitTestScratchPoint.y;
   if ('commands' in hitArea) return containsPathPoint(hitArea as Readonly<Path>, lx, ly);

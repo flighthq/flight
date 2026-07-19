@@ -1,5 +1,5 @@
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
-import { getNodeParent, getNodeRuntime, getNodeWorldTransformMatrix } from '@flighthq/node';
+import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals';
 import type {
   AnyInteractionSignalSlot,
@@ -698,14 +698,14 @@ function setPointerDataLocalPosition(data: PointerEventData, currentTarget: Node
     data.localY = data.worldY;
     return;
   }
-  inverseMatrixTransformPointXY(_localPoint, getNodeWorldTransformMatrix(currentTarget), data.worldX, data.worldY);
+  inverseMatrixTransformPointXY(_localPoint, getNodeWorldMatrix(currentTarget), data.worldX, data.worldY);
   data.localX = _localPoint.x;
   data.localY = _localPoint.y;
 }
 
 function isTransform2DNode(source: Readonly<NodeAny>): source is Transform2DNode {
-  const runtime = getNodeRuntime(source) as NodeRuntime & { worldTransform2D?: unknown };
-  return 'worldTransform2D' in runtime;
+  const runtime = getNodeRuntime(source) as NodeRuntime & { worldMatrix?: unknown };
+  return 'worldMatrix' in runtime;
 }
 
 type KeyboardSignalName = 'onKeyDown' | 'onKeyUp';

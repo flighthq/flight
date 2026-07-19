@@ -7,7 +7,7 @@ import {
   inverseMatrix4,
   multiplyMatrix4,
 } from '@flighthq/geometry';
-import { getNodeParent, getNodeWorldTransformMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
+import { getNodeParent, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Billboard, BillboardMode, Camera, Matrix4, SceneNode } from '@flighthq/types';
 
 import { isBillboard } from './billboard';
@@ -42,7 +42,7 @@ export function orientSceneBillboardsToCamera(scene: Readonly<SceneNode>, camera
 // its world position and scale, builds the facing world matrix, then converts it back through the
 // parent's inverse world transform into a local matrix (identity parent when the billboard is a root).
 function applyBillboardFacing(billboard: Billboard): void {
-  const world = getNodeWorldTransformMatrix4(billboard) as Readonly<Matrix4>;
+  const world = getNodeWorldMatrix4(billboard) as Readonly<Matrix4>;
   decomposeMatrix4(_position, _rotationScratch, _scale, world);
   writeBillboardFacingMatrix(_facingWorld, billboard.mode);
 
@@ -50,7 +50,7 @@ function applyBillboardFacing(billboard: Billboard): void {
   if (parent === null) {
     copyMatrix4(billboard.localMatrix, _facingWorld);
   } else {
-    const parentWorld = getNodeWorldTransformMatrix4(parent) as Readonly<Matrix4>;
+    const parentWorld = getNodeWorldMatrix4(parent) as Readonly<Matrix4>;
     if (inverseMatrix4(_inverseParentWorld, parentWorld)) {
       multiplyMatrix4(billboard.localMatrix, _inverseParentWorld, _facingWorld);
     } else {

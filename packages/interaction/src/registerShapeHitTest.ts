@@ -1,5 +1,5 @@
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry';
-import { getNodeWorldTransformMatrix } from '@flighthq/node';
+import { getNodeWorldMatrix } from '@flighthq/node';
 import { containsPathPoint } from '@flighthq/path';
 import { getShapeFillRegions } from '@flighthq/shape';
 import type { DisplayObject, NodeAny, Shape } from '@flighthq/types';
@@ -25,7 +25,7 @@ function hitTestShapeFill(source: NodeAny, x: number, y: number): number {
   const regions = getShapeFillRegions((source as Shape).data.commands);
   if (regions === null) return -1;
 
-  inverseMatrixTransformPointXY(shapeHitTestLocalPoint, getNodeWorldTransformMatrix(source as DisplayObject), x, y);
+  inverseMatrixTransformPointXY(shapeHitTestLocalPoint, getNodeWorldMatrix(source as DisplayObject), x, y);
   for (const region of regions) {
     if (containsPathPoint(region.path, shapeHitTestLocalPoint.x, shapeHitTestLocalPoint.y)) return 0;
   }
