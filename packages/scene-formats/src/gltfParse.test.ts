@@ -381,6 +381,130 @@ describe('createSceneFromGltf', () => {
     expect(mesh.materials).toHaveLength(0);
   });
 
+  it('maps a glTF sampler onto the texture wrap and filter state', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 5, 5]);
+    const doc = makeTriangleGltf();
+    doc.materials = [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }];
+    doc.textures = [{ sampler: 0, source: 0 }];
+    // REPEAT wrapS, MIRRORED_REPEAT wrapT, NEAREST mag, LINEAR_MIPMAP_LINEAR min.
+    doc.samplers = [{ magFilter: 9728, minFilter: 9987, wrapS: 10497, wrapT: 33648 }];
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const map = ((getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial)
+      .baseColorMap!;
+    expect(map.sampler.wrapU).toBe('repeat');
+    expect(map.sampler.wrapV).toBe('mirror-repeat');
+    expect(map.sampler.magFilter).toBe('nearest');
+    expect(map.sampler.minFilter).toBe('linear-mipmap-linear');
+    expect(map.sampler.mipmaps).toBe(true);
+  });
+
+  it('clears sampler mipmaps for a non-mip min filter', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 6]);
+    const doc = makeTriangleGltf();
+    doc.materials = [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }];
+    doc.textures = [{ sampler: 0, source: 0 }];
+    doc.samplers = [{ minFilter: 9729 }]; // LINEAR (no mip)
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const map = ((getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial)
+      .baseColorMap!;
+    expect(map.sampler.minFilter).toBe('linear');
+    expect(map.sampler.mipmaps).toBe(false);
+  });
+
+  it('marks a color map srgb and a data map linear', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 8]);
+    const doc = makeTriangleGltf();
+    doc.materials = [{ normalTexture: { index: 0 }, pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }];
+    doc.textures = [{ source: 0 }];
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    expect(mat.baseColorMap!.colorSpace).toBe('srgb');
+    expect(mat.normalMap!.colorSpace).toBe('linear');
+  });
+
+  it('applies a KHR_texture_transform onto the texture uv fields', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 9]);
+    const doc = makeTriangleGltf();
+    doc.materials = [
+      {
+        pbrMetallicRoughness: {
+          baseColorTexture: {
+            extensions: { KHR_texture_transform: { offset: [0.25, 0.5], rotation: 1.5, scale: [2, 4] } },
+            index: 0,
+          },
+        },
+      },
+    ];
+    doc.textures = [{ source: 0 }];
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const map = ((getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial)
+      .baseColorMap!;
+    expect([map.uvOffset.x, map.uvOffset.y]).toEqual([0.25, 0.5]);
+    expect(map.uvRotation).toBe(1.5);
+    expect([map.uvScale.x, map.uvScale.y]).toEqual([2, 4]);
+  });
+
+  it('carries options.basePath onto an external-URI image ref', () => {
+    const doc = makeTriangleGltf();
+    doc.materials = [{ emissiveTexture: { index: 0 } }];
+    doc.textures = [{ source: 0 }];
+    doc.images = [{ uri: 'textures/emissive.png' }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const mat = (getNodeChildren(createSceneFromGltf(doc, undefined, { basePath: 'assets/models' }))[0] as Mesh)
+      .materials[0] as StandardPbrMaterial;
+    const ref = mat.emissiveMap!.resource as ExternalSceneResourceRef;
+    expect(ref.uri).toBe('textures/emissive.png');
+    expect(ref.basePath).toBe('assets/models');
+  });
+
+  it('reads geometry from an external buffer supplied via options.externalBuffers', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: 0 }],
+      buffers: [{ byteLength: positions.byteLength, uri: 'model.bin' }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const externalBuffers = { 'model.bin': bytesOf(positions) };
+
+    const geometry = (getNodeChildren(createSceneFromGltf(doc, undefined, { externalBuffers }))[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect([p.x, p.y, p.z]).toEqual([1, 0, 0]);
+  });
+
+  it('warns and returns empty geometry for an unsupplied external buffer', () => {
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: 36, byteOffset: 0 }],
+      buffers: [{ byteLength: 36, uri: 'missing.bin' }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const warnings: string[] = [];
+
+    const geometry = (getNodeChildren(createSceneFromGltf(doc, warnings))[0] as Mesh).geometry;
+    expect(getMeshGeometryVertexCount(geometry)).toBe(0);
+    expect(warnings.some((w) => w.includes('missing.bin'))).toBe(true);
+  });
+
   it('applies a sparse accessor override on top of the base values', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const sparseIndices = new Uint16Array([1]); // override vertex 1

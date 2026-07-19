@@ -84,11 +84,13 @@ export function createEmbeddedTextureRef(bytes: Uint8Array, mimeType: string | n
 
 // Wraps a texture file path/URI declared by a model format as an Unresolved External resource ref on
 // a fresh Texture. The parser references the image, it does not load or decode it — @flighthq/scene-
-// resources resolves the ref later. Shared by the OBJ/MD5/3DS/MD2 material decoders.
-export function createExternalTextureRef(uri: string): Texture {
+// resources resolves the ref later, joining a relative `uri` against `basePath` (the directory the
+// container loaded from, null when the format carried none). Shared by the OBJ/MD5/3DS/MD2/glTF
+// material decoders.
+export function createExternalTextureRef(uri: string, basePath: string | null = null): Texture {
   return createTexture({
     resource: {
-      basePath: null,
+      basePath,
       kind: SceneResourceRefKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,

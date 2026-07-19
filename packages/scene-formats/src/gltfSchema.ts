@@ -13,6 +13,7 @@ export interface GltfDocument {
   meshes?: GltfMesh[];
   materials?: GltfMaterial[];
   textures?: GltfTexture[];
+  samplers?: GltfSampler[];
   images?: GltfImage[];
   animations?: GltfAnimation[];
   accessors?: GltfAccessor[];
@@ -74,8 +75,22 @@ export interface GltfPbrMetallicRoughness {
 }
 
 // A reference to a texture from a material channel. `index` points into `GltfDocument.textures`.
+// `extensions.KHR_texture_transform` carries the offset/rotation/scale UV remap applied at sample
+// time (the glTF-native tiling/atlas model, mapped onto the Texture's uvOffset/uvRotation/uvScale).
 export interface GltfTextureInfo {
   index: number;
+  texCoord?: number;
+  extensions?: { KHR_texture_transform?: GltfTextureTransform };
+}
+
+// The KHR_texture_transform extension block: a 2D offset (spec default [0,0]), a rotation in radians
+// (spec default 0, counter-clockwise about the origin), and a scale (spec default [1,1]), applied to
+// the UVs before sampling. `texCoord` overrides the referencing textureInfo's UV set (unused today —
+// Flight interleaves TEXCOORD_0 only).
+export interface GltfTextureTransform {
+  offset?: number[];
+  rotation?: number;
+  scale?: number[];
   texCoord?: number;
 }
 
@@ -89,10 +104,22 @@ export interface GltfOcclusionTextureInfo extends GltfTextureInfo {
   strength?: number;
 }
 
-// A texture binds an image `source` to a `sampler`. Flight consumes only the image today.
+// A texture binds an image `source` to a `sampler`. The sampler (an index into `GltfDocument.samplers`)
+// carries the wrap/filter state Flight maps onto a Sampler; absent means the spec-default sampler
+// (repeat wrap, implementation-chosen filtering).
 export interface GltfTexture {
   sampler?: number;
   source?: number;
+}
+
+// A glTF sampler: wrap modes and min/mag filters as GL enum constants. wrapS/wrapT map to the
+// Texture's wrapU/wrapV; magFilter/minFilter to the Sampler's mag/min filters (the mip-aware min
+// filters imply a mip chain). Absent fields take the spec defaults (repeat wrap; auto filtering).
+export interface GltfSampler {
+  magFilter?: 9728 | 9729;
+  minFilter?: 9728 | 9729 | 9984 | 9985 | 9986 | 9987;
+  wrapS?: 10497 | 33071 | 33648;
+  wrapT?: 10497 | 33071 | 33648;
 }
 
 // An image is backed by EITHER a `uri` (external file or `data:` URI) OR a `bufferView` (bytes inside
@@ -199,4 +226,20 @@ export interface GltfBuffer {
   byteLength: number;
   // Absent when the buffer's bytes come from a GLB binary chunk rather than a URI.
   uri?: string;
+}
+
+// Options for resolving a glTF document's external references. Parsing is synchronous, so a glTF
+// that stores its geometry in an external `.bin` (or images at external URIs) needs the caller to
+// supply already-fetched bytes and/or a base directory:
+//   externalBuffers — encoded bytes for external buffer/image URIs the parser must read now (geometry
+//                     lives here), keyed by the exact `uri` string as it appears in the document.
+//                     A buffer URI missing from this map decodes to empty with a warning.
+//   basePath        — the directory the container was loaded from, carried onto every External image
+//                     ref so @flighthq/scene-resources resolves a relative image URI against it later.
+// Both are optional: an all-embedded (data-URI or GLB-binary) document needs neither. This is the
+// only public input beyond the document itself, so it stays a plain-data object (no fetch callback —
+// the async fetch is the resolver's job, not the parser's).
+export interface GltfImportOptions {
+  basePath?: string | null;
+  externalBuffers?: Readonly<Record<string, ArrayLike<number>>>;
 }

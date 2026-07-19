@@ -1,8 +1,8 @@
 export * from './awdParse';
 export * from './gltfParse';
-// Only the public document input shape is re-exported; the remaining Gltf* wire types are
-// format-internal and stay module-scoped within the package.
-export type { GltfDocument } from './gltfSchema';
+// Only the public document input shape and the external-resolution options are re-exported; the
+// remaining Gltf* wire types are format-internal and stay module-scoped within the package.
+export type { GltfDocument, GltfImportOptions } from './gltfSchema';
 export * from './md2Parse';
 export * from './md5AnimParse';
 export * from './md5Parse';
