@@ -39,6 +39,7 @@ export function applyInnerGlowEffectToWgpu(
   applyWgpuEffectBoxBlur(state, s0, s1, s2, {
     blurX: effect.blurX ?? 6,
     blurY: effect.blurY ?? 6,
+    edgeColor: getInvertTintEdgeColor(color, alpha, strength),
     passes: quality,
   });
   applyWgpuEffectInnerClipPass(state, s1, src, s0);
@@ -57,3 +58,17 @@ export function applyInnerGlowEffectToWgpu(
 export const defaultWgpuInnerGlowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
   applyInnerGlowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerGlowEffect);
 };
+
+function getInvertTintEdgeColor(
+  color: number,
+  alpha: number,
+  strength: number,
+): readonly [number, number, number, number] {
+  const edgeAlpha = Math.min(1, alpha * strength);
+  return [
+    (((color >> 16) & 0xff) / 255) * edgeAlpha,
+    (((color >> 8) & 0xff) / 255) * edgeAlpha,
+    ((color & 0xff) / 255) * edgeAlpha,
+    edgeAlpha,
+  ];
+}

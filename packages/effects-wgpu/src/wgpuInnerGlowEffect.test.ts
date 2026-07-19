@@ -32,6 +32,7 @@ vi.mock('./wgpuEffectTintShader', () => ({
 }));
 
 import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { applyWgpuEffectInnerClipPass } from './wgpuEffectTintShader';
 import { applyInnerGlowEffectToWgpu, defaultWgpuInnerGlowEffectRunner } from './wgpuInnerGlowEffect';
 
@@ -64,6 +65,26 @@ describe('applyInnerGlowEffectToWgpu', () => {
     const finalComposite = vi.mocked(applyWgpuEffectBlitPass).mock.calls[0];
     expect(finalComposite[1]).not.toBe(source);
     expect(finalComposite[2]).toBe(dest);
+  });
+
+  it('uses an inverted exterior edge color for hidden-source blur', () => {
+    const source = createTarget('source');
+    const dest = createTarget('dest');
+
+    applyInnerGlowEffectToWgpu(createState(), source, dest, createPool(), {
+      kind: 'InnerGlowEffect',
+      color: 0xff0000,
+      sourceMode: 'hide',
+      strength: 2,
+    });
+
+    expect(applyWgpuEffectBoxBlur).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ edgeColor: [1, 0, 0, 1] }),
+    );
   });
 
   it('clips the hidden-source glow against the source alpha', () => {

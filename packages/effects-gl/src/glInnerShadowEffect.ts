@@ -79,7 +79,12 @@ export function applyInnerShadowEffectToGl(
   applyGlEffectInvertTintPass(state, src, s0, color, alpha, strength);
 
   // Pass 2: blur → s1 (s2 is ping-pong temp)
-  applyGlEffectBoxBlur(state, s0, s1, s2, { blurX: effect.blurX ?? 4, blurY: effect.blurY ?? 4, passes: quality });
+  applyGlEffectBoxBlur(state, s0, s1, s2, {
+    blurX: effect.blurX ?? 4,
+    blurY: effect.blurY ?? 4,
+    edgeColor: getInvertTintEdgeColor(color, alpha, strength),
+    passes: quality,
+  });
 
   // Pass 3: shift the blurred shadow by the offset → s0 (s1 no longer needed).
   // s0 still holds pass-1 content; clear it so the offset blit doesn't blend on top of it.
@@ -128,4 +133,18 @@ function getClipShader(state: GlRenderState): InnerClipLocations {
     clipShaders.set(state, loc);
   }
   return loc;
+}
+
+function getInvertTintEdgeColor(
+  color: number,
+  alpha: number,
+  strength: number,
+): readonly [number, number, number, number] {
+  const edgeAlpha = Math.min(1, alpha * strength);
+  return [
+    (((color >> 16) & 0xff) / 255) * edgeAlpha,
+    (((color >> 8) & 0xff) / 255) * edgeAlpha,
+    ((color & 0xff) / 255) * edgeAlpha,
+    edgeAlpha,
+  ];
 }

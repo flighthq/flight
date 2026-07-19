@@ -33,6 +33,7 @@ vi.mock('./glEffectTintShader', () => ({
 import { drawGlFullscreenPass } from '@flighthq/render-gl';
 
 import { applyGlEffectBlitPass } from './glEffectBlitShader';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
 import { applyInnerShadowEffectToGl, defaultGlInnerShadowEffectRunner } from './glInnerShadowEffect';
 
 describe('applyInnerShadowEffectToGl', () => {
@@ -64,6 +65,25 @@ describe('applyInnerShadowEffectToGl', () => {
     const finalComposite = vi.mocked(applyGlEffectBlitPass).mock.calls[0];
     expect(finalComposite[1]).not.toBe(source);
     expect(finalComposite[2]).toBe(dest);
+  });
+
+  it('uses an inverted exterior edge color for hidden-source blur', () => {
+    const source = createTarget('source');
+    const dest = createTarget('dest');
+
+    applyInnerShadowEffectToGl(createState(), source, dest, createPool(), {
+      kind: 'InnerShadowEffect',
+      color: 0,
+      sourceMode: 'hide',
+    });
+
+    expect(applyGlEffectBoxBlur).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ edgeColor: [0, 0, 0, 1] }),
+    );
   });
 
   it('preserves the clipped shadow pass when sourceMode is hide', () => {
