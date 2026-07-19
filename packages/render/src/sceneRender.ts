@@ -163,7 +163,9 @@ export function prepareSceneRender(
   // transforms (jointWorld * inverseBind). The backend uploads skeleton.jointMatrices through the
   // proxy and the HAS_SKIN vertex variant deforms from it, so the app poses the joints and this
   // pass alone readies the palette — it need not call the CPU updateMeshSkin on a GPU backend
-  // (doing both would deform twice). Rigid meshes carry no skin and are skipped.
+  // (doing both would deform twice). Rigid meshes carry no skin and are skipped. Morph is driven by
+  // the GL backend's draw (updateMeshMorph in drawGlScene), not here, to keep render backend-neutral
+  // and free of a @flighthq/scene dependency.
   for (let m = 0; m < prepared.meshes.length; m++) {
     const skin = prepared.meshes[m].skin;
     if (skin != null) computeSkeleton3DJointMatrices(skin.skeleton);

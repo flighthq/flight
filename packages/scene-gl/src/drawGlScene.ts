@@ -3,7 +3,7 @@ import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { getNodeWorldTransformMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@flighthq/render-gl';
-import { getSceneNodeWorldAlpha } from '@flighthq/scene';
+import { getSceneNodeWorldAlpha, updateMeshMorph } from '@flighthq/scene';
 import type {
   Camera,
   GlMeshMaterialRenderer,
@@ -84,6 +84,16 @@ export function drawGlScene(
   const blendedDrawList = runtime.blendedDrawList;
   opaqueDrawList.length = 0;
   blendedDrawList.length = 0;
+
+  // GL vertex morph (CPU-blend-then-upload): blend each visible morphed mesh's base + Σ wᵢ·targetᵢ into
+  // its geometry.vertices and bump the version, so ensureGlMeshUpload below re-uploads the deformed base.
+  // Runs before the draw lists are built so the uploaded buffer reflects this frame's weights. A rigid
+  // mesh (no morph) is a no-op. Driven here in the GL backend rather than in render's prepareSceneRender
+  // to keep @flighthq/render free of a @flighthq/scene dependency (the GL-only morph decision).
+  for (let m = 0; m < list.meshCount; m++) {
+    const mesh = list.visibleMeshes[m];
+    if (mesh.morph != null) updateMeshMorph(mesh);
+  }
 
   for (let m = 0; m < list.meshCount; m++) {
     const mesh = list.visibleMeshes[m];
