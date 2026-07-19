@@ -11,6 +11,8 @@ export * from './boxBlurMath';
 export * from './cameraMotionBlurEffect';
 export * from './chromaticAberrationEffect';
 export * from './colorTemperatureMath';
+export * from './compositeEffect';
+export * from './compositeOperatorMath';
 export * from './contactShadowsEffect';
 export * from './convolutionEffect';
 export * from './crtEffect';

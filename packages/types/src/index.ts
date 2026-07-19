@@ -85,6 +85,8 @@ export * from './ClockOptions';
 export * from './Collision';
 export * from './CollisionResponse';
 export * from './ColorTransform';
+export * from './CompositeEffect';
+export * from './CompositeOperator';
 export * from './Connectivity';
 export * from './ContactShadowsEffect';
 export * from './ConvolutionEffect';
