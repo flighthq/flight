@@ -1,10 +1,11 @@
-import type { ImageResource, SamplerLike } from '@flighthq/types';
+import type { ImageResource, SamplerLike, VideoTexture } from '@flighthq/types';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 import {
   applyGlBlendMode,
   bindGlImageResourceTexture,
   bindGlTexture,
+  bindGlVideoTexture,
   createGlTexture,
   drawGlQuad,
   enableGlBlendModeSupport,
@@ -414,6 +415,52 @@ describe('bindGlTexture', () => {
     (gl.getExtension as ReturnType<typeof vi.fn>).mockImplementation(() => null);
     bindGlTexture(state, document.createElement('img'), makeSampler({ anisotropy: 16 }));
     expect(gl.texParameterf).not.toHaveBeenCalled();
+  });
+});
+
+describe('bindGlVideoTexture', () => {
+  function videoTexture(frameId: number, readyState = 4, videoWidth = 320, videoHeight = 240): VideoTexture {
+    return {
+      frameId,
+      sampler: null,
+      source: { element: { readyState, videoWidth, videoHeight } as unknown as HTMLVideoElement },
+    } as unknown as VideoTexture;
+  }
+
+  it('creates a texture, uploads the current frame, and caches by VideoTexture identity', () => {
+    const { state, gl } = createGlState();
+    const vt = videoTexture(3);
+    const t1 = bindGlVideoTexture(state, vt);
+    expect(gl.createTexture).toHaveBeenCalled();
+    expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, vt.source.element);
+    const t2 = bindGlVideoTexture(state, vt);
+    expect(t2).toBe(t1);
+  });
+
+  it('re-uploads only when the frameId advances (the dirty-gate)', () => {
+    const { state, gl } = createGlState();
+    const vt = videoTexture(1);
+    bindGlVideoTexture(state, vt);
+    const uploads = (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length;
+    bindGlVideoTexture(state, vt);
+    expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads);
+    vt.frameId = 2;
+    bindGlVideoTexture(state, vt);
+    expect((gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.length).toBe(uploads + 1);
+  });
+
+  it('does not upload when the element has no decoded frame yet', () => {
+    const { state, gl } = createGlState();
+    bindGlVideoTexture(state, videoTexture(1, 1, 0, 0));
+    expect(gl.texImage2D).not.toHaveBeenCalled();
+  });
+
+  it('applies the VideoTexture sampler when no explicit sampler is passed', () => {
+    const { state, gl } = createGlState();
+    const vt = videoTexture(1);
+    (vt as { sampler: SamplerLike }).sampler = makeSampler({ wrapU: 'repeat' });
+    bindGlVideoTexture(state, vt);
+    expect(gl.texParameteri).toHaveBeenCalledWith(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
   });
 });
 
