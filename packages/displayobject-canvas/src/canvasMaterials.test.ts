@@ -1,5 +1,5 @@
 import type { CanvasRenderState } from '@flighthq/types';
-import { BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 import { applyCanvasBlendMode, enableCanvasBlendMode } from './canvasMaterials';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasRenderState';
@@ -30,13 +30,13 @@ describe('applyCanvasBlendMode', () => {
     expect(state.context.globalCompositeOperation).toBe('darken');
   });
 
-  it('should set globalCompositeOperation to "difference" for BlendMode.Difference', () => {
-    applyCanvasBlendMode(state, BlendMode.Difference);
+  it('should set globalCompositeOperation to "difference" for AdvancedBlendMode.Difference', () => {
+    applyCanvasBlendMode(state, AdvancedBlendMode.Difference);
     expect(state.context.globalCompositeOperation).toBe('difference');
   });
 
-  it('should set globalCompositeOperation to "hard-light" for BlendMode.HardLight', () => {
-    applyCanvasBlendMode(state, BlendMode.HardLight);
+  it('should set globalCompositeOperation to "hard-light" for AdvancedBlendMode.HardLight', () => {
+    applyCanvasBlendMode(state, AdvancedBlendMode.HardLight);
     expect(state.context.globalCompositeOperation).toBe('hard-light');
   });
 
@@ -50,8 +50,8 @@ describe('applyCanvasBlendMode', () => {
     expect(state.context.globalCompositeOperation).toBe('multiply');
   });
 
-  it('should set globalCompositeOperation to "overlay" for BlendMode.Overlay', () => {
-    applyCanvasBlendMode(state, BlendMode.Overlay);
+  it('should set globalCompositeOperation to "overlay" for AdvancedBlendMode.Overlay', () => {
+    applyCanvasBlendMode(state, AdvancedBlendMode.Overlay);
     expect(state.context.globalCompositeOperation).toBe('overlay');
   });
 

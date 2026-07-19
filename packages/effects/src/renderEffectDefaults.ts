@@ -58,6 +58,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     shadowColor: 0x000000,
     strength: 1,
   },
+  BlendEffect: { opacity: 1 },
   BloomEffect: { brightness: 1, mipCount: 0, passes: 1, radius: 8, threshold: 0.8, thresholdKnee: 0.5 },
   BlurEffect: { blurX: 4, blurY: 4 },
   BokehDepthOfFieldEffect: { apertureBlades: 6, maxBlurRadius: 16, samples: 16 },

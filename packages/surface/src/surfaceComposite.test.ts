@@ -1,4 +1,4 @@
-import { BlendMode } from '@flighthq/types';
+import { AdvancedBlendMode, BlendMode } from '@flighthq/types';
 
 import { createSurface } from './surface';
 import {
@@ -74,14 +74,14 @@ describe('compositeSurfacePixels', () => {
   it('overlay blend mode darkens on dark backdrops', () => {
     const dest = createSurface(1, 1, 0x400000ff); // RGBA: R=64
     const pixels = new Uint8ClampedArray([200, 0, 0, 255]);
-    compositeSurfacePixels(region(dest), pixels, BlendMode.Overlay);
+    compositeSurfacePixels(region(dest), pixels, AdvancedBlendMode.Overlay);
     expect(dest.data[0]).toBe(100); // 2 * 64 * 200 / 255
   });
 
   it('hardlight blend mode is overlay with operands swapped', () => {
     const dest = createSurface(1, 1, 0xc80000ff); // RGBA: R=200
     const pixels = new Uint8ClampedArray([64, 0, 0, 255]);
-    compositeSurfacePixels(region(dest), pixels, BlendMode.HardLight);
+    compositeSurfacePixels(region(dest), pixels, AdvancedBlendMode.HardLight);
     expect(dest.data[0]).toBe(100); // 2 * 200 * 64 / 255
   });
 
