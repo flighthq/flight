@@ -1124,9 +1124,10 @@ function readAwdPropertyUint32(
 }
 
 // Resolves an AWD material block id to a Flight Material, memoized so a material shared by several
-// subsets yields one Material (and one Texture/ImageResource per shared texture). A textured material
-// becomes a StandardPbrMaterial with a baseColorMap; a flat-color material becomes an UnlitMaterial;
-// anything that resolves to neither returns null (a bare, unmaterialed subset).
+// subsets yields one Material (and one Texture/ImageResource per shared texture). A material with a
+// diffuse texture and/or a flat diffuse color becomes a BlinnPhongMaterial (AWD's own AwayJS
+// MethodMaterial shading model); anything that resolves to neither returns null (a bare, unmaterialed
+// subset).
 function resolveAwdMaterial(
   materialId: number,
   materialBlocks: Readonly<Map<number, ParsedMaterial>>,

@@ -8,6 +8,16 @@ by: ingest:builder-67dc46d64
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
 
+## 2026-07-19 — morph corrective-over-skin composition follow-up (doc-honesty stage)
+
+`updateMeshMorph` + `updateMeshSkin` both currently CPU-blend into `geometry.vertices` and re-upload;
+the documented ordering (morph first so the skin captures its bind pose from the morphed result — see
+the durable note in `updateMeshMorph.ts`) makes corrective-shapes-over-skinning *correct* but *not
+composed on the GPU*. AAA depth gap, parked here rather than inline: a true composed skin+morph GPU path
+(morph deltas + bone palette resolved together in the vertex shader, no per-frame CPU rewrite of the
+vertex buffer) is deferred — see the morph-target-animation charter's open directions. Until then a
+mesh carrying both deformers pays a full CPU vertex pass per frame.
+
 ## [2026-06-24 · builder-67dc46d64] — as-claimed, not yet review-verified
 
 # Status: @flighthq/scene

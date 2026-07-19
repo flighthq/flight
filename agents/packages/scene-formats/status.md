@@ -11,6 +11,22 @@ by: null
 
 <!-- newest entry on top -->
 
+## 2026-07-19 — AAA depth follow-ups recorded (doc-honesty stage)
+
+Known parser depth gaps, parked here rather than as inline TODOs:
+
+- **3DS FACE_MATERIAL per-face subset splitting.** `parseTriMesh` (threeDsParse.ts) reads FACE_MATERIAL
+  sub-chunks but keeps only the material *names* — it discards the per-material face-index list each
+  sub-chunk carries, so a mesh with multiple materials is imported as one undifferentiated geometry
+  instead of split into per-material subsets (mirroring the OBJ `usemtl` subset path). AAA: split faces
+  into subsets keyed by FACE_MATERIAL, one draw range per material.
+- **glTF KHR_materials_emissive_strength.** `gltfParse.ts` never reads the extension; the scene-gl
+  material renderers already honor an `emissiveStrength` uniform, so importing it would light emissive
+  materials correctly (values > 1 drive bloom). Currently every imported material lands at strength 1.
+- **glTF non-triangle primitive modes.** `primitiveToGeometry` warns and imports points/lines/
+  strips/fans "as-is" (mode ≠ 4). AAA: convert triangle-strip/fan/line-strip/-loop into the canonical
+  triangle-list layout so non-triangle primitives render, rather than passing indices through unchanged.
+
 ## 2026-07-17 — AWD skinning wired; shared skin-emit seam across all 3 skeletal formats (builder, reviewed)
 
 `createSceneFromAwd` now emits `joints0`/`weights0` + parses the skeleton block + sets `mesh.skin`

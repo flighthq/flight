@@ -272,7 +272,7 @@ Quick-reference for common feature keywords. All package names use the `@flighth
 | Audio | `audio` + `media` | web | Web Audio mixer |
 | Video | `video` + `displayobject` | canvas, dom, gl, wgpu |  |
 | Video texture (dynamic) | `texture` (VideoTexture) + `render-gl` (uploadGlTextureVideoFrame) | gl | Per-frame element upload, frameId dirty-gate; scene texture + 2D bitmap fill |
-| Compressed textures | `texture-formats` (parse) + `render-gl` (upload) | gl | BCn/ETC/ASTC/PVRTC + ATF native upload via `WEBGL_compressed_texture_*` + capability detect + RGBA decode fallback; Basis transcode spec-only |
+| Compressed textures | `texture-formats` (parse) + `render-gl` (upload + draw) | gl | Draws through the GL bitmap path when the opt-in `registerGlCompressedTextureUpload` seam is installed (a plain-bitmap bundle sheds the ~40-format enum table otherwise). BCn/ETC/ASTC/PVRTC + ATF native upload via `WEBGL_compressed_texture_*` + capability detect + RGBA decode fallback; Basis/supercompression transcode spec-only |
 | Camera (2D) | `camera2d` | headless | Deadzone, parallax, zoom |
 | Camera (3D) | `camera` | gl, wgpu | Perspective, orthographic, frustum |
 | Tween / Spring / Easing | `tween`, `spring`, `easing` | headless |  |

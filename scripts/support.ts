@@ -114,8 +114,8 @@ const DECLARED_GAPS: readonly DeclaredGap[] = [
   {
     area: 'Resource lifecycle',
     capability: 'Compressed texture upload (KTX2 / DDS / Basis)',
-    status: 'not-implemented',
-    note: 'Containers parse to descriptors; no transcoder or compressed-GPU upload on any backend.',
+    status: 'partial',
+    note: 'GL-native block upload landed (render-gl uploadGlCompressedTextureContainer + display draw path, behind the opt-in registerGlCompressedTextureUpload seam, with an RGBA decode fallback); wgpu/canvas/dom have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel.',
   },
   {
     area: 'Effects',

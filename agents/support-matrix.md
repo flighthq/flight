@@ -33,7 +33,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Model Import | FBX / USD / COLLADA / PLY / STL | `not-implemented` | No parser exists. |
 | Model Import | glTF materials / textures / animations | `not-implemented` | glTF imports geometry + skins only; drops materials, textures, animation channels, external .bin (gltfParse.ts header). |
 | Model Import | OBJ / 3DS / MD2 / MD5 textures | `not-implemented` | Only AWD emits SceneResourceRefs; other parsers leave textures unresolved. |
-| Resource lifecycle | Compressed texture upload (KTX2 / DDS / Basis) | `not-implemented` | Containers parse to descriptors; no transcoder or compressed-GPU upload on any backend. |
+| Resource lifecycle | Compressed texture upload (KTX2 / DDS / Basis) | `partial` | GL-native block upload landed (render-gl uploadGlCompressedTextureContainer + display draw path, behind the opt-in registerGlCompressedTextureUpload seam, with an RGBA decode fallback); wgpu/canvas/dom have none. Still no Basis/supercompression transcoder — supercompressed containers report the failure sentinel. |
 | Resource lifecycle | Texture unload / eviction / streaming (mip/LOD) | `not-implemented` | scene-resources resolves but never releases; assets refcount wired to nothing; no progressive streaming. |
 | Simulation | Physics / dynamics (rigid-body solver, swept/TOI, contacts) | `not-implemented` | collision is discrete overlap + MTV only; no solver, no world integration. |
 | Skinning | GPU skinning — PBR / toon / unlit / matcap families | `not-implemented` | HAS_SKIN wired only for the classic prelude on WebGL; other families fall back to CPU deform. WebGPU: none. |
