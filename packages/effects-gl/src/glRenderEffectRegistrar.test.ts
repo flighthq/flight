@@ -127,11 +127,12 @@ describe('registerCompositeGlRenderEffects', () => {
     expect(typeof registerCompositeGlRenderEffects).toBe('function');
   });
 
-  it('registers the seven former-filter composite effect runners', () => {
+  it('registers the composite effect runners including the advanced-blend recipe', () => {
     const state = {} as never;
     registerCompositeGlRenderEffects(state);
     for (const kind of [
       'BevelEffect',
+      'BlendEffect',
       'DropShadowEffect',
       'GradientBevelEffect',
       'GradientGlowEffect',
