@@ -183,8 +183,9 @@ function buildScenesFromGltfDocument(
   return scenes;
 }
 
-// Builds the document's animation clips (each targeting the shared node pool) and pushes them onto the
-// given scene document's clip list.
+// Builds the document's animation clips (each targeting the shared node pool) and keys each into the given
+// scene document's animation map by the glTF animation's `name`, falling back to `animation${i}` when the
+// file leaves it unnamed.
 function attachGltfAnimations(
   scene: Scene,
   doc: Readonly<GltfDocument>,
@@ -192,10 +193,11 @@ function attachGltfAnimations(
   sceneNodes: readonly SceneNode[],
   warnings?: string[],
 ): void {
-  const clips = (doc.animations ?? [])
-    .map((animation) => buildGltfAnimationClip(doc, buffers, sceneNodes, animation, warnings))
-    .filter((clip): clip is AnimationClip => clip !== null);
-  if (clips.length > 0) (scene.animations as AnimationClip[]).push(...clips);
+  const gltfAnimations = doc.animations ?? [];
+  for (let i = 0; i < gltfAnimations.length; i++) {
+    const clip = buildGltfAnimationClip(doc, buffers, sceneNodes, gltfAnimations[i], warnings);
+    if (clip !== null) scene.animations[gltfAnimations[i].name ?? `animation${i}`] = clip;
+  }
 }
 
 // The document's shared node pool: every `nodes[]` entry built into a SceneNode (with geometry,

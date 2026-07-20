@@ -401,7 +401,7 @@ describe('createSceneFrom3ds animations', () => {
     const bytes = buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
     const scene = createSceneFrom3ds(bytes);
 
-    expect(scene.animations).toHaveLength(0);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
   });
 
@@ -409,7 +409,7 @@ describe('createSceneFrom3ds animations', () => {
     const warnings: string[] = [];
     const scene = createSceneFrom3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), warnings);
 
-    expect(scene.animations).toHaveLength(0);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.length).toBeGreaterThan(0);
   });

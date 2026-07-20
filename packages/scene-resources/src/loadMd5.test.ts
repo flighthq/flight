@@ -42,10 +42,10 @@ describe('loadSceneFromMd5Mesh', () => {
     vi.mocked(createSceneFromMd5Mesh).mockReturnValue(scene);
     const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
 
-    const loaded = await loadSceneFromMd5Mesh('meshsrc', 'animsrc', { resolver });
+    const loaded = await loadSceneFromMd5Mesh('meshsrc', { resolver });
 
     expect(loaded).toBe(scene);
-    expect(vi.mocked(createSceneFromMd5Mesh)).toHaveBeenCalledWith('meshsrc', 'animsrc');
+    expect(vi.mocked(createSceneFromMd5Mesh)).toHaveBeenCalledWith('meshsrc');
     expect(texture.resource?.state).toBe(ResourceResolutionState.Resolved);
     disposeSceneResourceResolver(resolver);
   });

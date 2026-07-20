@@ -16,7 +16,9 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
+import { parseMd5Anim } from './md5AnimParse';
 import { createSceneFromMd5Mesh } from './md5Parse';
+import { findSceneSkeletonJoints } from './shared';
 
 // A one-joint .md5anim matching SINGLE_TRIANGLE's single "root" joint, translating it per frame.
 const SINGLE_JOINT_ANIM = [
@@ -427,7 +429,7 @@ describe('createSceneFromMd5Mesh', () => {
     const source = ['MD5Version 10', 'numJoints 1', 'numMeshes 0', 'joints {', '  bad joint line', '}'].join('\n');
 
     const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, undefined, warnings);
+    createSceneFromMd5Mesh(source, warnings);
     expect(warnings.some((w) => w.includes('malformed joint'))).toBe(true);
   });
 
@@ -449,7 +451,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, undefined, warnings);
+    createSceneFromMd5Mesh(source, warnings);
     expect(warnings.some((w) => w.includes('malformed vert'))).toBe(true);
   });
 
@@ -471,7 +473,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, undefined, warnings);
+    createSceneFromMd5Mesh(source, warnings);
     expect(warnings.some((w) => w.includes('malformed tri'))).toBe(true);
   });
 
@@ -493,7 +495,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, undefined, warnings);
+    createSceneFromMd5Mesh(source, warnings);
     expect(warnings.some((w) => w.includes('malformed weight'))).toBe(true);
   });
 
@@ -501,7 +503,7 @@ describe('createSceneFromMd5Mesh', () => {
     const source = ['MD5Version 11', 'numJoints 0', 'numMeshes 0'].join('\n');
 
     const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, undefined, warnings);
+    createSceneFromMd5Mesh(source, warnings);
     expect(warnings.some((w) => w.includes('unsupported MD5Version'))).toBe(true);
   });
 
@@ -551,7 +553,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const warnings: string[] = [];
-    const scene = createSceneFromMd5Mesh(source, undefined, warnings);
+    const scene = createSceneFromMd5Mesh(source, warnings);
     expect(warnings).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(2);
   });
@@ -630,7 +632,7 @@ describe('createSceneFromMd5Mesh', () => {
     ].join('\n');
 
     const warnings: string[] = [];
-    createSceneFromMd5Mesh(source, undefined, warnings);
+    createSceneFromMd5Mesh(source, warnings);
     expect(warnings.some((w) => w.includes('joint index') && w.includes('out of range'))).toBe(true);
   });
 
@@ -677,19 +679,21 @@ describe('createSceneFromMd5Mesh', () => {
 });
 
 describe('createSceneFromMd5Mesh animations', () => {
-  it('returns the scene with empty animations when no anim source is given', () => {
+  it('returns the mesh scene with an empty animations map (the .md5anim is a separate file)', () => {
     const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
-    expect(scene.animations).toHaveLength(0);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
   });
 
-  it('folds a paired .md5anim into a clip bound to the scene’s own skeleton joints', () => {
-    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE, SINGLE_JOINT_ANIM);
-    expect(scene.animations).toHaveLength(1);
+  it('composes a paired .md5anim into a named clip bound to the scene’s own skeleton joints', () => {
+    const scene = createSceneFromMd5Mesh(SINGLE_TRIANGLE);
+    const joints = findSceneSkeletonJoints(scene.root)!;
+    scene.animations.walk = parseMd5Anim(SINGLE_JOINT_ANIM, joints)!;
+    expect(Object.keys(scene.animations)).toEqual(['walk']);
 
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
-    const joints = mesh.skin!.skeleton.joints;
-    const channel = scene.animations[0].channels[0];
+    const meshJoints = mesh.skin!.skeleton.joints;
+    const channel = scene.animations.walk.channels[0];
     // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
-    expect((channel.targetRef as SceneAnimationTarget).node).toBe(joints[0]);
+    expect((channel.targetRef as SceneAnimationTarget).node).toBe(meshJoints[0]);
   });
 });

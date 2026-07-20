@@ -4,15 +4,7 @@ import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, getNodeChildren } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, isMesh } from '@flighthq/scene';
-import type {
-  AnimationChannel,
-  AnimationClip,
-  Material,
-  Mesh,
-  MeshMorph,
-  MorphTarget,
-  SceneNode,
-} from '@flighthq/types';
+import type { AnimationChannel, Material, Mesh, MeshMorph, MorphTarget, SceneNode } from '@flighthq/types';
 import { SceneAnimationPathWeights } from '@flighthq/types';
 
 import {
@@ -196,7 +188,8 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
   // has exactly the two adjacent frames' weights non-zero (a hat function). A single-frame model has no
   // motion and leaves `animations` empty.
   const clip = buildMd2MorphClip(scene.root);
-  if (clip !== null) (scene.animations as AnimationClip[]).push(clip);
+  // MD2 carries a single implicit frame animation with no name in the format; key it 'default'.
+  if (clip !== null) scene.animations.default = clip;
 
   return scene;
 }
