@@ -168,3 +168,43 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run ${{ matrix.check }}
+
+  edge-publish:
+    # Snapshot ("edge"/"next") publish to npm on every push to a release channel — the continuous
+    # counterpart to the tag-triggered stable release (release.yml). It reuses this run's green legs
+    # via `needs`, so a red build never ships a snapshot; it never runs on pull_request (no secrets on
+    # forks, and only landed code should publish). The version is a prerelease under its own dist-tag
+    # (main -> edge, develop -> next), so `latest` is untouched. See agents/packaging.md.
+    name: Publish ${{ github.ref_name }} snapshot to npm
+    needs: [build, harness-build, test, quality, size, render-test]
+    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    concurrency:
+      # Serialize snapshot publishes per channel; never cancel one mid-publish.
+      group: edge-publish-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # edge-version derives the sortable build number from `git rev-list --count`
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - name: Compute snapshot version and dist-tag
+        id: edge
+        run: npx tsx scripts/edge-version.ts >> "$GITHUB_OUTPUT"
+      - name: Stamp the graph to the snapshot version
+        run: npm run version:packages ${{ steps.edge.outputs.version }}
+      - run: npm run build
+      - name: Publish snapshot to npm
+        run: npm run release -- --no-build --tag ${{ steps.edge.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'

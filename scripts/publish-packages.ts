@@ -11,9 +11,11 @@
 // registry is skipped, so a re-run after a partial failure completes the set.
 //
 // Usage:
-//   tsx scripts/publish-packages.ts                 publish all
+//   tsx scripts/publish-packages.ts                 publish all to the default `latest` dist-tag
 //   tsx scripts/publish-packages.ts --dry-run       pack + report, no upload
 //   tsx scripts/publish-packages.ts --no-build      skip the root build (dist must already exist)
+//   tsx scripts/publish-packages.ts --tag <tag>     publish under a dist-tag (e.g. edge/next), not
+//                                                   `latest` — the snapshot-channel publish path
 //   tsx scripts/publish-packages.ts <name-substr>   only packages whose name contains the substring
 
 import { execFileSync } from 'node:child_process';
@@ -39,7 +41,11 @@ const packagesDir = join(root, 'packages');
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const noBuild = args.includes('--no-build');
-const filter = args.find((a) => !a.startsWith('--'));
+// --tag <dist-tag> routes the publish to a channel other than `latest` (edge/next snapshots). The tag
+// value is a positional-looking token, so exclude it before resolving the name-substring filter.
+const tagIndex = args.indexOf('--tag');
+const distTag = tagIndex === -1 ? undefined : args[tagIndex + 1];
+const filter = args.find((a, i) => !a.startsWith('--') && i !== tagIndex + 1);
 
 const manifests = readdirSync(packagesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && existsSync(join(packagesDir, entry.name, 'package.json')))
@@ -85,6 +91,7 @@ for (const { dir, path, pkg } of manifests) {
   writeFileSync(path, `${JSON.stringify(pinInternalDependencies(pkg), null, 2)}\n`);
   try {
     const publishArgs = ['publish', '--access', 'public', '--ignore-scripts'];
+    if (distTag !== undefined) publishArgs.push('--tag', distTag);
     if (dryRun) publishArgs.push('--dry-run');
     execFileSync('npm', publishArgs, { cwd: dir, stdio: 'inherit' });
     published.push(id);
@@ -98,8 +105,8 @@ for (const { dir, path, pkg } of manifests) {
 }
 
 console.log(
-  `\n[publish] ${dryRun ? '(dry run) ' : ''}published ${published.length}, ` +
-    `skipped ${skipped.length}, failed ${failed.length}`,
+  `\n[publish] ${dryRun ? '(dry run) ' : ''}published ${published.length} to ` +
+    `dist-tag \`${distTag ?? 'latest'}\`, skipped ${skipped.length}, failed ${failed.length}`,
 );
 if (failed.length > 0) {
   console.error(`[publish] failed: ${failed.join(', ')}`);

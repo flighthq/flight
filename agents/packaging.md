@@ -18,6 +18,16 @@ The whole `@flighthq/*` graph publishes to public npm under **locked versioning*
 
 Release flow: `npm run version:packages 0.1.1` → commit → `git tag 0.1.1` → `git push --tags` (bare numeric tags, no `v` prefix — the `release.yml` trigger and the release-asset names follow the tag). Publishing requires the `@flighthq` npm scope and an `NPM_TOKEN` repo secret.
 
+## Snapshot ("edge"/"next") channel
+
+Every push to a release branch also publishes a **snapshot** build to npm — the continuous counterpart to the tagged stable release, so consumers can track the tip without waiting for a version bump. It reuses the same `version:packages` + `publish-packages.ts` machinery; only the version string and the dist-tag differ, so `latest` is never touched.
+
+- **`scripts/edge-version.ts`** computes the snapshot version and channel and prints them as GitHub `$GITHUB_OUTPUT` `key=value` lines. The base is `@flighthq/sdk`'s current source version (tag-independent, so a missing release tag never yields a stale base), **patch-bumped by one** so the snapshot sorts *above* the last release rather than as a prerelease of it — the ZeroVer bump (major pinned at `0`; a breaking change would bump the minor digit instead, and conventional commits can later drive that level). The full string is `<bumped>-<channel>.<count>.g<sha>`, where `<count>` = `git rev-list --count HEAD` (monotonic per branch, so snapshots sort in commit order) and `g<sha>` is the short commit sha. Channel: `main → edge`, `develop → next`.
+- **`publish-packages.ts --tag <dist-tag>`** publishes under that dist-tag instead of `latest`. Everything else (build once, pin internal `"*"` deps temporarily, idempotent skip of already-published versions, provenance) is identical to the stable release.
+- **`.github/workflows/tests.yml` → `edge-publish` job** runs only on `push` to `main`/`develop` (never on `pull_request` — forks have no secrets and only landed code should publish), and `needs` the build/test/quality/size/render legs so a red build never ships a snapshot. It computes the version, stamps it with `version:packages`, builds, and runs `npm run release -- --no-build --tag <channel>` authed with `NPM_TOKEN` + provenance.
+
+Install a snapshot with `npm install @flighthq/sdk@edge` (or `@next`). Snapshots are prereleases, so a normal `^`/`x` range never resolves to one — they are opt-in by dist-tag only.
+
 ## Package naming and axes
 
 A package name is a subsystem, written as **one fused word** — even a two-word concept fuses, never taking an internal dash: `displayobject` (not `display-object`), `spritesheet`, `textinput`, `textlayout`, `textshaper`, `easing`, `loader`. The dash is reserved for **one axis of variation** — a derivative that depends on and specializes the base. There are two axes:
