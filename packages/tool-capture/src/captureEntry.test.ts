@@ -12,6 +12,7 @@ describe('buildCaptureObserveDiagnostics', () => {
       coverage: 0,
       verifyPublished: false,
       verifyTargetKind: 'webgl',
+      warmupFrames: 3,
       logs: [
         { level: 'pageerror', data: { msg: 'boom' } },
         { level: 'error', channel: 'network', data: { msg: 'request failed' } },
@@ -27,6 +28,7 @@ describe('buildCaptureObserveDiagnostics', () => {
       pageErrorCount: 1,
       verifyPublished: false,
       verifyTargetKind: 'webgl',
+      warmupFrames: 3,
     });
   });
 
@@ -37,12 +39,14 @@ describe('buildCaptureObserveDiagnostics', () => {
       coverage: 0.42,
       verifyPublished: true,
       verifyTargetKind: 'webgl',
+      warmupFrames: 0,
       logs: [],
     });
     expect(d.blank).toBe(false);
     expect(d.coverage).toBe(0.42);
     expect(d.pageErrorCount).toBe(0);
     expect(d.errorCount).toBe(0);
+    expect(d.warmupFrames).toBe(0);
   });
 
   it('folds measured coverage into blank: an empty frame is blank even with no verify target', () => {
@@ -54,6 +58,7 @@ describe('buildCaptureObserveDiagnostics', () => {
       coverage: 0,
       verifyPublished: false,
       verifyTargetKind: null,
+      warmupFrames: 0,
       logs: [],
     });
     expect(empty.blank).toBe(true);
@@ -66,6 +71,7 @@ describe('buildCaptureObserveDiagnostics', () => {
         coverage: 0.1,
         verifyPublished: false,
         verifyTargetKind: null,
+        warmupFrames: 0,
         logs: [],
       }).blank,
     ).toBe(false);
@@ -76,6 +82,7 @@ describe('buildCaptureObserveDiagnostics', () => {
         coverage: null,
         verifyPublished: false,
         verifyTargetKind: null,
+        warmupFrames: 0,
         logs: [],
       }).blank,
     ).toBe(false);

@@ -56,6 +56,12 @@ export interface CaptureObserveDiagnostics {
   pageErrorCount: number;
   /** Console/network error logs (a failed asset, a console.error), excluding page exceptions. */
   errorCount: number;
+  /**
+   * Extra animation frames the observe warmup rendered past the requested count to coax a first draw out
+   * of an app-loop-driven page (see launchBrowser). 0 = drew immediately. A large value that still ended
+   * blank means the warmup gave up at its ceiling — the scene never drew, not that it merely started late.
+   */
+  warmupFrames: number;
 }
 
 export interface CaptureEntryOptions {
@@ -170,6 +176,7 @@ export function buildCaptureObserveDiagnostics(args: {
   logs: readonly unknown[];
   verifyPublished: boolean;
   verifyTargetKind: string | null;
+  warmupFrames: number;
 }): CaptureObserveDiagnostics {
   let pageErrorCount = 0;
   let errorCount = 0;
@@ -187,6 +194,7 @@ export function buildCaptureObserveDiagnostics(args: {
     pageErrorCount,
     verifyPublished: args.verifyPublished,
     verifyTargetKind: args.verifyTargetKind,
+    warmupFrames: args.warmupFrames,
   };
 }
 
@@ -405,6 +413,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           logs,
           verifyPublished: dataUrl !== null,
           verifyTargetKind: verificationTargetKind,
+          warmupFrames: await getObserveWarmupFrames(page),
         });
         const observeStatus: CaptureStatus = {
           state: 'ready',
@@ -519,9 +528,17 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
 function formatObserveDetail(d: Readonly<CaptureObserveDiagnostics>): string {
   const parts: string[] = [d.blank ? 'observed (blank — no verified frame)' : 'observed'];
   if (d.coverage !== null) parts.push(`coverage ${d.coverage.toFixed(3)}`);
+  // Surface the warmup so a slow capture reads as "it drew, just late" rather than an unexplained pause.
+  if (d.warmupFrames > 0) parts.push(`warmed up ${d.warmupFrames} extra frame${d.warmupFrames === 1 ? '' : 's'}`);
   if (d.pageErrorCount > 0) parts.push(`${d.pageErrorCount} page error${d.pageErrorCount === 1 ? '' : 's'}`);
   if (d.errorCount > 0) parts.push(`${d.errorCount} error${d.errorCount === 1 ? '' : 's'}`);
   return parts.join(', ');
+}
+
+// Extra animation frames the in-page observe warmup rendered past the requested count (see
+// launchBrowser). 0 when the page drew immediately or set nothing.
+async function getObserveWarmupFrames(page: Page): Promise<number> {
+  return page.evaluate(() => (window as unknown as { __ftWarmupFrames?: number }).__ftWarmupFrames ?? 0).catch(() => 0);
 }
 
 async function getRenderImageDataUrl(page: Page): Promise<string | null> {

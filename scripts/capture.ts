@@ -131,7 +131,7 @@ async function main(): Promise<void> {
 
   if (!externalUrl) console.log(`Ready at ${server.url}\n`);
 
-  const { browser, context } = await launchBrowser({ captureFrames, verify });
+  const { browser, context } = await launchBrowser({ captureFrames, verify, observe });
   const isAborted = installAbortHandler();
 
   let captured = 0;

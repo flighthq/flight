@@ -79,7 +79,11 @@ export async function runReferenceCapture(options: Readonly<ReferenceCaptureOpti
   const server = await startReferenceDevServer(options.checkoutDir, options.repoRoot);
   console.log(`Ready at ${server.url}\n`);
 
-  const { browser, context } = await launchBrowser({ captureFrames: options.captureFrames ?? 1, verify: true });
+  const { browser, context } = await launchBrowser({
+    captureFrames: options.captureFrames ?? 1,
+    verify: true,
+    observe: options.observe,
+  });
   const isAborted = installAbortHandler();
 
   let captured = 0;
