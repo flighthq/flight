@@ -151,10 +151,18 @@ interface RenderVerification {
   render: string;
 }
 
+// Empty-frame threshold for the coverage-derived blank flag: a frame whose measured non-background
+// coverage is at or below this reads as "nothing distinguishable rendered". Small but non-zero so a
+// stray antialiased edge pixel does not count as content.
+const OBSERVE_BLANK_COVERAGE = 0.001;
+
 // Summarizes an observe-mode capture into the status.json diagnostics block. Pure over its inputs and
 // the drained page logs (page exceptions vs. console/network errors are counted from `logs`), so the
 // interpretation an agent relies on — blank vs. drew-but-wrong vs. crashed — is unit-testable without a
-// browser. `blank` and `verifyPublished` come from the screenshot-source decision in captureEntry.
+// browser. `verifyPublished` and the incoming `blank` come from the screenshot-source decision in
+// captureEntry (blank = a verify target registered but published no frame); this also folds in measured
+// `coverage`, so a scene that drew nothing to the canvas reads as blank even when it registered no
+// verify target (the fallback canvas-grab path, e.g. a 2D scene whose assets never loaded).
 export function buildCaptureObserveDiagnostics(args: {
   backend: string;
   blank: boolean;
@@ -170,9 +178,10 @@ export function buildCaptureObserveDiagnostics(args: {
     if (level === 'pageerror') pageErrorCount += 1;
     else if (level === 'error') errorCount += 1;
   }
+  const blank = args.blank || (args.coverage !== null && args.coverage <= OBSERVE_BLANK_COVERAGE);
   return {
     backend: args.backend,
-    blank: args.blank,
+    blank,
     coverage: args.coverage,
     errorCount,
     pageErrorCount,
