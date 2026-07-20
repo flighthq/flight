@@ -211,6 +211,11 @@ async function main(): Promise<void> {
 
   if (runFailed) process.exit(1);
   if (interrupted) process.exit(130);
+  // Exit explicitly: the dev/static server and Playwright's handles keep the event loop alive after
+  // teardown, so a natural return would hang here (a shell loop or an agent waiting on process exit
+  // never regains control). All artifacts are written synchronously before this point, so a hard exit
+  // loses nothing.
+  process.exit(0);
 }
 
 main().catch((err: unknown) => {

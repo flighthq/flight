@@ -43,6 +43,11 @@ async function main(): Promise<void> {
 
   if (result.failed > 0) process.exit(1);
   if (result.aborted) process.exit(130);
+  // Exit explicitly: the spawned Vite dev server child and Playwright's handles keep the event loop
+  // alive after runReferenceCapture's teardown, so a natural return would hang here forever (a caller
+  // — a shell loop or an agent waiting on process exit — never gets control back). All artifacts are
+  // written synchronously before this point, so a hard exit loses nothing.
+  process.exit(0);
 }
 
 main().catch((err: unknown) => {
