@@ -281,6 +281,21 @@ describe('getNodeWorldMatrix4', () => {
     }
   });
 
+  it('propagates a grandparent change through an unchanged middle node to a grandchild', () => {
+    const root = createTestNode();
+    const mid = createTestNode();
+    const leaf = createTestNode();
+    addNodeChild(root, mid);
+    addNodeChild(mid, leaf);
+    setNodeTranslation(root, 1, 0, 0);
+    setNodeTranslation(leaf, 2, 0, 0);
+    // Prime the grandchild's cached world (root 1 + leaf 2 = 3), then move only the grandparent.
+    expect(getNodeWorldMatrix4(leaf).m[12]).toBeCloseTo(3);
+    setNodeTranslation(root, 100, 0, 0);
+    // The middle node does not change locally, but its world moves — the grandchild must follow.
+    expect(getNodeWorldMatrix4(leaf).m[12]).toBeCloseTo(102);
+  });
+
   it('recomputes the world matrix after reparenting to a different parent', () => {
     const parentA = createTestNode();
     const parentB = createTestNode();

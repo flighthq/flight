@@ -2,15 +2,22 @@ import type { Node, NodeRuntime } from '@flighthq/types';
 
 import { getNodeRuntime } from './node';
 
+// Records that the node's world transform was just recomputed. `worldTransformId` must change on every
+// recompute so descendants gated on it re-resolve: a child stores its parent's `worldTransformId` and
+// recomputes when it differs. A composite of (localTransformId, parentWorldTransformId) is NOT enough —
+// it is lossy (an ancestor two-plus levels up changes a node's world matrix without changing the node's
+// own composite id, since the ancestor's contribution does not survive into the low bits), so the change
+// never reaches grandchildren. A fresh monotonic revision per recompute is unconditionally propagating.
 export function computeNodeWorldTransformRevision<Traits extends object>(
   runtime: NodeRuntime<Traits>,
   parentRuntime?: Readonly<NodeRuntime<Traits>>,
 ): void {
-  const localTransformId = runtime.localTransformId;
-  const parentWorldTransformId = parentRuntime ? parentRuntime.worldTransformId : 0;
-  runtime.worldTransformUsingLocalTransformId = localTransformId;
-  runtime.worldTransformUsingParentTransformId = parentWorldTransformId;
-  runtime.worldTransformId = (localTransformId << 16) | (parentWorldTransformId & 0xffff);
+  runtime.worldTransformUsingLocalTransformId = runtime.localTransformId;
+  runtime.worldTransformUsingParentTransformId = parentRuntime ? parentRuntime.worldTransformId : 0;
+  _worldTransformRevisionCounter = (_worldTransformRevisionCounter + 1) >>> 0;
+  // 0 is the fresh-runtime sentinel (never a live revision), so step past a wrap back to 0.
+  if (_worldTransformRevisionCounter === 0) _worldTransformRevisionCounter = 1;
+  runtime.worldTransformId = _worldTransformRevisionCounter;
 }
 
 export function getNodeAppearanceRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
@@ -113,3 +120,7 @@ export function invalidateNodeWorldBounds<Traits extends object>(target: Node<Tr
   runtime.worldBoundsUsingWorldTransformId = -1;
   runtime.worldBoundsUsingLocalBoundsId = -1;
 }
+
+// Monotonic source of world-transform revisions, shared across all nodes so a parent recompute always
+// yields an id its children have not seen. Runtime-only (never serialized); wraps at 32 bits.
+let _worldTransformRevisionCounter = 0;
