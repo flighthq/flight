@@ -1,5 +1,5 @@
 import type { DisplayObject, DisplayObjectTraits } from './DisplayObject';
-import type { Entity, EntityRuntime } from './Entity';
+import type { EntityRuntime } from './Entity';
 import type { StageSignals } from './StageSignals';
 import type { Viewport } from './Viewport';
 
@@ -9,7 +9,7 @@ import type { Viewport } from './Viewport';
 // as a child anywhere — root-ness is unrepresentable-as-nestable by construction. The stage a display object
 // belongs to is resolved by walking to its root and reading the root runtime's stage back-pointer, so
 // `getDisplayObjectStage` stays a cheap lazy walk with no per-node propagation.
-export interface Stage extends Entity, Viewport<DisplayObjectTraits> {
+export interface Stage extends Viewport<DisplayObjectTraits> {
   color: number | null;
   root: DisplayObject;
   stageHeight: number;

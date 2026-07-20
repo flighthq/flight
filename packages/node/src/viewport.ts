@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity';
 import { createRectangle } from '@flighthq/geometry';
 import type {
   HasBoundsRectangleRuntime,
@@ -97,11 +98,11 @@ export function computeViewportRenderTransform<Traits extends object = NodeTrait
 export function createViewport<Traits extends object = NodeTraits>(
   obj?: Readonly<Partial<Viewport<Traits>>>,
 ): Viewport<Traits> {
-  return {
+  return createEntity({
     align: obj?.align ?? 'topleft',
     root: obj?.root ?? null,
     scaleMode: obj?.scaleMode ?? 'noscale',
-  };
+  }) as Viewport<Traits>;
 }
 
 const _tempRectangle: Rectangle = createRectangle();

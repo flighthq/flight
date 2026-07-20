@@ -1,27 +1,30 @@
-import { getNodeRoot, getNodeRuntime } from '@flighthq/node';
+import { createViewport, getNodeRoot, getNodeRuntime } from '@flighthq/node';
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type { DisplayObject, DisplayObjectRuntime, Stage, StageRuntime, StageSignals } from '@flighthq/types';
+import type {
+  DisplayObject,
+  DisplayObjectRuntime,
+  DisplayObjectTraits,
+  Stage,
+  StageRuntime,
+  StageSignals,
+} from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
 
 // Allocates a Stage: a presentation-context Entity that owns a display-object `root` (allocated here), not a
-// node in the tree. Defaults mirror the historical stage size and an unscaled, top-left viewport fit. The
-// root's runtime carries a back-pointer to this stage so getDisplayObjectStage can resolve membership by a
+// node in the tree. Composes createViewport for the shared root/align/scaleMode base, then layers on the
+// stage-only view dimensions and background color. The entity runtime stays unbound (createViewport →
+// createEntity); the root's runtime carries a back-pointer so getDisplayObjectStage resolves membership by a
 // lazy walk to the root.
 export function createStage(
   obj?: Readonly<Partial<Pick<Stage, 'align' | 'color' | 'scaleMode' | 'stageHeight' | 'stageWidth'>>>,
 ): Stage {
   const root = createDisplayObject();
-  const stage: Stage = {
-    [EntityRuntimeKey]: createStageRuntime(),
-    align: obj?.align ?? 'topleft',
-    color: obj?.color ?? null,
-    root,
-    scaleMode: obj?.scaleMode ?? 'noscale',
-    stageHeight: obj?.stageHeight ?? 550,
-    stageWidth: obj?.stageWidth ?? 400,
-  };
+  const stage = createViewport<DisplayObjectTraits>({ align: obj?.align, root, scaleMode: obj?.scaleMode }) as Stage;
+  stage.color = obj?.color ?? null;
+  stage.stageHeight = obj?.stageHeight ?? 550;
+  stage.stageWidth = obj?.stageWidth ?? 400;
   (getNodeRuntime(root) as DisplayObjectRuntime).stage = stage;
   return stage;
 }
@@ -42,7 +45,7 @@ export function createStageSignals(): StageSignals {
 }
 
 export function enableStageSignals(source: Stage): StageSignals {
-  const runtime = source[EntityRuntimeKey] as StageRuntime;
+  const runtime = ensureStageRuntime(source);
   return (runtime.stageSignals ??= createStageSignals());
 }
 
@@ -53,18 +56,29 @@ export function getDisplayObjectStage(source: Readonly<DisplayObject>): Stage | 
   return (getNodeRuntime(root) as DisplayObjectRuntime).stage;
 }
 
+// The stage's runtime, allocated on first access (the entity is created unbound). Callers that only read
+// enabled signals should use getStageSignals, which does not allocate.
 export function getStageRuntime(source: Readonly<Stage>): Readonly<StageRuntime> {
-  return source[EntityRuntimeKey] as StageRuntime;
+  return ensureStageRuntime(source as Stage);
 }
 
 export function getStageSignals(source: Readonly<Stage>): StageSignals | null {
-  return (source[EntityRuntimeKey] as StageRuntime).stageSignals;
+  const runtime = source[EntityRuntimeKey] as StageRuntime | undefined;
+  return runtime?.stageSignals ?? null;
 }
 
 export function setStageSize(source: Stage, width: number, height: number): void {
   if (source.stageWidth === width && source.stageHeight === height) return;
   source.stageWidth = width;
   source.stageHeight = height;
-  const runtime = source[EntityRuntimeKey] as StageRuntime;
-  if (runtime.stageSignals) emitSignal(runtime.stageSignals.onResize);
+  const runtime = source[EntityRuntimeKey] as StageRuntime | undefined;
+  if (runtime?.stageSignals) emitSignal(runtime.stageSignals.onResize);
+}
+
+function ensureStageRuntime(source: Stage): StageRuntime {
+  const existing = source[EntityRuntimeKey] as StageRuntime | undefined;
+  if (existing !== undefined) return existing;
+  const runtime = createStageRuntime();
+  source[EntityRuntimeKey] = runtime;
+  return runtime;
 }
