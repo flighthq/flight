@@ -86,17 +86,16 @@ jobs:
       - run: npm ci
       - run: npm run ${{ matrix.check }}
 
+  # Two test legs with different fidelity/speed tradeoffs. `test` is the thorough one: each package runs
+  # under its own vitest config, so node packages use the `node` environment and jsdom packages use
+  # `jsdom`, each isolated in its own process — correct, but minutes long. `test-fast` is the merged run
+  # (one shared jsdom env, no isolation) that finishes in seconds over the same test files. Both gate
+  # PRs, so any environment- or isolation-specific regression is caught before code merges; edge-publish
+  # gates only on `test-fast`, so a snapshot ships in seconds without waiting on the thorough leg.
   test:
-    name: TypeScript tests · ${{ matrix.label }}
+    name: TypeScript tests · isolated (per-package env)
     needs: build-check
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: unit
-            suite: test:unit
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -104,7 +103,20 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - run: npm run ${{ matrix.suite }}
+      - run: npm run test:unit
+
+  test-fast:
+    name: TypeScript tests · fast (merged jsdom)
+    needs: build-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
 
   quality:
     name: TypeScript quality
@@ -172,14 +184,14 @@ jobs:
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to a release channel — the continuous
     # counterpart to the tag-triggered stable release (release.yml). Edge is meant to be *available*,
-    # so it gates only on the two correctness legs — `build` (it compiles) and `test` (unit tests, fast
-    # and non-flaky) — and deliberately NOT on the health/hygiene legs (`size`, the flaky `render-test`
-    # matrix, `harness-build`, `quality`), which still run in parallel as signals but never block an
-    # edge build. It never runs on pull_request (no secrets on forks, and only landed code should
-    # publish). The version is a prerelease under its own dist-tag (main -> edge, develop -> next), so
-    # `latest` is untouched. See agents/packaging.md.
+    # so it gates only on the two correctness legs — `build` (it compiles) and `test-fast` (the merged
+    # unit-test run, seconds not minutes) — and deliberately NOT on the thorough `test` leg or the
+    # health/hygiene legs (`size`, the flaky `render-test` matrix, `harness-build`, `quality`), which
+    # still run in parallel as signals but never block an edge build. It never runs on pull_request (no
+    # secrets on forks, and only landed code should publish). The version is a prerelease under its own
+    # dist-tag (main -> edge, develop -> next), so `latest` is untouched. See agents/packaging.md.
     name: Publish ${{ github.ref_name }} snapshot to npm
-    needs: [build, test]
+    needs: [build, test-fast]
     if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
     runs-on: ubuntu-latest
     permissions:
