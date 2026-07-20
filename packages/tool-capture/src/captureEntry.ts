@@ -31,6 +31,31 @@ export interface CaptureStatus {
   baselineHash: string | null;
   /** null = no baseline exists yet; false = hash matches baseline; true = hash differs from baseline */
   changed: boolean | null;
+  /**
+   * Present only for an observe-mode capture: what the eyes actually saw. Observe never gates or
+   * touches baselines — it always emits a screenshot plus this block so a reviewing agent can tell
+   * "geometry drew but wrong" (blank:false, coverage>0) from "nothing drew" (blank:true, coverage 0)
+   * from "the page crashed" (pageErrorCount>0), instead of dead-ending on "cannot capture".
+   */
+  observe?: CaptureObserveDiagnostics;
+}
+
+/** What an observe-mode capture saw: the trustworthiness metadata beside the emitted screenshot. */
+export interface CaptureObserveDiagnostics {
+  /** No verified/non-blank frame was produced — the emitted screenshot is a fallback, likely blank/black. */
+  blank: boolean;
+  /** Render backend: canvas | dom | webgl | webgpu. */
+  backend: string;
+  /** The functional verify-target kind the page registered, or null when it registered none. */
+  verifyTargetKind: string | null;
+  /** True when the in-page verifier published a non-blank frame (window.__ftRenderImage). */
+  verifyPublished: boolean;
+  /** Verifier-reported non-background coverage in 0..1, or null when the page exposed none. */
+  coverage: number | null;
+  /** Uncaught page exceptions the page threw (a non-zero count means broken code, not a backend limit). */
+  pageErrorCount: number;
+  /** Console/network error logs (a failed asset, a console.error), excluding page exceptions. */
+  errorCount: number;
 }
 
 export interface CaptureEntryOptions {
@@ -59,6 +84,14 @@ export interface CaptureEntryOptions {
    * error on every backend.
    */
   failOnError?: boolean;
+  /**
+   * Eyes mode. When true the capture never fails closed: a blank/failed verifier readback that would
+   * otherwise throw ("cannot capture") instead emits a best-available screenshot and records a
+   * `CaptureObserveDiagnostics` block in status.json. Observe does not gate and does not compare or
+   * write baselines — it is for an agent (or human) to SEE a scene, not to pass/fail it. Overrides
+   * failOnError/updateBaseline behavior for the run.
+   */
+  observe?: boolean;
   /**
    * Polled before each renderer: when it returns true the run is being interrupted (Ctrl+C), so the
    * renderer loop stops and a torn-down page is not reported as a failure. See installAbortHandler.
@@ -89,6 +122,7 @@ export interface ParallelCaptureOptions {
   extraWait?: number;
   captureFrames?: number;
   failOnError?: boolean;
+  observe?: boolean;
   isAborted?: () => boolean;
   verify?: boolean;
   /** Number of Playwright pages to run concurrently. Default: 6. */
@@ -117,6 +151,36 @@ interface RenderVerification {
   render: string;
 }
 
+// Summarizes an observe-mode capture into the status.json diagnostics block. Pure over its inputs and
+// the drained page logs (page exceptions vs. console/network errors are counted from `logs`), so the
+// interpretation an agent relies on — blank vs. drew-but-wrong vs. crashed — is unit-testable without a
+// browser. `blank` and `verifyPublished` come from the screenshot-source decision in captureEntry.
+export function buildCaptureObserveDiagnostics(args: {
+  backend: string;
+  blank: boolean;
+  coverage: number | null;
+  logs: readonly unknown[];
+  verifyPublished: boolean;
+  verifyTargetKind: string | null;
+}): CaptureObserveDiagnostics {
+  let pageErrorCount = 0;
+  let errorCount = 0;
+  for (const entry of args.logs) {
+    const level = (entry as { level?: string }).level;
+    if (level === 'pageerror') pageErrorCount += 1;
+    else if (level === 'error') errorCount += 1;
+  }
+  return {
+    backend: args.backend,
+    blank: args.blank,
+    coverage: args.coverage,
+    errorCount,
+    pageErrorCount,
+    verifyPublished: args.verifyPublished,
+    verifyTargetKind: args.verifyTargetKind,
+  };
+}
+
 export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'changed' | 'error'> {
   const {
     context,
@@ -130,6 +194,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     extraWait = 0,
     captureFrames = 0,
     failOnError = false,
+    observe = false,
     isAborted = () => false,
   } = opts;
   const { displayLabel } = opts;
@@ -245,9 +310,10 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // The verification wait is the longest single step (up to 15s) and prints nothing while it
       // polls, so a run can look hung right after "Ready at". A muted heartbeat marks that the entry
       // is verifying, so the pause reads as progress rather than a stall.
+      let verification: RenderVerification | null = null;
       if (waitsForVerification) {
         console.log(statusLine('muted', renderer, 'verifying render…'));
-        await waitForRenderVerification(page);
+        verification = await waitForRenderVerification(page);
       }
       const verificationTargetKind = waitsForVerification ? await getFunctionalTargetKind(page) : null;
 
@@ -262,24 +328,38 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // - canvas / webgl: a <canvas> is appended directly to <body>.
       // - fallback: full page screenshot when neither canvas nor div is found (unknown layout).
       let screenshotBuffer: Buffer;
+      // True when no verified/non-blank frame was produced and the screenshot below is a fallback.
+      // Only ever set in observe mode: gate mode throws instead (a blank frame must not pass silently).
+      let blank = false;
       const backend = rendererBackend(renderer);
       const dataUrl = waitsForVerification ? await getRenderImageDataUrl(page) : null;
       if (dataUrl && backend !== 'dom') {
         screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
+      } else if (backend === 'webgpu' && waitsForVerification) {
+        // No verifier image — SwiftShader can't present the swapchain, so a plain screenshot is black.
+        // Gate mode treats this as fatal; observe mode still wants eyes, so it emits that black frame and
+        // records blank:true rather than dead-ending on "cannot capture".
+        if (!observe) throw new Error('WebGPU verifier did not produce a render image');
+        blank = true;
+        screenshotBuffer = await page.screenshot();
       } else if (backend === 'webgpu') {
-        if (waitsForVerification) {
-          throw new Error('WebGPU verifier did not produce a render image');
-        } else {
-          screenshotBuffer = await page.screenshot();
-        }
+        screenshotBuffer = await page.screenshot();
       } else if (backend === 'webgl' && waitsForVerification && verificationTargetKind === 'webgl') {
         // The page registered a WebGL verification target but published no verified frame, so its
         // readback was blank — a canvas screenshot here would be an all-black false pass (the exact
         // shape that hid a real render bug: green ✓ over a black frame, missed even by --fail-on-error
-        // since a verify timeout logs nothing). Fail loudly instead, mirroring the WebGPU guard above.
+        // since a verify timeout logs nothing). GATE mode fails loudly. OBSERVE mode instead emits that
+        // best-available (likely black) frame and records blank:true: the reviewing agent reads the
+        // diagnostics rather than a green ✓, so there is no false pass and it always has eyes on the scene.
         // A page that registers no target is not making a verification claim and still falls through
         // to the canvas-screenshot fallback below.
-        throw new Error('WebGL verifier did not produce a render image (blank or failed render)');
+        if (!observe) throw new Error('WebGL verifier did not produce a render image (blank or failed render)');
+        blank = true;
+        screenshotBuffer = await page
+          .locator('canvas')
+          .first()
+          .screenshot()
+          .catch(() => page.screenshot());
       } else if (backend === 'dom') {
         screenshotBuffer = await page
           .locator('body > div')
@@ -300,6 +380,32 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       writeFileSync(tmpLogs, logs.map((l) => JSON.stringify(l)).join('\n'));
       renameSync(tmpScreenshot, finalScreenshot);
       renameSync(tmpLogs, finalLogs);
+
+      if (observe) {
+        // Eyes mode: never gate, never touch baselines. Always emit the screenshot (done above) plus a
+        // diagnostics block so a reviewing agent can interpret what it is looking at, then move on. The
+        // finally below still closes the page.
+        const diagnostics = buildCaptureObserveDiagnostics({
+          backend,
+          blank,
+          coverage: verification?.coverage ?? null,
+          logs,
+          verifyPublished: dataUrl !== null,
+          verifyTargetKind: verificationTargetKind,
+        });
+        const observeStatus: CaptureStatus = {
+          state: 'ready',
+          capturedAt: Date.now(),
+          error: null,
+          hash,
+          baselineHash: null,
+          changed: null,
+          observe: diagnostics,
+        };
+        writeFileSync(statusPath, JSON.stringify(observeStatus, null, 2));
+        console.log(statusLine('pass', renderer, formatObserveDetail(diagnostics)));
+        continue;
+      }
 
       // Baseline update or comparison. The baseline is a committed sha256 hash, not a screenshot:
       // capture mode renders a deterministic frame (see launchBrowser), so the hash alone detects
@@ -395,6 +501,16 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   return 'ok';
 }
 
+// One-line human summary of an observe capture for the console — the agent-readable detail is the
+// status.json block, this just makes a multi-scene run scannable.
+function formatObserveDetail(d: Readonly<CaptureObserveDiagnostics>): string {
+  const parts: string[] = [d.blank ? 'observed (blank — no verified frame)' : 'observed'];
+  if (d.coverage !== null) parts.push(`coverage ${d.coverage.toFixed(3)}`);
+  if (d.pageErrorCount > 0) parts.push(`${d.pageErrorCount} page error${d.pageErrorCount === 1 ? '' : 's'}`);
+  if (d.errorCount > 0) parts.push(`${d.errorCount} error${d.errorCount === 1 ? '' : 's'}`);
+  return parts.join(', ');
+}
+
 async function getRenderImageDataUrl(page: Page): Promise<string | null> {
   return page
     .evaluate(() => (window as unknown as { __ftRenderImage?: string }).__ftRenderImage ?? null)
@@ -484,6 +600,7 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
         extraWait: opts.extraWait,
         captureFrames: opts.captureFrames,
         failOnError: opts.failOnError,
+        observe: opts.observe,
         verify: opts.verify,
         isAborted: () => isAborted(),
       });

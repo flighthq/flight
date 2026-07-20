@@ -26,6 +26,8 @@ export interface ReferenceCaptureOptions {
   extraWait?: number;
   updateBaseline?: boolean;
   failOnError?: boolean;
+  /** Eyes mode: never fail closed on a blank render — emit a screenshot + diagnostics per case. */
+  observe?: boolean;
   /** Output base; artifacts land at {outBase}/reference/{framework/corpus/case}/{renderer}/. */
   outBase: string;
   workerCount?: number;
@@ -96,6 +98,7 @@ export async function runReferenceCapture(options: Readonly<ReferenceCaptureOpti
       extraWait: options.extraWait,
       captureFrames: options.captureFrames,
       failOnError: options.failOnError,
+      observe: options.observe,
       verify: true,
       isAborted,
       workerCount: options.workerCount ?? 4,

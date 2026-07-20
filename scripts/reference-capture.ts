@@ -10,7 +10,9 @@
 // falls back to the canvas screenshot (fine for 2D, black for 3D in Docker) — the readback lights up per case.
 //
 // Invoked by reference-tool.ts's `capture` mode with FLIGHT_REFERENCE_CHECKOUT set to the checkout dir.
-// Usage (forwarded): [--filter <substr>] [--frames N] [--wait ms] [--update-baseline] [--fail-on-error]
+// Usage (forwarded): [--filter <substr>] [--frames N] [--wait ms] [--update-baseline] [--fail-on-error] [--observe]
+// --observe is eyes mode: never fail closed on a blank render — always write a screenshot + a diagnostics
+// block (blank/coverage/verify-target/pageErrorCount) so an agent can SEE a scene instead of hitting "cannot capture".
 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,6 +37,7 @@ async function main(): Promise<void> {
     extraWait: Math.max(0, parseInt(arg('wait', '0'), 10) || 0),
     updateBaseline: argv.includes('--update-baseline'),
     failOnError: argv.includes('--fail-on-error'),
+    observe: argv.includes('--observe'),
     outBase: resolve(repoRoot, '.artifacts'),
   });
 
