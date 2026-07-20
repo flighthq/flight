@@ -10,13 +10,15 @@
 //   bumped  = base with the patch digit +1 (the default "feature"-level bump), so an edge build sorts
 //             *above* the last release rather than as a prerelease of it. A breaking change bumps the
 //             minor digit instead (0.2.0 -> 0.3.0); conventional commits can later drive the level.
-//   version = <bumped>-<channel>.<count>.g<sha>
+//   version = <bumped>-<channel>.<count>.<sha>
 //             channel  main -> edge, develop -> next   (this is also the dist-tag).
 //             count    `git rev-list --count HEAD`, monotonic per branch, so edge builds within a
-//                      channel sort in commit order (a numeric prerelease identifier).
-//             g<sha>   short commit sha, "g"-prefixed (as `git describe` does) so the identifier is
-//                      never all-digits — semver forbids a leading zero on a numeric identifier, and
-//                      a hex sha can be all digits.
+//                      channel sort in commit order (a numeric prerelease identifier). It is the real
+//                      sort key, so the sha needs no ordering of its own.
+//             <sha>    short commit sha, disambiguating the rare builds that share a <count>. (A hex
+//                      sha that is all-digits with a leading zero is not a valid semver identifier —
+//                      ~1 in a few hundred commits; tolerated as a one-off failed publish that
+//                      self-heals on the next commit, rather than carrying a "g"-style prefix.)
 //
 // Prints `version=<v>` and `tag=<channel>` on stdout in GitHub Actions `$GITHUB_OUTPUT` key=value
 // form, so the workflow captures them with `>> "$GITHUB_OUTPUT"`.
@@ -39,7 +41,7 @@ if (channel === undefined) {
   process.exit(1);
 }
 
-const version = `${bumpVersion(readSdkVersion())}-${channel}.${commitCount()}.g${shortSha()}`;
+const version = `${bumpVersion(readSdkVersion())}-${channel}.${commitCount()}.${shortSha()}`;
 process.stdout.write(`version=${version}\ntag=${channel}\n`);
 
 // ZeroVer bump: patch +1 is the default "feature"-level step (0.2.0 -> 0.2.1); a breaking change bumps
