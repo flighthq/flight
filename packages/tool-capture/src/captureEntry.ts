@@ -385,10 +385,14 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         // Eyes mode: never gate, never touch baselines. Always emit the screenshot (done above) plus a
         // diagnostics block so a reviewing agent can interpret what it is looking at, then move on. The
         // finally below still closes the page.
+        // Prefer the page verifier's own coverage; when it exposed none (a timed-out/blank verify, or a
+        // page with no target), read the presented canvas back ourselves so `coverage` reflects the
+        // actual pixels — grounding blank-vs-drew-something in the image rather than only the verify handshake.
+        const coverage = verification?.coverage ?? (await measureObservedCanvasCoverage(page));
         const diagnostics = buildCaptureObserveDiagnostics({
           backend,
           blank,
-          coverage: verification?.coverage ?? null,
+          coverage,
           logs,
           verifyPublished: dataUrl !== null,
           verifyTargetKind: verificationTargetKind,
@@ -524,6 +528,43 @@ async function getRenderImageDataUrl(page: Page): Promise<string | null> {
 async function getFunctionalTargetKind(page: Page): Promise<string | null> {
   return page
     .evaluate(() => (window as unknown as { __ftTarget?: { kind?: string } }).__ftTarget?.kind ?? null)
+    .catch(() => null);
+}
+
+// Reads the first canvas's presented pixels back in-page and returns the fraction (0..1) that differs
+// from the top-left (background) pixel — an observe-mode coverage estimate for when the page verifier
+// exposed none. Relies on preserveDrawingBuffer (launchBrowser forces it for gl), so a WebGL canvas
+// retains its frame for drawImage. Reads the canvas itself, so a scene that renders only into an
+// offscreen target (presented via the verifier image) reads low here — that low coverage IS the signal
+// that the canvas holds nothing. Returns null when there is no canvas or the readback throws.
+async function measureObservedCanvasCoverage(page: Page): Promise<number | null> {
+  return page
+    .evaluate(() => {
+      const canvas = document.querySelector('canvas');
+      if (!canvas) return null;
+      const w = canvas.width;
+      const h = canvas.height;
+      if (w === 0 || h === 0) return null;
+      const off = document.createElement('canvas');
+      off.width = w;
+      off.height = h;
+      const ctx = off.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(canvas, 0, 0);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const br = data[0]!;
+      const bg = data[1]!;
+      const bb = data[2]!;
+      let differing = 0;
+      const pixels = w * h;
+      for (let i = 0; i < pixels; i++) {
+        const o = i * 4;
+        if (Math.abs(data[o]! - br) > 8 || Math.abs(data[o + 1]! - bg) > 8 || Math.abs(data[o + 2]! - bb) > 8) {
+          differing += 1;
+        }
+      }
+      return differing / pixels;
+    })
     .catch(() => null);
 }
 
