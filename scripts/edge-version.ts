@@ -12,9 +12,12 @@
 //             minor digit instead (0.2.0 -> 0.3.0); conventional commits can later drive the level.
 //   version = <bumped>-<channel>.<count>.<sha>
 //             channel  main -> edge, develop -> next   (this is also the dist-tag).
-//             count    `git rev-list --count HEAD`, monotonic per branch, so edge builds within a
-//                      channel sort in commit order (a numeric prerelease identifier). It is the real
-//                      sort key, so the sha needs no ordering of its own.
+//             count    commits since the last version tag (`git rev-list --count <tag>..HEAD`),
+//                      resetting to a small number each release, so it reads as "Nth build toward the
+//                      next version" — monotonic within a release cycle, so edge builds sort in commit
+//                      order (a numeric prerelease identifier). Falls back to the total commit count
+//                      when no version tag is reachable. It is the real sort key, so the sha needs no
+//                      ordering of its own.
 //             <sha>    short commit sha, disambiguating the rare builds that share a <count>. (A hex
 //                      sha that is all-digits with a leading zero is not a valid semver identifier —
 //                      ~1 in a few hundred commits; tolerated as a one-off failed publish that
@@ -58,8 +61,12 @@ function channelForBranch(name: string): 'edge' | 'next' | undefined {
   return undefined;
 }
 
+// Commits landed since the last release, so the number stays small and resets each version. Counts
+// from the root when no version tag is reachable (the pre-first-tag state), which still yields a
+// monotonic per-branch number.
 function commitCount(): string {
-  return git('rev-list', '--count', 'HEAD');
+  const tag = lastVersionTag();
+  return git('rev-list', '--count', tag === undefined ? 'HEAD' : `${tag}..HEAD`);
 }
 
 function git(...args: readonly string[]): string {
@@ -68,6 +75,16 @@ function git(...args: readonly string[]): string {
 
 function gitBranch(): string {
   return git('rev-parse', '--abbrev-ref', 'HEAD');
+}
+
+// The nearest reachable bare numeric version tag (0.2.0), matched so non-version tags (quimby/seed,
+// prerebase-blend) can't stand in for it. `git describe` exits non-zero when none is reachable.
+function lastVersionTag(): string | undefined {
+  try {
+    return git('describe', '--tags', '--abbrev=0', '--match', '[0-9]*.[0-9]*.[0-9]*');
+  } catch {
+    return undefined;
+  }
 }
 
 function readSdkVersion(): string {
