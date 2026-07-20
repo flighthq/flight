@@ -1,4 +1,5 @@
 import { createRandomSource } from '@flighthq/math';
+import { invalidateNodeLocalTransform } from '@flighthq/node';
 import { PARTICLE_VELOCITY_STRIDE, createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
@@ -414,8 +415,11 @@ describe('updateParticleEmitter', () => {
     expect(emitter.data.worldSpace).toBe(true);
   });
 
-  it('world-space: spawned particle position is transformed to world space', () => {
+  it('world-space: spawned particle position is transformed to the emitter node world position', () => {
     const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    emitter.x = 200;
+    emitter.y = 300;
+    invalidateNodeLocalTransform(emitter);
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -425,10 +429,9 @@ describe('updateParticleEmitter', () => {
       speedMax: 0,
       worldSpace: true,
     });
-    const worldTransform = { a: 1, b: 0, c: 0, d: 1, tx: 200, ty: 300 };
-    updateParticleEmitter(emitter, state, config, 1, undefined, worldTransform);
+    updateParticleEmitter(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(1);
-    // Particle origin should be at world position (200, 300), not (0, 0)
+    // Particle origin should be at the emitter node's world position (200, 300), not (0, 0)
     expect(emitter.data.transforms[0]).toBeCloseTo(200);
     expect(emitter.data.transforms[1]).toBeCloseTo(300);
   });
@@ -447,14 +450,14 @@ describe('updateParticleEmitter', () => {
       worldSpace: true,
     });
     // Frame 1: emitter at (0, 0)
-    const wt1 = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
-    updateParticleEmitter(emitter, state, config, 1, undefined, wt1);
+    updateParticleEmitter(emitter, state, config, 1);
     const countAfterFrame1 = emitter.data.particleCount;
     expect(countAfterFrame1).toBe(5);
 
-    // Frame 2: emitter moves to (100, 0) — trail interpolates spawn positions
-    const wt2 = { a: 1, b: 0, c: 0, d: 1, tx: 100, ty: 0 };
-    updateParticleEmitter(emitter, state, config, 1, undefined, wt2);
+    // Frame 2: emitter node moves to (100, 0) — trail interpolates spawn positions
+    emitter.x = 100;
+    invalidateNodeLocalTransform(emitter);
+    updateParticleEmitter(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(10);
 
     // The 5 new particles should span the path from x=0 to x=100

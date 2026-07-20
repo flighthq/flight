@@ -361,9 +361,9 @@ function enterFrame(): void {
   emitter.y = mouseY;
   invalidateNodeLocalTransform(emitter);
 
-  const worldTransform = { a: 1, b: 0, c: 0, d: 1, tx: emitter.x, ty: emitter.y };
+  // World-space emitter bakes spawns through its own node world transform (set above), so nothing to pass.
   applyParticleForces(emitter, simState, forces, dt);
-  updateParticleEmitter(emitter, simState, config, dt, undefined, worldTransform);
+  updateParticleEmitter(emitter, simState, config, dt);
   invalidateNodeAppearance(emitter);
 
   countLabel.data.text = `${emitter.data.particleCount} particles`;

@@ -1,4 +1,4 @@
-import { invalidateNodeLocalBounds } from '@flighthq/node';
+import { getNodeWorldMatrix, invalidateNodeLocalBounds } from '@flighthq/node';
 import {
   PARTICLE_VELOCITY_STRIDE,
   ensureParticleEmitterStateCapacity,
@@ -7,16 +7,16 @@ import {
   sampleParticleCurve,
 } from '@flighthq/particles';
 import type {
+  DisplayObject,
   ParticleEmitter,
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
   ParticleEmitterState,
-  WorldTransform2D,
 } from '@flighthq/types';
 
 import { reserveParticleEmitter } from './particleEmitter';
 
-export type { ParticleEmitterCallbacks, WorldTransform2D };
+export type { ParticleEmitterCallbacks };
 
 const PARTICLE_TRANSFORM_STRIDE = 4; // must match ./particleEmitter
 const TWO_PI = Math.PI * 2;
@@ -45,12 +45,15 @@ export function updateParticleEmitter(
   config: Readonly<ParticleEmitterConfig>,
   deltaTime: number,
   callbacks?: ParticleEmitterCallbacks,
-  worldTransform?: Readonly<WorldTransform2D>,
 ): void {
   const data = emitter.data;
 
-  // Sync world-space flag to data so renderers can read it.
-  data.worldSpace = config.worldSpace;
+  // World-space emitters bake spawns into world coordinates through the emitter's own 2D world transform
+  // (the same one the renderer draws with), so particles stay put as the emitter moves; position a
+  // world-space emitter by its node transform, not a passed-in transform. Only claim world-space to the
+  // renderer when a transform is in hand, so it never skips the node transform over unbaked particles.
+  const worldTransform = config.worldSpace ? getNodeWorldMatrix(emitter as unknown as DisplayObject) : null;
+  data.worldSpace = worldTransform !== null;
 
   // Guard against a zero or negative time step: no time has elapsed, so there is
   // nothing to age, move, or spawn. Critically, this avoids dividing by deltaTime when
@@ -62,8 +65,8 @@ export function updateParticleEmitter(
   // ── Emitter velocity (for velocity inheritance and trail interpolation) ───────
   // In world-space mode we track the world origin; in local-space mode we track
   // the emitter node position in parent space.
-  const trackX = config.worldSpace && worldTransform != null ? worldTransform.tx : emitter.x;
-  const trackY = config.worldSpace && worldTransform != null ? worldTransform.ty : emitter.y;
+  const trackX = worldTransform !== null ? worldTransform.tx : emitter.x;
+  const trackY = worldTransform !== null ? worldTransform.ty : emitter.y;
   const hasVelInherit = config.velocityInheritance !== 0;
   let emitterVelX = 0;
   let emitterVelY = 0;
@@ -244,7 +247,7 @@ export function updateParticleEmitter(
     const hasRotSpeed = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
 
     // World-space trail: distribute spawn origins along the path from prevPos → currentPos.
-    const doTrail = config.worldSpace && worldTransform != null && !isNaN(state.prevX);
+    const doTrail = worldTransform !== null && !isNaN(state.prevX);
     const prevPathX = doTrail ? state.prevX : trackX;
     const prevPathY = doTrail ? state.prevY : trackY;
 
@@ -364,7 +367,7 @@ export function updateParticleEmitter(
 
       // World-space: transform spawn position and velocity into world space,
       // and distribute origins along the emitter's movement path (trail interpolation).
-      if (config.worldSpace && worldTransform != null) {
+      if (worldTransform !== null) {
         const wt = worldTransform;
         // Trail: interpolate origin between prev and current world position
         const t = toSpawn > 1 ? sIdx / (toSpawn - 1) : 1;

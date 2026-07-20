@@ -6,7 +6,6 @@ import type {
   ParticleEmitterConfig,
   ParticleEmitterState,
   ParticleForce,
-  WorldTransform2D,
 } from '@flighthq/types';
 
 import { updateParticleEmitter } from './updateParticleEmitter';
@@ -27,7 +26,6 @@ import { updateParticleEmitter } from './updateParticleEmitter';
  * @param forces - Optional force fields to apply before integration (e.g. wind, attractor).
  * @param colliders - Optional colliders to resolve after integration (e.g. plane, circle).
  * @param callbacks - Optional spawn/death callbacks.
- * @param worldTransform - World-space transform for world-space emitters.
  */
 export function stepParticleEmitter(
   emitter: ParticleEmitter,
@@ -37,12 +35,11 @@ export function stepParticleEmitter(
   forces?: ReadonlyArray<ParticleForce>,
   colliders?: ReadonlyArray<ParticleCollider>,
   callbacks?: ParticleEmitterCallbacks,
-  worldTransform?: Readonly<WorldTransform2D>,
 ): void {
   if (forces != null && forces.length > 0) {
     applyParticleForces(emitter, state, forces, deltaTime);
   }
-  updateParticleEmitter(emitter, state, config, deltaTime, callbacks, worldTransform);
+  updateParticleEmitter(emitter, state, config, deltaTime, callbacks);
   if (colliders != null && colliders.length > 0) {
     applyParticleCollisions(emitter, state, colliders);
   }
