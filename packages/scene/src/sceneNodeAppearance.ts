@@ -29,8 +29,12 @@ export function ensureSceneNodeWorldAlpha(source: Readonly<SceneNode>): void {
     runtime.worldAlpha = parentWorldAlpha * source.alpha;
     runtime.worldAlphaUsingAppearanceId = appearanceId;
     runtime.worldAlphaUsingParentAppearanceId = parentWorldAppearanceId;
-    // Propagate a change downward exactly like computeNodeWorldTransformRevision builds worldTransformId.
-    runtime.worldAppearanceId = ((appearanceId << 16) | (parentWorldAppearanceId & 0xffff)) >>> 0;
+    // A fresh monotonic revision per recompute, mirroring computeNodeWorldTransformRevision: a composite
+    // of (appearanceId, parentWorldAppearanceId) is lossy and would not carry a grandparent's alpha change
+    // down to a grandchild, so the resolved id must change unconditionally whenever worldAlpha recomputes.
+    _worldAppearanceRevisionCounter = (_worldAppearanceRevisionCounter + 1) >>> 0;
+    if (_worldAppearanceRevisionCounter === 0) _worldAppearanceRevisionCounter = 1;
+    runtime.worldAppearanceId = _worldAppearanceRevisionCounter;
   }
 }
 
@@ -48,3 +52,7 @@ export function setSceneNodeAlpha(source: SceneNode, alpha: number): void {
   source.alpha = alpha;
   invalidateNodeAppearance(source);
 }
+
+// Monotonic source of resolved-appearance revisions, shared across nodes so a parent recompute always
+// yields an id its children have not seen. Runtime-only (never serialized); wraps at 32 bits.
+let _worldAppearanceRevisionCounter = 0;

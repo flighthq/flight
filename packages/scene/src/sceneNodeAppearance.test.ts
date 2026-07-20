@@ -30,6 +30,20 @@ describe('ensureSceneNodeWorldAlpha', () => {
     setSceneNodeAlpha(parent, 1);
     expect(getSceneNodeWorldAlpha(child)).toBeCloseTo(0.5);
   });
+
+  it('propagates a grandparent alpha change through an unchanged middle node to a grandchild', () => {
+    const root = createSceneNode();
+    const mid = createSceneNode();
+    const leaf = createSceneNode();
+    addNodeChild(root, mid);
+    addNodeChild(mid, leaf);
+    setSceneNodeAlpha(leaf, 0.5);
+    // Prime the grandchild's resolved worldAlpha (1 · 1 · 0.5), then fade only the grandparent.
+    expect(getSceneNodeWorldAlpha(leaf)).toBeCloseTo(0.5);
+    setSceneNodeAlpha(root, 0.2);
+    // The middle node's own alpha is unchanged, but its resolved alpha drops — the grandchild must follow.
+    expect(getSceneNodeWorldAlpha(leaf)).toBeCloseTo(0.1);
+  });
 });
 
 describe('getSceneNodeWorldAlpha', () => {
