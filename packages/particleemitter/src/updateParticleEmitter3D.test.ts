@@ -1,4 +1,4 @@
-import { createMatrix4, scaleMatrix4, setVector3, translateMatrix4 } from '@flighthq/geometry';
+import { setVector3 } from '@flighthq/geometry';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
 import {
   createParticleEmitterConfig,
@@ -218,9 +218,9 @@ describe('updateParticleEmitter3D', () => {
     expect(emitter.data.worldSpace).toBe(false);
   });
 
-  it('leaves worldSpace false and does not bake when config.worldSpace is set but no worldMatrix is given', () => {
-    // Guards the trap: claiming world-space without a matrix would tell the renderer to skip the node
-    // transform while spawns were never baked. Without a transform the spawn stays at the local origin.
+  it('claims world-space from config and bakes through the emitter node world matrix (identity at origin)', () => {
+    // World-space derives from the emitter node's own world matrix, not a passed matrix. A fresh emitter
+    // sits at the origin, so its identity world matrix bakes the point spawn at (0,0,0).
     const emitter = createParticleEmitter3D();
     const state = createParticleEmitterState(seededRandom(42));
     const config = createParticleEmitterConfig({
@@ -234,14 +234,16 @@ describe('updateParticleEmitter3D', () => {
     });
     updateParticleEmitter3D(emitter, state, config, 0.1);
     expect(emitter.data.particleCount).toBe(1);
-    expect(emitter.data.worldSpace).toBe(false);
+    expect(emitter.data.worldSpace).toBe(true);
     expect(emitter.data.transforms[0]).toBeCloseTo(0);
     expect(emitter.data.transforms[1]).toBeCloseTo(0);
     expect(emitter.data.positionsZ[0]).toBeCloseTo(0);
   });
 
-  it('bakes the spawn position through the world matrix when world-space', () => {
+  it('bakes the spawn position through the emitter node world matrix when world-space', () => {
     const emitter = createParticleEmitter3D();
+    setVector3(emitter.position, 5, 7, 9);
+    invalidateNodeLocalTransform(emitter);
     const state = createParticleEmitterState(seededRandom(42));
     const config = createParticleEmitterConfig({
       burstCount: 1,
@@ -252,19 +254,21 @@ describe('updateParticleEmitter3D', () => {
       speedMax: 0,
       worldSpace: true,
     });
-    const worldMatrix = createMatrix4();
-    translateMatrix4(worldMatrix, worldMatrix, 5, 7, 9);
-    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldMatrix);
+    updateParticleEmitter3D(emitter, state, config, 0.1);
     expect(emitter.data.particleCount).toBe(1);
     expect(emitter.data.worldSpace).toBe(true);
-    // point-shape spawn at the local origin, translated into world space by the transform.
+    // point-shape spawn at the local origin, translated into world space by the node's world position.
     expect(emitter.data.transforms[0]).toBeCloseTo(5);
     expect(emitter.data.transforms[1]).toBeCloseTo(7);
     expect(emitter.data.positionsZ[0]).toBeCloseTo(9);
   });
 
-  it('bakes velocity through the world matrix rotation and scale when world-space', () => {
+  it('bakes velocity through the emitter node world matrix rotation and scale when world-space', () => {
     const emitter = createParticleEmitter3D();
+    // Uniform node scale of 2 leaves velocity direction alone but doubles its magnitude, independent of the
+    // random sphere direction — so a local speed of 10 must become a world speed of 20.
+    setVector3(emitter.scale, 2, 2, 2);
+    invalidateNodeLocalTransform(emitter);
     const state = createParticleEmitterState(seededRandom(42));
     const config = createParticleEmitterConfig({
       emitterShape: 'sphere',
@@ -274,11 +278,7 @@ describe('updateParticleEmitter3D', () => {
       speedMax: 10,
       worldSpace: true,
     });
-    // Uniform scale of 2 leaves velocity direction alone but doubles its magnitude, independent of the
-    // random sphere direction — so a local speed of 10 must become a world speed of 20.
-    const worldMatrix = createMatrix4();
-    scaleMatrix4(worldMatrix, worldMatrix, 2, 2, 2);
-    updateParticleEmitter3D(emitter, state, config, 0.1, undefined, worldMatrix);
+    updateParticleEmitter3D(emitter, state, config, 0.1);
     expect(emitter.data.particleCount).toBeGreaterThan(0);
     const vx = state.velocities[0];
     const vy = state.velocities[1];
@@ -317,8 +317,7 @@ describe('updateParticleEmitter3D', () => {
     const state = createParticleEmitterState(seededRandom(42));
     // Frame 1 at the origin seeds the previous world position without spawning.
     const idle = createParticleEmitterConfig({ maxParticles: 100, spawnRate: 0, worldSpace: true });
-    const originTransform = createMatrix4();
-    updateParticleEmitter3D(emitter, state, idle, 0.1, undefined, originTransform);
+    updateParticleEmitter3D(emitter, state, idle, 0.1);
     // Frame 2 bursts 5 particles while the emitter sits at x=10: they spread from the previous position
     // (0) to the current one (10), so particle 0 is at 0, the middle at 5, the last at 10.
     const burst = createParticleEmitterConfig({
@@ -332,9 +331,9 @@ describe('updateParticleEmitter3D', () => {
       speedMin: 0,
       worldSpace: true,
     });
-    const movedTransform = createMatrix4();
-    translateMatrix4(movedTransform, movedTransform, 10, 0, 0);
-    updateParticleEmitter3D(emitter, state, burst, 0.1, undefined, movedTransform);
+    setVector3(emitter.position, 10, 0, 0);
+    invalidateNodeLocalTransform(emitter);
+    updateParticleEmitter3D(emitter, state, burst, 0.1);
     expect(emitter.data.particleCount).toBe(5);
     expect(emitter.data.transforms[0]).toBeCloseTo(0);
     expect(emitter.data.transforms[8]).toBeCloseTo(5);

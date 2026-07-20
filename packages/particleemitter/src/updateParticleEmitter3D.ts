@@ -1,4 +1,4 @@
-import { getNodeLocalMatrix4 } from '@flighthq/node';
+import { getNodeLocalMatrix4, getNodeWorldMatrix4 } from '@flighthq/node';
 import {
   PARTICLE_VELOCITY_STRIDE,
   ensureParticleEmitterStateCapacity,
@@ -7,7 +7,6 @@ import {
   sampleParticleCurve,
 } from '@flighthq/particles';
 import type {
-  Matrix4,
   ParticleEmitter3D,
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
@@ -39,18 +38,13 @@ export function updateParticleEmitter3D(
   config: Readonly<ParticleEmitterConfig>,
   deltaTime: number,
   callbacks?: ParticleEmitterCallbacks,
-  // When config.worldSpace is set, this is the emitter node's world matrix: new particles are baked into
-  // world space at spawn (position through the full matrix, velocity through its rotation) so they stay
-  // put as the emitter moves — the renderer then draws them without re-applying the emitter transform.
-  // Omit it (or leave config.worldSpace false) for the default emitter-local behavior. Named to match the
-  // 3D scene node's worldMatrix (getNodeWorldMatrix4); the 2D updateParticleEmitter's affine
-  // WorldTransform2D counterpart stays worldTransform.
-  worldMatrix?: Readonly<Matrix4>,
 ): void {
   const data = emitter.data;
-  const worldM = config.worldSpace && worldMatrix != null ? worldMatrix.m : null;
-  // Only claim world-space to the renderer when spawns are actually baked. Setting it from config alone
-  // would tell the renderer to skip the node transform while particles were never baked — misplacing them.
+  // World-space emitters bake each spawn into world coordinates (position through the full matrix,
+  // velocity through its rotation/scale) so puffs stay put as the emitter moves. The frame is the emitter
+  // node's own world matrix — the same transform the renderer draws with — so position a world-space
+  // emitter by its node transform (set it, or parent it), not through a passed-in matrix.
+  const worldM = config.worldSpace ? getNodeWorldMatrix4(emitter as unknown as SceneNode).m : null;
   data.worldSpace = worldM !== null;
 
   if (deltaTime <= 0) return;
@@ -58,10 +52,10 @@ export function updateParticleEmitter3D(
   // Emitter origin this frame: the world translation when baking to world space, else the node's local
   // translation. Tracked frame-to-frame (state.prev*) to derive the emitter's own velocity for velocity
   // inheritance and to spread world-space spawns along the emitter's path (trail interpolation).
-  const lm = getNodeLocalMatrix4(emitter as unknown as SceneNode).m;
-  const trackX = worldM !== null ? worldM[12] : lm[12];
-  const trackY = worldM !== null ? worldM[13] : lm[13];
-  const trackZ = worldM !== null ? worldM[14] : lm[14];
+  const originM = worldM !== null ? worldM : getNodeLocalMatrix4(emitter as unknown as SceneNode).m;
+  const trackX = originM[12];
+  const trackY = originM[13];
+  const trackZ = originM[14];
   const hasVelInherit = config.velocityInheritance !== 0;
   let emitterVelX = 0;
   let emitterVelY = 0;

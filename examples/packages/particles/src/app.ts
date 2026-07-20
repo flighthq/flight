@@ -210,15 +210,14 @@ function enterFrame(): void {
   fireEmitter.y += fireVelY * dt;
   invalidateNodeLocalTransform(fireEmitter);
 
-  const fireWorldTransform = { a: 1, b: 0, c: 0, d: 1, tx: fireEmitter.x, ty: fireEmitter.y };
+  // World-space emitter: it bakes spawns through its own node world transform (set above), so nothing to pass.
   applyParticleForces(fireEmitter, fireSimState, fireForces, dt);
-  updateParticleEmitter(fireEmitter, fireSimState, fireConfig, dt, undefined, fireWorldTransform);
+  updateParticleEmitter(fireEmitter, fireSimState, fireConfig, dt);
   invalidateNodeAppearance(fireEmitter);
 
-  // Snow emitter stays fixed; its world transform is just its position.
-  const snowWorldTransform = { a: 1, b: 0, c: 0, d: 1, tx: snowEmitter.x, ty: snowEmitter.y };
+  // Snow emitter stays fixed at its node position.
   applyParticleForces(snowEmitter, snowSimState, snowForces, dt);
-  updateParticleEmitter(snowEmitter, snowSimState, snowConfig, dt, undefined, snowWorldTransform);
+  updateParticleEmitter(snowEmitter, snowSimState, snowConfig, dt);
   invalidateNodeAppearance(snowEmitter);
 
   // Update the particle count label.
