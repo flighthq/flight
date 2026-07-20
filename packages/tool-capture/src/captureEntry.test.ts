@@ -44,6 +44,42 @@ describe('buildCaptureObserveDiagnostics', () => {
     expect(d.pageErrorCount).toBe(0);
     expect(d.errorCount).toBe(0);
   });
+
+  it('folds measured coverage into blank: an empty frame is blank even with no verify target', () => {
+    // A scene that registered no verify target (blank=false from the screenshot path) but drew nothing
+    // to the canvas (coverage 0) must still read as blank — the 2D-assets-never-loaded case.
+    const empty = buildCaptureObserveDiagnostics({
+      backend: 'webgl',
+      blank: false,
+      coverage: 0,
+      verifyPublished: false,
+      verifyTargetKind: null,
+      logs: [],
+    });
+    expect(empty.blank).toBe(true);
+
+    // A frame with real content stays non-blank; a null coverage (unmeasured) does not force blank.
+    expect(
+      buildCaptureObserveDiagnostics({
+        backend: 'webgl',
+        blank: false,
+        coverage: 0.1,
+        verifyPublished: false,
+        verifyTargetKind: null,
+        logs: [],
+      }).blank,
+    ).toBe(false);
+    expect(
+      buildCaptureObserveDiagnostics({
+        backend: 'webgl',
+        blank: false,
+        coverage: null,
+        verifyPublished: false,
+        verifyTargetKind: null,
+        logs: [],
+      }).blank,
+    ).toBe(false);
+  });
 });
 
 describe('captureEntry', () => {
