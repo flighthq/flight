@@ -9,7 +9,7 @@
 import type { Browser, BrowserContext } from '@playwright/test';
 
 export async function launchBrowser(
-  options: { captureFrames?: number; verify?: boolean } = {},
+  options: { captureFrames?: number; verify?: boolean; observe?: boolean } = {},
 ): Promise<{ browser: Browser; context: BrowserContext }> {
   const { chromium } = await import('@playwright/test');
 
@@ -41,8 +41,9 @@ export async function launchBrowser(
   // with no settle-timing race).
   const captureFrames = options.captureFrames ?? 0;
   const verify = options.verify ?? true;
+  const observe = options.observe ?? false;
   await context.addInitScript(
-    (args: { frames: number; verify: boolean }) => {
+    (args: { frames: number; verify: boolean; observe: boolean }) => {
       const flags = window as unknown as {
         __captureFramesReached?: boolean;
         __flightCapture?: boolean;
@@ -50,8 +51,9 @@ export async function launchBrowser(
         __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
         __ftTarget?: { kind?: string };
         __ftVerification?: { fingerprint?: string | null };
+        __ftWarmupFrames?: number;
       };
-      const { frames, verify } = args;
+      const { frames, verify, observe } = args;
       flags.__flightCapture = true;
       flags.__flightCaptureVerify = verify;
 
@@ -98,6 +100,14 @@ export async function launchBrowser(
       // blank to the ceiling still stops, and the verifier guard in captureEntry then fails it — no false
       // green, no unbounded loop (captureEntry's own 15s wait is the outer bound either way).
       const warmupCeiling = frames + 600;
+      // Observe-only fallback: a page that registers no verify target takes the canvas-grab path with no
+      // warmup, so an app-loop-driven scene (whose first tick establishes time and hasn't drawn yet) is
+      // frozen blank at frame N. In observe mode, keep advancing such a page until its canvas actually
+      // draws — bounded by this much smaller ceiling (app-loop startup is a few frames, and a genuinely
+      // blank scene must not burn the GPU-warmup's ~10s here). The extra frames are recorded so the
+      // caller can warn that the capture took longer. Gate/baseline mode is untouched (deterministic
+      // freeze at frame N), so this changes no committed hash.
+      const observeWarmupCeiling = frames + 120;
       let count = 0;
       const realRequestAnimationFrame = window.requestAnimationFrame.bind(window);
       // Expose the un-hijacked rAF so the render verifier can await a genuine presented frame before it
@@ -110,9 +120,53 @@ export async function launchBrowser(
           if (count >= frames) {
             const targetKind = flags.__ftTarget?.kind;
             const gpuVerifying = verify && (targetKind === 'webgl' || targetKind === 'webgpu');
-            const haveRealFrame =
-              (flags.__ftVerification?.fingerprint ?? null) !== null || document.getElementById('ft-error') !== null;
-            if (!gpuVerifying || haveRealFrame || count >= warmupCeiling) {
+            let done: boolean;
+            if (gpuVerifying) {
+              const haveRealFrame =
+                (flags.__ftVerification?.fingerprint ?? null) !== null || document.getElementById('ft-error') !== null;
+              done = haveRealFrame || count >= warmupCeiling;
+            } else if (observe) {
+              // Cheap inline "did anything draw" test: downscale the canvas into a 32×32 2D context and
+              // look for any pixel differing from the top-left (background). Inlined rather than a named
+              // helper on purpose — a named function in an addInitScript body gets esbuild's __name()
+              // wrapper, which is undefined in the injected page (same reason mulberry32 is inlined above).
+              let drew = false;
+              const canvas = document.querySelector('canvas');
+              if (canvas !== null && canvas.width > 0 && canvas.height > 0) {
+                const off = document.createElement('canvas');
+                off.width = 32;
+                off.height = 32;
+                const ctx = off.getContext('2d');
+                if (ctx === null) {
+                  drew = true; // can't sample — don't block the halt
+                } else {
+                  try {
+                    ctx.drawImage(canvas, 0, 0, 32, 32);
+                    const data = ctx.getImageData(0, 0, 32, 32).data;
+                    const r = data[0]!;
+                    const g = data[1]!;
+                    const b = data[2]!;
+                    for (let i = 4; i < data.length; i += 4) {
+                      if (
+                        Math.abs(data[i]! - r) > 8 ||
+                        Math.abs(data[i + 1]! - g) > 8 ||
+                        Math.abs(data[i + 2]! - b) > 8
+                      ) {
+                        drew = true;
+                        break;
+                      }
+                    }
+                  } catch {
+                    drew = true; // tainted/unreadable — don't block the halt
+                  }
+                }
+              }
+              done = drew || count >= observeWarmupCeiling;
+            } else {
+              done = true; // gate/baseline: deterministic freeze at exactly frame N
+            }
+            if (done) {
+              flags.__ftWarmupFrames = count - frames; // extra frames the warmup cost (0 = none)
               flags.__captureFramesReached = true;
               return; // halt: scene stops advancing
             }
@@ -122,7 +176,7 @@ export async function launchBrowser(
           callback(time);
         });
     },
-    { frames: captureFrames, verify },
+    { frames: captureFrames, verify, observe },
   );
 
   return { browser, context };
