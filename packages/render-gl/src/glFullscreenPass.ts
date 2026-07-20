@@ -91,11 +91,16 @@ export function drawGlFullscreenPass(
   gl.activeTexture(gl.TEXTURE0);
   runtime.currentTexture = null;
 
+  gl.blendEquation(gl.FUNC_ADD);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   runtime.currentBlendMode = null;
 
   setUniforms(gl, program);
   drawGlFullscreenQuad(state, program);
+
+  gl.blendEquation(gl.FUNC_ADD);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  runtime.currentBlendMode = null;
 
   // Unbind the sampled inputs. A fullscreen pass frequently reads a render target's own texture and
   // presents it; leaving that texture bound lets the NEXT draw that renders back into that target form

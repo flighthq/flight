@@ -43,6 +43,7 @@ const IGNORED_DIRS = new Set([
   'build',
   'coverage',
   'target',
+  '.cache',
   '.git',
   '.idea',
   '.vscode',
