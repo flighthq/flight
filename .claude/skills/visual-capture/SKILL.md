@@ -42,6 +42,28 @@ npm run list:reference                          # print the case names you can f
 - **3D scenes** read back the WebGL frame in-page (via a registered functional target), which is why a headless/Docker capture isn't a black rectangle. If a 3D reference case _does_ come back black, that case likely hasn't registered a functional target yet (the shared `scene3d.ts` and the inline-GL apps each publish one) — that's a flight-reference-side gap, not a capture failure.
 - To view it live in a real browser instead (for a human — the agent uses capture): `npm run dev:reference -- <case>`.
 
+## Eyes mode (`--observe`) — never "cannot capture"
+
+A normal capture **fails closed** on a blank WebGL/WebGPU readback: it throws `WebGL verifier did not produce a render image` and writes _no_ screenshot — so a review dead-ends with nothing to look at. Add `--observe` (works on `capture:examples`, `capture:functional`, `capture:reference`) to **fail open** instead: it always writes a `screenshot.png` (best-available frame, black if the render truly produced nothing) plus an `observe` diagnostics block in `status.json`, and never gates or touches baselines.
+
+```
+npm run capture:reference -- --observe --filter <case>
+npm run capture:functional -- --observe --filter <name>
+```
+
+Read the `observe` block to interpret what you're seeing without guessing:
+
+```json
+"observe": { "blank": true, "backend": "webgl", "verifyTargetKind": "webgl",
+             "verifyPublished": false, "coverage": 0, "pageErrorCount": 0, "errorCount": 0 }
+```
+
+- `pageErrorCount > 0` → **broken code** (the page threw). Read `logs.jsonl` for the exception — this is a real bug to fix.
+- `blank: true` + `pageErrorCount: 0` + `coverage ≈ 0` + a registered `verifyTargetKind` → the page **ran cleanly but rendered nothing**: a software-GL limitation of this sandbox (e.g. GPU skinning / `rgba16f` on SwiftShader), **not** your code. Confirm on real hardware.
+- `blank: false` / `coverage > 0` → something drew; just read `screenshot.png`.
+
+Use `--observe` whenever a plain capture reports "did not produce a render image" — it converts that dead-end into an image plus a machine-readable reason.
+
 ## Watch capture (long-running — requires Playwright)
 
 ```
@@ -73,7 +95,7 @@ Each captured entry writes three files into `tools/output/{tool}/{name}/{rendere
   { "state": "ready|error", "capturedAt": <unix ms>, "error": null|"message",
     "hash": "<sha256>", "baselineHash": "<sha256>|null", "changed": true|false|null }
   ```
-  `changed: null` = no baseline yet. `changed: true` = the screenshot hash differs from the committed baseline; read `screenshot.png` to see what changed. Check `capturedAt` against your last edit time to confirm the output is fresh.
+  `changed: null` = no baseline yet. `changed: true` = the screenshot hash differs from the committed baseline; read `screenshot.png` to see what changed. Check `capturedAt` against your last edit time to confirm the output is fresh. An `--observe` run adds an `observe` block (see Eyes mode above) and leaves `baselineHash`/`changed` null.
 
 ## Emitting logs from a scene
 

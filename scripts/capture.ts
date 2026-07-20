@@ -83,6 +83,10 @@ const captureFrames =
 const updateBaseline = argv.includes('--update-baseline');
 const failOnChanged = argv.includes('--fail-on-changed');
 const failOnError = argv.includes('--fail-on-error');
+// --observe is eyes mode: never fail closed on a blank render — always write a screenshot + a
+// diagnostics block (blank/coverage/pageErrorCount) so an agent can SEE a scene instead of hitting
+// "cannot capture". Does not gate or touch baselines.
+const observe = argv.includes('--observe');
 const verify = !argv.includes('--no-verify');
 // --dev opts into the Vite dev server; static is the default.
 const useDev = argv.includes('--dev');
@@ -148,6 +152,7 @@ async function main(): Promise<void> {
         extraWait,
         captureFrames,
         failOnError,
+        observe,
         isAborted,
         workerCount,
       });
@@ -175,6 +180,7 @@ async function main(): Promise<void> {
           extraWait,
           captureFrames,
           failOnError,
+          observe,
           isAborted,
         });
 
