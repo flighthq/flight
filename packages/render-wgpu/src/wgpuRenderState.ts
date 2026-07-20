@@ -15,7 +15,7 @@ const RING_SLOT_COUNT = 4096;
 
 export async function createWgpuRenderState(
   canvas: HTMLCanvasElement,
-  options: Partial<WgpuRenderOptions> = {},
+  options: WgpuRenderOptions = {},
 ): Promise<WgpuRenderState> {
   if (!navigator.gpu) throw new Error('WebGPU is not supported in this browser.');
 
