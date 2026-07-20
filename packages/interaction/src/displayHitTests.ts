@@ -34,11 +34,6 @@ export function defaultShapeHitTestHandler(source: NodeAny, x: number, y: number
   return hitTestGraphLocalBounds(source, x, y);
 }
 
-export function defaultStageHitTestHandler(_source: NodeAny, _x: number, _y: number): boolean {
-  // Containers have no self hit area — findGraphHitTarget traverses children separately.
-  return false;
-}
-
 export function defaultTextHitTestHandler(source: NodeAny, x: number, y: number): boolean {
   return hitTestGraphLocalBounds(source, x, y);
 }

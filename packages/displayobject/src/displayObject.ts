@@ -76,6 +76,7 @@ export function createDisplayObjectRuntime(
 ): DisplayObjectRuntime {
   const out = createNodeRuntime(methods) as DisplayObjectRuntime;
   out.traits = DisplayObjectTraitsKey;
+  out.stage = null;
   initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
   return out;
