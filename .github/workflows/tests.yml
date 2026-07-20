@@ -171,12 +171,15 @@ jobs:
 
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to a release channel — the continuous
-    # counterpart to the tag-triggered stable release (release.yml). It reuses this run's green legs
-    # via `needs`, so a red build never ships a snapshot; it never runs on pull_request (no secrets on
-    # forks, and only landed code should publish). The version is a prerelease under its own dist-tag
-    # (main -> edge, develop -> next), so `latest` is untouched. See agents/packaging.md.
+    # counterpart to the tag-triggered stable release (release.yml). Edge is meant to be *available*,
+    # so it gates only on the two correctness legs — `build` (it compiles) and `test` (unit tests, fast
+    # and non-flaky) — and deliberately NOT on the health/hygiene legs (`size`, the flaky `render-test`
+    # matrix, `harness-build`, `quality`), which still run in parallel as signals but never block an
+    # edge build. It never runs on pull_request (no secrets on forks, and only landed code should
+    # publish). The version is a prerelease under its own dist-tag (main -> edge, develop -> next), so
+    # `latest` is untouched. See agents/packaging.md.
     name: Publish ${{ github.ref_name }} snapshot to npm
-    needs: [build, harness-build, test, quality, size, render-test]
+    needs: [build, test]
     if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
     runs-on: ubuntu-latest
     permissions:
