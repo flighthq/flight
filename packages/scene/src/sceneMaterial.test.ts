@@ -1,17 +1,18 @@
 import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
+import { SceneNodeKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh';
-import { createScene } from './scene';
 import { findSceneMaterialByName } from './sceneMaterial';
+import { createSceneNode } from './sceneNode';
 
 describe('findSceneMaterialByName', () => {
   it('finds a named material on a descendant mesh', () => {
     const material = createBlinnPhongMaterial();
     material.name = 'canopy';
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
     expect(findSceneMaterialByName(scene, 'canopy')).toBe(material);
   });
@@ -19,13 +20,13 @@ describe('findSceneMaterialByName', () => {
   it('returns null when no material carries the name', () => {
     const material = createBlinnPhongMaterial();
     material.name = 'canopy';
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [material]));
     expect(findSceneMaterialByName(scene, 'fuselage')).toBeNull();
   });
 
   it('ignores anonymous materials (null name)', () => {
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createBlinnPhongMaterial()]));
     expect(findSceneMaterialByName(scene, 'canopy')).toBeNull();
   });
@@ -33,8 +34,8 @@ describe('findSceneMaterialByName', () => {
   it('searches nested descendants depth-first', () => {
     const material = createStandardPbrMaterial();
     material.name = 'deep';
-    const scene = createScene();
-    const group = createScene();
+    const scene = createSceneNode(SceneNodeKind);
+    const group = createSceneNode(SceneNodeKind);
     addNodeChild(scene, group);
     addNodeChild(group, createMesh(createBoxMeshGeometry(), [material]));
     expect(findSceneMaterialByName(scene, 'deep')).toBe(material);
@@ -52,7 +53,7 @@ describe('findSceneMaterialByName', () => {
     first.name = 'shared';
     const second = createBlinnPhongMaterial();
     second.name = 'shared';
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [first]));
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [second]));
     expect(findSceneMaterialByName(scene, 'shared')).toBe(first);
@@ -61,7 +62,7 @@ describe('findSceneMaterialByName', () => {
   it('skips null material slots without matching', () => {
     const material = createBlinnPhongMaterial();
     material.name = 'canopy';
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [null, material]));
     expect(findSceneMaterialByName(scene, 'canopy')).toBe(material);
   });

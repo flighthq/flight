@@ -26,7 +26,7 @@ function externalRef(uri: string): SceneResourceRef {
 function sceneWithTexture(uri: string): { scene: Scene; texture: ReturnType<typeof createTexture> } {
   const texture = createTexture({ resource: externalRef(uri) });
   const scene = createScene();
-  addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
+  addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
   return { scene: scene as Scene, texture };
 }
 
@@ -58,7 +58,7 @@ describe('resolveScenesWithOptions', () => {
     // A texture-free scene exercises the private-resolver create-and-dispose path without needing a
     // fetch backend: the call must complete without throwing.
     const scene = createScene();
-    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({})]));
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({})]));
     await expect(resolveScenesWithOptions([scene as Scene])).resolves.toBeUndefined();
   });
 });

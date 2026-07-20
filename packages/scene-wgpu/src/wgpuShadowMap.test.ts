@@ -5,7 +5,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import { createMesh, createScene } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera, SceneLights, SceneNode } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
@@ -34,7 +34,7 @@ function makeShadowCamera(): Camera {
 }
 
 function makeShadowScene(): SceneNode {
-  const scene = createScene();
+  const scene = createSceneNode(SceneNodeKind);
   addNodeChild(scene, createMesh(createBoxMeshGeometry(), []));
   return scene;
 }
@@ -126,7 +126,7 @@ describe('drawWgpuSceneShadowMap', () => {
     registerStandardPbrWgpuMaterial(state);
     drawWgpuSceneShadowMap(state, makeShadowScene(), makeShadowCamera());
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const camera = createCamera({
       far: 100,

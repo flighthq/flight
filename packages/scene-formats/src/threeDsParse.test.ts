@@ -10,7 +10,7 @@ import { isMesh } from '@flighthq/scene';
 import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFrom3ds, import3ds } from './threeDsParse';
+import { createSceneFrom3ds } from './threeDsParse';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -227,7 +227,7 @@ describe('createSceneFrom3ds', () => {
       }),
     );
 
-    const mesh = getNodeChildren(scene)[0] as Mesh;
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(1);
     const mat = mesh.materials[0] as BlinnPhongMaterial;
     expect(mat.kind).toBe(BlinnPhongMaterialKind);
@@ -241,7 +241,7 @@ describe('createSceneFrom3ds', () => {
 
   it('leaves a mesh unmaterialed when it references no material', () => {
     const mesh = getNodeChildren(
-      createSceneFrom3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])),
+      createSceneFrom3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])).root,
     )[0] as Mesh;
     expect(mesh.materials).toHaveLength(0);
   });
@@ -250,7 +250,7 @@ describe('createSceneFrom3ds', () => {
     // A triangle in 3DS Z-up: (0,0,0), (1,0,0), (0,0,1) → Y-up: (0,0,0), (1,0,0), (0,1,0)
     const bytes = buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2]);
     const scene = createSceneFrom3ds(bytes);
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
 
     // A named 3DS object is returned as a bare Mesh carrying the name, not a transform wrapper.
@@ -276,7 +276,7 @@ describe('createSceneFrom3ds', () => {
     // 3DS Z-up vertices: (0,0,0), (1,0,0), (0,1,0) — note Y is the "forward" axis in Z-up.
     const bytes = buildTriangle3ds('Triangle', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
     const scene = createSceneFrom3ds(bytes);
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
 
     const mesh = children[0] as SceneNode;
@@ -294,7 +294,7 @@ describe('createSceneFrom3ds', () => {
       { indices: [0, 1, 2], name: 'MeshB', positions: [2, 0, 0, 3, 0, 0, 2, 1, 0] },
     ]);
     const scene = createSceneFrom3ds(bytes);
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(2);
 
     // Each named object is a bare Mesh child of the scene, carrying its name.
@@ -307,7 +307,7 @@ describe('createSceneFrom3ds', () => {
   it('parses UV coordinates', () => {
     const bytes = buildTriangle3ds('UvTri', [0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2], [0, 0, 1, 0, 0.5, 1]);
     const scene = createSceneFrom3ds(bytes);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const uv = { x: 0, y: 0 };
     getMeshGeometryVertexUv0(uv, geometry, 0);
@@ -325,7 +325,7 @@ describe('createSceneFrom3ds', () => {
     // asserts the sign, not just the magnitude.
     const bytes = buildTriangle3ds('NormalTri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
     const scene = createSceneFrom3ds(bytes);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexNormal(n, geometry, 0);
@@ -340,7 +340,7 @@ describe('createSceneFrom3ds', () => {
     // positive and mirror the model. Vertex (0, 1, 0) in 3DS Z-up must land at (0, 0, -1).
     const bytes = buildTriangle3ds('RotTri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
     const scene = createSceneFrom3ds(bytes);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const p = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexPosition(p, geometry, 2);
@@ -349,7 +349,7 @@ describe('createSceneFrom3ds', () => {
 
   it('returns an empty scene for empty input', () => {
     const scene = createSceneFrom3ds(new Uint8Array(0));
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('warns on empty input', () => {
@@ -391,29 +391,26 @@ describe('createSceneFrom3ds', () => {
 
     const warnings: string[] = [];
     const scene = createSceneFrom3ds(bytes, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('missing'))).toBe(true);
   });
 });
 
-describe('import3ds', () => {
+describe('createSceneFrom3ds animations', () => {
   it('wraps the parsed scene with no animation and a one-element scenes array', () => {
     const bytes = buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]);
-    const result = import3ds(bytes);
+    const scene = createSceneFrom3ds(bytes);
 
-    expect(result.animations).toHaveLength(0);
-    expect(result.scenes).toHaveLength(1);
-    expect(result.scenes[0]).toBe(result.scene);
-    expect(getNodeChildren(result.scene)).toHaveLength(1);
+    expect(scene.animations).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(1);
   });
 
   it('returns an empty import (no scene children) for non-3DS input', () => {
     const warnings: string[] = [];
-    const result = import3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), warnings);
+    const scene = createSceneFrom3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), warnings);
 
-    expect(result.animations).toHaveLength(0);
-    expect(result.scenes).toHaveLength(1);
-    expect(getNodeChildren(result.scene)).toHaveLength(0);
+    expect(scene.animations).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.length).toBeGreaterThan(0);
   });
 });

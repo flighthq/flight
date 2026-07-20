@@ -28,11 +28,11 @@ describe('resolveSceneResourcesAndWait', () => {
     const a = createTexture({ resource: externalRef() });
     const b = createTexture({ resource: externalRef() });
     const scene = createScene();
-    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: a })]));
-    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: a })]));
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
     const resolver = createSceneResourceResolver({ fetch });
 
-    await resolveSceneResourcesAndWait(scene, resolver);
+    await resolveSceneResourcesAndWait(scene.root, resolver);
 
     expect(a.image).toBe(fakeImage);
     expect(b.image).toBe(fakeImage);
@@ -44,7 +44,7 @@ describe('resolveSceneResourcesAndWait', () => {
   it('resolves immediately when there is nothing pending', async () => {
     const scene = createScene();
     const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
-    await expect(resolveSceneResourcesAndWait(scene, resolver)).resolves.toBeUndefined();
+    await expect(resolveSceneResourcesAndWait(scene.root, resolver)).resolves.toBeUndefined();
     disposeSceneResourceResolver(resolver);
   });
 });

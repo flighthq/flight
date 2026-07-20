@@ -2,7 +2,7 @@ import { createCamera, createOrthographicProjection, setCameraViewMatrix4FromLoo
 import { createVector3 } from '@flighthq/geometry';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import { createMesh, createScene } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Skin, VertexAttributeLayout } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
@@ -103,7 +103,7 @@ function makeShadowCamera() {
 describe('drawGlSceneShadowMap', () => {
   it('lazily creates the shadow target on the first call', () => {
     const { state } = makeShadowState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const camera = makeShadowCamera();
 
     drawGlSceneShadowMap(state, scene, camera);
@@ -113,7 +113,7 @@ describe('drawGlSceneShadowMap', () => {
 
   it('reuses the same shadow target on subsequent calls', () => {
     const { state } = makeShadowState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const camera = makeShadowCamera();
 
     drawGlSceneShadowMap(state, scene, camera);
@@ -127,7 +127,7 @@ describe('drawGlSceneShadowMap', () => {
 
   it('records the light-space matrix on the runtime', () => {
     const { state } = makeShadowState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const camera = makeShadowCamera();
 
     drawGlSceneShadowMap(state, scene, camera);
@@ -139,7 +139,7 @@ describe('drawGlSceneShadowMap', () => {
 
   it('sets up the depth pass with front-face culling', () => {
     const { state, gl } = makeShadowState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const camera = makeShadowCamera();
 
     drawGlSceneShadowMap(state, scene, camera);
@@ -155,7 +155,7 @@ describe('drawGlSceneShadowMap', () => {
 
   it('applies the vertex morph to a caster before recording its depth', () => {
     const { state, gl } = makeShadowState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const geometry = createMeshGeometry({ layout: POSITION_LAYOUT, vertices: new Float32Array([0, 0, 0, 1, 0, 0]) });
     const mesh = createMesh(geometry, []);
     // Weight 1 on a target that raises y by 5: the depth pass must upload the blended pose, not the base.
@@ -174,7 +174,7 @@ describe('drawGlSceneShadowMap', () => {
 
   it('draws a GPU-skinned caster through the HAS_SKIN depth variant', () => {
     const { state } = makeShadowState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const geometry = createMeshGeometry({
       layout: SKINNED_LAYOUT,
       vertices: new Float32Array([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
@@ -199,7 +199,7 @@ describe('drawGlSceneShadowMap', () => {
 
   it('restores the previous framebuffer after the depth pass', () => {
     const { state, gl } = makeShadowState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const camera = makeShadowCamera();
 
     drawGlSceneShadowMap(state, scene, camera);

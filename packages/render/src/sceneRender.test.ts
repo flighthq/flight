@@ -10,7 +10,7 @@ import {
 } from '@flighthq/lighting';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createScene, getSceneNodeWorldAlpha } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind, getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type { Camera, Material, MeshGeometry, SceneLightBlock, SceneLights } from '@flighthq/types';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
@@ -207,7 +207,7 @@ describe('packSceneLightBlock', () => {
 describe('prepareSceneRender', () => {
   it('returns the lit, view-projected frame with the visible mesh', () => {
     const state = createRenderState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(scene, mesh);
 
@@ -224,7 +224,7 @@ describe('prepareSceneRender', () => {
 
   it('computes a non-identity view-projection', () => {
     const state = createRenderState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
     // A perspective view-projection is not the identity matrix.
     expect(list.viewProjection.m[15]).not.toBe(1);
@@ -232,7 +232,7 @@ describe('prepareSceneRender', () => {
 
   it('culls a mesh placed far behind the camera', () => {
     const state = createRenderState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(boundedBox(), [null]);
     mesh.position.z = 1000;
     invalidateNodeLocalTransform(mesh);
@@ -244,7 +244,7 @@ describe('prepareSceneRender', () => {
 
   it('keeps a mesh whose geometry has no cached bounds', () => {
     const state = createRenderState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [null]);
     mesh.geometry.bounds = null;
     mesh.position.z = 1000;
@@ -257,8 +257,8 @@ describe('prepareSceneRender', () => {
 
   it('skips disabled subtrees', () => {
     const state = createRenderState();
-    const scene = createScene();
-    const group = createScene({ enabled: false });
+    const scene = createSceneNode(SceneNodeKind);
+    const group = createSceneNode(SceneNodeKind, { enabled: false });
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
@@ -269,8 +269,8 @@ describe('prepareSceneRender', () => {
 
   it('skips a hidden subtree (visible=false propagates to descendants)', () => {
     const state = createRenderState();
-    const scene = createScene();
-    const group = createScene();
+    const scene = createSceneNode(SceneNodeKind);
+    const group = createSceneNode(SceneNodeKind);
     group.visible = false;
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
@@ -282,8 +282,8 @@ describe('prepareSceneRender', () => {
 
   it('resolves world transforms through nested groups', () => {
     const state = createRenderState();
-    const scene = createScene();
-    const group = createScene();
+    const scene = createSceneNode(SceneNodeKind);
+    const group = createSceneNode(SceneNodeKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
@@ -297,8 +297,8 @@ describe('prepareSceneRender', () => {
 
   it('folds parent x self alpha into each node resolved worldAlpha', () => {
     const state = createRenderState();
-    const scene = createScene();
-    const group = createScene();
+    const scene = createSceneNode(SceneNodeKind);
+    const group = createSceneNode(SceneNodeKind);
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);
@@ -314,7 +314,7 @@ describe('prepareSceneRender', () => {
 
   it('reuses the same list per render state across calls', () => {
     const state = createRenderState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const first = prepareSceneRender(state, scene, frontCamera(), emptyLights());
     const second = prepareSceneRender(state, scene, frontCamera(), emptyLights());
     expect(second).toBe(first);
@@ -322,7 +322,7 @@ describe('prepareSceneRender', () => {
 
   it('honors a positional material on a mesh', () => {
     const state = createRenderState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const material = { kind: 'TestMaterial' } as unknown as Material;
     const mesh = createMesh(boundedBox(), [material]);
     addNodeChild(scene, mesh);

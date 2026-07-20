@@ -4,7 +4,7 @@ import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import { createMesh, createScene } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera, GlRenderTarget, SceneLights } from '@flighthq/types';
 
 import { makeGlSceneState } from './glSceneTestHelper';
@@ -49,7 +49,7 @@ describe('presentGlScene', () => {
   it('renders into the target then presents to the canvas (default framebuffer)', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const target = makeTarget();
 
@@ -65,7 +65,7 @@ describe('presentGlScene', () => {
   it('clears the background color and the depth buffer before drawing', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
     presentGlScene(state, makeTarget(), scene, makeCamera(), LIGHTS);
@@ -81,7 +81,7 @@ describe('presentGlScene', () => {
   it('presents to the canvas after the scene draw, so the encode reads the rendered target', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const target = makeTarget();
 

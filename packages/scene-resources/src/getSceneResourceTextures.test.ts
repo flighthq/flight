@@ -42,10 +42,10 @@ describe('getSceneResourceTextures', () => {
     const map = createTexture({ resource: embeddedRef() });
     const scene = createScene();
     const mesh = createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: map })]);
-    addNodeChild(scene, mesh);
+    addNodeChild(scene.root, mesh);
 
     const out: Texture[] = [];
-    getSceneResourceTextures(scene, registry(), out);
+    getSceneResourceTextures(scene.root, registry(), out);
     expect(out).toEqual([map]);
   });
 
@@ -57,11 +57,11 @@ describe('getSceneResourceTextures', () => {
       createStandardPbrMaterial({ baseColorMap: shared }),
     ]);
     const b = createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: shared })]);
-    addNodeChild(scene, a);
-    addNodeChild(scene, b);
+    addNodeChild(scene.root, a);
+    addNodeChild(scene.root, b);
 
     const out: Texture[] = [];
-    getSceneResourceTextures(scene, registry(), out);
+    getSceneResourceTextures(scene.root, registry(), out);
     expect(out).toEqual([shared]);
   });
 

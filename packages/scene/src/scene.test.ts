@@ -6,42 +6,48 @@ import { createScene } from './scene';
 import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
 
 describe('createScene', () => {
-  it('creates a root node with SceneNodeKind', () => {
+  it('owns a root SceneNode with SceneNodeKind', () => {
     const scene = createScene();
-    expect(scene.kind).toBe(SceneNodeKind);
+    expect(scene.root.kind).toBe(SceneNodeKind);
   });
 
-  it('defaults enabled to true and name to null', () => {
+  it('starts with empty animations and null metadata', () => {
     const scene = createScene();
-    expect(scene.enabled).toBe(true);
-    expect(scene.name).toBe(null);
+    expect(scene.animations).toEqual([]);
+    expect(scene.metadata).toBeNull();
   });
 
-  it('accepts partial initial values', () => {
+  it('defaults the root enabled to true and name to null', () => {
+    const scene = createScene();
+    expect(scene.root.enabled).toBe(true);
+    expect(scene.root.name).toBe(null);
+  });
+
+  it('passes partial initial values to the root', () => {
     const scene = createScene({ enabled: false, name: 'world' });
-    expect(scene.enabled).toBe(false);
-    expect(scene.name).toBe('world');
+    expect(scene.root.enabled).toBe(false);
+    expect(scene.root.name).toBe('world');
   });
 
-  it('starts with an identity localMatrix and a null worldMatrix slot', () => {
+  it('starts the root with an identity localMatrix and a null worldMatrix slot', () => {
     const scene = createScene();
-    expect(getNodeLocalMatrix4(scene).m[0]).toBe(1);
-    expect(getNodeLocalMatrix4(scene).m[5]).toBe(1);
-    expect(getNodeLocalMatrix4(scene).m[10]).toBe(1);
-    expect(getNodeLocalMatrix4(scene).m[15]).toBe(1);
-    expect(getSceneNodeRuntime(scene).worldMatrix4).toBeNull();
+    expect(getNodeLocalMatrix4(scene.root).m[0]).toBe(1);
+    expect(getNodeLocalMatrix4(scene.root).m[5]).toBe(1);
+    expect(getNodeLocalMatrix4(scene.root).m[10]).toBe(1);
+    expect(getNodeLocalMatrix4(scene.root).m[15]).toBe(1);
+    expect(getSceneNodeRuntime(scene.root).worldMatrix4).toBeNull();
   });
 
-  it('starts with no children', () => {
+  it('starts the root with no children', () => {
     const scene = createScene();
-    expect(getNodeChildCount(scene)).toBe(0);
+    expect(getNodeChildCount(scene.root)).toBe(0);
   });
 
-  it('is the root for nodes attached beneath it', () => {
+  it('the root parents nodes attached beneath it', () => {
     const scene = createScene();
     const child = createSceneNode();
-    addNodeChild(scene, child);
-    expect(getNodeRoot(child)).toBe(scene);
-    expect(getNodeChildCount(scene)).toBe(1);
+    addNodeChild(scene.root, child);
+    expect(getNodeRoot(child)).toBe(scene.root);
+    expect(getNodeChildCount(scene.root)).toBe(1);
   });
 });

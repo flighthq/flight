@@ -11,14 +11,14 @@ import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } fr
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseObjMaterialLibrary } from './mtlParse';
-import { createSceneFromObj, importObj } from './objParse';
+import { createSceneFromObj } from './objParse';
 
 describe('createSceneFromObj', () => {
   it('parses a single triangle with positions only', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as SceneNode)).toBe(true);
 
@@ -39,7 +39,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 1 1 0', 'v 0 1 0', 'f 1 2 3', 'f 1 3 4'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 4 unique vertices, 6 indices (2 triangles).
     expect(getMeshGeometryVertexCount(geometry)).toBe(4);
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
@@ -49,7 +49,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 1 1 0', 'v 0 1 0', 'f 1 2 3 4'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // A quad becomes 2 triangles = 6 indices.
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
   });
@@ -58,7 +58,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 1.5 0.5 0', 'v 1 1 0', 'v 0 1 0', 'f 1 2 3 4 5'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // A pentagon becomes 3 triangles = 9 indices.
     expect(getMeshGeometryIndexCount(geometry)).toBe(9);
   });
@@ -69,7 +69,7 @@ describe('createSceneFromObj', () => {
     );
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
     const n = { x: 0, y: 0, z: 0 };
@@ -87,7 +87,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vn 0 0 -1', 'f 1//1 2//1 3//1'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
     const n = { x: 0, y: 0, z: 0 };
@@ -99,7 +99,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vt 0.5 0.5', 'f 1/1 2/1 3/1'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
     const uv = { x: 0, y: 0 };
@@ -111,7 +111,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f -3 -2 -1'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
 
     const p = { x: 0, y: 0, z: 0 };
@@ -136,11 +136,11 @@ describe('createSceneFromObj', () => {
     ].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const roots = getNodeChildren(scene);
+    const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(2);
 
     // Each single-material group becomes one bare Mesh carrying the group name —
-    // getNodeChildren(scene) returns Mesh nodes, not transform-only wrappers.
+    // getNodeChildren(scene.root) returns Mesh nodes, not transform-only wrappers.
     const groupA = roots[0] as SceneNode;
     expect(isMesh(groupA)).toBe(true);
     expect(groupA.name).toBe('GroupA');
@@ -154,7 +154,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'o Cube', 'f 1 2 3'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const roots = getNodeChildren(scene);
+    const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
     expect(isMesh(roots[0] as SceneNode)).toBe(true);
     expect((roots[0] as SceneNode).name).toBe('Cube');
@@ -177,7 +177,7 @@ describe('createSceneFromObj', () => {
 
     const scene = createSceneFromObj(obj);
     // The group "Body" is one bare Mesh, not a wrapper over per-material child meshes.
-    const roots = getNodeChildren(scene);
+    const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
     const mesh = roots[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
@@ -195,12 +195,12 @@ describe('createSceneFromObj', () => {
 
   it('returns an empty scene for empty input', () => {
     const scene = createSceneFromObj('');
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('returns an empty scene for comment-only input', () => {
     const scene = createSceneFromObj('# just a comment\n');
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('warns on faces with fewer than 3 vertices', () => {
@@ -228,7 +228,7 @@ describe('createSceneFromObj', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3', 'f 3 2 1'].join('\n');
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // Same 3 unique vertex combos used by both faces.
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
@@ -240,7 +240,7 @@ describe('createSceneFromObj', () => {
     );
 
     const scene = createSceneFromObj(obj);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 3 pos * 2 normals = 6 unique vertices.
     expect(getMeshGeometryVertexCount(geometry)).toBe(6);
   });
@@ -252,7 +252,7 @@ describe('createSceneFromObj', () => {
     const obj = ['mtllib materials.mtl', 'v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl RedMat', 'f 1 2 3'].join('\n');
 
     const scene = createSceneFromObj(obj, lib);
-    const mesh = getNodeChildren(scene)[0] as Mesh;
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial;
@@ -275,7 +275,7 @@ describe('createSceneFromObj', () => {
     const lib = parseObjMaterialLibrary(mtl);
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Shiny', 'f 1 2 3'].join('\n');
 
-    const material = (getNodeChildren(createSceneFromObj(obj, lib))[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    const material = (getNodeChildren(createSceneFromObj(obj, lib).root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.diffuse).toBe(0xcc6633_80 >>> 0); // Kd 0.8,0.4,0.2 with d=0.5 alpha
     expect(material.specular).toBe(0xffffffff); // Ks 1,1,1 opaque
@@ -292,7 +292,7 @@ describe('createSceneFromObj', () => {
     const lib = parseObjMaterialLibrary('newmtl Known\nKd 1 1 1\n');
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Missing', 'f 1 2 3'].join('\n');
 
-    const mesh = getNodeChildren(createSceneFromObj(obj, lib))[0] as Mesh;
+    const mesh = getNodeChildren(createSceneFromObj(obj, lib).root)[0] as Mesh;
     // One subset, one positional slot — null (resolves to DefaultMaterialKind at draw time).
     expect(mesh.materials).toEqual([null]);
   });
@@ -313,7 +313,7 @@ describe('createSceneFromObj', () => {
       'f 4 5 6',
     ].join('\n');
 
-    const roots = getNodeChildren(createSceneFromObj(obj, lib));
+    const roots = getNodeChildren(createSceneFromObj(obj, lib).root);
     expect(roots).toHaveLength(2);
     // Group B declares no usemtl of its own; per the OBJ spec it inherits RedMat set before group A.
     const groupB = roots[1] as Mesh;
@@ -327,19 +327,15 @@ describe('createSceneFromObj', () => {
 
     const scene = createSceneFromObj(obj);
     // Mesh should be a direct child of scene (no wrapper group).
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as SceneNode)).toBe(true);
   });
 });
 
-describe('importObj', () => {
-  it('wraps the scene as a SceneImport with one scene and no animations', () => {
+describe('createSceneFromObj animations', () => {
+  it('carries no animations (OBJ has none)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
-    const result = importObj(obj);
-    expect(result.scenes).toHaveLength(1);
-    expect(result.scene).toBe(result.scenes[0]);
-    expect(result.animations).toHaveLength(0);
-    expect(isMesh(getNodeChildren(result.scene)[0] as SceneNode)).toBe(true);
+    expect(createSceneFromObj(obj).animations).toHaveLength(0);
   });
 });

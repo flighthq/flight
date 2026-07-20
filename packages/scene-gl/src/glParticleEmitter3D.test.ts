@@ -2,7 +2,7 @@ import { createCamera } from '@flighthq/camera';
 import { createMatrix4, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
-import { createScene } from '@flighthq/scene';
+import { createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { ParticleEmitter3D, SceneLights } from '@flighthq/types';
 
 import { destroyGlParticleEmitter3DShader, drawGlSceneParticleEmitters } from './glParticleEmitter3D';
@@ -65,7 +65,7 @@ describe('destroyGlParticleEmitter3DShader', () => {
 
   it('deletes GPU resources after a draw', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = makeEmitterWithParticles(1);
     addNodeChild(scene, emitter);
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
@@ -78,14 +78,14 @@ describe('destroyGlParticleEmitter3DShader', () => {
 describe('drawGlSceneParticleEmitters', () => {
   it('is a no-op when scene has no particle emitter 3D nodes', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
   });
 
   it('skips emitters with zero particles', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = createParticleEmitter3D();
     addNodeChild(scene, emitter);
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
@@ -94,7 +94,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('issues an instanced draw for particles', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = makeEmitterWithParticles(5);
     addNodeChild(scene, emitter);
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
@@ -105,7 +105,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('applies the emitter node world transform for local-space particles', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = makeEmitterWithParticles(1);
     emitter.data.transforms[0] = 1;
     emitter.data.transforms[1] = 2;
@@ -123,7 +123,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('skips the node world transform for world-space particles already baked into world coordinates', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = makeEmitterWithParticles(1);
     emitter.data.transforms[0] = 1;
     emitter.data.transforms[1] = 2;
@@ -143,7 +143,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('compiles the shader program on first call', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(gl.calls.some((c) => c.name === 'createProgram')).toBe(true);
@@ -151,7 +151,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('reuses the shader program on subsequent calls', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     const programCount = gl.calls.filter((c) => c.name === 'createProgram').length;
@@ -161,7 +161,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('enables depth test and alpha blending', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
@@ -171,7 +171,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('applies the emitter blend mode: additive for add, premultiplied over-blend for normal', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const additive = makeEmitterWithParticles(1);
     additive.blendMode = 'add';
     const normal = makeEmitterWithParticles(1);
@@ -189,7 +189,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('uploads and binds the atlas image (never a null texture) for textured particles', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeAtlasEmitter(64, 32));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     // The atlas image is uploaded to a GL texture on first use.
@@ -209,7 +209,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('normalizes the particle quad to an aspect-ratio unit square, not the region pixel size', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     // A 64×32 region: the larger axis normalizes to 1, the shorter to its aspect ratio (0.5). The
     // raw pixel dims would make a 64-world-unit quad — screen-covering, with crippling overdraw.
     addNodeChild(scene, makeAtlasEmitter(64, 32));
@@ -224,7 +224,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('does not upload a texture and signals u_hasTexture off for atlas-less emitters', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(gl.calls.some((c) => c.name === 'texImage2D')).toBe(false);
@@ -237,7 +237,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('restores depth write and disables blend after draw', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     const depthMaskCalls = gl.calls.filter((c) => c.name === 'depthMask');
@@ -248,7 +248,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('uploads view-projection and camera vectors as uniforms', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
@@ -258,7 +258,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('draws multiple emitters in one call', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(3));
     addNodeChild(scene, makeEmitterWithParticles(7));
     drawGlSceneParticleEmitters(state, scene, makeCamera(), makeLights());
@@ -270,7 +270,7 @@ describe('drawGlSceneParticleEmitters', () => {
 
   it('skips disabled emitters', () => {
     const { state, gl } = makeGlSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = makeEmitterWithParticles(5);
     emitter.enabled = false;
     addNodeChild(scene, emitter);

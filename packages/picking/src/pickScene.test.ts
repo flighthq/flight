@@ -15,9 +15,8 @@ import {
 } from '@flighthq/geometry';
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
-import type { Camera, Mesh, Ray3D, SceneHit } from '@flighthq/types';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
+import type { Camera, Mesh, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
 
 import { createSceneHit, pickScene, pickSceneAll, pickSceneAllWithRay3D, pickSceneWithRay3D } from './pickScene';
 
@@ -61,8 +60,8 @@ function triangleMesh(frontFacing: boolean): Mesh {
   return createMesh(geometry, []);
 }
 
-function sceneWithCenteredBox(): { scene: Scene; mesh: Mesh } {
-  const scene = createScene();
+function sceneWithCenteredBox(): { scene: SceneNode; mesh: Mesh } {
+  const scene = createSceneNode(SceneNodeKind);
   const mesh = createMesh(createBoxMeshGeometry(2, 2, 2), []);
   addNodeChild(scene, mesh);
   return { scene, mesh };
@@ -108,7 +107,7 @@ describe('pickScene', () => {
 
   it('returns null for a scene containing only non-mesh nodes', () => {
     const camera = makeCamera();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     // A plain SceneNode is not a Mesh; isMesh() returns false for it.
     const node = createSceneNode();
     addNodeChild(scene, node);
@@ -128,7 +127,7 @@ describe('pickScene', () => {
 
   it('returns null when the scene has no meshes', () => {
     const camera = makeCamera();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const out = createSceneHit();
 
     expect(pickScene(scene, camera, 0, 0, out)).toBeNull();
@@ -153,7 +152,7 @@ describe('pickScene', () => {
   it('returns the nearer of two overlapping meshes', () => {
     // Camera is at z = 5 looking toward the origin in the -Z direction.
     const camera = makeCamera();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
 
     // meshFar is centred at the origin: front face at z = 1, back face at z = -1.
     const meshFar = createMesh(createBoxMeshGeometry(2, 2, 2), []);
@@ -188,7 +187,7 @@ describe('pickScene', () => {
 
   it('prunes the subtree of a disabled group node', () => {
     const camera = makeCamera();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const group = createSceneNode();
     group.enabled = false;
     const mesh = createMesh(createBoxMeshGeometry(2, 2, 2), []);
@@ -201,7 +200,7 @@ describe('pickScene', () => {
 
   it('excludes a mesh rejected by the predicate option', () => {
     const camera = makeCamera();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const meshFar = createMesh(createBoxMeshGeometry(2, 2, 2), []);
     addNodeChild(scene, meshFar);
     const meshNear = createMesh(createBoxMeshGeometry(2, 2, 2), []);
@@ -228,7 +227,7 @@ describe('pickScene', () => {
   it('maps a non-square orthographic viewport without an aspect mismap', () => {
     // View volume is 8 wide (halfWidth 4) but only 2 tall (halfHeight 1).
     const camera = makeOrthoCamera(4, 1);
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     // A 2x2x2 box centred at x = 3 spans x in [2, 4], within the horizontal extent but well outside
     // the vertical one — so a square (aspect = 1) mismap of screenX would miss it.
     const mesh = createMesh(createBoxMeshGeometry(2, 2, 2), []);
@@ -249,7 +248,7 @@ describe('pickScene', () => {
 
   it('hits a rotated and scaled mesh through the local-space path', () => {
     const camera = makeCamera();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(2, 2, 2), []);
     // Non-uniform scale (z doubled) plus a rotation about the Z axis. The +Z face stays on-axis, so
     // its world position is z = 1 * 2 = 2 while the surrounding geometry is rotated — exercising the
@@ -276,7 +275,7 @@ describe('pickScene', () => {
 describe('pickSceneAll', () => {
   it('collects both overlapping meshes sorted by ascending distance', () => {
     const camera = makeCamera();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const meshFar = createMesh(createBoxMeshGeometry(2, 2, 2), []);
     addNodeChild(scene, meshFar);
     const meshNear = createMesh(createBoxMeshGeometry(2, 2, 2), []);
@@ -357,9 +356,9 @@ describe('pickSceneWithRay3D', () => {
   });
 
   it('culls a back-facing triangle but keeps a front-facing one', () => {
-    const front = createScene();
+    const front = createSceneNode(SceneNodeKind);
     addNodeChild(front, triangleMesh(true));
-    const back = createScene();
+    const back = createSceneNode(SceneNodeKind);
     addNodeChild(back, triangleMesh(false));
     const out = createSceneHit();
 

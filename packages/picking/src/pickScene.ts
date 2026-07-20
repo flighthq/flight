@@ -11,7 +11,6 @@ import {
 } from '@flighthq/geometry';
 import { getMeshGeometryTriangleCount, getMeshGeometryVertexPosition } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
-import type { Scene } from '@flighthq/scene';
 import { getSceneNodeWorldBounds, isMesh } from '@flighthq/scene';
 import type { Camera, Mesh, Ray3D, SceneHit, SceneNode, Vector3 } from '@flighthq/types';
 
@@ -54,7 +53,7 @@ export function createSceneHit(): SceneHit {
 //
 // Alias-safe: `out` is only written when a hit is found; on a miss `out` is untouched.
 export function pickScene(
-  scene: Readonly<Scene>,
+  scene: Readonly<SceneNode>,
   camera: Readonly<Camera>,
   screenX: number,
   screenY: number,
@@ -69,7 +68,7 @@ export function pickScene(
 // returns `outArray`. A thin wrapper over `pickSceneAllWithRay3D` that first unprojects the camera
 // ray; on an unprojectable camera the array is emptied and returned.
 export function pickSceneAll(
-  scene: Readonly<Scene>,
+  scene: Readonly<SceneNode>,
   camera: Readonly<Camera>,
   screenX: number,
   screenY: number,
@@ -88,7 +87,7 @@ export function pickSceneAll(
 // reused and new ones allocated as needed, so the array can be kept and refilled across picks. The
 // general primitive behind `pickSceneAll`; the ray need not be unit-length (see `ScenePickOptions`).
 export function pickSceneAllWithRay3D(
-  scene: Readonly<Scene>,
+  scene: Readonly<SceneNode>,
   ray: Readonly<Ray3D>,
   outArray: SceneHit[],
   options?: Readonly<ScenePickOptions>,
@@ -121,7 +120,7 @@ export function pickSceneAllWithRay3D(
 //
 // Alias-safe: `out` is only written when a nearer hit is found; on a miss `out` is untouched.
 export function pickSceneWithRay3D(
-  scene: Readonly<Scene>,
+  scene: Readonly<SceneNode>,
   ray: Readonly<Ray3D>,
   out: SceneHit,
   options?: Readonly<ScenePickOptions>,
@@ -178,7 +177,7 @@ function compareSceneHitByDistance(a: Readonly<SceneHit>, b: Readonly<SceneHit>)
 // camera wrappers). It must not be called re-entrantly, and `onHit` must not itself start another
 // pick. A native port replaces this shared scratch with per-call stack storage.
 function forEachSceneRayHit(
-  scene: Readonly<Scene>,
+  scene: Readonly<SceneNode>,
   ray: Readonly<Ray3D>,
   options: Readonly<ScenePickOptions> | undefined,
   onHit: (hit: Readonly<SceneHit>) => void,

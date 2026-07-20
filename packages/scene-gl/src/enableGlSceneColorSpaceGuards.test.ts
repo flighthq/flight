@@ -5,7 +5,7 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import { createMesh, createScene } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera, SceneLights } from '@flighthq/types';
 
 import { drawGlScene } from './drawGlScene';
@@ -41,7 +41,7 @@ describe('enableGlSceneColorSpaceGuards', () => {
   it('warns once when a scene is drawn directly to the canvas (no target to encode)', () => {
     const { state } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
     const sink = createMemoryLogSink(8);

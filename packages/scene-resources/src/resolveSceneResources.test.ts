@@ -48,7 +48,7 @@ function pendingTexture(): Texture {
 function meshScene(...textures: Texture[]) {
   const scene = createScene();
   for (const texture of textures) {
-    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
   }
   return scene;
 }
@@ -102,7 +102,7 @@ describe('resolveSceneResources', () => {
     const scene = meshScene(a, b);
     const resolver = createSceneResourceResolver();
 
-    resolveSceneResources(scene, resolver);
+    resolveSceneResources(scene.root, resolver);
     await settle(resolver);
 
     expect(a.image).toBe(fakeImage);
@@ -120,7 +120,7 @@ describe('resolveSceneResources', () => {
     const scene = meshScene(wanted, skipped);
     const resolver = createSceneResourceResolver();
 
-    resolveSceneResources(scene, resolver, { select: (texture) => texture === wanted });
+    resolveSceneResources(scene.root, resolver, { select: (texture) => texture === wanted });
     await settle(resolver);
 
     expect(wanted.resource?.state).toBe(ResourceResolutionState.Resolved);
@@ -134,7 +134,7 @@ describe('resolveSceneResources', () => {
     const scene = meshScene(texture);
     const resolver = createSceneResourceResolver({ fetch: async () => null });
 
-    resolveSceneResources(scene, resolver);
+    resolveSceneResources(scene.root, resolver);
     await settle(resolver);
 
     expect(texture.image).toBeNull();
@@ -148,7 +148,7 @@ describe('resolveSceneResources', () => {
     const scene = meshScene(texture);
     const resolver = createSceneResourceResolver();
 
-    resolveSceneResources(scene, resolver);
+    resolveSceneResources(scene.root, resolver);
     await settle(resolver);
 
     expect(texture.resource?.state).toBe(ResourceResolutionState.Failed);
@@ -167,18 +167,18 @@ describe('resolveSceneResources', () => {
     const scene = meshScene(texture);
     const resolver = createSceneResourceResolver();
 
-    resolveSceneResources(scene, resolver, { select: () => true });
+    resolveSceneResources(scene.root, resolver, { select: () => true });
     expect(texture.resource?.state).toBe(ResourceResolutionState.Loading);
     expect(resolver.inFlight.has(texture)).toBe(true);
 
     // Drop it: not in the working set this pass → abort + revert.
-    resolveSceneResources(scene, resolver, { select: () => false });
+    resolveSceneResources(scene.root, resolver, { select: () => false });
     expect(texture.resource?.state).toBe(ResourceResolutionState.Unresolved);
     expect(texture.image).toBeNull();
     expect(resolver.inFlight.has(texture)).toBe(false);
 
     // Re-entry re-requests from scratch.
-    resolveSceneResources(scene, resolver, { select: () => true });
+    resolveSceneResources(scene.root, resolver, { select: () => true });
     expect(texture.resource?.state).toBe(ResourceResolutionState.Loading);
     expect(resolver.inFlight.has(texture)).toBe(true);
 
@@ -191,9 +191,9 @@ describe('resolveSceneResources', () => {
     const scene = meshScene(texture);
     const resolver = createSceneResourceResolver();
 
-    resolveSceneResources(scene, resolver);
+    resolveSceneResources(scene.root, resolver);
     const first = resolver.inFlight.get(texture);
-    resolveSceneResources(scene, resolver);
+    resolveSceneResources(scene.root, resolver);
     expect(resolver.inFlight.get(texture)).toBe(first);
 
     disposeSceneResourceResolver(resolver);
@@ -210,7 +210,7 @@ describe('resolveSceneResources', () => {
     connectSignal(signals.onResourceResolved, (event) => resolved.push(event.texture));
     connectSignal(signals.onResourceFailed, (event) => failed.push(event.texture));
 
-    resolveSceneResources(scene, resolver);
+    resolveSceneResources(scene.root, resolver);
     await settle(resolver);
 
     expect(resolved).toEqual([texture]);
@@ -227,7 +227,7 @@ describe('resolveSceneResources', () => {
     const failed: Texture[] = [];
     connectSignal(signals.onResourceFailed, (event) => failed.push(event.texture));
 
-    resolveSceneResources(scene, resolver);
+    resolveSceneResources(scene.root, resolver);
     await settle(resolver);
 
     expect(failed).toEqual([texture]);

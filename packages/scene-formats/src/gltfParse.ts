@@ -47,7 +47,6 @@ import type {
   GltfSampler,
   GltfTextureInfo,
 } from './gltfSchema';
-import type { SceneImport } from './sceneImport';
 
 // Parses a binary glTF (`.glb`) container into a Scene. The 12-byte header (magic `glTF`, version,
 // length) is validated, then the chunk stream is walked to extract the embedded JSON document and the
@@ -95,43 +94,39 @@ export function createSceneFromGltf(
   return buildSceneFromGltfDocument(doc, null, options, warnings);
 }
 
-// Imports a binary glTF (`.glb`) container as a whole file: every scene plus every animation clip,
-// with clip channels bound to the same SceneNode instances the scenes hold. `options` supplies any
-// external buffer bytes and base path the container still references. The assembly-tier sibling of
-// createSceneFromGlb — reach for it when the file carries animations or multiple scenes.
-export function importGlb(
+// Parses a binary glTF (`.glb`) container into every scene it declares (`Scene[]`), each carrying its
+// geometry; the file's animation clips are attached to the default scene. `options` supplies external
+// buffer bytes and a base path. Malformed containers return an empty array and push a warning.
+export function createScenesFromGlb(
   bytes: Readonly<Uint8Array>,
   warnings?: string[],
   options?: Readonly<GltfImportOptions>,
-): SceneImport {
+): Scene[] {
   const container = readGlbContainer(bytes, warnings);
-  if (container === null) return emptySceneImport();
-  return importGltfDocument(container.document, container.binary, options, warnings);
+  if (container === null) return [];
+  return buildScenesFromGltfDocument(container.document, container.binary, options, warnings);
 }
 
-// Imports a glTF 2.0 document as a whole file: `{ scene, scenes, animations }`. `scene` is the default
-// scene (`doc.scene`), `scenes` every scene the file declares (all sharing one node pool), and
-// `animations` a clip per `animations[]` entry with channels bound to the built nodes. `options`
-// supplies external buffer bytes and a base path for external URIs. The assembly-tier sibling of
-// createSceneFromGltf; the geometry-only primitive stays separate so a scene-only caller tree-shakes
-// the animation code out.
-export function importGltf(
+// Parses a glTF 2.0 document into every scene it declares (`Scene[]`), each carrying its geometry; the
+// file's animation clips are attached to the default scene. Reach for this over createSceneFromGltf when
+// the file declares multiple scenes. A malformed JSON string returns an empty array and pushes a warning.
+export function createScenesFromGltf(
   source: GltfDocument | string,
   warnings?: string[],
   options?: Readonly<GltfImportOptions>,
-): SceneImport {
+): Scene[] {
   let doc: GltfDocument;
   if (typeof source === 'string') {
     try {
       doc = JSON.parse(source) as GltfDocument;
     } catch {
-      warnings?.push('importGltf: source is not valid JSON; returning empty import');
-      return emptySceneImport();
+      warnings?.push('createScenesFromGltf: source is not valid JSON; returning empty array');
+      return [];
     }
   } else {
     doc = source;
   }
-  return importGltfDocument(doc, null, options, warnings);
+  return buildScenesFromGltfDocument(doc, null, options, warnings);
 }
 
 function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void {
@@ -150,9 +145,9 @@ function applyNodeTransform(node: SceneNode, gltfNode: Readonly<GltfNode>): void
   invalidateNodeLocalTransform(node);
 }
 
-// Builds the default scene from a parsed document plus an optional GLB binary chunk (null for the JSON
-// path). This is the geometry-only primitive's core: it deliberately never references the animation
-// builder, so a caller using only createSceneFrom* tree-shakes the animation code out of its bundle.
+// Builds the default scene document from a parsed document plus an optional GLB binary chunk (null for
+// the JSON path), with the file's animation clips attached. For strict geometry with no animation code,
+// use createMeshFromGltf (planned) rather than this scene path.
 function buildSceneFromGltfDocument(
   doc: Readonly<GltfDocument>,
   binary: Readonly<Uint8Array> | null,
@@ -161,7 +156,46 @@ function buildSceneFromGltfDocument(
 ): Scene {
   const pool = buildGltfNodePool(doc, binary, options, warnings);
   if (pool === null) return createScene();
-  return assembleGltfScene(doc, pool.sceneNodes, doc.scene ?? 0);
+  const scene = assembleGltfScene(doc, pool.sceneNodes, doc.scene ?? 0);
+  attachGltfAnimations(scene, doc, pool.buffers, pool.sceneNodes, warnings);
+  return scene;
+}
+
+// Builds every scene the document declares (each a view of the shared node pool), returning them in
+// declaration order. The file's animation clips target the shared pool; they are attached to the default
+// scene (`doc.scene`) — the common case is a single scene, or clips that drive the main one. Per-scene
+// clip distribution is a future refinement.
+function buildScenesFromGltfDocument(
+  doc: Readonly<GltfDocument>,
+  binary: Readonly<Uint8Array> | null,
+  options: Readonly<GltfImportOptions> | undefined,
+  warnings?: string[],
+): Scene[] {
+  const pool = buildGltfNodePool(doc, binary, options, warnings);
+  if (pool === null) return [];
+  const sceneCount = doc.scenes?.length ?? 0;
+  const scenes: Scene[] = [];
+  for (let i = 0; i < sceneCount; i++) scenes.push(assembleGltfScene(doc, pool.sceneNodes, i));
+  const defaultIndex = doc.scene ?? 0;
+  const primary = scenes[defaultIndex] ?? assembleGltfScene(doc, pool.sceneNodes, defaultIndex);
+  if (scenes.length === 0) scenes.push(primary);
+  attachGltfAnimations(primary, doc, pool.buffers, pool.sceneNodes, warnings);
+  return scenes;
+}
+
+// Builds the document's animation clips (each targeting the shared node pool) and pushes them onto the
+// given scene document's clip list.
+function attachGltfAnimations(
+  scene: Scene,
+  doc: Readonly<GltfDocument>,
+  buffers: readonly Uint8Array[],
+  sceneNodes: readonly SceneNode[],
+  warnings?: string[],
+): void {
+  const clips = (doc.animations ?? [])
+    .map((animation) => buildGltfAnimationClip(doc, buffers, sceneNodes, animation, warnings))
+    .filter((clip): clip is AnimationClip => clip !== null);
+  if (clips.length > 0) (scene.animations as AnimationClip[]).push(...clips);
 }
 
 // The document's shared node pool: every `nodes[]` entry built into a SceneNode (with geometry,
@@ -245,35 +279,9 @@ function assembleGltfScene(doc: Readonly<GltfDocument>, sceneNodes: readonly Sce
   const roots = doc.scenes?.[sceneIndex]?.nodes ?? topLevelNodeIndices(doc.nodes ?? []);
   for (let r = 0; r < roots.length; r++) {
     const node = sceneNodes[roots[r]];
-    if (node !== undefined) addNodeChild(scene, node);
+    if (node !== undefined) addNodeChild(scene.root, node);
   }
   return scene;
-}
-
-// Shared whole-file import for both the JSON and GLB entry points: builds the node pool once, then
-// every scene (as a view of that pool) and every animation clip (bound to that pool's nodes).
-function importGltfDocument(
-  doc: Readonly<GltfDocument>,
-  binary: Readonly<Uint8Array> | null,
-  options: Readonly<GltfImportOptions> | undefined,
-  warnings?: string[],
-): SceneImport {
-  const pool = buildGltfNodePool(doc, binary, options, warnings);
-  if (pool === null) return emptySceneImport();
-
-  const sceneCount = doc.scenes?.length ?? 0;
-  const scenes: Scene[] = [];
-  for (let i = 0; i < sceneCount; i++) scenes.push(assembleGltfScene(doc, pool.sceneNodes, i));
-  const defaultIndex = doc.scene ?? 0;
-  // With no `scenes[]` at all, still surface the top-level-node fallback scene as the primary.
-  const scene = scenes[defaultIndex] ?? assembleGltfScene(doc, pool.sceneNodes, defaultIndex);
-  if (scenes.length === 0) scenes.push(scene);
-
-  const animations = (doc.animations ?? [])
-    .map((animation) => buildGltfAnimationClip(doc, pool.buffers, pool.sceneNodes, animation, warnings))
-    .filter((clip): clip is AnimationClip => clip !== null);
-
-  return { animations, scene, scenes };
 }
 
 // Builds one AnimationClip from a glTF animation: each channel becomes an AnimationChannel whose track
@@ -370,11 +378,6 @@ function collectMorphableChildMeshes(node: Readonly<SceneNode>): Mesh[] {
     if (isMesh(child)) out.push(child as unknown as Mesh);
   }
   return out;
-}
-
-function emptySceneImport(): SceneImport {
-  const scene = createScene();
-  return { animations: [], scene, scenes: [scene] };
 }
 
 // Attaches a skin to the Mesh node(s) a glTF node produced: directly when the node is itself a Mesh

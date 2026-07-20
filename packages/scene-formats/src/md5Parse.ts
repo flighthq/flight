@@ -16,7 +16,6 @@ import type { AnimationClip, Material, Mesh, SceneNode, Skeleton3D } from '@flig
 
 import { parseMd5Anim } from './md5AnimParse';
 import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
-import type { SceneImport } from './sceneImport';
 import type { SkinInfluence } from './shared';
 import {
   convertPositionsZUpToYUp,
@@ -42,7 +41,7 @@ import {
 // position plus the joint position.
 //
 // Malformed lines push a warning and are skipped; the function never throws on bad input.
-export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Scene {
+export function createSceneFromMd5Mesh(source: string, animSource?: string, warnings?: string[]): Scene {
   const scene = createScene();
 
   const joints: Md5Joint[] = [];
@@ -170,7 +169,7 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       }
     }
 
-    addNodeChild(scene, skeletonRoot);
+    addNodeChild(scene.root, skeletonRoot);
 
     // Capture the current (bind) pose as the skin's rest pose: createSkeleton3D with no explicit
     // inverse-bind matrices derives them from the joint nodes' world transforms, which are set to
@@ -301,27 +300,20 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       }
       const meshNode: Mesh = createMesh(geometry, materials);
       if (skeleton !== null) meshNode.skin = { skeleton, skeletonRoot };
-      addNodeChild(scene, meshNode as unknown as SceneNode);
+      addNodeChild(scene.root, meshNode as unknown as SceneNode);
     }
   }
 
-  return scene;
-}
-
-// Imports an MD5 model as a whole: the mesh's scene (skeleton + skinned meshes) plus, when the paired
-// `.md5anim` source is supplied, its skeletal animation folded into one call. The assembly-tier sibling
-// of createSceneFromMd5Mesh. MD5 splits mesh and animation across two files, so `animSource` is a
-// separate argument (unlike AWD's single-file importAwd); when omitted, `animations` is empty. The clip
-// binds to the scene's own skeleton joints, so posing it deforms the skinned mesh with no caller
-// threading. MD5 declares a single scene, so `scenes` is a one-element array.
-export function importMd5Mesh(meshSource: string, animSource?: string, warnings?: string[]): SceneImport {
-  const scene = createSceneFromMd5Mesh(meshSource, warnings);
-  let clip: AnimationClip | null = null;
+  // When the paired `.md5anim` source is supplied, fold its skeletal animation onto the scene's own
+  // skeleton joints (MD5 splits mesh and animation across two files), so posing the clip deforms the mesh
+  // with no caller re-threading. Omitted `animSource` leaves `animations` empty.
   if (animSource !== undefined) {
-    const joints = findSceneSkeletonJoints(scene);
-    clip = joints !== null ? parseMd5Anim(animSource, joints, warnings) : null;
+    const joints = findSceneSkeletonJoints(scene.root);
+    const clip = joints !== null ? parseMd5Anim(animSource, joints, warnings) : null;
+    if (clip !== null) (scene.animations as AnimationClip[]).push(clip);
   }
-  return { animations: clip !== null ? [clip] : [], scene, scenes: [scene] };
+
+  return scene;
 }
 
 // Parses the joints { ... } block. Returns the line index after the closing brace.
