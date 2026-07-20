@@ -19,7 +19,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
-import { createSceneFromAwd, parseAwdSkeletonAnimation } from './awdParse';
+import { createSceneFromAwd, parseAwdSkeletonAnimations } from './awdParse';
 import {
   AWD_BLOCK_CONTAINER,
   AWD_BLOCK_MATERIAL,
@@ -302,6 +302,13 @@ const SKINNED_TRIANGLE_AWD = (() => {
   );
   return concatBytes(buildAwdHeader(body.length), body);
 })();
+
+// The single clip a one-animation AWD fixture yields (undefined for a file with no clip).
+const firstAwdClip = (
+  bytes: Readonly<Uint8Array>,
+  joints: readonly SceneNode[],
+  warnings?: string[],
+): AnimationClip | undefined => Object.values(parseAwdSkeletonAnimations(bytes, joints, warnings))[0];
 
 describe('createSceneFromAwd', () => {
   it('parses a single triangle with positions and indices', () => {
@@ -675,8 +682,8 @@ describe('createSceneFromAwd', () => {
 
     // The verify contract: parse the animation over the mesh's own skeleton joints, so posing the
     // clip deforms the skinned mesh — the animation, skeleton, and skin share one joint hierarchy.
-    const clip = parseAwdSkeletonAnimation(SKINNED_TRIANGLE_AWD, joints)!;
-    expect(clip).not.toBeNull();
+    const clip = firstAwdClip(SKINNED_TRIANGLE_AWD, joints)!;
+    expect(clip).toBeDefined();
     // Each joint gets a translation channel and a rotation channel, in joint order.
     expect(clip.channels).toHaveLength(4);
     expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
@@ -825,7 +832,7 @@ describe('createSceneFromAwd animations', () => {
   });
 });
 
-describe('parseAwdSkeletonAnimation', () => {
+describe('parseAwdSkeletonAnimations', () => {
   it('binds channels to the provided joint nodes in skeleton order', () => {
     // parentIndex 0 = root (no parent); parentIndex 1 = parent is joint[0] (1-based).
     const skeletonBody = buildSkeletonBody('TestSkeleton', [
@@ -859,8 +866,8 @@ describe('parseAwdSkeletonAnimation', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const joints = [createSceneNode(), createSceneNode()];
-    const clip = parseAwdSkeletonAnimation(awd, joints);
-    expect(clip).not.toBeNull();
+    const clip = firstAwdClip(awd, joints);
+    expect(clip).toBeDefined();
 
     // Each joint gets a translation channel and a rotation channel, in joint order.
     expect(clip!.channels).toHaveLength(4);
@@ -901,7 +908,7 @@ describe('parseAwdSkeletonAnimation', () => {
     );
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()])!;
+    const clip = firstAwdClip(awd, [createSceneNode()])!;
     const track = clip.channels[0].track;
 
     const out = [0, 0, 0];
@@ -937,7 +944,7 @@ describe('parseAwdSkeletonAnimation', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const joints = [createSceneNode()];
-    const clip = parseAwdSkeletonAnimation(awd, joints)!;
+    const clip = firstAwdClip(awd, joints)!;
     const target = clip.channels[0].targetRef as SceneAnimationTarget;
     expect(target.node).toBe(joints[0]);
     expect(target.path).toBe('Translation');
@@ -958,7 +965,7 @@ describe('parseAwdSkeletonAnimation', () => {
     const body = concatBytes(skeletonBlock, skeletonBody, poseBlock, poseBody, animBlock, animBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()])!;
+    const clip = firstAwdClip(awd, [createSceneNode()])!;
     const out = [0, 0, 0];
     sampleAnimationTrack(out, clip.channels[0].track, 0);
     expect(out).toEqual([0, 0, 0]);
@@ -981,16 +988,16 @@ describe('parseAwdSkeletonAnimation', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const warnings: string[] = [];
-    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings);
-    expect(clip).toBeNull();
+    const clip = firstAwdClip(awd, [createSceneNode()], warnings);
+    expect(clip).toBeUndefined();
     expect(warnings.some((w) => w.includes('1 nodes but skeleton has 2 joints'))).toBe(true);
   });
 
   it('returns null and warns when no skeleton blocks are found', () => {
     const awd = buildAwdHeader(0);
     const warnings: string[] = [];
-    const clip = parseAwdSkeletonAnimation(awd, [], warnings);
-    expect(clip).toBeNull();
+    const clip = firstAwdClip(awd, [], warnings);
+    expect(clip).toBeUndefined();
     expect(warnings.some((w) => w.includes('no skeleton blocks'))).toBe(true);
   });
 
@@ -1004,23 +1011,23 @@ describe('parseAwdSkeletonAnimation', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const warnings: string[] = [];
-    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings);
-    expect(clip).toBeNull();
+    const clip = firstAwdClip(awd, [createSceneNode()], warnings);
+    expect(clip).toBeUndefined();
     expect(warnings.some((w) => w.includes('no skeleton animation blocks'))).toBe(true);
   });
 
   it('returns null and warns for truncated input', () => {
     const warnings: string[] = [];
-    const clip = parseAwdSkeletonAnimation(new Uint8Array(4), [], warnings);
-    expect(clip).toBeNull();
+    const clip = firstAwdClip(new Uint8Array(4), [], warnings);
+    expect(clip).toBeUndefined();
     expect(warnings.some((w) => w.includes('header'))).toBe(true);
   });
 
   it('returns null and warns for invalid magic', () => {
     const bogus = new Uint8Array(12);
     const warnings: string[] = [];
-    const clip = parseAwdSkeletonAnimation(bogus, [], warnings);
-    expect(clip).toBeNull();
+    const clip = firstAwdClip(bogus, [], warnings);
+    expect(clip).toBeUndefined();
     expect(warnings.some((w) => w.includes('magic'))).toBe(true);
   });
 
@@ -1037,8 +1044,8 @@ describe('parseAwdSkeletonAnimation', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const warnings: string[] = [];
-    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings);
-    expect(clip).not.toBeNull();
+    const clip = firstAwdClip(awd, [createSceneNode()], warnings);
+    expect(clip).toBeDefined();
     expect(warnings.some((w) => w.includes('pose block 99'))).toBe(true);
   });
 
@@ -1072,7 +1079,7 @@ describe('parseAwdSkeletonAnimation', () => {
     );
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()])!;
+    const clip = firstAwdClip(awd, [createSceneNode()])!;
     expect(clip.duration).toBeCloseTo(1.0);
 
     const track = clip.channels[0].track;
@@ -1080,7 +1087,7 @@ describe('parseAwdSkeletonAnimation', () => {
     expect(track.times[1]).toBeCloseTo(0.25);
   });
 
-  it('selects an animation block by name, defaulting to the first and warning on an absent name', () => {
+  it('keys every named animation block into the map', () => {
     const skeletonBody = buildSkeletonBody('Skeleton', [
       { name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM },
     ]);
@@ -1118,16 +1125,10 @@ describe('parseAwdSkeletonAnimation', () => {
       return out[0];
     };
 
-    // No name → first block in file order ('idle', X=3).
-    expect(sampleX(parseAwdSkeletonAnimation(awd, [createSceneNode()])!)).toBeCloseTo(3);
-
-    // Named → the matching block's poses ('attack', X=9).
-    expect(sampleX(parseAwdSkeletonAnimation(awd, [createSceneNode()], undefined, 'attack')!)).toBeCloseTo(9);
-
-    // Absent name → warns and falls back to the first block ('idle', X=3).
-    const warnings: string[] = [];
-    const clip = parseAwdSkeletonAnimation(awd, [createSceneNode()], warnings, 'missing')!;
-    expect(sampleX(clip)).toBeCloseTo(3);
-    expect(warnings.some((w) => w.includes('no animation block named "missing"'))).toBe(true);
+    // Every named block is keyed into the map, each sampling its own poses ('idle' X=3, 'attack' X=9).
+    const clips = parseAwdSkeletonAnimations(awd, [createSceneNode()]);
+    expect(Object.keys(clips).sort()).toEqual(['attack', 'idle']);
+    expect(sampleX(clips.idle)).toBeCloseTo(3);
+    expect(sampleX(clips.attack)).toBeCloseTo(9);
   });
 });

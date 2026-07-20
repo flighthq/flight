@@ -198,7 +198,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   // mesh binds to it via mesh.skin and its joint nodes are posable by the animation clip. AWD binds a
   // mesh to a skeleton through an animator block Flight does not parse yet; with the common single-
   // skeleton file (the shambler) every skinned mesh is bound to that one skeleton. The joint nodes are
-  // reachable as mesh.skin.skeleton.joints — the same handle parseAwdSkeletonAnimation binds against.
+  // reachable as mesh.skin.skeleton.joints — the same handle parseAwdSkeletonAnimations binds against.
   let skin: Skin | null = null;
   if (skeletonBlocks.size > 0) {
     const built = buildAwdSkeleton(skeletonBlocks.values().next().value!);
@@ -286,49 +286,46 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
 
   // Bind the file's skeleton animation to the joints the scene already holds (exposed as
   // mesh.skin.skeleton.joints), so the returned document carries its clips with no caller re-threading.
+  // Fold every named skeleton animation the file carries — keyed by its block name — into the scene's
+  // animation map, all bound to the joints the scene already holds (mesh.skin.skeleton.joints).
   const joints = findSceneSkeletonJoints(scene.root);
-  const clip = joints !== null ? parseAwdSkeletonAnimation(bytes, joints, warnings) : null;
-  // AWD can carry several named skeleton animations; createSceneFromAwd folds the first as 'default'.
-  // Enumerating and keying every named block by name is a later enhancement.
-  if (clip !== null) scene.animations.default = clip;
+  if (joints !== null) Object.assign(scene.animations, parseAwdSkeletonAnimations(bytes, joints, warnings));
 
   return scene;
 }
 
-// Parses AWD skeleton-pose and skeleton-animation blocks into an AnimationClip that drives the given
-// joint SceneNodes — the joints createSceneFromAwd built and exposed as mesh.skin.skeleton.joints.
-// Binding to those same nodes (rather than freshly-created ones) is what lets the clip deform the
-// skinned mesh: the animation, the skeleton, and the skin all reference one joint hierarchy. This
-// mirrors parseMd5Anim(source, joints). Channels drive each joint's translation per keyframe. Returns
-// null when the header is invalid or no skeleton/animation blocks are found. The `joints` array must
-// be in AWD skeleton order (index j = joint j); a length mismatch with the file's skeleton warns.
-// A file may carry several named animation blocks (idle/walk/attack); `animationName` selects one by
-// name, defaulting to the first block in file order and warning when a requested name is absent.
-export function parseAwdSkeletonAnimation(
+// Parses every named skeleton-animation block in an AWD file into a name→clip map. Each clip drives the
+// given joint SceneNodes — the joints createSceneFromAwd built and exposed as mesh.skin.skeleton.joints —
+// so binding to those same nodes (rather than freshly-created ones) is what lets a clip deform the skinned
+// mesh: animation, skeleton, and skin all reference one joint hierarchy. Mirrors parseMd5Anim(source,
+// joints). A file may carry several named animations (idle/walk/attack); each is keyed by its block name
+// (or `animation${i}` in file order when unnamed), so a caller selects one with `clips['walk']`. Returns
+// an empty map when the header is invalid or no skeleton/animation blocks are found. The `joints` array
+// must be in AWD skeleton order (index j = joint j); a length mismatch with the file's skeleton warns.
+export function parseAwdSkeletonAnimations(
   bytes: Readonly<Uint8Array>,
   joints: readonly SceneNode[],
   warnings?: string[],
-  animationName?: string,
-): AnimationClip | null {
+): Record<string, AnimationClip> {
   const source = bytes as Uint8Array;
   if (source.byteLength < AWD_HEADER_BYTES) {
-    warnings?.push('parseAwdSkeletonAnimation: byte length is smaller than the 12-byte AWD header');
-    return null;
+    warnings?.push('parseAwdSkeletonAnimations: byte length is smaller than the 12-byte AWD header');
+    return {};
   }
 
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
 
   if (source[0] !== AWD_MAGIC_0 || source[1] !== AWD_MAGIC_1 || source[2] !== AWD_MAGIC_2) {
-    warnings?.push("parseAwdSkeletonAnimation: magic is not 'AWD'; not an AWD file");
-    return null;
+    warnings?.push("parseAwdSkeletonAnimations: magic is not 'AWD'; not an AWD file");
+    return {};
   }
 
   const compression = source[7];
   if (compression !== AWD_COMPRESSION_NONE) {
     warnings?.push(
-      `parseAwdSkeletonAnimation: compression method ${compression} is not supported; only uncompressed AWD is supported`,
+      `parseAwdSkeletonAnimations: compression method ${compression} is not supported; only uncompressed AWD is supported`,
     );
-    return null;
+    return {};
   }
 
   const bodyLength = view.getUint32(8, true);
@@ -348,7 +345,7 @@ export function parseAwdSkeletonAnimation(
     const blockDataStart = offset + AWD_BLOCK_HEADER_BYTES;
 
     if (blockDataStart + blockLength > bodyEnd) {
-      warnings?.push('parseAwdSkeletonAnimation: block length runs past the end of the body');
+      warnings?.push('parseAwdSkeletonAnimations: block length runs past the end of the body');
       break;
     }
 
@@ -385,39 +382,52 @@ export function parseAwdSkeletonAnimation(
   }
 
   if (skeletonBlocks.size === 0) {
-    warnings?.push('parseAwdSkeletonAnimation: no skeleton blocks found');
-    return null;
+    warnings?.push('parseAwdSkeletonAnimations: no skeleton blocks found');
+    return {};
   }
   if (animationBlocks.size === 0) {
-    warnings?.push('parseAwdSkeletonAnimation: no skeleton animation blocks found');
-    return null;
+    warnings?.push('parseAwdSkeletonAnimations: no skeleton animation blocks found');
+    return {};
   }
 
   const parsedSkeleton = skeletonBlocks.values().next().value!;
-  // A file can carry several named animations (e.g. idle/walk/attack); select by name when asked,
-  // otherwise use the first block in file order. A requested name that is absent warns and falls back.
-  let parsedAnimation = animationBlocks.values().next().value!;
-  if (animationName !== undefined) {
-    const named = [...animationBlocks.values()].find((a) => a.name === animationName);
-    if (named !== undefined) {
-      parsedAnimation = named;
-    } else {
-      warnings?.push(`parseAwdSkeletonAnimation: no animation block named "${animationName}"; using the first block`);
-    }
-  }
-
   if (joints.length < parsedSkeleton.joints.length) {
     warnings?.push(
-      `parseAwdSkeletonAnimation: joints array has ${joints.length} nodes but skeleton has ${parsedSkeleton.joints.length} joints`,
+      `parseAwdSkeletonAnimations: joints array has ${joints.length} nodes but skeleton has ${parsedSkeleton.joints.length} joints`,
     );
-    return null;
+    return {};
   }
 
-  const jointCount = parsedSkeleton.joints.length;
-  const poseCount = parsedAnimation.poses.length;
+  // A file can carry several named animations (idle/walk/attack); build a clip for each and key it by the
+  // block's name (falling back to file order when unnamed). All bind to the one shared joint hierarchy.
+  const out: Record<string, AnimationClip> = {};
+  let index = 0;
+  for (const parsedAnimation of animationBlocks.values()) {
+    const clip = buildAwdSkeletonAnimationClip(
+      parsedAnimation,
+      parsedSkeleton.joints.length,
+      poseBlocks,
+      joints,
+      warnings,
+    );
+    if (clip !== null) out[parsedAnimation.name || `animation${index}`] = clip;
+    index++;
+  }
+  return out;
+}
 
+// Builds one AnimationClip from a parsed AWD skeleton-animation block: samples each pose's per-joint local
+// matrix into a translation + rotation track bound to the matching joint node. Null when it has no poses.
+function buildAwdSkeletonAnimationClip(
+  parsedAnimation: Readonly<ParsedSkeletonAnimation>,
+  jointCount: number,
+  poseBlocks: ReadonlyMap<number, ParsedSkeletonPose>,
+  joints: readonly SceneNode[],
+  warnings?: string[],
+): AnimationClip | null {
+  const poseCount = parsedAnimation.poses.length;
   if (poseCount === 0) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton animation has no poses');
+    warnings?.push('parseAwdSkeletonAnimations: skeleton animation has no poses');
     return null;
   }
 
@@ -443,7 +453,7 @@ export function parseAwdSkeletonAnimation(
       const pose = poseBlocks.get(poseBlockId);
       if (pose === undefined) {
         warnings?.push(
-          `parseAwdSkeletonAnimation: pose block ${poseBlockId} referenced by animation not found; using identity`,
+          `parseAwdSkeletonAnimations: pose block ${poseBlockId} referenced by animation not found; using identity`,
         );
         translationValues.push(0, 0, 0);
         rotationValues.push(0, 0, 0, 1);
@@ -1225,14 +1235,14 @@ function parseSkeletonBlock(
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before name');
+    warnings?.push('parseAwdSkeletonAnimations: skeleton block truncated before name');
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint count');
+    warnings?.push('parseAwdSkeletonAnimations: skeleton block truncated before joint count');
     return null;
   }
   const jointCount = dv.getUint16(offset, true);
@@ -1244,7 +1254,7 @@ function parseSkeletonBlock(
   for (let j = 0; j < jointCount; j++) {
     // Joint ID (sequential, 0-based).
     if (offset + 4 > end) {
-      warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint fields');
+      warnings?.push('parseAwdSkeletonAnimations: skeleton block truncated before joint fields');
       return null;
     }
     offset += 2; // skip jointId (implicit from array position)
@@ -1252,7 +1262,7 @@ function parseSkeletonBlock(
     offset += 2;
 
     if (offset + 2 > end) {
-      warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint name');
+      warnings?.push('parseAwdSkeletonAnimations: skeleton block truncated before joint name');
       return null;
     }
     const jointNameResult = readAwdString(view, source, offset);
@@ -1260,7 +1270,7 @@ function parseSkeletonBlock(
 
     const floatSize = matrixWide ? 8 : 4;
     if (offset + 12 * floatSize > end) {
-      warnings?.push('parseAwdSkeletonAnimation: skeleton block truncated before joint transform');
+      warnings?.push('parseAwdSkeletonAnimations: skeleton block truncated before joint transform');
       return null;
     }
     const transformResult = readAwdTransform(view, offset, matrixWide);
@@ -1290,14 +1300,14 @@ function parseSkeletonPoseBlock(
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before name');
+    warnings?.push('parseAwdSkeletonAnimations: skeleton pose block truncated before name');
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before joint count');
+    warnings?.push('parseAwdSkeletonAnimations: skeleton pose block truncated before joint count');
     return null;
   }
   const jointCount = dv.getUint16(offset, true);
@@ -1308,7 +1318,7 @@ function parseSkeletonPoseBlock(
   const jointTransforms: (Float64Array | null)[] = [];
   for (let j = 0; j < jointCount; j++) {
     if (offset + 1 > end) {
-      warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before hasTransform');
+      warnings?.push('parseAwdSkeletonAnimations: skeleton pose block truncated before hasTransform');
       return null;
     }
     const hasTransform = dv.getUint8(offset);
@@ -1317,7 +1327,7 @@ function parseSkeletonPoseBlock(
     if (hasTransform !== 0) {
       const floatSize = matrixWide ? 8 : 4;
       if (offset + 12 * floatSize > end) {
-        warnings?.push('parseAwdSkeletonAnimation: skeleton pose block truncated before joint transform');
+        warnings?.push('parseAwdSkeletonAnimations: skeleton pose block truncated before joint transform');
         return null;
       }
       const transformResult = readAwdTransform(view, offset, matrixWide);
@@ -1345,14 +1355,14 @@ function parseSkeletonAnimationBlock(
   let offset = start;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before name');
+    warnings?.push('parseAwdSkeletonAnimations: skeleton animation block truncated before name');
     return null;
   }
   const nameResult = readAwdString(view, source, offset);
   offset = nameResult.end;
 
   if (offset + 2 > end) {
-    warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before frame count');
+    warnings?.push('parseAwdSkeletonAnimations: skeleton animation block truncated before frame count');
     return null;
   }
   const poseCount = dv.getUint16(offset, true);
@@ -1363,14 +1373,14 @@ function parseSkeletonAnimationBlock(
   const poses: { duration: number; poseBlockId: number }[] = [];
   for (let p = 0; p < poseCount; p++) {
     if (offset + 4 > end) {
-      warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before pose block ID');
+      warnings?.push('parseAwdSkeletonAnimations: skeleton animation block truncated before pose block ID');
       return null;
     }
     const poseBlockId = dv.getUint32(offset, true);
     offset += 4;
 
     if (offset + 2 > end) {
-      warnings?.push('parseAwdSkeletonAnimation: skeleton animation block truncated before pose duration');
+      warnings?.push('parseAwdSkeletonAnimations: skeleton animation block truncated before pose duration');
       return null;
     }
     const duration = dv.getUint16(offset, true);
