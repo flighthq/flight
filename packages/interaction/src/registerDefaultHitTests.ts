@@ -9,7 +9,6 @@ import {
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
-  StageKind,
   TextLabelKind,
   TilemapKind,
   VideoKind,
@@ -23,7 +22,6 @@ import {
   defaultRenderViewHitTestHandler,
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
-  defaultStageHitTestHandler,
   defaultTextHitTestHandler,
   defaultVideoHitTestHandler,
 } from './displayHitTests';
@@ -45,7 +43,6 @@ export function registerDefaultHitTests(): void {
   registerHitTest(Scale9ShapeKind, defaultShapeHitTestHandler);
   registerHitTest(ShapeKind, defaultShapeHitTestHandler);
   registerHitTest(SpriteKind, defaultSpriteHitTestHandler);
-  registerHitTest(StageKind, defaultStageHitTestHandler);
   registerHitTest(TextLabelKind, defaultTextHitTestHandler);
   registerHitTest(TilemapKind, defaultTilemapHitTestHandler);
   registerHitTest(VideoKind, defaultVideoHitTestHandler);

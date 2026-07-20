@@ -25,8 +25,8 @@ describe('registerDefaultHitTests', () => {
   it('containers return null for self hit', () => {
     registerDefaultHitTests();
 
-    const stage = createStage();
-    setRectangle(getNodeLocalBoundsRectangle(stage), 0, 0, 100, 100);
-    expect(findGraphHitTarget(stage, 50, 50)).toBeNull();
+    const root = createStage().root;
+    setRectangle(getNodeLocalBoundsRectangle(root), 0, 0, 100, 100);
+    expect(findGraphHitTarget(root, 50, 50)).toBeNull();
   });
 });

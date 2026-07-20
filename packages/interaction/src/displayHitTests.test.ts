@@ -10,7 +10,6 @@ import {
   defaultRenderViewHitTestHandler,
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
-  defaultStageHitTestHandler,
   defaultTextHitTestHandler,
   defaultTextInputHitTestHandler,
   defaultVideoHitTestHandler,
@@ -90,13 +89,6 @@ describe('defaultShapeHitTestHandler', () => {
   it('returns false when point is outside local bounds', () => {
     const obj = makeDisplayObject();
     expect(defaultShapeHitTestHandler(obj, 200, 200)).toBe(false);
-  });
-});
-
-describe('defaultStageHitTestHandler', () => {
-  it('always returns false â€” containers have no self hit area', () => {
-    const obj = makeDisplayObject();
-    expect(defaultStageHitTestHandler(obj, 50, 50)).toBe(false);
   });
 });
 

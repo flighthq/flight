@@ -1,14 +1,10 @@
-import { createRectangle } from '@flighthq/geometry';
 import { addNodeChild } from '@flighthq/node';
 import { connectSignal } from '@flighthq/signals';
-import type { Node, PartialNode, Stage } from '@flighthq/types';
-import { StageKind } from '@flighthq/types';
+import type { Stage } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
 import {
-  computeStageLocalBoundsRectangle,
   createStage,
-  createStageData,
   createStageRuntime,
   createStageSignals,
   enableStageSignals,
@@ -18,16 +14,6 @@ import {
   setStageSize,
 } from './stage';
 
-describe('computeStageLocalBoundsRectangle', () => {
-  it('sets out dimensions from stageWidth and stageHeight', () => {
-    const stage = createStage({ data: { stageWidth: 800, stageHeight: 600 } });
-    const out = createRectangle();
-    computeStageLocalBoundsRectangle(out, stage as unknown as Node);
-    expect(out.width).toBe(800);
-    expect(out.height).toBe(600);
-  });
-});
-
 describe('createStage', () => {
   let stage: Stage;
 
@@ -36,58 +22,31 @@ describe('createStage', () => {
   });
 
   it('initializes default values', () => {
-    expect(stage.data.color).toBe(null);
-    expect(stage.data.stageHeight).toBe(550);
-    expect(stage.data.stageWidth).toBe(400);
-    expect(stage.kind).toStrictEqual(StageKind);
+    expect(stage.color).toBe(null);
+    expect(stage.stageHeight).toBe(550);
+    expect(stage.stageWidth).toBe(400);
+    expect(stage.align).toBe('topleft');
+    expect(stage.scaleMode).toBe('noscale');
+  });
+
+  it('allocates a display-object root the stage points back to', () => {
+    expect(stage.root).toBeDefined();
+    expect(getDisplayObjectStage(stage.root)).toBe(stage);
   });
 
   it('allows pre-defined values', () => {
-    const base: PartialNode<Stage> = {
-      data: {
-        color: 0xff0000ff,
-        stageHeight: 1000,
-        stageWidth: 2000,
-      },
-    };
-    const obj = createStage(base);
-    const data = base.data!;
-    expect(obj.data.color).toStrictEqual(data.color);
-    expect(obj.data.stageHeight).toStrictEqual(data.stageHeight);
-    expect(obj.data.stageWidth).toStrictEqual(data.stageWidth);
-  });
-
-  it('returns a new object for better hidden-class performance', () => {
-    const base = {};
-    const obj = createStage(base);
-    expect(obj).not.toStrictEqual(base);
-  });
-});
-
-describe('createStageData', () => {
-  it('returns default values', () => {
-    const data = createStageData();
-    expect(data.stageWidth).toBe(400);
-    expect(data.stageHeight).toBe(550);
-    expect(data.color).toBe(null);
-  });
-
-  it('allows pre-defined values', () => {
-    const data = createStageData({ stageWidth: 1920, stageHeight: 1080 });
-    expect(data.stageWidth).toBe(1920);
-    expect(data.stageHeight).toBe(1080);
+    const obj = createStage({ color: 0xff0000ff, stageHeight: 1000, stageWidth: 2000 });
+    expect(obj.color).toStrictEqual(0xff0000ff);
+    expect(obj.stageHeight).toStrictEqual(1000);
+    expect(obj.stageWidth).toStrictEqual(2000);
   });
 });
 
 describe('createStageRuntime', () => {
-  it('returns a non-null runtime', () => {
+  it('returns a non-null runtime with stageSignals initialized to null', () => {
     const runtime = createStageRuntime();
     expect(runtime).not.toBeNull();
-  });
-
-  it('uses computeStageLocalBoundsRectangle', () => {
-    const runtime = createStageRuntime();
-    expect(runtime.computeLocalBoundsRectangle).toStrictEqual(computeStageLocalBoundsRectangle);
+    expect(runtime.stageSignals).toBeNull();
   });
 });
 
@@ -126,17 +85,17 @@ describe('getDisplayObjectStage', () => {
     expect(getDisplayObjectStage(obj)).toBeNull();
   });
 
-  it('returns null when the root is not a Stage', () => {
+  it('returns null when the root is not owned by a Stage', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     addNodeChild(root, child);
     expect(getDisplayObjectStage(child)).toBeNull();
   });
 
-  it('returns the Stage when it is the root', () => {
+  it('returns the Stage when a child is added under its root', () => {
     const stage = createStage();
     const child = createDisplayObject();
-    addNodeChild(stage, child);
+    addNodeChild(stage.root, child);
     expect(getDisplayObjectStage(child)).toBe(stage);
   });
 
@@ -144,7 +103,7 @@ describe('getDisplayObjectStage', () => {
     const stage = createStage();
     const mid = createDisplayObject();
     const leaf = createDisplayObject();
-    addNodeChild(stage, mid);
+    addNodeChild(stage.root, mid);
     addNodeChild(mid, leaf);
     expect(getDisplayObjectStage(leaf)).toBe(stage);
   });
@@ -155,11 +114,6 @@ describe('getStageRuntime', () => {
     const stage = createStage();
     const runtime = getStageRuntime(stage);
     expect(runtime).not.toBeNull();
-  });
-
-  it('initializes stageSignals to null', () => {
-    const runtime = createStageRuntime();
-    expect(runtime.stageSignals).toBeNull();
   });
 });
 
@@ -180,8 +134,8 @@ describe('setStageSize', () => {
   it('updates stageWidth and stageHeight', () => {
     const stage = createStage();
     setStageSize(stage, 1920, 1080);
-    expect(stage.data.stageWidth).toBe(1920);
-    expect(stage.data.stageHeight).toBe(1080);
+    expect(stage.stageWidth).toBe(1920);
+    expect(stage.stageHeight).toBe(1080);
   });
 
   it('emits onResize when dimensions change', () => {
@@ -195,7 +149,7 @@ describe('setStageSize', () => {
   });
 
   it('does not emit onResize when dimensions are unchanged', () => {
-    const stage = createStage({ data: { stageWidth: 400, stageHeight: 300 } });
+    const stage = createStage({ stageWidth: 400, stageHeight: 300 });
     let called = false;
     connectSignal(enableStageSignals(stage).onResize, () => {
       called = true;

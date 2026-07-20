@@ -1,42 +1,36 @@
-import { getNodeRoot, invalidateNodeLocalBounds } from '@flighthq/node';
+import { getNodeRoot, getNodeRuntime } from '@flighthq/node';
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type {
-  DisplayObject,
-  MethodsOf,
-  Node,
-  PartialNode,
-  Rectangle,
-  Stage,
-  StageData,
-  StageRuntime,
-  StageSignals,
-} from '@flighthq/types';
-import { EntityRuntimeKey, StageKind } from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRuntime, Stage, StageRuntime, StageSignals } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
-import { createDisplayObjectGeneric, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayObject';
+import { createDisplayObject } from './displayObject';
 
-export function computeStageLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const data = (source as Stage).data;
-  out.width = data.stageWidth;
-  out.height = data.stageHeight;
-}
-
-export function createStage(obj?: Readonly<PartialNode<Stage>>): Stage {
-  return createDisplayObjectGeneric(StageKind, obj, createStageData, createStageRuntime) as Stage;
-}
-
-export function createStageData(data?: Readonly<Partial<StageData>>): StageData {
-  return {
-    color: data?.color ?? null,
-    stageHeight: data?.stageHeight ?? 550,
-    stageWidth: data?.stageWidth ?? 400,
+// Allocates a Stage: a presentation-context Entity that owns a display-object `root` (allocated here), not a
+// node in the tree. Defaults mirror the historical stage size and an unscaled, top-left viewport fit. The
+// root's runtime carries a back-pointer to this stage so getDisplayObjectStage can resolve membership by a
+// lazy walk to the root.
+export function createStage(
+  obj?: Readonly<Partial<Pick<Stage, 'align' | 'color' | 'scaleMode' | 'stageHeight' | 'stageWidth'>>>,
+): Stage {
+  const root = createDisplayObject();
+  const stage: Stage = {
+    [EntityRuntimeKey]: createStageRuntime(),
+    align: obj?.align ?? 'topleft',
+    color: obj?.color ?? null,
+    root,
+    scaleMode: obj?.scaleMode ?? 'noscale',
+    stageHeight: obj?.stageHeight ?? 550,
+    stageWidth: obj?.stageWidth ?? 400,
   };
+  (getNodeRuntime(root) as DisplayObjectRuntime).stage = stage;
+  return stage;
 }
 
 export function createStageRuntime(): StageRuntime {
-  const out = createDisplayObjectRuntime(defaultMethods) as StageRuntime;
-  out.stageSignals = null;
-  return out;
+  return {
+    binding: null,
+    stageSignals: null,
+  };
 }
 
 export function createStageSignals(): StageSignals {
@@ -52,13 +46,15 @@ export function enableStageSignals(source: Stage): StageSignals {
   return (runtime.stageSignals ??= createStageSignals());
 }
 
+// Resolves the Stage a display object belongs to, or null when its root is not owned by a stage. Walks to the
+// root (a cheap parent walk) and reads the stage back-pointer the root runtime carries.
 export function getDisplayObjectStage(source: Readonly<DisplayObject>): Stage | null {
   const root = getNodeRoot(source);
-  return root.kind === StageKind ? (root as Stage) : null;
+  return (getNodeRuntime(root) as DisplayObjectRuntime).stage;
 }
 
 export function getStageRuntime(source: Readonly<Stage>): Readonly<StageRuntime> {
-  return getDisplayObjectRuntime(source) as StageRuntime;
+  return source[EntityRuntimeKey] as StageRuntime;
 }
 
 export function getStageSignals(source: Readonly<Stage>): StageSignals | null {
@@ -66,14 +62,9 @@ export function getStageSignals(source: Readonly<Stage>): StageSignals | null {
 }
 
 export function setStageSize(source: Stage, width: number, height: number): void {
-  if (source.data.stageWidth === width && source.data.stageHeight === height) return;
-  source.data.stageWidth = width;
-  source.data.stageHeight = height;
-  invalidateNodeLocalBounds(source);
+  if (source.stageWidth === width && source.stageHeight === height) return;
+  source.stageWidth = width;
+  source.stageHeight = height;
   const runtime = source[EntityRuntimeKey] as StageRuntime;
   if (runtime.stageSignals) emitSignal(runtime.stageSignals.onResize);
 }
-
-const defaultMethods: Partial<MethodsOf<StageRuntime>> = {
-  computeLocalBoundsRectangle: computeStageLocalBoundsRectangle,
-};
