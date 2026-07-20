@@ -12,5 +12,5 @@ export type { Scene } from '@flighthq/types';
 // (`createSceneFrom*`) fill them. `obj` configures the root node (`enabled`/`name`).
 export function createScene(obj?: Readonly<Partial<Pick<SceneNode, 'enabled' | 'name'>>>): Scene {
   const root = createSceneNode(SceneNodeKind, obj);
-  return createEntity({ animations: [] as readonly never[], metadata: null, root }) as Scene;
+  return createEntity({ animations: {}, metadata: null, root }) as Scene;
 }

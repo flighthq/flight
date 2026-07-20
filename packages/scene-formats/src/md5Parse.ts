@@ -12,16 +12,14 @@ import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { AnimationClip, Material, Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
+import type { Material, Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
 
-import { parseMd5Anim } from './md5AnimParse';
 import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
 import type { SkinInfluence } from './shared';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
   createExternalTextureRef,
-  findSceneSkeletonJoints,
   packSkinInfluences,
   reverseTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
@@ -41,7 +39,7 @@ import {
 // position plus the joint position.
 //
 // Malformed lines push a warning and are skipped; the function never throws on bad input.
-export function createSceneFromMd5Mesh(source: string, animSource?: string, warnings?: string[]): Scene {
+export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Scene {
   const scene = createScene();
 
   const joints: Md5Joint[] = [];
@@ -304,15 +302,9 @@ export function createSceneFromMd5Mesh(source: string, animSource?: string, warn
     }
   }
 
-  // When the paired `.md5anim` source is supplied, fold its skeletal animation onto the scene's own
-  // skeleton joints (MD5 splits mesh and animation across two files), so posing the clip deforms the mesh
-  // with no caller re-threading. Omitted `animSource` leaves `animations` empty.
-  if (animSource !== undefined) {
-    const joints = findSceneSkeletonJoints(scene.root);
-    const clip = joints !== null ? parseMd5Anim(animSource, joints, warnings) : null;
-    if (clip !== null) (scene.animations as AnimationClip[]).push(clip);
-  }
-
+  // MD5 splits mesh and animation across two files, so this returns the mesh (skeleton + skinned meshes)
+  // with an empty `animations` map. To bind a paired `.md5anim`, the caller composes:
+  // `scene.animations['walk'] = parseMd5Anim(animSource, findSceneSkeletonJoints(scene.root)!)`.
   return scene;
 }
 

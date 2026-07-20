@@ -13,7 +13,7 @@ describe('createScene', () => {
 
   it('starts with empty animations and null metadata', () => {
     const scene = createScene();
-    expect(scene.animations).toEqual([]);
+    expect(scene.animations).toEqual({});
     expect(scene.metadata).toBeNull();
   });
 

@@ -336,6 +336,6 @@ describe('createSceneFromObj', () => {
 describe('createSceneFromObj animations', () => {
   it('carries no animations (OBJ has none)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
-    expect(createSceneFromObj(obj).animations).toHaveLength(0);
+    expect(Object.keys(createSceneFromObj(obj).animations)).toHaveLength(0);
   });
 });

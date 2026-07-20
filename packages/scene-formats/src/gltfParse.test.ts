@@ -1013,14 +1013,14 @@ describe('createSceneFromGltf animations', () => {
     doc.animations![0].channels.push({ sampler: 0, target: { node: 1, path: 'weights' } });
     const warnings: string[] = [];
     const scene = createSceneFromGltf(doc, warnings);
-    expect(scene.animations[0].channels).toHaveLength(1); // only the rotation channel survives
+    expect(Object.values(scene.animations)[0].channels).toHaveLength(1); // only the rotation channel survives
     expect(warnings.some((w) => w.includes('no morphable mesh'))).toBe(true);
   });
 
   it('imports translation and scale channels as 3-component non-quaternion tracks', () => {
     const doc = makeAnimatedMultiSceneGltf();
     doc.animations![0].channels[0].target.path = 'translation';
-    const clip = createSceneFromGltf(doc).animations[0];
+    const clip = Object.values(createSceneFromGltf(doc).animations)[0];
     expect((clip.channels[0].targetRef as SceneAnimationTarget).path).toBe('Translation');
     expect(clip.channels[0].track.quaternion).toBe(false);
     expect(clip.channels[0].track.components).toBe(3);
@@ -1030,7 +1030,7 @@ describe('createSceneFromGltf animations', () => {
     const warnings: string[] = [];
     const scene = createSceneFromGltf('{ not json', warnings);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
-    expect(scene.animations).toHaveLength(0);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
   });
 
@@ -1048,8 +1048,8 @@ describe('createSceneFromGltf animations', () => {
 
   it('imports a weights channel bound to the mesh morph, its width the target count', () => {
     const scene = createSceneFromGltf(makeMorphGltf());
-    expect(scene.animations).toHaveLength(1);
-    const clip = scene.animations[0];
+    expect(Object.keys(scene.animations)).toHaveLength(1);
+    const clip = Object.values(scene.animations)[0];
     expect(clip.channels).toHaveLength(1);
     const channel = clip.channels[0];
     const target = channel.targetRef as SceneAnimationTarget;
@@ -1065,7 +1065,7 @@ describe('createScenesFromGlb', () => {
     const glb = buildGlb(makeAnimatedMultiSceneGltf(), new Uint8Array(0));
     const scenes = createScenesFromGlb(glb);
     expect(scenes).toHaveLength(2);
-    expect(scenes[0].animations).toHaveLength(1);
+    expect(Object.keys(scenes[0].animations)).toHaveLength(1);
   });
 
   it('returns an empty array for a malformed container', () => {
@@ -1083,8 +1083,8 @@ describe('createScenesFromGltf', () => {
 
   it('attaches the file animation clips to the default scene, bound to the driven node', () => {
     const scenes = createScenesFromGltf(makeAnimatedMultiSceneGltf());
-    expect(scenes[0].animations).toHaveLength(1);
-    const clip = scenes[0].animations[0];
+    expect(Object.keys(scenes[0].animations)).toHaveLength(1);
+    const clip = Object.values(scenes[0].animations)[0];
     expect(clip.channels).toHaveLength(1);
     expect(clip.duration).toBe(1); // max keyframe time
 

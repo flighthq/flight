@@ -792,12 +792,12 @@ function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: numbe
 describe('createSceneFromAwd animations', () => {
   it('returns the scene plus the skeleton animation bound to the scene’s own joints', () => {
     const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
-    expect(scene.animations).toHaveLength(1);
+    expect(Object.keys(scene.animations)).toHaveLength(1);
 
     // The clip binds the SAME joint nodes the imported scene's mesh skins from — no caller threading.
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
     const joints = mesh.skin!.skeleton.joints;
-    const clip = scene.animations[0];
+    const clip = Object.values(scene.animations)[0];
     // Each joint gets a translation channel and a rotation channel, in joint order.
     expect(clip.channels).toHaveLength(4);
     expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
@@ -820,7 +820,7 @@ describe('createSceneFromAwd animations', () => {
       miBody,
     );
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
-    expect(scene.animations).toHaveLength(0);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root).length).toBeGreaterThan(0);
   });
 });

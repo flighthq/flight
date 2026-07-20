@@ -473,7 +473,7 @@ describe('createSceneFromMd2 animations', () => {
       triangles: singleTriangle,
     });
     const scene = createSceneFromMd2(md2);
-    expect(scene.animations).toHaveLength(0);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
   });
 
@@ -518,8 +518,8 @@ describe('createSceneFromMd2 animations', () => {
       triangles: singleTriangle,
     });
     const scene = createSceneFromMd2(md2);
-    expect(scene.animations).toHaveLength(1);
-    const clip = scene.animations[0];
+    expect(Object.keys(scene.animations)).toHaveLength(1);
+    const clip = Object.values(scene.animations)[0];
     expect(clip.channels).toHaveLength(1);
     const channel = clip.channels[0];
     expect((channel.targetRef as SceneAnimationTarget).path).toBe('Weights');

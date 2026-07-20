@@ -288,7 +288,9 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   // mesh.skin.skeleton.joints), so the returned document carries its clips with no caller re-threading.
   const joints = findSceneSkeletonJoints(scene.root);
   const clip = joints !== null ? parseAwdSkeletonAnimation(bytes, joints, warnings) : null;
-  if (clip !== null) (scene.animations as AnimationClip[]).push(clip);
+  // AWD can carry several named skeleton animations; createSceneFromAwd folds the first as 'default'.
+  // Enumerating and keying every named block by name is a later enhancement.
+  if (clip !== null) scene.animations.default = clip;
 
   return scene;
 }
