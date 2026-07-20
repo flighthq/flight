@@ -9,7 +9,7 @@ import { EntityRuntimeKey } from '@flighthq/types';
 
 import { compileDefaultGlProgram, createDefaultGlBitmapShader } from './glShader';
 
-export function createGlRenderState(canvas: HTMLCanvasElement, options: Partial<GlRenderOptions> = {}): GlRenderState {
+export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRenderOptions = {}): GlRenderState {
   const contextAttribs: WebGLContextAttributes = {
     alpha: true,
     antialias: options.antialias ?? true,
