@@ -6,16 +6,7 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
 } from '@flighthq/node';
-import type {
-  Kind,
-  Material,
-  Mesh,
-  MeshDeformer,
-  MeshGeometry,
-  MeshRuntime,
-  NodeSignals,
-  SceneNode,
-} from '@flighthq/types';
+import type { Kind, Material, Mesh, MeshDeformer, MeshGeometry, MeshRuntime, NodeSignals } from '@flighthq/types';
 import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal, MeshKind } from '@flighthq/types';
 
 import { createSceneNode, getSceneNodeRuntime } from './sceneNode';
@@ -91,6 +82,7 @@ export function getMeshSignals(source: Mesh): NodeSignals | null {
 // A node is a Mesh — a drawable leaf, not a transform-only group — when it carries geometry.
 // Robust across custom kinds (a Mesh need not use MeshKind), so the scene render pass discriminates
 // by this rather than by kind symbol.
-export function isMesh(source: Readonly<SceneNode>): source is Mesh {
+export function isMesh(source: any): source is Mesh {
+  // eslint-disable-line
   return (source as Partial<Mesh>).geometry != null;
 }
