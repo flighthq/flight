@@ -4,12 +4,17 @@
 // publish it under; the CI job stamps it with `version:packages` and publishes with
 // `release -- --tag <tag>` so it lands on that channel and never touches `latest`.
 //
-// Scheme (ZeroVer / semver §4 — major pinned at 0 pre-1.0):
+// Scheme:
 //   base    = @flighthq/sdk's current source version (the canonical latest; tag-independent, so a
 //             missing or unpushed release tag never yields a stale base).
-//   bumped  = base with the patch digit +1 (the default "feature"-level bump), so an edge build sorts
-//             *above* the last release rather than as a prerelease of it. A breaking change bumps the
-//             minor digit instead (0.2.0 -> 0.3.0); conventional commits can later drive the level.
+//   bumped  = base bumped by the highest conventional-commits level among the commits since the last
+//             version tag — a `type!:` subject or a `BREAKING CHANGE:` footer is breaking, a `feat:` is
+//             a feature, anything else is a fix. The lane decides which digit moves: pre-1.0 (base major
+//             0) is the ZeroVer lane where everything shifts down one — breaking bumps the minor,
+//             feature/fix bump the patch, and major stays 0. Once a real 1.0.0 lands the normal lane
+//             applies (breaking -> major, feature -> minor, fix -> patch); the lane is keyed on the base
+//             major, so it switches itself with no code change. Either way an edge build sorts *above*
+//             the last release as its upcoming version, not as a prerelease of it.
 //   version = <bumped>-<channel>.<count>.<sha>
 //             channel  main -> edge, develop -> next   (this is also the dist-tag).
 //             count    commits since the last version tag (`git rev-list --count <tag>..HEAD`),
@@ -35,6 +40,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+type BumpLevel = 'breaking' | 'feature' | 'fix';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const branch = process.argv[2] ?? process.env.GITHUB_REF_NAME ?? gitBranch();
@@ -44,14 +51,52 @@ if (channel === undefined) {
   process.exit(1);
 }
 
-const version = `${bumpVersion(readSdkVersion())}-${channel}.${commitCount()}.${shortSha()}`;
+// The commit range since the last release drives both the bump level and the build count.
+const tag = lastVersionTag();
+const range = tag === undefined ? 'HEAD' : `${tag}..HEAD`;
+const version = `${applyBump(readSdkVersion(), detectBumpLevel(range))}-${channel}.${commitCount(range)}.${shortSha()}`;
 process.stdout.write(`version=${version}\ntag=${channel}\n`);
 
-// ZeroVer bump: patch +1 is the default "feature"-level step (0.2.0 -> 0.2.1); a breaking change bumps
-// the minor digit and resets patch (0.2.0 -> 0.3.0). Major stays 0 until an explicit 1.0.
-function bumpVersion(base: string, level: 'feature' | 'breaking' = 'feature'): string {
+// Apply a conventional-commits bump to the base, choosing which digit moves by the current lane. Pre-1.0
+// (base major 0) is the ZeroVer lane: everything shifts down one — a breaking change bumps the minor, a
+// feature or fix bumps the patch, and the major stays 0. Once a real 1.0.0 lands the base major is >= 1
+// and the normal lane applies (breaking -> major, feature -> minor, fix -> patch). The lane is keyed on
+// the base major, so the switch is automatic.
+function applyBump(base: string, level: BumpLevel): string {
   const [major, minor, patch] = base.split('.').map((n) => Number.parseInt(n, 10));
-  return level === 'breaking' ? `${major}.${minor + 1}.0` : `${major}.${minor}.${patch + 1}`;
+  if (major === 0) {
+    return level === 'breaking' ? `0.${minor + 1}.0` : `0.${minor}.${patch + 1}`;
+  }
+  if (level === 'breaking') return `${major + 1}.0.0`;
+  if (level === 'feature') return `${major}.${minor + 1}.0`;
+  return `${major}.${minor}.${patch + 1}`;
+}
+
+// The highest conventional-commits level among the commits in `range` (breaking outranks feature
+// outranks fix). Reads raw bodies NUL-delimited so a multi-line `BREAKING CHANGE:` footer stays intact.
+function detectBumpLevel(range: string): BumpLevel {
+  const messages = git('log', '--format=%B%x00', range)
+    .split('\0')
+    .map((m) => m.trim())
+    .filter(Boolean);
+  let level: BumpLevel = 'fix';
+  for (const message of messages) {
+    if (isBreakingCommit(message)) return 'breaking';
+    if (isFeatureCommit(message)) level = 'feature';
+  }
+  return level;
+}
+
+// A `!` before the colon in the subject (`type!:` / `type(scope)!:`) marks a breaking change, as does a
+// `BREAKING CHANGE:` / `BREAKING-CHANGE:` footer line anywhere in the body.
+function isBreakingCommit(message: string): boolean {
+  const subject = message.split('\n', 1)[0];
+  return /^[a-z]+(\([^)]*\))?!:/.test(subject) || /^BREAKING[ -]CHANGE:/m.test(message);
+}
+
+// A `feat:` / `feat(scope):` subject. A breaking `feat!:` is caught earlier by isBreakingCommit.
+function isFeatureCommit(message: string): boolean {
+  return /^feat(\([^)]*\))?:/.test(message.split('\n', 1)[0]);
 }
 
 // main -> the "edge" channel, develop -> the "next" channel; any other branch is not a publish target.
@@ -61,12 +106,10 @@ function channelForBranch(name: string): 'edge' | 'next' | undefined {
   return undefined;
 }
 
-// Commits landed since the last release, so the number stays small and resets each version. Counts
-// from the root when no version tag is reachable (the pre-first-tag state), which still yields a
-// monotonic per-branch number.
-function commitCount(): string {
-  const tag = lastVersionTag();
-  return git('rev-list', '--count', tag === undefined ? 'HEAD' : `${tag}..HEAD`);
+// Commits in `range` (since the last release), so the number stays small and resets each version — a
+// monotonic per-branch sort key. The caller passes `HEAD` when no version tag is reachable.
+function commitCount(range: string): string {
+  return git('rev-list', '--count', range);
 }
 
 function git(...args: readonly string[]): string {
