@@ -175,14 +175,32 @@ describe('drawGlFullscreenPass', () => {
     expect(drawSpy).toHaveBeenCalled();
   });
 
-  it('sets premultiplied-alpha blending and invalidates the cached blend mode', () => {
+  it('sets premultiplied-alpha blending and caches the normal blend mode', () => {
     const { state, gl } = createGlState();
     const program = compileGlFullscreenProgram(gl, FRAG_SRC);
     const blendSpy = vi.spyOn(gl, 'blendFunc');
+    const blendEquationSpy = vi.spyOn(gl, 'blendEquation');
 
     drawGlFullscreenPass(state, program, [], null, () => {});
 
     expect(blendSpy).toHaveBeenCalledWith(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    expect(blendEquationSpy).toHaveBeenCalledWith(gl.FUNC_ADD);
+    expect(getGlRenderStateRuntime(state).currentBlendMode).toBeNull();
+  });
+
+  it('restores normal blending when setUniforms overrides the blend function', () => {
+    const { state, gl } = createGlState();
+    const program = compileGlFullscreenProgram(gl, FRAG_SRC);
+    const blendSpy = vi.spyOn(gl, 'blendFunc');
+    const blendEquationSpy = vi.spyOn(gl, 'blendEquation');
+
+    drawGlFullscreenPass(state, program, [], null, (gl) => {
+      gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);
+    });
+
+    expect(blendSpy).toHaveBeenCalledWith(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);
+    expect(blendSpy).toHaveBeenLastCalledWith(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    expect(blendEquationSpy).toHaveBeenLastCalledWith(gl.FUNC_ADD);
     expect(getGlRenderStateRuntime(state).currentBlendMode).toBeNull();
   });
 });
