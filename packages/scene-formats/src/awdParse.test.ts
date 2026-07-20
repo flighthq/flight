@@ -19,7 +19,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
-import { createSceneFromAwd, importAwd, parseAwdSkeletonAnimation } from './awdParse';
+import { createSceneFromAwd, parseAwdSkeletonAnimation } from './awdParse';
 import {
   AWD_BLOCK_CONTAINER,
   AWD_BLOCK_MATERIAL,
@@ -320,7 +320,7 @@ describe('createSceneFromAwd', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const scene = createSceneFromAwd(awd);
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as SceneNode)).toBe(true);
     expect((children[0] as SceneNode).name).toBe('TriMesh');
@@ -358,7 +358,7 @@ describe('createSceneFromAwd', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const scene = createSceneFromAwd(awd);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexNormal(n, geometry, 0);
@@ -389,7 +389,7 @@ describe('createSceneFromAwd', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const scene = createSceneFromAwd(awd);
-    const roots = getNodeChildren(scene);
+    const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
     const container = roots[0] as SceneNode;
     expect(isMesh(container)).toBe(false);
@@ -403,14 +403,14 @@ describe('createSceneFromAwd', () => {
     const awd = buildAwdHeader(0, AWD_COMPRESSION_DEFLATE);
     const warnings: string[] = [];
     const scene = createSceneFromAwd(awd, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('compression'))).toBe(true);
   });
 
   it('returns an empty scene and warns for truncated input', () => {
     const warnings: string[] = [];
     const scene = createSceneFromAwd(new Uint8Array(4), warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('header'))).toBe(true);
   });
 
@@ -419,14 +419,14 @@ describe('createSceneFromAwd', () => {
     bogus[0] = 0x00;
     const warnings: string[] = [];
     const scene = createSceneFromAwd(bogus, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('magic'))).toBe(true);
   });
 
   it('returns an empty scene for a valid header with no blocks', () => {
     const awd = buildAwdHeader(0);
     const scene = createSceneFromAwd(awd);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('applies transform from mesh instance block', () => {
@@ -445,7 +445,7 @@ describe('createSceneFromAwd', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const scene = createSceneFromAwd(awd);
-    const meshNode = getNodeChildren(scene)[0] as SceneNode;
+    const meshNode = getNodeChildren(scene.root)[0] as SceneNode;
     const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[12]).toBeCloseTo(10);
     expect(m[13]).toBeCloseTo(20);
@@ -474,7 +474,7 @@ describe('createSceneFromAwd', () => {
 
     const warnings: string[] = [];
     const scene = createSceneFromAwd(awd, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(1);
+    expect(getNodeChildren(scene.root)).toHaveLength(1);
     expect(warnings.some((w) => w.includes('geometry block 99'))).toBe(true);
   });
 
@@ -491,7 +491,7 @@ describe('createSceneFromAwd', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const scene = createSceneFromAwd(awd);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
   });
 
@@ -520,7 +520,7 @@ describe('createSceneFromAwd', () => {
     const warnings: string[] = [];
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
 
-    const mesh = getNodeChildren(scene)[0] as Mesh;
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial | null;
@@ -559,7 +559,7 @@ describe('createSceneFromAwd', () => {
     );
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
 
-    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as BlinnPhongMaterial | null;
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial | null;
     expect(material).not.toBeNull();
     expect(material!.kind).toBe(BlinnPhongMaterialKind);
     expect(material!.diffuse).toBe(0x336699ff);
@@ -591,7 +591,7 @@ describe('createSceneFromAwd', () => {
     const warnings: string[] = [];
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body), warnings);
 
-    const material = (getNodeChildren(scene)[0] as Mesh).materials[0] as BlinnPhongMaterial;
+    const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.diffuseMap!.image).toBeNull();
     const ref = material.diffuseMap!.resource as ExternalSceneResourceRef;
@@ -625,7 +625,7 @@ describe('createSceneFromAwd', () => {
     );
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
 
-    const texture = ((getNodeChildren(scene)[0] as Mesh).materials[0] as BlinnPhongMaterial).diffuseMap!;
+    const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial).diffuseMap!;
     expect(texture.image).toBeNull(); // parse never allocates or fills an ImageResource
     const ref = texture.resource as EmbeddedSceneResourceRef;
     expect(ref.kind).toBe('Embedded');
@@ -636,7 +636,7 @@ describe('createSceneFromAwd', () => {
 
   it('emits joints0/weights0 into the skinned layout and binds the skeleton via mesh.skin', () => {
     const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
-    const mesh = getNodeChildren(scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
     expect(mesh).toBeTruthy();
 
     // Skinned records interleave joints0/weights0 past uv0 → 20-float (80-byte) stride.
@@ -664,13 +664,13 @@ describe('createSceneFromAwd', () => {
     expect(mesh.skin?.skeleton.joints).toHaveLength(2);
     expect(mesh.skin?.skeleton.names).toEqual(['Root', 'Child']);
     // The skeleton hierarchy hangs under the "skeleton" group added to the scene.
-    expect(mesh.skin?.skeletonRoot).toBe(getNodeChildren(scene).find((c) => !isMesh(c as SceneNode)));
+    expect(mesh.skin?.skeletonRoot).toBe(getNodeChildren(scene.root).find((c) => !isMesh(c as SceneNode)));
     expect(getNodeParent(mesh.skin!.skeleton.joints[1])).toBe(mesh.skin!.skeleton.joints[0]);
   });
 
   it('binds the animation clip to the same joint nodes the mesh skins from (identity)', () => {
     const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
-    const mesh = getNodeChildren(scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
     const joints = mesh.skin!.skeleton.joints;
 
     // The verify contract: parse the animation over the mesh's own skeleton joints, so posing the
@@ -703,7 +703,7 @@ describe('createSceneFromAwd', () => {
       miBody,
     );
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
-    const mesh = getNodeChildren(scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
 
     expect(mesh.geometry.layout.stride).toBe(48); // canonical (non-skinned) layout
     expect(mesh.skin == null).toBe(true);
@@ -789,17 +789,15 @@ function buildSkeletonAnimationBody(name: string, poses: Array<{ duration: numbe
   return concatBytes(...parts);
 }
 
-describe('importAwd', () => {
+describe('createSceneFromAwd animations', () => {
   it('returns the scene plus the skeleton animation bound to the scene’s own joints', () => {
-    const result = importAwd(SKINNED_TRIANGLE_AWD);
-    expect(result.scenes).toHaveLength(1);
-    expect(result.scene).toBe(result.scenes[0]);
-    expect(result.animations).toHaveLength(1);
+    const scene = createSceneFromAwd(SKINNED_TRIANGLE_AWD);
+    expect(scene.animations).toHaveLength(1);
 
     // The clip binds the SAME joint nodes the imported scene's mesh skins from — no caller threading.
-    const mesh = getNodeChildren(result.scene).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as SceneNode)) as unknown as Mesh;
     const joints = mesh.skin!.skeleton.joints;
-    const clip = result.animations[0];
+    const clip = scene.animations[0];
     // Each joint gets a translation channel and a rotation channel, in joint order.
     expect(clip.channels).toHaveLength(4);
     expect((clip.channels[0].targetRef as SceneAnimationTarget).node).toBe(joints[0]);
@@ -821,9 +819,9 @@ describe('importAwd', () => {
       buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const result = importAwd(concatBytes(buildAwdHeader(body.length), body));
-    expect(result.animations).toHaveLength(0);
-    expect(getNodeChildren(result.scene).length).toBeGreaterThan(0);
+    const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
+    expect(scene.animations).toHaveLength(0);
+    expect(getNodeChildren(scene.root).length).toBeGreaterThan(0);
   });
 });
 

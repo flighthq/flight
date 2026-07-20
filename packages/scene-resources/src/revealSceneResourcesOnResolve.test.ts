@@ -1,6 +1,7 @@
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
+import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import { emitSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
@@ -22,12 +23,12 @@ function pendingRef(): EmbeddedSceneResourceRef {
   };
 }
 
-function sceneWithPendingTexture(): { mesh: SceneNode; scene: SceneNode; texture: Texture } {
+function sceneWithPendingTexture(): { mesh: SceneNode; scene: Scene; texture: Texture } {
   const texture = createTexture({ resource: pendingRef() });
   const material = createStandardPbrMaterial({ baseColorMap: texture });
   const mesh = createMesh(createBoxMeshGeometry(), [material]);
   const scene = createScene();
-  addNodeChild(scene, mesh);
+  addNodeChild(scene.root, mesh);
   return { mesh, scene, texture };
 }
 
@@ -35,14 +36,14 @@ describe('revealSceneResourcesOnResolve', () => {
   it('hides every object carrying a pending texture to the start opacity up front', () => {
     const { mesh, scene } = sceneWithPendingTexture();
     const resolver = createSceneResourceResolver();
-    revealSceneResourcesOnResolve(resolver, scene, createTweenManager());
+    revealSceneResourcesOnResolve(resolver, scene.root, createTweenManager());
     expect(mesh.alpha).toBe(0);
   });
 
   it('honors a custom from opacity', () => {
     const { mesh, scene } = sceneWithPendingTexture();
     const resolver = createSceneResourceResolver();
-    revealSceneResourcesOnResolve(resolver, scene, createTweenManager(), { from: 0.2 });
+    revealSceneResourcesOnResolve(resolver, scene.root, createTweenManager(), { from: 0.2 });
     expect(mesh.alpha).toBeCloseTo(0.2);
   });
 
@@ -50,7 +51,7 @@ describe('revealSceneResourcesOnResolve', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
     const resolver = createSceneResourceResolver();
     const manager = createTweenManager();
-    revealSceneResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
+    revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
     expect(mesh.alpha).toBe(0);
 
     const signals = enableSceneResourceSignals(resolver);
@@ -66,7 +67,7 @@ describe('revealSceneResourcesOnResolve', () => {
     const { scene } = sceneWithPendingTexture();
     const resolver = createSceneResourceResolver();
     const manager = createTweenManager();
-    revealSceneResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
+    revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
 
     const stray = createTexture({ resource: pendingRef() });
     emitSignal(enableSceneResourceSignals(resolver).onResourceResolved, { ref: stray.resource!, texture: stray });
@@ -77,7 +78,7 @@ describe('revealSceneResourcesOnResolve', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
     const resolver = createSceneResourceResolver();
     const manager = createTweenManager();
-    const dispose = revealSceneResourcesOnResolve(resolver, scene, manager, { fadeSeconds: 0.5 });
+    const dispose = revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
     dispose();
 
     emitSignal(enableSceneResourceSignals(resolver).onResourceResolved, { ref: texture.resource!, texture });

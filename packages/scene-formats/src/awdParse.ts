@@ -59,7 +59,6 @@ import {
   AWD_STREAM_UVS,
   AWD_TEXTURE_TYPE_EMBEDDED,
 } from './awdSchema';
-import type { SceneImport } from './sceneImport';
 import type { SkinInfluence } from './shared';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
@@ -203,7 +202,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   let skin: Skin | null = null;
   if (skeletonBlocks.size > 0) {
     const built = buildAwdSkeleton(skeletonBlocks.values().next().value!);
-    addNodeChild(scene, built.skeletonRoot);
+    addNodeChild(scene.root, built.skeletonRoot);
     skin = { skeleton: built.skeleton, skeletonRoot: built.skeletonRoot };
     if (skeletonBlocks.size > 1) {
       warnings?.push(
@@ -281,23 +280,17 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
 
   for (const [blockId, node] of sceneNodes) {
     if (!parented.has(blockId)) {
-      addNodeChild(scene, node);
+      addNodeChild(scene.root, node);
     }
   }
 
-  return scene;
-}
-
-// Imports an AWD file as a whole: the scene plus its skeleton animation clip, folded into one call so
-// the caller never re-threads the joint handle. The assembly-tier sibling of createSceneFromAwd —
-// builds the scene, then binds the file's skeleton animation to the joints that scene already holds
-// (createSceneFromAwd exposes them as mesh.skin.skeleton.joints). AWD declares a single scene, so
-// `scenes` is a one-element array; `animations` is empty when the file carries no skeleton animation.
-export function importAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneImport {
-  const scene = createSceneFromAwd(bytes, warnings);
-  const joints = findSceneSkeletonJoints(scene);
+  // Bind the file's skeleton animation to the joints the scene already holds (exposed as
+  // mesh.skin.skeleton.joints), so the returned document carries its clips with no caller re-threading.
+  const joints = findSceneSkeletonJoints(scene.root);
   const clip = joints !== null ? parseAwdSkeletonAnimation(bytes, joints, warnings) : null;
-  return { animations: clip !== null ? [clip] : [], scene, scenes: [scene] };
+  if (clip !== null) (scene.animations as AnimationClip[]).push(clip);
+
+  return scene;
 }
 
 // Parses AWD skeleton-pose and skeleton-animation blocks into an AnimationClip that drives the given

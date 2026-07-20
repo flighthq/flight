@@ -29,7 +29,7 @@ describe('loadSceneFromObj', () => {
     };
     const texture = createTexture({ resource: ref });
     const scene = createScene();
-    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
     vi.mocked(createSceneFromObj).mockReturnValue(scene as Scene);
     const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
 

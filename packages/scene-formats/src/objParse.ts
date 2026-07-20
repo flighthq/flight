@@ -6,7 +6,6 @@ import { createMesh, createScene, MeshKind } from '@flighthq/scene';
 import type { BlinnPhongMaterial, Material, MeshSubset, Texture } from '@flighthq/types';
 
 import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
-import type { SceneImport } from './sceneImport';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
 // Parses a Wavefront OBJ text source into a Scene. Each group (`g`) or object (`o`) — and any
@@ -159,15 +158,6 @@ export function createSceneFromObj(
   return scene;
 }
 
-// Imports a Wavefront OBJ as a whole file. The assembly-tier sibling of createSceneFromObj, present for
-// uniformity across the format importers — but OBJ carries no animation and one scene, so `animations`
-// is always empty and `scenes` a one-element array. `createSceneFromObj` already IS OBJ's complete
-// import; this exists only so a caller can treat every format's import<F> identically.
-export function importObj(source: string, materials?: Readonly<ObjMaterialLibrary>, warnings?: string[]): SceneImport {
-  const scene = createSceneFromObj(source, materials, warnings);
-  return { animations: [], scene, scenes: [scene] };
-}
-
 // Accumulates interleaved vertex data and triangle indices for one material within a group.
 interface MaterialBucket {
   // Dedup map: "posIdx/uvIdx/normalIdx" → emitted vertex index.
@@ -311,7 +301,7 @@ function flushGroup(
     subsets,
     vertices: new Float32Array(vertices),
   });
-  addNodeChild(scene, createMesh(geometry, materials, MeshKind, { name }));
+  addNodeChild(scene.root, createMesh(geometry, materials, MeshKind, { name }));
 }
 
 // Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.

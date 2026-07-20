@@ -2,7 +2,7 @@ import { createCamera } from '@flighthq/camera';
 import { createMatrix4, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
-import { createScene } from '@flighthq/scene';
+import { createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera, ParticleEmitter3D, SceneLights } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
@@ -81,7 +81,7 @@ describe('destroyWgpuParticleEmitter3DResources', () => {
 
   it('drops resources after a draw', () => {
     const { state } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(() => destroyWgpuParticleEmitter3DResources(state)).not.toThrow();
@@ -91,14 +91,14 @@ describe('destroyWgpuParticleEmitter3DResources', () => {
 describe('drawWgpuSceneParticleEmitters', () => {
   it('is a no-op when the scene has no particle emitter nodes', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
 
   it('skips emitters with zero particles', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createParticleEmitter3D());
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
@@ -106,7 +106,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('issues one instanced indexed draw of 6 indices per emitter', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(5));
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     const draw = fake.calls.find((c) => c.name === 'drawIndexed');
@@ -117,7 +117,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('uploads the per-instance data to a vertex buffer', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(3));
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(findInstanceWrite(fake.calls)).toBeDefined();
@@ -125,7 +125,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('normalizes the particle quad to an aspect-ratio unit square, not the region pixel size', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeAtlasEmitter(64, 32));
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     const instanceData = findInstanceWrite(fake.calls)!;
@@ -136,7 +136,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('compiles the textured pipeline variant for an atlas emitter', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeAtlasEmitter(64, 64));
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     expect(pipelineDescriptors(fake.calls).some((d) => hasTextureConstant(d) === 1)).toBe(true);
@@ -144,7 +144,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('compiles the untextured pipeline variant for an atlas-less emitter', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     const descriptors = pipelineDescriptors(fake.calls);
@@ -154,7 +154,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('reuses the cached pipeline on a second draw', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
     drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
@@ -164,7 +164,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('skips the node world transform for world-space particles', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = makeEmitterWithParticles(1);
     emitter.data.transforms[0] = 1;
     emitter.data.transforms[1] = 2;
@@ -183,7 +183,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
 
   it('applies the node world transform for local-space particles', () => {
     const { state, fake } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const emitter = makeEmitterWithParticles(1);
     emitter.data.transforms[0] = 1;
     emitter.data.transforms[1] = 2;

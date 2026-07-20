@@ -136,21 +136,21 @@ describe('findSceneSkeletonJoints', () => {
     const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: new Float32Array(0) });
     const mesh = createMesh(geometry, []);
     mesh.skin = { skeleton, skeletonRoot: null };
-    addNodeChild(scene, mesh as unknown as SceneNode);
+    addNodeChild(scene.root, mesh as unknown as SceneNode);
 
-    expect(findSceneSkeletonJoints(scene)).toBe(skeleton.joints);
+    expect(findSceneSkeletonJoints(scene.root)).toBe(skeleton.joints);
   });
 
   it('returns null when the scene has no skinned mesh', () => {
     const scene = createScene();
     addNodeChild(
-      scene,
+      scene.root,
       createMesh(
         createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: new Float32Array(0) }),
         [],
       ) as unknown as SceneNode,
     );
-    expect(findSceneSkeletonJoints(scene)).toBeNull();
+    expect(findSceneSkeletonJoints(scene.root)).toBeNull();
   });
 });
 

@@ -19,7 +19,7 @@ import type {
 } from '@flighthq/types';
 import { StandardPbrMaterialKind } from '@flighthq/types';
 
-import { createSceneFromGlb, createSceneFromGltf, importGlb, importGltf } from './gltfParse';
+import { createSceneFromGlb, createSceneFromGltf, createScenesFromGlb, createScenesFromGltf } from './gltfParse';
 import type { GltfDocument } from './gltfSchema';
 
 // A base64 `data:` URI carrying `bytes` under an explicit image MIME type.
@@ -249,7 +249,7 @@ describe('createSceneFromGlb', () => {
     };
     const scene = createSceneFromGlb(buildGlb(doc, binary));
 
-    const meshNode = getNodeChildren(scene)[0] as SceneNode;
+    const meshNode = getNodeChildren(scene.root)[0] as SceneNode;
     expect(isMesh(meshNode)).toBe(true);
     const geometry = (meshNode as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
@@ -263,14 +263,14 @@ describe('createSceneFromGlb', () => {
     bogus[0] = 0x00;
     const warnings: string[] = [];
     const scene = createSceneFromGlb(bogus, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('magic'))).toBe(true);
   });
 
   it('returns an empty scene and warns when the byte length is below the header size', () => {
     const warnings: string[] = [];
     const scene = createSceneFromGlb(new Uint8Array(4), warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.length).toBeGreaterThan(0);
   });
 });
@@ -290,7 +290,7 @@ describe('createSceneFromGltf', () => {
     ];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mesh = getNodeChildren(createSceneFromGltf(doc))[0] as Mesh;
+    const mesh = getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(1);
     const mat = mesh.materials[0] as StandardPbrMaterial;
     expect(mat.kind).toBe(StandardPbrMaterialKind);
@@ -315,7 +315,7 @@ describe('createSceneFromGltf', () => {
     ];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     const srgbByte = Math.round(linearChannelToSrgb(0.5) * 0xff);
     const expected = ((srgbByte << 24) | (srgbByte << 16) | (srgbByte << 8)) >>> 0;
     expect(mat.baseColor).toBe((expected | 0xff) >>> 0);
@@ -328,7 +328,7 @@ describe('createSceneFromGltf', () => {
     doc.materials = [{}];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.baseColor).toBe(0xffffffff); // default [1,1,1,1]
     expect(mat.metallic).toBe(1);
     expect(mat.roughness).toBe(1);
@@ -344,7 +344,7 @@ describe('createSceneFromGltf', () => {
     doc.images = [{ uri: imageDataUri('image/png', png) }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.baseColorMap!.image).toBeNull();
     const ref = mat.baseColorMap!.resource as EmbeddedSceneResourceRef;
     expect(ref.kind).toBe('Embedded');
@@ -359,7 +359,7 @@ describe('createSceneFromGltf', () => {
     doc.images = [{ uri: 'textures/emissive.png' }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     const ref = mat.emissiveMap!.resource as ExternalSceneResourceRef;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('textures/emissive.png');
@@ -388,7 +388,7 @@ describe('createSceneFromGltf', () => {
       textures: [{ source: 0 }],
     };
 
-    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.normalScale).toBe(2);
     const ref = mat.normalMap!.resource as EmbeddedSceneResourceRef;
     expect(ref.kind).toBe('Embedded');
@@ -397,7 +397,7 @@ describe('createSceneFromGltf', () => {
   });
 
   it('leaves a primitive unmaterialed when it references no material', () => {
-    const mesh = getNodeChildren(createSceneFromGltf(makeTriangleGltf()))[0] as Mesh;
+    const mesh = getNodeChildren(createSceneFromGltf(makeTriangleGltf()).root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(0);
   });
 
@@ -411,7 +411,7 @@ describe('createSceneFromGltf', () => {
     doc.images = [{ uri: imageDataUri('image/png', png) }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const map = ((getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial)
+    const map = ((getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial)
       .baseColorMap!;
     expect(map.sampler.wrapU).toBe('repeat');
     expect(map.sampler.wrapV).toBe('mirror-repeat');
@@ -429,7 +429,7 @@ describe('createSceneFromGltf', () => {
     doc.images = [{ uri: imageDataUri('image/png', png) }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const map = ((getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial)
+    const map = ((getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial)
       .baseColorMap!;
     expect(map.sampler.minFilter).toBe('linear');
     expect(map.sampler.mipmaps).toBe(false);
@@ -443,7 +443,7 @@ describe('createSceneFromGltf', () => {
     doc.images = [{ uri: imageDataUri('image/png', png) }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial;
+    const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.baseColorMap!.colorSpace).toBe('srgb');
     expect(mat.normalMap!.colorSpace).toBe('linear');
   });
@@ -465,7 +465,7 @@ describe('createSceneFromGltf', () => {
     doc.images = [{ uri: imageDataUri('image/png', png) }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const map = ((getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).materials[0] as StandardPbrMaterial)
+    const map = ((getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial)
       .baseColorMap!;
     expect([map.uvOffset.x, map.uvOffset.y]).toEqual([0.25, 0.5]);
     expect(map.uvRotation).toBe(1.5);
@@ -479,7 +479,7 @@ describe('createSceneFromGltf', () => {
     doc.images = [{ uri: 'textures/emissive.png' }];
     doc.meshes![0].primitives[0].material = 0;
 
-    const mat = (getNodeChildren(createSceneFromGltf(doc, undefined, { basePath: 'assets/models' }))[0] as Mesh)
+    const mat = (getNodeChildren(createSceneFromGltf(doc, undefined, { basePath: 'assets/models' }).root)[0] as Mesh)
       .materials[0] as StandardPbrMaterial;
     const ref = mat.emissiveMap!.resource as ExternalSceneResourceRef;
     expect(ref.uri).toBe('textures/emissive.png');
@@ -500,7 +500,8 @@ describe('createSceneFromGltf', () => {
     };
     const externalBuffers = { 'model.bin': bytesOf(positions) };
 
-    const geometry = (getNodeChildren(createSceneFromGltf(doc, undefined, { externalBuffers }))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc, undefined, { externalBuffers }).root)[0] as Mesh)
+      .geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     const p = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexPosition(p, geometry, 1);
@@ -520,7 +521,7 @@ describe('createSceneFromGltf', () => {
     };
     const warnings: string[] = [];
 
-    const geometry = (getNodeChildren(createSceneFromGltf(doc, warnings))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc, warnings).root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(0);
     expect(warnings.some((w) => w.includes('missing.bin'))).toBe(true);
   });
@@ -559,7 +560,7 @@ describe('createSceneFromGltf', () => {
       scenes: [{ nodes: [0] }],
     };
 
-    const geometry = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
     const p = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexPosition(p, geometry, 0);
     expect([p.x, p.y, p.z]).toEqual([0, 0, 0]);
@@ -571,13 +572,13 @@ describe('createSceneFromGltf', () => {
 
   it('accepts a JSON string as well as a parsed object', () => {
     const scene = createSceneFromGltf(JSON.stringify(makeTriangleGltf()));
-    expect(getNodeChildren(scene)).toHaveLength(1);
+    expect(getNodeChildren(scene.root)).toHaveLength(1);
   });
 
   it('builds the correct hierarchy for a 2-node parent-child scene', () => {
     const scene = createSceneFromGltf(makeParentChildGltf());
 
-    const roots = getNodeChildren(scene);
+    const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
 
     const node0 = roots[0] as SceneNode;
@@ -593,7 +594,7 @@ describe('createSceneFromGltf', () => {
   it('builds the node hierarchy with the imported mesh and transform', () => {
     const scene = createSceneFromGltf(makeTriangleGltf());
 
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
 
     const meshNode = children[0] as SceneNode;
@@ -626,7 +627,7 @@ describe('createSceneFromGltf', () => {
 
   it('returns a scene for a document with no nodes', () => {
     const scene = createSceneFromGltf({ asset: { version: '2.0' } });
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
   it('de-strides interleaved position and normal attributes via bufferView.byteStride', () => {
@@ -646,7 +647,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const geometry = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
 
     const p = { x: 0, y: 0, z: 0 };
     const n = { x: 0, y: 0, z: 0 };
@@ -683,7 +684,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const geometry = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
     const uv = { x: 0, y: 0 };
@@ -713,7 +714,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const groupNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
+    const groupNode = getNodeChildren(createSceneFromGltf(doc).root)[0] as SceneNode;
 
     // A multi-primitive mesh node is a transform-only group with one Mesh child per primitive.
     expect(isMesh(groupNode)).toBe(false);
@@ -743,7 +744,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const geometry = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
 
     const t = { w: 0, x: 0, y: 0, z: 0 };
     getMeshGeometryVertexTangent(t, geometry, 1);
@@ -751,7 +752,7 @@ describe('createSceneFromGltf', () => {
   });
 
   it('zero-fills the tangent slot when a primitive has no TANGENT attribute', () => {
-    const geometry = (getNodeChildren(createSceneFromGltf(makeTriangleGltf()))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(makeTriangleGltf()).root)[0] as Mesh).geometry;
     const t = { w: 0, x: 0, y: 0, z: 0 };
     getMeshGeometryVertexTangent(t, geometry, 0);
     expect([t.x, t.y, t.z, t.w]).toEqual([0, 0, 0, 0]);
@@ -763,7 +764,7 @@ describe('createSceneFromGltf', () => {
     expect(() => {
       scene = createSceneFromGltf('{ this is not valid json', warnings);
     }).not.toThrow();
-    expect(getNodeChildren(scene!)).toHaveLength(0);
+    expect(getNodeChildren(scene!.root)).toHaveLength(0);
     expect(warnings.length).toBeGreaterThan(0);
   });
 
@@ -798,7 +799,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
+    const meshNode = getNodeChildren(createSceneFromGltf(doc).root)[0] as SceneNode;
     const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[12]).toBeCloseTo(10);
     expect(m[13]).toBeCloseTo(20);
@@ -825,7 +826,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
+    const meshNode = getNodeChildren(createSceneFromGltf(doc).root)[0] as SceneNode;
     const m = getNodeLocalMatrix4(meshNode).m;
     // After 90-degree Z rotation: col0 ≈ [0, 1, 0], col1 ≈ [-1, 0, 0].
     expect(m[0]).toBeCloseTo(0);
@@ -848,7 +849,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const meshNode = getNodeChildren(createSceneFromGltf(doc))[0] as SceneNode;
+    const meshNode = getNodeChildren(createSceneFromGltf(doc).root)[0] as SceneNode;
     const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[0]).toBeCloseTo(2);
     expect(m[5]).toBeCloseTo(3);
@@ -881,7 +882,7 @@ describe('createSceneFromGltf', () => {
       scene: 0,
       scenes: [{ nodes: [0] }],
     };
-    const geometry = (getNodeChildren(createSceneFromGltf(doc))[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     expect(getMeshGeometryIndexCount(geometry)).toBe(3);
     const p = { x: 0, y: 0, z: 0 };
@@ -906,7 +907,7 @@ describe('createSceneFromGltf', () => {
       scenes: [{ nodes: [0] }, { nodes: [1] }],
     };
     const scene = createSceneFromGltf(doc);
-    const roots = getNodeChildren(scene);
+    const roots = getNodeChildren(scene.root);
     // Scene 1 has only node 1 (the mesh node), not node 0.
     expect(roots).toHaveLength(1);
     expect(isMesh(roots[0] as SceneNode)).toBe(true);
@@ -922,7 +923,7 @@ describe('createSceneFromGltf', () => {
 
   it('imports a skin binding the mesh to a skeleton over its joint nodes', () => {
     const scene = createSceneFromGltf(makeSkinnedGltf());
-    const roots = getNodeChildren(scene);
+    const roots = getNodeChildren(scene.root);
     const meshNode = roots[0] as unknown as Mesh;
     const jointNode = roots[1] as SceneNode;
 
@@ -936,7 +937,7 @@ describe('createSceneFromGltf', () => {
 
   it('emits the skinned layout with renormalized weights for a skinned primitive', () => {
     const scene = createSceneFromGltf(makeSkinnedGltf());
-    const geometry = (getNodeChildren(scene)[0] as unknown as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as unknown as Mesh).geometry;
 
     expect(geometry.layout.stride).toBe(80);
     // joints0 at float 12, weights0 at float 16; vertex 0 is fully weighted to joint 0.
@@ -946,7 +947,7 @@ describe('createSceneFromGltf', () => {
 
   it('defaults inverse-bind matrices to identity when the skin omits them', () => {
     const scene = createSceneFromGltf(makeSkinnedGltf(false));
-    const meshNode = getNodeChildren(scene)[0] as unknown as Mesh;
+    const meshNode = getNodeChildren(scene.root)[0] as unknown as Mesh;
     const inverseBind = meshNode.skin?.skeleton.inverseBindMatrices;
 
     expect(inverseBind?.length).toBe(16);
@@ -960,7 +961,7 @@ describe('createSceneFromGltf', () => {
 
   it('leaves an unskinned primitive on the canonical layout with no skin', () => {
     const scene = createSceneFromGltf(makeTriangleGltf());
-    const meshNode = getNodeChildren(scene)[0] as unknown as Mesh;
+    const meshNode = getNodeChildren(scene.root)[0] as unknown as Mesh;
 
     expect(meshNode.skin ?? null).toBeNull();
     expect(meshNode.geometry.layout.stride).toBe(48);
@@ -1005,82 +1006,37 @@ function makeAnimatedMultiSceneGltf(): GltfDocument {
   };
 }
 
-describe('importGlb', () => {
-  it('imports scenes and animations from a GLB container', () => {
-    const glb = buildGlb(makeAnimatedMultiSceneGltf(), new Uint8Array(0));
-    const result = importGlb(glb);
-    expect(result.scenes).toHaveLength(2);
-    expect(result.animations).toHaveLength(1);
-  });
-
-  it('returns an empty single-scene import for a malformed container', () => {
-    const result = importGlb(new Uint8Array([1, 2, 3]));
-    expect(result.scenes).toHaveLength(1);
-    expect(getNodeChildren(result.scene)).toHaveLength(0);
-    expect(result.animations).toHaveLength(0);
-  });
-});
-
-describe('importGltf', () => {
-  it('returns every scene the document declares, with scene pointing at the default', () => {
-    const result = importGltf(makeAnimatedMultiSceneGltf());
-    expect(result.scenes).toHaveLength(2);
-    // Default scene (index 0) holds node 0; its one mesh child is the primary scene.
-    expect(result.scene).toBe(result.scenes[0]);
-    expect(getNodeChildren(result.scene)).toHaveLength(1);
-    expect(getNodeChildren(result.scenes[1])).toHaveLength(1);
-  });
-
-  it('builds an AnimationClip whose channel binds the driven node and its rotation path', () => {
-    const result = importGltf(makeAnimatedMultiSceneGltf());
-    expect(result.animations).toHaveLength(1);
-    const clip = result.animations[0];
-    expect(clip.channels).toHaveLength(1);
-    expect(clip.duration).toBe(1); // max keyframe time
-
-    const channel = clip.channels[0];
-    const target = channel.targetRef as SceneAnimationTarget;
-    expect(target.path).toBe('Rotation');
-    // The channel binds the SAME node instance that lives in scene 1 (node 1), not a fresh copy.
-    expect(target.node).toBe(getNodeChildren(result.scenes[1])[0]);
-    // Rotation tracks are quaternion tracks (4 components, slerped).
-    expect(channel.track.quaternion).toBe(true);
-    expect(channel.track.components).toBe(4);
-    expect(channel.track.interpolation).toBe('Linear');
-    expect(Array.from(channel.track.times)).toEqual([0, 1]);
-  });
-
+describe('createSceneFromGltf animations', () => {
   it('drops a weights channel targeting a node with no morphable mesh, with a warning', () => {
     const doc = makeAnimatedMultiSceneGltf();
     // Node 1's mesh has no morph targets, so the weights channel cannot bind and is dropped.
     doc.animations![0].channels.push({ sampler: 0, target: { node: 1, path: 'weights' } });
     const warnings: string[] = [];
-    const result = importGltf(doc, warnings);
-    expect(result.animations[0].channels).toHaveLength(1); // only the rotation channel survives
+    const scene = createSceneFromGltf(doc, warnings);
+    expect(scene.animations[0].channels).toHaveLength(1); // only the rotation channel survives
     expect(warnings.some((w) => w.includes('no morphable mesh'))).toBe(true);
   });
 
   it('imports translation and scale channels as 3-component non-quaternion tracks', () => {
     const doc = makeAnimatedMultiSceneGltf();
     doc.animations![0].channels[0].target.path = 'translation';
-    const clip = importGltf(doc).animations[0];
+    const clip = createSceneFromGltf(doc).animations[0];
     expect((clip.channels[0].targetRef as SceneAnimationTarget).path).toBe('Translation');
     expect(clip.channels[0].track.quaternion).toBe(false);
     expect(clip.channels[0].track.components).toBe(3);
   });
 
-  it('returns an empty single-scene import for invalid input', () => {
+  it('returns an empty scene for invalid input', () => {
     const warnings: string[] = [];
-    const result = importGltf('{ not json', warnings);
-    expect(result.scenes).toHaveLength(1);
-    expect(getNodeChildren(result.scene)).toHaveLength(0);
-    expect(result.animations).toHaveLength(0);
+    const scene = createSceneFromGltf('{ not json', warnings);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(scene.animations).toHaveLength(0);
     expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
   });
 
   it('reads primitives[].targets into the mesh morph set with seeded weights', () => {
-    const result = importGltf(makeMorphGltf());
-    const mesh = getNodeChildren(result.scene)[0] as Mesh;
+    const scene = createSceneFromGltf(makeMorphGltf());
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(mesh.morph).not.toBeNull();
     expect(mesh.morph!.targets).toHaveLength(1);
     expect(Array.from(mesh.morph!.targets[0].positionDeltas)).toEqual([0, 10, 0, 0, 10, 0, 0, 10, 0]);
@@ -1091,15 +1047,62 @@ describe('importGltf', () => {
   });
 
   it('imports a weights channel bound to the mesh morph, its width the target count', () => {
-    const result = importGltf(makeMorphGltf());
-    expect(result.animations).toHaveLength(1);
-    const clip = result.animations[0];
+    const scene = createSceneFromGltf(makeMorphGltf());
+    expect(scene.animations).toHaveLength(1);
+    const clip = scene.animations[0];
     expect(clip.channels).toHaveLength(1);
     const channel = clip.channels[0];
     const target = channel.targetRef as SceneAnimationTarget;
     expect(target.path).toBe('Weights');
-    expect(target.node).toBe(getNodeChildren(result.scene)[0]);
+    expect(target.node).toBe(getNodeChildren(scene.root)[0]);
     expect(channel.track.components).toBe(1); // one morph target → one weight component
     expect(Array.from(channel.track.times)).toEqual([0, 1]);
+  });
+});
+
+describe('createScenesFromGlb', () => {
+  it('imports every scene from a GLB container, with animations on the default scene', () => {
+    const glb = buildGlb(makeAnimatedMultiSceneGltf(), new Uint8Array(0));
+    const scenes = createScenesFromGlb(glb);
+    expect(scenes).toHaveLength(2);
+    expect(scenes[0].animations).toHaveLength(1);
+  });
+
+  it('returns an empty array for a malformed container', () => {
+    expect(createScenesFromGlb(new Uint8Array([1, 2, 3]))).toHaveLength(0);
+  });
+});
+
+describe('createScenesFromGltf', () => {
+  it('returns every scene the document declares, each carrying its geometry', () => {
+    const scenes = createScenesFromGltf(makeAnimatedMultiSceneGltf());
+    expect(scenes).toHaveLength(2);
+    expect(getNodeChildren(scenes[0].root)).toHaveLength(1);
+    expect(getNodeChildren(scenes[1].root)).toHaveLength(1);
+  });
+
+  it('attaches the file animation clips to the default scene, bound to the driven node', () => {
+    const scenes = createScenesFromGltf(makeAnimatedMultiSceneGltf());
+    expect(scenes[0].animations).toHaveLength(1);
+    const clip = scenes[0].animations[0];
+    expect(clip.channels).toHaveLength(1);
+    expect(clip.duration).toBe(1); // max keyframe time
+
+    const channel = clip.channels[0];
+    const target = channel.targetRef as SceneAnimationTarget;
+    expect(target.path).toBe('Rotation');
+    // The channel binds the SAME node instance that lives in scene 1 (node 1), not a fresh copy.
+    expect(target.node).toBe(getNodeChildren(scenes[1].root)[0]);
+    // Rotation tracks are quaternion tracks (4 components, slerped).
+    expect(channel.track.quaternion).toBe(true);
+    expect(channel.track.components).toBe(4);
+    expect(channel.track.interpolation).toBe('Linear');
+    expect(Array.from(channel.track.times)).toEqual([0, 1]);
+  });
+
+  it('returns an empty array for invalid input', () => {
+    const warnings: string[] = [];
+    expect(createScenesFromGltf('{ not json', warnings)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
   });
 });

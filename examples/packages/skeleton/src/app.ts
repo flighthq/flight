@@ -1,4 +1,3 @@
-import { createScene } from '@flighthq/scene';
 import type { Camera, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -20,12 +19,12 @@ import {
   copyQuaternion,
   invalidateNodeLocalTransform,
   updateMeshSkin,
+  SceneNodeKind,
 } from '@flighthq/sdk';
 
 import { render } from './render';
 
-// createScene collides in the @flighthq/sdk barrel (exported by both @flighthq/node and
-// @flighthq/scene), so import the 3D scene version directly from its package.
+// The scene root is a bare SceneNode (createScene now allocates a Scene *document* that owns a root).
 
 // Skeleton example: a multi-segment tube mesh deformed by CPU skinning. Four joints form a chain
 // along the Y axis; sinusoidal rotations on the Z axis produce a smooth undulating wave. The mesh
@@ -122,7 +121,7 @@ const geometry = createMeshGeometry({
 
 // Build the joint hierarchy as SceneNodes in a chain along Y. Joint 0 is the root at the bottom of
 // the tube; each successive joint is offset upward by the segment span.
-const scene = createScene();
+const scene = createSceneNode(SceneNodeKind);
 
 const jointSpacing = TOTAL_HEIGHT / (JOINT_COUNT - 1);
 const jointNodes: SceneNode[] = [];

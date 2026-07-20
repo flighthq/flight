@@ -1,4 +1,4 @@
-import { createScene } from '@flighthq/scene';
+import { createSceneNode } from '@flighthq/scene';
 import type { Camera, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -15,12 +15,13 @@ import {
   normalizeVector3,
   setCameraViewMatrix4FromLookAt,
   invalidateNodeLocalTransform,
+  SceneNodeKind,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
 
-// createScene is imported from @flighthq/scene directly because it collides in the @flighthq/sdk
-// barrel (conflicting star exports from @flighthq/node and @flighthq/scene).
+// The scene root is a bare SceneNode (createScene now allocates a Scene *document* that owns a root);
+// createSceneNode is imported from @flighthq/scene directly to sidestep the @flighthq/sdk barrel.
 
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;
@@ -49,7 +50,7 @@ const blueMaterial = createStandardPbrMaterial({
   roughness: 0.5,
 });
 
-const scene = createScene();
+const scene = createSceneNode(SceneNodeKind);
 
 const boxMesh = createMesh(boxGeometry, [redMaterial]);
 // A node's transform is authored via its `position`/`rotation`/`scale` fields; invalidate after editing.

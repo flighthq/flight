@@ -33,7 +33,7 @@ describe('loadSceneFromMd2', () => {
     };
     const texture = createTexture({ resource: ref });
     const scene = createScene();
-    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
+    addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
     vi.mocked(createSceneFromMd2).mockReturnValue(scene as Scene);
     const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
 

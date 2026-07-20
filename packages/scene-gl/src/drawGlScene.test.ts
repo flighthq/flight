@@ -6,7 +6,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import { createMesh, createScene } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera, GlRenderTarget, SceneLights } from '@flighthq/types';
 
 import { drawGlScene } from './drawGlScene';
@@ -33,7 +33,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const material = createStandardPbrMaterial();
     const meshA = createMesh(createBoxMeshGeometry(), [material]);
     const meshB = createMesh(createBoxMeshGeometry(), [material]);
@@ -51,7 +51,7 @@ describe('drawGlScene', () => {
     const { state } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
     // Stand in for render-gl having a program bound and cached before the scene draws. The mesh
@@ -69,7 +69,7 @@ describe('drawGlScene', () => {
   it("declares the bound render target 'linear' (scene materials output linear HDR)", () => {
     const { state } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
     const runtime = getGlRenderStateRuntime(state);
@@ -85,7 +85,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     mesh.enabled = false;
     addNodeChild(scene, mesh);
@@ -98,7 +98,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
@@ -112,7 +112,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const blendedMaterial = createStandardPbrMaterial();
     blendedMaterial.alphaMode = 'blend';
     const mesh = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
@@ -133,7 +133,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     // Add blended first, then opaque — opaque should still draw before blended.
     const blendedMaterial = createStandardPbrMaterial();
     blendedMaterial.alphaMode = 'blend';
@@ -156,7 +156,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
@@ -170,7 +170,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     // Opaque material, but the node is faded (alpha < 1). prepareSceneRender (run inside drawGlScene)
     // folds the authored alpha into worldAlpha, and drawGlScene must route the fading object through
     // the blended pass so it composites correctly.
@@ -190,7 +190,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     mesh.alpha = 1;
     addNodeChild(scene, mesh);
@@ -204,7 +204,7 @@ describe('drawGlScene', () => {
   it('skips a subset whose material has no registered renderer (no fallback)', () => {
     const { state, gl } = makeGlSceneState();
     // No registerStandardPbrGlMaterial: nothing resolves.
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
@@ -216,7 +216,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const blendedMaterial = createStandardPbrMaterial();
     blendedMaterial.alphaMode = 'blend';
 
@@ -242,7 +242,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     // An emitter carries no geometry, so it never appears in the visible-mesh list; drawGlScene must
     // run the emitter pass internally. The emitter's instanced pass is the only drawElementsInstanced
     // caller, so its presence proves the emitter was drawn without a separate manual pass.
@@ -267,7 +267,7 @@ describe('drawGlScene', () => {
     const { state, gl } = makeGlSceneState();
     registerStandardPbrGlMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
     drawGlScene(state, scene, makeCamera(), LIGHTS);

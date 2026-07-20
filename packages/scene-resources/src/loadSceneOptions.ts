@@ -21,7 +21,7 @@ export async function resolveScenesWithOptions(
 ): Promise<void> {
   const resolver = options?.resolver ?? createSceneResourceResolver();
   try {
-    for (const scene of scenes) await resolveSceneResourcesAndWait(scene, resolver);
+    for (const scene of scenes) await resolveSceneResourcesAndWait(scene.root, resolver);
   } finally {
     if (options?.resolver === undefined) disposeSceneResourceResolver(resolver);
   }

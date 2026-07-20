@@ -16,7 +16,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFromMd2, importMd2 } from './md2Parse';
+import { createSceneFromMd2 } from './md2Parse';
 import { MD2_ANORMS } from './md2Schema';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and
@@ -157,7 +157,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const scene = createSceneFromMd2(md2);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 3 unique vertex/texcoord combos, 6 indices (2 triangles).
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
@@ -178,7 +178,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const scene = createSceneFromMd2(md2);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     const n = { x: 0, y: 0, z: 0 };
     getMeshGeometryVertexNormal(n, geometry, 0);
     const expected = MD2_ANORMS[5];
@@ -207,7 +207,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const scene = createSceneFromMd2(md2);
-    const children = getNodeChildren(scene);
+    const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as SceneNode)).toBe(true);
 
@@ -240,7 +240,7 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
     });
 
-    const mesh = getNodeChildren(createSceneFromMd2(md2))[0] as Mesh;
+    const mesh = getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(1);
     const material = mesh.materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
@@ -265,14 +265,14 @@ describe('createSceneFromMd2', () => {
       triangles: [{ texIndices: [0, 1, 2], vertIndices: [0, 1, 2] }],
     });
 
-    const mesh = getNodeChildren(createSceneFromMd2(md2))[0] as Mesh;
+    const mesh = getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh;
     expect(mesh.materials).toHaveLength(0);
   });
 
   it('returns an empty scene for input shorter than the header', () => {
     const warnings: string[] = [];
     const scene = createSceneFromMd2(new Uint8Array(10), warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('shorter than'))).toBe(true);
   });
 
@@ -290,7 +290,7 @@ describe('createSceneFromMd2', () => {
 
     const warnings: string[] = [];
     const scene = createSceneFromMd2(md2, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('invalid magic'))).toBe(true);
   });
 
@@ -308,7 +308,7 @@ describe('createSceneFromMd2', () => {
 
     const warnings: string[] = [];
     const scene = createSceneFromMd2(md2, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('unsupported version'))).toBe(true);
   });
 
@@ -327,7 +327,7 @@ describe('createSceneFromMd2', () => {
     const truncated = md2.slice(0, 70);
     const warnings: string[] = [];
     const scene = createSceneFromMd2(truncated, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('truncated'))).toBe(true);
   });
 
@@ -345,7 +345,7 @@ describe('createSceneFromMd2', () => {
 
     const warnings: string[] = [];
     const scene = createSceneFromMd2(md2, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(warnings.some((w) => w.includes('no frames'))).toBe(true);
   });
 
@@ -368,7 +368,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const scene = createSceneFromMd2(md2);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const uv = { x: 0, y: 0 };
     getMeshGeometryVertexUv0(uv, geometry, 0);
@@ -403,7 +403,7 @@ describe('createSceneFromMd2', () => {
     });
 
     const scene = createSceneFromMd2(md2);
-    const geometry = (getNodeChildren(scene)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     // 3 vertices * 2 texcoord variants = 6 unique vertices.
     expect(getMeshGeometryVertexCount(geometry)).toBe(6);
     expect(getMeshGeometryIndexCount(geometry)).toBe(6);
@@ -427,7 +427,7 @@ describe('createSceneFromMd2', () => {
     const warnings: string[] = [];
     const scene = createSceneFromMd2(md2, warnings);
     // First triangle should still produce a mesh.
-    expect(getNodeChildren(scene)).toHaveLength(1);
+    expect(getNodeChildren(scene.root)).toHaveLength(1);
     expect(warnings.some((w) => w.includes('vertex index') && w.includes('out of range'))).toBe(true);
   });
 
@@ -448,12 +448,12 @@ describe('createSceneFromMd2', () => {
 
     const warnings: string[] = [];
     const scene = createSceneFromMd2(md2, warnings);
-    expect(getNodeChildren(scene)).toHaveLength(1);
+    expect(getNodeChildren(scene.root)).toHaveLength(1);
     expect(warnings.some((w) => w.includes('texcoord index') && w.includes('out of range'))).toBe(true);
   });
 });
 
-describe('importMd2', () => {
+describe('createSceneFromMd2 animations', () => {
   const singleTriangleFrame0 = [
     { normalIndex: 0, x: 0, y: 0, z: 0 },
     { normalIndex: 0, x: 1, y: 0, z: 0 },
@@ -472,11 +472,9 @@ describe('importMd2', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const result = importMd2(md2);
-    expect(result.scenes).toHaveLength(1);
-    expect(result.scene).toBe(result.scenes[0]);
-    expect(result.animations).toHaveLength(0);
-    expect(getNodeChildren(result.scene)).toHaveLength(1);
+    const scene = createSceneFromMd2(md2);
+    expect(scene.animations).toHaveLength(0);
+    expect(getNodeChildren(scene.root)).toHaveLength(1);
   });
 
   it('builds a mesh morph with one target per non-base frame (frame 1 delta from frame 0)', () => {
@@ -494,7 +492,7 @@ describe('importMd2', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const mesh = getNodeChildren(createSceneFromMd2(md2))[0] as Mesh;
+    const mesh = getNodeChildren(createSceneFromMd2(md2).root)[0] as Mesh;
     expect(mesh.morph).not.toBeNull();
     expect(mesh.morph!.targets).toHaveLength(1);
     // The deduped vertex for source vertex 1 carries a +2 x position delta.
@@ -519,9 +517,9 @@ describe('importMd2', () => {
       texCoords: singleTriangleTexCoords,
       triangles: singleTriangle,
     });
-    const result = importMd2(md2);
-    expect(result.animations).toHaveLength(1);
-    const clip = result.animations[0];
+    const scene = createSceneFromMd2(md2);
+    expect(scene.animations).toHaveLength(1);
+    const clip = scene.animations[0];
     expect(clip.channels).toHaveLength(1);
     const channel = clip.channels[0];
     expect((channel.targetRef as SceneAnimationTarget).path).toBe('Weights');

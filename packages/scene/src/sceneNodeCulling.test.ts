@@ -1,9 +1,9 @@
 import { createFrustum, createMatrix4, setVector3 } from '@flighthq/geometry';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { SceneNodeKind } from '@flighthq/types';
 
 import { createMesh } from './mesh';
-import { createScene } from './scene';
 import { createSceneNode } from './sceneNode';
 import { buildSceneFrustum, cullSceneNodeByFrustum } from './sceneNodeCulling';
 
@@ -53,7 +53,7 @@ describe('buildSceneFrustum', () => {
 
 describe('cullSceneNodeByFrustum', () => {
   it('returns empty when no meshes', () => {
-    const root = createScene();
+    const root = createSceneNode(SceneNodeKind);
     const frustum = createFrustum();
     buildSceneFrustum(frustum, makeViewProjection());
     const out = cullSceneNodeByFrustum([], root, frustum);
@@ -61,7 +61,7 @@ describe('cullSceneNodeByFrustum', () => {
   });
 
   it('collects a mesh at the origin that is in frustum', () => {
-    const root = createScene();
+    const root = createSceneNode(SceneNodeKind);
     const mesh = createMesh(makeBoxGeometry(), []);
     setVector3(mesh.position, 0, 0, -5); // in front of camera
     invalidateNodeLocalTransform(mesh);
@@ -73,7 +73,7 @@ describe('cullSceneNodeByFrustum', () => {
   });
 
   it('excludes disabled nodes and their subtrees', () => {
-    const root = createScene();
+    const root = createSceneNode(SceneNodeKind);
     const parent = createSceneNode();
     parent.enabled = false;
     const mesh = createMesh(makeBoxGeometry(), []);
@@ -89,7 +89,7 @@ describe('cullSceneNodeByFrustum', () => {
   });
 
   it('excludes meshes behind the camera', () => {
-    const root = createScene();
+    const root = createSceneNode(SceneNodeKind);
     const mesh = createMesh(makeBoxGeometry(), []);
     setVector3(mesh.position, 0, 0, 50); // behind camera (positive Z in RH)
     invalidateNodeLocalTransform(mesh);
@@ -101,7 +101,7 @@ describe('cullSceneNodeByFrustum', () => {
   });
 
   it('does not clear out before appending', () => {
-    const root = createScene();
+    const root = createSceneNode(SceneNodeKind);
     const mesh = createMesh(makeBoxGeometry(), []);
     setVector3(mesh.position, 0, 0, -5);
     invalidateNodeLocalTransform(mesh);
@@ -114,7 +114,7 @@ describe('cullSceneNodeByFrustum', () => {
   });
 
   it('returns the out array', () => {
-    const root = createScene();
+    const root = createSceneNode(SceneNodeKind);
     const frustum = createFrustum();
     buildSceneFrustum(frustum, makeViewProjection());
     const out: ReturnType<typeof createSceneNode>[] = [];

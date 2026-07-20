@@ -5,7 +5,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
-import { createMesh, createScene } from '@flighthq/scene';
+import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera, ParticleEmitter3D, SceneLights } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
@@ -32,7 +32,7 @@ describe('drawWgpuScene', () => {
     const { fake, state } = makeWgpuSceneState();
     registerStandardPbrWgpuMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
@@ -45,7 +45,7 @@ describe('drawWgpuScene', () => {
   it('skips a subset whose material has no registered renderer (no fallback)', () => {
     const { fake, state } = makeWgpuSceneState();
     // No registerStandardPbrWgpuMaterial: nothing resolves.
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     addNodeChild(scene, mesh);
 
@@ -57,7 +57,7 @@ describe('drawWgpuScene', () => {
     const { fake, state } = makeWgpuSceneState();
     registerStandardPbrWgpuMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const material = createStandardPbrMaterial();
     const meshA = createMesh(createBoxMeshGeometry(), [material]);
     const meshB = createMesh(createBoxMeshGeometry(), [material]);
@@ -75,7 +75,7 @@ describe('drawWgpuScene', () => {
     const { fake, state } = makeWgpuSceneState();
     registerStandardPbrWgpuMaterial(state);
 
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     const mesh = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     mesh.enabled = false;
     addNodeChild(scene, mesh);
@@ -86,7 +86,7 @@ describe('drawWgpuScene', () => {
 
   it('draws a scene ParticleEmitter3D as a final pass without a manual emitter call', () => {
     const { fake, state } = makeWgpuSceneState();
-    const scene = createScene();
+    const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeParticleEmitter(3));
     // No mesh and no manual drawWgpuSceneParticleEmitters — drawWgpuScene must render the emitter itself
     // (a 6-index instanced quad draw), mirroring drawGlScene's automatic emitter pass.
