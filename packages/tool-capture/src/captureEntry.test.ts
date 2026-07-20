@@ -2,7 +2,49 @@ import { isAbsolute, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { captureEntry, captureParallel, getCaptureOutputPaths } from './captureEntry';
+import { buildCaptureObserveDiagnostics, captureEntry, captureParallel, getCaptureOutputPaths } from './captureEntry';
+
+describe('buildCaptureObserveDiagnostics', () => {
+  it('passes through the render facts and separates page exceptions from console/network errors', () => {
+    const d = buildCaptureObserveDiagnostics({
+      backend: 'webgl',
+      blank: true,
+      coverage: 0,
+      verifyPublished: false,
+      verifyTargetKind: 'webgl',
+      logs: [
+        { level: 'pageerror', data: { msg: 'boom' } },
+        { level: 'error', channel: 'network', data: { msg: 'request failed' } },
+        { level: 'error', channel: 'console', data: { msg: 'console.error' } },
+        { level: 'info', data: { msg: 'ignored' } },
+      ],
+    });
+    expect(d).toEqual({
+      backend: 'webgl',
+      blank: true,
+      coverage: 0,
+      errorCount: 2,
+      pageErrorCount: 1,
+      verifyPublished: false,
+      verifyTargetKind: 'webgl',
+    });
+  });
+
+  it('reports a clean non-blank observation with no errors', () => {
+    const d = buildCaptureObserveDiagnostics({
+      backend: 'webgl',
+      blank: false,
+      coverage: 0.42,
+      verifyPublished: true,
+      verifyTargetKind: 'webgl',
+      logs: [],
+    });
+    expect(d.blank).toBe(false);
+    expect(d.coverage).toBe(0.42);
+    expect(d.pageErrorCount).toBe(0);
+    expect(d.errorCount).toBe(0);
+  });
+});
 
 describe('captureEntry', () => {
   // Driving a page needs a live Playwright BrowserContext and server; that path is exercised end to end
