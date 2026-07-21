@@ -1,6 +1,10 @@
 import {
+  composeMatrix4,
   conjugateQuaternion,
+  createMatrix4,
   createQuaternion,
+  createTransform3D,
+  inverseMatrix4,
   multiplyQuaternion,
   rotateVector3ByQuaternion,
   setQuaternion,
@@ -8,11 +12,17 @@ import {
 } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
-import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { Material, Mesh, SceneNode, Skeleton3D } from '@flighthq/types';
+import { createSceneFromDocument } from '@flighthq/scene';
+import type {
+  Material,
+  MaterialLike,
+  Matrix4,
+  SceneDocument,
+  SceneDocumentMesh,
+  SceneDocumentSkin,
+} from '@flighthq/types';
+import { MeshKind, SceneNodeKind } from '@flighthq/types';
 
 import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './md5Schema';
 import type { SkinInfluence } from './shared';
@@ -25,22 +35,36 @@ import {
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
 
-// Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. The ASCII line-oriented format
-// contains a skeleton (joints) and one or more mesh sections. Each mesh section becomes a
-// separate Mesh child of the scene root. The joints form a nested SceneNode hierarchy under a
-// "skeleton" group. The subtlety that MD5 skinning gets wrong: .md5mesh joint transforms are
-// ABSOLUTE (object-space), but .md5anim frames are parent-RELATIVE — so the bind pose here is
-// converted absolute→relative before nesting (so parent × child rebuilds the absolute world), while
-// parseMd5Anim drives its already-relative values onto the same nested joints. Both then pose one
-// consistent hierarchy. See the absolute→relative conversion in the skeleton build below.
+// Parses an id Tech 4 MD5 mesh file (.md5mesh) into a Scene. Convenience over
+// `createSceneFromDocument(parseMd5Mesh(source, warnings))`. See parseMd5Mesh for the import model.
+export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Scene {
+  return createSceneFromDocument(parseMd5Mesh(source, warnings));
+}
+
+// Parses an id Tech 4 MD5 mesh file (.md5mesh) into a format-neutral SceneDocument. The ASCII
+// line-oriented format contains a skeleton (joints) and one or more mesh sections. Each mesh section
+// becomes one document Mesh node (skinned layout, joints0/weights0), and the joints become a "skeleton"
+// group + joint node subtree in the document `nodes` table plus one entry in `skins` (joints by node
+// index, inverse-bind per joint). The subtlety that MD5 skinning gets wrong: .md5mesh joint transforms
+// are ABSOLUTE (object-space), but .md5anim frames are parent-RELATIVE — so each joint node here carries
+// its parent-RELATIVE local transform (parent × child rebuilds the absolute world), while parseMd5Anim
+// drives its already-relative values onto the same joints. Both then pose one consistent hierarchy. The
+// skin's inverse-bind is derived directly from the ABSOLUTE bind world (the document requires it explicit,
+// where the live scene path let createSkeleton3D derive it from the joint nodes' world transforms).
 //
-// Vertex positions are computed from weighted joint influences: for each vertex, the final
-// position is the sum of each weight's bias multiplied by the joint-space-transformed weight
-// position plus the joint position.
+// Vertex positions are computed from weighted joint influences: for each vertex, the final position is the
+// sum of each weight's bias multiplied by the joint-space-transformed weight position plus the joint
+// position. MD5's per-section `shader` becomes a BlinnPhongMaterial (the id Tech texture-and-lighting
+// model) whose diffuseMap references the shader path as an unresolved External ref — the parser
+// references, it does not load; resolution is @flighthq/scene-resources's explicit step.
+//
+// MD5 splits mesh and animation across two files, so the document's `animations` table is empty. To bind a
+// paired `.md5anim`, the caller composes onto the assembled scene:
+// `scene.animations['walk'] = parseMd5Anim(animSource, findSceneSkeletonJoints(scene.root)!)`.
 //
 // Malformed lines push a warning and are skipped; the function never throws on bad input.
-export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Scene {
-  const scene = createScene();
+export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument {
+  const document = emptyMd5Document();
 
   const joints: Md5Joint[] = [];
   const meshes: Md5Mesh[] = [];
@@ -79,106 +103,17 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
     }
   }
 
-  // Build skeleton hierarchy as SceneNode tree. The skin (below) references these joint nodes by
-  // identity, so parseMd5Anim can pose the same nodes the mesh deforms from.
-  let skeleton: Skeleton3D | null = null;
-  let skeletonRoot: SceneNode | null = null;
+  // Emit the skeleton into the document node table (skeleton group + joint nodes) and its skin (joints by
+  // node index + inverse-bind). The skin index every mesh section binds to.
+  let skinIndex: number | undefined;
   if (joints.length > 0) {
-    skeletonRoot = createSceneNode(undefined, { name: 'skeleton' });
-    const jointNodes: SceneNode[] = [];
-
-    // Convert joint positions and orientations from Z-up to Y-up.
-    const jointPositions: number[] = [];
-    const jointOrientations: number[] = [];
-    for (const joint of joints) {
-      jointPositions.push(joint.positionX, joint.positionY, joint.positionZ);
-      jointOrientations.push(joint.orientationX, joint.orientationY, joint.orientationZ, joint.orientationW);
-    }
-    convertPositionsZUpToYUp(jointPositions);
-    convertQuaternionsZUpToYUp(jointOrientations);
-
-    // The .md5mesh joints are ABSOLUTE (object-space) transforms, but the SceneNode hierarchy composes
-    // parent × child, so each joint's LOCAL transform must be its transform relative to its parent:
-    // localQuat = parentAbsQuat⁻¹ · absQuat, localPos = parentAbsQuat⁻¹ · (absPos − parentAbsPos). This
-    // is the crux MD5 skinning gets wrong two ways: setting the absolute transform directly as the local
-    // (double-accumulates → explodes under animation), or flattening the skeleton (breaks the .md5anim
-    // frames, which are parent-RELATIVE and rely on the hierarchy to compose to absolute — see
-    // parseMd5Anim). With bind converted to relative here and anim already relative, both pose the same
-    // nested joints consistently. Roots (parentIndex < 0) keep their absolute transform as local.
-    const parentConj = createQuaternion();
-    const relPos = { x: 0, y: 0, z: 0 };
-    const relQuat = createQuaternion();
-    for (let j = 0; j < joints.length; j++) {
-      const joint = joints[j];
-      const node = createSceneNode(undefined, { name: joint.name });
-      const pi = j * 3;
-      const qi = j * 4;
-      const parentIndex = joint.parentIndex;
-      let localPx = jointPositions[pi];
-      let localPy = jointPositions[pi + 1];
-      let localPz = jointPositions[pi + 2];
-      let localQx = jointOrientations[qi];
-      let localQy = jointOrientations[qi + 1];
-      let localQz = jointOrientations[qi + 2];
-      let localQw = jointOrientations[qi + 3];
-      if (parentIndex >= 0 && parentIndex < joints.length) {
-        const ppi = parentIndex * 3;
-        const pqi = parentIndex * 4;
-        conjugateQuaternion(parentConj, {
-          w: jointOrientations[pqi + 3],
-          x: jointOrientations[pqi],
-          y: jointOrientations[pqi + 1],
-          z: jointOrientations[pqi + 2],
-        });
-        rotateVector3ByQuaternion(
-          relPos,
-          {
-            x: localPx - jointPositions[ppi],
-            y: localPy - jointPositions[ppi + 1],
-            z: localPz - jointPositions[ppi + 2],
-          },
-          parentConj,
-        );
-        multiplyQuaternion(relQuat, parentConj, { w: localQw, x: localQx, y: localQy, z: localQz });
-        localPx = relPos.x;
-        localPy = relPos.y;
-        localPz = relPos.z;
-        localQx = relQuat.x;
-        localQy = relQuat.y;
-        localQz = relQuat.z;
-        localQw = relQuat.w;
-      } else if (parentIndex >= joints.length) {
-        warnings?.push(`createSceneFromMd5Mesh: joint ${j} has out-of-range parent index ${parentIndex}`);
-      }
-      setVector3(node.position, localPx, localPy, localPz);
-      setQuaternion(node.rotation, localQx, localQy, localQz, localQw);
-      invalidateNodeLocalTransform(node);
-      jointNodes.push(node);
-    }
-
-    // Nest by parent index so parent × child composition reconstructs each joint's absolute world
-    // transform from the parent-relative locals set above; roots hang under the skeleton group.
-    for (let j = 0; j < joints.length; j++) {
-      const parentIndex = joints[j].parentIndex;
-      if (parentIndex >= 0 && parentIndex < jointNodes.length) {
-        addNodeChild(jointNodes[parentIndex], jointNodes[j]);
-      } else {
-        addNodeChild(skeletonRoot, jointNodes[j]);
-      }
-    }
-
-    addNodeChild(scene.root, skeletonRoot);
-
-    // Capture the current (bind) pose as the skin's rest pose: createSkeleton3D with no explicit
-    // inverse-bind matrices derives them from the joint nodes' world transforms, which are set to
-    // the MD5 rest pose above. Shared by every mesh section — they skin from the same skeleton.
-    const jointNames = joints.map((joint) => joint.name);
-    skeleton = createSkeleton3D(jointNodes, undefined, jointNames);
+    skinIndex = document.skins.length;
+    document.skins.push(buildMd5SkeletonDocument(joints, document, warnings));
   }
 
-  // Build mesh geometry from weighted vertices. Each vertex bakes its bind-pose position from the
-  // joint influences (as before) and, unlike before, keeps those influences as the skinned layout's
-  // joints0/weights0 channels so the mesh can be re-deformed every frame from an animated skeleton.
+  // Build mesh geometry from weighted vertices. Each vertex bakes its bind-pose position from the joint
+  // influences and keeps those influences as the skinned layout's joints0/weights0 channels so the mesh can
+  // be re-deformed every frame from an animated skeleton.
   for (let m = 0; m < meshes.length; m++) {
     const md5Mesh = meshes[m];
     const vertices: number[] = [];
@@ -285,27 +220,170 @@ export function createSceneFromMd5Mesh(source: string, warnings?: string[]): Sce
       // MD5 carries no normals; derive them from the Y-up bind-pose positions and winding.
       computeMeshGeometryNormals(geometry, geometry);
       // MD5's per-section `shader` names the material/texture the mesh uses. MD5 has no lighting-model
-      // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model)
-      // whose diffuseMap references the shader path; resolution of that path is the caller's step.
-      const materials: Material[] = [];
+      // parameters, so decode it as a BlinnPhongMaterial (the id Tech texture-and-lighting model) whose
+      // diffuseMap references the shader path; resolution of that path is the caller's step.
+      const meshMaterials: number[] = [];
       if (md5Mesh.shader.length > 0) {
         const material = createBlinnPhongMaterial({
           diffuseMap: createExternalTextureRef(md5Mesh.shader),
         }) as unknown as Material;
         // MD5's shader path is the material's authored identity — preserve it as the name.
         material.name = md5Mesh.shader;
-        materials.push(material);
+        meshMaterials.push(document.materials.length);
+        document.materials.push(material as unknown as MaterialLike);
       }
-      const meshNode: Mesh = createMesh(geometry, materials);
-      if (skeleton !== null) meshNode.skin = { skeleton, skeletonRoot };
-      addNodeChild(scene.root, meshNode as unknown as SceneNode);
+      const documentMesh: SceneDocumentMesh = { geometry, materials: meshMaterials };
+      if (skinIndex !== undefined) documentMesh.skin = skinIndex;
+      const meshIndex = document.meshes.length;
+      document.meshes.push(documentMesh);
+      const nodeIndex = document.nodes.length;
+      document.nodes.push({ children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() });
+      document.scenes[0].rootNodes.push(nodeIndex);
     }
   }
 
-  // MD5 splits mesh and animation across two files, so this returns the mesh (skeleton + skinned meshes)
-  // with an empty `animations` map. To bind a paired `.md5anim`, the caller composes:
-  // `scene.animations['walk'] = parseMd5Anim(animSource, findSceneSkeletonJoints(scene.root)!)`.
-  return scene;
+  return document;
+}
+
+// Emits an MD5 joint list into a SceneDocument as a "skeleton" group node + one joint node per MD5 joint
+// (with its parent-RELATIVE local transform), and returns the SceneDocumentSkin whose joints are those node
+// indices and whose inverse-bind is derived from the ABSOLUTE bind world. Appends the nodes to
+// `document.nodes` and wires the skeleton-group node as a scene root plus each joint under its parent joint
+// (roots under the group) via `children` index lists.
+function buildMd5SkeletonDocument(
+  joints: readonly Md5Joint[],
+  document: SceneDocument,
+  warnings?: string[],
+): SceneDocumentSkin {
+  const skeletonRootIndex = document.nodes.length;
+  document.nodes.push({ children: [], kind: SceneNodeKind, name: 'skeleton', transform: createTransform3D() });
+  document.scenes[0].rootNodes.push(skeletonRootIndex);
+
+  // Convert joint positions and orientations from Z-up to Y-up.
+  const jointPositions: number[] = [];
+  const jointOrientations: number[] = [];
+  for (const joint of joints) {
+    jointPositions.push(joint.positionX, joint.positionY, joint.positionZ);
+    jointOrientations.push(joint.orientationX, joint.orientationY, joint.orientationZ, joint.orientationW);
+  }
+  convertPositionsZUpToYUp(jointPositions);
+  convertQuaternionsZUpToYUp(jointOrientations);
+
+  const jointNodeIndices: number[] = [];
+  for (let j = 0; j < joints.length; j++) {
+    jointNodeIndices.push(document.nodes.length);
+    document.nodes.push({ children: [], kind: SceneNodeKind, name: joints[j].name, transform: createTransform3D() });
+  }
+
+  // The .md5mesh joints are ABSOLUTE (object-space) transforms, but the SceneNode hierarchy composes parent
+  // × child, so each joint's LOCAL transform must be its transform relative to its parent: localQuat =
+  // parentAbsQuat⁻¹ · absQuat, localPos = parentAbsQuat⁻¹ · (absPos − parentAbsPos). This is the crux MD5
+  // skinning gets wrong two ways: setting the absolute transform directly as the local (double-accumulates →
+  // explodes under animation), or flattening the skeleton (breaks the .md5anim frames, which are
+  // parent-RELATIVE and rely on the hierarchy to compose to absolute — see parseMd5Anim). With bind
+  // converted to relative here and anim already relative, both pose the same nested joints consistently.
+  // Roots (parentIndex < 0) keep their absolute transform as local.
+  const parentConj = createQuaternion();
+  const relPos = { x: 0, y: 0, z: 0 };
+  const relQuat = createQuaternion();
+  for (let j = 0; j < joints.length; j++) {
+    const pi = j * 3;
+    const qi = j * 4;
+    const parentIndex = joints[j].parentIndex;
+    let localPx = jointPositions[pi];
+    let localPy = jointPositions[pi + 1];
+    let localPz = jointPositions[pi + 2];
+    let localQx = jointOrientations[qi];
+    let localQy = jointOrientations[qi + 1];
+    let localQz = jointOrientations[qi + 2];
+    let localQw = jointOrientations[qi + 3];
+    if (parentIndex >= 0 && parentIndex < joints.length) {
+      const ppi = parentIndex * 3;
+      const pqi = parentIndex * 4;
+      conjugateQuaternion(parentConj, {
+        w: jointOrientations[pqi + 3],
+        x: jointOrientations[pqi],
+        y: jointOrientations[pqi + 1],
+        z: jointOrientations[pqi + 2],
+      });
+      rotateVector3ByQuaternion(
+        relPos,
+        {
+          x: localPx - jointPositions[ppi],
+          y: localPy - jointPositions[ppi + 1],
+          z: localPz - jointPositions[ppi + 2],
+        },
+        parentConj,
+      );
+      multiplyQuaternion(relQuat, parentConj, { w: localQw, x: localQx, y: localQy, z: localQz });
+      localPx = relPos.x;
+      localPy = relPos.y;
+      localPz = relPos.z;
+      localQx = relQuat.x;
+      localQy = relQuat.y;
+      localQz = relQuat.z;
+      localQw = relQuat.w;
+    } else if (parentIndex >= joints.length) {
+      warnings?.push(`createSceneFromMd5Mesh: joint ${j} has out-of-range parent index ${parentIndex}`);
+    }
+    const transform = document.nodes[jointNodeIndices[j]].transform;
+    setVector3(transform.position, localPx, localPy, localPz);
+    setQuaternion(transform.rotation, localQx, localQy, localQz, localQw);
+  }
+
+  // Nest by parent index so parent × child composition reconstructs each joint's absolute world transform
+  // from the parent-relative locals set above; roots hang under the skeleton group.
+  for (let j = 0; j < joints.length; j++) {
+    const parentIndex = joints[j].parentIndex;
+    if (parentIndex >= 0 && parentIndex < joints.length) {
+      document.nodes[jointNodeIndices[parentIndex]].children.push(jointNodeIndices[j]);
+    } else {
+      document.nodes[skeletonRootIndex].children.push(jointNodeIndices[j]);
+    }
+  }
+
+  // Derive each joint's inverse-bind matrix from its ABSOLUTE (Y-up) bind world transform: inverseBind =
+  // (compose(absPos, absQuat, 1))⁻¹. MD5 joints are already absolute, so no hierarchy walk is needed — this
+  // is exactly what the live scene path produced by letting createSkeleton3D derive the palette from the
+  // joint nodes' world transforms (which recompose to these absolutes).
+  const inverseBind: Matrix4[] = [];
+  const bindWorld = createMatrix4();
+  for (let j = 0; j < joints.length; j++) {
+    const pi = j * 3;
+    const qi = j * 4;
+    composeMatrix4(
+      bindWorld,
+      { x: jointPositions[pi], y: jointPositions[pi + 1], z: jointPositions[pi + 2] },
+      {
+        w: jointOrientations[qi + 3],
+        x: jointOrientations[qi],
+        y: jointOrientations[qi + 1],
+        z: jointOrientations[qi + 2],
+      },
+      { x: 1, y: 1, z: 1 },
+    );
+    const inv = createMatrix4();
+    inverseMatrix4(inv, bindWorld);
+    inverseBind.push(inv);
+  }
+
+  return { inverseBind, joints: jointNodeIndices };
+}
+
+// The empty SceneDocument returned before assembly begins — every table present.
+function emptyMd5Document(): SceneDocument {
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
 }
 
 // Parses the joints { ... } block. Returns the line index after the closing brace.
