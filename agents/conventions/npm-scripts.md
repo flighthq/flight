@@ -57,3 +57,5 @@ Collapses over these leaves:
 | `functional` / `examples` / `gallery` | the matching `dev:*` server |
 
 All render checks invoke `@flighthq/tool-capture`: `capture --fail-on-error` runs smoke reporting, while `validate` runs parity (`--no-regression`), regression (`--no-parity`), and baseline writes (`--update-fingerprints`).
+
+The subject umbrellas dogfood its higher-level batch workflow: `test:functional` and `test:examples` select one subject from `tool-capture.batch.json`, while `test:browser` processes both subjects through one multi-subject plan. The leaf smoke/parity/regression and baseline commands remain available for focused reads and writes.

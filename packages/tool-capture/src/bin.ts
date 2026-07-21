@@ -2,10 +2,13 @@
 // Turn-key capture CLI:
 // - observe <url>: one arbitrary page, zero integration, always emit eyes + diagnostics.
 // - capture: a full entry × renderer report from a JSON manifest or Flight's built-in suites.
+// - validate: tolerant regression/parity fingerprints over the same suite.
+// - batch: capture + validate workflow over many independently-configured subjects.
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { readCaptureBatchManifest } from './captureBatchManifest.js';
 import { discoverEntries } from './captureEntries.js';
 import type { Entry } from './captureEntries.js';
 import { captureUrl } from './captureEntry.js';
@@ -15,6 +18,12 @@ import { readCaptureManifest } from './captureManifest.js';
 import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.js';
 import { runCaptureSuite } from './captureSuite.js';
 import { runCaptureValidation } from './captureValidation.js';
+import type {
+  CaptureWorkflowCaptureOptions,
+  CaptureWorkflowOptions,
+  CaptureWorkflowValidationOptions,
+} from './captureWorkflow.js';
+import { runCaptureBatch } from './captureWorkflow.js';
 
 const USAGE = `usage:
   tool-capture observe <url> [--out <dir>] [--wait <ms>] [--frames <n>]
@@ -22,6 +31,7 @@ const USAGE = `usage:
   tool-capture capture --tool <examples|functional> [options]
   tool-capture validate [--manifest <file>] (--url <url> | --dir <built-dir>) [options]
   tool-capture validate --tool <examples|functional> [options]
+  tool-capture batch [--config <file>] [--only <subject>] [--subjects-parallel <n>] [options]
 
 capture options:
   --filter <name> --renderer <ids> --out <dir> --wait <ms> --frames <n>
@@ -31,6 +41,9 @@ capture options:
 validation options:
   --report --update-fingerprints --no-regression --no-parity
   --stability-epsilon <n> --regression-tolerance <n> --parity-tolerance <n>
+
+batch options:
+  --config <file> defaults to tool-capture.batch.json; remaining options override every subject
 
 Manifest: { "subject": "app", "entries": [{ "name": "home", "renderers": ["webgl"],
   "routes": { "webgl": "pages/home/" } }] }`;
@@ -71,7 +84,7 @@ async function resolveCaptureCliSuite(argv: readonly string[]): Promise<CaptureC
     entries = discoverEntries(toolName, root);
   } else {
     const conventionalManifest = resolve(root, 'tool-capture.json');
-    if (!existsSync(conventionalManifest)) throw new Error(`capture/validate requires --manifest or --tool\n${USAGE}`);
+    if (!existsSync(conventionalManifest)) throw new Error(`suite requires --manifest or --tool\n${USAGE}`);
     manifest = readCaptureManifest(conventionalManifest);
     subject = flag(argv, 'subject') ?? manifest.subject;
     entries = manifest.entries;
@@ -96,33 +109,19 @@ async function resolveCaptureCliSuite(argv: readonly string[]): Promise<CaptureC
       : await resolveStaticServer({ tool: toolName, root, forceBuild: hasFlag(argv, 'build') });
     console.log(`Ready at ${server.url}\n`);
   } else {
-    throw new Error(`capture/validate requires --url or --dir for manifest suites\n${USAGE}`);
+    throw new Error(`suite requires --url or --dir for manifest suites\n${USAGE}`);
   }
   return { entries, manifest, root, server, subject };
 }
 
 async function capture(argv: readonly string[]): Promise<number> {
   const { subject, entries, server, root } = await resolveCaptureCliSuite(argv);
-
-  const frames = flag(argv, 'frames');
-  const parallel = flag(argv, 'parallel');
   const result = await runCaptureSuite({
+    ...captureOptions(argv),
     subject,
     entries,
     server,
     root,
-    outBase: flag(argv, 'out') ?? '.artifacts',
-    filter: flag(argv, 'filter'),
-    rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
-    extraWait: parseNonNegativeInteger(flag(argv, 'wait'), 0),
-    captureFrames: parseNonNegativeInteger(frames?.split(',')[0], 0),
-    workerCount: Math.max(1, parseNonNegativeInteger(parallel, 6)),
-    sequential: hasFlag(argv, 'sequential'),
-    updateBaseline: hasFlag(argv, 'update-baseline'),
-    failOnChanged: hasFlag(argv, 'fail-on-changed'),
-    failOnError: hasFlag(argv, 'fail-on-error'),
-    observe: hasFlag(argv, 'observe'),
-    verify: hasFlag(argv, 'verify') ? true : hasFlag(argv, 'no-verify') ? false : undefined,
   });
   if (result.aborted) return 130;
   return result.shouldFail ? 1 : 0;
@@ -131,10 +130,40 @@ async function capture(argv: readonly string[]): Promise<number> {
 async function validate(argv: readonly string[]): Promise<number> {
   const { subject, entries, server, root, manifest } = await resolveCaptureCliSuite(argv);
   const result = await runCaptureValidation({
+    ...validationOptions(argv, subject, manifest),
     subject,
     entries,
     server,
     root,
+  });
+  if (result.aborted) return 130;
+  return result.shouldFail ? 1 : 0;
+}
+
+function captureOptions(argv: readonly string[]): CaptureWorkflowCaptureOptions {
+  const frames = flag(argv, 'frames');
+  return {
+    outBase: flag(argv, 'out') ?? '.artifacts',
+    filter: flag(argv, 'filter'),
+    rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
+    extraWait: parseNonNegativeInteger(flag(argv, 'wait'), 0),
+    captureFrames: parseNonNegativeInteger(frames?.split(',')[0], 0),
+    workerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'parallel'), 6)),
+    sequential: hasFlag(argv, 'sequential'),
+    updateBaseline: hasFlag(argv, 'update-baseline'),
+    failOnChanged: hasFlag(argv, 'fail-on-changed'),
+    failOnError: hasFlag(argv, 'fail-on-error'),
+    observe: hasFlag(argv, 'observe'),
+    verify: hasFlag(argv, 'verify') ? true : hasFlag(argv, 'no-verify') ? false : undefined,
+  };
+}
+
+function validationOptions(
+  argv: readonly string[],
+  subject: string,
+  manifest: CaptureManifest | null,
+): CaptureWorkflowValidationOptions {
+  return {
     filter: flag(argv, 'filter'),
     rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
     captureFrames: Math.max(1, parseNonNegativeInteger(flag(argv, 'frames'), 1)),
@@ -150,6 +179,41 @@ async function validate(argv: readonly string[]): Promise<number> {
     fingerprintSkip:
       manifest?.validation?.fingerprintSkip ?? (manifest === null && subject === 'examples' ? ['playingsound'] : []),
     paritySkip: manifest?.validation?.paritySkip ?? (manifest === null ? FLIGHT_PARITY_SKIP : {}),
+  };
+}
+
+async function batch(argv: readonly string[]): Promise<number> {
+  const root = resolve(flag(argv, 'root') ?? process.cwd());
+  const configPath = resolve(root, flag(argv, 'config') ?? 'tool-capture.batch.json');
+  const manifest = readCaptureBatchManifest(configPath);
+  const only = flag(argv, 'only');
+  const globalArgs = removeBatchOptions(argv);
+  const subjects = manifest.subjects
+    .filter((subject) => only === undefined || subject.name === only)
+    .map((subject) => ({
+      name: subject.name,
+      async resolve(): Promise<CaptureWorkflowOptions> {
+        // Put global CLI arguments first: flag() deliberately takes the first occurrence, making
+        // command-line values batch-wide overrides of subject defaults.
+        const subjectArgv = [...globalArgs, ...subject.args];
+        const suite = await resolveCaptureCliSuite(subjectArgv);
+        const operations = new Set(subject.operations ?? ['capture', 'validate']);
+        return {
+          subject: suite.subject,
+          entries: suite.entries,
+          server: suite.server,
+          root: suite.root,
+          capture: operations.has('capture') ? captureOptions(subjectArgv) : false,
+          validation: operations.has('validate')
+            ? validationOptions(subjectArgv, suite.subject, suite.manifest)
+            : false,
+        };
+      },
+    }));
+  if (subjects.length === 0) throw new Error(`No batch subject matched --only=${only ?? ''}`);
+  const result = await runCaptureBatch({
+    subjects,
+    subjectWorkerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'subjects-parallel'), 1)),
   });
   if (result.aborted) return 130;
   return result.shouldFail ? 1 : 0;
@@ -172,6 +236,7 @@ async function main(): Promise<void> {
   }
   if (command === 'capture') process.exit(await capture(argv));
   if (command === 'validate') process.exit(await validate(argv));
+  if (command === 'batch') process.exit(await batch(argv));
   console.error(USAGE);
   process.exit(2);
 }
@@ -186,6 +251,19 @@ function parseNumber(value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function removeBatchOptions(argv: readonly string[]): string[] {
+  const result: string[] = [];
+  for (let index = 0; index < argv.length; index++) {
+    const argument = argv[index]!;
+    const key = ['config', 'only', 'subjects-parallel'].find(
+      (candidate) => argument === `--${candidate}` || argument.startsWith(`--${candidate}=`),
+    );
+    if (key === undefined) result.push(argument);
+    else if (argument === `--${key}`) index++;
+  }
+  return result;
 }
 
 const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | string[]>> = {

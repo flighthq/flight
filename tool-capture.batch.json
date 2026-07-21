@@ -1,0 +1,24 @@
+{
+  "subjects": [
+    {
+      "name": "functional",
+      "args": [
+        "--tool=functional",
+        "--frames=1",
+        "--renderer=dom,canvas,webgl,webgpu",
+        "--fail-on-error",
+        "--no-regression"
+      ]
+    },
+    {
+      "name": "examples",
+      "args": [
+        "--tool=examples",
+        "--frames=30",
+        "--renderer=dom,canvas,webgl,webgpu",
+        "--fail-on-error",
+        "--no-regression"
+      ]
+    }
+  ]
+}
