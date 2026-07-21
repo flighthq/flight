@@ -49,6 +49,21 @@ export function getCameraViewProjectionMatrix4(out: Matrix4Like, camera: Readonl
   multiplyMatrix4(out, __scratchProjection, camera.view);
 }
 
+// Sets the viewport aspect ratio (width / height) on the camera's projection, in place. For a
+// perspective projection this writes `aspect` directly; for an orthographic projection it widens
+// the view volume to match — keeping `halfHeight` and setting `halfWidth = halfHeight * aspect`,
+// so the vertical extent is preserved as the viewport resizes. The authored counterpart to the
+// `aspect` argument `getCameraViewProjectionMatrix4` takes: set it once on resize rather than
+// reaching into `camera.projection` with a cast.
+export function setCameraAspect(camera: Camera, aspect: number): void {
+  const projection = camera.projection;
+  if (projection.kind === 'perspective') {
+    projection.aspect = aspect;
+    return;
+  }
+  projection.halfWidth = projection.halfHeight * aspect;
+}
+
 // Sets the camera's per-frame sub-pixel jitter offset (in NDC), in place. TAA reads this when
 // building the jittered projection matrix.
 export function setCameraJitter(camera: Camera, x: number, y: number): void {
