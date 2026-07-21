@@ -15,9 +15,15 @@ basedOn: ./review.md
    or otherwise invalidate compiled variants—a kind-only program key cannot retain stale shader code.
 2. **Sample every declared extension map and compose lobes coherently.** Bind each map's own UV set and
    texture transform rather than sampling every slot through the base-color map's shared `v_uv0`.
-   Combined extensions need raster proof, not only source-string tests.
+   Extension energy and orientation must survive both punctual and IBL paths—do not implement
+   clearcoat/sheen/anisotropy/subsurface as direct-light-only decorations, and use anisotropic
+   visibility with the anisotropic distribution. Combined extensions need raster proof, not only
+   source-string tests.
 3. **Implement transmission as explicit reusable passes.** Capture opaque scene color, sample the
-   refractive path, and apply Beer–Lambert absorption from thickness/attenuation/IOR inputs.
+   refractive path, and apply Beer–Lambert absorption from thickness/attenuation/IOR inputs. Project
+   refraction through the camera rather than adding world-space XY directly to screen UV, preserve the
+   Fresnel-reflected surface lobe instead of mixing all surface radiance away, filter scene color by
+   roughness, and prevent sampling a texture attached to the active draw framebuffer.
 4. **Follow diagnostics inversion.** Missing registrations, duplicate kinds, texture-unit exhaustion,
    and unsupported combinations return sentinels with shakeable explain/guard layers rather than
    unconditional draw-path throws; normal rendering skips invalid duplicates deterministically and
@@ -25,7 +31,8 @@ basedOn: ./review.md
    explainer/strings in a sibling diagnostic module, use the standard message-with-fixing-call shape,
    and test both fire and silent cases.
 5. **Add exhaustive GL behavior tests.** Cover scalar and map inputs, multi-extension composition,
-   diagnostics, and transmission against a distinguishable captured background.
+   diagnostics, punctual plus IBL realization, and transmission assembled from a real rendered and
+   resolved opaque target against a distinguishable background.
 6. **Keep backend caches private to state/runtime.** Export operations, not caches.
 7. **Keep the vendor-extension seam in the header layer.** Any exported registration contract that a
    third-party extension must implement—including the GL snippet, bind context, support diagnostic,
