@@ -1,6 +1,6 @@
 import type { DisplayObject, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
   beginGlRenderEffectPipeline,
@@ -16,8 +16,8 @@ import {
   createTextureAtlas,
   createVelocityField,
   defaultGlMotionBlurEffectRunner,
-  defaultGlParticleEmitterRenderer,
-  defaultGlParticleEmitterVelocityWriter,
+  defaultGlParticleEmitter2DRenderer,
+  defaultGlParticleEmitter2DVelocityWriter,
   endGlRenderEffectPipeline,
   invalidateNodeLocalTransform,
   prepareDisplayObjectRender,
@@ -42,9 +42,9 @@ export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x101014ff,
 });
-registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);
+registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerGlRenderEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
-registerGlVelocityWriter(state, ParticleEmitterKind, defaultGlParticleEmitterVelocityWriter);
+registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
 const velocityTarget: GlRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);

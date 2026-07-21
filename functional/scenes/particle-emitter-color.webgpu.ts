@@ -23,7 +23,7 @@ import {
   getSurfacePixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   reserveParticleEmitter,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
@@ -48,7 +48,7 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x101018ff, // opaque dark (packed RGBA, low byte = alpha)
-  kinds: [ParticleEmitterKind],
+  kinds: [ParticleEmitter2DKind],
 });
 
 function makeWhiteCanvas(): HTMLCanvasElement {
