@@ -4,10 +4,10 @@ import {
   sampleParticleColorCurve,
   sampleParticleCurve,
 } from '@flighthq/particles';
-import type { ParticleEmitter } from '@flighthq/types';
+import type { ParticleEmitter2D } from '@flighthq/types';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 
-import { reserveParticleEmitter } from './particleEmitter';
+import { reserveParticleEmitter2D } from './particleEmitter';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
 const TWO_PI = Math.PI * 2;
@@ -28,8 +28,8 @@ const TWO_PI = Math.PI * 2;
  *  and alpha per particle — the seam for per-particle source-pixel coloring
  *  (a white config × tint = tint). See {@link emitParticleBurst3D} for the tint
  *  interaction with color curves and variance. */
-export function emitParticleBurst(
-  emitter: ParticleEmitter,
+export function emitParticleBurst2D(
+  emitter: ParticleEmitter2D,
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
   count: number,
@@ -53,7 +53,7 @@ export function emitParticleBurst(
     config.colorEndVarianceB !== 0;
 
   const newCount = liveCount + toSpawn;
-  reserveParticleEmitter(emitter, newCount);
+  reserveParticleEmitter2D(emitter, newCount);
   ensureParticleEmitterStateCapacity(state, newCount, hasColorVariance);
 
   const { colorStartR, colorStartG, colorStartB, colorEndR, colorEndG, colorEndB } = config;

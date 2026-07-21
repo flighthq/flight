@@ -3,7 +3,7 @@ import { noopRendererData } from '@flighthq/render';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { createGlProgram } from '@flighthq/render-gl';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl';
-import type { GlRenderState, ParticleEmitter, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
+import type { GlRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types';
 import type { GlParticleShader } from '@flighthq/types';
 
 import { flushGlSpriteBatch } from './glSpriteBatch';
@@ -122,9 +122,9 @@ function ensureInstanceCapacity(state: GlRenderState, count: number): void {
   gl.bufferData(gl.ARRAY_BUFFER, newSize * 4, gl.DYNAMIC_DRAW);
 }
 
-export function drawGlParticleEmitter(state: GlRenderState, renderProxy: RenderProxy2D): void {
+export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);
-  const source = renderProxy.source as ParticleEmitter;
+  const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || particleCount === 0) return;
 
@@ -278,10 +278,10 @@ export function drawGlParticleEmitter(state: GlRenderState, renderProxy: RenderP
   gl.vertexAttribDivisor(shader.locSize, 0);
 }
 
-export const defaultGlParticleEmitterRenderer: SpriteRenderer = {
+export const defaultGlParticleEmitter2DRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit(state: GlRenderState, node: RenderProxy2D): void {
     flushGlSpriteBatch(state);
-    drawGlParticleEmitter(state, node);
+    drawGlParticleEmitter2D(state, node);
   },
 };

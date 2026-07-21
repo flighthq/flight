@@ -4,7 +4,7 @@ import type { GlRenderState } from '@flighthq/types';
 import {
   BitmapKind,
   DisplayObjectKind,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
   RichTextKind,
@@ -20,7 +20,7 @@ import { defaultGlBitmapRenderer } from './glBitmap';
 import { defaultGlRenderCacheRenderer } from './glCache';
 import { defaultGlDisplayObjectRenderer } from './glDisplayObject';
 import { registerGlDisplayObjectRenderers } from './glDisplayObjectRegistration';
-import { defaultGlParticleEmitterRenderer } from './glParticleEmitter';
+import { defaultGlParticleEmitter2DRenderer } from './glParticleEmitter2D';
 import { defaultGlQuadBatchRenderer } from './glQuadBatch';
 import { defaultGlRichTextRenderer } from './glRichText';
 import { defaultGlScale9ShapeRenderer } from './glScale9Shape';
@@ -44,7 +44,7 @@ describe('registerGlDisplayObjectRenderers', () => {
     const { rendererMap } = getRenderStateRuntime(state);
     expect(rendererMap.get(BitmapKind)).toBe(defaultGlBitmapRenderer);
     expect(rendererMap.get(DisplayObjectKind)).toBe(defaultGlDisplayObjectRenderer);
-    expect(rendererMap.get(ParticleEmitterKind)).toBe(defaultGlParticleEmitterRenderer);
+    expect(rendererMap.get(ParticleEmitter2DKind)).toBe(defaultGlParticleEmitter2DRenderer);
     expect(rendererMap.get(QuadBatchKind)).toBe(defaultGlQuadBatchRenderer);
     expect(rendererMap.get(RenderCacheKind)).toBe(defaultGlRenderCacheRenderer);
     expect(rendererMap.get(RichTextKind)).toBe(defaultGlRichTextRenderer);
@@ -68,10 +68,12 @@ describe('registerGlDisplayObjectRenderers', () => {
     expect(getRenderStateRuntime(state).rendererMap.get(DisplayObjectKind)).toBe(defaultGlDisplayObjectRenderer);
   });
 
-  it('registers ParticleEmitterKind with the default particle emitter renderer', () => {
+  it('registers ParticleEmitter2DKind with the default particle emitter renderer', () => {
     const state = makeState();
     registerGlDisplayObjectRenderers(state);
-    expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitterKind)).toBe(defaultGlParticleEmitterRenderer);
+    expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitter2DKind)).toBe(
+      defaultGlParticleEmitter2DRenderer,
+    );
   });
 
   it('registers QuadBatchKind with the default quad batch renderer', () => {

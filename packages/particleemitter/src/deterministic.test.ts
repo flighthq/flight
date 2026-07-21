@@ -2,8 +2,8 @@ import { createRandomSource } from '@flighthq/math';
 import { PARTICLE_VELOCITY_STRIDE, createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
-import { createParticleEmitter } from './particleEmitter';
-import { stepParticleEmitter } from './stepParticleEmitter';
+import { createParticleEmitter2D } from './particleEmitter';
+import { stepParticleEmitter2D } from './stepParticleEmitter2D';
 
 function makeAtlas(): TextureAtlas {
   return {
@@ -26,16 +26,16 @@ describe('deterministic replay', () => {
       gravityY: 100,
     });
 
-    const emitterA = createParticleEmitter({ data: { atlas } });
+    const emitterA = createParticleEmitter2D({ data: { atlas } });
     const stateA = createParticleEmitterState(createRandomSource(42));
 
-    const emitterB = createParticleEmitter({ data: { atlas } });
+    const emitterB = createParticleEmitter2D({ data: { atlas } });
     const stateB = createParticleEmitterState(createRandomSource(42));
 
     const steps = [0.016, 0.033, 0.016, 0.05, 0.016, 0.016, 0.033, 0.016];
     for (const dt of steps) {
-      stepParticleEmitter(emitterA, stateA, config, dt);
-      stepParticleEmitter(emitterB, stateB, config, dt);
+      stepParticleEmitter2D(emitterA, stateA, config, dt);
+      stepParticleEmitter2D(emitterB, stateB, config, dt);
     }
 
     expect(emitterA.data.particleCount).toBeGreaterThan(0);

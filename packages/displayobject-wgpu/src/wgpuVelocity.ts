@@ -10,7 +10,7 @@ import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createWgpuRenderTarget } from '@flighthq/render-wgpu';
 import type {
   Kind,
-  ParticleEmitter,
+  ParticleEmitter2D,
   QuadBatch,
   QuadBatchRuntime,
   Spatial2DNode,
@@ -53,7 +53,7 @@ export const defaultWgpuDisplayObjectVelocityWriter: WgpuVelocityWriter = (ctx, 
   drawWgpuVelocityQuad(ctx, bounds.x, bounds.y, bounds.width, bounds.height, _scratchVelocity.x, _scratchVelocity.y);
 };
 
-// The ParticleEmitter writer emits PER-PARTICLE velocity: each particle moves on its own vector (a
+// The ParticleEmitter2D writer emits PER-PARTICLE velocity: each particle moves on its own vector (a
 // fountain fans outward), so one emitter-wide vector would be wrong — a user who wants the whole emitter
 // to share a velocity attaches it to a parent node, which the DisplayObject writer covers. The per-particle
 // world rect is reconstructed exactly as the particle renderer composes its quad: a [0,1] corner scaled by
@@ -61,9 +61,9 @@ export const defaultWgpuDisplayObjectVelocityWriter: WgpuVelocityWriter = (ctx, 
 // mapped by the emitter world transform (skipped when worldSpace puts particles in world space already).
 // Velocity stays in node units; drawWgpuVelocityQuad applies pixelRatio (matching the other writers).
 // Skips particles with zero velocity and emitters without a populated velocities array. Mirrors
-// defaultGlParticleEmitterVelocityWriter.
-export const defaultWgpuParticleEmitterVelocityWriter: WgpuVelocityWriter = (ctx, node) => {
-  const emitter = node as unknown as ParticleEmitter;
+// defaultGlParticleEmitter2DVelocityWriter.
+export const defaultWgpuParticleEmitter2DVelocityWriter: WgpuVelocityWriter = (ctx, node) => {
+  const emitter = node as unknown as ParticleEmitter2D;
   const { atlas, ids, particleCount, transforms, velocities, worldSpace } = emitter.data;
   if (atlas === null || particleCount === 0 || velocities.length < particleCount * 2) return;
   const regions = atlas.regions;

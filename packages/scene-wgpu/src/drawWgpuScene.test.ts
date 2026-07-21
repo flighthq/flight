@@ -87,8 +87,8 @@ describe('drawWgpuScene', () => {
   it('draws a scene ParticleEmitter3D as a final pass without a manual emitter call', () => {
     const { fake, state } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
-    addNodeChild(scene, makeParticleEmitter(3));
-    // No mesh and no manual drawWgpuSceneParticleEmitters — drawWgpuScene must render the emitter itself
+    addNodeChild(scene, makeParticleEmitter2D(3));
+    // No mesh and no manual drawWgpuSceneParticleEmitter2Ds — drawWgpuScene must render the emitter itself
     // (a 6-index instanced quad draw), mirroring drawGlScene's automatic emitter pass.
     drawWgpuScene(state, scene, makeCamera(), LIGHTS);
     const draw = fake.calls.find((c) => c.name === 'drawIndexed');
@@ -98,7 +98,7 @@ describe('drawWgpuScene', () => {
   });
 });
 
-function makeParticleEmitter(count: number): ParticleEmitter3D {
+function makeParticleEmitter2D(count: number): ParticleEmitter3D {
   const emitter = createParticleEmitter3D();
   reserveParticleEmitter3D(emitter, count);
   const data = emitter.data;

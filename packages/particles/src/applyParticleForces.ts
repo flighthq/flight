@@ -2,7 +2,7 @@ import type {
   AttractorForce,
   DragForce,
   ForceFalloff,
-  ParticleEmitter,
+  ParticleEmitter2D,
   ParticleEmitterState,
   ParticleForce,
   ParticleObject,
@@ -21,13 +21,13 @@ const accel: [number, number, number] = [0, 0, 0];
 
 /** Apply force fields to a typed-array particle emitter, integrating the
  *  resulting acceleration into per-particle velocity. Call this BEFORE
- *  updateParticleEmitter each frame so the velocity change is integrated into
+ *  updateParticleEmitter2D each frame so the velocity change is integrated into
  *  position the same frame.
  *
  *  This is a fully opt-in pass: import it only for emitters that need forces.
  *  The core update path is unaware of it. */
 export function applyParticleForces(
-  emitter: ParticleEmitter,
+  emitter: ParticleEmitter2D,
   state: ParticleEmitterState,
   forces: ReadonlyArray<ParticleForce>,
   deltaTime: number,

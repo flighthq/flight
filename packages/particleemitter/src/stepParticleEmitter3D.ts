@@ -1,7 +1,7 @@
 import { applyParticleCollisions, applyParticleForces } from '@flighthq/particles';
 import type {
   ParticleCollider,
-  ParticleEmitter,
+  ParticleEmitter2D,
   ParticleEmitter3D,
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
@@ -20,9 +20,9 @@ export function stepParticleEmitter3D(
   colliders?: ReadonlyArray<ParticleCollider>,
   callbacks?: ParticleEmitterCallbacks,
 ): void {
-  // applyParticleForces/Collisions are typed against ParticleEmitter but only
+  // applyParticleForces/Collisions are typed against ParticleEmitter2D but only
   // access emitter.data (ParticleEmitterData), which ParticleEmitter3D shares.
-  const asEmitter = emitter as unknown as ParticleEmitter;
+  const asEmitter = emitter as unknown as ParticleEmitter2D;
   if (forces != null && forces.length > 0) {
     applyParticleForces(asEmitter, state, forces, deltaTime);
   }

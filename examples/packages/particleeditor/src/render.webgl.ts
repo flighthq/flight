@@ -2,10 +2,10 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createGlCanvasElement,
   createGlRenderState,
-  defaultGlParticleEmitterRenderer,
+  defaultGlParticleEmitter2DRenderer,
   defaultGlTextLabelRenderer,
   enableGlBlendModeSupport,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   prepareDisplayObjectRender,
   registerDefaultGlMaterial,
   registerRenderer,
@@ -26,7 +26,7 @@ export const state = createGlRenderState(canvas, {
 });
 
 registerDefaultGlMaterial(state);
-registerRenderer(state, ParticleEmitterKind, defaultGlParticleEmitterRenderer);
+registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
 enableGlBlendModeSupport(state);
 

@@ -13,18 +13,18 @@ export interface ParticleEmitterData extends DisplayObjectData {
   positionsZ: Float32Array;
   transforms: Float32Array; // [x, y, rotation, scale] × capacity — 4 floats/particle
   // [vx, vy] × capacity — per-particle velocity in the same space/units as transforms positions, kept
-  // aligned with transforms by updateParticleEmitter so the velocity G-buffer writer can smear each
+  // aligned with transforms by updateParticleEmitter2D so the velocity G-buffer writer can smear each
   // particle by its own vector. Empty until the emitter is reserved.
   velocities: Float32Array;
   worldSpace: boolean; // when true, particle positions are world-space; renderers skip node transform
 }
 
-export interface ParticleEmitterRuntime extends DisplayObjectRuntime {
+export interface ParticleEmitter2DRuntime extends DisplayObjectRuntime {
   localBoundsRectangle: Rectangle | null;
 }
 
-export interface ParticleEmitter extends DisplayObject {
+export interface ParticleEmitter2D extends DisplayObject {
   data: ParticleEmitterData;
 }
 
-export const ParticleEmitterKind = 'ParticleEmitter';
+export const ParticleEmitter2DKind = 'ParticleEmitter2D';

@@ -8,13 +8,13 @@ import {
 } from '@flighthq/particles';
 import type {
   DisplayObject,
-  ParticleEmitter,
+  ParticleEmitter2D,
   ParticleEmitterCallbacks,
   ParticleEmitterConfig,
   ParticleEmitterState,
 } from '@flighthq/types';
 
-import { reserveParticleEmitter } from './particleEmitter';
+import { reserveParticleEmitter2D } from './particleEmitter';
 
 export type { ParticleEmitterCallbacks };
 
@@ -24,8 +24,8 @@ const TWO_PI = Math.PI * 2;
 /** True once a finite, non-looping emitter has finished emitting AND all of its
  *  particles have died — i.e. a one-shot effect that is safe to recycle/remove.
  *  Always false for infinite or looping emitters (they never finish). */
-export function isParticleEmitterComplete(
-  emitter: ParticleEmitter,
+export function isParticleEmitter2DComplete(
+  emitter: ParticleEmitter2D,
   state: Readonly<ParticleEmitterState>,
   config: Readonly<ParticleEmitterConfig>,
 ): boolean {
@@ -39,8 +39,8 @@ function isEmitting(config: Readonly<ParticleEmitterConfig>, emitterAge: number)
   return config.duration <= 0 || config.loop || emitterAge < config.duration;
 }
 
-export function updateParticleEmitter(
-  emitter: ParticleEmitter,
+export function updateParticleEmitter2D(
+  emitter: ParticleEmitter2D,
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
   deltaTime: number,
@@ -216,7 +216,7 @@ export function updateParticleEmitter(
 
   // ── Phase 2: spawn new particles ─────────────────────────────────────────────
   // A finite, non-looping emitter stops spawning once its duration elapses;
-  // existing particles keep ageing out (use isParticleEmitterComplete to detect the end).
+  // existing particles keep ageing out (use isParticleEmitter2DComplete to detect the end).
   const emitting = isEmitting(config, state.emitterAge);
   if (config.duration > 0 && !config.loop) state.emitterAge += deltaTime;
 
@@ -237,7 +237,7 @@ export function updateParticleEmitter(
 
   if (toSpawn > 0) {
     const newCount = liveCount + toSpawn;
-    reserveParticleEmitter(emitter, newCount);
+    reserveParticleEmitter2D(emitter, newCount);
     ensureParticleEmitterStateCapacity(state, newCount, hasColorVariance);
 
     const baseAngle = Math.atan2(config.directionY, config.directionX);
@@ -471,7 +471,7 @@ export function updateParticleEmitter(
   }
 
   // Fire onEmitterComplete when a finite emitter has just finished and all particles are gone.
-  if (signals !== null && isParticleEmitterComplete(emitter, state, config)) {
+  if (signals !== null && isParticleEmitter2DComplete(emitter, state, config)) {
     signals.onEmitterComplete.emit();
   }
 

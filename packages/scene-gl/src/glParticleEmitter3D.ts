@@ -379,7 +379,7 @@ export function destroyGlParticleEmitter3DShader(state: GlRenderState): void {
   shaderCache.delete(state);
 }
 
-export function drawGlSceneParticleEmitters(
+export function drawGlSceneParticleEmitter2Ds(
   state: GlRenderState,
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera>,

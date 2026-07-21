@@ -6,7 +6,7 @@ import { createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera, ParticleEmitter3D, SceneLights } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
-import { destroyWgpuParticleEmitter3DResources, drawWgpuSceneParticleEmitters } from './wgpuParticleEmitter3D';
+import { destroyWgpuParticleEmitter3DResources, drawWgpuSceneParticleEmitter2Ds } from './wgpuParticleEmitter3D';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
 function makeCamera(): Camera {
@@ -83,16 +83,16 @@ describe('destroyWgpuParticleEmitter3DResources', () => {
     const { state } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     expect(() => destroyWgpuParticleEmitter3DResources(state)).not.toThrow();
   });
 });
 
-describe('drawWgpuSceneParticleEmitters', () => {
+describe('drawWgpuSceneParticleEmitter2Ds', () => {
   it('is a no-op when the scene has no particle emitter nodes', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
 
@@ -100,7 +100,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createParticleEmitter3D());
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
 
@@ -108,7 +108,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(5));
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     const draw = fake.calls.find((c) => c.name === 'drawIndexed');
     expect(draw).toBeDefined();
     expect(draw!.args[0]).toBe(6);
@@ -119,7 +119,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(3));
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     expect(findInstanceWrite(fake.calls)).toBeDefined();
   });
 
@@ -127,7 +127,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeAtlasEmitter(64, 32));
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     const instanceData = findInstanceWrite(fake.calls)!;
     // Instance floats [13]/[14] carry the normalized quad size for the first particle.
     expect(instanceData[13]).toBeCloseTo(1);
@@ -138,7 +138,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeAtlasEmitter(64, 64));
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     expect(pipelineDescriptors(fake.calls).some((d) => hasTextureConstant(d) === 1)).toBe(true);
   });
 
@@ -146,7 +146,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     const descriptors = pipelineDescriptors(fake.calls);
     expect(descriptors.length).toBe(1);
     expect(hasTextureConstant(descriptors[0])).toBe(0);
@@ -156,8 +156,8 @@ describe('drawWgpuSceneParticleEmitters', () => {
     const { state, fake } = makeWgpuSceneState();
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, makeEmitterWithParticles(1));
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     // One variant compiled once across both draws — the shader module and pipeline are cached per state.
     expect(pipelineDescriptors(fake.calls).length).toBe(1);
   });
@@ -173,7 +173,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     invalidateNodeLocalTransform(emitter);
     emitter.data.worldSpace = true;
     addNodeChild(scene, emitter);
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     const instanceData = findInstanceWrite(fake.calls)!;
     // Already baked into world space, so the (10,20,30) node translation is not re-applied.
     expect(instanceData[0]).toBeCloseTo(1);
@@ -191,7 +191,7 @@ describe('drawWgpuSceneParticleEmitters', () => {
     setVector3(emitter.position, 10, 20, 30);
     invalidateNodeLocalTransform(emitter);
     addNodeChild(scene, emitter);
-    drawWgpuSceneParticleEmitters(state, scene, makeCamera(), makeLights());
+    drawWgpuSceneParticleEmitter2Ds(state, scene, makeCamera(), makeLights());
     const instanceData = findInstanceWrite(fake.calls)!;
     expect(instanceData[0]).toBeCloseTo(11);
     expect(instanceData[1]).toBeCloseTo(22);

@@ -2,7 +2,7 @@ import { hasImageResourcePixels } from '@flighthq/image';
 import { noopRendererData } from '@flighthq/render';
 import { bindWgpuImageResourceTexture } from '@flighthq/render-wgpu';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { ParticleEmitter, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
+import type { ParticleEmitter2D, RenderProxy2D, SpriteRenderer, WgpuRenderState } from '@flighthq/types';
 
 import { flushWgpuSpriteBatch } from './wgpuSpriteBatch';
 
@@ -181,11 +181,11 @@ function ensureParticleInstanceBuffer(state: WgpuRenderState, count: number): vo
   runtime.particleInstanceData = new Float32Array(newCapacity / 4);
 }
 
-export function drawWgpuParticleEmitter(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
+export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.renderPass === null) return;
 
-  const source = renderProxy.source as ParticleEmitter;
+  const source = renderProxy.source as ParticleEmitter2D;
   const { atlas, alphas, colors, ids, particleCount, transforms } = source.data;
   if (atlas === null || atlas.image === null || !hasImageResourcePixels(atlas.image) || particleCount === 0) return;
 
@@ -311,10 +311,10 @@ export function drawWgpuParticleEmitter(state: WgpuRenderState, renderProxy: Ren
   pass.draw(6, drawCount, 0, 0);
 }
 
-export const defaultWgpuParticleEmitterRenderer: SpriteRenderer = {
+export const defaultWgpuParticleEmitter2DRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit(state: WgpuRenderState, node: RenderProxy2D): void {
     flushWgpuSpriteBatch(state);
-    drawWgpuParticleEmitter(state, node);
+    drawWgpuParticleEmitter2D(state, node);
   },
 };

@@ -15,7 +15,7 @@ import type {
   GlVelocityContext,
   GlVelocityWriter,
   Kind,
-  ParticleEmitter,
+  ParticleEmitter2D,
   QuadBatch,
   QuadBatchRuntime,
   Spatial2DNode,
@@ -54,7 +54,7 @@ export const defaultGlDisplayObjectVelocityWriter: GlVelocityWriter = (ctx, node
   drawGlVelocityQuad(ctx, bounds.x, bounds.y, bounds.width, bounds.height, _scratchVelocity.x, _scratchVelocity.y);
 };
 
-// The ParticleEmitter writer emits PER-PARTICLE velocity: each particle moves on its own vector (a
+// The ParticleEmitter2D writer emits PER-PARTICLE velocity: each particle moves on its own vector (a
 // fountain fans outward), so one emitter-wide vector would be wrong — a user who wants the whole emitter
 // to share a velocity attaches it to a parent node instead, which the DisplayObject writer covers. The
 // per-particle world rect is reconstructed exactly as the particle renderer composes its quad: a [0,1]
@@ -63,8 +63,8 @@ export const defaultGlDisplayObjectVelocityWriter: GlVelocityWriter = (ctx, node
 // space already). Velocity stays in node units; drawGlVelocityQuad applies pixelRatio (matching the
 // other writers; a non-unit emitter scale or worldSpace under hiDpi is the same approximation as
 // QuadBatch). Skips particles with zero velocity and emitters without a populated velocities array.
-export const defaultGlParticleEmitterVelocityWriter: GlVelocityWriter = (ctx, node) => {
-  const emitter = node as unknown as ParticleEmitter;
+export const defaultGlParticleEmitter2DVelocityWriter: GlVelocityWriter = (ctx, node) => {
+  const emitter = node as unknown as ParticleEmitter2D;
   const { atlas, ids, particleCount, transforms, velocities, worldSpace } = emitter.data;
   if (atlas === null || particleCount === 0 || velocities.length < particleCount * 2) return;
   const regions = atlas.regions;

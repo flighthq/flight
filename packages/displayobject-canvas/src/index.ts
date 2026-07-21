@@ -10,7 +10,7 @@ export * from './canvasFillPattern';
 export * from './canvasImageSource';
 export * from './canvasMaterialRegistry';
 export * from './canvasMaterials';
-export * from './canvasParticleEmitter';
+export * from './canvasParticleEmitter2D';
 export * from './canvasQuadBatch';
 export * from './canvasRegistration';
 export * from './canvasRenderState';

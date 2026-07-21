@@ -12,12 +12,12 @@ import {
   BlendMode,
   createDisplayObject,
   createImageResource,
-  createParticleEmitter,
+  createParticleEmitter2D,
   createTextLabel,
   createTextureAtlas,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  updateParticleEmitter,
+  updateParticleEmitter2D,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
@@ -61,7 +61,7 @@ const snowAtlas = createTextureAtlas({ image: createImageResource(snowCanvas) })
 addTextureAtlasRegion(snowAtlas, 0, 0, 12, 12);
 
 // Fire emitter: additive glow, follows mouse, world-space trail.
-const fireEmitter = createParticleEmitter();
+const fireEmitter = createParticleEmitter2D();
 fireEmitter.data.atlas = fireAtlas;
 fireEmitter.blendMode = BlendMode.Add;
 fireEmitter.scaleX = 1;
@@ -111,7 +111,7 @@ const fireForces: readonly ParticleForce[] = [
 const fireSimState = createParticleEmitterState();
 
 // Snow emitter: normal blend, fixed position at top-right, gentle downward drift.
-const snowEmitter = createParticleEmitter();
+const snowEmitter = createParticleEmitter2D();
 snowEmitter.data.atlas = snowAtlas;
 snowEmitter.scaleX = 1;
 snowEmitter.scaleY = 1;
@@ -212,12 +212,12 @@ function enterFrame(): void {
 
   // World-space emitter: it bakes spawns through its own node world transform (set above), so nothing to pass.
   applyParticleForces(fireEmitter, fireSimState, fireForces, dt);
-  updateParticleEmitter(fireEmitter, fireSimState, fireConfig, dt);
+  updateParticleEmitter2D(fireEmitter, fireSimState, fireConfig, dt);
   invalidateNodeAppearance(fireEmitter);
 
   // Snow emitter stays fixed at its node position.
   applyParticleForces(snowEmitter, snowSimState, snowForces, dt);
-  updateParticleEmitter(snowEmitter, snowSimState, snowConfig, dt);
+  updateParticleEmitter2D(snowEmitter, snowSimState, snowConfig, dt);
   invalidateNodeAppearance(snowEmitter);
 
   // Update the particle count label.

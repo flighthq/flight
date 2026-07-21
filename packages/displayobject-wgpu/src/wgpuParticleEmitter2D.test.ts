@@ -1,34 +1,34 @@
-import { createParticleEmitter } from '@flighthq/particleemitter';
+import { createParticleEmitter2D } from '@flighthq/particleemitter';
 import { getRenderProxy2D, prepareDisplayObjectRender } from '@flighthq/render';
 import { renderWgpuBackground, submitWgpuRenderPass } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 
-import { defaultWgpuParticleEmitterRenderer, drawWgpuParticleEmitter } from './wgpuParticleEmitter';
+import { defaultWgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('defaultWgpuParticleEmitterRenderer', () => {
+describe('defaultWgpuParticleEmitter2DRenderer', () => {
   it('has a createData function', () => {
-    expect(typeof defaultWgpuParticleEmitterRenderer.createData).toBe('function');
+    expect(typeof defaultWgpuParticleEmitter2DRenderer.createData).toBe('function');
   });
 
   it('has a submit function', () => {
-    expect(typeof defaultWgpuParticleEmitterRenderer.submit).toBe('function');
+    expect(typeof defaultWgpuParticleEmitter2DRenderer.submit).toBe('function');
   });
 });
 
-describe('drawWgpuParticleEmitter', () => {
+describe('drawWgpuParticleEmitter2D', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
 
-    const emitter = createParticleEmitter();
+    const emitter = createParticleEmitter2D();
     prepareDisplayObjectRender(state, emitter);
     const renderProxy = getRenderProxy2D(state, emitter)!;
 
-    expect(() => drawWgpuParticleEmitter(state, renderProxy)).not.toThrow();
+    expect(() => drawWgpuParticleEmitter2D(state, renderProxy)).not.toThrow();
     submitWgpuRenderPass(state);
   });
 });

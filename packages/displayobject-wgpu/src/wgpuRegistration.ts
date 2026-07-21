@@ -3,7 +3,7 @@ import type { WgpuRenderState } from '@flighthq/types';
 import {
   BitmapKind,
   DisplayObjectKind,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
   RichTextKind,
@@ -19,7 +19,7 @@ import { defaultWgpuBitmapRenderer } from './wgpuBitmap';
 import { defaultWgpuRenderCacheRenderer } from './wgpuCache';
 import { registerDefaultWgpuMaterial } from './wgpuDefaultMaterial';
 import { defaultWgpuDisplayObjectRenderer } from './wgpuDisplayObject';
-import { defaultWgpuParticleEmitterRenderer } from './wgpuParticleEmitter';
+import { defaultWgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
 import { defaultWgpuQuadBatchRenderer } from './wgpuQuadBatch';
 import { defaultWgpuRichTextRenderer } from './wgpuRichText';
 import { defaultWgpuScale9ShapeRenderer } from './wgpuScale9Shape';
@@ -43,7 +43,7 @@ export function registerWgpuDisplayObjectRenderers(state: WgpuRenderState): void
   registerDefaultWgpuMaterial(state);
   registerRenderer(state, BitmapKind, defaultWgpuBitmapRenderer);
   registerRenderer(state, DisplayObjectKind, defaultWgpuDisplayObjectRenderer);
-  registerRenderer(state, ParticleEmitterKind, defaultWgpuParticleEmitterRenderer);
+  registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
   registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
   registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
   registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
@@ -62,7 +62,7 @@ export function registerWgpuDisplayObjectRenderers(state: WgpuRenderState): void
  */
 export function registerWgpuSpriteRenderers(state: WgpuRenderState): void {
   registerDefaultWgpuMaterial(state);
-  registerRenderer(state, ParticleEmitterKind, defaultWgpuParticleEmitterRenderer);
+  registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
   registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
   registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
   registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);

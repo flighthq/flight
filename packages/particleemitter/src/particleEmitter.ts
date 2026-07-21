@@ -10,13 +10,13 @@ import type {
   MethodsOf,
   Node,
   PartialNode,
-  ParticleEmitter,
+  ParticleEmitter2D,
   ParticleEmitterData,
-  ParticleEmitterRuntime,
+  ParticleEmitter2DRuntime,
   Rectangle,
   Vector2Like,
 } from '@flighthq/types';
-import { ParticleEmitterKind } from '@flighthq/types';
+import { ParticleEmitter2DKind } from '@flighthq/types';
 
 // Internal stride constants. Hidden from callers so no raw array index math leaks out.
 const PARTICLE_TRANSFORM_STRIDE = 4; // [x, y, rotation, scale] per particle
@@ -27,17 +27,17 @@ const PARTICLE_VELOCITY_STRIDE = 2; // [vx, vy] per particle
 export const PARTICLE_EMITTER_DELETED_ID = 0xffff;
 
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
-  const runtime = getDisplayObjectRuntime(source as DisplayObject) as ParticleEmitterRuntime;
+  const runtime = getDisplayObjectRuntime(source as DisplayObject) as ParticleEmitter2DRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
 
 /**
- * Appends a new particle at the end of `target`, auto-growing capacity via `reserveParticleEmitter`.
+ * Appends a new particle at the end of `target`, auto-growing capacity via `reserveParticleEmitter2D`.
  * Returns the new particle index. Color defaults to white (1, 1, 1) and alpha to 1.0 unless
- * overridden with `setParticleEmitterParticleColor` / `setParticleEmitterParticleAlpha`.
+ * overridden with `setParticleEmitter2DParticleColor` / `setParticleEmitter2DParticleAlpha`.
  */
-export function appendParticleEmitterParticle(
-  target: ParticleEmitter,
+export function appendParticleEmitter2DParticle(
+  target: ParticleEmitter2D,
   id: number,
   x: number,
   y: number,
@@ -46,9 +46,9 @@ export function appendParticleEmitterParticle(
 ): number {
   const index = target.data.particleCount;
   const needed = index + 1;
-  if (getParticleEmitterCapacity(target) < needed) {
+  if (getParticleEmitter2DCapacity(target) < needed) {
     const newCapacity = Math.max(needed, target.data.particleCount * 2 || 8);
-    reserveParticleEmitter(target, newCapacity);
+    reserveParticleEmitter2D(target, newCapacity);
   }
   target.data.particleCount = needed;
   target.data.ids[index] = id;
@@ -70,18 +70,18 @@ export function appendParticleEmitterParticle(
 }
 
 /** Sets `target.data.particleCount = 0`, keeping allocated capacity. */
-export function clearParticleEmitter(target: ParticleEmitter): void {
+export function clearParticleEmitter2D(target: ParticleEmitter2D): void {
   target.data.particleCount = 0;
 }
 
 /**
- * Deep-copies `source` into a new `ParticleEmitter` with independent typed arrays and a fresh runtime.
+ * Deep-copies `source` into a new `ParticleEmitter2D` with independent typed arrays and a fresh runtime.
  * The new emitter has the same `particleCount`, `atlas`, and `worldSpace` flag, but its
  * `transforms`, `alphas`, `colors`, `ids`, and `velocities` are cloned typed arrays.
  */
-export function cloneParticleEmitter(source: Readonly<ParticleEmitter>): ParticleEmitter {
+export function cloneParticleEmitter2D(source: Readonly<ParticleEmitter2D>): ParticleEmitter2D {
   const src = source.data;
-  return createParticleEmitter({
+  return createParticleEmitter2D({
     data: {
       alphas: src.alphas.slice(),
       atlas: src.atlas,
@@ -104,7 +104,7 @@ export function cloneParticleEmitter(source: Readonly<ParticleEmitter>): Particl
  * Use after a series of swap-removes with manual id-zeroing when stable iteration order is needed.
  * For simple swap-remove workflows, compaction is not required.
  */
-export function compactParticleEmitter(target: ParticleEmitter): void {
+export function compactParticleEmitter2D(target: ParticleEmitter2D): void {
   const data = target.data;
   if (data.particleCount === 0) return;
   let write = 0;
@@ -135,7 +135,10 @@ export function compactParticleEmitter(target: ParticleEmitter): void {
   data.particleCount = write;
 }
 
-export function computeParticleEmitterLocalBoundsRectangle(out: Rectangle, source: Readonly<ParticleEmitter>): void {
+export function computeParticleEmitter2DLocalBoundsRectangle(
+  out: Rectangle,
+  source: Readonly<ParticleEmitter2D>,
+): void {
   const { atlas, ids, particleCount, transforms } = source.data;
   if (atlas === null || particleCount === 0) {
     out.x = 0;
@@ -195,13 +198,19 @@ export function computeParticleEmitterLocalBoundsRectangle(out: Rectangle, sourc
   }
 }
 
-export function createParticleEmitter(obj?: Readonly<PartialNode<ParticleEmitter>>): ParticleEmitter {
+export function createParticleEmitter2D(obj?: Readonly<PartialNode<ParticleEmitter2D>>): ParticleEmitter2D {
   return createDisplayObjectGeneric(
-    ParticleEmitterKind,
+    ParticleEmitter2DKind,
     obj,
     createParticleEmitterData,
-    createParticleEmitterRuntime,
-  ) as ParticleEmitter;
+    createParticleEmitter2DRuntime,
+  ) as ParticleEmitter2D;
+}
+
+export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
+  const runtime = createDisplayObjectRuntime(defaultMethods) as ParticleEmitter2DRuntime;
+  runtime.localBoundsRectangle = null;
+  return runtime;
 }
 
 export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitterData>>): ParticleEmitterData {
@@ -218,13 +227,7 @@ export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitte
   };
 }
 
-export function createParticleEmitterRuntime(): ParticleEmitterRuntime {
-  const runtime = createDisplayObjectRuntime(defaultMethods) as ParticleEmitterRuntime;
-  runtime.localBoundsRectangle = null;
-  return runtime;
-}
-
-export function getParticleEmitterCapacity(source: Readonly<ParticleEmitter>): number {
+export function getParticleEmitter2DCapacity(source: Readonly<ParticleEmitter2D>): number {
   const data = source.data;
   const transformCapacity = (data.transforms.length / PARTICLE_TRANSFORM_STRIDE) | 0;
   return Math.min(data.ids.length, data.alphas.length, transformCapacity);
@@ -234,7 +237,7 @@ export function getParticleEmitterCapacity(source: Readonly<ParticleEmitter>): n
  * Returns the alpha of particle `index`, or -1 when `index` is out of range.
  * Bounds-checked against `particleCount`.
  */
-export function getParticleEmitterParticleAlpha(source: Readonly<ParticleEmitter>, index: number): number {
+export function getParticleEmitter2DParticleAlpha(source: Readonly<ParticleEmitter2D>, index: number): number {
   if (index < 0 || index >= source.data.particleCount) return -1;
   return source.data.alphas[index];
 }
@@ -243,7 +246,7 @@ export function getParticleEmitterParticleAlpha(source: Readonly<ParticleEmitter
  * Returns the region id of particle `index`, or -1 when `index` is out of range.
  * Bounds-checked against `particleCount`.
  */
-export function getParticleEmitterParticleId(source: Readonly<ParticleEmitter>, index: number): number {
+export function getParticleEmitter2DParticleId(source: Readonly<ParticleEmitter2D>, index: number): number {
   if (index < 0 || index >= source.data.particleCount) return -1;
   return source.data.ids[index];
 }
@@ -252,9 +255,9 @@ export function getParticleEmitterParticleId(source: Readonly<ParticleEmitter>, 
  * Writes the velocity (vx, vy) of particle `index` into `out.x` and `out.y`.
  * Returns false and writes nothing when `index` is out of range.
  */
-export function getParticleEmitterParticleVelocity(
+export function getParticleEmitter2DParticleVelocity(
   out: Vector2Like,
-  source: Readonly<ParticleEmitter>,
+  source: Readonly<ParticleEmitter2D>,
   index: number,
 ): boolean {
   if (index < 0 || index >= source.data.particleCount) return false;
@@ -264,8 +267,8 @@ export function getParticleEmitterParticleVelocity(
   return true;
 }
 
-export function getParticleEmitterRuntime(source: Readonly<ParticleEmitter>): Readonly<ParticleEmitterRuntime> {
-  return getDisplayObjectRuntime(source) as ParticleEmitterRuntime;
+export function getParticleEmitter2DRuntime(source: Readonly<ParticleEmitter2D>): Readonly<ParticleEmitter2DRuntime> {
+  return getDisplayObjectRuntime(source) as ParticleEmitter2DRuntime;
 }
 
 /**
@@ -273,7 +276,7 @@ export function getParticleEmitterRuntime(source: Readonly<ParticleEmitter>): Re
  * Does not preserve order — the particle that was at `particleCount-1` moves to `index`.
  * No-ops when `index` is out of range.
  */
-export function removeParticleEmitterParticle(target: ParticleEmitter, index: number): void {
+export function removeParticleEmitter2DParticle(target: ParticleEmitter2D, index: number): void {
   const data = target.data;
   const last = data.particleCount - 1;
   if (index < 0 || index > last) return;
@@ -301,8 +304,8 @@ export function removeParticleEmitterParticle(target: ParticleEmitter, index: nu
   data.particleCount = last;
 }
 
-export function reserveParticleEmitter(target: ParticleEmitter, capacity: number): void {
-  if (getParticleEmitterCapacity(target) >= capacity) return;
+export function reserveParticleEmitter2D(target: ParticleEmitter2D, capacity: number): void {
+  if (getParticleEmitter2DCapacity(target) >= capacity) return;
   const data = target.data;
   data.alphas = reserveFloat32Array(data.alphas, capacity);
   data.colors = reserveFloat32Array(data.colors, capacity * 3);
@@ -312,8 +315,8 @@ export function reserveParticleEmitter(target: ParticleEmitter, capacity: number
   data.velocities = reserveFloat32Array(data.velocities, capacity * 2);
 }
 
-export function setParticleEmitterLocalBoundsRectangle(target: ParticleEmitter, rect: Readonly<Rectangle>): void {
-  const runtime = getDisplayObjectRuntime(target) as ParticleEmitterRuntime;
+export function setParticleEmitter2DLocalBoundsRectangle(target: ParticleEmitter2D, rect: Readonly<Rectangle>): void {
+  const runtime = getDisplayObjectRuntime(target) as ParticleEmitter2DRuntime;
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   copyRectangle(runtime.localBoundsRectangle, rect);
   invalidateNodeLocalBounds(target);
@@ -323,8 +326,8 @@ export function setParticleEmitterLocalBoundsRectangle(target: ParticleEmitter, 
  * Sets the full transform and id for particle `index`.
  * No-ops when `index` is out of range (`[0, particleCount)`).
  */
-export function setParticleEmitterParticle(
-  target: ParticleEmitter,
+export function setParticleEmitter2DParticle(
+  target: ParticleEmitter2D,
   index: number,
   id: number,
   x: number,
@@ -345,7 +348,7 @@ export function setParticleEmitterParticle(
 /**
  * Sets the alpha of particle `index`. No-ops when `index` is out of range.
  */
-export function setParticleEmitterParticleAlpha(target: ParticleEmitter, index: number, alpha: number): void {
+export function setParticleEmitter2DParticleAlpha(target: ParticleEmitter2D, index: number, alpha: number): void {
   if (index < 0 || index >= target.data.particleCount) return;
   target.data.alphas[index] = alpha;
 }
@@ -353,8 +356,8 @@ export function setParticleEmitterParticleAlpha(target: ParticleEmitter, index: 
 /**
  * Sets the color (r, g, b, 0–1 normalized) of particle `index`. No-ops when `index` is out of range.
  */
-export function setParticleEmitterParticleColor(
-  target: ParticleEmitter,
+export function setParticleEmitter2DParticleColor(
+  target: ParticleEmitter2D,
   index: number,
   r: number,
   g: number,
@@ -370,8 +373,8 @@ export function setParticleEmitterParticleColor(
 /**
  * Sets the velocity (vx, vy) of particle `index`. No-ops when `index` is out of range.
  */
-export function setParticleEmitterParticleVelocity(
-  target: ParticleEmitter,
+export function setParticleEmitter2DParticleVelocity(
+  target: ParticleEmitter2D,
   index: number,
   vx: number,
   vy: number,
@@ -382,6 +385,6 @@ export function setParticleEmitterParticleVelocity(
   target.data.velocities[vt + 1] = vy;
 }
 
-const defaultMethods: Partial<MethodsOf<ParticleEmitterRuntime>> = {
+const defaultMethods: Partial<MethodsOf<ParticleEmitter2DRuntime>> = {
   computeLocalBoundsRectangle: copyLocalBoundsRectangle,
 };
