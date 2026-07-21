@@ -59,8 +59,8 @@ Read the `observe` block to interpret what you're seeing without guessing:
 ```
 
 - `pageErrorCount > 0` → **broken code** (the page threw). Read `logs.jsonl` for the exception — this is a real bug to fix.
-- `blank: true` + `pageErrorCount: 0` + `coverage ≈ 0` + a registered `verifyTargetKind` → the page **ran cleanly but rendered nothing**. On a simple scene this is a real bug; on a **heavy 3D scene** it's **UNKNOWN** (a software-GL quirk _or_ a specific render-path bug — not a proven limitation; see "Known failure modes" below). Verify on real hardware before concluding anything.
-- `blank: false` / `coverage > 0` → something drew; just read `screenshot.png`.
+- `blank: true` + `coverage ≈ 0` + `0` errors → **actually blank.** Common benign causes: no visual (audio-only), needs interaction/input, or captured before the scene warmed up. Heavy 3D is **not** intrinsically blank here — with warmup it renders (a full corpus sweep confirmed the awayjs 3D suite renders in-sandbox, e.g. `aircraft-demo` at 0.93 coverage). So treat a clean blank as "look closer at this scene," not "the environment can't."
+- `blank: false` / `coverage > 0` → something drew; **read `screenshot.png`** — `coverage` is measured from the actual pixels, so it is the source of truth (a high `coverage` with `verifyPublished: false` still means it rendered; the verifier just didn't fingerprint it).
 
 Use `--observe` whenever a plain capture reports "did not produce a render image" — it converts that dead-end into an image plus a machine-readable reason.
 
@@ -72,13 +72,14 @@ This subsystem has several _distinct, silent_ failure modes; hitting a different
 | --- | --- | --- |
 | Capture prints `✓ ok` then the process **hangs** (never returns) | Was a real bug in the CLI exit path — **fixed** (`process.exit(0)` on success) | If it recurs, the dev-server child or a Playwright handle is keeping the loop alive; exit explicitly, don't `pkill` and call it broken |
 | `--observe` blank, `pageErrorCount > 0` | **Your code threw** at load/run | Read `logs.jsonl` for the exception — a real bug to fix (this is how a stale import / `__name`-in-init-script surfaces) |
-| `--observe` blank, `0` errors, `verifyTargetKind` set, `coverage ≈ 0` on a **heavy 3D scene** (skinning, IBL/cubemap, `rgba16f`) | **UNKNOWN, not impossible** — see the hard facts below | Don't call it a proven SwiftShader limit. Flag it; verify on real hardware; only dig deeper if you're specifically root-causing |
+| `--observe` blank, `0` errors, `coverage ≈ 0` on a **heavy 3D scene** (skinning, IBL/cubemap, `rgba16f`) | **NOT a SwiftShader limit** — the awayjs 3D suite renders in-sandbox with warmup (`aircraft-demo` → 0.93). A clean blank means _this scene_ needs more warmup, needs interaction, or has a real bug | Look at the scene, not the environment: bump `--frames`, check whether it needs input, read `logs.jsonl`. Do not narrate it as "SwiftShader can't" |
+| `blank: true` but `coverage` is **high** (e.g. 0.9) | **False positive — it rendered.** `coverage` is measured from real pixels and is authoritative; the `blank` flag now follows it, but old runs/notes may show the stale verify-publish flag | Trust `coverage`. Read `screenshot.png` — it drew |
 | `--observe` blank on a **2D / app-loop** scene at default frames, then fine with `--frames 5` | **Captured too early** (app-loop first tick hasn't drawn) — warmup **fixed** it | `observe.warmupFrames > 0` means it recovered on its own; nothing to fix |
 
 **Hard environment facts (proven — do not re-run these experiments):**
 
 - **You cannot move off SwiftShader in this sandbox.** Playwright's Chromium pins `SwiftShader Device … (ANGLE/Vulkan)` regardless of `--use-angle=gl`, `--use-gl=egl`, `--disable-features=Vulkan`, `GALLIUM_DRIVER=llvmpipe`, old headless, or `--in-process-gpu` (crashes). Mesa llvmpipe is installed but never selected. Swapping the GL backend is a dead end here.
-- **SwiftShader is not the obvious wall.** The core GPU-skinning primitive — vertex-shader `texelFetch` of an `RGBA32F` texture — **works** on SwiftShader (verified). So a heavy-3D blank is _specific_, not "SwiftShader can't do skinning." It may be a real, fixable render-path bug or an opaque miscompile — but it is **not** an established hardware limitation. Treat it as unknown.
+- **SwiftShader renders heavy 3D fine — the "wall" was a false alarm.** A full `--observe` corpus sweep shows the awayjs 3D suite renders in-sandbox with warmup: `aircraft-demo` (IBL sky + reflective ocean + textured jet) 0.93, `intermediate-md5-animation` (skeletal) 0.95, `basic-skybox` 0.92, `intermediate-globe` 0.82, etc. The `aircraft-demo`/`awd-viewer` blanks that once looked like a "SwiftShader can't do IBL/skinning" limit were **captured-too-early** (IBL bake / async upload needs many frames) — the same root as the 2D piratepig case, fixed by warmup, not by any GL change. The isolated primitive (vertex-shader `texelFetch` of `RGBA32F`) also works. Do not narrate heavy-3D blanks as a hardware limitation.
 - WebGPU, WebGL2, Canvas, DOM all render in-sandbox (SwiftShader; see `agents/maturity-gaps.md`). Simple 3D (`basic-view`) renders fine; only some advanced scenes blank — which is why "blank" alone is never proof the code is broken.
 
 ## Watch capture (long-running — requires Playwright)

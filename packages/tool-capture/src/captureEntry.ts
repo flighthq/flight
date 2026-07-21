@@ -165,10 +165,11 @@ const OBSERVE_BLANK_COVERAGE = 0.001;
 // Summarizes an observe-mode capture into the status.json diagnostics block. Pure over its inputs and
 // the drained page logs (page exceptions vs. console/network errors are counted from `logs`), so the
 // interpretation an agent relies on — blank vs. drew-but-wrong vs. crashed — is unit-testable without a
-// browser. `verifyPublished` and the incoming `blank` come from the screenshot-source decision in
-// captureEntry (blank = a verify target registered but published no frame); this also folds in measured
-// `coverage`, so a scene that drew nothing to the canvas reads as blank even when it registered no
-// verify target (the fallback canvas-grab path, e.g. a 2D scene whose assets never loaded).
+// browser. `blank` is decided by the MEASURED pixel `coverage` whenever we have it: the actual frame is
+// ground truth. The incoming `args.blank` (a verify target registered but never published) is only a
+// weak fallback used when coverage is unmeasurable — the verifier can fail to publish a scene that
+// clearly rendered (its own threshold/timing), so trusting it over the pixels false-flags full frames as
+// blank. Verified against the reference corpus, where many scenes publish `false` yet cover >0.9.
 export function buildCaptureObserveDiagnostics(args: {
   backend: string;
   blank: boolean;
@@ -185,7 +186,7 @@ export function buildCaptureObserveDiagnostics(args: {
     if (level === 'pageerror') pageErrorCount += 1;
     else if (level === 'error') errorCount += 1;
   }
-  const blank = args.blank || (args.coverage !== null && args.coverage <= OBSERVE_BLANK_COVERAGE);
+  const blank = args.coverage !== null ? args.coverage <= OBSERVE_BLANK_COVERAGE : args.blank;
   return {
     backend: args.backend,
     blank,
