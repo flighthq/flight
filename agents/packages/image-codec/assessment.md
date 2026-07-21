@@ -1,12 +1,17 @@
 ---
 package: '@flighthq/image-codec'
-updated: 2026-07-13
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # image-codec — Assessment
 
 See [charter](./charter.md) for blessed direction; evidence in [review](./review.md).
+
+## Depth gaps
+
+1. **Verify decode behavior with canonical real files.** Synthetic headers prove dispatch but not decoder correctness, orientation, color profile handling, animation, HDR/bit depth, or corrupt/truncated-input behavior. Add small provenance-recorded fixtures and decoded-pixel assertions.
+2. **Expose progressive/multi-frame decode as separate seams when demanded.** Animated images and incremental decode should not inflate the one-shot RGBA8 primitive; add independently imported decoder capabilities and honest capability enumeration.
 
 ## Recommended
 

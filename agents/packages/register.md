@@ -39,16 +39,16 @@ Plus the triad **plurality guard**: a `-formats`/`-backend` cell only when the s
 
 ## Landed candidates (recommended → built, as of 2026-07-03)
 
-Eight June candidates are now real: `animation`, `skeleton`, `picking` (3D build-out), `gltf` (landed as **`scene-formats`**, a glTF import proving-slice), `font` and `audio`-the-subject (from the `resources` dissolution), `displayobject-skia` (Rust-only crate), and the `audio`-mixer candidate (folded into **`media`** — bus graph, per-bus gain/pan/mute/routing; the naming collision below is thereby resolved). Each has a blessed cell under `packages/` with its review in `<name>/review.md`.
+Eight June candidates are now real: `animation`, `skeleton3d` (originally `skeleton`), `picking` (3D build-out), `gltf` (landed as **`scene-formats`**, a glTF import proving-slice), `font` and `audio`-the-subject (from the `resources` dissolution), `displayobject-skia` (Rust-only crate), and the `audio`-mixer candidate (folded into **`media`** — bus graph, per-bus gain/pan/mute/routing; the naming collision below is thereby resolved). Each has a blessed cell under `packages/` with its review in `<name>/review.md`.
 
 **Chartered, not yet built** — eight cells carry a blessed charter with no code behind them, the ready-to-build queue: `capture`, `clock`, `image-codec`, `movieclip`, `particleemitter`, `path-boolean`, `path-formats`, `shape-formats`. (This list is computed live in [`TODO.md`](TODO.md).)
 
 ## Build queue — recommended order (regenerated 2026-07-10)
 
-Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is **built**: `net`, `socket`, `assets`, `collision`, `spatial`, `camera2d`, `accessibility`, plus the whole 2D-game / animation / `-formats` blocks (`flow`, `spring`, `motionpath`, `clock`, `intl`, `permissions`, `scene`, `picking`, `animation`, `skeleton`, `font`, `image-codec`, `texture-formats`, `tilemap-formats`, and the full text/glyph bitmap cluster `glyphatlas`/`bitmapfont`/`bitmapfont-formats`/`bitmaptext`). What genuinely remains, re-ranked by foundational-ness and unblocked-ness:
+Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is **built**: `net`, `socket`, `assets`, `collision`, `spatial`, unified `camera`, `accessibility`, plus the whole 2D-game / animation / `-formats` blocks (`flow`, `spring`, `motionpath`, `clock`, `intl`, `permissions`, `scene`, `picking`, `animation`, `skeleton3d`, `font`, `image-codec`, `texture-formats`, `tilemap-formats`, and the full text/glyph bitmap cluster `glyphatlas`/`bitmapfont`/`bitmapfont-formats`/`bitmaptext`). What genuinely remains, re-ranked by foundational-ness and unblocked-ness:
 
 1. **Text itemization + shaping cluster** — the typography bottleneck, now unblocked (the shaper seam is glyph-bearing and bitmap text just landed). `textsegment` (grapheme/word/line segmentation; upstream `unicode-segmentation`) and `textbidi` (bidi itemization; upstream `unicode-bidi`) are the itemize layers correct international layout sits on; `textshaper-harfbuzz` (GSUB/GPOS shaping — the TS backend seam + registrar is local, the heavy rustybuzz impl → `flight-rs` like `surface-rs`); `text-markup` (markup → rich-text `-formats`).
-2. **3D lighting build-out** — defers to [`render-architecture.md`](../render-architecture.md) / [`3d-materials-architecture.md`](../3d-materials-architecture.md) as authoritative; sequence core-lit → shadow → IBL. `shadow` (shadow-map pass + PCF seam), `environment` (skybox + IBL bake), `instancing` (GPU instancing). **`render-graph` needs its own design pass FIRST** (it reshapes `render`).
+2. **3D bedrock deepening** — settle the approved GL contracts first (`ApplicationRenderView` + partial-target viewport/scissor; Standard/Extended PBR + full extension maps/true transmission), then build explicit effect attachments/history; animation mixing + skeleton3d proof/depth; texture residency/transcoding; mesh channel/topology correctness; shadows + probes; complete scene-format resource realization; and finally instancing/LOD/true-3D particles. Commission WGPU parity after the GL contracts and raster evidence settle. A general render graph, BVH/occlusion, reversed-Z, and full mesh simplification remain later layers, not prerequisites for these primitives.
 3. **Host backends** — mechanical, mirror `host-electron`: `host-tauri`, `host-capacitor`.
 4. **Platform-suite opportunistic** — clean cells like clipboard/dialog: `mediasession`, `biometrics`, `purchase`, `calendar`, `contacts`.
 5. **Infra / tooling** — `devtools`, `testing`. The `tool-*` suite has begun (`tool-capture`); `testing`/`devtools` may land as `tool-*` cells rather than SDK packages.
@@ -57,8 +57,8 @@ Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is
 Design calls to settle before building the affected entries:
 
 - **Scene serialization** — the aligned name `scene-formats` is taken by the glTF importer; native save/load + versioned migration needs a fold-in or a distinct name (`scene-save`? `scene-document`?).
-- **`render-graph`** — its own design pass (reshaping `render`) before shadow/lighting sequencing hardens.
-- **The `animation`/`skeleton`/`tween`/`timeline` boundary** — now that all four are built, revisit for overlap (anchor: the `clock` charter).
+- **`render-graph`** — its own later design pass after explicit attachment/pass contracts are behaviorally proven; do not make it a prerequisite for viewport, PBR transmission, effects inputs, or shadows.
+- **The `animation`/`skeleton3d`/`tween`/`timeline` boundary** — now that all four are built, revisit for overlap (anchor: the `clock` charter).
 
 ## 2D/3D naming architecture (decided 2026-07-15)
 
@@ -68,7 +68,7 @@ The standing rule for packages that span two and three dimensions. The test: **"
 
 | Package | 2D type | 3D type | Status | Notes |
 | --- | --- | --- | --- | --- |
-| `camera` | `Camera2D` | `Camera3D` | merge `camera2d` into `camera` | Both pure math (matrix producers), no graph dep |
+| `camera` | `Camera2D` | `Camera3D` | unified; `camera2d` absorbed | Both pure math (matrix producers), no graph dep |
 | `particleemitter` | `ParticleEmitter2D` | `ParticleEmitter3D` | add 3D, rename existing | Dual `displayobject`+`scene` dep accepted; tree-shaking zeroes cost |
 | `collision` | 2D shapes (existing) | 3D shapes (future) | add 3D when built | GJK/EPA joins same package; vocabulary-distinct names (Circle/Sphere) need no suffix |
 | `spatial` | 2D backends (existing) | 3D backends (future) | add 3D when built | BVH/octree behind same `SpatialIndexBackend` seam |
@@ -79,7 +79,7 @@ The standing rule for packages that span two and three dimensions. The test: **"
 | 2D package | 3D package | Status | Why different models |
 | --- | --- | --- | --- |
 | `physics2d` | `physics3d` | both new (chartered) | Different solvers, constraint Jacobians, contact generation (SAT vs GJK/EPA), island strategies |
-| `skeleton2d` | `skeleton3d` | both new (chartered); `skeleton` renames to `skeleton3d` | Different skinning math (CPU 2D mesh warp vs GPU skin palette), different IK, different blend strategies |
+| `skeleton2d` | `skeleton3d` | 3D renamed and built; 2D chartered | Different skinning math (CPU 2D mesh warp vs GPU skin palette), different IK, different blend strategies |
 
 ### Inherently single-dimension (no counterpart)
 
@@ -89,7 +89,7 @@ Display graph families (`displayobject`=2D, `scene`=3D), 2D geometry primitives 
 
 - When both 2D and 3D types coexist in one package, both get explicit suffixes: `Camera2D`/`Camera3D`, `ParticleEmitter2D`/`ParticleEmitter3D`.
 - Where shape names are vocabulary-distinct (Circle vs Sphere, ConvexPolygon vs ConvexHull), no dimension suffix is needed.
-- `skeleton` renames to `skeleton3d` for symmetry with `skeleton2d`. Both dimensions get explicit suffixes.
+- Historical `skeleton` is absorbed into `skeleton3d` for symmetry with `skeleton2d`. Both dimensions have explicit suffixes.
 
 Resolved / redundant — removed from the candidate set:
 
@@ -137,18 +137,18 @@ The visual-authoring-artifact arc ([structural-forks fork I](structural-forks.md
 
 ### 3D pipeline build-out — ✅ accepted: full 3D (2026-06-24)
 
-Scope **decided** (fork G): Flight goes full 3D. `environment`, `instancing`, `picking`, `postprocess`, `shadow`, `skeleton`, `animation`, `render-graph`, `gltf` — all **accepted (in scope, to build)**; `scene` (stub today) becomes a priority build-out. **Binding constraint: 3D is strictly additive** — a 2D app pays nothing for it (hard tree-shake + API boundary), enforced by a 2D-example `size` baseline that must not move. Still to **design** within scope: the `animation`/`skeleton`/`tween` boundary, and `render-graph`'s reshaping of `render` (its own design pass).
+Scope **decided** (fork G): Flight goes full 3D. `environment`, `instancing`, `picking`, `postprocess`, `shadow`, `skeleton3d`, `animation`, `render-graph`, `gltf` — all **accepted (in scope, to build)**; `scene` becomes a priority build-out. **Binding constraint: 3D is strictly additive** — a 2D app pays nothing for it (hard tree-shake + API boundary), enforced by a 2D-example `size` baseline that must not move. Still to **design** within scope: the `animation`/`skeleton3d`/`tween` boundary, and `render-graph`'s eventual reshaping of `render` after the explicit pass/attachment contracts settle.
 
 **Reconciled against the existing 3D architecture** — [`render-architecture.md`](../render-architecture.md) and [`3d-materials-architecture.md`](../3d-materials-architecture.md) are the **authoritative** 3D design; this register defers to them rather than restating them:
 
 - **Already planned / in progress there:** `materials` (built — 20-material taxonomy, 922 tests), lighting, `shadow`, `environment` (IBL) sit in the materials/lighting build plan (core-lit → shadows → IBL → transmission); `scene-gl`/`scene-wgpu` are being stubbed and wired; `instancing` is partially planned.
-- **Net-new beyond that plan** (what this structure newly tracks): `picking`, `postprocess`, `skeleton`, `animation`, `render-graph`, `gltf`.
+- **Net-new beyond that plan** (what this structure newly tracks): `picking`, `postprocess`, `skeleton3d`, `animation`, `render-graph`, `gltf`.
 
 The 2D↔3D boundary the binding constraint demands already has a home in `render-architecture.md` (the "Stage / Texture bridge"); the new piece is the **2D-example `size` gate** that enforces it.
 
 ### 2D game subjects
 
-`collision`, `spatial`, `camera2d`, `flow`, `clock`, `motion-path`, `spring` — **bedrock**. `clock` is the shared time-domain primitive under tween/timeline/spritesheet/particles (fork A); `motion-path` and `spring` coordinate with the animation family.
+`collision`, `spatial`, `camera`'s `Camera2D` surface, `flow`, `clock`, `motion-path`, `spring` — **bedrock**. `clock` is the shared time-domain primitive under tween/timeline/spritesheet/particles (fork A); `motion-path` and `spring` coordinate with the animation family.
 
 ### Networking
 
@@ -192,7 +192,7 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 | `steering` | steering · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — Reynolds seek/flee/arrive/flocking. Distinct from motionpath (authored) and spring (smoothing) |
 | `behaviortree` | ai · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — plain-data BTs, open node-kind registry, explicit tick, caller-owned blackboard |
 | `statechart` | state · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — hierarchical FSM. Doubly motivated: gameplay + Rive SM runtime substrate. Distinct from flow (app stack) |
-| `skeleton2d` | skeleton · primitive | naming matrix (2026-07-15) | **bedrock** — 2D skeletal animation (Spine/DragonBones territory). Separate from `skeleton` (3D) because the dimension changes the mathematical model. Chartered 2026-07-15 |
+| `skeleton2d` | skeleton · primitive | naming matrix (2026-07-15) | **bedrock** — 2D skeletal animation (Spine/DragonBones territory). Separate from `skeleton3d` because the dimension changes the mathematical model. Chartered 2026-07-15 |
 
 ### Cloud / distributed tier (soon)
 

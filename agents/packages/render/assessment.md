@@ -1,12 +1,23 @@
 ---
 package: '@flighthq/render'
-updated: 2026-07-13
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # render — Assessment
 
 Sorted from the 2026-07-13 full survey (`review.md`). Of the seven Approved entries, five have landed in source (no-op deletion, alias collapse, per-state adapt hook, the world-bounds viewport fix minus its duck-type residual, and the `computeTextFormatFontString` move to `@flighthq/text`); the guard/explain set and the 3D dirty short-circuit remain pending. Landed items are dropped from Recommended; their residuals and the still-pending approved work stay.
+
+## Directed
+
+1. **Make `RenderTarget` + device-pixel `Viewport` the allocation-free sub-target primitive.** A render pass can address only part of an existing target without allocating another GPU target. The `Viewport` remains an `Entity`: every Flight `create*` must return an `Entity` because that shape contract is load-bearing for the current OOP layer.
+2. **Treat viewport aspect as authoritative at draw time.** Camera-stored aspect is only a fallback for standalone/headless matrix work. Rendering the same camera into two viewports must derive two projection aspects without mutating the camera between draws.
+3. **Keep `RenderState` as the explicit current command/destination context.** Draw operations may update state-owned backend bindings and caches, just as Canvas and DOM draws affect their current destination. Persistent semantic changes must have named operations; backend bookkeeping stays private behind the state/runtime rather than leaking as public `gl*` fields.
+4. **Retire `RenderViewport2D` without inventing a false world-space replacement.** Its old rectangle is screen-space after an optional transform. Reuse `RectangleLike`/the picking rectangle where that is the real contract, or introduce a precisely named cull rectangle only if a distinct concept remains.
+
+## Depth gaps
+
+1. **Defer render-graph machinery until the attachment/pass contracts are proven.** Explicit pass inputs and outputs are needed now; a general render graph, occlusion system, and other scheduling machinery are later composition layers rather than current bedrock.
 
 ## Recommended
 

@@ -1,12 +1,19 @@
 ---
 package: '@flighthq/render-gl'
-updated: 2026-06-25
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # render-gl — Assessment (merge gate, integration-b2824e3d8)
 
 Recommendation layer over `review.md`. Scope: the **integration-b2824e3d8 delta** against the approved base (`origin/main`, `eb73c3d74`). The delta is **test-only** (four files; three clean, one non-compiling). This assessment sorts what the gate must do before this delta merges, plus the standing within-package gaps that remain parked. Items needing a blessed Boundary/North-star decision are routed to the charter's **Open directions** (below), not into Recommended.
+
+## Directed
+
+1. **Add a real partial-target GL pass.** Viewport and scissor constrain drawing and color/depth clears to the requested sub-rectangle of the existing framebuffer; beginning the pass allocates no replacement target. Nested passes restore the prior viewport and scissor exactly.
+2. **Keep GL runtime noise state-owned and private.** Current framebuffer/program/VAO/texture bindings, caches, scratch, and lazy scene runtime may hang from the render state's private runtime. They are implementation facts, not public semantic state; export only the explicit operations a custom renderer actually needs.
+3. **Prove viewport behavior with raster functionals.** Cover a sub-rectangle draw, sub-rectangle color and depth clear preserving outside pixels, nested scissor restoration, two viewports on one target, and one camera rendered with two aspect ratios. Assertions must inspect the relevant regions/relationships, not merely record a stable fingerprint.
+4. **Do not create an upward dependency on application.** GL may implement the backend primitives used by `ApplicationRenderView`, but `@flighthq/render-gl` must remain below `@flighthq/application` in the package graph.
 
 ## Recommended
 

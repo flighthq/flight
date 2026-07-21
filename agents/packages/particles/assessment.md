@@ -1,12 +1,18 @@
 ---
 package: '@flighthq/particles'
-updated: 2026-07-02
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # particles — Assessment
 
 Sorted from the depth review (82/100, solid), verified against the live tree (33 exports, 164+ tests, 14 source files), and the direction session (2026-07-02). Eight decisions blessed, including the sim/node split. The package is a strong CPU simulation core. The major architectural direction is extracting the display-object wiring into `@flighthq/particleemitter`, leaving particles as a pure value-leaf.
+
+## Depth gaps
+
+1. **Finish the dimension-honest 3D simulation primitives.** The live 3D path now carries z position/velocity/gravity, box/sphere/cone spawn, world/local motion, and 3D bounds, but `stepParticleEmitter3D` still casts the emitter to `ParticleEmitter2D` for forces and collisions. Add true 3D force/collider descriptors and distance sorting while sharing only genuinely dimension-independent curve/lifetime logic.
+2. **Preserve a backend-neutral simulation seam.** CPU SoA remains the reference; a future compute/GPU implementation consumes the same explicit buffers/descriptors and returns inspectable state. Do not put a GPU branch into every CPU update loop.
+3. **Complete mature emitter behavior.** Collision responses, sub-emitters, trails, render-order keys, prewarm/deterministic replay, and module combinations need behavioral tests across 2D and 3D.
 
 ## Recommended
 

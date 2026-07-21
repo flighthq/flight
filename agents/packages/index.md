@@ -46,7 +46,7 @@ Only `charter.md` is authored from _your_ direction; the other three are produce
 ```
 
 1. **Survey** — a review agent ingests the `status.md`, the package source and tests, and writes `review.md`: present capabilities, gaps, and where reality contradicts the charter. The evidence comes from the live worktree. Judged **against the charter** (see the rubric rule below).
-2. **Assess** — an assessment agent turns the review into `assessment.md`, sorting work into **`Recommended`** (the actionable, sweep-safe shortlist) and **`Backlog`** (parked candidates). Anything that needs a real decision — cross-package work, an API-shape fork — does **not** go in `Recommended`; it is surfaced into the charter's **Open directions** for an explicit conversation.
+2. **Assess** — an assessment agent turns the review into `assessment.md`, sorting work into **`Recommended`** (the actionable, sweep-safe shortlist), **`Backlog`** (parked candidates), and, when needed, **`Depth gaps`** (surveyed domain-maturity gaps that should remain visible in the aggregate queue). Explicit user direction that spans packages or requires staged delivery is recorded under **`Directed`**, keeping it distinct from blanket-sweep work. Anything that still needs a real decision — cross-package work, an API-shape fork — does **not** go in `Recommended`; it is surfaced into the charter's **Open directions** for an explicit conversation.
 3. **Approve** — you approve verbally, often coarsely ("do all recommended"). The agent **freezes** the named set into `assessment.md › Approved`, stamped and attributed (see the approval gate).
 4. **Execute** — a developer does the approved work and appends a `status.md` entry.
 5. **Promote** — a completed item that encodes a permanent ruling is appended to `charter.md › Decisions` on its way out. The charter is the only file an agent never writes to without your blessing.
@@ -68,7 +68,7 @@ Every `Approved` entry carries a **provenance stamp** — date plus whether it w
 
 The `reviews/` tree (depth, breadth, maturation, alignment) and the `tools/agents/proposals/` pipeline were point-in-time staging areas whose findings have been migrated into this `packages/` structure — per-package cells, [`register.md`](register.md), [`structural-forks.md`](structural-forks.md), and [`TODO.md`](TODO.md). Both were removed from the repository on 2026-07-03; their content is recoverable from git history. **The only durable structure is `packages/`.**
 
-Every cell carries a charter and assessment, every built package's cell carries a review (only the 7 chartered-unbuilt candidates have none yet). The generated cross-package view is [`TODO.md`](TODO.md) (via `todo.mjs`) — the one-file index of actionable work (chartered-unbuilt packages, the register's ranked candidate queue, and every assessment's `Recommended` items, weakest-first). **Agents looking for work start at `TODO.md`** and read only the named cell for detail.
+Every cell carries a charter and assessment, every built package's cell carries a review (only the chartered-unbuilt candidates have none yet). The generated cross-package view is [`TODO.md`](TODO.md) (via `todo.mjs`) — the one-file index of actionable and surveyed work (chartered-unbuilt packages, the register's ranked candidate queue, and every assessment's `Directed`, `Recommended`, and `Depth gaps` items). **Agents looking for work start at `TODO.md`** and read only the named cell for detail.
 
 ## File layout
 

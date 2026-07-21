@@ -1,12 +1,18 @@
 ---
 package: '@flighthq/animation'
-updated: 2026-07-03
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # animation — Assessment
 
 See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 review (partial, 40/100). The sampling kernel (track/clip/player, glTF-conformant cubic, quaternion slerp) is keep-worthy as-is; the review's headline gaps — blending, events, additive layers, state machine — are all charter-in-scope but gated on the mixer/layer Open direction or the flagged animation/skeleton/tween/timeline boundary, so the sweep-safe set below is the kernel-hardening and player-maturation slice.
+
+## Depth gaps
+
+1. **Add a target-free mixer/layer kernel.** Weighted clip accumulation, cross-fades, normalized quaternion blending, additive/override layers, and partial masks are the missing composition tier above sampling. Bindings remain separate consumers.
+2. **Complete playback semantics.** Add clip markers/events, root-motion extraction, finite repeat and ping-pong behavior, robust seeking across markers, and deterministic transition behavior.
+3. **Add authoring/runtime utilities without a kitchen sink.** Subclip/trim, key reduction, additive rebasing, clip validation, and binary/cursor sampling remain separable primitives. A later state machine/blend tree composes them rather than entering the sampler core.
 
 ## Recommended
 

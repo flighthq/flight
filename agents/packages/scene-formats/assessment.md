@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene-formats'
-updated: 2026-07-03
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
@@ -9,6 +9,13 @@ basedOn: ./review.md
 See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 review (stub, 18/100). The charter's priority Decision — expand glTF coverage, since partial support is not useful — makes most of the review's glTF build-out sweep-safe within-package work: the existing slice is well-shaped and grows rather than restructures. Parked items are those needing the `mesh` vertex-layout expansion, a cross-package seam, or a charter Open direction (export/serialize naming, USD scope, streaming).
 
 _Items 1–4, 7, 9 of the original list landed 2026-07-09 (`771bf232`): GLB container parsing (`createSceneFromGlb`), `byteStride`/`normalized` accessor correctness, multi-primitive meshes, TANGENT import, validation/diagnostics (version check, no-throw sentinel on malformed JSON, non-triangle-`mode`/`extensionsRequired` warnings), and the `GltfDocument`-only barrel narrowing — plus a latent `decodeBase64` high-byte fix. Remaining:_
+
+## Depth gaps
+
+1. **Return a complete import result, not only a node tree.** Resolve external buffers/images, materials/textures/samplers, animations/skins/morphs, cameras, lights, and diagnostics through explicit caller-supplied resource seams. Do not hide network/loading inside the parser.
+2. **Carry the full common attribute set.** `TEXCOORD_1`, `COLOR_0`, `JOINTS_0/1`, `WEIGHTS_0/1`, morph targets, sparse accessors, normalized/packed formats, and multi-primitive/subset semantics must survive into mesh/material/skeleton types.
+3. **Use open format-extension handlers.** glTF material/light/compression extensions, including Draco/mesh compression and PBR extensions, register individually. Unsupported required extensions return a sentinel/explanation rather than silently dropping visible behavior.
+4. **Add end-to-end fixture functionals.** Import canonical real assets, realize their resources, render distinguishing views, and assert behavior. Parser unit tests alone cannot validate that decoded maps, skinning, cameras, lights, or compressed geometry survive the full path.
 
 1. Core-spec materials/textures/samplers import — parse `materials`/`textures`/`images`/`samplers` and map metallic-roughness onto `@flighthq/materials` + `@flighthq/texture`. The largest visible-output gap: every import renders untextured. **Cross-package — needs a direction for the material/texture mapping.**
 2. Animations import into the `@flighthq/animation` core — glTF channel/sampler/clip map onto `AnimationTrack`/`AnimationChannel`/`AnimationClip` with `SceneAnimationTarget`. **Cross-package — needs a direction.**

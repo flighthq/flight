@@ -1,12 +1,17 @@
 ---
 package: '@flighthq/capture'
-updated: 2026-07-13
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # capture — Assessment
 
 See [charter](./charter.md) for blessed direction. First review (2026-07-13) now exists. The Approved ledger below is carried forward verbatim — note its items were frozen against the scripts tooling home, which has since been absorbed into `@flighthq/tool-capture` (see review.md gap 2 and candidate open direction 1 for the re-homing question).
+
+## Depth gaps
+
+1. **Add behavior assertions above whole-frame fingerprints.** Raster functionals for viewport/scissor, PBR maps/combinations/transmission, attachments, shadows, skinning, and particles should inspect meaningful regions, ordering, depth preservation, or expected relationships. Fingerprints remain regression evidence but cannot prove that the intended feature path produced the image.
+2. **Make unsupported-path diagnostics capturable.** Functional cases should be able to assert sentinel/explanation/guard output alongside pixels, so an intentionally unsupported extension or unavailable attachment is distinguishable from a silently inert renderer.
 
 ## Recommended
 

@@ -1,6 +1,19 @@
+---
+package: '@flighthq/mesh'
+updated: 2026-07-21
+basedOn: ./review.md
+---
+
 # mesh — Assessment
 
 See [charter](./charter.md) for blessed direction.
+
+## Depth gaps
+
+1. **Make every declared vertex channel usable end to end.** Add typed access/build/edit support for `uv1`, `color0`, `joints0`, `weights0`, any secondary influence channels, and packed/normalized formats; then consume them in scene import and GL shaders with raster proof.
+2. **Complete topology-editing primitives.** Weld, deindex, indexed/non-indexed conversion, subset editing, validation, and index-width selection are the bedrock operations importers and procedural tooling otherwise reimplement.
+3. **Deepen normal/tangent/UV authoring.** Add angle-threshold smoothing/split normals, robust tangent generation across seams, and basic planar/box/spherical UV projection as independent functions.
+4. **Realize instancing and LOD instead of leaving header-only types.** `InstancedMesh` and `LodMesh` need an owned data/update contract, render consumption, culling/selection rules, and functionals. Keep a full simplifier as later tooling rather than blocking these primitives.
 
 ## Recommended
 

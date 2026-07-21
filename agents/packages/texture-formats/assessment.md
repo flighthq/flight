@@ -1,10 +1,15 @@
 ---
 package: '@flighthq/texture-formats'
-updated: 2026-07-13
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # texture-formats — Assessment
+
+## Depth gaps
+
+1. **Complete the compressed-payload realization seam.** Container parsing must hand BasisLZ/UASTC/ETC/BC/ASTC payloads to separately registered transcoders/decoders with explicit target-format capability selection; identifying byte ranges alone is not end-to-end texture support.
+2. **Validate against real tool outputs.** KTX2/DDS/Basis/ATF fixtures from canonical encoders must prove mip/layer/face offsets, supercompression metadata, corrupt-range rejection, and eventual GPU upload. Synthetic header builders remain useful unit tests but are not sufficient evidence.
 
 ## Recommended
 

@@ -1,12 +1,18 @@
 ---
 package: '@flighthq/application'
-updated: 2026-07-13
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # application — Assessment
 
 Refreshed against the 2026-07-13 review (solid — 88). All three previously-Recommended items are verified done in the live tree: the `@flighthq/types` half exists (`LoopBackend.ts`, `ApplicationLoopOptions.ts`, expanded `Application`, the three `WindowBackend` methods), dead `LoopState.accumulated` is removed (only `fixedAccumulator` remains), and the Package Map line in `agents/index.md` now describes the full loop + windowing surface.
+
+## Directed
+
+1. **Build `ApplicationRenderView` as the explicit 95% assembly.** It links an `ApplicationWindow`, `RenderState`, `RenderTarget`, and device-pixel `Viewport` while keeping all four independently accessible. Window resize updates the common target/state/viewport case; callers attach additional resize work through the existing signal rather than a kitchen-sink callback surface.
+2. **Keep package arrows pointing downward.** The shared view contract belongs in `@flighthq/types`; generic attach/resize observation belongs here. A render backend must not import `@flighthq/application` merely to offer a backend assembly helper. Prefer a caller composition or a high-level application helper that depends only on lower layers.
+3. **Lead with GL and defer WGPU assembly parity.** Settle the window/target/state/viewport contract and its GL behavior first. Do not use a premature WGPU factory to harden an unvalidated cross-backend contract.
 
 ## Recommended
 

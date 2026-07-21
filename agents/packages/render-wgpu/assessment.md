@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/render-wgpu'
-updated: 2026-06-24
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
@@ -11,6 +11,10 @@ basedOn: ./review.md
 > **No maturation roadmap to absorb.** `reviews/maturation/depth/render-wgpu.md` does not exist — the review is the first survey of this package, so the only seed is `review.md` itself.
 >
 > The charter is a pure stub (all four sections `TODO`), so every design-shaped item lands in `Backlog` by default and feeds the charter's Open directions — there is no blessed North star or Boundary yet to make a call against. The structural forks most in play here are **D** (the runtime backend seam: what is the subject-agnostic core vs. the per-subject leaf) and **A** (source-data vs. graph-participation), both of which gate the core/leaf cut.
+
+## Directed
+
+1. **Defer `ApplicationRenderView` and partial-target parity until the GL contract settles.** Do not add an upward `@flighthq/application` dependency or preserve a premature WGPU factory merely for symmetry. Once GL functionals validate the shared `RenderTarget`/`Viewport`/pass semantics, implement the same lower-layer contract here.
 
 ## Recommended
 
