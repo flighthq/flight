@@ -9,7 +9,7 @@ import {
   createSpotLight,
 } from '@flighthq/lighting';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
+import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind, getSceneNodeWorldAlpha } from '@flighthq/scene';
 import type { Camera, Material, MeshGeometry, SceneLightBlock, SceneLights } from '@flighthq/types';
 import {
@@ -328,5 +328,32 @@ describe('prepareSceneRender', () => {
     addNodeChild(scene, mesh);
     const list = prepareSceneRender(state, scene, frontCamera(), emptyLights());
     expect(list.visibleMeshes[0].materials[0]).toBe(material);
+  });
+
+  it('refreshes a mesh world transform under the default policy without an explicit invalidate', () => {
+    const state = createRenderState(); // default 'refreshDerivedState'
+    const scene = createSceneNode(SceneNodeKind);
+    const mesh = createMesh(boundedBox(), [null]);
+    addNodeChild(scene, mesh);
+    const camera = frontCamera();
+    prepareSceneRender(state, scene, camera, emptyLights());
+    mesh.position.x = 3; // bare mutation, no invalidateNodeLocalTransform
+    prepareSceneRender(state, scene, camera, emptyLights());
+    expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
+  });
+
+  it('leaves a mesh world transform stale under requiresInvalidation until invalidated', () => {
+    const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
+    const scene = createSceneNode(SceneNodeKind);
+    const mesh = createMesh(boundedBox(), [null]);
+    addNodeChild(scene, mesh);
+    const camera = frontCamera();
+    prepareSceneRender(state, scene, camera, emptyLights());
+    mesh.position.x = 3;
+    prepareSceneRender(state, scene, camera, emptyLights());
+    expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(0); // stale: the caller never invalidated
+    invalidateNodeLocalTransform(mesh);
+    prepareSceneRender(state, scene, camera, emptyLights());
+    expect(getNodeWorldMatrix4(mesh).m[12]).toBeCloseTo(3);
   });
 });

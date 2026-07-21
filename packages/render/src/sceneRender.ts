@@ -11,7 +11,7 @@ import {
   setPerspectiveMatrix4,
   transformAabbByMatrix4,
 } from '@flighthq/geometry';
-import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
+import { getNodeRuntime, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import { computeSkeleton3DJointMatrices } from '@flighthq/skeleton3d';
 import type {
   Aabb,
@@ -156,7 +156,12 @@ export function prepareSceneRender(
   packSceneLightBlock(list.lights, lights);
 
   prepared.meshes.length = 0;
-  collectVisibleMeshes(scene, prepared.frustum, prepared.worldBounds, prepared.meshes);
+  // The sync policy governs transform freshness in the prepare pass, consistently with the 2D
+  // display-object prepare: 'refreshDerivedState' (the default) recomposes every visited node's
+  // matrices from its current transform each frame, so a bare `mesh.position.x = …` shows up with no
+  // caller-side invalidate; 'requiresInvalidation' trusts the caller's invalidate* calls instead.
+  const refreshTransforms = state.sceneGraphSyncPolicy === 'refreshDerivedState';
+  collectVisibleMeshes(scene, prepared.frustum, prepared.worldBounds, prepared.meshes, refreshTransforms);
   list.meshCount = prepared.meshes.length;
 
   // Refresh the GPU skin palette for every visible skinned mesh from its joints' current world
@@ -179,12 +184,19 @@ function collectVisibleMeshes(
   frustum: Readonly<Frustum>,
   worldBounds: Aabb,
   out: Mesh[],
+  refreshTransforms: boolean,
 ): void {
   // `enabled` gates graph participation; `visible` gates rendering. A hidden subtree is skipped whole,
   // so `visible` propagates (a hidden group hides its descendants) without a resolved-visibility cache.
   if (!node.enabled || !(node as unknown as HasAppearance).visible) {
     return;
   }
+
+  // Under 'refreshDerivedState', bump the local-transform revision of every visited node before its
+  // world matrix is read below. Pre-order walk order means an ancestor is invalidated before any
+  // descendant resolves the parent chain, so the whole visible subtree recomposes from live transform
+  // fields this frame. See prepareSceneRender for the policy rationale.
+  if (refreshTransforms) invalidateNodeLocalTransform(node as NodeAny);
 
   // worldAlpha is not folded in this walk: it is lazily ensured on access (getSceneNodeWorldAlpha), the
   // appearance analog of the ensure-on-access world matrix the renderer resolves at draw time. This walk
@@ -200,7 +212,7 @@ function collectVisibleMeshes(
   const children = getNodeRuntime(node).children;
   if (children !== null) {
     for (let i = 0; i < children.length; i++) {
-      collectVisibleMeshes(children[i], frustum, worldBounds, out);
+      collectVisibleMeshes(children[i], frustum, worldBounds, out, refreshTransforms);
     }
   }
 }
