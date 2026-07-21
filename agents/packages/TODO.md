@@ -865,6 +865,7 @@ These are explicit user directions whose implementation may span packages or req
 - Keep package arrows pointing downward
 - Lead with GL and defer WGPU assembly parity
 - Make synchronization idempotent and window-authoritative
+- Complete the Entity constructor invariant in the application domain
 
 ### entity (solid 92)
 
