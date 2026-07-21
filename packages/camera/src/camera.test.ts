@@ -4,12 +4,13 @@ import {
   createCamera,
   getCameraInverseViewProjectionMatrix4,
   getCameraViewProjectionMatrix4,
+  setCameraAspect,
   setCameraJitter,
   setCameraViewMatrix4FromLookAt,
   setCameraViewMatrix4FromMatrix4,
   updateCameraInverseViewProjection,
 } from './camera';
-import { createPerspectiveProjection, setProjectionMatrix4 } from './projection';
+import { createOrthographicProjection, createPerspectiveProjection, setProjectionMatrix4 } from './projection';
 
 describe('createCamera', () => {
   it('stores projection, near, far and identity view/inverse with zero jitter', () => {
@@ -96,6 +97,25 @@ describe('getCameraViewProjectionMatrix4', () => {
     for (let i = 0; i < 16; i++) {
       expect(camera.view.m[i]).toBeCloseTo(expected.m[i]);
     }
+  });
+});
+
+describe('setCameraAspect', () => {
+  it('writes the aspect on a perspective projection in place', () => {
+    const projection = createPerspectiveProjection({ aspect: 1, fovY: 1 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    setCameraAspect(camera, 16 / 9);
+    // Same object, mutated in place — no cast needed to read the narrowed field.
+    expect(projection.aspect).toBeCloseTo(16 / 9);
+    expect(camera.projection).toBe(projection);
+  });
+
+  it('widens an orthographic view volume to the aspect, preserving half-height', () => {
+    const projection = createOrthographicProjection({ halfHeight: 5, halfWidth: 5 });
+    const camera = createCamera({ far: 100, near: 0.1, projection });
+    setCameraAspect(camera, 2);
+    expect(projection.halfHeight).toBe(5);
+    expect(projection.halfWidth).toBe(10);
   });
 });
 
