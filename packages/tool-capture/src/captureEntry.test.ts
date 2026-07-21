@@ -2,7 +2,13 @@ import { isAbsolute, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildCaptureObserveDiagnostics, captureEntry, captureParallel, getCaptureOutputPaths } from './captureEntry';
+import {
+  buildCaptureObserveDiagnostics,
+  captureEntry,
+  captureParallel,
+  captureUrl,
+  getCaptureOutputPaths,
+} from './captureEntry';
 
 describe('buildCaptureObserveDiagnostics', () => {
   it('passes through the render facts and separates page exceptions from console/network errors', () => {
@@ -114,6 +120,13 @@ describe('captureEntry', () => {
 describe('captureParallel', () => {
   it('is a callable parallel capture pass', () => {
     expect(typeof captureParallel).toBe('function');
+  });
+});
+
+describe('captureUrl', () => {
+  // Drives its own headless browser against a live URL; exercised end to end by the `observe` bin.
+  it('is a callable single-url observe pass', () => {
+    expect(typeof captureUrl).toBe('function');
   });
 });
 

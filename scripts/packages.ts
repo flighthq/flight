@@ -36,6 +36,7 @@ interface PackageJson {
   module?: string;
   types?: string;
   exports?: PackageExports;
+  bin?: string | Record<string, string>;
   files?: string[];
   repository?: PackageRepository;
   sideEffects?: boolean | string[];
@@ -258,10 +259,28 @@ function isTopLevelSideEffectStatement(statement: ts.Statement): boolean {
   );
 }
 
-function checkNoTopLevelSideEffects(errors: CheckError[], pkgDir: string): void {
+// The `bin` targets are executables, not tree-shakeable library modules — running at top level is their
+// whole point — so their source files are exempt from the no-side-effects rule. Map each dist bin target
+// (`dist/bin.js`) back to its `src/bin.ts` so the check skips exactly those files.
+function getBinSourceFiles(pkgDir: string, bin: PackageJson['bin']): Set<string> {
+  const targets = bin === undefined ? [] : typeof bin === 'string' ? [bin] : Object.values(bin);
+  const sources = new Set<string>();
+  for (const target of targets) {
+    const src = target
+      .replace(/^\.?\//, '')
+      .replace(/^dist\//, 'src/')
+      .replace(/\.js$/, '.ts');
+    sources.add(join(pkgDir, src));
+  }
+  return sources;
+}
+
+function checkNoTopLevelSideEffects(errors: CheckError[], pkgDir: string, bin: PackageJson['bin']): void {
   const sideEffects: string[] = [];
+  const binSources = getBinSourceFiles(pkgDir, bin);
 
   for (const sourcePath of getSourceFiles(join(pkgDir, 'src'))) {
+    if (binSources.has(sourcePath)) continue;
     const sourceFile = ts.createSourceFile(sourcePath, readFileSync(sourcePath, 'utf-8'), ts.ScriptTarget.Latest, true);
     for (const statement of sourceFile.statements) {
       if (!isTopLevelSideEffectStatement(statement)) continue;
@@ -327,7 +346,7 @@ for (const pkgDir of packageDirs) {
   }
 
   check(errors, 'sideEffects is false', pkg.sideEffects === false, `got ${JSON.stringify(pkg.sideEffects)}`);
-  checkNoTopLevelSideEffects(errors, pkgDir);
+  checkNoTopLevelSideEffects(errors, pkgDir, pkg.bin);
 
   check(
     errors,
