@@ -4,7 +4,7 @@ import type { Kind } from './Entity';
 import type { ImageResourceReference } from './ImageResourceReference';
 import type { Light } from './Light';
 import type { MaterialLike } from './Material';
-import type { Matrix4 } from './Matrix4';
+import type { Matrix4Like } from './Matrix4';
 import type { MeshGeometry } from './MeshGeometry';
 import type { MeshMorph } from './MorphTarget';
 import type { SceneAnimationPath } from './SceneAnimationPath';
@@ -125,6 +125,6 @@ export interface SceneDocumentScene {
 // inverse-bind matrix array (one `Matrix4` per joint, index-aligned with `joints`). The assembler resolves
 // the joint indices against the built node array to construct a live `Skin`/`Skeleton3D`.
 export interface SceneDocumentSkin {
-  inverseBind: Matrix4[];
+  inverseBind: Matrix4Like[];
   joints: number[];
 }

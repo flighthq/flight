@@ -19,7 +19,14 @@ import type {
 } from '@flighthq/types';
 import { StandardPbrMaterialKind } from '@flighthq/types';
 
-import { createSceneFromGlb, createSceneFromGltf, createScenesFromGlb, createScenesFromGltf } from './gltfParse';
+import {
+  createSceneFromGlb,
+  createSceneFromGltf,
+  createScenesFromGlb,
+  createScenesFromGltf,
+  parseGlb,
+  parseGltf,
+} from './gltfParse';
 import type { GltfDocument } from './gltfSchema';
 
 // A base64 `data:` URI carrying `bytes` under an explicit image MIME type.
@@ -1103,6 +1110,79 @@ describe('createScenesFromGltf', () => {
   it('returns an empty array for invalid input', () => {
     const warnings: string[] = [];
     expect(createScenesFromGltf('{ not json', warnings)).toHaveLength(0);
+    expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
+  });
+});
+
+describe('parseGlb', () => {
+  it('parses a GLB container into a SceneDocument decomposition', () => {
+    const positions = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const binary = bytesOf(positions);
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: 0 }],
+      buffers: [{ byteLength: positions.byteLength }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+    const document = parseGlb(buildGlb(doc, binary));
+    expect(document.meshes).toHaveLength(1);
+    expect(document.nodes).toHaveLength(1);
+    expect(document.nodes[0].mesh).toBe(0);
+    expect(document.scenes[0].rootNodes).toEqual([0]);
+  });
+
+  it('returns an empty document for a malformed container', () => {
+    const document = parseGlb(new Uint8Array([1, 2, 3]));
+    expect(document.nodes).toHaveLength(0);
+    expect(document.scenes).toHaveLength(0);
+  });
+});
+
+describe('parseGltf', () => {
+  it('decomposes a glTF document into index-referenced tables with inline geometry', () => {
+    const document = parseGltf(makeTriangleGltf());
+    expect(document.meshes).toHaveLength(1);
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(3);
+    expect(document.nodes[0].mesh).toBe(0);
+    expect(document.nodes[0].transform.position.x).toBe(5);
+  });
+
+  it('expands a multi-primitive mesh into a group node with per-primitive child mesh nodes', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const uri = toDataUri(bytesOf(positions));
+    const doc: GltfDocument = {
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' }],
+      asset: { version: '2.0' },
+      bufferViews: [{ buffer: 0, byteLength: positions.byteLength, byteOffset: 0 }],
+      buffers: [{ byteLength: positions.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }, { attributes: { POSITION: 0 } }] }],
+      nodes: [{ mesh: 0 }],
+      scenes: [{ nodes: [0] }],
+    };
+    const document = parseGltf(doc);
+    expect(document.meshes).toHaveLength(2);
+    // Node 0 is a group with two child mesh nodes (one per primitive).
+    expect(document.nodes[0].mesh).toBeUndefined();
+    expect(document.nodes[0].children).toHaveLength(2);
+    expect(document.nodes[document.nodes[0].children[0]].mesh).toBe(0);
+    expect(document.nodes[document.nodes[0].children[1]].mesh).toBe(1);
+  });
+
+  it('carries a skin as joint node indices plus inverse-bind matrices', () => {
+    const document = parseGltf(makeSkinnedGltf());
+    expect(document.skins).toHaveLength(1);
+    expect(document.skins[0].joints.length).toBeGreaterThan(0);
+    expect(document.skins[0].inverseBind.length).toBe(document.skins[0].joints.length);
+  });
+
+  it('returns an empty document and warns for invalid JSON', () => {
+    const warnings: string[] = [];
+    const document = parseGltf('{ not json', warnings);
+    expect(document.nodes).toHaveLength(0);
     expect(warnings.some((w) => w.includes('not valid JSON'))).toBe(true);
   });
 });
