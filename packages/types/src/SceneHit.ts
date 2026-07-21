@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Mesh } from './Mesh';
 
 // Result of a successful scene pick (a camera or world ray hitting a Mesh's geometry). `distance` is
@@ -7,7 +8,7 @@ import type { Mesh } from './Mesh';
 // first/second/third vertex, so the hit point is `u*A + v*B + w*C` with `u + v + w === 1`.
 // `normalX`/`normalY`/`normalZ` are the triangle's unit geometric face normal in world space (the
 // normalized cross product of two edges), matching the flat-scalar shape of `pointX/Y/Z`.
-export interface SceneHit {
+export interface SceneHit extends Entity {
   node: Mesh;
   distance: number;
   triangleIndex: number;

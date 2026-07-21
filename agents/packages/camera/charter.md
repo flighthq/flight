@@ -50,7 +50,9 @@ _Drawn from the review and neighbor packages. Edit freely._
 
 ## Decisions
 
-- **2026-07-03 — Investigate `getCameraLinearDepth` ortho path before changing.** May be load-bearing for effects packages. Do not blind-fix.
+- **2026-07-21 — Linear-depth recovery is projection-aware.** The repository-wide consumer audit found
+  no external dependency on the erroneous perspective-only behavior. Perspective uses the rational
+  inverse and orthographic uses its affine NDC-to-view-depth remap, each tested independently.
 - **2026-07-03 — Reversed-Z / infinite-far perspective in scope.**
 - **2026-07-03 — Off-axis/asymmetric projection (stereo/VR/portals) in scope.**
 - **2026-07-03 — TS-leads, Rust conforms later.**
@@ -62,14 +64,12 @@ _Every candidate question the review surfaced, plus the structural forks that to
 
 1. **Does `inverseViewProjection` belong on the `Camera` entity at all?** It is derived, written only by `updateCameraInverseViewProjection`, and read only by the effects packages (TAA / velocity / fog / DoF), never within `camera`. This is the **entity/runtime-slot pattern (fork A)** applied to a 3D entity: keep it a public cache field, move it to a runtime slot owned by the effects subsystem, or drop it and have effects compute it. Charter should rule.
 
-2. **Is `getCameraLinearDepth` perspective-only or projection-aware?** Today it always applies the perspective depth inversion and is wrong for orthographic (the doc comment's "same formula applies" claim is false; tests only cover perspective). If projection-aware, it must branch on `projection.kind` — which feeds the **closed-union-vs-registry fork (B)**: `setProjectionMatrix4` is already a closed `kind` switch, and off-axis / reversed-Z / infinite-far variants grow it. Charter should decide whether projection kinds stay a closed union (small, tight, in-a-closed-system) or become an open registry as the family grows — and, in the meantime, whether `getCameraLinearDepth` is scoped to perspective or fixed to branch.
+2. **Where is the geometry↔camera line for ray/plane math?** `intersectCameraRayWithPlane` is a fully general ray-plane intersection with nothing camera-specific in it; `getCameraRayThroughBoundingSphere` is the camera-flavored companion. Should `camera` re-export general geometry ergonomics for picking convenience, or do such helpers home in `@flighthq/geometry` and camera only adds the camera-specific wrapping?
 
-3. **Where is the geometry↔camera line for ray/plane math?** `intersectCameraRayWithPlane` is a fully general ray-plane intersection with nothing camera-specific in it; `getCameraRayThroughBoundingSphere` is the camera-flavored companion. Should `camera` re-export general geometry ergonomics for picking convenience, or do such helpers home in `@flighthq/geometry` and camera only adds the camera-specific wrapping?
+3. **Is a stored viewport (`setCameraViewport`) the intended end-state?** `aspect` is threaded through every `get*` / `setProjection*` call and also stored on the descriptor — a dual source of truth. A `setCameraViewport(camera, w, h)` / `getCameraAspect` would retire the threaded argument, but touches every `aspect`-threaded call site in the `scene-gl` effects — a cross-package change the charter should bless before a worker takes it.
 
-4. **Is a stored viewport (`setCameraViewport`) the intended end-state?** `aspect` is threaded through every `get*` / `setProjection*` call and also stored on the descriptor — a dual source of truth. A `setCameraViewport(camera, w, h)` / `getCameraAspect` would retire the threaded argument, but touches every `aspect`-threaded call site in the `scene-gl` effects — a cross-package change the charter should bless before a worker takes it.
+4. **What is the camera's scope vs. controllers and the 3D pipeline?** State the boundary to a future `@flighthq/camera-controller` and to `scene` / `mesh`, so the off-axis / stereo / VR question has a home: is an asymmetric/off-axis frustum a single-camera projection variant (a new `kind` + a `setProjectionMatrix4` branch), or a separate stereo-rig abstraction? Same question governs reversed-Z / infinite-far perspective, which also couples to the GPU NDC-range convention in `render-gl` / `render-wgpu`.
 
-5. **What is the camera's scope vs. controllers and the 3D pipeline?** State the boundary to a future `@flighthq/camera-controller` and to `scene` / `mesh`, so the off-axis / stereo / VR question has a home: is an asymmetric/off-axis frustum a single-camera projection variant (a new `kind` + a `setProjectionMatrix4` branch), or a separate stereo-rig abstraction? Same question governs reversed-Z / infinite-far perspective, which also couples to the GPU NDC-range convention in `render-gl` / `render-wgpu`.
+5. **3D scope and the additivity gate (fork G).** Full 3D is now in scope and `camera` is a real crate in the 3D family. The charter should confirm camera follows the **strictly-additive** rule — a 2D bundle pays nothing for it — and flag that the TS `index.md` Package Map currently has no explicit `camera` bullet (the 3D family is documented only in `rust/index.md`); whether to add explicit 3D-subject bullets is the user's call.
 
-6. **3D scope and the additivity gate (fork G).** Full 3D is now in scope and `camera` is a real crate in the 3D family. The charter should confirm camera follows the **strictly-additive** rule — a 2D bundle pays nothing for it — and flag that the TS `index.md` Package Map currently has no explicit `camera` bullet (the 3D family is documented only in `rust/index.md`); whether to add explicit 3D-subject bullets is the user's call.
-
-7. **Rust conformance is as-claimed, not compiled.** The `flighthq-camera` crate exists in the bundle but was never built (`cargo` unavailable; "correct by inspection"). The charter/assessment should treat Rust parity as unverified until a compile+conformance pass runs.
+6. **Rust conformance is as-claimed, not compiled.** The `flighthq-camera` crate exists in the bundle but was never built (`cargo` unavailable; "correct by inspection"). The charter/assessment should treat Rust parity as unverified until a compile+conformance pass runs.

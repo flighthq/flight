@@ -1,4 +1,3 @@
-import { createBoundingSphere } from '@flighthq/geometry';
 import type { BoundingSphereLike, Light, PointLight } from '@flighthq/types';
 import {
   AmbientLightKind,
@@ -74,18 +73,30 @@ export function getLightLuminance(light: Readonly<Light>): number {
 // lights with a finite range, tests whether the influence sphere intersects `bounds` using a
 // sphere-sphere overlap test. An empty `bounds` (radius < 0) is treated as no overlap.
 export function hasLightInfluenceOnBounds(light: Readonly<Light>, bounds: Readonly<BoundingSphereLike>): boolean {
-  // Use module-level scratch to avoid per-call allocation.
-  getLightInfluenceBounds(scratchSphere, light);
-  // Sentinel radius (-1) = unlimited reach.
-  if (scratchSphere.radius < 0) return true;
+  const kind = light.kind;
+  if (
+    kind === AmbientLightKind ||
+    kind === HemisphereLightKind ||
+    kind === EnvironmentKind ||
+    kind === DirectionalLightKind
+  ) {
+    return true;
+  }
+
+  // Preserve getLightInfluenceBounds' open-kind sentinel: an unknown/non-spatial light is unlimited
+  // rather than silently culled.
+  if (kind !== PointLightKind && kind !== SpotLightKind && kind !== AreaLightKind) return true;
+
+  const spatial = light as Readonly<PointLight>;
+  if (spatial.range < 0) return true;
   // Empty bounds — treat as no overlap.
   if (bounds.radius < 0) return false;
   // Sphere-sphere overlap: distance between centers <= sum of radii.
-  const dx = scratchSphere.center.x - bounds.center.x;
-  const dy = scratchSphere.center.y - bounds.center.y;
-  const dz = scratchSphere.center.z - bounds.center.z;
+  const dx = spatial.position.x - bounds.center.x;
+  const dy = spatial.position.y - bounds.center.y;
+  const dz = spatial.position.z - bounds.center.z;
   const distSq = dx * dx + dy * dy + dz * dz;
-  const radSum = scratchSphere.radius + bounds.radius;
+  const radSum = spatial.range + bounds.radius;
   return distSq <= radSum * radSum;
 }
 
@@ -98,6 +109,3 @@ export function isLightShadowCasting(light: Readonly<Light>): boolean {
   }
   return (light as unknown as Readonly<{ castsShadow: boolean }>).castsShadow;
 }
-
-// Scratch sphere used by hasLightInfluenceOnBounds to avoid per-call allocation.
-const scratchSphere = createBoundingSphere(0, 0, 0, -1);

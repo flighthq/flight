@@ -81,7 +81,6 @@ The charter is a **seed stub**: "What it is" is filled (transcribed from the dep
 
 **Minor code-hygiene nits (within-package, sweep-safe):**
 
-- **Copy-paste doc comments in `meshGeometryAttributes.ts`.** `getMeshGeometryVertexNormal` (line 9) and `getMeshGeometryVertexUv0` (lines 48–49) both describe themselves as _"Reads the position (x, y, z)"_ / reference the wrong semantic. The code is correct; the comments were not updated from the position template.
 - **Type-header comment drift:** `types/MeshGeometry.ts` references `destroyMeshGeometryGPUData` (lines 51, 79–80) but the actual functions are `destroyMeshGeometryGlData` / `destroyMeshGeometryWgpuData`. The header names a function that does not exist.
 
 **Where the admin docs are stale against the work (candidate revisions — user's gate):**

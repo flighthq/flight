@@ -17,7 +17,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. Fix copy-paste doc comments (`getMeshGeometryVertexNormal` says "position").
+None. The copied `getMeshGeometryVertexNormal` position/semantic comment is corrected.
 
 ## Approved
 

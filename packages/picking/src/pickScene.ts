@@ -1,4 +1,5 @@
 import { getCamera3DScreenToWorldRay } from '@flighthq/camera';
+import { createEntity } from '@flighthq/entity';
 import {
   createAabb,
   createMatrix4,
@@ -30,7 +31,7 @@ export interface ScenePickOptions {
 // Allocates a zeroed SceneHit. Handy for the `out` of `pickScene`/`pickSceneWithRay3D` and for
 // growing the `outArray` of the multi-hit queries. `node` is null until a pick fills it.
 export function createSceneHit(): SceneHit {
-  return {
+  return createEntity({
     distance: 0,
     node: null as unknown as Mesh,
     normalX: 0,
@@ -43,7 +44,7 @@ export function createSceneHit(): SceneHit {
     u: 0,
     v: 0,
     w: 0,
-  };
+  });
 }
 
 // Resolves the nearest Mesh hit by a camera pick ray through a scene, filling `out` and returning it,

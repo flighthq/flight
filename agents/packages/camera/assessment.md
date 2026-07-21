@@ -28,8 +28,9 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. Remove stream-of-consciousness comment in `basis.ts` ("wait, this is col 1 of R" / "Actually...").
-2. Investigate `getCameraLinearDepth` ortho path -- may be load-bearing. Do NOT fix blindly; verify if any effects package depends on current behavior before changing.
+None. The basis comment is corrected. `getCamera3DLinearDepth` had no consumers outside camera, and its
+orthographic path incorrectly used the perspective inverse; it now uses the affine orthographic depth
+mapping with near/mid/far tests while the perspective path is unchanged.
 
 ## Approved
 

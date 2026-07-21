@@ -5,8 +5,7 @@ import type { Camera3D } from '@flighthq/types';
 // point in front of the camera (standard right-handed convention where the camera looks toward -Z).
 //
 // For perspective projection the NDC depth is non-linear; this undoes that non-linearity using the
-// camera's near/far clip planes. For orthographic projection the depth is already linear, so the
-// same formula still applies but the result is a simple remap.
+// camera's near/far clip planes. Orthographic projection uses its own affine remap.
 //
 // `ndcZ` should be in [-1, 1] (OpenGL depth convention). Values outside that range are clamped
 // mathematically — no explicit clamp is applied; callers should supply valid NDC depths.
@@ -18,6 +17,9 @@ export function getCamera3DLinearDepth(camera: Readonly<Camera3D>, ndcZ: number)
   const range = far - near;
   if (range === 0) {
     return 0;
+  }
+  if (camera.projection.kind === 'orthographic') {
+    return -(near + ((ndcZ + 1) * range) / 2);
   }
   // Map ndcZ from [-1, 1] back to the view-space Z for a perspective projection.
   // Derived from the perspective depth mapping:
