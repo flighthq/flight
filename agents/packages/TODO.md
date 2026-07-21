@@ -136,25 +136,17 @@ Design calls to settle before building the affected entries:
 
 - Strengthen the loader tests
 
-### scene (partial 55)
-
-- Remove dead no-op ternaries in raycaster
-- Replace literal casts with `createVector3` in raycast hit construction
-
 ### tileset (solid 55)
 
 - Fix the `buildTilesetRegions` correctness edges
 - Pass `margin`/`spacing` through the loaders
 - Add `disposeTileset`
 
-### picking (solid 58)
+### camera-controls (partial 58)
 
-- Extract `pickSceneWithRay3D(scene, ray, out)` and make `pickScene` the thin camera wrapper over it — the general primitive (VR controller…
-- Enrich `SceneHit` with `triangleIndex` and the geometric face normal (flat `normalX/Y/Z` scalars, matching the existing flat-point shape)…
-- Skip non-visible meshes by default — hidden meshes are pickable today
-- Query options per the charter Decision set: optional predicate filter, near/far distance limits (`maxDistance`), and backface-cull vs dou…
-- `pickSceneAll` (every hit, sorted by distance, into a caller-supplied array) — charter Decision 2026-07-03
-- Coverage and hygiene: a transformed (rotated/scaled) mesh test — the exact path the local-space design exists for; an orthographic non-sq…
+- Correct the package description
+- Make orbit pan semantics precise
+- Define angular wrap behavior and test the ±π seam
 
 ### spritesheet-formats (partial 58)
 
@@ -341,6 +333,12 @@ Design calls to settle before building the affected entries:
 - Add `explain*` queries for the silent sentinels
 - Test the `decodeImagePremultiplied` auto-detect path
 
+### scene-resources (solid 70)
+
+- Reveal an owner only after its required resource set settles
+- Separate the empty resolver primitive from the built-in assembly
+- Hide `SceneResourceInFlight`
+
 ### capture (solid 72)
 
 - `explain*` queries for the silent sentinels
@@ -409,6 +407,12 @@ Design calls to settle before building the affected entries:
 - Cross-variant fixture hardening
 - BMFont binary `.fnt` parser
 
+### color (solid 74)
+
+- Split unclamped OkLab inversion from gamut handling
+- Move exported HslColor and HsvColor types to the header layer
+- Correct the Kelvin out-of-range documentation to match endpoint clamping
+
 ### path-formats (solid 74)
 
 - `explainSvgPathData(d)` diagnostic query
@@ -419,9 +423,9 @@ Design calls to settle before building the affected entries:
 
 ### render-gl (solid 74)
 
-- Fix the non-compiling `glFullscreenPass.test.ts` before this delta merges (blocking)
-- Keep the three clean test files as-is
-- (Contingent on keeping the fullscreen file) use a constructor for the `makeTarget` fixture
+- Make render-target pool matching preserve every storage axis
+- Preserve heterogeneous MRT formats across resize
+- Close fullscreen-present resource ownership
 
 ### socket (solid 74)
 
@@ -450,10 +454,12 @@ Design calls to settle before building the affected entries:
 
 ### scene-gl (solid 75)
 
-- Wire `hasGlMeshGeometryUv1` into the standard-PBR `bind()` so the `HAS_UV1` path stops being dead surface
-- Remove the dead `normalMatrix` field from the draw entry (or honor the placeholder)
-- Collapse the two identical pool helpers into one `acquireDrawEntry(pool)`
-- Capture the `mesh-blend-transparency` functional baseline
+- Wire the existing UV1 detector into production PBR variants
+- Recycle or remove the draw-entry pools
+- Remove the dead draw-entry normalMatrix field and collapse duplicate acquire helpers
+- Delete old IBL textures on rebake
+- Add deterministic skybox teardown
+- Fix the nonexistent invalidation contract
 
 ### bitmapfont (solid 76)
 
@@ -788,21 +794,38 @@ Design calls to settle before building the affected entries:
 
 These are explicit user directions whose implementation may span packages or require staged delivery; they are not blanket-sweep items.
 
+### camera-controls (partial 58)
+
+- Make both controller constructors produce Entities
+
+### picking (solid 70)
+
+- Make createSceneHit produce an Entity
+
+### scene-resources (solid 70)
+
+- Make every `create*` result an Entity
+- Compose Extended PBR texture discovery through a nested extension-kind registry
+
+### color (solid 74)
+
+- Enforce create-to-Entity naming and shape
+
 ### render-gl (solid 74)
 
 - Add a real partial-target GL pass
 - Keep GL runtime noise state-owned and private
 - Prove viewport behavior with raster functionals
-- Do not create an upward dependency on application
+- Do not create an upward application dependency
 
 ### scene-gl (solid 75)
 
-- Realize `ExtendedPbrMaterial` through separately imported extension registrations
+- Realize ExtendedPbrMaterial through separately imported extension registrations
 - Sample every declared extension map and compose lobes coherently
-- Implement real transmission as explicit passes and inputs
-- Follow diagnostics inversion for unsupported realizations
-- Add exhaustive GL raster functionals
-- Keep backend caches internal to state/runtime
+- Implement transmission as explicit reusable passes
+- Follow diagnostics inversion
+- Add exhaustive GL behavior tests
+- Keep backend caches private to state/runtime
 
 ### render (solid 76)
 
@@ -857,11 +880,11 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - OBJ/MTL importer — charter Decision 2026-07-03 ("the home for all 3D file format parsing"); cheap, high value for test assets
 - Sparse accessors + external `.bin`/image URI resolution — parked correctness gaps flagged during the 2026-07-09 pass
 
-### scene (partial 55)
+### camera-controls (partial 58)
 
-- Reconcile orphaned scene-node families
-- Make the cull/prepare seam singular and consumed
-- Defer acceleration until the semantic list is correct
+- Add controller-state primitives
+- Add explicit framing composition
+- Keep advanced behaviors compositional
 
 ### texture (solid 58)
 
@@ -881,6 +904,14 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Add dependency and progressive-load coordination
 - Define the visibility-streaming seam
 
+### scene (solid 68)
+
+- Realize InstancedMesh end to end
+- Realize LodMesh end to end
+- Unify explicit scene preparation
+- Resolve shared-geometry deformation ownership
+- Add acceleration after semantic correctness
+
 ### texture-formats (solid 68)
 
 - Complete the compressed-payload realization seam
@@ -891,18 +922,23 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Verify decode behavior with canonical real files
 - Expose progressive/multi-frame decode as separate seams when demanded
 
+### picking (solid 70)
+
+- Make CPU queries agree with rendered deformation
+- Complete hit attributes
+- Add material-aware and non-triangle selection as opt-in layers
+- Add acceleration after semantics
+
+### scene-resources (solid 70)
+
+- Add recovery and diagnostics
+- Add residency rather than a larger resolver
+- Prove resource realization behaviorally
+
 ### capture (solid 72)
 
 - Add behavior assertions above whole-frame fingerprints
 - Make unsupported-path diagnostics capturable
-
-### skeleton3d (solid 72)
-
-- Prove the shipped skinning path behaviorally
-- Represent deformation beyond the top-four baseline
-- Add pose composition with the animation mixer
-- Deepen the rigging primitives
-- Commission WGPU parity only after GL evidence
 
 ### particles (solid 73)
 
@@ -910,11 +946,42 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Preserve a backend-neutral simulation seam
 - Complete mature emitter behavior
 
+### color (solid 74)
+
+- Add explicit colorimetry primitives
+- Add perceptual authoring spaces deliberately
+- Provide the CPU reference for display transforms
+
 ### particleemitter (solid 74)
 
 - Finish the 3D node and render feed as real composition
 - Offer separable render modes
 - Prove ordering and spatial behavior with raster functionals
+
+### render-gl (solid 74)
+
+- Define the HDR display-output contract
+- Grow color-space metadata beyond linear/sRGB when required
+- Complete the device tier only as consumed primitives
+- Make all state-owned GPU caches deterministically destructible
+
+### scene-gl (solid 75)
+
+- Make environment caches identity/version aware
+- Honor CubeTexture.colorSpace
+- Preserve or explicitly own GL state across auxiliary passes
+- Define HDR scene presentation
+- Unify transparent ordering across subject families
+- Finish scene semantic depth before acceleration
+
+### skeleton3d (solid 75)
+
+- Prove composed deformation behavior
+- Define clone-safe morph-plus-skin ownership
+- Represent influences beyond the common top four
+- Compose poses with animation
+- Deepen rigging as separate primitives
+- Commission WGPU only after GL evidence
 
 ### render (solid 76)
 
@@ -951,14 +1018,14 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `scene-formats` · `motionpath` · `skeleton3d` · `particleemitter` · `debug` · `lifecycle` · `adjustments` · `platform` · `connectivity` · `screen` · `accessibility` · `clock` · `color` · `host-capacitor` · `intl` · `movieclip` · `scene-resources` · `shading`
+`storage` · `updater` · `scene-formats` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `debug` · `lifecycle` · `adjustments` · `platform` · `connectivity` · `screen` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 
 Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). The review loop works this list to keep everything above trustworthy; it can be ignored when simply orienting in a package.
 
-- **Needs a direction session (charter stub or never directed):** `textshaper-canvas` · `textureatlas-formats` · `xml`
-- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `color` · `host-capacitor` · `intl` · `movieclip` · `scene-resources` · `shading`
+- **Needs a direction session (charter stub or never directed):** `camera-controls` · `textshaper-canvas` · `textureatlas-formats` · `xml`
+- **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 - **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)`
-- **Needs assess refresh (review newer than assessment):** `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `picking (assessment 2026-07-03 < review 2026-07-09)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `types (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
+- **Needs assess refresh (review newer than assessment):** `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `types (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
 - **Open directions awaiting the user:** 589 across 132 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `camera` (7) · `render` (7) · `timeline` (7) · `capture` (6) · `effects-canvas` (6) · `loader` (6) · `scene-resources` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.

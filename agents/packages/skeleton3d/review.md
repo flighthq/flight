@@ -1,40 +1,54 @@
 ---
 package: '@flighthq/skeleton3d'
 status: solid
-score: 72
+score: 75
 updated: 2026-07-21
 ingested:
   - charter.md
-  - status.md
   - source
+  - tests
+  - scene morph source
 ---
 
-# Review: @flighthq/skeleton3d
+# skeleton3d — Review
 
 ## Verdict
 
-**solid — 72/100.** The package has moved well past the old palette-only `skeleton` review. The live source owns the `Skeleton3D` entity, joint palette computation, CPU vertex skinning, mesh-level bind-pose deformation/update, and skinned bounds. The charter records GL GPU skinning plus MD5/glTF/AWD influence import through a shared top-four/renormalize seam. These are useful bedrock primitives rather than a controller kitchen sink.
+**Solid — 75/100.** Skeleton3D owns an Entity, joint hierarchy and palette computation, CPU vertex
+skinning, bind-pose capture, mesh update and skinned bounds. GL consumes an explicit palette, and MD5,
+glTF, and AWD import feed a shared top-four influence representation. This is a coherent deformation
+primitive rather than an animation controller.
 
-It is not yet an authoritative skeletal-animation domain. WGPU deformation still lacks host-GPU proof; the chosen top-four packing drops additional influences rather than representing them; morph targets, pose buffers/masks, IK/constraints, dual-quaternion skinning, and retargeting remain absent; and no functional raster establishes CPU↔GL deformation parity, animated bounds/culling, or imported-asset behavior.
+The former claim that morph targets are absent is stale. Mesh and scene now carry morph targets,
+animation drives their weights, CPU blending exists, and GL has a morph functional. The unresolved
+depth is correct **composition**: independent morph and skin paths do not yet establish a safe,
+per-frame, clone-safe morph-plus-skin result shared by render, bounds, and picking.
 
-## Present capabilities
+## What is solid
 
-- `createSkeleton3D` and palette/bind-pose operations over explicit joint matrices.
-- Allocation-explicit CPU `skinVertices` plus `skinMeshGeometry`/`updateMeshSkin` composition.
-- Skinned bounds through `getMeshSkinBounds`.
-- Layout-driven skin participation through `Mesh.skin`, avoiding a duplicate `SkinnedMesh` node family.
-- Shared importer packing for MD5, glTF, and AWD, with top-four influence selection and renormalization.
-- GL shader-variant plumbing recorded in the charter; WGPU remains deferred.
+- Explicit skeleton creation, bind/inverse-bind data, joint palette updates, and CPU skin functions.
+- Mesh skin participation is a property of Mesh, avoiding a redundant SkinnedMesh node hierarchy.
+- Importers normalize onto one top-four layout and GL uses a reusable palette texture rather than one
+  resource per skeleton.
+- CPU skinned bounds exist, preserving a headless query route.
+- Morph is correctly a sibling deformation family in mesh/scene, not falsely owned by skeleton3d.
 
 ## Gaps
 
-- No behavior-level GL capture proving imported animation deforms the intended vertices, matches the CPU reference, or updates culling bounds.
-- More than four influences are discarded to the top four; no secondary/variable influence representation exists.
-- Morph-target data and skin/morph execution order are absent.
-- Pose buffers, joint masks, and blend-tree consumption are not yet composed with `@flighthq/animation`.
-- IK/aim/constraints, dual-quaternion skinning, and retargeting are absent.
-- WGPU skinning and cross-backend functional parity remain unproven.
+- More than four influences are discarded rather than represented by an optional secondary/variable
+  influence stream.
+- CPU morph and skin both write MeshGeometry. The documented ordering does not by itself solve repeated
+  frames, independent clones sharing geometry, corrective shapes, or GPU morph-plus-skin composition.
+- Picking and culling do not yet consume a guaranteed same-frame prepared deformation result.
+- There is no raster/CPU comparison covering imported animation, composed morph+skin, animated bounds,
+  and prevention of accidental CPU-plus-GPU double skinning.
+- Pose buffers, joint masks, additive/override pose mixing, sockets, and root motion are not composed
+  with the target-free animation mixer.
+- IK/aim constraints, dual-quaternion skinning, and retargeting remain absent.
+- WGPU remains intentionally deferred until GL semantics and evidence settle.
 
-## Contract fit
+## Boundary conclusion
 
-The package boundary is sound: deformation math lives here; animation sampling/mixing stays in `animation`; mesh stores layout/source data; backends consume the palette explicitly. New depth should preserve that split and add small solver/deformation primitives rather than a stateful all-in-one skeleton controller.
+Keep skeletal palette/deformation math here, morph math in mesh, animation time/mixing in animation,
+and scene preparation as the composition point. Do not absorb morph, IK, playback, and render resources
+into one Skeleton controller.

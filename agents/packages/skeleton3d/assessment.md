@@ -8,20 +8,29 @@ basedOn: ./review.md
 
 ## Recommended
 
-No sweep-safe items from this focused depth review; the meaningful work crosses mesh, animation, scene formats, or render backends.
+No sweep-safe items; meaningful work crosses mesh, scene preparation, animation, formats, or GL.
 
 ## Depth gaps
 
-1. **Prove the shipped skinning path behaviorally.** Add imported MD5/glTF/AWD GL captures, CPU↔GPU deformation comparison, animated skinned bounds/culling, and a diagnostic case preventing accidental CPU+GPU double skinning.
-2. **Represent deformation beyond the top-four baseline.** Add an explicit secondary/variable influence path, morph-target deltas, and a documented morph/skin execution order without inflating the common four-influence layout.
-3. **Add pose composition with the animation mixer.** Pose buffers, joint masks, additive/override blending, sockets, root motion, and blend-tree consumers should reuse animation's target-free mixer rather than create another playhead.
-4. **Deepen the rigging primitives.** Analytical two-bone/aim constraints, optional iterative IK, dual-quaternion skinning, and retargeting remain separable authoritative-tier additions.
-5. **Commission WGPU parity only after GL evidence.** Mirror the settled palette/layout/diagnostic contracts and run cross-backend captures; do not independently redesign the skin seam.
+1. **Prove composed deformation behavior.** Add imported MD5/glTF/AWD GL captures, CPU-to-GPU
+   comparisons, corrective morph-plus-skin cases, animated bounds/picking, clone independence, and a
+   diagnostic preventing CPU-plus-GPU double skinning.
+2. **Define clone-safe morph-plus-skin ownership.** Repeated frames and independently posed clones must
+   not mutate shared geometry into one another; establish an explicit prepared deformation result or a
+   fully composed GPU vertex path.
+3. **Represent influences beyond the common top four.** Add a separately paid secondary/variable
+   influence stream without inflating every rigid or four-influence vertex.
+4. **Compose poses with animation.** Pose buffers, joint masks, additive/override blending, sockets,
+   root motion, and blend-tree consumers should reuse the target-free mixer.
+5. **Deepen rigging as separate primitives.** Analytical two-bone/aim constraints, optional iterative
+   IK, dual-quaternion skinning, and retargeting should remain individually importable.
+6. **Commission WGPU only after GL evidence.** Mirror the settled palette/layout/preparation contract;
+   do not independently redesign it.
 
 ## Backlog
 
-- Full animation-graph authoring UI/runtime remains outside this value/deformation package.
-- Physics-driven ragdoll coupling waits on the physics3d body/constraint contract.
+- Animation-graph authoring UI/runtime.
+- Ragdoll coupling waits on the physics3d constraint contract.
 
 ## Approved
 
