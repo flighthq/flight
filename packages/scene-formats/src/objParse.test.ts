@@ -7,7 +7,7 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import type { BlinnPhongMaterial, ExternalImageResourceReference, Mesh, SceneNode } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseObjMaterialLibrary } from './mtlParse';
@@ -282,9 +282,9 @@ describe('createSceneFromObj', () => {
     expect(material.shininess).toBe(64); // Ns
     expect(material.alphaMode).toBe('blend'); // d < 1
     // Texture maps are referenced by filename, not decoded.
-    expect((material.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('wood.png');
-    expect((material.specularMap!.resource as ExternalSceneResourceRef).uri).toBe('spec.png');
-    expect((material.normalMap!.resource as ExternalSceneResourceRef).uri).toBe('normal.png');
+    expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('wood.png');
+    expect((material.specularMap!.resource as ExternalImageResourceReference).uri).toBe('spec.png');
+    expect((material.normalMap!.resource as ExternalImageResourceReference).uri).toBe('normal.png');
     expect(material.diffuseMap!.image).toBeNull();
   });
 

@@ -389,7 +389,7 @@ export * from './SceneNode';
 export * from './SceneNodeVisitor';
 export * from './SceneRenderList';
 export * from './SceneRenderProxy';
-export * from './SceneResourceRef';
+export * from './ImageResourceReference';
 export * from './Screen';
 export * from './ScreenChangeEvent';
 export * from './ScreenColorSpace';

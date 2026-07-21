@@ -9,7 +9,7 @@ import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type {
   BlinnPhongMaterial,
-  ExternalSceneResourceRef,
+  ExternalImageResourceReference,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
@@ -411,7 +411,7 @@ describe('createSceneFromMd5Mesh', () => {
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.name).toBe('textures/default'); // MD5 shader path preserved as the authored identity
     // The shader path is referenced, not decoded: an Unresolved External ref, image left null.
-    expect((material.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('textures/default');
+    expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('textures/default');
     expect(material.diffuseMap!.image).toBeNull();
   });
 

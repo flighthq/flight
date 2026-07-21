@@ -2,7 +2,7 @@ import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
 import { createSkeleton3D } from '@flighthq/skeleton3d';
-import type { EmbeddedSceneResourceRef, ExternalSceneResourceRef, SceneNode } from '@flighthq/types';
+import type { EmbeddedImageResourceReference, ExternalImageResourceReference, SceneNode } from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
 
 import {
@@ -103,7 +103,7 @@ describe('createEmbeddedTextureRef', () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
     const texture = createEmbeddedTextureRef(bytes, 'image/png');
     expect(texture.image).toBeNull();
-    const ref = texture.resource as EmbeddedSceneResourceRef;
+    const ref = texture.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.bytes).toBe(bytes);
     expect(ref.mimeType).toBe('image/png');
@@ -111,7 +111,7 @@ describe('createEmbeddedTextureRef', () => {
   });
 
   it('accepts a null mimeType for the resolver to sniff', () => {
-    const ref = createEmbeddedTextureRef(new Uint8Array([0]), null).resource as EmbeddedSceneResourceRef;
+    const ref = createEmbeddedTextureRef(new Uint8Array([0]), null).resource as EmbeddedImageResourceReference;
     expect(ref.mimeType).toBeNull();
   });
 });
@@ -120,7 +120,7 @@ describe('createExternalTextureRef', () => {
   it('wraps a filename as an Unresolved External resource ref without loading it', () => {
     const texture = createExternalTextureRef('models/hero.png');
     expect(texture.image).toBeNull();
-    const ref = texture.resource as ExternalSceneResourceRef;
+    const ref = texture.resource as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('models/hero.png');
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);

@@ -6,7 +6,7 @@ import { createMesh, createScene } from '@flighthq/scene';
 import { emitSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween';
-import type { EmbeddedSceneResourceRef, SceneNode, Texture } from '@flighthq/types';
+import type { EmbeddedImageResourceReference, SceneNode, Texture } from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
 
 import { revealSceneResourcesOnResolve } from './revealSceneResourcesOnResolve';
@@ -14,7 +14,7 @@ import { createSceneResourceResolver } from './sceneResourceResolver';
 import type { SceneResourceEvent } from './sceneResourceSignals';
 import { enableSceneResourceSignals } from './sceneResourceSignals';
 
-function pendingRef(): EmbeddedSceneResourceRef {
+function pendingRef(): EmbeddedImageResourceReference {
   return {
     kind: 'Embedded',
     bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),

@@ -5,8 +5,8 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import { createSceneFromMd2 } from '@flighthq/scene-formats';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, SceneResourceRef } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadSceneFromMd2 } from './loadMd2';
@@ -24,9 +24,9 @@ afterEach(() => {
 
 describe('loadSceneFromMd2', () => {
   it('parses MD2 and resolves its skin texture', async () => {
-    const ref: SceneResourceRef = {
+    const ref: ImageResourceReference = {
       basePath: null,
-      kind: SceneResourceRefKind.External,
+      kind: ImageResourceReferenceKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,
       uri: 'hero.pcx',

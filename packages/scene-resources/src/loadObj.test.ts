@@ -5,8 +5,8 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import { createSceneFromObj } from '@flighthq/scene-formats';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, SceneResourceRef } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadSceneFromObj } from './loadObj';
@@ -20,9 +20,9 @@ const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
 describe('loadSceneFromObj', () => {
   it('parses OBJ and resolves the MTL material textures', async () => {
-    const ref: SceneResourceRef = {
+    const ref: ImageResourceReference = {
       basePath: null,
-      kind: SceneResourceRefKind.External,
+      kind: ImageResourceReferenceKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,
       uri: 'wood.png',

@@ -21,7 +21,7 @@ import {
   ResourceResolutionState,
   SceneAnimationPathRotation,
   SceneAnimationPathTranslation,
-  SceneResourceRefKind,
+  ImageResourceReferenceKind,
 } from '@flighthq/types';
 
 import {
@@ -81,7 +81,7 @@ import {
 // BlinnPhongMaterial (the format's own shading model — AwayJS MethodMaterial), carrying its flat
 // diffuse color and/or a diffuseMap referencing the AWD texture. The parser does not reinterpret into
 // PBR/Unlit — that is the caller's explicit choice. Each texture's image source is emitted as an
-// unresolved SceneResourceRef on the Texture (`Texture.resource`, `image` left null) — embedded
+// unresolved ImageResourceReference on the Texture (`Texture.resource`, `image` left null) — embedded
 // payloads as an Embedded ref carrying the encoded bytes, external-URL textures as an External ref
 // carrying the URL. @flighthq/scene-resources resolves those refs on the caller's schedule. Only an
 // embedded payload of an unrecognized image format warns and leaves the subset unmaterialed.
@@ -590,7 +590,7 @@ interface ParsedMaterial {
 // A parsed AWD texture block (type 82). Exactly one source form is populated: `bytes` (+ detected
 // `mimeType`) for an embedded, self-describing image payload (PNG/JPEG/…), or `url` for an external
 // reference (the block's name is the URL in AWD's external form). Both null when an embedded payload
-// was not a recognized image format (dropped). The parser emits these as a SceneResourceRef; it does
+// was not a recognized image format (dropped). The parser emits these as a ImageResourceReference; it does
 // not fetch or decode.
 interface ParsedTexture {
   bytes: Uint8Array | null;
@@ -1174,7 +1174,7 @@ function resolveAwdMaterial(
   return material;
 }
 
-// Resolves an AWD texture block id to a Flight Texture carrying an unresolved SceneResourceRef, or
+// Resolves an AWD texture block id to a Flight Texture carrying an unresolved ImageResourceReference, or
 // null when the texture is missing or its embedded payload was an unrecognized image format. The
 // parser references — it does not decode: an embedded block emits an Embedded ref holding the encoded
 // bytes; an external block emits an External ref holding the URL. The Texture's `image` stays null
@@ -1192,7 +1192,7 @@ function resolveAwdTexture(
   if (parsed.bytes !== null && parsed.mimeType !== null) {
     return createTexture({
       resource: {
-        kind: SceneResourceRefKind.Embedded,
+        kind: ImageResourceReferenceKind.Embedded,
         bytes: parsed.bytes,
         mimeType: parsed.mimeType,
         state: ResourceResolutionState.Unresolved,
@@ -1202,7 +1202,7 @@ function resolveAwdTexture(
   if (parsed.url !== null) {
     return createTexture({
       resource: {
-        kind: SceneResourceRefKind.External,
+        kind: ImageResourceReferenceKind.External,
         uri: parsed.url,
         basePath: null,
         mimeType: null,

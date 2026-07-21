@@ -4,8 +4,8 @@ import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, SceneResourceRef } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { resolveScenesWithOptions } from './loadSceneOptions';
@@ -13,10 +13,10 @@ import { createSceneResourceResolver, disposeSceneResourceResolver } from './sce
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
-function externalRef(uri: string): SceneResourceRef {
+function externalRef(uri: string): ImageResourceReference {
   return {
     basePath: null,
-    kind: SceneResourceRefKind.External,
+    kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
     uri,

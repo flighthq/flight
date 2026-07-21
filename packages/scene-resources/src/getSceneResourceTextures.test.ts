@@ -3,8 +3,8 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createScene } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
-import type { SceneResourceRef, Texture } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResourceReference, Texture } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { getSceneResourceTextures } from './getSceneResourceTextures';
@@ -13,8 +13,8 @@ import {
   registerBuiltInSceneMaterialTextures,
 } from './sceneMaterialTextureRegistry';
 
-function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): SceneResourceRef {
-  return { bytes: new Uint8Array([1, 2, 3]), kind: SceneResourceRefKind.Embedded, mimeType: 'image/png', state };
+function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
+  return { bytes: new Uint8Array([1, 2, 3]), kind: ImageResourceReferenceKind.Embedded, mimeType: 'image/png', state };
 }
 
 function registry() {

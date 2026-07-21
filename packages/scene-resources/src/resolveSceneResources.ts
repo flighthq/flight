@@ -1,8 +1,8 @@
 import { loadImageResourceFromBytes } from '@flighthq/image';
 import { queueResourceLoad } from '@flighthq/loader';
 import { emitSignal } from '@flighthq/signals';
-import type { ImageResource, SceneNode, SceneResourceRef, Texture } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResource, SceneNode, ImageResourceReference, Texture } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 
 import { getSceneResourceTextures } from './getSceneResourceTextures';
 import type { SceneResourceInFlight, SceneResourceResolver } from './sceneResourceResolver';
@@ -11,8 +11,8 @@ import type { SceneResourceInFlight, SceneResourceResolver } from './sceneResour
 // pending texture — the "all" policy; supply a predicate for visible-only/prioritized streaming).
 // `priority` orders the loader queue (higher first) so nearer/visible textures resolve before others.
 export interface ResolveSceneResourcesOptions {
-  priority?: (texture: Readonly<Texture>, ref: Readonly<SceneResourceRef>) => number;
-  select?: (texture: Readonly<Texture>, ref: Readonly<SceneResourceRef>) => boolean;
+  priority?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => number;
+  select?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => boolean;
 }
 
 // Resolves one texture's ref to an ImageResource (or null for an expected failure): Embedded bytes
@@ -20,10 +20,10 @@ export interface ResolveSceneResourcesOptions {
 // carried by `signal` (both paths reject on abort). Exported for direct testing of the two ref kinds.
 export function resolveOneSceneResourceTexture(
   resolver: Readonly<SceneResourceResolver>,
-  ref: Readonly<SceneResourceRef>,
+  ref: Readonly<ImageResourceReference>,
   signal: AbortSignal,
 ): Promise<ImageResource | null> {
-  if (ref.kind === SceneResourceRefKind.Embedded) {
+  if (ref.kind === ImageResourceReferenceKind.Embedded) {
     return loadImageResourceFromBytes(ref.bytes, ref.mimeType ?? undefined, signal);
   }
   return resolver.fetch(ref, signal);
@@ -75,7 +75,7 @@ function cancelDroppedResolutions(resolver: SceneResourceResolver, working: Read
 function finishSceneResourceResolution(
   resolver: SceneResourceResolver,
   texture: Texture,
-  ref: SceneResourceRef,
+  ref: ImageResourceReference,
   entry: SceneResourceInFlight,
   image: ImageResource | null,
 ): void {
@@ -95,7 +95,7 @@ function finishSceneResourceResolution(
 function failSceneResourceResolution(
   resolver: SceneResourceResolver,
   texture: Texture,
-  ref: SceneResourceRef,
+  ref: ImageResourceReference,
   entry: SceneResourceInFlight,
 ): void {
   if (resolver.inFlight.get(texture) !== entry) return;
@@ -109,7 +109,7 @@ function failSceneResourceResolution(
 function emitSceneResourceEvent(
   resolver: Readonly<SceneResourceResolver>,
   texture: Texture,
-  ref: SceneResourceRef,
+  ref: ImageResourceReference,
   resolved: boolean,
 ): void {
   const signals = resolver.signals;

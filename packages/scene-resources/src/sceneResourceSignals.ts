@@ -1,12 +1,12 @@
 import { createSignal } from '@flighthq/signals';
-import type { SceneResourceRef, Signal, Texture } from '@flighthq/types';
+import type { ImageResourceReference, Signal, Texture } from '@flighthq/types';
 
 import type { SceneResourceResolver } from './sceneResourceResolver';
 
 // One resource-availability event: the Texture whose ref settled and the ref itself (read `ref.state`
 // for Resolved vs Failed, or `texture.image` for the bound result on resolve).
 export interface SceneResourceEvent {
-  ref: SceneResourceRef;
+  ref: ImageResourceReference;
   texture: Texture;
 }
 

@@ -1,13 +1,13 @@
 import { cancelResourceLoad, createResourceLoader, disposeResourceLoader, startResourceLoad } from '@flighthq/loader';
 import type { ResourceLoader, Texture } from '@flighthq/types';
 
+import type { ImageResourceFetch } from './imageResourceFetch';
+import { createWebImageResourceFetch } from './imageResourceFetch';
 import type { SceneMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
 import {
   createSceneMaterialTextureRegistry,
   registerBuiltInSceneMaterialTextures,
 } from './sceneMaterialTextureRegistry';
-import type { SceneResourceFetch } from './sceneResourceFetch';
-import { createWebSceneResourceFetch } from './sceneResourceFetch';
 import type { SceneResourceSignals } from './sceneResourceSignals';
 
 // One texture's in-flight resolution: the AbortController that cancels it, the loader item `key`, and
@@ -24,7 +24,7 @@ export interface SceneResourceInFlight {
 // `registry` maps material kinds to their texture slots, and `signals` is the opt-in availability
 // group (null until enableSceneResourceSignals). Holds no scene reference — a pass takes the scene.
 export interface SceneResourceResolver {
-  fetch: SceneResourceFetch;
+  fetch: ImageResourceFetch;
   inFlight: Map<Texture, SceneResourceInFlight>;
   loader: ResourceLoader;
   registry: SceneMaterialTextureRegistry;
@@ -32,7 +32,7 @@ export interface SceneResourceResolver {
 }
 
 export interface SceneResourceResolverOptions {
-  fetch?: SceneResourceFetch;
+  fetch?: ImageResourceFetch;
   maxConcurrent?: number;
   // A caller-supplied registry replaces the built-in default wholesale; omit it to get a fresh
   // registry pre-populated with the built-in surface-material listers.
@@ -52,7 +52,7 @@ export function createSceneResourceResolver(options?: Readonly<SceneResourceReso
   }
 
   return {
-    fetch: options?.fetch ?? createWebSceneResourceFetch(),
+    fetch: options?.fetch ?? createWebImageResourceFetch(),
     inFlight: new Map(),
     loader,
     registry,
