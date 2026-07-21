@@ -858,6 +858,7 @@ These are explicit user directions whose implementation may span packages or req
 - Model full extension inputs, including textures and coherent combinations
 - Preserve the Entity constructor invariant
 - Compose the standard property block, not a nested material
+- Make extension names honest about their transport model
 
 ### application (solid 88)
 

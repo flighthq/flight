@@ -19,6 +19,10 @@ See [charter](./charter.md) for blessed direction.
    populate `standard` with `createStandardPbrMaterialProperties`; embedding a full
    `StandardPbrMaterial` entity smuggles a second kind/runtime/surface trailer into a value block whose
    contract does not consume them.
+7. **Make extension names honest about their transport model.** A `SubsurfacePbrExtension` promises
+   subsurface transport; a wrapped-diffuse lighting approximation is a smaller, different primitive.
+   Either implement a thickness/profile/backlighting transport contract or name and type the existing
+   atom `WrappedDiffusePbrExtension` so composition does not conceal the approximation.
 
 ## Recommended
 
