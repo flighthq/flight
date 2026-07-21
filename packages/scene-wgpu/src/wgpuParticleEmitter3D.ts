@@ -3,7 +3,7 @@ import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  Camera,
+  Camera3D,
   Matrix4,
   NodeAny,
   ParticleBlendMode,
@@ -410,7 +410,7 @@ export function destroyWgpuParticleEmitter3DResources(state: WgpuRenderState): v
 }
 
 // Draws every ParticleEmitter3D under `scene` on the WebGPU backend — the WGSL mirror of scene-gl's
-// drawGlSceneParticleEmitter2Ds. Camera-facing billboards, instanced, one pipeline per (blend mode,
+// drawGlSceneParticleEmitter2Ds. Camera3D-facing billboards, instanced, one pipeline per (blend mode,
 // textured) variant, depth-tested but not depth-writing. Must run inside an open scene render pass
 // (reuses the pass on the render-state runtime). drawWgpuScene calls this automatically as its final
 // transparent pass (mirroring drawGlScene), so the common path needs no manual call; it stays exported
@@ -418,7 +418,7 @@ export function destroyWgpuParticleEmitter3DResources(state: WgpuRenderState): v
 export function drawWgpuSceneParticleEmitter2Ds(
   state: WgpuRenderState,
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
 ): void {
   emitterScratch.length = 0;

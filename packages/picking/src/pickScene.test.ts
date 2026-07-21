@@ -1,8 +1,8 @@
 import {
-  createCamera,
+  createCamera3D,
   createOrthographicProjection,
   createPerspectiveProjection,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera';
 import {
   copyQuaternion,
@@ -16,30 +16,30 @@ import {
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera, Mesh, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
+import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
 
 import { createSceneHit, pickScene, pickSceneAll, pickSceneAllWithRay3D, pickSceneWithRay3D } from './pickScene';
 
-function makeCamera(): Camera {
-  const camera = createCamera({
+function makeCamera(): Camera3D {
+  const camera = createCamera3D({
     far: 100,
     near: 0.1,
     projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 2 }),
   });
   // Look down -Z at the origin from z = 5.
-  setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+  setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
   return camera;
 }
 
 // Orthographic camera with a deliberately non-square view volume (halfWidth != halfHeight) to guard
 // against a horizontal/vertical mismap. Looks down -Z from z = 5.
-function makeOrthoCamera(halfWidth: number, halfHeight: number): Camera {
-  const camera = createCamera({
+function makeOrthoCamera(halfWidth: number, halfHeight: number): Camera3D {
+  const camera = createCamera3D({
     far: 100,
     near: 0.1,
     projection: createOrthographicProjection({ halfHeight, halfWidth }),
   });
-  setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+  setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
   return camera;
 }
 
@@ -150,7 +150,7 @@ describe('pickScene', () => {
   });
 
   it('returns the nearer of two overlapping meshes', () => {
-    // Camera is at z = 5 looking toward the origin in the -Z direction.
+    // Camera3D is at z = 5 looking toward the origin in the -Z direction.
     const camera = makeCamera();
     const scene = createSceneNode(SceneNodeKind);
 

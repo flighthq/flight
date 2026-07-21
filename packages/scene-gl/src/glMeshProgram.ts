@@ -1,8 +1,8 @@
-import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
+import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
 import { createGlProgram, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
 import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
-import type { Camera, GlRenderState, MeshGeometry, SceneRenderProxy, TextureLike } from '@flighthq/types';
+import type { Camera3D, GlRenderState, MeshGeometry, SceneRenderProxy, TextureLike } from '@flighthq/types';
 
 import { ensureGlMeshUpload } from './glMeshUpload';
 import { ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
@@ -182,7 +182,7 @@ export function hasGlUvTransform(texture: Readonly<TextureLike> | null): boolean
 export function setGlMeshCameraPosition(
   gl: WebGL2RenderingContext,
   locCameraPosition: WebGLUniformLocation | null,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
 ): void {
   inverseMatrix4(scratchInverseView, camera.view);
   getMatrix4Position(scratchCameraPosition, scratchInverseView);
@@ -195,10 +195,10 @@ export function setGlMeshCameraPosition(
 export function setGlMeshViewProjection(
   gl: WebGL2RenderingContext,
   locViewProjection: WebGLUniformLocation | null,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
 ): void {
   const aspect = camera.projection.kind === 'perspective' ? camera.projection.aspect : 1;
-  getCameraViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
+  getCamera3DViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
   gl.uniformMatrix4fv(locViewProjection, false, scratchViewProjection.m);
 }
 

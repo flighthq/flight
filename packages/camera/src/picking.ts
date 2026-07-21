@@ -1,7 +1,7 @@
 import { createMatrix4, createVector3, inverseMatrix4, normalizeVector3, subtractVector3 } from '@flighthq/geometry';
-import type { Camera, Ray3DLike, Vector3Like } from '@flighthq/types';
+import type { Camera3D, Ray3DLike, Vector3Like } from '@flighthq/types';
 
-import { getCameraViewProjectionMatrix4 } from './camera';
+import { getCamera3DViewProjectionMatrix4 } from './camera';
 
 // Writes the world-space ray from the camera through an NDC screen point (ndcX, ndcY) into
 // `out` and returns true, or returns false (leaving `out` untouched) when the view-projection
@@ -13,14 +13,14 @@ import { getCameraViewProjectionMatrix4 } from './camera';
 // any screen-to-world query.
 //
 // Reads all inputs into locals before writing `out`, so it is alias-safe.
-export function getCameraScreenToWorldRay(
+export function getCamera3DScreenToWorldRay(
   out: Ray3DLike,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   ndcX: number,
   ndcY: number,
   aspect: number,
 ): boolean {
-  getCameraViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
+  getCamera3DViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
   if (!inverseMatrix4(__scratchInverseVP, __scratchViewProjection)) {
     return false;
   }
@@ -75,13 +75,13 @@ export function getCameraScreenToWorldRay(
 // Use this to anchor HUD elements, labels, and gizmos to world positions.
 //
 // Reads all inputs into locals before writing `out`, so it is alias-safe.
-export function getCameraWorldToScreen(
+export function getCamera3DWorldToScreen(
   out: Vector3Like,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   worldPoint: Readonly<Vector3Like>,
   aspect: number,
 ): boolean {
-  getCameraViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
+  getCamera3DViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
   const m = __scratchViewProjection.m;
   const wx = worldPoint.x,
     wy = worldPoint.y,

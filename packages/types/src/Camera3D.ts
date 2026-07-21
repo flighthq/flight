@@ -9,7 +9,7 @@ import type { Vector2 } from './Vector2';
 // `inverseViewProjection` is the cached inverse of projection×view, consumed by the existing
 // TAA / velocity / fog / depth-of-field effects; it is recomputed whenever view or projection
 // changes.
-export interface Camera extends Entity {
+export interface Camera3D extends Entity {
   far: number;
   inverseViewProjection: Matrix4;
   jitter: Vector2;
@@ -18,13 +18,13 @@ export interface Camera extends Entity {
   view: Matrix4;
 }
 
-export type CameraLike = EntityWithoutRuntime<Camera>;
+export type Camera3DLike = EntityWithoutRuntime<Camera3D>;
 
 // Discriminated union of the supported projection models. Switch on `kind`.
 export type Projection = OrthographicProjection | PerspectiveProjection;
 
 // Perspective projection: a vertical field of view in radians and a viewport aspect ratio
-// (width / height). The clip-plane distances live on the owning Camera (near/far).
+// (width / height). The clip-plane distances live on the owning Camera3D (near/far).
 export interface PerspectiveProjection {
   aspect: number;
   fovY: number;
@@ -32,7 +32,7 @@ export interface PerspectiveProjection {
 }
 
 // Orthographic projection: the half-extents of the view volume in view-space units. The full
-// visible width is 2*halfWidth and height 2*halfHeight. Clip-plane distances live on the Camera.
+// visible width is 2*halfWidth and height 2*halfHeight. Clip-plane distances live on the Camera3D.
 export interface OrthographicProjection {
   halfHeight: number;
   halfWidth: number;

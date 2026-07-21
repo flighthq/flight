@@ -5,7 +5,7 @@ import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import { orderModifierStack, resolveModifier } from '@flighthq/shading';
 import type { ModifierRegistry } from '@flighthq/shading';
 import type {
-  Camera,
+  Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
   Material,
@@ -46,7 +46,7 @@ export const shadedGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const shaded = material as Readonly<ShadedMaterial> | null;

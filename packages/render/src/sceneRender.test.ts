@@ -1,4 +1,4 @@
-import { createCamera, createPerspectiveProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
+import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { unpackColorToLinear } from '@flighthq/color';
 import { createAabb } from '@flighthq/geometry';
 import {
@@ -11,7 +11,7 @@ import {
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind, getSceneNodeWorldAlpha } from '@flighthq/scene';
-import type { Camera, Material, MeshGeometry, SceneLightBlock, SceneLights } from '@flighthq/types';
+import type { Camera3D, Material, MeshGeometry, SceneLightBlock, SceneLights } from '@flighthq/types';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -31,13 +31,13 @@ function boundedBox(): MeshGeometry {
   return geometry;
 }
 
-function frontCamera(): Camera {
-  const camera = createCamera({
+function frontCamera(): Camera3D {
+  const camera = createCamera3D({
     far: 100,
     near: 0.1,
     projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
   });
-  setCameraViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 10 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+  setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 10 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
   return camera;
 }
 

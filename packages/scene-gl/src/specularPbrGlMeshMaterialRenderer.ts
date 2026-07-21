@@ -1,7 +1,7 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import type {
-  Camera,
+  Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
   Material,
@@ -33,7 +33,7 @@ export const specularPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const specular = material as Readonly<SpecularPbrMaterial> | null;

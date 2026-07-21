@@ -1,16 +1,16 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createWireframeMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
 import { WireframeMaterialKind } from '@flighthq/types';
 
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 import { registerWireframeWgpuMaterial, wireframeWgpuMeshMaterialRenderer } from './wireframeWgpuMeshMaterialRenderer';
 
-function makeCamera(): Camera {
-  return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+function makeCamera(): Camera3D {
+  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
 const NO_LIGHTS: SceneLightBlock = {

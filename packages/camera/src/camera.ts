@@ -1,6 +1,6 @@
 import { createEntity } from '@flighthq/entity';
 import { createMatrix4, createVector2, inverseMatrix4, multiplyMatrix4, setMatrix4LookAt } from '@flighthq/geometry';
-import type { Camera, Matrix4Like, Projection, Vector3Like } from '@flighthq/types';
+import type { Camera3D, Matrix4Like, Projection, Vector3Like } from '@flighthq/types';
 
 import { setProjectionMatrix4 } from './projection';
 
@@ -10,7 +10,7 @@ import { setProjectionMatrix4 } from './projection';
 // `inverseViewProjection` (consumed by TAA / velocity / fog / depth-of-field, initialized to
 // identity). The view matrix is canonical: the camera has no separate Transform3D — a Matrix4 is
 // the only world->view representation.
-export function createCamera(opts: Readonly<CameraOptions>): Camera {
+export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
   return createEntity({
     far: opts.far,
     inverseViewProjection: createMatrix4(),
@@ -28,13 +28,13 @@ export function createCamera(opts: Readonly<CameraOptions>): Camera {
 //
 // Reads camera fields into a scratch matrix before writing `out`, so it is safe even if `out`
 // aliases the camera's own `inverseViewProjection` or `view`. Use
-// `updateCameraInverseViewProjection` instead to safely update the cached field.
-export function getCameraInverseViewProjectionMatrix4(
+// `updateCamera3DInverseViewProjection` instead to safely update the cached field.
+export function getCamera3DInverseViewProjectionMatrix4(
   out: Matrix4Like,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   aspect: number,
 ): boolean {
-  getCameraViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
+  getCamera3DViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
   return inverseMatrix4(out, __scratchViewProjection);
 }
 
@@ -44,7 +44,7 @@ export function getCameraInverseViewProjectionMatrix4(
 //
 // Reads camera fields into a scratch matrix before writing `out`, so it is safe even if `out`
 // aliases the camera's own `view`.
-export function getCameraViewProjectionMatrix4(out: Matrix4Like, camera: Readonly<Camera>, aspect: number): void {
+export function getCamera3DViewProjectionMatrix4(out: Matrix4Like, camera: Readonly<Camera3D>, aspect: number): void {
   setProjectionMatrix4(__scratchProjection, camera.projection, aspect, camera.near, camera.far);
   multiplyMatrix4(out, __scratchProjection, camera.view);
 }
@@ -53,9 +53,9 @@ export function getCameraViewProjectionMatrix4(out: Matrix4Like, camera: Readonl
 // perspective projection this writes `aspect` directly; for an orthographic projection it widens
 // the view volume to match — keeping `halfHeight` and setting `halfWidth = halfHeight * aspect`,
 // so the vertical extent is preserved as the viewport resizes. The authored counterpart to the
-// `aspect` argument `getCameraViewProjectionMatrix4` takes: set it once on resize rather than
+// `aspect` argument `getCamera3DViewProjectionMatrix4` takes: set it once on resize rather than
 // reaching into `camera.projection` with a cast.
-export function setCameraAspect(camera: Camera, aspect: number): void {
+export function setCamera3DAspect(camera: Camera3D, aspect: number): void {
   const projection = camera.projection;
   if (projection.kind === 'perspective') {
     projection.aspect = aspect;
@@ -66,7 +66,7 @@ export function setCameraAspect(camera: Camera, aspect: number): void {
 
 // Sets the camera's per-frame sub-pixel jitter offset (in NDC), in place. TAA reads this when
 // building the jittered projection matrix.
-export function setCameraJitter(camera: Camera, x: number, y: number): void {
+export function setCamera3DJitter(camera: Camera3D, x: number, y: number): void {
   camera.jitter.x = x;
   camera.jitter.y = y;
 }
@@ -76,8 +76,8 @@ export function setCameraJitter(camera: Camera, x: number, y: number): void {
 // explicit world transform.
 //
 // Reads all vector inputs before writing, so it is safe when the vectors alias one another.
-export function setCameraViewMatrix4FromLookAt(
-  camera: Camera,
+export function setCamera3DViewMatrix4FromLookAt(
+  camera: Camera3D,
   eye: Readonly<Vector3Like>,
   target: Readonly<Vector3Like>,
   up: Readonly<Vector3Like>,
@@ -87,7 +87,7 @@ export function setCameraViewMatrix4FromLookAt(
 
 // Copies a precomputed world->view matrix into the camera in place. Use this when the view matrix
 // is derived elsewhere (for example, the inverse of a scene node's world transform).
-export function setCameraViewMatrix4FromMatrix4(camera: Camera, view: Readonly<Matrix4Like>): void {
+export function setCamera3DViewMatrix4FromMatrix4(camera: Camera3D, view: Readonly<Matrix4Like>): void {
   camera.view.m.set(view.m);
 }
 
@@ -97,17 +97,17 @@ export function setCameraViewMatrix4FromMatrix4(camera: Camera, view: Readonly<M
 //
 // Call this once per frame after setting the view matrix and before any effects that read
 // camera.inverseViewProjection (TAA, velocity, fog, depth-of-field).
-export function updateCameraInverseViewProjection(camera: Camera, aspect: number): boolean {
+export function updateCamera3DInverseViewProjection(camera: Camera3D, aspect: number): boolean {
   // Write into a scratch first so the cache is never clobbered with NaN on failure.
-  const ok = getCameraInverseViewProjectionMatrix4(__scratchInverse, camera, aspect);
+  const ok = getCamera3DInverseViewProjectionMatrix4(__scratchInverse, camera, aspect);
   if (ok) {
     camera.inverseViewProjection.m.set(__scratchInverse.m);
   }
   return ok;
 }
 
-// Structural inputs for createCamera.
-export interface CameraOptions {
+// Structural inputs for createCamera3D.
+export interface Camera3DOptions {
   far: number;
   near: number;
   projection: Projection;

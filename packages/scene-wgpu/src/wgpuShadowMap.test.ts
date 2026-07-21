@@ -1,4 +1,4 @@
-import { configureDirectionalShadowCamera, createCamera } from '@flighthq/camera';
+import { configureDirectionalShadowCamera3D, createCamera3D } from '@flighthq/camera';
 import { createAabb, createVector3 } from '@flighthq/geometry';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
@@ -6,7 +6,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera, SceneLights, SceneNode } from '@flighthq/types';
+import type { Camera3D, SceneLights, SceneNode } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
@@ -22,14 +22,14 @@ const LIGHTS: SceneLights = {
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
 };
 
-function makeShadowCamera(): Camera {
-  // The projection is overwritten by configureDirectionalShadowCamera (to orthographic); start perspective.
-  const camera = createCamera({
+function makeShadowCamera(): Camera3D {
+  // The projection is overwritten by configureDirectionalShadowCamera3D (to orthographic); start perspective.
+  const camera = createCamera3D({
     far: 10,
     near: 0.1,
     projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
   });
-  configureDirectionalShadowCamera(camera, { x: 0, y: -1, z: -1 }, createAabb(-1, -1, -1, 1, 1, 1));
+  configureDirectionalShadowCamera3D(camera, { x: 0, y: -1, z: -1 }, createAabb(-1, -1, -1, 1, 1, 1));
   return camera;
 }
 
@@ -128,7 +128,7 @@ describe('drawWgpuSceneShadowMap', () => {
 
     const scene = createSceneNode(SceneNodeKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
-    const camera = createCamera({
+    const camera = createCamera3D({
       far: 100,
       near: 0.1,
       projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },

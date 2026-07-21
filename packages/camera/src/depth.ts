@@ -1,4 +1,4 @@
-import type { Camera } from '@flighthq/types';
+import type { Camera3D } from '@flighthq/types';
 
 // Converts a raw NDC depth value (ndcZ ∈ [-1, 1]) from the camera's projection back to a linear
 // view-space Z value (distance from the camera along its -Z axis). Returns a negative value for a
@@ -12,7 +12,7 @@ import type { Camera } from '@flighthq/types';
 // mathematically — no explicit clamp is applied; callers should supply valid NDC depths.
 //
 // Returns 0 when `near` equals `far` (degenerate clip range).
-export function getCameraLinearDepth(camera: Readonly<Camera>, ndcZ: number): number {
+export function getCamera3DLinearDepth(camera: Readonly<Camera3D>, ndcZ: number): number {
   const near = camera.near;
   const far = camera.far;
   const range = far - near;
@@ -32,10 +32,10 @@ export function getCameraLinearDepth(camera: Readonly<Camera>, ndcZ: number): nu
 }
 
 // Converts a raw NDC depth value (ndcZ ∈ [-1, 1]) to a positive linear depth in [near, far] —
-// the distance along the camera's view axis. This is the unsigned version of getCameraLinearDepth,
+// the distance along the camera's view axis. This is the unsigned version of getCamera3DLinearDepth,
 // useful for fog and SSAO where a positive scalar distance is needed rather than a signed Z.
 //
 // Returns 0 when `near` equals `far` (degenerate clip range).
-export function getCameraViewSpaceZ(camera: Readonly<Camera>, ndcZ: number): number {
-  return -getCameraLinearDepth(camera, ndcZ);
+export function getCamera3DViewSpaceZ(camera: Readonly<Camera3D>, ndcZ: number): number {
+  return -getCamera3DLinearDepth(camera, ndcZ);
 }

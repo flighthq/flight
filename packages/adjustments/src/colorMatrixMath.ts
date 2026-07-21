@@ -352,7 +352,7 @@ export function createVintageColorMatrix(): number[] {
  *
  * Temperature shifts are modelled as complementary R/B channel gains (warm = more R, less B).
  * Tint shifts are modelled as G channel gain (more G = green, less G = magenta). This matches the
- * Lightroom/Camera Raw slider convention.
+ * Lightroom/Camera3D Raw slider convention.
  */
 export function createWhiteBalanceColorMatrix(temperature: number, tint: number): number[] {
   // Map [-100, 100] to multiplicative gain adjustments centred at 1.

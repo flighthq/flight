@@ -1,4 +1,4 @@
-import type { Camera } from './Camera';
+import type { Camera3D } from './Camera3D';
 import type { Material } from './Material';
 import type { MeshGeometry } from './MeshGeometry';
 import type { SceneLightBlock } from './SceneLightBlock';
@@ -32,7 +32,7 @@ export interface WgpuMeshMaterialRenderer {
     state: WgpuRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void;
 
   // Draw one Mesh subset. Lazily uploads the geometry's GPU buffers (keyed by geometry.version,

@@ -1,4 +1,4 @@
-import { createCamera, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
@@ -6,20 +6,20 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera, SceneLights } from '@flighthq/types';
+import type { Camera3D, SceneLights } from '@flighthq/types';
 
 import { drawGlScene } from './drawGlScene';
 import { areGlSceneColorSpaceGuardsEnabled, enableGlSceneColorSpaceGuards } from './enableGlSceneColorSpaceGuards';
 import { makeGlSceneState } from './glSceneTestHelper';
 import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
 
-function makeCamera(): Camera {
-  const camera = createCamera({
+function makeCamera(): Camera3D {
+  const camera = createCamera3D({
     far: 100,
     near: 0.1,
     projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
   });
-  setCameraViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+  setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
   return camera;
 }
 

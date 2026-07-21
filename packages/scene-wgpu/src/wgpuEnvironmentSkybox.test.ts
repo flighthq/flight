@@ -1,5 +1,5 @@
-import { createCamera } from '@flighthq/camera';
-import type { Camera, CubeTexture, Environment, ImageResource } from '@flighthq/types';
+import { createCamera3D } from '@flighthq/camera';
+import type { Camera3D, CubeTexture, Environment, ImageResource } from '@flighthq/types';
 
 import { drawWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
@@ -8,8 +8,8 @@ import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 // cover the CPU-side wiring: the no-complete-cube sentinel no-op, and the pipeline/bind/draw call shape of
 // the backdrop pass — mirroring scene-gl's skybox test.
 
-function makeCamera(): Camera {
-  return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+function makeCamera(): Camera3D {
+  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
 function completeEnvironment(): Environment {

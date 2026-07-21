@@ -12,12 +12,12 @@ import { isMesh } from './mesh';
 
 // Convenience: derives a camera frustum from a view-projection matrix and calls
 // `cullSceneNodeByFrustum`. `viewProjection` must be the combined view × projection matrix
-// (as returned by getCameraViewProjectionMatrix4). Writes the derived frustum into `outFrustum`
+// (as returned by getCamera3DViewProjectionMatrix4). Writes the derived frustum into `outFrustum`
 // so the caller can cache it for the frame (pass createFrustum() or a scratch Frustum).
 //
 // `aspect` is intentionally absent here — the caller provides the pre-computed viewProjection.
 // For camera-specific variants see buildSceneFrustumFromCamera in @flighthq/camera (or compute
-// the viewProjection from getCameraViewProjectionMatrix4 before calling this).
+// the viewProjection from getCamera3DViewProjectionMatrix4 before calling this).
 export function buildSceneFrustum(out: FrustumLike, viewProjection: Readonly<Matrix4Like>): void {
   setFrustumFromMatrix4(out, viewProjection);
 }

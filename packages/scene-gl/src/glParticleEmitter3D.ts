@@ -3,7 +3,7 @@ import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import { bindGlTexture, createGlProgram, invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import type {
-  Camera,
+  Camera3D,
   GlRenderState,
   Matrix4,
   NodeAny,
@@ -382,7 +382,7 @@ export function destroyGlParticleEmitter3DShader(state: GlRenderState): void {
 export function drawGlSceneParticleEmitter2Ds(
   state: GlRenderState,
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
 ): void {
   emitterScratch.length = 0;
@@ -397,7 +397,7 @@ export function drawGlSceneParticleEmitter2Ds(
   gl.useProgram(shader.program);
   gl.uniformMatrix4fv(shader.locViewProjection, false, list.viewProjection.m);
 
-  // Camera right and up from the view matrix rows (column-major storage).
+  // Camera3D right and up from the view matrix rows (column-major storage).
   const vm = camera.view.m;
   gl.uniform3f(shader.locCameraRight, vm[0], vm[4], vm[8]);
   gl.uniform3f(shader.locCameraUp, vm[1], vm[5], vm[9]);

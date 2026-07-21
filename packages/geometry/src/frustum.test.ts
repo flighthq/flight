@@ -59,7 +59,7 @@ describe('getFrustumCorners', () => {
     inverseMatrix4(inv, vp);
     const corners = Array.from({ length: 8 }, () => createVector3());
     getFrustumCorners(corners, inv);
-    // Camera at (0,0,5) looking toward origin along -z; near z > far z
+    // Camera3D at (0,0,5) looking toward origin along -z; near z > far z
     const nearZ = corners.slice(0, 4).map((c) => c.z);
     const farZ = corners.slice(4, 8).map((c) => c.z);
     for (const nz of nearZ) {

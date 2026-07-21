@@ -1,7 +1,7 @@
-import { getCameraInverseViewProjectionMatrix4 } from '@flighthq/camera';
+import { getCamera3DInverseViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
-import type { Camera, Environment, Matrix4, WgpuRenderState } from '@flighthq/types';
+import type { Camera3D, Environment, Matrix4, WgpuRenderState } from '@flighthq/types';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
 import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
@@ -17,7 +17,7 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 export function drawWgpuEnvironmentSkybox(
   state: WgpuRenderState,
   environment: Readonly<Environment>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   aspect: number,
 ): void {
   const cubeView = ensureWgpuEnvironmentSourceCube(state, environment);
@@ -31,7 +31,7 @@ export function drawWgpuEnvironmentSkybox(
   const format = stateRuntime.currentColorFormat ?? state.format;
   const sky = ensureWgpuSkyboxPipeline(state, format);
 
-  getCameraInverseViewProjectionMatrix4(_inverseViewProjection, camera, aspect);
+  getCamera3DInverseViewProjectionMatrix4(_inverseViewProjection, camera, aspect);
   const u = _skyScratch;
   const m = _inverseViewProjection.m;
   for (let i = 0; i < 16; i++) u[i] = m[i];

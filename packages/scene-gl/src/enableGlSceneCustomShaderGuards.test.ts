@@ -1,7 +1,7 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log';
 import { createCustomShaderMaterial } from '@flighthq/materials';
-import type { Camera, SceneLightBlock } from '@flighthq/types';
+import type { Camera3D, SceneLightBlock } from '@flighthq/types';
 
 import {
   customShaderGlMeshMaterialRenderer,
@@ -17,8 +17,8 @@ import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 const GL_FLOAT_MAT3 = 0x8b5b;
 const GL_FLOAT_MAT4 = 0x8b5c;
 
-function makeCamera(): Camera {
-  return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+function makeCamera(): Camera3D {
+  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
 const NO_LIGHTS: SceneLightBlock = {

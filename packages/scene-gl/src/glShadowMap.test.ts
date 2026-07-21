@@ -1,4 +1,4 @@
-import { createCamera, createOrthographicProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
+import { createCamera3D, createOrthographicProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
 import { createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
@@ -91,12 +91,12 @@ function makeShadowState() {
 }
 
 function makeShadowCamera() {
-  const camera = createCamera({
+  const camera = createCamera3D({
     far: 100,
     near: 0.1,
     projection: createOrthographicProjection({ halfHeight: 10, halfWidth: 10 }),
   });
-  setCameraViewMatrix4FromLookAt(camera, createVector3(0, 10, 10), createVector3(0, 0, 0), createVector3(0, 1, 0));
+  setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 10, 10), createVector3(0, 0, 0), createVector3(0, 1, 0));
   return camera;
 }
 

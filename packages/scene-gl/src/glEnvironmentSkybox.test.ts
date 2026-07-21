@@ -1,4 +1,4 @@
-import { createCamera, createPerspectiveProjection } from '@flighthq/camera';
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera';
 import type { Environment } from '@flighthq/types';
 
 import { drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
@@ -12,7 +12,7 @@ describe('drawGlEnvironmentSkybox', () => {
   it('is a no-op when the environment has no source cube', () => {
     const { state, gl } = makeGlSceneState();
     const environment = { environment: null, intensity: 1 } as Environment;
-    const camera = createCamera({
+    const camera = createCamera3D({
       far: 100,
       near: 0.1,
       projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),

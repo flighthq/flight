@@ -454,7 +454,7 @@ function enterFrame(): void {
   appendShapeEndFill(visibleBoundsShape);
   invalidateNodeAppearance(visibleBoundsShape);
 
-  cameraLabel.data.text = `Camera: (${camera.x.toFixed(0)}, ${camera.y.toFixed(0)})  Zoom: ${camera.zoom.toFixed(2)}`;
+  cameraLabel.data.text = `Camera3D: (${camera.x.toFixed(0)}, ${camera.y.toFixed(0)})  Zoom: ${camera.zoom.toFixed(2)}`;
   invalidateNodeAppearance(cameraLabel);
   playerLabel.data.text = `Player: (${player.x.toFixed(0)}, ${player.y.toFixed(0)})`;
   invalidateNodeAppearance(playerLabel);

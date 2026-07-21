@@ -16,7 +16,7 @@ import { computeSkeleton3DJointMatrices } from '@flighthq/skeleton3d';
 import type {
   Aabb,
   AmbientLight,
-  Camera,
+  Camera3D,
   DirectionalLight,
   Frustum,
   HasAppearance,
@@ -141,7 +141,7 @@ export function packSceneLightBlock(out: SceneLightBlock, lights: Readonly<Scene
 export function prepareSceneRender(
   state: RenderState,
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
 ): SceneRenderList {
   const prepared = ensurePreparedScene(state);
@@ -344,7 +344,7 @@ function packSpotLight(data: Float32Array, offset: number, spot: Readonly<SpotLi
 // projection's own aspect is used when set (non-zero), else the render state's `aspect` fallback;
 // near/far come from the camera. Reads camera fields through a scratch projection before the multiply,
 // so it is safe even if `out` aliases the camera's view.
-function setSceneViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera>, aspect: number): void {
+function setSceneViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D>, aspect: number): void {
   const projection = camera.projection;
   if (projection.kind === 'perspective') {
     // Geometry's setPerspectiveMatrix4 takes the tangent of the half-FOV, not the full angle.

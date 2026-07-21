@@ -1,10 +1,10 @@
-import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
+import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindWgpuImageResourceTexture, getWgpuRenderStateRuntime, getWgpuSampler } from '@flighthq/render-wgpu';
 import { getTextureUvMatrix, hasTextureUvTransform } from '@flighthq/texture';
 import type {
-  Camera,
+  Camera3D,
   MeshGeometry,
   SceneLightBlock,
   SceneRenderProxy,
@@ -680,13 +680,13 @@ export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Sce
 // block) into the scene runtime's Frame buffer and ensures the Frame bind group exists. The light
 // block layout matches SceneLightBlock.data: directional { direction.xyz @0, radiance.rgb @4 } then
 // ambient { radiance.rgb @8 }; the presence counts go into the lightDirection.w / ambientRadiance.w
-// lanes the shader branches on. Camera world position is the translation of the inverse view matrix.
+// lanes the shader branches on. Camera3D world position is the translation of the inverse view matrix.
 // Punctual light arrays (point/spot/hemisphere) follow the camera view matrix, mirroring the packed
 // layout from SceneLightBlock.data; a final vec4f carries the three punctual counts. Shared by every
 // family — lighting-independent families simply ignore the light lanes.
 export function writeWgpuFrameUniform(
   state: WgpuRenderState,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLightBlock>,
 ): void {
   ensureWgpuFrameBindGroup(state);
@@ -694,7 +694,7 @@ export function writeWgpuFrameUniform(
   const f = _frameScratch;
 
   const aspect = camera.projection.kind === 'perspective' ? camera.projection.aspect : 1;
-  getCameraViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
+  getCamera3DViewProjectionMatrix4(scratchViewProjection, camera, aspect !== 0 ? aspect : 1);
   const vp = scratchViewProjection.m;
   for (let i = 0; i < 16; i++) f[i] = vp[i];
 
@@ -719,7 +719,7 @@ export function writeWgpuFrameUniform(
   f[30] = data[10];
   f[31] = lights.ambientCount;
 
-  // Camera view matrix (floats 32..47): used by matcap to rotate the world-space normal into view
+  // Camera3D view matrix (floats 32..47): used by matcap to rotate the world-space normal into view
   // space. Lighting-independent families ignore these lanes; the cost is one extra mat4 per frame.
   const view = camera.view.m;
   for (let i = 0; i < 16; i++) f[32 + i] = view[i];

@@ -1,4 +1,4 @@
-import { getCameraScreenToWorldRay } from '@flighthq/camera';
+import { getCamera3DScreenToWorldRay } from '@flighthq/camera';
 import {
   createAabb,
   createMatrix4,
@@ -12,7 +12,7 @@ import {
 import { getMeshGeometryTriangleCount, getMeshGeometryVertexPosition } from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { getSceneNodeWorldBounds, isMesh } from '@flighthq/scene';
-import type { Camera, Mesh, Ray3D, SceneHit, SceneNode, Vector3 } from '@flighthq/types';
+import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode, Vector3 } from '@flighthq/types';
 
 // Filters applied to a scene pick query. All fields are optional; an omitted field imposes no
 // constraint. `predicate` includes a Mesh in the query only when it returns `true` (a per-mesh
@@ -54,7 +54,7 @@ export function createSceneHit(): SceneHit {
 // Alias-safe: `out` is only written when a hit is found; on a miss `out` is untouched.
 export function pickScene(
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   screenX: number,
   screenY: number,
   out: SceneHit,
@@ -69,7 +69,7 @@ export function pickScene(
 // ray; on an unprojectable camera the array is emptied and returned.
 export function pickSceneAll(
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   screenX: number,
   screenY: number,
   outArray: SceneHit[],
@@ -139,9 +139,9 @@ export function pickSceneWithRay3D(
 // Unprojects a camera pick ray into `out`. Orthographic projections ignore `aspect` (their extents
 // are the half-width/half-height on the descriptor), so the passed value only matters for
 // perspective, where it must be the projection's own aspect to avoid a horizontal ray skew.
-function buildCameraPickRay(out: Ray3D, camera: Readonly<Camera>, screenX: number, screenY: number): boolean {
+function buildCameraPickRay(out: Ray3D, camera: Readonly<Camera3D>, screenX: number, screenY: number): boolean {
   const aspect = camera.projection.kind === 'perspective' ? camera.projection.aspect : 1;
-  return getCameraScreenToWorldRay(out, camera, screenX, screenY, aspect);
+  return getCamera3DScreenToWorldRay(out, camera, screenX, screenY, aspect);
 }
 
 // Field-copies `src` into `out`. SceneHit is a plain result struct (no runtime identity), so a shallow

@@ -3,7 +3,7 @@ import { unpackColorToLinear } from '@flighthq/color';
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type {
-  Camera,
+  Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
   Material,
@@ -43,7 +43,7 @@ export const toonGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const toon = material as Readonly<ToonMaterial> | null;

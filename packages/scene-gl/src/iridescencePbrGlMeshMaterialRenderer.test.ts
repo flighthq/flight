@@ -1,8 +1,8 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createIridescencePbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, Matrix3, Matrix4, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
 import { IridescencePbrMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -13,8 +13,8 @@ import {
   registerIridescencePbrGlMaterial,
 } from './iridescencePbrGlMeshMaterialRenderer';
 
-function makeCamera(): Camera {
-  return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+function makeCamera(): Camera3D {
+  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
 function makeLights(): SceneLightBlock {

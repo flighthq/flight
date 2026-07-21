@@ -1,5 +1,5 @@
 import type {
-  Camera,
+  Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
   Material,
@@ -27,7 +27,7 @@ export const normalGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     _lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const normal = material as Readonly<NormalMaterial> | null;
