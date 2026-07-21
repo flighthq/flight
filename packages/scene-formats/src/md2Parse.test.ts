@@ -16,7 +16,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFromMd2 } from './md2Parse';
+import { createSceneFromMd2, parseMd2 } from './md2Parse';
 import { MD2_ANORMS } from './md2Schema';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and
@@ -528,5 +528,64 @@ describe('createSceneFromMd2 animations', () => {
     expect(channel.track.times).toHaveLength(2);
     expect(channel.track.times[0]).toBeCloseTo(0);
     expect(channel.track.times[1]).toBeCloseTo(0.1);
+  });
+});
+
+describe('parseMd2', () => {
+  it('decomposes a model into a single mesh node document with inline geometry', () => {
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 10, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 10, z: 0 },
+      ],
+      scale: [1, 1, 1],
+      texCoords: [{ s: 0, t: 0 }],
+      translate: [0, 0, 0],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+
+    const document = parseMd2(md2);
+    expect(document.meshes).toHaveLength(1);
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(3);
+    expect(document.nodes).toHaveLength(1);
+    expect(document.nodes[0].mesh).toBe(0);
+    expect(document.scenes[0].rootNodes).toEqual([0]);
+  });
+
+  it('carries per-frame vertex animation as a weights channel bound to the mesh node index', () => {
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 10, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 10, z: 0 },
+      ],
+      extraFrames: [
+        [
+          { normalIndex: 0, x: 0, y: 0, z: 5 },
+          { normalIndex: 0, x: 10, y: 0, z: 5 },
+          { normalIndex: 0, x: 0, y: 10, z: 5 },
+        ],
+      ],
+      numFrames: 2,
+      scale: [1, 1, 1],
+      texCoords: [{ s: 0, t: 0 }],
+      translate: [0, 0, 0],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+
+    const document = parseMd2(md2);
+    expect(document.meshes[0].morph).not.toBeNull();
+    expect(document.animations).toHaveLength(1);
+    expect(document.animations[0].channels[0].node).toBe(0);
+  });
+
+  it('returns an empty document (every table present) for malformed input', () => {
+    const warnings: string[] = [];
+    const document = parseMd2(new Uint8Array(10), warnings);
+    expect(document.nodes).toEqual([]);
+    expect(document.meshes).toEqual([]);
+    expect(document.scenes).toEqual([{ rootNodes: [] }]);
+    expect(warnings.length).toBeGreaterThan(0);
   });
 });
