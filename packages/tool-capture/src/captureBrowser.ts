@@ -48,6 +48,7 @@ export async function launchBrowser(
         __captureFramesReached?: boolean;
         __flightCapture?: boolean;
         __flightCaptureVerify?: boolean;
+        __ftGlContexts?: Array<{ canvas: HTMLCanvasElement; gl: WebGLRenderingContext | WebGL2RenderingContext }>;
         __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
         __ftTarget?: { kind?: string };
         __ftVerification?: { fingerprint?: string | null };
@@ -73,8 +74,12 @@ export async function launchBrowser(
       if (frames < 1) return;
       flags.__captureFramesReached = false;
 
-      // Force preserveDrawingBuffer so the halted Gl frame survives in the buffer for the screenshot
-      // (the default clears it once composited, which would shoot blank once the loop stops).
+      // Own the GL-context boundary. Forcing preserveDrawingBuffer keeps the halted frame in the buffer
+      // for the screenshot (the default clears it once composited, shooting blank once the loop stops).
+      // Recording each (canvas, gl) here is what lets the harness grab the present frame back post-hoc
+      // with ZERO integration: a scene just renders, and captureEntry reads these contexts' default
+      // framebuffers itself (see the intercepted-frame grab) — no client verifier registration needed.
+      flags.__ftGlContexts = [];
       const realGetContext = HTMLCanvasElement.prototype.getContext as (
         this: HTMLCanvasElement,
         type: string,
@@ -86,7 +91,11 @@ export async function launchBrowser(
         attrs?: Record<string, unknown>,
       ) {
         if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
-          return realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: true });
+          const gl = realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: true });
+          if (gl !== null && !flags.__ftGlContexts!.some((e) => e.gl === gl)) {
+            flags.__ftGlContexts!.push({ canvas: this, gl: gl as WebGLRenderingContext | WebGL2RenderingContext });
+          }
+          return gl;
         }
         return realGetContext.call(this, type, attrs);
       } as typeof HTMLCanvasElement.prototype.getContext;

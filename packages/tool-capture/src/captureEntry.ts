@@ -351,7 +351,16 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       let blank = false;
       const backend = rendererBackend(renderer);
       const dataUrl = waitsForVerification ? await getRenderImageDataUrl(page) : null;
-      if (dataUrl && backend !== 'dom') {
+      // Zero-integration path: in observe mode, prefer reading the frame straight from the WebGL contexts
+      // the harness intercepted at getContext time (see launchBrowser). No client verifier registration
+      // and no verify-publish handshake to false-negate — the scene just renders, the harness grabs it.
+      // Null for wgpu (swapchain unreadable post-hoc — needs the SDK capture adapter), dom, 2d, or a page
+      // with no GL context, all of which fall through to the verifier/canvas paths below.
+      const intercept = observe && backend === 'webgl' ? await grabInterceptedGlFrame(page) : null;
+      if (intercept !== null) {
+        screenshotBuffer = Buffer.from(intercept.dataUrl.split(',')[1], 'base64');
+        blank = intercept.coverage <= OBSERVE_BLANK_COVERAGE;
+      } else if (dataUrl && backend !== 'dom') {
         screenshotBuffer = Buffer.from(dataUrl.split(',')[1], 'base64');
       } else if (backend === 'webgpu' && waitsForVerification) {
         // No verifier image — SwiftShader can't present the swapchain, so a plain screenshot is black.
@@ -403,10 +412,10 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         // Eyes mode: never gate, never touch baselines. Always emit the screenshot (done above) plus a
         // diagnostics block so a reviewing agent can interpret what it is looking at, then move on. The
         // finally below still closes the page.
-        // Prefer the page verifier's own coverage; when it exposed none (a timed-out/blank verify, or a
-        // page with no target), read the presented canvas back ourselves so `coverage` reflects the
-        // actual pixels — grounding blank-vs-drew-something in the image rather than only the verify handshake.
-        const coverage = verification?.coverage ?? (await measureObservedCanvasCoverage(page));
+        // Coverage source, best first: the harness's own intercepted-GL readback (measured pixels, the
+        // same frame we emit), then the page verifier's coverage, then a canvas grab. All are measured
+        // from real pixels — never the verify-publish handshake, which false-negates rendered scenes.
+        const coverage = intercept?.coverage ?? verification?.coverage ?? (await measureObservedCanvasCoverage(page));
         const diagnostics = buildCaptureObserveDiagnostics({
           backend,
           blank,
@@ -591,6 +600,69 @@ async function measureObservedCanvasCoverage(page: Page): Promise<number | null>
         }
       }
       return differing / pixels;
+    })
+    .catch(() => null);
+}
+
+// Zero-integration frame grab: read back every WebGL context the harness recorded at getContext time
+// (see launchBrowser's __ftGlContexts) — pick the one with the most content — and return it as a PNG data
+// URL plus its measured non-background coverage. Relies on the forced preserveDrawingBuffer so the
+// presented default framebuffer survives for this post-hoc readback. No client verifier registration is
+// involved: the scene just renders and the harness reads its context directly. Returns null when no GL
+// context was recorded (a wgpu / 2d / dom page, or one with no canvas), which the caller falls through on.
+async function grabInterceptedGlFrame(page: Page): Promise<{ coverage: number; dataUrl: string } | null> {
+  return page
+    .evaluate(() => {
+      const ctxs = (
+        window as unknown as {
+          __ftGlContexts?: Array<{ canvas: HTMLCanvasElement; gl: WebGLRenderingContext | WebGL2RenderingContext }>;
+        }
+      ).__ftGlContexts;
+      if (ctxs === undefined || ctxs.length === 0) return null;
+      let best: { coverage: number; dataUrl: string } | null = null;
+      for (const entry of ctxs) {
+        const canvas = entry.canvas;
+        const gl = entry.gl;
+        const w = canvas.width;
+        const h = canvas.height;
+        if (w === 0 || h === 0) continue;
+        try {
+          gl.finish();
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          const buf = new Uint8Array(w * h * 4);
+          gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+          const br = buf[0]!;
+          const bg = buf[1]!;
+          const bb = buf[2]!;
+          let differing = 0;
+          const pixels = w * h;
+          for (let i = 0; i < pixels; i++) {
+            const o = i * 4;
+            if (Math.abs(buf[o]! - br) > 8 || Math.abs(buf[o + 1]! - bg) > 8 || Math.abs(buf[o + 2]! - bb) > 8) {
+              differing += 1;
+            }
+          }
+          const coverage = differing / pixels;
+          if (best !== null && coverage <= best.coverage) continue;
+          // gl.readPixels is bottom-up; flip rows into a top-down 2D canvas before encoding to PNG.
+          const off = document.createElement('canvas');
+          off.width = w;
+          off.height = h;
+          const c2d = off.getContext('2d');
+          if (c2d === null) continue;
+          const img = c2d.createImageData(w, h);
+          const rowBytes = w * 4;
+          for (let y = 0; y < h; y++) {
+            const src = (h - 1 - y) * rowBytes;
+            img.data.set(buf.subarray(src, src + rowBytes), y * rowBytes);
+          }
+          c2d.putImageData(img, 0, 0);
+          best = { coverage, dataUrl: off.toDataURL('image/png') };
+        } catch {
+          // A lost or cross-origin-tainted context can't be read — skip it.
+        }
+      }
+      return best;
     })
     .catch(() => null);
 }
