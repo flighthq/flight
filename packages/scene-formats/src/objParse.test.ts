@@ -11,7 +11,7 @@ import type { BlinnPhongMaterial, ExternalImageResourceReference, Mesh, SceneNod
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseObjMaterialLibrary } from './mtlParse';
-import { createSceneFromObj } from './objParse';
+import { createSceneFromObj, parseObj } from './objParse';
 
 describe('createSceneFromObj', () => {
   it('parses a single triangle with positions only', () => {
@@ -337,5 +337,33 @@ describe('createSceneFromObj animations', () => {
   it('carries no animations (OBJ has none)', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
     expect(Object.keys(createSceneFromObj(obj).animations)).toHaveLength(0);
+  });
+});
+
+describe('parseObj', () => {
+  it('decomposes each group into a document mesh node with inline geometry', () => {
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
+    const document = parseObj(obj);
+    expect(document.meshes).toHaveLength(1);
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(3);
+    expect(document.nodes[0].mesh).toBe(0);
+    expect(document.scenes[0].rootNodes).toEqual([0]);
+  });
+
+  it('registers a usemtl material into the document materials table by index', () => {
+    const mtl = ['newmtl red', 'Kd 1 0 0'].join('\n');
+    const library = parseObjMaterialLibrary(mtl);
+    const obj = ['usemtl red', 'v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
+    const document = parseObj(obj, library);
+    expect(document.materials).toHaveLength(1);
+    expect((document.materials[0] as BlinnPhongMaterial).name).toBe('red');
+    expect(document.meshes[0].materials).toEqual([0]);
+  });
+
+  it('uses a -1 material index for an unmaterialed subset', () => {
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
+    const document = parseObj(obj);
+    expect(document.materials).toHaveLength(0);
+    expect(document.meshes[0].materials).toEqual([-1]);
   });
 });

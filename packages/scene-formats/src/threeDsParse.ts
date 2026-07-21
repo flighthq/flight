@@ -1,9 +1,10 @@
+import { createTransform3D } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene } from '@flighthq/scene';
-import type { Material, SceneNode } from '@flighthq/types';
+import { createSceneFromDocument } from '@flighthq/scene';
+import type { Material, MaterialLike, SceneDocument, SceneDocumentMesh, SceneDocumentNode } from '@flighthq/types';
+import { MeshKind } from '@flighthq/types';
 
 import {
   CANONICAL_FLOATS_PER_VERTEX,
@@ -48,13 +49,33 @@ import {
 // common in practice and each becomes a separate Mesh child of the scene.
 //
 // Malformed or truncated input pushes a warning and returns an empty or partial scene; the function
-// never throws on bad input.
+// never throws on bad input. Convenience over `createSceneFromDocument(parse3ds(bytes))`.
 export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
-  const scene = createScene();
+  return createSceneFromDocument(parse3ds(bytes, warnings));
+}
+
+// Parses an Autodesk 3DS binary file into a format-neutral SceneDocument. Each named-object trimesh
+// becomes one document Mesh node (inline geometry, canonical PBR layout, RH Z-up → Y-up). Referenced
+// materials are registered into the document's materials table (deduped by name) and named per mesh by
+// index. Assemble into a live Scene with `createSceneFromDocument`. Malformed input returns an empty or
+// partial document with a warning.
+export function parse3ds(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneDocument {
+  const document: SceneDocument = {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
 
   if (bytes.byteLength < THREE_DS_CHUNK_HEADER_BYTES) {
     warnings?.push('createSceneFrom3ds: input is smaller than the minimum chunk header (6 bytes)');
-    return scene;
+    return document;
   }
 
   const source = bytes as Uint8Array;
@@ -65,7 +86,7 @@ export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, warnings?: strin
     warnings?.push(
       `createSceneFrom3ds: expected main chunk ID 0x4D4D but found 0x${mainId.toString(16).toUpperCase().padStart(4, '0')}`,
     );
-    return scene;
+    return document;
   }
 
   // The material table (0xAFFF chunks) and the meshes are siblings under the editor chunk, and a mesh
@@ -73,13 +94,12 @@ export function createSceneFrom3ds(bytes: Readonly<Uint8Array>, warnings?: strin
   // resolve each mesh's referenced names against it.
   const materials = new Map<string, ThreeDsMaterial>();
   const meshes = collectMeshes(view, 0, materials, warnings);
-  const resolved = new Map<string, Material>();
+  const materialIndexByName = new Map<string, number>();
   for (let i = 0; i < meshes.length; i++) {
-    const meshNode = buildMeshNode(meshes[i], materials, resolved);
-    if (meshNode !== null) addNodeChild(scene.root, meshNode);
+    appendMeshDocument(meshes[i], materials, materialIndexByName, document);
   }
 
-  return scene;
+  return document;
 }
 
 // Recursively walks the chunk tree starting at `offset`, collecting all trimesh descriptors found
@@ -316,15 +336,16 @@ function parseUvCoords(
 // from RH Z-up to RH Y-up via convertPositionsZUpToYUp. Face normals are computed per-face and
 // averaged at shared vertices to produce smooth normals. The materials the mesh's faces reference
 // are resolved against the file's material table (memoized in `resolved`) and attached to the Mesh node.
-function buildMeshNode(
+function appendMeshDocument(
   mesh: Readonly<ThreeDsMesh>,
   materials: Readonly<Map<string, ThreeDsMaterial>>,
-  resolved: Map<string, Material>,
-): SceneNode | null {
+  materialIndexByName: Map<string, number>,
+  document: SceneDocument,
+): void {
   const vertexCount = mesh.vertices.length / 3;
   const faceCount = mesh.faces.length / 3;
 
-  if (vertexCount === 0 || faceCount === 0) return null;
+  if (vertexCount === 0 || faceCount === 0) return;
 
   // Convert positions from RH Z-up to RH Y-up before normal computation so all geometry
   // operates in Flight's coordinate space. The rotation preserves winding, so computed normals
@@ -409,35 +430,36 @@ function buildMeshNode(
   const indices = Uint32Array.from(mesh.faces);
   const geometry = createMeshGeometry({ indices, layout: CANONICAL_LAYOUT, vertices });
 
-  // Resolve each distinct material name the mesh references to a BlinnPhongMaterial, memoized so a
-  // material shared across meshes yields one instance. 3DS assigns materials per face-subset, but this
+  // Resolve each distinct material name the mesh references to a document material index, memoized so a
+  // material shared across meshes registers one entry. 3DS assigns materials per face-subset, but this
   // importer keeps the mesh geometry whole, so the referenced materials are attached in file order
   // without splitting the geometry into subsets.
-  const meshMaterials: Material[] = [];
+  const meshMaterials: number[] = [];
   const seen = new Set<string>();
   for (const materialName of mesh.materialNames) {
     if (seen.has(materialName)) continue;
     seen.add(materialName);
     const parsed = materials.get(materialName);
     if (parsed === undefined) continue;
-    let material = resolved.get(materialName);
-    if (material === undefined) {
-      material = threeDsMaterialToBlinnPhong(parsed);
-      resolved.set(materialName, material);
+    let index = materialIndexByName.get(materialName);
+    if (index === undefined) {
+      index = document.materials.length;
+      document.materials.push(threeDsMaterialToBlinnPhong(parsed) as unknown as MaterialLike);
+      materialIndexByName.set(materialName, index);
     }
-    meshMaterials.push(material);
+    meshMaterials.push(index);
   }
 
-  // A 3DS named object holds a single trimesh, so the name belongs on the Mesh node itself — the
-  // Mesh is a SceneNode and carries its own name. Wrapping it in a transform-only group would only
-  // hide the Mesh a level down (getNodeChildren returning geometry:null wrappers). Match glTF: a
-  // lone mesh is returned bare, named.
-  return createMesh(
-    geometry,
-    meshMaterials,
-    undefined,
-    mesh.name.length > 0 ? { name: mesh.name } : undefined,
-  ) as unknown as SceneNode;
+  const documentMesh: SceneDocumentMesh = { geometry, materials: meshMaterials };
+  const meshIndex = document.meshes.length;
+  document.meshes.push(documentMesh);
+  // A 3DS named object holds a single trimesh, so the name belongs on the Mesh node itself. Match glTF:
+  // a lone mesh is a bare Mesh node, named.
+  const node: SceneDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  if (mesh.name.length > 0) node.name = mesh.name;
+  const nodeIndex = document.nodes.length;
+  document.nodes.push(node);
+  document.scenes[0].rootNodes.push(nodeIndex);
 }
 
 // Converts a parsed 3DS material to Flight's BlinnPhongMaterial — 3DS's own diffuse/specular shading
