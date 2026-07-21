@@ -3,7 +3,6 @@ export * from './camera';
 export * from './camera2d';
 export * from './culling';
 export * from './depth';
-export * from './follow';
 export * from './frustumCorners';
 export * from './intersection';
 export * from './parallax';

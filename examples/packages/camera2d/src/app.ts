@@ -3,9 +3,9 @@ import {
   getCamera2DParallaxPoint,
   getCamera2DViewMatrix,
   getCamera2DVisibleBounds,
-  updateCamera2DFollow,
   zoomCamera2DAtScreenPoint,
 } from '@flighthq/camera';
+import { updateCamera2DFollow } from '@flighthq/camera-controls';
 import type { Shape } from '@flighthq/sdk';
 import {
   addNodeChild,

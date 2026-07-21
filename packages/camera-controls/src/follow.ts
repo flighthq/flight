@@ -1,8 +1,7 @@
+import { getCamera2DVisibleBounds } from '@flighthq/camera';
 import { createRectangle } from '@flighthq/geometry';
 import { clamp, damp } from '@flighthq/math';
 import type { Camera2D, Camera2DFollowOptions } from '@flighthq/types';
-
-import { getCamera2DVisibleBounds } from './visibleBounds';
 
 // Moves the camera toward a follow target for one step, mutating `camera` in place.
 //

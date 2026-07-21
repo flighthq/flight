@@ -150,6 +150,8 @@
       "@flighthq/geometry/*": ["./packages/geometry/src/*"],
       "@flighthq/camera": ["./packages/camera/src/index.ts"],
       "@flighthq/camera/*": ["./packages/camera/src/*"],
+      "@flighthq/camera-controls": ["./packages/camera-controls/src/index.ts"],
+      "@flighthq/camera-controls/*": ["./packages/camera-controls/src/*"],
       "@flighthq/lighting": ["./packages/lighting/src/index.ts"],
       "@flighthq/lighting/*": ["./packages/lighting/src/*"],
       "@flighthq/mesh": ["./packages/mesh/src/index.ts"],
