@@ -50,6 +50,10 @@ linear-HDR present path conflates transfer encoding with display mapping.
   yet closed.
 - A linear rgba16f target is presented with only the sRGB OETF. HDR values above display white are not
   tone-mapped or gamut-mapped in the common path and clamp at the canvas.
+- Requesting rgba16f/rgba32f silently produces an effective rgba8 target when
+  `EXT_color_buffer_float` is absent. This is a useful visible-output fallback, but there is no
+  capability query, required-vs-preferred allocation policy, or diagnostic that the HDR pipeline has
+  already lost its headroom; callers must notice `target.format` changed.
 - No explicit capability table, context-loss/recreation protocol, sampler object tier, compressed upload,
   timer query/stats, or complete cached depth/cull/color-mask setter family.
 - Color space is a binary linear/sRGB tag with no primaries, white point, display transfer, or gamut

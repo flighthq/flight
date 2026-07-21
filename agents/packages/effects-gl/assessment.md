@@ -14,7 +14,8 @@ basedOn: ./review.md
 
 1. **Build the reusable GL attachment/history substrate before claiming advanced effects.** Add explicit sampleable scene color, depth, normals, velocity, material-data, and prior-frame targets with lifecycle owned by the render state/pass assembly. Effects request only what they consume.
 2. **Replace color-only stand-ins with behaviorally tested implementations.** Prioritize depth-driven SSAO/DoF, history+velocity TAA and motion blur, then scene-color/depth/normal SSR. Each functional must demonstrate the defining behavior (occlusion at geometry contact, temporal accumulation/rejection, motion-vector direction, focus plane, reflected scene content), not only a changed screenshot.
-3. **Keep shadows outside the effects lane.** Shadow-map production and light-space sampling belong to lighting/scene rendering; effects may consume shadow-derived buffers only when an explicit later recipe calls for them.
+3. **Validate HDR-required chains against the effective target, not requested options.** The pipeline defaults to rgba8 and render-gl may degrade a requested rgba16f target to rgba8. Bloom/tone-map can still execute after that point, but the source highlights have already clipped. Use effect-input metadata plus the target's effective format to explain/warn or reject under an opt-in strict policy; do not silently present such a chain as HDR-correct.
+4. **Keep shadows outside the effects lane.** Shadow-map production and light-space sampling belong to lighting/scene rendering; effects may consume shadow-derived buffers only when an explicit later recipe calls for them.
 
 ## Recommended
 
@@ -45,7 +46,7 @@ Parked — each carries a reason. Nothing here is sweep-safe.
 
 ### Larger / deferred maturity (Gold, no decision but substantial)
 
-- **Performance & robustness** — half-resolution quality scale for expensive families (bloom/DoF/SSAO) via a descriptor field; context-loss recovery (the `glEffectProgramCache` WeakMap holds dead programs after `webglcontextrestored`); `rgba16f`-unsupported fallback (extension probe → degrade to `rgba8` with a sentinel rather than a black screen); zero-size target guards. _Parked:_ several touch `render-gl` lifecycle or need a descriptor field in `@flighthq/types`; the quality-scale field is header-first.
+- **Performance & robustness** — half-resolution quality scale for expensive families (bloom/DoF/SSAO) via a descriptor field; context-loss recovery (the `glEffectProgramCache` WeakMap holds dead programs after `webglcontextrestored`); an observable strict/degrade policy for render-gl's existing `rgba16f` → `rgba8` fallback; zero-size target guards. _Parked:_ several touch `render-gl` lifecycle or need a descriptor field in `@flighthq/types`; the quality-scale field is header-first.
 - **Effect-chain fusion** — `fuseGlRenderEffectChain` collapsing adjacent color-only point effects into one fullscreen pass. _Parked:_ larger optimization layer, lower priority than the parity/seam work above.
 - **Per-effect reference + pipeline cookbook docs** — _Parked:_ documentation pass, sequence after the feature surface stabilizes.
 
