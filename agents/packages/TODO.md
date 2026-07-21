@@ -1012,6 +1012,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Build the reusable GL attachment/history substrate before claiming advanced effects
 - Replace color-only stand-ins with behaviorally tested implementations
 - Validate HDR-required chains against the effective target, not requested options
+- Make adjustment color domains explicit in the pipeline
 - Keep shadows outside the effects lane
 
 ### lighting (solid 88)
