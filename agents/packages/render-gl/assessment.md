@@ -13,6 +13,8 @@ basedOn: ./review.md
    restore the exact prior viewport and scissor. Runtime coordinate mapping uses the active region's
    dimensions/origin for 2D as well as 3D, a nested full-region pass cannot escape an enclosing clip,
    and target-edge intersection computes both edges before clamping so negative origins do not expand.
+   MSAA resolve is a storage operation and must run with scissor disabled (then restore it), so an
+   enclosing viewport cannot truncate the blit of a nested or differently sized target.
 2. **Keep GL runtime noise state-owned and private.** Current bindings, caches, scratch, lazy programs,
    and backend registries may hang from the RenderState runtime, but they are implementation facts rather
    than public semantic state.
