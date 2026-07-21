@@ -14,6 +14,7 @@ import {
   hasTextureUvTransform,
   isTextureReady,
   resetTextureUvTransform,
+  setTextureFlip,
   setTextureImage,
   setTextureUvOffset,
   setTextureUvRotation,
@@ -22,6 +23,13 @@ import {
 } from './texture';
 
 const fakeImage = { width: 32, height: 64 } as ImageResource;
+
+// Applies a column-major 3×3 uv matrix to (u, v, 1), writing the transformed coordinate into out.
+function multiplyMatrix3Uv(out: { x: number; y: number }, matrix: { m: ArrayLike<number> }, u: number, v: number) {
+  const m = matrix.m;
+  out.x = m[0] * u + m[3] * v + m[6];
+  out.y = m[1] * u + m[4] * v + m[7];
+}
 
 describe('cloneTexture', () => {
   it('shares the image but deep-clones the sampler and uv vectors', () => {
@@ -247,6 +255,37 @@ describe('getTextureUvMatrix', () => {
     expect(out.m[7]).toBeCloseTo(0.75); // ty
   });
 
+  it('maps v to 1 - v for a vertical flip and u to 1 - u for a horizontal flip', () => {
+    const out = createMatrix3();
+    const scratch = createVector2();
+
+    getTextureUvMatrix(out, createTexture({ flipY: true }));
+    // Apply the matrix to (u, v) = (0.2, 0.3): expect (0.2, 0.7).
+    multiplyMatrix3Uv(scratch, out, 0.2, 0.3);
+    expect(scratch.x).toBeCloseTo(0.2);
+    expect(scratch.y).toBeCloseTo(0.7);
+
+    getTextureUvMatrix(out, createTexture({ flipX: true }));
+    multiplyMatrix3Uv(scratch, out, 0.2, 0.3);
+    expect(scratch.x).toBeCloseTo(0.8);
+    expect(scratch.y).toBeCloseTo(0.3);
+  });
+
+  it('agrees with transformTextureUv when a flip combines with scale, rotation, and offset', () => {
+    const texture = createTexture({ flipX: true, flipY: true, uvScale: createVector2(2, 3) });
+    setTextureUvOffset(texture, 0.1, 0.2);
+    setTextureUvRotation(texture, 0.5);
+    const out = createMatrix3();
+    getTextureUvMatrix(out, texture);
+
+    const viaMatrix = createVector2();
+    multiplyMatrix3Uv(viaMatrix, out, 0.35, 0.6);
+    const viaInline = createVector2();
+    transformTextureUv(viaInline, texture, 0.35, 0.6);
+    expect(viaMatrix.x).toBeCloseTo(viaInline.x);
+    expect(viaMatrix.y).toBeCloseTo(viaInline.y);
+  });
+
   it('encodes scale in the diagonal', () => {
     const texture = createTexture();
     setTextureUvScale(texture, 2, 3);
@@ -312,6 +351,11 @@ describe('hasTextureUvTransform', () => {
     expect(hasTextureUvTransform(texture)).toBe(true);
   });
 
+  it('is true when a flip flag is set', () => {
+    expect(hasTextureUvTransform(createTexture({ flipY: true }))).toBe(true);
+    expect(hasTextureUvTransform(createTexture({ flipX: true }))).toBe(true);
+  });
+
   it('is true when the rotation is non-zero', () => {
     const texture = createTexture();
     setTextureUvRotation(texture, 0.5);
@@ -357,6 +401,19 @@ describe('resetTextureUvTransform', () => {
     expect(texture.colorSpace).toStrictEqual('linear');
     expect(texture.image).toBe(fakeImage);
     expect(texture.sampler).toBe(sampler);
+  });
+});
+
+describe('setTextureFlip', () => {
+  it('sets the flip flags in place', () => {
+    const texture = createTexture();
+    expect(texture.flipX).toBe(false);
+    setTextureFlip(texture, true, true);
+    expect(texture.flipX).toBe(true);
+    expect(texture.flipY).toBe(true);
+    setTextureFlip(texture, false, true);
+    expect(texture.flipX).toBe(false);
+    expect(texture.flipY).toBe(true);
   });
 });
 
