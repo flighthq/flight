@@ -15,6 +15,10 @@ See [charter](./charter.md) for blessed direction.
 3. **Make the lane taxonomy explicit.** Lambert/Phong/Blinn-Phong are mutually exclusive complete lighting models. PBR extensions are physically meaningful lobes or transport terms composed into PBR. Shader feature/modifier work belongs in `@flighthq/shading`; `@flighthq/adjustments` transforms an already-produced value. Do not blur these lanes under a generic “extension” noun.
 4. **Model full extension inputs, including textures and coherent combinations.** Clearcoat, sheen, anisotropy, iridescence, specular, subsurface, and transmission/volume descriptors expose their canonical scalar/color/map inputs—including clearcoat normal scale—and per-map UV selection. Each map's own texture transform must survive binding rather than inheriting the base-color map's transform. Descriptor-level validation should reject domain-invalid data and invalid cross-field relationships, not combinations merely unsupported by one backend.
 5. **Preserve the Entity constructor invariant.** Every public `create*Material` and `create*PbrExtension` that produces a Flight entity must use the entity constructor path; descriptors intentionally defined as `*Like` remain structural inputs.
+6. **Compose the standard property block, not a nested material.** Extended presets such as glass must
+   populate `standard` with `createStandardPbrMaterialProperties`; embedding a full
+   `StandardPbrMaterial` entity smuggles a second kind/runtime/surface trailer into a value block whose
+   contract does not consume them.
 
 ## Recommended
 

@@ -857,6 +857,7 @@ These are explicit user directions whose implementation may span packages or req
 - Make the lane taxonomy explicit
 - Model full extension inputs, including textures and coherent combinations
 - Preserve the Entity constructor invariant
+- Compose the standard property block, not a nested material
 
 ### application (solid 88)
 
