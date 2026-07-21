@@ -1,6 +1,6 @@
 import { connectSignal, emitSignal } from '@flighthq/signals';
-import type { SceneResourceRef, Texture } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResourceReference, Texture } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
@@ -10,9 +10,9 @@ import {
   getSceneResourceSignals,
 } from './sceneResourceSignals';
 
-const ref: SceneResourceRef = {
+const ref: ImageResourceReference = {
   bytes: new Uint8Array(),
-  kind: SceneResourceRefKind.Embedded,
+  kind: ImageResourceReferenceKind.Embedded,
   mimeType: null,
   state: ResourceResolutionState.Resolved,
 };

@@ -5,8 +5,8 @@ import { addNodeChild } from '@flighthq/node';
 import { createMesh, createScene } from '@flighthq/scene';
 import { connectSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, SceneResourceRef, Texture } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference, Texture } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveOneSceneResourceTexture, resolveSceneResources } from './resolveSceneResources';
@@ -22,19 +22,19 @@ vi.mock('@flighthq/image', () => ({
 const loadFromBytes = vi.mocked(loadImageResourceFromBytes);
 const fakeImage = { height: 2, width: 2 } as unknown as ImageResource;
 
-function embeddedRef(mimeType: string | null = 'image/png'): SceneResourceRef {
+function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   return {
     bytes: new Uint8Array([9, 9]),
-    kind: SceneResourceRefKind.Embedded,
+    kind: ImageResourceReferenceKind.Embedded,
     mimeType,
     state: ResourceResolutionState.Unresolved,
   };
 }
 
-function externalRef(uri = 'leaf.png'): SceneResourceRef {
+function externalRef(uri = 'leaf.png'): ImageResourceReference {
   return {
     basePath: null,
-    kind: SceneResourceRefKind.External,
+    kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
     uri,

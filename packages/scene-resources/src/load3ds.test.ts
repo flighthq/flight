@@ -5,8 +5,8 @@ import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
 import { createSceneFrom3ds } from '@flighthq/scene-formats';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, SceneResourceRef } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadSceneFrom3ds } from './load3ds';
@@ -24,9 +24,9 @@ afterEach(() => {
 
 describe('loadSceneFrom3ds', () => {
   it('parses 3DS and resolves its material textures', async () => {
-    const ref: SceneResourceRef = {
+    const ref: ImageResourceReference = {
       basePath: null,
-      kind: SceneResourceRefKind.External,
+      kind: ImageResourceReferenceKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,
       uri: 'skin.png',

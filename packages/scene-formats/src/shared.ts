@@ -3,7 +3,7 @@ import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
 import type { Mesh, SceneNode, Texture, VertexAttributeLayout } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
 export const CANONICAL_LAYOUT: VertexAttributeLayout = {
@@ -74,7 +74,7 @@ export function createEmbeddedTextureRef(bytes: Uint8Array, mimeType: string | n
   return createTexture({
     resource: {
       bytes,
-      kind: SceneResourceRefKind.Embedded,
+      kind: ImageResourceReferenceKind.Embedded,
       mimeType,
       state: ResourceResolutionState.Unresolved,
     },
@@ -90,7 +90,7 @@ export function createExternalTextureRef(uri: string, basePath: string | null = 
   return createTexture({
     resource: {
       basePath,
-      kind: SceneResourceRefKind.External,
+      kind: ImageResourceReferenceKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,
       uri,

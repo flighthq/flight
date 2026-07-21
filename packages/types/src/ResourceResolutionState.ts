@@ -1,4 +1,4 @@
-// The lifecycle state of one SceneResourceRef as it moves from a parser-emitted reference to a
+// The lifecycle state of one ImageResourceReference as it moves from a parser-emitted reference to a
 // live, decoded image bound onto its Texture. Queryable plain data the caller (a loading HUD, a
 // fade controller, analytics) reads directly off the ref; the resolver advances it.
 //

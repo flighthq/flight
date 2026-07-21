@@ -10,6 +10,6 @@ export * from './resolveSceneResources';
 export * from './resolveSceneResourcesAndWait';
 export * from './revealSceneResourcesOnResolve';
 export * from './sceneMaterialTextureRegistry';
-export * from './sceneResourceFetch';
+export * from './imageResourceFetch';
 export * from './sceneResourceResolver';
 export * from './sceneResourceSignals';

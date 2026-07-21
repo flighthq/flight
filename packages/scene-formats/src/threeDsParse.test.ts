@@ -7,7 +7,7 @@ import {
 } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { BlinnPhongMaterial, ExternalSceneResourceRef, Mesh, SceneNode } from '@flighthq/types';
+import type { BlinnPhongMaterial, ExternalImageResourceReference, Mesh, SceneNode } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { createSceneFrom3ds } from './threeDsParse';
@@ -235,7 +235,7 @@ describe('createSceneFrom3ds', () => {
     expect(mat.specular).toBe(0xffffffff);
     expect(mat.name).toBe('Skin'); // 3DS material chunk name preserved as the authored identity
     // Texture filename is referenced, not decoded.
-    expect((mat.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('skin.png');
+    expect((mat.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('skin.png');
     expect(mat.diffuseMap!.image).toBeNull();
   });
 

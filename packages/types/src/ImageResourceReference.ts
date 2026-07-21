@@ -16,14 +16,14 @@ import type { ResourceResolutionState } from './ResourceResolutionState';
 // A closed union for v1: a native host adds reach by swapping the resolver's fetch backend for
 // External, not by inventing a new ref kind. Opening the union later (a third member) is additive.
 
-export const SceneResourceRefKind = {
+export const ImageResourceReferenceKind = {
   Embedded: 'Embedded',
   External: 'External',
 } as const;
 
-export type SceneResourceRefKind = (typeof SceneResourceRefKind)[keyof typeof SceneResourceRefKind];
+export type ImageResourceReferenceKind = (typeof ImageResourceReferenceKind)[keyof typeof ImageResourceReferenceKind];
 
-interface SceneResourceRefBase {
+interface ImageResourceReferenceBase {
   // The image MIME type (`image/png`, `image/jpeg`) when known — detected from the embedded bytes
   // or declared by the container. Null when it must be inferred at resolve time (e.g. from an
   // external URI's extension or the fetch response), which the resolver does.
@@ -34,7 +34,7 @@ interface SceneResourceRefBase {
 }
 
 // The encoded image bytes are already available; resolution decodes them through @flighthq/image-codec.
-export interface EmbeddedSceneResourceRef extends SceneResourceRefBase {
+export interface EmbeddedImageResourceReference extends ImageResourceReferenceBase {
   kind: 'Embedded';
   bytes: Uint8Array;
 }
@@ -42,10 +42,10 @@ export interface EmbeddedSceneResourceRef extends SceneResourceRefBase {
 // The image must be fetched from `uri` before decoding. `uri` may be absolute or relative; a
 // relative `uri` resolves against `basePath` (the directory the container was loaded from), null
 // when the container carried no base. The fetch itself is a swappable seam the resolver owns.
-export interface ExternalSceneResourceRef extends SceneResourceRefBase {
+export interface ExternalImageResourceReference extends ImageResourceReferenceBase {
   kind: 'External';
   uri: string;
   basePath: string | null;
 }
 
-export type SceneResourceRef = EmbeddedSceneResourceRef | ExternalSceneResourceRef;
+export type ImageResourceReference = EmbeddedImageResourceReference | ExternalImageResourceReference;

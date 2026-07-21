@@ -9,7 +9,7 @@ import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type {
   BlinnPhongMaterial,
-  ExternalSceneResourceRef,
+  ExternalImageResourceReference,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
@@ -246,7 +246,7 @@ describe('createSceneFromMd2', () => {
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.name).toBe('players/hero/skin.pcx'); // MD2 skin path preserved as the authored identity
     // The skin path is referenced, not decoded: an Unresolved External ref, image left null.
-    expect((material.diffuseMap!.resource as ExternalSceneResourceRef).uri).toBe('players/hero/skin.pcx');
+    expect((material.diffuseMap!.resource as ExternalImageResourceReference).uri).toBe('players/hero/skin.pcx');
     expect(material.diffuseMap!.image).toBeNull();
   });
 

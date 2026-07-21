@@ -10,8 +10,8 @@ import {
   createScenesFromGltf,
 } from '@flighthq/scene-formats';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, SceneResourceRef } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadSceneFromGlb, loadSceneFromGltf, loadScenesFromGlb, loadScenesFromGltf } from './loadGltf';
@@ -26,10 +26,10 @@ vi.mock('@flighthq/scene-formats', () => ({
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
-function externalRef(): SceneResourceRef {
+function externalRef(): ImageResourceReference {
   return {
     basePath: null,
-    kind: SceneResourceRefKind.External,
+    kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
     uri: 'tex.png',

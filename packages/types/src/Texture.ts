@@ -1,7 +1,7 @@
 import type { Entity, EntityWithoutRuntime } from './Entity';
 import type { ImageResource } from './ImageResource';
+import type { ImageResourceReference } from './ImageResourceReference';
 import type { Sampler } from './Sampler';
-import type { SceneResourceRef } from './SceneResourceRef';
 import type { TextureUvTransform } from './TextureUvTransform';
 
 // How the texture's pixels are interpreted at sample time. baseColor/emissive maps are 'srgb'
@@ -23,7 +23,7 @@ export interface Texture extends Entity, TextureUvTransform {
   // stays synchronous while the heavy decode/fetch is deferred. Absent (`null`/undefined) for a
   // texture whose image is already in hand or bound. @flighthq/scene-resources resolves it and
   // fills `image`; the renderer may read `resource.state` to fade the surface in on availability.
-  resource?: SceneResourceRef | null;
+  resource?: ImageResourceReference | null;
   sampler: Sampler;
 }
 

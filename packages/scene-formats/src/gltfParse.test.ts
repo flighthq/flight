@@ -10,8 +10,8 @@ import {
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import type {
-  EmbeddedSceneResourceRef,
-  ExternalSceneResourceRef,
+  EmbeddedImageResourceReference,
+  ExternalImageResourceReference,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
@@ -346,7 +346,7 @@ describe('createSceneFromGltf', () => {
 
     const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.baseColorMap!.image).toBeNull();
-    const ref = mat.baseColorMap!.resource as EmbeddedSceneResourceRef;
+    const ref = mat.baseColorMap!.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
     expect(Array.from(ref.bytes)).toEqual(Array.from(png));
@@ -360,7 +360,7 @@ describe('createSceneFromGltf', () => {
     doc.meshes![0].primitives[0].material = 0;
 
     const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
-    const ref = mat.emissiveMap!.resource as ExternalSceneResourceRef;
+    const ref = mat.emissiveMap!.resource as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('textures/emissive.png');
   });
@@ -390,7 +390,7 @@ describe('createSceneFromGltf', () => {
 
     const mat = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).materials[0] as StandardPbrMaterial;
     expect(mat.normalScale).toBe(2);
-    const ref = mat.normalMap!.resource as EmbeddedSceneResourceRef;
+    const ref = mat.normalMap!.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
     expect(Array.from(ref.bytes)).toEqual(Array.from(png));
@@ -481,7 +481,7 @@ describe('createSceneFromGltf', () => {
 
     const mat = (getNodeChildren(createSceneFromGltf(doc, undefined, { basePath: 'assets/models' }).root)[0] as Mesh)
       .materials[0] as StandardPbrMaterial;
-    const ref = mat.emissiveMap!.resource as ExternalSceneResourceRef;
+    const ref = mat.emissiveMap!.resource as ExternalImageResourceReference;
     expect(ref.uri).toBe('textures/emissive.png');
     expect(ref.basePath).toBe('assets/models');
   });

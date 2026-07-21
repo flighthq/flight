@@ -1,9 +1,9 @@
 import { loadImageResourceFromUrl } from '@flighthq/image';
-import type { ExternalSceneResourceRef, ImageResource } from '@flighthq/types';
-import { ResourceResolutionState, SceneResourceRefKind } from '@flighthq/types';
+import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types';
+import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createWebSceneResourceFetch, resolveSceneResourceUri } from './sceneResourceFetch';
+import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch';
 
 vi.mock('@flighthq/image', () => ({
   loadImageResourceFromBytes: vi.fn(),
@@ -13,10 +13,10 @@ vi.mock('@flighthq/image', () => ({
 const loadFromUrl = vi.mocked(loadImageResourceFromUrl);
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
-function externalRef(uri: string, basePath: string | null): ExternalSceneResourceRef {
+function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {
   return {
     basePath,
-    kind: SceneResourceRefKind.External,
+    kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
     uri,
@@ -27,10 +27,10 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('createWebSceneResourceFetch', () => {
+describe('createWebImageResourceFetch', () => {
   it('fetches the resolved URL and returns the decoded image', async () => {
     loadFromUrl.mockResolvedValue(fakeImage);
-    const fetch = createWebSceneResourceFetch();
+    const fetch = createWebImageResourceFetch();
     const result = await fetch(externalRef('leaf.png', 'assets/textures'), new AbortController().signal);
     expect(loadFromUrl).toHaveBeenCalledWith('assets/textures/leaf.png', undefined, expect.anything());
     expect(result).toBe(fakeImage);
@@ -38,7 +38,7 @@ describe('createWebSceneResourceFetch', () => {
 
   it('returns null on a non-abort failure', async () => {
     loadFromUrl.mockRejectedValue(new Error('404'));
-    const fetch = createWebSceneResourceFetch();
+    const fetch = createWebImageResourceFetch();
     const result = await fetch(externalRef('missing.png', null), new AbortController().signal);
     expect(result).toBeNull();
   });
@@ -47,33 +47,33 @@ describe('createWebSceneResourceFetch', () => {
     const controller = new AbortController();
     controller.abort();
     loadFromUrl.mockRejectedValue(new Error('aborted'));
-    const fetch = createWebSceneResourceFetch();
+    const fetch = createWebImageResourceFetch();
     await expect(fetch(externalRef('x.png', null), controller.signal)).rejects.toThrow();
   });
 });
 
-describe('resolveSceneResourceUri', () => {
+describe('resolveImageResourceUri', () => {
   it('joins a relative uri to a base path', () => {
-    expect(resolveSceneResourceUri('leaf.png', 'assets/tex')).toBe('assets/tex/leaf.png');
+    expect(resolveImageResourceUri('leaf.png', 'assets/tex')).toBe('assets/tex/leaf.png');
   });
 
   it('does not double the separator when the base ends with a slash', () => {
-    expect(resolveSceneResourceUri('leaf.png', 'assets/tex/')).toBe('assets/tex/leaf.png');
+    expect(resolveImageResourceUri('leaf.png', 'assets/tex/')).toBe('assets/tex/leaf.png');
   });
 
   it('keeps a scheme-absolute uri verbatim', () => {
-    expect(resolveSceneResourceUri('https://cdn.test/leaf.png', 'assets/tex')).toBe('https://cdn.test/leaf.png');
+    expect(resolveImageResourceUri('https://cdn.test/leaf.png', 'assets/tex')).toBe('https://cdn.test/leaf.png');
   });
 
   it('keeps a data uri verbatim', () => {
-    expect(resolveSceneResourceUri('data:image/png;base64,AAAA', 'assets/tex')).toBe('data:image/png;base64,AAAA');
+    expect(resolveImageResourceUri('data:image/png;base64,AAAA', 'assets/tex')).toBe('data:image/png;base64,AAAA');
   });
 
   it('keeps a root-absolute uri verbatim', () => {
-    expect(resolveSceneResourceUri('/textures/leaf.png', 'assets/tex')).toBe('/textures/leaf.png');
+    expect(resolveImageResourceUri('/textures/leaf.png', 'assets/tex')).toBe('/textures/leaf.png');
   });
 
   it('returns a relative uri unchanged when the base path is null', () => {
-    expect(resolveSceneResourceUri('leaf.png', null)).toBe('leaf.png');
+    expect(resolveImageResourceUri('leaf.png', null)).toBe('leaf.png');
   });
 });

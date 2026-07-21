@@ -11,8 +11,8 @@ import { createSceneNode, isMesh } from '@flighthq/scene';
 import type {
   AnimationClip,
   BlinnPhongMaterial,
-  EmbeddedSceneResourceRef,
-  ExternalSceneResourceRef,
+  EmbeddedImageResourceReference,
+  ExternalImageResourceReference,
   Mesh,
   SceneAnimationTarget,
   SceneNode,
@@ -537,7 +537,7 @@ describe('createSceneFromAwd', () => {
     expect(material!.diffuseMap).not.toBeNull();
     // The parser references, it does not decode: image stays null, a ref carries the source.
     expect(material!.diffuseMap!.image).toBeNull();
-    const ref = material!.diffuseMap!.resource as EmbeddedSceneResourceRef;
+    const ref = material!.diffuseMap!.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.mimeType).toBe('image/png');
     expect(ref.bytes).toEqual(FAKE_PNG_BYTES);
@@ -573,7 +573,7 @@ describe('createSceneFromAwd', () => {
     expect(material!.diffuseMap).toBeNull();
   });
 
-  it('emits an External SceneResourceRef for an external-URL texture', () => {
+  it('emits an External ImageResourceReference for an external-URL texture', () => {
     const posStream = buildStream(
       AWD_STREAM_POSITIONS,
       AWD_DATA_FLOAT32,
@@ -601,7 +601,7 @@ describe('createSceneFromAwd', () => {
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial;
     expect(material.kind).toBe(BlinnPhongMaterialKind);
     expect(material.diffuseMap!.image).toBeNull();
-    const ref = material.diffuseMap!.resource as ExternalSceneResourceRef;
+    const ref = material.diffuseMap!.resource as ExternalImageResourceReference;
     expect(ref.kind).toBe('External');
     expect(ref.uri).toBe('http://example.com/tex.png');
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);
@@ -634,7 +634,7 @@ describe('createSceneFromAwd', () => {
 
     const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as BlinnPhongMaterial).diffuseMap!;
     expect(texture.image).toBeNull(); // parse never allocates or fills an ImageResource
-    const ref = texture.resource as EmbeddedSceneResourceRef;
+    const ref = texture.resource as EmbeddedImageResourceReference;
     expect(ref.kind).toBe('Embedded');
     expect(ref.bytes).toEqual(FAKE_PNG_BYTES);
     expect(ref.mimeType).toBe('image/png');
