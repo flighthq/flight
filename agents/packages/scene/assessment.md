@@ -8,23 +8,33 @@ basedOn: ./review.md
 
 See [charter](./charter.md) for blessed direction.
 
-## Depth gaps
-
-1. **Reconcile orphaned scene-node families.** `InstancedMesh`, `LodMesh`, `Billboard`, and related header types either gain constructors/updates/query behavior and backend consumers or are removed; a type-only promise is not a realized feature.
-2. **Make the cull/prepare seam singular and consumed.** Scene's cull query and render's internal visible-mesh walk should share one explicit result/primitive or one should be removed. Instancing, LOD, layers, skinned bounds, and shadow-caster collection must enter through the chosen seam.
-3. **Defer acceleration until the semantic list is correct.** BVH/octree, occlusion, and other acceleration are valuable later, but first establish correct visibility/layer/instancing/LOD/skinning behavior and functional evidence on the simple walk.
-
 ## Recommended
 
-1. Remove dead no-op ternaries in raycaster.
-2. Replace literal casts with `createVector3` in raycast hit construction.
+No sweep-safe items from this review. The remaining work crosses render, picking, mesh deformation, or
+resource-policy seams.
+
+## Depth gaps
+
+1. **Realize InstancedMesh end to end.** Constructor/data updates, per-instance transforms and optional
+   colors, bounds/culling, GL draw, instance identity in picking, and functional evidence must share one
+   explicit instance-data primitive.
+2. **Realize LodMesh end to end.** Selection and hysteresis should consume camera projection plus the
+   active Viewport, integrate resource availability, and expose the selected level to render and picking.
+3. **Unify explicit scene preparation.** Morph, skin, billboards, LOD, instances, bounds, culling,
+   shadows, and picking must observe one prepared frame without hidden automatic updates or duplicated
+   traversal.
+4. **Resolve shared-geometry deformation ownership.** Independent clones must not overwrite one
+   another's morphed/skinned vertices; keep rigid geometry sharing cheap while making deform state
+   per-instance or GPU-resolved.
+5. **Add acceleration after semantic correctness.** BVH/octree, occlusion, and other structures should
+   consume the same prepared bounds/identity contract rather than create a second scene truth.
+
+## Backlog
+
+- Per-node layers/visibility categories.
+- Versioned scene serialization.
+- Optional CameraNode/LightNode conveniences only if they remain additive.
 
 ## Approved
 
 None.
-
-## Backlog
-
-- BVH/octree spatial acceleration.
-- Per-node visibility/layer mask.
-- Serialization.
