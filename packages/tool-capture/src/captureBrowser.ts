@@ -121,15 +121,16 @@ export async function launchBrowser(
             const targetKind = flags.__ftTarget?.kind;
             const gpuVerifying = verify && (targetKind === 'webgl' || targetKind === 'webgpu');
             let done: boolean;
-            if (gpuVerifying) {
-              const haveRealFrame =
-                (flags.__ftVerification?.fingerprint ?? null) !== null || document.getElementById('ft-error') !== null;
-              done = haveRealFrame || count >= warmupCeiling;
-            } else if (observe) {
-              // Cheap inline "did anything draw" test: downscale the canvas into a 32×32 2D context and
-              // look for any pixel differing from the top-left (background). Inlined rather than a named
-              // helper on purpose — a named function in an addInitScript body gets esbuild's __name()
-              // wrapper, which is undefined in the injected page (same reason mulberry32 is inlined above).
+            if (observe) {
+              // Eyes mode halts on MEASURED canvas pixels, not the verifier's publish signal — the latter
+              // false-negatives for whole corpora (e.g. starling/functional render at >0.9 coverage yet
+              // never publish, so a verifier-gated warmup burns all the way to the ceiling). Cheap inline
+              // "did anything draw" test: downscale the canvas into a 32×32 2D context and look for any
+              // pixel differing from the top-left (background). Inlined rather than a named helper on
+              // purpose — a named function in an addInitScript body gets esbuild's __name() wrapper, which
+              // is undefined in the injected page (same reason mulberry32 is inlined above). The ceiling
+              // stays generous when a GPU target is present (a slow IBL bake / async upload can need dozens
+              // of frames before first pixels), tighter otherwise (an app-loop 2D scene draws within a few).
               let drew = false;
               const canvas = document.querySelector('canvas');
               if (canvas !== null && canvas.width > 0 && canvas.height > 0) {
@@ -161,7 +162,11 @@ export async function launchBrowser(
                   }
                 }
               }
-              done = drew || count >= observeWarmupCeiling;
+              done = drew || count >= (gpuVerifying ? warmupCeiling : observeWarmupCeiling);
+            } else if (gpuVerifying) {
+              const haveRealFrame =
+                (flags.__ftVerification?.fingerprint ?? null) !== null || document.getElementById('ft-error') !== null;
+              done = haveRealFrame || count >= warmupCeiling;
             } else {
               done = true; // gate/baseline: deterministic freeze at exactly frame N
             }
