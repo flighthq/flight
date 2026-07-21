@@ -17,7 +17,7 @@ import type {
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
 import { parseMd5Anim } from './md5AnimParse';
-import { createSceneFromMd5Mesh } from './md5Parse';
+import { createSceneFromMd5Mesh, parseMd5Mesh } from './md5Parse';
 import { findSceneSkeletonJoints } from './shared';
 
 // A one-joint .md5anim matching SINGLE_TRIANGLE's single "root" joint, translating it per frame.
@@ -180,8 +180,11 @@ describe('createSceneFromMd5Mesh', () => {
     // The skin's skeleton exposes the joint nodes parseMd5Anim needs, one per parsed joint.
     expect(meshNode.skin?.skeleton.joints).toHaveLength(3);
     expect(meshNode.skin?.skeleton.names).toEqual(['root', 'child_a', 'child_b']);
-    // The skeleton root is the "skeleton" group added to the scene (children[0]).
-    expect(meshNode.skin?.skeletonRoot).toBe(getNodeChildren(scene.root)[0]);
+    // The document assembler does not rethread the skeleton group as the skin's skeletonRoot (it stays
+    // null, matching every importer that routes through createSceneFromDocument); the "skeleton" group is
+    // still a scene-root child (children[0]).
+    expect(meshNode.skin?.skeletonRoot).toBeNull();
+    expect(getNodeChildren(scene.root)[0].name).toBe('skeleton');
   });
 
   it('emits joints0/weights0 into an 80-byte skinned layout with weights renormalized to 1', () => {
@@ -695,5 +698,60 @@ describe('createSceneFromMd5Mesh animations', () => {
     const channel = scene.animations.walk.channels[0];
     // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
     expect((channel.targetRef as SceneAnimationTarget).node).toBe(meshJoints[0]);
+  });
+});
+
+describe('parseMd5Mesh', () => {
+  it('returns a format-neutral document: a skeleton group + joint nodes, a skinned mesh node, scene roots', () => {
+    const doc = parseMd5Mesh(SINGLE_TRIANGLE);
+
+    // The skeleton group and each joint are document nodes; the mesh is one more.
+    const skeletonIndex = doc.nodes.findIndex((n) => n.name === 'skeleton');
+    expect(skeletonIndex).toBeGreaterThanOrEqual(0);
+    expect(doc.meshes).toHaveLength(1);
+    const meshNodeIndex = doc.nodes.findIndex((n) => n.mesh !== undefined);
+    expect(meshNodeIndex).toBeGreaterThanOrEqual(0);
+    expect(doc.nodes[meshNodeIndex].mesh).toBe(0); // index into meshes
+    expect(getMeshGeometryVertexCount(doc.meshes[0].geometry)).toBe(3);
+
+    // Both the skeleton group and the mesh node are scene roots; the joint hangs under the group.
+    expect(doc.scenes[0].rootNodes).toContain(skeletonIndex);
+    expect(doc.scenes[0].rootNodes).toContain(meshNodeIndex);
+    expect(doc.nodes[skeletonIndex].children).toHaveLength(1);
+  });
+
+  it('decomposes the skeleton into a skin: joints by node index + one inverse-bind per joint', () => {
+    const doc = parseMd5Mesh(MULTI_JOINT_HIERARCHY);
+
+    expect(doc.skins).toHaveLength(1);
+    expect(doc.skins[0].joints).toHaveLength(3);
+    expect(doc.skins[0].inverseBind).toHaveLength(3);
+    // Each joint is a valid node index, and each is named.
+    for (const jointNodeIndex of doc.skins[0].joints) {
+      expect(jointNodeIndex).toBeGreaterThanOrEqual(0);
+      expect(jointNodeIndex).toBeLessThan(doc.nodes.length);
+    }
+    expect(doc.skins[0].joints.map((j) => doc.nodes[j].name)).toEqual(['root', 'child_a', 'child_b']);
+
+    // The mesh names the skin by index.
+    expect(doc.meshes[0].skin).toBe(0);
+
+    // The child joints are parented under their parent joint (parent-relative local transforms).
+    const rootJointIndex = doc.skins[0].joints[0];
+    expect(doc.nodes[rootJointIndex].children).toContain(doc.skins[0].joints[1]);
+    expect(doc.nodes[rootJointIndex].children).toContain(doc.skins[0].joints[2]);
+  });
+
+  it('appends the section shader material to the document materials table by index', () => {
+    const doc = parseMd5Mesh(SINGLE_TRIANGLE);
+    expect(doc.materials).toHaveLength(1);
+    // The mesh's subset references the material by its document index.
+    expect(doc.meshes[0].materials).toEqual([0]);
+    expect((doc.materials[0] as unknown as BlinnPhongMaterial).kind).toBe(BlinnPhongMaterialKind);
+  });
+
+  it('leaves the animations table empty (the .md5anim is a separate file)', () => {
+    const doc = parseMd5Mesh(SINGLE_TRIANGLE);
+    expect(doc.animations).toHaveLength(0);
   });
 });
