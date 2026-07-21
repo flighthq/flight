@@ -381,6 +381,7 @@ export * from './ScanlinesEffect';
 export * from './Scene';
 export * from './SceneAnimationPath';
 export * from './SceneAnimationTarget';
+export * from './SceneDocument';
 export * from './SceneHit';
 export * from './SceneLightBlock';
 export * from './SceneLights';
