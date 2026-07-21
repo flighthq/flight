@@ -10,5 +10,10 @@
     "types": ["node", "vitest/globals"]
   },
   "include": ["src"],
-  "references": [{ "path": "../render-wgpu" }, { "path": "../surface" }, { "path": "../types" }]
+  "references": [
+    { "path": "../capture" },
+    { "path": "../render-wgpu" },
+    { "path": "../surface" },
+    { "path": "../types" }
+  ]
 }

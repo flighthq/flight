@@ -1,8 +1,7 @@
-// Parity + regression render verification (Tiers 3 and 5), complementing the in-page smoke gate
-// (capture --fail-on-error, Tiers 1/2/4). It drives the functional or examples dev server
-// (--tool, default functional), reads each backend's coarse render fingerprint (stashed on
-// window.__ftVerification by the harness/examples verifier), and compares them with the SDK's tolerant
-// fingerprint metric:
+// Turn-key parity + regression render verification (Tiers 3 and 5), complementing the capture suite's
+// smoke gate (Tiers 1/2/4). Pages publish their coarse render fingerprint on
+// window.__ftVerification; this module owns browser execution, self-stability checks, baseline I/O,
+// comparison, reporting, interruption, and the final verdict.
 //
 //   - Tier 3 (parity): the raster backends of one test (canvas/webgl/webgpu) must agree within a
 //     tolerance — they render the same scene, so a backend that diverges has a bug. No committed image.
@@ -16,112 +15,79 @@
 // tiers — it is still covered by the smoke gate. Regression and parity run only for
 // backends that have a committed baseline, i.e. ones already proven stable.
 //
-// Run via the npm scripts: `test:{functional,examples}:parity` (cross-backend) and `:regression`
-// (vs committed baseline), `:regression:baseline` to rewrite fingerprints. The sibling `:smoke`
-// script is the separate builds-and-runs / not-blank gate (capture --fail-on-error); the
-// `test:{functional,examples}` umbrella runs smoke then this script (both tiers).
-//
-// Usage:
-//   tsx ./scripts/compare-render.ts [--tool=functional|examples] [--filter=name] [--renderer=canvas,webgl]
-//                                   [--frames=N]                 frame to capture (examples: 30)
-//                                   [--report]                   print all distances, gate nothing
-//                                   [--update-fingerprints]      rewrite baselines for self-stable entries
-//                                   [--no-regression] [--no-parity]
-//                                   [--parity-tolerance=N] [--regression-tolerance=N]
-//                                   [--dev]                      use Vite dev server (default: static)
-//                                   [--build]                    force rebuild before serving
-//                                   [--sequential]               disable parallel entry processing
-//                                   [--parallel=N]               override worker count (default: 6)
-//
-// Baselines live at tests/{tool}/baselines/{name}.json (tracked), keyed by column id.
+// The CLI exposes this as `tool-capture validate`; consumers with generated entries or a custom server
+// can call runCaptureValidation directly. Baselines live at `<subject>/baselines/<name>.json`, keyed by
+// renderer/column id.
 
-import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface';
-import type { DetailTone, Tool } from '@flighthq/tool-capture';
+import { resolve } from 'node:path';
+
 import {
-  BACKEND_UNAVAILABLE,
-  discoverEntries,
-  formatDetailLine,
-  formatStatusLine,
-  formatSummaryCount,
-  formatSummaryLine,
-  getBaselineField,
-  installAbortHandler,
-  isBrowserClosedError,
-  launchBrowser,
-  rendererMatchesFilter,
-  resolveServer,
-  resolveStaticServer,
-  routeSegment,
-  setBaselineField,
-} from '@flighthq/tool-capture';
+  CAPTURE_PARITY_TOLERANCE,
+  CAPTURE_REGRESSION_TOLERANCE,
+  compareCaptureFingerprints,
+  evaluateCaptureParity,
+  evaluateCaptureRegression,
+} from '@flighthq/capture';
 import type { BrowserContext, Page } from '@playwright/test';
 import pc from 'picocolors';
 
-const argv = process.argv.slice(2);
+import { getBaselineField, setBaselineField } from './baselineStore.js';
+import { launchBrowser } from './captureBrowser.js';
+import type { Entry } from './captureEntries.js';
+import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './captureEntries.js';
+import type { DetailTone } from './captureFormat.js';
+import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
+import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
+import type { Server } from './captureServer.js';
 
-function arg(key: string, fallback: string): string {
-  const hit = argv.find((a) => a.startsWith(`--${key}=`));
-  return hit ? hit.slice(key.length + 3) : fallback;
+export interface CaptureValidationOptions {
+  subject: string;
+  entries: Readonly<Entry[]>;
+  server: Server;
+  root?: string;
+  filter?: string;
+  rendererFilter?: Readonly<string[]>;
+  captureFrames?: number;
+  report?: boolean;
+  updateFingerprints?: boolean;
+  gateRegression?: boolean;
+  gateParity?: boolean;
+  stabilityEpsilon?: number;
+  regressionTolerance?: number;
+  parityTolerance?: number;
+  sequential?: boolean;
+  workerCount?: number;
+  fingerprintSkip?: Readonly<string[]>;
+  paritySkip?: Readonly<Record<string, 'all' | Readonly<string[]>>>;
 }
 
-// 'functional' tests render their scene at frame 1; examples often animate, so they are
-// captured at a later frame (pass --frames=30). Each backend's verifier stashes window.__ftVerification
-// with the fingerprint, and routes are /tests/… vs /examples/…; everything else is identical.
-const tool = arg('tool', 'functional') as Tool;
-const routePrefix = tool === 'examples' ? 'examples' : 'tests';
-const filter = arg('filter', '');
-const rendererFilter = arg('renderer', '').split(',').filter(Boolean);
-const captureFrames = Math.max(1, parseInt(arg('frames', '1'), 10) || 1);
-const report = argv.includes('--report');
-const updateFingerprints = argv.includes('--update-fingerprints');
-// Tier selection. Parity (Tier 3) compares two backends in the same run, so it is environment
-// independent and safe to gate in any CI. Regression (Tier 5) compares against a committed baseline
-// captured in one environment, so across a different GPU/driver it can drift — gate it only where the
-// baseline was captured, and pass --no-regression elsewhere (the cross-environment CI gate).
-const gateRegression = !argv.includes('--no-regression');
-const gateParity = !argv.includes('--no-parity');
-// Calibrated from a full run: same-backend run-to-run distance is ≤ ~1.2 for stable tests and ~30+ for
-// an animated one; cross-backend agreement is ≤ ~6.5 even for the antialiasing-heavy filters. So a test
-// is "self-stable" well under 4, regression noise is well under 5, and real divergence is well over 15.
-const stabilityEpsilon = parseFloat(arg('stability-epsilon', '4'));
-const regressionTolerance = parseFloat(arg('regression-tolerance', '5'));
-const parityTolerance = parseFloat(arg('parity-tolerance', '15'));
-// --dev opts into the Vite dev server; static is the default (same as capture.ts).
-const useDev = argv.includes('--dev');
-// --build forces a rebuild even when dist already exists.
-const forceBuild = argv.includes('--build');
-// --sequential opts out of parallel entry processing; parallel is the default.
-const useParallel = !argv.includes('--sequential');
-// --parallel=N overrides the worker count.
-const parallelArg = argv.find((a) => a === '--parallel' || a.startsWith('--parallel='));
-const workerCount = parallelArg?.includes('=') ? Math.max(1, parseInt(parallelArg.split('=')[1], 10) || 6) : 6;
+export interface CaptureValidationResult {
+  aborted: boolean;
+  loadFailures: number;
+  parityFailures: number;
+  parityPasses: number;
+  regressionFailures: number;
+  regressionPasses: number;
+  shouldFail: boolean;
+  skipped: number;
+  updated: number;
+}
 
-const root = process.cwd();
-
-// Entries excluded from fingerprint verification entirely — they produce no meaningful rendered
-// pixels (audio-only, etc.) and intentionally skip the in-page verifier (VERIFY_SKIP in
-// examples/runners/web/vite.config.ts). They still get the Tier 1/2/4 error gate via --fail-on-error.
-const FINGERPRINT_SKIP = new Set<string>(['playingsound']);
-
-// Entries excluded from the cross-backend parity check. A string value skips all pairs; an array
-// of backend names excludes those backends from the pair matrix (remaining backends still compare).
-// Examples: 'effect-foo' skips parity entirely; ['canvas'] excludes canvas so only webgl·webgpu is
-// checked. Entries here render genuinely different content per backend (video timing), use an
-// approximate backend (canvas 2D compositing vs GPU shader), or hit unavoidable GPU precision
-// divergence — not a renderer bug. They are still regression-gated per backend.
-const PARITY_SKIP = new Map<string, 'all' | string[]>([
-  ['playingvideo', 'all'],
-  // Canvas effect runners approximate GPU shaders with 2D compositing — structural divergence, not bugs.
-  ['effect-hue-saturation', ['canvas']],
-  ['effect-lens-distortion', ['canvas']],
-  ['effect-lens-flare', ['canvas']],
-  ['effect-posterize', ['canvas']],
-  ['effect-vignette', ['canvas']],
-  // GPU floating-point precision divergence compounds across multi-step ray marches / sampling.
-  ['effect-displacement', 'all'],
-  ['effect-god-rays', 'all'],
-  ['effect-screen-space-fog', 'all'],
-]);
+interface ResolvedCaptureValidationOptions {
+  subject: string;
+  root: string;
+  rendererFilter: readonly string[];
+  captureFrames: number;
+  report: boolean;
+  updateFingerprints: boolean;
+  gateRegression: boolean;
+  gateParity: boolean;
+  stabilityEpsilon: number;
+  regressionTolerance: number;
+  parityTolerance: number;
+  fingerprintSkip: ReadonlySet<string>;
+  paritySkip: Readonly<Record<string, 'all' | Readonly<string[]>>>;
+}
 
 interface Verification {
   render: string;
@@ -130,10 +96,8 @@ interface Verification {
 }
 
 function distance(a: string, b: string): number | null {
-  const fa = parseSurfaceFingerprint(a);
-  const fb = parseSurfaceFingerprint(b);
-  if (fa === null || fb === null || fa.gridSize !== fb.gridSize) return null;
-  return compareSurfaceFingerprints(fa, fb);
+  const difference = compareCaptureFingerprints(a, b);
+  return Number.isFinite(difference) ? difference : null;
 }
 
 // Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
@@ -141,8 +105,9 @@ function distance(a: string, b: string): number | null {
 async function loadFingerprint(
   context: BrowserContext,
   baseUrl: string,
-  name: string,
+  entry: Readonly<Entry>,
   renderer: string,
+  subject: string,
 ): Promise<{ fingerprint: string | null; reason: string; unavailable: boolean; aborted: boolean }> {
   // The real failure reason can arrive three ways, and Playwright's pageerror only catches the first:
   // a synchronous uncaught exception (pageerror), an unhandled promise rejection (the verifier is an
@@ -160,7 +125,11 @@ async function loadFingerprint(
     page.on('console', (m) => {
       if (m.type() === 'error') pageError ||= m.text();
     });
-    await page.goto(`${baseUrl}/${routePrefix}/${name}/${routeSegment(renderer)}/`, {
+    const route =
+      entry.routes?.[renderer] ??
+      entry.route?.(renderer) ??
+      `${subject === 'examples' ? 'examples' : 'tests'}/${entry.name}/${routeSegment(renderer)}/`;
+    await page.goto(`${baseUrl}/${route}`, {
       waitUntil: 'domcontentloaded',
       timeout: 15_000,
     });
@@ -222,10 +191,11 @@ interface EntryResult {
 async function processEntry(
   context: BrowserContext,
   baseUrl: string,
-  entry: { name: string; renderers: string[] },
+  entry: Readonly<Entry>,
   entryIndex: number,
   totalEntries: number,
   isAborted: () => boolean,
+  options: Readonly<ResolvedCaptureValidationOptions>,
 ): Promise<EntryResult> {
   const result: EntryResult = {
     regressionFailures: 0,
@@ -242,11 +212,9 @@ async function processEntry(
 
   const renderers = entry.renderers.filter((r) => {
     const i = r.indexOf(':');
-    const lib = i === -1 ? null : r.slice(0, i);
     const renderer = i === -1 ? r : r.slice(i + 1);
     if (renderer === 'dom') return false;
-    if (lib !== null && lib !== 'flight') return false;
-    return rendererMatchesFilter(r, rendererFilter);
+    return rendererMatchesFilter(r, options.rendererFilter);
   });
 
   const labelWidth = Math.max(6, ...renderers.map((r) => r.length));
@@ -255,7 +223,7 @@ async function processEntry(
   const detailLine = (glyph: string, label: string, message: string, paint: (s: string) => string): string =>
     formatDetailLine(glyph, label, labelWidth, message, paint);
 
-  if (FINGERPRINT_SKIP.has(entry.name)) {
+  if (options.fingerprintSkip.has(entry.name)) {
     result.skipped += renderers.length;
     return result;
   }
@@ -264,7 +232,7 @@ async function processEntry(
 
   for (const renderer of renderers) {
     if (isAborted()) break;
-    const first = await loadFingerprint(context, baseUrl, entry.name, renderer);
+    const first = await loadFingerprint(context, baseUrl, entry, renderer, options.subject);
     if (first.aborted) break;
     if (first.fingerprint === null) {
       if (first.unavailable) {
@@ -278,24 +246,24 @@ async function processEntry(
     }
     const fingerprint = first.fingerprint;
 
-    if (updateFingerprints) {
-      const second = await loadFingerprint(context, baseUrl, entry.name, renderer);
+    if (options.updateFingerprints) {
+      const second = await loadFingerprint(context, baseUrl, entry, renderer, options.subject);
       if (second.aborted) break;
       const selfDistance = second.fingerprint ? distance(fingerprint, second.fingerprint) : null;
-      if (selfDistance === null || selfDistance > stabilityEpsilon) {
+      if (selfDistance === null || selfDistance > options.stabilityEpsilon) {
         const note = `not baselined — nondeterministic (self-distance ${selfDistance?.toFixed(2) ?? 'n/a'})`;
         result.output.push(statusLine('skip', renderer, note));
         result.skipped++;
         continue;
       }
-      setBaselineField(root, tool, entry.name, renderer, 'fingerprint', fingerprint);
+      setBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint', fingerprint);
       result.output.push(statusLine('pass', renderer, 'baseline written'));
       result.updated++;
       eligible.set(renderer, fingerprint);
       continue;
     }
 
-    const committed = getBaselineField(root, tool, entry.name, renderer, 'fingerprint');
+    const committed = getBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint');
     if (committed === null) {
       result.output.push(statusLine('muted', renderer, 'no fingerprint baseline — skipped'));
       result.skipped++;
@@ -306,14 +274,19 @@ async function processEntry(
     if (dist === null) {
       result.output.push(statusLine('fail', renderer, 'unreadable fingerprint baseline'));
       result.regressionFailures++;
-    } else if (report) {
+    } else if (options.report) {
       result.output.push(detailLine(pc.dim('='), renderer, pc.dim(`regression distance ${dist.toFixed(2)}`), pc.dim));
-    } else if (gateRegression) {
-      if (dist > regressionTolerance) {
-        result.output.push(statusLine('fail', renderer, `regression ${dist.toFixed(2)} > ${regressionTolerance}`));
+    } else if (options.gateRegression) {
+      const check = evaluateCaptureRegression(fingerprint, committed, options.regressionTolerance);
+      if (!check.pass) {
+        result.output.push(
+          statusLine('fail', renderer, `regression ${dist.toFixed(2)} > ${options.regressionTolerance}`),
+        );
         result.regressionFailures++;
       } else {
-        result.output.push(statusLine('pass', renderer, `regression ${dist.toFixed(2)} ≤ ${regressionTolerance}`));
+        result.output.push(
+          statusLine('pass', renderer, `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance}`),
+        );
         result.regressionPasses++;
       }
     }
@@ -323,28 +296,29 @@ async function processEntry(
 
   // Tier 3 (parity): cross-backend agreement among the eligible (baselined / self-stable) raster
   // backends.
-  const skip = PARITY_SKIP.get(entry.name);
+  const skip = options.paritySkip[entry.name];
   const present = skip === 'all' ? [] : [...eligible.keys()].filter((r) => !skip?.includes(r));
-  const pairs: { label: string; dist: number }[] = [];
+  const pairs: { a: string; b: string; label: string; dist: number }[] = [];
   for (let i = 0; i < present.length; i++) {
     for (let j = i + 1; j < present.length; j++) {
       const [a, b] = [present[i], present[j]];
       const dist = distance(eligible.get(a)!, eligible.get(b)!);
-      if (dist !== null) pairs.push({ label: `${a}·${b}`, dist });
+      if (dist !== null) pairs.push({ a: a!, b: b!, label: `${a}·${b}`, dist });
     }
   }
   if (pairs.length > 0) {
-    if (report) {
+    if (options.report) {
       const segments = pairs.map((p) => `${p.label} ${p.dist.toFixed(2)}`).join('  ');
       result.output.push(detailLine(pc.dim('~'), 'parity', pc.dim(segments), pc.dim));
-    } else if (gateParity) {
+    } else if (options.gateParity) {
       let anyFailed = false;
       const segments = pairs
         .map((p) => {
-          if (p.dist > parityTolerance) {
+          const check = evaluateCaptureParity(eligible.get(p.a)!, eligible.get(p.b)!, options.parityTolerance);
+          if (!check.pass) {
             anyFailed = true;
             result.parityFailures++;
-            return pc.red(`${p.label} ${p.dist.toFixed(2)}>${parityTolerance}`);
+            return pc.red(`${p.label} ${p.dist.toFixed(2)}>${options.parityTolerance}`);
           }
           result.parityPasses++;
           return pc.dim(`${p.label} ${p.dist.toFixed(2)}`);
@@ -354,7 +328,7 @@ async function processEntry(
       const line = detailLine(
         paint(anyFailed ? '✗' : '✓'),
         'parity',
-        `${segments}  ${pc.dim(`(≤${parityTolerance})`)}`,
+        `${segments}  ${pc.dim(`(≤${options.parityTolerance})`)}`,
         paint,
       );
       result.output.push(line);
@@ -364,26 +338,33 @@ async function processEntry(
   return result;
 }
 
-async function main(): Promise<void> {
-  let entries = discoverEntries(tool, root);
-  if (filter) entries = entries.filter((e) => e.name.includes(filter));
-  if (entries.length === 0) {
-    console.error(`No ${tool} entries found  filter="${filter}"`);
-    process.exit(1);
-  }
-
-  if (useDev) {
-    console.log(`Starting ${tool} dev server…`);
-  } else if (forceBuild) {
-    console.log(`Building and serving ${tool} dist…`);
-  } else {
-    console.log(`Serving ${tool} dist (use --build to rebuild, --dev for the Vite server)…`);
-  }
-
-  const server = useDev ? await resolveServer({ tool, root }) : await resolveStaticServer({ tool, root, forceBuild });
-  console.log(`Ready at ${server.url}\n`);
-  const { browser, context } = await launchBrowser({ captureFrames });
-
+export async function runCaptureValidation(
+  input: Readonly<CaptureValidationOptions>,
+): Promise<CaptureValidationResult> {
+  const entries = input.filter
+    ? input.entries.filter((entry) => entry.name.includes(input.filter!))
+    : [...input.entries];
+  if (entries.length === 0) throw new Error(`No validation entries found subject=${input.subject}`);
+  const options: ResolvedCaptureValidationOptions = {
+    subject: input.subject,
+    root: resolve(input.root ?? process.cwd()),
+    rendererFilter: input.rendererFilter ?? [],
+    captureFrames: Math.max(1, input.captureFrames ?? 1),
+    report: input.report ?? false,
+    updateFingerprints: input.updateFingerprints ?? false,
+    gateRegression: input.gateRegression ?? true,
+    gateParity: input.gateParity ?? true,
+    stabilityEpsilon: input.stabilityEpsilon ?? 4,
+    regressionTolerance: input.regressionTolerance ?? CAPTURE_REGRESSION_TOLERANCE,
+    parityTolerance: input.parityTolerance ?? CAPTURE_PARITY_TOLERANCE,
+    fingerprintSkip: new Set(input.fingerprintSkip ?? []),
+    paritySkip: input.paritySkip ?? {},
+  };
+  const launched = await launchBrowser({ captureFrames: options.captureFrames }).catch((error: unknown) => {
+    input.server.kill();
+    throw error;
+  });
+  const { browser, context } = launched;
   const isAborted = installAbortHandler();
 
   let regressionFailures = 0;
@@ -395,15 +376,23 @@ async function main(): Promise<void> {
   let skipped = 0;
 
   try {
-    if (useParallel) {
+    if (!input.sequential) {
       const jobs = entries.map((entry, i) => ({ entry, index: i }));
-      const activeWorkers = Math.min(workerCount, jobs.length);
+      const activeWorkers = Math.min(Math.max(1, input.workerCount ?? 6), jobs.length);
       const workers = Array.from({ length: activeWorkers }, async () => {
         while (true) {
           if (isAborted()) break;
           const job = jobs.shift();
           if (!job) break;
-          const result = await processEntry(context, server.url, job.entry, job.index, entries.length, isAborted);
+          const result = await processEntry(
+            context,
+            input.server.url,
+            job.entry,
+            job.index,
+            entries.length,
+            isAborted,
+            options,
+          );
           regressionFailures += result.regressionFailures;
           parityFailures += result.parityFailures;
           regressionPasses += result.regressionPasses;
@@ -420,11 +409,12 @@ async function main(): Promise<void> {
         if (isAborted()) break;
         const result = await processEntry(
           context,
-          server.url,
+          input.server.url,
           entries[entryIndex],
           entryIndex,
           entries.length,
           isAborted,
+          options,
         );
         regressionFailures += result.regressionFailures;
         parityFailures += result.parityFailures;
@@ -438,13 +428,13 @@ async function main(): Promise<void> {
     }
   } finally {
     await browser.close().catch(() => {});
-    server.kill();
+    input.server.kill();
   }
 
   const interrupted = isAborted();
   const note = interrupted ? pc.yellow('   — interrupted (partial run)') : '';
 
-  if (updateFingerprints) {
+  if (options.updateFingerprints) {
     console.log(
       '\n' +
         formatSummaryLine(loadFailures > 0, [
@@ -456,12 +446,11 @@ async function main(): Promise<void> {
     );
     if (loadFailures > 0) {
       console.error(pc.red(`${loadFailures} test(s) failed to load/verify — not a clean baseline run.`));
-      process.exit(1);
+      return createResult(true);
     }
-    if (interrupted) process.exit(130);
-    return;
+    return createResult(loadFailures > 0);
   }
-  if (report) {
+  if (options.report) {
     console.log(
       '\n' +
         formatSummaryLine(loadFailures > 0, [
@@ -471,9 +460,7 @@ async function main(): Promise<void> {
         pc.dim('   (report only — nothing gated)') +
         note,
     );
-    if (loadFailures > 0) process.exit(1);
-    if (interrupted) process.exit(130);
-    return;
+    return createResult(loadFailures > 0);
   }
   const failed = regressionFailures > 0 || parityFailures > 0 || loadFailures > 0;
   console.log(
@@ -488,13 +475,19 @@ async function main(): Promise<void> {
       ]) +
       note,
   );
-  if (failed) process.exit(1);
-  if (interrupted) process.exit(130);
-}
+  return createResult(failed);
 
-main().catch((err: unknown) => {
-  // A closed browser/page reject is the interrupt racing teardown — exit quietly, not with a raw stack.
-  if (isBrowserClosedError(err)) process.exit(130);
-  console.error(err);
-  process.exit(1);
-});
+  function createResult(shouldFail: boolean): CaptureValidationResult {
+    return {
+      aborted: interrupted,
+      loadFailures,
+      parityFailures,
+      parityPasses,
+      regressionFailures,
+      regressionPasses,
+      shouldFail,
+      skipped,
+      updated,
+    };
+  }
+}

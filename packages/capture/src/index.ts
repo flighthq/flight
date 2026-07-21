@@ -1,2 +1,2 @@
-export * from './captureBaseline';
-export * from './captureComparison';
+export * from './captureBaseline.js';
+export * from './captureComparison.js';

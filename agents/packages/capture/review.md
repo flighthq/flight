@@ -10,7 +10,7 @@ ingested:
 
 # capture — Review
 
-**Verdict:** solid — 72/100. The 2026-07-09 first-build decision (pure policy/format layer, no Playwright/Node I/O) is delivered exactly and tested well; the score is capped not by the code but by adoption: the package has **zero consumers** today, and three of the four 2026-07-03 Approved items (which now execute in `tool-capture`'s source) remain undelivered.
+**Verdict:** solid — 82/100. The pure policy/format layer is delivered and tested well, and is now consumed by `@flighthq/tool-capture` for fingerprint comparison and baseline serialization. Remaining gaps are diagnostics for silent sentinels and the outstanding capture-determinism roadmap items.
 
 ## Present capabilities
 
@@ -23,7 +23,7 @@ Two source files under `packages/capture/src/`, types header-first in `@flighthq
 
 ## Gaps
 
-1. **No consumers.** `grep` finds `@flighthq/capture` imported only by the sdk barrel. `scripts/compare-render.ts` still calls `@flighthq/surface`'s `parseSurfaceFingerprint`/`compareSurfaceFingerprints` directly with its own CLI tolerances, and `tool-capture`'s `baselineStore.ts` re-implements the identical baseline format/merge logic (its `writeBaseline` mirrors `formatCaptureBaseline` line-for-line). This duplication is the blessed deferral (2026-07-09 Decision: tool adoption follows the Rust parity crate) — recorded here because it is the package's largest real-world risk: two byte-format twins that can drift.
+1. **Tooling adoption completed.** `@flighthq/tool-capture` now imports the comparison defaults/evaluators and delegates baseline parsing, formatting, and field operations to this package. Its `validate` CLI and API replace the loose comparison script, closing the duplicated-format drift risk.
 2. **Approved-ledger items outstanding.** Of the four 2026-07-03 Approved items (which target the tooling home): per-test tolerance overrides — not done (`compare-render.ts` still uses global `--regression-tolerance`/`--parity-tolerance` flags); raw-RGBA hashing — not done (`tool-capture/captureEntry.ts` hashes PNG screenshot bytes); clock pinning — not done (`tool-capture/captureBrowser.ts` seeds `Math.random` and explicitly notes "It does not pin the clock"). Fingerprint-capture acceleration is partially addressed by `tool-capture`'s `captureParallel`. Since the tooling home has itself moved into `@flighthq/tool-capture`, these items now straddle two cells.
 3. **No `explain*` for the silent sentinels.** `compareCaptureFingerprints` collapses three distinct causes (unparseable a, unparseable b, grid mismatch) into one Infinity; `parseCaptureBaseline` collapses malformed-JSON vs non-object into null. The diagnostics rule gives every silent sentinel a shakeable `explain*` query returning plain data — none exists.
 4. **Per-column tolerance has no home in the record shape.** The Approved per-test tolerance override will need a place to live; `CaptureColumnBaseline` is `{ fingerprint?, sha256? }` only. (A format decision, not a bug.)

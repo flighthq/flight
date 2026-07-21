@@ -5,6 +5,10 @@ updated: 2026-07-09
 
 # capture — Status Log
 
+## 2026-07-21 — adopted by tool-capture
+
+The deferred TypeScript tooling adoption is complete. `@flighthq/tool-capture` now consumes the comparison tolerances/evaluators and baseline record operations directly. Its manifest-driven `validate` CLI and `runCaptureValidation` API own Playwright fingerprint collection, self-stability rechecks, baseline-file I/O, parity/regression gates, reporting, and interruption. Flight's parity/regression npm scripts use that CLI; the loose `scripts/compare-render.ts` implementation was removed.
+
 ## 2026-07-09 — standalone policy/format layer shipped (first build)
 
 Built the pure, importable-in-isolation first layer per the 2026-07-09 charter decision. No Playwright, no Node `fs`, no DOM — depends only on `@flighthq/surface` (fingerprint math) and `@flighthq/types` (header types).

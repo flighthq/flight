@@ -29,7 +29,7 @@ export interface Entry {
 // null-fingerprint / page-error outcomes that may be skipped rather than failed — the gate verifies
 // backends where they exist and stays green on machines without them. A real render bug still fails:
 // a validation error (bad writeBuffer/copy) is logged before the device dies, and is matched first.
-// Shared with compare-render.ts so the smoke gate and the parity/regression gate agree on what counts
+// Shared by capture and validation so the smoke gate and the parity/regression gate agree on what counts
 // as "unavailable".
 export const BACKEND_UNAVAILABLE =
   /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter|WebGPU is not supported|external Instance reference no longer exists|device (was )?lost|device is lost/i;

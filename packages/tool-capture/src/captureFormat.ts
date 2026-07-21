@@ -1,4 +1,4 @@
-// Terminal output formatting shared by the capture.ts / compare-render.ts CLIs so their progress and
+// Terminal output formatting shared by the capture and validation passes so their progress and
 // summary lines stay aligned.
 
 import pc from 'picocolors';
