@@ -59,7 +59,7 @@ Read the `observe` block to interpret what you're seeing without guessing:
 ```
 
 - `pageErrorCount > 0` → **broken code** (the page threw). Read `logs.jsonl` for the exception — this is a real bug to fix.
-- `blank: true` + `pageErrorCount: 0` + `coverage ≈ 0` + a registered `verifyTargetKind` → the page **ran cleanly but rendered nothing**: a software-GL limitation of this sandbox (e.g. GPU skinning / `rgba16f` on SwiftShader), **not** your code. Confirm on real hardware.
+- `blank: true` + `pageErrorCount: 0` + `coverage ≈ 0` + a registered `verifyTargetKind` → the page **ran cleanly but rendered nothing**. On a simple scene this is a real bug; on a **heavy 3D scene** it's **UNKNOWN** (a software-GL quirk _or_ a specific render-path bug — not a proven limitation; see "Known failure modes" below). Verify on real hardware before concluding anything.
 - `blank: false` / `coverage > 0` → something drew; just read `screenshot.png`.
 
 Use `--observe` whenever a plain capture reports "did not produce a render image" — it converts that dead-end into an image plus a machine-readable reason.
