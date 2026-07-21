@@ -37,6 +37,15 @@ export function equalsMaterial(a: Readonly<Material>, b: Readonly<Material>): bo
   return true;
 }
 
+// Returns `material` narrowed to the specific material type `T` when its `kind` matches, else
+// `null` (including for a `null` input). The sanctioned narrowing for the open material-kind model:
+// `getMaterialOfKind(mesh.materials[0], BlinnPhongMaterialKind)` yields a `BlinnPhongMaterial | null`
+// to read or re-derive from, without an unchecked `as` at the call site. `kind` is a registry key, so
+// a vendor-prefixed custom kind narrows the same way.
+export function getMaterialOfKind<T extends Material>(material: Readonly<Material> | null, kind: Kind): T | null {
+  return material !== null && material.kind === kind ? (material as T) : null;
+}
+
 // Internal helper — writes all own enumerable data fields from `src` onto `dst`. Skips
 // the `kind` field (already set on `dst` at construction). Handles the `standard` sub-block
 // by shallow-field copy; all other values are assigned.
