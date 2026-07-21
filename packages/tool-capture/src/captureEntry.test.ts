@@ -86,6 +86,20 @@ describe('buildCaptureObserveDiagnostics', () => {
         logs: [],
       }).blank,
     ).toBe(false);
+
+    // Measured pixels win over the verifier: a scene the verifier never published (blank=true) but
+    // whose canvas is clearly full (coverage 0.98) is NOT blank — the verify-publish false-positive.
+    expect(
+      buildCaptureObserveDiagnostics({
+        backend: 'webgl',
+        blank: true,
+        coverage: 0.98,
+        verifyPublished: false,
+        verifyTargetKind: 'webgl',
+        warmupFrames: 600,
+        logs: [],
+      }).blank,
+    ).toBe(false);
   });
 });
 
