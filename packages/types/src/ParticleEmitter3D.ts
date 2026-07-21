@@ -1,4 +1,4 @@
-import type { ParticleEmitterData } from './ParticleEmitter';
+import type { ParticleEmitterData } from './ParticleEmitter2D';
 import type { ParticleBlendMode } from './ParticleEmitterConfig';
 import type { SceneNode, SceneNodeRuntime } from './SceneNode';
 

@@ -8,7 +8,7 @@ export * from './glColorAdjustment';
 export * from './glDefaultMaterial';
 export * from './glDisplayObject';
 export * from './glDisplayObjectRegistration';
-export * from './glParticleEmitter';
+export * from './glParticleEmitter2D';
 export * from './glQuadBatch';
 export * from './glRichText';
 export * from './glScale9Mapper';

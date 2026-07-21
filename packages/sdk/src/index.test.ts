@@ -62,8 +62,8 @@ describe('package exports', () => {
       expect(sdk.createParticleEmitterConfig).toBeTypeOf('function');
     });
 
-    it('exports ParticleEmitterKind with expected value', () => {
-      expect(sdk.ParticleEmitterKind).toBe('ParticleEmitter');
+    it('exports ParticleEmitter2DKind with expected value', () => {
+      expect(sdk.ParticleEmitter2DKind).toBe('ParticleEmitter2D');
     });
   });
 

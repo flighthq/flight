@@ -11,7 +11,7 @@ export type BitmapTextAlign = 'center' | 'justify' | 'left' | 'right';
 // The QuadBatch-backed bitmap text display node. It lays out a string's glyphs from a `GlyphSource`
 // (per-glyph atlas rect, advance, bearing, kerning, line metrics) and emits one glyph quad per
 // visible glyph into a backing `@flighthq/sprite` QuadBatch — one batched draw per glyph-atlas page.
-// It is the composition-layer sibling of `MovieClip` (over a timeline) and `ParticleEmitter` (over a
+// It is the composition-layer sibling of `MovieClip` (over a timeline) and `ParticleEmitter2D` (over a
 // particle sim): a display node assembled from lower primitives.
 //
 // The node registers no GPU renderer. Its backing QuadBatches (on `BitmapTextRuntime.quadBatches`,

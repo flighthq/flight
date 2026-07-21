@@ -21,7 +21,7 @@ import type {
 import { DefaultMaterialKind } from '@flighthq/types';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { drawGlSceneParticleEmitters } from './glParticleEmitter3D';
+import { drawGlSceneParticleEmitter2Ds } from './glParticleEmitter3D';
 import type { GlSceneDrawEntry } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
 
@@ -208,10 +208,10 @@ export function drawGlScene(
   // ParticleEmitter3D nodes carry no geometry, so prepareSceneRender never lists them among the
   // visible meshes above. Draw them here as a final transparent instanced pass so the common
   // drawGlScene path renders a scene's emitters without the caller also invoking the emitter pass
-  // by hand. drawGlSceneParticleEmitters stays exported for manual ordering; it early-returns (and
+  // by hand. drawGlSceneParticleEmitter2Ds stays exported for manual ordering; it early-returns (and
   // skips its own cache invalidation) when the scene has no emitters, so the mesh-only path is
   // unaffected and the invalidate below still covers it.
-  drawGlSceneParticleEmitters(state, scene, camera, lights);
+  drawGlSceneParticleEmitter2Ds(state, scene, camera, lights);
 
   // Mesh/skybox/shadow binds above issued raw gl.useProgram/blendFunc/bindFramebuffer calls that
   // render-gl's own binding cache did not observe. Invalidate it so the next render-gl operation —

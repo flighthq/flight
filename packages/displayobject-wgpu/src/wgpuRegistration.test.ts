@@ -3,7 +3,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import {
   BitmapKind,
   DisplayObjectKind,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   QuadBatchKind,
   RichTextKind,
   Scale9ShapeKind,
@@ -36,7 +36,7 @@ describe('registerWgpuDisplayObjectRenderers', () => {
   it('registers particle emitter renderer', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuDisplayObjectRenderers(state);
-    expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitterKind)).not.toBeUndefined();
+    expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitter2DKind)).not.toBeUndefined();
   });
 
   it('registers quad batch renderer', async () => {
@@ -92,7 +92,7 @@ describe('registerWgpuSpriteRenderers', () => {
   it('registers particle emitter renderer', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuSpriteRenderers(state);
-    expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitterKind)).not.toBeUndefined();
+    expect(getRenderStateRuntime(state).rendererMap.get(ParticleEmitter2DKind)).not.toBeUndefined();
   });
 
   it('registers quad batch renderer', async () => {

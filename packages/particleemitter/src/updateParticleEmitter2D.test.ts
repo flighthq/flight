@@ -3,9 +3,9 @@ import { invalidateNodeLocalTransform } from '@flighthq/node';
 import { PARTICLE_VELOCITY_STRIDE, createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles';
 import type { TextureAtlas } from '@flighthq/types';
 
-import { createParticleEmitter, reserveParticleEmitter } from './particleEmitter';
-import { prewarmParticleEmitter } from './prewarmParticleEmitter';
-import { isParticleEmitterComplete, updateParticleEmitter } from './updateParticleEmitter';
+import { createParticleEmitter2D, reserveParticleEmitter2D } from './particleEmitter';
+import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D';
+import { isParticleEmitter2DComplete, updateParticleEmitter2D } from './updateParticleEmitter2D';
 
 function makeAtlas(): TextureAtlas {
   return {
@@ -14,9 +14,9 @@ function makeAtlas(): TextureAtlas {
   } as TextureAtlas;
 }
 
-describe('isParticleEmitterComplete', () => {
-  it('isParticleEmitterComplete is true once a one-shot emitter has finished and all particles died', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+describe('isParticleEmitter2DComplete', () => {
+  it('isParticleEmitter2DComplete is true once a one-shot emitter has finished and all particles died', () => {
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 10,
@@ -26,60 +26,60 @@ describe('isParticleEmitterComplete', () => {
       duration: 1,
       loop: false,
     });
-    expect(isParticleEmitterComplete(emitter, state, config)).toBe(false);
+    expect(isParticleEmitter2DComplete(emitter, state, config)).toBe(false);
     // Emit for 1s.
-    for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.1);
+    for (let i = 0; i < 10; i++) updateParticleEmitter2D(emitter, state, config, 0.1);
     expect(emitter.data.particleCount).toBeGreaterThan(0);
-    expect(isParticleEmitterComplete(emitter, state, config)).toBe(false); // particles still alive
+    expect(isParticleEmitter2DComplete(emitter, state, config)).toBe(false); // particles still alive
     // Let every particle die out (lifetime 0.5s).
-    for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.1);
+    for (let i = 0; i < 10; i++) updateParticleEmitter2D(emitter, state, config, 0.1);
     expect(emitter.data.particleCount).toBe(0);
-    expect(isParticleEmitterComplete(emitter, state, config)).toBe(true);
+    expect(isParticleEmitter2DComplete(emitter, state, config)).toBe(true);
   });
 
-  it('isParticleEmitterComplete is always false for infinite or looping emitters', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+  it('isParticleEmitter2DComplete is always false for infinite or looping emitters', () => {
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const infinite = createParticleEmitterConfig({ spawnRate: 0, duration: 0 });
-    expect(isParticleEmitterComplete(emitter, state, infinite)).toBe(false);
+    expect(isParticleEmitter2DComplete(emitter, state, infinite)).toBe(false);
     const looping = createParticleEmitterConfig({ spawnRate: 0, duration: 1, loop: true });
-    expect(isParticleEmitterComplete(emitter, state, looping)).toBe(false);
+    expect(isParticleEmitter2DComplete(emitter, state, looping)).toBe(false);
   });
 });
 
-describe('updateParticleEmitter', () => {
+describe('updateParticleEmitter2D', () => {
   it('spawns particles up to spawnRate × deltaTime', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, maxParticles: 100 });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(10);
   });
 
   it('respects maxParticles limit', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 100, maxParticles: 5 });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(5);
   });
 
   it('ages particles over time', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
       lifetimeMin: 10,
       lifetimeMax: 10,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn 1 particle (spawnRate*deltaTime=1)
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn 1 particle (spawnRate*deltaTime=1)
     expect(emitter.data.particleCount).toBe(1);
-    updateParticleEmitter(emitter, state, config, 0.1); // age by 0.1
+    updateParticleEmitter2D(emitter, state, config, 0.1); // age by 0.1
     expect(state.lifetimes[0]).toBeCloseTo(0.1);
   });
 
   it('removes particles when lifetime expires', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -87,15 +87,15 @@ describe('updateParticleEmitter', () => {
       lifetimeMax: 0.5,
     });
     // Spawn one particle
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(1);
     // Advance past lifetime
-    updateParticleEmitter(emitter, state, config, 0.6);
+    updateParticleEmitter2D(emitter, state, config, 0.6);
     expect(emitter.data.particleCount).toBe(0);
   });
 
   it('integrates velocity with gravity', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -109,16 +109,16 @@ describe('updateParticleEmitter', () => {
       directionX: 0,
       directionY: -1,
     });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     // After spawn, position is (0,0). After next update with gravity...
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     // vx = 100*1 = 100, x += 100*1 = 100 (gravity applied to velocity then integrated)
     const x = emitter.data.transforms[0];
     expect(x).toBeGreaterThan(0);
   });
 
   it('interpolates alpha from alphaStart to alphaEnd over lifetime', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -129,13 +129,13 @@ describe('updateParticleEmitter', () => {
       speedMin: 0,
       speedMax: 0,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn 1 particle
-    updateParticleEmitter(emitter, state, config, 0.5); // advance to half lifetime
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn 1 particle
+    updateParticleEmitter2D(emitter, state, config, 0.5); // advance to half lifetime
     expect(emitter.data.alphas[0]).toBeCloseTo(0.5, 1);
   });
 
   it('accumulates fractional spawn debt across frames', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 10,
@@ -144,12 +144,12 @@ describe('updateParticleEmitter', () => {
       maxParticles: 100,
     });
     // 10 frames of deltaTime=0.05 → total deltaTime=0.5 → 5 particles
-    for (let i = 0; i < 10; i++) updateParticleEmitter(emitter, state, config, 0.05);
+    for (let i = 0; i < 10; i++) updateParticleEmitter2D(emitter, state, config, 0.05);
     expect(emitter.data.particleCount).toBe(5);
   });
 
   it('grows emitter arrays as needed', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 100,
@@ -157,23 +157,23 @@ describe('updateParticleEmitter', () => {
       lifetimeMin: 10,
       lifetimeMax: 10,
     });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(50);
     expect(emitter.data.transforms.length).toBeGreaterThanOrEqual(50 * 4);
   });
 
   it('pre-reserved emitters do not allocate during update', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
-    reserveParticleEmitter(emitter, 100);
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    reserveParticleEmitter2D(emitter, 100);
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, maxParticles: 100 });
     const { transforms } = emitter.data;
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.transforms).toBe(transforms);
   });
 
   it('interpolates color from colorStart to colorEnd over lifetime', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -188,15 +188,15 @@ describe('updateParticleEmitter', () => {
       colorEndG: 0,
       colorEndB: 1,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn
-    updateParticleEmitter(emitter, state, config, 0.5); // half-life
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn
+    updateParticleEmitter2D(emitter, state, config, 0.5); // half-life
     expect(emitter.data.colors[0]).toBeCloseTo(0.5, 1); // R
     expect(emitter.data.colors[1]).toBeCloseTo(0, 1); // G
     expect(emitter.data.colors[2]).toBeCloseTo(0.5, 1); // B
   });
 
   it('animates scale over lifetime when scaleEnd differs from 1', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -208,13 +208,13 @@ describe('updateParticleEmitter', () => {
       scaleMax: 2,
       scaleEnd: 0,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn with scale=2
-    updateParticleEmitter(emitter, state, config, 0.5); // half-life → scale=1
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn with scale=2
+    updateParticleEmitter2D(emitter, state, config, 0.5); // half-life → scale=1
     expect(emitter.data.transforms[3]).toBeCloseTo(1, 1);
   });
 
   it('rotates particles at their individual rotation speed', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -228,15 +228,15 @@ describe('updateParticleEmitter', () => {
       rotationSpeedMin: Math.PI,
       rotationSpeedMax: Math.PI,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn
     const rotBefore = emitter.data.transforms[2];
-    updateParticleEmitter(emitter, state, config, 1); // advance 1s at π rad/s
+    updateParticleEmitter2D(emitter, state, config, 1); // advance 1s at π rad/s
     const rotAfter = emitter.data.transforms[2];
     expect(rotAfter - rotBefore).toBeCloseTo(Math.PI, 3);
   });
 
   it('spawns particles within the circle radius', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 50,
@@ -248,7 +248,7 @@ describe('updateParticleEmitter', () => {
       emitterShape: 'circle',
       emitterRadius: 100,
     });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     for (let i = 0; i < emitter.data.particleCount; i++) {
       const x = emitter.data.transforms[i * 4];
       const y = emitter.data.transforms[i * 4 + 1];
@@ -257,7 +257,7 @@ describe('updateParticleEmitter', () => {
   });
 
   it('spawns particles within the rect bounds', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 50,
@@ -270,7 +270,7 @@ describe('updateParticleEmitter', () => {
       emitterWidth: 200,
       emitterHeight: 100,
     });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     for (let i = 0; i < emitter.data.particleCount; i++) {
       const x = emitter.data.transforms[i * 4];
       const y = emitter.data.transforms[i * 4 + 1];
@@ -280,7 +280,7 @@ describe('updateParticleEmitter', () => {
   });
 
   it('fires a one-shot burst on the first frame', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 0,
@@ -290,14 +290,14 @@ describe('updateParticleEmitter', () => {
       lifetimeMin: 10,
       lifetimeMax: 10,
     });
-    updateParticleEmitter(emitter, state, config, 1 / 60);
+    updateParticleEmitter2D(emitter, state, config, 1 / 60);
     expect(emitter.data.particleCount).toBe(20);
-    updateParticleEmitter(emitter, state, config, 1 / 60);
+    updateParticleEmitter2D(emitter, state, config, 1 / 60);
     expect(emitter.data.particleCount).toBe(20); // no second burst
   });
 
   it('fires repeated bursts at the configured interval', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 0,
@@ -307,9 +307,9 @@ describe('updateParticleEmitter', () => {
       lifetimeMin: 10,
       lifetimeMax: 10,
     });
-    updateParticleEmitter(emitter, state, config, 0.01); // burst 1 fires (burstTimer=0)
+    updateParticleEmitter2D(emitter, state, config, 0.01); // burst 1 fires (burstTimer=0)
     expect(emitter.data.particleCount).toBe(5);
-    updateParticleEmitter(emitter, state, config, 1.0); // burst 2 fires after 1s
+    updateParticleEmitter2D(emitter, state, config, 1.0); // burst 2 fires after 1s
     expect(emitter.data.particleCount).toBe(10);
   });
 
@@ -322,7 +322,7 @@ describe('updateParticleEmitter', () => {
         { id: 2, x: 32, y: 0, width: 16, height: 16, pivotX: null, pivotY: null },
       ],
     } as TextureAtlas;
-    const emitter = createParticleEmitter({ data: { atlas } });
+    const emitter = createParticleEmitter2D({ data: { atlas } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -334,22 +334,22 @@ describe('updateParticleEmitter', () => {
       frameCount: 3,
       frameRate: 1,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn → frame 0
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn → frame 0
     expect(emitter.data.ids[0]).toBe(0);
-    updateParticleEmitter(emitter, state, config, 1); // +1s → frame 1
+    updateParticleEmitter2D(emitter, state, config, 1); // +1s → frame 1
     expect(emitter.data.ids[0]).toBe(1);
-    updateParticleEmitter(emitter, state, config, 1); // +1s → frame 2
+    updateParticleEmitter2D(emitter, state, config, 1); // +1s → frame 2
     expect(emitter.data.ids[0]).toBe(2);
-    updateParticleEmitter(emitter, state, config, 1); // +1s → frame 0 (wraps)
+    updateParticleEmitter2D(emitter, state, config, 1); // +1s → frame 0 (wraps)
     expect(emitter.data.ids[0]).toBe(0);
   });
 
   it('fires onSpawn callback for each spawned particle', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 3, lifetimeMin: 10, lifetimeMax: 10 });
     let spawnCount = 0;
-    updateParticleEmitter(emitter, state, config, 1, {
+    updateParticleEmitter2D(emitter, state, config, 1, {
       onSpawn: () => {
         spawnCount++;
       },
@@ -358,7 +358,7 @@ describe('updateParticleEmitter', () => {
   });
 
   it('fires onDeath callback with particle position when it expires', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -367,9 +367,9 @@ describe('updateParticleEmitter', () => {
       speedMin: 0,
       speedMax: 0,
     });
-    updateParticleEmitter(emitter, state, config, 1); // spawn
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn
     let deathFired = false;
-    updateParticleEmitter(emitter, state, config, 0.6, {
+    updateParticleEmitter2D(emitter, state, config, 0.6, {
       onDeath: () => {
         deathFired = true;
       },
@@ -378,15 +378,15 @@ describe('updateParticleEmitter', () => {
   });
 
   it('prewarm produces a non-empty particle state', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 2, lifetimeMax: 2 });
-    prewarmParticleEmitter(emitter, state, config, 1);
+    prewarmParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBeGreaterThan(0);
   });
 
   it('applies color variance — each particle gets its own birth/death color', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 5,
@@ -399,7 +399,7 @@ describe('updateParticleEmitter', () => {
       colorEndR: 0.5,
       colorEndVarianceR: 0.5,
     });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     // With full variance all born-red channels should be in [0, 1]
     for (let i = 0; i < emitter.data.particleCount; i++) {
       expect(state.colorBirth[i * 3]).toBeGreaterThanOrEqual(0);
@@ -408,15 +408,15 @@ describe('updateParticleEmitter', () => {
   });
 
   it('world-space flag is synced to emitter.data.worldSpace', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ worldSpace: true, spawnRate: 0 });
-    updateParticleEmitter(emitter, state, config, 1 / 60);
+    updateParticleEmitter2D(emitter, state, config, 1 / 60);
     expect(emitter.data.worldSpace).toBe(true);
   });
 
   it('world-space: spawned particle position is transformed to the emitter node world position', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     emitter.x = 200;
     emitter.y = 300;
     invalidateNodeLocalTransform(emitter);
@@ -429,7 +429,7 @@ describe('updateParticleEmitter', () => {
       speedMax: 0,
       worldSpace: true,
     });
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(1);
     // Particle origin should be at the emitter node's world position (200, 300), not (0, 0)
     expect(emitter.data.transforms[0]).toBeCloseTo(200);
@@ -437,7 +437,7 @@ describe('updateParticleEmitter', () => {
   });
 
   it('trail interpolation: particles spawned at interpolated positions along path', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     // spawnRate=5 with deltaTime=1 → 5 particles per frame; maxParticles=10 leaves room for frame 2
     const config = createParticleEmitterConfig({
@@ -450,14 +450,14 @@ describe('updateParticleEmitter', () => {
       worldSpace: true,
     });
     // Frame 1: emitter at (0, 0)
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     const countAfterFrame1 = emitter.data.particleCount;
     expect(countAfterFrame1).toBe(5);
 
     // Frame 2: emitter node moves to (100, 0) — trail interpolates spawn positions
     emitter.x = 100;
     invalidateNodeLocalTransform(emitter);
-    updateParticleEmitter(emitter, state, config, 1);
+    updateParticleEmitter2D(emitter, state, config, 1);
     expect(emitter.data.particleCount).toBe(10);
 
     // The 5 new particles should span the path from x=0 to x=100
@@ -472,7 +472,7 @@ describe('updateParticleEmitter', () => {
   });
 
   it('velocity inheritance: new particles receive fraction of emitter velocity', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 0,
@@ -489,12 +489,12 @@ describe('updateParticleEmitter', () => {
     });
     // Establish prev position
     emitter.x = 0;
-    updateParticleEmitter(emitter, state, config, 1 / 60);
+    updateParticleEmitter2D(emitter, state, config, 1 / 60);
 
     // Move emitter, trigger burst
     state.burstTimer = 0;
     emitter.x = 100;
-    updateParticleEmitter(emitter, state, config, 1 / 60);
+    updateParticleEmitter2D(emitter, state, config, 1 / 60);
     // Emitter moved 100px in 1/60s → velocity ≈ 6000 px/s
     // With inheritance=1, vx of new particle should be ≈ 6000
     const vx = state.velocities[(emitter.data.particleCount - 1) * PARTICLE_VELOCITY_STRIDE];
@@ -502,7 +502,7 @@ describe('updateParticleEmitter', () => {
   });
 
   it('ignores a zero-deltaTime frame: no spawning, aging, or velocity corruption', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 0,
@@ -517,11 +517,11 @@ describe('updateParticleEmitter', () => {
     });
     // Establish a previous position, then move the emitter and step with deltaTime=0.
     emitter.x = 0;
-    updateParticleEmitter(emitter, state, config, 1 / 60);
+    updateParticleEmitter2D(emitter, state, config, 1 / 60);
     const countBefore = emitter.data.particleCount;
     state.burstTimer = 0; // arm a burst that would otherwise fire on the next step
     emitter.x = 100;
-    updateParticleEmitter(emitter, state, config, 0);
+    updateParticleEmitter2D(emitter, state, config, 0);
     // No new particles spawned on a zero-deltaTime frame...
     expect(emitter.data.particleCount).toBe(countBefore);
     // ...and existing particle velocities remain finite (no divide-by-deltaTime poisoning).
@@ -532,27 +532,27 @@ describe('updateParticleEmitter', () => {
   });
 
   it('ignores a negative-deltaTime frame', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 10, lifetimeMax: 10 });
-    updateParticleEmitter(emitter, state, config, 1); // spawn 10
+    updateParticleEmitter2D(emitter, state, config, 1); // spawn 10
     const countBefore = emitter.data.particleCount;
     const accBefore = state.spawnAccumulator;
-    updateParticleEmitter(emitter, state, config, -1);
+    updateParticleEmitter2D(emitter, state, config, -1);
     expect(emitter.data.particleCount).toBe(countBefore);
     expect(state.spawnAccumulator).toBe(accBefore); // accumulator not driven negative
   });
 
   it('still syncs the world-space flag on a zero-deltaTime frame', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ worldSpace: true, spawnRate: 10 });
-    updateParticleEmitter(emitter, state, config, 0);
+    updateParticleEmitter2D(emitter, state, config, 0);
     expect(emitter.data.worldSpace).toBe(true);
   });
 
   it('a finite, non-looping emitter stops spawning after its duration', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 10,
@@ -563,17 +563,17 @@ describe('updateParticleEmitter', () => {
       loop: false,
     });
     // Step well past the 1s duration so emission has definitely stopped.
-    for (let i = 0; i < 20; i++) updateParticleEmitter(emitter, state, config, 0.1);
+    for (let i = 0; i < 20; i++) updateParticleEmitter2D(emitter, state, config, 0.1);
     const countAfterDuration = emitter.data.particleCount;
     expect(countAfterDuration).toBeGreaterThan(0);
     expect(countAfterDuration).toBeLessThan(15); // ~10 particles, not unbounded
     // Stepping further spawns nothing more (and nothing dies yet).
-    for (let i = 0; i < 20; i++) updateParticleEmitter(emitter, state, config, 0.1);
+    for (let i = 0; i < 20; i++) updateParticleEmitter2D(emitter, state, config, 0.1);
     expect(emitter.data.particleCount).toBe(countAfterDuration);
   });
 
   it('a looping emitter keeps spawning past its duration', () => {
-    const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 10,
@@ -583,7 +583,7 @@ describe('updateParticleEmitter', () => {
       duration: 1,
       loop: true,
     });
-    for (let i = 0; i < 30; i++) updateParticleEmitter(emitter, state, config, 0.1);
+    for (let i = 0; i < 30; i++) updateParticleEmitter2D(emitter, state, config, 0.1);
     // 3 seconds at rate 10 → ~30 particles, well past the 1s duration.
     expect(emitter.data.particleCount).toBeGreaterThan(20);
   });
@@ -599,7 +599,7 @@ describe('updateParticleEmitter', () => {
       lifetimes: number[];
       count: number;
     } => {
-      const emitter = createParticleEmitter({ data: { atlas: makeAtlas() } });
+      const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
       const state = createParticleEmitterState(createRandomSource(1234));
       const config = createParticleEmitterConfig({
         spawnRate: 30,
@@ -615,7 +615,7 @@ describe('updateParticleEmitter', () => {
         scaleMax: 2,
         gravityY: 50,
       });
-      for (let i = 0; i < 60; i++) updateParticleEmitter(emitter, state, config, 1 / 60);
+      for (let i = 0; i < 60; i++) updateParticleEmitter2D(emitter, state, config, 1 / 60);
       const count = emitter.data.particleCount;
       return {
         transforms: Array.from(emitter.data.transforms.slice(0, count * 4)),

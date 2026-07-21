@@ -1,7 +1,7 @@
 import {
   BitmapKind,
   DisplayObjectKind,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   QuadBatchKind,
   RichTextKind,
   Scale9ShapeKind,
@@ -20,7 +20,7 @@ describe('canvasDisplayObjectRendererEntries', () => {
     const kinds = canvasDisplayObjectRendererEntries.map(([kind]) => kind);
     expect(kinds).toContain(BitmapKind);
     expect(kinds).toContain(DisplayObjectKind);
-    expect(kinds).toContain(ParticleEmitterKind);
+    expect(kinds).toContain(ParticleEmitter2DKind);
     expect(kinds).toContain(QuadBatchKind);
     expect(kinds).toContain(RichTextKind);
     expect(kinds).toContain(Scale9ShapeKind);

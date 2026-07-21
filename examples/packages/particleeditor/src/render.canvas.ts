@@ -2,10 +2,10 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createCanvasElement,
   createCanvasRenderState,
-  defaultCanvasParticleEmitterRenderer,
+  defaultCanvasParticleEmitter2DRenderer,
   defaultCanvasTextLabelRenderer,
   enableCanvasBlendMode,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   prepareDisplayObjectRender,
   registerRenderer,
   renderCanvasBackground,
@@ -22,7 +22,7 @@ export const state = createCanvasRenderState(canvas, {
   backgroundColor: 0x0a0a14ff,
 });
 
-registerRenderer(state, ParticleEmitterKind, defaultCanvasParticleEmitterRenderer);
+registerRenderer(state, ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
 enableCanvasBlendMode(state);
 

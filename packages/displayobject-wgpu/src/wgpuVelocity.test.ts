@@ -1,5 +1,5 @@
 import { createDisplayObject } from '@flighthq/displayobject';
-import { createParticleEmitter, reserveParticleEmitter } from '@flighthq/particleemitter';
+import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter';
 import { renderWgpuBackground } from '@flighthq/render-wgpu';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/sprite';
@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   createWgpuVelocityTarget,
   defaultWgpuDisplayObjectVelocityWriter,
-  defaultWgpuParticleEmitterVelocityWriter,
+  defaultWgpuParticleEmitter2DVelocityWriter,
   defaultWgpuQuadBatchVelocityWriter,
   drawWgpuVelocityQuad,
   getWgpuVelocityWriter,
@@ -39,9 +39,9 @@ describe('defaultWgpuDisplayObjectVelocityWriter', () => {
   });
 });
 
-describe('defaultWgpuParticleEmitterVelocityWriter', () => {
+describe('defaultWgpuParticleEmitter2DVelocityWriter', () => {
   it('is a velocity writer function', () => {
-    expect(typeof defaultWgpuParticleEmitterVelocityWriter).toBe('function');
+    expect(typeof defaultWgpuParticleEmitter2DVelocityWriter).toBe('function');
   });
 
   it('emits per-particle velocity for an emitter with a velocities array without throwing', async () => {
@@ -49,8 +49,8 @@ describe('defaultWgpuParticleEmitterVelocityWriter', () => {
     const target = createWgpuVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 16, height: 16, pivotX: null, pivotY: null } as TextureAtlasRegion;
     const atlas = { image: null, regions: [region] } as TextureAtlas;
-    const emitter = createParticleEmitter();
-    reserveParticleEmitter(emitter, 2);
+    const emitter = createParticleEmitter2D();
+    reserveParticleEmitter2D(emitter, 2);
     emitter.data.atlas = atlas;
     emitter.data.particleCount = 2;
     emitter.data.ids[0] = 0;
@@ -58,7 +58,7 @@ describe('defaultWgpuParticleEmitterVelocityWriter', () => {
     emitter.data.transforms.set([10, 10, 0, 1, 40, 20, 0, 1]);
     emitter.data.velocities.set([3, -2, -1, 4]);
 
-    registerWgpuVelocityWriter(state, emitter.kind, defaultWgpuParticleEmitterVelocityWriter);
+    registerWgpuVelocityWriter(state, emitter.kind, defaultWgpuParticleEmitter2DVelocityWriter);
     const field = createVelocityField();
     beginVelocityFrame(field);
 

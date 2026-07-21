@@ -7,7 +7,7 @@ export * from './wgpuClipRectangle';
 export * from './wgpuColorAdjustment';
 export * from './wgpuDefaultMaterial';
 export * from './wgpuDisplayObject';
-export * from './wgpuParticleEmitter';
+export * from './wgpuParticleEmitter2D';
 export * from './wgpuQuadBatch';
 export * from './wgpuRegistration';
 export * from './wgpuRendererData';

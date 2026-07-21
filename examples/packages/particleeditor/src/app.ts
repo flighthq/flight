@@ -7,7 +7,7 @@ import {
   buildParticleCurve,
   createDisplayObject,
   createImageResource,
-  createParticleEmitter,
+  createParticleEmitter2D,
   createParticleEmitterConfig,
   createParticleEmitterState,
   createTextLabel,
@@ -15,7 +15,7 @@ import {
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   particleColorCurveFromKeyframes,
-  updateParticleEmitter,
+  updateParticleEmitter2D,
 } from '@flighthq/sdk';
 
 import { canvas, render, scale } from './render';
@@ -41,7 +41,7 @@ pCtx.fillRect(0, 0, 16, 16);
 const atlas = createTextureAtlas({ image: createImageResource(particleCanvas) });
 addTextureAtlasRegion(atlas, 0, 0, 16, 16);
 
-const emitter = createParticleEmitter();
+const emitter = createParticleEmitter2D();
 emitter.data.atlas = atlas;
 emitter.blendMode = BlendMode.Add;
 emitter.scaleX = 1;
@@ -363,7 +363,7 @@ function enterFrame(): void {
 
   // World-space emitter bakes spawns through its own node world transform (set above), so nothing to pass.
   applyParticleForces(emitter, simState, forces, dt);
-  updateParticleEmitter(emitter, simState, config, dt);
+  updateParticleEmitter2D(emitter, simState, config, dt);
   invalidateNodeAppearance(emitter);
 
   countLabel.data.text = `${emitter.data.particleCount} particles`;

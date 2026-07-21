@@ -1,6 +1,6 @@
 import type { RenderProxy2D } from '@flighthq/types';
 
-import { drawCanvasParticleEmitter } from './canvasParticleEmitter';
+import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D';
 import { createCanvasRenderState } from './canvasRenderState';
 
 function makeAtlas() {
@@ -37,18 +37,18 @@ function makeRenderProxy(data: Record<string, unknown> = {}): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
-describe('drawCanvasParticleEmitter', () => {
+describe('drawCanvasParticleEmitter2D', () => {
   it('calls drawImage once for a single live particle', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasParticleEmitter(state, makeRenderProxy());
+    drawCanvasParticleEmitter2D(state, makeRenderProxy());
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('calls drawImage once per live particle', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasParticleEmitter(
+    drawCanvasParticleEmitter2D(
       state,
       makeRenderProxy({
         particleCount: 3,
@@ -64,21 +64,21 @@ describe('drawCanvasParticleEmitter', () => {
   it('skips drawing when atlas is null', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasParticleEmitter(state, makeRenderProxy({ atlas: null }));
+    drawCanvasParticleEmitter2D(state, makeRenderProxy({ atlas: null }));
     expect(spy).not.toHaveBeenCalled();
   });
 
   it('skips drawing when particleCount is 0', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasParticleEmitter(state, makeRenderProxy({ particleCount: 0 }));
+    drawCanvasParticleEmitter2D(state, makeRenderProxy({ particleCount: 0 }));
     expect(spy).not.toHaveBeenCalled();
   });
 
   it('does not throw on NaN particle transforms', () => {
     const state = makeState();
     expect(() =>
-      drawCanvasParticleEmitter(
+      drawCanvasParticleEmitter2D(
         state,
         makeRenderProxy({
           transforms: new Float32Array([Number.NaN, Number.NaN, Number.NaN, Number.NaN]),
@@ -90,7 +90,7 @@ describe('drawCanvasParticleEmitter', () => {
   it('skips particles with out-of-range region ids', () => {
     const state = makeState();
     const spy = vi.spyOn(state.context, 'drawImage');
-    drawCanvasParticleEmitter(
+    drawCanvasParticleEmitter2D(
       state,
       makeRenderProxy({
         particleCount: 3,

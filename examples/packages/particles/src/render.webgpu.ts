@@ -2,10 +2,10 @@ import type { DisplayObject } from '@flighthq/sdk';
 import {
   createWgpuCanvasElement,
   createWgpuRenderState,
-  defaultWgpuParticleEmitterRenderer,
+  defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuTextLabelRenderer,
   enableWgpuBlendModeSupport,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   prepareDisplayObjectRender,
   registerDefaultWgpuMaterial,
   registerRenderer,
@@ -26,7 +26,7 @@ export const state = await createWgpuRenderState(canvas, {
 });
 
 registerDefaultWgpuMaterial(state);
-registerRenderer(state, ParticleEmitterKind, defaultWgpuParticleEmitterRenderer);
+registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
 registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
 enableWgpuBlendModeSupport(state);
 

@@ -1,7 +1,7 @@
 import type {
   CircleCollider,
   ParticleCollider,
-  ParticleEmitter,
+  ParticleEmitter2D,
   ParticleEmitterState,
   ParticleObject,
   ParticleObjectsState,
@@ -18,13 +18,13 @@ export type { CircleCollider, ParticleCollider, PlaneCollider, RectangleCollider
 const s: [number, number, number, number, number, number] = [0, 0, 0, 0, 0, 0];
 
 /** Resolve particle/collider collisions for a typed-array emitter, correcting
- *  position and velocity in place. Call this AFTER updateParticleEmitter so it
+ *  position and velocity in place. Call this AFTER updateParticleEmitter2D so it
  *  fixes up penetration produced by the frame's integration.
  *
  *  Fully opt-in: import it only for emitters that collide. The core update path
  *  is unaware of it. */
 export function applyParticleCollisions(
-  emitter: ParticleEmitter,
+  emitter: ParticleEmitter2D,
   state: ParticleEmitterState,
   colliders: ReadonlyArray<ParticleCollider>,
 ): void {

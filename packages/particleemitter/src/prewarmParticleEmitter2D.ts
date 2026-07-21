@@ -1,11 +1,11 @@
-import type { ParticleEmitter } from '@flighthq/types';
+import type { ParticleEmitter2D } from '@flighthq/types';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types';
 
-import type { ParticleEmitterCallbacks } from './updateParticleEmitter';
-import { updateParticleEmitter } from './updateParticleEmitter';
+import type { ParticleEmitterCallbacks } from './updateParticleEmitter2D';
+import { updateParticleEmitter2D } from './updateParticleEmitter2D';
 
-export function prewarmParticleEmitter(
-  emitter: ParticleEmitter,
+export function prewarmParticleEmitter2D(
+  emitter: ParticleEmitter2D,
   state: ParticleEmitterState,
   config: Readonly<ParticleEmitterConfig>,
   duration: number,
@@ -18,7 +18,7 @@ export function prewarmParticleEmitter(
   let elapsed = 0;
   while (elapsed < duration) {
     const deltaTime = Math.min(step, duration - elapsed);
-    updateParticleEmitter(emitter, state, config, deltaTime, callbacks);
+    updateParticleEmitter2D(emitter, state, config, deltaTime, callbacks);
     elapsed += deltaTime;
   }
 }

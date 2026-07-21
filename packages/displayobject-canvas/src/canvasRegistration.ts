@@ -3,7 +3,7 @@ import type { CanvasRenderState, Kind, Renderer } from '@flighthq/types';
 import {
   BitmapKind,
   DisplayObjectKind,
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   QuadBatchKind,
   RichTextKind,
   Scale9ShapeKind,
@@ -16,7 +16,7 @@ import {
 
 import { defaultCanvasBitmapRenderer } from './canvasBitmap';
 import { defaultCanvasDisplayObjectRenderer } from './canvasDisplayObject';
-import { defaultCanvasParticleEmitterRenderer } from './canvasParticleEmitter';
+import { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
 import { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
 import { defaultCanvasRichTextRenderer } from './canvasRichText';
 import { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
@@ -32,7 +32,7 @@ import { defaultCanvasVideoRenderer } from './canvasVideo';
 export const canvasDisplayObjectRendererEntries: ReadonlyArray<readonly [Kind, Renderer]> = [
   [BitmapKind, defaultCanvasBitmapRenderer],
   [DisplayObjectKind, defaultCanvasDisplayObjectRenderer],
-  [ParticleEmitterKind, defaultCanvasParticleEmitterRenderer],
+  [ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer],
   [QuadBatchKind, defaultCanvasQuadBatchRenderer],
   [RichTextKind, defaultCanvasRichTextRenderer],
   [Scale9ShapeKind, defaultCanvasScale9ShapeRenderer],

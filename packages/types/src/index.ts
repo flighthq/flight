@@ -290,7 +290,7 @@ export * from './ParticleBurstSchedule';
 export * from './ParticleCollider';
 export * from './ParticleConfigIssue';
 export * from './ParticleCurve';
-export * from './ParticleEmitter';
+export * from './ParticleEmitter2D';
 export * from './ParticleEmitter3D';
 export * from './ParticleEmitterCallbacks';
 export * from './ParticleEmitterConfig';

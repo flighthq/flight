@@ -21,7 +21,7 @@ export function createParticleEmitterSignals(): ParticleEmitterSignals {
  *  need loose multi-listener notification.
  *
  *  Connect to the returned signals; they are fired by the simulation functions
- *  (`updateParticleEmitter`, `stepParticleEmitter`) when the state carries signals.
+ *  (`updateParticleEmitter2D`, `stepParticleEmitter2D`) when the state carries signals.
  *  Use `getParticleEmitterSignals` to read without creating. */
 export function enableParticleEmitterSignals(state: object): ParticleEmitterSignals {
   const s = state as Record<symbol, ParticleEmitterSignals | undefined>;
