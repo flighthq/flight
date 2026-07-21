@@ -864,6 +864,7 @@ These are explicit user directions whose implementation may span packages or req
 - Build `ApplicationRenderView` as the explicit 95% assembly
 - Keep package arrows pointing downward
 - Lead with GL and defer WGPU assembly parity
+- Make synchronization idempotent and window-authoritative
 
 ### entity (solid 92)
 

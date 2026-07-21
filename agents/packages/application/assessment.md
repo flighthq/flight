@@ -13,6 +13,10 @@ Refreshed against the 2026-07-13 review (solid — 88). All three previously-Rec
 1. **Build `ApplicationRenderView` as the explicit 95% assembly.** It links an `ApplicationWindow`, `RenderState`, `RenderTarget`, and device-pixel `Viewport` while keeping all four independently accessible. Window resize updates the common target/state/viewport case; callers attach additional resize work through the existing signal rather than a kitchen-sink callback surface.
 2. **Keep package arrows pointing downward.** The shared view contract belongs in `@flighthq/types`; generic attach/resize observation belongs here. A render backend must not import `@flighthq/application` merely to offer a backend assembly helper. Prefer a caller composition or a high-level application helper that depends only on lower layers.
 3. **Lead with GL and defer WGPU assembly parity.** Settle the window/target/state/viewport contract and its GL behavior first. Do not use a premature WGPU factory to harden an unvalidated cross-backend contract.
+4. **Make synchronization idempotent and window-authoritative.** Do not assign the canvas backing size
+   when its dimensions are unchanged—the assignment resets WebGL state even when target resize then
+   no-ops. Respect the supplied `ApplicationWindow.devicePixelRatio`; browser observation updates that
+   source explicitly rather than a backend factory silently replacing it from ambient global state.
 
 ## Recommended
 
