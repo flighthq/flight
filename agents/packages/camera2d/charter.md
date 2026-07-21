@@ -6,6 +6,7 @@ lastDirection: 2026-07-10
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+absorbed: '@flighthq/camera'
 ---
 
 # camera2d — Charter
@@ -31,6 +32,7 @@ _Append-only, dated, blessed rulings._
 - **[2026-07-10] Plain-data `Camera2D`, center-anchored, free functions.** `Camera2D` = `{ x; y; zoom; rotation; viewportWidth; viewportHeight }` where `(x,y)` is the world point at the viewport center (center-anchored is the game-camera norm). Functions compose a world→screen `Matrix` via `@flighthq/geometry` and write results to `out` params, allocation-free in the hot path. Follows the SDK's plain-data-over-stateful-object rule (no `Camera` class that mutates on `.update()` behind the scenes).
 - **[2026-07-10] Frame-rate-independent follow smoothing.** Target follow uses `@flighthq/math`'s `damp` (exponential smoothing by a time constant), not a raw per-frame `lerp` factor, so behavior is stable across frame rates. A deadzone box (half-extents around the view center) suppresses motion until the target leaves it; optional world-bounds clamping keeps the view inside the level. All parameters are explicit options, no hidden defaults mutating the camera.
 - **[2026-07-10] `Camera2D` type in `@flighthq/types`.** Header layer owns the shape so renderer/culling consumers reference it without importing this package. Function names carry the full `Camera2D` type name per the naming rule (`getCamera2DViewMatrix`, `updateCamera2DFollow`, `getCamera2DVisibleBounds`, world/screen projection + parallax + zoom-at-point helpers).
+- **[2026-07-21] Absorbed into `@flighthq/camera`.** The dimension changes the representation, not the camera's mathematical role, so `Camera2D` and `Camera3D` share one package. This cell remains only as historical direction and must not cause `@flighthq/camera2d` to be recreated.
 
 ## Decisions
 

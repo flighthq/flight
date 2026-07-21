@@ -3,6 +3,7 @@ package: "@flighthq/skeleton"
 draft: false
 lastDirection: 2026-07-03
 crate: "flighthq-skeleton"
+absorbed: '@flighthq/skeleton3d'
 ---
 
 # skeleton — Charter
@@ -23,6 +24,8 @@ Skeletal animation support -- joint hierarchies, inverse-bind matrices, skin pal
 - Non-goals: animation playback (that's animation), GPU skinning shaders (scene-gl/scene-wgpu).
 
 ## Decisions
+
+- **[2026-07-15] Absorbed into `@flighthq/skeleton3d`.** The explicit dimension suffix distinguishes this matrix/quaternion/GPU-palette domain from `@flighthq/skeleton2d`. This cell remains historical and must not cause `@flighthq/skeleton` to be recreated.
 
 - **2026-07-03 — Keep as standalone package.** Why: skeletal animation has significant room to grow (SkinnedMesh, morph targets, IK); bundling it into scene would bloat the scene graph with domain-specific state.
 - **2026-07-03 — Add clone/dispose/equals for Skeleton entity.** Why: standard entity quartet pattern; Skeleton is a first-class entity that needs lifecycle and comparison support.

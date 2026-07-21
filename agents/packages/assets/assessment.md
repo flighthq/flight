@@ -1,10 +1,16 @@
 ---
 package: '@flighthq/assets'
-updated: 2026-07-13
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # assets — Assessment
+
+## Depth gaps
+
+1. **Add caller-owned residency budgets and eviction.** Reference-count-at-zero disposal is a sound primitive, but a mature asset system also needs byte accounting, LRU/priority eviction, pinned assets, and an explicit trim operation. Avoid a process-global cache.
+2. **Add dependency and progressive-load coordination.** Asset graphs should represent scene→mesh→texture dependencies, deduplicate them, cancel orphaned in-flight work, and surface partial residency/progress without making the base `AssetLibrary` eagerly import every resource adapter.
+3. **Define the visibility-streaming seam.** A caller supplies demand/priority (visible mesh, desired mip, distance); the library/scheduler resolves and retires work. Texture owns resident levels, while assets owns policy and lifecycle.
 
 ## Recommended
 

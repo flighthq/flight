@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/effects-gl'
-updated: 2026-06-24
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
@@ -9,6 +9,12 @@ basedOn: ./review.md
 > Recommendation layer over `review.md` (survey of bundle `builder-67dc46d64`) and the absorbed `reviews/maturation/depth/effects-gl.md` roadmap. `Recommended` is strictly sweep-safe (within-package, no cross-package coupling, no breaking change, no open design decision) so "do all recommended" is always safe to bless. Design forks and cross-package items are noted for the charter's **Open directions**, not placed here. `Approved` stays empty until a verbal gate.
 >
 > The roadmap is being consumed: its **entire Bronze tier already landed in this bundle** (batch + category + taxonomy registrars, `getGlRenderEffectKinds`, `hasGlRenderEffectRunner`, dropped `@flighthq/filters` dep), as did two Silver items (mip-pyramid bloom, uniform-location cache). Those are not re-recommended. The depth roadmap can be removed once this assessment is in place.
+
+## Depth gaps
+
+1. **Build the reusable GL attachment/history substrate before claiming advanced effects.** Add explicit sampleable scene color, depth, normals, velocity, material-data, and prior-frame targets with lifecycle owned by the render state/pass assembly. Effects request only what they consume.
+2. **Replace color-only stand-ins with behaviorally tested implementations.** Prioritize depth-driven SSAO/DoF, history+velocity TAA and motion blur, then scene-color/depth/normal SSR. Each functional must demonstrate the defining behavior (occlusion at geometry contact, temporal accumulation/rejection, motion-vector direction, focus plane, reflected scene content), not only a changed screenshot.
+3. **Keep shadows outside the effects lane.** Shadow-map production and light-space sampling belong to lighting/scene rendering; effects may consume shadow-derived buffers only when an explicit later recipe calls for them.
 
 ## Recommended
 

@@ -3,8 +3,9 @@
 //   node agents/packages/todo.mjs
 //
 // Reads only the durable per-package cells (charter/review/assessment front matter and the
-// assessment `Recommended` sections) plus register.md's hand-ranked Build queue. TODO.md is a
-// generated view — never edit it by hand; edit the cells or the register and regenerate.
+// assessment `Directed`, `Recommended`, and `Depth gaps` sections) plus register.md's
+// hand-ranked Build queue. TODO.md is a generated view — never edit it by hand; edit the cells or
+// the register and regenerate.
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -62,6 +63,7 @@ const cells = readdirSync(here, { withFileTypes: true })
 
 const chartered = [];
 const external = []; // charter kept here for reference, but the code was spun out to another repo
+const absorbed = []; // historical cell whose implementation and scope were folded into another package
 const rustIntended = []; // `rust:` — designated for a Rust impl in the named repo (built there, named/scoped here)
 const reserved = []; // charter reserves the name/concept, but it is deliberately not to be built yet
 const deepen = [];
@@ -83,6 +85,10 @@ for (const name of cells) {
   // not actionable local work — keep it out of chartered-unbuilt, deepen, and liveness entirely.
   if (charterMeta.spunOut) {
     external.push({ name, repo: charterMeta.spunOut });
+    continue;
+  }
+  if (charterMeta.absorbed) {
+    absorbed.push({ name, target: charterMeta.absorbed });
     continue;
   }
   // A `rust:` cell is DESIGNATED for a Rust implementation in the named repo (e.g. flight-rs), which
@@ -128,17 +134,23 @@ for (const name of cells) {
   }
 
   const assessmentPath = join(cellDir, 'assessment.md');
+  let directedItems = [];
   let items = [];
+  let depthGapItems = [];
   if (existsSync(assessmentPath)) {
     const assessmentText = readFileSync(assessmentPath, 'utf8');
     const assessmentMeta = frontMatter(assessmentText);
     if (review.updated && assessmentMeta.updated && assessmentMeta.updated < review.updated) {
       needsAssess.push(`${name} (assessment ${assessmentMeta.updated} < review ${review.updated})`);
     }
+    const directed = section(assessmentText, 'Directed');
+    if (directed) directedItems = itemHeadlines(directed);
     const recommended = section(assessmentText, 'Recommended');
     if (recommended) items = itemHeadlines(recommended);
+    const depthGaps = section(assessmentText, 'Depth gaps');
+    if (depthGaps) depthGapItems = itemHeadlines(depthGaps);
   }
-  deepen.push({ name, status, score, items });
+  deepen.push({ name, status, score, directedItems, items, depthGapItems });
 }
 
 deepen.sort((a, b) => (a.score ?? 101) - (b.score ?? 101) || a.name.localeCompare(b.name));
@@ -150,9 +162,9 @@ const today = new Date().toISOString().slice(0, 10);
 const lines = [];
 lines.push('# Package TODO Index');
 lines.push('');
-lines.push(`_Generated ${today} by \`node agents/packages/todo.mjs\` — do not edit by hand. Sources: each cell's \`review.md\` (status/score), \`assessment.md › Recommended\` (the sweep-safe work queue), \`charter.md\` (chartered-unbuilt detection), and \`register.md › Build queue\`. Regenerate after assessments or the register change._`);
+lines.push(`_Generated ${today} by \`node agents/packages/todo.mjs\` — do not edit by hand. Sources: each cell's \`review.md\` (status/score), \`assessment.md\` (Directed, Recommended, and Depth gaps), \`charter.md\` (chartered-unbuilt detection), and \`register.md › Build queue\`. Regenerate after assessments or the register change._`);
 lines.push('');
-lines.push('One line per actionable item. For detail, read only the named package\'s cell: `agents/packages/<name>/assessment.md` (and its `charter.md` for the rules). `Recommended` items are pre-sorted as sweep-safe but **not yet approved**; check `assessment.md › Approved` for blessed work.');
+lines.push('One line per tracked item. For detail, read only the named package\'s cell: `agents/packages/<name>/assessment.md` (and its `charter.md` for the rules). `Directed` is user-approved program work, `Recommended` is sweep-safe but **not yet approved**, and `Depth gaps` is surveyed domain depth awaiting prioritization.');
 lines.push('');
 lines.push('## Create — chartered, not yet built');
 lines.push('');
@@ -169,6 +181,16 @@ if (external.length > 0) {
   lines.push('');
   for (const { name, repo } of external) {
     lines.push(`- **\`${name}\`** — built in \`${repo}\``);
+  }
+  lines.push('');
+}
+if (absorbed.length > 0) {
+  lines.push('## Absorbed — historical cells folded into another package');
+  lines.push('');
+  lines.push('These cells retain their direction/review history, but are not packages to recreate or deepen independently.');
+  lines.push('');
+  for (const { name, target } of absorbed) {
+    lines.push(`- **\`${name}\`** → \`${target}\``);
   }
   lines.push('');
 }
@@ -208,6 +230,30 @@ for (const { name, status, score, items } of deepen) {
   for (const item of items) lines.push(`- ${item}`);
   lines.push('');
 }
+lines.push('## Deepen — user-directed programs by package');
+lines.push('');
+lines.push('These are explicit user directions whose implementation may span packages or require staged delivery; they are not blanket-sweep items.');
+lines.push('');
+for (const { name, status, score, directedItems } of deepen) {
+  if (directedItems.length === 0) continue;
+  const scoreLabel = score === null ? status : `${status} ${score}`;
+  lines.push(`### ${name} (${scoreLabel})`);
+  lines.push('');
+  for (const item of directedItems) lines.push(`- ${item}`);
+  lines.push('');
+}
+lines.push('## Deepen — surveyed domain-depth gaps by package');
+lines.push('');
+lines.push('These are observed maturity gaps, including intentionally deferred work. They require prioritization or a package direction before execution unless separately approved.');
+lines.push('');
+for (const { name, status, score, depthGapItems } of deepen) {
+  if (depthGapItems.length === 0) continue;
+  const scoreLabel = score === null ? status : `${status} ${score}`;
+  lines.push(`### ${name} (${scoreLabel})`);
+  lines.push('');
+  for (const item of depthGapItems) lines.push(`- ${item}`);
+  lines.push('');
+}
 const noItems = deepen.filter((entry) => entry.items.length === 0).map((entry) => entry.name);
 if (noItems.length > 0) {
   lines.push('## No open Recommended items');
@@ -241,5 +287,5 @@ lines.push('');
 
 writeFileSync(join(here, 'TODO.md'), `${lines.join('\n')}`);
 console.log(
-  `TODO.md: ${chartered.length} chartered-unbuilt, ${reserved.length} reserved, ${external.length} external (spun out), ${rustIntended.length} rust-intended, ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
+  `TODO.md: ${chartered.length} chartered-unbuilt, ${absorbed.length} absorbed, ${reserved.length} reserved, ${external.length} external (spun out), ${rustIntended.length} rust-intended, ${deepen.filter((d) => d.items.length > 0).length} packages with Recommended items, ${noItems.length} with none; liveness: ${needsDirection.length} direction, ${needsReview.length} review, ${needsReReview.length} re-review, ${needsAssess.length} assess, ${questionTotal} open questions`,
 );

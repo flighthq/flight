@@ -1,12 +1,16 @@
 ---
 package: '@flighthq/entity'
-updated: 2026-07-03
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # entity — Assessment
 
 Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). Four Decisions blessed. The package is feature-complete for its domain; the only approved work is a one-word description fix.
+
+## Directed
+
+1. **Enforce the repository-wide `create*` Entity invariant.** Every Flight `create*` that constructs an SDK object returns an `Entity` through the entity constructor path, including value-looking objects such as `Viewport`; this preserves internal shape enforcement and the still-load-bearing OOP binding layer. Structural literals remain reserved for explicit `*Like` inputs. Add a mechanical/API test capable of catching new constructor drift.
 
 ## Recommended
 

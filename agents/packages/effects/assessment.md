@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/effects'
-updated: 2026-07-02
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
@@ -9,6 +9,12 @@ basedOn: ./review.md
 Sorted from the depth review (90/100), verified against the live tree (66 source files, 66 test files, 262 tests, 96 exports), and the direction session (2026-07-02). Eight charter decisions blessed — most significantly the per-kind handler registration pattern that dissolves the three central tables, and effects owning interpolation via registered field-role metadata.
 
 The package is mature — 52 effect kinds, 10 recipe math modules, full pipeline-support layer. The major remaining architectural work is the registration migration (dissolving central tables into per-kind handlers on pipeline state) and the color-aware interpolation fix (structurally via field-role metadata).
+
+## Depth gaps
+
+1. **Define explicit effect-input attachment requirements.** Advanced effects must declare whether they need scene color, linear/sampleable depth, normals, velocity, material data, or frame history. Descriptors remain substrate-agnostic; the presence of a backend realization and the availability of required attachments form the honest support matrix.
+2. **Stop treating stand-ins as feature completion.** SSAO, SSR, TAA, motion blur, depth of field, and similar effects are not complete when their attachment inputs are absent and the backend returns passthrough or color-only approximations. Keep the descriptor if useful, but diagnostics and support docs must expose the missing substrate.
+3. **Keep attachment production below effect recipes.** Scene/deferred/prepass primitives produce the reusable buffers; effects consume them explicitly. Do not grow one “postprocess setup” utility that allocates every attachment and defeats tree-shaking.
 
 ## Recommended
 

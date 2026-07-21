@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene-wgpu'
-updated: 2026-06-24
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
@@ -9,6 +9,10 @@ basedOn: ./review.md
 This package is a per-backend **leaf renderer** in a deliberate twin set (`scene-gl` ↔ `scene-wgpu`) over a shared header (`@flighthq/types`) and shared packing (`@flighthq/render`). The review and the absorbed roadmap both establish the governing fact: **every renderer-envelope feature here is a four-surface change** — `@flighthq/types` first, then `@flighthq/render`, then this backend _and_ its `scene-gl` twin in lockstep, then the Rust `flighthq-scene-wgpu` mirror. That makes nearly the entire roadmap cross-package by construction, so it lands in Backlog rather than Recommended. The headline feature — multi-light forward — is additionally gated on an unresolved design decision (Open direction #1), so it cannot be swept.
 
 The result is a near-empty Recommended set. That is the honest read: the package is already deep where it owns its own surface (the material/shader catalogue is authoritative), and the remaining work is exactly the coordinated, charter-gated kind the gate is designed to hold back. The charter is still a stub, so the substantive questions are routed to its Open directions below.
+
+## Directed
+
+1. **Defer PBR-extension parity until the GL contracts and raster evidence settle.** Do not independently evolve the old WGPU per-extension material lane. After `StandardPbrMaterial`/`ExtendedPbrMaterial`/open `PbrExtension`, attachment inputs, diagnostics, and transmission passes are proven in GL, migrate this backend deliberately against those contracts.
 
 ## Recommended
 

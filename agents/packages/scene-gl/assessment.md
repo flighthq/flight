@@ -1,12 +1,21 @@
 ---
 package: '@flighthq/scene-gl'
-updated: 2026-06-25
+updated: 2026-07-21
 basedOn: ./review.md
 ---
 
 # scene-gl — Assessment
 
 > Recommendation layer over [review.md](./review.md), framed as a **merge gate**: base is the approved `origin/main` (`eb73c3d74`); the judged subject is the `integration-b2824e3d8` delta. `Recommended` is strictly sweep-safe (within `@flighthq/scene-gl`, no cross-package coupling, no open design decision). `Backlog` is everything else, each with its parking reason. `Approved` is empty — approval is the user's verbal gate. The charter is still `draft: true`, so every design fork and cross-package item routes to the charter's **Open directions** (closing section), not into `Recommended`.
+
+## Directed
+
+1. **Realize `ExtendedPbrMaterial` through separately imported extension registrations.** Standard PBR stays untouched. Remove the old per-extension material renderers/registrars and register each `PbrExtension.kind` realization independently into an open GL registry.
+2. **Sample every declared extension map and compose lobes coherently.** Clearcoat factor/roughness/normal, sheen color/roughness, anisotropy direction/strength, iridescence thickness, specular color/factor, subsurface thickness, and transmission/volume maps must reach shader behavior rather than only define keys or uniform packing. Combined-extension variants need raster proof, not source-string tests alone.
+3. **Implement real transmission as explicit passes and inputs.** Capture opaque scene color, sample it through the refractive path, and apply Beer–Lambert absorption using thickness, attenuation color/distance, and IOR. Keep the opaque-scene-color attachment/pass reusable; do not hide it inside a material kitchen sink.
+4. **Follow diagnostics inversion for unsupported realizations.** Missing extension registration or a backend-unsupported combination returns a sentinel and has a shakeable `explain*`/optional guard. Do not throw unconditionally from the draw hot path, and do not turn a GL limitation into a material-domain prohibition.
+5. **Add exhaustive GL raster functionals.** Cover each extension with scalar inputs, each texture path, coherent multi-extension combinations, missing-registration diagnostics, and transmission against distinguishable captured background/depth. Assertions should verify rendered regions/relationships in addition to fingerprint stability.
+6. **Keep backend caches internal to state/runtime.** PBR programs, extension handler resolution, opaque-scene captures, and draw scratch are private `GlSceneRuntime`/render-state implementation data unless an external custom renderer demonstrably needs a primitive.
 
 ## Recommended
 

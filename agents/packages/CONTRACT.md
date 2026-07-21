@@ -21,9 +21,12 @@ lastDirection: null # YYYY-MM-DD of the last time you gave direction; null until
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+absorbed: '@flighthq/target' # optional; historical cell folded into another package
 ```
 
 The charter carries **no status or score** — that lives in `review.md`/`assessment.md`. This keeps the charter's git history meaningful: it changes only when _direction_ changes.
+
+`absorbed` is optional and records a package that was deliberately folded into another package. The cell remains as architectural history, but generators must exclude it from build/deepen queues and must not propose recreating it.
 
 ### `review.md`
 
