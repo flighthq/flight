@@ -1,30 +1,28 @@
-import { createViewport, getNodeRoot, getNodeRuntime } from '@flighthq/node';
+import { createEntity } from '@flighthq/entity';
+import { getNodeRoot, getNodeRuntime } from '@flighthq/node';
 import { createSignal, emitSignal } from '@flighthq/signals';
-import type {
-  DisplayObject,
-  DisplayObjectRuntime,
-  DisplayObjectTraits,
-  Stage,
-  StageRuntime,
-  StageSignals,
-} from '@flighthq/types';
+import type { DisplayObject, DisplayObjectRuntime, Stage, StageRuntime, StageSignals } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createDisplayObject } from './displayObject';
 
 // Allocates a Stage: a presentation-context Entity that owns a display-object `root` (allocated here), not a
-// node in the tree. Composes createViewport for the shared root/align/scaleMode base, then layers on the
-// stage-only view dimensions and background color. The entity runtime stays unbound (createViewport →
-// createEntity); the root's runtime carries a back-pointer so getDisplayObjectStage resolves membership by a
-// lazy walk to the root.
+// node in the tree. Carries the fit context (`align`/`scaleMode`) directly — fit is the Stage's concern, and
+// the bedrock `Viewport` is a drawable rect, not a base of Stage — plus the view dimensions and background
+// color. The entity runtime stays unbound; the root's runtime carries a back-pointer so getDisplayObjectStage
+// resolves membership by a lazy walk to the root.
 export function createStage(
   obj?: Readonly<Partial<Pick<Stage, 'align' | 'color' | 'scaleMode' | 'stageHeight' | 'stageWidth'>>>,
 ): Stage {
   const root = createDisplayObject();
-  const stage = createViewport<DisplayObjectTraits>({ align: obj?.align, root, scaleMode: obj?.scaleMode }) as Stage;
-  stage.color = obj?.color ?? null;
-  stage.stageHeight = obj?.stageHeight ?? 550;
-  stage.stageWidth = obj?.stageWidth ?? 400;
+  const stage = createEntity({
+    align: obj?.align ?? 'topleft',
+    color: obj?.color ?? null,
+    root,
+    scaleMode: obj?.scaleMode ?? 'noscale',
+    stageHeight: obj?.stageHeight ?? 550,
+    stageWidth: obj?.stageWidth ?? 400,
+  }) as Stage;
   (getNodeRuntime(root) as DisplayObjectRuntime).stage = stage;
   return stage;
 }

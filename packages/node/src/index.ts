@@ -10,6 +10,7 @@ export * from './hierarchy';
 export * from './node';
 export * from './revision';
 export * from './transform2d';
+export * from './stageFit';
 export * from './transform3d';
 export * from './traversal';
 export * from './viewport';
