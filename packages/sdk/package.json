@@ -96,7 +96,6 @@
     "@flighthq/bitmapfont-formats": "*",
     "@flighthq/bitmaptext": "*",
     "@flighthq/camera": "*",
-    "@flighthq/camera2d": "*",
     "@flighthq/capture": "*",
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",

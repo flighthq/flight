@@ -1,4 +1,3 @@
-export * from '@flighthq/camera2d';
 export * from '@flighthq/collision';
 export * from '@flighthq/flow';
 export * from '@flighthq/particleemitter';
