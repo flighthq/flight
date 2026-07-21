@@ -17,6 +17,10 @@ Refreshed against the 2026-07-13 review (solid — 88). All three previously-Rec
    when its dimensions are unchanged—the assignment resets WebGL state even when target resize then
    no-ops. Respect the supplied `ApplicationWindow.devicePixelRatio`; browser observation updates that
    source explicitly rather than a backend factory silently replacing it from ambient global state.
+5. **Complete the Entity constructor invariant in the application domain.** `Application`,
+   `ApplicationWindow`, `LoopBackend`, and `WindowBackend` are all returned by public `create*`
+   functions today, so their header contracts must extend `Entity` and their factories must use
+   `createEntity`; retain the names only with that enforced shape.
 
 ## Recommended
 
