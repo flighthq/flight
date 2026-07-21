@@ -10,7 +10,7 @@ import { isMesh } from '@flighthq/scene';
 import type { BlinnPhongMaterial, ExternalImageResourceReference, Mesh, SceneNode } from '@flighthq/types';
 import { BlinnPhongMaterialKind } from '@flighthq/types';
 
-import { createSceneFrom3ds } from './threeDsParse';
+import { createSceneFrom3ds, parse3ds } from './threeDsParse';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
@@ -411,6 +411,45 @@ describe('createSceneFrom3ds animations', () => {
 
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
+    expect(warnings.length).toBeGreaterThan(0);
+  });
+});
+
+describe('parse3ds', () => {
+  it('decomposes each trimesh into a document mesh node with inline geometry', () => {
+    const document = parse3ds(buildTriangle3ds('Tri', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]));
+    expect(document.meshes).toHaveLength(1);
+    expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(3);
+    expect(document.nodes[0].mesh).toBe(0);
+    expect(document.nodes[0].name).toBe('Tri');
+    expect(document.scenes[0].rootNodes).toEqual([0]);
+  });
+
+  it('registers a referenced material into the document materials table by index', () => {
+    const material = writeMaterial({
+      diffuse: [204, 102, 51],
+      name: 'Skin',
+      specular: [255, 255, 255],
+      textureFilename: 'skin.png',
+    });
+    const document = parse3ds(
+      buildMaterialScene3ds({
+        faceMaterialName: 'Skin',
+        indices: [0, 1, 2],
+        material,
+        meshName: 'Cube',
+        positions: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      }),
+    );
+    expect(document.materials).toHaveLength(1);
+    expect((document.materials[0] as BlinnPhongMaterial).name).toBe('Skin');
+    expect(document.meshes[0].materials).toEqual([0]);
+  });
+
+  it('returns an empty document with a warning for non-3DS input', () => {
+    const warnings: string[] = [];
+    const document = parse3ds(new Uint8Array([0, 0, 0, 0, 0, 0]), warnings);
+    expect(document.nodes).toHaveLength(0);
     expect(warnings.length).toBeGreaterThan(0);
   });
 });

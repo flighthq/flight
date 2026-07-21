@@ -1,38 +1,65 @@
+import { createTransform3D } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, MeshKind } from '@flighthq/scene';
-import type { BlinnPhongMaterial, Material, MeshSubset, Texture } from '@flighthq/types';
+import { createSceneFromDocument } from '@flighthq/scene';
+import type {
+  BlinnPhongMaterial,
+  Material,
+  MaterialLike,
+  MeshSubset,
+  SceneDocument,
+  SceneDocumentMesh,
+  SceneDocumentNode,
+  Texture,
+} from '@flighthq/types';
+import { MeshKind } from '@flighthq/types';
 
 import type { ObjMaterial, ObjMaterialLibrary } from './objSchema';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
 
-// Parses a Wavefront OBJ text source into a Scene. Each group (`g`) or object (`o`) — and any
-// top-level faces before the first group — becomes one Mesh, using the canonical vertex layout. A
-// group that spans several `usemtl` materials becomes a single Mesh with one MeshSubset per
-// material (contiguous index ranges) and a positional `materials` array — not a wrapper over
-// per-material child meshes — so `getNodeChildren(scene)` returns the drawable Mesh nodes directly.
-// The optional `materials` argument supplies the material library referenced by `mtllib`/`usemtl`;
-// each named material becomes a BlinnPhongMaterial (MTL's own Kd/Ks/Ns shading model) in the
-// subset's positional slot. Without the library, material directives are acknowledged but each
-// subset's slot stays null (resolving to DefaultMaterialKind at draw time).
+// Parses a Wavefront OBJ text source into a Scene. Convenience over `createSceneFromDocument(parseObj
+// (source, materials))`. See parseObj for the import model.
+export function createSceneFromObj(
+  source: string,
+  materials?: Readonly<ObjMaterialLibrary>,
+  warnings?: string[],
+): Scene {
+  return createSceneFromDocument(parseObj(source, materials, warnings));
+}
+
+// Parses a Wavefront OBJ text source into a format-neutral SceneDocument. Each group (`g`) or object
+// (`o`) — and any top-level faces before the first group — becomes one document Mesh (inline geometry),
+// using the canonical vertex layout. A group that spans several `usemtl` materials becomes a single Mesh
+// with one MeshSubset per material (contiguous index ranges) and a positional `materials` index array —
+// not a wrapper over per-material child meshes. The optional `materials` argument supplies the material
+// library referenced by `mtllib`/`usemtl`; each named material becomes a BlinnPhongMaterial (MTL's own
+// Kd/Ks/Ns shading model) in the document's materials table, deduped by name. Without the library,
+// material directives are acknowledged but the subset's material index stays absent (resolving to
+// DefaultMaterialKind at draw time). Assemble into a live Scene with `createSceneFromDocument`.
 //
 // Supported directives: `v`, `vn`, `vt`, `f`, `g`, `o`, `mtllib`, `usemtl`. Faces may be
 // triangles, quads, or N-gons (fan-triangulated). Face vertex references support independent
 // position/uv/normal indices (`v/vt/vn`, `v//vn`, `v/vt`) and negative (relative) indices.
 //
 // Malformed lines push a warning and are skipped; the function never throws on bad input.
-export function createSceneFromObj(
-  source: string,
-  materials?: Readonly<ObjMaterialLibrary>,
-  warnings?: string[],
-): Scene {
+export function parseObj(source: string, materials?: Readonly<ObjMaterialLibrary>, warnings?: string[]): SceneDocument {
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
 
-  const scene = createScene();
+  const document: SceneDocument = {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
 
   // Name of the current group/object scope (undefined for top-level faces before the first group).
   let currentGroupName: string | undefined;
@@ -43,8 +70,8 @@ export function createSceneFromObj(
   let materialBuckets = new Map<string, MaterialBucket>();
   let activeMaterial = '';
 
-  // One Flight material per MTL material name, shared across every mesh (and group) that uses it.
-  const resolvedMaterials = new Map<string, Material | null>();
+  // One document material index per MTL material name, shared across every mesh (and group) that uses it.
+  const resolvedMaterials = new Map<string, number>();
 
   const lines = source.split('\n');
   for (let i = 0; i < lines.length; i++) {
@@ -134,7 +161,7 @@ export function createSceneFromObj(
         // A group/object boundary flushes the accumulated faces as one Mesh (one subset per
         // material) and starts a fresh group. `usemtl` state persists across the boundary per the
         // OBJ spec — `g`/`o` name geometry, they do not reset the active material.
-        flushGroup(materialBuckets, currentGroupName, scene, materials, resolvedMaterials);
+        flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials);
         materialBuckets = new Map<string, MaterialBucket>();
         currentGroupName = args || undefined;
         break;
@@ -153,9 +180,9 @@ export function createSceneFromObj(
   }
 
   // Flush the final group's accumulated faces.
-  flushGroup(materialBuckets, currentGroupName, scene, materials, resolvedMaterials);
+  flushGroup(materialBuckets, currentGroupName, document, materials, resolvedMaterials);
 
-  return scene;
+  return document;
 }
 
 // Accumulates interleaved vertex data and triangle indices for one material within a group.
@@ -270,14 +297,14 @@ function parseFaceVertex(
 function flushGroup(
   buckets: Readonly<Map<string, MaterialBucket>>,
   name: string | undefined,
-  scene: Scene,
+  document: SceneDocument,
   library: Readonly<ObjMaterialLibrary> | undefined,
-  resolvedMaterials: Map<string, Material | null>,
+  resolvedMaterials: Map<string, number>,
 ): void {
   const vertices: number[] = [];
   const indices: number[] = [];
   const subsets: MeshSubset[] = [];
-  const materials: (Material | null)[] = [];
+  const materials: number[] = [];
 
   for (const [materialName, bucket] of buckets) {
     if (bucket.indices.length === 0) continue;
@@ -290,7 +317,7 @@ function flushGroup(
     for (let k = 0; k < bucket.vertices.length; k++) vertices.push(bucket.vertices[k]);
 
     subsets.push({ indexCount: bucket.indices.length, indexOffset });
-    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials));
+    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials, document));
   }
 
   if (subsets.length === 0) return;
@@ -301,7 +328,14 @@ function flushGroup(
     subsets,
     vertices: new Float32Array(vertices),
   });
-  addNodeChild(scene.root, createMesh(geometry, materials, MeshKind, { name }));
+  const meshIndex = document.meshes.length;
+  const mesh: SceneDocumentMesh = { geometry, materials };
+  document.meshes.push(mesh);
+  const nodeIndex = document.nodes.length;
+  const node: SceneDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  if (name !== undefined) node.name = name;
+  document.nodes.push(node);
+  document.scenes[0].rootNodes.push(nodeIndex);
 }
 
 // Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.
@@ -343,21 +377,30 @@ function clampChannel(value: number): number {
   return Math.round(Math.min(1, Math.max(0, value)) * 0xff);
 }
 
-// Resolves an MTL material name to a Flight material, memoizing so a name shared across meshes yields
-// one material instance. Empty name (no `usemtl`) or unknown name → null (mesh left unmaterialed).
+// Resolves an MTL material name to a document material INDEX, memoizing so a name shared across meshes
+// registers one material entry. Empty name (no `usemtl`) or unknown name → -1 (no material; the assembler
+// resolves an out-of-range index to null, DefaultMaterialKind at draw time). A resolved material is
+// appended to the document's materials table and its index cached by name.
 function resolveObjMaterial(
   name: string,
   library: Readonly<ObjMaterialLibrary> | undefined,
-  cache: Map<string, Material | null>,
-): Material | null {
-  if (name === '') return null;
+  cache: Map<string, number>,
+  document: SceneDocument,
+): number {
+  if (name === '') return -1;
   const cached = cache.get(name);
   if (cached !== undefined) return cached;
 
   const parsed = library?.materials.get(name);
-  const material = parsed !== undefined ? (objMaterialToBlinnPhong(parsed) as unknown as Material) : null;
+  if (parsed === undefined) {
+    cache.set(name, -1);
+    return -1;
+  }
+  const material = objMaterialToBlinnPhong(parsed) as unknown as Material;
   // Preserve the MTL `newmtl` handle as the material's authored name (findSceneMaterialByName).
-  if (material !== null) material.name = name;
-  cache.set(name, material);
-  return material;
+  material.name = name;
+  const index = document.materials.length;
+  document.materials.push(material as unknown as MaterialLike);
+  cache.set(name, index);
+  return index;
 }
