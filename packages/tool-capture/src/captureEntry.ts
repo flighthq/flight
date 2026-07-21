@@ -16,6 +16,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
+import { launchBrowser } from './captureBrowser.js';
 import type { Entry, Tool } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
@@ -753,6 +754,102 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
 
   await Promise.all(workers);
   return { captured, changed, failed };
+}
+
+// Observe one arbitrary URL — the standalone "eyes" primitive behind the `tool-capture observe` bin.
+// Drives its own browser (deterministic frame-halt + warmup + the getContext intercept), navigates to
+// `url`, grabs the present frame straight from the intercepted GL context (falling back to a canvas
+// screenshot), and writes the screenshot + logs + an observe diagnostics status. Zero page integration:
+// any page that renders to a canvas works, Flight or not — no verifier registration, no per-frame ping.
+export async function captureUrl(
+  url: string,
+  options: Readonly<CaptureUrlOptions>,
+): Promise<CaptureObserveDiagnostics> {
+  const { outDir, wait = 0, captureFrames = 1 } = options;
+  mkdirSync(outDir, { recursive: true });
+  const logs: unknown[] = [];
+  const { browser, context } = await launchBrowser({ captureFrames, verify: false, observe: true });
+  const page = await context.newPage();
+  page.on('pageerror', (err) => {
+    logs.push({ __flight: true, t: -1, level: 'pageerror', data: { msg: err.message } });
+  });
+  page.on('console', (msg) => {
+    const type = msg.type();
+    if (type === 'error' || type === 'warning') {
+      logs.push({
+        __flight: true,
+        t: -1,
+        level: type === 'error' ? 'error' : 'warn',
+        channel: 'console',
+        data: { msg: msg.text() },
+      });
+    }
+  });
+  page.on('requestfailed', (req) => {
+    logs.push({
+      __flight: true,
+      t: -1,
+      level: 'error',
+      channel: 'network',
+      data: { msg: `request failed: ${req.url()} (${req.failure()?.errorText ?? 'unknown'})` },
+    });
+  });
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+    await page.waitForSelector('canvas', { timeout: 8_000 }).catch(() => {});
+    await page
+      .waitForFunction(
+        () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
+        null,
+        { timeout: 15_000 },
+      )
+      .catch(() => {});
+    if (wait > 0) await page.waitForTimeout(wait);
+
+    const intercept = await grabInterceptedGlFrame(page);
+    const screenshotBuffer =
+      intercept !== null
+        ? Buffer.from(intercept.dataUrl.split(',')[1]!, 'base64')
+        : await page
+            .locator('canvas')
+            .first()
+            .screenshot()
+            .catch(() => page.screenshot());
+    const coverage = intercept?.coverage ?? (await measureObservedCanvasCoverage(page));
+    const diagnostics = buildCaptureObserveDiagnostics({
+      backend: intercept !== null ? 'webgl' : 'canvas',
+      blank: false,
+      coverage,
+      logs,
+      verifyPublished: false,
+      verifyTargetKind: null,
+      warmupFrames: await getObserveWarmupFrames(page),
+    });
+    writeFileSync(join(outDir, 'screenshot.png'), screenshotBuffer);
+    writeFileSync(join(outDir, 'logs.jsonl'), logs.map((l) => JSON.stringify(l)).join('\n'));
+    const status: CaptureStatus = {
+      state: 'ready',
+      capturedAt: Date.now(),
+      error: null,
+      hash: createHash('sha256').update(screenshotBuffer).digest('hex'),
+      baselineHash: null,
+      changed: null,
+      observe: diagnostics,
+    };
+    writeFileSync(join(outDir, 'status.json'), JSON.stringify(status, null, 2));
+    return diagnostics;
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
+export interface CaptureUrlOptions {
+  /** Directory to write screenshot.png / logs.jsonl / status.json into (flat, one page). */
+  outDir: string;
+  /** Extra settle time after the frame halt, in ms. */
+  wait?: number;
+  /** Frame-halt minimum (see launchBrowser); 1 is the robust default. */
+  captureFrames?: number;
 }
 
 // The artifact paths for one capture, derived purely from the output base, tool, entry name, and
