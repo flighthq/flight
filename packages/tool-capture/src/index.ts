@@ -1,5 +1,6 @@
 export * from './baselineStore';
 export * from './captureBrowser';
+export * from './captureBatchManifest';
 export * from './captureEntries';
 export * from './captureEntry';
 export * from './captureFormat';
@@ -9,6 +10,7 @@ export * from './captureRenderTarget';
 export * from './captureServer';
 export * from './captureSuite';
 export * from './captureValidation';
+export * from './captureWorkflow';
 export * from './functionalScenes';
 export * from './functionalVerify';
 export * from './referenceCapture';
