@@ -9,13 +9,18 @@ basedOn: ./review.md
 ## Directed
 
 1. **Realize ExtendedPbrMaterial through separately imported extension registrations.** Standard PBR
-   stays lean; each PbrExtension kind registers its own GL realization.
-2. **Sample every declared extension map and compose lobes coherently.** Combined extensions need raster
-   proof, not only source-string tests.
+   stays lean and open: neither its prelude nor its define/cache key enumerates built-in extensions;
+   extension kinds and contributed source provide extended-program identity. Each PbrExtension kind
+   registers its own GL realization.
+2. **Sample every declared extension map and compose lobes coherently.** Bind each map's own UV set and
+   texture transform rather than sampling every slot through the base-color map's shared `v_uv0`.
+   Combined extensions need raster proof, not only source-string tests.
 3. **Implement transmission as explicit reusable passes.** Capture opaque scene color, sample the
    refractive path, and apply Beer–Lambert absorption from thickness/attenuation/IOR inputs.
-4. **Follow diagnostics inversion.** Missing registrations and unsupported combinations return
-   sentinels with shakeable explain/guard layers rather than unconditional draw-path throws.
+4. **Follow diagnostics inversion.** Missing registrations, duplicate kinds, texture-unit exhaustion,
+   and unsupported combinations return sentinels with shakeable explain/guard layers rather than
+   unconditional draw-path throws; normal rendering skips invalid duplicates deterministically and
+   only an explicitly enabled guard throws.
 5. **Add exhaustive GL behavior tests.** Cover scalar and map inputs, multi-extension composition,
    diagnostics, and transmission against a distinguishable captured background.
 6. **Keep backend caches private to state/runtime.** Export operations, not caches.
@@ -23,7 +28,9 @@ basedOn: ./review.md
    third-party extension must implement—including the GL snippet, bind context, support diagnostic,
    shader contribution, and caller-owned transmission scene-color shape—belongs in
    `@flighthq/types`; `@flighthq/scene-gl` should export implementations against those shared types,
-   not define cross-package API shapes inline.
+   not define cross-package API shapes inline. The public bind context should provide the necessary
+   uniform and texture operations without exposing private `GlPbrProgram` or `GlPbrDefineKey`
+   implementation shapes.
 
 ## Recommended
 
