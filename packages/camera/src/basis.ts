@@ -25,11 +25,7 @@ export function getCamera3DForward(out: Vector3Like, camera: Readonly<Camera3D>)
 // Safe when `out` aliases any field of the camera.
 export function getCamera3DPosition(out: Vector3Like, camera: Readonly<Camera3D>): void {
   const m = camera.view.m;
-  // Column-major storage: element(row, col) = m[row + 4*col].
-  // The 3×3 rotation block R^T (transposed) has rows:
-  //   row 0: m[0], m[1], m[2]   (column 0 of R = right x-components)
-  //   row 1: m[4], m[5], m[6]   (column 1 of R = up y-components ... wait, this is col 1 of R)
-  // Actually R^T column 0 = R row 0 = [m[0], m[4], m[8]], but the inverse translation is:
+  // Column-major storage: element(row, col) = m[row + 4*col]. For the orthonormal rotation block:
   //   eye = -(R^T · t)
   //   (R^T · t).x = m[0]*m[12] + m[1]*m[13] + m[2]*m[14]
   //   (R^T · t).y = m[4]*m[12] + m[5]*m[13] + m[6]*m[14]

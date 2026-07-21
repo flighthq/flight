@@ -10,6 +10,7 @@
   },
   "references": [
     { "path": "../camera" },
+    { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../mesh" },
     { "path": "../node" },

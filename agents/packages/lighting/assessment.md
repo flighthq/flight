@@ -16,7 +16,8 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. Fix non-re-entrant module-level scratch in `hasLightInfluenceOnBounds` (use local or pool).
+None. The prior module-level scratch in `hasLightInfluenceOnBounds` is removed; the query now performs
+an allocation-free scalar intersection directly from the light descriptor.
 
 ## Approved
 

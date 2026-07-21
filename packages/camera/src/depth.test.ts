@@ -1,6 +1,6 @@
 import { createCamera3D } from './camera';
 import { getCamera3DLinearDepth, getCamera3DViewSpaceZ } from './depth';
-import { createPerspectiveProjection } from './projection';
+import { createOrthographicProjection, createPerspectiveProjection } from './projection';
 
 function makeCamera(near = 0.1, far = 100) {
   return createCamera3D({
@@ -36,6 +36,18 @@ describe('getCamera3DLinearDepth', () => {
     const depth = getCamera3DLinearDepth(camera, 0);
     expect(depth).toBeLessThan(-1);
     expect(depth).toBeGreaterThan(-100);
+  });
+
+  it('linearly maps orthographic NDC depth to the clip range', () => {
+    const camera = createCamera3D({
+      far: 101,
+      near: 1,
+      projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
+    });
+
+    expect(getCamera3DLinearDepth(camera, -1)).toBeCloseTo(-1);
+    expect(getCamera3DLinearDepth(camera, 0)).toBeCloseTo(-51);
+    expect(getCamera3DLinearDepth(camera, 1)).toBeCloseTo(-101);
   });
 });
 

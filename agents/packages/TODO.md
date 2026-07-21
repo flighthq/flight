@@ -549,10 +549,6 @@ Design calls to settle before building the affected entries:
 
 - Document `transition.height` limitation
 
-### mesh (solid 80)
-
-- Fix copy-paste doc comments (`getMeshGeometryVertexNormal` says "position")
-
 ### net (solid 80)
 
 - `explainNetResponse(response)` query
@@ -576,11 +572,6 @@ Design calls to settle before building the affected entries:
 - Add a colocated regression test that pins the cache-key fix
 - Return a non-zero `unitsPerEm` (identity `size`) from `getFontMetrics` instead of `0`
 - Probe a descender glyph in the `getFontMetrics` ascent/descent fallback
-
-### camera (solid 82)
-
-- Remove stream-of-consciousness comment in `basis.ts` ("wait, this is col 1 of R" / "Actually...")
-- Investigate `getCameraLinearDepth` ortho path -- may be load-bearing
 
 ### device (solid 82)
 
@@ -704,10 +695,6 @@ Design calls to settle before building the affected entries:
 - Fix the stale "45 effects / 45 runners" count to 44
 - Add a deterministic unit-assertion tier the jsdom env can run, above the "is a function" floor
 
-### lighting (solid 88)
-
-- Fix non-re-entrant module-level scratch in `hasLightInfluenceOnBounds` (use local or pool)
-
 ### math (solid 88)
 
 - Fix the `previousPowerOfTwo` doc comment
@@ -797,10 +784,6 @@ These are explicit user directions whose implementation may span packages or req
 ### camera-controls (partial 58)
 
 - Make both controller constructors produce Entities
-
-### picking (solid 70)
-
-- Make createSceneHit produce an Entity
 
 ### scene-resources (solid 70)
 
@@ -1029,7 +1012,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `scene-formats` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `debug` · `lifecycle` · `adjustments` · `platform` · `connectivity` · `screen` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `scene-formats` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 
@@ -1039,4 +1022,4 @@ Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). 
 - **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 - **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)`
 - **Needs assess refresh (review newer than assessment):** `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `types (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 589 across 132 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `camera` (7) · `render` (7) · `timeline` (7) · `capture` (6) · `effects-canvas` (6) · `loader` (6) · `scene-resources` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Open directions awaiting the user:** 588 across 132 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `effects-canvas` (6) · `loader` (6) · `scene-resources` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.

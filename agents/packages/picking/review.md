@@ -23,7 +23,7 @@ attribute access.
 The next depth is semantic rather than another overload: picks must agree with what was actually drawn.
 GPU-skinned, morphed, billboarded, instanced, and LOD-selected geometry can currently diverge from the
 CPU geometry queried here. Result data also stops short of interpolated attributes and material/subset
-identity. **createSceneHit** itself violates the repository-wide Entity constructor invariant.
+identity. `SceneHit` now honors the repository-wide Entity constructor invariant.
 
 ## What is solid
 
@@ -39,9 +39,6 @@ identity. **createSceneHit** itself violates the repository-wide Entity construc
 
 ## Correctness and depth gaps
 
-- **SceneHit** does not extend Entity and **createSceneHit** returns a structural literal. The result may
-  be plain data conceptually, but the current repository rule is that every exported create product is
-  Entity-backed; either honor that rule or rename a non-entity initializer consistently.
 - Morph targets mutate CPU geometry only when their explicit update runs. A pick before that update can
   hit stale base geometry. GPU-skinned meshes are queried against CPU vertices unless a CPU skin update
   has also run. Picking must consume the same explicit deformation preparation/evaluator as bounds and

@@ -5,8 +5,8 @@ import type { MeshGeometry, VertexAttribute, VertexAttributeLayout, VertexSemant
 // layout — not just the canonical PBR record. set* functions bump geometry.version so backends
 // know to re-upload.
 
-// Reads the position (x, y, z) of vertex `vertexIndex` into `out`. Returns false when the
-// layout has no position semantic or vertexIndex is out of range; out is unchanged.
+// Reads the normal (x, y, z) of vertex `vertexIndex` into `out`. Returns false when the
+// layout has no normal semantic or vertexIndex is out of range; out is unchanged.
 export function getMeshGeometryVertexNormal(
   out: { x: number; y: number; z: number },
   geometry: Readonly<MeshGeometry>,

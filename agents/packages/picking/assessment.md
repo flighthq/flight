@@ -10,8 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Directed
 
-1. **Make createSceneHit produce an Entity.** Move SceneHit onto the Entity contract and construct it
-   through createEntity, preserving caller-owned reuse and flat result fields.
+None remaining.
 
 ## Recommended
 
@@ -39,4 +38,5 @@ preparation, mesh deformation, materials, or future instancing/LOD contracts.
 
 ## Approved
 
-None.
+- [2026-07-21 · completed] `SceneHit` extends Entity and `createSceneHit` uses `createEntity`, preserving
+  caller-owned reuse and flat result fields.

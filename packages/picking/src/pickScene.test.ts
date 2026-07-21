@@ -17,6 +17,7 @@ import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flight
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createSceneHit, pickScene, pickSceneAll, pickSceneAllWithRay3D, pickSceneWithRay3D } from './pickScene';
 
@@ -71,6 +72,7 @@ describe('createSceneHit', () => {
   it('allocates a zeroed hit with a sentinel triangle index', () => {
     const hit = createSceneHit();
 
+    expect(EntityRuntimeKey in hit).toBe(true);
     expect(hit.triangleIndex).toBe(-1);
     expect(hit.distance).toBe(0);
     expect(hit.normalX).toBe(0);
