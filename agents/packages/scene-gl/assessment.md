@@ -11,7 +11,8 @@ basedOn: ./review.md
 1. **Realize ExtendedPbrMaterial through separately imported extension registrations.** Standard PBR
    stays lean and open: neither its prelude nor its define/cache key enumerates built-in extensions;
    extension kinds and contributed source provide extended-program identity. Each PbrExtension kind
-   registers its own GL realization.
+   registers its own GL realization. Last-write-wins re-registration must advance a registry version
+   or otherwise invalidate compiled variants—a kind-only program key cannot retain stale shader code.
 2. **Sample every declared extension map and compose lobes coherently.** Bind each map's own UV set and
    texture transform rather than sampling every slot through the base-color map's shared `v_uv0`.
    Combined extensions need raster proof, not only source-string tests.
@@ -20,7 +21,9 @@ basedOn: ./review.md
 4. **Follow diagnostics inversion.** Missing registrations, duplicate kinds, texture-unit exhaustion,
    and unsupported combinations return sentinels with shakeable explain/guard layers rather than
    unconditional draw-path throws; normal rendering skips invalid duplicates deterministically and
-   only an explicitly enabled guard throws.
+   an explicitly enabled guard warns through `@flighthq/log` without changing control flow. Keep the
+   explainer/strings in a sibling diagnostic module, use the standard message-with-fixing-call shape,
+   and test both fire and silent cases.
 5. **Add exhaustive GL behavior tests.** Cover scalar and map inputs, multi-extension composition,
    diagnostics, and transmission against a distinguishable captured background.
 6. **Keep backend caches private to state/runtime.** Export operations, not caches.
@@ -30,7 +33,8 @@ basedOn: ./review.md
    `@flighthq/types`; `@flighthq/scene-gl` should export implementations against those shared types,
    not define cross-package API shapes inline. The public bind context should provide the necessary
    uniform and texture operations without exposing private `GlPbrProgram` or `GlPbrDefineKey`
-   implementation shapes.
+   implementation shapes. Prelude, program-cache, standard-block, raw uniform-location, and scene
+   runtime helpers are backend implementation modules, not root-barrel API atoms.
 
 ## Recommended
 
