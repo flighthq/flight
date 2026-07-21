@@ -1,4 +1,4 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { createMatrix4, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
@@ -9,7 +9,7 @@ import { destroyGlParticleEmitter3DShader, drawGlSceneParticleEmitter2Ds } from 
 import { makeGlSceneState } from './glSceneTestHelper';
 
 function makeCamera() {
-  const cam = createCamera({
+  const cam = createCamera3D({
     far: 100,
     near: 0.1,
     projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },

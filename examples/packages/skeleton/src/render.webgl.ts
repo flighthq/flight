@@ -1,5 +1,5 @@
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
   beginGlRenderEffectPipeline,
   createGlCanvasElement,
@@ -31,7 +31,7 @@ const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
 });
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;

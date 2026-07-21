@@ -8,7 +8,7 @@ import type {
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 
-// Camera motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
+// Camera3D motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
 // toward the screen center. A legitimate 2D effect on its own, the Wgpu mirror of effects-gl's
 // applyCameraMotionBlurEffectToGl. Two richer variants are 2D-native follow-ups, not 3D-gated:
 // feeding the actual camera/root transform delta as the smear vector (global velocity), and per-object

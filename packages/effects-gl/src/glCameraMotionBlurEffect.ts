@@ -3,7 +3,7 @@ import type { CameraMotionBlurEffect, GlRenderEffectRunner, GlRenderState, GlRen
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 
-// Camera motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
+// Camera3D motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
 // toward the screen center. A legitimate 2D effect on its own. Two richer variants are 2D-native
 // follow-ups, not 3D-gated: feeding the actual camera/root transform delta as the smear vector (global
 // velocity), and per-object motion blur reading ctx.sceneVelocityTexture (per-node prev-transform delta).

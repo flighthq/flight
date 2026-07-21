@@ -1,11 +1,11 @@
-import type { Camera, Vector3Like } from '@flighthq/types';
+import type { Camera3D, Vector3Like } from '@flighthq/types';
 
 // Extracts the camera's world-space forward direction (-Z of the camera frame) from the view
 // matrix and writes it into `out`. In a right-handed camera frame the forward vector points
 // from the eye toward the target; it is the negated third row of the view matrix.
 //
 // Safe when `out` aliases any field of the camera.
-export function getCameraForward(out: Vector3Like, camera: Readonly<Camera>): void {
+export function getCamera3DForward(out: Vector3Like, camera: Readonly<Camera3D>): void {
   const m = camera.view.m;
   // Row 2 of the view matrix is the negated forward direction in world space.
   // Negate to get the true forward (eye→target).
@@ -23,7 +23,7 @@ export function getCameraForward(out: Vector3Like, camera: Readonly<Camera>): vo
 // (setGlMeshCameraPosition) should delegate here rather than recomputing it inline.
 //
 // Safe when `out` aliases any field of the camera.
-export function getCameraPosition(out: Vector3Like, camera: Readonly<Camera>): void {
+export function getCamera3DPosition(out: Vector3Like, camera: Readonly<Camera3D>): void {
   const m = camera.view.m;
   // Column-major storage: element(row, col) = m[row + 4*col].
   // The 3×3 rotation block R^T (transposed) has rows:
@@ -56,7 +56,7 @@ export function getCameraPosition(out: Vector3Like, camera: Readonly<Camera>): v
 // matrix and writes it into `out`. It is the first row of the view matrix.
 //
 // Safe when `out` aliases any field of the camera.
-export function getCameraRight(out: Vector3Like, camera: Readonly<Camera>): void {
+export function getCamera3DRight(out: Vector3Like, camera: Readonly<Camera3D>): void {
   const m = camera.view.m;
   out.x = m[0];
   out.y = m[4];
@@ -67,7 +67,7 @@ export function getCameraRight(out: Vector3Like, camera: Readonly<Camera>): void
 // matrix and writes it into `out`. It is the second row of the view matrix.
 //
 // Safe when `out` aliases any field of the camera.
-export function getCameraUp(out: Vector3Like, camera: Readonly<Camera>): void {
+export function getCamera3DUp(out: Vector3Like, camera: Readonly<Camera3D>): void {
   const m = camera.view.m;
   out.x = m[1];
   out.y = m[5];

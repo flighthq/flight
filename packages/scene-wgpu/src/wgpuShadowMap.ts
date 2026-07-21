@@ -1,9 +1,9 @@
-import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
+import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix3, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  Camera,
+  Camera3D,
   Material,
   Matrix3,
   Matrix4,
@@ -55,7 +55,7 @@ export function destroyWgpuSceneShadow(state: WgpuRenderState): void {
 // Shadows are opt-in: an app that never calls this leaves runtime.shadow null, so existing scenes render
 // unchanged (the lit draws bind a dummy depth map gated off by the shadow uniform).
 //
-// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera). All
+// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera3D). All
 // meshes are drawn (no frustum cull — an off-screen caster can still shadow the visible scene).
 //
 // MUST be called before the main scene render pass opens: it drives its own depth-only render pass on
@@ -65,7 +65,7 @@ export function destroyWgpuSceneShadow(state: WgpuRenderState): void {
 export function drawWgpuSceneShadowMap(
   state: WgpuRenderState,
   scene: Readonly<SceneNode>,
-  shadowCamera: Readonly<Camera>,
+  shadowCamera: Readonly<Camera3D>,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const encoder = runtime.commandEncoder;
@@ -83,7 +83,7 @@ export function drawWgpuSceneShadowMap(
     sceneRuntime.shadow = shadow;
   }
   const lightMatrix = shadow.matrix;
-  getCameraViewProjectionMatrix4(lightMatrix, shadowCamera, 1);
+  getCamera3DViewProjectionMatrix4(lightMatrix, shadowCamera, 1);
 
   const pipeline = ensureWgpuShadowDepthPipeline(state);
 

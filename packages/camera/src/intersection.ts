@@ -1,6 +1,6 @@
-import type { BoundingSphereLike, Camera, PlaneLike, Ray3DLike, Vector3Like } from '@flighthq/types';
+import type { BoundingSphereLike, Camera3D, PlaneLike, Ray3DLike, Vector3Like } from '@flighthq/types';
 
-import { getCameraScreenToWorldRay, getCameraWorldToScreen } from './picking';
+import { getCamera3DScreenToWorldRay, getCamera3DWorldToScreen } from './picking';
 
 // Returns the world-space ray from the camera through the center of a bounding sphere, writing
 // the result into `out` and returning true. The ray is suitable for picking and hover-highlight
@@ -15,9 +15,9 @@ import { getCameraScreenToWorldRay, getCameraWorldToScreen } from './picking';
 // The ray direction is normalized. `aspect` is viewport width / height.
 //
 // Reads all inputs before writing `out`, so it is alias-safe.
-export function getCameraRayThroughBoundingSphere(
+export function getCamera3DRayThroughBoundingSphere(
   out: Ray3DLike,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   sphere: Readonly<BoundingSphereLike>,
   aspect: number,
 ): boolean {
@@ -25,11 +25,11 @@ export function getCameraRayThroughBoundingSphere(
     return false;
   }
   // Project sphere center to NDC.
-  if (!getCameraWorldToScreen(__scratchNdc, camera, sphere.center, aspect)) {
+  if (!getCamera3DWorldToScreen(__scratchNdc, camera, sphere.center, aspect)) {
     return false;
   }
   // Unproject those NDC coords back to a world-space ray.
-  return getCameraScreenToWorldRay(out, camera, __scratchNdc.x, __scratchNdc.y, aspect);
+  return getCamera3DScreenToWorldRay(out, camera, __scratchNdc.x, __scratchNdc.y, aspect);
 }
 
 // Computes the intersection of a ray with an infinite plane, writing the hit point into `out`
@@ -42,11 +42,11 @@ export function getCameraRayThroughBoundingSphere(
 // does not need to be unit length. The ray direction does not need to be unit length either.
 //
 // This is not specific to a camera but lives here as an ergonomic companion to
-// `getCameraScreenToWorldRay`: cast a ray from mouse position, intersect with a ground plane,
+// `getCamera3DScreenToWorldRay`: cast a ray from mouse position, intersect with a ground plane,
 // and you have world-space mouse drag.
 //
 // Reads all inputs before writing `out`, so it is alias-safe.
-export function intersectCameraRayWithPlane(
+export function intersectCamera3DRayWithPlane(
   out: Vector3Like,
   ray: Readonly<Ray3DLike>,
   plane: Readonly<PlaneLike>,

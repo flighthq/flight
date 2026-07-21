@@ -2,7 +2,7 @@ import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  Camera,
+  Camera3D,
   LambertMaterial,
   Material,
   MeshGeometry,
@@ -30,7 +30,7 @@ export const lambertWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     state: WgpuRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
     const pass = stateRuntime.renderPass;

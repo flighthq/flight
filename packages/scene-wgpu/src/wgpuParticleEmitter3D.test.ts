@@ -1,16 +1,16 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { createMatrix4, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera, ParticleEmitter3D, SceneLights } from '@flighthq/types';
+import type { Camera3D, ParticleEmitter3D, SceneLights } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { destroyWgpuParticleEmitter3DResources, drawWgpuSceneParticleEmitter2Ds } from './wgpuParticleEmitter3D';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
-function makeCamera(): Camera {
-  const cam = createCamera({
+function makeCamera(): Camera3D {
+  const cam = createCamera3D({
     far: 100,
     near: 0.1,
     projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },

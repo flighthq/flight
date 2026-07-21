@@ -1,9 +1,9 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture';
-import type { Camera, ImageResource } from '@flighthq/types';
+import type { Camera3D, ImageResource } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import {
@@ -20,8 +20,8 @@ import {
 } from './glMeshProgram';
 import { makeFakeGl2, makeGlSceneState } from './glSceneTestHelper';
 
-function makeCamera(): Camera {
-  return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+function makeCamera(): Camera3D {
+  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
 function makeProgram(): GlMeshProgram {

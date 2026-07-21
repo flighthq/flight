@@ -1,7 +1,7 @@
 import { createMatrix4, inverseMatrix4 } from '@flighthq/geometry';
-import type { Camera, Vector3Like } from '@flighthq/types';
+import type { Camera3D, Vector3Like } from '@flighthq/types';
 
-import { getCameraViewProjectionMatrix4 } from './camera';
+import { getCamera3DViewProjectionMatrix4 } from './camera';
 
 // Writes the 8 world-space corners of the camera frustum into `out` (a length-8 array of
 // Vector3Like) and returns true. Returns false (leaving `out` untouched) when the
@@ -19,12 +19,12 @@ import { getCameraViewProjectionMatrix4 } from './camera';
 //
 // Needed for cascaded shadow maps, debug draw, and tight bounds fitting.
 // Reads all inputs before writing any `out` element, so it is alias-safe.
-export function getCameraFrustumCorners(
+export function getCamera3DFrustumCorners(
   out: [Vector3Like, Vector3Like, Vector3Like, Vector3Like, Vector3Like, Vector3Like, Vector3Like, Vector3Like],
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   aspect: number,
 ): boolean {
-  getCameraViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
+  getCamera3DViewProjectionMatrix4(__scratchViewProjection, camera, aspect);
   if (!inverseMatrix4(__scratchInverseVP, __scratchViewProjection)) {
     return false;
   }

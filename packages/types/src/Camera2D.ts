@@ -9,7 +9,7 @@ import type { Rectangle } from './Rectangle';
 // camera norm). `zoom` > 1 magnifies (a smaller world region fills the viewport); `zoom` < 1 zooms
 // out. `rotation` is in radians and rotates the camera counter-clockwise about its center, so the
 // world appears to rotate clockwise on screen. `viewportWidth`/`viewportHeight` are the drawable
-// surface size in device pixels. Distinct from `Camera` (the 3D perspective/orthographic camera).
+// surface size in device pixels. Distinct from `Camera3D` (the 3D perspective/orthographic camera).
 export interface Camera2D {
   rotation: number;
   viewportHeight: number;

@@ -1,10 +1,10 @@
-import { getCameraViewProjectionMatrix4 } from '@flighthq/camera';
+import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { hasMeshGeometrySkin } from '@flighthq/mesh';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl';
 import { updateMeshMorph } from '@flighthq/scene';
-import type { Camera, GlRenderState, Mesh, SceneNode, SceneNodeTraits } from '@flighthq/types';
+import type { Camera3D, GlRenderState, Mesh, SceneNode, SceneNodeTraits } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import {
@@ -22,12 +22,12 @@ import { ensureGlSkinPalette, getGlSceneRuntime } from './glSceneRuntime';
 // the shadow during shading. Shadows are opt-in: an app that never calls this leaves runtime.shadow
 // null, so existing scenes render unchanged.
 //
-// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera). All
+// `shadowCamera` is the orthographic light camera (see camera's configureDirectionalShadowCamera3D). All
 // meshes are drawn (no frustum cull — an off-screen caster can still shadow the visible scene).
 export function drawGlSceneShadowMap(
   state: GlRenderState,
   scene: Readonly<SceneNode>,
-  shadowCamera: Readonly<Camera>,
+  shadowCamera: Readonly<Camera3D>,
 ): void {
   const gl = state.gl;
   const runtime = getGlSceneRuntime(state);
@@ -41,7 +41,7 @@ export function drawGlSceneShadowMap(
   }
   const target = runtime.shadowTarget;
   const matrix = runtime.shadow?.matrix ?? createMatrix4();
-  getCameraViewProjectionMatrix4(matrix, shadowCamera, 1);
+  getCamera3DViewProjectionMatrix4(matrix, shadowCamera, 1);
 
   const rigidProgram = ensureGlSceneProgram(state, 'shadow:depth', compileShadowDepthProgram);
   // Compiled lazily on the first GPU-skinned caster so a scene without skinned meshes never pays for it.

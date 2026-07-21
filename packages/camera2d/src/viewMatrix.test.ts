@@ -36,7 +36,7 @@ describe('getCamera2DViewMatrix', () => {
   });
 
   it('rotates the view opposite the camera rotation', () => {
-    // Camera rotated +90deg (CCW): a world point to the right appears above the center.
+    // Camera3D rotated +90deg (CCW): a world point to the right appears above the center.
     const camera = createCamera2D(800, 600, { rotation: Math.PI / 2 });
     const view = createMatrix();
     getCamera2DViewMatrix(camera, view);

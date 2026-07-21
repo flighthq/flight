@@ -1,7 +1,7 @@
 import type { LinearColor } from '@flighthq/color';
 import { unpackColorToLinear } from '@flighthq/color';
 import type {
-  Camera,
+  Camera3D,
   EmissiveMaterial,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -33,7 +33,7 @@ export const emissiveGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     _lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const emissive = material as Readonly<EmissiveMaterial> | null;

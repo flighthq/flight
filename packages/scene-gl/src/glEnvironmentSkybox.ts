@@ -1,7 +1,7 @@
-import { getCameraInverseViewProjectionMatrix4 } from '@flighthq/camera';
+import { getCamera3DInverseViewProjectionMatrix4 } from '@flighthq/camera';
 import { createMatrix4 } from '@flighthq/geometry';
 import { createGlProgram } from '@flighthq/render-gl';
-import type { Camera, Environment, GlRenderState, Matrix4 } from '@flighthq/types';
+import type { Camera3D, Environment, GlRenderState, Matrix4 } from '@flighthq/types';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
 
@@ -14,7 +14,7 @@ import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
 export function drawGlEnvironmentSkybox(
   state: GlRenderState,
   environment: Readonly<Environment>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   aspect: number,
 ): void {
   const cube = ensureGlEnvironmentSourceCube(state, environment);
@@ -23,7 +23,7 @@ export function drawGlEnvironmentSkybox(
   const gl = state.gl;
   const sky = ensureGlSkybox(state);
 
-  getCameraInverseViewProjectionMatrix4(_inverseViewProjection, camera, aspect);
+  getCamera3DInverseViewProjectionMatrix4(_inverseViewProjection, camera, aspect);
 
   const prevDepthTest = gl.getParameter(gl.DEPTH_TEST) as boolean;
   gl.depthMask(false);

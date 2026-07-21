@@ -55,7 +55,7 @@ export * from './BloomEffect';
 export * from './BlurEffect';
 export * from './BokehDepthOfFieldEffect';
 export * from './BoundingSphere';
-export * from './Camera';
+export * from './Camera3D';
 export * from './Camera2D';
 export * from './CameraMotionBlurEffect';
 export * from './CanvasMaterialRenderer';

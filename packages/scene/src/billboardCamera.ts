@@ -8,7 +8,7 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry';
 import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node';
-import type { Billboard, BillboardMode, Camera, Matrix4, SceneNode } from '@flighthq/types';
+import type { Billboard, BillboardMode, Camera3D, Matrix4, SceneNode } from '@flighthq/types';
 
 import { isBillboard } from './billboard';
 import { getSceneNodeRuntime } from './sceneNode';
@@ -22,7 +22,7 @@ import { getSceneNodeRuntime } from './sceneNode';
 // Call once per frame per billboard after the camera's view matrix is set and before drawing. For a
 // whole subtree, orientSceneBillboardsToCamera walks and orients every Billboard in one pass, deriving
 // the camera basis a single time.
-export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<Camera>): void {
+export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<Camera3D>): void {
   setBillboardCameraBasis(camera);
   applyBillboardFacing(billboard);
 }
@@ -32,7 +32,7 @@ export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<C
 // camera basis is derived once and reused across every billboard. Parents are oriented before their
 // descendants (top-down), so a billboard nested under another billboard sees its parent's updated
 // transform.
-export function orientSceneBillboardsToCamera(scene: Readonly<SceneNode>, camera: Readonly<Camera>): void {
+export function orientSceneBillboardsToCamera(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>): void {
   setBillboardCameraBasis(camera);
   orientBillboardSubtree(scene);
 }
@@ -80,7 +80,7 @@ function orientBillboardSubtree(node: Readonly<SceneNode>): void {
 // basis vectors are normalized so a camera with a scaled view still yields a rotation-only billboard
 // basis. `_back` is the camera's +Z world axis (toward the viewer), which is the facing normal a
 // screen-aligned billboard adopts.
-function setBillboardCameraBasis(camera: Readonly<Camera>): void {
+function setBillboardCameraBasis(camera: Readonly<Camera3D>): void {
   inverseMatrix4(_cameraWorld, camera.view);
   const m = _cameraWorld.m;
   _cameraEyeX = m[12];
@@ -152,7 +152,7 @@ function writeBillboardFacingMatrix(out: Matrix4, mode: BillboardMode): void {
     let dz = _cameraEyeZ - pz;
     let dl = Math.hypot(dx, dz);
     if (dl < FACING_EPSILON) {
-      // Camera is directly above/below: fall back to the camera back-axis projected onto XZ.
+      // Camera3D is directly above/below: fall back to the camera back-axis projected onto XZ.
       dx = _cameraBackX;
       dz = _cameraBackZ;
       dl = Math.hypot(dx, dz);

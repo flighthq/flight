@@ -1,8 +1,8 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { createEmissiveModifier, createRimModifier, createShadedMaterial } from '@flighthq/shading';
-import type { Camera, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
 import { ShadedMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -12,8 +12,8 @@ import { setGlSceneTime } from './glSceneTime';
 import { registerBuiltInGlModifierSnippets } from './glShadedBuiltInModifiers';
 import { registerShadedGlMaterial, shadedGlMeshMaterialRenderer } from './shadedGlMeshMaterialRenderer';
 
-function makeCamera(): Camera {
-  return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+function makeCamera(): Camera3D {
+  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
 function makeLights(): SceneLightBlock {

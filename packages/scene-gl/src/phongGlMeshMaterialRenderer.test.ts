@@ -1,8 +1,8 @@
-import { createCamera } from '@flighthq/camera';
+import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createPhongMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
-import type { Camera, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
+import type { Camera3D, SceneLightBlock, SceneRenderProxy } from '@flighthq/types';
 import { PhongMaterialKind } from '@flighthq/types';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -10,8 +10,8 @@ import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 import { phongGlMeshMaterialRenderer, registerPhongGlMaterial } from './phongGlMeshMaterialRenderer';
 
-function makeCamera(): Camera {
-  return createCamera({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
+function makeCamera(): Camera3D {
+  return createCamera3D({ far: 100, near: 0.1, projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' } });
 }
 
 function makeLights(): SceneLightBlock {
@@ -47,7 +47,7 @@ describe('phongGlMeshMaterialRenderer', () => {
     expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
     // Light block (2 vec4) + diffuse + specular colors → at least 4 uniform4f.
     expect(gl.calls.filter((c) => c.name === 'uniform4f').length).toBeGreaterThanOrEqual(4);
-    // Camera position is a vec3; the ambient radiance is too — at least 2 uniform3f.
+    // Camera3D position is a vec3; the ambient radiance is too — at least 2 uniform3f.
     expect(gl.calls.filter((c) => c.name === 'uniform3f').length).toBeGreaterThanOrEqual(2);
   });
 

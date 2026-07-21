@@ -1,9 +1,9 @@
-import type { Camera, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
+import type { Camera3D, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   createAmbientLight,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createMesh,
   createMeshGeometry,
@@ -14,7 +14,7 @@ import {
   createStandardPbrMaterial,
   createVector3,
   normalizeVector3,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   copyQuaternion,
   invalidateNodeLocalTransform,
@@ -146,12 +146,12 @@ const mesh: Mesh = createMesh(geometry, [material]);
 mesh.skin = { skeleton: createSkeleton3D(jointNodes) };
 addNodeChild(scene, mesh);
 
-const camera: Camera = createCamera({
+const camera: Camera3D = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: 800 / 600, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(6, 4, 10), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(6, 4, 10), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 const directionalDirection = createVector3(-1, -0.5, -0.7);
 normalizeVector3(directionalDirection, directionalDirection);

@@ -1,7 +1,7 @@
 import { hasImageResourcePixels } from '@flighthq/image';
 import { bindGlImageResourceTexture } from '@flighthq/render-gl';
 import type {
-  Camera,
+  Camera3D,
   CustomShaderMaterial,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -43,7 +43,7 @@ export const customShaderGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     _lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const custom = material as Readonly<CustomShaderMaterial> | null;
     if (custom === null || custom.shaderKey === '') {

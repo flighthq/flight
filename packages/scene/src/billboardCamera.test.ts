@@ -1,8 +1,8 @@
-import { createCamera, createPerspectiveProjection, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
+import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { copyQuaternion, createQuaternion, setQuaternionFromAxisAngle, setVector3 } from '@flighthq/geometry';
 import { createPlaneMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
-import type { Camera } from '@flighthq/types';
+import type { Camera3D } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createBillboard } from './billboard';
@@ -11,9 +11,13 @@ import { createMesh } from './mesh';
 import { createSceneNode } from './sceneNode';
 
 // A camera at (ex,ey,ez) looking at the world origin with world +Y up.
-function cameraLookingFrom(ex: number, ey: number, ez: number): Camera {
-  const camera = createCamera({ far: 100, near: 0.1, projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }) });
-  setCameraViewMatrix4FromLookAt(camera, { x: ex, y: ey, z: ez }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+function cameraLookingFrom(ex: number, ey: number, ez: number): Camera3D {
+  const camera = createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+  });
+  setCamera3DViewMatrix4FromLookAt(camera, { x: ex, y: ey, z: ez }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
   return camera;
 }
 

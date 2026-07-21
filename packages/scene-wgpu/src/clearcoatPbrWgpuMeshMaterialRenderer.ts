@@ -1,6 +1,6 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import type {
-  Camera,
+  Camera3D,
   ClearcoatPbrMaterial,
   Material,
   MeshGeometry,
@@ -38,7 +38,7 @@ export const clearcoatPbrWgpuMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     state: WgpuRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const stateRuntime = getWgpuRenderStateRuntime(state);
     const pass = stateRuntime.renderPass;

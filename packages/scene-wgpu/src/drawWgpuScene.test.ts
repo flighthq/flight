@@ -1,4 +1,4 @@
-import { createCamera, setCameraViewMatrix4FromLookAt } from '@flighthq/camera';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting';
 import { createStandardPbrMaterial } from '@flighthq/materials';
@@ -6,19 +6,19 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera, ParticleEmitter3D, SceneLights } from '@flighthq/types';
+import type { Camera3D, ParticleEmitter3D, SceneLights } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 
-function makeCamera(): Camera {
-  const camera = createCamera({
+function makeCamera(): Camera3D {
+  const camera = createCamera3D({
     far: 100,
     near: 0.1,
     projection: { aspect: 1, fovY: Math.PI / 3, kind: 'perspective' },
   });
-  setCameraViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+  setCamera3DViewMatrix4FromLookAt(camera, { x: 0, y: 0, z: 5 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
   return camera;
 }
 

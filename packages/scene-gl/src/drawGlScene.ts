@@ -5,7 +5,7 @@ import { prepareSceneRender } from '@flighthq/render';
 import { declareGlRenderTargetColorSpace, invalidateGlRenderStateCache } from '@flighthq/render-gl';
 import { getSceneNodeWorldAlpha, updateMeshMorph } from '@flighthq/scene';
 import type {
-  Camera,
+  Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
   Material,
@@ -60,7 +60,7 @@ function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
 export function drawGlScene(
   state: GlRenderState,
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
 ): void {
   const list = prepareSceneRender(state, scene, camera, lights);

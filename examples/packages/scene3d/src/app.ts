@@ -1,10 +1,10 @@
 import { createSceneNode } from '@flighthq/scene';
-import type { Camera, SceneLights } from '@flighthq/sdk';
+import type { Camera3D, SceneLights } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
+  createCamera3D,
   createConeMeshGeometry,
   createDirectionalLight,
   createMesh,
@@ -13,7 +13,7 @@ import {
   createStandardPbrMaterial,
   createVector3,
   normalizeVector3,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   invalidateNodeLocalTransform,
   SceneNodeKind,
 } from '@flighthq/sdk';
@@ -68,12 +68,12 @@ invalidateNodeLocalTransform(coneMesh);
 addNodeChild(scene, coneMesh);
 
 // Perspective camera viewing the scene from a 3/4 angle.
-const camera: Camera = createCamera({
+const camera: Camera3D = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(4, 3, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(4, 3, 5), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // White directional light from the upper right plus a dim ambient fill.
 const directionalDirection = createVector3(-1, -0.5, -0.7);

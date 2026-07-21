@@ -2,7 +2,7 @@ import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flig
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import { prepareSceneRender } from '@flighthq/render';
 import type {
-  Camera,
+  Camera3D,
   Material,
   Matrix3,
   Matrix4,
@@ -33,7 +33,7 @@ import { drawWgpuSceneParticleEmitter2Ds } from './wgpuParticleEmitter3D';
 export function drawWgpuScene(
   state: WgpuRenderState,
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
 ): void {
   const list = prepareSceneRender(state, scene, camera, lights);

@@ -1,5 +1,5 @@
 import type {
-  Camera,
+  Camera3D,
   ClearcoatPbrMaterial,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -30,7 +30,7 @@ export const clearcoatPbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const clearcoat = material as Readonly<ClearcoatPbrMaterial> | null;

@@ -1,5 +1,5 @@
 import type {
-  Camera,
+  Camera3D,
   DepthMaterial,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -25,7 +25,7 @@ export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     _lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const depth = material as Readonly<DepthMaterial> | null;

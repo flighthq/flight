@@ -1,5 +1,5 @@
 import type {
-  Camera,
+  Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
   IridescencePbrMaterial,
@@ -30,7 +30,7 @@ export const iridescencePbrGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     state: GlRenderState,
     material: Readonly<Material> | null,
     lights: Readonly<SceneLightBlock>,
-    camera: Readonly<Camera>,
+    camera: Readonly<Camera3D>,
   ): void {
     const gl = state.gl;
     const iridescence = material as Readonly<IridescencePbrMaterial> | null;

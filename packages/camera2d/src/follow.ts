@@ -14,7 +14,7 @@ import { getCamera2DVisibleBounds } from './visibleBounds';
 // `worldBounds` is given, the camera is clamped so the visible world rectangle stays inside the
 // level, centering on any axis where the level is smaller than the view.
 //
-// Camera inputs are read into locals before any write, so passing the same camera as target source is
+// Camera3D inputs are read into locals before any write, so passing the same camera as target source is
 // safe. The deadzone box is axis-aligned in world space (it aligns with the view only when
 // `rotation` is 0).
 export function updateCamera2DFollow(
