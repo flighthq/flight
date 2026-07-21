@@ -1,4 +1,4 @@
-import { loadImageResourceFromBytes } from '@flighthq/image';
+import type * as ImageModule from '@flighthq/image';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
@@ -7,20 +7,23 @@ import { connectSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
 import type { ImageResource, ImageResourceReference, Texture } from '@flighthq/types';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { resolveOneSceneResourceTexture, resolveSceneResources } from './resolveSceneResources';
+import type * as ResolveSceneResourcesModule from './resolveSceneResources';
 import type { SceneResourceResolver } from './sceneResourceResolver';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
-import { enableSceneResourceSignals } from './sceneResourceSignals';
+import type * as SceneResourceResolverModule from './sceneResourceResolver';
+import type * as SceneResourceSignalsModule from './sceneResourceSignals';
 
-vi.mock('@flighthq/image', () => ({
-  loadImageResourceFromBytes: vi.fn(),
-  loadImageResourceFromUrl: vi.fn(),
-}));
-
-const loadFromBytes = vi.mocked(loadImageResourceFromBytes);
 const fakeImage = { height: 2, width: 2 } as unknown as ImageResource;
+type LoadImageResourceFromBytes = typeof ImageModule.loadImageResourceFromBytes;
+
+let createSceneResourceResolver: typeof SceneResourceResolverModule.createSceneResourceResolver;
+let disposeSceneResourceResolver: typeof SceneResourceResolverModule.disposeSceneResourceResolver;
+let enableSceneResourceSignals: typeof SceneResourceSignalsModule.enableSceneResourceSignals;
+let loadFromBytes: Mock<LoadImageResourceFromBytes>;
+let resolveOneSceneResourceTexture: typeof ResolveSceneResourcesModule.resolveOneSceneResourceTexture;
+let resolveSceneResources: typeof ResolveSceneResourcesModule.resolveSceneResources;
 
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   return {
@@ -58,8 +61,25 @@ async function settle(resolver: SceneResourceResolver): Promise<void> {
   await Promise.allSettled(promises);
 }
 
+beforeAll(async () => {
+  vi.resetModules();
+  loadFromBytes = vi.fn<LoadImageResourceFromBytes>();
+  vi.doMock('@flighthq/image', () => ({
+    loadImageResourceFromBytes: loadFromBytes,
+    loadImageResourceFromUrl: vi.fn(),
+  }));
+  ({ resolveOneSceneResourceTexture, resolveSceneResources } = await import('./resolveSceneResources'));
+  ({ createSceneResourceResolver, disposeSceneResourceResolver } = await import('./sceneResourceResolver'));
+  ({ enableSceneResourceSignals } = await import('./sceneResourceSignals'));
+});
+
+afterAll(() => {
+  vi.doUnmock('@flighthq/image');
+  vi.resetModules();
+});
+
 afterEach(() => {
-  vi.clearAllMocks();
+  loadFromBytes.mockReset();
 });
 
 describe('resolveOneSceneResourceTexture', () => {

@@ -1,17 +1,17 @@
-import { loadImageResourceFromUrl } from '@flighthq/image';
+import type * as ImageModule from '@flighthq/image';
 import type { ExternalImageResourceReference, ImageResource } from '@flighthq/types';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch';
+import type * as ImageResourceFetchModule from './imageResourceFetch';
 
-vi.mock('@flighthq/image', () => ({
-  loadImageResourceFromBytes: vi.fn(),
-  loadImageResourceFromUrl: vi.fn(),
-}));
-
-const loadFromUrl = vi.mocked(loadImageResourceFromUrl);
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
+type LoadImageResourceFromUrl = typeof ImageModule.loadImageResourceFromUrl;
+
+let createWebImageResourceFetch: typeof ImageResourceFetchModule.createWebImageResourceFetch;
+let loadFromUrl: Mock<LoadImageResourceFromUrl>;
+let resolveImageResourceUri: typeof ImageResourceFetchModule.resolveImageResourceUri;
 
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {
   return {
@@ -23,8 +23,23 @@ function externalRef(uri: string, basePath: string | null): ExternalImageResourc
   };
 }
 
+beforeAll(async () => {
+  vi.resetModules();
+  loadFromUrl = vi.fn<LoadImageResourceFromUrl>();
+  vi.doMock('@flighthq/image', () => ({
+    loadImageResourceFromBytes: vi.fn(),
+    loadImageResourceFromUrl: loadFromUrl,
+  }));
+  ({ createWebImageResourceFetch, resolveImageResourceUri } = await import('./imageResourceFetch'));
+});
+
+afterAll(() => {
+  vi.doUnmock('@flighthq/image');
+  vi.resetModules();
+});
+
 afterEach(() => {
-  vi.clearAllMocks();
+  loadFromUrl.mockReset();
 });
 
 describe('createWebImageResourceFetch', () => {
