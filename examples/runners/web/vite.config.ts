@@ -29,7 +29,7 @@ const examplesDir = join(projectRoot, 'examples', 'packages');
 const VERIFY_SKIP = new Set<string>(['playingsound']);
 
 function entryWithLogCapture(name: string, render: string): string {
-  const verifyPath = join(projectRoot, 'tools', 'harness', 'verify.ts');
+  const verifyPath = join(projectRoot, 'packages', 'tool-capture', 'src', 'functionalVerify.ts');
   // The shared in-page render verifier (also used by the functional harness). Reused here so examples
   // get the same not-blank / error / fingerprint checks with no per-example code. It is dynamically
   // imported and run ONLY under capture mode (window.__flightCapture, set by the verify harness), so

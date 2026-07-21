@@ -1,6 +1,6 @@
 import type { DisplayObject } from '@flighthq/sdk';
 import {
-  ParticleEmitterKind,
+  ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
   beginVelocityFrame,
@@ -16,8 +16,8 @@ import {
   createWgpuRenderState,
   createWgpuVelocityTarget,
   defaultWgpuMotionBlurEffectRunner,
-  defaultWgpuParticleEmitterRenderer,
-  defaultWgpuParticleEmitterVelocityWriter,
+  defaultWgpuParticleEmitter2DRenderer,
+  defaultWgpuParticleEmitter2DVelocityWriter,
   endWgpuRenderEffectPipeline,
   invalidateNodeLocalTransform,
   prepareDisplayObjectRender,
@@ -40,9 +40,9 @@ const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
-registerRenderer(state, ParticleEmitterKind, defaultWgpuParticleEmitterRenderer);
+registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
 registerWgpuRenderEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
-registerWgpuVelocityWriter(state, ParticleEmitterKind, defaultWgpuParticleEmitterVelocityWriter);
+registerWgpuVelocityWriter(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DVelocityWriter);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 const velocityTarget = createWgpuVelocityTarget(state, canvas.width, canvas.height);
