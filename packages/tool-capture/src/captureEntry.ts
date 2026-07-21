@@ -567,11 +567,7 @@ async function getRenderImageDataUrl(page: Page): Promise<string | null> {
 }
 
 async function getCanvasImageDataUrl(page: Page): Promise<string | null> {
-  return page
-    .locator('canvas')
-    .first()
-    .evaluate((canvas) => canvas.toDataURL('image/png'))
-    .catch(() => null);
+  return page.evaluate(() => document.querySelector('canvas')?.toDataURL('image/png') ?? null).catch(() => null);
 }
 
 // The kind of functional target the page registered (webgl / webgpu / canvas / dom), or null if it
