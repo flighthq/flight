@@ -65,6 +65,19 @@ describe('findNode', () => {
     const result = findNode(root, (n) => n === root);
     expect(result).toBeNull();
   });
+
+  it('narrows the result to the guarded type when the predicate is a type guard', () => {
+    interface TaggedNode extends Node<NodeTraits> {
+      tag: string;
+    }
+    const isTagged = (n: Node<NodeTraits>): n is TaggedNode => (n as Partial<TaggedNode>).tag === 'tagged';
+    (childA as TaggedNode).tag = 'tagged';
+    const result = findNode(root, isTagged);
+    // Compile-time proof of the guard overload: `result` is `TaggedNode | null`, so reading `.tag`
+    // needs no cast. Would not typecheck if findNode returned the un-narrowed NodeOf.
+    expect(result?.tag).toBe('tagged');
+    expect(result).toBe(childA);
+  });
 });
 
 describe('findNodeByName', () => {

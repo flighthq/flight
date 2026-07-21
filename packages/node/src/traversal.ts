@@ -5,8 +5,17 @@ import { getNodeRuntime } from './node';
 
 /**
  * Finds the first descendant of `source` (depth-first pre-order) that satisfies `predicate`.
- * Returns `null` if no descendant matches.
+ * Returns `null` if no descendant matches. When `predicate` is a type guard, the result is
+ * narrowed to the guarded type, so `findNode(root, isMesh)` returns `Mesh | null` with no cast.
  */
+export function findNode<Traits extends object, Result extends Node<Traits>>(
+  source: Readonly<Node<Traits>>,
+  predicate: (node: Node<Traits>) => node is Result,
+): Result | null;
+export function findNode<Traits extends object = NodeTraits>(
+  source: Readonly<Node<Traits>>,
+  predicate: (node: Node<Traits>) => boolean,
+): NodeOf<Traits> | null;
 export function findNode<Traits extends object = NodeTraits>(
   source: Readonly<Node<Traits>>,
   predicate: (node: Node<Traits>) => boolean,
