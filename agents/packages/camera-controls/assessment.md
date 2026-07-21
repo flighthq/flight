@@ -6,35 +6,30 @@ basedOn: ./review.md
 
 # camera-controls — Assessment
 
-The charter is not directed yet; this assessment uses the repository AAA/composition standard and
-keeps larger controller-family choices out of `Recommended`.
+The package now has a solid primitive floor. The charter remains undirected, so larger controller
+families stay out of automatic work.
 
 ## Directed
 
-1. **Make both controller constructors produce Entities.** Move the controller interfaces onto the
-   Entity contract and construct through `createEntity`, preserving the current plain fields and
-   input-agnostic behavior.
+None. Orbit and fly controller interfaces now extend Entity and both constructors use `createEntity`.
 
 ## Recommended
 
-1. **Correct the package description.** Remove the claim that this package owns 2D follow behavior.
-2. **Make orbit pan semantics precise.** Rename/document the existing world-up pan honestly and add a
-   separate true view-plane pan only if that distinction can be expressed without changing callers.
-3. **Define angular wrap behavior and test the ±π seam.** Use shortest-angle damping or explicitly
-   normalize external wrapped deltas into the package's chosen continuous-angle contract.
+None. The description accurately names both the exported 2D follow primitive and 3D controllers;
+world-up and true view-plane orbit pan are separate operations; angular damping takes the shortest
+arc across ±π with seam tests.
 
 ## Depth gaps
 
-1. **Add controller-state primitives.** Reset, snap current to goal, clone/capture/restore, and direct
-   setters prevent callers from manually synchronizing coupled current/goal fields.
-2. **Add explicit framing composition.** Fit a sphere/AABB into perspective or orthographic projection
-   using the active viewport aspect and padding, then optionally update an orbit target/distance.
-3. **Keep advanced behaviors compositional.** Arcball/trackball, additive shake, rails/cinematic paths,
-   and a caller-supplied collision query for fly movement should be separate primitives or adapters,
-   not branches in a universal controller.
+None at the bedrock tier. Controller copy/clone/reset/snap operations preserve runtime ownership and
+do not alias mutable vectors. Sphere framing composes target placement with perspective goal distance
+or orthographic extents using an explicit active viewport aspect and padding; clip-plane policy stays
+visible to the caller.
 
 ## Backlog
 
+- Arcball/trackball, additive shake, rails/cinematic paths, and collision-aware fly movement remain
+  separate future primitives or adapters. Do not add them as modes on a universal controller.
 - Input-device mappings belong in small input/application adapters, not this headless package.
 - The charter needs a direction session before the advanced-controller family is expanded.
 

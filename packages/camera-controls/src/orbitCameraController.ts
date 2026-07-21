@@ -1,7 +1,34 @@
 import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
+import { createEntity } from '@flighthq/entity';
 import { createVector3 } from '@flighthq/geometry';
-import { clamp, damp } from '@flighthq/math';
+import { clamp, damp, deltaAngle } from '@flighthq/math';
 import type { Camera3D, OrbitCameraController, OrbitCameraControllerOptions } from '@flighthq/types';
+
+// Allocates an independent Entity containing the same controller value state.
+export function cloneOrbitCameraController(source: Readonly<OrbitCameraController>): OrbitCameraController {
+  const clone = createOrbitCameraController();
+  copyOrbitCameraController(clone, source);
+  return clone;
+}
+
+// Copies all controller state without sharing its mutable target. Entity runtime/binding state is
+// deliberately left on `out`; this is a value-state operation, not an ownership transfer.
+export function copyOrbitCameraController(out: OrbitCameraController, source: Readonly<OrbitCameraController>): void {
+  out.azimuth = source.azimuth;
+  out.distance = source.distance;
+  out.goalAzimuth = source.goalAzimuth;
+  out.goalDistance = source.goalDistance;
+  out.goalPolar = source.goalPolar;
+  out.maxDistance = source.maxDistance;
+  out.maxPolar = source.maxPolar;
+  out.minDistance = source.minDistance;
+  out.minPolar = source.minPolar;
+  out.polar = source.polar;
+  out.smoothTime = source.smoothTime;
+  out.target.x = source.target.x;
+  out.target.y = source.target.y;
+  out.target.z = source.target.z;
+}
 
 // Allocates an orbit controller. `target` defaults to the origin, `distance` to 10, angles to 0;
 // `polar` limits default to just inside ±90° so the look-at up vector never degenerates, `distance`
@@ -12,7 +39,7 @@ export function createOrbitCameraController(options?: Readonly<OrbitCameraContro
   const polar = options?.polar ?? 0;
   const distance = options?.distance ?? 10;
   const target = options?.target;
-  return {
+  return createEntity({
     azimuth,
     distance,
     goalAzimuth: azimuth,
@@ -25,7 +52,7 @@ export function createOrbitCameraController(options?: Readonly<OrbitCameraContro
     polar,
     smoothTime: options?.smoothTime ?? 0,
     target: createVector3(target?.x ?? 0, target?.y ?? 0, target?.z ?? 0),
-  };
+  });
 }
 
 // Moves the goal distance (dolly / zoom) by `deltaDistance`, clamped to [minDistance, maxDistance].
@@ -50,8 +77,8 @@ export function orbitCameraController(
   controller.goalPolar = clamp(controller.goalPolar + deltaPolar, controller.minPolar, controller.maxPolar);
 }
 
-// Slides the orbit `target` in the view plane: `deltaRight` along the camera's horizontal right axis
-// (at the current goal azimuth), `deltaUp` along world-up. Because the eye is derived from the target
+// Slides the orbit `target` in a world-up plane: `deltaRight` along the camera's horizontal right axis
+// (at the current goal azimuth), `deltaUp` along world Y. Because the eye is derived from the target
 // each update, panning the target pans the whole view. Reads the target into locals before writing so
 // aliasing is safe.
 export function panCameraController(controller: OrbitCameraController, deltaRight: number, deltaUp: number): void {
@@ -61,6 +88,56 @@ export function panCameraController(controller: OrbitCameraController, deltaRigh
   target.x += cosAzimuth * deltaRight;
   target.y += deltaUp;
   target.z += -sinAzimuth * deltaRight;
+}
+
+// Slides the orbit target in the actual camera view plane. Unlike `panCameraController`, `deltaUp`
+// follows screen-up at the goal polar angle, so it can change all three target coordinates.
+export function panOrbitCameraControllerInViewPlane(
+  controller: OrbitCameraController,
+  deltaRight: number,
+  deltaUp: number,
+): void {
+  const cosAzimuth = Math.cos(controller.goalAzimuth);
+  const sinAzimuth = Math.sin(controller.goalAzimuth);
+  const cosPolar = Math.cos(controller.goalPolar);
+  const sinPolar = Math.sin(controller.goalPolar);
+  const target = controller.target;
+  target.x += cosAzimuth * deltaRight - sinAzimuth * sinPolar * deltaUp;
+  target.y += cosPolar * deltaUp;
+  target.z += -sinAzimuth * deltaRight - cosAzimuth * sinPolar * deltaUp;
+}
+
+// Restores the controller to constructor defaults or the supplied seed. Current and goal spherical
+// coordinates are synchronized, which makes this suitable for scene changes without an eased tail.
+export function resetOrbitCameraController(
+  controller: OrbitCameraController,
+  options?: Readonly<OrbitCameraControllerOptions>,
+): void {
+  const azimuth = options?.azimuth ?? 0;
+  const polar = options?.polar ?? 0;
+  const distance = options?.distance ?? 10;
+  const target = options?.target;
+  controller.azimuth = azimuth;
+  controller.distance = distance;
+  controller.goalAzimuth = azimuth;
+  controller.goalDistance = distance;
+  controller.goalPolar = polar;
+  controller.maxDistance = options?.maxDistance ?? Number.POSITIVE_INFINITY;
+  controller.maxPolar = options?.maxPolar ?? DEFAULT_MAX_POLAR;
+  controller.minDistance = options?.minDistance ?? DEFAULT_MIN_DISTANCE;
+  controller.minPolar = options?.minPolar ?? DEFAULT_MIN_POLAR;
+  controller.polar = polar;
+  controller.smoothTime = options?.smoothTime ?? 0;
+  controller.target.x = target?.x ?? 0;
+  controller.target.y = target?.y ?? 0;
+  controller.target.z = target?.z ?? 0;
+}
+
+// Snaps current spherical state to the clamped goal without writing a camera.
+export function snapOrbitCameraController(controller: OrbitCameraController): void {
+  controller.azimuth = controller.goalAzimuth;
+  controller.distance = clamp(controller.goalDistance, controller.minDistance, controller.maxDistance);
+  controller.polar = clamp(controller.goalPolar, controller.minPolar, controller.maxPolar);
 }
 
 // Advances the controller one step and writes the resulting view into `camera` (in place). Eases the
@@ -77,7 +154,8 @@ export function updateOrbitCameraController(
   const goalDistance = clamp(controller.goalDistance, controller.minDistance, controller.maxDistance);
   if (controller.smoothTime > 0 && deltaTime > 0) {
     const lambda = 1 / controller.smoothTime;
-    controller.azimuth = damp(controller.azimuth, controller.goalAzimuth, lambda, deltaTime);
+    const nearestGoalAzimuth = controller.azimuth + deltaAngle(controller.azimuth, controller.goalAzimuth);
+    controller.azimuth = damp(controller.azimuth, nearestGoalAzimuth, lambda, deltaTime);
     controller.polar = damp(controller.polar, goalPolar, lambda, deltaTime);
     controller.distance = damp(controller.distance, goalDistance, lambda, deltaTime);
   } else {

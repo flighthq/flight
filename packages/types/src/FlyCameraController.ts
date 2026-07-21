@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Vector3 } from './Vector3';
 import type { Vector3Like } from './Vector3';
 
@@ -9,7 +10,7 @@ import type { Vector3Like } from './Vector3';
 // it takes intent deltas, not raw input, so it stays input-agnostic. `pitch` is clamped to
 // [`minPitch`, `maxPitch`] (kept just inside ±90° to avoid gimbal flip); `smoothTime` is the
 // `@flighthq/math` `damp` time constant for the look angles; <= 0 snaps.
-export interface FlyCameraController {
+export interface FlyCameraController extends Entity {
   goalPitch: number;
   goalYaw: number;
   maxPitch: number;
