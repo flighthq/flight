@@ -43,13 +43,19 @@ basedOn: ./review.md
    transfer function on present. Values above display white are encoded then clamped by the canvas; the
    no-effects path therefore has no exposure/tone-map/display transform. Make tone-map choice explicit
    in the presentation assembly while keeping the transfer pass bedrock and subject-agnostic.
-2. **Grow color-space metadata beyond linear/sRGB when required.** Working primaries, display primaries,
+2. **Make float-target negotiation explicit and observable.** `createGlRenderTarget` silently substitutes
+   rgba8 when `EXT_color_buffer_float` is absent and exposes only the effective `target.format`. That
+   avoids a black incomplete framebuffer, but an effect pipeline can then tone-map radiance that was
+   already clipped. Add a small capability query plus required/preferred allocation policy or an
+   explain/guard diagnostic; keep graceful degradation available, but never let "requested HDR" imply
+   that HDR headroom was actually obtained.
+3. **Grow color-space metadata beyond linear/sRGB when required.** Working primaries, display primaries,
    transfer, white point, and gamut mapping should be explicit descriptors/passes rather than hidden
    assumptions in textures or present.
-3. **Complete the device tier only as consumed primitives.** Capabilities/extensions, context loss and
+4. **Complete the device tier only as consumed primitives.** Capabilities/extensions, context loss and
    recreation, cached depth/cull/color-mask setters, samplers, compressed upload, timer queries, and
    statistics remain gaps; avoid a monolithic device wrapper or eager feature registration.
-4. **Make all state-owned GPU caches deterministically destructible.** WeakMap ownership is acceptable
+5. **Make all state-owned GPU caches deterministically destructible.** WeakMap ownership is acceptable
    for lookup, but RenderState destruction must reach every program, VAO, framebuffer, buffer, sampler,
    and state-owned texture it creates.
 

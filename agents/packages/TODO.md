@@ -968,6 +968,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 ### render-gl (solid 74)
 
 - Define the HDR display-output contract
+- Make float-target negotiation explicit and observable
 - Grow color-space metadata beyond linear/sRGB when required
 - Complete the device tier only as consumed primitives
 - Make all state-owned GPU caches deterministically destructible
@@ -1010,6 +1011,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 - Build the reusable GL attachment/history substrate before claiming advanced effects
 - Replace color-only stand-ins with behaviorally tested implementations
+- Validate HDR-required chains against the effective target, not requested options
 - Keep shadows outside the effects lane
 
 ### lighting (solid 88)

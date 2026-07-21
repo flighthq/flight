@@ -45,7 +45,10 @@ Grounded in `67dc46d64:packages/effects-gl/src/`.
 - **No backend-parity proof.** There are no `tests/functional/effect-*-gl` scenes proving the GL output agrees with canvas/wgpu (`test:functional:parity`). The colocated tests verify wiring, not rendered pixels. This is the highest-value missing coverage for a render backend and is exactly the kind of thing jsdom cannot reach.
 - **Bloom math duplicated, not consumed** (see Contract & docs fit — this is also a gap in completeness: the package does not yet use the shared primitive it should).
 - **Chain-ordering / validation metadata absent.** No `validateGlRenderEffectChain` / `orderGlRenderEffectChain` / tone-map-last helper; the pipeline silently skips unregistered kinds. `hasGlRenderEffectRunner` lets a caller build their own policy, but there is no canonical ordering hint. Blocked on a `RenderEffectChainHint` type in `@flighthq/types`/`@flighthq/effects`.
-- **No context-loss recovery / `rgba16f` fallback / effect-chain fusion.** Standard maturity items for a GPU effects backend, all deferred and cross-package-dependent.
+- **No context-loss recovery / observable HDR-degrade policy / effect-chain fusion.** Render-gl now
+  falls back from unsupported rgba16f to rgba8, but the pipeline does not diagnose that an HDR-required
+  chain is operating on already-clipped input. The remaining maturity items are deferred and
+  cross-package-dependent.
 
 ## Charter contradictions
 
