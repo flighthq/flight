@@ -846,6 +846,8 @@ These are explicit user directions whose implementation may span packages or req
 
 - Finish the single camera package migration
 - Use draw-time viewport aspect for rendered projection
+- Complete the Entity constructor invariant
+- Migrate every Flight functional off the removed Camera surface
 
 ### materials (solid 87)
 
@@ -997,6 +999,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 ### camera (solid 82)
 
 - Keep reversed-Z and off-axis/stereo projection behind the viewport contract
+- Make Camera2D multi-viewport semantics explicit
 
 ### effects-gl (solid 84)
 
