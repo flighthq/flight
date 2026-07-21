@@ -34,6 +34,7 @@
   "dependencies": {
     "@flighthq/image": "*",
     "@flighthq/loader": "*",
+    "@flighthq/net": "*",
     "@flighthq/node": "*",
     "@flighthq/scene": "*",
     "@flighthq/scene-formats": "*",

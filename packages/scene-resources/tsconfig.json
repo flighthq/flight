@@ -22,6 +22,9 @@
       "path": "../mesh"
     },
     {
+      "path": "../net"
+    },
+    {
       "path": "../node"
     },
     {

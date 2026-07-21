@@ -1,22 +1,69 @@
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { setNetBackend } from '@flighthq/net';
 import { addNodeChild } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
 import { createMesh, createScene } from '@flighthq/scene';
-import { createSceneFromObj } from '@flighthq/scene-formats';
+import { createSceneFromObj, parseObj } from '@flighthq/scene-formats';
 import { createTexture } from '@flighthq/texture';
-import type { ImageResource, ImageResourceReference } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference, NetResponse, SceneDocument } from '@flighthq/types';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { loadSceneFromObj } from './loadObj';
+import { loadObj, loadSceneFromObj } from './loadObj';
 import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 vi.mock('@flighthq/scene-formats', () => ({
   createSceneFromObj: vi.fn(),
+  parseObj: vi.fn(),
 }));
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
+
+function emptyDocument(): SceneDocument {
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [],
+    skins: [],
+  };
+}
+
+function okResponse(body: string): NetResponse {
+  return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
+}
+
+afterEach(() => {
+  vi.clearAllMocks();
+  setNetBackend(null);
+});
+
+describe('loadObj', () => {
+  it('fetches the URL as text and parses the source into a document (no resolution)', async () => {
+    const doc = emptyDocument();
+    vi.mocked(parseObj).mockReturnValue(doc);
+    let requestedType: string | undefined;
+    setNetBackend({
+      sendNetRequest: async (request) => {
+        requestedType = request.responseType;
+        return okResponse('v 0 0 0');
+      },
+    });
+
+    const loaded = await loadObj('model.obj');
+
+    expect(requestedType).toBe('text');
+    expect(vi.mocked(parseObj)).toHaveBeenCalledOnce();
+    expect(vi.mocked(parseObj).mock.calls[0][0]).toBe('v 0 0 0');
+    expect(loaded).toBe(doc);
+  });
+});
 
 describe('loadSceneFromObj', () => {
   it('parses OBJ and resolves the MTL material textures', async () => {
