@@ -1,11 +1,19 @@
-import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation';
+import { createAnimationTrack } from '@flighthq/animation';
+import { createTransform3D } from '@flighthq/geometry';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, getNodeChildren } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, isMesh } from '@flighthq/scene';
-import type { AnimationChannel, Material, Mesh, MeshMorph, MorphTarget, SceneNode } from '@flighthq/types';
-import { SceneAnimationPathWeights } from '@flighthq/types';
+import { createSceneFromDocument } from '@flighthq/scene';
+import type {
+  Material,
+  MaterialLike,
+  MeshMorph,
+  MorphTarget,
+  SceneDocument,
+  SceneDocumentAnimation,
+  SceneDocumentMesh,
+} from '@flighthq/types';
+import { MeshKind, SceneAnimationPathWeights } from '@flighthq/types';
 
 import {
   MD2_ANORMS,
@@ -35,11 +43,20 @@ import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef
 // through the same re-indexing. MD2's oddities — byte-quantized frames, the normal LUT, and the Z-up→
 // Y-up reflection — stay quarantined here; the emitted morph targets are plain Y-up float deltas.
 //
-// Malformed input pushes a warning and returns an empty Scene rather than throwing.
+// Malformed input pushes a warning and returns an empty Scene rather than throwing. Convenience over
+// `createSceneFromDocument(parseMd2(bytes))`.
 export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
+  return createSceneFromDocument(parseMd2(bytes, warnings));
+}
+
+// Parses an id Software MD2 (Quake 2) binary model into a format-neutral SceneDocument: one Mesh node
+// whose base pose is frame 0 and whose per-frame vertex animation is carried as a MeshMorph (each later
+// frame a position/normal delta target), plus one weights animation driving that morph. Assemble into a
+// live Scene with `createSceneFromDocument`. Malformed input returns an empty document with a warning.
+export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneDocument {
   if (bytes.length < MD2_HEADER_SIZE) {
     warnings?.push('createSceneFromMd2: input is shorter than the 68-byte MD2 header');
-    return createScene();
+    return emptyMd2Document();
   }
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -47,13 +64,13 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
   const magic = view.getInt32(0, true);
   if (magic !== MD2_MAGIC) {
     warnings?.push(`createSceneFromMd2: invalid magic 0x${(magic >>> 0).toString(16)}, expected 0x32504449 (IDP2)`);
-    return createScene();
+    return emptyMd2Document();
   }
 
   const version = view.getInt32(4, true);
   if (version !== MD2_VERSION) {
     warnings?.push(`createSceneFromMd2: unsupported version ${version}, expected 8`);
-    return createScene();
+    return emptyMd2Document();
   }
 
   const skinWidth = view.getInt32(8, true);
@@ -70,12 +87,12 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
 
   if (numFrames < 1) {
     warnings?.push('createSceneFromMd2: model has no frames');
-    return createScene();
+    return emptyMd2Document();
   }
 
   if (numTriangles < 1) {
     warnings?.push('createSceneFromMd2: model has no triangles');
-    return createScene();
+    return emptyMd2Document();
   }
 
   // Validate that the buffer contains the data regions we need — including every frame (each frame is
@@ -87,7 +104,7 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
 
   if (texCoordsEnd > bytes.length || trianglesEnd > bytes.length || allFramesEnd > bytes.length) {
     warnings?.push('createSceneFromMd2: input is truncated; data regions extend past end of buffer');
-    return createScene();
+    return emptyMd2Document();
   }
 
   // Read texcoords: int16 s, int16 t per entry. Scale to 0-1 using skinWidth/skinHeight.
@@ -154,14 +171,15 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
 
   if (indices.length === 0) {
     warnings?.push('createSceneFromMd2: no valid triangle indices produced');
-    return createScene();
+    return emptyMd2Document();
   }
 
   // MD2 has no lighting-model parameters — its material is the skin: a texture path. Decode the first
   // skin (models commonly carry exactly one) to a BlinnPhongMaterial whose diffuseMap references that
   // path; MD2's own shading is diffuse-textured. Extra skins are alternate textures for the same mesh,
   // not additional materials, so only the first is attached.
-  const materials: Material[] = [];
+  const document = emptyMd2Document();
+  const meshMaterials: number[] = [];
   if (numSkins >= 1 && offSkins + MD2_SKIN_SIZE <= bytes.length) {
     const skinName = readMd2SkinName(bytes, offSkins);
     if (skinName.length > 0) {
@@ -170,28 +188,29 @@ export function createSceneFromMd2(bytes: Readonly<Uint8Array>, warnings?: strin
       }) as unknown as Material;
       // MD2's skin path is the material's authored identity — preserve it as the name.
       material.name = skinName;
-      materials.push(material);
+      document.materials.push(material as unknown as MaterialLike);
+      meshMaterials.push(0);
     }
   }
 
-  const scene = createScene();
   const vertices = new Float32Array(interleavedVertices);
   const indexArray = Uint32Array.from(indices);
   const geometry = createMeshGeometry({ indices: indexArray, layout: CANONICAL_LAYOUT, vertices });
-  const mesh = createMesh(geometry, materials);
   const morph = buildMd2Morph(frames, sourceVertexIndices);
-  if (morph !== null) mesh.morph = morph;
-  addNodeChild(scene.root, mesh as unknown as SceneNode);
+  const documentMesh: SceneDocumentMesh = { geometry, materials: meshMaterials };
+  if (morph !== null) documentMesh.morph = morph;
+  document.meshes.push(documentMesh);
+  document.nodes.push({ children: [], kind: MeshKind, mesh: 0, transform: createTransform3D() });
+  document.scenes[0].rootNodes.push(0);
 
-  // Realize MD2's per-frame vertex animation as one weight-track clip on the generic morph substrate:
-  // MD2's frames are semantically a two-frame lerp at each instant, so the clip's per-frame weight track
-  // has exactly the two adjacent frames' weights non-zero (a hat function). A single-frame model has no
-  // motion and leaves `animations` empty.
-  const clip = buildMd2MorphClip(scene.root);
-  // MD2 carries a single implicit frame animation with no name in the format; key it 'default'.
-  if (clip !== null) scene.animations.default = clip;
+  // Realize MD2's per-frame vertex animation as one weight-track channel on the generic morph substrate:
+  // MD2's frames are semantically a two-frame lerp at each instant, so the per-frame weight track has
+  // exactly the two adjacent frames' weights non-zero (a hat function). A single-frame model has no
+  // motion and leaves `animations` empty. The channel binds the mesh node (index 0) by index.
+  const animation = buildMd2MorphAnimation(morph);
+  if (animation !== null) document.animations.push(animation);
 
-  return scene;
+  return document;
 }
 
 // One decompressed MD2 frame in Flight's Y-up space: `positions` and `normals` are 3 floats per source
@@ -279,16 +298,15 @@ function buildMd2Morph(frames: readonly Md2Frame[], sourceVertexIndices: readonl
   return { targets, weights: new Float32Array(targets.length) };
 }
 
-// Builds the vertex-morph AnimationClip for the mesh createSceneFromMd2 produced, or null when it has no
-// morph (a single-frame model, or no mesh). Frame 0 is the base pose; each morph target is frame i+1.
-// The clip is a single `weights` track whose value block per keyframe is the full weight vector: at
-// keyframe for frame k it sets weight[k-1] = 1 and all others 0 (frame 0 = all-zero base). Linear
+// Builds the vertex-morph SceneDocumentAnimation for the MD2 mesh (document node 0), or null when the
+// model has no morph (a single-frame model). Frame 0 is the base pose; each morph target is frame i+1.
+// The animation is a single `weights` channel whose value block per keyframe is the full weight vector:
+// at keyframe for frame k it sets weight[k-1] = 1 and all others 0 (frame 0 = all-zero base). Linear
 // interpolation between adjacent keyframes then blends frame i → i+1 — the two-frame lerp MD2 semantics
 // call for, realized as a hat function over the shared generic morph sink. Times are k / MD2_FRAME_FPS.
-function buildMd2MorphClip(root: Readonly<SceneNode>): ReturnType<typeof createAnimationClip> | null {
-  const mesh = findMd2Mesh(root);
-  if (mesh === null || mesh.morph == null) return null;
-  const targetCount = mesh.morph.targets.length;
+function buildMd2MorphAnimation(morph: MeshMorph | null): SceneDocumentAnimation | null {
+  if (morph === null) return null;
+  const targetCount = morph.targets.length;
   if (targetCount === 0) return null;
 
   const frameCount = targetCount + 1; // targets are frames 1..N; frame 0 is the base
@@ -300,18 +318,28 @@ function buildMd2MorphClip(root: Readonly<SceneNode>): ReturnType<typeof createA
     if (k >= 1) values[k * targetCount + (k - 1)] = 1;
   }
   const track = createAnimationTrack({ components: targetCount, interpolation: 'Linear', times, values });
-  const channel: AnimationChannel = createAnimationChannel(track, { node: mesh, path: SceneAnimationPathWeights });
-  return createAnimationClip([channel]);
+  // MD2 carries a single implicit frame animation with no name in the format; key it 'default'.
+  return {
+    channels: [{ node: 0, path: SceneAnimationPathWeights, track }],
+    duration: times[frameCount - 1],
+    name: 'default',
+  };
 }
 
-// The first Mesh node directly under a scene (createSceneFromMd2 parents exactly one), or null.
-function findMd2Mesh(root: Readonly<SceneNode>): Mesh | null {
-  const children = getNodeChildren(root);
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i] as unknown as SceneNode;
-    if (isMesh(child)) return child as unknown as Mesh;
-  }
-  return null;
+// The empty SceneDocument returned when MD2 parsing fails or before assembly begins — every table present.
+function emptyMd2Document(): SceneDocument {
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
 }
 
 // Reads a fixed 64-byte null-padded ASCII skin path record starting at `offset`, stopping at the
