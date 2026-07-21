@@ -20,6 +20,14 @@ export interface MeshGeometryFromAttributesOptions {
   uvs?: readonly number[] | null;
 }
 
+// Caller-owned result for resolving one logical triangle into vertex indices. Keeping this flat and
+// local avoids allocating a tuple for every triangle in bounds, picking, and authoring passes.
+export interface MeshTriangleVertexIndices {
+  i0: number;
+  i1: number;
+  i2: number;
+}
+
 // Builds a MeshGeometry from separate position/normal/uv arrays using the canonical 12-float
 // PBR record (position + normal + tangent.w + uv0). Normals are computed when omitted;
 // tangents are always computed from the UV gradient. Promotes indices to Uint32 past 65535
@@ -90,6 +98,44 @@ export function getMeshGeometryTriangleCount(geometry: Readonly<MeshGeometry>): 
     return indexCount >= 3 ? indexCount - 2 : 0;
   }
   return 0;
+}
+
+// Resolves one logical triangle for indexed or non-indexed triangle-list/triangle-strip geometry.
+// Strip winding alternates, so odd triangles swap their first two vertices and retain the geometry's
+// declared CCW front-face convention. Returns false without changing `out` for an unsupported
+// topology or out-of-range triangle.
+export function getMeshGeometryTriangleVertexIndices(
+  out: MeshTriangleVertexIndices,
+  geometry: Readonly<MeshGeometry>,
+  triangleIndex: number,
+): boolean {
+  if (triangleIndex < 0 || triangleIndex >= getMeshGeometryTriangleCount(geometry)) return false;
+
+  let element0: number;
+  let element1: number;
+  let element2: number;
+  if (geometry.topology === 'triangle-list') {
+    element0 = triangleIndex * 3;
+    element1 = element0 + 1;
+    element2 = element0 + 2;
+  } else if (geometry.topology === 'triangle-strip') {
+    element0 = triangleIndex;
+    element1 = triangleIndex + 1;
+    element2 = triangleIndex + 2;
+    if ((triangleIndex & 1) !== 0) {
+      const swap = element0;
+      element0 = element1;
+      element1 = swap;
+    }
+  } else {
+    return false;
+  }
+
+  const indices = geometry.indices;
+  out.i0 = indices ? indices[element0] : element0;
+  out.i1 = indices ? indices[element1] : element1;
+  out.i2 = indices ? indices[element2] : element2;
+  return true;
 }
 
 // Concatenates multiple geometries into a single MeshGeometry. All source geometries must share

@@ -5,6 +5,7 @@ import { createBoxMeshGeometry, createQuadMeshGeometry } from './meshGeometryBui
 import {
   createMeshGeometryFromAttributes,
   getMeshGeometryTriangleCount,
+  getMeshGeometryTriangleVertexIndices,
   mergeMeshGeometries,
   validateMeshGeometry,
 } from './meshGeometryOperations';
@@ -71,6 +72,61 @@ describe('getMeshGeometryTriangleCount', () => {
       vertices: verts,
     });
     expect(getMeshGeometryTriangleCount(geo)).toBe(2); // 4 - 2
+  });
+});
+
+describe('getMeshGeometryTriangleVertexIndices', () => {
+  it('resolves indexed and non-indexed triangle lists', () => {
+    const indexed = createMeshGeometry({
+      indices: new Uint16Array([2, 0, 1]),
+      layout: POSITION_ONLY_LAYOUT,
+      vertices: new Float32Array(9),
+    });
+    const out = { i0: -1, i1: -1, i2: -1 };
+    expect(getMeshGeometryTriangleVertexIndices(out, indexed, 0)).toBe(true);
+    expect(out).toEqual({ i0: 2, i1: 0, i2: 1 });
+
+    const sequential = createMeshGeometry({ layout: POSITION_ONLY_LAYOUT, vertices: new Float32Array(9) });
+    expect(getMeshGeometryTriangleVertexIndices(out, sequential, 0)).toBe(true);
+    expect(out).toEqual({ i0: 0, i1: 1, i2: 2 });
+  });
+
+  it('alternates triangle-strip winding for indexed and non-indexed geometry', () => {
+    const indexed = createMeshGeometry({
+      indices: new Uint16Array([3, 1, 4, 2]),
+      layout: POSITION_ONLY_LAYOUT,
+      topology: 'triangle-strip',
+      vertices: new Float32Array(15),
+    });
+    const out = { i0: -1, i1: -1, i2: -1 };
+    expect(getMeshGeometryTriangleVertexIndices(out, indexed, 0)).toBe(true);
+    expect(out).toEqual({ i0: 3, i1: 1, i2: 4 });
+    expect(getMeshGeometryTriangleVertexIndices(out, indexed, 1)).toBe(true);
+    expect(out).toEqual({ i0: 4, i1: 1, i2: 2 });
+
+    const sequential = createMeshGeometry({
+      layout: POSITION_ONLY_LAYOUT,
+      topology: 'triangle-strip',
+      vertices: new Float32Array(12),
+    });
+    expect(getMeshGeometryTriangleVertexIndices(out, sequential, 1)).toBe(true);
+    expect(out).toEqual({ i0: 2, i1: 1, i2: 3 });
+  });
+
+  it('leaves out unchanged for unsupported topology and invalid indices', () => {
+    const points = createMeshGeometry({
+      layout: POSITION_ONLY_LAYOUT,
+      topology: 'point-list',
+      vertices: new Float32Array(9),
+    });
+    const out = { i0: 7, i1: 8, i2: 9 };
+    expect(getMeshGeometryTriangleVertexIndices(out, points, 0)).toBe(false);
+    expect(out).toEqual({ i0: 7, i1: 8, i2: 9 });
+
+    const triangles = createMeshGeometry({ layout: POSITION_ONLY_LAYOUT, vertices: new Float32Array(9) });
+    expect(getMeshGeometryTriangleVertexIndices(out, triangles, -1)).toBe(false);
+    expect(getMeshGeometryTriangleVertexIndices(out, triangles, 1)).toBe(false);
+    expect(out).toEqual({ i0: 7, i1: 8, i2: 9 });
   });
 });
 

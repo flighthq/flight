@@ -40,3 +40,6 @@ preparation, mesh deformation, materials, or future instancing/LOD contracts.
 
 - [2026-07-21 · completed] `SceneHit` extends Entity and `createSceneHit` uses `createEntity`, preserving
   caller-owned reuse and flat result fields.
+- [2026-07-21 · completed] Narrow-phase triangle decoding now consumes mesh's shared logical-triangle
+  primitive. Indexed/non-indexed triangle strips use alternating CCW winding rather than the old
+  triangle-list-only `triangleIndex * 3` address, with a backface-culling pick proof.

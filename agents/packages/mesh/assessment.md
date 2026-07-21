@@ -17,7 +17,10 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-None. The copied `getMeshGeometryVertexNormal` position/semantic comment is corrected.
+None. The copied `getMeshGeometryVertexNormal` position/semantic comment is corrected. Logical
+triangle decoding is now one allocation-free primitive shared by consumers: indexed/non-indexed
+triangle lists and alternating-winding strips resolve consistently, with unsupported/out-of-range
+queries leaving caller-owned output untouched.
 
 ## Approved
 

@@ -369,4 +369,21 @@ describe('pickSceneWithRay3D', () => {
     // Double-sided (default) hits either winding.
     expect(pickSceneWithRay3D(back, makeCenterRay(), out)).not.toBeNull();
   });
+
+  it('picks the second triangle of an indexed strip with its CCW winding', () => {
+    const geometry = createMeshGeometryFromAttributes({
+      indices: [0, 1, 2, 3],
+      positions: [-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0],
+    });
+    geometry.topology = 'triangle-strip';
+    const scene = createSceneNode(SceneNodeKind);
+    addNodeChild(scene, createMesh(geometry, []));
+    const ray = createRay3D();
+    setRay3D(ray, createVector3(0.5, 0.5, 1), createVector3(0, 0, -1));
+
+    const hit = pickSceneWithRay3D(scene, ray, createSceneHit(), { cullBackfaces: true });
+
+    expect(hit?.triangleIndex).toBe(1);
+    expect(hit?.normalZ).toBeCloseTo(1);
+  });
 });

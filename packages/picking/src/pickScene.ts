@@ -10,7 +10,11 @@ import {
   intersectRay3DTriangle,
   inverseMatrix4,
 } from '@flighthq/geometry';
-import { getMeshGeometryTriangleCount, getMeshGeometryVertexPosition } from '@flighthq/mesh';
+import {
+  getMeshGeometryTriangleCount,
+  getMeshGeometryTriangleVertexIndices,
+  getMeshGeometryVertexPosition,
+} from '@flighthq/mesh';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node';
 import { getSceneNodeWorldBounds, isMesh } from '@flighthq/scene';
 import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode, Vector3 } from '@flighthq/types';
@@ -230,16 +234,12 @@ function intersectMeshTriangles(
   transformDirectionByMatrix4(_localRay.direction, ray.direction, _inverseWorld.m);
 
   const geometry = mesh.geometry;
-  const indices = geometry.indices;
   const triangleCount = getMeshGeometryTriangleCount(geometry);
   for (let triangle = 0; triangle < triangleCount; triangle++) {
-    const base = triangle * 3;
-    const i0 = indices ? indices[base] : base;
-    const i1 = indices ? indices[base + 1] : base + 1;
-    const i2 = indices ? indices[base + 2] : base + 2;
-    getMeshGeometryVertexPosition(_a, geometry, i0);
-    getMeshGeometryVertexPosition(_b, geometry, i1);
-    getMeshGeometryVertexPosition(_c, geometry, i2);
+    if (!getMeshGeometryTriangleVertexIndices(_triangle, geometry, triangle)) continue;
+    getMeshGeometryVertexPosition(_a, geometry, _triangle.i0);
+    getMeshGeometryVertexPosition(_b, geometry, _triangle.i1);
+    getMeshGeometryVertexPosition(_c, geometry, _triangle.i2);
 
     const t = intersectRay3DTriangle(_localRay, _a, _b, _c);
     if (t < 0 || t > maxDistance) continue;
@@ -374,3 +374,4 @@ const _worldNormal = createVector3();
 const _localPoint = createVector3();
 const _worldPoint = createVector3();
 const _hit = createSceneHit();
+const _triangle = { i0: 0, i1: 0, i2: 0 };
