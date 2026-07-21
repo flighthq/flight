@@ -17,6 +17,8 @@ import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampl
 export function cloneTexture(source: Readonly<TextureLike>): Texture {
   return createEntity({
     colorSpace: source.colorSpace,
+    flipX: source.flipX,
+    flipY: source.flipY,
     image: source.image,
     resource: source.resource ?? null,
     sampler: cloneSampler(source.sampler),
@@ -31,6 +33,8 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
 // preserved). Safe when out aliases source.
 export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): void {
   const colorSpace = source.colorSpace;
+  const flipX = source.flipX;
+  const flipY = source.flipY;
   const image = source.image;
   const resource = source.resource ?? null;
   const uvRotation = source.uvRotation;
@@ -38,6 +42,8 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
   copyVector2(out.uvOffset, source.uvOffset);
   copyVector2(out.uvScale, source.uvScale);
   out.colorSpace = colorSpace;
+  out.flipX = flipX;
+  out.flipY = flipY;
   out.image = image;
   out.resource = resource;
   out.uvRotation = uvRotation;
@@ -49,6 +55,8 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
 export function createTexture(opts?: Readonly<Partial<TextureLike>>): Texture {
   return createEntity({
     colorSpace: opts?.colorSpace ?? 'srgb',
+    flipX: opts?.flipX ?? false,
+    flipY: opts?.flipY ?? false,
     image: opts?.image ?? null,
     resource: opts?.resource ?? null,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
@@ -68,6 +76,8 @@ export function equalsTexture(
   if (a === b) return true;
   return (
     a.colorSpace === b.colorSpace &&
+    a.flipX === b.flipX &&
+    a.flipY === b.flipY &&
     a.image === b.image &&
     a.uvRotation === b.uvRotation &&
     a.uvOffset.x === b.uvOffset.x &&
@@ -103,12 +113,19 @@ export function getTextureInverseUvMatrix(out: Matrix3Like, texture: Readonly<Te
 // Safe when out is an unrelated scratch; not intended for aliased input (no in-param here).
 export function getTextureUvMatrix(out: Matrix3Like, texture: Readonly<TextureUvTransform>): void {
   const r = texture.uvRotation;
-  const sx = texture.uvScale.x;
-  const sy = texture.uvScale.y;
-  const tx = texture.uvOffset.x;
-  const ty = texture.uvOffset.y;
+  // A flip is a -1 scale plus a +1 pre-offset on that axis (u → 1 - u), applied before scale/rotate/
+  // translate: the scale negates and the +1 (in source-uv units, so it scales) rotates into the
+  // translation, keeping the flipped range in [0, 1].
+  const flipScaleX = texture.flipX ? -1 : 1;
+  const flipScaleY = texture.flipY ? -1 : 1;
+  const sx = texture.uvScale.x * flipScaleX;
+  const sy = texture.uvScale.y * flipScaleY;
+  const preOffsetX = texture.flipX ? texture.uvScale.x : 0;
+  const preOffsetY = texture.flipY ? texture.uvScale.y : 0;
   const cosR = Math.cos(r);
   const sinR = Math.sin(r);
+  const tx = texture.uvOffset.x + cosR * preOffsetX - sinR * preOffsetY;
+  const ty = texture.uvOffset.y + sinR * preOffsetX + cosR * preOffsetY;
   const m = out.m;
   m[0] = sx * cosR; // (0,0)
   m[1] = sx * sinR; // (1,0)
@@ -132,6 +149,8 @@ export function getTextureWidth(texture: Readonly<TextureLike>): number {
 // only a texture that actually remaps its uv compiles the transforming path.
 export function hasTextureUvTransform(texture: Readonly<TextureUvTransform>): boolean {
   return (
+    texture.flipX ||
+    texture.flipY ||
     texture.uvScale.x !== 1 ||
     texture.uvScale.y !== 1 ||
     texture.uvOffset.x !== 0 ||
@@ -146,14 +165,24 @@ export function isTextureReady(texture: Readonly<TextureLike>): boolean {
   return texture.image !== null;
 }
 
-// Resets the KHR_texture_transform to identity in place: zero offset, no rotation, unit scale.
-// Leaves the image, color space, and sampler untouched.
+// Resets the KHR_texture_transform to identity in place: zero offset, no rotation, unit scale, and
+// no flip. Leaves the image, color space, and sampler untouched.
 export function resetTextureUvTransform(texture: TextureLike): void {
+  texture.flipX = false;
+  texture.flipY = false;
   texture.uvOffset.x = 0;
   texture.uvOffset.y = 0;
   texture.uvRotation = 0;
   texture.uvScale.x = 1;
   texture.uvScale.y = 1;
+}
+
+// Sets the vertical/horizontal flip flags in place. A flip mirrors the sampled coordinate on that
+// axis (`u → 1 - u`, `v → 1 - v`) before scale/rotate/translate — the sampler-space fix for an
+// upside-down image or render-target, with no pixel copy.
+export function setTextureFlip(texture: TextureLike, flipX: boolean, flipY: boolean): void {
+  texture.flipX = flipX;
+  texture.flipY = flipY;
 }
 
 // Binds (or clears, with null) the texture's image source in place. Does not touch sampling state
@@ -185,6 +214,9 @@ export function setTextureUvScale(texture: TextureLike, x: number, y: number): v
 // getTextureUvMatrix's result, computed inline to avoid allocating a scratch matrix.
 // Out-param form — out may be any Vector2; no aliasing hazard (u and v are scalar inputs).
 export function transformTextureUv(out: Vector2Like, texture: Readonly<TextureLike>, u: number, v: number): void {
+  // Flip mirrors the coordinate first (u → 1 - u), then the standard scale → rotate → translate.
+  const fu = texture.flipX ? 1 - u : u;
+  const fv = texture.flipY ? 1 - v : v;
   const r = texture.uvRotation;
   const sx = texture.uvScale.x;
   const sy = texture.uvScale.y;
@@ -192,6 +224,6 @@ export function transformTextureUv(out: Vector2Like, texture: Readonly<TextureLi
   const ty = texture.uvOffset.y;
   const cosR = Math.cos(r);
   const sinR = Math.sin(r);
-  out.x = sx * cosR * u - sy * sinR * v + tx;
-  out.y = sx * sinR * u + sy * cosR * v + ty;
+  out.x = sx * cosR * fu - sy * sinR * fv + tx;
+  out.y = sx * sinR * fu + sy * cosR * fv + ty;
 }

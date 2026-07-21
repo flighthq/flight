@@ -3,6 +3,7 @@ import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@fligh
 import type { Matrix3Like, VideoResource, VideoTexture, VideoTextureLike } from '@flighthq/types';
 
 import { cloneSampler, copySampler, createSampler } from './sampler';
+import { getTextureUvMatrix } from './texture';
 
 // Marks a fresh decoded frame as available for upload by bumping `frameId`. A driver calls this once
 // per rendered frame when the backing element reports new pixels (readyState advanced, or a
@@ -20,6 +21,8 @@ export function advanceVideoTexture(videoTexture: VideoTextureLike): number {
 export function cloneVideoTexture(source: Readonly<VideoTextureLike>): VideoTexture {
   return createEntity({
     colorSpace: source.colorSpace,
+    flipX: source.flipX,
+    flipY: source.flipY,
     frameId: -1,
     sampler: cloneSampler(source.sampler),
     source: source.source,
@@ -34,6 +37,8 @@ export function cloneVideoTexture(source: Readonly<VideoTextureLike>): VideoText
 // aliases source.
 export function copyVideoTexture(out: VideoTextureLike, source: Readonly<VideoTextureLike>): void {
   const colorSpace = source.colorSpace;
+  const flipX = source.flipX;
+  const flipY = source.flipY;
   const frameId = source.frameId;
   const src = source.source;
   const uvRotation = source.uvRotation;
@@ -41,6 +46,8 @@ export function copyVideoTexture(out: VideoTextureLike, source: Readonly<VideoTe
   copyVector2(out.uvOffset, source.uvOffset);
   copyVector2(out.uvScale, source.uvScale);
   out.colorSpace = colorSpace;
+  out.flipX = flipX;
+  out.flipY = flipY;
   out.frameId = frameId;
   out.source = src;
   out.uvRotation = uvRotation;
@@ -52,6 +59,8 @@ export function copyVideoTexture(out: VideoTextureLike, source: Readonly<VideoTe
 export function createVideoTexture(source: VideoResource, opts?: Readonly<Partial<VideoTextureLike>>): VideoTexture {
   return createEntity({
     colorSpace: opts?.colorSpace ?? 'srgb',
+    flipX: opts?.flipX ?? false,
+    flipY: opts?.flipY ?? false,
     frameId: opts?.frameId ?? -1,
     sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
     source: opts?.source ?? source,
@@ -77,27 +86,12 @@ export function getVideoTextureInverseUvMatrix(out: Matrix3Like, videoTexture: R
   inverseMatrix3(out, out);
 }
 
-// Composes the KHR_texture_transform fields (uvOffset, uvRotation, uvScale) into the column-major 3×3
-// matrix a shader consumes at sample time — the same layout getTextureUvMatrix produces, so a material
-// samples a VideoTexture through one uv-transform path. scale → rotate → translate. Out-param form.
+// Composes the KHR_texture_transform fields (flip, uvOffset, uvRotation, uvScale) into the column-major
+// 3×3 matrix a shader consumes at sample time. A VideoTexture is a TextureUvTransform, so this delegates
+// to getTextureUvMatrix — one uv-transform path (flip → scale → rotate → translate) for both texture
+// kinds. Out-param form.
 export function getVideoTextureUvMatrix(out: Matrix3Like, videoTexture: Readonly<VideoTextureLike>): void {
-  const r = videoTexture.uvRotation;
-  const sx = videoTexture.uvScale.x;
-  const sy = videoTexture.uvScale.y;
-  const tx = videoTexture.uvOffset.x;
-  const ty = videoTexture.uvOffset.y;
-  const cosR = Math.cos(r);
-  const sinR = Math.sin(r);
-  const m = out.m;
-  m[0] = sx * cosR;
-  m[1] = sx * sinR;
-  m[2] = 0;
-  m[3] = -sy * sinR;
-  m[4] = sy * cosR;
-  m[5] = 0;
-  m[6] = tx;
-  m[7] = ty;
-  m[8] = 1;
+  getTextureUvMatrix(out, videoTexture);
 }
 
 // Returns the pixel width of the current video frame, or -1 when no element is attached or no frame
