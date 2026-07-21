@@ -5,7 +5,7 @@ import {
   getCamera2DVisibleBounds,
   updateCamera2DFollow,
   zoomCamera2DAtScreenPoint,
-} from '@flighthq/camera2d';
+} from '@flighthq/camera';
 import type { Shape } from '@flighthq/sdk';
 import {
   addNodeChild,

@@ -2,7 +2,7 @@ import { createVector2 } from '@flighthq/geometry';
 import { describe, expect, it } from 'vitest';
 
 import { createCamera2D } from './camera2d';
-import { unprojectCamera2DPoint } from './projection';
+import { unprojectCamera2DPoint } from './projection2d';
 import { zoomCamera2DAtScreenPoint } from './zoom';
 
 describe('zoomCamera2DAtScreenPoint', () => {

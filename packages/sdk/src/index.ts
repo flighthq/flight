@@ -10,7 +10,6 @@ export * from '@flighthq/bitmapfont';
 export * from '@flighthq/bitmapfont-formats';
 export * from '@flighthq/bitmaptext';
 export * from '@flighthq/camera';
-export * from '@flighthq/camera2d';
 export * from '@flighthq/capture';
 export * from '@flighthq/clip';
 export * from '@flighthq/clipboard';
