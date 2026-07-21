@@ -64,6 +64,23 @@ Read the `observe` block to interpret what you're seeing without guessing:
 
 Use `--observe` whenever a plain capture reports "did not produce a render image" — it converts that dead-end into an image plus a machine-readable reason.
 
+## Known failure modes & verdicts — read before concluding "it's impossible"
+
+This subsystem has several _distinct, silent_ failure modes; hitting a different one each run makes it feel nondeterministic ("saw it yesterday, doomed today"). Don't invent a unifying "it's broken" story — match the symptom to a known verdict. Most are already fixed; the rest have a settled answer, so start here instead of re-deriving it.
+
+| Symptom | Verdict | Do this |
+| --- | --- | --- |
+| Capture prints `✓ ok` then the process **hangs** (never returns) | Was a real bug in the CLI exit path — **fixed** (`process.exit(0)` on success) | If it recurs, the dev-server child or a Playwright handle is keeping the loop alive; exit explicitly, don't `pkill` and call it broken |
+| `--observe` blank, `pageErrorCount > 0` | **Your code threw** at load/run | Read `logs.jsonl` for the exception — a real bug to fix (this is how a stale import / `__name`-in-init-script surfaces) |
+| `--observe` blank, `0` errors, `verifyTargetKind` set, `coverage ≈ 0` on a **heavy 3D scene** (skinning, IBL/cubemap, `rgba16f`) | **UNKNOWN, not impossible** — see the hard facts below | Don't call it a proven SwiftShader limit. Flag it; verify on real hardware; only dig deeper if you're specifically root-causing |
+| `--observe` blank on a **2D / app-loop** scene at default frames, then fine with `--frames 5` | **Captured too early** (app-loop first tick hasn't drawn) — warmup **fixed** it | `observe.warmupFrames > 0` means it recovered on its own; nothing to fix |
+
+**Hard environment facts (proven — do not re-run these experiments):**
+
+- **You cannot move off SwiftShader in this sandbox.** Playwright's Chromium pins `SwiftShader Device … (ANGLE/Vulkan)` regardless of `--use-angle=gl`, `--use-gl=egl`, `--disable-features=Vulkan`, `GALLIUM_DRIVER=llvmpipe`, old headless, or `--in-process-gpu` (crashes). Mesa llvmpipe is installed but never selected. Swapping the GL backend is a dead end here.
+- **SwiftShader is not the obvious wall.** The core GPU-skinning primitive — vertex-shader `texelFetch` of an `RGBA32F` texture — **works** on SwiftShader (verified). So a heavy-3D blank is _specific_, not "SwiftShader can't do skinning." It may be a real, fixable render-path bug or an opaque miscompile — but it is **not** an established hardware limitation. Treat it as unknown.
+- WebGPU, WebGL2, Canvas, DOM all render in-sandbox (SwiftShader; see `agents/maturity-gaps.md`). Simple 3D (`basic-view`) renders fine; only some advanced scenes blank — which is why "blank" alone is never proof the code is broken.
+
 ## Watch capture (long-running — requires Playwright)
 
 ```
