@@ -1,7 +1,7 @@
 import type { StandardPbrMaterial } from '@flighthq/types';
 import { StandardPbrMaterialKind } from '@flighthq/types';
 
-import { cloneMaterial, copyMaterial, createMaterial, equalsMaterial } from './material';
+import { cloneMaterial, copyMaterial, createMaterial, equalsMaterial, getMaterialOfKind } from './material';
 import { createStandardPbrMaterial } from './pbrMaterials';
 
 const TestMaterialKind = 'TestMaterial';
@@ -82,5 +82,21 @@ describe('equalsMaterial', () => {
 
   it('treats same-kind materials without comparable fields as equal', () => {
     expect(equalsMaterial(createMaterial(TestMaterialKind), createMaterial(TestMaterialKind))).toBe(true);
+  });
+});
+
+describe('getMaterialOfKind', () => {
+  it('returns the material when the kind matches', () => {
+    const material = createMaterial(TestMaterialKind);
+    expect(getMaterialOfKind(material, TestMaterialKind)).toBe(material);
+  });
+
+  it('returns null when the kind does not match', () => {
+    const material = createMaterial(TestMaterialKind);
+    expect(getMaterialOfKind(material, OtherMaterialKind)).toBeNull();
+  });
+
+  it('returns null for a null material', () => {
+    expect(getMaterialOfKind(null, TestMaterialKind)).toBeNull();
   });
 });
