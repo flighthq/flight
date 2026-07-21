@@ -46,7 +46,27 @@ Deliberately not-yet-built cells; the charter reserves the name and records when
 Re-ranked after the 2026-07 build-out. The 2026-07-03 queue's entire top tier is **built**: `net`, `socket`, `assets`, `collision`, `spatial`, unified `camera`, `accessibility`, plus the whole 2D-game / animation / `-formats` blocks (`flow`, `spring`, `motionpath`, `clock`, `intl`, `permissions`, `scene`, `picking`, `animation`, `skeleton3d`, `font`, `image-codec`, `texture-formats`, `tilemap-formats`, and the full text/glyph bitmap cluster `glyphatlas`/`bitmapfont`/`bitmapfont-formats`/`bitmaptext`). What genuinely remains, re-ranked by foundational-ness and unblocked-ness:
 
 1. **Text itemization + shaping cluster** — the typography bottleneck, now unblocked (the shaper seam is glyph-bearing and bitmap text just landed). `textsegment` (grapheme/word/line segmentation; upstream `unicode-segmentation`) and `textbidi` (bidi itemization; upstream `unicode-bidi`) are the itemize layers correct international layout sits on; `textshaper-harfbuzz` (GSUB/GPOS shaping — the TS backend seam + registrar is local, the heavy rustybuzz impl → `flight-rs` like `surface-rs`); `text-markup` (markup → rich-text `-formats`).
-2. **3D bedrock deepening** — settle the approved GL contracts first (`ApplicationRenderView` + partial-target viewport/scissor; Standard/Extended PBR + full extension maps/true transmission), then build explicit effect attachments/history; animation mixing + skeleton3d proof/depth; texture residency/transcoding; mesh channel/topology correctness; shadows + probes; complete scene-format resource realization; and finally instancing/LOD/true-3D particles. Commission WGPU parity after the GL contracts and raster evidence settle. A general render graph, BVH/occlusion, reversed-Z, and full mesh simplification remain later layers, not prerequisites for these primitives.
+2. **3D bedrock deepening** — execute in dependency order, with exhaustive GL behavior proof at each wave:
+   1. **Frame/target contract:** integrate `ApplicationRenderView`, partial-target viewport/scissor and
+      composable Extended PBR; finish truthful render-target storage axes, float capability negotiation,
+      MSAA resolve isolation, deterministic GL teardown, and the HDR/output-transform contract.
+   2. **Material/lighting transport:** make Standard/Extended PBR combinations physically coherent across
+      punctual and IBL paths; assemble real opaque scene color for transmission; keep every extension and
+      resource lister independently tree-shakable. Shadows/probes begin only on these settled inputs.
+   3. **Prepared-scene semantics:** unify explicit scene preparation across rendering, bounds, picking,
+      morph, skin, billboard, instance, and selected LOD. Prove morph+skin composition and clone-safe
+      ownership before acceleration. Animation mixing/pose composition belongs in this wave.
+   4. **Resource/import truth:** complete texture channel/format upload, mip/residency state, environment
+      cache invalidation, scene-resource retry/diagnostics, and full scene-format material/texture/sampler/
+      animation results with real fixtures.
+   5. **Scene scale and breadth:** realize instancing and LOD end to end, then true-3D particle render feeds,
+      unified transparent ordering, forward-light budgets, directional/spot/point shadows, and probes.
+   6. **Advanced consumers:** explicit normal/material/velocity/history attachments followed by real
+      SSAO/DoF/TAA/motion blur/SSR behavior, then optional BVH/refit and visibility acceleration.
+
+   Commission WGPU parity only after each GL contract has raster evidence. A general render graph,
+   occlusion system, reversed-Z, full mesh simplification, and physics3d remain later layers rather than
+   prerequisites for these atoms.
 3. **Host backends** — mechanical, mirror `host-electron`: `host-tauri`, `host-capacitor`.
 4. **Platform-suite opportunistic** — clean cells like clipboard/dialog: `mediasession`, `biometrics`, `purchase`, `calendar`, `contacts`.
 5. **Infra / tooling** — `devtools`, `testing`. The `tool-*` suite has begun (`tool-capture`); `testing`/`devtools` may land as `tool-*` cells rather than SDK packages.
