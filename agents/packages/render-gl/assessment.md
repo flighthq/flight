@@ -10,12 +10,16 @@ basedOn: ./review.md
 
 1. **Add a real partial-target GL pass.** Viewport and scissor constrain drawing and color/depth clears
    to a sub-rectangle of an existing framebuffer without allocating a replacement target; nested passes
-   restore prior viewport and scissor.
+   restore the exact prior viewport and scissor. Runtime coordinate mapping uses the active region's
+   dimensions/origin for 2D as well as 3D, a nested full-region pass cannot escape an enclosing clip,
+   and target-edge intersection computes both edges before clamping so negative origins do not expand.
 2. **Keep GL runtime noise state-owned and private.** Current bindings, caches, scratch, lazy programs,
    and backend registries may hang from the RenderState runtime, but they are implementation facts rather
    than public semantic state.
 3. **Prove viewport behavior with raster functionals.** Include sub-rectangle color/depth preservation,
-   nested restoration, two viewports on one target, and one camera rendered with two aspects.
+   nested restoration followed by another actual draw in the outer pass, 2D projection/clipping, two
+   viewports on one target, edge-clamped regions, and one camera rendered with two aspects; clear-only
+   captures cannot prove viewport restoration or draw-space mapping.
 4. **Do not create an upward application dependency.** GL provides backend primitives for
    ApplicationRenderView while remaining below application in the package graph.
 
