@@ -826,6 +826,7 @@ These are explicit user directions whose implementation may span packages or req
 - Follow diagnostics inversion
 - Add exhaustive GL behavior tests
 - Keep backend caches private to state/runtime
+- Keep the vendor-extension seam in the header layer
 
 ### render (solid 76)
 

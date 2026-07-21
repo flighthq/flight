@@ -19,6 +19,11 @@ basedOn: ./review.md
 5. **Add exhaustive GL behavior tests.** Cover scalar and map inputs, multi-extension composition,
    diagnostics, and transmission against a distinguishable captured background.
 6. **Keep backend caches private to state/runtime.** Export operations, not caches.
+7. **Keep the vendor-extension seam in the header layer.** Any exported registration contract that a
+   third-party extension must implement—including the GL snippet, bind context, support diagnostic,
+   shader contribution, and caller-owned transmission scene-color shape—belongs in
+   `@flighthq/types`; `@flighthq/scene-gl` should export implementations against those shared types,
+   not define cross-package API shapes inline.
 
 ## Recommended
 
