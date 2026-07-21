@@ -7,7 +7,6 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import type { BrowserContext } from '@playwright/test';
 
-import type { Tool } from './captureEntries.js';
 import type { CaptureStatus } from './captureEntry.js';
 import { captureEntry, getCaptureOutputPaths } from './captureEntry.js';
 
@@ -38,7 +37,7 @@ export interface CaptureRenderTargetResult {
 }
 
 export async function captureRenderTarget(
-  tool: Tool,
+  tool: string,
   name: string,
   renderer: string,
   options: CaptureRenderTargetOptions,

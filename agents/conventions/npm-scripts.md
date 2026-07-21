@@ -56,4 +56,4 @@ Collapses over these leaves:
 | `test:baseline` | every render-test baseline (today: `test:regression:baseline`) |
 | `functional` / `examples` / `gallery` | the matching `dev:*` server |
 
-The mechanics behind these scripts live in `scripts/capture.ts` (smoke, via `--fail-on-error`) and `scripts/compare-render.ts` (parity = `--no-regression`, regression = `--no-parity`, write = `--update-fingerprints`).
+The smoke scripts invoke `@flighthq/tool-capture`'s `capture` CLI (`--fail-on-error`); parity and regression mechanics live in `scripts/compare-render.ts` (parity = `--no-regression`, regression = `--no-parity`, write = `--update-fingerprints`).

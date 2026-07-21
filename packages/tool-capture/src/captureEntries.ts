@@ -15,6 +15,9 @@ export type Tool = 'examples' | 'functional' | 'reference';
 export interface Entry {
   name: string;
   renderers: string[];
+  // Declarative counterpart to `route`, suitable for a JSON capture manifest. Values are URL paths
+  // relative to the suite base URL, keyed by renderer id.
+  routes?: Readonly<Record<string, string>>;
   // When set, overrides the tool-based URL construction: captureEntry loads `${baseUrl}/${route(renderer)}`.
   // This is what lets an external subject (flight-reference's framework/corpus/case routes) reuse the same
   // hardened capture path as the monorepo's flat examples/functional routes.

@@ -12,7 +12,7 @@ ingested:
 
 _No `status.md` exists in this cell yet (the 2026-07-10 build is recorded in the charter's Decisions instead); evidence is the live source._
 
-**Verdict:** solid — 73/100. The blessed consolidation lift is real and adopted: one hardened capture path with the deterministic browser prep, the presented-frame sync contract, parallel sweeps, and the programmatic `captureRenderTarget` entry, consumed by `scripts/capture.ts`, `scripts/watch-capture.ts`, `scripts/compare-render.ts`, and `tools/functional/vite.config.ts`. What remains is the deferred `@flighthq/capture` wiring, the deferred naming pass, a status.json shape that diverges from the charter's stated contract, and env-bound modules whose tests are existence-only.
+**Verdict:** solid — 73/100. The blessed consolidation lift is real and adopted: one hardened capture path with deterministic browser prep, the presented-frame sync contract, manifest-driven and programmatic parallel sweeps, and the programmatic `captureRenderTarget` entry. Flight's capture/smoke scripts invoke the package CLI directly; watch capture, compare-render, and the functional Vite config consume its lower-level APIs. What remains is the deferred `@flighthq/capture` wiring, the deferred naming pass, a status.json shape that diverges from the charter's stated contract, and env-bound modules whose tests are existence-only.
 
 ## Present capabilities
 

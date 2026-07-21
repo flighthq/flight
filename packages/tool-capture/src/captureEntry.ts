@@ -17,7 +17,7 @@ import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { launchBrowser } from './captureBrowser.js';
-import type { Entry, Tool } from './captureEntries.js';
+import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine } from './captureFormat.js';
@@ -70,7 +70,7 @@ export interface CaptureEntryOptions {
   entry: Entry;
   renderers: string[];
   baseUrl: string;
-  tool: Tool;
+  tool: string;
   outBase: string;
   /** Repo root — committed baselines live at tests/<tool>/baselines/<name>.json. */
   root: string;
@@ -122,7 +122,7 @@ export interface ParallelCaptureOptions {
   entries: Entry[];
   rendererFilter: string[];
   baseUrl: string;
-  tool: Tool;
+  tool: string;
   outBase: string;
   root: string;
   updateBaseline?: boolean;
@@ -236,13 +236,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   for (const renderer of renderers) {
     // Stop launching pages once an interrupt has begun; the partial result is reported by the caller.
     if (isAborted()) break;
-    const urlPath = entry.route
-      ? entry.route(renderer)
-      : tool === 'examples'
-        ? `examples/${entry.name}/${routeSegment(renderer)}/`
-        : tool === 'functional'
-          ? `tests/${entry.name}/${routeSegment(renderer)}/`
-          : ''; // landing: the single page is served at the server root
+    const urlPath =
+      entry.routes?.[renderer] ??
+      (entry.route
+        ? entry.route(renderer)
+        : tool === 'examples'
+          ? `examples/${entry.name}/${routeSegment(renderer)}/`
+          : tool === 'functional'
+            ? `tests/${entry.name}/${routeSegment(renderer)}/`
+            : ''); // landing: the single page is served at the server root
 
     const url = `${baseUrl}/${urlPath}`;
     const { outDir, tmpScreenshot, finalScreenshot, tmpLogs, finalLogs, statusPath } = getCaptureOutputPaths(
@@ -867,7 +869,12 @@ export interface CaptureUrlOptions {
 // The artifact paths for one capture, derived purely from the output base, tool, entry name, and
 // renderer. Shared by captureEntry (which writes them) and captureRenderTarget (which reports them),
 // so the on-disk layout is defined in exactly one place: {outBase}/{tool}/{name}/{routeSegment}/…
-export function getCaptureOutputPaths(outBase: string, tool: Tool, name: string, renderer: string): CaptureOutputPaths {
+export function getCaptureOutputPaths(
+  outBase: string,
+  tool: string,
+  name: string,
+  renderer: string,
+): CaptureOutputPaths {
   const outDir = join(resolve(outBase), tool, name, routeSegment(renderer));
   return {
     outDir,

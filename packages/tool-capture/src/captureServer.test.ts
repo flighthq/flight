@@ -1,6 +1,24 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { resolveServer, resolveStaticServer } from './captureServer';
+import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer';
+
+describe('resolveCaptureDirectoryServer', () => {
+  it('serves an already-built directory and shuts down', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'capture-directory-'));
+    writeFileSync(join(directory, 'index.html'), '<h1>capturable</h1>');
+    const server = await resolveCaptureDirectoryServer(directory);
+    try {
+      expect(await (await fetch(server.url)).text()).toContain('capturable');
+    } finally {
+      server.kill();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('resolveServer', () => {
   it('resolves immediately to an external URL, stripping a trailing slash', async () => {

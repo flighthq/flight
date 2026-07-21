@@ -15,13 +15,20 @@ export interface Server {
   kill(): void;
 }
 
-export function resolveServer(opts: { tool: Tool; root: string; externalUrl?: string }): Promise<Server> {
+/** Serves an already-built directory on an ephemeral localhost port for a capture suite. */
+export function resolveCaptureDirectoryServer(directory: string): Promise<Server> {
+  return serveDirectory(directory);
+}
+
+export function resolveServer(opts: { tool?: Tool; root: string; externalUrl?: string }): Promise<Server> {
   const { tool, root, externalUrl } = opts;
 
   if (externalUrl) {
     const url = externalUrl.replace(/\/$/, '');
     return Promise.resolve({ url, kill: () => {} });
   }
+
+  if (tool === undefined) return Promise.reject(new Error('A built-in tool is required when no external URL is set'));
 
   const toolDir = tool === 'examples' ? join(root, 'examples', 'runners', 'web') : join(root, 'tools', tool);
   const viteJs = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
@@ -115,6 +122,10 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
     return Promise.reject(new Error(`No build found at ${distDir} after build. Run "npm run build:${tool}" to debug.`));
   }
 
+  return serveDirectory(distDir);
+}
+
+function serveDirectory(directory: string): Promise<Server> {
   const MIME: Record<string, string> = {
     '.css': 'text/css',
     '.gif': 'image/gif',
@@ -142,8 +153,8 @@ export function resolveStaticServer(opts: { tool: Tool; root: string; forceBuild
       let urlPath = (req.url ?? '/').split('?')[0];
       if (urlPath.endsWith('/')) urlPath += 'index.html';
 
-      const fsPath = join(distDir, urlPath);
-      if (relative(distDir, fsPath).startsWith('..')) {
+      const fsPath = join(directory, urlPath);
+      if (relative(directory, fsPath).startsWith('..')) {
         res.writeHead(403);
         res.end();
         return;
