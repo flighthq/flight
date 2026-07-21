@@ -128,12 +128,11 @@ export async function runReferenceCapture(options: Readonly<ReferenceCaptureOpti
 }
 
 // Spawns flight-reference's Vite dev server in the checkout, resolving once it logs its Local URL.
-// FLIGHT_REPO points its @flighthq/* aliases at the Flight source. We deliberately do NOT set
-// FLIGHT_SDK_SOURCE: that flag excludes @flighthq/sdk from Vite's dep pre-bundling to serve it as raw
-// source over HMR (for actively editing SDK internals) — which makes a cold page transform the entire SDK
-// module graph (~1700 modules, tens of seconds) and blow past the capture's page timeout. Capture renders
-// once and only needs the built result, so the pre-bundled path (esbuild-bundling the same local source
-// once) is both correct and far faster here.
+// FLIGHT_REPO points its @flighthq/* aliases at the Flight source. FLIGHT_SDK_WATCH keeps the SDK barrel
+// on the same raw-source module graph as direct package imports. Pre-bundling only @flighthq/sdk creates
+// a second copy of stateful renderer registries: a reference app can register a material through the SDK
+// copy, then draw through a direct @flighthq/scene-gl import whose registry remains empty. That split made
+// the OpenFL Stage3D Flight versions render correctly in host dev mode but capture as blank canvases.
 export function startReferenceDevServer(
   checkoutDir: string,
   repoRoot: string,
@@ -142,7 +141,7 @@ export function startReferenceDevServer(
     const child = spawn('npx', ['vite', '--host', '0.0.0.0'], {
       cwd: checkoutDir,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, FLIGHT_REPO: repoRoot },
+      env: { ...process.env, FLIGHT_REPO: repoRoot, FLIGHT_SDK_WATCH: '1' },
     });
     let resolved = false;
     const timeout = setTimeout(() => {

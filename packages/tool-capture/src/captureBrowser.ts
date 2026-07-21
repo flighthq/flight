@@ -126,6 +126,14 @@ export async function launchBrowser(
       window.requestAnimationFrame = (callback: FrameRequestCallback): number =>
         realRequestAnimationFrame((time) => {
           if (flags.__captureFramesReached) return; // halted: scene holds its last frame
+          // Harness/bootstrap scripts can request frames before the renderer has even created its
+          // canvas or registered a verification target. Those are not render frames: counting them can
+          // exhaust a small --frames value before an async application module starts, freezing its first
+          // real draw as a blank canvas. Let bootstrap callbacks run without advancing the capture count.
+          if (flags.__ftTarget === undefined && document.querySelector('canvas') === null) {
+            callback(time);
+            return;
+          }
           if (count >= frames) {
             const targetKind = flags.__ftTarget?.kind;
             const gpuVerifying = verify && (targetKind === 'webgl' || targetKind === 'webgpu');
