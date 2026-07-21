@@ -394,6 +394,14 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           .first()
           .screenshot()
           .catch(() => page.screenshot());
+      } else if (backend === 'webgl' && captureFrames > 0) {
+        // launchBrowser forces preserveDrawingBuffer in deterministic frame mode, so read the canvas
+        // itself instead of Chromium's compositor. Headless SwiftShader can display a WebGL canvas in
+        // an interactive browser while returning an entirely blank locator screenshot; reference pages
+        // that do not register a verifier otherwise produce a false-green white capture here.
+        const canvasDataUrl = await getCanvasImageDataUrl(page);
+        if (canvasDataUrl === null) throw new Error('WebGL canvas did not produce a capture image');
+        screenshotBuffer = Buffer.from(canvasDataUrl.split(',')[1], 'base64');
       } else {
         screenshotBuffer = await page
           .locator('canvas')
@@ -555,6 +563,14 @@ async function getObserveWarmupFrames(page: Page): Promise<number> {
 async function getRenderImageDataUrl(page: Page): Promise<string | null> {
   return page
     .evaluate(() => (window as unknown as { __ftRenderImage?: string }).__ftRenderImage ?? null)
+    .catch(() => null);
+}
+
+async function getCanvasImageDataUrl(page: Page): Promise<string | null> {
+  return page
+    .locator('canvas')
+    .first()
+    .evaluate((canvas) => canvas.toDataURL('image/png'))
     .catch(() => null);
 }
 
