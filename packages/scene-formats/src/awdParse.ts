@@ -3,6 +3,8 @@ import {
   copyMatrix4,
   createMatrix4,
   createQuaternion,
+  createTransform3D,
+  decomposeMatrix4ToTransform3D,
   inverseMatrix4,
   multiplyMatrix4,
   setQuaternionFromMatrix4,
@@ -10,17 +12,31 @@ import {
 import { detectImageMimeType } from '@flighthq/image-codec';
 import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
-import { addNodeChild, setNodeLocalMatrix4 } from '@flighthq/node';
 import type { Scene } from '@flighthq/scene';
-import { createMesh, createScene, createSceneNode } from '@flighthq/scene';
-import { createSkeleton3D } from '@flighthq/skeleton3d';
+import { createSceneFromDocument } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
-import type { AnimationClip, Material, Matrix4, SceneNode, Skeleton3D, Skin, Texture } from '@flighthq/types';
+import type {
+  AnimationClip,
+  AnimationTrack,
+  Material,
+  MaterialLike,
+  Matrix4,
+  SceneDocument,
+  SceneDocumentAnimation,
+  SceneDocumentAnimationChannel,
+  SceneDocumentMesh,
+  SceneDocumentNode,
+  SceneDocumentSkin,
+  SceneNode,
+  Texture,
+  Transform3D,
+} from '@flighthq/types';
 import {
   MeshKind,
   ResourceResolutionState,
   SceneAnimationPathRotation,
   SceneAnimationPathTranslation,
+  SceneNodeKind,
   ImageResourceReferenceKind,
 } from '@flighthq/types';
 
@@ -64,43 +80,50 @@ import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
   convertTransformLhToRh,
-  findSceneSkeletonJoints,
   negateVec3Z,
   packSkinInfluences,
   reverseTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
 
-// Parses an Away3D AWD 2.x binary file into a Scene. The 12-byte header (magic `AWD`, version,
-// flags, compression, body length) is validated, then the block stream is walked to extract
-// geometry blocks (type 1), container blocks (type 22), mesh-instance blocks (type 23), material
-// blocks (type 81), and texture blocks (type 82). Mesh instances reference geometry and material
-// blocks by block ID; materials reference texture blocks the same way.
-//
-// A mesh instance's per-subset materials are resolved to Flight materials: an AWD material becomes a
-// BlinnPhongMaterial (the format's own shading model — AwayJS MethodMaterial), carrying its flat
-// diffuse color and/or a diffuseMap referencing the AWD texture. The parser does not reinterpret into
-// PBR/Unlit — that is the caller's explicit choice. Each texture's image source is emitted as an
-// unresolved ImageResourceReference on the Texture (`Texture.resource`, `image` left null) — embedded
-// payloads as an Embedded ref carrying the encoded bytes, external-URL textures as an External ref
-// carrying the URL. @flighthq/scene-resources resolves those refs on the caller's schedule. Only an
-// embedded payload of an unrecognized image format warns and leaves the subset unmaterialed.
-//
-// Only uncompressed AWD files are supported; compressed files (deflate or LZMA) push a warning
-// and return an empty scene. Malformed input pushes a warning and returns an empty scene rather
-// than throwing.
+// Parses an Away3D AWD 2.x binary file into a Scene. Convenience over `createSceneFromDocument(parseAwd
+// (bytes, warnings))`. See parseAwd for the import model.
 export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): Scene {
+  return createSceneFromDocument(parseAwd(bytes, warnings));
+}
+
+// Parses an Away3D AWD 2.x binary file into a format-neutral SceneDocument. The 12-byte header (magic
+// `AWD`, version, flags, compression, body length) is validated, then the block stream is walked to
+// extract geometry blocks (type 1), container blocks (type 22), mesh-instance blocks (type 23), material
+// blocks (type 81), texture blocks (type 82), and the skeleton block (type 101). Mesh instances reference
+// geometry and material blocks by block ID; materials reference texture blocks the same way.
+//
+// The file's skeleton (if any) becomes a skeleton-group + joint node subtree in the document node table
+// (`nodes`) plus one entry in `skins` (its `joints` are those joint node indices, its `inverseBind` the
+// AWD joint matrices, which ARE the inverse bind pose); each skinned sub-mesh's document mesh names that
+// skin by index. Containers become group nodes, mesh instances become mesh nodes (one geometry → one mesh
+// node carrying the instance name; several geometries → a named group of anonymous per-subset mesh nodes),
+// and parenting is expressed through `children` index lists with the unparented nodes as scene roots. Each
+// AWD material becomes a BlinnPhongMaterial (the format's own AwayJS MethodMaterial shading model) in the
+// document `materials` table, carrying its flat diffuse color and/or a diffuseMap referencing an unresolved
+// AWD texture ImageResourceReference — the parser references, it does not fetch or decode; the resolution is
+// @flighthq/scene-resources's explicit pass. The file's skeleton animations become document `animations`
+// whose channels bind by joint node index. Assemble into a live Scene with `createSceneFromDocument`.
+//
+// Only uncompressed AWD files are supported; compressed files (deflate or LZMA) push a warning and return
+// an empty document. Malformed input pushes a warning and returns an empty document rather than throwing.
+export function parseAwd(bytes: Readonly<Uint8Array>, warnings?: string[]): SceneDocument {
   const source = bytes as Uint8Array;
   if (source.byteLength < AWD_HEADER_BYTES) {
     warnings?.push('createSceneFromAwd: byte length is smaller than the 12-byte AWD header');
-    return createScene();
+    return emptyAwdDocument();
   }
 
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
 
   if (source[0] !== AWD_MAGIC_0 || source[1] !== AWD_MAGIC_1 || source[2] !== AWD_MAGIC_2) {
     warnings?.push("createSceneFromAwd: magic is not 'AWD'; not an AWD file");
-    return createScene();
+    return emptyAwdDocument();
   }
 
   const compression = source[7];
@@ -108,7 +131,7 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     warnings?.push(
       `createSceneFromAwd: compression method ${compression} is not supported; only uncompressed AWD is supported`,
     );
-    return createScene();
+    return emptyAwdDocument();
   }
 
   const bodyLength = view.getUint32(8, true);
@@ -191,19 +214,23 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
     offset = blockDataStart + blockLength;
   }
 
-  const scene = createScene();
-  const sceneNodes = new Map<number, SceneNode>();
+  const document = emptyAwdDocument();
+  // Maps an AWD block id to the document node index it produced (containers + mesh instances), so parenting
+  // can rewire the flat node array by index the way the scene graph did by SceneNode reference.
+  const nodeIndexForBlock = new Map<number, number>();
 
-  // Build the file's skeleton (if any) once and hang its joint hierarchy under the scene, so a skinned
-  // mesh binds to it via mesh.skin and its joint nodes are posable by the animation clip. AWD binds a
-  // mesh to a skeleton through an animator block Flight does not parse yet; with the common single-
-  // skeleton file (the shambler) every skinned mesh is bound to that one skeleton. The joint nodes are
-  // reachable as mesh.skin.skeleton.joints — the same handle parseAwdSkeletonAnimations binds against.
-  let skin: Skin | null = null;
+  // Build the file's skeleton (if any) once as document nodes: a skeleton-group node + joint nodes with
+  // their bind-pose local transforms, and one skin entry whose joints are those node indices. AWD binds a
+  // mesh to a skeleton through an animator block Flight does not parse yet; with the common single-skeleton
+  // file (the shambler) every skinned mesh is bound to that one skeleton.
+  let skinIndex: number | undefined;
+  let skeletonJointNodeIndices: number[] = [];
   if (skeletonBlocks.size > 0) {
-    const built = buildAwdSkeleton(skeletonBlocks.values().next().value!);
-    addNodeChild(scene.root, built.skeletonRoot);
-    skin = { skeleton: built.skeleton, skeletonRoot: built.skeletonRoot };
+    const built = buildAwdSkeletonDocument(skeletonBlocks.values().next().value!, document);
+    skeletonJointNodeIndices = built.jointNodeIndices;
+    skinIndex = document.skins.length;
+    document.skins.push(built.skin);
+    document.scenes[0].rootNodes.push(built.skeletonRootIndex);
     if (skeletonBlocks.size > 1) {
       warnings?.push(
         `createSceneFromAwd: file has ${skeletonBlocks.size} skeletons; every skinned mesh binds to the first`,
@@ -212,86 +239,113 @@ export function createSceneFromAwd(bytes: Readonly<Uint8Array>, warnings?: strin
   }
 
   for (const [blockId, container] of containerBlocks) {
-    const node = createSceneNode(undefined, { name: container.name || undefined });
-    applyAwdTransform(node, container.transform);
-    sceneNodes.set(blockId, node);
+    const nodeIndex = document.nodes.length;
+    document.nodes.push({
+      children: [],
+      kind: SceneNodeKind,
+      name: container.name || undefined,
+      transform: awdTransformToTransform3D(container.transform),
+    });
+    nodeIndexForBlock.set(blockId, nodeIndex);
   }
 
-  // One Flight Material per AWD material block, shared across every subset that references it (and
-  // thus one Texture + one ImageResource per shared texture). Keyed by AWD material block id.
-  const resolvedMaterials = new Map<number, Material | null>();
-  const materialForSubset = (meshInst: ParsedMeshInstance, subsetIndex: number): (Material | null)[] => {
+  // One Flight Material per AWD material block, shared across every subset that references it (and thus one
+  // Texture + one ImageResource per shared texture). Keyed by AWD material block id → document material index.
+  const resolvedMaterials = new Map<number, number>();
+  const materialForSubset = (meshInst: ParsedMeshInstance, subsetIndex: number): number[] => {
     const materialId = subsetIndex < meshInst.materialIds.length ? meshInst.materialIds[subsetIndex] : 0;
-    const material = resolveAwdMaterial(materialId, materialBlocks, textureBlocks, resolvedMaterials, warnings);
-    return material !== null ? [material] : [];
+    const index = resolveAwdMaterial(materialId, materialBlocks, textureBlocks, resolvedMaterials, document, warnings);
+    return index >= 0 ? [index] : [];
   };
 
   for (const [blockId, meshInst] of meshInstanceBlocks) {
     const geometries = geometryBlocks.get(meshInst.geometryId);
-    let node: SceneNode;
+    const transform = awdTransformToTransform3D(meshInst.transform);
+    let nodeIndex: number;
     if (geometries !== undefined && geometries.length > 0) {
       if (geometries.length === 1) {
-        // node = mesh here, so the mesh carries the instance name directly; the multi-geometry
-        // branch instead names the wrapping container (its subset meshes stay anonymous parts).
-        const mesh = createMesh(geometries[0].geometry, materialForSubset(meshInst, 0), MeshKind, {
+        // The single mesh node carries the instance name directly; the multi-geometry branch instead names
+        // the wrapping group (its subset meshes stay anonymous parts).
+        const meshIndex = document.meshes.length;
+        const mesh: SceneDocumentMesh = {
+          geometry: geometries[0].geometry,
+          materials: materialForSubset(meshInst, 0),
+        };
+        if (skinIndex !== undefined && geometries[0].skinned) mesh.skin = skinIndex;
+        document.meshes.push(mesh);
+        nodeIndex = document.nodes.length;
+        document.nodes.push({
+          children: [],
+          kind: MeshKind,
+          mesh: meshIndex,
           name: meshInst.name || undefined,
+          transform,
         });
-        if (skin !== null && geometries[0].skinned) mesh.skin = skin;
-        node = mesh as unknown as SceneNode;
       } else {
-        node = createSceneNode(undefined, { name: meshInst.name || undefined });
+        nodeIndex = document.nodes.length;
+        const group: SceneDocumentNode = {
+          children: [],
+          kind: SceneNodeKind,
+          name: meshInst.name || undefined,
+          transform,
+        };
+        document.nodes.push(group);
         for (let i = 0; i < geometries.length; i++) {
-          const mesh = createMesh(geometries[i].geometry, materialForSubset(meshInst, i));
-          if (skin !== null && geometries[i].skinned) mesh.skin = skin;
-          addNodeChild(node, mesh as unknown as SceneNode);
+          const meshIndex = document.meshes.length;
+          const mesh: SceneDocumentMesh = {
+            geometry: geometries[i].geometry,
+            materials: materialForSubset(meshInst, i),
+          };
+          if (skinIndex !== undefined && geometries[i].skinned) mesh.skin = skinIndex;
+          document.meshes.push(mesh);
+          const childIndex = document.nodes.length;
+          document.nodes.push({ children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() });
+          group.children.push(childIndex);
         }
       }
     } else {
-      node = createSceneNode(undefined, { name: meshInst.name || undefined });
+      nodeIndex = document.nodes.length;
+      document.nodes.push({ children: [], kind: SceneNodeKind, name: meshInst.name || undefined, transform });
       if (meshInst.geometryId !== 0) {
         warnings?.push(
           `createSceneFromAwd: mesh instance block ${blockId} references geometry block ${meshInst.geometryId} which was not found`,
         );
       }
     }
-    applyAwdTransform(node, meshInst.transform);
-    sceneNodes.set(blockId, node);
+    nodeIndexForBlock.set(blockId, nodeIndex);
   }
 
   const parented = new Set<number>();
   for (const [blockId, container] of containerBlocks) {
     if (container.parentId !== 0) {
-      const parent = sceneNodes.get(container.parentId);
-      if (parent !== undefined) {
-        addNodeChild(parent, sceneNodes.get(blockId)!);
+      const parentIndex = nodeIndexForBlock.get(container.parentId);
+      if (parentIndex !== undefined) {
+        document.nodes[parentIndex].children.push(nodeIndexForBlock.get(blockId)!);
         parented.add(blockId);
       }
     }
   }
   for (const [blockId, meshInst] of meshInstanceBlocks) {
     if (meshInst.parentId !== 0) {
-      const parent = sceneNodes.get(meshInst.parentId);
-      if (parent !== undefined) {
-        addNodeChild(parent, sceneNodes.get(blockId)!);
+      const parentIndex = nodeIndexForBlock.get(meshInst.parentId);
+      if (parentIndex !== undefined) {
+        document.nodes[parentIndex].children.push(nodeIndexForBlock.get(blockId)!);
         parented.add(blockId);
       }
     }
   }
 
-  for (const [blockId, node] of sceneNodes) {
-    if (!parented.has(blockId)) {
-      addNodeChild(scene.root, node);
-    }
+  for (const blockId of nodeIndexForBlock.keys()) {
+    if (!parented.has(blockId)) document.scenes[0].rootNodes.push(nodeIndexForBlock.get(blockId)!);
   }
 
-  // Bind the file's skeleton animation to the joints the scene already holds (exposed as
-  // mesh.skin.skeleton.joints), so the returned document carries its clips with no caller re-threading.
-  // Fold every named skeleton animation the file carries — keyed by its block name — into the scene's
-  // animation map, all bound to the joints the scene already holds (mesh.skin.skeleton.joints).
-  const joints = findSceneSkeletonJoints(scene.root);
-  if (joints !== null) Object.assign(scene.animations, parseAwdSkeletonAnimations(bytes, joints, warnings));
+  // The file's skeleton animations become document animations whose channels bind by joint node index. Uses
+  // the same block-walk as the live parseAwdSkeletonAnimations, but emits node-index-bound document channels.
+  if (skeletonJointNodeIndices.length > 0) {
+    document.animations.push(...buildAwdDocumentAnimations(bytes, skeletonJointNodeIndices, warnings));
+  }
 
-  return scene;
+  return document;
 }
 
 // Parses every named skeleton-animation block in an AWD file into a name→clip map. Each clip drives the
@@ -490,51 +544,200 @@ function buildAwdSkeletonAnimationClip(
   return createAnimationClip(channels, timeAccumulator);
 }
 
-// Builds the joint SceneNode hierarchy + Skeleton3D from a parsed AWD skeleton block, hung under a
-// "skeleton" group node so the whole rig can be attached to the scene as one child (the same shape
-// createSceneFromMd5Mesh uses). The parent chain is wired (AWD parent index is 1-based, 0 = root;
-// roots hang under the group). The AWD skeleton joint matrix is the inverse bind pose, so it is passed
-// to createSkeleton3D as the explicit inverse-bind palette and each joint's local transform is seeded
-// to the bind pose, so the skinned mesh renders undeformed until the animation poses the joints.
-// Callers get the joint nodes back for binding both the mesh skin and (via mesh.skin.skeleton.joints)
-// the animation clip to one hierarchy.
-function buildAwdSkeleton(parsedSkeleton: Readonly<ParsedSkeleton>): {
-  jointNodes: SceneNode[];
-  skeleton: Skeleton3D;
-  skeletonRoot: SceneNode;
-} {
+// Builds the document animation table from an AWD file's skeleton-animation blocks, binding each channel by
+// the joint's document node index (in `jointNodeIndices`, AWD joint order). The block walk mirrors the live
+// parseAwdSkeletonAnimations; the difference is only the sink — document channels carry a node index + path
+// + track rather than a live-node-bound AnimationChannel. Every named animation (idle/walk/attack) becomes
+// one SceneDocumentAnimation keyed by its block name (or `animation${i}` in file order when unnamed). Returns
+// an empty array when no skeleton/animation blocks are found.
+function buildAwdDocumentAnimations(
+  bytes: Readonly<Uint8Array>,
+  jointNodeIndices: readonly number[],
+  warnings?: string[],
+): SceneDocumentAnimation[] {
+  const source = bytes as Uint8Array;
+  const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
+  const bodyLength = view.getUint32(8, true);
+  const bodyEnd = Math.min(AWD_HEADER_BYTES + bodyLength, source.byteLength);
+
+  const skeletonBlocks = new Map<number, ParsedSkeleton>();
+  const poseBlocks = new Map<number, ParsedSkeletonPose>();
+  const animationBlocks = new Map<number, ParsedSkeletonAnimation>();
+
+  let offset = AWD_HEADER_BYTES;
+  while (offset + AWD_BLOCK_HEADER_BYTES <= bodyEnd) {
+    const namespace = source[offset + 4];
+    const blockType = source[offset + 5];
+    const blockFlags = source[offset + 6];
+    const blockLength = view.getUint32(offset + 7, true);
+    const blockDataStart = offset + AWD_BLOCK_HEADER_BYTES;
+    if (blockDataStart + blockLength > bodyEnd) break;
+    const blockId = view.getUint32(offset, true);
+    const matrixWide = (blockFlags & 1) !== 0;
+    if (namespace === AWD_NAMESPACE_CORE) {
+      if (blockType === AWD_BLOCK_SKELETON) {
+        const skeleton = parseSkeletonBlock(view, source, blockDataStart, blockDataStart + blockLength, matrixWide);
+        if (skeleton !== null) skeletonBlocks.set(blockId, skeleton);
+      } else if (blockType === AWD_BLOCK_SKELETON_POSE) {
+        const pose = parseSkeletonPoseBlock(view, source, blockDataStart, blockDataStart + blockLength, matrixWide);
+        if (pose !== null) poseBlocks.set(blockId, pose);
+      } else if (blockType === AWD_BLOCK_SKELETON_ANIMATION) {
+        const anim = parseSkeletonAnimationBlock(view, source, blockDataStart, blockDataStart + blockLength);
+        if (anim !== null) animationBlocks.set(blockId, anim);
+      }
+    }
+    offset = blockDataStart + blockLength;
+  }
+
+  if (skeletonBlocks.size === 0 || animationBlocks.size === 0) return [];
+  const parsedSkeleton = skeletonBlocks.values().next().value!;
   const jointCount = parsedSkeleton.joints.length;
-  const skeletonRoot = createSceneNode(undefined, { name: 'skeleton' });
-  const jointNodes: SceneNode[] = [];
-  const jointNames: string[] = [];
+
+  const animations: SceneDocumentAnimation[] = [];
+  let index = 0;
+  for (const parsedAnimation of animationBlocks.values()) {
+    const built = buildAwdDocumentAnimation(parsedAnimation, jointCount, poseBlocks, jointNodeIndices, warnings);
+    if (built !== null) {
+      built.name = parsedAnimation.name || `animation${index}`;
+      animations.push(built);
+    }
+    index++;
+  }
+  return animations;
+}
+
+// Builds one SceneDocumentAnimation from a parsed AWD skeleton-animation block: samples each pose's per-joint
+// local matrix into a translation + rotation track bound to the matching joint node INDEX. Null when it has
+// no poses. Mirrors buildAwdSkeletonAnimationClip's per-joint sampling, emitting document channels.
+function buildAwdDocumentAnimation(
+  parsedAnimation: Readonly<ParsedSkeletonAnimation>,
+  jointCount: number,
+  poseBlocks: ReadonlyMap<number, ParsedSkeletonPose>,
+  jointNodeIndices: readonly number[],
+  warnings?: string[],
+): SceneDocumentAnimation | null {
+  const poseCount = parsedAnimation.poses.length;
+  if (poseCount === 0) {
+    warnings?.push('parseAwdSkeletonAnimations: skeleton animation has no poses');
+    return null;
+  }
+
+  const times: number[] = [];
+  let timeAccumulator = 0;
+  for (let p = 0; p < poseCount; p++) {
+    times.push(timeAccumulator);
+    timeAccumulator += parsedAnimation.poses[p].duration / 1000;
+  }
+
+  const rotationMatrix = createMatrix4();
+  const rotationQuat = createQuaternion();
+  const channels: SceneDocumentAnimationChannel[] = [];
   for (let j = 0; j < jointCount; j++) {
-    const joint = parsedSkeleton.joints[j];
-    jointNodes.push(createSceneNode(undefined, { name: joint.name || undefined }));
-    jointNames.push(joint.name);
+    if (j >= jointNodeIndices.length) break;
+    const translationValues: number[] = [];
+    const rotationValues: number[] = [];
+    for (let p = 0; p < poseCount; p++) {
+      const poseBlockId = parsedAnimation.poses[p].poseBlockId;
+      const pose = poseBlocks.get(poseBlockId);
+      if (pose === undefined) {
+        warnings?.push(
+          `parseAwdSkeletonAnimations: pose block ${poseBlockId} referenced by animation not found; using identity`,
+        );
+        translationValues.push(0, 0, 0);
+        rotationValues.push(0, 0, 0, 1);
+      } else if (j < pose.jointTransforms.length && pose.jointTransforms[j] !== null) {
+        const transform = pose.jointTransforms[j]!;
+        translationValues.push(transform[9], transform[10], transform[11]);
+        awdTransformToMatrix4(rotationMatrix, transform);
+        setQuaternionFromMatrix4(rotationQuat, rotationMatrix);
+        rotationValues.push(rotationQuat.x, rotationQuat.y, rotationQuat.z, rotationQuat.w);
+      } else {
+        translationValues.push(0, 0, 0);
+        rotationValues.push(0, 0, 0, 1);
+      }
+    }
+
+    const translationTrack: AnimationTrack = createAnimationTrack({ components: 3, times, values: translationValues });
+    channels.push({ node: jointNodeIndices[j], path: SceneAnimationPathTranslation, track: translationTrack });
+
+    const rotationTrack: AnimationTrack = createAnimationTrack({
+      components: 4,
+      quaternion: true,
+      times,
+      values: rotationValues,
+    });
+    channels.push({ node: jointNodeIndices[j], path: SceneAnimationPathRotation, track: rotationTrack });
+  }
+
+  return { channels, duration: timeAccumulator, name: parsedAnimation.name };
+}
+
+// The empty SceneDocument returned when AWD parsing fails or before assembly begins — every table present.
+function emptyAwdDocument(): SceneDocument {
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
+}
+
+// Emits an AWD skeleton block into a SceneDocument as a "skeleton" group node + one joint node per AWD
+// joint (with its bind-pose local transform), plus a SceneDocumentSkin whose joints are those node indices
+// and whose inverseBind are the AWD joint matrices (which ARE the inverse bind pose). Appends the nodes to
+// `document.nodes` and returns the skeleton-group node index, the joint node indices (in AWD joint order,
+// for animation binding), and the skin. The parent chain is wired through the joint nodes' `children` index
+// lists (AWD parent index is 1-based, 0 = root; roots hang under the group). Each joint's LOCAL transform
+// is seeded to the bind pose so the skinned mesh renders undeformed until the animation poses the joints —
+// the same math the live scene path used, decomposed to a Transform3D for the document node.
+function buildAwdSkeletonDocument(
+  parsedSkeleton: Readonly<ParsedSkeleton>,
+  document: SceneDocument,
+): { jointNodeIndices: number[]; skeletonRootIndex: number; skin: SceneDocumentSkin } {
+  const jointCount = parsedSkeleton.joints.length;
+
+  const skeletonRootIndex = document.nodes.length;
+  document.nodes.push({ children: [], kind: SceneNodeKind, name: 'skeleton', transform: createTransform3D() });
+
+  const jointNodeIndices: number[] = [];
+  for (let j = 0; j < jointCount; j++) {
+    jointNodeIndices.push(document.nodes.length);
+    document.nodes.push({
+      children: [],
+      kind: SceneNodeKind,
+      name: parsedSkeleton.joints[j].name || undefined,
+      transform: createTransform3D(),
+    });
   }
 
   for (let j = 0; j < jointCount; j++) {
     const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
-    if (parentIndex1 > 0 && parentIndex1 - 1 < jointNodes.length) {
-      addNodeChild(jointNodes[parentIndex1 - 1], jointNodes[j]);
+    if (parentIndex1 > 0 && parentIndex1 - 1 < jointCount) {
+      document.nodes[jointNodeIndices[parentIndex1 - 1]].children.push(jointNodeIndices[j]);
     } else {
-      addNodeChild(skeletonRoot, jointNodes[j]);
+      document.nodes[skeletonRootIndex].children.push(jointNodeIndices[j]);
     }
   }
 
   // The AWD skeleton joint matrix is the joint's INVERSE bind pose (model→joint at bind), not a local
-  // transform — see the AWD format and AwayJS's AWDParser (joint.inverseBindPose). So store it as the
-  // skeleton's explicit inverse-bind palette, and seed each joint's LOCAL transform to the bind pose so
-  // the rig renders undeformed until the animation poses the joints. Bind world = inverseBind⁻¹, and a
-  // joint's bind-local = parentBindWorld⁻¹ · jointBindWorld (roots use bind world directly). The
-  // animation clip then overrides these locals per frame; the skinning palette is jointWorld ·
-  // inverseBind, which is identity at bind (undeformed) and the pose delta once animated.
-  const inverseBindMatrices = new Float32Array(jointCount * 16);
+  // transform — see the AWD format and AwayJS's AWDParser (joint.inverseBindPose). So carry it as the skin's
+  // explicit inverse-bind palette, and seed each joint's LOCAL transform to the bind pose so the rig renders
+  // undeformed until the animation poses the joints. Bind world = inverseBind⁻¹, and a joint's bind-local =
+  // parentBindWorld⁻¹ · jointBindWorld (roots use bind world directly). The animation clip then overrides
+  // these locals per frame; the skinning palette is jointWorld · inverseBind, which is identity at bind
+  // (undeformed) and the pose delta once animated.
+  const inverseBind: Matrix4[] = [];
   const bindWorld: Matrix4[] = [];
-  const invBind = createMatrix4();
   for (let j = 0; j < jointCount; j++) {
+    const invBind = createMatrix4();
     awdTransformToMatrix4(invBind, parsedSkeleton.joints[j].transform);
-    inverseBindMatrices.set(invBind.m, j * 16);
+    inverseBind.push(invBind);
     const bw = createMatrix4();
     inverseMatrix4(bw, invBind);
     bindWorld.push(bw);
@@ -550,11 +753,11 @@ function buildAwdSkeleton(parsedSkeleton: Readonly<ParsedSkeleton>): {
     } else {
       copyMatrix4(local, bindWorld[j]);
     }
-    setNodeLocalMatrix4(jointNodes[j], local);
+    decomposeMatrix4ToTransform3D(document.nodes[jointNodeIndices[j]].transform, local);
   }
 
-  const skeleton = createSkeleton3D(jointNodes, inverseBindMatrices, jointNames);
-  return { jointNodes, skeleton, skeletonRoot };
+  const skin: SceneDocumentSkin = { inverseBind, joints: jointNodeIndices };
+  return { jointNodeIndices, skeletonRootIndex, skin };
 }
 
 interface ParsedGeometry {
@@ -627,10 +830,13 @@ function readAwdTransform(
   return { end: offset + 12 * floatSize, transform };
 }
 
-// Writes an AWD 12-float column-major transform into a node's local matrix (authored directly).
-function applyAwdTransform(node: SceneNode, transform: Readonly<Float64Array>): void {
+// Decomposes an AWD 12-float column-major transform into a document node's authored TRS Transform3D
+// (lossy only on shear, which AWD authoring does not produce).
+function awdTransformToTransform3D(transform: Readonly<Float64Array>): Transform3D {
   awdTransformToMatrix4(_awdTransformScratch, transform);
-  setNodeLocalMatrix4(node, _awdTransformScratch);
+  const out = createTransform3D();
+  decomposeMatrix4ToTransform3D(out, _awdTransformScratch);
+  return out;
 }
 
 const _awdTransformScratch = createMatrix4();
@@ -1130,27 +1336,28 @@ function readAwdPropertyUint32(
   return (view as DataView).getUint32(entry.offset, true);
 }
 
-// Resolves an AWD material block id to a Flight Material, memoized so a material shared by several
-// subsets yields one Material (and one Texture/ImageResource per shared texture). A material with a
-// diffuse texture and/or a flat diffuse color becomes a BlinnPhongMaterial (AWD's own AwayJS
-// MethodMaterial shading model); anything that resolves to neither returns null (a bare, unmaterialed
-// subset).
+// Resolves an AWD material block id to a document material INDEX (appended to `document.materials`),
+// memoized so a material shared by several subsets registers one entry (and one Texture/ImageResource per
+// shared texture). A material with a diffuse texture and/or a flat diffuse color becomes a
+// BlinnPhongMaterial (AWD's own AwayJS MethodMaterial shading model); anything that resolves to neither
+// returns -1 (a bare, unmaterialed subset — the assembler resolves an out-of-range index to null).
 function resolveAwdMaterial(
   materialId: number,
   materialBlocks: Readonly<Map<number, ParsedMaterial>>,
   textureBlocks: Readonly<Map<number, ParsedTexture>>,
-  cache: Map<number, Material | null>,
+  cache: Map<number, number>,
+  document: SceneDocument,
   warnings?: string[],
-): Material | null {
-  if (materialId === 0) return null;
+): number {
+  if (materialId === 0) return -1;
   const cached = cache.get(materialId);
   if (cached !== undefined) return cached;
 
   const parsed = materialBlocks.get(materialId);
   if (parsed === undefined) {
     warnings?.push(`createSceneFromAwd: mesh references material block ${materialId} which was not found`);
-    cache.set(materialId, null);
-    return null;
+    cache.set(materialId, -1);
+    return -1;
   }
 
   // AWD's material model is Blinn-Phong (AwayJS MethodMaterial), so decode to BlinnPhongMaterial —
@@ -1160,18 +1367,20 @@ function resolveAwdMaterial(
   // + getPhongToPbrLightExposure); the importer does not presume a PBR pipeline.
   const diffuseTexture =
     parsed.diffuseTextureId !== 0 ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, warnings) : null;
-  let material: Material | null = null;
-  if (diffuseTexture !== null || parsed.color !== null) {
-    material = createBlinnPhongMaterial({
-      diffuse: parsed.color !== null ? awdColorToRgba(parsed.color) : 0xffffffff,
-      diffuseMap: diffuseTexture,
-    }) as unknown as Material;
-    // Preserve the AWD material block name as the material's authored name (empty → anonymous).
-    material.name = parsed.name.length > 0 ? parsed.name : null;
+  if (diffuseTexture === null && parsed.color === null) {
+    cache.set(materialId, -1);
+    return -1;
   }
-
-  cache.set(materialId, material);
-  return material;
+  const material = createBlinnPhongMaterial({
+    diffuse: parsed.color !== null ? awdColorToRgba(parsed.color) : 0xffffffff,
+    diffuseMap: diffuseTexture,
+  }) as unknown as Material;
+  // Preserve the AWD material block name as the material's authored name (empty → anonymous).
+  material.name = parsed.name.length > 0 ? parsed.name : null;
+  const index = document.materials.length;
+  document.materials.push(material as unknown as MaterialLike);
+  cache.set(materialId, index);
+  return index;
 }
 
 // Resolves an AWD texture block id to a Flight Texture carrying an unresolved ImageResourceReference, or

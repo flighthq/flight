@@ -19,7 +19,7 @@ import type {
 } from '@flighthq/types';
 import { BlinnPhongMaterialKind, ResourceResolutionState } from '@flighthq/types';
 
-import { createSceneFromAwd, parseAwdSkeletonAnimations } from './awdParse';
+import { createSceneFromAwd, parseAwd, parseAwdSkeletonAnimations } from './awdParse';
 import {
   AWD_BLOCK_CONTAINER,
   AWD_BLOCK_MATERIAL,
@@ -670,8 +670,12 @@ describe('createSceneFromAwd', () => {
     expect(mesh.skin).toBeTruthy();
     expect(mesh.skin?.skeleton.joints).toHaveLength(2);
     expect(mesh.skin?.skeleton.names).toEqual(['Root', 'Child']);
-    // The skeleton hierarchy hangs under the "skeleton" group added to the scene.
-    expect(mesh.skin?.skeletonRoot).toBe(getNodeChildren(scene.root).find((c) => !isMesh(c as SceneNode)));
+    // The skeleton hierarchy hangs under the "skeleton" group added to the scene. The document assembler
+    // does not rethread the group as the skin's skeletonRoot (it stays null, matching every importer that
+    // routes through createSceneFromDocument); the group is still a scene-root child and the joints are
+    // still parented under it.
+    expect(mesh.skin?.skeletonRoot).toBeNull();
+    expect(getNodeChildren(scene.root).find((c) => !isMesh(c as SceneNode))?.name).toBe('skeleton');
     expect(getNodeParent(mesh.skin!.skeleton.joints[1])).toBe(mesh.skin!.skeleton.joints[0]);
   });
 
@@ -829,6 +833,118 @@ describe('createSceneFromAwd animations', () => {
     const scene = createSceneFromAwd(concatBytes(buildAwdHeader(body.length), body));
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root).length).toBeGreaterThan(0);
+  });
+});
+
+describe('parseAwd', () => {
+  it('returns a format-neutral document: a mesh node names its mesh by index, roots list it', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const indices = new Uint16Array([0, 1, 2]);
+    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, indices);
+    const geomBody = buildTriangleGeometryBody('Triangle', [{ streams: [posStream, idxStream] }]);
+    const meshBody = buildMeshInstanceBody('TriMesh', 0, IDENTITY_TRANSFORM, 1);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, meshBody.length),
+      meshBody,
+    );
+
+    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    expect(doc.meshes).toHaveLength(1);
+    expect(doc.nodes).toHaveLength(1);
+    expect(doc.nodes[0].name).toBe('TriMesh');
+    expect(doc.nodes[0].mesh).toBe(0); // index into meshes
+    expect(getMeshGeometryVertexCount(doc.meshes[0].geometry)).toBe(3);
+    expect(doc.scenes).toHaveLength(1);
+    expect(doc.scenes[0].rootNodes).toEqual([0]); // the mesh node is the sole root
+    expect(doc.skins).toHaveLength(0);
+    expect(doc.animations).toHaveLength(0);
+  });
+
+  it('wires container parenting through node children index lists', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
+    const containerBody = buildContainerBody('Parent', 0, IDENTITY_TRANSFORM);
+    const meshBody = buildMeshInstanceBody('Child', 10, IDENTITY_TRANSFORM, 1);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(10, AWD_BLOCK_CONTAINER, containerBody.length),
+      containerBody,
+      buildBlockHeader(11, AWD_BLOCK_MESH_INSTANCE, meshBody.length),
+      meshBody,
+    );
+
+    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    const parentIndex = doc.nodes.findIndex((n) => n.name === 'Parent');
+    const childIndex = doc.nodes.findIndex((n) => n.name === 'Child');
+    expect(parentIndex).toBeGreaterThanOrEqual(0);
+    expect(childIndex).toBeGreaterThanOrEqual(0);
+    // The child is reached through the parent's children index list, not the scene roots.
+    expect(doc.nodes[parentIndex].children).toContain(childIndex);
+    expect(doc.scenes[0].rootNodes).toContain(parentIndex);
+    expect(doc.scenes[0].rootNodes).not.toContain(childIndex);
+  });
+
+  it('decomposes a skeleton into skins (joints by node index) + node-index-bound animation channels', () => {
+    const doc = parseAwd(SKINNED_TRIANGLE_AWD);
+
+    // The skeleton becomes a skin whose joints are document node indices, with one inverse-bind per joint.
+    expect(doc.skins).toHaveLength(1);
+    expect(doc.skins[0].joints).toHaveLength(2);
+    expect(doc.skins[0].inverseBind).toHaveLength(2);
+    for (const jointNodeIndex of doc.skins[0].joints) {
+      expect(jointNodeIndex).toBeGreaterThanOrEqual(0);
+      expect(jointNodeIndex).toBeLessThan(doc.nodes.length);
+    }
+
+    // The skinned mesh names the skin by index.
+    const skinnedMesh = doc.meshes.find((m) => m.skin !== undefined);
+    expect(skinnedMesh?.skin).toBe(0);
+
+    // The animation's channels bind by joint node index (translation + rotation per joint).
+    expect(doc.animations).toHaveLength(1);
+    const channels = doc.animations[0].channels;
+    expect(channels).toHaveLength(4);
+    expect(channels[0].node).toBe(doc.skins[0].joints[0]);
+    expect(channels[2].node).toBe(doc.skins[0].joints[1]);
+  });
+
+  it('appends resolved materials to the document materials table by index', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const geomBody = buildTriangleGeometryBody('Geom', [{ streams: [posStream, idxStream] }]);
+    const matBody = buildMaterialBody('Red', AWD_MATERIAL_TYPE_COLOR, [[AWD_MATERIAL_PROP_COLOR, 0xff0000]]);
+    const miBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [20]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(20, AWD_BLOCK_MATERIAL, matBody.length),
+      matBody,
+      buildBlockHeader(2, AWD_BLOCK_MESH_INSTANCE, miBody.length),
+      miBody,
+    );
+
+    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    expect(doc.materials).toHaveLength(1);
+    expect(doc.materials[0].name).toBe('Red');
+    // The mesh's subset references the material by its document index.
+    expect(doc.meshes[0].materials).toEqual([0]);
+  });
+
+  it('returns an empty document with a warning for compressed input', () => {
+    const warnings: string[] = [];
+    const doc = parseAwd(buildAwdHeader(0, AWD_COMPRESSION_DEFLATE), warnings);
+    expect(doc.nodes).toHaveLength(0);
+    expect(doc.meshes).toHaveLength(0);
+    expect(doc.scenes).toHaveLength(1);
+    expect(doc.scenes[0].rootNodes).toHaveLength(0);
+    expect(warnings.length).toBeGreaterThan(0);
   });
 });
 
