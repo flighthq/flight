@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { Vector3 } from './Vector3';
 import type { Vector3Like } from './Vector3';
 
@@ -10,7 +11,7 @@ import type { Vector3Like } from './Vector3';
 // measured from the horizon and clamped to [`minPolar`, `maxPolar`] (kept just inside ±90° so the
 // look-at up vector never degenerates); `distance` is clamped to [`minDistance`, `maxDistance`].
 // `smoothTime` is the `@flighthq/math` `damp` time constant; <= 0 snaps.
-export interface OrbitCameraController {
+export interface OrbitCameraController extends Entity {
   azimuth: number;
   distance: number;
   goalAzimuth: number;

@@ -1,7 +1,30 @@
 import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
+import { createEntity } from '@flighthq/entity';
 import { createVector3 } from '@flighthq/geometry';
-import { clamp, damp } from '@flighthq/math';
+import { clamp, damp, deltaAngle } from '@flighthq/math';
 import type { Camera3D, FlyCameraController, FlyCameraControllerOptions } from '@flighthq/types';
+
+// Allocates an independent Entity containing the same controller value state.
+export function cloneFlyCameraController(source: Readonly<FlyCameraController>): FlyCameraController {
+  const clone = createFlyCameraController();
+  copyFlyCameraController(clone, source);
+  return clone;
+}
+
+// Copies all controller state without sharing its mutable position. Entity runtime/binding state is
+// deliberately left on `out`; this is a value-state operation, not an ownership transfer.
+export function copyFlyCameraController(out: FlyCameraController, source: Readonly<FlyCameraController>): void {
+  out.goalPitch = source.goalPitch;
+  out.goalYaw = source.goalYaw;
+  out.maxPitch = source.maxPitch;
+  out.minPitch = source.minPitch;
+  out.pitch = source.pitch;
+  out.position.x = source.position.x;
+  out.position.y = source.position.y;
+  out.position.z = source.position.z;
+  out.smoothTime = source.smoothTime;
+  out.yaw = source.yaw;
+}
 
 // Allocates a fly / first-person controller. `position` defaults to the origin, `yaw`/`pitch` to 0
 // (looking down -Z), `pitch` limits to just inside ±90° (no gimbal flip), and `smoothTime` to 0 (the
@@ -10,7 +33,7 @@ export function createFlyCameraController(options?: Readonly<FlyCameraController
   const yaw = options?.yaw ?? 0;
   const pitch = options?.pitch ?? 0;
   const position = options?.position;
-  return {
+  return createEntity({
     goalPitch: pitch,
     goalYaw: yaw,
     maxPitch: options?.maxPitch ?? DEFAULT_MAX_PITCH,
@@ -19,7 +42,7 @@ export function createFlyCameraController(options?: Readonly<FlyCameraController
     position: createVector3(position?.x ?? 0, position?.y ?? 0, position?.z ?? 0),
     smoothTime: options?.smoothTime ?? 0,
     yaw,
-  };
+  });
 }
 
 // Moves the goal look angles by the given radian deltas: `deltaYaw` turns horizontally (unbounded),
@@ -48,6 +71,33 @@ export function moveFlyCameraController(
   position.z += -cosYaw * forward + sinYaw * right;
 }
 
+// Restores the controller to constructor defaults or the supplied seed. Current and goal angles are
+// synchronized, which makes this suitable for scene changes without a one-frame eased transition.
+export function resetFlyCameraController(
+  controller: FlyCameraController,
+  options?: Readonly<FlyCameraControllerOptions>,
+): void {
+  const yaw = options?.yaw ?? 0;
+  const pitch = options?.pitch ?? 0;
+  const position = options?.position;
+  controller.goalPitch = pitch;
+  controller.goalYaw = yaw;
+  controller.maxPitch = options?.maxPitch ?? DEFAULT_MAX_PITCH;
+  controller.minPitch = options?.minPitch ?? DEFAULT_MIN_PITCH;
+  controller.pitch = pitch;
+  controller.position.x = position?.x ?? 0;
+  controller.position.y = position?.y ?? 0;
+  controller.position.z = position?.z ?? 0;
+  controller.smoothTime = options?.smoothTime ?? 0;
+  controller.yaw = yaw;
+}
+
+// Snaps current look state to the clamped goal without writing a camera.
+export function snapFlyCameraController(controller: FlyCameraController): void {
+  controller.pitch = clamp(controller.goalPitch, controller.minPitch, controller.maxPitch);
+  controller.yaw = controller.goalYaw;
+}
+
 // Advances the controller one step and writes the resulting view into `camera` (in place). Eases the
 // current yaw/pitch toward their clamped goals with `@flighthq/math` `damp` (frame-rate independent;
 // `smoothTime` <= 0 or `deltaTime` <= 0 snaps), builds the forward direction from the angles, and
@@ -56,7 +106,8 @@ export function updateFlyCameraController(controller: FlyCameraController, camer
   const goalPitch = clamp(controller.goalPitch, controller.minPitch, controller.maxPitch);
   if (controller.smoothTime > 0 && deltaTime > 0) {
     const lambda = 1 / controller.smoothTime;
-    controller.yaw = damp(controller.yaw, controller.goalYaw, lambda, deltaTime);
+    const nearestGoalYaw = controller.yaw + deltaAngle(controller.yaw, controller.goalYaw);
+    controller.yaw = damp(controller.yaw, nearestGoalYaw, lambda, deltaTime);
     controller.pitch = damp(controller.pitch, goalPitch, lambda, deltaTime);
   } else {
     controller.yaw = controller.goalYaw;

@@ -1,18 +1,50 @@
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
-import { createMatrix4, createVector3 } from '@flighthq/geometry';
+import { createVector3 } from '@flighthq/geometry';
+import { EntityRuntimeKey } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import {
+  cloneOrbitCameraController,
+  copyOrbitCameraController,
   createOrbitCameraController,
   dollyCameraController,
   orbitCameraController,
   panCameraController,
+  panOrbitCameraControllerInViewPlane,
+  resetOrbitCameraController,
+  snapOrbitCameraController,
   updateOrbitCameraController,
 } from './orbitCameraController';
 
 function testCamera() {
   return createCamera3D({ far: 100, near: 0.1, projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }) });
 }
+
+describe('cloneOrbitCameraController', () => {
+  it('creates an independent Entity with the same value state', () => {
+    const source = createOrbitCameraController({ azimuth: 0.2, distance: 4, target: createVector3(1, 2, 3) });
+    const clone = cloneOrbitCameraController(source);
+    expect(clone).toMatchObject({ azimuth: 0.2, distance: 4 });
+    expect(EntityRuntimeKey in clone).toBe(true);
+    expect(clone.target).not.toBe(source.target);
+    clone.target.x = 10;
+    expect(source.target.x).toBe(1);
+  });
+});
+
+describe('copyOrbitCameraController', () => {
+  it('copies value state without sharing target or replacing runtime state', () => {
+    const source = createOrbitCameraController({ azimuth: 0.2, distance: 4, target: createVector3(1, 2, 3) });
+    const out = createOrbitCameraController();
+    const runtime = { binding: null };
+    out[EntityRuntimeKey] = runtime;
+    copyOrbitCameraController(out, source);
+
+    expect(out).toMatchObject({ azimuth: 0.2, distance: 4 });
+    expect(out[EntityRuntimeKey]).toBe(runtime);
+    expect(out.target).not.toBe(source.target);
+  });
+});
 
 describe('createOrbitCameraController', () => {
   it('applies documented defaults with current equal to goal', () => {
@@ -31,6 +63,10 @@ describe('createOrbitCameraController', () => {
     expect(c.polar).toBe(0.5);
     expect(c.target.x).toBe(1);
     expect(c.target.z).toBe(3);
+  });
+
+  it('produces an Entity', () => {
+    expect(EntityRuntimeKey in createOrbitCameraController()).toBe(true);
   });
 });
 
@@ -65,6 +101,43 @@ describe('panCameraController', () => {
   });
 });
 
+describe('panOrbitCameraControllerInViewPlane', () => {
+  it('follows screen-up at nonzero polar', () => {
+    const c = createOrbitCameraController({ polar: Math.PI / 4 });
+    panOrbitCameraControllerInViewPlane(c, 0, 2);
+    expect(c.target.x).toBeCloseTo(0);
+    expect(c.target.y).toBeCloseTo(Math.SQRT2);
+    expect(c.target.z).toBeCloseTo(-Math.SQRT2);
+  });
+});
+
+describe('resetOrbitCameraController', () => {
+  it('resets all coupled state from a seed', () => {
+    const c = createOrbitCameraController({ target: createVector3(1, 2, 3) });
+    resetOrbitCameraController(c, {
+      azimuth: 1,
+      distance: 4,
+      maxDistance: 6,
+      maxPolar: 0.5,
+      polar: 0.25,
+      target: createVector3(4, 5, 6),
+    });
+    expect(c).toMatchObject({ azimuth: 1, goalAzimuth: 1, distance: 4, goalDistance: 4, polar: 0.25 });
+    expect(c.target).toMatchObject({ x: 4, y: 5, z: 6 });
+  });
+});
+
+describe('snapOrbitCameraController', () => {
+  it('snaps current values to clamped goals', () => {
+    const c = createOrbitCameraController({ maxDistance: 6, maxPolar: 0.5 });
+    c.goalDistance = 20;
+    c.goalPolar = 2;
+    snapOrbitCameraController(c);
+    expect(c.distance).toBe(6);
+    expect(c.polar).toBe(0.5);
+  });
+});
+
 describe('updateOrbitCameraController', () => {
   it('snaps to the goal when smoothTime is 0 and writes the look-at view', () => {
     const c = createOrbitCameraController({ distance: 10 }); // azimuth 0, polar 0 => eye (0,0,10)
@@ -83,5 +156,13 @@ describe('updateOrbitCameraController', () => {
     updateOrbitCameraController(c, testCamera(), 0.016);
     expect(c.azimuth).toBeGreaterThan(0);
     expect(c.azimuth).toBeLessThan(1); // has not reached the goal in one small step
+  });
+
+  it('takes the shortest arc across the wrapped azimuth seam', () => {
+    const c = createOrbitCameraController({ azimuth: Math.PI - 0.05, smoothTime: 0.5 });
+    c.goalAzimuth = -Math.PI + 0.05;
+    updateOrbitCameraController(c, testCamera(), 0.016);
+    expect(c.azimuth).toBeGreaterThan(Math.PI - 0.05);
+    expect(c.azimuth).toBeLessThan(Math.PI + 0.05);
   });
 });
