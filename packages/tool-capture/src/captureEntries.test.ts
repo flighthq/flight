@@ -35,6 +35,13 @@ describe('discoverEntries', () => {
   });
 });
 
+describe('Entry', () => {
+  it('accepts declarative renderer routes for JSON manifests', () => {
+    const entry = { name: 'home', renderers: ['webgl'], routes: { webgl: 'pages/home/' } };
+    expect(entry.routes.webgl).toBe('pages/home/');
+  });
+});
+
 describe('rendererMatchesFilter', () => {
   it('matches everything when the filter is empty', () => {
     expect(rendererMatchesFilter('webgl', [])).toBe(true);
