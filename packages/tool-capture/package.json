@@ -35,6 +35,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/capture": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/surface": "*",
     "@flighthq/types": "*",

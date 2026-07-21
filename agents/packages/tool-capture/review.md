@@ -12,7 +12,7 @@ ingested:
 
 _No `status.md` exists in this cell yet (the 2026-07-10 build is recorded in the charter's Decisions instead); evidence is the live source._
 
-**Verdict:** solid — 73/100. The blessed consolidation lift is real and adopted: one hardened capture path with deterministic browser prep, the presented-frame sync contract, manifest-driven and programmatic parallel sweeps, and the programmatic `captureRenderTarget` entry. Flight's capture/smoke scripts invoke the package CLI directly; watch capture, compare-render, and the functional Vite config consume its lower-level APIs. What remains is the deferred `@flighthq/capture` wiring, the deferred naming pass, a status.json shape that diverges from the charter's stated contract, and env-bound modules whose tests are existence-only.
+**Verdict:** solid — 82/100. Capture and fingerprint validation now share one package-owned lifecycle: deterministic browser prep, manifest/server discovery, parallel scheduling, baseline I/O and policy, reporting, and verdicts. Flight invokes the `capture` and `validate` commands directly; other packages can use the same JSON manifest or the `runCaptureSuite` / `runCaptureValidation` APIs. Remaining gaps are the deferred naming pass, a status.json shape that diverges from the charter's stated contract, and thin environment-bound tests.
 
 ## Present capabilities
 
@@ -28,7 +28,7 @@ Nine modules under `packages/tool-capture/src/` (judged as a `tool-*` package: N
 
 ## Gaps
 
-1. **`@flighthq/capture` not consumed** — the sha256/baseline compare is self-contained and `baselineStore.ts` duplicates capture's `formatCaptureBaseline` byte format. Blessed deviation (Decision 2026-07-10 item 2) and already charter Open direction 0; the duplication is the standing drift risk.
+1. **`@flighthq/capture` adoption is complete** — validation uses its comparison tolerances/evaluators and `baselineStore.ts` delegates parsing, formatting, and field access to its canonical baseline operations. The former byte-format drift risk is closed.
 2. **`status.json` shape diverges from the charter's stated agent contract.** The charter Decision says the trio's status is `{ rendered, blank, changed, error }`; actual `CaptureStatus` is `{ state: 'ready'|'error', capturedAt, error, hash, baselineHash, changed }` — no `rendered`/`blank` fields (blank detection lives in the in-page functional verifier and surfaces only as an error log). Either the code grows the verdict fields or the charter/skill text should describe the real shape.
 3. **Naming pass pending** — `Entry`, `Tool`, `Server`, `launchBrowser`, `formatDetailLine`, `baselinePath` are generic exports from a package root; the SDK's globally-self-identifying rule is relaxed for `tool-*` but the Decision itself notes the fully-qualified pass as a separate step.
 4. **Env-bound modules have existence-only tests** — `captureBrowser`, `captureRenderTarget`, `captureServer`, `captureEntry`/`captureParallel` assert only that the function exists (each documents why); the pure helpers (format, store, discovery, interrupt, entries) are tested for real. No harness-level integration test lives in the package itself (the `capture:*` scripts are the de-facto gate).
@@ -37,7 +37,7 @@ Nine modules under `packages/tool-capture/src/` (judged as a `tool-*` package: N
 
 ## Charter contradictions
 
-- The Boundaries section claims "`scripts/compare-render.ts` stays harness-side (**it already consumes `@flighthq/capture`**)" — false in source: `compare-render.ts` imports `@flighthq/surface` and `@flighthq/tool-capture`, not `@flighthq/capture` (nothing outside the sdk barrel does). A factual charter statement to correct.
+- The charter allowed `scripts/compare-render.ts` to stay harness-side or move; it now lives in the package as `captureValidation.ts` and consumes `@flighthq/capture` directly.
 - The status.json shape mismatch (gap 2) sits between Decision text and code; flagged rather than judged.
 
 Otherwise the build matches the Decisions closely — including the recorded split of the present-frame sync (Node driving here, in-page verifier staying in `tools/harness/` via the unchanged `window` contract).

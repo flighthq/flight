@@ -5,6 +5,10 @@ import type { Entry } from './captureEntries.js';
 export interface CaptureManifest {
   entries: Entry[];
   subject: string;
+  validation?: {
+    fingerprintSkip?: string[];
+    paritySkip?: Record<string, 'all' | string[]>;
+  };
 }
 
 export function parseCaptureManifest(source: string, sourceName: string = 'capture manifest'): CaptureManifest {
@@ -22,7 +26,27 @@ export function parseCaptureManifest(source: string, sourceName: string = 'captu
       }
     }
   }
+  if (value.validation !== undefined) {
+    const { fingerprintSkip, paritySkip } = value.validation;
+    if (fingerprintSkip !== undefined && !isStringArray(fingerprintSkip)) {
+      throw new Error(`${sourceName}: validation.fingerprintSkip must be a string array`);
+    }
+    if (paritySkip !== undefined) {
+      if (typeof paritySkip !== 'object' || paritySkip === null || Array.isArray(paritySkip)) {
+        throw new Error(`${sourceName}: validation.paritySkip must be an object`);
+      }
+      for (const [name, renderers] of Object.entries(paritySkip)) {
+        if (renderers !== 'all' && !isStringArray(renderers)) {
+          throw new Error(`${sourceName}: validation.paritySkip.${name} must be "all" or a string array`);
+        }
+      }
+    }
+  }
   return value as CaptureManifest;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
 export function readCaptureManifest(path: string): CaptureManifest {

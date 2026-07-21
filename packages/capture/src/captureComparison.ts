@@ -1,4 +1,4 @@
-import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface';
+import { compareSurfaceFingerprints, parseSurfaceFingerprint } from '@flighthq/surface/surfaceFingerprint';
 import type { CaptureCheckResult } from '@flighthq/types';
 
 // Default parity tolerance (mean absolute per-channel difference, 0..255). Cross-backend agreement is

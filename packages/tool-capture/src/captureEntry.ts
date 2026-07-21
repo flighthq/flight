@@ -225,7 +225,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   let anyChanged = false;
 
   // Detail lines below the caller's [N/M] header drop the entry name (the header carries it) and
-  // column-align on the renderer label, matching compare-render.ts. The renderer name carries the
+  // column-align on the renderer label, matching the validation report. The renderer name carries the
   // verdict color; routine confirmations dim (see formatStatusLine).
   // displayLabel overrides the renderer name when set (used by captureParallel).
   const labelWidth = displayLabel ? Math.max(6, displayLabel.length) : Math.max(6, ...renderers.map((r) => r.length));

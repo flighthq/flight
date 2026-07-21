@@ -10,19 +10,27 @@ import { discoverEntries } from './captureEntries.js';
 import type { Entry } from './captureEntries.js';
 import { captureUrl } from './captureEntry.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
+import type { CaptureManifest } from './captureManifest.js';
 import { readCaptureManifest } from './captureManifest.js';
 import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.js';
 import { runCaptureSuite } from './captureSuite.js';
+import { runCaptureValidation } from './captureValidation.js';
 
 const USAGE = `usage:
   tool-capture observe <url> [--out <dir>] [--wait <ms>] [--frames <n>]
   tool-capture capture [--manifest <file>] (--url <url> | --dir <built-dir>) [options]
   tool-capture capture --tool <examples|functional> [options]
+  tool-capture validate [--manifest <file>] (--url <url> | --dir <built-dir>) [options]
+  tool-capture validate --tool <examples|functional> [options]
 
 capture options:
   --filter <name> --renderer <ids> --out <dir> --wait <ms> --frames <n>
   --parallel <n> --sequential --dev --build --update-baseline --fail-on-changed
   --fail-on-error --verify --no-verify --observe
+
+validation options:
+  --report --update-fingerprints --no-regression --no-parity
+  --stability-epsilon <n> --regression-tolerance <n> --parity-tolerance <n>
 
 Manifest: { "subject": "app", "entries": [{ "name": "home", "renderers": ["webgl"],
   "routes": { "webgl": "pages/home/" } }] }`;
@@ -38,15 +46,24 @@ function hasFlag(argv: readonly string[], key: string): boolean {
   return argv.includes(`--${key}`);
 }
 
-async function capture(argv: readonly string[]): Promise<number> {
+interface CaptureCliSuite {
+  entries: Entry[];
+  manifest: CaptureManifest | null;
+  root: string;
+  server: Awaited<ReturnType<typeof resolveServer>>;
+  subject: string;
+}
+
+async function resolveCaptureCliSuite(argv: readonly string[]): Promise<CaptureCliSuite> {
   const root = resolve(flag(argv, 'root') ?? process.cwd());
   const manifestPath = flag(argv, 'manifest');
   const toolName = flag(argv, 'tool');
+  let manifest: CaptureManifest | null = null;
   let subject: string;
   let entries: Entry[];
 
   if (manifestPath !== undefined) {
-    const manifest = readCaptureManifest(resolve(root, manifestPath));
+    manifest = readCaptureManifest(resolve(root, manifestPath));
     subject = flag(argv, 'subject') ?? manifest.subject;
     entries = manifest.entries;
   } else if (toolName === 'examples' || toolName === 'functional') {
@@ -54,8 +71,8 @@ async function capture(argv: readonly string[]): Promise<number> {
     entries = discoverEntries(toolName, root);
   } else {
     const conventionalManifest = resolve(root, 'tool-capture.json');
-    if (!existsSync(conventionalManifest)) throw new Error(`capture requires --manifest or --tool\n${USAGE}`);
-    const manifest = readCaptureManifest(conventionalManifest);
+    if (!existsSync(conventionalManifest)) throw new Error(`capture/validate requires --manifest or --tool\n${USAGE}`);
+    manifest = readCaptureManifest(conventionalManifest);
     subject = flag(argv, 'subject') ?? manifest.subject;
     entries = manifest.entries;
   }
@@ -79,8 +96,13 @@ async function capture(argv: readonly string[]): Promise<number> {
       : await resolveStaticServer({ tool: toolName, root, forceBuild: hasFlag(argv, 'build') });
     console.log(`Ready at ${server.url}\n`);
   } else {
-    throw new Error(`capture requires --url or --dir for manifest suites\n${USAGE}`);
+    throw new Error(`capture/validate requires --url or --dir for manifest suites\n${USAGE}`);
   }
+  return { entries, manifest, root, server, subject };
+}
+
+async function capture(argv: readonly string[]): Promise<number> {
+  const { subject, entries, server, root } = await resolveCaptureCliSuite(argv);
 
   const frames = flag(argv, 'frames');
   const parallel = flag(argv, 'parallel');
@@ -106,6 +128,33 @@ async function capture(argv: readonly string[]): Promise<number> {
   return result.shouldFail ? 1 : 0;
 }
 
+async function validate(argv: readonly string[]): Promise<number> {
+  const { subject, entries, server, root, manifest } = await resolveCaptureCliSuite(argv);
+  const result = await runCaptureValidation({
+    subject,
+    entries,
+    server,
+    root,
+    filter: flag(argv, 'filter'),
+    rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
+    captureFrames: Math.max(1, parseNonNegativeInteger(flag(argv, 'frames'), 1)),
+    report: hasFlag(argv, 'report'),
+    updateFingerprints: hasFlag(argv, 'update-fingerprints'),
+    gateRegression: !hasFlag(argv, 'no-regression'),
+    gateParity: !hasFlag(argv, 'no-parity'),
+    stabilityEpsilon: parseNumber(flag(argv, 'stability-epsilon')),
+    regressionTolerance: parseNumber(flag(argv, 'regression-tolerance')),
+    parityTolerance: parseNumber(flag(argv, 'parity-tolerance')),
+    sequential: hasFlag(argv, 'sequential'),
+    workerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'parallel'), 6)),
+    fingerprintSkip:
+      manifest?.validation?.fingerprintSkip ?? (manifest === null && subject === 'examples' ? ['playingsound'] : []),
+    paritySkip: manifest?.validation?.paritySkip ?? (manifest === null ? FLIGHT_PARITY_SKIP : {}),
+  });
+  if (result.aborted) return 130;
+  return result.shouldFail ? 1 : 0;
+}
+
 async function main(): Promise<void> {
   const [command, ...argv] = process.argv.slice(2);
   if (command === 'observe') {
@@ -122,6 +171,7 @@ async function main(): Promise<void> {
     process.exit(0);
   }
   if (command === 'capture') process.exit(await capture(argv));
+  if (command === 'validate') process.exit(await validate(argv));
   console.error(USAGE);
   process.exit(2);
 }
@@ -131,6 +181,24 @@ function parseNonNegativeInteger(value: string | undefined, fallback: number): n
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
+
+function parseNumber(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | string[]>> = {
+  playingvideo: 'all',
+  'effect-hue-saturation': ['canvas'],
+  'effect-lens-distortion': ['canvas'],
+  'effect-lens-flare': ['canvas'],
+  'effect-posterize': ['canvas'],
+  'effect-vignette': ['canvas'],
+  'effect-displacement': 'all',
+  'effect-god-rays': 'all',
+  'effect-screen-space-fog': 'all',
+};
 
 main().catch((err: unknown) => {
   if (isBrowserClosedError(err)) process.exit(130);

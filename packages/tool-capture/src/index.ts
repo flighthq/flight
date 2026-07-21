@@ -8,6 +8,7 @@ export * from './captureManifest';
 export * from './captureRenderTarget';
 export * from './captureServer';
 export * from './captureSuite';
+export * from './captureValidation';
 export * from './functionalScenes';
 export * from './functionalVerify';
 export * from './referenceCapture';

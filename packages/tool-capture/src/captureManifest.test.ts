@@ -28,6 +28,21 @@ describe('parseCaptureManifest', () => {
       /needs a route/,
     );
   });
+
+  it('parses validation policy and rejects malformed skips', () => {
+    const manifest = {
+      subject: 'app',
+      entries: [{ name: 'home', renderers: ['webgl'], routes: { webgl: 'home/' } }],
+      validation: { fingerprintSkip: ['animated'], paritySkip: { home: ['webgl'], video: 'all' } },
+    };
+    expect(parseCaptureManifest(JSON.stringify(manifest))).toEqual(manifest);
+    expect(() =>
+      parseCaptureManifest(JSON.stringify({ ...manifest, validation: { fingerprintSkip: 'animated' } })),
+    ).toThrow(/fingerprintSkip/);
+    expect(() =>
+      parseCaptureManifest(JSON.stringify({ ...manifest, validation: { paritySkip: { home: true } } })),
+    ).toThrow(/paritySkip\.home/);
+  });
 });
 
 describe('readCaptureManifest', () => {

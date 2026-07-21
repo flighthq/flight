@@ -217,7 +217,9 @@ function scanFlightImports(files: string[]): Set<string> {
         specifier = statement.moduleSpecifier.text;
       }
       if (specifier?.startsWith('@flighthq/')) {
-        imports.add(specifier);
+        // Dependency keys name the package, while an import may select one of its declared subpath
+        // exports (for example @flighthq/surface/surfaceFingerprint).
+        imports.add(specifier.split('/').slice(0, 2).join('/'));
       }
     }
   }
