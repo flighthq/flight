@@ -4,7 +4,11 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "references": [{ "path": "../../../packages/camera" }, { "path": "../../../packages/sdk" }],
+  "references": [
+    { "path": "../../../packages/camera" },
+    { "path": "../../../packages/camera-controls" },
+    { "path": "../../../packages/sdk" }
+  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

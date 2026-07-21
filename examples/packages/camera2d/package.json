@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@flighthq/camera": "*",
+    "@flighthq/camera-controls": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {

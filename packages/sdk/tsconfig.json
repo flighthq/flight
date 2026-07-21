@@ -46,6 +46,9 @@
       "path": "../camera"
     },
     {
+      "path": "../camera-controls"
+    },
+    {
       "path": "../capture"
     },
     {

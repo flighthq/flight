@@ -34,7 +34,6 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/math": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
