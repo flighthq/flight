@@ -123,6 +123,61 @@ describe('convertMeshGeometryLayout', () => {
     expect(converted.vertices[4]).toBe(0);
     expect(converted.vertices[5]).toBe(0);
   });
+  it('converts packed channels by semantic and round-trips their declared encoding', () => {
+    const packedLayout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'unorm8x4', semantic: 'color0' },
+        { byteOffset: 4, format: 'uint16x4', semantic: 'joints0' },
+      ],
+      stride: 12,
+    };
+    const packedVertices = new Float32Array(3);
+    const packedView = new DataView(packedVertices.buffer);
+    new Uint8Array(packedVertices.buffer).set([255, 128, 0, 64]);
+    packedView.setUint16(4, 1, true);
+    packedView.setUint16(6, 255, true);
+    packedView.setUint16(8, 256, true);
+    packedView.setUint16(10, 65_535, true);
+    const source = createMeshGeometry({ layout: packedLayout, vertices: packedVertices });
+    const floatLayout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'float32x4', semantic: 'color0' },
+        { byteOffset: 16, format: 'float32x4', semantic: 'joints0' },
+      ],
+      stride: 32,
+    };
+
+    const converted = convertMeshGeometryLayout(source, floatLayout);
+
+    expect(converted.vertices[0]).toBe(1);
+    expect(converted.vertices[1]).toBeCloseTo(128 / 255);
+    expect(converted.vertices[2]).toBe(0);
+    expect(converted.vertices[3]).toBeCloseTo(64 / 255);
+    expect(Array.from(converted.vertices.slice(4, 8))).toEqual([1, 255, 256, 65_535]);
+    const roundTrip = convertMeshGeometryLayout(converted, packedLayout);
+    expect(Array.from(new Uint8Array(roundTrip.vertices.buffer))).toEqual(
+      Array.from(new Uint8Array(packedVertices.buffer)),
+    );
+  });
+  it('leaves target-only components zero instead of reading into the next source attribute', () => {
+    const sourceLayout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+        { byteOffset: 12, format: 'unorm8x4', semantic: 'color0' },
+      ],
+      stride: 16,
+    };
+    const sourceVertices = new Float32Array([1, 2, 3, 123]);
+    const source = createMeshGeometry({ layout: sourceLayout, vertices: sourceVertices });
+    const targetLayout: VertexAttributeLayout = {
+      attributes: [{ byteOffset: 0, format: 'float32x4', semantic: 'position' }],
+      stride: 16,
+    };
+
+    const converted = convertMeshGeometryLayout(source, targetLayout);
+
+    expect(Array.from(converted.vertices)).toEqual([1, 2, 3, 0]);
+  });
   it('preserves vertex count', () => {
     const vertices = new Float32Array(3 * 12); // 3 canonical vertices
     vertices[0] = 1;

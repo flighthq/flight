@@ -5,51 +5,68 @@ import { createMeshGeometry } from './meshGeometry';
 // Re-packs a geometry's interleaved vertex stream into a new layout. Attributes present in both
 // the source layout and `targetLayout` are copied by semantic into the corresponding slot of the
 // new stream. Attributes in `targetLayout` that are absent in the source are zero-filled.
-// Attributes in the source that are absent in `targetLayout` are silently dropped. Only float32*
-// attributes (4 bytes per component) are copied; other formats are not yet supported and are
-// zero-filled in the target.
+// Attributes in the source that are absent in `targetLayout` are silently dropped. Matching formats
+// copy their attribute bytes exactly; differing declared formats convert component values, including
+// normalized packed channels. Components absent from the source remain zero.
 //
-// Returns a new MeshGeometry with the same index buffer (by reference), topology, and subsets
-// as `source`. The `version` field resets to 0. Bounds are set to `null` (caller should
-// recompute if needed). The source geometry is not modified.
+// Returns a new MeshGeometry with equivalent index data, topology, and subsets as `source`. The
+// `version` field resets to 0. Bounds are set to `null` (caller should recompute if needed). The
+// source geometry is not modified.
 export function convertMeshGeometryLayout(
   source: Readonly<MeshGeometry>,
   targetLayout: Readonly<VertexAttributeLayout>,
 ): MeshGeometry {
   const srcStride = source.layout.stride;
   const dstStride = targetLayout.stride;
-  const srcFloatsPerVertex = srcStride / 4;
-  const dstFloatsPerVertex = dstStride / 4;
-  const vertexCount = srcFloatsPerVertex > 0 ? Math.floor(source.vertices.length / srcFloatsPerVertex) : 0;
-  const dstVertices = new Float32Array(vertexCount * dstFloatsPerVertex);
-  const srcVerts = source.vertices;
+  const vertexCount = srcStride > 0 ? Math.floor(source.vertices.byteLength / srcStride) : 0;
+  const dstVertices = new Float32Array((vertexCount * dstStride) / 4);
+  const sourceBytes = new Uint8Array(source.vertices.buffer, source.vertices.byteOffset, source.vertices.byteLength);
+  const destinationBytes = new Uint8Array(dstVertices.buffer);
+  const sourceView = new DataView(sourceBytes.buffer, sourceBytes.byteOffset, sourceBytes.byteLength);
+  const destinationView = new DataView(destinationBytes.buffer);
 
-  // Build a mapping from each target attribute to its source float offset.
-  // Only float32* formats are handled; non-float32 target attributes stay zero.
-  const mapping: { componentCount: number; dstFloatOffset: number; srcFloatOffset: number }[] = [];
+  const mappings: AttributeMapping[] = [];
   for (const dstAttr of targetLayout.attributes) {
-    if (!dstAttr.format.startsWith('float32')) continue;
-    const dstFloatOffset = dstAttr.byteOffset / 4;
-    const componentCount = getFloat32ComponentCount(dstAttr.format);
-    if (componentCount === 0) continue;
-    // Find the matching source attribute by semantic.
-    const srcAttr = source.layout.attributes.find(
-      (a) => a.semantic === dstAttr.semantic && a.format.startsWith('float32'),
-    );
+    const srcAttr = source.layout.attributes.find((attribute) => attribute.semantic === dstAttr.semantic);
     if (!srcAttr) continue;
-    mapping.push({
-      componentCount,
-      dstFloatOffset,
-      srcFloatOffset: srcAttr.byteOffset / 4,
-    });
+    const sourceByteLength = getVertexFormatByteLength(srcAttr.format);
+    const destinationByteLength = getVertexFormatByteLength(dstAttr.format);
+    if (
+      sourceByteLength === 0 ||
+      destinationByteLength === 0 ||
+      srcAttr.byteOffset < 0 ||
+      dstAttr.byteOffset < 0 ||
+      srcAttr.byteOffset + sourceByteLength > srcStride ||
+      dstAttr.byteOffset + destinationByteLength > dstStride
+    ) {
+      continue;
+    }
+    mappings.push({ destination: dstAttr, source: srcAttr, sourceByteLength });
   }
 
-  for (let i = 0; i < vertexCount; i++) {
-    const srcBase = i * srcFloatsPerVertex;
-    const dstBase = i * dstFloatsPerVertex;
-    for (const { dstFloatOffset, srcFloatOffset, componentCount } of mapping) {
-      for (let c = 0; c < componentCount; c++) {
-        dstVertices[dstBase + dstFloatOffset + c] = srcVerts[srcBase + srcFloatOffset + c];
+  for (let vertex = 0; vertex < vertexCount; vertex++) {
+    for (const mapping of mappings) {
+      const sourceOffset = vertex * srcStride + mapping.source.byteOffset;
+      const destinationOffset = vertex * dstStride + mapping.destination.byteOffset;
+      if (mapping.source.format === mapping.destination.format) {
+        destinationBytes.set(
+          sourceBytes.subarray(sourceOffset, sourceOffset + mapping.sourceByteLength),
+          destinationOffset,
+        );
+        continue;
+      }
+      const componentCount = Math.min(
+        getVertexFormatComponentCount(mapping.source.format),
+        getVertexFormatComponentCount(mapping.destination.format),
+      );
+      for (let component = 0; component < componentCount; component++) {
+        writeVertexFormatComponent(
+          destinationView,
+          destinationOffset,
+          mapping.destination.format,
+          component,
+          readVertexFormatComponent(sourceView, sourceOffset, mapping.source.format, component),
+        );
       }
     }
   }
@@ -63,14 +80,84 @@ export function convertMeshGeometryLayout(
   });
 }
 
-// Returns the number of float32 components for a float32* VertexFormat string (e.g. 'float32x3'
-// → 3, 'float32' → 1). Returns 0 for unrecognized formats.
-function getFloat32ComponentCount(format: string): number {
-  if (format === 'float32') return 1;
-  if (format === 'float32x2') return 2;
-  if (format === 'float32x3') return 3;
-  if (format === 'float32x4') return 4;
-  return 0;
+interface AttributeMapping {
+  destination: VertexAttributeLayout['attributes'][number];
+  source: VertexAttributeLayout['attributes'][number];
+  sourceByteLength: number;
+}
+
+function getVertexFormatByteLength(format: VertexAttributeLayout['attributes'][number]['format']): number {
+  switch (format) {
+    case 'float32x2':
+      return 8;
+    case 'float32x3':
+      return 12;
+    case 'float32x4':
+      return 16;
+    case 'uint16x4':
+      return 8;
+    case 'uint8x4':
+    case 'unorm8x4':
+      return 4;
+  }
+}
+
+function getVertexFormatComponentCount(format: VertexAttributeLayout['attributes'][number]['format']): number {
+  switch (format) {
+    case 'float32x2':
+      return 2;
+    case 'float32x3':
+      return 3;
+    case 'float32x4':
+    case 'uint16x4':
+    case 'uint8x4':
+    case 'unorm8x4':
+      return 4;
+  }
+}
+
+function readVertexFormatComponent(
+  view: Readonly<DataView>,
+  byteOffset: number,
+  format: VertexAttributeLayout['attributes'][number]['format'],
+  component: number,
+): number {
+  switch (format) {
+    case 'float32x2':
+    case 'float32x3':
+    case 'float32x4':
+      return view.getFloat32(byteOffset + component * 4, true);
+    case 'uint16x4':
+      return view.getUint16(byteOffset + component * 2, true);
+    case 'uint8x4':
+      return view.getUint8(byteOffset + component);
+    case 'unorm8x4':
+      return view.getUint8(byteOffset + component) / 0xff;
+  }
+}
+
+function writeVertexFormatComponent(
+  view: DataView,
+  byteOffset: number,
+  format: VertexAttributeLayout['attributes'][number]['format'],
+  component: number,
+  value: number,
+): void {
+  switch (format) {
+    case 'float32x2':
+    case 'float32x3':
+    case 'float32x4':
+      view.setFloat32(byteOffset + component * 4, value, true);
+      return;
+    case 'uint16x4':
+      view.setUint16(byteOffset + component * 2, Math.round(Math.min(0xffff, Math.max(0, value))), true);
+      return;
+    case 'uint8x4':
+      view.setUint8(byteOffset + component, Math.round(Math.min(0xff, Math.max(0, value))));
+      return;
+    case 'unorm8x4':
+      view.setUint8(byteOffset + component, Math.round(Math.min(1, Math.max(0, value)) * 0xff));
+  }
 }
 
 // The canonical interleaved PBR vertex layout used by every built-in primitive builder:
