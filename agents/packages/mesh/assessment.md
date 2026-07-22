@@ -19,8 +19,11 @@ See [charter](./charter.md) for blessed direction.
    reinterpreted as a float array merely to fit the container type.
 2. **Make every declared vertex channel usable end to end.** Typed read/edit support now covers `uv1`,
    `color0`, `joints0`, and `weights0` across float, packed integer, and normalized storage. Importers
-   still need to preserve those encodings instead of eagerly expanding common data, and secondary
-   influence channels plus raster proof remain.
+   still need to preserve those encodings instead of eagerly expanding common data. The format
+   vocabulary itself is not yet sufficient for common packed sources: two-component uint/unorm UVs,
+   16-bit normalized colors/weights, and signed-normalized quantized normals/tangents have no truthful
+   `VertexFormat`. Add only the needed arities/encodings, with format-aware edit, GL binding, and raster
+   proof; secondary influence channels remain a separate semantic-depth item.
 3. **Complete topology-editing primitives.** Exact full-record welding, explicit index conversion,
    deindexing, validation, and index-width selection now exist as separate atoms. Tolerance/semantic
    welding, subset split/merge/edit operations, unused-vertex compaction, and topology conversion remain.

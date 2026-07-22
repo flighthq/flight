@@ -25,8 +25,10 @@ extension depth, not the old "first primitive, no material" slice.
    `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
    material selection, skinning, and rendered proof. Preserve source encodings through the mesh
    package's byte-native record boundary instead of eagerly expanding them merely because
-   `MeshGeometry.vertices` is currently a `Float32Array`. Primitive topology mapping is now complete;
-   raster fixtures still need to prove each direct and converted mode.
+   `MeshGeometry.vertices` is currently a `Float32Array`; the mesh format vocabulary must first gain
+   the missing two-component uint/unorm, unorm16, and quantized signed-normalized encodings rather than
+   silently decoding every accessor to float. Primitive topology mapping is now complete; raster
+   fixtures still need to prove each direct and converted mode.
 3. **Replace the remaining inline extension knowledge with open handlers.** The parser now accepts
    individually supplied handlers and `KHR_lights_punctual` ships as one tree-shakable handler;
    `KHR_texture_transform` remains inline. Material and mesh-compression handlers should use the same
