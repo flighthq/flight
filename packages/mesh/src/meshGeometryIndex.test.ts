@@ -1,3 +1,4 @@
+import { createAabb } from '@flighthq/geometry';
 import type { VertexAttributeLayout } from '@flighthq/types';
 
 import { createMeshGeometry } from './meshGeometry';
@@ -64,6 +65,11 @@ describe('computeMeshGeometryWireframeIndices', () => {
 describe('expandMeshGeometryIndices', () => {
   it('un-welds shared vertices into per-index copies', () => {
     const geometry = makeQuad();
+    geometry.bounds = createAabb(0, 0, 0, 1, 1, 0);
+    geometry.subsets = [
+      { indexCount: 3, indexOffset: 0 },
+      { indexCount: 3, indexOffset: 3 },
+    ];
     const expanded = expandMeshGeometryIndices(geometry);
     expect(expanded.indices).toBeNull();
     // 6 indices -> 6 standalone vertices.
@@ -73,6 +79,11 @@ describe('expandMeshGeometryIndices', () => {
     expect(expanded.vertices[2 * 12 + 1]).toBe(1);
     expect(expanded.vertices[3 * 12]).toBe(0);
     expect(expanded.vertices[3 * 12 + 1]).toBe(1);
+    expect(expanded.subsets).toEqual(geometry.subsets);
+    expect(expanded.subsets).not.toBe(geometry.subsets);
+    expect(expanded.bounds?.min).toMatchObject({ x: 0, y: 0, z: 0 });
+    expect(expanded.bounds?.max).toMatchObject({ x: 1, y: 1, z: 0 });
+    expect(expanded.bounds).not.toBe(geometry.bounds);
   });
 
   it('deep-copies non-indexed geometry as-is', () => {

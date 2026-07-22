@@ -42,7 +42,8 @@ being re-derived from list-only offsets.
 - [2026-07-21 · completed] Indexed conversion and exact welding are independent operations. Sequential
   indexing preserves vertex identity; welding compares the complete raw record (including packed
   channels/padding), remaps indexed or non-indexed element streams, preserves topology/subsets/bounds,
-  and chooses the narrowest safe index width. Existing deindex and validation complete the base loop.
+  and chooses the narrowest safe index width. Deindex likewise preserves subset ranges and cached
+  bounds while detaching storage; validation completes the base loop.
 
 ## Backlog
 
