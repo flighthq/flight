@@ -891,9 +891,9 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### scene (solid 68)
 
-- Realize InstancedMesh end to end
-- Realize LodMesh end to end
-- Unify explicit scene preparation
+- Realize InstancedMesh around one versioned data entity
+- Replace single-node LOD state with per-view selection
+- Unify explicit scene preparation around draw entries, not `Mesh[]`
 - Resolve shared-geometry deformation ownership
 - Add acceleration after semantic correctness
 
@@ -972,6 +972,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 ### render (solid 76)
 
 - Defer render-graph machinery until the attachment/pass contracts are proven
+- Replace the prepared `Mesh[]` with a truthful draw-entry contract before scale features
 
 ### mesh (solid 80)
 

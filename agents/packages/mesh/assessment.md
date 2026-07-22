@@ -18,7 +18,10 @@ See [charter](./charter.md) for blessed direction.
    deindexing, validation, and index-width selection now exist as separate atoms. Tolerance/semantic
    welding, subset split/merge/edit operations, unused-vertex compaction, and topology conversion remain.
 3. **Deepen normal/tangent/UV authoring.** Add angle-threshold smoothing/split normals, robust tangent generation across seams, and basic planar/box/spherical UV projection as independent functions.
-4. **Realize instancing and LOD instead of leaving header-only types.** `InstancedMesh` and `LodMesh` need an owned data/update contract, render consumption, culling/selection rules, and functionals. Keep a full simplifier as later tooling rather than blocking these primitives.
+4. **Realize instancing and LOD instead of leaving header-only types.** Instance records need a
+   contiguous versioned entity rather than `Matrix4[]`; LOD selection must be per prepared view rather
+   than the node-global `activeLevelIndex`. These compose through scene preparation, GL, bounds, and
+   picking. Keep a full simplifier as later tooling rather than blocking authored level primitives.
 
 ## Recommended
 
