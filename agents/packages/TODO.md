@@ -919,7 +919,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 ### picking (solid 70)
 
 - Make CPU queries agree with rendered deformation
-- Complete hit attributes
+- Finish instance/LOD hit identity
 - Add material-aware and non-triangle selection as opt-in layers
 - Add acceleration after semantics
 

@@ -21,7 +21,9 @@ None. The copied `getMeshGeometryVertexNormal` position/semantic comment is corr
 triangle decoding is now one allocation-free primitive shared by consumers: indexed/non-indexed
 triangle lists and alternating-winding strips resolve consistently, with unsupported/out-of-range
 queries leaving caller-owned output untouched. `refreshMeshGeometryBounds` is the corresponding
-cached-spatial atom: it allocates an AABB once and refreshes it in place after vertex edits.
+cached-spatial atom: it allocates an AABB once and refreshes it in place after vertex edits. Logical
+triangle-to-subset identity is likewise one topology-aware primitive consumed by picking rather than
+being re-derived from list-only offsets.
 
 ## Approved
 
