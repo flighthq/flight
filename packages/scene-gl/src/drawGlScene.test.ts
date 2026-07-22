@@ -10,6 +10,7 @@ import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
 import type { Camera3D, GlRenderTarget, SceneLightsLike } from '@flighthq/types';
 
 import { drawGlScene } from './drawGlScene';
+import { getGlSceneRuntime } from './glSceneRuntime';
 import { makeGlSceneState } from './glSceneTestHelper';
 import { registerStandardPbrGlMaterial } from './registerStandardPbrGlMaterial';
 
@@ -184,6 +185,32 @@ describe('drawGlScene', () => {
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
     // The resolved node opacity was uploaded to u_objectAlpha (a uniform1f of 0.5).
     expect(gl.calls.some((c) => c.name === 'uniform1f' && c.args[1] === 0.5)).toBe(true);
+  });
+
+  it('reuses opaque and blended draw records across frames', () => {
+    const { state } = makeGlSceneState();
+    registerStandardPbrGlMaterial(state);
+
+    const scene = createSceneNode(SceneNodeKind);
+    const opaque = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
+    const blendedMaterial = createStandardPbrMaterial();
+    blendedMaterial.alphaMode = 'blend';
+    const blended = createMesh(createBoxMeshGeometry(), [blendedMaterial]);
+    addNodeChild(scene, opaque);
+    addNodeChild(scene, blended);
+
+    const camera = makeCamera();
+    drawGlScene(state, scene, camera, LIGHTS);
+    const runtime = getGlSceneRuntime(state);
+    const opaqueEntry = runtime.opaqueDrawList[0];
+    const blendedEntry = runtime.blendedDrawList[0];
+
+    drawGlScene(state, scene, camera, LIGHTS);
+
+    expect(runtime.opaqueDrawList[0]).toBe(opaqueEntry);
+    expect(runtime.blendedDrawList[0]).toBe(blendedEntry);
+    expect(runtime.opaquePool).toHaveLength(0);
+    expect(runtime.blendedPool).toHaveLength(0);
   });
 
   it('keeps a fully-opaque mesh (node alpha 1) in the opaque pass', () => {

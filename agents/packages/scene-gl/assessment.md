@@ -51,16 +51,12 @@ basedOn: ./review.md
    described a nonexistent `HAS_UV1` variant and had no production consumer. What remains is importer
    coverage, a deliberate missing-channel fallback/diagnostic, and raster proof for independently
    transformed maps on UV0 and UV1.
-2. **Recycle or remove the draw-entry pools.** The current lists are cleared without returning entries
-   to the pools, so the pool names imply reuse while every frame allocates fresh records.
-3. **Remove the dead draw-entry normalMatrix field and collapse duplicate acquire helpers.** Both are
-   within-package implementation noise that obscures the actual per-draw normal-matrix computation.
-4. **Delete old IBL textures on rebake.** Replacing runtime.ibl currently abandons the previous
+2. **Delete old IBL textures on rebake.** Replacing runtime.ibl currently abandons the previous
    irradiance and prefiltered textures.
-5. **Add deterministic skybox teardown.** The per-state skybox program, VAO, and vertex buffer are held
+3. **Add deterministic skybox teardown.** The per-state skybox program, VAO, and vertex buffer are held
    only in a module WeakMap; the buffer is not even retained in the record, and destroyGlSceneRuntime
    cannot free any of them.
-6. **Fix the nonexistent invalidation contract.** ensureGlEnvironmentSourceCube says callers should
+4. **Fix the nonexistent invalidation contract.** ensureGlEnvironmentSourceCube says callers should
    use destroyGlEnvironment when the cube changes, but no such function exists.
 
 ## Depth gaps
@@ -105,6 +101,11 @@ basedOn: ./review.md
 - WGPU parity remains deferred until GL contracts and functionals settle.
 
 ## Approved
+
+- [2026-07-22 · completed] Opaque and blended draw records return to their private per-state pools
+  before each partition, so steady-state scene drawing reuses records instead of allocating every
+  frame. One acquire atom serves both lists, and the dead draw-entry `normalMatrix` placeholder is gone;
+  the actual normal matrix remains explicit caller scratch computed immediately before each draw.
 
 - [2026-07-21 · completed] Packed mesh attributes bind through `vertexAttribPointer`, matching the
   built-in shaders' float/vec inputs: unsigned joints convert without normalization and unorm
