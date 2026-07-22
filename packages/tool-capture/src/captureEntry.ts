@@ -683,22 +683,20 @@ async function measureObservedCanvasCoverage(page: Page): Promise<number | null>
     .catch(() => null);
 }
 
-// Zero-integration frame grab: read back every WebGL context the harness recorded at getContext time
-// (see launchBrowser's __ftGlContexts) — pick the one with the most content — and return it as a PNG data
-// URL plus its measured non-background coverage. Relies on the forced preserveDrawingBuffer so the
-// presented default framebuffer survives for this post-hoc readback. No client verifier registration is
-// involved: the scene just renders and the harness reads its context directly. Returns null when no GL
-// context was recorded (a wgpu / 2d / dom page, or one with no canvas), which the caller falls through on.
+// Zero-integration frame grab: start with the best frame captured synchronously at an observe-mode draw
+// boundary, then read every WebGL context the harness recorded at getContext time and keep whichever has
+// the most content. The early frame survives ANGLE/driver combinations that discard even a requested
+// preserveDrawingBuffer before post-hoc readback. No client verifier registration is involved.
 async function grabInterceptedGlFrame(page: Page): Promise<{ coverage: number; dataUrl: string } | null> {
   return page
     .evaluate(() => {
-      const ctxs = (
-        window as unknown as {
-          __ftGlContexts?: Array<{ canvas: HTMLCanvasElement; gl: WebGLRenderingContext | WebGL2RenderingContext }>;
-        }
-      ).__ftGlContexts;
-      if (ctxs === undefined || ctxs.length === 0) return null;
-      let best: { coverage: number; dataUrl: string } | null = null;
+      const flags = window as unknown as {
+        __ftBestGlFrame?: { coverage: number; dataUrl: string };
+        __ftGlContexts?: Array<{ canvas: HTMLCanvasElement; gl: WebGLRenderingContext | WebGL2RenderingContext }>;
+      };
+      const ctxs = flags.__ftGlContexts;
+      let best: { coverage: number; dataUrl: string } | null = flags.__ftBestGlFrame ?? null;
+      if (ctxs === undefined || ctxs.length === 0) return best;
       for (const entry of ctxs) {
         const canvas = entry.canvas;
         const gl = entry.gl;
