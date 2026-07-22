@@ -81,16 +81,18 @@ if (!base) {
 }
 
 const changed = (capture(`git diff --name-only ${base}...HEAD`) ?? '').split('\n').filter(Boolean);
-// Only package source (packages/<name>/src/**) sits in a colocated test's module graph, so only
-// those changes can flip a vitest result. A push touching only scripts/, tools/, docs, or config
-// skips vitest's workspace startup entirely (it would just print "No test files found"); CI still
-// runs everything.
-const affectsPackageTests = changed.some((file) => /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file));
+// Only fast-path package source sits in a colocated test's module graph, so only those changes can
+// flip a result here. Tool-capture source is still compiled by typecheck, while its tests run in the
+// per-package CI lane. A push touching only tool-capture, scripts/, tools/, docs, or config skips
+// vitest's workspace startup entirely; CI still runs everything.
+const affectsFastPackageTests = changed.some(
+  (file) => /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file) && !file.startsWith('packages/tool-capture/'),
+);
 
 console.log(pc.cyan(`pre-push: ${changed.length} file(s) changed vs ${base}`));
 
-if (affectsPackageTests) {
+if (affectsFastPackageTests) {
   run(`npx vitest run --changed ${base}`);
 } else {
-  console.log(pc.dim('pre-push: no package source changed — skipping vitest'));
+  console.log(pc.dim('pre-push: no fast-path package source changed — skipping vitest'));
 }
