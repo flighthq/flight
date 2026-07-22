@@ -1,12 +1,12 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -23,7 +23,7 @@ import {
   prepareSceneRender,
   registerUnlitGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
@@ -55,7 +55,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -80,7 +80,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lig
 // depth buffer), the far box bleeds through the overlap and the overlap pixel reads as the FAR color —
 // exactly the regression this test catches.
 //
-// Camera model (RH view, eye on +z looking at origin): +x is screen-right, +y is screen-up, and a
+// Camera3D model (RH view, eye on +z looking at origin): +x is screen-right, +y is screen-up, and a
 // LARGER +z translation moves a mesh TOWARD the eye (nearer). So the near box is translated to +z and
 // the far box to -z; their x offsets are chosen to overlap in the middle while each keeps an exclusive
 // flank.
@@ -97,7 +97,7 @@ const farGeometry = createBoxMeshGeometry(1, 1, 1);
 const nearMaterial = createUnlitMaterial({ baseColor: 0xff3030ff }); // near box: red
 const farMaterial = createUnlitMaterial({ baseColor: 0x3060ffff }); // far box: blue
 
-const scene = createScene();
+const scene = createScene().root;
 
 // FAR box: shifted LEFT and pushed to -z (away from the eye). Its right flank reaches into the center.
 const farMesh = createMesh(farGeometry, [farMaterial]);
@@ -115,12 +115,12 @@ setNodeLocalMatrix4(nearMesh, nearLocal);
 addNodeChild(scene, nearMesh);
 
 // Straight-on view from +z so depth maps cleanly to the z translations above. Eye ~ (0,0,4).
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // Unlit ignores lights, but render() requires a valid rig.
 const directionalDirection = createVector3(-1, -0.35, -0.55);

@@ -19,13 +19,13 @@ import {
   addTextureAtlasRegion,
   createDisplayContainer,
   createImageResource,
-  createParticleEmitter,
+  createParticleEmitter2D,
   createTextureAtlas,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
-  reserveParticleEmitter,
+  reserveParticleEmitter2D,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -83,12 +83,12 @@ for (let i = 0; i < SWATCHES.length; i++) addTextureAtlasRegion(atlas, i * REGIO
 const root = createDisplayContainer();
 
 // One emitter at the origin; particle transforms are authored directly in logical canvas coordinates.
-const emitter = createParticleEmitter();
+const emitter = createParticleEmitter2D();
 emitter.data.atlas = atlas;
 addNodeChild(root, emitter);
 invalidateNodeLocalTransform(emitter);
 
-reserveParticleEmitter(emitter, PARTICLES.length);
+reserveParticleEmitter2D(emitter, PARTICLES.length);
 emitter.data.particleCount = PARTICLES.length;
 for (let i = 0; i < PARTICLES.length; i++) {
   const [id, cx, cy, scale, rotation] = PARTICLES[i];

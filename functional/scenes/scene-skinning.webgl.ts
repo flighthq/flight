@@ -1,11 +1,12 @@
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   beginGlRenderEffectPipeline,
+  copyQuaternion,
   createAmbientLight,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -21,14 +22,14 @@ import {
   createVector3,
   endGlRenderEffectPipeline,
   getSurfacePixelLuminance,
+  invalidateNodeLocalTransform,
   normalizeVector3,
   prepareSceneRender,
   registerUnlitGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
-  setSceneNodePosition,
-  setSceneNodeRotationQuaternion,
+  setVector3,
 } from '@flighthq/sdk';
 
 // scene-skinning — exercises the GL GPU-skinning draw path end to end: a Mesh in the canonical skinned
@@ -65,7 +66,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
@@ -134,7 +135,8 @@ const material = createUnlitMaterial({ baseColor: 0xff8030ff });
 function buildPosedScene(bendAngle: number): SceneNode {
   const root = createSceneNode();
   const bend = createSceneNode();
-  setSceneNodePosition(bend, 0, 1, 0);
+  setVector3(bend.position, 0, 1, 0);
+  invalidateNodeLocalTransform(bend);
   addNodeChild(root, bend);
 
   // Capture the inverse-bind matrices from the REST pose (bend unrotated) so the palette is identity at
@@ -144,9 +146,10 @@ function buildPosedScene(bendAngle: number): SceneNode {
 
   const q = createQuaternion();
   setQuaternionFromAxisAngle(q, createVector3(0, 0, 1), bendAngle);
-  setSceneNodeRotationQuaternion(bend, q);
+  copyQuaternion(bend.rotation, q);
+  invalidateNodeLocalTransform(bend);
 
-  const scene = createScene();
+  const scene = createScene().root;
   addNodeChild(scene, root);
   const geometry = createMeshGeometry({
     layout: CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -159,13 +162,13 @@ function buildPosedScene(bendAngle: number): SceneNode {
   return scene;
 }
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
 // Look straight down the +Z axis at the bar's mid-height so the bend reads as a lateral lean in screen X.
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 1, 5), createVector3(0, 1, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 1, 5), createVector3(0, 1, 0), createVector3(0, 1, 0));
 
 const directionalDirection = createVector3(-1, -0.35, -0.55);
 normalizeVector3(directionalDirection, directionalDirection);

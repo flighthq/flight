@@ -25,7 +25,7 @@ import {
   renderGlDisplayObject,
 } from '@flighthq/sdk';
 
-// Camera motion blur [MOTION]: the full frame smears along the camera motion vectors, so the
+// Camera3D motion blur [MOTION]: the full frame smears along the camera motion vectors, so the
 // mid-screen shapes streak in the direction of travel.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

@@ -1,11 +1,11 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, Environment, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, Environment, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
-  createCamera,
+  createCamera3D,
   createCubeTexture,
   createDirectionalLight,
   createEnvironment,
@@ -23,7 +23,7 @@ import {
   prepareSceneRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
 } from '@flighthq/sdk';
 
@@ -54,7 +54,7 @@ export const height = 600;
 
 export function render(
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
   environment: Readonly<Environment>,
 ): void {
@@ -100,20 +100,20 @@ for (let face = 0; face < 6; face++) {
 }
 const environment = createEnvironment({ environment: cube, intensity: 1 });
 
-const scene = createScene();
+const scene = createScene().root;
 const sphere = createMesh(createSphereMeshGeometry(0.8, 32, 24), [
   createStandardPbrMaterial({ baseColor: 0x808080ff, metallic: 0, roughness: 0.5 }),
 ]);
 addNodeChild(scene, sphere);
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 2.2 }),
 });
 // Look down the -Z axis, tilted slightly down, so the view spans the back face (-Z, yellow) in the
 // centre with the down face (-Y, dark) toward the bottom and the up face (+Y, light) toward the top.
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, -0.4, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, -0.4, 0), createVector3(0, 1, 0));
 
 const lights = {
   ambient: createAmbientLight({ color: 0x808080ff, intensity: 0.5 }),

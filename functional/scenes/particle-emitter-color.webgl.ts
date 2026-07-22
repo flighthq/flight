@@ -18,13 +18,13 @@ import {
   addTextureAtlasRegion,
   createDisplayContainer,
   createImageResource,
-  createParticleEmitter,
+  createParticleEmitter2D,
   createTextureAtlas,
   getSurfacePixelRgb,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
-  reserveParticleEmitter,
+  reserveParticleEmitter2D,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
@@ -66,12 +66,12 @@ addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
 
 const root = createDisplayContainer();
 
-const emitter = createParticleEmitter();
+const emitter = createParticleEmitter2D();
 emitter.data.atlas = atlas;
 addNodeChild(root, emitter);
 invalidateNodeLocalTransform(emitter);
 
-reserveParticleEmitter(emitter, PARTICLES.length);
+reserveParticleEmitter2D(emitter, PARTICLES.length);
 emitter.data.particleCount = PARTICLES.length;
 for (let i = 0; i < PARTICLES.length; i++) {
   const [cx, cy, scale, rotation, r, g, b] = PARTICLES[i];

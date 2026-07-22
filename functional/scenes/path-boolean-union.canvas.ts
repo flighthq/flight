@@ -48,7 +48,7 @@ const result = unionPaths(pathA, pathB);
 
 const root = createDisplayContainer();
 const shape = createShape();
-appendShapeBeginFill(shape, 0x00cc00ff);
+appendShapeBeginFill(shape, 0x00cc00, 1);
 appendShapePath(shape, result.commands, result.data, result.winding);
 appendShapeEndFill(shape);
 invalidateNodeAppearance(shape);

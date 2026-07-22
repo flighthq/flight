@@ -7,7 +7,7 @@ import {
   beginWgpuRenderEffectPipeline,
   createImageResource,
   createMotionBlurEffect,
-  createParticleEmitter,
+  createParticleEmitter2D,
   createSprite,
   createTextureAtlas,
   createVelocityField,
@@ -27,7 +27,7 @@ import {
   renderWgpuBackground,
   renderWgpuDisplayObject,
   renderWgpuVelocity,
-  reserveParticleEmitter,
+  reserveParticleEmitter2D,
   setWgpuRenderEffectVelocityTexture,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
@@ -95,7 +95,7 @@ root.scaleX = scale;
 root.scaleY = scale;
 invalidateNodeLocalTransform(root);
 
-const emitter = createParticleEmitter();
+const emitter = createParticleEmitter2D();
 emitter.data.atlas = atlas;
 emitter.x = width / scale / 2;
 emitter.y = height / scale / 2;
@@ -105,7 +105,7 @@ invalidateNodeLocalTransform(emitter);
 const PARTICLE_COUNT = 8;
 const RING_RADIUS = 110;
 const SPRITE_SIZE = 32;
-reserveParticleEmitter(emitter, PARTICLE_COUNT);
+reserveParticleEmitter2D(emitter, PARTICLE_COUNT);
 emitter.data.particleCount = PARTICLE_COUNT;
 for (let i = 0; i < PARTICLE_COUNT; i++) {
   const angle = (i / PARTICLE_COUNT) * Math.PI * 2;

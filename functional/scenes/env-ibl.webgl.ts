@@ -1,10 +1,10 @@
 import { createScene } from '@flighthq/scene';
 import { bakeEnvironmentIbl, drawGlEnvironmentSkybox, drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, Environment, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, Environment, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
-  createCamera,
+  createCamera3D,
   createCubeTexture,
   createEnvironment,
   createGlCanvasElement,
@@ -19,12 +19,13 @@ import {
   endGlRenderEffectPipeline,
   getSurfacePixel,
   getSurfacePixelLuminance,
+  invalidateNodeLocalTransform,
   prepareSceneRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
-  setSceneNodePosition,
+  setVector3,
 } from '@flighthq/sdk';
 
 // Gl-backend IBL render: bake the environment's split-sum set once, draw the skybox backdrop, then
@@ -57,7 +58,7 @@ let baked = false;
 
 export function render(
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
   environment: Readonly<Environment>,
 ): void {
@@ -100,28 +101,30 @@ for (let face = 0; face < 6; face++) {
 }
 const environment = createEnvironment({ environment: cube, intensity: 1 });
 
-const scene = createScene();
+const scene = createScene().root;
 
 // Left: smooth metal — specular IBL reflects the environment.
 const metal = createMesh(createSphereMeshGeometry(0.9, 48, 32), [
   createStandardPbrMaterial({ baseColor: 0xffffffff, metallic: 1, roughness: 0.06 }),
 ]);
-setSceneNodePosition(metal, -1.15, 0, 0);
+setVector3(metal.position, -1.15, 0, 0);
+invalidateNodeLocalTransform(metal);
 addNodeChild(scene, metal);
 
 // Right: rough dielectric — diffuse IBL tints it with the environment irradiance.
 const rough = createMesh(createSphereMeshGeometry(0.9, 48, 32), [
   createStandardPbrMaterial({ baseColor: 0xb0b0b0ff, metallic: 0, roughness: 0.65 }),
 ]);
-setSceneNodePosition(rough, 1.15, 0, 0);
+setVector3(rough.position, 1.15, 0, 0);
+invalidateNodeLocalTransform(rough);
 addNodeChild(scene, rough);
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 3.4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4.6), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4.6), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // No punctual lights — the spheres are lit only by the baked environment.
 const lights = { ambient: null, directional: null };

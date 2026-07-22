@@ -5,12 +5,12 @@ import {
   registerShadedGlMaterial,
   setGlSceneTime,
 } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
   createAnimatedNormalModifier,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createEmissiveModifier,
   createGlCanvasElement,
@@ -32,7 +32,7 @@ import {
   normalizeVector3,
   prepareSceneRender,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
 // drawGlScene / setGlSceneTime / the ShadedMaterial registrations exist only on scene-gl; drawGlScene
@@ -79,7 +79,7 @@ export const height = 600;
 // a reproducible capture — the seam is setGlSceneTime; an app would advance it with elapsed seconds.
 const sceneTimeSeconds = 0.35;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -123,17 +123,17 @@ const material = createShadedMaterial({
   ],
 });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
 // Perspective camera dead-on the globe from +z. Aspect matches the target so the globe stays circular.
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 3.2), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3.2), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // One white sun travelling down-left-into-screen, so the screen-RIGHT hemisphere is the lit day side
 // and the screen-LEFT hemisphere is the dark night side where the facing-gated city lights emit. A dim

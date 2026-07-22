@@ -1,17 +1,16 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
-  createMatrix4,
   createMesh,
   createOrthographicProjection,
   createUnlitMaterial,
@@ -22,9 +21,9 @@ import {
   prepareSceneRender,
   registerUnlitGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
-  setNodeLocalMatrix4,
-  translateMatrix4,
+  setCamera3DViewMatrix4FromLookAt,
+  invalidateNodeLocalTransform,
+  setVector3,
 } from '@flighthq/sdk';
 
 // drawGlScene exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
@@ -54,7 +53,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -86,7 +85,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lig
 // and asserts the two are within ~15% of each other. If the projection silently fell back to perspective
 // (or ortho half-extents were mis-wired), the far box would shrink and the widths would diverge.
 //
-// Camera model (RH view, eye on +z looking at origin): +x is screen-right, larger +z is nearer the eye.
+// Camera3D model (RH view, eye on +z looking at origin): +x is screen-right, larger +z is nearer the eye.
 // Only the PROJECTION differs from the perspective tests; the look-at view is identical.
 //
 // app.ts is backend-agnostic; the per-backend scene wiring lives in render.webgl.ts / render.webgpu.ts.
@@ -101,35 +100,33 @@ const rightGeometry = createBoxMeshGeometry(1, 1, 1);
 const leftMaterial = createUnlitMaterial({ baseColor: 0xe0c040ff }); // left/near: amber
 const rightMaterial = createUnlitMaterial({ baseColor: 0x40b0e0ff }); // right/far: cyan
 
-const scene = createScene();
+const scene = createScene().root;
 
 // LEFT box: NEAR the camera (+z), shifted left.
 const leftMesh = createMesh(leftGeometry, [leftMaterial]);
-const leftLocal = createMatrix4();
-translateMatrix4(leftLocal, leftLocal, -1.2, 0, 1.5);
-setNodeLocalMatrix4(leftMesh, leftLocal);
+setVector3(leftMesh.position, -1.2, 0, 1.5);
+invalidateNodeLocalTransform(leftMesh);
 addNodeChild(scene, leftMesh);
 
 // RIGHT box: FAR from the camera (-z), shifted right by the same amount. Under perspective it would
 // project smaller; under ortho it stays the same on-screen size as the left box.
 const rightMesh = createMesh(rightGeometry, [rightMaterial]);
-const rightLocal = createMatrix4();
-translateMatrix4(rightLocal, rightLocal, 1.2, 0, -1.5);
-setNodeLocalMatrix4(rightMesh, rightLocal);
+setVector3(rightMesh.position, 1.2, 0, -1.5);
+invalidateNodeLocalTransform(rightMesh);
 addNodeChild(scene, rightMesh);
 
 // Orthographic frustum sized to frame both boxes (centers at x = ±1.2, each box ±0.5 wide) with margin.
 // Full visible width is 2*halfWidth = 6 units; height is 2*halfHeight = 6/aspect units.
 const halfWidth = 3;
 const halfHeight = halfWidth / aspect;
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createOrthographicProjection({ halfHeight: halfHeight, halfWidth: halfWidth }),
 });
 
 // Same straight-on look-at view as the perspective tests; only the projection above differs.
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 const directionalDirection = createVector3(-1, -0.35, -0.55);
 normalizeVector3(directionalDirection, directionalDirection);
@@ -143,11 +140,12 @@ render(scene, camera, lights);
 export function assertRender(surface: Readonly<Surface>): void {
   const cx = Math.floor(surface.width / 2);
   const cy = Math.floor(surface.height / 2);
+  const backgroundLuminance = getSurfacePixelLuminance(surface, 0, 0);
 
   // Measure each box's on-screen silhouette width by the widest contiguous run of lit columns on the
   // center row, scanned within the left half [0, cx) and right half [cx, width) respectively.
-  const leftWidth = widestLitRun(surface, cy, 0, cx);
-  const rightWidth = widestLitRun(surface, cy, cx, surface.width);
+  const leftWidth = widestLitRun(surface, cy, 0, cx, backgroundLuminance);
+  const rightWidth = widestLitRun(surface, cy, cx, surface.width, backgroundLuminance);
 
   // Each box must actually be present (a real silhouette, not a sliver).
   const minPixels = Math.floor(surface.width * 0.05);
@@ -180,18 +178,24 @@ export function assertRender(surface: Readonly<Surface>): void {
     [m, surface.height - m],
     [surface.width - m, surface.height - m],
   ]) {
-    if (getSurfacePixelLuminance(surface, x, y) > 40) {
+    if (Math.abs(getSurfacePixelLuminance(surface, x, y) - backgroundLuminance) > 10) {
       throw new Error(`[camera-orthographic] frame corner (${x},${y}) not background — silhouettes are not bounded`);
     }
   }
 }
 
 // Widest contiguous run of foreground (non-background) columns on row `y`, scanning x in [xStart, xEnd).
-function widestLitRun(surface: Readonly<Surface>, y: number, xStart: number, xEnd: number): number {
+function widestLitRun(
+  surface: Readonly<Surface>,
+  y: number,
+  xStart: number,
+  xEnd: number,
+  backgroundLuminance: number,
+): number {
   let best = 0;
   let run = 0;
   for (let x = xStart; x < xEnd; x++) {
-    if (getSurfacePixelLuminance(surface, x, y) > 40) {
+    if (Math.abs(getSurfacePixelLuminance(surface, x, y) - backgroundLuminance) > 10) {
       run++;
       if (run > best) best = run;
     } else {
