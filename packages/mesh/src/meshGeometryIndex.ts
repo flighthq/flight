@@ -6,6 +6,56 @@ import { cloneMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
 // and derive a wireframe line-list from a triangle index buffer. These read the existing
 // vertex/index streams and produce fresh data; they do not mutate the source geometry.
 
+// Removes vertex records that are not referenced by an indexed geometry and remaps the existing
+// element stream to the compact records. Records are retained in first-reference order, so the draw
+// sequence, topology, subset ranges, and complete packed bytes remain unchanged. Non-indexed input has
+// no unused records by definition and is deep-cloned. Invalid stride alignment or an out-of-range
+// source index likewise returns an unchanged deep clone rather than manufacturing partial geometry.
+export function compactMeshGeometryVertices(geometry: Readonly<MeshGeometry>): MeshGeometry {
+  const sourceIndices = geometry.indices;
+  const stride = geometry.layout.stride;
+  const sourceByteLength = geometry.vertices.byteLength;
+  if (sourceIndices === null || stride <= 0 || stride % 4 !== 0 || sourceByteLength % stride !== 0) {
+    return cloneMeshGeometry(geometry);
+  }
+
+  const vertexCount = sourceByteLength / stride;
+  const sourceToCompact = new Uint32Array(vertexCount);
+  sourceToCompact.fill(UINT32_UNMAPPED);
+  let compactCount = 0;
+
+  for (let element = 0; element < sourceIndices.length; element++) {
+    const sourceIndex = sourceIndices[element];
+    if (sourceIndex >= vertexCount) return cloneMeshGeometry(geometry);
+    if (sourceToCompact[sourceIndex] === UINT32_UNMAPPED) sourceToCompact[sourceIndex] = compactCount++;
+  }
+
+  const sourceBytes = new Uint8Array(
+    geometry.vertices.buffer,
+    geometry.vertices.byteOffset,
+    geometry.vertices.byteLength,
+  );
+  const compactBuffer = new ArrayBuffer(compactCount * stride);
+  const compactBytes = new Uint8Array(compactBuffer);
+  for (let sourceIndex = 0; sourceIndex < vertexCount; sourceIndex++) {
+    const compactIndex = sourceToCompact[sourceIndex];
+    if (compactIndex === UINT32_UNMAPPED) continue;
+    const sourceOffset = sourceIndex * stride;
+    compactBytes.set(sourceBytes.subarray(sourceOffset, sourceOffset + stride), compactIndex * stride);
+  }
+
+  const indices =
+    compactCount > UINT16_INDEX_CEILING ? new Uint32Array(sourceIndices.length) : new Uint16Array(sourceIndices.length);
+  for (let element = 0; element < sourceIndices.length; element++) {
+    indices[element] = sourceToCompact[sourceIndices[element]];
+  }
+
+  const out = cloneMeshGeometry(geometry);
+  out.vertices = new Float32Array(compactBuffer);
+  out.indices = indices;
+  return out;
+}
+
 // Returns the wireframe line-list index buffer for the geometry's triangle indices: every triangle
 // edge expands to a two-index line segment, so a triangle (a, b, c) yields the lines (a, b),
 // (b, c), (c, a). Reads the existing index stream (or sequential triangles for non-indexed
@@ -176,3 +226,4 @@ function hashVertexRecord(bytes: Readonly<Uint8Array>, offset: number, byteLengt
 }
 
 const UINT16_INDEX_CEILING = 65_535;
+const UINT32_UNMAPPED = 0xffffffff;

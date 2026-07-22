@@ -25,8 +25,8 @@ See [charter](./charter.md) for blessed direction.
    `VertexFormat`. Add only the needed arities/encodings, with format-aware edit, GL binding, and raster
    proof; secondary influence channels remain a separate semantic-depth item.
 3. **Complete topology-editing primitives.** Exact full-record welding, explicit index conversion,
-   deindexing, validation, and index-width selection now exist as separate atoms. Tolerance/semantic
-   welding, subset split/merge/edit operations, unused-vertex compaction, and topology conversion remain.
+   deindexing, validation, index-width selection, and unused-vertex compaction now exist as separate
+   atoms. Tolerance/semantic welding, subset split/merge/edit operations, and topology conversion remain.
 4. **Deepen normal/tangent/UV authoring.** Add angle-threshold smoothing/split normals, robust tangent generation across seams, and basic planar/box/spherical UV projection as independent functions.
 5. **Realize instancing and LOD instead of leaving header-only types.** Instance records need a
    contiguous versioned entity rather than `Matrix4[]`; LOD selection must be per prepared view rather
@@ -58,6 +58,9 @@ being re-derived from list-only offsets.
   lists and strips plus point lists, including non-indexed geometry. This closes the runtime half of
   the topology contract; format importers still owe honest mapping/conversion for source modes that do
   not have a direct Flight topology.
+- [2026-07-22 · completed] Unused-vertex compaction is independent from welding: indexed geometry is
+  remapped in first-reference order, complete packed records and draw metadata survive, the result uses
+  the narrowest valid index width, and malformed or non-indexed input returns an unchanged deep clone.
 
 ## Backlog
 
