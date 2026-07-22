@@ -6,39 +6,59 @@ basedOn: ./review.md
 
 # scene-formats — Assessment
 
-See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 review (stub, 18/100). The charter's priority Decision — expand glTF coverage, since partial support is not useful — makes most of the review's glTF build-out sweep-safe within-package work: the existing slice is well-shaped and grows rather than restructures. Parked items are those needing the `mesh` vertex-layout expansion, a cross-package seam, or a charter Open direction (export/serialize naming, USD scope, streaming).
-
-_Items 1–4, 7, 9 of the original list landed 2026-07-09 (`771bf232`): GLB container parsing (`createSceneFromGlb`), `byteStride`/`normalized` accessor correctness, multi-primitive meshes, TANGENT import, validation/diagnostics (version check, no-throw sentinel on malformed JSON, non-triangle-`mode`/`extensionsRequired` warnings), and the `GltfDocument`-only barrel narrowing — plus a latent `decodeBase64` high-byte fix. Remaining:_
+The 2026-07-09 review is no longer an accurate inventory. The live package now parses glTF/GLB,
+OBJ/MTL, AWD, 3DS, MD2, and MD5 into the shared `SceneDocument` decomposition. glTF already carries
+multi-primitive geometry, strided/normalized/sparse accessors, metallic-roughness materials and image
+references, sampler state and texture transforms, skins, morphs, and animation tracks. External geometry
+bytes are caller-supplied while external images remain explicit unresolved references for
+`scene-resources`; parsing does not hide network work. The remaining gaps are integration truth and open
+extension depth, not the old "first primitive, no material" slice.
 
 ## Depth gaps
 
-1. **Return a complete import result, not only a node tree.** Resolve external buffers/images, materials/textures/samplers, animations/skins/morphs, cameras, lights, and diagnostics through explicit caller-supplied resource seams. Do not hide network/loading inside the parser.
-2. **Carry the full common attribute set.** `TEXCOORD_1`, `COLOR_0`, `JOINTS_0/1`, `WEIGHTS_0/1`, morph targets, sparse accessors, normalized/packed formats, and multi-primitive/subset semantics must survive into mesh/material/skeleton types.
-3. **Use open format-extension handlers.** glTF material/light/compression extensions, including Draco/mesh compression and PBR extensions, register individually. Unsupported required extensions return a sentinel/explanation rather than silently dropping visible behavior.
-4. **Add end-to-end fixture functionals.** Import canonical real assets, realize their resources, render distinguishing views, and assert behavior. Parser unit tests alone cannot validate that decoded maps, skinning, cameras, lights, or compressed geometry survive the full path.
+1. **Make the complete import result truthful.** `SceneDocument.resources` is documented as the image
+   reference table but every parser currently returns it empty while material-owned textures carry the
+   real references. Populate/deduplicate that table or remove the false parallel truth. glTF cameras and
+   punctual lights must fill their existing standalone document tables, and structured diagnostics must
+   accompany the document without hiding loading inside parsing.
+2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
+   `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
+   material selection, skinning, and rendered proof. Non-triangle primitive modes need an honest
+   topology mapping rather than warning/dropping visible data.
+3. **Replace inline extension knowledge with open handlers.** `KHR_texture_transform` is implemented
+   inline, yet `extensionsRequired` currently labels every named extension unsupported—including one the
+   parser can consume. Material, punctual-light, mesh-compression, and future vendor handlers should
+   register individually; unsupported required extensions return typed diagnostics/sentinels. Do not add
+   a registerAll assembly.
+4. **Prove real files end to end.** Canonical fixtures must cross parse → SceneDocument → scene assembly
+   → resource realization → GL rendering for maps, UV sets, sparse/packed attributes, skin+morph,
+   animation, multi-primitive materials, and each classic format. Parser-only unit tests do not establish
+   visible import fidelity.
 
-1. Core-spec materials/textures/samplers import — parse `materials`/`textures`/`images`/`samplers` and map metallic-roughness onto `@flighthq/materials` + `@flighthq/texture`. The largest visible-output gap: every import renders untextured. **Cross-package — needs a direction for the material/texture mapping.**
-2. Animations import into the `@flighthq/animation` core — glTF channel/sampler/clip map onto `AnimationTrack`/`AnimationChannel`/`AnimationClip` with `SceneAnimationTarget`. **Cross-package — needs a direction.**
-3. OBJ/MTL importer — charter Decision 2026-07-03 ("the home for all 3D file format parsing"); cheap, high value for test assets. Within-package, sweep-safe.
-4. Sparse accessors + external `.bin`/image URI resolution — parked correctness gaps flagged during the 2026-07-09 pass.
+## Recommended
+
+1. Reconcile `SceneDocument.resources` with the texture references already emitted inside materials;
+   cover shared-image deduplication and embedded/external references.
+2. Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
+   again, so regressions are caught above synthetic accessor tests.
 
 ## Backlog
 
-Parked — each with the reason it is not sweep-safe.
-
-- **Skins and morph targets** (`skins`, `targets`/`weights` → `@flighthq/skeleton`). _Parked — cross-package: needs `JOINTS_0`/`WEIGHTS_0` in `mesh`'s vertex layout and skeleton's SkinnedMesh Open direction._
-- **`COLOR_0` / `TEXCOORD_1` / `JOINTS_0` / `WEIGHTS_0` attribute coverage.** _Parked — cross-package: requires expanding `mesh`'s canonical vertex layout beyond position/normal/tangent/uv0._
-- **External buffer/image URI resolver** (`scene.bin` references; only embedded base64 decodes today). _Parked — design decision: injected async resolver vs pre-fetched buffer map vs `@flighthq/loader` integration changes the import seam's sync/async shape._
-- **Extension-handler registry** with `KHR_lights_punctual` / `KHR_materials_*` as first entries. _Parked — the registry mechanism follows the SDK's registry-by-default rule, but extension scope is the explicit open dial in the blessed 3D pipeline architecture, settled as the package is built._
-- **Cameras and punctual lights import.** _Parked — no scene home: cameras and lights are draw-arguments, not scene members, per the blessed architecture; needs the optional `CameraNode`/`LightNode` decision or an import-result shape carrying them alongside the `Scene`._
-- **Export direction** (`createGltfFromScene` / serializer) and the import-export pair vocabulary. _Parked — design decision; charter Open direction, and the naming rides the scene-serialization naming fork; candidate Open direction for the charter._
-- **USD.** _Parked — charter Open direction: full USD vs USDZ-only._
-- **Streaming/progressive parsing.** _Parked — charter Open direction._
-- **`CANONICAL_LAYOUT` shared export.** _Parked — cross-package: the constant duplicates one `mesh` keeps private ("kept in sync structurally" is a drift trap); `mesh` or `types` should export it and this package consume it._
-- **`decodeBase64` shared home.** _Parked — cross-package: other packages (`image`) plausibly need the same primitive; extract-the-missing-primitive applies._
-- **`createMesh(...) as unknown as SceneNode` double-cast.** _Parked — cross-package: the fix is in the type hierarchy owned by `scene`/`mesh`/`types` (`Mesh` should be a `SceneNode` family member without `unknown`)._
-- **Standardize the `warnings` out-array diagnostics channel.** _Parked — cross-package convention: invented here; should be typed once if it spreads to other codecs._
+- Draco/meshopt/KTX2 decoding composes through separately imported codec handlers; it does not belong in
+  the core JSON walker.
+- Camera and `KHR_lights_punctual` import target the existing standalone SceneDocument tables, not new
+  CameraNode/LightNode graph subjects.
+- Export/serialization naming, USD/USDZ scope, and progressive parsing remain charter direction work.
+- Native binary scene serialization is a separate format over SceneDocument, not a reason to preserve
+  glTF accessors in the runtime representation.
 
 ## Approved
 
-None.
+- [2026-07-21 · completed] Required-extension diagnostics now recognize the core parser's consumed
+  `KHR_texture_transform` support while retaining a warning for genuinely unsupported requirements.
+  Supported/unsupported tests prevent schema presence from being confused with implementation.
+- [2026-07-21 · present] All supported importers stop at the format-neutral SceneDocument and share the
+  scene assembler; the live Scene convenience functions are thin compositions over that boundary.
+- [2026-07-21 · present] glTF/GLB core materials, textures/samplers, external buffer input, sparse and
+  strided accessors, skins, morphs, and animations are implemented. OBJ/MTL, AWD, 3DS, MD2, and MD5 make
+  the package a genuine format family rather than a one-format stub.

@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity';
 import { createAabb } from '@flighthq/geometry';
 import type { MeshSkinBindPose, Skeleton3D } from '@flighthq/types';
 
@@ -44,11 +45,11 @@ function bindPoseFor(positions: number[], jointIndices: number[]): MeshSkinBindP
 }
 
 function skeletonFor(palette: number[]): Skeleton3D {
-  return {
+  return createEntity({
     inverseBindMatrices: new Float32Array(palette.length),
     jointMatrices: new Float32Array(palette),
     joints: [],
-  };
+  });
 }
 
 describe('getMeshSkinConservativeBounds', () => {

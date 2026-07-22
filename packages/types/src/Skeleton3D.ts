@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { SceneNode } from './SceneNode';
 
 // A skin: an ordered set of joint (bone) SceneNodes plus their inverse-bind matrices, and the computed
@@ -9,7 +10,7 @@ import type { SceneNode } from './SceneNode';
 // joint order. `jointMatrices` is the palette filled by computeSkeleton3DJointMatrices each frame
 // (jointWorldMatrix * inverseBindMatrix per joint) and uploaded as the bone uniform; a vertex is
 // deformed by the weighted sum of its joints' palette matrices.
-export interface Skeleton3D {
+export interface Skeleton3D extends Entity {
   inverseBindMatrices: Float32Array;
   jointMatrices: Float32Array;
   joints: SceneNode[];

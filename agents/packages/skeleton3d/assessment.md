@@ -35,6 +35,9 @@ No sweep-safe items; meaningful work crosses mesh, scene preparation, animation,
 
 ## Approved
 
+- [2026-07-21 · completed] `Skeleton3D` now extends Entity. `createSkeleton3D`,
+  `cloneSkeleton3D`, and the cycle-safe SceneDocument skin assembler all construct the same enforced
+  Entity shape; no import path can quietly return a structural skeleton literal.
 - [2026-07-21 · completed] CPU morph-plus-skin has an explicit `updateMeshDeformation` composition.
   Each deformer remains independently importable; the composition runs morph first and refreshes only
   skin's deformable position/normal input on later frames, preserving static influences and allocated

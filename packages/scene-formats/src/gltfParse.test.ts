@@ -928,6 +928,14 @@ describe('createSceneFromGltf', () => {
     expect(warnings.some((w) => w.includes('KHR_draco_mesh_compression'))).toBe(true);
   });
 
+  it('does not label the consumed KHR_texture_transform extension unsupported', () => {
+    const doc = makeTriangleGltf();
+    doc.extensionsRequired = ['KHR_texture_transform'];
+    const warnings: string[] = [];
+    createSceneFromGltf(doc, warnings);
+    expect(warnings).toEqual([]);
+  });
+
   it('imports a skin binding the mesh to a skeleton over its joint nodes', () => {
     const scene = createSceneFromGltf(makeSkinnedGltf());
     const roots = getNodeChildren(scene.root);

@@ -1,15 +1,15 @@
+import { createEntity } from '@flighthq/entity';
 import { copyMatrix4, createMatrix4, inverseMatrix4, multiplyMatrix4 } from '@flighthq/geometry';
 import { getNodeWorldMatrix4 } from '@flighthq/node';
 import type { Matrix4Like, SceneNode, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
-  const clone: Skeleton3D = {
+  const clone = createEntity({
     inverseBindMatrices: new Float32Array(skeleton.inverseBindMatrices),
     jointMatrices: new Float32Array(skeleton.jointMatrices),
     joints: skeleton.joints.slice(),
-  };
-  if (skeleton.names != null) clone.names = skeleton.names.slice();
-  else if (skeleton.names === null) clone.names = null;
+    names: skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
+  });
   return clone;
 }
 
@@ -29,12 +29,12 @@ export function createSkeleton3D(
   names?: readonly string[] | null,
 ): Skeleton3D {
   const count = joints.length;
-  const skeleton: Skeleton3D = {
+  const skeleton = createEntity({
     inverseBindMatrices: inverseBindMatrices ?? new Float32Array(count * 16),
     jointMatrices: new Float32Array(count * 16),
     joints,
     names: names ?? null,
-  };
+  });
   if (inverseBindMatrices === undefined) setSkeleton3DBindPose(skeleton);
   return skeleton;
 }

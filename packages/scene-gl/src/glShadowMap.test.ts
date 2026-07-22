@@ -182,6 +182,7 @@ describe('drawGlSceneShadowMap', () => {
     const mesh = createMesh(geometry, []);
     const skin: Skin = {
       skeleton: {
+        [EntityRuntimeKey]: undefined,
         inverseBindMatrices: new Float32Array(16),
         jointMatrices: new Float32Array(16),
         joints: [],
