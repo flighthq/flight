@@ -16,10 +16,11 @@ const pages: Record<string, string> = {
     requestAnimationFrame(draw);
   </script>`,
   '/static-webgl': `<!doctype html><canvas width="320" height="180"></canvas><script>
-    const gl = document.querySelector('canvas').getContext('webgl'); gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-    setTimeout(() => {
-      gl.enable(gl.SCISSOR_TEST); gl.scissor(60,40,200,100); gl.clearColor(1,0.2,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-    }, 100);
+    const gl = document.querySelector('canvas').getContext('webgl');
+    if (!gl) throw new Error('WebGL unavailable');
+    gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.SCISSOR_TEST); gl.scissor(60,40,200,100); gl.clearColor(1,0.2,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.flush();
   </script>`,
   '/blank-evidence': `<!doctype html><canvas width="320" height="180"></canvas><div id="error">Renderer failed to initialize</div>`,
   '/flaky': `<!doctype html><canvas width="320" height="180"></canvas><script>
