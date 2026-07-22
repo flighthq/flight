@@ -60,8 +60,8 @@ function entryModule(name: string, backend: string): string {
     `setLogSink(createConsoleCaptureSink());`,
     `window.__ftBackend = ${JSON.stringify(backend)};`,
     `const __testModule = await import(${JSON.stringify(scenePath)});`,
-    `const { runRenderVerification } = await import('@ft/verify');`,
-    `await runRenderVerification(__testModule, ${JSON.stringify(backend)});`,
+    `const { verifyCaptureTarget } = await import('@ft/capture');`,
+    `await verifyCaptureTarget(__testModule, ${JSON.stringify(backend)});`,
   ].join('\n');
 }
 
@@ -149,6 +149,7 @@ function functionalTestsPlugin(tests: FunctionalScene[]): Plugin[] {
         // backend is chosen at runtime via window.__ftBackend (set by the entry above).
         if (source === '@ft/render') return resolve(harnessDir, 'render.ts');
         if (source === '@ft/verify') return resolve(projectRoot, 'packages/tool-capture/src/functionalVerify.ts');
+        if (source === '@ft/capture') return resolve(projectRoot, 'packages/tool-capture/src/capturePage.ts');
       },
 
       load(id) {

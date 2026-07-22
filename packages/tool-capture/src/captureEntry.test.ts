@@ -8,6 +8,7 @@ import {
   captureParallel,
   captureUrl,
   getCaptureOutputPaths,
+  isTransientCaptureError,
 } from './captureEntry';
 
 describe('buildCaptureObserveDiagnostics', () => {
@@ -27,14 +28,19 @@ describe('buildCaptureObserveDiagnostics', () => {
       ],
     });
     expect(d).toEqual({
+      attemptErrors: [],
+      attempts: 1,
       backend: 'webgl',
       blank: true,
       coverage: 0,
       errorCount: 2,
       pageErrorCount: 1,
+      pageEvidence: false,
       verifyPublished: false,
       verifyTargetKind: 'webgl',
       warmupFrames: 3,
+      timedOut: false,
+      usable: true,
     });
   });
 
@@ -68,6 +74,7 @@ describe('buildCaptureObserveDiagnostics', () => {
       logs: [],
     });
     expect(empty.blank).toBe(true);
+    expect(empty.usable).toBe(false);
 
     // A frame with real content stays non-blank; a null coverage (unmeasured) does not force blank.
     expect(
@@ -140,5 +147,13 @@ describe('getCaptureOutputPaths', () => {
     expect(paths.finalLogs).toBe(join(paths.outDir, 'logs.jsonl'));
     expect(paths.tmpLogs).toBe(join(paths.outDir, 'logs.tmp.jsonl'));
     expect(paths.statusPath).toBe(join(paths.outDir, 'status.json'));
+  });
+});
+
+describe('isTransientCaptureError', () => {
+  it('retries infrastructure failures but not deterministic render assertions', () => {
+    expect(isTransientCaptureError('page.goto: Timeout 15000ms exceeded')).toBe(true);
+    expect(isTransientCaptureError('Execution context was destroyed')).toBe(true);
+    expect(isTransientCaptureError('[mesh] expected red, got blue')).toBe(false);
   });
 });

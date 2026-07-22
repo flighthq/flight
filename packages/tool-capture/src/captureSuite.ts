@@ -9,10 +9,11 @@ import pc from 'picocolors';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
-import { rendererMatchesFilter } from './captureEntries.js';
-import { captureEntry, captureParallel } from './captureEntry.js';
+import { captureParallel } from './captureEntry.js';
+import type { CaptureTargetReport } from './captureEntry.js';
 import { formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler } from './captureInterrupt.js';
+import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
 
 export interface CaptureSuiteOptions {
@@ -37,6 +38,9 @@ export interface CaptureSuiteOptions {
   workerCount?: number;
   /** Reuse an already initialized browser/context. The caller owns its lifetime. */
   browserSession?: CaptureBrowserSession;
+  maxRetries?: number;
+  /** Aggregate machine report path. Defaults to `<outBase>/<subject>/report.json`; false disables it. */
+  reportPath?: string | false;
 }
 
 export type CaptureFingerprintMap = Record<string, Record<string, string>>;
@@ -49,9 +53,13 @@ export interface CaptureSuiteResult {
   shouldFail: boolean;
   /** Assertion-passed fingerprints collected as a by-product of capture. */
   fingerprints: CaptureFingerprintMap;
+  durationMs: number;
+  targets: CaptureTargetReport[];
+  reportPath: string | null;
 }
 
 export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): Promise<CaptureSuiteResult> {
+  const startedAt = performance.now();
   const root = resolve(options.root ?? process.cwd());
   const outBase = resolve(root, options.outBase ?? '.artifacts');
   const rendererFilter = [...(options.rendererFilter ?? [])];
@@ -74,62 +82,36 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
   let captured = 0;
   let changed = 0;
   let failed = 0;
+  let targets: CaptureTargetReport[] = [];
   const fingerprints: CaptureFingerprintMap = {};
   const onVerifiedFingerprint = (entry: string, renderer: string, fingerprint: string): void => {
     (fingerprints[entry] ??= {})[renderer] = fingerprint;
   };
 
   try {
-    if (!options.sequential) {
-      const result = await captureParallel({
-        context,
-        entries: [...entries],
-        rendererFilter,
-        baseUrl: options.server.url,
-        tool: options.subject,
-        outBase,
-        root,
-        updateBaseline: options.updateBaseline,
-        extraWait: options.extraWait,
-        captureFrames,
-        failOnError: options.failOnError,
-        observe: options.observe,
-        verify,
-        isAborted,
-        workerCount: options.workerCount ?? 6,
-        onVerifiedFingerprint,
-      });
-      captured = result.captured;
-      changed = result.changed;
-      failed = result.failed;
-    } else {
-      for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
-        if (isAborted()) break;
-        const entry = entries[entryIndex]!;
-        console.log(`${pc.dim(`[${entryIndex + 1}/${entries.length}]`)} ${pc.bold(entry.name)}`);
-        const renderers = entry.renderers.filter((renderer) => rendererMatchesFilter(renderer, rendererFilter));
-        const result = await captureEntry({
-          context,
-          entry,
-          renderers,
-          baseUrl: options.server.url,
-          tool: options.subject,
-          outBase,
-          root,
-          updateBaseline: options.updateBaseline,
-          extraWait: options.extraWait,
-          captureFrames,
-          failOnError: options.failOnError,
-          observe: options.observe,
-          verify,
-          isAborted,
-          onVerifiedFingerprint,
-        });
-        if (result === 'ok') captured += renderers.length;
-        else if (result === 'changed') changed += renderers.length;
-        else failed += renderers.length;
-      }
-    }
+    const result = await captureParallel({
+      context,
+      entries: [...entries],
+      rendererFilter,
+      baseUrl: options.server.url,
+      tool: options.subject,
+      outBase,
+      root,
+      updateBaseline: options.updateBaseline,
+      extraWait: options.extraWait,
+      captureFrames,
+      failOnError: options.failOnError,
+      observe: options.observe,
+      verify,
+      isAborted,
+      workerCount: options.sequential ? 1 : (options.workerCount ?? 6),
+      onVerifiedFingerprint,
+      maxRetries: options.maxRetries,
+    });
+    captured = result.captured;
+    changed = result.changed;
+    failed = result.failed;
+    targets = result.targets;
   } finally {
     if (ownsBrowser) await browser.close().catch(() => {});
     options.server.kill();
@@ -148,5 +130,23 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
       note,
   );
   console.log(`Output:   ${outBase}/${options.subject}/`);
-  return { aborted, captured, changed, failed, shouldFail, fingerprints };
+  const reportPath =
+    options.reportPath === false
+      ? null
+      : options.reportPath === undefined
+        ? resolve(outBase, options.subject, 'report.json')
+        : resolve(options.reportPath);
+  const result: CaptureSuiteResult = {
+    aborted,
+    captured,
+    changed,
+    failed,
+    shouldFail,
+    fingerprints,
+    durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+    targets,
+    reportPath,
+  };
+  if (reportPath !== null) writeCaptureReport(reportPath, 'capture', result);
+  return result;
 }

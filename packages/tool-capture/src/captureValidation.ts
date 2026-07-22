@@ -39,6 +39,8 @@ import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './capt
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
+import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
 import type { CaptureFingerprintMap } from './captureSuite.js';
 
@@ -65,6 +67,8 @@ export interface CaptureValidationOptions {
   fingerprints?: Readonly<CaptureFingerprintMap>;
   /** Reuse an already initialized browser/context. The caller owns its lifetime. */
   browserSession?: CaptureBrowserSession;
+  /** Aggregate machine report path. Defaults to `.artifacts/<subject>/validation-report.json`. */
+  reportPath?: string | false;
 }
 
 export interface CaptureValidationResult {
@@ -77,6 +81,19 @@ export interface CaptureValidationResult {
   shouldFail: boolean;
   skipped: number;
   updated: number;
+  durationMs: number;
+  reportPath: string | null;
+  checks: CaptureValidationCheck[];
+}
+
+export interface CaptureValidationCheck {
+  entry: string;
+  renderers: string[];
+  kind: 'load' | 'stability' | 'baseline' | 'regression' | 'parity';
+  status: 'passed' | 'failed' | 'skipped' | 'reported';
+  message: string;
+  distance?: number;
+  threshold?: number;
 }
 
 interface ResolvedCaptureValidationOptions {
@@ -97,6 +114,7 @@ interface ResolvedCaptureValidationOptions {
 }
 
 interface Verification {
+  protocolVersion?: number;
   render: string;
   coverage: number | null;
   fingerprint: string | null;
@@ -176,6 +194,14 @@ async function loadFingerprint(
     const verification = await page
       .evaluate(() => (window as unknown as { __ftVerification?: Verification }).__ftVerification ?? null)
       .catch(() => null);
+    if (verification?.protocolVersion !== undefined && verification.protocolVersion !== CAPTURE_PROTOCOL_VERSION) {
+      return {
+        fingerprint: null,
+        reason: `capture protocol ${verification.protocolVersion} is incompatible with ${CAPTURE_PROTOCOL_VERSION}`,
+        unavailable: false,
+        aborted: false,
+      };
+    }
     if (verification?.state === 'passed' && verification.fingerprint)
       return { fingerprint: verification.fingerprint, reason: '', unavailable: false, aborted: false };
     // The functional entry paints any error into #ft-error (covering window.error AND unhandledrejection);
@@ -209,6 +235,7 @@ interface EntryResult {
   updated: number;
   skipped: number;
   output: string[];
+  checks: CaptureValidationCheck[];
 }
 
 async function processEntry(
@@ -228,6 +255,7 @@ async function processEntry(
     updated: 0,
     skipped: 0,
     output: [],
+    checks: [],
   };
 
   result.output.push(`${pc.dim(`[${entryIndex + 1}/${totalEntries}]`)} ${pc.bold(entry.name)}`);
@@ -242,6 +270,13 @@ async function processEntry(
 
   if (options.fingerprintSkip.has(entry.name)) {
     result.skipped += renderers.length;
+    result.checks.push({
+      entry: entry.name,
+      renderers,
+      kind: 'baseline',
+      status: 'skipped',
+      message: 'fingerprint policy skip',
+    });
     return result;
   }
 
@@ -259,9 +294,23 @@ async function processEntry(
       if (first.unavailable) {
         result.output.push(statusLine('skip', renderer, `skipped — ${first.reason}`));
         result.skipped++;
+        result.checks.push({
+          entry: entry.name,
+          renderers: [renderer],
+          kind: 'load',
+          status: 'skipped',
+          message: first.reason,
+        });
       } else {
         result.output.push(statusLine('fail', renderer, first.reason));
         result.loadFailures++;
+        result.checks.push({
+          entry: entry.name,
+          renderers: [renderer],
+          kind: 'load',
+          status: 'failed',
+          message: first.reason,
+        });
       }
       continue;
     }
@@ -276,11 +325,26 @@ async function processEntry(
         const note = `not baselined — nondeterministic (self-distance ${selfDistance?.toFixed(2) ?? 'n/a'})`;
         result.output.push(statusLine('skip', renderer, note));
         result.skipped++;
+        result.checks.push({
+          entry: entry.name,
+          renderers: [renderer],
+          kind: 'stability',
+          status: 'skipped',
+          message: note,
+          ...(selfDistance === null ? {} : { distance: selfDistance, threshold: options.stabilityEpsilon }),
+        });
         continue;
       }
       setBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint', fingerprint);
       result.output.push(statusLine('pass', renderer, 'baseline written'));
       result.updated++;
+      result.checks.push({
+        entry: entry.name,
+        renderers: [renderer],
+        kind: 'baseline',
+        status: 'passed',
+        message: 'baseline written',
+      });
       eligible.set(renderer, fingerprint);
       continue;
     }
@@ -289,6 +353,13 @@ async function processEntry(
     if (committed === null) {
       result.output.push(statusLine('muted', renderer, 'no fingerprint baseline — skipped'));
       result.skipped++;
+      result.checks.push({
+        entry: entry.name,
+        renderers: [renderer],
+        kind: 'baseline',
+        status: 'skipped',
+        message: 'no fingerprint baseline',
+      });
       continue;
     }
     const dist = distance(fingerprint, committed);
@@ -296,8 +367,24 @@ async function processEntry(
     if (dist === null) {
       result.output.push(statusLine('fail', renderer, 'unreadable fingerprint baseline'));
       result.regressionFailures++;
+      result.checks.push({
+        entry: entry.name,
+        renderers: [renderer],
+        kind: 'regression',
+        status: 'failed',
+        message: 'unreadable fingerprint baseline',
+      });
     } else if (options.report) {
       result.output.push(detailLine(pc.dim('='), renderer, pc.dim(`regression distance ${dist.toFixed(2)}`), pc.dim));
+      result.checks.push({
+        entry: entry.name,
+        renderers: [renderer],
+        kind: 'regression',
+        status: 'reported',
+        message: `regression distance ${dist.toFixed(2)}`,
+        distance: dist,
+        threshold: options.regressionTolerance,
+      });
     } else if (options.gateRegression) {
       const check = evaluateCaptureRegression(fingerprint, committed, options.regressionTolerance);
       if (!check.pass) {
@@ -305,11 +392,29 @@ async function processEntry(
           statusLine('fail', renderer, `regression ${dist.toFixed(2)} > ${options.regressionTolerance}`),
         );
         result.regressionFailures++;
+        result.checks.push({
+          entry: entry.name,
+          renderers: [renderer],
+          kind: 'regression',
+          status: 'failed',
+          message: `regression ${dist.toFixed(2)} > ${options.regressionTolerance}`,
+          distance: dist,
+          threshold: options.regressionTolerance,
+        });
       } else {
         result.output.push(
           statusLine('pass', renderer, `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance}`),
         );
         result.regressionPasses++;
+        result.checks.push({
+          entry: entry.name,
+          renderers: [renderer],
+          kind: 'regression',
+          status: 'passed',
+          message: `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance}`,
+          distance: dist,
+          threshold: options.regressionTolerance,
+        });
       }
     }
   }
@@ -332,6 +437,17 @@ async function processEntry(
     if (options.report) {
       const segments = pairs.map((p) => `${p.label} ${p.dist.toFixed(2)}`).join('  ');
       result.output.push(detailLine(pc.dim('~'), 'parity', pc.dim(segments), pc.dim));
+      for (const pair of pairs) {
+        result.checks.push({
+          entry: entry.name,
+          renderers: [pair.a, pair.b],
+          kind: 'parity',
+          status: 'reported',
+          message: `parity distance ${pair.dist.toFixed(2)}`,
+          distance: pair.dist,
+          threshold: options.parityTolerance,
+        });
+      }
     } else if (options.gateParity) {
       let anyFailed = false;
       const segments = pairs
@@ -340,9 +456,27 @@ async function processEntry(
           if (!check.pass) {
             anyFailed = true;
             result.parityFailures++;
+            result.checks.push({
+              entry: entry.name,
+              renderers: [p.a, p.b],
+              kind: 'parity',
+              status: 'failed',
+              message: `parity ${p.dist.toFixed(2)} > ${options.parityTolerance}`,
+              distance: p.dist,
+              threshold: options.parityTolerance,
+            });
             return pc.red(`${p.label} ${p.dist.toFixed(2)}>${options.parityTolerance}`);
           }
           result.parityPasses++;
+          result.checks.push({
+            entry: entry.name,
+            renderers: [p.a, p.b],
+            kind: 'parity',
+            status: 'passed',
+            message: `parity ${p.dist.toFixed(2)} ≤ ${options.parityTolerance}`,
+            distance: p.dist,
+            threshold: options.parityTolerance,
+          });
           return pc.dim(`${p.label} ${p.dist.toFixed(2)}`);
         })
         .join('  ');
@@ -363,6 +497,7 @@ async function processEntry(
 export async function runCaptureValidation(
   input: Readonly<CaptureValidationOptions>,
 ): Promise<CaptureValidationResult> {
+  const startedAt = performance.now();
   const entries = input.filter
     ? input.entries.filter((entry) => entry.name.includes(input.filter!))
     : [...input.entries];
@@ -400,6 +535,7 @@ export async function runCaptureValidation(
   let loadFailures = 0;
   let updated = 0;
   let skipped = 0;
+  const checks: CaptureValidationCheck[] = [];
 
   try {
     // Balance pages, not entries: a four-renderer entry must not monopolize one worker while another
@@ -452,6 +588,7 @@ export async function runCaptureValidation(
           loadFailures += result.loadFailures;
           updated += result.updated;
           skipped += result.skipped;
+          checks.push(...result.checks);
           for (const line of result.output) console.log(line);
         }
       });
@@ -467,6 +604,7 @@ export async function runCaptureValidation(
         loadFailures += result.loadFailures;
         updated += result.updated;
         skipped += result.skipped;
+        checks.push(...result.checks);
         for (const line of result.output) console.log(line);
       }
     }
@@ -522,7 +660,14 @@ export async function runCaptureValidation(
   return createResult(failed);
 
   function createResult(shouldFail: boolean): CaptureValidationResult {
-    return {
+    const reportPath =
+      input.reportPath === false
+        ? null
+        : resolve(
+            input.reportPath ?? options.root,
+            ...(input.reportPath === undefined ? ['.artifacts', input.subject, 'validation-report.json'] : []),
+          );
+    const result: CaptureValidationResult = {
       aborted: interrupted,
       loadFailures,
       parityFailures,
@@ -532,6 +677,11 @@ export async function runCaptureValidation(
       shouldFail,
       skipped,
       updated,
+      durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+      reportPath,
+      checks,
     };
+    if (reportPath !== null) writeCaptureReport(reportPath, 'validation', result);
+    return result;
   }
 }

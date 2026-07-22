@@ -53,6 +53,13 @@ describe('runCaptureWorkflow', () => {
       validation: false,
     });
     expect(kills).toBe(1);
-    expect(result).toEqual({ aborted: false, capture: null, shouldFail: false, validation: null });
+    expect(result).toEqual({
+      aborted: false,
+      capture: null,
+      shouldFail: false,
+      validation: null,
+      durationMs: 0,
+      reportPath: null,
+    });
   });
 });

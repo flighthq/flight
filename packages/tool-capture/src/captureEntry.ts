@@ -9,7 +9,7 @@
 // launchBrowser's init script establishes (__ftRealRequestAnimationFrame, __ftRenderImage).
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import type { BrowserContext, Page } from '@playwright/test';
@@ -22,9 +22,12 @@ import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './capt
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine } from './captureFormat.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
+import { writeCaptureReport } from './captureReport.js';
 import type { FunctionalVerification } from './functionalVerify.js';
 
 export interface CaptureStatus {
+  protocolVersion: typeof CAPTURE_PROTOCOL_VERSION;
   state: 'ready' | 'error';
   capturedAt: number;
   error: string | null;
@@ -44,6 +47,16 @@ export interface CaptureStatus {
 
 /** What an observe-mode capture saw: the trustworthiness metadata beside the emitted screenshot. */
 export interface CaptureObserveDiagnostics {
+  /** True when the image contains rendered content or actionable failure evidence. */
+  usable: boolean;
+  /** Number of page attempts used to obtain this evidence. */
+  attempts: number;
+  /** The adaptive render warmup exhausted its safety bound. */
+  timedOut: boolean;
+  /** Non-canvas UI (for example an error overlay or loading message) is visible in the page image. */
+  pageEvidence: boolean;
+  /** Reasons recorded by attempts before the final evidence image. */
+  attemptErrors: string[];
   /** No verified/non-blank frame was produced — the emitted screenshot is a fallback, likely blank/black. */
   blank: boolean;
   /** Render backend: canvas | dom | webgl | webgpu. */
@@ -118,6 +131,8 @@ export interface CaptureEntryOptions {
   verify?: boolean;
   /** Receives fingerprints that completed every page-side assertion. Used to fuse capture + validation. */
   onVerifiedFingerprint?: (entry: string, renderer: string, fingerprint: string) => void;
+  /** Fresh-page retries for transient navigation/protocol failures. Default: 1. */
+  maxRetries?: number;
 }
 
 export interface ParallelCaptureOptions {
@@ -136,6 +151,7 @@ export interface ParallelCaptureOptions {
   isAborted?: () => boolean;
   verify?: boolean;
   onVerifiedFingerprint?: (entry: string, renderer: string, fingerprint: string) => void;
+  maxRetries?: number;
   /** Number of Playwright pages to run concurrently. Default: 6. */
   workerCount?: number;
 }
@@ -144,6 +160,22 @@ export interface ParallelCaptureResult {
   captured: number;
   changed: number;
   failed: number;
+  targets: CaptureTargetReport[];
+}
+
+export interface CaptureTargetReport {
+  entry: string;
+  renderer: string;
+  result: 'captured' | 'changed' | 'failed';
+  durationMs: number;
+  retries: number;
+  usable: boolean;
+  error: string | null;
+  artifacts: {
+    screenshot: string;
+    logs: string;
+    status: string;
+  };
 }
 
 /** The artifact file paths for one (tool, entry, renderer) capture, under the output base directory. */
@@ -162,6 +194,7 @@ type RenderVerification = FunctionalVerification;
 // coverage is at or below this reads as "nothing distinguishable rendered". Small but non-zero so a
 // stray antialiased edge pixel does not count as content.
 const OBSERVE_BLANK_COVERAGE = 0.001;
+const OBSERVE_WARMUP_TIMEOUT_MS = 5_000;
 
 // Summarizes an observe-mode capture into the status.json diagnostics block. Pure over its inputs and
 // the drained page logs (page exceptions vs. console/network errors are counted from `logs`), so the
@@ -179,6 +212,10 @@ export function buildCaptureObserveDiagnostics(args: {
   verifyPublished: boolean;
   verifyTargetKind: string | null;
   warmupFrames: number;
+  attempts?: number;
+  timedOut?: boolean;
+  pageEvidence?: boolean;
+  attemptErrors?: readonly string[];
 }): CaptureObserveDiagnostics {
   let pageErrorCount = 0;
   let errorCount = 0;
@@ -188,15 +225,21 @@ export function buildCaptureObserveDiagnostics(args: {
     else if (level === 'error') errorCount += 1;
   }
   const blank = args.coverage !== null ? args.coverage <= OBSERVE_BLANK_COVERAGE : args.blank;
+  const usable = !blank || pageErrorCount > 0 || errorCount > 0 || args.pageEvidence === true;
   return {
+    attemptErrors: [...(args.attemptErrors ?? [])],
+    attempts: args.attempts ?? 1,
     backend: args.backend,
     blank,
     coverage: args.coverage,
     errorCount,
     pageErrorCount,
+    pageEvidence: args.pageEvidence ?? false,
     verifyPublished: args.verifyPublished,
     verifyTargetKind: args.verifyTargetKind,
     warmupFrames: args.warmupFrames,
+    timedOut: args.timedOut ?? false,
+    usable,
   };
 }
 
@@ -305,6 +348,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
       let earlyObserveIntercept: { coverage: number; dataUrl: string } | null = null;
+      let observeTimedOut = false;
       if (!verify) {
         const selector = rendererBackend(renderer) === 'dom' ? 'body > div' : 'canvas';
         await page.waitForSelector(selector, { timeout: 8_000 }).catch(() => {});
@@ -323,7 +367,11 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         // --frames=N mode: wait until the page has rendered N frames and the halt has frozen it
         // (see launchBrowser). waitForFunction polls until the page reaches N — no fixed short
         // timeout that could shoot a varying earlier frame — so frame N is captured deterministically.
-        if (!alreadyObserved) {
+        if (!alreadyObserved && observe) {
+          const observed = await waitForObservedPixels(page, OBSERVE_WARMUP_TIMEOUT_MS);
+          earlyObserveIntercept ??= observed.intercept;
+          observeTimedOut = !observed.reached;
+        } else if (!alreadyObserved) {
           await page.waitForFunction(
             () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
             null,
@@ -456,8 +504,11 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           verifyPublished: dataUrl !== null,
           verifyTargetKind: verificationTargetKind,
           warmupFrames: await getObserveWarmupFrames(page),
+          pageEvidence: await hasVisiblePageEvidence(page),
+          timedOut: observeTimedOut,
         });
         const observeStatus: CaptureStatus = {
+          protocolVersion: CAPTURE_PROTOCOL_VERSION,
           state: 'ready',
           capturedAt: Date.now(),
           error: null,
@@ -505,6 +556,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       }
 
       const status: CaptureStatus = {
+        protocolVersion: CAPTURE_PROTOCOL_VERSION,
         state: 'ready',
         capturedAt: Date.now(),
         error: null,
@@ -543,6 +595,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       writeFileSync(finalLogs, logs.map((l) => JSON.stringify(l)).join('\n'));
 
       const errorStatus: CaptureStatus = {
+        protocolVersion: CAPTURE_PROTOCOL_VERSION,
         state: 'error',
         capturedAt: Date.now(),
         error: message,
@@ -760,6 +813,7 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
   let captured = 0;
   let changed = 0;
   let failed = 0;
+  const targets: CaptureTargetReport[] = [];
 
   const activeWorkers = Math.min(workerCount, jobs.length);
   const workers = Array.from({ length: activeWorkers }, async () => {
@@ -768,33 +822,77 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
       const job = jobs.shift();
       if (!job) break;
 
-      const result = await captureEntry({
-        context,
-        entry: job.entry,
-        renderers: [job.renderer],
-        displayLabel: `${job.entry.name}/${job.renderer}`,
-        baseUrl: opts.baseUrl,
-        tool: opts.tool,
-        outBase: opts.outBase,
-        root: opts.root,
-        updateBaseline: opts.updateBaseline,
-        extraWait: opts.extraWait,
-        captureFrames: opts.captureFrames,
-        failOnError: opts.failOnError,
-        observe: opts.observe,
-        verify: opts.verify,
-        onVerifiedFingerprint: opts.onVerifiedFingerprint,
-        isAborted: () => isAborted(),
-      });
+      const startedAt = performance.now();
+      const maxRetries = opts.maxRetries ?? 1;
+      let retries = 0;
+      let result: 'ok' | 'changed' | 'error';
+      while (true) {
+        result = await captureEntry({
+          context,
+          entry: job.entry,
+          renderers: [job.renderer],
+          displayLabel: `${job.entry.name}/${job.renderer}`,
+          baseUrl: opts.baseUrl,
+          tool: opts.tool,
+          outBase: opts.outBase,
+          root: opts.root,
+          updateBaseline: opts.updateBaseline,
+          extraWait: opts.extraWait,
+          captureFrames: opts.captureFrames,
+          failOnError: opts.failOnError,
+          observe: opts.observe,
+          verify: opts.verify,
+          onVerifiedFingerprint: opts.onVerifiedFingerprint,
+          isAborted: () => isAborted(),
+        });
+        const status = readCaptureStatus(opts.outBase, opts.tool, job.entry.name, job.renderer);
+        const transientError = result === 'error' && isTransientCaptureError(status?.error ?? '');
+        // Observe is an eyes contract, not merely a non-throwing capture. A successful navigation
+        // that yielded no pixels deserves the same fresh-page recovery as a transient protocol
+        // failure; this is particularly important in large batches where one slow-starting subject
+        // would otherwise silently leave an agent with an unusable screenshot.
+        const unusableObservation =
+          opts.observe === true &&
+          result === 'ok' &&
+          status?.observe !== undefined &&
+          (status.observe.blank || status.observe.timedOut);
+        if ((!transientError && !unusableObservation) || retries >= maxRetries || isAborted()) break;
+        retries++;
+        console.log(
+          formatStatusLine('muted', `${job.entry.name}/${job.renderer}`, 6, `retrying (${retries}/${maxRetries})…`),
+        );
+      }
 
       if (result === 'ok') captured++;
       else if (result === 'changed') changed++;
       else failed++;
+      const paths = getCaptureOutputPaths(opts.outBase, opts.tool, job.entry.name, job.renderer);
+      const status = readCaptureStatus(opts.outBase, opts.tool, job.entry.name, job.renderer);
+      targets.push({
+        entry: job.entry.name,
+        renderer: job.renderer,
+        result: result === 'ok' ? 'captured' : result === 'changed' ? 'changed' : 'failed',
+        durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+        retries,
+        usable: status?.state === 'ready' && (status.observe?.usable ?? status.hash !== null),
+        error: status?.error ?? null,
+        artifacts: { screenshot: paths.finalScreenshot, logs: paths.finalLogs, status: paths.statusPath },
+      });
     }
   });
 
   await Promise.all(workers);
-  return { captured, changed, failed };
+  return { captured, changed, failed, targets };
+}
+
+function readCaptureStatus(outBase: string, tool: string, entry: string, renderer: string): CaptureStatus | null {
+  try {
+    return JSON.parse(
+      readFileSync(getCaptureOutputPaths(outBase, tool, entry, renderer).statusPath, 'utf8'),
+    ) as CaptureStatus;
+  } catch {
+    return null;
+  }
 }
 
 // Observe one arbitrary URL — the standalone "eyes" primitive behind the `tool-capture observe` bin.
@@ -805,6 +903,50 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
 export async function captureUrl(
   url: string,
   options: Readonly<CaptureUrlOptions>,
+): Promise<CaptureObserveDiagnostics> {
+  const attempts = Math.max(1, (options.maxRetries ?? 2) + 1);
+  let last: CaptureObserveDiagnostics | null = null;
+  const attemptErrors: string[] = [];
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    last = await captureUrlAttempt(url, options, attempt);
+    attemptErrors.push(...last.attemptErrors);
+    if (!last.blank && !last.timedOut) break;
+    if (last.attemptErrors.length === 0) {
+      attemptErrors.push(
+        last.timedOut ? `attempt ${attempt}: render warmup timed out` : `attempt ${attempt}: blank render`,
+      );
+    }
+  }
+  last = { ...last!, attemptErrors };
+  updateObserveStatus(options.outDir, last);
+  writeCaptureReport(join(options.outDir, 'report.json'), 'observe', { url, diagnostics: last! });
+  return last!;
+}
+
+// The artifact paths for one capture, derived purely from the output base, tool, entry name, and
+// renderer. Shared by captureEntry (which writes them) and captureRenderTarget (which reports them),
+// so the on-disk layout is defined in exactly one place: {outBase}/{tool}/{name}/{routeSegment}/…
+export function getCaptureOutputPaths(
+  outBase: string,
+  tool: string,
+  name: string,
+  renderer: string,
+): CaptureOutputPaths {
+  const outDir = join(resolve(outBase), tool, name, routeSegment(renderer));
+  return {
+    outDir,
+    tmpScreenshot: join(outDir, 'screenshot.tmp.png'),
+    finalScreenshot: join(outDir, 'screenshot.png'),
+    tmpLogs: join(outDir, 'logs.tmp.jsonl'),
+    finalLogs: join(outDir, 'logs.jsonl'),
+    statusPath: join(outDir, 'status.json'),
+  };
+}
+
+async function captureUrlAttempt(
+  url: string,
+  options: Readonly<CaptureUrlOptions>,
+  attempt: number,
 ): Promise<CaptureObserveDiagnostics> {
   const { outDir, wait = 0, captureFrames = 1 } = options;
   mkdirSync(outDir, { recursive: true });
@@ -841,19 +983,14 @@ export async function captureUrl(
     await page.evaluate(() => {
       requestAnimationFrame(() => requestAnimationFrame(() => {}));
     });
-    const earlyIntercept = await grabInterceptedGlFrame(page);
+    let earlyIntercept = await grabInterceptedGlFrame(page);
     const earlyCoverage = earlyIntercept?.coverage ?? (await measureObservedCanvasCoverage(page));
-    const reachedFrame =
-      earlyCoverage !== null && earlyCoverage > OBSERVE_BLANK_COVERAGE
-        ? true
-        : await page
-            .waitForFunction(
-              () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
-              null,
-              { timeout: 15_000 },
-            )
-            .then(() => true)
-            .catch(() => false);
+    let reachedFrame = earlyCoverage !== null && earlyCoverage > OBSERVE_BLANK_COVERAGE;
+    if (!reachedFrame) {
+      const observed = await waitForObservedPixels(page, OBSERVE_WARMUP_TIMEOUT_MS);
+      earlyIntercept ??= observed.intercept;
+      reachedFrame = observed.reached;
+    }
     if (!reachedFrame) {
       logs.push({
         __flight: true,
@@ -888,14 +1025,49 @@ export async function captureUrl(
       verifyPublished: false,
       verifyTargetKind: null,
       warmupFrames: await getObserveWarmupFrames(page),
+      attempts: attempt,
+      timedOut: !reachedFrame,
+      pageEvidence: await hasVisiblePageEvidence(page),
     });
     writeFileSync(join(outDir, 'screenshot.png'), screenshotBuffer);
     writeFileSync(join(outDir, 'logs.jsonl'), logs.map((l) => JSON.stringify(l)).join('\n'));
     const status: CaptureStatus = {
+      protocolVersion: CAPTURE_PROTOCOL_VERSION,
       state: 'ready',
       capturedAt: Date.now(),
       error: null,
       hash: createHash('sha256').update(screenshotBuffer).digest('hex'),
+      baselineHash: null,
+      changed: null,
+      observe: diagnostics,
+    };
+    writeFileSync(join(outDir, 'status.json'), JSON.stringify(status, null, 2));
+    return diagnostics;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logs.push({ __flight: true, t: -1, level: 'error', channel: 'capture', data: { msg: message } });
+    const screenshotBuffer = await page.screenshot().catch(() => null);
+    const diagnostics = buildCaptureObserveDiagnostics({
+      backend: 'page',
+      blank: true,
+      coverage: null,
+      logs,
+      verifyPublished: false,
+      verifyTargetKind: null,
+      warmupFrames: await getObserveWarmupFrames(page),
+      attempts: attempt,
+      timedOut: /timeout/i.test(message),
+      pageEvidence: await hasVisiblePageEvidence(page),
+      attemptErrors: [message],
+    });
+    if (screenshotBuffer !== null) writeFileSync(join(outDir, 'screenshot.png'), screenshotBuffer);
+    writeFileSync(join(outDir, 'logs.jsonl'), logs.map((entry) => JSON.stringify(entry)).join('\n'));
+    const status: CaptureStatus = {
+      protocolVersion: CAPTURE_PROTOCOL_VERSION,
+      state: 'error',
+      capturedAt: Date.now(),
+      error: message,
+      hash: screenshotBuffer === null ? null : createHash('sha256').update(screenshotBuffer).digest('hex'),
       baselineHash: null,
       changed: null,
       observe: diagnostics,
@@ -907,6 +1079,50 @@ export async function captureUrl(
   }
 }
 
+function updateObserveStatus(outDir: string, diagnostics: CaptureObserveDiagnostics): void {
+  const path = join(outDir, 'status.json');
+  try {
+    const status = JSON.parse(readFileSync(path, 'utf8')) as CaptureStatus;
+    status.observe = diagnostics;
+    writeFileSync(path, JSON.stringify(status, null, 2));
+  } catch {
+    // An unrecoverable browser-launch failure may leave no status file; the caller still receives diagnostics.
+  }
+}
+
+async function hasVisiblePageEvidence(page: Page): Promise<boolean> {
+  return page
+    .evaluate(() =>
+      [...document.body.children].some(
+        (element) =>
+          element.tagName !== 'CANVAS' &&
+          ((element.textContent ?? '').trim() !== '' || (element as HTMLElement).offsetWidth > 0),
+      ),
+    )
+    .catch(() => false);
+}
+
+async function waitForObservedPixels(
+  page: Page,
+  timeoutMs: number,
+): Promise<{
+  reached: boolean;
+  intercept: { coverage: number; dataUrl: string } | null;
+}> {
+  const deadline = performance.now() + timeoutMs;
+  while (performance.now() < deadline) {
+    const intercept = await grabInterceptedGlFrame(page);
+    const coverage = intercept?.coverage ?? (await measureObservedCanvasCoverage(page));
+    if (coverage !== null && coverage > OBSERVE_BLANK_COVERAGE) return { reached: true, intercept };
+    const halted = await page
+      .evaluate(() => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true)
+      .catch(() => false);
+    if (halted) return { reached: true, intercept };
+    await page.waitForTimeout(100);
+  }
+  return { reached: false, intercept: null };
+}
+
 export interface CaptureUrlOptions {
   /** Directory to write screenshot.png / logs.jsonl / status.json into (flat, one page). */
   outDir: string;
@@ -914,24 +1130,12 @@ export interface CaptureUrlOptions {
   wait?: number;
   /** Frame-halt minimum (see launchBrowser); 1 is the robust default. */
   captureFrames?: number;
+  /** Additional fresh-browser attempts after a blank, timeout, or navigation failure. Default: 2. */
+  maxRetries?: number;
 }
 
-// The artifact paths for one capture, derived purely from the output base, tool, entry name, and
-// renderer. Shared by captureEntry (which writes them) and captureRenderTarget (which reports them),
-// so the on-disk layout is defined in exactly one place: {outBase}/{tool}/{name}/{routeSegment}/…
-export function getCaptureOutputPaths(
-  outBase: string,
-  tool: string,
-  name: string,
-  renderer: string,
-): CaptureOutputPaths {
-  const outDir = join(resolve(outBase), tool, name, routeSegment(renderer));
-  return {
-    outDir,
-    tmpScreenshot: join(outDir, 'screenshot.tmp.png'),
-    finalScreenshot: join(outDir, 'screenshot.png'),
-    tmpLogs: join(outDir, 'logs.tmp.jsonl'),
-    finalLogs: join(outDir, 'logs.jsonl'),
-    statusPath: join(outDir, 'status.json'),
-  };
+export function isTransientCaptureError(message: string): boolean {
+  return /timeout|net::ERR_|page crashed|execution context was destroyed|target page|navigation failed|protocol error|render verifier did not reach/i.test(
+    message,
+  );
 }
