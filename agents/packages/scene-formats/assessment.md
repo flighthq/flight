@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene-formats'
-updated: 2026-07-21
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -21,6 +21,11 @@ extension depth, not the old "first primitive, no material" slice.
    real references. Populate/deduplicate that table or remove the false parallel truth. glTF cameras and
    punctual lights must fill their existing standalone document tables, and structured diagnostics must
    accompany the document without hiding loading inside parsing.
+   In glTF specifically, resolve image identity once per `images[]` entry and let each independently
+   sampled Texture point at that shared reference: the same source may legitimately need separate
+   Texture entities for different sampler, color-space, UV-set, or texture-transform state. The current
+   material walk constructs a fresh Texture and reference for every slot, so a repeated image is fetched
+   and decoded repeatedly and cannot make `resources` truthful by simple post-hoc value deduplication.
 2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
    `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
    material selection, skinning, and rendered proof. Non-triangle primitive modes need an honest

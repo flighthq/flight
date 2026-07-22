@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene-resources'
-updated: 2026-07-21
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -38,6 +38,14 @@ See [charter](./charter.md) for blessed direction.
    should compose assets/texture-formats with the current resolution state machine.
 3. **Prove resource realization behaviorally.** Add GL captures for every supported scene format,
    multi-map reveal, shared URI dedup, cancellation/re-entry, and failure fallback.
+4. **Resolve shared image identity once and fan out deterministically.** A SceneDocument may contain
+   several Texture entities with distinct sampler/color-space/UV state that share one
+   ImageResourceReference. The resolver is currently keyed only by Texture; merely sharing the ref would
+   let the first request advance its state while leaving sibling textures unbound. Track one in-flight
+   decode/fetch per resource identity, bind the resulting ImageResource to every subscribed Texture, and
+   define cancellation as subscriber removal rather than aborting work still needed by another visible
+   owner. Test mixed priorities, one subscriber leaving, failure/retry, and exact one-fetch/one-decode
+   behavior.
 
 ## Backlog
 
