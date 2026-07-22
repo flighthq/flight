@@ -1,7 +1,7 @@
 import { createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials';
 import { createTexture } from '@flighthq/texture';
 import type { Material, Texture } from '@flighthq/types';
-import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
+import { EntityRuntimeKey, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -14,6 +14,7 @@ import {
 describe('createSceneMaterialTextureRegistry', () => {
   it('creates an empty registry', () => {
     const registry = createSceneMaterialTextureRegistry();
+    expect(EntityRuntimeKey in registry).toBe(true);
     expect(registry.listers.size).toBe(0);
   });
 });

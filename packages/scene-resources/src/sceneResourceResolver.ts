@@ -1,46 +1,23 @@
+import { createEntity } from '@flighthq/entity';
 import { cancelResourceLoad, createResourceLoader, disposeResourceLoader, startResourceLoad } from '@flighthq/loader';
-import type { ImageResource, ImageResourceReference, ResourceLoader, Texture } from '@flighthq/types';
+import type { SceneResourceResolver, SceneResourceResolverOptions } from '@flighthq/types';
 
-import type { ImageResourceFetch } from './imageResourceFetch';
-import { createWebImageResourceFetch } from './imageResourceFetch';
-import type { SceneMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
+import { fetchWebImageResource } from './imageResourceFetch';
 import {
   createSceneMaterialTextureRegistry,
   registerBuiltInSceneMaterialTextures,
 } from './sceneMaterialTextureRegistry';
-import type { SceneResourceSignals } from './sceneResourceSignals';
+import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
+import type { SceneResourceResolverWithRuntime } from './sceneResourceResolverRuntime';
 
-// One resource identity's in-flight resolution: the AbortController that cancels it, the loader item
-// `key`, the settle `promise`, and every Texture currently subscribed to the result. Several sampled
-// Texture entities may share one image resource while retaining independent sampler/color/UV state.
-// Internal to the package.
-export interface SceneResourceInFlight {
-  controller: AbortController;
-  key: string;
-  promise: Promise<void>;
-  subscribers: Set<Texture>;
-}
-
-// The resolver object: the composed state a resolution pass reads and advances. `fetch` is the
-// external-URI seam, `inFlight` tracks pending loads by shared resource identity, `resolved` retains
-// each settled image for later Texture subscribers, `loader` bounds concurrency, `registry` maps
-// material kinds to their texture slots, and `signals` is the opt-in availability group (null until
-// enableSceneResourceSignals). Holds no scene reference — a pass takes the scene.
-export interface SceneResourceResolver {
-  fetch: ImageResourceFetch;
-  inFlight: Map<ImageResourceReference, SceneResourceInFlight>;
-  loader: ResourceLoader;
-  registry: SceneMaterialTextureRegistry;
-  resolved: Map<ImageResourceReference, ImageResource>;
-  signals: SceneResourceSignals | null;
-}
-
-export interface SceneResourceResolverOptions {
-  fetch?: ImageResourceFetch;
-  maxConcurrent?: number;
-  // A caller-supplied registry replaces the built-in default wholesale; omit it to get a fresh
-  // registry pre-populated with the built-in surface-material listers.
-  registry?: SceneMaterialTextureRegistry;
+// Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
+// above stays empty so importing/creating it cannot silently pull material families into a custom lane.
+export function createBuiltInSceneResourceResolver(
+  options?: Readonly<SceneResourceResolverOptions>,
+): SceneResourceResolver {
+  const resolver = createSceneResourceResolver(options);
+  registerBuiltInSceneMaterialTextures(resolver.registry);
+  return resolver;
 }
 
 export function createSceneResourceResolver(options?: Readonly<SceneResourceResolverOptions>): SceneResourceResolver {
@@ -49,30 +26,27 @@ export function createSceneResourceResolver(options?: Readonly<SceneResourceReso
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
   startResourceLoad(loader);
 
-  let registry = options?.registry;
-  if (registry === undefined) {
-    registry = createSceneMaterialTextureRegistry();
-    registerBuiltInSceneMaterialTextures(registry);
-  }
-
-  return {
-    fetch: options?.fetch ?? createWebImageResourceFetch(),
-    inFlight: new Map(),
-    loader,
-    registry,
-    resolved: new Map(),
-    signals: null,
-  };
+  return createEntity({
+    fetch: options?.fetch ?? fetchWebImageResource,
+    registry: options?.registry ?? createSceneMaterialTextureRegistry(),
+    [SceneResourceResolverRuntimeKey]: {
+      inFlight: new Map(),
+      loader,
+      resolved: new Map(),
+      signals: null,
+    },
+  });
 }
 
 // Releases the resolver: cancels and disposes the loader, aborts every in-flight controller, and
 // clears the in-flight map. GC-managed teardown (no GPU/native resource), so dispose, not destroy.
 export function disposeSceneResourceResolver(resolver: SceneResourceResolver): void {
-  cancelResourceLoad(resolver.loader);
-  disposeResourceLoader(resolver.loader);
-  for (const entry of resolver.inFlight.values()) {
+  const runtime = (resolver as SceneResourceResolverWithRuntime)[SceneResourceResolverRuntimeKey];
+  cancelResourceLoad(runtime.loader);
+  disposeResourceLoader(runtime.loader);
+  for (const entry of runtime.inFlight.values()) {
     entry.controller.abort();
   }
-  resolver.inFlight.clear();
-  resolver.resolved.clear();
+  runtime.inFlight.clear();
+  runtime.resolved.clear();
 }

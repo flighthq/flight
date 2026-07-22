@@ -6,12 +6,17 @@ import { createMesh, createScene } from '@flighthq/scene';
 import { emitSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween';
-import type { EmbeddedImageResourceReference, ImageResource, SceneNode, Texture } from '@flighthq/types';
+import type {
+  EmbeddedImageResourceReference,
+  ImageResource,
+  SceneNode,
+  SceneResourceEvent,
+  Texture,
+} from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
 
 import { revealSceneResourcesOnResolve } from './revealSceneResourcesOnResolve';
-import { createSceneResourceResolver } from './sceneResourceResolver';
-import type { SceneResourceEvent } from './sceneResourceSignals';
+import { createBuiltInSceneResourceResolver } from './sceneResourceResolver';
 import { enableSceneResourceSignals } from './sceneResourceSignals';
 
 function pendingRef(): EmbeddedImageResourceReference {
@@ -35,21 +40,21 @@ function sceneWithPendingTexture(): { mesh: SceneNode; scene: Scene; texture: Te
 describe('revealSceneResourcesOnResolve', () => {
   it('hides every object carrying a pending texture to the start opacity up front', () => {
     const { mesh, scene } = sceneWithPendingTexture();
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     revealSceneResourcesOnResolve(resolver, scene.root, createTweenManager());
     expect(mesh.alpha).toBe(0);
   });
 
   it('honors a custom from opacity', () => {
     const { mesh, scene } = sceneWithPendingTexture();
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     revealSceneResourcesOnResolve(resolver, scene.root, createTweenManager(), { from: 0.2 });
     expect(mesh.alpha).toBeCloseTo(0.2);
   });
 
   it('fades the owning object to full opacity as its texture resolves', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     const manager = createTweenManager();
     revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
     expect(mesh.alpha).toBe(0);
@@ -70,7 +75,7 @@ describe('revealSceneResourcesOnResolve', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [material]);
     const scene = createScene();
     addNodeChild(scene.root, mesh);
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     const manager = createTweenManager();
     revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
 
@@ -89,7 +94,7 @@ describe('revealSceneResourcesOnResolve', () => {
     const mesh = createMesh(createBoxMeshGeometry(), [material]);
     const scene = createScene();
     addNodeChild(scene.root, mesh);
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     const manager = createTweenManager();
     revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
 
@@ -114,7 +119,7 @@ describe('revealSceneResourcesOnResolve', () => {
     const scene = createScene();
     addNodeChild(scene.root, mesh);
 
-    revealSceneResourcesOnResolve(createSceneResourceResolver(), scene.root, createTweenManager());
+    revealSceneResourcesOnResolve(createBuiltInSceneResourceResolver(), scene.root, createTweenManager());
     expect(mesh.alpha).toBe(1);
   });
 
@@ -125,7 +130,7 @@ describe('revealSceneResourcesOnResolve', () => {
     const scene = createScene();
     addNodeChild(scene.root, a);
     addNodeChild(scene.root, b);
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     const manager = createTweenManager();
     revealSceneResourcesOnResolve(resolver, scene.root, manager);
 
@@ -136,7 +141,7 @@ describe('revealSceneResourcesOnResolve', () => {
 
   it('ignores a resolve event for a texture it is not tracking', () => {
     const { scene } = sceneWithPendingTexture();
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     const manager = createTweenManager();
     revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
 
@@ -147,7 +152,7 @@ describe('revealSceneResourcesOnResolve', () => {
 
   it('disconnects the listener when the returned disposer runs', () => {
     const { mesh, scene, texture } = sceneWithPendingTexture();
-    const resolver = createSceneResourceResolver();
+    const resolver = createBuiltInSceneResourceResolver();
     const manager = createTweenManager();
     const dispose = revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
     dispose();

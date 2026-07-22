@@ -2,21 +2,18 @@ import { forEachNodeDescendant } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import { connectSignal, disconnectSignal } from '@flighthq/signals';
 import { createTween } from '@flighthq/tween';
-import type { EasingFunction, Material, SceneNode, Texture, TweenManager } from '@flighthq/types';
+import type {
+  Material,
+  SceneNode,
+  SceneResourceResolver,
+  SceneResourceRevealOptions,
+  Texture,
+  TweenManager,
+} from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
 
 import { getSceneMaterialTextures } from './sceneMaterialTextureRegistry';
-import type { SceneResourceResolver } from './sceneResourceResolver';
 import { enableSceneResourceSignals } from './sceneResourceSignals';
-
-export interface SceneResourceRevealOptions {
-  // The timing curve of the fade (an @flighthq/easing function). Omit for the tween's default (linear).
-  ease?: EasingFunction;
-  // The fade duration in seconds. Default 0.4.
-  fadeSeconds?: number;
-  // The starting opacity an object is hidden to before its texture resolves. Default 0 (invisible).
-  from?: number;
-}
 
 // The standard streamed-texture fade-in, composed from node opacity (P1/P2) + @flighthq/tween: every
 // object carrying a still-pending texture is hidden to `from` up front, and only after every required

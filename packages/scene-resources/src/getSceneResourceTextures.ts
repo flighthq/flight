@@ -1,8 +1,7 @@
 import { forEachNodeDescendant } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
-import type { Material, SceneNode, Texture } from '@flighthq/types';
+import type { Material, SceneMaterialTextureRegistry, SceneNode, Texture } from '@flighthq/types';
 
-import type { SceneMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
 import { getSceneMaterialTextures } from './sceneMaterialTextureRegistry';
 
 // Clears `out`, then fills it with the unique Textures reachable through `scene` whose `resource` is

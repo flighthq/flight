@@ -1,21 +1,17 @@
-import type { Kind, Material, StandardPbrMaterial, Texture, UnlitMaterial } from '@flighthq/types';
+import { createEntity } from '@flighthq/entity';
+import type {
+  Kind,
+  Material,
+  SceneMaterialTextureLister,
+  SceneMaterialTextureRegistry,
+  StandardPbrMaterial,
+  Texture,
+  UnlitMaterial,
+} from '@flighthq/types';
 import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
 
-// Appends a material's non-null Textures to `out`. One lister per material kind: the seam that lets
-// resource discovery enumerate a material's texture slots without per-kind reflection. A lister
-// reads only the slots its concrete material declares (cast from the base Material), so unregistered
-// kinds contribute nothing and unused listers tree-shake out.
-export type SceneMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
-
-// Open registry mapping a material `kind` to its texture lister. Users register listers for custom
-// material kinds; the built-in listers are opt-in via registerBuiltInSceneMaterialTextures so a
-// resolver never carries slot knowledge for materials it does not use.
-export interface SceneMaterialTextureRegistry {
-  listers: Map<Kind, SceneMaterialTextureLister>;
-}
-
 export function createSceneMaterialTextureRegistry(): SceneMaterialTextureRegistry {
-  return { listers: new Map() };
+  return createEntity({ listers: new Map() });
 }
 
 // Looks up the lister for `material.kind` and, when present, appends the material's non-null Textures

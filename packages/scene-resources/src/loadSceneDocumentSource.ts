@@ -3,7 +3,7 @@ import type { SceneDocument } from '@flighthq/types';
 
 // The empty SceneDocument a URL loader returns when the fetch fails — every table present and empty, so the
 // caller and the assembler never special-case a partial document (matching each parser's own empty shape).
-export function createEmptySceneDocument(): SceneDocument {
+export function allocateEmptySceneDocument(): SceneDocument {
   return {
     animations: [],
     cameras: [],

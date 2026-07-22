@@ -7,8 +7,8 @@ import type { ImageResource, ImageResourceReference } from '@flighthq/types';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import { describe, expect, it, vi } from 'vitest';
 
-import { resolveSceneResourcesAndWait } from './resolveSceneResourcesAndWait';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { resolveSceneResourcesAndWait, waitForSceneResourceResolver } from './resolveSceneResourcesAndWait';
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
@@ -30,21 +30,28 @@ describe('resolveSceneResourcesAndWait', () => {
     const scene = createScene();
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: a })]));
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
-    const resolver = createSceneResourceResolver({ fetch });
+    const resolver = createBuiltInSceneResourceResolver({ fetch });
 
     await resolveSceneResourcesAndWait(scene.root, resolver);
 
     expect(a.image).toBe(fakeImage);
     expect(b.image).toBe(fakeImage);
     expect(a.resource?.state).toBe(ResourceResolutionState.Resolved);
-    expect(resolver.inFlight.size).toBe(0);
     disposeSceneResourceResolver(resolver);
   });
 
   it('resolves immediately when there is nothing pending', async () => {
     const scene = createScene();
-    const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
+    const resolver = createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
     await expect(resolveSceneResourcesAndWait(scene.root, resolver)).resolves.toBeUndefined();
+    disposeSceneResourceResolver(resolver);
+  });
+});
+
+describe('waitForSceneResourceResolver', () => {
+  it('resolves immediately when the resolver has no pending requests', async () => {
+    const resolver = createBuiltInSceneResourceResolver();
+    await expect(waitForSceneResourceResolver(resolver)).resolves.toBeUndefined();
     disposeSceneResourceResolver(resolver);
   });
 });

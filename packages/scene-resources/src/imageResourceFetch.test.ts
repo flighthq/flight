@@ -9,7 +9,7 @@ import type * as ImageResourceFetchModule from './imageResourceFetch';
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 type LoadImageResourceFromUrl = typeof ImageModule.loadImageResourceFromUrl;
 
-let createWebImageResourceFetch: typeof ImageResourceFetchModule.createWebImageResourceFetch;
+let fetchWebImageResource: typeof ImageResourceFetchModule.fetchWebImageResource;
 let loadFromUrl: Mock<LoadImageResourceFromUrl>;
 let resolveImageResourceUri: typeof ImageResourceFetchModule.resolveImageResourceUri;
 
@@ -30,7 +30,7 @@ beforeAll(async () => {
     loadImageResourceFromBytes: vi.fn(),
     loadImageResourceFromUrl: loadFromUrl,
   }));
-  ({ createWebImageResourceFetch, resolveImageResourceUri } = await import('./imageResourceFetch'));
+  ({ fetchWebImageResource, resolveImageResourceUri } = await import('./imageResourceFetch'));
 });
 
 afterAll(() => {
@@ -42,19 +42,20 @@ afterEach(() => {
   loadFromUrl.mockReset();
 });
 
-describe('createWebImageResourceFetch', () => {
+describe('fetchWebImageResource', () => {
   it('fetches the resolved URL and returns the decoded image', async () => {
     loadFromUrl.mockResolvedValue(fakeImage);
-    const fetch = createWebImageResourceFetch();
-    const result = await fetch(externalRef('leaf.png', 'assets/textures'), new AbortController().signal);
+    const result = await fetchWebImageResource(
+      externalRef('leaf.png', 'assets/textures'),
+      new AbortController().signal,
+    );
     expect(loadFromUrl).toHaveBeenCalledWith('assets/textures/leaf.png', undefined, expect.anything());
     expect(result).toBe(fakeImage);
   });
 
   it('returns null on a non-abort failure', async () => {
     loadFromUrl.mockRejectedValue(new Error('404'));
-    const fetch = createWebImageResourceFetch();
-    const result = await fetch(externalRef('missing.png', null), new AbortController().signal);
+    const result = await fetchWebImageResource(externalRef('missing.png', null), new AbortController().signal);
     expect(result).toBeNull();
   });
 
@@ -62,8 +63,7 @@ describe('createWebImageResourceFetch', () => {
     const controller = new AbortController();
     controller.abort();
     loadFromUrl.mockRejectedValue(new Error('aborted'));
-    const fetch = createWebImageResourceFetch();
-    await expect(fetch(externalRef('x.png', null), controller.signal)).rejects.toThrow();
+    await expect(fetchWebImageResource(externalRef('x.png', null), controller.signal)).rejects.toThrow();
   });
 });
 

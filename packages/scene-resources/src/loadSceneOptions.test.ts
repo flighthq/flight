@@ -9,7 +9,7 @@ import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/t
 import { describe, expect, it } from 'vitest';
 
 import { resolveScenesWithOptions } from './loadSceneOptions';
-import { createSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
+import { createBuiltInSceneResourceResolver, disposeSceneResourceResolver } from './sceneResourceResolver';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 
@@ -33,7 +33,7 @@ function sceneWithTexture(uri: string): { scene: Scene; texture: ReturnType<type
 describe('resolveScenesWithOptions', () => {
   it('resolves a scene’s external texture refs through a supplied resolver', async () => {
     const { scene, texture } = sceneWithTexture('a.png');
-    const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
+    const resolver = createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
 
     await resolveScenesWithOptions([scene], { resolver });
 
@@ -45,7 +45,7 @@ describe('resolveScenesWithOptions', () => {
   it('resolves every scene in a multi-scene list through one shared resolver', async () => {
     const a = sceneWithTexture('a.png');
     const b = sceneWithTexture('b.png');
-    const resolver = createSceneResourceResolver({ fetch: async () => fakeImage });
+    const resolver = createBuiltInSceneResourceResolver({ fetch: async () => fakeImage });
 
     await resolveScenesWithOptions([a.scene, b.scene], { resolver });
 
