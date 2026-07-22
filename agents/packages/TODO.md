@@ -890,7 +890,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 - Complete the compressed-payload realization seam
 - Validate against real tool outputs
-- Preserve source shape and interpretation metadata
+- Preserve remaining source interpretation metadata
 
 ### image-codec (solid 70)
 

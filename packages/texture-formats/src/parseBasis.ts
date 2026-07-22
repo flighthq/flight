@@ -21,8 +21,9 @@ import {
 // compressed — transcoding ETC1S/UASTC to a GPU format is the caller's / `flight-rs`'s job.
 //
 // The ETC1S codebook/selector/table sections and per-slice CRCs are not read (they are inputs to the
-// transcoder, not to locating a slice). Basis cube/video texture types are not distinguished — every
-// image is reported as an array layer (`faces` = 1).
+// transcoder, not to locating a slice). 2D/array images become layers, cubemap-array images become six
+// faces per layer, and volume images become depth slices. Video frames are rejected because the common
+// container descriptor cannot preserve their temporal/conditional-replenishment semantics truthfully.
 export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null {
   if (!hasBasisSignature(bytes)) return null;
   if (bytes.byteLength < basisHeaderMinSize) return null;
@@ -33,6 +34,8 @@ export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null
   const format = basisTexFormat[bytes[basisTexFormatOffset]]; // m_tex_format (offset 20)
   if (format === undefined) return null;
   if (totalSlices === 0) return null;
+  const shape = getBasisTextureShape(bytes[basisTexTypeOffset], totalImages);
+  if (shape === null) return null;
 
   const sliceDescReader = createByteReader(bytes, basisSliceDescOffsetField);
   const sliceDescOffset = readByteReaderU32(sliceDescReader);
@@ -66,16 +69,37 @@ export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null
   }
 
   return {
-    depth: 1,
-    faces: 1,
+    depth: shape.depth,
+    faces: shape.faces,
     format,
     height: baseHeight || (levels[0]?.height ?? 0),
-    layers: Math.max(1, totalImages),
+    layers: shape.layers,
     levels,
     mipLevels: Math.max(1, maxLevel),
     supercompression: 'None',
     width: baseWidth || (levels[0]?.width ?? 0),
   };
+}
+
+function getBasisTextureShape(
+  textureType: number,
+  totalImages: number,
+): { readonly depth: number; readonly faces: number; readonly layers: number } | null {
+  const images = Math.max(1, totalImages);
+  switch (textureType) {
+    case basisTextureType2d:
+    case basisTextureType2dArray:
+      return { depth: 1, faces: 1, layers: images };
+    case basisTextureTypeCubemapArray:
+      if (totalImages === 0 || totalImages % 6 !== 0) return null;
+      return { depth: 1, faces: 6, layers: totalImages / 6 };
+    case basisTextureTypeVideoFrames:
+      return null;
+    case basisTextureTypeVolume:
+      return { depth: images, faces: 1, layers: 1 };
+    default:
+      return null;
+  }
 }
 
 function hasBasisSignature(bytes: Readonly<Uint8Array>): boolean {
@@ -85,9 +109,16 @@ function hasBasisSignature(bytes: Readonly<Uint8Array>): boolean {
 
 const basisTotalSlicesOffset = 14;
 const basisTexFormatOffset = 20;
+const basisTexTypeOffset = 23;
 const basisSliceDescOffsetField = 63;
 const basisHeaderMinSize = 67; // through m_slice_desc_file_ofs (offset 63, 4 bytes)
 const basisSliceDescSize = 23;
+
+const basisTextureType2d = 0;
+const basisTextureType2dArray = 1;
+const basisTextureTypeCubemapArray = 2;
+const basisTextureTypeVideoFrames = 3;
+const basisTextureTypeVolume = 4;
 
 const basisTexFormat: Readonly<Record<number, TextureContainerFormat>> = {
   0: 'etc1s',
