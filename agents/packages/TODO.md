@@ -419,6 +419,7 @@ Design calls to settle before building the affected entries:
 - Make render-target pool matching preserve every storage axis
 - Preserve heterogeneous MRT formats across resize
 - Close fullscreen-present resource ownership
+- Replace the unit-blind texture cache with private state-owned binding facts
 
 ### socket (solid 74)
 
@@ -935,6 +936,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Complete the device tier only as consumed primitives
 - Make all state-owned GPU caches deterministically destructible
 - Remove backend implementation noise from the `create*` Entity vocabulary
+- Narrow the exported runtime seam
 
 ### scene-gl (solid 75)
 

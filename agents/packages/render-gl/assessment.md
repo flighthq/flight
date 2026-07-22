@@ -36,6 +36,12 @@ basedOn: ./review.md
 3. **Close fullscreen-present resource ownership.** The copy and linear-to-sRGB program WeakMaps and
    fullscreen VAO WeakMap are not reachable from destroyGlRenderState. Add explicit internal teardown
    hooks and tests for their programs/VAOs.
+4. **Replace the unit-blind texture cache with private state-owned binding facts.** `currentTexture`
+   records neither active unit nor target, yet `displayobject-gl` still trusts it to skip a bind while
+   scene/material paths bind many units. Track active unit plus per-unit/target bindings privately, or
+   bind unconditionally at the few remaining call sites. Route pixel unpack state through the same
+   internal tier: element/video uploads currently set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` ad hoc and leave
+   its effective state implicit. Do not add either implementation detail to public `GlRenderState`.
 
 ## Depth gaps
 
@@ -63,6 +69,11 @@ basedOn: ./review.md
    slot. Name their irreducible operations for what they do (`compile*`, `allocate*`, or `build*`) and keep
    public `create*` for Entity-backed Flight objects such as GlRenderState/GlRenderTarget. Runtime-record
    constructors and private cache factories should be internal unless a caller genuinely composes them.
+7. **Narrow the exported runtime seam.** `GlRenderStateRuntime` currently places binding trackers,
+   sprite batches, registries, caches, scratch, and optional package hooks into one header-layer shape.
+   State ownership is correct; exposing the aggregate implementation record is not. Custom renderers
+   should receive small operation/context contracts, while sibling packages attach private runtime
+   records plus deterministic teardown callbacks without growing a cross-package kitchen-sink type.
 
 ## Backlog
 
