@@ -23,6 +23,13 @@ See [charter](./charter.md) for blessed direction.
    subsurface transport; a wrapped-diffuse lighting approximation is a smaller, different primitive.
    Either implement a thickness/profile/backlighting transport contract or name and type the existing
    atom `WrappedDiffusePbrExtension` so composition does not conceal the approximation.
+8. **Keep specular-glossiness conversion texture-truthful.** Specular-glossiness is a complete legacy
+   PBR workflow, not a `PbrExtension`: its packed map contains sRGB specular RGB plus linear glossiness
+   alpha, while a metallic-roughness map contains linear roughness G plus metallic B. The scalar
+   approximation may convert factors, but it must leave `metallicRoughnessMap` empty unless the caller
+   supplies an explicitly baked/remapped texture. Never alias the packed source map into the destination
+   descriptor. Expose any texture bake as a separately imported operation with explicit output ownership,
+   color-space, resolution, and failure semantics.
 
 ## Recommended
 

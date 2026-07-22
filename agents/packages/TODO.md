@@ -831,6 +831,7 @@ These are explicit user directions whose implementation may span packages or req
 - Preserve the Entity constructor invariant
 - Compose the standard property block, not a nested material
 - Make extension names honest about their transport model
+- Keep specular-glossiness conversion texture-truthful
 
 ### application (solid 88)
 
@@ -904,6 +905,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 - Add residency rather than a larger resolver
 - Prove resource realization behaviorally
+- Discover specular-glossiness textures through an opt-in lister
 
 ### capture (solid 72)
 
@@ -947,6 +949,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Unify transparent ordering across subject families
 - Finish scene semantic depth before acceleration
 - Turn the directional shadow proof into a composable pass
+- Realize the declared specular-glossiness texture workflow
 
 ### skeleton3d (solid 75)
 
