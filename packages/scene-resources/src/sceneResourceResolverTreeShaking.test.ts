@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
