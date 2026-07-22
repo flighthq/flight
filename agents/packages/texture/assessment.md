@@ -26,12 +26,14 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. Define CubeFace constants (`CubeFacePositiveX`, `CubeFaceNegativeX`, `CubeFacePositiveY`, `CubeFaceNegativeY`, `CubeFacePositiveZ`, `CubeFaceNegativeZ`) in `@flighthq/types`.
-2. Remove unused `@flighthq/resources` dependency from package.json.
+None. The review's compile blocker and dependency cleanup are already resolved; the remaining work is
+the cross-package residency/realization depth above.
 
 ## Approved
 
-None.
+- [2026-07-22 · reconciled] All six canonical `CubeFace*` indices live beside `CubeTexture` in
+  `@flighthq/types`, are barrel-exported, and are consumed by texture tests. The stale
+  `@flighthq/resources` dependency is absent; `texture` depends only on entity, geometry, and types.
 
 ## Backlog
 
