@@ -4,6 +4,7 @@ import { createMeshGeometry } from './meshGeometry';
 import {
   addMeshGeometrySubset,
   getMeshGeometrySubsetTriangleCount,
+  getMeshGeometryTriangleSubsetIndex,
   setMeshGeometrySubsets,
 } from './meshGeometrySubset';
 
@@ -56,6 +57,30 @@ describe('getMeshGeometrySubsetTriangleCount', () => {
       vertices: vertices,
     });
     expect(getMeshGeometrySubsetTriangleCount(geometry, 0)).toBe(2);
+  });
+});
+
+describe('getMeshGeometryTriangleSubsetIndex', () => {
+  it('resolves list triangles against element ranges', () => {
+    const geometry = makeQuad();
+    setMeshGeometrySubsets(geometry, [
+      { indexCount: 3, indexOffset: 0 },
+      { indexCount: 3, indexOffset: 3 },
+    ]);
+    expect(getMeshGeometryTriangleSubsetIndex(geometry, 0)).toBe(0);
+    expect(getMeshGeometryTriangleSubsetIndex(geometry, 1)).toBe(1);
+    expect(getMeshGeometryTriangleSubsetIndex(geometry, 2)).toBe(-1);
+  });
+
+  it('resolves overlapping strip triangles and rejects non-triangle topology', () => {
+    const geometry = makeQuad();
+    geometry.topology = 'triangle-strip';
+    geometry.indices = new Uint16Array([0, 1, 2, 3]);
+    setMeshGeometrySubsets(geometry, [{ indexCount: 4, indexOffset: 0 }]);
+    expect(getMeshGeometryTriangleSubsetIndex(geometry, 0)).toBe(0);
+    expect(getMeshGeometryTriangleSubsetIndex(geometry, 1)).toBe(0);
+    geometry.topology = 'line-list';
+    expect(getMeshGeometryTriangleSubsetIndex(geometry, 0)).toBe(-1);
   });
 });
 

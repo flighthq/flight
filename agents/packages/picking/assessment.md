@@ -24,8 +24,10 @@ preparation, mesh deformation, materials, or future instancing/LOD contracts.
    selected LOD. Explicit CPU morph/skin updates now refresh cached bounds, and a pick-before/after
    morph test proves broad and narrow phases move together; GPU-skinned geometry, billboard, instance,
    and selected-LOD agreement remain.
-2. **Complete hit attributes.** Add interpolated UV and vertex normal/tangent, material/subset identity,
-   face orientation, and eventually instance/LOD identity without bloating the nearest-hit core.
+2. **Finish instance/LOD hit identity.** UV0, inverse-transpose smooth normal, orthogonalized tangent
+   with mirror-aware handedness, material/subset identity, and face orientation are now independent
+   on-demand queries rather than fields bloating every nearest hit. Instance and selected-LOD identity
+   follow their end-to-end scene contracts.
 3. **Add material-aware and non-triangle selection as opt-in layers.** Alpha-mask coverage,
    point/line/gizmo thresholds, and region selection should compose over the base hit family.
 4. **Add acceleration after semantics.** A per-geometry BVH/refit path and scene broad phase should be
@@ -45,3 +47,6 @@ preparation, mesh deformation, materials, or future instancing/LOD contracts.
 - [2026-07-21 · completed] Narrow-phase triangle decoding now consumes mesh's shared logical-triangle
   primitive. Indexed/non-indexed triangle strips use alternating CCW winding rather than the old
   triangle-list-only `triangleIndex * 3` address, with a backface-culling pick proof.
+- [2026-07-21 · completed] Surface attributes stay compositional: six separately importable queries
+  derive UV0, smooth normal, tangent/handedness, subset, material, and face orientation from the core
+  hit and current prepared geometry. Missing channels return false without touching caller output.

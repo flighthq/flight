@@ -29,6 +29,26 @@ export function getMeshGeometrySubsetTriangleCount(geometry: Readonly<MeshGeomet
   return 0;
 }
 
+// Returns the subset containing all three elements of a logical triangle, or -1 when no subset owns
+// it. Subset offsets/counts address the index/vertex element stream, so triangle lists advance by
+// three while triangle strips advance by one. Overlapping subsets resolve to the first declaration.
+export function getMeshGeometryTriangleSubsetIndex(geometry: Readonly<MeshGeometry>, triangleIndex: number): number {
+  if (triangleIndex < 0) return -1;
+  let firstElement: number;
+  if (geometry.topology === 'triangle-list') firstElement = triangleIndex * 3;
+  else if (geometry.topology === 'triangle-strip') firstElement = triangleIndex;
+  else return -1;
+
+  const subsets = geometry.subsets;
+  for (let subsetIndex = 0; subsetIndex < subsets.length; subsetIndex++) {
+    const subset = subsets[subsetIndex];
+    if (firstElement >= subset.indexOffset && firstElement + 3 <= subset.indexOffset + subset.indexCount) {
+      return subsetIndex;
+    }
+  }
+  return -1;
+}
+
 // Replaces the geometry's entire subset list with a fresh copy of `subsets`, taking ownership of
 // the range definitions while leaving the vertex/index buffers untouched. Pass a single
 // whole-buffer subset to collapse back to one material binding.
