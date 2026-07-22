@@ -23,7 +23,9 @@ extension depth, not the old "first primitive, no material" slice.
    diagnostics must still accompany the document without hiding loading inside parsing.
 2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
    `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
-   material selection, skinning, and rendered proof. Primitive topology mapping is now complete;
+   material selection, skinning, and rendered proof. Preserve source encodings through the mesh
+   package's byte-native record boundary instead of eagerly expanding them merely because
+   `MeshGeometry.vertices` is currently a `Float32Array`. Primitive topology mapping is now complete;
    raster fixtures still need to prove each direct and converted mode.
 3. **Replace the remaining inline extension knowledge with open handlers.** The parser now accepts
    individually supplied handlers and `KHR_lights_punctual` ships as one tree-shakable handler;

@@ -10,15 +10,22 @@ See [charter](./charter.md) for blessed direction.
 
 ## Depth gaps
 
-1. **Make every declared vertex channel usable end to end.** Typed read/edit support now covers `uv1`,
+1. **Make the interleaved vertex stream byte-native.** `MeshGeometry.vertices` is documented and
+   uploaded as raw records described by byte offsets and packed formats, but its public type remains
+   `Float32Array` and many authoring operations still derive record counts and copies through float
+   elements. Use an owned byte view/record stream at the bedrock boundary; keep the canonical
+   12-float PBR record as a convenience constructor above it. Clone, merge, deindex, weld, validation,
+   deformation, and upload must use `byteLength` plus the declared layout so packed records are never
+   reinterpreted as a float array merely to fit the container type.
+2. **Make every declared vertex channel usable end to end.** Typed read/edit support now covers `uv1`,
    `color0`, `joints0`, and `weights0` across float, packed integer, and normalized storage. Importers
    still need to preserve those encodings instead of eagerly expanding common data, and secondary
    influence channels plus raster proof remain.
-2. **Complete topology-editing primitives.** Exact full-record welding, explicit index conversion,
+3. **Complete topology-editing primitives.** Exact full-record welding, explicit index conversion,
    deindexing, validation, and index-width selection now exist as separate atoms. Tolerance/semantic
    welding, subset split/merge/edit operations, unused-vertex compaction, and topology conversion remain.
-3. **Deepen normal/tangent/UV authoring.** Add angle-threshold smoothing/split normals, robust tangent generation across seams, and basic planar/box/spherical UV projection as independent functions.
-4. **Realize instancing and LOD instead of leaving header-only types.** Instance records need a
+4. **Deepen normal/tangent/UV authoring.** Add angle-threshold smoothing/split normals, robust tangent generation across seams, and basic planar/box/spherical UV projection as independent functions.
+5. **Realize instancing and LOD instead of leaving header-only types.** Instance records need a
    contiguous versioned entity rather than `Matrix4[]`; LOD selection must be per prepared view rather
    than the node-global `activeLevelIndex`. These compose through scene preparation, GL, bounds, and
    picking. Keep a full simplifier as later tooling rather than blocking authored level primitives.
