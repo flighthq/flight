@@ -18,7 +18,8 @@ See [charter](./charter.md) for blessed direction.
    deformation, and upload must use `byteLength` plus the declared layout so packed records are never
    reinterpreted as a float array merely to fit the container type.
 2. **Make every declared vertex channel usable end to end.** Typed read/edit support now covers `uv1`,
-   `color0`, `joints0`, and `weights0` across float, packed integer, and normalized storage. Importers
+   `color0`, `joints0`, and `weights0` across float, packed integer, and normalized storage, and layout
+   conversion preserves or converts those declared encodings by semantic. Importers
    still need to preserve those encodings instead of eagerly expanding common data. The format
    vocabulary itself is not yet sufficient for common packed sources: two-component uint/unorm UVs,
    16-bit normalized colors/weights, and signed-normalized quantized normals/tangents have no truthful
@@ -61,6 +62,9 @@ being re-derived from list-only offsets.
 - [2026-07-22 · completed] Unused-vertex compaction is independent from welding: indexed geometry is
   remapped in first-reference order, complete packed records and draw metadata survive, the result uses
   the narrowest valid index width, and malformed or non-indexed input returns an unchanged deep clone.
+- [2026-07-22 · completed] Layout conversion no longer zero-fills packed channels or reads beyond a
+  smaller source arity. Same-format attributes copy byte-exactly; float, uint8/uint16, and unorm8
+  channels convert component values by semantic, with absent channels/components remaining zero.
 
 ## Backlog
 
