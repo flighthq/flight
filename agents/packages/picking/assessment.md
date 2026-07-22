@@ -21,7 +21,9 @@ preparation, mesh deformation, materials, or future instancing/LOD contracts.
 
 1. **Make CPU queries agree with rendered deformation.** Define one explicit preparation/evaluation
    seam shared by bounds and picking for morph, skin, billboard orientation, instance transforms, and
-   selected LOD; add pick-before/after-update and composed morph+skin functional tests.
+   selected LOD. Explicit CPU morph/skin updates now refresh cached bounds, and a pick-before/after
+   morph test proves broad and narrow phases move together; GPU-skinned geometry, billboard, instance,
+   and selected-LOD agreement remain.
 2. **Complete hit attributes.** Add interpolated UV and vertex normal/tangent, material/subset identity,
    face orientation, and eventually instance/LOD identity without bloating the nearest-hit core.
 3. **Add material-aware and non-triangle selection as opt-in layers.** Alpha-mask coverage,

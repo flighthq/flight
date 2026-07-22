@@ -1,4 +1,4 @@
-import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
+import { getMeshGeometrySkinBindPose, refreshMeshGeometryBounds, setMeshGeometrySkinBindPose } from '@flighthq/mesh';
 import type { Mesh } from '@flighthq/types';
 
 import { computeSkeleton3DJointMatrices } from './skeleton3d';
@@ -34,4 +34,5 @@ export function updateMeshSkin(mesh: Readonly<Mesh>): void {
   }
 
   skinMeshGeometry(geometry, skin.skeleton, bindPose);
+  refreshMeshGeometryBounds(geometry);
 }

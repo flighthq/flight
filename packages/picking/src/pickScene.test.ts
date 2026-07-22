@@ -15,8 +15,8 @@ import {
 } from '@flighthq/geometry';
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/mesh';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
-import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera3D, Mesh, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
+import { createMesh, createSceneNode, SceneNodeKind, updateMeshMorph } from '@flighthq/scene';
+import type { Camera3D, Mesh, MeshMorph, Ray3D, SceneHit, SceneNode } from '@flighthq/types';
 import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createSceneHit, pickScene, pickSceneAll, pickSceneAllWithRay3D, pickSceneWithRay3D } from './pickScene';
@@ -385,5 +385,34 @@ describe('pickSceneWithRay3D', () => {
 
     expect(hit?.triangleIndex).toBe(1);
     expect(hit?.normalZ).toBeCloseTo(1);
+  });
+
+  it('observes morphed vertices and refreshed broad-phase bounds after explicit update', () => {
+    const geometry = createMeshGeometryFromAttributes({
+      positions: [9, -1, 0, 11, -1, 0, 10, 1, 0],
+    });
+    const mesh = createMesh(geometry, []);
+    const morph: MeshMorph = {
+      targets: [
+        {
+          normalDeltas: null,
+          positionDeltas: new Float32Array([-10, 0, 0, -10, 0, 0, -10, 0, 0]),
+          tangentDeltas: null,
+        },
+      ],
+      weights: new Float32Array([1]),
+    };
+    mesh.morph = morph;
+    const scene = createSceneNode(SceneNodeKind);
+    addNodeChild(scene, mesh);
+    const ray = makeCenterRay();
+    const out = createSceneHit();
+
+    expect(pickSceneWithRay3D(scene, ray, out)).toBeNull();
+    updateMeshMorph(mesh);
+
+    expect(mesh.geometry.bounds?.min.x).toBe(-1);
+    expect(mesh.geometry.bounds?.max.x).toBe(1);
+    expect(pickSceneWithRay3D(scene, ray, out)?.node).toBe(mesh);
   });
 });

@@ -8,6 +8,7 @@ import {
   computeMeshGeometryFlatNormals,
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
+  refreshMeshGeometryBounds,
 } from './meshGeometryCompute';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
@@ -214,5 +215,20 @@ describe('computeMeshGeometryTangents', () => {
     computeMeshGeometryNormals(geometry, geometry);
     computeMeshGeometryTangents(geometry, geometry);
     expect(geometry.vertices[9]).toBe(-1);
+  });
+});
+
+describe('refreshMeshGeometryBounds', () => {
+  it('allocates once, then refreshes the same cached bounds after vertex edits', () => {
+    const geometry = makeTriangle();
+    expect(geometry.bounds).toBeNull();
+    refreshMeshGeometryBounds(geometry);
+    const bounds = geometry.bounds;
+    expect(bounds?.max.x).toBe(1);
+
+    geometry.vertices[12] = 4;
+    refreshMeshGeometryBounds(geometry);
+    expect(geometry.bounds).toBe(bounds);
+    expect(bounds?.max.x).toBe(4);
   });
 });

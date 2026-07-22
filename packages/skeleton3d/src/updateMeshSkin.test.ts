@@ -34,6 +34,8 @@ describe('updateMeshSkin', () => {
     updateMeshSkin(mesh);
 
     expect(mesh.geometry.vertices[1]).toBeCloseTo(5);
+    expect(mesh.geometry.bounds?.min.y).toBeCloseTo(5);
+    expect(mesh.geometry.bounds?.max.y).toBeCloseTo(5);
     expect(mesh.geometry.version).toBe(versionBefore + 1);
     expect(getMeshGeometrySkinBindPose(mesh.geometry)).not.toBeNull();
   });

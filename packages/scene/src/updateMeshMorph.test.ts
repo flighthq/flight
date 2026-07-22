@@ -30,6 +30,8 @@ describe('updateMeshMorph', () => {
 
     expect(getMeshGeometryMorphBindPose(mesh.geometry)).not.toBeNull();
     expect(Array.from(mesh.geometry.vertices)).toEqual([1, 7, 3]);
+    expect(mesh.geometry.bounds?.min.y).toBe(7);
+    expect(mesh.geometry.bounds?.max.y).toBe(7);
   });
 
   it('reblends from the captured base each frame as weights change', () => {
@@ -45,6 +47,7 @@ describe('updateMeshMorph', () => {
     morph.weights[0] = 3;
     updateMeshMorph(mesh);
     expect(Array.from(mesh.geometry.vertices)).toEqual([6, 0, 0]);
+    expect(mesh.geometry.bounds?.min.x).toBe(6);
   });
 
   it('is a no-op for a mesh with no morph', () => {
