@@ -1,4 +1,4 @@
-import type { Camera3D, Mesh, SceneLights, SceneNode } from '@flighthq/sdk';
+import type { Camera3D, Mesh, SceneLightsLike, SceneNode } from '@flighthq/sdk';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
@@ -155,7 +155,7 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(6, 4, 10), createVector3(
 
 const directionalDirection = createVector3(-1, -0.5, -0.7);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights: SceneLights = {
+const lights: SceneLightsLike = {
   ambient: createAmbientLight({ color: 0x6080b0ff, intensity: 0.2 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: directionalDirection, intensity: 3 }),
 };

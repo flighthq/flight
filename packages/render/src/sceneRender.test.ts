@@ -11,7 +11,7 @@ import {
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind, getSceneNodeWorldAlpha } from '@flighthq/scene';
-import type { Camera3D, Material, MeshGeometry, SceneLightBlock, SceneLights } from '@flighthq/types';
+import type { Camera3D, Material, MeshGeometry, SceneLightBlock, SceneLightsLike } from '@flighthq/types';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -41,7 +41,7 @@ function frontCamera(): Camera3D {
   return camera;
 }
 
-function emptyLights(): SceneLights {
+function emptyLights(): SceneLightsLike {
   return { ambient: null, directional: null };
 }
 

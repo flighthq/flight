@@ -7,7 +7,7 @@ import type {
   Matrix3,
   Matrix4,
   Mesh,
-  SceneLights,
+  SceneLightsLike,
   SceneNode,
   SceneRenderProxy,
   WgpuRenderState,
@@ -34,7 +34,7 @@ export function drawWgpuScene(
   state: WgpuRenderState,
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<SceneLightsLike>,
 ): void {
   const list = prepareSceneRender(state, scene, camera, lights);
   const lightBlock = list.lights;

@@ -6,7 +6,7 @@ import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera3D, SceneLights, SceneNode } from '@flighthq/types';
+import type { Camera3D, SceneLightsLike, SceneNode } from '@flighthq/types';
 
 import { drawWgpuScene } from './drawWgpuScene';
 import { registerStandardPbrWgpuMaterial } from './registerStandardPbrWgpuMaterial';
@@ -17,7 +17,7 @@ import { getWgpuSceneRuntime } from './wgpuSceneRuntime';
 import { makeWgpuSceneState } from './wgpuSceneTestHelper';
 import { destroyWgpuSceneShadow, drawWgpuSceneShadowMap } from './wgpuShadowMap';
 
-const LIGHTS: SceneLights = {
+const LIGHTS: SceneLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
 };

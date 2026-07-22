@@ -10,7 +10,7 @@ import type {
   ParticleBlendMode,
   ParticleEmitter3D,
   ParticleEmitterData,
-  SceneLights,
+  SceneLightsLike,
   SceneNode,
 } from '@flighthq/types';
 import { ParticleEmitter3DKind } from '@flighthq/types';
@@ -383,7 +383,7 @@ export function drawGlSceneParticleEmitter2Ds(
   state: GlRenderState,
   scene: Readonly<SceneNode>,
   camera: Readonly<Camera3D>,
-  lights: Readonly<SceneLights>,
+  lights: Readonly<SceneLightsLike>,
 ): void {
   emitterScratch.length = 0;
   collectParticleEmitter3DNodes(scene, emitterScratch);

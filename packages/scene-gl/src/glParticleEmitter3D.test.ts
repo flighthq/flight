@@ -3,7 +3,7 @@ import { createMatrix4, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter';
 import { createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { ParticleEmitter3D, SceneLights } from '@flighthq/types';
+import type { ParticleEmitter3D, SceneLightsLike } from '@flighthq/types';
 
 import { destroyGlParticleEmitter3DShader, drawGlSceneParticleEmitter2Ds } from './glParticleEmitter3D';
 import { makeGlSceneState } from './glSceneTestHelper';
@@ -18,7 +18,7 @@ function makeCamera() {
   return cam;
 }
 
-function makeLights(): SceneLights {
+function makeLights(): SceneLightsLike {
   return { ambient: null, directional: null };
 }
 

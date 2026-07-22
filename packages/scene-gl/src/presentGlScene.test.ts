@@ -5,7 +5,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
 import { createMesh, createSceneNode, SceneNodeKind } from '@flighthq/scene';
-import type { Camera3D, GlRenderTarget, SceneLights } from '@flighthq/types';
+import type { Camera3D, GlRenderTarget, SceneLightsLike } from '@flighthq/types';
 
 import { makeGlSceneState } from './glSceneTestHelper';
 import { presentGlScene } from './presentGlScene';
@@ -40,7 +40,7 @@ function makeTarget(): GlRenderTarget {
   };
 }
 
-const LIGHTS: SceneLights = {
+const LIGHTS: SceneLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),
   directional: createDirectionalLight({ color: 0xffffffff, direction: createVector3(0, -1, -1), intensity: 1 }),
 };

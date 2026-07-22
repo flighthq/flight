@@ -1,5 +1,5 @@
 import { createSceneNode } from '@flighthq/scene';
-import type { Camera3D, SceneLights } from '@flighthq/sdk';
+import type { Camera3D, SceneLightsLike } from '@flighthq/sdk';
 import {
   addNodeChild,
   createAmbientLight,
@@ -78,7 +78,7 @@ setCamera3DViewMatrix4FromLookAt(camera, createVector3(4, 3, 5), createVector3(0
 // White directional light from the upper right plus a dim ambient fill.
 const directionalDirection = createVector3(-1, -0.5, -0.7);
 normalizeVector3(directionalDirection, directionalDirection);
-const lights: SceneLights = {
+const lights: SceneLightsLike = {
   ambient: createAmbientLight({ color: 0x607090ff, intensity: 0.2 }),
   directional: createDirectionalLight({
     color: 0xffffffff,
