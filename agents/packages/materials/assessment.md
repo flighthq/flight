@@ -36,6 +36,15 @@ See [charter](./charter.md) for blessed direction.
 1. Migrate `LinearColor`, `HslColor`, `HsvColor` type definitions to `@flighthq/types`.
 2. Fix stale `hslToRgb` doc comment (copy-pasted from `rgbToHsl`).
 3. Rename `createColorTransform` parameter from `obj` to `options` and add `Readonly<>`.
+4. **Give the spec-gloss texture drop a shakeable diagnostics seam.**
+   `convertSpecularGlossinessToStandardPbr` now (correctly) writes `metallicRoughnessMap = null` when
+   the source carries a `specularGlossinessMap`, silently dropping it — a materially different result
+   (flat metal/roughness) with zero runtime signal. Per the diagnostics inversion rule, every silent
+   sentinel gets a shakeable query: add `explainSpecularGlossinessConversion(source) → { droppedMaps }`
+   and/or an `enableMaterialConversionGuards` warning naming the bake path. Low-severity/parked: the
+   `materials` package has **no** diagnostics layer today (no `explain*`/`Guard`/`enable*`), so this is a
+   package-wide gap shared with `convertPhongToStandardPbrMaterial`, not a regression — do it when the
+   materials diagnostics layer is first stood up, not in isolation.
 
 ## Approved
 

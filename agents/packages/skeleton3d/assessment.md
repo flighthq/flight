@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/skeleton3d'
-updated: 2026-07-21
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -8,7 +8,25 @@ basedOn: ./review.md
 
 ## Recommended
 
-No sweep-safe items; meaningful work crosses mesh, scene preparation, animation, formats, or GL.
+1. **Resolve the morph/skin deformer layering inversion.** `updateMeshDeformation` runtime-imports
+   `updateMeshMorph` from `@flighthq/scene`, so the CPU-deformation composition drags a
+   `skeleton3d → scene` dependency — while `updateMeshSkin`'s own comment still asserts that pairing skin
+   with skeleton3d "keeps skeleton3d below scene with no cycle." That statement is now **false**:
+   `updateMeshDeformation` puts skeleton3d *above* scene. Yet `updateMeshMorph` imports only
+   `@flighthq/mesh` + `@flighthq/types` — it has zero scene-graph dependency, so the two symmetric
+   deformer-glue functions are split across packages by charter fiat, not structure. **Fix:** move
+   `updateMeshMorph` down beside `updateMeshSkin` (skeleton3d, or better both into `mesh` as pure
+   deform-over-runtime-slot glue), leaving `@flighthq/scene` to only *route* `Weights` channels into
+   `mesh.morph.weights`; then `updateMeshDeformation` composes two same-layer primitives and the "below
+   scene" comment is true again. Also **drop the redundant `@flighthq/scene` `devDependencies` entry**
+   in `packages/skeleton3d/package.json` (it is now a runtime `dependencies` entry too — packaging
+   drift). _(User-approved 2026-07-22.)_
+2. **Dirty-gate the per-frame bounds recompute.** `updateMeshMorph`/`updateMeshSkin` both call
+   `refreshMeshGeometryBounds` unconditionally each frame — an O(vertices) second sweep on top of the
+   deform pass — even though `MeshGeometry` already carries a `version` counter and nullable `bounds`.
+   A GPU-skinned or upload-only mesh that never CPU-picks/culls pays this for nothing. Invalidate a
+   bounds-dirty flag (or reuse `version`) in the deform and recompute lazily on the first bounds query,
+   preserving the picking-agreement correctness the deform-then-bounds tests prove.
 
 ## Depth gaps
 
@@ -52,3 +70,7 @@ No sweep-safe items; meaningful work crosses mesh, scene preparation, animation,
   atom: a caller supplies the node-kind-aware clone callback, joint-to-joint parent links are rebuilt,
   outside-skeleton parents stay caller-owned, and skeleton buffers/names remain detached. The cheap
   `cloneSkeleton3D` sharing contract is unchanged.
+- [2026-07-22 · picked] Resolve the morph/skin deformer layering inversion — move `updateMeshMorph`
+  down beside `updateMeshSkin` (or both into `mesh`) so `updateMeshDeformation` composes same-layer
+  primitives and skeleton3d no longer imports `@flighthq/scene`, and drop the redundant `@flighthq/scene`
+  `devDependencies` entry — assessment.md#recommended item 1. Blessed, not yet implemented.

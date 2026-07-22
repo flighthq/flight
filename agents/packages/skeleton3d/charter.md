@@ -10,7 +10,7 @@ status: ./status.md
 
 # skeleton3d — Charter
 
-Renamed from `@flighthq/skeleton` (2026-07-15). The original charter, review, assessment, and status remain in `agents/packages/skeleton/` until the code-level rename is executed; this cell is the forward reference.
+Renamed from `@flighthq/skeleton` (2026-07-15); the code-level rename is complete (`packages/skeleton3d` is live, `packages/skeleton` is gone). The original charter, review, assessment, and status remain in `agents/packages/skeleton/`, now marked `absorbed: '@flighthq/skeleton3d'` so generators treat it as history; this cell is the authoritative one.
 
 ## What it is
 

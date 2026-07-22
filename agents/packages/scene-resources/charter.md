@@ -144,3 +144,13 @@ _Append-only, dated, blessed rulings._
    to validate the descriptor + resolver, with AWD as the embedded-path proof.
 6. **Determinism** — the resolve-all wrapper is the capture/test mode; confirm the streaming path is
    excluded from fingerprint baselines.
+7. **The `load*` verb means two opposite I/O halves.** `loadGltf(url)`/`loadGlb`/`loadObj`/`loadAwd`/
+   `load3ds`/`loadMd2`/`loadMd5Mesh` fetch the *file* but do **not** resolve textures and return a
+   `SceneDocument`; `loadSceneFromGltf(bytes)`/`loadSceneFromGlb`/… take in-hand bytes (no fetch),
+   **do** resolve textures, and return a `Scene`. Same verb, opposite halves — and there is no single
+   URL→resolved-`Scene` call (a caller composes `loadGltf` → `createSceneFromDocument` →
+   `resolveSceneResourcesAndWait`). The name `loadGltf` also advertises neither `Document` nor
+   "unresolved." **Proposed:** rename the fetch family to make the unresolved-document result explicit
+   and free the `load` verb (e.g. `fetchGltfDocument`/`loadGltfDocument`), reserving `loadSceneFrom*`
+   for the resolve path — and consider whether a one-call URL→`Scene` convenience should exist. Highest-
+   traffic verb in the layer; pre-release is the moment. _(Review flagged; pending direction.)_

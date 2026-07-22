@@ -17,7 +17,7 @@ status: ./status.md
 
 Rive is two things, and this cell is only the first:
 
-- **Format parse (`rive-formats`, this cell).** `.riv` bytes → Flight data: vector shapes → `@flighthq/shape`, meshes → `@flighthq/mesh`, bones → `@flighthq/skeleton`, animations → `@flighthq/animation`.
+- **Format parse (`rive-formats`, this cell).** `.riv` bytes → Flight data: vector shapes → `@flighthq/shape`, meshes → `@flighthq/mesh`, bones → `@flighthq/skeleton3d`, animations → `@flighthq/animation`.
 - **State-machine runtime (a _separate_ future cell).** Rive's interactive state machines — inputs driving state transitions that blend animations — are a *runtime interpretation*, not a format parse. Keep them out of the importer, the same node/sim split Flight already draws (`particles` sim vs. `particleemitter` node, `timeline` vs. `movieclip`). The importer produces the state-machine *description* as data; a distinct runtime consumes it.
 
 This split is what keeps `rive-formats` an honest `-formats` codec rather than a Rive engine smuggled in under a codec name.

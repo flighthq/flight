@@ -219,7 +219,7 @@ Rationale:
 1. **OBJ** — highest real-world usage frequency; the universal lowest-common-denominator format; nearly every 3D asset collection includes OBJ files. Cheap to implement and immediately justifies the plural "formats" package name (assessment item 3 calls this "cheap, high value for test assets").
 2. **3DS** — second most common legacy format in free asset libraries and older game modding communities; binary parsing follows the same chunk-walking pattern already proven by GLB.
 3. **FBX** — the dominant professional interchange format (Maya/Blender/Unity/Unreal), but complex enough to warrant third position. Covers the largest gap in professional workflows.
-4. **MD5/MD2** — game-development heritage formats; well-documented, lightweight. MD5's skeletal data is a natural future bridge to `@flighthq/skeleton`. MD2's per-frame vertices are a bridge to morph animation. These can be done together as a batch.
+4. **MD5/MD2** — game-development heritage formats; well-documented, lightweight. MD5's skeletal data is a natural future bridge to `@flighthq/skeleton3d`. MD2's per-frame vertices are a bridge to morph animation. These can be done together as a batch.
 5. **AWD** — niche format with a small user base (Away3D/Flash ecosystem). Included for completeness but lowest priority.
 
 ## Open questions
@@ -922,7 +922,7 @@ This section maps common feature keywords to their implementing packages and bac
 | **Tween** | `@flighthq/tween` | n/a (headless) | Duration-based property animation |
 | **Spring** | `@flighthq/spring` | n/a (headless) | Damped-harmonic second-order |
 | **Easing** | `@flighthq/easing` | n/a (headless) | Penner/CSS/shader timing curves |
-| **Skeletal animation** | `@flighthq/skeleton`, `@flighthq/animation` | gl, wgpu | |
+| **Skeletal animation** | `@flighthq/skeleton3d`, `@flighthq/animation` | gl, wgpu | |
 | **Spritesheet animation** | `@flighthq/spritesheet`, `@flighthq/movieclip` | canvas, gl, wgpu | |
 | **Path / shapes** | `@flighthq/path`, `@flighthq/shape` | canvas, dom, gl, wgpu | |
 | **Path booleans** | `@flighthq/path-boolean` | n/a (headless) | Union/intersect/difference/xor/offset |

@@ -149,6 +149,7 @@ Design calls to settle before building the affected entries:
 ### scene-formats (partial 46)
 
 - Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
+- Reconcile the `warnings: string[]` diagnostics idiom with the inversion rule
 
 ### textureatlas-formats (partial 50)
 
@@ -332,6 +333,16 @@ Design calls to settle before building the affected entries:
 - Add `explain*` queries for the silent sentinels
 - Test the `decodeImagePremultiplied` auto-detect path
 
+### picking (solid 70)
+
+- Make `SceneHit.node` type-honest
+
+### scene-resources (solid 70)
+
+- Return a distinguishable sentinel on document fetch failure
+- Fix the stale reveal comment
+- Converge the two diagnostics idioms in this layer
+
 ### capture (solid 72)
 
 - `explain*` queries for the silent sentinels
@@ -453,6 +464,11 @@ Design calls to settle before building the affected entries:
 - Add deterministic skybox teardown
 - Fix the nonexistent invalidation contract
 
+### skeleton3d (solid 75)
+
+- Resolve the morph/skin deformer layering inversion
+- Dirty-gate the per-frame bounds recompute
+
 ### bitmapfont (solid 76)
 
 - Supplementary-plane-safe kerning key
@@ -540,6 +556,12 @@ Design calls to settle before building the affected entries:
 ### keyboard (solid 80)
 
 - Document `transition.height` limitation
+
+### mesh (solid 80)
+
+- Extract the shared `vertexFormat.ts` primitive
+- Stop allocating a `DataView` + object literal per packed-channel accessor call
+- Add a metadata-only geometry clone for weld/compact/expand
 
 ### net (solid 80)
 
@@ -662,6 +684,7 @@ Design calls to settle before building the affected entries:
 - Migrate `LinearColor`, `HslColor`, `HsvColor` type definitions to `@flighthq/types`
 - Fix stale `hslToRgb` doc comment (copy-pasted from `rgbToHsl`)
 - Rename `createColorTransform` parameter from `obj` to `options` and add `Readonly<>`
+- Give the spec-gloss texture drop a shakeable diagnostics seam
 
 ### application (solid 88)
 
@@ -703,6 +726,7 @@ Design calls to settle before building the affected entries:
 - ~~**Fix DOM/Dom casing.**~~ _Already done._ Files are `DomRenderOptions.ts`, `DomStageRectangle.ts`
 - Extract `TextDirection` alias
 - Document `glyphCount` on `ShapedRun`
+- Rename `ViewportAlign`/`ViewportScaleMode` → `StageAlign`/`StageScaleMode`
 
 ### displayobject-dom (solid 89)
 
@@ -937,6 +961,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Make all state-owned GPU caches deterministically destructible
 - Remove backend implementation noise from the `create*` Entity vocabulary
 - Narrow the exported runtime seam
+- Disambiguate the compressed-texture upload sentinel, and share one shape classifier
 
 ### scene-gl (solid 75)
 
@@ -998,7 +1023,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `picking` · `scene-resources` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `particleemitter` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 
@@ -1007,5 +1032,5 @@ Computed from cell front matter (dates are `updated:`/`lastDirection:` fields). 
 - **Needs a direction session (charter stub or never directed):** `camera-controls` · `textshaper-canvas` · `textureatlas-formats` · `xml`
 - **Needs a first review (built, no review.md):** `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 - **Needs re-review (work landed after the survey):** `displayobject-wgpu (review 2026-06-24 < status 2026-06-25)` · `glyphatlas (review 2026-07-13 < status 2026-07-17)` · `render-gl (review 2026-07-21 < status 2026-07-22)` · `texture (review 2026-06-25 < status 2026-07-22)`
-- **Needs assess refresh (review newer than assessment):** `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `types (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
-- **Open directions awaiting the user:** 588 across 132 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `effects-canvas` (6) · `loader` (6) · `scene-resources` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.
+- **Needs assess refresh (review newer than assessment):** `audio (assessment 2026-07-03 < review 2026-07-13)` · `log (assessment 2026-07-02 < review 2026-07-13)` · `spritesheet (assessment 2026-07-02 < review 2026-07-13)` · `tileset (assessment 2026-07-03 < review 2026-07-09)` · `tween (assessment 2026-07-02 < review 2026-07-13)` · `video (assessment 2026-07-03 < review 2026-07-09)` · `xml (assessment 2026-07-03 < review 2026-07-09)`
+- **Open directions awaiting the user:** 593 across 133 charters — most-loaded: `scene` (13) · `displayobject-gl` (12) · `render-gl` (12) · `displayobject` (11) · `displayobject-dom` (10) · `effects-wgpu` (10) · `lighting` (10) · `scene-gl` (10) · `spritesheet-formats` (10) · `displayobject-canvas` (9) · `mesh` (9) · `render-wgpu` (9) · `skeleton3d` (9) · `displayobject-wgpu` (8) · `effects-gl` (8) · `geometry` (8) · `materials` (8) · `particles-formats` (8) · `scene-wgpu` (8) · `render` (7) · `scene-resources` (7) · `timeline` (7) · `camera` (6) · `capture` (6) · `color` (6) · `effects-canvas` (6) · `loader` (6) · `texture-formats` (6) · `tween` (6). Each charter's `## Open directions` section holds the questions; a direction session drains them.

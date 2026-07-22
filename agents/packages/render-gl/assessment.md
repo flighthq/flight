@@ -74,6 +74,19 @@ basedOn: ./review.md
    State ownership is correct; exposing the aggregate implementation record is not. Custom renderers
    should receive small operation/context contracts, while sibling packages attach private runtime
    records plus deterministic teardown callbacks without growing a cross-package kitchen-sink type.
+8. **Disambiguate the compressed-texture upload sentinel, and share one shape classifier.**
+   `uploadGlCompressedTextureContainer` returns a single `false` across three distinct causes —
+   unsupported texture shape, still-wrapped supercompression, and no payload — so a caller cannot tell
+   "this is a volume, use a 3D binder" from "inflate the Zstd first." Rejection-as-sentinel and
+   rejecting *before* any GL call are both correct (they follow the inversion rule); the missing piece
+   is a paired `explainGlCompressedTextureUpload(container)` returning plain data that names the fixing
+   step. Separately, container-shape classification is now expressed twice with different thresholds
+   (`isSupportedGlCompressedTextureContainerShape` accepts 2D/array/single-cube; the inline
+   `uploadGlCompressedImageResource` gate accepts 2D only) — both correct today, but a shared
+   `getGlCompressedTextureContainerShape → 'texture2d' | 'cube' | 'array' | 'unsupported'` classifier
+   would keep the two gates provably consistent and give the future cube/array binders one truth. Low
+   severity: these are setup-time errors, and this composes with the compressed-upload work already
+   flagged in Depth gap #4.
 
 ## Backlog
 

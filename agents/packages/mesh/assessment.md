@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/mesh'
-updated: 2026-07-21
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -36,13 +36,38 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-None. The copied `getMeshGeometryVertexNormal` position/semantic comment is corrected. Logical
-triangle decoding is now one allocation-free primitive shared by consumers: indexed/non-indexed
-triangle lists and alternating-winding strips resolve consistently, with unsupported/out-of-range
-queries leaving caller-owned output untouched. `refreshMeshGeometryBounds` is the corresponding
-cached-spatial atom: it allocates an AABB once and refreshes it in place after vertex edits. Logical
-triangle-to-subset identity is likewise one topology-aware primitive consumed by picking rather than
-being re-derived from list-only offsets.
+1. **Extract the shared `vertexFormat.ts` primitive.** `meshGeometryLayout.ts` and
+   `meshGeometryAttributes.ts` each define their own `getVertexFormatByteLength` /
+   `getVertexFormatComponentCount` / read-write-component switch over the same 6-member `VertexFormat`
+   union — eight functions, two copies — and they have already drifted cosmetically (`/0xff` vs `/255`,
+   inline clamp vs a `clamp()` helper). This is the decomposition smell: the byte-native vertex-format
+   is a bedrock primitive silently bundled by two files, so any future format (`snorm8x4`, half-float)
+   is a two-site edit with a correctness-drift trap. Extract one `vertexFormat.ts` both files import;
+   pure and `sideEffects:false`, so DCE keeps zero bundle cost. Sweep-safe, within-package.
+   _(User-approved 2026-07-22.)_
+2. **Stop allocating a `DataView` + object literal per packed-channel accessor call.**
+   `getAttributeByteLocation` (`meshGeometryAttributes.ts`) does `new DataView(...)` **and** returns a
+   fresh `{attribute, byteOffset, view}` on every `get/setMeshGeometryVertexColor0/Joints0/Weights0`,
+   while the float fast-paths read straight off the `Float32Array` with zero allocation. The charter's
+   north star promises out-param accessors "safe for hot-loop reuse"; read components directly via a
+   reused/cached view (or an inline byte offset) and return the location by out-param, not a per-call
+   object. (Only consumer today is the once-per-geometry skin bind-pose capture, so it is transient
+   capture-time garbage, not per-frame — but the accessor is a general primitive.)
+3. **Add a metadata-only geometry clone for weld/compact/expand.** `weldMeshGeometryVertices`,
+   `compactMeshGeometryVertices`, and `expandMeshGeometryIndices` each `cloneMeshGeometry` (deep-copying
+   `vertices` *and* `indices`) purely to carry layout/subsets/topology/bounds, then overwrite both
+   arrays — one wasted full vertex-buffer allocation per op. Add `cloneMeshGeometryMetadata` (copies
+   descriptors + fresh runtime, not the big arrays) and build these three on it; `indexMeshGeometryVertices`
+   legitimately keeps `vertices` and can stay on the full clone.
+
+Already clean: the copied `getMeshGeometryVertexNormal` position/semantic comment is corrected;
+logical triangle decoding is one allocation-free primitive shared by consumers (indexed/non-indexed
+lists and alternating-winding strips resolve consistently, out-of-range queries leave caller output
+untouched); `refreshMeshGeometryBounds` allocates an AABB once and refreshes in place; logical
+triangle-to-subset identity is one topology-aware primitive consumed by picking, not re-derived from
+list-only offsets. `VertexFormat` is correctly a **closed union**, not a registry — it is a bounded
+GPU-hardware set, so the closed-system exception applies; the finding above is duplication, not the
+union choice.
 
 ## Approved
 
@@ -65,6 +90,9 @@ being re-derived from list-only offsets.
 - [2026-07-22 · completed] Layout conversion no longer zero-fills packed channels or reads beyond a
   smaller source arity. Same-format attributes copy byte-exactly; float, uint8/uint16, and unorm8
   channels convert component values by semantic, with absent channels/components remaining zero.
+- [2026-07-22 · picked] Extract the shared `vertexFormat.ts` primitive so the byte-length/component-
+  count/read-write-component switch is not duplicated (and drifting) across `meshGeometryLayout.ts` and
+  `meshGeometryAttributes.ts` — assessment.md#recommended item 1. Blessed, not yet implemented.
 
 ## Backlog
 
