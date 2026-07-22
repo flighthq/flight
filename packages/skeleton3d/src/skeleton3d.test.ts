@@ -1,7 +1,7 @@
 import { createMatrix4, getMatrix4Element, setVector3 } from '@flighthq/geometry';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
 import { createSceneNode } from '@flighthq/scene';
-import type { Skeleton3D } from '@flighthq/types';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
   cloneSkeleton3D,
@@ -33,6 +33,7 @@ describe('cloneSkeleton3D', () => {
     expect(Array.from(clone.inverseBindMatrices)).toEqual(Array.from(skeleton.inverseBindMatrices));
     expect(clone.names).toEqual(['root']);
     expect(clone.names).not.toBe(skeleton.names);
+    expect(EntityRuntimeKey in clone).toBe(true);
   });
 
   it('preserves a null names field', () => {
@@ -68,11 +69,9 @@ describe('computeSkeleton3DJointMatrices', () => {
     const shared = new Float32Array(32);
     shared.set(temp.inverseBindMatrices);
 
-    const aliasSkeleton: Skeleton3D = {
-      inverseBindMatrices: shared,
-      jointMatrices: shared,
-      joints: [joint0, joint1],
-    };
+    const aliasSkeleton = createSkeleton3D([joint0, joint1]);
+    aliasSkeleton.inverseBindMatrices = shared;
+    aliasSkeleton.jointMatrices = shared;
 
     computeSkeleton3DJointMatrices(aliasSkeleton);
 
@@ -131,6 +130,7 @@ describe('createSkeleton3D', () => {
     const skeleton = createSkeleton3D([createSceneNode(), createSceneNode()]);
     expect(skeleton.jointMatrices.length).toBe(32);
     expect(skeleton.inverseBindMatrices.length).toBe(32);
+    expect(EntityRuntimeKey in skeleton).toBe(true);
   });
 });
 

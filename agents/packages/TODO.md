@@ -146,6 +146,11 @@ Design calls to settle before building the affected entries:
 - Correct the "pull-style" package description
 - Add the small query-helper layer
 
+### scene-formats (partial 46)
+
+- Reconcile `SceneDocument.resources` with the texture references already emitted inside materials;
+- Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
+
 ### textureatlas-formats (partial 50)
 
 - Adopt the registry pattern from `spritesheet-formats`
@@ -861,14 +866,10 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### scene-formats (partial 46)
 
-- Return a complete import result, not only a node tree
-- Carry the full common attribute set
-- Use open format-extension handlers
-- Add end-to-end fixture functionals
-- Core-spec materials/textures/samplers import — parse `materials`/`textures`/`images`/`samplers` and map metallic-roughness onto `@flighth…
-- Animations import into the `@flighthq/animation` core — glTF channel/sampler/clip map onto `AnimationTrack`/`AnimationChannel`/`Animation…
-- OBJ/MTL importer — charter Decision 2026-07-03 ("the home for all 3D file format parsing"); cheap, high value for test assets
-- Sparse accessors + external `.bin`/image URI resolution — parked correctness gaps flagged during the 2026-07-09 pass
+- Make the complete import result truthful
+- Carry every common vertex channel and topology
+- Replace inline extension knowledge with open handlers
+- Prove real files end to end
 
 ### texture (solid 58)
 
@@ -1006,7 +1007,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `scene-formats` · `animation` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `animation` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 

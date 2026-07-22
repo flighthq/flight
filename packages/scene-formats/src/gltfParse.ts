@@ -195,6 +195,7 @@ function buildGltfDocument(
   }
   if (doc.extensionsRequired !== undefined) {
     for (const extension of doc.extensionsRequired) {
+      if (isSupportedGltfExtension(extension)) continue;
       warnings?.push(`parseGltf: required extension '${extension}' is not supported and was ignored`);
     }
   }
@@ -671,6 +672,13 @@ function decodeBase64(s: string): Uint8Array {
 
 function isSupportedGltfVersion(version: string): boolean {
   return Number.parseInt(version, 10) === 2;
+}
+
+// Names only the extensions the core parser actually consumes today. This prevents required-extension
+// diagnostics from contradicting visible behavior while the open handler registry remains a separate
+// depth step; adding a schema field alone must not count as support.
+function isSupportedGltfExtension(extension: string): boolean {
+  return extension === 'KHR_texture_transform';
 }
 
 // Normalizes a raw integer component to its float range per the glTF spec: unsigned types map onto

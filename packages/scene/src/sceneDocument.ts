@@ -1,4 +1,5 @@
 import { createAnimationChannel, createAnimationClip } from '@flighthq/animation';
+import { createEntity } from '@flighthq/entity';
 import { setQuaternion, setVector3 } from '@flighthq/geometry';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node';
 import type {
@@ -10,7 +11,6 @@ import type {
   SceneDocument,
   SceneDocumentNode,
   SceneNode,
-  Skeleton3D,
   Skin,
 } from '@flighthq/types';
 
@@ -96,15 +96,16 @@ function applyDocumentSkins(document: Readonly<SceneDocument>, nodes: readonly S
       inverseBindMatrices.set(skin.inverseBind[j].m, j * 16);
     }
     // The Skeleton3D palette (jointMatrices) is filled per-frame by computeSkeleton3DJointMatrices; here it
-    // starts zeroed. Built inline rather than via @flighthq/skeleton3d because that package depends on
-    // @flighthq/scene (createMesh/createSceneNode), which would form a cycle — Skeleton3D is plain data.
+    // starts zeroed. Built inline through createEntity rather than via @flighthq/skeleton3d because that
+    // package depends on @flighthq/scene (createMesh/createSceneNode), which would form a cycle; the
+    // Entity shape invariant still holds at this assembly seam.
     // Joint names are recovered from the resolved joint nodes; null when the source named none.
-    const skeleton: Skeleton3D = {
+    const skeleton = createEntity({
       inverseBindMatrices,
       jointMatrices: new Float32Array(joints.length * 16),
       joints,
       names: names.some((name) => name.length > 0) ? names : null,
-    };
+    });
     return { skeleton, skeletonRoot: null };
   });
   for (let i = 0; i < document.nodes.length; i++) {

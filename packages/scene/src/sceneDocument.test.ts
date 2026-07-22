@@ -4,7 +4,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import type { MaterialLike, Mesh, SceneDocument, SceneNode } from '@flighthq/types';
-import { SceneAnimationPathTranslation, SceneNodeKind, MeshKind } from '@flighthq/types';
+import { EntityRuntimeKey, SceneAnimationPathTranslation, SceneNodeKind, MeshKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { isMesh } from './mesh';
@@ -94,6 +94,7 @@ describe('createSceneFromDocument', () => {
     expect(mesh.skin).toBeTruthy();
     expect(mesh.skin?.skeleton.joints).toHaveLength(1);
     expect(mesh.skin?.skeleton.names).toEqual(['joint']);
+    expect(EntityRuntimeKey in mesh.skin!.skeleton).toBe(true);
   });
 
   it('rebuilds a node-bound animation clip from a document channel', () => {
