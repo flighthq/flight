@@ -360,6 +360,32 @@ describe('parseObj', () => {
     expect(document.meshes[0].materials).toEqual([0]);
   });
 
+  it('records each shared MTL image identity once while retaining separate Texture entities', () => {
+    const library = parseObjMaterialLibrary(
+      ['newmtl first', 'map_Kd shared.png', 'newmtl second', 'map_Kd shared.png'].join('\n'),
+    );
+    const obj = [
+      'v 0 0 0',
+      'v 1 0 0',
+      'v 0 1 0',
+      'usemtl first',
+      'g first',
+      'f 1 2 3',
+      'usemtl second',
+      'g second',
+      'f 1 2 3',
+    ].join('\n');
+    const document = parseObj(obj, library);
+    const first = document.materials[0] as BlinnPhongMaterial;
+    const second = document.materials[1] as BlinnPhongMaterial;
+
+    expect(document.resources).toHaveLength(1);
+    expect((document.resources[0] as ExternalImageResourceReference).uri).toBe('shared.png');
+    expect(first.diffuseMap).not.toBe(second.diffuseMap);
+    expect(first.diffuseMap!.resource).toBe(document.resources[0]);
+    expect(second.diffuseMap!.resource).toBe(document.resources[0]);
+  });
+
   it('uses a -1 material index for an unmaterialed subset', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
     const document = parseObj(obj);

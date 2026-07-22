@@ -148,7 +148,6 @@ Design calls to settle before building the affected entries:
 
 ### scene-formats (partial 46)
 
-- Reconcile `SceneDocument.resources` with the texture references already emitted inside materials;
 - Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
 
 ### textureatlas-formats (partial 50)

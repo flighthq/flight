@@ -344,14 +344,14 @@ function flushGroup(
 // load). Ka/map_Ka and the illum model have no Blinn-Phong equivalent — ambient is a scene light in
 // Flight, not a material property — so they are dropped; a caller wanting metallic-roughness PBR
 // converts explicitly downstream.
-function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>): BlinnPhongMaterial {
+function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>, document: SceneDocument): BlinnPhongMaterial {
   const result = createBlinnPhongMaterial({
     diffuse: packObjColor(material.diffuse, material.dissolve),
-    diffuseMap: externalObjTexture(material.mapDiffuse),
-    normalMap: externalObjTexture(material.mapBump),
+    diffuseMap: externalObjTexture(material.mapDiffuse, document),
+    normalMap: externalObjTexture(material.mapBump, document),
     shininess: material.specularExponent,
     specular: packObjColor(material.specular, 1),
-    specularMap: externalObjTexture(material.mapSpecular),
+    specularMap: externalObjTexture(material.mapSpecular, document),
   });
   // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
   // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only.
@@ -360,8 +360,8 @@ function objMaterialToBlinnPhong(material: Readonly<ObjMaterial>): BlinnPhongMat
 }
 
 // Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
-function externalObjTexture(uri: string | null): Texture | null {
-  return uri === null ? null : createExternalTextureRef(uri);
+function externalObjTexture(uri: string | null, document: SceneDocument): Texture | null {
+  return uri === null ? null : createExternalTextureRef(uri, null, document.resources);
 }
 
 // Packs an MTL sRGB-space [r,g,b] triple (each in [0,1]) plus an alpha into a 0xRRGGBBAA integer.
@@ -396,7 +396,7 @@ function resolveObjMaterial(
     cache.set(name, -1);
     return -1;
   }
-  const material = objMaterialToBlinnPhong(parsed) as unknown as Material;
+  const material = objMaterialToBlinnPhong(parsed, document) as unknown as Material;
   // Preserve the MTL `newmtl` handle as the material's authored name (findSceneMaterialByName).
   material.name = name;
   const index = document.materials.length;

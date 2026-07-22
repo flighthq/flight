@@ -225,7 +225,7 @@ export function parseMd5Mesh(source: string, warnings?: string[]): SceneDocument
       const meshMaterials: number[] = [];
       if (md5Mesh.shader.length > 0) {
         const material = createBlinnPhongMaterial({
-          diffuseMap: createExternalTextureRef(md5Mesh.shader),
+          diffuseMap: createExternalTextureRef(md5Mesh.shader, null, document.resources),
         }) as unknown as Material;
         // MD5's shader path is the material's authored identity — preserve it as the name.
         material.name = md5Mesh.shader;

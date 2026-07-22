@@ -184,7 +184,7 @@ export function parseMd2(bytes: Readonly<Uint8Array>, warnings?: string[]): Scen
     const skinName = readMd2SkinName(bytes, offSkins);
     if (skinName.length > 0) {
       const material = createBlinnPhongMaterial({
-        diffuseMap: createExternalTextureRef(skinName),
+        diffuseMap: createExternalTextureRef(skinName, null, document.resources),
       }) as unknown as Material;
       // MD2's skin path is the material's authored identity — preserve it as the name.
       material.name = skinName;
