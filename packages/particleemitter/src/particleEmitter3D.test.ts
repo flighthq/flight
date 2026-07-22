@@ -1,4 +1,4 @@
-import { createAabb } from '@flighthq/geometry';
+import { createAabb, createMatrix4 } from '@flighthq/geometry';
 import { getNodeLocalMatrix4 } from '@flighthq/node';
 import { ParticleEmitter3DKind } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
@@ -23,6 +23,7 @@ import {
   setParticleEmitter3DParticleAlpha,
   setParticleEmitter3DParticleColor,
   setParticleEmitter3DParticleVelocity,
+  sortParticleEmitter3DIndicesByViewDepth,
 } from './particleEmitter3D';
 
 describe('appendParticleEmitter3DParticle', () => {
@@ -376,5 +377,62 @@ describe('setParticleEmitter3DParticleVelocity', () => {
     const emitter = createParticleEmitter3D();
     setParticleEmitter3DParticleVelocity(emitter, 0, 1, 2, 3);
     expect(emitter.data.particleCount).toBe(0);
+  });
+});
+
+describe('sortParticleEmitter3DIndicesByViewDepth', () => {
+  it('writes stable back-to-front indices without reordering particle storage', () => {
+    const emitter = createParticleEmitter3D();
+    appendParticleEmitter3DParticle(emitter, 10, 0, 0, -2, 0, 1);
+    appendParticleEmitter3DParticle(emitter, 11, 0, 0, -10, 0, 1);
+    appendParticleEmitter3DParticle(emitter, 12, 0, 0, -5, 0, 1);
+    appendParticleEmitter3DParticle(emitter, 13, 0, 0, -5, 0, 1);
+    const indices = new Uint32Array(4);
+    const depths = new Float64Array(4);
+
+    expect(sortParticleEmitter3DIndicesByViewDepth(indices, depths, emitter, createMatrix4())).toBe(true);
+
+    expect(Array.from(indices)).toEqual([1, 2, 3, 0]);
+    expect(Array.from(emitter.data.ids.slice(0, 4))).toEqual([10, 11, 12, 13]);
+  });
+
+  it('applies the caller-supplied stored-position-to-view matrix', () => {
+    const emitter = createParticleEmitter3D();
+    appendParticleEmitter3DParticle(emitter, 10, 2, 0, 0, 0, 1);
+    appendParticleEmitter3DParticle(emitter, 11, -3, 0, 0, 0, 1);
+    const positionToView = createMatrix4();
+    positionToView.m[2] = 1;
+    positionToView.m[10] = 0;
+    const indices = new Uint32Array(2);
+
+    sortParticleEmitter3DIndicesByViewDepth(indices, new Float64Array(2), emitter, positionToView);
+
+    expect(Array.from(indices)).toEqual([1, 0]);
+  });
+
+  it('leaves caller outputs untouched when either scratch lane is too small', () => {
+    const emitter = createParticleEmitter3D();
+    appendParticleEmitter3DParticle(emitter, 10, 0, 0, -2, 0, 1);
+    appendParticleEmitter3DParticle(emitter, 11, 0, 0, -10, 0, 1);
+    const indices = new Uint32Array([99]);
+    const depths = new Float64Array([88, 77]);
+
+    expect(sortParticleEmitter3DIndicesByViewDepth(indices, depths, emitter, createMatrix4())).toBe(false);
+
+    expect(Array.from(indices)).toEqual([99]);
+    expect(Array.from(depths)).toEqual([88, 77]);
+  });
+
+  it('rejects incomplete particle storage before touching outputs', () => {
+    const emitter = createParticleEmitter3D();
+    appendParticleEmitter3DParticle(emitter, 10, 0, 0, -2, 0, 1);
+    emitter.data.positionsZ = new Float32Array(0);
+    const indices = new Uint32Array([99]);
+    const depths = new Float64Array([88]);
+
+    expect(sortParticleEmitter3DIndicesByViewDepth(indices, depths, emitter, createMatrix4())).toBe(false);
+
+    expect(Array.from(indices)).toEqual([99]);
+    expect(Array.from(depths)).toEqual([88]);
   });
 });
