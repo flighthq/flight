@@ -3,6 +3,7 @@ import type { VertexAttributeLayout } from '@flighthq/types';
 
 import { createMeshGeometry } from './meshGeometry';
 import {
+  compactMeshGeometryVertices,
   computeMeshGeometryWireframeIndices,
   expandMeshGeometryIndices,
   indexMeshGeometryVertices,
@@ -33,6 +34,78 @@ function makeQuad() {
   const indices = new Uint16Array([0, 1, 2, 2, 1, 3]);
   return createMeshGeometry({ indices: indices, layout: CANONICAL_LAYOUT, vertices: vertices });
 }
+
+describe('compactMeshGeometryVertices', () => {
+  it('retains referenced records in first-use order and preserves draw metadata', () => {
+    const vertices = new Float32Array(5 * 12);
+    for (let vertex = 0; vertex < 5; vertex++) vertices[vertex * 12] = vertex + 10;
+    const geometry = createMeshGeometry({
+      indices: new Uint32Array([4, 2, 4, 0]),
+      layout: CANONICAL_LAYOUT,
+      subsets: [
+        { indexCount: 2, indexOffset: 0 },
+        { indexCount: 2, indexOffset: 2 },
+      ],
+      topology: 'line-list',
+      vertices,
+    });
+    geometry.bounds = createAabb(-1, -2, -3, 4, 5, 6);
+
+    const compacted = compactMeshGeometryVertices(geometry);
+
+    expect(compacted.vertices.length).toBe(3 * 12);
+    expect([compacted.vertices[0], compacted.vertices[12], compacted.vertices[24]]).toEqual([14, 12, 10]);
+    expect(compacted.indices).toBeInstanceOf(Uint16Array);
+    expect(Array.from(compacted.indices!)).toEqual([0, 1, 0, 2]);
+    expect(compacted.topology).toBe('line-list');
+    expect(compacted.subsets).toEqual(geometry.subsets);
+    expect(compacted.subsets).not.toBe(geometry.subsets);
+    expect(compacted.bounds?.min).toMatchObject({ x: -1, y: -2, z: -3 });
+    expect(compacted.bounds?.max).toMatchObject({ x: 4, y: 5, z: 6 });
+    expect(compacted.bounds).not.toBe(geometry.bounds);
+  });
+
+  it('copies complete packed records byte-for-byte', () => {
+    const layout: VertexAttributeLayout = {
+      attributes: [{ byteOffset: 0, format: 'unorm8x4', semantic: 'color0' }],
+      stride: 4,
+    };
+    const vertices = new Float32Array(3);
+    new Uint8Array(vertices.buffer).set([1, 2, 3, 4, 10, 20, 30, 40, 100, 110, 120, 130]);
+    const geometry = createMeshGeometry({ indices: new Uint16Array([2, 0]), layout, vertices });
+
+    const compacted = compactMeshGeometryVertices(geometry);
+
+    expect(Array.from(new Uint8Array(compacted.vertices.buffer))).toEqual([100, 110, 120, 130, 1, 2, 3, 4]);
+    expect(Array.from(compacted.indices!)).toEqual([0, 1]);
+  });
+
+  it('deep-clones non-indexed input without changing its records', () => {
+    const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: new Float32Array(2 * 12) });
+    geometry.vertices[12] = 7;
+
+    const compacted = compactMeshGeometryVertices(geometry);
+
+    expect(compacted).not.toBe(geometry);
+    expect(compacted.vertices).not.toBe(geometry.vertices);
+    expect(compacted.vertices[12]).toBe(7);
+    expect(compacted.indices).toBeNull();
+  });
+
+  it('returns an unchanged deep clone for an out-of-range source index', () => {
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 3]),
+      layout: CANONICAL_LAYOUT,
+      vertices: new Float32Array(2 * 12),
+    });
+
+    const compacted = compactMeshGeometryVertices(geometry);
+
+    expect(compacted).not.toBe(geometry);
+    expect(compacted.vertices).not.toBe(geometry.vertices);
+    expect(Array.from(compacted.indices!)).toEqual([0, 3]);
+  });
+});
 
 describe('computeMeshGeometryWireframeIndices', () => {
   it('expands each triangle into three edge line segments', () => {
