@@ -868,7 +868,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 - Make the complete import result truthful
 - Carry every common vertex channel and topology
-- Replace inline extension knowledge with open handlers
+- Replace the remaining inline extension knowledge with open handlers
 - Prove real files end to end
 
 ### texture (solid 58)

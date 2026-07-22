@@ -9,6 +9,7 @@
 
 export interface GltfDocument {
   asset?: { version: string };
+  cameras?: GltfCamera[];
   scene?: number;
   scenes?: GltfScene[];
   nodes?: GltfNode[];
@@ -24,6 +25,38 @@ export interface GltfDocument {
   skins?: GltfSkin[];
   extensionsUsed?: string[];
   extensionsRequired?: string[];
+  extensions?: GltfDocumentExtensions;
+}
+
+export interface GltfCamera {
+  name?: string;
+  orthographic?: {
+    xmag: number;
+    ymag: number;
+    zfar: number;
+    znear: number;
+  };
+  perspective?: {
+    aspectRatio?: number;
+    yfov: number;
+    zfar?: number;
+    znear: number;
+  };
+  type: 'orthographic' | 'perspective';
+}
+
+export interface GltfDocumentExtensions {
+  KHR_lights_punctual?: { lights: GltfPunctualLight[] };
+  [kind: string]: unknown;
+}
+
+export interface GltfPunctualLight {
+  color?: number[];
+  intensity?: number;
+  name?: string;
+  range?: number;
+  spot?: { innerConeAngle?: number; outerConeAngle?: number };
+  type: 'directional' | 'point' | 'spot';
 }
 
 // A glTF animation: a bundle of channels, each pairing a sampler (the keyframe curve) with a target
@@ -139,6 +172,7 @@ export interface GltfScene {
 }
 
 export interface GltfNode {
+  camera?: number;
   name?: string;
   children?: number[];
   mesh?: number;
@@ -149,6 +183,7 @@ export interface GltfNode {
   translation?: number[];
   rotation?: number[];
   scale?: number[];
+  extensions?: { KHR_lights_punctual?: { light: number }; [kind: string]: unknown };
 }
 
 // A glTF skin: the ordered joint (bone) nodes, their inverse-bind matrices accessor (one MAT4 per
@@ -229,20 +264,4 @@ export interface GltfBuffer {
   byteLength: number;
   // Absent when the buffer's bytes come from a GLB binary chunk rather than a URI.
   uri?: string;
-}
-
-// Options for resolving a glTF document's external references. Parsing is synchronous, so a glTF
-// that stores its geometry in an external `.bin` (or images at external URIs) needs the caller to
-// supply already-fetched bytes and/or a base directory:
-//   externalBuffers — encoded bytes for external buffer/image URIs the parser must read now (geometry
-//                     lives here), keyed by the exact `uri` string as it appears in the document.
-//                     A buffer URI missing from this map decodes to empty with a warning.
-//   basePath        — the directory the container was loaded from, carried onto every External image
-//                     ref so @flighthq/scene-resources resolves a relative image URI against it later.
-// Both are optional: an all-embedded (data-URI or GLB-binary) document needs neither. This is the
-// only public input beyond the document itself, so it stays a plain-data object (no fetch callback —
-// the async fetch is the resolver's job, not the parser's).
-export interface GltfImportOptions {
-  basePath?: string | null;
-  externalBuffers?: Readonly<Record<string, ArrayLike<number>>>;
 }

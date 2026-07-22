@@ -36,3 +36,5 @@ Parked — each names why it is not sweep-safe.
 ## Approved
 
 - [2026-07-03 · charter session] Guarded pool mode (`enableGeometryPoolGuards`) — charter Decision 2026-07-03 (diagnostics)
+- [2026-07-22 · completed] `setPerspectiveMatrix4` evaluates the infinite-far limit explicitly, so
+  source formats with an omitted far plane do not produce `Infinity / Infinity` NaNs.

@@ -1495,6 +1495,14 @@ describe('setPerspectiveMatrix4', () => {
     expect(() => setPerspectiveMatrix4(m, 0.5, 0, 0.1, 1000)).toThrow();
   });
 
+  it('evaluates the infinite-far projection limit without NaN', () => {
+    const m = createMatrix4();
+    setPerspectiveMatrix4(m, 0.5, 1.6, 0.1, Number.POSITIVE_INFINITY);
+    expect(Array.from(m.m).every(Number.isFinite)).toBe(true);
+    expect(m.m[10]).toBe(-1);
+    expect(m.m[14]).toBeCloseTo(-0.2);
+  });
+
   it('sets m[11] to -1', () => {
     const m = createMatrix4();
     setPerspectiveMatrix4(m, 0.5, 1.6, 0.1, 1000);
