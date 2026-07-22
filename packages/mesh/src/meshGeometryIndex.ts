@@ -1,6 +1,6 @@
 import type { MeshGeometry } from '@flighthq/types';
 
-import { cloneMeshGeometry, createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
+import { cloneMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
 
 // Index-buffer pipeline over a MeshGeometry: de-index a welded stream to a flat non-indexed one,
 // and derive a wireframe line-list from a triangle index buffer. These read the existing
@@ -54,19 +54,16 @@ export function computeMeshGeometryWireframeIndices(
 
 // De-indexes (un-welds) the geometry into a flat non-indexed stream: each triangle index expands
 // into its own copy of the referenced vertex record, so shared vertices become distinct. The
-// result is a new MeshGeometry with the same layout and topology, `indices` null, and a single
-// whole-range subset. This is the prerequisite for truly per-face attributes (flat shading,
+// result is a new MeshGeometry with the same layout, topology, subsets, and bounds but `indices`
+// null. Subset offsets/counts address the same element positions after expansion and therefore remain
+// valid. This is the prerequisite for truly per-face attributes (flat shading,
 // per-face UVs) where shared vertices must not be welded. Non-indexed geometry is deep-copied as-is.
 export function expandMeshGeometryIndices(geometry: Readonly<MeshGeometry>): MeshGeometry {
   const indices = geometry.indices;
   const floatsPerVertex = geometry.layout.stride / 4;
   const sourceVertices = geometry.vertices;
 
-  if (!indices) {
-    const vertices = new Float32Array(sourceVertices.length);
-    vertices.set(sourceVertices);
-    return createMeshGeometry({ indices: null, layout: geometry.layout, topology: geometry.topology, vertices });
-  }
+  if (!indices) return cloneMeshGeometry(geometry);
 
   const vertices = new Float32Array(indices.length * floatsPerVertex);
   for (let i = 0; i < indices.length; i++) {
@@ -77,7 +74,10 @@ export function expandMeshGeometryIndices(geometry: Readonly<MeshGeometry>): Mes
     }
   }
 
-  return createMeshGeometry({ indices: null, layout: geometry.layout, topology: geometry.topology, vertices });
+  const out = cloneMeshGeometry(geometry);
+  out.indices = null;
+  out.vertices = vertices;
+  return out;
 }
 
 // Converts a non-indexed vertex stream to an indexed stream without welding or changing record order:
