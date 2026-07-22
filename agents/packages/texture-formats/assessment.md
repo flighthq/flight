@@ -10,7 +10,7 @@ basedOn: ./review.md
 
 1. **Complete the compressed-payload realization seam.** Container parsing must hand BasisLZ/UASTC/ETC/BC/ASTC payloads to separately registered transcoders/decoders with explicit target-format capability selection; identifying byte ranges alone is not end-to-end texture support.
 2. **Validate against real tool outputs.** KTX2/DDS/Basis/ATF fixtures from canonical encoders must prove mip/layer/face offsets, supercompression metadata, corrupt-range rejection, and eventual GPU upload. Synthetic header builders remain useful unit tests but are not sufficient evidence.
-3. **Preserve source shape and interpretation metadata.** Basis `m_tex_type`, KTX2 DFD orientation/swizzle/color-model data, and DDS volume depth are currently collapsed or rejected. Add small container-specific descriptors rather than widening the common level record into a kitchen-sink; keep video-texture sequencing and actual transcoding as separately paid consumers.
+3. **Preserve remaining source interpretation metadata.** KTX2 DFD orientation/swizzle/color-model data and DDS volume depth are currently dropped or rejected. Basis now maps 2D/array, cubemap-array, and volume shapes onto the common descriptor and truthfully rejects video frames; video sequencing needs a separately paid temporal descriptor. Add small container-specific descriptors rather than widening the common level record into a kitchen-sink; keep actual transcoding separately paid.
 
 ## Recommended
 
@@ -39,6 +39,10 @@ Parked, with why:
   `m_slice_desc_file_ofs` at 63, and 23-byte slice descriptors with 24-bit image indices. The byte
   reader has a separately tested little-endian U24 atom; fixtures use the corrected layout and prove
   values beyond 16 bits rather than reproducing the old parser's assumptions.
+- [2026-07-22 · completed] Basis `m_tex_type` is no longer flattened unconditionally: 2D/array
+  images retain layers, cubemap arrays expose six faces and their array-layer count, and volumes expose
+  depth. Video frames and malformed cube counts return the existing unsupported sentinel because a
+  static `TextureContainer` cannot truthfully represent temporal replenishment semantics.
 - [2026-07-22 · completed] `computeTextureContainerLevels` and
   `getTextureContainerLevelByteLength` are root exports. KTX2 Zstd/ZLIB indivisible levels,
   uncompressed array splitting, DDS DX10 arrays, and multi-peer preference are all exercised. The
