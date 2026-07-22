@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { discoverEntries, rendererMatchesFilter, routeSegment } from './captureEntries';
+import { discoverEntries, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries';
 
 let root: string;
 
@@ -39,6 +39,32 @@ describe('Entry', () => {
   it('accepts declarative renderer routes for JSON manifests', () => {
     const entry = { name: 'home', renderers: ['webgl'], routes: { webgl: 'pages/home/' } };
     expect(entry.routes.webgl).toBe('pages/home/');
+  });
+});
+
+describe('getCaptureEntryRoute', () => {
+  it('prefers declarative and generated routes over subject conventions', () => {
+    expect(
+      getCaptureEntryRoute(
+        { name: 'home', renderers: ['webgl'], routes: { webgl: 'pages/home/' } },
+        'webgl',
+        'functional',
+      ),
+    ).toBe('pages/home/');
+    expect(
+      getCaptureEntryRoute(
+        { name: 'home', renderers: ['webgl'], route: (renderer) => `custom/${renderer}` },
+        'webgl',
+        'functional',
+      ),
+    ).toBe('custom/webgl');
+  });
+
+  it('centralizes built-in and reference route conventions', () => {
+    const entry = { name: 'home', renderers: ['flight:webgl'] };
+    expect(getCaptureEntryRoute(entry, 'flight:webgl', 'examples')).toBe('examples/home/flight-webgl/');
+    expect(getCaptureEntryRoute(entry, 'flight:webgl', 'functional')).toBe('tests/home/flight-webgl/');
+    expect(getCaptureEntryRoute(entry, 'flight:webgl', 'reference')).toBe('');
   });
 });
 

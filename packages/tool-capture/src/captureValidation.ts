@@ -35,7 +35,7 @@ import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
-import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './captureEntries.js';
+import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
@@ -188,10 +188,7 @@ async function loadFingerprint(
     page.on('console', (m) => {
       if (m.type() === 'error') pageError ||= m.text();
     });
-    const route =
-      entry.routes?.[renderer] ??
-      entry.route?.(renderer) ??
-      `${subject === 'examples' ? 'examples' : 'tests'}/${entry.name}/${routeSegment(renderer)}/`;
+    const route = getCaptureEntryRoute(entry, renderer, subject);
     await page.goto(`${baseUrl}/${route}`, {
       waitUntil: 'domcontentloaded',
       timeout: 15_000,

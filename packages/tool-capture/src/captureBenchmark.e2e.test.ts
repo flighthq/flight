@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { benchmarkBaselinePath, runCaptureBenchmark } from './captureBenchmark';
+import { getCaptureBenchmarkBaselinePath, runCaptureBenchmark } from './captureBenchmark';
 import { runCaptureValidation } from './captureValidation';
 
 const domPage = `<!doctype html><div id="target" style="width:320px;height:180px;background:#123;position:relative"><div style="position:absolute;left:60px;top:40px;width:200px;height:100px;background:#f40"></div></div><script>
@@ -54,7 +54,7 @@ describe('benchmark and generalized parity browser workflow', () => {
     expect(result.targets[0]?.samplesMs).toHaveLength(3);
     expect(result.targets[1]?.referenceRatio).not.toBeNull();
     expect(result.calibration.cpuOperationsPerMs).toBeGreaterThan(0);
-    expect(readFileSync(benchmarkBaselinePath(root, 'fixture', 'work'), 'utf8')).toContain('normalizedWork');
+    expect(readFileSync(getCaptureBenchmarkBaselinePath(root, 'fixture', 'work'), 'utf8')).toContain('normalizedWork');
     expect(readFileSync(join(root, '.artifacts/fixture/benchmark-report.json'), 'utf8')).toContain('benchmark');
 
     const gated = await runCaptureBenchmark({

@@ -136,7 +136,7 @@ export interface CaptureBatchResult {
   reportPath: string | null;
 }
 
-/** Runs the enabled capture and validation passes for one subject against one shared server. */
+/** Runs the enabled capture, validation, and benchmark passes for one subject against one shared server. */
 export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOptions>): Promise<CaptureWorkflowResult> {
   const startedAt = performance.now();
   const borrowedServer: Server = { url: options.server.url, kill() {} };

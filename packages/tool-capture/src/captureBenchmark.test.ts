@@ -1,17 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  benchmarkBaselinePath,
   calculateCaptureBenchmarkStatistics,
   evaluateCaptureBenchmarkRegression,
+  getCaptureBenchmarkBaselinePath,
   runCaptureBenchmark,
 } from './captureBenchmark';
-
-describe('benchmarkBaselinePath', () => {
-  it('uses a subject-local committed benchmark directory', () => {
-    expect(benchmarkBaselinePath('/repo', 'app', 'home')).toBe('/repo/app/benchmarks/home.json');
-  });
-});
 
 describe('calculateCaptureBenchmarkStatistics', () => {
   it('returns robust median, p95, and MAD values', () => {
@@ -35,6 +29,12 @@ describe('evaluateCaptureBenchmarkRegression', () => {
     expect(evaluateCaptureBenchmarkRegression(80, 100, 0.1).pass).toBe(true);
     expect(evaluateCaptureBenchmarkRegression(109, 100, 0.1).pass).toBe(true);
     expect(evaluateCaptureBenchmarkRegression(111, 100, 0.1).pass).toBe(false);
+  });
+});
+
+describe('getCaptureBenchmarkBaselinePath', () => {
+  it('uses a subject-local committed benchmark directory', () => {
+    expect(getCaptureBenchmarkBaselinePath('/repo', 'app', 'home')).toBe('/repo/app/benchmarks/home.json');
   });
 });
 

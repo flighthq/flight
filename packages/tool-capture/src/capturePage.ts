@@ -23,6 +23,48 @@ export interface CapturePageTargetOptions {
   verify?: boolean;
 }
 
+export interface CaptureElementTargetOptions {
+  renderer: 'canvas' | 'dom' | 'webgl';
+  element: HTMLElement;
+  /** Existing WebGL context for a WebGL canvas. Required because requesting a second context is unreliable. */
+  gl?: WebGLRenderingContext | WebGL2RenderingContext;
+  render?: () => void | Promise<void>;
+  assertRender?: FunctionalRenderOracle;
+  minCoverage?: number;
+  scale?: number;
+  verify?: boolean;
+}
+
+/** Adapts a DOM or canvas element owned by another Flight-ecosystem renderer to the capture protocol. */
+export function installCaptureElementTarget(
+  options: Readonly<CaptureElementTargetOptions>,
+): Promise<CaptureVerification | null> {
+  if (options.renderer === 'dom') {
+    return installCaptureTarget({
+      ...options,
+      state: { element: options.element } as unknown as DomRenderState,
+      width: options.element.clientWidth,
+      height: options.element.clientHeight,
+    });
+  }
+  if (!(options.element instanceof HTMLCanvasElement)) {
+    throw new Error(`capture ${options.renderer} target must be a canvas element`);
+  }
+  if (options.renderer === 'webgl' && options.gl === undefined) {
+    throw new Error('capture webgl target requires its existing WebGL context');
+  }
+  const state =
+    options.renderer === 'webgl'
+      ? ({ canvas: options.element, gl: options.gl } as unknown as GlRenderState)
+      : ({ canvas: options.element } as unknown as CanvasRenderState);
+  return installCaptureTarget({
+    ...options,
+    state,
+    width: options.element.width,
+    height: options.element.height,
+  });
+}
+
 /**
  * Installs and, while under tool-capture, verifies one render target. This is the only page-side API a
  * raw consumer needs; suite scheduling, screenshots, fingerprints, parity, reports, and retries remain

@@ -3,7 +3,12 @@
 import type { DomRenderState } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { installCaptureTarget, registerCaptureBenchmarkTarget, verifyCaptureTarget } from './capturePage';
+import {
+  installCaptureElementTarget,
+  installCaptureTarget,
+  registerCaptureBenchmarkTarget,
+  verifyCaptureTarget,
+} from './capturePage';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
 
 afterEach(() => {
@@ -15,6 +20,22 @@ afterEach(() => {
   flags.__ftTarget = undefined;
   flags.__ftVerification = undefined;
   flags.__ftBenchmarkTarget = undefined;
+});
+
+describe('installCaptureElementTarget', () => {
+  it('adapts a renderer-owned DOM element without requiring a Flight render state', async () => {
+    const element = document.createElement('div');
+    element.textContent = 'reference renderer';
+    await expect(installCaptureElementTarget({ renderer: 'dom', element, verify: true })).resolves.toMatchObject({
+      render: 'dom',
+      state: 'passed',
+    });
+  });
+
+  it('requires the existing context for WebGL targets', () => {
+    const element = document.createElement('canvas');
+    expect(() => installCaptureElementTarget({ renderer: 'webgl', element })).toThrow(/existing WebGL context/);
+  });
 });
 
 describe('installCaptureTarget', () => {

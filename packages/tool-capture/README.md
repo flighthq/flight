@@ -2,6 +2,8 @@
 
 Deterministic browser capture and reporting for canvas, DOM, WebGL, and WebGPU pages.
 
+The package deliberately combines four layers behind one root export: browser orchestration, the versioned page protocol, Flight render-state verification, and Flight's built-in functional/example presets. The files remain separated by responsibility, but they ship and version together because capture correctness depends on Flight's renderer and surface semantics.
+
 ## Choose the contract
 
 - **Observe:** zero page integration. Produces agent eyesight and explicit `usable`, `blank`, `timedOut`, retry, and error diagnostics.
@@ -59,6 +61,17 @@ await installCaptureTarget({
   state,
   render: () => renderScene(scene),
   assertRender,
+});
+```
+
+An external renderer inside a Flight ecosystem project can register its owned element without manufacturing a Flight render state. Pass the existing WebGL context rather than requesting the canvas context again:
+
+```ts
+await installCaptureElementTarget({
+  renderer: 'webgl',
+  element: canvas,
+  gl,
+  render: () => referenceApp.render(),
 });
 ```
 
