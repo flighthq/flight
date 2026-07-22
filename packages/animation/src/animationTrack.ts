@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity';
 import type { AnimationInterpolation, AnimationTrack, AnimationTrackValidationDiagnostic } from '@flighthq/types';
 import { AnimationInterpolationLinear } from '@flighthq/types';
 
@@ -5,14 +6,14 @@ import { AnimationInterpolationLinear } from '@flighthq/types';
 // vs number[] backing) so the clone shares no mutable state with the source. `easing` is a pure
 // function and is carried by reference; all scalar fields are copied.
 export function cloneAnimationTrack(track: Readonly<AnimationTrack>): AnimationTrack {
-  return {
+  return createEntity({
     components: track.components,
     easing: track.easing,
     interpolation: track.interpolation,
     quaternion: track.quaternion,
     times: cloneNumberBuffer(track.times),
     values: cloneNumberBuffer(track.values),
-  };
+  });
 }
 
 // Allocates an AnimationTrack. `times` must be ascending; `values` is the flat keyframe buffer
@@ -26,14 +27,14 @@ export function createAnimationTrack(opts: {
   quaternion?: boolean;
   easing?: AnimationTrack['easing'];
 }): AnimationTrack {
-  return {
+  return createEntity({
     components: opts.components ?? 1,
     easing: opts.easing ?? null,
     interpolation: opts.interpolation ?? AnimationInterpolationLinear,
     quaternion: opts.quaternion ?? false,
     times: opts.times,
     values: opts.values,
-  };
+  });
 }
 
 // Samples `track` at time `t`, writing `track.components` numbers into `out`. `t` is clamped to the
@@ -116,14 +117,14 @@ export function trimAnimationTrack(
     const off = k * stride;
     for (let c = 0; c < stride; c++) outValues.push(track.values[off + c]);
   }
-  return {
+  return createEntity({
     components,
     easing: track.easing,
     interpolation: track.interpolation,
     quaternion: track.quaternion,
     times: outTimes,
     values: outValues,
-  };
+  });
 }
 
 // Structurally validates a track, returning null when it is well-formed or an array of diagnostics

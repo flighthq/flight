@@ -22,6 +22,7 @@ describe('cloneAnimationClip', () => {
     expect(clone.channels[0].track.times).not.toBe(clip.channels[0].track.times);
     expect(clone.channels[0].targetRef).toBe(target);
     expect(clone.duration).toBe(clip.duration);
+    expect(EntityRuntimeKey in clone).toBe(true);
   });
 });
 
@@ -32,6 +33,7 @@ describe('createAnimationChannel', () => {
     const channel = createAnimationChannel(t, target);
     expect(channel.track).toBe(t);
     expect(channel.targetRef).toBe(target);
+    expect(EntityRuntimeKey in channel).toBe(true);
   });
 });
 
@@ -42,6 +44,7 @@ describe('createAnimationClip', () => {
       createAnimationChannel(track([0, 2.5]), null),
     ]);
     expect(clip.duration).toBe(2.5);
+    expect(EntityRuntimeKey in clip).toBe(true);
   });
 
   it('honors an explicit duration override', () => {
@@ -84,3 +87,4 @@ describe('sampleAnimationClip', () => {
     expect(calls).toBe(0);
   });
 });
+import { EntityRuntimeKey } from '@flighthq/types';

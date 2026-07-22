@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity';
 import { createSignal, emitSignal } from '@flighthq/signals';
 import type { AnimationClip, AnimationLoopMode, AnimationPlayer } from '@flighthq/types';
 import { AnimationLoopModePingPong, AnimationLoopModeRepeat } from '@flighthq/types';
@@ -85,7 +86,7 @@ export function advanceAnimationPlayer(player: AnimationPlayer, dt: number): voi
 // by reference — players are lightweight drivers over a clip; clone the clip separately for independent
 // buffers. The clone starts signal-free (onFinished/onLooped null) so listeners are never shared.
 export function cloneAnimationPlayer(player: Readonly<AnimationPlayer>): AnimationPlayer {
-  return {
+  return createEntity({
     clip: player.clip,
     loop: player.loop,
     loopMode: player.loopMode,
@@ -95,7 +96,7 @@ export function cloneAnimationPlayer(player: Readonly<AnimationPlayer>): Animati
     repeatCount: player.repeatCount,
     speed: player.speed,
     time: player.time,
-  };
+  });
 }
 
 // Allocates a player over `clip`. Defaults: looping, 'Repeat' loop mode, infinite repeats, playing,
@@ -111,7 +112,7 @@ export function createAnimationPlayer(
     time?: number;
   }>,
 ): AnimationPlayer {
-  return {
+  return createEntity({
     clip,
     loop: opts?.loop ?? true,
     loopMode: opts?.loopMode ?? AnimationLoopModeRepeat,
@@ -121,7 +122,7 @@ export function createAnimationPlayer(
     repeatCount: opts?.repeatCount ?? -1,
     speed: opts?.speed ?? 1,
     time: opts?.time ?? 0,
-  };
+  });
 }
 
 // Allocates and attaches the opt-in player signals (onFinished, onLooped) to a player created before

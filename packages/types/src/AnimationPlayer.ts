@@ -1,5 +1,6 @@
 import type { AnimationClip } from './AnimationClip';
 import type { AnimationLoopMode } from './AnimationLoopMode';
+import type { Entity } from './Entity';
 import type { Signal } from './Signal';
 
 // The explicit time driver for an AnimationClip — the app advances it each frame
@@ -12,7 +13,7 @@ import type { Signal } from './Signal';
 // is the remaining number of loop wraps/bounces permitted; each wrap decrements it and playback stops
 // once it reaches zero. `onFinished`/`onLooped` are opt-in signals allocated by
 // enableAnimationPlayerSignals — null/undefined until enabled, so a bare player stays signal-free.
-export interface AnimationPlayer {
+export interface AnimationPlayer extends Entity {
   clip: AnimationClip;
   loop: boolean;
   loopMode?: AnimationLoopMode;

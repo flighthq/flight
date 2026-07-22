@@ -1,4 +1,9 @@
-import { AnimationInterpolationCubic, AnimationInterpolationLinear, AnimationInterpolationStep } from '@flighthq/types';
+import {
+  AnimationInterpolationCubic,
+  AnimationInterpolationLinear,
+  AnimationInterpolationStep,
+  EntityRuntimeKey,
+} from '@flighthq/types';
 
 import {
   cloneAnimationTrack,
@@ -18,6 +23,7 @@ describe('cloneAnimationTrack', () => {
     expect(Array.from(clone.values)).toEqual([0, 0, 2, 4]);
     (clone.values as number[])[0] = 99;
     expect((track.values as number[])[0]).toBe(0);
+    expect(EntityRuntimeKey in clone).toBe(true);
   });
 
   it('preserves a Float32Array backing', () => {
@@ -51,6 +57,7 @@ describe('createAnimationTrack', () => {
     expect(track.components).toBe(1);
     expect(track.quaternion).toBe(false);
     expect(track.easing).toBeNull();
+    expect(EntityRuntimeKey in track).toBe(true);
   });
 });
 
@@ -170,6 +177,7 @@ describe('trimAnimationTrack', () => {
   it('keeps in-range keyframes and rebases times to start at 0', () => {
     const track = createAnimationTrack({ times: [0, 1, 2, 3, 4], values: [0, 10, 20, 30, 40] });
     const sub = trimAnimationTrack(track, 1, 3);
+    expect(EntityRuntimeKey in sub).toBe(true);
     expect(Array.from(sub.times)).toEqual([0, 1, 2]);
     expect(Array.from(sub.values)).toEqual([10, 20, 30]);
   });

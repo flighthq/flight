@@ -32,6 +32,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/entity": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

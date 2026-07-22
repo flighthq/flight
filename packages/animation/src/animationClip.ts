@@ -1,3 +1,4 @@
+import { createEntity } from '@flighthq/entity';
 import type { AnimationChannel, AnimationClip, AnimationTrack } from '@flighthq/types';
 
 import { cloneAnimationTrack, sampleAnimationTrack } from './animationTrack';
@@ -9,17 +10,17 @@ export function cloneAnimationClip(clip: Readonly<AnimationClip>): AnimationClip
   for (const channel of clip.channels) {
     channels.push(createAnimationChannel(cloneAnimationTrack(channel.track), channel.targetRef));
   }
-  return { channels, duration: clip.duration };
+  return createEntity({ channels, duration: clip.duration });
 }
 
 // Pairs a track with an opaque target reference (interpreted only by the domain binding layer).
 export function createAnimationChannel(track: AnimationTrack, targetRef: unknown): AnimationChannel {
-  return { targetRef, track };
+  return createEntity({ targetRef, track });
 }
 
 // Bundles channels into a clip. `duration` defaults to the latest keyframe time across all channels.
 export function createAnimationClip(channels: AnimationChannel[], duration?: number): AnimationClip {
-  return { channels, duration: duration ?? computeChannelsDuration(channels) };
+  return createEntity({ channels, duration: duration ?? computeChannelsDuration(channels) });
 }
 
 // Returns the clip's total duration in seconds.
