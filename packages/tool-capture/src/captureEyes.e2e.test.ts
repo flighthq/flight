@@ -21,6 +21,7 @@ const pages: Record<string, string> = {
     gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.SCISSOR_TEST); gl.scissor(60,40,200,100); gl.clearColor(1,0.2,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.flush();
+    queueMicrotask(() => { gl.disable(gl.SCISSOR_TEST); gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT); });
   </script>`,
   '/blank-evidence': `<!doctype html><canvas width="320" height="180"></canvas><div id="error">Renderer failed to initialize</div>`,
   '/flaky': `<!doctype html><canvas width="320" height="180"></canvas><script>
@@ -69,7 +70,7 @@ describe('capture eyes browser contract', () => {
     });
     expect(diagnostics.backend).toBe('webgl');
     expect(diagnostics.coverage).toBeGreaterThan(0.1);
-    expect(diagnostics.usable).toBe(true);
+    expect(diagnostics).toMatchObject({ attempts: 1, timedOut: false, usable: true });
   }, 20_000);
 
   it('preserves full-page evidence and emits a versioned machine report for a blank renderer', async () => {

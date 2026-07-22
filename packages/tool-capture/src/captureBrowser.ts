@@ -53,6 +53,7 @@ export async function launchBrowser(
         __captureFramesReached?: boolean;
         __flightCapture?: boolean;
         __flightCaptureVerify?: boolean;
+        __ftBestGlFrame?: { coverage: number; dataUrl: string };
         __ftGlContexts?: Array<{ canvas: HTMLCanvasElement; gl: WebGLRenderingContext | WebGL2RenderingContext }>;
         __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
         __ftTarget?: { kind?: string };
@@ -98,7 +99,89 @@ export async function launchBrowser(
         if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
           const gl = realGetContext.call(this, type, { ...attrs, preserveDrawingBuffer: true });
           if (gl !== null && !flags.__ftGlContexts!.some((e) => e.gl === gl)) {
-            flags.__ftGlContexts!.push({ canvas: this, gl: gl as WebGLRenderingContext | WebGL2RenderingContext });
+            const webgl = gl as WebGLRenderingContext | WebGL2RenderingContext;
+            flags.__ftGlContexts!.push({ canvas: this, gl: webgl });
+
+            // A preserved default framebuffer is still not dependable on every ANGLE/driver pair:
+            // some hosts return a valid context but discard its one-shot frame before Playwright can
+            // read it. Eyes mode snapshots once per JavaScript task, immediately after the page's last
+            // clear/draw call and before the compositor boundary. This remains zero-integration and
+            // avoids a readback per draw call; post-hoc preserveDrawingBuffer reads stay as a fallback.
+            if (observe) {
+              const methods = [
+                'blitFramebuffer',
+                'clear',
+                'clearBufferfi',
+                'clearBufferfv',
+                'clearBufferiv',
+                'clearBufferuiv',
+                'drawArrays',
+                'drawArraysInstanced',
+                'drawElements',
+                'drawElementsInstanced',
+                'drawRangeElements',
+              ];
+              const webglMethods = webgl as unknown as Record<string, unknown>;
+              const snapshotState = { pending: false };
+              for (const method of methods) {
+                const original = webglMethods[method];
+                if (typeof original !== 'function') continue;
+                webglMethods[method] = (...methodArgs: unknown[]): unknown => {
+                  const result = Reflect.apply(original, webgl, methodArgs);
+                  if (!snapshotState.pending) {
+                    snapshotState.pending = true;
+                    queueMicrotask(() => {
+                      snapshotState.pending = false;
+                      const w = this.width;
+                      const h = this.height;
+                      if (w === 0 || h === 0 || webgl.isContextLost()) return;
+                      try {
+                        // Only the presented/default framebuffer is evidence. An offscreen draw is
+                        // captured when the page later clears, draws, or blits it to the default target.
+                        if (webgl.getParameter(webgl.FRAMEBUFFER_BINDING) !== null) return;
+                        webgl.finish();
+                        const buf = new Uint8Array(w * h * 4);
+                        webgl.readPixels(0, 0, w, h, webgl.RGBA, webgl.UNSIGNED_BYTE, buf);
+                        const br = buf[0]!;
+                        const bg = buf[1]!;
+                        const bb = buf[2]!;
+                        let differing = 0;
+                        const pixels = w * h;
+                        for (let i = 0; i < pixels; i++) {
+                          const o = i * 4;
+                          if (
+                            Math.abs(buf[o]! - br) > 8 ||
+                            Math.abs(buf[o + 1]! - bg) > 8 ||
+                            Math.abs(buf[o + 2]! - bb) > 8
+                          ) {
+                            differing += 1;
+                          }
+                        }
+                        const coverage = differing / pixels;
+                        if (flags.__ftBestGlFrame !== undefined && coverage <= flags.__ftBestGlFrame.coverage) return;
+                        const off = document.createElement('canvas');
+                        off.width = w;
+                        off.height = h;
+                        const c2d = off.getContext('2d');
+                        if (c2d === null) return;
+                        const image = c2d.createImageData(w, h);
+                        const rowBytes = w * 4;
+                        for (let y = 0; y < h; y++) {
+                          const source = (h - 1 - y) * rowBytes;
+                          image.data.set(buf.subarray(source, source + rowBytes), y * rowBytes);
+                        }
+                        c2d.putImageData(image, 0, 0);
+                        flags.__ftBestGlFrame = { coverage, dataUrl: off.toDataURL('image/png') };
+                      } catch {
+                        // A lost, unreadable, or transiently incomplete context falls through to the
+                        // next draw boundary and ultimately the normal post-hoc readback/retry path.
+                      }
+                    });
+                  }
+                  return result;
+                };
+              }
+            }
           }
           return gl;
         }
