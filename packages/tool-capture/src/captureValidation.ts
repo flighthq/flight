@@ -33,12 +33,14 @@ import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { launchBrowser } from './captureBrowser.js';
+import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
 import type { Server } from './captureServer.js';
+import type { CaptureFingerprintMap } from './captureSuite.js';
 
 export interface CaptureValidationOptions {
   subject: string;
@@ -59,6 +61,10 @@ export interface CaptureValidationOptions {
   workerCount?: number;
   fingerprintSkip?: Readonly<string[]>;
   paritySkip?: Readonly<Record<string, 'all' | Readonly<string[]>>>;
+  /** Assertion-passed fingerprints from a preceding capture pass. Avoids reloading those pages. */
+  fingerprints?: Readonly<CaptureFingerprintMap>;
+  /** Reuse an already initialized browser/context. The caller owns its lifetime. */
+  browserSession?: CaptureBrowserSession;
 }
 
 export interface CaptureValidationResult {
@@ -87,12 +93,30 @@ interface ResolvedCaptureValidationOptions {
   parityTolerance: number;
   fingerprintSkip: ReadonlySet<string>;
   paritySkip: Readonly<Record<string, 'all' | Readonly<string[]>>>;
+  fingerprints: Readonly<CaptureFingerprintMap>;
 }
 
 interface Verification {
   render: string;
   coverage: number | null;
   fingerprint: string | null;
+  state?: 'pending' | 'passed' | 'failed';
+  error?: string | null;
+}
+
+type FingerprintLoad = Awaited<ReturnType<typeof loadFingerprint>>;
+type FingerprintSamples = Map<string, { first: FingerprintLoad; second?: FingerprintLoad }>;
+
+function fingerprintKey(entry: string, renderer: string): string {
+  return `${entry}\0${renderer}`;
+}
+
+function validationRenderers(entry: Readonly<Entry>, rendererFilter: readonly string[]): string[] {
+  return entry.renderers.filter((renderer) => {
+    const separator = renderer.indexOf(':');
+    const backend = separator === -1 ? renderer : renderer.slice(separator + 1);
+    return backend !== 'dom' && rendererMatchesFilter(renderer, rendererFilter);
+  });
 }
 
 function distance(a: string, b: string): number | null {
@@ -133,7 +157,6 @@ async function loadFingerprint(
       waitUntil: 'domcontentloaded',
       timeout: 15_000,
     });
-    await page.waitForSelector('canvas', { timeout: 8_000 }).catch(() => {});
     // Wait for a TERMINAL state, not merely for __ftVerification to exist. runRenderVerification sets
     // that object up front with fingerprint:null, then fills the fingerprint only AFTER an async step —
     // for WebGPU, an `await mapAsync()` GPU readback. Resolving on the object's mere existence would read
@@ -144,7 +167,7 @@ async function loadFingerprint(
       .waitForFunction(
         () => {
           const v = (window as unknown as { __ftVerification?: Verification }).__ftVerification;
-          return (v != null && v.fingerprint !== null) || document.getElementById('ft-error') !== null;
+          return v?.state === 'passed' || v?.state === 'failed' || document.getElementById('ft-error') !== null;
         },
         null,
         { timeout: 15_000, polling: 100 },
@@ -153,12 +176,12 @@ async function loadFingerprint(
     const verification = await page
       .evaluate(() => (window as unknown as { __ftVerification?: Verification }).__ftVerification ?? null)
       .catch(() => null);
-    if (verification?.fingerprint)
+    if (verification?.state === 'passed' && verification.fingerprint)
       return { fingerprint: verification.fingerprint, reason: '', unavailable: false, aborted: false };
     // The functional entry paints any error into #ft-error (covering window.error AND unhandledrejection);
     // read it as the most reliable real reason when neither a fingerprint nor a pageerror surfaced.
     const overlay = await page.$eval('#ft-error', (el) => el.textContent ?? '').catch(() => '');
-    const detail = pageError || overlay;
+    const detail = verification?.error || pageError || overlay;
     if (BACKEND_UNAVAILABLE.test(detail))
       return { fingerprint: null, reason: `backend unavailable (${detail})`, unavailable: true, aborted: false };
     return { fingerprint: null, reason: detail || 'verifier did not run', unavailable: false, aborted: false };
@@ -189,13 +212,12 @@ interface EntryResult {
 }
 
 async function processEntry(
-  context: BrowserContext,
-  baseUrl: string,
   entry: Readonly<Entry>,
   entryIndex: number,
   totalEntries: number,
   isAborted: () => boolean,
   options: Readonly<ResolvedCaptureValidationOptions>,
+  samples: Readonly<FingerprintSamples>,
 ): Promise<EntryResult> {
   const result: EntryResult = {
     regressionFailures: 0,
@@ -210,12 +232,7 @@ async function processEntry(
 
   result.output.push(`${pc.dim(`[${entryIndex + 1}/${totalEntries}]`)} ${pc.bold(entry.name)}`);
 
-  const renderers = entry.renderers.filter((r) => {
-    const i = r.indexOf(':');
-    const renderer = i === -1 ? r : r.slice(i + 1);
-    if (renderer === 'dom') return false;
-    return rendererMatchesFilter(r, options.rendererFilter);
-  });
+  const renderers = validationRenderers(entry, options.rendererFilter);
 
   const labelWidth = Math.max(6, ...renderers.map((r) => r.length));
   const statusLine = (tone: DetailTone, label: string, message: string): string =>
@@ -232,7 +249,11 @@ async function processEntry(
 
   for (const renderer of renderers) {
     if (isAborted()) break;
-    const first = await loadFingerprint(context, baseUrl, entry, renderer, options.subject);
+    const supplied = options.fingerprints[entry.name]?.[renderer];
+    const first = supplied
+      ? { fingerprint: supplied, reason: '', unavailable: false, aborted: false }
+      : samples.get(fingerprintKey(entry.name, renderer))?.first;
+    if (first === undefined) break;
     if (first.aborted) break;
     if (first.fingerprint === null) {
       if (first.unavailable) {
@@ -247,7 +268,8 @@ async function processEntry(
     const fingerprint = first.fingerprint;
 
     if (options.updateFingerprints) {
-      const second = await loadFingerprint(context, baseUrl, entry, renderer, options.subject);
+      const second = samples.get(fingerprintKey(entry.name, renderer))?.second;
+      if (second === undefined) break;
       if (second.aborted) break;
       const selfDistance = second.fingerprint ? distance(fingerprint, second.fingerprint) : null;
       if (selfDistance === null || selfDistance > options.stabilityEpsilon) {
@@ -359,11 +381,15 @@ export async function runCaptureValidation(
     parityTolerance: input.parityTolerance ?? CAPTURE_PARITY_TOLERANCE,
     fingerprintSkip: new Set(input.fingerprintSkip ?? []),
     paritySkip: input.paritySkip ?? {},
+    fingerprints: input.fingerprints ?? {},
   };
-  const launched = await launchBrowser({ captureFrames: options.captureFrames }).catch((error: unknown) => {
-    input.server.kill();
-    throw error;
-  });
+  const ownsBrowser = input.browserSession === undefined;
+  const launched =
+    input.browserSession ??
+    (await launchBrowser({ captureFrames: options.captureFrames }).catch((error: unknown) => {
+      input.server.kill();
+      throw error;
+    }));
   const { browser, context } = launched;
   const isAborted = installAbortHandler();
 
@@ -376,6 +402,40 @@ export async function runCaptureValidation(
   let skipped = 0;
 
   try {
+    // Balance pages, not entries: a four-renderer entry must not monopolize one worker while another
+    // worker gets a one-renderer entry. The same flattened queue also makes capture-provided
+    // fingerprints free — only missing samples become browser jobs.
+    const samples: FingerprintSamples = new Map();
+    const fingerprintJobs = entries.flatMap((entry) =>
+      options.fingerprintSkip.has(entry.name)
+        ? []
+        : validationRenderers(entry, options.rendererFilter)
+            .filter(
+              (renderer) => options.updateFingerprints || options.fingerprints[entry.name]?.[renderer] === undefined,
+            )
+            .map((renderer) => ({ entry, renderer })),
+    );
+    const fingerprintWorkerCount = input.sequential
+      ? 1
+      : Math.min(Math.max(1, input.workerCount ?? 6), fingerprintJobs.length);
+    await Promise.all(
+      Array.from({ length: fingerprintWorkerCount }, async () => {
+        while (!isAborted()) {
+          const job = fingerprintJobs.shift();
+          if (job === undefined) return;
+          const supplied = options.fingerprints[job.entry.name]?.[job.renderer];
+          const first = await loadFingerprint(context, input.server.url, job.entry, job.renderer, options.subject);
+          let second: FingerprintLoad | undefined;
+          if (options.updateFingerprints && supplied === undefined && first.fingerprint !== null && !first.aborted) {
+            second = await loadFingerprint(context, input.server.url, job.entry, job.renderer, options.subject);
+          } else if (options.updateFingerprints && supplied !== undefined) {
+            second = first;
+          }
+          samples.set(fingerprintKey(job.entry.name, job.renderer), { first, second });
+        }
+      }),
+    );
+
     if (!input.sequential) {
       const jobs = entries.map((entry, i) => ({ entry, index: i }));
       const activeWorkers = Math.min(Math.max(1, input.workerCount ?? 6), jobs.length);
@@ -384,15 +444,7 @@ export async function runCaptureValidation(
           if (isAborted()) break;
           const job = jobs.shift();
           if (!job) break;
-          const result = await processEntry(
-            context,
-            input.server.url,
-            job.entry,
-            job.index,
-            entries.length,
-            isAborted,
-            options,
-          );
+          const result = await processEntry(job.entry, job.index, entries.length, isAborted, options, samples);
           regressionFailures += result.regressionFailures;
           parityFailures += result.parityFailures;
           regressionPasses += result.regressionPasses;
@@ -407,15 +459,7 @@ export async function runCaptureValidation(
     } else {
       for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
         if (isAborted()) break;
-        const result = await processEntry(
-          context,
-          input.server.url,
-          entries[entryIndex],
-          entryIndex,
-          entries.length,
-          isAborted,
-          options,
-        );
+        const result = await processEntry(entries[entryIndex], entryIndex, entries.length, isAborted, options, samples);
         regressionFailures += result.regressionFailures;
         parityFailures += result.parityFailures;
         regressionPasses += result.regressionPasses;
@@ -427,7 +471,7 @@ export async function runCaptureValidation(
       }
     }
   } finally {
-    await browser.close().catch(() => {});
+    if (ownsBrowser) await browser.close().catch(() => {});
     input.server.kill();
   }
 

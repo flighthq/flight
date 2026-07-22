@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import pc from 'picocolors';
 
 import { launchBrowser } from './captureBrowser.js';
+import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { rendererMatchesFilter } from './captureEntries.js';
 import { captureEntry, captureParallel } from './captureEntry.js';
@@ -34,7 +35,11 @@ export interface CaptureSuiteOptions {
   verify?: boolean;
   sequential?: boolean;
   workerCount?: number;
+  /** Reuse an already initialized browser/context. The caller owns its lifetime. */
+  browserSession?: CaptureBrowserSession;
 }
+
+export type CaptureFingerprintMap = Record<string, Record<string, string>>;
 
 export interface CaptureSuiteResult {
   aborted: boolean;
@@ -42,6 +47,8 @@ export interface CaptureSuiteResult {
   changed: number;
   failed: number;
   shouldFail: boolean;
+  /** Assertion-passed fingerprints collected as a by-product of capture. */
+  fingerprints: CaptureFingerprintMap;
 }
 
 export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): Promise<CaptureSuiteResult> {
@@ -55,15 +62,22 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
 
   const captureFrames = options.captureFrames ?? 0;
   const verify = options.verify ?? options.subject === 'functional';
-  const launched = await launchBrowser({ captureFrames, verify, observe: options.observe }).catch((error: unknown) => {
-    options.server.kill();
-    throw error;
-  });
+  const ownsBrowser = options.browserSession === undefined;
+  const launched =
+    options.browserSession ??
+    (await launchBrowser({ captureFrames, verify, observe: options.observe }).catch((error: unknown) => {
+      options.server.kill();
+      throw error;
+    }));
   const { browser, context } = launched;
   const isAborted = installAbortHandler();
   let captured = 0;
   let changed = 0;
   let failed = 0;
+  const fingerprints: CaptureFingerprintMap = {};
+  const onVerifiedFingerprint = (entry: string, renderer: string, fingerprint: string): void => {
+    (fingerprints[entry] ??= {})[renderer] = fingerprint;
+  };
 
   try {
     if (!options.sequential) {
@@ -83,6 +97,7 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
         verify,
         isAborted,
         workerCount: options.workerCount ?? 6,
+        onVerifiedFingerprint,
       });
       captured = result.captured;
       changed = result.changed;
@@ -108,6 +123,7 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
           observe: options.observe,
           verify,
           isAborted,
+          onVerifiedFingerprint,
         });
         if (result === 'ok') captured += renderers.length;
         else if (result === 'changed') changed += renderers.length;
@@ -115,7 +131,7 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
       }
     }
   } finally {
-    await browser.close().catch(() => {});
+    if (ownsBrowser) await browser.close().catch(() => {});
     options.server.kill();
   }
 
@@ -132,5 +148,5 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
       note,
   );
   console.log(`Output:   ${outBase}/${options.subject}/`);
-  return { aborted, captured, changed, failed, shouldFail };
+  return { aborted, captured, changed, failed, shouldFail, fingerprints };
 }

@@ -49,10 +49,18 @@ window.__ftVerification = {
   render: 'webgl',
   coverage: 1,
   fingerprint: '1:25acc0',
+  state: 'passed',
+  error: null,
 };
 ```
 
-Fingerprints use the `<grid-size>:<rgb-hex>` format produced by `formatSurfaceFingerprint`. Once the page exposes a non-null fingerprint, validation is turn-key:
+Fingerprints use the `<grid-size>:<rgb-hex>` format produced by `formatSurfaceFingerprint`. Publish `state: 'pending'` before asynchronous readback, then `passed` only after render assertions succeed or `failed` with an error. Consumers using Flight's functional target can make that whole contract a single call:
+
+```ts
+await runRenderVerification(testModule, renderer);
+```
+
+Once the page reaches a terminal verification state, validation is turn-key:
 
 ```sh
 tool-capture validate --dir dist --no-regression
@@ -136,11 +144,11 @@ tool-capture batch --filter terrain --renderer webgl,webgpu
 tool-capture batch --subjects-parallel 2
 ```
 
-Arguments after `batch` override each subject's defaults. Subjects run sequentially unless `--subjects-parallel` is set; entries use each subject's `--parallel` worker pool. Capture and validation reuse the subject's server, avoiding a second build/startup. `runCaptureWorkflow` and `runCaptureBatch` provide the same composition for generated resource catalogs.
+Arguments after `batch` override each subject's defaults. Subjects run sequentially unless `--subjects-parallel` is set; targets use each subject's `--parallel` worker pool. Capture and validation reuse the subject's server, browser, and assertion-passed fingerprints, so the normal validation pass does not reload pages it just captured. Standalone validation flattens entries × renderers into the same balanced page queue. `runCaptureWorkflow` and `runCaptureBatch` provide the same composition for generated resource catalogs.
 
 ## Observe one page
 
-`observe` is the zero-integration eyes primitive. It always emits the best available screenshot and diagnostics rather than enforcing a suite gate:
+`observe` is the zero-integration eyes primitive. It waits adaptively for measured pixels, ignores dev-server WebSocket shutdown noise, and always emits the best available screenshot plus `status.json` diagnostics rather than enforcing a suite gate. If a canvas remains blank, it captures the full page so an error overlay or loading UI is visible instead of cropping the only useful evidence away:
 
 ```sh
 tool-capture observe http://localhost:5173/example --out capture

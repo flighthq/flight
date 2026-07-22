@@ -22,6 +22,7 @@ import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './capt
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine } from './captureFormat.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
+import type { FunctionalVerification } from './functionalVerify.js';
 
 export interface CaptureStatus {
   state: 'ready' | 'error';
@@ -115,6 +116,8 @@ export interface CaptureEntryOptions {
    * functional target, so its WebGL captures read the fingerprinted surface instead of a black canvas.
    */
   verify?: boolean;
+  /** Receives fingerprints that completed every page-side assertion. Used to fuse capture + validation. */
+  onVerifiedFingerprint?: (entry: string, renderer: string, fingerprint: string) => void;
 }
 
 export interface ParallelCaptureOptions {
@@ -132,6 +135,7 @@ export interface ParallelCaptureOptions {
   observe?: boolean;
   isAborted?: () => boolean;
   verify?: boolean;
+  onVerifiedFingerprint?: (entry: string, renderer: string, fingerprint: string) => void;
   /** Number of Playwright pages to run concurrently. Default: 6. */
   workerCount?: number;
 }
@@ -152,11 +156,7 @@ export interface CaptureOutputPaths {
   statusPath: string;
 }
 
-interface RenderVerification {
-  coverage: number | null;
-  fingerprint: string | null;
-  render: string;
-}
+type RenderVerification = FunctionalVerification;
 
 // Empty-frame threshold for the coverage-derived blank flag: a frame whose measured non-background
 // coverage is at or below this reads as "nothing distinguishable rendered". Small but non-zero so a
@@ -292,6 +292,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
 
     // A failed asset/network request never throws in-page, so it would otherwise be invisible here.
     page.on('requestfailed', (req) => {
+      if (isCaptureTransportNoise(req.url())) return;
       logs.push({
         __flight: true,
         t: -1,
@@ -303,21 +304,35 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
 
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
-      await page.waitForSelector('canvas', { timeout: 8_000 }).catch(() => {});
-      if (captureFrames && captureFrames > 0) {
+      let earlyObserveIntercept: { coverage: number; dataUrl: string } | null = null;
+      if (!verify) {
+        const selector = rendererBackend(renderer) === 'dom' ? 'body > div' : 'canvas';
+        await page.waitForSelector(selector, { timeout: 8_000 }).catch(() => {});
+      }
+      if (!verify && captureFrames && captureFrames > 0) {
+        // A one-shot/static scene may never schedule its own rAF. Kick the injected frame controller
+        // twice so deterministic/observe mode can freeze an already-rendered page instead of timing out
+        // waiting for an application loop that does not exist.
+        await page.evaluate(() => {
+          requestAnimationFrame(() => requestAnimationFrame(() => {}));
+        });
+        earlyObserveIntercept = observe ? await grabInterceptedGlFrame(page) : null;
+        const alreadyObserved =
+          (earlyObserveIntercept?.coverage ?? (observe ? await measureObservedCanvasCoverage(page) : null) ?? 0) >
+          OBSERVE_BLANK_COVERAGE;
         // --frames=N mode: wait until the page has rendered N frames and the halt has frozen it
         // (see launchBrowser). waitForFunction polls until the page reaches N — no fixed short
         // timeout that could shoot a varying earlier frame — so frame N is captured deterministically.
-        await page
-          .waitForFunction(
+        if (!alreadyObserved) {
+          await page.waitForFunction(
             () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
             null,
             {
               timeout: 15_000,
             },
-          )
-          .catch(() => {});
-      } else {
+          );
+        }
+      } else if (!verify) {
         // Default: two animation frames so the page's own rAF callback has run and drawn before the
         // screenshot. A frozen page (the landing backgrounds in capture mode) renders the same frame
         // each tick, so this is enough for a stable shot; the optional --wait covers slower loads.
@@ -335,6 +350,11 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       if (waitsForVerification) {
         console.log(statusLine('muted', renderer, 'verifying render…'));
         verification = await waitForRenderVerification(page);
+        if (verification?.state === 'failed') throw new Error(verification.error ?? 'render verification failed');
+        if (verification?.state !== 'passed') throw new Error('render verifier did not reach a terminal state');
+        if (verification.fingerprint !== null) {
+          opts.onVerifiedFingerprint?.(entry.name, renderer, verification.fingerprint);
+        }
       }
       const verificationTargetKind = waitsForVerification ? await getFunctionalTargetKind(page) : null;
 
@@ -359,7 +379,8 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // and no verify-publish handshake to false-negate — the scene just renders, the harness grabs it.
       // Null for wgpu (swapchain unreadable post-hoc — needs the SDK capture adapter), dom, 2d, or a page
       // with no GL context, all of which fall through to the verifier/canvas paths below.
-      const intercept = observe && backend === 'webgl' ? await grabInterceptedGlFrame(page) : null;
+      const intercept =
+        observe && backend === 'webgl' ? (earlyObserveIntercept ?? (await grabInterceptedGlFrame(page))) : null;
       if (intercept !== null) {
         screenshotBuffer = Buffer.from(intercept.dataUrl.split(',')[1], 'base64');
         blank = intercept.coverage <= OBSERVE_BLANK_COVERAGE;
@@ -391,11 +412,11 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           .screenshot()
           .catch(() => page.screenshot());
       } else if (backend === 'dom') {
-        screenshotBuffer = await page
-          .locator('body > div')
-          .first()
-          .screenshot()
-          .catch(() => page.screenshot());
+        // Locator screenshots wait for DOM stability and can consume Playwright's full 30s action
+        // timeout on platform-text pages whose layout observers keep reporting movement. The capture
+        // viewport is the functional surface size, so a direct page screenshot is the same image
+        // without the stability heuristic.
+        screenshotBuffer = await page.screenshot();
       } else if (backend === 'webgl' && captureFrames > 0) {
         // launchBrowser forces preserveDrawingBuffer in deterministic frame mode, so read the canvas
         // itself instead of Chromium's compositor. Headless SwiftShader can display a WebGL canvas in
@@ -494,9 +515,8 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
 
       if (failOnError) {
-        // Let any in-flight error events (a verification throw surfaces as a page error / console
-        // error) flush to the listeners, then fail the entry if the page reported any error.
-        await page.waitForTimeout(120);
+        // Verification now has an explicit terminal state, so assertion errors are already visible here;
+        // no fixed per-target delay is needed to hope an event happens to flush first.
         const errorLog = logs.find((l) => {
           const level = (l as { level?: string }).level;
           return level === 'pageerror' || level === 'error';
@@ -702,6 +722,8 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
         const verification = w.__ftVerification;
         if (document.getElementById('ft-error') !== null) return true;
         if (verification === undefined) return false;
+        if (verification.state === 'failed') return true;
+        if (verification.state !== 'passed') return false;
         if (verification.render === 'dom') return true;
         return verification.fingerprint !== null && typeof w.__ftRenderImage === 'string' && w.__ftRenderImage !== '';
       },
@@ -713,6 +735,10 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
   return page
     .evaluate(() => (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification ?? null)
     .catch(() => null);
+}
+
+function isCaptureTransportNoise(url: string): boolean {
+  return url.startsWith('ws://') || url.startsWith('wss://');
 }
 
 // Flattens entries × renderers into a shared job queue and processes them with workerCount
@@ -757,6 +783,7 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
         failOnError: opts.failOnError,
         observe: opts.observe,
         verify: opts.verify,
+        onVerifiedFingerprint: opts.onVerifiedFingerprint,
         isAborted: () => isAborted(),
       });
 
@@ -800,6 +827,7 @@ export async function captureUrl(
     }
   });
   page.on('requestfailed', (req) => {
+    if (isCaptureTransportNoise(req.url())) return;
     logs.push({
       __flight: true,
       t: -1,
@@ -810,29 +838,51 @@ export async function captureUrl(
   });
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
-    await page.waitForSelector('canvas', { timeout: 8_000 }).catch(() => {});
-    await page
-      .waitForFunction(
-        () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
-        null,
-        { timeout: 15_000 },
-      )
-      .catch(() => {});
+    await page.evaluate(() => {
+      requestAnimationFrame(() => requestAnimationFrame(() => {}));
+    });
+    const earlyIntercept = await grabInterceptedGlFrame(page);
+    const earlyCoverage = earlyIntercept?.coverage ?? (await measureObservedCanvasCoverage(page));
+    const reachedFrame =
+      earlyCoverage !== null && earlyCoverage > OBSERVE_BLANK_COVERAGE
+        ? true
+        : await page
+            .waitForFunction(
+              () => (window as unknown as { __captureFramesReached?: boolean }).__captureFramesReached === true,
+              null,
+              { timeout: 15_000 },
+            )
+            .then(() => true)
+            .catch(() => false);
+    if (!reachedFrame) {
+      logs.push({
+        __flight: true,
+        t: -1,
+        level: 'warn',
+        channel: 'capture',
+        data: { msg: 'render warmup reached its 15s safety bound; emitting the best available page image' },
+      });
+    }
     if (wait > 0) await page.waitForTimeout(wait);
 
-    const intercept = await grabInterceptedGlFrame(page);
-    const screenshotBuffer =
-      intercept !== null
-        ? Buffer.from(intercept.dataUrl.split(',')[1]!, 'base64')
-        : await page
-            .locator('canvas')
-            .first()
-            .screenshot()
-            .catch(() => page.screenshot());
+    const intercept = earlyIntercept ?? (await grabInterceptedGlFrame(page));
     const coverage = intercept?.coverage ?? (await measureObservedCanvasCoverage(page));
+    const canvasIsBlank = coverage !== null && coverage <= OBSERVE_BLANK_COVERAGE;
+    // If the render surface is blank, capture the whole page instead: an error overlay or loading UI is
+    // useful eyesight, while cropping to the blank canvas hides the only evidence an agent can act on.
+    const screenshotBuffer =
+      intercept !== null && !canvasIsBlank
+        ? Buffer.from(intercept.dataUrl.split(',')[1]!, 'base64')
+        : canvasIsBlank
+          ? await page.screenshot()
+          : await page
+              .locator('canvas')
+              .first()
+              .screenshot()
+              .catch(() => page.screenshot());
     const diagnostics = buildCaptureObserveDiagnostics({
-      backend: intercept !== null ? 'webgl' : 'canvas',
-      blank: false,
+      backend: intercept !== null ? 'webgl' : (await page.locator('canvas').count()) > 0 ? 'canvas' : 'dom',
+      blank: canvasIsBlank,
       coverage,
       logs,
       verifyPublished: false,
