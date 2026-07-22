@@ -27,7 +27,9 @@ preparation, mesh deformation, materials, or future instancing/LOD contracts.
 2. **Finish instance/LOD hit identity.** UV0, inverse-transpose smooth normal, orthogonalized tangent
    with mirror-aware handedness, material/subset identity, and face orientation are now independent
    on-demand queries rather than fields bloating every nearest hit. Instance and selected-LOD identity
-   follow their end-to-end scene contracts.
+   follow their end-to-end scene contracts. Picking must consume the same prepared draw entry or an
+   immutable snapshot of its instance handle and per-view LOD choice; independently re-running LOD
+   selection or reading node-global `activeLevelIndex` can disagree with what was drawn.
 3. **Add material-aware and non-triangle selection as opt-in layers.** Alpha-mask coverage,
    point/line/gizmo thresholds, and region selection should compose over the base hit family.
 4. **Add acceleration after semantics.** A per-geometry BVH/refit path and scene broad phase should be

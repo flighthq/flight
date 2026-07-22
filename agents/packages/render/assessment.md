@@ -18,6 +18,11 @@ Sorted from the 2026-07-13 full survey (`review.md`). Of the seven Approved entr
 ## Depth gaps
 
 1. **Defer render-graph machinery until the attachment/pass contracts are proven.** Explicit pass inputs and outputs are needed now; a general render graph, occlusion system, and other scheduling machinery are later composition layers rather than current bedrock.
+2. **Replace the prepared `Mesh[]` with a truthful draw-entry contract before scale features.** A
+   backend-neutral entry should identify source node/render payload, world transform, optional
+   instance-data + count, selected LOD + level, and prepared deformation identity. Entries are pooled
+   privately on RenderState runtime; the public header exposes the read contract, not allocation/cache
+   controls. This is the shared seam for draw, bounds, picking, shadows, and later acceleration.
 
 ## Recommended
 

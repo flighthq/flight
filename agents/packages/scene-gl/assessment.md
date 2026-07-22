@@ -75,7 +75,9 @@ basedOn: ./review.md
    meshes rather than participating in the blended depth order. Large/intersecting meshes still need a
    documented route to per-subset ordering or optional OIT.
 6. **Finish scene semantic depth before acceleration.** Instancing, LOD, shared prepared deformation,
-   shadow/probe invalidation, and picking coherence must use the same scene facts as draw.
+   shadow/probe invalidation, and picking coherence must use the same scene facts as draw. GL instance
+   buffers key off the versioned instance-data entity and prepared count; LOD consumes the prepared
+   level rather than selecting again in the backend. Neither belongs in the material renderer registry.
 
 ## Backlog
 
