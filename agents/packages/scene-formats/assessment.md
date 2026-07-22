@@ -46,6 +46,15 @@ extension depth, not the old "first primitive, no material" slice.
 
 1. Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
    again, so regressions are caught above synthetic accessor tests.
+2. **Reconcile the `warnings: string[]` diagnostics idiom with the inversion rule.** The parser family
+   reports problems by pushing raw English strings into a caller-supplied `warnings` array
+   (`gltfParse.ts`, `gltfPunctualLights.ts`, and the `load*` loaders in `scene-resources`). The SDK
+   diagnostics inversion rule wants core to expose structured seams/data with caller-facing messages in
+   separately-imported `enable*Guards` modules emitting through `@flighthq/log`. `scene-resources`'s own
+   resource-failure path already does this (structured `ImageResourceFailure` + `explain*` + guard), so
+   the two halves of the import layer use two idioms. Pre-existing house style, not introduced by these
+   commits — but this is the place to converge once import diagnostics are designed (tracked jointly in
+   Depth gap #1's "structured diagnostics must accompany the document" line).
 
 ## Backlog
 

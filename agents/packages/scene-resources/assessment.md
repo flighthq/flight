@@ -17,7 +17,23 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-No open Recommended items.
+1. **Return a distinguishable sentinel on document fetch failure.** On any transport/HTTP failure every
+   `load*` (`loadGltf`, …) returns `allocateEmptySceneDocument()` (all tables present, empty) and pushes
+   an English string into the optional `warnings?: string[]`, so a fetch failure is indistinguishable
+   from a genuinely empty scene unless the caller opts to inspect `warnings`. Per the sentinel rule, an
+   expected failure should be a first-class sentinel: return `SceneDocument | null` (null on fetch
+   failure), or at minimum document that empty-doc-plus-warning is the failure signal.
+2. **Fix the stale reveal comment.** `revealSceneResourcesOnResolve.ts` has a trailing doc line stating
+   "an object with several pending textures fades in when the first of them resolves," which contradicts
+   the head of the same comment and the implementation (reveal fires only once `owner.pending.size === 0`).
+   Leftover from the pre-`88d31985` fade-on-first behavior; correct it to say the owner reveals only after
+   all its required textures settle.
+3. **Converge the two diagnostics idioms in this layer.** The resolver's own failure path is exemplary
+   (structured `ImageResourceFailure` + `explainImageResourceReferenceResolution` +
+   `enableSceneResourceFailureGuards` through `@flighthq/log`), but the `load*`/document side reports
+   through a raw-string `warnings` out-array — two idioms for the same package. The modern
+   inversion-rule pattern already exists here; the document loaders are the place to converge on it (see
+   the sibling note added to `scene-formats`).
 
 ## Depth gaps
 

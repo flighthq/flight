@@ -39,7 +39,7 @@ This is the 2D half of skeletal animation. 3D skeletal animation is `@flighthq/s
 
 **Non-goals:**
 
-- 3D skeletal animation — `@flighthq/skeleton` (Matrix4, GPU skin palettes, blend trees).
+- 3D skeletal animation — `@flighthq/skeleton3d` (Matrix4, GPU skin palettes, blend trees).
 - Spine/DragonBones file format import — a future `skeleton2d-formats` neighbor.
 - Display-object integration — a composition layer (`skeletonsprite`?) owns the display node.
 - Animation playback — `@flighthq/animation` drives timelines; this package owns the data + apply.
@@ -49,7 +49,7 @@ This is the 2D half of skeletal animation. 3D skeletal animation is `@flighthq/s
 ## Decisions
 
 - **[2026-07-15] Separate package from 3D skeleton.** Different mathematical model: 2D affine transforms vs 4×4 matrices, CPU mesh warp vs GPU skin palette, 2D IK vs 3D IK. User-directed.
-- **[2026-07-15] Named `skeleton2d`; 3D is `skeleton3d`.** `skeleton` is the domain word; the `2d`/`3d` suffix follows the physics pattern. Both dimensions get explicit suffixes — the existing `@flighthq/skeleton` renames to `@flighthq/skeleton3d`. User-directed.
+- **[2026-07-15] Named `skeleton2d`; 3D is `skeleton3d`.** `skeleton` is the domain word; the `2d`/`3d` suffix follows the physics pattern. Both dimensions get explicit suffixes — the existing `@flighthq/skeleton3d` renames to `@flighthq/skeleton3d`. User-directed.
 
 ## Open directions
 

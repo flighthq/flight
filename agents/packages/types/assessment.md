@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/types'
-updated: 2026-07-02
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -17,6 +17,7 @@ Strictly sweep-safe: within `@flighthq/types`, no open design decision.
 - ~~**Fix DOM/Dom casing.**~~ _Already done._ Files are `DomRenderOptions.ts`, `DomStageRectangle.ts`. Consistent `Dom` PascalCase throughout.
 - **Extract `TextDirection` alias.** `'LeftToRight' | 'RightToLeft'` is inline in both `ShapedRun.direction` and `ShapeRunOptions.direction`. Extract to a shared `TextDirection` type in its own file, reference from both.
 - **Document `glyphCount` on `ShapedRun`.** Add a one-line comment explaining why `glyphCount` coexists with `glyphs.length` (over-allocated result buffer), or drop it if it is always `glyphs.length`.
+- **Rename `ViewportAlign`/`ViewportScaleMode` → `StageAlign`/`StageScaleMode`.** The Viewport reshape (`d1b12413`) deliberately moved *fit* off `Viewport` (now the bedrock drawable-rect) onto `Stage`, and these two enums are now consumed only by `Stage.ts`/`stageFit.ts` — `Viewport.ts` no longer references them. Keeping the `Viewport` prefix breaks the "globally self-identifying" naming rule (a reader greps `ViewportAlign` expecting it to live on `Viewport`, finds it owns nothing there). Rename to `StageAlign`/`StageScaleMode`, or a neutral `FitAlign`/`FitScaleMode` if non-Stage fit consumers are foreseen. Within-`types`, sweep-safe.
 
 ## Backlog
 

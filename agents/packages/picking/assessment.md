@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/picking'
-updated: 2026-07-21
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -14,8 +14,17 @@ None remaining.
 
 ## Recommended
 
-No sweep-safe implementation follows from this review. The meaningful corrections touch scene
-preparation, mesh deformation, materials, or future instancing/LOD contracts.
+1. **Make `SceneHit.node` type-honest.** `SceneHit.node` (in `@flighthq/types`) is declared non-null
+   `Mesh`, but `createSceneHit()` initializes it `null as unknown as Mesh` (`pickScene.ts`). A fresh
+   hit — the documented `out` for `pickScene` and a reused slot in `pickSceneAll`'s output array —
+   therefore exposes `node === null` under a type that promises `Mesh`; any consumer reading `.node`
+   without checking the return dereferences null with no type warning. Miss-handling is otherwise correct
+   (on a miss the `null` return is the sentinel and `out` is left untouched), so the fix is just to type
+   `node: Mesh | null`, matching the struct's other `-1`/`null` sentinels and dropping the
+   `as unknown as` cast. Sweep-safe across `types` + `picking`.
+
+Beyond that, the meaningful corrections touch scene preparation, mesh deformation, materials, or future
+instancing/LOD contracts.
 
 ## Depth gaps
 

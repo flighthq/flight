@@ -111,3 +111,11 @@ _Append-only, dated, blessed rulings._
 4. **Name** — confirm `@flighthq/color`.
 5. **`particles`/`surface` color reuse** — fold their HSV/pixel color math onto `color` too, or leave
    as domain-local until it demonstrably duplicates. Decide during the consumer re-point.
+6. **How to resolve the `create*`-returns-bare-value conflict (assessment `Directed` #1).**
+   `createHslColor`/`createHsvColor`/`createLinearColor`/`createColorFromKelvin` return
+   `[number,number,number]`/scalars, not Entities — colliding with the SDK-wide `create*` = "allocates
+   an Entity" reading. Two exits: **(a) Entity-back** the working color scratch types where identity is
+   intended, so `create*` stays honest; or **(b) rename** the pure value-scratch allocation to a
+   non-`create` verb (the `allocateEmptySceneDocument` precedent). _User lean (2026-07-22): unsure about
+   `allocate*`; wants to weigh whether these should simply **be Entities** instead. Pending a direction
+   session — do not pick unilaterally._
