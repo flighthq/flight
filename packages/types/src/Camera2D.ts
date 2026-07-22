@@ -1,6 +1,6 @@
 import type { Rectangle } from './Rectangle';
 
-// 2D game-camera header. `@flighthq/camera2d` operates on this plain-data camera to produce the
+// 2D game-camera header. `@flighthq/camera` operates on this plain-data camera to produce the
 // world<->screen transform, follow a target with a deadzone and frame-rate-independent smoothing,
 // clamp to world bounds, compute parallax-layer offsets, and report the visible world rectangle for
 // culling. It is the seam between a 2D game's world coordinates and what the renderer draws.
