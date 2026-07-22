@@ -14,7 +14,6 @@ import { createBlinnPhongMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh';
 import type { Scene } from '@flighthq/scene';
 import { createSceneFromDocument } from '@flighthq/scene';
-import { createTexture } from '@flighthq/texture';
 import type {
   AnimationClip,
   AnimationTrack,
@@ -31,14 +30,7 @@ import type {
   Texture,
   Transform3D,
 } from '@flighthq/types';
-import {
-  MeshKind,
-  ResourceResolutionState,
-  SceneAnimationPathRotation,
-  SceneAnimationPathTranslation,
-  SceneNodeKind,
-  ImageResourceReferenceKind,
-} from '@flighthq/types';
+import { MeshKind, SceneAnimationPathRotation, SceneAnimationPathTranslation, SceneNodeKind } from '@flighthq/types';
 
 import {
   AWD_BLOCK_CONTAINER,
@@ -80,6 +72,8 @@ import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
   convertTransformLhToRh,
+  createEmbeddedTextureRef,
+  createExternalTextureRef,
   negateVec3Z,
   packSkinInfluences,
   reverseTriangleWinding,
@@ -1366,7 +1360,9 @@ function resolveAwdMaterial(
   // caller wanting metallic-roughness converts explicitly downstream (getPbrRoughnessFromPhongShininess
   // + getPhongToPbrLightExposure); the importer does not presume a PBR pipeline.
   const diffuseTexture =
-    parsed.diffuseTextureId !== 0 ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, warnings) : null;
+    parsed.diffuseTextureId !== 0
+      ? resolveAwdTexture(parsed.diffuseTextureId, textureBlocks, document, warnings)
+      : null;
   if (diffuseTexture === null && parsed.color === null) {
     cache.set(materialId, -1);
     return -1;
@@ -1391,6 +1387,7 @@ function resolveAwdMaterial(
 function resolveAwdTexture(
   textureId: number,
   textureBlocks: Readonly<Map<number, ParsedTexture>>,
+  document: SceneDocument,
   warnings?: string[],
 ): Texture | null {
   const parsed = textureBlocks.get(textureId);
@@ -1399,25 +1396,10 @@ function resolveAwdTexture(
     return null;
   }
   if (parsed.bytes !== null && parsed.mimeType !== null) {
-    return createTexture({
-      resource: {
-        kind: ImageResourceReferenceKind.Embedded,
-        bytes: parsed.bytes,
-        mimeType: parsed.mimeType,
-        state: ResourceResolutionState.Unresolved,
-      },
-    });
+    return createEmbeddedTextureRef(parsed.bytes, parsed.mimeType, document.resources);
   }
   if (parsed.url !== null) {
-    return createTexture({
-      resource: {
-        kind: ImageResourceReferenceKind.External,
-        uri: parsed.url,
-        basePath: null,
-        mimeType: null,
-        state: ResourceResolutionState.Unresolved,
-      },
-    });
+    return createExternalTextureRef(parsed.url, null, document.resources);
   }
   return null;
 }

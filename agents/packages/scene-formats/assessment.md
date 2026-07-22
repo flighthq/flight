@@ -16,12 +16,11 @@ extension depth, not the old "first primitive, no material" slice.
 
 ## Depth gaps
 
-1. **Make the complete import result truthful.** glTF now fills `SceneDocument.resources` once per
-   `images[]` identity and lets independently sampled Texture entities share the reference while keeping
-   distinct sampler, color-space, UV-set, and texture-transform state. The classic format parsers still
-   return an empty table while material textures carry their real references; populate those tables.
-   glTF cameras and punctual lights must fill their existing standalone document tables, and structured
-   diagnostics must accompany the document without hiding loading inside parsing.
+1. **Make the complete import result truthful.** Every current parser now records the image identities
+   referenced by its material textures in `SceneDocument.resources`; independently sampled Texture
+   entities share the reference while retaining their own sampling state. glTF cameras and punctual
+   lights must still fill their existing standalone document tables, and structured diagnostics must
+   accompany the document without hiding loading inside parsing.
 2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
    `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
    material selection, skinning, and rendered proof. Primitive topology mapping is now complete;
@@ -38,9 +37,7 @@ extension depth, not the old "first primitive, no material" slice.
 
 ## Recommended
 
-1. Reconcile `SceneDocument.resources` with the texture references already emitted inside materials;
-   cover shared-image deduplication and embedded/external references.
-2. Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
+1. Add fixture-backed assertions for the already-supported glTF/GLB core before expanding the schema
    again, so regressions are caught above synthetic accessor tests.
 
 ## Backlog
@@ -70,3 +67,7 @@ extension depth, not the old "first primitive, no material" slice.
 - [2026-07-22 · completed] glTF image identity is normalized once per `images[]` entry in
   `SceneDocument.resources`. Multiple Texture entities may sample that resource with independent
   sampler/color-space/UV state, while scene-resources fetches/decodes the shared identity once.
+- [2026-07-22 · completed] OBJ/MTL, AWD, 3DS, MD2, and MD5 now populate `SceneDocument.resources`
+  instead of leaving material texture references invisible to the document resolver. Repeated external
+  URIs or AWD texture-block identities share one reference while each material slot keeps a distinct
+  Texture entity; embedded and external source forms are covered at the parser boundary.

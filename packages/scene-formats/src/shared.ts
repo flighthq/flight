@@ -5,6 +5,7 @@ import { createTexture } from '@flighthq/texture';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
+  ImageResourceReference,
   Mesh,
   SceneNode,
   Texture,
@@ -102,8 +103,22 @@ export function convertTransformLhToRh(transform: Float64Array): void {
 // GLB buffer or an AWD texture block) as an Unresolved Embedded resource ref on a fresh Texture. The
 // parser carries the bytes but does not decode them — @flighthq/scene-resources decodes on resolve.
 // `mimeType` is null when the container did not declare one (the resolver sniffs it from the bytes).
-export function createEmbeddedTextureRef(bytes: Uint8Array, mimeType: string | null): Texture {
-  return createTexture({ resource: buildEmbeddedImageResourceReference(bytes, mimeType) });
+export function createEmbeddedTextureRef(
+  bytes: Uint8Array,
+  mimeType: string | null,
+  resources?: ImageResourceReference[],
+): Texture {
+  let resource = resources?.find(
+    (candidate): candidate is EmbeddedImageResourceReference =>
+      candidate.kind === ImageResourceReferenceKind.Embedded &&
+      candidate.bytes === bytes &&
+      candidate.mimeType === mimeType,
+  );
+  if (resource === undefined) {
+    resource = buildEmbeddedImageResourceReference(bytes, mimeType);
+    resources?.push(resource);
+  }
+  return createTexture({ resource });
 }
 
 // Wraps a texture file path/URI declared by a model format as an Unresolved External resource ref on
@@ -111,8 +126,22 @@ export function createEmbeddedTextureRef(bytes: Uint8Array, mimeType: string | n
 // resources resolves the ref later, joining a relative `uri` against `basePath` (the directory the
 // container loaded from, null when the format carried none). Shared by the OBJ/MD5/3DS/MD2/glTF
 // material decoders.
-export function createExternalTextureRef(uri: string, basePath: string | null = null): Texture {
-  return createTexture({ resource: buildExternalImageResourceReference(uri, basePath) });
+export function createExternalTextureRef(
+  uri: string,
+  basePath: string | null = null,
+  resources?: ImageResourceReference[],
+): Texture {
+  let resource = resources?.find(
+    (candidate): candidate is ExternalImageResourceReference =>
+      candidate.kind === ImageResourceReferenceKind.External &&
+      candidate.uri === uri &&
+      candidate.basePath === basePath,
+  );
+  if (resource === undefined) {
+    resource = buildExternalImageResourceReference(uri, basePath);
+    resources?.push(resource);
+  }
+  return createTexture({ resource });
 }
 
 // Walks a built scene for the first skinned mesh and returns its skeleton's joints — the same node

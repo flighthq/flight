@@ -444,7 +444,7 @@ function appendMeshDocument(
     let index = materialIndexByName.get(materialName);
     if (index === undefined) {
       index = document.materials.length;
-      document.materials.push(threeDsMaterialToBlinnPhong(parsed) as unknown as MaterialLike);
+      document.materials.push(threeDsMaterialToBlinnPhong(parsed, document) as unknown as MaterialLike);
       materialIndexByName.set(materialName, index);
     }
     meshMaterials.push(index);
@@ -466,10 +466,13 @@ function appendMeshDocument(
 // model. The diffuse and specular colors map directly; the texture map filename becomes an Unresolved
 // External diffuseMap ref. The ambient color has no Blinn-Phong equivalent (ambient is a scene light
 // in Flight), so it is dropped; a caller wanting PBR converts explicitly.
-function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>): Material {
+function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, document: SceneDocument): Material {
   const result = createBlinnPhongMaterial({
     diffuse: packThreeDsColor(material.diffuse),
-    diffuseMap: material.textureFilename !== null ? createExternalTextureRef(material.textureFilename) : null,
+    diffuseMap:
+      material.textureFilename !== null
+        ? createExternalTextureRef(material.textureFilename, null, document.resources)
+        : null,
     specular: packThreeDsColor(material.specular),
   }) as unknown as Material;
   // Preserve the 3DS material chunk name as the material's authored name (empty → anonymous).

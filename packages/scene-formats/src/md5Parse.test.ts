@@ -748,6 +748,8 @@ describe('parseMd5Mesh', () => {
     // The mesh's subset references the material by its document index.
     expect(doc.meshes[0].materials).toEqual([0]);
     expect((doc.materials[0] as unknown as BlinnPhongMaterial).kind).toBe(BlinnPhongMaterialKind);
+    expect(doc.resources).toHaveLength(1);
+    expect(doc.resources[0]).toBe((doc.materials[0] as unknown as BlinnPhongMaterial).diffuseMap!.resource);
   });
 
   it('leaves the animations table empty (the .md5anim is a separate file)', () => {

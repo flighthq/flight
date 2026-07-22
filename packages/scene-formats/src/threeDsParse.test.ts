@@ -444,6 +444,8 @@ describe('parse3ds', () => {
     expect(document.materials).toHaveLength(1);
     expect((document.materials[0] as BlinnPhongMaterial).name).toBe('Skin');
     expect(document.meshes[0].materials).toEqual([0]);
+    expect(document.resources).toHaveLength(1);
+    expect(document.resources[0]).toBe((document.materials[0] as BlinnPhongMaterial).diffuseMap!.resource);
   });
 
   it('returns an empty document with a warning for non-3DS input', () => {

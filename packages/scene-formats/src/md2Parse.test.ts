@@ -540,6 +540,7 @@ describe('parseMd2', () => {
         { normalIndex: 0, x: 0, y: 10, z: 0 },
       ],
       scale: [1, 1, 1],
+      skin: 'players/hero/skin.pcx',
       texCoords: [{ s: 0, t: 0 }],
       translate: [0, 0, 0],
       triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
@@ -551,6 +552,8 @@ describe('parseMd2', () => {
     expect(document.nodes).toHaveLength(1);
     expect(document.nodes[0].mesh).toBe(0);
     expect(document.scenes[0].rootNodes).toEqual([0]);
+    expect(document.resources).toHaveLength(1);
+    expect(document.resources[0]).toBe((document.materials[0] as BlinnPhongMaterial).diffuseMap!.resource);
   });
 
   it('carries per-frame vertex animation as a weights channel bound to the mesh node index', () => {

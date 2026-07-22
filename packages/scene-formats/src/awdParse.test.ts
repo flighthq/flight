@@ -937,6 +937,44 @@ describe('parseAwd', () => {
     expect(doc.meshes[0].materials).toEqual([0]);
   });
 
+  it('records a texture block in resources and shares its reference across sampled Texture entities', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const idxStream = buildStream(AWD_STREAM_INDICES, AWD_DATA_UINT16, new Uint16Array([0, 1, 2]));
+    const posStream = buildStream(AWD_STREAM_POSITIONS, AWD_DATA_FLOAT32, positions);
+    const geomBody = buildTriangleGeometryBody('Geom', [
+      { streams: [posStream, idxStream] },
+      { streams: [posStream, idxStream] },
+    ]);
+    const texBody = buildTextureBody('diffuse.png', AWD_TEXTURE_TYPE_EMBEDDED, FAKE_PNG_BYTES);
+    const firstMaterial = buildMaterialBody('First', AWD_MATERIAL_TYPE_TEXTURE, [
+      [AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2],
+    ]);
+    const secondMaterial = buildMaterialBody('Second', AWD_MATERIAL_TYPE_TEXTURE, [
+      [AWD_MATERIAL_PROP_DIFFUSE_TEXTURE, 2],
+    ]);
+    const meshBody = buildMeshInstanceBodyWithMaterials('Mesh', 0, IDENTITY_TRANSFORM, 1, [3, 4]);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD_BLOCK_TEXTURE, texBody.length),
+      texBody,
+      buildBlockHeader(3, AWD_BLOCK_MATERIAL, firstMaterial.length),
+      firstMaterial,
+      buildBlockHeader(4, AWD_BLOCK_MATERIAL, secondMaterial.length),
+      secondMaterial,
+      buildBlockHeader(5, AWD_BLOCK_MESH_INSTANCE, meshBody.length),
+      meshBody,
+    );
+
+    const doc = parseAwd(concatBytes(buildAwdHeader(body.length), body));
+    const first = doc.materials[0] as BlinnPhongMaterial;
+    const second = doc.materials[1] as BlinnPhongMaterial;
+    expect(doc.resources).toHaveLength(1);
+    expect(first.diffuseMap).not.toBe(second.diffuseMap);
+    expect(first.diffuseMap!.resource).toBe(doc.resources[0]);
+    expect(second.diffuseMap!.resource).toBe(doc.resources[0]);
+  });
+
   it('returns an empty document with a warning for compressed input', () => {
     const warnings: string[] = [];
     const doc = parseAwd(buildAwdHeader(0, AWD_COMPRESSION_DEFLATE), warnings);
