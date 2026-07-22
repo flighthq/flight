@@ -3,7 +3,7 @@
 // - observe <url>: one arbitrary page, zero integration, always emit eyes + diagnostics.
 // - capture: a full entry × renderer report from a JSON manifest or Flight's built-in suites.
 // - validate: tolerant regression/parity fingerprints over the same suite.
-// - batch: capture + validate workflow over many independently-configured subjects.
+// - batch: capture + validate + benchmark workflow over many independently-configured subjects.
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -14,8 +14,9 @@ import { runCaptureBenchmark } from './captureBenchmark.js';
 import { discoverEntries } from './captureEntries.js';
 import type { Entry } from './captureEntries.js';
 import { captureUrl } from './captureEntry.js';
+import { getFlightCaptureValidationPreset } from './captureFlightPreset.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
-import type { CaptureManifest, CaptureParityGroup } from './captureManifest.js';
+import type { CaptureManifest } from './captureManifest.js';
 import { readCaptureManifest } from './captureManifest.js';
 import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.js';
 import { runCaptureSuite } from './captureSuite.js';
@@ -187,6 +188,7 @@ function validationOptions(
   subject: string,
   manifest: CaptureManifest | null,
 ): CaptureWorkflowValidationOptions {
+  const preset = getFlightCaptureValidationPreset(subject);
   return {
     filter: flag(argv, 'filter'),
     rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
@@ -200,12 +202,9 @@ function validationOptions(
     parityTolerance: parseNumber(flag(argv, 'parity-tolerance')),
     sequential: hasFlag(argv, 'sequential'),
     workerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'parallel'), 6)),
-    fingerprintSkip:
-      manifest?.validation?.fingerprintSkip ?? (manifest === null && subject === 'examples' ? ['playingsound'] : []),
-    paritySkip: manifest?.validation?.paritySkip ?? (manifest === null ? FLIGHT_PARITY_SKIP : {}),
-    parityGroups:
-      manifest?.validation?.parityGroups ??
-      (manifest === null && subject === 'functional' ? FLIGHT_PARITY_GROUPS : undefined),
+    fingerprintSkip: manifest?.validation?.fingerprintSkip ?? (manifest === null ? preset.fingerprintSkip : []),
+    paritySkip: manifest?.validation?.paritySkip ?? (manifest === null ? preset.paritySkip : {}),
+    parityGroups: manifest?.validation?.parityGroups ?? (manifest === null ? preset.parityGroups : undefined),
   };
 }
 
@@ -316,25 +315,6 @@ function removeBatchOptions(argv: readonly string[]): string[] {
   }
   return result;
 }
-
-const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | string[]>> = {
-  playingvideo: 'all',
-  'effect-hue-saturation': ['canvas'],
-  'effect-lens-distortion': ['canvas'],
-  'effect-lens-flare': ['canvas'],
-  'effect-posterize': ['canvas'],
-  'effect-vignette': ['canvas'],
-  'effect-displacement': 'all',
-  'effect-god-rays': 'all',
-  'effect-screen-space-fog': 'all',
-};
-
-const FLIGHT_PARITY_GROUPS: Readonly<Record<string, CaptureParityGroup>> = {
-  visual: {
-    targets: ['dom', 'canvas', 'webgl', 'webgpu'],
-    reference: 'canvas',
-  },
-};
 
 main().catch((err: unknown) => {
   if (isBrowserClosedError(err)) process.exit(130);

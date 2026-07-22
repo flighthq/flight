@@ -57,6 +57,15 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
     .filter((e) => e.renderers.length > 0);
 }
 
+/** Resolves the route for one subject entry and renderer, honoring declarative and generated overrides. */
+export function getCaptureEntryRoute(entry: Readonly<Entry>, renderer: string, subject: string): string {
+  if (entry.routes?.[renderer] !== undefined) return entry.routes[renderer];
+  if (entry.route !== undefined) return entry.route(renderer);
+  if (subject === 'reference') return '';
+  const prefix = subject === 'examples' ? 'examples' : 'tests';
+  return `${prefix}/${entry.name}/${routeSegment(renderer)}/`;
+}
+
 export function rendererMatchesFilter(renderer: string, filter: readonly string[]): boolean {
   if (filter.length === 0) return true;
   const backend = renderer.includes(':') ? renderer.slice(renderer.indexOf(':') + 1) : renderer;

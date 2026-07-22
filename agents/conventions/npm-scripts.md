@@ -56,6 +56,6 @@ Collapses over these leaves:
 | `test:baseline` | every render-test baseline (today: `test:regression:baseline`) |
 | `functional` / `examples` / `gallery` | the matching `dev:*` server |
 
-All render checks invoke `@flighthq/tool-capture`: `capture --fail-on-error` runs smoke reporting, while `validate` runs parity (`--no-regression`), regression (`--no-parity`), and baseline writes (`--update-fingerprints`).
+All render checks invoke `@flighthq/tool-capture`: `capture --fail-on-error` runs smoke reporting, `validate` runs parity (`--no-regression`), regression (`--no-parity`), and baseline writes (`--update-fingerprints`), and `benchmark` samples repeatable synchronized work (`--update-benchmarks` writes stable performance baselines).
 
 The subject umbrellas dogfood its higher-level batch workflow: `test:functional` and `test:examples` select one subject from `tool-capture.batch.json`, while `test:browser` processes both subjects through one multi-subject plan. The leaf smoke/parity/regression and baseline commands remain available for focused reads and writes.

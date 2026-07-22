@@ -18,7 +18,7 @@ import pc from 'picocolors';
 import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
-import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './captureEntries.js';
+import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine } from './captureFormat.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
@@ -279,16 +279,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   for (const renderer of renderers) {
     // Stop launching pages once an interrupt has begun; the partial result is reported by the caller.
     if (isAborted()) break;
-    const urlPath =
-      entry.routes?.[renderer] ??
-      (entry.route
-        ? entry.route(renderer)
-        : tool === 'examples'
-          ? `examples/${entry.name}/${routeSegment(renderer)}/`
-          : tool === 'functional'
-            ? `tests/${entry.name}/${routeSegment(renderer)}/`
-            : ''); // landing: the single page is served at the server root
-
+    const urlPath = getCaptureEntryRoute(entry, renderer, tool);
     const url = `${baseUrl}/${urlPath}`;
     const { outDir, tmpScreenshot, finalScreenshot, tmpLogs, finalLogs, statusPath } = getCaptureOutputPaths(
       outBase,

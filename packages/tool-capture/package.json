@@ -45,6 +45,6 @@
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Turn-key browser capture CLI and API for deterministic page suites, screenshot/log/status reporting, and baseline comparison",
+  "description": "Turn-key Flight capture, visual verification, parity, and benchmark CLI and API",
   "sideEffects": false
 }

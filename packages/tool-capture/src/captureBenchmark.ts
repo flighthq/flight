@@ -12,7 +12,7 @@ import pc from 'picocolors';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
-import { rendererMatchesFilter, routeSegment } from './captureEntries.js';
+import { getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
 import { installAbortHandler } from './captureInterrupt.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { writeCaptureReport } from './captureReport.js';
@@ -103,10 +103,6 @@ interface CaptureBenchmarkBaseline {
   targets: Record<string, CaptureBenchmarkBaselineTarget>;
 }
 
-export function benchmarkBaselinePath(root: string, subject: string, entry: string): string {
-  return join(root, subject, 'benchmarks', `${entry}.json`);
-}
-
 export function calculateCaptureBenchmarkStatistics(samples: readonly number[]): CaptureBenchmarkStatistics {
   if (samples.length === 0 || samples.some((sample) => !Number.isFinite(sample) || sample < 0)) {
     throw new Error('benchmark samples must contain finite non-negative values');
@@ -135,6 +131,10 @@ export function evaluateCaptureBenchmarkRegression(
   return { change, pass: change <= tolerance };
 }
 
+export function getCaptureBenchmarkBaselinePath(root: string, subject: string, entry: string): string {
+  return join(root, subject, 'benchmarks', `${entry}.json`);
+}
+
 async function benchmarkTarget(
   context: BrowserContext,
   baseUrl: string,
@@ -152,7 +152,7 @@ async function benchmarkTarget(
 ): Promise<CaptureBenchmarkTargetResult> {
   const page = await context.newPage();
   try {
-    await page.goto(`${baseUrl}/${entryRoute(entry, renderer, subject)}`, {
+    await page.goto(`${baseUrl}/${getCaptureEntryRoute(entry, renderer, subject)}`, {
       waitUntil: 'domcontentloaded',
       timeout: 15_000,
     });
@@ -377,7 +377,7 @@ function applyBenchmarkBaseline(options: {
   stabilityTolerance: number;
   update: boolean;
 }): void {
-  const path = benchmarkBaselinePath(options.root, options.subject, options.entry);
+  const path = getCaptureBenchmarkBaselinePath(options.root, options.subject, options.entry);
   const baseline = readBenchmarkBaseline(path);
   if (options.update) {
     const next: CaptureBenchmarkBaseline = {
@@ -588,14 +588,6 @@ function writeBenchmarkBaseline(path: string, baseline: CaptureBenchmarkBaseline
   const temporary = `${path}.tmp`;
   writeFileSync(temporary, `${JSON.stringify(sorted, null, 2)}\n`);
   renameSync(temporary, path);
-}
-
-function entryRoute(entry: Readonly<Entry>, renderer: string, subject: string): string {
-  return (
-    entry.routes?.[renderer] ??
-    entry.route?.(renderer) ??
-    `${subject === 'examples' ? 'examples' : 'tests'}/${entry.name}/${routeSegment(renderer)}/`
-  );
 }
 
 function rendererBackend(renderer: string): string {
