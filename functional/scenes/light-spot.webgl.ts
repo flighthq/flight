@@ -1,12 +1,12 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createBlinnPhongMaterial,
-  createCamera,
+  createCamera3D,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -22,7 +22,7 @@ import {
   prepareSceneRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
 // drawGlScene collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
@@ -54,7 +54,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
@@ -72,16 +72,16 @@ const logicalHeight = height / scale;
 const geometry = createSphereMeshGeometry(0.5, 48, 32);
 const material = createBlinnPhongMaterial({ diffuse: 0x808080ff, specular: 0x808080ff, shininess: 32 });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // A white spot up-front-right, aimed back at the origin with a 24° outer cone (12° inner hotspot), plus
 // a dim ambient fill. The cone covers the screen-right cap of the sphere; the screen-left side sits

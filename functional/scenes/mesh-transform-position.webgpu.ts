@@ -1,12 +1,12 @@
 import { createScene } from '@flighthq/scene';
 import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createMatrix4,
   createMesh,
@@ -23,7 +23,7 @@ import {
   prepareSceneRender,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
   submitWgpuRenderPass,
   translateMatrix4,
@@ -55,7 +55,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   prepareSceneRender(state, scene, camera, lights);
@@ -71,7 +71,7 @@ registerWgpuFunctionalTarget(state, scale);
 // frame instead of the center. The visual is unambiguous: a centered box vs. an off-center box is the
 // most direct screen-space evidence that the model matrix is consumed by the scene update + projection.
 //
-// Camera is head-on (eye at (0,0,4), looking at the origin) so screen position is easy to reason about:
+// Camera3D is head-on (eye at (0,0,4), looking at the origin) so screen position is easy to reason about:
 // world +x → screen right, world +y → screen up. The box is translated to (+1.3, +0.7, 0); its silhouette
 // therefore moves up-and-right, the frame center becomes background, and the cube color appears off-center.
 //
@@ -84,7 +84,7 @@ const logicalHeight = height / scale;
 const geometry = createBoxMeshGeometry(1, 1, 1);
 const material = createUnlitMaterial({ baseColor: 0x30c0a0ff });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
@@ -96,12 +96,12 @@ translateMatrix4(meshLocal, meshLocal, 1.3, 0.7, 0);
 setNodeLocalMatrix4(mesh, meshLocal);
 
 // Head-on camera at (0,0,4): world +x → screen right, world +y → screen up. fovY = PI/4.
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // Unlit ignores lights, but render() requires a valid rig.
 const directionalDirection = createVector3(-1, -0.35, -0.55);

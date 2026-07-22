@@ -1,7 +1,7 @@
 // camera2d-viewport — validates that a Camera2D view transform, when applied through the display
 // object transform system, produces correct world→screen mapping.
 //
-// Camera centered at world (200, 200) with 2× zoom on an 800×600 viewport. Three circles at known
+// Camera3D centered at world (200, 200) with 2× zoom on an 800×600 viewport. Three circles at known
 // world positions:
 //   red   at world (200, 200) → screen (400, 300) — viewport center
 //   blue  at world (100, 100) → screen (200, 100)

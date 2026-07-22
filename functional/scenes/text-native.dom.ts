@@ -11,6 +11,7 @@ import {
   renderDomBackground,
   renderDomDisplayObject,
 } from '@flighthq/sdk';
+import { registerFunctionalTarget } from '@ft/verify';
 
 // NativeText is platform/DOM-backed, so this test runs on the DOM backend only — there is no canvas or
 // webgl render.*.ts, which restricts discovery to DOM.
@@ -31,6 +32,8 @@ export function render(root: DisplayObject): void {
   renderDomBackground(state);
   renderDomDisplayObject(state, root);
 }
+
+registerFunctionalTarget({ kind: 'dom', state, width, height, scale, render });
 
 const root = createDisplayContainer();
 

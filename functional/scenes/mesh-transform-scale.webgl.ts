@@ -1,12 +1,12 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -24,7 +24,7 @@ import {
   registerUnlitGlMaterial,
   renderGlBackground,
   scaleMatrix4,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
 } from '@flighthq/sdk';
 
@@ -55,7 +55,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -74,7 +74,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lig
 // visual is a bigger block: a point that would be OUTSIDE the unit cube's projection is INSIDE the 2× cube,
 // yet the frame corners stay background — a footprint that is larger but not full-frame.
 //
-// Camera is head-on (eye at (0,0,4), fovY = PI/4): the half-view-height at the z=0 plane is 4*tan(PI/8) ≈
+// Camera3D is head-on (eye at (0,0,4), fovY = PI/4): the half-view-height at the z=0 plane is 4*tan(PI/8) ≈
 // 1.657 world units, mapping ~0.005523 world units per pixel. So the unit box (half-extent 0.5) reaches
 // ~0.113*width from center; the 2× box (half-extent 1.0) reaches ~0.226*width. A sample at 0.16*width is
 // between them: outside the unit footprint, inside the doubled one. scaleMatrix4(out, source, sx, sy, sz).
@@ -88,7 +88,7 @@ const logicalHeight = height / scale;
 const geometry = createBoxMeshGeometry(1, 1, 1);
 const material = createUnlitMaterial({ baseColor: 0x8040d0ff });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
@@ -100,12 +100,12 @@ scaleMatrix4(meshLocal, meshLocal, 2, 2, 2);
 setNodeLocalMatrix4(mesh, meshLocal);
 
 // Head-on camera at (0,0,4): screen-space size scales directly with world size, easy to reason about.
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // Unlit ignores lights, but render() requires a valid rig.
 const directionalDirection = createVector3(-1, -0.35, -0.55);

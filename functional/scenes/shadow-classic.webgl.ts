@@ -1,14 +1,14 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
-  configureDirectionalShadowCamera,
+  configureDirectionalShadowCamera3D,
   createAabb,
   createAmbientLight,
   createBlinnPhongMaterial,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -22,11 +22,12 @@ import {
   endGlRenderEffectPipeline,
   getSceneNodeWorldBounds,
   getSurfacePixelLuminance,
+  invalidateNodeLocalTransform,
   prepareSceneRender,
   registerBlinnPhongGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
-  setSceneNodePosition,
+  setCamera3DViewMatrix4FromLookAt,
+  setVector3,
 } from '@flighthq/sdk';
 
 // shadow-classic — proves the directional shadow map is RECEIVED by the classic (Blinn-Phong) material
@@ -68,9 +69,9 @@ export const height = 600;
 
 export function render(
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
-  shadowCamera: Readonly<Camera>,
+  shadowCamera: Readonly<Camera3D>,
 ): void {
   // 1) Depth pass from the light's POV into the shadow map.
   drawGlSceneShadowMap(state, scene, shadowCamera);
@@ -93,21 +94,22 @@ const logicalHeight = height / scale;
 // Diffuse-dominant Blinn-Phong (low specular) so the lit ground is a broad even bright the shadow darkens.
 const material = createBlinnPhongMaterial({ diffuse: 0xb8b8b8ff, shininess: 16, specular: 0x101010ff });
 
-const scene = createScene();
+const scene = createScene().root;
 
 const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
 addNodeChild(scene, ground);
 
 const sphere = createMesh(createSphereMeshGeometry(0.7, 32, 24), [material]);
-setSceneNodePosition(sphere, 0, 1.3, 0);
+setVector3(sphere.position, 0, 1.3, 0);
+invalidateNodeLocalTransform(sphere);
 addNodeChild(scene, sphere);
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0, 0.4, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0, 0.4, 0), createVector3(0, 1, 0));
 
 const direction = createVector3(0, -1, 0);
 const lights = {
@@ -117,12 +119,12 @@ const lights = {
 
 const sceneBounds = createAabb();
 getSceneNodeWorldBounds(sceneBounds, scene);
-const shadowCamera = createCamera({
+const shadowCamera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
-configureDirectionalShadowCamera(shadowCamera, direction, sceneBounds);
+configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
 
 render(scene, camera, lights, shadowCamera);
 

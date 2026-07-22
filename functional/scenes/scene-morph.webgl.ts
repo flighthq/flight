@@ -1,10 +1,10 @@
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, MeshMorph, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, MeshMorph, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   createAmbientLight,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -22,7 +22,7 @@ import {
   prepareSceneRender,
   registerUnlitGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
 // scene-morph — exercises the GL vertex-morph draw path (updateMeshMorph, driven inside drawGlScene on the
@@ -56,7 +56,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   const gl = state.gl;
@@ -112,18 +112,18 @@ const geometry = createMeshGeometry({
 });
 const material = createUnlitMaterial({ baseColor: 0xff8030ff });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 mesh.morph = morph;
 addNodeChild(scene, mesh);
 
 // A straight-on view down -Z so the quad reads as a screen-aligned square whose corners grow outward.
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 const directionalDirection = createVector3(-1, -0.35, -0.55);
 normalizeVector3(directionalDirection, directionalDirection);

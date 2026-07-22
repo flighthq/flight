@@ -1,13 +1,13 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlScene, drawGlSceneShadowMap } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
-  configureDirectionalShadowCamera,
+  configureDirectionalShadowCamera3D,
   createAabb,
   createAmbientLight,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -22,11 +22,12 @@ import {
   endGlRenderEffectPipeline,
   getSceneNodeWorldBounds,
   getSurfacePixelLuminance,
+  invalidateNodeLocalTransform,
   prepareSceneRender,
   registerStandardPbrGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
-  setSceneNodePosition,
+  setCamera3DViewMatrix4FromLookAt,
+  setVector3,
 } from '@flighthq/sdk';
 
 // drawGlScene exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
@@ -57,9 +58,9 @@ export const height = 600;
 
 export function render(
   scene: Readonly<SceneNode>,
-  camera: Readonly<Camera>,
+  camera: Readonly<Camera3D>,
   lights: Readonly<SceneLights>,
-  shadowCamera: Readonly<Camera>,
+  shadowCamera: Readonly<Camera3D>,
 ): void {
   // 1) Depth pass: render the scene from the light's POV into the shadow map (off the scene target).
   drawGlSceneShadowMap(state, scene, shadowCamera);
@@ -96,7 +97,7 @@ const logicalHeight = height / scale;
 // a broad even bright that the shadow clearly darkens.
 const material = createStandardPbrMaterial({ baseColor: 0xb8b8b8ff, metallic: 0, roughness: 0.8 });
 
-const scene = createScene();
+const scene = createScene().root;
 
 // Horizontal ground plane (createPlaneMeshGeometry is XZ, normal +Y).
 const ground = createMesh(createPlaneMeshGeometry(8, 8), [material]);
@@ -104,15 +105,16 @@ addNodeChild(scene, ground);
 
 // A sphere hovering above the plane centre — the shadow caster.
 const sphere = createMesh(createSphereMeshGeometry(0.7, 32, 24), [material]);
-setSceneNodePosition(sphere, 0, 1.3, 0);
+setVector3(sphere.position, 0, 1.3, 0);
+invalidateNodeLocalTransform(sphere);
 addNodeChild(scene, sphere);
 
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0, 0.4, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 3, 5), createVector3(0, 0.4, 0), createVector3(0, 1, 0));
 
 // One white sun straight down + a dim ambient fill so the shadowed ground reads clearly dark.
 const direction = createVector3(0, -1, 0);
@@ -124,12 +126,12 @@ const lights = {
 // Shadow camera fitted to the scene's world bounds along the light direction.
 const sceneBounds = createAabb();
 getSceneNodeWorldBounds(sceneBounds, scene);
-const shadowCamera = createCamera({
+const shadowCamera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createOrthographicProjection({ halfHeight: 1, halfWidth: 1 }),
 });
-configureDirectionalShadowCamera(shadowCamera, direction, sceneBounds);
+configureDirectionalShadowCamera3D(shadowCamera, direction, sceneBounds);
 
 render(scene, camera, lights, shadowCamera);
 

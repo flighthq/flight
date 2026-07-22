@@ -1,12 +1,12 @@
 import { createScene } from '@flighthq/scene';
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -24,7 +24,7 @@ import {
   registerUnlitGlMaterial,
   renderGlBackground,
   rotateMatrix4,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
 } from '@flighthq/sdk';
 
@@ -55,7 +55,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -74,7 +74,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lig
 // WIDE (horizontal); rotated 90° about Z it becomes TALL (vertical). The oracle asserts the silhouette now
 // extends vertically and no longer horizontally — a result only a correctly-applied Z rotation can produce.
 //
-// Camera is head-on (eye at (0,0,4), looking at the origin), so the X bar lies flat in the screen plane and
+// Camera3D is head-on (eye at (0,0,4), looking at the origin), so the X bar lies flat in the screen plane and
 // a Z rotation is an in-plane screen rotation. rotateMatrix4 takes RADIANS (rotateMatrix4(out, source, axis,
 // radians)); the axis is world +Z = (0,0,1). A quarter turn (π/2) maps the bar's long X extent onto the
 // screen's Y axis.
@@ -88,7 +88,7 @@ const logicalHeight = height / scale;
 const geometry = createBoxMeshGeometry(1.6, 0.35, 0.35);
 const material = createUnlitMaterial({ baseColor: 0xc06030ff });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
@@ -101,12 +101,12 @@ rotateMatrix4(meshLocal, meshLocal, zAxis, Math.PI / 2);
 setNodeLocalMatrix4(mesh, meshLocal);
 
 // Head-on camera at (0,0,4): the X bar lies in the screen plane; a Z rotation rotates it within the screen.
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // Unlit ignores lights, but render() requires a valid rig.
 const directionalDirection = createVector3(-1, -0.35, -0.55);

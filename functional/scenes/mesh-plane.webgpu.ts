@@ -1,11 +1,11 @@
 import { createScene } from '@flighthq/scene';
 import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createAmbientLight,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
@@ -22,7 +22,7 @@ import {
   prepareSceneRender,
   registerUnlitWgpuMaterial,
   renderWgpuBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -52,7 +52,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   prepareSceneRender(state, scene, camera, lights);
@@ -83,18 +83,18 @@ const logicalHeight = height / scale;
 const geometry = createPlaneMeshGeometry(2.5, 2.5);
 const material = createUnlitMaterial({ baseColor: 0x30c0b0ff });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
 // Above-and-in-front so the +Y front face reads as a filled tilted quad (a parallelogram), not an
 // edge-on sliver. A plane viewed edge-on vanishes; this elevated 3/4 view fills the center.
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 2.2, 2.6), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 2.2, 2.6), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // Unlit ignores lights, but render() requires a valid rig.
 const directionalDirection = createVector3(-1, -0.35, -0.55);

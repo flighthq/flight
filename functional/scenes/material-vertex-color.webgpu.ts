@@ -1,11 +1,11 @@
 import { createScene } from '@flighthq/scene';
 import { drawWgpuScene } from '@flighthq/scene-wgpu';
-import type { Camera, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginWgpuRenderEffectPipeline,
   createAmbientLight,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createMesh,
   createPerspectiveProjection,
@@ -21,7 +21,7 @@ import {
   prepareSceneRender,
   registerVertexColorWgpuMaterial,
   renderWgpuBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -51,7 +51,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   prepareSceneRender(state, scene, camera, lights);
@@ -88,18 +88,18 @@ const geometry = createSphereMeshGeometry(0.5, 48, 32);
 // directly to the rgba16f scene target, ignoring all lights and surface normals.
 const material = createVertexColorMaterial({ tint: 0x40a0e0ff });
 
-const scene = createScene();
+const scene = createScene().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
 // Perspective camera dead-on the sphere from +z, looking at the origin. Aspect matches the target so
 // the sphere stays circular.
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // The same strong angled sun + ambient fill as material-standard-pbr. VertexColor ignores both, so this
 // rig is here precisely to prove the surface does NOT respond to it.

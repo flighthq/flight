@@ -1,12 +1,12 @@
 import { createScene, createSceneNode } from '@flighthq/scene';
 import { drawGlScene } from '@flighthq/scene-gl';
-import type { Camera, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
+import type { Camera3D, GlRenderEffectPipeline, SceneLights, SceneNode, Surface } from '@flighthq/sdk';
 import {
   addNodeChild,
   beginGlRenderEffectPipeline,
   createAmbientLight,
   createBoxMeshGeometry,
-  createCamera,
+  createCamera3D,
   createDirectionalLight,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
@@ -23,7 +23,7 @@ import {
   prepareSceneRender,
   registerUnlitGlMaterial,
   renderGlBackground,
-  setCameraViewMatrix4FromLookAt,
+  setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
@@ -55,7 +55,7 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
-export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lights: Readonly<SceneLights>): void {
+export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera3D>, lights: Readonly<SceneLights>): void {
   beginGlRenderEffectPipeline(state, pipeline);
   // renderGlBackground clears color; the depth attachment needs its own clear to the far plane (1.0)
   // or every fragment fails the LESS depth test against an uncleared (0) buffer and the scene is black.
@@ -81,7 +81,7 @@ export function render(scene: Readonly<SceneNode>, camera: Readonly<Camera>, lig
 // render dead-center instead. The oracle asserts exactly that split (center = background, upper-right =
 // child color), so it fails loudly if hierarchy composition regresses.
 //
-// Camera model (RH view, eye on +z looking at origin): +x is screen-right, +y is screen-up.
+// Camera3D model (RH view, eye on +z looking at origin): +x is screen-right, +y is screen-up.
 //
 // app.ts is backend-agnostic; the per-backend scene wiring lives in render.webgl.ts / render.webgpu.ts.
 
@@ -91,7 +91,7 @@ const logicalHeight = height / scale;
 const geometry = createBoxMeshGeometry(1, 1, 1);
 const material = createUnlitMaterial({ baseColor: 0x40e080ff }); // child: green
 
-const scene = createScene();
+const scene = createScene().root;
 
 // Transform-only parent: translated up-and-right. The child inherits this through world composition.
 const parent = createSceneNode();
@@ -106,12 +106,12 @@ const mesh = createMesh(geometry, [material]);
 addNodeChild(parent, mesh);
 
 // Straight-on view from +z so the parent's (x,y) translation maps directly to screen (right, up).
-const camera = createCamera({
+const camera = createCamera3D({
   far: 100,
   near: 0.1,
   projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
 });
-setCameraViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 4), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 const directionalDirection = createVector3(-1, -0.35, -0.55);
 normalizeVector3(directionalDirection, directionalDirection);
