@@ -10,9 +10,19 @@ See [charter](./charter.md) for blessed direction.
 
 ## Depth gaps
 
-1. **Add explicit mip/residency state to texture realization.** The descriptor layer is strong, but it cannot yet express which mip levels are resident, upload a new level progressively, or report the memory actually held. Keep these as small resource operations rather than an implicit global streamer.
-2. **Separate sampling description from residency policy.** Texture continues to own sampling/UV/cubemap/format descriptors; `assets` or a dedicated caller-owned scheduler owns budgets, visibility priority, eviction, and request cancellation.
-3. **Complete declared channel/format paths with render proof.** Texture arrays/3D volumes, compressed payload upload, color-space behavior, and map-specific UV selection need backend consumers and functionals before their descriptor presence counts as feature depth.
+1. **Separate desired mip policy from effective per-state residency.** `Sampler.mipmaps` currently means
+   "generate/use a full chain" and the GL binder generates it on first use; it cannot request a mip
+   range, upload one level progressively, report resident bytes, or distinguish requested quality from
+   what one render state actually holds. Texture/ImageResource descriptors carry source intent and
+   versions; each backend runtime owns effective resident levels. Expose small level/range/byte queries
+   and upload/evict operations rather than an implicit global streamer.
+2. **Keep scheduling caller-owned.** `assets` or a dedicated scheduler owns budgets, visibility
+   priority, cancellation, and eviction order. `texture` supplies descriptors and residency operations;
+   `render-gl` realizes them. Do not put a global cache, loader, or policy loop in the Texture entity.
+3. **Complete declared channel/format paths with render proof.** Compressed upload already accepts full
+   containers, but it is not integrated with progressive ImageResource residency. Texture arrays/3D
+   volumes, cube color-space behavior, all declared pixel formats, and map-specific UV0/UV1 selection
+   need backend consumers and behavioral functionals before descriptor presence counts as feature depth.
 
 ## Recommended
 

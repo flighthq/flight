@@ -856,6 +856,10 @@ These are explicit user directions whose implementation may span packages or req
 - Make synchronization idempotent and window-authoritative
 - Complete the Entity constructor invariant in the application domain
 
+### lighting (solid 88)
+
+- Align the SceneLights constructor with the Entity invariant
+
 ### entity (solid 92)
 
 - Enforce the repository-wide `create*` Entity invariant
@@ -873,8 +877,8 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### texture (solid 58)
 
-- Add explicit mip/residency state to texture realization
-- Separate sampling description from residency policy
+- Separate desired mip policy from effective per-state residency
+- Keep scheduling caller-owned
 - Complete declared channel/format paths with render proof
 
 ### animation (solid 62)
