@@ -21,8 +21,11 @@ extension depth, not the old "first primitive, no material" slice.
    entities share the reference while retaining their own sampling state. Placed glTF cameras and the
    opt-in punctual-light extension now fill the existing standalone document tables. Structured
    diagnostics must still accompany the document without hiding loading inside parsing.
-2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
-   `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
+2. **Carry every common vertex channel and topology.** The mesh/GL layout already has working `uv1`,
+   `color0`, `joints0`, and `weights0` consumers, but glTF geometry construction still emits only
+   `TEXCOORD_0` plus the first skin pair: a texture declaring UV set 1 therefore samples the generic
+   zero attribute instead of authored `TEXCOORD_1`, and `COLOR_0` never reaches PBR. Import
+   `TEXCOORD_1`, `COLOR_0`, secondary `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms with
    material selection, skinning, and rendered proof. Preserve source encodings through the mesh
    package's byte-native record boundary instead of eagerly expanding them merely because
    `MeshGeometry.vertices` is currently a `Float32Array`; the mesh format vocabulary must first gain

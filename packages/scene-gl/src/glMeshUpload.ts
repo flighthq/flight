@@ -118,20 +118,6 @@ function getGlPrimitiveMode(gl: WebGL2RenderingContext, topology: PrimitiveTopol
   }
 }
 
-// Returns true when a MeshGeometry's vertex layout contains a `uv1` semantic (glTF TEXCOORD_1).
-// Used by material renderers to drive the `hasUv1` flag in GlPbrDefineKey at bind time, so the
-// compiled shader variant matches the actual geometry layout without the caller needing to know.
-// A geometry without `uv1` in its layout will have location 5 unbound; the shader path is
-// disabled (#ifndef HAS_UV1) and the attribute reads zero — safe but wasted sampler. Pass the
-// result to buildGlPbrStandardDefineKey as the `hasUv1` argument.
-export function hasGlMeshGeometryUv1(geometry: Readonly<MeshGeometry>): boolean {
-  const attributes = geometry.layout.attributes;
-  for (let i = 0; i < attributes.length; i++) {
-    if (attributes[i].semantic === 'uv1') return true;
-  }
-  return false;
-}
-
 // Builds the STATIC bind-pose vertex buffer a GPU-skinned mesh uploads: a copy of the interleaved
 // buffer with position and normal restored from the captured skin bind pose. tangent/uv0/joints0/
 // weights0 are already static (updateMeshSkin rewrites only position/normal), so copying them straight

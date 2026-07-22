@@ -8,8 +8,9 @@ import type { MeshSkinBindPose } from './MeshSkinBindPose';
 // * tangent.w). The canonical interleaved PBR vertex record is
 //   position(3) + normal(3) + tangent(4, w = handedness) + uv0(2) = 12 f32 / 48 bytes,
 // laid out so one record maps 1:1 to a GL vertexAttribPointer table, a GPUVertexBufferLayout,
-// and a C offsetof table. joints0/weights0/color0 are reserved semantics for a later skinning
-// and vertex-color pass. Index data auto-promotes Uint16 -> Uint32 past 65k vertices.
+// and a C offsetof table. Optional uv1/color0/joints0/weights0 channels extend that record through
+// the declared layout without changing the canonical base. Index data auto-promotes Uint16 -> Uint32
+// past 65k vertices.
 
 // The role an attribute plays, independent of its numeric format. Renderers bind by semantic.
 export type VertexSemantic = 'color0' | 'joints0' | 'normal' | 'position' | 'tangent' | 'uv0' | 'uv1' | 'weights0';
