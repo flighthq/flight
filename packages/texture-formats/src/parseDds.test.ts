@@ -131,6 +131,25 @@ describe('parseDds', () => {
     expect(container!.levels[0].byteOffset).toBe(148); // data follows the 20-byte DX10 header
   });
 
+  it('lays out every DX10 array layer as an independent subresource chain', () => {
+    const container = parseDds(
+      buildDds({
+        dx10: { arraySize: 3, dxgiFormat: 98 },
+        fourCC: fourCC('DX10'),
+        height: 4,
+        pfFlags: 0x4,
+        width: 4,
+      }),
+    );
+    expect(container).not.toBeNull();
+    expect(container!.layers).toBe(3);
+    expect(container!.levels).toEqual([
+      { byteLength: 16, byteOffset: 148, height: 4, width: 4 },
+      { byteLength: 16, byteOffset: 164, height: 4, width: 4 },
+      { byteLength: 16, byteOffset: 180, height: 4, width: 4 },
+    ]);
+  });
+
   it('returns null for a non-DDS, truncated, unknown-format, or volume texture', () => {
     expect(parseDds(new Uint8Array([0xab, 0x4b, 0x54, 0x58]))).toBeNull();
     expect(parseDds(new Uint8Array([0x44, 0x44, 0x53, 0x20, 0, 0, 0, 0]))).toBeNull();

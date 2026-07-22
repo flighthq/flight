@@ -6,6 +6,7 @@ import {
   createByteReader,
   hasByteReaderBytes,
   readByteReaderU16,
+  readByteReaderU24,
   readByteReaderU32,
   readByteReaderU8,
 } from './byteReader';
@@ -27,9 +28,9 @@ export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null
   if (bytes.byteLength < basisHeaderMinSize) return null;
 
   const header = createByteReader(bytes, basisTotalSlicesOffset);
-  const totalSlices = readByteReaderU16(header); // m_total_slices (offset 12)
-  const totalImages = readByteReaderU16(header); // m_total_images (offset 14)
-  const format = basisTexFormat[bytes[basisTexFormatOffset]]; // m_tex_format (offset 16)
+  const totalSlices = readByteReaderU24(header); // m_total_slices (offset 14)
+  const totalImages = readByteReaderU24(header); // m_total_images (offset 17)
+  const format = basisTexFormat[bytes[basisTexFormatOffset]]; // m_tex_format (offset 20)
   if (format === undefined) return null;
   if (totalSlices === 0) return null;
 
@@ -44,7 +45,7 @@ export function parseBasis(bytes: Readonly<Uint8Array>): TextureContainer | null
   let baseHeight = 0;
   let maxLevel = 0;
   for (let slice = 0; slice < totalSlices; slice += 1) {
-    const imageIndex = readByteReaderU16(table);
+    const imageIndex = readByteReaderU24(table);
     const levelIndex = readByteReaderU8(table);
     readByteReaderU8(table); // m_flags
     const width = readByteReaderU16(table);
@@ -82,11 +83,11 @@ function hasBasisSignature(bytes: Readonly<Uint8Array>): boolean {
   return bytes.byteLength >= 2 && bytes[0] === 0x73 && bytes[1] === 0x42;
 }
 
-const basisTotalSlicesOffset = 12;
-const basisTexFormatOffset = 16;
-const basisSliceDescOffsetField = 61;
-const basisHeaderMinSize = 65; // through m_slice_desc_file_ofs (offset 61, 4 bytes)
-const basisSliceDescSize = 22;
+const basisTotalSlicesOffset = 14;
+const basisTexFormatOffset = 20;
+const basisSliceDescOffsetField = 63;
+const basisHeaderMinSize = 67; // through m_slice_desc_file_ofs (offset 63, 4 bytes)
+const basisSliceDescSize = 23;
 
 const basisTexFormat: Readonly<Record<number, TextureContainerFormat>> = {
   0: 'etc1s',

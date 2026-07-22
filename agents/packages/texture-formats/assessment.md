@@ -10,16 +10,13 @@ basedOn: ./review.md
 
 1. **Complete the compressed-payload realization seam.** Container parsing must hand BasisLZ/UASTC/ETC/BC/ASTC payloads to separately registered transcoders/decoders with explicit target-format capability selection; identifying byte ranges alone is not end-to-end texture support.
 2. **Validate against real tool outputs.** KTX2/DDS/Basis/ATF fixtures from canonical encoders must prove mip/layer/face offsets, supercompression metadata, corrupt-range rejection, and eventual GPU upload. Synthetic header builders remain useful unit tests but are not sufficient evidence.
+3. **Preserve source shape and interpretation metadata.** Basis `m_tex_type`, KTX2 DFD orientation/swizzle/color-model data, and DDS volume depth are currently collapsed or rejected. Add small container-specific descriptors rather than widening the common level record into a kitchen-sink; keep video-texture sequencing and actual transcoding as separately paid consumers.
 
 ## Recommended
 
 Sweep-safe: within `@flighthq/texture-formats`, no cross-package coupling, no breaking public-API change, no open design fork.
 
-1. **Correct `parseBasis` to the published basisu header layout.** Re-derive every offset from `basisu_file_headers.h`: 24-bit `m_total_slices`/`m_total_images` at 14/17, `m_tex_format` at 20, `m_slice_desc_file_ofs` at 63, 23-byte `basis_slice_desc` with 24-bit `m_image_index` — and rebuild `parseBasis.test.ts`'s builder to the corrected layout. Directly serves charter Open direction 5 and fixes the review's highest-severity finding; the public signature (`parseBasis(bytes): TextureContainer | null`) is unchanged.
-2. **Add `explain*` diagnostics for parse rejection.** Per the diagnostics inversion rule every silent `null` needs a shakeable companion — e.g. `explainTextureContainerParse(bytes)` returning plain data (which container was detected, and the rejection reason: truncated header, unmapped vkFormat/DXGI/FourCC code, level range overrun, unsupported ATF format code). Separately importable so parsers stay lean.
-3. **Barrel-export the level-layout helpers.** `getTextureContainerLevelByteLength` and `computeTextureContainerLevels` are public-shaped, fully tested, and consumer-useful (upload byte-size validation, staging allocation); re-export them from `index.ts`. Purely additive.
-4. **Deepen tests on unexercised paths.** KTX2 Zstd/ZLIB supercompression schemes and `layerCount > 1` (per-layer sub-image split), DDS DX10 `arraySize > 1` layer layout, and a `selectTextureContainer` preference-order case with multiple supported peers.
-5. **Refresh the stale self-descriptions.** `package.json` description to include ATF and the peer-array/`selectTextureContainer` story (the Package Map lines in `agents/index.md`/`agents/packages/map.md` are the same staleness — flagged there as candidate revisions for the user, since admin docs are outside a package sweep).
+1. **Add `explain*` diagnostics for parse rejection.** Per the diagnostics inversion rule every silent `null` needs a shakeable companion — e.g. `explainTextureContainerParse(bytes)` returning plain data (which container was detected, and the rejection reason: truncated header, unmapped vkFormat/DXGI/FourCC code, level range overrun, unsupported ATF format code). Separately importable so parsers stay lean.
 
 ## Backlog
 
@@ -37,4 +34,12 @@ Parked, with why:
 
 ## Approved
 
-None.
+- [2026-07-22 · completed] `parseBasis` now matches the published packed basisu layout: 24-bit
+  `m_total_slices`/`m_total_images` at offsets 14/17, `m_tex_format` at 20,
+  `m_slice_desc_file_ofs` at 63, and 23-byte slice descriptors with 24-bit image indices. The byte
+  reader has a separately tested little-endian U24 atom; fixtures use the corrected layout and prove
+  values beyond 16 bits rather than reproducing the old parser's assumptions.
+- [2026-07-22 · completed] `computeTextureContainerLevels` and
+  `getTextureContainerLevelByteLength` are root exports. KTX2 Zstd/ZLIB indivisible levels,
+  uncompressed array splitting, DDS DX10 arrays, and multi-peer preference are all exercised. The
+  package and package-map descriptions now include ATF, peer selection, and level layout.
