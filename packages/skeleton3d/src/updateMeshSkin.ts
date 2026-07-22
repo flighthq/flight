@@ -2,7 +2,7 @@ import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@fligh
 import type { Mesh } from '@flighthq/types';
 
 import { computeSkeleton3DJointMatrices } from './skeleton3d';
-import { captureMeshSkinBindPose, skinMeshGeometry } from './skinMeshGeometry';
+import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeformInput } from './skinMeshGeometry';
 
 // Deforms a skinned mesh into its geometry for the current joint pose — the explicit per-frame
 // skinning call. Run it after the pose is set (an animation clip applied to the joint nodes, or
@@ -27,6 +27,10 @@ export function updateMeshSkin(mesh: Readonly<Mesh>): void {
   if (bindPose === null) {
     bindPose = captureMeshSkinBindPose(geometry);
     setMeshGeometrySkinBindPose(geometry, bindPose);
+  } else if (mesh.morph != null) {
+    // The composed update has just written the current morph result into geometry. Refresh only
+    // skin's deform input so later morph-weight changes are not frozen into the first captured pose.
+    updateMeshSkinBindPoseDeformInput(bindPose, geometry);
   }
 
   skinMeshGeometry(geometry, skin.skeleton, bindPose);

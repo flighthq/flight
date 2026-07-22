@@ -109,6 +109,34 @@ export function skinMeshGeometry(
   geometry.version++;
 }
 
+// Refreshes only the deformable position/normal input of an existing skin bind pose from the
+// geometry's current vertices. Static joints/weights and output scratch remain untouched. This is
+// the allocation-free bridge for composed morph-then-skin deformation: morph writes its result into
+// the geometry, this copies that result into skin input, then skinMeshGeometry applies the palette.
+export function updateMeshSkinBindPoseDeformInput(bindPose: MeshSkinBindPose, geometry: Readonly<MeshGeometry>): void {
+  const { layout, vertices } = geometry;
+  const floatsPerVertex = layout.stride / 4;
+  const vertexCount =
+    floatsPerVertex > 0 ? Math.min((vertices.length / floatsPerVertex) | 0, bindPose.positions.length / 3) : 0;
+  const positionOffset = floatOffsetForSemantic(layout, 'position');
+  const normalOffset = floatOffsetForSemantic(layout, 'normal');
+
+  for (let v = 0; v < vertexCount; v++) {
+    const source = v * floatsPerVertex;
+    const target = v * 3;
+    if (positionOffset >= 0) {
+      bindPose.positions[target] = vertices[source + positionOffset];
+      bindPose.positions[target + 1] = vertices[source + positionOffset + 1];
+      bindPose.positions[target + 2] = vertices[source + positionOffset + 2];
+    }
+    if (normalOffset >= 0) {
+      bindPose.normals[target] = vertices[source + normalOffset];
+      bindPose.normals[target + 1] = vertices[source + normalOffset + 1];
+      bindPose.normals[target + 2] = vertices[source + normalOffset + 2];
+    }
+  }
+}
+
 // The float (not byte) offset of a semantic within an interleaved vertex record, or -1 when the
 // layout does not carry it. byteOffset is a multiple of 4 for the float32 channels skinning reads.
 function floatOffsetForSemantic(layout: Readonly<VertexAttributeLayout>, semantic: string): number {

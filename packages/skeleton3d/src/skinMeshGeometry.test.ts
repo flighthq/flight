@@ -6,7 +6,7 @@ import type { MeshGeometry } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton3DJointMatrices, createSkeleton3D } from './skeleton3d';
-import { captureMeshSkinBindPose, skinMeshGeometry } from './skinMeshGeometry';
+import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeformInput } from './skinMeshGeometry';
 
 // Builds a single-vertex geometry in the canonical skinned layout (20 floats): position, normal,
 // tangent(0), uv0(0), joints0, weights0.
@@ -78,5 +78,29 @@ describe('skinMeshGeometry', () => {
     // Normal (translation leaves it), and the static joints0/weights0 channels are untouched.
     expect(geometry.vertices[4]).toBeCloseTo(1);
     expect(geometry.vertices[16]).toBe(1);
+  });
+});
+
+describe('updateMeshSkinBindPoseDeformInput', () => {
+  it('refreshes positions and normals without replacing static influences or scratch', () => {
+    const geometry = createOneVertexSkinnedGeometry([1, 2, 3], [0, 1, 0], [2, 0, 0, 0], [1, 0, 0, 0]);
+    const bindPose = captureMeshSkinBindPose(geometry);
+    const joints = bindPose.joints;
+    const weights = bindPose.weights;
+    const scratch = bindPose.skinnedPositions;
+    geometry.vertices[0] = 4;
+    geometry.vertices[1] = 5;
+    geometry.vertices[2] = 6;
+    geometry.vertices[3] = 1;
+    geometry.vertices[4] = 0;
+    geometry.vertices[5] = 0;
+
+    updateMeshSkinBindPoseDeformInput(bindPose, geometry);
+
+    expect(Array.from(bindPose.positions)).toEqual([4, 5, 6]);
+    expect(Array.from(bindPose.normals)).toEqual([1, 0, 0]);
+    expect(bindPose.joints).toBe(joints);
+    expect(bindPose.weights).toBe(weights);
+    expect(bindPose.skinnedPositions).toBe(scratch);
   });
 });
