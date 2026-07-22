@@ -1,5 +1,11 @@
 import { getMeshGeometrySkinBindPose } from '@flighthq/mesh';
-import type { GlRenderState, MeshGeometry, MeshSkinBindPose, VertexAttribute } from '@flighthq/types';
+import type {
+  GlRenderState,
+  MeshGeometry,
+  MeshSkinBindPose,
+  PrimitiveTopology,
+  VertexAttribute,
+} from '@flighthq/types';
 
 import type { GlMeshUpload } from './glSceneRuntime';
 import { getGlSceneRuntime } from './glSceneRuntime';
@@ -38,6 +44,7 @@ export function ensureGlMeshUpload(
   const gl = state.gl;
   const cache = getGlSceneRuntime(state).uploadCache;
   let upload = cache.get(geometry as MeshGeometry);
+  const primitiveMode = getGlPrimitiveMode(gl, geometry.topology);
 
   const bindPose = gpuSkinned ? getMeshGeometrySkinBindPose(geometry) : null;
 
@@ -45,6 +52,7 @@ export function ensureGlMeshUpload(
     upload !== undefined &&
     (bindPose !== null ? upload.skinBindUploaded === true : upload.version === geometry.version)
   ) {
+    upload.primitiveMode = primitiveMode;
     gl.bindVertexArray(upload.vao);
     return upload;
   }
@@ -54,6 +62,7 @@ export function ensureGlMeshUpload(
       indexBuffer: null,
       indexCount: 0,
       indexType: gl.UNSIGNED_SHORT,
+      primitiveMode,
       vao: gl.createVertexArray()!,
       version: -1,
       vertexBuffer: gl.createBuffer()!,
@@ -83,12 +92,30 @@ export function ensureGlMeshUpload(
     upload.indexType = geometry.indices instanceof Uint32Array ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
     upload.indexCount = geometry.indices.length;
   } else {
+    if (upload.indexBuffer !== null) gl.deleteBuffer(upload.indexBuffer);
     upload.indexBuffer = null;
-    upload.indexCount = 0;
+    upload.indexCount =
+      geometry.layout.stride > 0 ? Math.floor(geometry.vertices.byteLength / geometry.layout.stride) : 0;
   }
 
+  upload.primitiveMode = primitiveMode;
   upload.version = geometry.version;
   return upload;
+}
+
+function getGlPrimitiveMode(gl: WebGL2RenderingContext, topology: PrimitiveTopology): number {
+  switch (topology) {
+    case 'line-list':
+      return gl.LINES;
+    case 'line-strip':
+      return gl.LINE_STRIP;
+    case 'point-list':
+      return gl.POINTS;
+    case 'triangle-strip':
+      return gl.TRIANGLE_STRIP;
+    default:
+      return gl.TRIANGLES;
+  }
 }
 
 // Returns true when a MeshGeometry's vertex layout contains a `uv1` semantic (glTF TEXCOORD_1).

@@ -106,9 +106,9 @@ export function drawGlSceneShadowMap(
     const upload = ensureGlMeshUpload(state, mesh.geometry, skinned);
     gl.bindVertexArray(upload.vao);
     if (upload.indexBuffer !== null) {
-      gl.drawElements(gl.TRIANGLES, upload.indexCount, upload.indexType, 0);
+      gl.drawElements(upload.primitiveMode, upload.indexCount, upload.indexType, 0);
     } else {
-      gl.drawArrays(gl.TRIANGLES, 0, upload.indexCount);
+      gl.drawArrays(upload.primitiveMode, 0, upload.indexCount);
     }
   });
 
