@@ -2,7 +2,7 @@ import { setVector3 } from '@flighthq/geometry';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { invalidateNodeLocalTransform } from '@flighthq/node';
 import { createSceneNode } from '@flighthq/scene';
-import type { MeshGeometry } from '@flighthq/types';
+import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton3DJointMatrices, createSkeleton3D } from './skeleton3d';
@@ -40,6 +40,37 @@ describe('captureMeshSkinBindPose', () => {
     expect(bindPose.weights[0]).toBe(1);
     expect(bindPose.skinnedPositions.length).toBe(3);
     expect(bindPose.skinnedNormals.length).toBe(3);
+  });
+
+  it('decodes packed joint and weight channels through the shared mesh attribute contract', () => {
+    const layout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+        { byteOffset: 12, format: 'float32x3', semantic: 'normal' },
+        { byteOffset: 24, format: 'uint8x4', semantic: 'joints0' },
+        { byteOffset: 28, format: 'unorm8x4', semantic: 'weights0' },
+      ],
+      stride: 32,
+    };
+    const vertices = new Float32Array(8);
+    vertices.set([1, 2, 3, 0, 1, 0]);
+    const view = new DataView(vertices.buffer);
+    view.setUint8(24, 3);
+    view.setUint8(25, 2);
+    view.setUint8(26, 1);
+    view.setUint8(27, 0);
+    view.setUint8(28, 128);
+    view.setUint8(29, 64);
+    view.setUint8(30, 32);
+    view.setUint8(31, 31);
+
+    const bindPose = captureMeshSkinBindPose(createMeshGeometry({ layout, vertices }));
+
+    expect(Array.from(bindPose.joints)).toEqual([3, 2, 1, 0]);
+    expect(bindPose.weights[0]).toBeCloseTo(128 / 255);
+    expect(bindPose.weights[1]).toBeCloseTo(64 / 255);
+    expect(bindPose.weights[2]).toBeCloseTo(32 / 255);
+    expect(bindPose.weights[3]).toBeCloseTo(31 / 255);
   });
 });
 

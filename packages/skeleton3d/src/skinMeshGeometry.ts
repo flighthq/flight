@@ -1,3 +1,4 @@
+import { getMeshGeometryVertexJoints0, getMeshGeometryVertexWeights0 } from '@flighthq/mesh';
 import type { MeshGeometry, MeshSkinBindPose, Skeleton3D, VertexAttributeLayout } from '@flighthq/types';
 
 import { skinVertices } from './skinVertices';
@@ -16,13 +17,12 @@ export function captureMeshSkinBindPose(geometry: Readonly<MeshGeometry>): MeshS
 
   const positionOffset = floatOffsetForSemantic(layout, 'position');
   const normalOffset = floatOffsetForSemantic(layout, 'normal');
-  const jointsOffset = floatOffsetForSemantic(layout, 'joints0');
-  const weightsOffset = floatOffsetForSemantic(layout, 'weights0');
-
   const positions = new Float32Array(vertexCount * 3);
   const normals = new Float32Array(vertexCount * 3);
   const joints = new Float32Array(vertexCount * 4);
   const weights = new Float32Array(vertexCount * 4);
+  const joint = { w: 0, x: 0, y: 0, z: 0 };
+  const weight = { w: 0, x: 0, y: 0, z: 0 };
 
   for (let v = 0; v < vertexCount; v++) {
     const base = v * floatsPerVertex;
@@ -38,17 +38,17 @@ export function captureMeshSkinBindPose(geometry: Readonly<MeshGeometry>): MeshS
       normals[p + 1] = vertices[base + normalOffset + 1];
       normals[p + 2] = vertices[base + normalOffset + 2];
     }
-    if (jointsOffset >= 0) {
-      joints[w] = vertices[base + jointsOffset];
-      joints[w + 1] = vertices[base + jointsOffset + 1];
-      joints[w + 2] = vertices[base + jointsOffset + 2];
-      joints[w + 3] = vertices[base + jointsOffset + 3];
+    if (getMeshGeometryVertexJoints0(joint, geometry, v)) {
+      joints[w] = joint.x;
+      joints[w + 1] = joint.y;
+      joints[w + 2] = joint.z;
+      joints[w + 3] = joint.w;
     }
-    if (weightsOffset >= 0) {
-      weights[w] = vertices[base + weightsOffset];
-      weights[w + 1] = vertices[base + weightsOffset + 1];
-      weights[w + 2] = vertices[base + weightsOffset + 2];
-      weights[w + 3] = vertices[base + weightsOffset + 3];
+    if (getMeshGeometryVertexWeights0(weight, geometry, v)) {
+      weights[w] = weight.x;
+      weights[w + 1] = weight.y;
+      weights[w + 2] = weight.z;
+      weights[w + 3] = weight.w;
     }
   }
 

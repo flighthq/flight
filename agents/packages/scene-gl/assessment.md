@@ -84,4 +84,7 @@ basedOn: ./review.md
 
 ## Approved
 
-None.
+- [2026-07-21 · completed] Packed mesh attributes bind through `vertexAttribPointer`, matching the
+  built-in shaders' float/vec inputs: unsigned joints convert without normalization and unorm
+  color/weight channels normalize in fixed-function input assembly. The integer-pointer path is
+  deliberately absent until a separately declared ivec/uvec shader input exists.

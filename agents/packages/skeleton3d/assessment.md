@@ -43,3 +43,6 @@ No sweep-safe items; meaningful work crosses mesh, scene preparation, animation,
   skin's deformable position/normal input on later frames, preserving static influences and allocated
   scratch. Each CPU deformer refreshes cached geometry bounds; a changing-weight two-frame test proves
   the old first-morph freeze is gone.
+- [2026-07-21 · completed] Skin bind-pose capture consumes mesh's format-aware joint/weight accessors,
+  so packed uint8/uint16 joint indices and normalized uint8 weights produce the same CPU influence
+  streams as canonical float32 channels. This does not add a second skinning layout truth.

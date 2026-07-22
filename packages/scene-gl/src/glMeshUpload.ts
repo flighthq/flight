@@ -165,11 +165,11 @@ function bindGlVertexAttribute(gl: WebGL2RenderingContext, attribute: Readonly<V
   if (location === undefined) return;
   const [size, type, normalized] = resolveGlVertexFormat(gl, attribute.format);
   gl.enableVertexAttribArray(location);
-  if (type === gl.FLOAT) {
-    gl.vertexAttribPointer(location, size, type, normalized, stride, attribute.byteOffset);
-  } else {
-    gl.vertexAttribIPointer(location, size, type, stride, attribute.byteOffset);
-  }
+  // Every built-in mesh shader declares these locations as float/vec inputs. WebGL therefore needs
+  // vertexAttribPointer even when storage is integer: it converts uint joints to float values and
+  // normalizes unorm weights/colors. vertexAttribIPointer is only valid for ivec/uvec shader inputs
+  // and creates a link/input-type mismatch here.
+  gl.vertexAttribPointer(location, size, type, normalized, stride, attribute.byteOffset);
 }
 
 // Maps a VertexFormat to its [componentCount, glType, normalized] tuple. The canonical PBR record
