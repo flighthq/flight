@@ -12,6 +12,7 @@ import {
   enableDomBlendModeSupport,
   enableDomClipSupport,
   enableDomRenderCache,
+  invalidateNodeLocalTransform,
   prepareDisplayObjectRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -76,6 +77,10 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
       if (!prepareDisplayObjectRender(state, root)) return;
       renderDomBackground(state);
       renderDomDisplayObject(state, root);
+    },
+    benchmark(root: DisplayObject): void {
+      invalidateNodeLocalTransform(root);
+      this.render(root);
     },
   });
 }

@@ -3,13 +3,18 @@
 import type { DomRenderState } from '@flighthq/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { installCaptureTarget, verifyCaptureTarget } from './capturePage';
+import { installCaptureTarget, registerCaptureBenchmarkTarget, verifyCaptureTarget } from './capturePage';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
 
 afterEach(() => {
-  const flags = window as typeof window & { __ftTarget?: unknown; __ftVerification?: unknown };
+  const flags = window as typeof window & {
+    __ftTarget?: unknown;
+    __ftVerification?: unknown;
+    __ftBenchmarkTarget?: unknown;
+  };
   flags.__ftTarget = undefined;
   flags.__ftVerification = undefined;
+  flags.__ftBenchmarkTarget = undefined;
 });
 
 describe('installCaptureTarget', () => {
@@ -46,6 +51,14 @@ describe('installCaptureTarget', () => {
       height: 1,
     });
     expect(result).toBeNull();
+  });
+});
+
+describe('registerCaptureBenchmarkTarget', () => {
+  it('publishes custom repeatable work for the benchmark runner', () => {
+    const target = { kind: 'wasm', run() {}, synchronize() {} };
+    expect(registerCaptureBenchmarkTarget(target)).toBe(target);
+    expect((window as unknown as { __ftBenchmarkTarget?: unknown }).__ftBenchmarkTarget).toBe(target);
   });
 });
 

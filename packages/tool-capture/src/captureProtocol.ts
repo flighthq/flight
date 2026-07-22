@@ -13,6 +13,17 @@ export interface CaptureVerification {
   error: string | null;
 }
 
+/** Repeatable page work exposed to the benchmark runner by the normal capture-target registration. */
+export interface CaptureBenchmarkTarget {
+  protocolVersion?: typeof CAPTURE_PROTOCOL_VERSION;
+  /** False until the target has captured enough state to repeat its workload. */
+  ready?: boolean;
+  kind: string;
+  run(): void | Promise<void>;
+  /** Resolve only after work submitted by run() is observable by the backend. */
+  synchronize(): void | Promise<void>;
+}
+
 export function isCaptureVerificationTerminal(
   verification: Readonly<Pick<CaptureVerification, 'state'>> | null | undefined,
 ): boolean {

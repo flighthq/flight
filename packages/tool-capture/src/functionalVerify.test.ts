@@ -17,6 +17,7 @@ interface VerificationWindowLike {
   __ftTarget?: unknown;
   __ftVerification?: unknown;
   __ftRenderImage?: unknown;
+  __ftBenchmarkTarget?: { run(): void | Promise<void> };
 }
 
 function verification(): Record<string, unknown> {
@@ -28,6 +29,7 @@ afterEach(() => {
   w.__ftTarget = undefined;
   w.__ftVerification = undefined;
   w.__ftRenderImage = undefined;
+  w.__ftBenchmarkTarget = undefined;
 });
 
 // A minimal DOM target — the only backend snapshot/verification handles without a real GPU context.
@@ -60,6 +62,16 @@ describe('registerFunctionalTarget', () => {
     const returned = registerFunctionalTarget(target);
     expect(returned).toBe(target);
     expect((window as unknown as VerificationWindowLike).__ftTarget).toBe(target);
+  });
+
+  it('automatically exposes the last rendered root as repeatable benchmark work', async () => {
+    let renders = 0;
+    const target = domTarget(document.createElement('div'));
+    target.render = () => renders++;
+    const registered = registerFunctionalTarget(target);
+    registered.render({} as never);
+    await (window as unknown as VerificationWindowLike).__ftBenchmarkTarget?.run();
+    expect(renders).toBe(2);
   });
 });
 

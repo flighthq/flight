@@ -5,7 +5,7 @@ import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 
 export const CAPTURE_REPORT_VERSION = 1 as const;
 
-export type CaptureReportKind = 'observe' | 'capture' | 'validation' | 'workflow' | 'batch';
+export type CaptureReportKind = 'observe' | 'capture' | 'validation' | 'benchmark' | 'workflow' | 'batch';
 
 export interface CaptureReportEnvelope<T> {
   protocolVersion: typeof CAPTURE_PROTOCOL_VERSION;

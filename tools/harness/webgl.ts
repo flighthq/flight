@@ -18,6 +18,7 @@ import {
   enableGlBlendModeSupport,
   enableGlClipSupport,
   enableGlRenderCache,
+  invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareDisplayObjectRender,
   QuadBatchKind,
@@ -99,6 +100,10 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
       if (!prepareDisplayObjectRender(state, root)) return;
       renderGlBackground(state);
       renderGlDisplayObject(state, root);
+    },
+    benchmark(root: DisplayObject): void {
+      invalidateNodeLocalTransform(root);
+      this.render(root);
     },
   });
 }

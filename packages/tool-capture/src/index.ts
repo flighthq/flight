@@ -1,6 +1,7 @@
 export * from './baselineStore';
 export * from './captureBrowser';
 export * from './captureBatchManifest';
+export * from './captureBenchmark';
 export * from './captureEntries';
 export * from './captureEntry';
 export * from './captureFormat';

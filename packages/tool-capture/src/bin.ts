@@ -9,11 +9,13 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { readCaptureBatchManifest } from './captureBatchManifest.js';
+import type { CaptureBenchmarkOptions } from './captureBenchmark.js';
+import { runCaptureBenchmark } from './captureBenchmark.js';
 import { discoverEntries } from './captureEntries.js';
 import type { Entry } from './captureEntries.js';
 import { captureUrl } from './captureEntry.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
-import type { CaptureManifest } from './captureManifest.js';
+import type { CaptureManifest, CaptureParityGroup } from './captureManifest.js';
 import { readCaptureManifest } from './captureManifest.js';
 import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.js';
 import { runCaptureSuite } from './captureSuite.js';
@@ -31,6 +33,8 @@ const USAGE = `usage:
   tool-capture capture --tool <examples|functional> [options]
   tool-capture validate [--manifest <file>] (--url <url> | --dir <built-dir>) [options]
   tool-capture validate --tool <examples|functional> [options]
+  tool-capture benchmark [--manifest <file>] (--url <url> | --dir <built-dir>) [options]
+  tool-capture benchmark --tool <examples|functional> [options]
   tool-capture batch [--config <file>] [--only <subject>] [--subjects-parallel <n>] [options]
 
 capture options:
@@ -43,6 +47,10 @@ Every command writes a versioned aggregate JSON report beneath its artifact dire
 validation options:
   --report --update-fingerprints --no-regression --no-parity
   --stability-epsilon <n> --regression-tolerance <n> --parity-tolerance <n>
+
+benchmark options:
+  --warmup <n> --iterations <n> --samples <n> --sample-duration <ms> --benchmark-reference <renderer>
+  --performance-tolerance <fraction> --stability-tolerance <fraction> --retries <n> --update-benchmarks
 
 batch options:
   --config <file> defaults to tool-capture.batch.json; remaining options override every subject
@@ -142,6 +150,18 @@ async function validate(argv: readonly string[]): Promise<number> {
   return result.shouldFail ? 1 : 0;
 }
 
+async function benchmark(argv: readonly string[]): Promise<number> {
+  const { subject, entries, server, root, manifest } = await resolveCaptureCliSuite(argv);
+  const result = await runCaptureBenchmark({
+    ...benchmarkOptions(argv, manifest),
+    subject,
+    entries,
+    server,
+    root,
+  });
+  return result.shouldFail ? 1 : 0;
+}
+
 function captureOptions(argv: readonly string[]): CaptureWorkflowCaptureOptions {
   const frames = flag(argv, 'frames');
   const observe = hasFlag(argv, 'observe');
@@ -183,6 +203,29 @@ function validationOptions(
     fingerprintSkip:
       manifest?.validation?.fingerprintSkip ?? (manifest === null && subject === 'examples' ? ['playingsound'] : []),
     paritySkip: manifest?.validation?.paritySkip ?? (manifest === null ? FLIGHT_PARITY_SKIP : {}),
+    parityGroups:
+      manifest?.validation?.parityGroups ??
+      (manifest === null && subject === 'functional' ? FLIGHT_PARITY_GROUPS : undefined),
+  };
+}
+
+function benchmarkOptions(
+  argv: readonly string[],
+  manifest: CaptureManifest | null,
+): Omit<CaptureBenchmarkOptions, 'entries' | 'root' | 'server' | 'subject'> {
+  const configured = manifest?.benchmark;
+  return {
+    filter: flag(argv, 'filter'),
+    rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
+    warmupIterations: parseNonNegativeInteger(flag(argv, 'warmup'), configured?.warmupIterations ?? 3),
+    iterations: Math.max(1, parseNonNegativeInteger(flag(argv, 'iterations'), configured?.iterations ?? 10)),
+    samples: Math.max(3, parseNonNegativeInteger(flag(argv, 'samples'), configured?.samples ?? 7)),
+    sampleDurationMs: parseNumber(flag(argv, 'sample-duration')) ?? configured?.sampleDurationMs,
+    maxRetries: parseNonNegativeInteger(flag(argv, 'retries'), configured?.maxRetries ?? 1),
+    reference: flag(argv, 'benchmark-reference') ?? configured?.reference,
+    regressionTolerance: parseNumber(flag(argv, 'performance-tolerance')) ?? configured?.regressionTolerance,
+    stabilityTolerance: parseNumber(flag(argv, 'stability-tolerance')) ?? configured?.stabilityTolerance,
+    updateBaselines: hasFlag(argv, 'update-benchmarks'),
   };
 }
 
@@ -211,6 +254,7 @@ async function batch(argv: readonly string[]): Promise<number> {
           validation: operations.has('validate')
             ? validationOptions(subjectArgv, suite.subject, suite.manifest)
             : false,
+          benchmark: operations.has('benchmark') ? benchmarkOptions(subjectArgv, suite.manifest) : false,
         };
       },
     }));
@@ -242,6 +286,7 @@ async function main(): Promise<void> {
   }
   if (command === 'capture') process.exit(await capture(argv));
   if (command === 'validate') process.exit(await validate(argv));
+  if (command === 'benchmark') process.exit(await benchmark(argv));
   if (command === 'batch') process.exit(await batch(argv));
   console.error(USAGE);
   process.exit(2);
@@ -282,6 +327,13 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | string[]>> = {
   'effect-displacement': 'all',
   'effect-god-rays': 'all',
   'effect-screen-space-fog': 'all',
+};
+
+const FLIGHT_PARITY_GROUPS: Readonly<Record<string, CaptureParityGroup>> = {
+  visual: {
+    targets: ['dom', 'canvas', 'webgl', 'webgpu'],
+    reference: 'canvas',
+  },
 };
 
 main().catch((err: unknown) => {

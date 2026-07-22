@@ -39,6 +39,7 @@ import { BACKEND_UNAVAILABLE, rendererMatchesFilter, routeSegment } from './capt
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
+import type { CaptureParityGroup } from './captureManifest.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
@@ -63,6 +64,8 @@ export interface CaptureValidationOptions {
   workerCount?: number;
   fingerprintSkip?: Readonly<string[]>;
   paritySkip?: Readonly<Record<string, 'all' | Readonly<string[]>>>;
+  /** Explicit visual comparison groups. Unlike legacy parity, these may include DOM and arbitrary targets. */
+  parityGroups?: Readonly<Record<string, Readonly<CaptureParityGroup>>>;
   /** Assertion-passed fingerprints from a preceding capture pass. Avoids reloading those pages. */
   fingerprints?: Readonly<CaptureFingerprintMap>;
   /** Reuse an already initialized browser/context. The caller owns its lifetime. */
@@ -110,6 +113,7 @@ interface ResolvedCaptureValidationOptions {
   parityTolerance: number;
   fingerprintSkip: ReadonlySet<string>;
   paritySkip: Readonly<Record<string, 'all' | Readonly<string[]>>>;
+  parityGroups: Readonly<Record<string, Readonly<CaptureParityGroup>>>;
   fingerprints: Readonly<CaptureFingerprintMap>;
 }
 
@@ -129,17 +133,34 @@ function fingerprintKey(entry: string, renderer: string): string {
   return `${entry}\0${renderer}`;
 }
 
-function validationRenderers(entry: Readonly<Entry>, rendererFilter: readonly string[]): string[] {
+function validationRenderers(
+  entry: Readonly<Entry>,
+  rendererFilter: readonly string[],
+  parityGroups: Readonly<Record<string, Readonly<CaptureParityGroup>>>,
+): string[] {
+  const explicitTargets = new Set(Object.values(parityGroups).flatMap((group) => group.targets));
   return entry.renderers.filter((renderer) => {
     const separator = renderer.indexOf(':');
     const backend = separator === -1 ? renderer : renderer.slice(separator + 1);
-    return backend !== 'dom' && rendererMatchesFilter(renderer, rendererFilter);
+    return (backend !== 'dom' || explicitTargets.has(renderer)) && rendererMatchesFilter(renderer, rendererFilter);
   });
 }
 
 function distance(a: string, b: string): number | null {
   const difference = compareCaptureFingerprints(a, b);
   return Number.isFinite(difference) ? difference : null;
+}
+
+function addPair(
+  pairs: Array<{ a: string; b: string; label: string; dist: number; tolerance: number }>,
+  fingerprints: ReadonlyMap<string, string>,
+  a: string,
+  b: string,
+  group: string,
+  tolerance: number,
+): void {
+  const dist = distance(fingerprints.get(a)!, fingerprints.get(b)!);
+  if (dist !== null) pairs.push({ a, b, label: `${group === '' ? '' : `${group}:`}${a}·${b}`, dist, tolerance });
 }
 
 // Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
@@ -204,6 +225,12 @@ async function loadFingerprint(
     }
     if (verification?.state === 'passed' && verification.fingerprint)
       return { fingerprint: verification.fingerprint, reason: '', unavailable: false, aborted: false };
+    if (verification?.state === 'passed') {
+      const domFingerprint = await captureDomFingerprint(page);
+      if (domFingerprint !== null) {
+        return { fingerprint: domFingerprint, reason: '', unavailable: false, aborted: false };
+      }
+    }
     // The functional entry paints any error into #ft-error (covering window.error AND unhandledrejection);
     // read it as the most reliable real reason when neither a fingerprint nor a pageerror surfaced.
     const overlay = await page.$eval('#ft-error', (el) => el.textContent ?? '').catch(() => '');
@@ -223,6 +250,67 @@ async function loadFingerprint(
     };
   } finally {
     await page?.close().catch(() => {});
+  }
+}
+
+async function captureDomFingerprint(page: Page): Promise<string | null> {
+  const handle = await page
+    .evaluateHandle(() =>
+      (window as unknown as { __ftTarget?: { kind?: string; state?: { element?: HTMLElement } } }).__ftTarget?.kind ===
+      'dom'
+        ? (window as unknown as { __ftTarget: { state: { element: HTMLElement } } }).__ftTarget.state.element
+        : null,
+    )
+    .catch(() => null);
+  const element = handle?.asElement();
+  if (element === null || element === undefined) {
+    await handle?.dispose();
+    return null;
+  }
+  try {
+    const screenshot = await element.screenshot({ animations: 'disabled' });
+    const dataUrl = `data:image/png;base64,${screenshot.toString('base64')}`;
+    return await page.evaluate(async (source) => {
+      const image = new Image();
+      image.src = source;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      if (context === null || canvas.width === 0 || canvas.height === 0) return null;
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const gridSize = 16;
+      const hex = '0123456789abcdef';
+      let fingerprint = `${gridSize}:`;
+      for (let cy = 0; cy < gridSize; cy++) {
+        const y0 = Math.floor((cy * canvas.height) / gridSize);
+        const y1 = Math.max(y0 + 1, Math.floor(((cy + 1) * canvas.height) / gridSize));
+        for (let cx = 0; cx < gridSize; cx++) {
+          const x0 = Math.floor((cx * canvas.width) / gridSize);
+          const x1 = Math.max(x0 + 1, Math.floor(((cx + 1) * canvas.width) / gridSize));
+          const sums = [0, 0, 0];
+          let count = 0;
+          for (let y = y0; y < y1 && y < canvas.height; y++) {
+            for (let x = x0; x < x1 && x < canvas.width; x++) {
+              const offset = (y * canvas.width + x) * 4;
+              sums[0] += pixels[offset]!;
+              sums[1] += pixels[offset + 1]!;
+              sums[2] += pixels[offset + 2]!;
+              count++;
+            }
+          }
+          for (const sum of sums) {
+            const value = count === 0 ? 0 : Math.round(sum / count);
+            fingerprint += hex[(value >> 4) & 0xf]! + hex[value & 0xf]!;
+          }
+        }
+      }
+      return fingerprint;
+    }, dataUrl);
+  } finally {
+    await handle?.dispose();
   }
 }
 
@@ -260,7 +348,7 @@ async function processEntry(
 
   result.output.push(`${pc.dim(`[${entryIndex + 1}/${totalEntries}]`)} ${pc.bold(entry.name)}`);
 
-  const renderers = validationRenderers(entry, options.rendererFilter);
+  const renderers = validationRenderers(entry, options.rendererFilter, options.parityGroups);
 
   const labelWidth = Math.max(6, ...renderers.map((r) => r.length));
   const statusLine = (tone: DetailTone, label: string, message: string): string =>
@@ -315,6 +403,10 @@ async function processEntry(
       continue;
     }
     const fingerprint = first.fingerprint;
+
+    // Explicit groups are same-run comparisons and do not require a committed regression baseline.
+    // Legacy all-pairs parity retains its prior proven-stable/baselined eligibility policy.
+    if (Object.keys(options.parityGroups).length > 0) eligible.set(renderer, fingerprint);
 
     if (options.updateFingerprints) {
       const second = samples.get(fingerprintKey(entry.name, renderer))?.second;
@@ -424,13 +516,32 @@ async function processEntry(
   // Tier 3 (parity): cross-backend agreement among the eligible (baselined / self-stable) raster
   // backends.
   const skip = options.paritySkip[entry.name];
-  const present = skip === 'all' ? [] : [...eligible.keys()].filter((r) => !skip?.includes(r));
-  const pairs: { a: string; b: string; label: string; dist: number }[] = [];
-  for (let i = 0; i < present.length; i++) {
-    for (let j = i + 1; j < present.length; j++) {
-      const [a, b] = [present[i], present[j]];
-      const dist = distance(eligible.get(a)!, eligible.get(b)!);
-      if (dist !== null) pairs.push({ a: a!, b: b!, label: `${a}·${b}`, dist });
+  const allowed = (renderer: string): boolean => skip !== 'all' && !skip?.includes(renderer);
+  const pairs: { a: string; b: string; label: string; dist: number; tolerance: number }[] = [];
+  const groups = Object.entries(options.parityGroups);
+  if (groups.length === 0) {
+    const present = [...eligible.keys()].filter(allowed);
+    for (let i = 0; i < present.length; i++) {
+      for (let j = i + 1; j < present.length; j++) {
+        addPair(pairs, eligible, present[i]!, present[j]!, '', options.parityTolerance);
+      }
+    }
+  } else {
+    for (const [groupName, group] of groups) {
+      const present = group.targets.filter((renderer) => eligible.has(renderer) && allowed(renderer));
+      if (group.reference !== undefined && present.includes(group.reference)) {
+        for (const renderer of present) {
+          if (renderer !== group.reference) {
+            addPair(pairs, eligible, group.reference, renderer, groupName, group.tolerance ?? options.parityTolerance);
+          }
+        }
+      } else {
+        for (let i = 0; i < present.length; i++) {
+          for (let j = i + 1; j < present.length; j++) {
+            addPair(pairs, eligible, present[i]!, present[j]!, groupName, group.tolerance ?? options.parityTolerance);
+          }
+        }
+      }
     }
   }
   if (pairs.length > 0) {
@@ -445,14 +556,14 @@ async function processEntry(
           status: 'reported',
           message: `parity distance ${pair.dist.toFixed(2)}`,
           distance: pair.dist,
-          threshold: options.parityTolerance,
+          threshold: pair.tolerance,
         });
       }
     } else if (options.gateParity) {
       let anyFailed = false;
       const segments = pairs
         .map((p) => {
-          const check = evaluateCaptureParity(eligible.get(p.a)!, eligible.get(p.b)!, options.parityTolerance);
+          const check = evaluateCaptureParity(eligible.get(p.a)!, eligible.get(p.b)!, p.tolerance);
           if (!check.pass) {
             anyFailed = true;
             result.parityFailures++;
@@ -461,11 +572,11 @@ async function processEntry(
               renderers: [p.a, p.b],
               kind: 'parity',
               status: 'failed',
-              message: `parity ${p.dist.toFixed(2)} > ${options.parityTolerance}`,
+              message: `parity ${p.dist.toFixed(2)} > ${p.tolerance}`,
               distance: p.dist,
-              threshold: options.parityTolerance,
+              threshold: p.tolerance,
             });
-            return pc.red(`${p.label} ${p.dist.toFixed(2)}>${options.parityTolerance}`);
+            return pc.red(`${p.label} ${p.dist.toFixed(2)}>${p.tolerance}`);
           }
           result.parityPasses++;
           result.checks.push({
@@ -473,20 +584,15 @@ async function processEntry(
             renderers: [p.a, p.b],
             kind: 'parity',
             status: 'passed',
-            message: `parity ${p.dist.toFixed(2)} ≤ ${options.parityTolerance}`,
+            message: `parity ${p.dist.toFixed(2)} ≤ ${p.tolerance}`,
             distance: p.dist,
-            threshold: options.parityTolerance,
+            threshold: p.tolerance,
           });
           return pc.dim(`${p.label} ${p.dist.toFixed(2)}`);
         })
         .join('  ');
       const paint = anyFailed ? pc.red : pc.green;
-      const line = detailLine(
-        paint(anyFailed ? '✗' : '✓'),
-        'parity',
-        `${segments}  ${pc.dim(`(≤${options.parityTolerance})`)}`,
-        paint,
-      );
+      const line = detailLine(paint(anyFailed ? '✗' : '✓'), 'parity', segments, paint);
       result.output.push(line);
     }
   }
@@ -516,6 +622,7 @@ export async function runCaptureValidation(
     parityTolerance: input.parityTolerance ?? CAPTURE_PARITY_TOLERANCE,
     fingerprintSkip: new Set(input.fingerprintSkip ?? []),
     paritySkip: input.paritySkip ?? {},
+    parityGroups: input.parityGroups ?? {},
     fingerprints: input.fingerprints ?? {},
   };
   const ownsBrowser = input.browserSession === undefined;
@@ -545,7 +652,7 @@ export async function runCaptureValidation(
     const fingerprintJobs = entries.flatMap((entry) =>
       options.fingerprintSkip.has(entry.name)
         ? []
-        : validationRenderers(entry, options.rendererFilter)
+        : validationRenderers(entry, options.rendererFilter, options.parityGroups)
             .filter(
               (renderer) => options.updateFingerprints || options.fingerprints[entry.name]?.[renderer] === undefined,
             )

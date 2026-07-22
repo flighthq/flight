@@ -1,12 +1,15 @@
-// High-level capture + fingerprint-validation workflow. The lower-level passes continue to own their
-// browser contexts; this layer lends both the same server and closes it once the complete subject has
-// finished, avoiding a duplicate build/server startup for the common smoke-then-verify workflow.
+// High-level capture + fingerprint-validation + benchmark workflow. Visual passes share one browser;
+// benchmarking gets a clean serial browser after visual resources are released. All passes share the
+// server, avoiding duplicate builds/startups while keeping timing isolated from screenshot contention.
 
 import { resolve } from 'node:path';
 
 import pc from 'picocolors';
 
+import type { CaptureBenchmarkOptions, CaptureBenchmarkResult } from './captureBenchmark.js';
+import { runCaptureBenchmark } from './captureBenchmark.js';
 import { launchBrowser } from './captureBrowser.js';
+import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
@@ -17,6 +20,10 @@ import { runCaptureValidation } from './captureValidation.js';
 
 export type CaptureWorkflowCaptureOptions = Omit<
   CaptureSuiteOptions,
+  'browserSession' | 'entries' | 'root' | 'server' | 'subject'
+>;
+export type CaptureWorkflowBenchmarkOptions = Omit<
+  CaptureBenchmarkOptions,
   'browserSession' | 'entries' | 'root' | 'server' | 'subject'
 >;
 export type CaptureWorkflowValidationOptions = Omit<
@@ -33,6 +40,8 @@ export interface CaptureWorkflowOptions {
   capture?: Readonly<CaptureWorkflowCaptureOptions> | false;
   /** Fingerprint parity/regression pass. Defaults to enabled; set false for capture-only workflows. */
   validation?: Readonly<CaptureWorkflowValidationOptions> | false;
+  /** Synchronized performance samples and regression pass. Disabled unless configured. */
+  benchmark?: Readonly<CaptureWorkflowBenchmarkOptions> | false;
   reportPath?: string | false;
 }
 
@@ -41,6 +50,7 @@ export interface CaptureWorkflowResult {
   capture: CaptureSuiteResult | null;
   shouldFail: boolean;
   validation: CaptureValidationResult | null;
+  benchmark: CaptureBenchmarkResult | null;
   durationMs: number;
   reportPath: string | null;
 }
@@ -132,54 +142,82 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
   const borrowedServer: Server = { url: options.server.url, kill() {} };
   let capture: CaptureSuiteResult | null = null;
   let validation: CaptureValidationResult | null = null;
+  let benchmark: CaptureBenchmarkResult | null = null;
   const captureOptions = options.capture === false ? null : (options.capture ?? {});
   const validationOptions = options.validation === false ? null : (options.validation ?? {});
-  if (captureOptions === null && validationOptions === null) {
+  const benchmarkOptions = options.benchmark === false || options.benchmark === undefined ? null : options.benchmark;
+  if (captureOptions === null && validationOptions === null && benchmarkOptions === null) {
     options.server.kill();
-    return { aborted: false, capture: null, shouldFail: false, validation: null, durationMs: 0, reportPath: null };
+    return {
+      aborted: false,
+      capture: null,
+      shouldFail: false,
+      validation: null,
+      benchmark: null,
+      durationMs: 0,
+      reportPath: null,
+    };
   }
   const captureFrames = Math.max(1, captureOptions?.captureFrames ?? 1, validationOptions?.captureFrames ?? 1);
-  const browserSession = await launchBrowser({
-    captureFrames,
-    verify: validationOptions !== null || captureOptions?.verify === true || options.subject === 'functional',
-    observe: captureOptions?.observe,
-  }).catch((error: unknown) => {
-    options.server.kill();
-    throw error;
-  });
-
+  let browserSession: CaptureBrowserSession | null = null;
   try {
-    if (captureOptions !== null) {
-      capture = await runCaptureSuite({
-        ...captureOptions,
-        subject: options.subject,
-        entries: options.entries,
-        server: borrowedServer,
-        root: options.root,
-        browserSession,
+    if (captureOptions !== null || validationOptions !== null) {
+      browserSession = await launchBrowser({
         captureFrames,
-        verify: captureOptions.verify ?? validationOptions !== null,
+        verify: validationOptions !== null || captureOptions?.verify === true || options.subject === 'functional',
+        observe: captureOptions?.observe,
       });
+      if (captureOptions !== null) {
+        capture = await runCaptureSuite({
+          ...captureOptions,
+          subject: options.subject,
+          entries: options.entries,
+          server: borrowedServer,
+          root: options.root,
+          browserSession,
+          captureFrames,
+          verify: captureOptions.verify ?? validationOptions !== null,
+        });
+      }
+      if (capture?.aborted !== true && validationOptions !== null) {
+        validation = await runCaptureValidation({
+          ...validationOptions,
+          subject: options.subject,
+          entries: options.entries,
+          server: borrowedServer,
+          root: options.root,
+          browserSession,
+          captureFrames,
+          fingerprints: capture?.fingerprints,
+        });
+      }
+      // Timing must not share a browser/GPU process with the parallel screenshot pass. Keep the server
+      // warm, but release visual resources before the benchmark launches its clean serial session.
+      await browserSession.browser.close().catch(() => {});
+      browserSession = null;
     }
-    if (capture?.aborted !== true && validationOptions !== null) {
-      validation = await runCaptureValidation({
-        ...validationOptions,
+    if (
+      capture?.aborted !== true &&
+      validation?.aborted !== true &&
+      capture?.shouldFail !== true &&
+      validation?.shouldFail !== true &&
+      benchmarkOptions !== null
+    ) {
+      benchmark = await runCaptureBenchmark({
+        ...benchmarkOptions,
         subject: options.subject,
         entries: options.entries,
         server: borrowedServer,
         root: options.root,
-        browserSession,
-        captureFrames,
-        fingerprints: capture?.fingerprints,
       });
     }
   } finally {
-    await browserSession.browser.close().catch(() => {});
+    await browserSession?.browser.close().catch(() => {});
     options.server.kill();
   }
 
   const aborted = capture?.aborted === true || validation?.aborted === true;
-  const shouldFail = capture?.shouldFail === true || validation?.shouldFail === true;
+  const shouldFail = capture?.shouldFail === true || validation?.shouldFail === true || benchmark?.shouldFail === true;
   console.log(
     `${pc.bold(options.subject)} workflow ${shouldFail ? pc.red('failed') : aborted ? pc.yellow('interrupted') : pc.green('passed')}\n`,
   );
@@ -193,6 +231,7 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
   const result: CaptureWorkflowResult = {
     aborted,
     capture,
+    benchmark,
     shouldFail,
     validation,
     durationMs: Math.round((performance.now() - startedAt) * 100) / 100,

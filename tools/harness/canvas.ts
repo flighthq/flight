@@ -18,6 +18,7 @@ import {
   enableCanvasBlendMode,
   enableCanvasClip,
   enableCanvasRenderCache,
+  invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareDisplayObjectRender,
   QuadBatchKind,
@@ -96,6 +97,10 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
       if (!prepareDisplayObjectRender(state, root)) return;
       renderCanvasBackground(state);
       renderCanvasDisplayObject(state, root);
+    },
+    benchmark(root: DisplayObject): void {
+      invalidateNodeLocalTransform(root);
+      this.render(root);
     },
   });
 }

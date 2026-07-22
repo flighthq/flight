@@ -13,14 +13,14 @@ describe('parseCaptureBatchManifest', () => {
         JSON.stringify({
           subjects: [
             { name: 'icons', args: ['--manifest=icons/tool-capture.json', '--url=http://localhost:5173'] },
-            { name: 'models', args: ['--manifest=models/tool-capture.json'], operations: ['validate'] },
+            { name: 'models', args: ['--manifest=models/tool-capture.json'], operations: ['validate', 'benchmark'] },
           ],
         }),
       ),
     ).toEqual({
       subjects: [
         { name: 'icons', args: ['--manifest=icons/tool-capture.json', '--url=http://localhost:5173'] },
-        { name: 'models', args: ['--manifest=models/tool-capture.json'], operations: ['validate'] },
+        { name: 'models', args: ['--manifest=models/tool-capture.json'], operations: ['validate', 'benchmark'] },
       ],
     });
   });
