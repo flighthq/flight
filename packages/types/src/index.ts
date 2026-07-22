@@ -23,6 +23,7 @@ export * from './AnimationClip';
 export * from './AnimationInterpolation';
 export * from './AnimationLoopMode';
 export * from './AnimationPlayer';
+export * from './AnimationSampleAccumulator';
 export * from './AnimationTrack';
 export * from './AnimationTrackValidationDiagnostic';
 export * from './AnimatedNormalModifier';
