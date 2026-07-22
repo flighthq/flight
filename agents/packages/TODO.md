@@ -972,7 +972,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 ### skeleton3d (solid 75)
 
 - Prove composed deformation behavior
-- Define clone-safe morph-plus-skin ownership
+- Finish clone-safe morph-plus-skin ownership
 - Represent influences beyond the common top four
 - Compose poses with animation
 - Deepen rigging as separate primitives

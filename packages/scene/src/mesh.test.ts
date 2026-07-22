@@ -1,5 +1,5 @@
 import { createStandardPbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh';
 import {
   addNodeChild,
   getNodeChildCount,
@@ -21,6 +21,7 @@ import {
   MeshKind,
 } from './mesh';
 import { createSceneNode } from './sceneNode';
+import { updateMeshMorph } from './updateMeshMorph';
 
 describe('cloneMesh', () => {
   it('shares the geometry by reference', () => {
@@ -57,18 +58,49 @@ describe('cloneMesh', () => {
     expect(clone.kind).toBe('Custom');
   });
 
-  it('shares the skin by reference when present', () => {
+  it('shares skin pose explicitly but detaches CPU-deformed geometry', () => {
     const skin = {} as Skin;
     const source = createMesh(createBoxMeshGeometry(), []);
     source.skin = skin;
-    expect(cloneMesh(source).skin).toBe(skin);
+    const clone = cloneMesh(source);
+    expect(clone.skin).toBe(skin);
+    expect(clone.geometry).not.toBe(source.geometry);
   });
 
-  it('shares the morph by reference when present', () => {
-    const morph: MeshMorph = { targets: [], weights: new Float32Array(0) };
+  it('shares immutable morph targets but detaches weights and geometry', () => {
+    const targets: MeshMorph['targets'] = [];
+    const morph: MeshMorph = { targets, weights: new Float32Array([0.5]) };
     const source = createMesh(createBoxMeshGeometry(), []);
     source.morph = morph;
-    expect(cloneMesh(source).morph).toBe(morph);
+    const clone = cloneMesh(source);
+    expect(clone.morph).not.toBe(morph);
+    expect(clone.morph?.targets).toBe(targets);
+    expect(clone.morph?.weights).not.toBe(morph.weights);
+    expect(clone.morph?.weights[0]).toBe(0.5);
+    expect(clone.geometry).not.toBe(source.geometry);
+  });
+
+  it('restores base geometry when cloning an already-morphed mesh', () => {
+    const geometry = createBoxMeshGeometry();
+    const deltas = new Float32Array(getMeshGeometryVertexCount(geometry) * 3);
+    deltas[0] = 5;
+    const source = createMesh(geometry, []);
+    source.morph = {
+      targets: [{ normalDeltas: null, positionDeltas: deltas, tangentDeltas: null }],
+      weights: new Float32Array([1]),
+    };
+    const baseX = geometry.vertices[0];
+    updateMeshMorph(source);
+    expect(source.geometry.vertices[0]).toBe(baseX + 5);
+
+    const clone = cloneMesh(source);
+
+    expect(clone.geometry.vertices[0]).toBe(baseX);
+    expect(clone.morph?.weights[0]).toBe(1);
+    if (clone.morph) clone.morph.weights[0] = 2;
+    updateMeshMorph(clone);
+    expect(clone.geometry.vertices[0]).toBe(baseX + 10);
+    expect(source.geometry.vertices[0]).toBe(baseX + 5);
   });
 
   it('does not copy children', () => {
