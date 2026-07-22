@@ -3,6 +3,7 @@ import { isMesh } from '@flighthq/scene';
 import { connectSignal, disconnectSignal } from '@flighthq/signals';
 import { createTween } from '@flighthq/tween';
 import type { EasingFunction, Material, SceneNode, Texture, TweenManager } from '@flighthq/types';
+import { ResourceResolutionState } from '@flighthq/types';
 
 import { getSceneMaterialTextures } from './sceneMaterialTextureRegistry';
 import type { SceneResourceResolver } from './sceneResourceResolver';
@@ -18,10 +19,12 @@ export interface SceneResourceRevealOptions {
 }
 
 // The standard streamed-texture fade-in, composed from node opacity (P1/P2) + @flighthq/tween: every
-// object carrying a still-pending texture is hidden to `from` up front, and when a texture resolves
-// the resolver's onResourceResolved signal fades its owning object's `node.alpha` up to 1 over
-// `fadeSeconds`. The resolver only reports availability; this recipe animates — the app ticks the fade
-// via updateTweens(tweenManager, dt), and a node-opacity-honoring renderer (scene-gl) makes it visible.
+// object carrying a still-pending texture is hidden to `from` up front, and only after every required
+// texture settles does the recipe fade its owning object's `node.alpha` up to 1 over `fadeSeconds`.
+// Failure counts as settled so the renderer's fallback can be revealed instead of leaving the object
+// permanently hidden. A cancelled load does not settle and remains pending until a later resolution
+// pass re-requests it. The resolver only reports availability; this recipe animates — the app ticks
+// the fade via updateTweens(tweenManager, dt), and a node-opacity-honoring renderer makes it visible.
 //
 // Call BEFORE resolveSceneResources so objects start hidden rather than popping. Returns a disposer
 // that disconnects the signal listener (the tween manager and any in-flight tweens are the caller's).
@@ -37,31 +40,51 @@ export function revealSceneResourcesOnResolve(
   const from = options?.from ?? 0;
   const tweenOptions = options?.ease !== undefined ? { ease: options.ease } : undefined;
 
-  const owners = new Map<Texture, SceneNode[]>();
-  collectPendingTextureOwners(scene, resolver, owners);
-  for (const nodes of owners.values()) {
-    for (const node of nodes) node.alpha = from;
+  const ownersByTexture = new Map<Texture, SceneResourceRevealOwner[]>();
+  const owners: SceneResourceRevealOwner[] = [];
+  collectPendingTextureOwners(scene, resolver, ownersByTexture, owners);
+  for (const owner of owners) {
+    owner.node.alpha = from;
   }
 
   const signals = enableSceneResourceSignals(resolver);
   const slot = (event: Readonly<{ texture: Texture }>): void => {
-    const nodes = owners.get(event.texture);
-    if (nodes === undefined) return;
-    for (const node of nodes) createTween(tweenManager, node, fadeSeconds, { alpha: 1 }, tweenOptions);
+    const textureOwners = ownersByTexture.get(event.texture);
+    if (textureOwners === undefined) return;
+    // A resource must emit at most one terminal event for a Texture, but deleting here also makes the
+    // reveal atom robust to a caller manually replaying or forwarding the same event.
+    ownersByTexture.delete(event.texture);
+    for (const owner of textureOwners) {
+      owner.pending.delete(event.texture);
+      if (owner.pending.size === 0) {
+        createTween(tweenManager, owner.node, fadeSeconds, { alpha: 1 }, tweenOptions);
+      }
+    }
   };
   connectSignal(signals.onResourceResolved, slot);
-  return () => disconnectSignal(signals.onResourceResolved, slot);
+  connectSignal(signals.onResourceFailed, slot);
+  return () => {
+    disconnectSignal(signals.onResourceResolved, slot);
+    disconnectSignal(signals.onResourceFailed, slot);
+  };
 }
 
-// Maps each still-pending texture (resource != null) to the Mesh nodes that carry it, so a resolved
-// texture's event resolves back to the object(s) to fade. Mirrors getSceneResourceTextures' walk but
-// keeps the owning node instead of deduping textures to a flat list.
+interface SceneResourceRevealOwner {
+  node: SceneNode;
+  pending: Set<Texture>;
+}
+
+// Maps each unresolved/loading texture to its owning Mesh reveal state. Already bound images and
+// previously failed references are settled before this recipe begins, so they must not hide an owner
+// waiting for an event that will never arrive. Repeated texture slots on one owner count only once.
 function collectPendingTextureOwners(
   scene: Readonly<SceneNode>,
   resolver: Readonly<SceneResourceResolver>,
-  out: Map<Texture, SceneNode[]>,
+  ownersByTexture: Map<Texture, SceneResourceRevealOwner[]>,
+  owners: SceneResourceRevealOwner[],
 ): void {
   const slots: Texture[] = [];
+  const ownersByNode = new Map<SceneNode, SceneResourceRevealOwner>();
   const visit = (node: Readonly<SceneNode>): void => {
     if (!isMesh(node)) return;
     const owner = node as SceneNode;
@@ -73,13 +96,22 @@ function collectPendingTextureOwners(
       getSceneMaterialTextures(resolver.registry, material, slots);
       for (let j = 0; j < slots.length; j++) {
         const texture = slots[j];
-        if (texture.resource == null) continue;
-        let nodes = out.get(texture);
-        if (nodes === undefined) {
-          nodes = [];
-          out.set(texture, nodes);
+        const ref = texture.resource;
+        if (ref == null || texture.image !== null || ref.state === ResourceResolutionState.Failed) continue;
+        let ownerState = ownersByNode.get(owner);
+        if (ownerState === undefined) {
+          ownerState = { node: owner, pending: new Set() };
+          ownersByNode.set(owner, ownerState);
+          owners.push(ownerState);
         }
-        if (!nodes.includes(owner)) nodes.push(owner);
+        if (ownerState.pending.has(texture)) continue;
+        ownerState.pending.add(texture);
+        let textureOwners = ownersByTexture.get(texture);
+        if (textureOwners === undefined) {
+          textureOwners = [];
+          ownersByTexture.set(texture, textureOwners);
+        }
+        textureOwners.push(ownerState);
       }
     }
   };

@@ -6,7 +6,7 @@ import { createMesh, createScene } from '@flighthq/scene';
 import { emitSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween';
-import type { EmbeddedImageResourceReference, SceneNode, Texture } from '@flighthq/types';
+import type { EmbeddedImageResourceReference, ImageResource, SceneNode, Texture } from '@flighthq/types';
 import { ResourceResolutionState } from '@flighthq/types';
 
 import { revealSceneResourcesOnResolve } from './revealSceneResourcesOnResolve';
@@ -61,6 +61,77 @@ describe('revealSceneResourcesOnResolve', () => {
 
     updateTweens(manager, 0.5);
     expect(mesh.alpha).toBeCloseTo(1);
+  });
+
+  it('waits for every required texture across a material before revealing its owner', () => {
+    const baseColorMap = createTexture({ resource: pendingRef() });
+    const normalMap = createTexture({ resource: pendingRef() });
+    const material = createStandardPbrMaterial({ baseColorMap, normalMap });
+    const mesh = createMesh(createBoxMeshGeometry(), [material]);
+    const scene = createScene();
+    addNodeChild(scene.root, mesh);
+    const resolver = createSceneResourceResolver();
+    const manager = createTweenManager();
+    revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
+
+    const signals = enableSceneResourceSignals(resolver);
+    emitSignal(signals.onResourceResolved, { ref: baseColorMap.resource!, texture: baseColorMap });
+    expect(hasTweensOf(manager, mesh)).toBe(false);
+
+    emitSignal(signals.onResourceResolved, { ref: normalMap.resource!, texture: normalMap });
+    expect(hasTweensOf(manager, mesh)).toBe(true);
+  });
+
+  it('treats failure as settled and reveals the fallback only after the remaining resources settle', () => {
+    const baseColorMap = createTexture({ resource: pendingRef() });
+    const normalMap = createTexture({ resource: pendingRef() });
+    const material = createStandardPbrMaterial({ baseColorMap, normalMap });
+    const mesh = createMesh(createBoxMeshGeometry(), [material]);
+    const scene = createScene();
+    addNodeChild(scene.root, mesh);
+    const resolver = createSceneResourceResolver();
+    const manager = createTweenManager();
+    revealSceneResourcesOnResolve(resolver, scene.root, manager, { fadeSeconds: 0.5 });
+
+    const signals = enableSceneResourceSignals(resolver);
+    emitSignal(signals.onResourceFailed, { ref: normalMap.resource!, texture: normalMap });
+    expect(hasTweensOf(manager, mesh)).toBe(false);
+
+    emitSignal(signals.onResourceResolved, { ref: baseColorMap.resource!, texture: baseColorMap });
+    expect(hasTweensOf(manager, mesh)).toBe(true);
+  });
+
+  it('does not hide an owner whose resource was already bound or had already failed', () => {
+    const bound = createTexture({
+      image: { height: 1, width: 1 } as ImageResource,
+      resource: pendingRef(),
+    });
+    const failedRef = pendingRef();
+    failedRef.state = ResourceResolutionState.Failed;
+    const failed = createTexture({ resource: failedRef });
+    const material = createStandardPbrMaterial({ baseColorMap: bound, normalMap: failed });
+    const mesh = createMesh(createBoxMeshGeometry(), [material]);
+    const scene = createScene();
+    addNodeChild(scene.root, mesh);
+
+    revealSceneResourcesOnResolve(createSceneResourceResolver(), scene.root, createTweenManager());
+    expect(mesh.alpha).toBe(1);
+  });
+
+  it('reveals every owner of one shared texture when that texture settles', () => {
+    const texture = createTexture({ resource: pendingRef() });
+    const a = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial({ baseColorMap: texture })]);
+    const b = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial({ baseColorMap: texture })]);
+    const scene = createScene();
+    addNodeChild(scene.root, a);
+    addNodeChild(scene.root, b);
+    const resolver = createSceneResourceResolver();
+    const manager = createTweenManager();
+    revealSceneResourcesOnResolve(resolver, scene.root, manager);
+
+    emitSignal(enableSceneResourceSignals(resolver).onResourceResolved, { ref: texture.resource!, texture });
+    expect(hasTweensOf(manager, a)).toBe(true);
+    expect(hasTweensOf(manager, b)).toBe(true);
   });
 
   it('ignores a resolve event for a texture it is not tracking', () => {
