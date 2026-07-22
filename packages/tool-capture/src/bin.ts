@@ -26,7 +26,7 @@ import type {
 import { runCaptureBatch } from './captureWorkflow.js';
 
 const USAGE = `usage:
-  tool-capture observe <url> [--out <dir>] [--wait <ms>] [--frames <n>]
+  tool-capture observe <url> [--out <dir>] [--wait <ms>] [--frames <n>] [--retries <n>]
   tool-capture capture [--manifest <file>] (--url <url> | --dir <built-dir>) [options]
   tool-capture capture --tool <examples|functional> [options]
   tool-capture validate [--manifest <file>] (--url <url> | --dir <built-dir>) [options]
@@ -36,7 +36,9 @@ const USAGE = `usage:
 capture options:
   --filter <name> --renderer <ids> --out <dir> --wait <ms> --frames <n>
   --parallel <n> --sequential --dev --build --update-baseline --fail-on-changed
-  --fail-on-error --verify --no-verify --observe
+  --fail-on-error --verify --no-verify --observe --retries <n>
+
+Every command writes a versioned aggregate JSON report beneath its artifact directory.
 
 validation options:
   --report --update-fingerprints --no-regression --no-parity
@@ -142,6 +144,7 @@ async function validate(argv: readonly string[]): Promise<number> {
 
 function captureOptions(argv: readonly string[]): CaptureWorkflowCaptureOptions {
   const frames = flag(argv, 'frames');
+  const observe = hasFlag(argv, 'observe');
   return {
     outBase: flag(argv, 'out') ?? '.artifacts',
     filter: flag(argv, 'filter'),
@@ -153,8 +156,9 @@ function captureOptions(argv: readonly string[]): CaptureWorkflowCaptureOptions 
     updateBaseline: hasFlag(argv, 'update-baseline'),
     failOnChanged: hasFlag(argv, 'fail-on-changed'),
     failOnError: hasFlag(argv, 'fail-on-error'),
-    observe: hasFlag(argv, 'observe'),
+    observe,
     verify: hasFlag(argv, 'verify') ? true : hasFlag(argv, 'no-verify') ? false : undefined,
+    maxRetries: parseNonNegativeInteger(flag(argv, 'retries'), observe ? 2 : 1),
   };
 }
 
@@ -214,6 +218,7 @@ async function batch(argv: readonly string[]): Promise<number> {
   const result = await runCaptureBatch({
     subjects,
     subjectWorkerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'subjects-parallel'), 1)),
+    reportPath: resolve(root, '.artifacts', 'capture-batch-report.json'),
   });
   if (result.aborted) return 130;
   return result.shouldFail ? 1 : 0;
@@ -229,10 +234,11 @@ async function main(): Promise<void> {
       outDir,
       wait: parseNonNegativeInteger(flag(argv, 'wait'), 0),
       captureFrames: parseNonNegativeInteger(flag(argv, 'frames'), 1) || 1,
+      maxRetries: parseNonNegativeInteger(flag(argv, 'retries'), 2),
     });
     console.log(`captured → ${resolve(outDir, 'screenshot.png')}`);
     console.log(`observe   ${JSON.stringify(diagnostics)}`);
-    process.exit(0);
+    process.exit(diagnostics.blank || !diagnostics.usable ? 1 : 0);
   }
   if (command === 'capture') process.exit(await capture(argv));
   if (command === 'validate') process.exit(await validate(argv));

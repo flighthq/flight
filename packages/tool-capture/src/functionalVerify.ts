@@ -16,6 +16,9 @@ import type {
   WgpuRenderState,
 } from '@flighthq/types';
 
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
+import type { CaptureVerification } from './captureProtocol.js';
+
 export const FUNCTIONAL_VERIFICATION_IMAGE_KEY = '__ftRenderImage';
 
 const DEFAULT_MIN_COVERAGE = 0.0008;
@@ -56,13 +59,8 @@ export interface FunctionalTestModule {
   minCoverage?: number;
 }
 
-export interface FunctionalVerification {
-  render: string;
-  coverage: number | null;
-  fingerprint: string | null;
-  state: 'pending' | 'passed' | 'failed';
-  error: string | null;
-}
+/** @deprecated Prefer the protocol-neutral CaptureVerification name. */
+export type FunctionalVerification = CaptureVerification;
 
 export interface FunctionalWgpuTarget {
   kind: 'webgpu';
@@ -98,6 +96,7 @@ export function publishFunctionalRenderSync(render: string): boolean {
   const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
   if (coverage < DEFAULT_MIN_COVERAGE) return false;
   (window as VerificationWindow).__ftVerification = {
+    protocolVersion: CAPTURE_PROTOCOL_VERSION,
     render,
     coverage,
     fingerprint: formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID)),
@@ -127,6 +126,7 @@ export function registerWgpuFunctionalTarget(state: WgpuRenderState, scale = 1):
 
 export async function runRenderVerification(testModule: FunctionalTestModule, render: string): Promise<void> {
   const result: FunctionalVerification = {
+    protocolVersion: CAPTURE_PROTOCOL_VERSION,
     render,
     coverage: null,
     fingerprint: null,

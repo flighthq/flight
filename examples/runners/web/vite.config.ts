@@ -30,6 +30,7 @@ const VERIFY_SKIP = new Set<string>(['playingsound']);
 
 function entryWithLogCapture(name: string, render: string): string {
   const verifyPath = join(projectRoot, 'packages', 'tool-capture', 'src', 'functionalVerify.ts');
+  const capturePath = join(projectRoot, 'packages', 'tool-capture', 'src', 'capturePage.ts');
   // The shared in-page render verifier (also used by the functional harness). Reused here so examples
   // get the same not-blank / error / fingerprint checks with no per-example code. It is dynamically
   // imported and run ONLY under capture mode (window.__flightCapture, set by the verify harness), so
@@ -65,8 +66,8 @@ function entryWithLogCapture(name: string, render: string): string {
       // module resolves. Wait for the first frame to draw — the --frames halt flags __captureFramesReached
       // once it has — polling via setTimeout (rAF is halted by then), capped so one-shot renders proceed.
       `  await new Promise((resolve) => { let n = 0; const poll = () => (window['__captureFramesReached'] || ++n > 140) ? resolve() : setTimeout(poll, 15); poll(); });`,
-      `  const { runRenderVerification } = await import(${JSON.stringify(verifyPath)});`,
-      `  await runRenderVerification(__example, ${JSON.stringify(render)});`,
+      `  const { verifyCaptureTarget } = await import(${JSON.stringify(capturePath)});`,
+      `  await verifyCaptureTarget(__example, ${JSON.stringify(render)});`,
       `}`,
     );
   }

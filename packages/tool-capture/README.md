@@ -2,6 +2,14 @@
 
 Deterministic browser capture and reporting for canvas, DOM, WebGL, and WebGPU pages.
 
+## Choose the contract
+
+- **Observe:** zero page integration. Produces agent eyesight and explicit `usable`, `blank`, `timedOut`, retry, and error diagnostics.
+- **Capture gate:** a manifest plus CLI flags. Produces deterministic screenshots, logs, hashes, and smoke failures.
+- **Verification:** one shared page adapter. Adds asserted non-blank readback, fingerprints, parity, and regression without capture code in each example.
+
+Every command writes versioned `status.json` files and an aggregate `report.json` envelope intended for CI and AI agents. Capture retries transient navigation/protocol failures in a fresh page; `observe` retries blank or timed-out attempts while preserving the best full-page evidence from its final attempt.
+
 ## Capture a suite
 
 Add a `tool-capture.json` manifest to a package:
@@ -40,27 +48,26 @@ tool-capture capture --dir dist --renderer webgl,webgpu --parallel 4
 
 Use `runCaptureSuite` when entries or server lifecycle are generated programmatically. It owns browser setup and teardown, deterministic frame synchronization, parallel or sequential scheduling, baseline policy, interruption, summaries, and the final verdict.
 
-## Validate fingerprints
+## Install verification once
 
-The same manifest and server options drive the tolerant parity/regression pass when pages publish a render fingerprint:
-
-```js
-window.__ftVerification = {
-  render: 'webgl',
-  coverage: 1,
-  fingerprint: '1:25acc0',
-  state: 'passed',
-  error: null,
-};
-```
-
-Fingerprints use the `<grid-size>:<rgb-hex>` format produced by `formatSurfaceFingerprint`. Publish `state: 'pending'` before asynchronous readback, then `passed` only after render assertions succeed or `failed` with an error. Consumers using Flight's functional target can make that whole contract a single call:
+Raw consumers can register, render, and verify with one call after constructing their normal renderer state:
 
 ```ts
-await runRenderVerification(testModule, renderer);
+await installCaptureTarget({
+  renderer: 'webgl',
+  state,
+  render: () => renderScene(scene),
+  assertRender,
+});
 ```
 
-Once the page reaches a terminal verification state, validation is turn-key:
+The adapter is inert outside a tool-capture browser. During capture it registers readable WebGL/WebGPU state before drawing and publishes the complete versioned terminal contract only after assertions pass. A project whose shared renderer factory already registers the target needs one runner-level line and zero capture-specific lines in each example:
+
+```ts
+await verifyCaptureTarget(exampleModule, renderer);
+```
+
+Fingerprints use the `<grid-size>:<rgb-hex>` format produced by `formatSurfaceFingerprint`. Once the page reaches a terminal verification state, validation is turn-key:
 
 ```sh
 tool-capture validate --dir dist --no-regression
@@ -148,8 +155,8 @@ Arguments after `batch` override each subject's defaults. Subjects run sequentia
 
 ## Observe one page
 
-`observe` is the zero-integration eyes primitive. It waits adaptively for measured pixels, ignores dev-server WebSocket shutdown noise, and always emits the best available screenshot plus `status.json` diagnostics rather than enforcing a suite gate. If a canvas remains blank, it captures the full page so an error overlay or loading UI is visible instead of cropping the only useful evidence away:
+`observe` is the zero-integration eyes primitive. It actively polls presented pixels, ignores dev-server WebSocket shutdown noise, and retries twice by default. If a canvas remains blank, it captures the full page so an error overlay or loading UI is visible instead of cropping the only useful evidence away. A clean blank result exits nonzero, but `screenshot.png`, `status.json`, and `report.json` remain available:
 
 ```sh
-tool-capture observe http://localhost:5173/example --out capture
+tool-capture observe http://localhost:5173/example --out capture --retries 2
 ```

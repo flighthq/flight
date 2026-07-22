@@ -2,10 +2,13 @@
 // browser contexts; this layer lends both the same server and closes it once the complete subject has
 // finished, avoiding a duplicate build/server startup for the common smoke-then-verify workflow.
 
+import { resolve } from 'node:path';
+
 import pc from 'picocolors';
 
 import { launchBrowser } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
+import { writeCaptureReport } from './captureReport.js';
 import type { Server } from './captureServer.js';
 import type { CaptureSuiteOptions, CaptureSuiteResult } from './captureSuite.js';
 import { runCaptureSuite } from './captureSuite.js';
@@ -30,6 +33,7 @@ export interface CaptureWorkflowOptions {
   capture?: Readonly<CaptureWorkflowCaptureOptions> | false;
   /** Fingerprint parity/regression pass. Defaults to enabled; set false for capture-only workflows. */
   validation?: Readonly<CaptureWorkflowValidationOptions> | false;
+  reportPath?: string | false;
 }
 
 export interface CaptureWorkflowResult {
@@ -37,10 +41,13 @@ export interface CaptureWorkflowResult {
   capture: CaptureSuiteResult | null;
   shouldFail: boolean;
   validation: CaptureValidationResult | null;
+  durationMs: number;
+  reportPath: string | null;
 }
 
 /** Runs lazily-resolved subject workflows through a bounded worker pool and returns one aggregate verdict. */
 export async function runCaptureBatch(options: Readonly<CaptureBatchOptions>): Promise<CaptureBatchResult> {
+  const startedAt = performance.now();
   if (options.subjects.length === 0) throw new Error('No capture batch subjects found');
   const jobs = options.subjects.map((subject, index) => ({ index, subject }));
   const results: CaptureBatchSubjectResult[] = Array.from({ length: jobs.length });
@@ -71,7 +78,24 @@ export async function runCaptureBatch(options: Readonly<CaptureBatchOptions>): P
   console.log(
     `${shouldFail ? pc.red('✗ failed') : pc.green('✓ passed')}   ${passed} subjects passed   ${failed} subjects failed${aborted ? pc.yellow('   — interrupted') : ''}`,
   );
-  return { aborted, failed, passed, shouldFail, subjects: results };
+  const reportPath =
+    options.reportPath === false
+      ? null
+      : resolve(
+          options.reportPath ?? process.cwd(),
+          ...(options.reportPath === undefined ? ['.artifacts', 'capture-batch-report.json'] : []),
+        );
+  const result: CaptureBatchResult = {
+    aborted,
+    failed,
+    passed,
+    shouldFail,
+    subjects: results,
+    durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+    reportPath,
+  };
+  if (reportPath !== null) writeCaptureReport(reportPath, 'batch', result);
+  return result;
 }
 
 export interface CaptureBatchSubject {
@@ -83,6 +107,7 @@ export interface CaptureBatchOptions {
   subjects: Readonly<CaptureBatchSubject[]>;
   /** Number of subjects processed concurrently. Resource concurrency remains configured per subject. */
   subjectWorkerCount?: number;
+  reportPath?: string | false;
 }
 
 export interface CaptureBatchSubjectResult {
@@ -97,10 +122,13 @@ export interface CaptureBatchResult {
   passed: number;
   shouldFail: boolean;
   subjects: CaptureBatchSubjectResult[];
+  durationMs: number;
+  reportPath: string | null;
 }
 
 /** Runs the enabled capture and validation passes for one subject against one shared server. */
 export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOptions>): Promise<CaptureWorkflowResult> {
+  const startedAt = performance.now();
   const borrowedServer: Server = { url: options.server.url, kill() {} };
   let capture: CaptureSuiteResult | null = null;
   let validation: CaptureValidationResult | null = null;
@@ -108,7 +136,7 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
   const validationOptions = options.validation === false ? null : (options.validation ?? {});
   if (captureOptions === null && validationOptions === null) {
     options.server.kill();
-    return { aborted: false, capture: null, shouldFail: false, validation: null };
+    return { aborted: false, capture: null, shouldFail: false, validation: null, durationMs: 0, reportPath: null };
   }
   const captureFrames = Math.max(1, captureOptions?.captureFrames ?? 1, validationOptions?.captureFrames ?? 1);
   const browserSession = await launchBrowser({
@@ -155,5 +183,21 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
   console.log(
     `${pc.bold(options.subject)} workflow ${shouldFail ? pc.red('failed') : aborted ? pc.yellow('interrupted') : pc.green('passed')}\n`,
   );
-  return { aborted, capture, shouldFail, validation };
+  const reportPath =
+    options.reportPath === false
+      ? null
+      : resolve(
+          options.reportPath ?? options.root ?? process.cwd(),
+          ...(options.reportPath === undefined ? ['.artifacts', options.subject, 'workflow-report.json'] : []),
+        );
+  const result: CaptureWorkflowResult = {
+    aborted,
+    capture,
+    shouldFail,
+    validation,
+    durationMs: Math.round((performance.now() - startedAt) * 100) / 100,
+    reportPath,
+  };
+  if (reportPath !== null) writeCaptureReport(reportPath, 'workflow', result);
+  return result;
 }
