@@ -17,9 +17,11 @@ import { createSurfaceMaterial } from './surfaceMaterial';
 // Lossiness: the conversion is an approximation — metal/dielectric separation derived from
 // the specular luma cannot fully recover the original material on every surface. Document
 // the approximation when surfacing the output to users.
-// Map assignments: diffuseMap → baseColorMap; specularGlossinessMap → metallicRoughnessMap
-// (packing semantics differ — the renderer must remap channels). normalMap, occlusionMap,
-// emissiveMap, normalScale, occlusionStrength, and emissiveStrength are forwarded unchanged.
+// Map assignments: diffuseMap → baseColorMap. The packed specularGlossinessMap cannot be assigned to
+// metallicRoughnessMap because their channel and color-space semantics differ; this factor-only atom
+// leaves that destination null. A caller that needs a texture conversion must explicitly bake/remap it.
+// normalMap, occlusionMap, emissiveMap, normalScale, occlusionStrength, and emissiveStrength are
+// forwarded unchanged.
 export function convertSpecularGlossinessToStandardPbr(
   out: StandardPbrMaterialProperties,
   source: Readonly<SpecularGlossinessPbrMaterial>,
@@ -29,7 +31,6 @@ export function convertSpecularGlossinessToStandardPbr(
   const specular = source.specular;
   const glossiness = source.glossiness;
   const diffuseMap = source.diffuseMap;
-  const specularGlossinessMap = source.specularGlossinessMap;
   const emissive = source.emissive;
   const emissiveMap = source.emissiveMap;
   const emissiveStrength = source.emissiveStrength;
@@ -68,7 +69,7 @@ export function convertSpecularGlossinessToStandardPbr(
   out.emissiveMap = emissiveMap;
   out.emissiveStrength = emissiveStrength;
   out.metallic = metallic;
-  out.metallicRoughnessMap = specularGlossinessMap;
+  out.metallicRoughnessMap = null;
   out.normalMap = normalMap;
   out.normalScale = normalScale;
   out.occlusionMap = occlusionMap;

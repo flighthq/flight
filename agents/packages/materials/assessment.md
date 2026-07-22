@@ -39,7 +39,10 @@ See [charter](./charter.md) for blessed direction.
 
 ## Approved
 
-None.
+- [2026-07-22 · completed] Factor-only specular-glossiness conversion no longer aliases packed
+  specular RGB plus glossiness A into the incompatible roughness G plus metallic B texture slot. It
+  clears that destination deterministically while preserving scalar approximation and compatible maps;
+  dedicated GL sampling or an explicit texture bake remains depth work.
 
 ## Backlog
 
