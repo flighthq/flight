@@ -175,11 +175,6 @@ Design calls to settle before building the affected entries:
 
 - Flag textlayout's `_text` parameter for removal
 
-### texture (solid 58)
-
-- Define CubeFace constants (`CubeFacePositiveX`, `CubeFaceNegativeX`, `CubeFacePositiveY`, `CubeFaceNegativeY`, `CubeFacePositiveZ`, `Cube…
-- Remove unused `@flighthq/resources` dependency from package.json
-
 ### video (solid 60)
 
 - Loader options — `crossOrigin`, `muted`, `playsInline`, `preload`, and a readiness mode (`metadata` | `canplay` | `canplaythrough`)
@@ -999,7 +994,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `animation` · `motionpath` · `scene` · `picking` · `scene-resources` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `texture` · `animation` · `motionpath` · `scene` · `picking` · `scene-resources` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 
