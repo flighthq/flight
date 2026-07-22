@@ -16,6 +16,7 @@ const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 function externalRef(uri: string): ImageResourceReference {
   return {
     basePath: null,
+    failure: null,
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,

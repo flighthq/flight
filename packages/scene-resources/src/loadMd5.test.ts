@@ -42,6 +42,7 @@ function okResponse(body: string): NetResponse {
 function sceneWithTexture(): { scene: Scene; texture: ReturnType<typeof createTexture> } {
   const ref: ImageResourceReference = {
     basePath: null,
+    failure: null,
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,

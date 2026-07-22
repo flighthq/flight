@@ -11,6 +11,8 @@ export * from './resolveSceneResources';
 export * from './resolveSceneResourcesAndWait';
 export * from './revealSceneResourcesOnResolve';
 export * from './sceneMaterialTextureRegistry';
+export * from './sceneResourceRecovery';
 export * from './imageResourceFetch';
 export * from './sceneResourceResolver';
 export * from './sceneResourceSignals';
+export * from './enableSceneResourceFailureGuards';

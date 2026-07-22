@@ -39,6 +39,7 @@ function emptyDocument(): SceneDocument {
 function externalRef(): ImageResourceReference {
   return {
     basePath: null,
+    failure: null,
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,

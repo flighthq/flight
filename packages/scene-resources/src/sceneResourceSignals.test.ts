@@ -12,6 +12,7 @@ import {
 
 const ref: ImageResourceReference = {
   bytes: new Uint8Array(),
+  failure: null,
   kind: ImageResourceReferenceKind.Embedded,
   mimeType: null,
   state: ResourceResolutionState.Resolved,

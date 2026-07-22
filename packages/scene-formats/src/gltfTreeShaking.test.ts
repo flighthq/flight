@@ -1,9 +1,7 @@
-import { fileURLToPath } from 'node:url';
-
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
-const resolveDir = fileURLToPath(new URL('.', import.meta.url));
+const resolveDir = decodeURIComponent(new URL('.', import.meta.url).pathname);
 
 async function bundleRootExport(name: string): Promise<string> {
   const result = await build({

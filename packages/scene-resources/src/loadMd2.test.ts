@@ -62,6 +62,7 @@ describe('loadSceneFromMd2', () => {
   it('parses MD2 and resolves its skin texture', async () => {
     const ref: ImageResourceReference = {
       basePath: null,
+      failure: null,
       kind: ImageResourceReferenceKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,

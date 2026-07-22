@@ -14,7 +14,13 @@ import {
 } from './sceneMaterialTextureRegistry';
 
 function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
-  return { bytes: new Uint8Array([1, 2, 3]), kind: ImageResourceReferenceKind.Embedded, mimeType: 'image/png', state };
+  return {
+    bytes: new Uint8Array([1, 2, 3]),
+    failure: null,
+    kind: ImageResourceReferenceKind.Embedded,
+    mimeType: 'image/png',
+    state,
+  };
 }
 
 function registry() {

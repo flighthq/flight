@@ -3,13 +3,14 @@ import { queueResourceLoad } from '@flighthq/loader';
 import { emitSignal } from '@flighthq/signals';
 import type {
   ImageResource,
+  ImageResourceFailure,
   SceneNode,
   ImageResourceReference,
   ResolveSceneResourcesOptions,
   SceneResourceResolver,
   Texture,
 } from '@flighthq/types';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import { ImageResourceFailureKind, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 
 import { getSceneResourceTextures } from './getSceneResourceTextures';
 import { SceneResourceResolverRuntimeKey } from './sceneResourceResolverRuntime';
@@ -55,6 +56,7 @@ export function resolveSceneResources(
     if (ref == null) continue;
     if (texture.image !== null) {
       runtime.resolved.set(ref, texture.image);
+      ref.failure = null;
       ref.state = ResourceResolutionState.Resolved;
     }
     if (options?.select !== undefined && !options.select(texture, ref)) continue;
@@ -102,11 +104,17 @@ function finishSceneResourceResolution(
   if (runtime.inFlight.get(ref) !== entry) return;
   runtime.inFlight.delete(ref);
   if (image === null) {
+    ref.failure = {
+      kind: ImageResourceFailureKind.Unavailable,
+      message: 'Image resource resolution returned no image',
+      name: null,
+    };
     ref.state = ResourceResolutionState.Failed;
     for (const texture of entry.subscribers) emitSceneResourceEvent(resolver, texture, ref, false);
     return;
   }
   runtime.resolved.set(ref, image);
+  ref.failure = null;
   ref.state = ResourceResolutionState.Resolved;
   for (const texture of entry.subscribers) bindResolvedSceneResource(resolver, texture, ref, image);
 }
@@ -115,12 +123,14 @@ function failSceneResourceResolution(
   resolver: SceneResourceResolver,
   ref: ImageResourceReference,
   entry: SceneResourceInFlight,
+  cause: unknown,
 ): void {
   const runtime = (resolver as SceneResourceResolverWithRuntime)[SceneResourceResolverRuntimeKey];
   if (runtime.inFlight.get(ref) !== entry) return;
   runtime.inFlight.delete(ref);
   // An abort is a cancel, not a failure: the ref was already reverted to Unresolved when dropped.
   if (entry.controller.signal.aborted) return;
+  ref.failure = createImageResourceFailure(cause);
   ref.state = ResourceResolutionState.Failed;
   for (const texture of entry.subscribers) emitSceneResourceEvent(resolver, texture, ref, false);
 }
@@ -157,6 +167,7 @@ function requestWorkingResolutions(
   for (const [ref, subscribers] of working) {
     const resolved = runtime.resolved.get(ref);
     if (resolved !== undefined) {
+      ref.failure = null;
       ref.state = ResourceResolutionState.Resolved;
       for (let i = 0; i < subscribers.length; i++) {
         bindResolvedSceneResource(resolver, subscribers[i], ref, resolved);
@@ -166,6 +177,7 @@ function requestWorkingResolutions(
     if (runtime.inFlight.has(ref)) continue;
     if (ref.state === ResourceResolutionState.Resolved) ref.state = ResourceResolutionState.Unresolved;
     if (ref.state !== ResourceResolutionState.Unresolved) continue;
+    ref.failure = null;
     ref.state = ResourceResolutionState.Loading;
     const controller = new AbortController();
     let priority = 0;
@@ -191,10 +203,17 @@ function requestWorkingResolutions(
     };
     entry.promise = handle.promise.then(
       (image) => finishSceneResourceResolution(resolver, ref, entry, image),
-      () => failSceneResourceResolution(resolver, ref, entry),
+      (cause) => failSceneResourceResolution(resolver, ref, entry, cause),
     );
     runtime.inFlight.set(ref, entry);
   }
 }
 
 const _resolvedVoid: Promise<void> = Promise.resolve();
+
+function createImageResourceFailure(cause: unknown): ImageResourceFailure {
+  if (cause instanceof Error) {
+    return { kind: ImageResourceFailureKind.Error, message: cause.message, name: cause.name };
+  }
+  return { kind: ImageResourceFailureKind.Error, message: String(cause), name: null };
+}

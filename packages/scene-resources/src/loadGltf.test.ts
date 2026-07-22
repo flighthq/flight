@@ -60,6 +60,7 @@ function okResponse(body: string | ArrayBuffer): NetResponse {
 function externalRef(): ImageResourceReference {
   return {
     basePath: null,
+    failure: null,
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,

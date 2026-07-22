@@ -909,7 +909,6 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### scene-resources (solid 70)
 
-- Add recovery and diagnostics
 - Add residency rather than a larger resolver
 - Prove resource realization behaviorally
 

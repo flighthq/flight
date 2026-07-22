@@ -35,6 +35,7 @@
     "@flighthq/entity": "*",
     "@flighthq/image": "*",
     "@flighthq/loader": "*",
+    "@flighthq/log": "*",
     "@flighthq/net": "*",
     "@flighthq/node": "*",
     "@flighthq/scene": "*",

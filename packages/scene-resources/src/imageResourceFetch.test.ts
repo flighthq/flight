@@ -16,6 +16,7 @@ let resolveImageResourceUri: typeof ImageResourceFetchModule.resolveImageResourc
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {
   return {
     basePath,
+    failure: null,
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
