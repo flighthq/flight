@@ -182,6 +182,14 @@ describe('getParticleEmitter3DCapacity', () => {
     reserveParticleEmitter3D(emitter, 64);
     expect(getParticleEmitter3DCapacity(emitter)).toBe(64);
   });
+
+  it('is bounded by every per-particle storage lane', () => {
+    const emitter = createParticleEmitter3D();
+    reserveParticleEmitter3D(emitter, 8);
+    emitter.data.positionsZ = new Float32Array(3);
+    emitter.data.colors = new Float32Array(2 * 3);
+    expect(getParticleEmitter3DCapacity(emitter)).toBe(2);
+  });
 });
 
 describe('getParticleEmitter3DParticleAlpha', () => {
@@ -292,6 +300,18 @@ describe('reserveParticleEmitter3D', () => {
     reserveParticleEmitter3D(emitter, 100);
     reserveParticleEmitter3D(emitter, 50);
     expect(getParticleEmitter3DCapacity(emitter)).toBe(100);
+  });
+
+  it('repairs a short storage lane even when the other lanes already have capacity', () => {
+    const emitter = createParticleEmitter3D();
+    reserveParticleEmitter3D(emitter, 8);
+    emitter.data.positionsZ = new Float32Array(0);
+    emitter.data.velocities = new Float32Array(0);
+
+    reserveParticleEmitter3D(emitter, 8);
+
+    expect(emitter.data.positionsZ.length).toBeGreaterThanOrEqual(8);
+    expect(emitter.data.velocities.length).toBeGreaterThanOrEqual(8 * 3);
   });
 });
 
