@@ -783,12 +783,42 @@ describe('createSceneFromGltf', () => {
     expect(warnings.some((w) => w.includes('version'))).toBe(true);
   });
 
-  it('warns when a primitive mode is not triangles', () => {
+  it.each([
+    [0, 'point-list'],
+    [1, 'line-list'],
+    [3, 'line-strip'],
+    [4, 'triangle-list'],
+    [5, 'triangle-strip'],
+  ] as const)('maps glTF primitive mode %s to %s', (mode, topology) => {
     const doc = makeTriangleGltf();
-    doc.meshes![0].primitives[0].mode = 1; // LINES
+    doc.meshes![0].primitives[0].mode = mode;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
+    expect(geometry.topology).toBe(topology);
+  });
+
+  it('converts glTF line loops into closed line-list indices', () => {
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].mode = 2;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
+    expect(geometry.topology).toBe('line-list');
+    expect(Array.from(geometry.indices ?? [])).toEqual([0, 1, 1, 2, 2, 0]);
+  });
+
+  it('converts glTF triangle fans into triangle-list indices', () => {
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].mode = 6;
+    const geometry = (getNodeChildren(createSceneFromGltf(doc).root)[0] as Mesh).geometry;
+    expect(geometry.topology).toBe('triangle-list');
+    expect(Array.from(geometry.indices ?? [])).toEqual([0, 1, 2]);
+  });
+
+  it('omits an unknown primitive mode with a warning instead of drawing the wrong topology', () => {
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].mode = 7;
     const warnings: string[] = [];
-    createSceneFromGltf(doc, warnings);
-    expect(warnings.some((w) => w.includes('mode'))).toBe(true);
+    const geometry = (getNodeChildren(createSceneFromGltf(doc, warnings).root)[0] as Mesh).geometry;
+    expect(getMeshGeometryIndexCount(geometry)).toBe(0);
+    expect(warnings.some((warning) => warning.includes('mode 7'))).toBe(true);
   });
 
   it('applies a matrix transform when node.matrix is a 16-element column-major array', () => {
