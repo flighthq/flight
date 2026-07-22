@@ -87,9 +87,9 @@ basedOn: ./review.md
    thrown upload/draw. Keep target caching as an optional state-owned assembly above that allocation-free
    pass, not a side effect inseparable from drawing.
 8. **Realize the declared specular-glossiness texture workflow.** The current renderer converts scalar
-   factors and explicitly ignores `specularGlossinessMap`; the materials helper also aliases that packed
-   texture to the incompatible metallic-roughness slot. Either sample diffuse RGBA and specular RGB plus
-   glossiness A in a dedicated GL workflow, or consume the output of an explicit bake/remap operation.
+   factors and explicitly ignores `specularGlossinessMap`; the factor conversion now correctly leaves
+   the incompatible metallic-roughness texture slot empty. Either sample diffuse RGBA and specular RGB
+   plus glossiness A in a dedicated GL workflow, or consume the output of an explicit bake/remap operation.
    Preserve the standard normal/occlusion/emissive maps and each texture's UV/transform, apply sRGB only
    to color channels, and prove the packed RGB/A semantics with a distinguishing real raster. Do not
    describe factor-only approximation as support for the material's texture contract.

@@ -1,3 +1,4 @@
+import type { Texture } from '@flighthq/types';
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types';
 
 import {
@@ -32,6 +33,17 @@ describe('convertSpecularGlossinessToStandardPbr', () => {
     convertSpecularGlossinessToStandardPbr(out, source);
     expect(out.emissive).toBe(0xff000000);
     expect(out.emissiveStrength).toBe(2.5);
+  });
+  it('does not reinterpret a packed specular-glossiness map as metallic-roughness', () => {
+    const packedMap = {} as Texture;
+    const previousMap = {} as Texture;
+    const source = createSpecularGlossinessPbrMaterial({ specularGlossinessMap: packedMap });
+    const out = createStandardPbrMaterialProperties({ metallicRoughnessMap: previousMap });
+
+    convertSpecularGlossinessToStandardPbr(out, source);
+
+    expect(out.metallicRoughnessMap).toBeNull();
+    expect(source.specularGlossinessMap).toBe(packedMap);
   });
   it('is alias-safe when out is used as a different object from source', () => {
     const source = createSpecularGlossinessPbrMaterial({ glossiness: 0.5, diffuse: 0xff0000ff });
