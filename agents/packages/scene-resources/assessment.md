@@ -20,13 +20,10 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Reveal an owner only after its required resource set settles.** Track a pending count per node so
-   the first resolved texture cannot expose a partially realized material; cover shared textures,
-   multi-material nodes, failure policy, and cancellation in tests.
-2. **Separate the empty resolver primitive from the built-in assembly.** Stop the base constructor from
+1. **Separate the empty resolver primitive from the built-in assembly.** Stop the base constructor from
    silently registering Standard PBR and Unlit. Give the preconfigured convenience an explicit name so
    its bundle cost and behavior are discernible.
-3. **Hide `SceneResourceInFlight`.** It is documented as internal and should not be re-exported as public
+2. **Hide `SceneResourceInFlight`.** It is documented as internal and should not be re-exported as public
    API shape.
 
 ## Depth gaps
@@ -50,3 +47,8 @@ See [charter](./charter.md) for blessed direction.
   Independently sampled Texture subscribers share one fetch/decode, receive the same ImageResource,
   retain their own sampler/color/UV state, and may leave a working set without aborting a load another
   subscriber still needs. A later subscriber binds from the resolver's settled cache without new I/O.
+- [2026-07-22 · completed] Reveal waits for every pending Texture required by an owner rather than the
+  first terminal event. Repeated/shared texture slots are deduplicated per owner, every owner of a
+  shared Texture is released together, failure explicitly counts as settled so fallback rendering is
+  not hidden forever, cancellation remains pending until re-entry settles, and resources already bound
+  or failed before subscription do not create an eventless hidden owner.

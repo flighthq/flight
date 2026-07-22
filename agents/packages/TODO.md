@@ -343,7 +343,6 @@ Design calls to settle before building the affected entries:
 
 ### scene-resources (solid 70)
 
-- Reveal an owner only after its required resource set settles
 - Separate the empty resolver primitive from the built-in assembly
 - Hide `SceneResourceInFlight`
 
