@@ -30,7 +30,7 @@ services:
 
 layouts:
   default:
-    expr: ((review review2 review3 review4) | (builder builder2 builder3 review4 integration)):80 / (host $serve):20
+    expr: ((review review2 review3 review4) | (builder builder2 builder3 builder4 integration)):80 / (host $serve):20
 
 default: default
 
