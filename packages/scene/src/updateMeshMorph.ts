@@ -2,6 +2,7 @@ import {
   blendMeshGeometryMorph,
   captureMeshMorphBindPose,
   getMeshGeometryMorphBindPose,
+  refreshMeshGeometryBounds,
   setMeshGeometryMorphBindPose,
 } from '@flighthq/mesh';
 import type { Mesh } from '@flighthq/types';
@@ -30,4 +31,5 @@ export function updateMeshMorph(mesh: Readonly<Mesh>): void {
   }
 
   blendMeshGeometryMorph(geometry, morph, bindPose);
+  refreshMeshGeometryBounds(geometry);
 }

@@ -1,3 +1,4 @@
+import { createAabb } from '@flighthq/geometry';
 import type { AabbLike, BoundingSphereLike, MeshGeometry } from '@flighthq/types';
 
 // Per-vertex compute over the canonical interleaved PBR record: position(3) + normal(3) +
@@ -346,6 +347,17 @@ export function computeMeshGeometryTangents(out: MeshGeometry, geometry: Readonl
     target[base + 2] = tz;
     target[base + 3] = w;
   }
+}
+
+// Recomputes a geometry's cached local bounds after an in-place vertex edit. Reuses the existing AABB
+// when present and allocates it only on the first refresh; steady-state deformation is allocation-free.
+export function refreshMeshGeometryBounds(geometry: MeshGeometry): void {
+  let bounds = geometry.bounds;
+  if (bounds === null) {
+    bounds = createAabb();
+    geometry.bounds = bounds;
+  }
+  computeMeshGeometryBounds(bounds, geometry);
 }
 
 // Canonical interleaved PBR record float offsets within one vertex (stride = 48 bytes / 12 floats):

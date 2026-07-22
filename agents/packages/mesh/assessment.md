@@ -20,7 +20,8 @@ See [charter](./charter.md) for blessed direction.
 None. The copied `getMeshGeometryVertexNormal` position/semantic comment is corrected. Logical
 triangle decoding is now one allocation-free primitive shared by consumers: indexed/non-indexed
 triangle lists and alternating-winding strips resolve consistently, with unsupported/out-of-range
-queries leaving caller-owned output untouched.
+queries leaving caller-owned output untouched. `refreshMeshGeometryBounds` is the corresponding
+cached-spatial atom: it allocates an AABB once and refreshes it in place after vertex edits.
 
 ## Approved
 
