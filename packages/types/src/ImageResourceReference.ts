@@ -23,7 +23,24 @@ export const ImageResourceReferenceKind = {
 
 export type ImageResourceReferenceKind = (typeof ImageResourceReferenceKind)[keyof typeof ImageResourceReferenceKind];
 
+export const ImageResourceFailureKind = {
+  Error: 'Error',
+  Unavailable: 'Unavailable',
+} as const;
+
+export type ImageResourceFailureKind = (typeof ImageResourceFailureKind)[keyof typeof ImageResourceFailureKind];
+
+// A serialization-safe failure cause retained on the reference. Raw thrown values and Error objects
+// stay inside the async operation; diagnostics get the stable category, name, and message only.
+export interface ImageResourceFailure {
+  kind: ImageResourceFailureKind;
+  message: string;
+  name: string | null;
+}
+
 interface ImageResourceReferenceBase {
+  // Null until a terminal failure. Reset/retry clears it before the next request.
+  failure: ImageResourceFailure | null;
   // The image MIME type (`image/png`, `image/jpeg`) when known — detected from the embedded bytes
   // or declared by the container. Null when it must be inferred at resolve time (e.g. from an
   // external URI's extension or the fetch response), which the resolver does.
@@ -49,3 +66,10 @@ export interface ExternalImageResourceReference extends ImageResourceReferenceBa
 }
 
 export type ImageResourceReference = EmbeddedImageResourceReference | ExternalImageResourceReference;
+
+export interface ImageResourceReferenceResolutionExplanation {
+  failure: ImageResourceFailure | null;
+  kind: ImageResourceReferenceKind;
+  retryable: boolean;
+  state: ResourceResolutionState;
+}

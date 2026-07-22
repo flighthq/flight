@@ -39,6 +39,7 @@ export function buildEmbeddedImageResourceReference(
 ): EmbeddedImageResourceReference {
   return {
     bytes,
+    failure: null,
     kind: ImageResourceReferenceKind.Embedded,
     mimeType,
     state: ResourceResolutionState.Unresolved,
@@ -51,6 +52,7 @@ export function buildExternalImageResourceReference(
 ): ExternalImageResourceReference {
   return {
     basePath,
+    failure: null,
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,

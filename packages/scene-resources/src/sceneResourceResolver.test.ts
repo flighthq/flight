@@ -59,6 +59,7 @@ describe('disposeSceneResourceResolver', () => {
     const texture = createTexture({
       resource: {
         bytes: new Uint8Array(0),
+        failure: null,
         kind: ImageResourceReferenceKind.Embedded,
         mimeType: null,
         state: ResourceResolutionState.Loading,

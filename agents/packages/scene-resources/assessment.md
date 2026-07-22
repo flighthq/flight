@@ -21,12 +21,10 @@ No open Recommended items.
 
 ## Depth gaps
 
-1. **Add recovery and diagnostics.** Define retry/reset for `Failed`, preserve a failure cause as plain
-   data, and expose a shakeable `explain*` query plus optional guard without throwing in the async path.
-2. **Add residency rather than a larger resolver.** URI/content dedup, reference-counted release,
+1. **Add residency rather than a larger resolver.** URI/content dedup, reference-counted release,
    memory budgets, eviction, progressive mip/quality replacement, and cancellation on visibility loss
    should compose assets/texture-formats with the current resolution state machine.
-3. **Prove resource realization behaviorally.** Add GL captures for every supported scene format,
+2. **Prove resource realization behaviorally.** Add GL captures for every supported scene format,
    multi-map reveal, shared URI dedup, cancellation/re-entry, and failure fallback.
 
 ## Backlog
@@ -36,6 +34,13 @@ No open Recommended items.
 
 ## Approved
 
+- [2026-07-22 · completed] Every image reference retains a serialization-safe terminal failure cause;
+  abort remains cancellation rather than failure. `explainImageResourceReferenceResolution` returns a
+  detached plain-data account, `resetFailedImageResourceReference` is the single-reference atom, and
+  `retryFailedSceneResources` composes reset with the normal selection/priority resolver pass while
+  deduplicating shared identities. The separately imported, resolver-scoped failure guard is
+  idempotent/queryable/removable, warns once per failed attempt through `@flighthq/log`, names the exact
+  retry call, and remains absent from the base resolver bundle by direct bundle proof.
 - [2026-07-22 · completed] Resolution is keyed by ImageResourceReference identity, not Texture.
   Independently sampled Texture subscribers share one fetch/decode, receive the same ImageResource,
   retain their own sampler/color/UV state, and may leave a working set without aborting a load another

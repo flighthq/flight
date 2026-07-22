@@ -69,6 +69,7 @@ describe('loadSceneFromObj', () => {
   it('parses OBJ and resolves the MTL material textures', async () => {
     const ref: ImageResourceReference = {
       basePath: null,
+      failure: null,
       kind: ImageResourceReferenceKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,

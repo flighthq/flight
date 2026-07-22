@@ -19,6 +19,9 @@
       "path": "../loader"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../materials"
     },
     {

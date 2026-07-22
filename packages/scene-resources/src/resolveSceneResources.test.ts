@@ -6,7 +6,7 @@ import { createMesh, createScene } from '@flighthq/scene';
 import { connectSignal } from '@flighthq/signals';
 import { createTexture } from '@flighthq/texture';
 import type { ImageResource, ImageResourceReference, SceneResourceResolver, Texture } from '@flighthq/types';
-import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
+import { ImageResourceFailureKind, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 import type { Mock } from 'vitest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -29,6 +29,7 @@ let waitForSceneResourceResolver: typeof ResolveSceneResourcesAndWaitModule.wait
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   return {
     bytes: new Uint8Array([9, 9]),
+    failure: null,
     kind: ImageResourceReferenceKind.Embedded,
     mimeType,
     state: ResourceResolutionState.Unresolved,
@@ -38,6 +39,7 @@ function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceRefere
 function externalRef(uri = 'leaf.png'): ImageResourceReference {
   return {
     basePath: null,
+    failure: null,
     kind: ImageResourceReferenceKind.External,
     mimeType: null,
     state: ResourceResolutionState.Unresolved,
@@ -129,6 +131,7 @@ describe('resolveSceneResources', () => {
     expect(a.image).toBe(fakeImage);
     expect(b.image).toBe(fakeImage);
     expect(a.resource?.state).toBe(ResourceResolutionState.Resolved);
+    expect(a.resource?.failure).toBeNull();
     expect(b.resource?.state).toBe(ResourceResolutionState.Resolved);
     disposeSceneResourceResolver(resolver);
   });
@@ -223,6 +226,11 @@ describe('resolveSceneResources', () => {
 
     expect(texture.image).toBeNull();
     expect(texture.resource?.state).toBe(ResourceResolutionState.Failed);
+    expect(texture.resource?.failure).toEqual({
+      kind: ImageResourceFailureKind.Unavailable,
+      message: 'Image resource resolution returned no image',
+      name: null,
+    });
     disposeSceneResourceResolver(resolver);
   });
 
@@ -236,6 +244,11 @@ describe('resolveSceneResources', () => {
     await settle(resolver);
 
     expect(texture.resource?.state).toBe(ResourceResolutionState.Failed);
+    expect(texture.resource?.failure).toEqual({
+      kind: ImageResourceFailureKind.Error,
+      message: 'bad image',
+      name: 'Error',
+    });
     disposeSceneResourceResolver(resolver);
   });
 

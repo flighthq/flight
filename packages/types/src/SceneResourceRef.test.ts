@@ -17,8 +17,9 @@ describe('ImageResourceReference', () => {
   describe('descriptor shape', () => {
     it('models an embedded ref carrying encoded bytes and a starting Unresolved state', () => {
       const ref: EmbeddedImageResourceReference = {
-        kind: 'Embedded',
         bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+        failure: null,
+        kind: 'Embedded',
         mimeType: 'image/png',
         state: ResourceResolutionState.Unresolved,
       };
@@ -29,11 +30,12 @@ describe('ImageResourceReference', () => {
 
     it('models an external ref carrying a uri and optional basePath', () => {
       const ref: ExternalImageResourceReference = {
-        kind: 'External',
-        uri: 'textures/hull.png',
         basePath: '/models/',
+        failure: null,
+        kind: 'External',
         mimeType: null,
         state: ResourceResolutionState.Unresolved,
+        uri: 'textures/hull.png',
       };
       const base: ImageResourceReference = ref;
       expect(base.kind).toBe('External');
@@ -42,11 +44,12 @@ describe('ImageResourceReference', () => {
 
     it('narrows on the kind discriminant', () => {
       const ref: ImageResourceReference = {
-        kind: 'External',
-        uri: 'a.png',
         basePath: null,
+        failure: null,
+        kind: 'External',
         mimeType: null,
         state: ResourceResolutionState.Loading,
+        uri: 'a.png',
       };
       if (ref.kind === 'External') {
         expect(ref.uri).toBe('a.png');

@@ -62,6 +62,7 @@ describe('loadSceneFrom3ds', () => {
   it('parses 3DS and resolves its material textures', async () => {
     const ref: ImageResourceReference = {
       basePath: null,
+      failure: null,
       kind: ImageResourceReferenceKind.External,
       mimeType: null,
       state: ResourceResolutionState.Unresolved,
