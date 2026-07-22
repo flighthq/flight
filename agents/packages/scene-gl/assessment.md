@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/scene-gl'
-updated: 2026-07-21
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -78,6 +78,14 @@ basedOn: ./review.md
    shadow/probe invalidation, and picking coherence must use the same scene facts as draw. GL instance
    buffers key off the versioned instance-data entity and prepared count; LOD consumes the prepared
    level rather than selecting again in the backend. Neither belongs in the material renderer registry.
+7. **Turn the directional shadow proof into a composable pass.** `drawGlSceneShadowMap` currently hides a
+   fixed-size target allocation on the scene runtime, traverses/selects/deforms the scene independently,
+   ignores the selected DirectionalLight's declared shadow settings, and restores only a hand-picked GL
+   baseline rather than the exact incoming framebuffer/viewport/scissor/depth/cull/program/VAO/texture
+   state. Consume the same prepared draw entries as the forward pass, accept an explicit target plus
+   viewport and shadow-view descriptor, upload bias/filter policy, and bracket exact state even on a
+   thrown upload/draw. Keep target caching as an optional state-owned assembly above that allocation-free
+   pass, not a side effect inseparable from drawing.
 
 ## Backlog
 
