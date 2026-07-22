@@ -859,6 +859,7 @@ These are explicit user directions whose implementation may span packages or req
 ### entity (solid 92)
 
 - Enforce the repository-wide `create*` Entity invariant
+- Make the migration semantic rather than a cast exercise
 
 ## Deepen — surveyed domain-depth gaps by package
 
@@ -919,6 +920,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Add recovery and diagnostics
 - Add residency rather than a larger resolver
 - Prove resource realization behaviorally
+- Resolve shared image identity once and fan out deterministically
 
 ### capture (solid 72)
 
@@ -950,6 +952,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Grow color-space metadata beyond linear/sRGB when required
 - Complete the device tier only as consumed primitives
 - Make all state-owned GPU caches deterministically destructible
+- Remove backend implementation noise from the `create*` Entity vocabulary
 
 ### scene-gl (solid 75)
 

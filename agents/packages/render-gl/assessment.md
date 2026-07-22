@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/render-gl'
-updated: 2026-07-21
+updated: 2026-07-22
 basedOn: ./review.md
 ---
 
@@ -58,6 +58,11 @@ basedOn: ./review.md
 5. **Make all state-owned GPU caches deterministically destructible.** WeakMap ownership is acceptable
    for lookup, but RenderState destruction must reach every program, VAO, framebuffer, buffer, sampler,
    and state-owned texture it creates.
+6. **Remove backend implementation noise from the `create*` Entity vocabulary.** Native products such as
+   `WebGLProgram`, `WebGLTexture`, and `HTMLCanvasElement` cannot truthfully carry Flight's Entity runtime
+   slot. Name their irreducible operations for what they do (`compile*`, `allocate*`, or `build*`) and keep
+   public `create*` for Entity-backed Flight objects such as GlRenderState/GlRenderTarget. Runtime-record
+   constructors and private cache factories should be internal unless a caller genuinely composes them.
 
 ## Backlog
 
