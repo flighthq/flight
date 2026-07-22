@@ -2,7 +2,7 @@
 
 Deterministic browser capture and reporting for canvas, DOM, WebGL, and WebGPU pages.
 
-The package deliberately combines four layers behind one root export: browser orchestration, the versioned page protocol, Flight render-state verification, and Flight's built-in functional/example presets. The files remain separated by responsibility, but they ship and version together because capture correctness depends on Flight's renderer and surface semantics.
+The package deliberately combines four layers behind one public root: browser orchestration, the versioned page protocol, Flight render-state verification, and Flight's built-in functional/example presets. The files remain separated by responsibility, but they ship and version together because capture correctness depends on Flight's renderer and surface semantics. The root's `browser` condition exposes only the page protocol and adapters, so Vite never loads Node or Playwright modules into a page build.
 
 ## Choose the contract
 
@@ -52,6 +52,12 @@ tool-capture capture --dir dist --renderer webgl,webgpu --parallel 4
 Use `runCaptureSuite` when entries or server lifecycle are generated programmatically. It owns browser setup and teardown, deterministic frame synchronization, parallel or sequential scheduling, baseline policy, interruption, summaries, and the final verdict.
 
 ## Install verification once
+
+Import page APIs from the same package root as the CLI/API; browser-aware bundlers select its page-only condition:
+
+```ts
+import { installCaptureElementTarget, installCaptureTarget, verifyCaptureTarget } from '@flighthq/tool-capture';
+```
 
 Raw consumers can register, render, and verify with one call after constructing their normal renderer state:
 

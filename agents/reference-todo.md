@@ -20,7 +20,7 @@ Keep the Vite case discovery and external-framework adapters. Delete duplicated 
 
 Add `@flighthq/tool-capture` as a development dependency at a version containing the capture/validation/benchmark workflow. Import only from `@flighthq/tool-capture`; do not import `dist/*`, `src/*`, or `.cache/flight-latest/packages/tool-capture/src/*`.
 
-For unpublished Flight development, extend the existing `FLIGHT_REPO` aliasing so `@flighthq/tool-capture` resolves to `$FLIGHT_REPO/packages/tool-capture/src/index.ts`. The installed package remains the default when `FLIGHT_REPO` is absent.
+For unpublished Flight development, extend the browser-facing Vite aliasing so `@flighthq/tool-capture` resolves to `$FLIGHT_REPO/packages/tool-capture/src/browser.ts`. Node scripts should continue to resolve the package normally (or use the built workspace package), because the package's Node root contains orchestration while its browser-conditioned root contains only the page protocol and adapters. The installed package remains the default when `FLIGHT_REPO` is absent.
 
 Verify both modes:
 
@@ -29,7 +29,7 @@ npm run check
 FLIGHT_REPO=/path/to/flight FLIGHT_SDK_WATCH=1 npm run check
 ```
 
-The production build must prove that browser-side imports tree-shake the Node orchestration modules correctly.
+The production build must prove that browser-side root imports select `dist/browser.js`; fail the build if Node built-ins, Playwright, or CLI formatting occur in the page graph.
 
 ## 2. Make case discovery a shared data source
 
@@ -110,7 +110,7 @@ Replace the implementation in `content/harness/verify.ts` with imports or thin r
 - presented-frame waiting;
 - `registerFunctionalTarget` or `registerWgpuFunctionalTarget`.
 
-Keep `@ft/verify` as the stable alias used by cases, but point it at the thin package-backed module in installed-package mode and at `$FLIGHT_REPO/packages/tool-capture/src/functionalVerify.ts` in local-source mode.
+Keep `@ft/verify` as the stable alias used by cases, but make it a thin module that re-exports the page APIs from the `@flighthq/tool-capture` root in both installed and local-source modes. The root alias from step 1 selects `src/browser.ts` during local Vite development; do not add a second private-file alias.
 
 Update `content/harness/target.ts` and the four target factories to match current Flight harness behavior:
 
@@ -166,7 +166,20 @@ Build once, serve the built directory through tool-capture, and use the standard
 }
 ```
 
-Avoid repeating `build` in the final CI job: build and generate once, then run the three tool commands against the same `dist`. If a long-lived preview server is already running, use `--url` instead of `--dir`.
+Keep those individual commands for local diagnosis and baseline updates. For the required CI path, add a `tool-capture.batch.json` plan so capture and validation reuse one browser/server and benchmark gets a fresh uncontended serial browser:
+
+```json
+{
+  "subjects": [
+    {
+      "name": "content",
+      "args": ["--manifest=tool-capture.json", "--dir=dist", "--verify", "--fail-on-error", "--fail-on-changed"]
+    }
+  ]
+}
+```
+
+Add `"capture:all": "npm run build && npm run capture:manifest && tool-capture batch"` and use it in CI. If a long-lived preview server is already running, use `--url` instead of `--dir`. Keep baseline updates as separate individual commands so screenshot, fingerprint, and performance baseline changes remain independently reviewable.
 
 Delete `scripts/capture.ts` after the standard CLI produces equivalent or better screenshots, logs, statuses, baselines, summaries, interruption behavior, and exit codes. Remove its direct Playwright, hashing, filesystem, server, formatting, and baseline-store code.
 
