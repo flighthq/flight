@@ -1,12 +1,22 @@
 ---
 package: '@flighthq/render-gl'
-updated: 2026-06-24
-by: ingest:builder-67dc46d64
+updated: 2026-07-22
+by: review3
 ---
 
 # render-gl — Status Log
 
 > Append-only continuity log, newest on top. Entries distributed from worker reports on ingest are **as-claimed** until a review pass verifies them against the diff.
+
+## 2026-07-22 — compressed texture shape boundary
+
+- `uploadGlCompressedTextureContainer` now returns `false` before issuing GL calls for volumes and
+  cubemap arrays; its realized targets are exactly 2D, one cubemap, and 2D arrays.
+- The opt-in `ImageResource` upload bridge now accepts only a plain 2D container because its caller has
+  bound `TEXTURE_2D`. Cube/array/volume resources require distinct entity and binder families rather
+  than accidentally addressing an unbound target.
+- Unit proof covers both the low-level target boundary and the installed bridge boundary. The broader
+  array/volume subject-level work remains in the texture assessment/TODO.
 
 ## 2026-06-25 — builder Phase 3 (Recommended sweep)
 

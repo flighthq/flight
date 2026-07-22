@@ -47,11 +47,11 @@ function makeContainer(): TextureContainer {
 }
 
 // A compressed-only ImageResource wrapping makeContainer, for exercising the installed upload seam.
-function uploadableCompressedImage(): ImageResource {
+function uploadableCompressedImage(containerOverrides?: Partial<TextureContainer>): ImageResource {
   return {
     source: null,
     data: null,
-    compressed: { container: makeContainer(), payload: new Uint8Array(16) },
+    compressed: { container: { ...makeContainer(), ...containerOverrides }, payload: new Uint8Array(16) },
     width: 4,
     height: 4,
     version: 1,
@@ -159,6 +159,17 @@ describe('registerGlCompressedTextureUpload', () => {
     const plain = { source: null, data: null, compressed: null } as unknown as ImageResource;
     expect(uploader(gl, plain, null)).toBe(false);
   });
+
+  it('rejects non-2D containers because the installed image bridge is bound to TEXTURE_2D', () => {
+    const { state } = createGlState();
+    registerGlCompressedTextureUpload(state);
+    const uploader = getGlRenderStateRuntime(state).compressedTextureUpload!;
+    const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
+    expect(uploader(gl, uploadableCompressedImage({ faces: 6 }), null)).toBe(false);
+    expect(uploader(gl, uploadableCompressedImage({ layers: 2 }), null)).toBe(false);
+    expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
+    expect(gl.texStorage3D).not.toHaveBeenCalled();
+  });
 });
 
 describe('uploadGlCompressedTextureContainer', () => {
@@ -222,6 +233,17 @@ describe('uploadGlCompressedTextureContainer', () => {
     expect(uploadGlCompressedTextureContainer(gl, container, new Uint8Array(16))).toBe(false);
     expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
     expect(gl.texImage2D).not.toHaveBeenCalled();
+  });
+
+  it('rejects volume and cubemap-array shapes instead of uploading them through a wrong target', () => {
+    const gl = makeGl({ WEBGL_compressed_texture_s3tc: S3TC_EXT });
+    expect(uploadGlCompressedTextureContainer(gl, { ...makeContainer(), depth: 2 }, new Uint8Array(16))).toBe(false);
+    expect(
+      uploadGlCompressedTextureContainer(gl, { ...makeContainer(), faces: 6, layers: 2 }, new Uint8Array(16)),
+    ).toBe(false);
+    expect(gl.compressedTexImage2D).not.toHaveBeenCalled();
+    expect(gl.compressedTexSubImage3D).not.toHaveBeenCalled();
+    expect(gl.texStorage3D).not.toHaveBeenCalled();
   });
 
   it('targets each cube face from the flat mip+face index', () => {

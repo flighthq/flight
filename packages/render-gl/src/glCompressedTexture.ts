@@ -225,6 +225,8 @@ export function registerGlCompressedTextureUpload(state: GlRenderState, uploader
 // back to a different asset (or inflates/transcodes first). The caller owns creating/binding the
 // texture (to gl.TEXTURE_2D, gl.TEXTURE_CUBE_MAP, or gl.TEXTURE_2D_ARRAY per the container's shape) and
 // setting sampler/mip state; this uploads only the container's own sub-images.
+// Volume and cubemap-array shapes return false without issuing GL calls; they require distinct
+// target/layout realizations rather than being flattened through the supported targets.
 //
 // `container.levels` is the flat subresource list in `mip + (face + layer * faces) * mipLevels` order;
 // each flat index is decoded back to (mip, face, layer) so a cubemap's six faces land on
@@ -237,6 +239,10 @@ export function uploadGlCompressedTextureContainer(
   payload: Readonly<Uint8Array>,
   decode?: GlCompressedTextureDecoder,
 ): boolean {
+  // This atom realizes 2D, one cubemap, or a 2D array. A volume needs TEXTURE_3D allocation and
+  // depth-slice layout; a cubemap array needs a distinct target/extension. Reject those shapes before
+  // issuing any GL call rather than uploading their first slice as a plausible but incorrect 2D image.
+  if (!isSupportedGlCompressedTextureContainerShape(container)) return false;
   // A still-wrapped supercompressed payload (Zstd/ZLIB deflate or BasisLZ transcode) is not block data;
   // uploading it as if it were would push corrupt pixels. Fail the sentinel and let the caller inflate
   // or transcode through the deferred seam first.
@@ -300,6 +306,12 @@ function isAstcFormat(format: TextureContainerFormat): boolean {
   return format.startsWith('astc');
 }
 
+function isSupportedGlCompressedTextureContainerShape(container: Readonly<TextureContainer>): boolean {
+  if (container.depth !== 1 || !Number.isInteger(container.layers) || container.layers < 1) return false;
+  if (container.faces === 1) return true;
+  return container.faces === 6 && container.layers === 1;
+}
+
 // The installed GlCompressedTextureUploader: bridges a compressed ImageResource to the container upload,
 // threading through any registered RGBA decode fallback. Returns false when the resource carries no
 // compressed payload so the display path leaves the texture as-is rather than uploading garbage.
@@ -310,5 +322,10 @@ function uploadGlCompressedImageResource(
 ): boolean {
   const compressed = image.compressed;
   if (compressed === null) return false;
-  return uploadGlCompressedTextureContainer(gl, compressed.container, compressed.payload, decode ?? undefined);
+  const container = compressed.container;
+  // bindGlImageResourceTexture installs this bridge while TEXTURE_2D is bound. Cube, array, and volume
+  // resources require their own entity/binder families; forwarding one here would address an unbound
+  // target even though the low-level container uploader supports caller-bound cube and 2D-array targets.
+  if (container.depth !== 1 || container.faces !== 1 || container.layers !== 1) return false;
+  return uploadGlCompressedTextureContainer(gl, container, compressed.payload, decode ?? undefined);
 }
