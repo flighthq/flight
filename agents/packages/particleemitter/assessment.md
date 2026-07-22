@@ -20,7 +20,10 @@ No sweep-safe items (extraction not yet performed).
 
 ## Approved
 
-None.
+- [2026-07-22 · completed] `ParticleEmitter3D` capacity is the minimum across every per-particle
+  storage lane: IDs, alpha, color, XY/rotation/scale transforms, Z positions, and XYZ velocities.
+  Reservation therefore repairs a short lane instead of returning early from unrelated capacity,
+  preventing silent out-of-bounds writes after imported or caller-supplied data.
 
 ## Backlog
 

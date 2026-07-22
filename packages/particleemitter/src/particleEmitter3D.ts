@@ -160,8 +160,17 @@ export function createParticleEmitter3D(obj?: Readonly<PartialNode<ParticleEmitt
 
 export function getParticleEmitter3DCapacity(source: Readonly<ParticleEmitter3D>): number {
   const data = source.data;
+  const colorCapacity = (data.colors.length / PARTICLE_COLOR_STRIDE) | 0;
   const transformCapacity = (data.transforms.length / PARTICLE_TRANSFORM_STRIDE) | 0;
-  return Math.min(data.ids.length, data.alphas.length, transformCapacity);
+  const velocityCapacity = (data.velocities.length / PARTICLE_VELOCITY_STRIDE) | 0;
+  return Math.min(
+    data.ids.length,
+    data.alphas.length,
+    data.positionsZ.length,
+    colorCapacity,
+    transformCapacity,
+    velocityCapacity,
+  );
 }
 
 export function getParticleEmitter3DParticleAlpha(source: Readonly<ParticleEmitter3D>, index: number): number {
