@@ -72,8 +72,9 @@ basedOn: ./review.md
 4. **Define HDR scene presentation.** presentGlScene writes HDR radiance then applies only an sRGB OETF.
    Compose an explicit exposure/tone-map/output transform for the common no-custom-effects assembly.
 5. **Unify transparent ordering across subject families.** Transparent particles render after all
-   meshes rather than participating in the blended depth order. Large/intersecting meshes still need a
-   documented route to per-subset ordering or optional OIT.
+   meshes rather than participating in the blended depth order, and particles within an emitter remain
+   in simulation-storage order because no prepared sort-index seam exists. Large/intersecting meshes
+   still need a documented route to per-subset ordering or optional OIT.
 6. **Finish scene semantic depth before acceleration.** Instancing, LOD, shared prepared deformation,
    shadow/probe invalidation, and picking coherence must use the same scene facts as draw. GL instance
    buffers key off the versioned instance-data entity and prepared count; LOD consumes the prepared
