@@ -964,6 +964,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ### mesh (solid 80)
 
+- Make the interleaved vertex stream byte-native
 - Make every declared vertex channel usable end to end
 - Complete topology-editing primitives
 - Deepen normal/tangent/UV authoring
