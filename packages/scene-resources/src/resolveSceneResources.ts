@@ -29,14 +29,14 @@ export function resolveOneSceneResourceTexture(
   return resolver.fetch(ref, signal);
 }
 
-// Advances resolution of `scene`'s pending texture resources under the given policy. Synchronous and
+// Advances resolution of `scene`'s texture resources under the given policy. Synchronous and
 // fire-and-forget: it starts/cancels loads to match the current working set and returns immediately,
 // so the caller re-invokes it as that set changes — that re-invocation IS the streaming/visibility
 // driver. Each pass:
-//   1. discovers the pending textures,
-//   2. narrows them to the working set (all pending, or those `select` accepts),
-//   3. cancels any in-flight load no longer in the working set (reverting its ref to Unresolved), and
-//   4. requests each working-set texture not already in flight.
+//   1. discovers textures and groups them by shared ImageResourceReference identity,
+//   2. narrows their subscribers to the working set (all, or those `select` accepts),
+//   3. cancels an in-flight load only when its final subscriber leaves, and
+//   4. requests each unresolved identity once, fanning the result out to its Texture subscribers.
 // Mutates `ref.state` and, on success, binds `texture.image`. Emits the availability signals when
 // enabled.
 export function resolveSceneResources(
@@ -44,29 +44,46 @@ export function resolveSceneResources(
   resolver: SceneResourceResolver,
   options?: Readonly<ResolveSceneResourcesOptions>,
 ): void {
-  const pending: Texture[] = [];
-  getSceneResourceTextures(scene, resolver.registry, pending);
+  const textures: Texture[] = [];
+  getSceneResourceTextures(scene, resolver.registry, textures);
 
-  const working = new Set<Texture>();
-  for (let i = 0; i < pending.length; i++) {
-    const texture = pending[i];
+  const working = new Map<ImageResourceReference, Texture[]>();
+  for (let i = 0; i < textures.length; i++) {
+    const texture = textures[i];
     const ref = texture.resource;
     if (ref == null) continue;
-    if (options?.select === undefined || options.select(texture, ref)) working.add(texture);
+    if (texture.image !== null) {
+      resolver.resolved.set(ref, texture.image);
+      ref.state = ResourceResolutionState.Resolved;
+    }
+    if (options?.select !== undefined && !options.select(texture, ref)) continue;
+    let subscribers = working.get(ref);
+    if (subscribers === undefined) {
+      subscribers = [];
+      working.set(ref, subscribers);
+    }
+    subscribers.push(texture);
   }
 
   cancelDroppedResolutions(resolver, working);
   requestWorkingResolutions(resolver, working, options);
 }
 
-function cancelDroppedResolutions(resolver: SceneResourceResolver, working: ReadonlySet<Texture>): void {
-  for (const [texture, entry] of resolver.inFlight) {
-    if (working.has(texture)) continue;
+function cancelDroppedResolutions(
+  resolver: SceneResourceResolver,
+  working: ReadonlyMap<ImageResourceReference, readonly Texture[]>,
+): void {
+  for (const [ref, entry] of resolver.inFlight) {
+    const subscribers = working.get(ref);
+    if (subscribers !== undefined && subscribers.length > 0) {
+      entry.subscribers.clear();
+      for (let i = 0; i < subscribers.length; i++) entry.subscribers.add(subscribers[i]);
+      continue;
+    }
     entry.controller.abort();
-    resolver.inFlight.delete(texture);
-    const ref = texture.resource;
-    // A dropped-mid-load ref reverts to Unresolved so a later pass re-requests it from scratch.
-    if (ref != null && ref.state === ResourceResolutionState.Loading) {
+    resolver.inFlight.delete(ref);
+    // A resource with no remaining subscribers reverts to Unresolved so a later pass re-requests it.
+    if (ref.state === ResourceResolutionState.Loading) {
       ref.state = ResourceResolutionState.Unresolved;
     }
   }
@@ -74,36 +91,45 @@ function cancelDroppedResolutions(resolver: SceneResourceResolver, working: Read
 
 function finishSceneResourceResolution(
   resolver: SceneResourceResolver,
-  texture: Texture,
   ref: ImageResourceReference,
   entry: SceneResourceInFlight,
   image: ImageResource | null,
 ): void {
   // Ignore a late settle whose entry was already cancelled or replaced by a newer request.
-  if (resolver.inFlight.get(texture) !== entry) return;
-  resolver.inFlight.delete(texture);
+  if (resolver.inFlight.get(ref) !== entry) return;
+  resolver.inFlight.delete(ref);
   if (image === null) {
     ref.state = ResourceResolutionState.Failed;
-    emitSceneResourceEvent(resolver, texture, ref, false);
+    for (const texture of entry.subscribers) emitSceneResourceEvent(resolver, texture, ref, false);
     return;
   }
-  texture.image = image;
+  resolver.resolved.set(ref, image);
   ref.state = ResourceResolutionState.Resolved;
-  emitSceneResourceEvent(resolver, texture, ref, true);
+  for (const texture of entry.subscribers) bindResolvedSceneResource(resolver, texture, ref, image);
 }
 
 function failSceneResourceResolution(
   resolver: SceneResourceResolver,
-  texture: Texture,
   ref: ImageResourceReference,
   entry: SceneResourceInFlight,
 ): void {
-  if (resolver.inFlight.get(texture) !== entry) return;
-  resolver.inFlight.delete(texture);
+  if (resolver.inFlight.get(ref) !== entry) return;
+  resolver.inFlight.delete(ref);
   // An abort is a cancel, not a failure: the ref was already reverted to Unresolved when dropped.
   if (entry.controller.signal.aborted) return;
   ref.state = ResourceResolutionState.Failed;
-  emitSceneResourceEvent(resolver, texture, ref, false);
+  for (const texture of entry.subscribers) emitSceneResourceEvent(resolver, texture, ref, false);
+}
+
+function bindResolvedSceneResource(
+  resolver: Readonly<SceneResourceResolver>,
+  texture: Texture,
+  ref: ImageResourceReference,
+  image: ImageResource,
+): void {
+  if (texture.image === image) return;
+  texture.image = image;
+  emitSceneResourceEvent(resolver, texture, ref, true);
 }
 
 function emitSceneResourceEvent(
@@ -120,17 +146,30 @@ function emitSceneResourceEvent(
 
 function requestWorkingResolutions(
   resolver: SceneResourceResolver,
-  working: ReadonlySet<Texture>,
+  working: ReadonlyMap<ImageResourceReference, readonly Texture[]>,
   options?: Readonly<ResolveSceneResourcesOptions>,
 ): void {
-  for (const texture of working) {
-    const ref = texture.resource;
-    if (ref == null || resolver.inFlight.has(texture) || ref.state !== ResourceResolutionState.Unresolved) {
+  for (const [ref, subscribers] of working) {
+    const resolved = resolver.resolved.get(ref);
+    if (resolved !== undefined) {
+      ref.state = ResourceResolutionState.Resolved;
+      for (let i = 0; i < subscribers.length; i++) {
+        bindResolvedSceneResource(resolver, subscribers[i], ref, resolved);
+      }
       continue;
     }
+    if (resolver.inFlight.has(ref)) continue;
+    if (ref.state === ResourceResolutionState.Resolved) ref.state = ResourceResolutionState.Unresolved;
+    if (ref.state !== ResourceResolutionState.Unresolved) continue;
     ref.state = ResourceResolutionState.Loading;
     const controller = new AbortController();
-    const priority = options?.priority?.(texture, ref) ?? 0;
+    let priority = 0;
+    if (options?.priority !== undefined) {
+      priority = Number.NEGATIVE_INFINITY;
+      for (let i = 0; i < subscribers.length; i++) {
+        priority = Math.max(priority, options.priority(subscribers[i], ref));
+      }
+    }
     const handle = queueResourceLoad<ImageResource | null>(resolver.loader, {
       load: (loaderSignal) => {
         // Wire the loader's own cancellation (dispose/cancel) into our per-texture controller.
@@ -140,12 +179,17 @@ function requestWorkingResolutions(
       },
       priority,
     });
-    const entry: SceneResourceInFlight = { controller, key: handle.key, promise: _resolvedVoid };
+    const entry: SceneResourceInFlight = {
+      controller,
+      key: handle.key,
+      promise: _resolvedVoid,
+      subscribers: new Set(subscribers),
+    };
     entry.promise = handle.promise.then(
-      (image) => finishSceneResourceResolution(resolver, texture, ref, entry, image),
-      () => failSceneResourceResolution(resolver, texture, ref, entry),
+      (image) => finishSceneResourceResolution(resolver, ref, entry, image),
+      () => failSceneResourceResolution(resolver, ref, entry),
     );
-    resolver.inFlight.set(texture, entry);
+    resolver.inFlight.set(ref, entry);
   }
 }
 

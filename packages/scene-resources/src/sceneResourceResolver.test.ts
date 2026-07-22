@@ -1,5 +1,10 @@
 import { createTexture } from '@flighthq/texture';
-import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types';
+import {
+  ResourceResolutionState,
+  ImageResourceReferenceKind,
+  StandardPbrMaterialKind,
+  UnlitMaterialKind,
+} from '@flighthq/types';
 import { describe, expect, it } from 'vitest';
 
 import { createSceneMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
@@ -33,8 +38,21 @@ describe('disposeSceneResourceResolver', () => {
   it('aborts every in-flight controller and clears the map', () => {
     const resolver = createSceneResourceResolver();
     const controller = new AbortController();
-    const entry: SceneResourceInFlight = { controller, key: 'k', promise: Promise.resolve() };
-    resolver.inFlight.set(createTexture(), entry);
+    const texture = createTexture({
+      resource: {
+        bytes: new Uint8Array(0),
+        kind: ImageResourceReferenceKind.Embedded,
+        mimeType: null,
+        state: ResourceResolutionState.Loading,
+      },
+    });
+    const entry: SceneResourceInFlight = {
+      controller,
+      key: 'k',
+      promise: Promise.resolve(),
+      subscribers: new Set([texture]),
+    };
+    resolver.inFlight.set(texture.resource!, entry);
 
     disposeSceneResourceResolver(resolver);
     expect(controller.signal.aborted).toBe(true);

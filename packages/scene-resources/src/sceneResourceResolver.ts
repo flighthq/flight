@@ -1,5 +1,5 @@
 import { cancelResourceLoad, createResourceLoader, disposeResourceLoader, startResourceLoad } from '@flighthq/loader';
-import type { ResourceLoader, Texture } from '@flighthq/types';
+import type { ImageResource, ImageResourceReference, ResourceLoader, Texture } from '@flighthq/types';
 
 import type { ImageResourceFetch } from './imageResourceFetch';
 import { createWebImageResourceFetch } from './imageResourceFetch';
@@ -10,24 +10,28 @@ import {
 } from './sceneMaterialTextureRegistry';
 import type { SceneResourceSignals } from './sceneResourceSignals';
 
-// One texture's in-flight resolution: the AbortController that cancels it, the loader item `key`, and
-// the settle `promise` (resolves once the finish handler has bound the image or recorded the outcome,
-// so resolveSceneResourcesAndWait can await a fully-settled scene). Internal to the package.
+// One resource identity's in-flight resolution: the AbortController that cancels it, the loader item
+// `key`, the settle `promise`, and every Texture currently subscribed to the result. Several sampled
+// Texture entities may share one image resource while retaining independent sampler/color/UV state.
+// Internal to the package.
 export interface SceneResourceInFlight {
   controller: AbortController;
   key: string;
   promise: Promise<void>;
+  subscribers: Set<Texture>;
 }
 
 // The resolver object: the composed state a resolution pass reads and advances. `fetch` is the
-// external-URI seam, `inFlight` tracks per-Texture pending loads, `loader` bounds concurrency,
-// `registry` maps material kinds to their texture slots, and `signals` is the opt-in availability
-// group (null until enableSceneResourceSignals). Holds no scene reference — a pass takes the scene.
+// external-URI seam, `inFlight` tracks pending loads by shared resource identity, `resolved` retains
+// each settled image for later Texture subscribers, `loader` bounds concurrency, `registry` maps
+// material kinds to their texture slots, and `signals` is the opt-in availability group (null until
+// enableSceneResourceSignals). Holds no scene reference — a pass takes the scene.
 export interface SceneResourceResolver {
   fetch: ImageResourceFetch;
-  inFlight: Map<Texture, SceneResourceInFlight>;
+  inFlight: Map<ImageResourceReference, SceneResourceInFlight>;
   loader: ResourceLoader;
   registry: SceneMaterialTextureRegistry;
+  resolved: Map<ImageResourceReference, ImageResource>;
   signals: SceneResourceSignals | null;
 }
 
@@ -56,6 +60,7 @@ export function createSceneResourceResolver(options?: Readonly<SceneResourceReso
     inFlight: new Map(),
     loader,
     registry,
+    resolved: new Map(),
     signals: null,
   };
 }
@@ -69,4 +74,5 @@ export function disposeSceneResourceResolver(resolver: SceneResourceResolver): v
     entry.controller.abort();
   }
   resolver.inFlight.clear();
+  resolver.resolved.clear();
 }

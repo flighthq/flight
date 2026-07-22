@@ -16,16 +16,12 @@ extension depth, not the old "first primitive, no material" slice.
 
 ## Depth gaps
 
-1. **Make the complete import result truthful.** `SceneDocument.resources` is documented as the image
-   reference table but every parser currently returns it empty while material-owned textures carry the
-   real references. Populate/deduplicate that table or remove the false parallel truth. glTF cameras and
-   punctual lights must fill their existing standalone document tables, and structured diagnostics must
-   accompany the document without hiding loading inside parsing.
-   In glTF specifically, resolve image identity once per `images[]` entry and let each independently
-   sampled Texture point at that shared reference: the same source may legitimately need separate
-   Texture entities for different sampler, color-space, UV-set, or texture-transform state. The current
-   material walk constructs a fresh Texture and reference for every slot, so a repeated image is fetched
-   and decoded repeatedly and cannot make `resources` truthful by simple post-hoc value deduplication.
+1. **Make the complete import result truthful.** glTF now fills `SceneDocument.resources` once per
+   `images[]` identity and lets independently sampled Texture entities share the reference while keeping
+   distinct sampler, color-space, UV-set, and texture-transform state. The classic format parsers still
+   return an empty table while material textures carry their real references; populate those tables.
+   glTF cameras and punctual lights must fill their existing standalone document tables, and structured
+   diagnostics must accompany the document without hiding loading inside parsing.
 2. **Carry every common vertex channel and topology.** `TEXCOORD_1`, `COLOR_0`, secondary
    `JOINTS_1`/`WEIGHTS_1`, and their packed/normalized forms need canonical mesh-layout consumers,
    material selection, skinning, and rendered proof. Primitive topology mapping is now complete;
@@ -71,3 +67,6 @@ extension depth, not the old "first primitive, no material" slice.
   triangles, and triangle strips retain their direct Flight topology; line loops and triangle fans
   expand to explicit list indices; unknown modes emit no elements with a diagnostic instead of drawing
   the same bytes as triangles. The GL forward/shadow path consumes the resulting topology.
+- [2026-07-22 · completed] glTF image identity is normalized once per `images[]` entry in
+  `SceneDocument.resources`. Multiple Texture entities may sample that resource with independent
+  sampler/color-space/UV state, while scene-resources fetches/decodes the shared identity once.

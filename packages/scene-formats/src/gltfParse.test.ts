@@ -359,6 +359,35 @@ describe('createSceneFromGltf', () => {
     expect(Array.from(ref.bytes)).toEqual(Array.from(png));
   });
 
+  it('lists each glTF image resource once and shares its identity across independently sampled textures', () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
+    const doc = makeTriangleGltf();
+    doc.materials = [
+      {
+        normalTexture: { index: 1 },
+        pbrMetallicRoughness: { baseColorTexture: { index: 0 } },
+      },
+    ];
+    doc.textures = [
+      { sampler: 0, source: 0 },
+      { sampler: 1, source: 0 },
+    ];
+    doc.samplers = [{ wrapS: 10497 }, { wrapS: 33071 }];
+    doc.images = [{ uri: imageDataUri('image/png', png) }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const parsed = parseGltf(doc);
+    const material = parsed.materials[0] as StandardPbrMaterial;
+    expect(parsed.resources).toHaveLength(1);
+    expect(material.baseColorMap).not.toBe(material.normalMap);
+    expect(material.baseColorMap!.resource).toBe(parsed.resources[0]);
+    expect(material.normalMap!.resource).toBe(parsed.resources[0]);
+    expect(material.baseColorMap!.colorSpace).toBe('srgb');
+    expect(material.normalMap!.colorSpace).toBe('linear');
+    expect(material.baseColorMap!.sampler.wrapU).toBe('repeat');
+    expect(material.normalMap!.sampler.wrapU).toBe('clamp-to-edge');
+  });
+
   it('resolves an external-URI image to an External texture ref', () => {
     const doc = makeTriangleGltf();
     doc.materials = [{ emissiveTexture: { index: 0 } }];
