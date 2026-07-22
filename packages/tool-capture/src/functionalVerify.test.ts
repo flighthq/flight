@@ -19,6 +19,10 @@ interface VerificationWindowLike {
   __ftRenderImage?: unknown;
 }
 
+function verification(): Record<string, unknown> {
+  return (window as unknown as VerificationWindowLike).__ftVerification as Record<string, unknown>;
+}
+
 afterEach(() => {
   const w = window as unknown as VerificationWindowLike;
   w.__ftTarget = undefined;
@@ -71,6 +75,12 @@ describe('runRenderVerification', () => {
   it('throws on a blank DOM render (no elements or text)', async () => {
     registerFunctionalTarget(domTarget(document.createElement('div')));
     await expect(runRenderVerification({}, 'dom')).rejects.toThrow(/blank render/);
+    expect(verification()).toMatchObject({ state: 'failed', error: expect.stringContaining('blank render') });
+  });
+
+  it('fails terminally when no DOM target was registered', async () => {
+    await expect(runRenderVerification({}, 'dom')).rejects.toThrow(/no DOM target/);
+    expect(verification()).toMatchObject({ state: 'failed' });
   });
 
   it('passes a DOM render that emitted content and records the verification', async () => {
@@ -78,7 +88,7 @@ describe('runRenderVerification', () => {
     host.appendChild(document.createElement('span'));
     registerFunctionalTarget(domTarget(host));
     await runRenderVerification({}, 'dom');
-    expect((window as unknown as VerificationWindowLike).__ftVerification).toMatchObject({ render: 'dom' });
+    expect(verification()).toMatchObject({ render: 'dom', state: 'passed', error: null });
   });
 });
 

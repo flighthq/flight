@@ -4,6 +4,7 @@
 
 import pc from 'picocolors';
 
+import { launchBrowser } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import type { Server } from './captureServer.js';
 import type { CaptureSuiteOptions, CaptureSuiteResult } from './captureSuite.js';
@@ -11,10 +12,13 @@ import { runCaptureSuite } from './captureSuite.js';
 import type { CaptureValidationOptions, CaptureValidationResult } from './captureValidation.js';
 import { runCaptureValidation } from './captureValidation.js';
 
-export type CaptureWorkflowCaptureOptions = Omit<CaptureSuiteOptions, 'entries' | 'root' | 'server' | 'subject'>;
+export type CaptureWorkflowCaptureOptions = Omit<
+  CaptureSuiteOptions,
+  'browserSession' | 'entries' | 'root' | 'server' | 'subject'
+>;
 export type CaptureWorkflowValidationOptions = Omit<
   CaptureValidationOptions,
-  'entries' | 'root' | 'server' | 'subject'
+  'browserSession' | 'entries' | 'fingerprints' | 'root' | 'server' | 'subject'
 >;
 
 export interface CaptureWorkflowOptions {
@@ -100,27 +104,49 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
   const borrowedServer: Server = { url: options.server.url, kill() {} };
   let capture: CaptureSuiteResult | null = null;
   let validation: CaptureValidationResult | null = null;
+  const captureOptions = options.capture === false ? null : (options.capture ?? {});
+  const validationOptions = options.validation === false ? null : (options.validation ?? {});
+  if (captureOptions === null && validationOptions === null) {
+    options.server.kill();
+    return { aborted: false, capture: null, shouldFail: false, validation: null };
+  }
+  const captureFrames = Math.max(1, captureOptions?.captureFrames ?? 1, validationOptions?.captureFrames ?? 1);
+  const browserSession = await launchBrowser({
+    captureFrames,
+    verify: validationOptions !== null || captureOptions?.verify === true || options.subject === 'functional',
+    observe: captureOptions?.observe,
+  }).catch((error: unknown) => {
+    options.server.kill();
+    throw error;
+  });
 
   try {
-    if (options.capture !== false) {
+    if (captureOptions !== null) {
       capture = await runCaptureSuite({
-        ...options.capture,
+        ...captureOptions,
         subject: options.subject,
         entries: options.entries,
         server: borrowedServer,
         root: options.root,
+        browserSession,
+        captureFrames,
+        verify: captureOptions.verify ?? validationOptions !== null,
       });
     }
-    if (capture?.aborted !== true && options.validation !== false) {
+    if (capture?.aborted !== true && validationOptions !== null) {
       validation = await runCaptureValidation({
-        ...options.validation,
+        ...validationOptions,
         subject: options.subject,
         entries: options.entries,
         server: borrowedServer,
         root: options.root,
+        browserSession,
+        captureFrames,
+        fingerprints: capture?.fingerprints,
       });
     }
   } finally {
+    await browserSession.browser.close().catch(() => {});
     options.server.kill();
   }
 

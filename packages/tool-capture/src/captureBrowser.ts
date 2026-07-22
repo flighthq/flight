@@ -8,9 +8,14 @@
 
 import type { Browser, BrowserContext } from '@playwright/test';
 
+export interface CaptureBrowserSession {
+  browser: Browser;
+  context: BrowserContext;
+}
+
 export async function launchBrowser(
   options: { captureFrames?: number; verify?: boolean; observe?: boolean } = {},
-): Promise<{ browser: Browser; context: BrowserContext }> {
+): Promise<CaptureBrowserSession> {
   const { chromium } = await import('@playwright/test');
 
   // Headless Chromium exposes navigator.gpu but withholds a Wgpu adapter on a software-only,
@@ -51,7 +56,7 @@ export async function launchBrowser(
         __ftGlContexts?: Array<{ canvas: HTMLCanvasElement; gl: WebGLRenderingContext | WebGL2RenderingContext }>;
         __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
         __ftTarget?: { kind?: string };
-        __ftVerification?: { fingerprint?: string | null };
+        __ftVerification?: { fingerprint?: string | null; state?: 'pending' | 'passed' | 'failed' };
         __ftWarmupFrames?: number;
       };
       const { frames, verify, observe } = args;
@@ -130,7 +135,12 @@ export async function launchBrowser(
           // canvas or registered a verification target. Those are not render frames: counting them can
           // exhaust a small --frames value before an async application module starts, freezing its first
           // real draw as a blank canvas. Let bootstrap callbacks run without advancing the capture count.
-          if (flags.__ftTarget === undefined && document.querySelector('canvas') === null) {
+          if (
+            flags.__ftTarget === undefined &&
+            document.querySelector('canvas') === null &&
+            document.body?.childElementCount === 0 &&
+            (document.body?.textContent ?? '').trim() === ''
+          ) {
             callback(time);
             return;
           }
@@ -150,6 +160,12 @@ export async function launchBrowser(
               // of frames before first pixels), tighter otherwise (an app-loop 2D scene draws within a few).
               let drew = false;
               const canvas = document.querySelector('canvas');
+              if (
+                canvas === null &&
+                (document.body?.childElementCount !== 0 || (document.body?.textContent ?? '').trim() !== '')
+              ) {
+                drew = true;
+              }
               if (canvas !== null && canvas.width > 0 && canvas.height > 0) {
                 const off = document.createElement('canvas');
                 off.width = 32;
@@ -182,7 +198,9 @@ export async function launchBrowser(
               done = drew || count >= (gpuVerifying ? warmupCeiling : observeWarmupCeiling);
             } else if (gpuVerifying) {
               const haveRealFrame =
-                (flags.__ftVerification?.fingerprint ?? null) !== null || document.getElementById('ft-error') !== null;
+                flags.__ftVerification?.state === 'passed' ||
+                flags.__ftVerification?.state === 'failed' ||
+                document.getElementById('ft-error') !== null;
               done = haveRealFrame || count >= warmupCeiling;
             } else {
               done = true; // gate/baseline: deterministic freeze at exactly frame N

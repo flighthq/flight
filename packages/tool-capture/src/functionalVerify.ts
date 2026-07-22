@@ -60,6 +60,8 @@ export interface FunctionalVerification {
   render: string;
   coverage: number | null;
   fingerprint: string | null;
+  state: 'pending' | 'passed' | 'failed';
+  error: string | null;
 }
 
 export interface FunctionalWgpuTarget {
@@ -99,6 +101,8 @@ export function publishFunctionalRenderSync(render: string): boolean {
     render,
     coverage,
     fingerprint: formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID)),
+    state: 'passed',
+    error: null,
   };
   (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(surface);
   return true;
@@ -122,36 +126,52 @@ export function registerWgpuFunctionalTarget(state: WgpuRenderState, scale = 1):
 }
 
 export async function runRenderVerification(testModule: FunctionalTestModule, render: string): Promise<void> {
-  const result: FunctionalVerification = { render, coverage: null, fingerprint: null };
+  const result: FunctionalVerification = {
+    render,
+    coverage: null,
+    fingerprint: null,
+    state: 'pending',
+    error: null,
+  };
   (window as VerificationWindow).__ftVerification = result;
 
-  if (render === 'dom') {
-    const target = (window as VerificationWindow).__ftTarget;
-    if (target?.kind === 'dom') {
+  try {
+    if (render === 'dom') {
+      const target = (window as VerificationWindow).__ftTarget;
+      if (target?.kind !== 'dom') throw new Error(`[verify:${render}] blank render: no DOM target registered`);
       const element = target.state.element;
       const hasContent = element.childElementCount > 0 || (element.textContent ?? '').trim() !== '';
       if (!hasContent) throw new Error(`[verify:${render}] blank render: no DOM output produced`);
+      result.state = 'passed';
+      return;
     }
-    return;
+
+    await waitForPresentedFrame();
+
+    const surface = await snapshotFunctionalRender();
+    if (surface === null) throw new Error(`[verify:${render}] blank render: no readable render surface`);
+
+    const background = getSurfacePixel(surface, 0, 0);
+    const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
+    const fingerprint = formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID));
+
+    const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;
+    if (coverage < minCoverage) {
+      throw new Error(`[verify:${render}] blank render: coverage ${coverage.toFixed(5)} below ${minCoverage}`);
+    }
+
+    await testModule.assertRender?.(surface);
+    (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(
+      getFunctionalRenderImageSurface() ?? surface,
+    );
+    result.coverage = coverage;
+    result.fingerprint = fingerprint;
+    result.state = 'passed';
+  } catch (error) {
+    result.error = error instanceof Error ? error.message : String(error);
+    result.state = 'failed';
+    throw error;
   }
-
-  await waitForPresentedFrame();
-
-  const surface = await snapshotFunctionalRender();
-  if (surface === null) return;
-
-  const background = getSurfacePixel(surface, 0, 0);
-  const coverage = getSurfaceCoverage(surface, background, BACKGROUND_CHANNEL_TOLERANCE);
-  result.coverage = coverage;
-  result.fingerprint = formatSurfaceFingerprint(createSurfaceFingerprint(surface, FINGERPRINT_GRID));
-
-  const minCoverage = testModule.minCoverage ?? DEFAULT_MIN_COVERAGE;
-  if (coverage < minCoverage) {
-    throw new Error(`[verify:${render}] blank render: coverage ${coverage.toFixed(5)} below ${minCoverage}`);
-  }
-
-  await testModule.assertRender?.(surface);
-  (window as VerificationWindow).__ftRenderImage = encodeSurfaceToDataUrl(getFunctionalRenderImageSurface() ?? surface);
 }
 
 export async function snapshotFunctionalRender(): Promise<Surface | null> {
