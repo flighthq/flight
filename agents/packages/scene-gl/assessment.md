@@ -45,8 +45,12 @@ basedOn: ./review.md
 
 ## Recommended
 
-1. **Wire the existing UV1 detector into production PBR variants.** The shader/detector path exists but
-   standard PBR never passes geometry UV1 presence into its define key, so occlusion still samples UV0.
+1. **Keep UV1 as a vertex-layout fact, not a shader-registration feature.** PBR already declares a fixed
+   UV1 attribute lane and uploads bind it whenever the geometry layout carries `uv1`; no program define,
+   public detector, or material-registry branch is needed. The removed `hasGlMeshGeometryUv1` export
+   described a nonexistent `HAS_UV1` variant and had no production consumer. What remains is importer
+   coverage, a deliberate missing-channel fallback/diagnostic, and raster proof for independently
+   transformed maps on UV0 and UV1.
 2. **Recycle or remove the draw-entry pools.** The current lists are cleared without returning entries
    to the pools, so the pool names imply reuse while every frame allocates fresh records.
 3. **Remove the dead draw-entry normalMatrix field and collapse duplicate acquire helpers.** Both are
