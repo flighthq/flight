@@ -185,16 +185,6 @@ Design calls to settle before building the affected entries:
 - Format family symmetry — rename `inferVideoType` → `inferVideoMimeType`; add magic-byte `detectVideoMimeType` (`ftyp` boxes, EBML/Matrosk…
 - Export the codec-negotiation primitive — `selectVideoResourceUrl` / `canPlayVideoType`
 
-### animation (solid 62)
-
-- Replace the linear keyframe scan in `sampleAnimationTrack` (from index 0 every call) with binary search — internal change, no API impact
-- Promote the sample-every-channel loop into the core as `sampleAnimationClip` (caller-supplied output buffer or per-channel visitor) so `s…
-- Finished/looped notification behind an `enableAnimationPlayerSignals` opt-in — the review notes the SDK's `@flighthq/signals` + `enable*`…
-- Loop modes on `AnimationPlayer`: ping-pong and finite repeat count alongside the existing boolean `loop`
-- Player verbs and accessors: `playAnimationPlayer` / `stopAnimationPlayer` (symmetric with the existing `seekAnimationPlayer`) and `getAni…
-- `validateAnimationTrack` — sentinel-returning check for ascending times and `values.length === keyCount × components` (a malformed track …
-- Track/clip utilities: `trimAnimationTrack`/subclip, key reduction, and `cloneAnimationTrack` / `cloneAnimationClip` / `cloneAnimationPlayer`
-
 ### audio (solid 62)
 
 - Complete the loader matrix — `loadAudioResourceFromBytes`, `FromBlob`, `FromBase64`
@@ -1016,7 +1006,7 @@ These are observed maturity gaps, including intentionally deferred work. They re
 
 ## No open Recommended items
 
-`storage` · `updater` · `scene-formats` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
+`storage` · `updater` · `scene-formats` · `animation` · `motionpath` · `scene` · `picking` · `particleemitter` · `skeleton3d` · `camera-controls` · `debug` · `lifecycle` · `adjustments` · `mesh` · `camera` · `platform` · `connectivity` · `screen` · `lighting` · `accessibility` · `clock` · `host-capacitor` · `intl` · `movieclip` · `shading`
 
 ## Liveness — which stage each stale cell needs next
 

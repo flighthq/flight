@@ -16,13 +16,9 @@ See [charter](./charter.md) for blessed direction. Sorted from the 2026-07-03 re
 
 ## Recommended
 
-1. Replace the linear keyframe scan in `sampleAnimationTrack` (from index 0 every call) with binary search — internal change, no API impact. (Cached per-channel cursor state is parked; see Backlog.)
-2. Promote the sample-every-channel loop into the core as `sampleAnimationClip` (caller-supplied output buffer or per-channel visitor) so `scene`, `skeleton`, and future bindings share one loop instead of reimplementing it. Additive; `@flighthq/scene` adopts later.
-3. Finished/looped notification behind an `enableAnimationPlayerSignals` opt-in — the review notes the SDK's `@flighthq/signals` + `enable*` convention "fits here exactly"; today `advanceAnimationPlayer` clears `playing` silently.
-4. Loop modes on `AnimationPlayer`: ping-pong and finite repeat count alongside the existing boolean `loop`.
-5. Player verbs and accessors: `playAnimationPlayer` / `stopAnimationPlayer` (symmetric with the existing `seekAnimationPlayer`) and `getAnimationPlayerNormalizedTime`.
-6. `validateAnimationTrack` — sentinel-returning check for ascending times and `values.length === keyCount × components` (a malformed track currently samples `NaN` silently).
-7. Track/clip utilities: `trimAnimationTrack`/subclip, key reduction, and `cloneAnimationTrack` / `cloneAnimationClip` / `cloneAnimationPlayer`.
+None. The kernel-hardening tranche has landed: binary search, shared clip sampling, opt-in player
+signals, ping-pong/finite repeats, player verbs/normalized time, validation, clone, and trim. Key
+reduction remains a depth utility rather than a sweep correction.
 
 ## Backlog
 
@@ -41,4 +37,6 @@ Parked — each with the reason it is not sweep-safe.
 
 ## Approved
 
-None.
+- [2026-07-21 · completed] AnimationTrack, AnimationChannel, AnimationClip, and AnimationPlayer now
+  extend Entity. Every `createAnimation*`, clone, and trim result uses `createEntity`, with runtime-key
+  tests across all four product families.

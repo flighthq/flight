@@ -1,4 +1,5 @@
 import { connectSignal } from '@flighthq/signals';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import { createAnimationClip } from './animationClip';
 import {
@@ -135,6 +136,7 @@ describe('cloneAnimationPlayer', () => {
     expect(clone.time).toBe(4);
     expect(clone.onFinished).toBeNull();
     expect(clone.onLooped).toBeNull();
+    expect(EntityRuntimeKey in clone).toBe(true);
   });
 });
 
@@ -145,6 +147,7 @@ describe('createAnimationPlayer', () => {
     expect(p.playing).toBe(true);
     expect(p.speed).toBe(1);
     expect(p.time).toBe(0);
+    expect(EntityRuntimeKey in p).toBe(true);
   });
 
   it('defaults to Repeat loop mode, infinite repeats, and no signals', () => {
