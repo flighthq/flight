@@ -142,9 +142,9 @@ export function drawGlMeshSubset(
 
   if (upload.indexBuffer !== null) {
     const elementSize = upload.indexType === gl.UNSIGNED_INT ? 4 : 2;
-    gl.drawElements(gl.TRIANGLES, subset.indexCount, upload.indexType, subset.indexOffset * elementSize);
+    gl.drawElements(upload.primitiveMode, subset.indexCount, upload.indexType, subset.indexOffset * elementSize);
   } else {
-    gl.drawArrays(gl.TRIANGLES, subset.indexOffset, subset.indexCount);
+    gl.drawArrays(upload.primitiveMode, subset.indexOffset, subset.indexCount);
   }
 }
 

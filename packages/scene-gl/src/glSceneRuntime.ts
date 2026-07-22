@@ -109,6 +109,9 @@ export interface GlMeshUpload {
   indexBuffer: WebGLBuffer | null;
   indexCount: number;
   indexType: number;
+  // Effective WebGL primitive enum for MeshGeometry.topology. Stored with the upload so every
+  // consumer (forward, shadow, future velocity passes) issues the same primitive assembly.
+  primitiveMode: number;
   // Set when this upload holds the STATIC bind pose of a GPU-skinned mesh (position/normal restored from
   // the skin bind pose, not the per-frame CPU-posed geometry.vertices). While true the buffer is reused
   // across frames even as geometry.version bumps — the GPU deforms the fixed bind vertices via the joint

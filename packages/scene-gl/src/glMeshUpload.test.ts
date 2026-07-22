@@ -21,6 +21,7 @@ describe('destroyGlMeshUpload', () => {
       indexBuffer: null,
       indexCount: 0,
       indexType: gl.UNSIGNED_SHORT,
+      primitiveMode: gl.TRIANGLES,
       vao: {} as WebGLVertexArrayObject,
       version: 0,
       vertexBuffer: {} as WebGLBuffer,
@@ -44,7 +45,50 @@ describe('ensureGlMeshUpload', () => {
     const expectedType = geometry.indices instanceof Uint32Array ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
     expect(upload.indexType).toBe(expectedType);
     expect(upload.version).toBe(geometry.version);
+    expect(upload.primitiveMode).toBe(gl.TRIANGLES);
     expect(gl.calls.some((c) => c.name === 'bufferData')).toBe(true);
+  });
+
+  it('reports the vertex count for a non-indexed upload', () => {
+    const { state, gl } = makeGlSceneState();
+    const layout: VertexAttributeLayout = {
+      attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+      stride: 12,
+    };
+    const geometry = createMeshGeometry({ layout, vertices: new Float32Array(9) });
+    const upload = ensureGlMeshUpload(state, geometry);
+
+    expect(upload.indexBuffer).toBeNull();
+    expect(upload.indexCount).toBe(3);
+    expect(upload.primitiveMode).toBe(gl.TRIANGLES);
+  });
+
+  it('refreshes the primitive mode on a cached upload without re-uploading buffers', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const upload = ensureGlMeshUpload(state, geometry);
+    const bufferDataCount = gl.calls.filter((call) => call.name === 'bufferData').length;
+
+    geometry.topology = 'triangle-strip';
+    const reused = ensureGlMeshUpload(state, geometry);
+
+    expect(reused).toBe(upload);
+    expect(reused.primitiveMode).toBe(gl.TRIANGLE_STRIP);
+    expect(gl.calls.filter((call) => call.name === 'bufferData').length).toBe(bufferDataCount);
+  });
+
+  it('deletes an obsolete index buffer when geometry becomes non-indexed', () => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    const upload = ensureGlMeshUpload(state, geometry);
+    expect(upload.indexBuffer).not.toBeNull();
+
+    geometry.indices = null;
+    geometry.version++;
+    ensureGlMeshUpload(state, geometry);
+
+    expect(upload.indexBuffer).toBeNull();
+    expect(gl.calls.filter((call) => call.name === 'deleteBuffer').length).toBe(1);
   });
 
   it('caches by geometry and reuses the upload when the version is unchanged', () => {

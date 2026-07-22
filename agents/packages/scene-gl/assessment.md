@@ -98,3 +98,8 @@ basedOn: ./review.md
   built-in shaders' float/vec inputs: unsigned joints convert without normalization and unorm
   color/weight channels normalize in fixed-function input assembly. The integer-pointer path is
   deliberately absent until a separately declared ivec/uvec shader input exists.
+- [2026-07-22 · completed] Forward and shadow mesh draws consume `MeshGeometry.topology` through one
+  upload-owned effective GL primitive mode instead of hard-coding triangles. Indexed and non-indexed
+  list/strip/point draws share the same subset path; non-indexed uploads retain their real vertex count,
+  cached uploads observe topology edits without buffer churn, and dropping indices deletes the obsolete
+  GPU buffer. glTF line-loop/triangle-fan conversion and raster captures remain importer/evidence work.

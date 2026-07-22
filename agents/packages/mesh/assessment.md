@@ -44,6 +44,10 @@ being re-derived from list-only offsets.
   channels/padding), remaps indexed or non-indexed element streams, preserves topology/subsets/bounds,
   and chooses the narrowest safe index width. Deindex likewise preserves subset ranges and cached
   bounds while detaching storage; validation completes the base loop.
+- [2026-07-22 · completed] `PrimitiveTopology` is now draw-authoritative in GL for line/triangle
+  lists and strips plus point lists, including non-indexed geometry. This closes the runtime half of
+  the topology contract; format importers still owe honest mapping/conversion for source modes that do
+  not have a direct Flight topology.
 
 ## Backlog
 

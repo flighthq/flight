@@ -1,9 +1,9 @@
 import { createCamera3D } from '@flighthq/camera';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry';
 import { createStandardPbrMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture';
-import type { Camera3D, ImageResource } from '@flighthq/types';
+import type { Camera3D, ImageResource, PrimitiveTopology, VertexAttributeLayout } from '@flighthq/types';
 
 import type { GlMeshProgram } from './glMeshProgram';
 import {
@@ -127,6 +127,53 @@ describe('drawGlMeshSubset', () => {
     const draw = gl.calls.find((c) => c.name === 'drawElements');
     expect(draw).toBeDefined();
     expect(draw!.args[1]).toBe(proxy.subset.indexCount);
+  });
+
+  it.each([
+    ['line-list', 'LINES'],
+    ['line-strip', 'LINE_STRIP'],
+    ['point-list', 'POINTS'],
+    ['triangle-list', 'TRIANGLES'],
+    ['triangle-strip', 'TRIANGLE_STRIP'],
+  ] as const)('draws %s geometry with the matching GL primitive mode', (topology, constant) => {
+    const { state, gl } = makeGlSceneState();
+    const geometry = createBoxMeshGeometry();
+    geometry.topology = topology as PrimitiveTopology;
+    drawGlMeshSubset(
+      state,
+      makeProgram(),
+      {
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    const draw = gl.calls.find((call) => call.name === 'drawElements');
+    expect(draw?.args[0]).toBe(gl[constant]);
+  });
+
+  it('draws a non-indexed geometry with its vertex count', () => {
+    const { state, gl } = makeGlSceneState();
+    const layout: VertexAttributeLayout = {
+      attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+      stride: 12,
+    };
+    const geometry = createMeshGeometry({ layout, vertices: new Float32Array(9) });
+    drawGlMeshSubset(
+      state,
+      makeProgram(),
+      {
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+    const draw = gl.calls.find((call) => call.name === 'drawArrays');
+    expect(draw?.args).toEqual([gl.TRIANGLES, 0, 3]);
   });
 
   it('uploads u_objectAlpha with the proxy alpha when the program has an object-alpha location', () => {
