@@ -7,6 +7,7 @@ Deterministic browser capture and reporting for canvas, DOM, WebGL, and WebGPU p
 - **Observe:** zero page integration. Produces agent eyesight and explicit `usable`, `blank`, `timedOut`, retry, and error diagnostics.
 - **Capture gate:** a manifest plus CLI flags. Produces deterministic screenshots, logs, hashes, and smoke failures.
 - **Verification:** one shared page adapter. Adds asserted non-blank readback, fingerprints, parity, and regression without capture code in each example.
+- **Benchmark:** repeatable page work with backend completion fences, robust statistics, calibrated scores, relative comparisons, and committed performance baselines.
 
 Every command writes versioned `status.json` files and an aggregate `report.json` envelope intended for CI and AI agents. Capture retries transient navigation/protocol failures in a fresh page; `observe` retries blank or timed-out attempts while preserving the best full-page evidence from its final attempt.
 
@@ -91,7 +92,56 @@ Optional manifest policy keeps intentional exceptions beside the suite:
 }
 ```
 
+Explicit groups compare any target IDs, including DOM and WASM-backed variants. DOM targets are rasterized to the same normalized 16×16 RGB fingerprint as canvas/GPU targets. A reference produces clear reference-to-target failures instead of an increasingly noisy all-pairs matrix:
+
+```json
+{
+  "validation": {
+    "parityGroups": {
+      "visual": {
+        "targets": ["dom", "canvas", "webgl", "webgpu", "wasm:webgl"],
+        "reference": "canvas",
+        "tolerance": 15
+      }
+    }
+  }
+}
+```
+
+Legacy manifests retain raster-only all-pairs behavior. Explicit groups are same-run comparisons and do not require committed regression fingerprints, though each target still reports its independent regression-baseline status.
+
 `runCaptureValidation` exposes the same validation lifecycle programmatically. Comparison tolerances and baseline formats come from `@flighthq/capture`; `tool-capture` owns browser execution and reporting.
+
+## Benchmark repeatable render work
+
+`installCaptureTarget({ render })` and Flight's normal functional-target registration automatically expose the last rendered scene as benchmark work. Custom/WASM pages can call `registerCaptureBenchmarkTarget({ kind, run, synchronize })`; `synchronize` must fence submitted work. Screenshots, fingerprinting, page startup, and calibration are outside timed intervals.
+
+```json
+{
+  "benchmark": {
+    "reference": "canvas",
+    "warmupIterations": 3,
+    "iterations": 10,
+    "samples": 7,
+    "sampleDurationMs": 20,
+    "maxRetries": 1,
+    "regressionTolerance": 0.2,
+    "stabilityTolerance": 0.1
+  }
+}
+```
+
+```sh
+tool-capture benchmark --dir dist --update-benchmarks
+tool-capture benchmark --dir dist
+tool-capture benchmark --url http://localhost:5173 --renderer canvas,webgl --samples 11
+```
+
+The update command writes stable baselines to `<subject>/benchmarks/<entry>.json`; a target whose median absolute deviation exceeds the configured stability tolerance is not baselined. Transient navigation, browser, and protocol failures retry in a fresh page (`maxRetries`, default 1), while deterministic verification failures do not. Every run writes `.artifacts/<subject>/benchmark-report.json` with raw samples, median, p95, MAD, retry count, browser/host metadata, CPU/GPU calibration throughput, normalized work, reference ratios, baseline choice, and percentage change.
+
+`iterations` is a minimum: the runner adaptively increases it until each timed sample reaches `sampleDurationMs`, avoiding zero-duration and timer-quantization noise for very fast targets.
+
+No calibration makes performance completely host-independent: renderer workloads stress different parts of CPUs, drivers, and GPUs. The gate therefore prefers a same-run ratio when `reference` is available, because shared host conditions cancel best. Choose a reference with a comparable resource path; a CPU-DOM versus discrete-GPU ratio still reflects that machine's CPU/GPU balance. Otherwise the gate compares `median × calibration throughput`, an estimate of host-normalized work. Keep raw medians for same-machine trends, use ratios for heterogeneous CI, and treat calibrated scores as a useful secondary signal rather than a physical unit. Benchmarks run serially by design so ordinary capture worker concurrency cannot contaminate them.
 
 ## Batch many resources and subjects
 
@@ -138,7 +188,7 @@ The existing `capture` and `validate` baseline commands remain independent. To r
     {
       "name": "shaders",
       "args": ["--manifest=packages/shaders/tool-capture.json", "--dir=packages/shaders/dist"],
-      "operations": ["validate"]
+      "operations": ["validate", "benchmark"]
     }
   ]
 }
@@ -151,7 +201,7 @@ tool-capture batch --filter terrain --renderer webgl,webgpu
 tool-capture batch --subjects-parallel 2
 ```
 
-Arguments after `batch` override each subject's defaults. Subjects run sequentially unless `--subjects-parallel` is set; targets use each subject's `--parallel` worker pool. Capture and validation reuse the subject's server, browser, and assertion-passed fingerprints, so the normal validation pass does not reload pages it just captured. Standalone validation flattens entries × renderers into the same balanced page queue. `runCaptureWorkflow` and `runCaptureBatch` provide the same composition for generated resource catalogs.
+Arguments after `batch` override each subject's defaults. Subjects run sequentially unless `--subjects-parallel` is set; targets use each subject's `--parallel` worker pool. All operations reuse the subject's server, and capture/validation share a browser so capture-supplied fingerprints avoid validation reloads. Before benchmarking, that parallel visual browser is closed and a clean serial browser is launched so GPU/process contention cannot contaminate timing. Standalone validation flattens entries × renderers into the same balanced page queue. `runCaptureWorkflow` and `runCaptureBatch` provide the same composition for generated resource catalogs.
 
 ## Observe one page
 

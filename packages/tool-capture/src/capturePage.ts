@@ -4,7 +4,8 @@
 
 import type { CanvasRenderState, DomRenderState, GlRenderState, Surface, WgpuRenderState } from '@flighthq/types';
 
-import type { CaptureVerification } from './captureProtocol.js';
+import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import type { FunctionalRenderOracle, FunctionalTarget } from './functionalVerify.js';
 import { registerFunctionalTarget, registerWgpuFunctionalTarget, runRenderVerification } from './functionalVerify.js';
 
@@ -37,6 +38,14 @@ export async function installCaptureTarget(
     registerFunctionalTarget(createFunctionalTarget(options, scale));
   }
 
+  if (options.render !== undefined) {
+    registerCaptureBenchmarkTarget({
+      kind: options.renderer,
+      run: options.render,
+      synchronize: () => synchronizeCaptureTarget(options.renderer, options.state),
+    });
+  }
+
   await options.render?.();
   const flags = window as typeof window & { __flightCapture?: boolean; __flightCaptureVerify?: boolean };
   if (options.verify !== true && (!flags.__flightCapture || flags.__flightCaptureVerify === false)) return null;
@@ -44,6 +53,13 @@ export async function installCaptureTarget(
     { assertRender: options.assertRender, minCoverage: options.minCoverage },
     options.renderer,
   );
+}
+
+/** Registers repeatable work for custom pages that do not use a Flight-style functional target. */
+export function registerCaptureBenchmarkTarget<T extends CaptureBenchmarkTarget>(target: T): T {
+  target.protocolVersion ??= CAPTURE_PROTOCOL_VERSION;
+  (window as typeof window & { __ftBenchmarkTarget?: CaptureBenchmarkTarget }).__ftBenchmarkTarget = target;
+  return target;
 }
 
 /** One-line runner integration for a target that a shared Flight-style factory already registered. */
@@ -66,4 +82,17 @@ function createFunctionalTarget(options: Readonly<CapturePageTargetOptions>, sca
   if (options.renderer === 'webgl')
     return { kind: 'webgl', state: state as GlRenderState, width, height, scale, render };
   return { kind: 'canvas', state: state as CanvasRenderState, width, height, scale, render };
+}
+
+async function synchronizeCaptureTarget(
+  renderer: CapturePageTargetOptions['renderer'],
+  state: CapturePageTargetOptions['state'],
+): Promise<void> {
+  if (renderer === 'webgl') {
+    (state as GlRenderState).gl.finish();
+  } else if (renderer === 'webgpu') {
+    await (state as WgpuRenderState).device.queue.onSubmittedWorkDone();
+  } else if (renderer === 'dom') {
+    (state as DomRenderState).element.getBoundingClientRect();
+  }
 }

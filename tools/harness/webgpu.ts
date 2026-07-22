@@ -19,6 +19,7 @@ import {
   enableWgpuClipSupport,
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
+  invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareDisplayObjectRender,
   QuadBatchKind,
@@ -100,6 +101,10 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
       renderWgpuBackground(state);
       renderWgpuDisplayObject(state, root);
       submitWgpuRenderPass(state);
+    },
+    benchmark(root: DisplayObject): void {
+      invalidateNodeLocalTransform(root);
+      this.render(root);
     },
   });
 }

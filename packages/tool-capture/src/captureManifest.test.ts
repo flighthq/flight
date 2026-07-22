@@ -43,6 +43,32 @@ describe('parseCaptureManifest', () => {
       parseCaptureManifest(JSON.stringify({ ...manifest, validation: { paritySkip: { home: true } } })),
     ).toThrow(/paritySkip\.home/);
   });
+
+  it('parses explicit parity groups and benchmark policy', () => {
+    const manifest = {
+      subject: 'app',
+      entries: [
+        {
+          name: 'home',
+          renderers: ['dom', 'wasm:webgl'],
+          routes: { dom: 'home/dom', 'wasm:webgl': 'home/wasm' },
+        },
+      ],
+      validation: {
+        parityGroups: { visual: { targets: ['dom', 'wasm:webgl'], reference: 'dom', tolerance: 20 } },
+      },
+      benchmark: { reference: 'dom', warmupIterations: 2, iterations: 10, samples: 7, maxRetries: 1 },
+    };
+    expect(parseCaptureManifest(JSON.stringify(manifest))).toEqual(manifest);
+    expect(() =>
+      parseCaptureManifest(
+        JSON.stringify({ ...manifest, validation: { parityGroups: { visual: { targets: ['dom'] } } } }),
+      ),
+    ).toThrow(/at least two/);
+    expect(() => parseCaptureManifest(JSON.stringify({ ...manifest, benchmark: { samples: 2 } }))).toThrow(
+      /at least 3/,
+    );
+  });
 });
 
 describe('readCaptureManifest', () => {

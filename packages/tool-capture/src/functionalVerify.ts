@@ -17,7 +17,7 @@ import type {
 } from '@flighthq/types';
 
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
-import type { CaptureVerification } from './captureProtocol.js';
+import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';
 
 export const FUNCTIONAL_VERIFICATION_IMAGE_KEY = '__ftRenderImage';
 
@@ -34,6 +34,7 @@ export interface FunctionalCanvasTarget {
   height: number;
   scale: number;
   render(root: DisplayObject): void;
+  benchmark?(root: DisplayObject): void | Promise<void>;
 }
 
 export interface FunctionalDomTarget {
@@ -43,6 +44,7 @@ export interface FunctionalDomTarget {
   height: number;
   scale: number;
   render(root: DisplayObject): void;
+  benchmark?(root: DisplayObject): void | Promise<void>;
 }
 
 export interface FunctionalGlTarget {
@@ -52,6 +54,7 @@ export interface FunctionalGlTarget {
   height: number;
   scale: number;
   render(root: DisplayObject): void;
+  benchmark?(root: DisplayObject): void | Promise<void>;
 }
 
 export interface FunctionalTestModule {
@@ -69,6 +72,7 @@ export interface FunctionalWgpuTarget {
   height: number;
   scale: number;
   render(root: DisplayObject): void;
+  benchmark?(root: DisplayObject): void | Promise<void>;
 }
 
 export type FunctionalTarget = FunctionalCanvasTarget | FunctionalDomTarget | FunctionalGlTarget | FunctionalWgpuTarget;
@@ -77,6 +81,7 @@ type VerificationWindow = typeof window & {
   __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
   __ftRenderImage?: string;
   __ftTarget?: FunctionalTarget;
+  __ftBenchmarkTarget?: CaptureBenchmarkTarget;
   __ftVerification?: FunctionalVerification;
 };
 
@@ -108,7 +113,35 @@ export function publishFunctionalRenderSync(render: string): boolean {
 }
 
 export function registerFunctionalTarget<T extends FunctionalTarget>(target: T): T {
-  (window as VerificationWindow).__ftTarget = target;
+  const captureWindow = window as VerificationWindow;
+  const render = target.render.bind(target);
+  let lastRoot: DisplayObject | undefined;
+  const benchmarkTarget: CaptureBenchmarkTarget = {
+    protocolVersion: CAPTURE_PROTOCOL_VERSION,
+    ready: false,
+    kind: target.kind,
+    run(): void | Promise<void> {
+      if (lastRoot === undefined) throw new Error(`benchmark target ${target.kind} has not rendered its first frame`);
+      return target.benchmark === undefined ? render(lastRoot) : target.benchmark(lastRoot);
+    },
+    async synchronize(): Promise<void> {
+      if (target.kind === 'webgl') {
+        target.state.gl.finish();
+      } else if (target.kind === 'webgpu') {
+        await target.state.device.queue.onSubmittedWorkDone();
+      } else if (target.kind === 'dom') {
+        // Forces pending style/layout work without adding a frame-duration floor to every sample.
+        target.state.element.getBoundingClientRect();
+      }
+    },
+  };
+  target.render = (root: DisplayObject): void => {
+    lastRoot = root;
+    benchmarkTarget.ready = true;
+    render(root);
+  };
+  captureWindow.__ftTarget = target;
+  captureWindow.__ftBenchmarkTarget = benchmarkTarget;
   return target;
 }
 

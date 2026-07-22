@@ -55,6 +55,7 @@ describe('runCaptureWorkflow', () => {
     expect(kills).toBe(1);
     expect(result).toEqual({
       aborted: false,
+      benchmark: null,
       capture: null,
       shouldFail: false,
       validation: null,

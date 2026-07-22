@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-export type CaptureBatchOperation = 'capture' | 'validate';
+export type CaptureBatchOperation = 'capture' | 'validate' | 'benchmark';
 
 export interface CaptureBatchManifestSubject {
   name: string;
@@ -30,7 +30,9 @@ export function parseCaptureBatchManifest(
       subject.operations !== undefined &&
       (!Array.isArray(subject.operations) ||
         subject.operations.length === 0 ||
-        subject.operations.some((operation) => operation !== 'capture' && operation !== 'validate'))
+        subject.operations.some(
+          (operation) => operation !== 'capture' && operation !== 'validate' && operation !== 'benchmark',
+        ))
     ) {
       throw new Error(`${sourceName}: subject ${subject.name} has invalid operations`);
     }
