@@ -2,7 +2,14 @@ import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh';
 import { getNodeChildren } from '@flighthq/node';
 import { isMesh } from '@flighthq/scene';
 import { createTexture } from '@flighthq/texture';
-import type { Mesh, SceneNode, Texture, VertexAttributeLayout } from '@flighthq/types';
+import type {
+  EmbeddedImageResourceReference,
+  ExternalImageResourceReference,
+  Mesh,
+  SceneNode,
+  Texture,
+  VertexAttributeLayout,
+} from '@flighthq/types';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
@@ -24,6 +31,31 @@ export const SKINNED_FLOATS_PER_VERTEX = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.
 // Source formats may list more influences per vertex (AWD's shambler uses 8); the top four by weight
 // are kept and renormalized. See packSkinInfluences.
 export const MAX_SKIN_INFLUENCES = 4;
+
+export function buildEmbeddedImageResourceReference(
+  bytes: Uint8Array,
+  mimeType: string | null,
+): EmbeddedImageResourceReference {
+  return {
+    bytes,
+    kind: ImageResourceReferenceKind.Embedded,
+    mimeType,
+    state: ResourceResolutionState.Unresolved,
+  };
+}
+
+export function buildExternalImageResourceReference(
+  uri: string,
+  basePath: string | null = null,
+): ExternalImageResourceReference {
+  return {
+    basePath,
+    kind: ImageResourceReferenceKind.External,
+    mimeType: null,
+    state: ResourceResolutionState.Unresolved,
+    uri,
+  };
+}
 
 // Flight uses a right-handed Y-up coordinate system with CCW front faces. Importers for formats
 // that use different conventions apply the conversions below at parse time so every scene enters
@@ -71,14 +103,7 @@ export function convertTransformLhToRh(transform: Float64Array): void {
 // parser carries the bytes but does not decode them — @flighthq/scene-resources decodes on resolve.
 // `mimeType` is null when the container did not declare one (the resolver sniffs it from the bytes).
 export function createEmbeddedTextureRef(bytes: Uint8Array, mimeType: string | null): Texture {
-  return createTexture({
-    resource: {
-      bytes,
-      kind: ImageResourceReferenceKind.Embedded,
-      mimeType,
-      state: ResourceResolutionState.Unresolved,
-    },
-  });
+  return createTexture({ resource: buildEmbeddedImageResourceReference(bytes, mimeType) });
 }
 
 // Wraps a texture file path/URI declared by a model format as an Unresolved External resource ref on
@@ -87,15 +112,7 @@ export function createEmbeddedTextureRef(bytes: Uint8Array, mimeType: string | n
 // container loaded from, null when the format carried none). Shared by the OBJ/MD5/3DS/MD2/glTF
 // material decoders.
 export function createExternalTextureRef(uri: string, basePath: string | null = null): Texture {
-  return createTexture({
-    resource: {
-      basePath,
-      kind: ImageResourceReferenceKind.External,
-      mimeType: null,
-      state: ResourceResolutionState.Unresolved,
-      uri,
-    },
-  });
+  return createTexture({ resource: buildExternalImageResourceReference(uri, basePath) });
 }
 
 // Walks a built scene for the first skinned mesh and returns its skeleton's joints — the same node

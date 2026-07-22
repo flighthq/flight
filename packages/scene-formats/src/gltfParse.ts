@@ -6,8 +6,10 @@ import { createStandardPbrMaterial } from '@flighthq/materials';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import type { Scene } from '@flighthq/scene';
 import { createSceneFromDocument, createScenesFromDocument } from '@flighthq/scene';
+import { createTexture } from '@flighthq/texture';
 import type {
   AnimationInterpolation,
+  ImageResourceReference,
   Material,
   MaterialLike,
   MeshGeometry,
@@ -202,8 +204,12 @@ function buildGltfDocument(
   }
 
   const buffers = (doc.buffers ?? []).map((buffer) => decodeGltfBuffer(buffer, binary, options, warnings));
+  const imageResources = (doc.images ?? []).map((image) =>
+    buildGltfImageResourceReference(doc, buffers, image, options),
+  );
+  const resources = imageResources.filter((resource): resource is ImageResourceReference => resource !== null);
   const materials: MaterialLike[] = (doc.materials ?? []).map(
-    (material) => gltfMaterialToPbr(doc, buffers, material, options) as MaterialLike,
+    (material) => gltfMaterialToPbr(doc, imageResources, material) as MaterialLike,
   );
 
   // One document mesh per glTF primitive (inline geometry + morph + material indices). Track, per glTF
@@ -297,7 +303,7 @@ function buildGltfDocument(
     meshes,
     metadata: buildGltfMetadata(doc),
     nodes,
-    resources: [],
+    resources,
     scenes,
     skins,
   };
@@ -497,21 +503,20 @@ function identityMatrix16(): Float32Array {
 // decode: glTF is natively PBR, so unlike the classic formats it is NOT reinterpreted.
 function gltfMaterialToPbr(
   doc: Readonly<GltfDocument>,
-  buffers: readonly Uint8Array[],
+  imageResources: readonly (ImageResourceReference | null)[],
   material: Readonly<GltfMaterial>,
-  options: Readonly<GltfImportOptions> | undefined,
 ): Material {
   const pbr = material.pbrMetallicRoughness ?? {};
   const result = createStandardPbrMaterial({
     baseColor: packGltfLinearColor(pbr.baseColorFactor ?? [1, 1, 1, 1], 4),
-    baseColorMap: resolveGltfTexture(doc, buffers, pbr.baseColorTexture, 'srgb', options),
+    baseColorMap: resolveGltfTexture(doc, imageResources, pbr.baseColorTexture, 'srgb'),
     emissive: packGltfLinearColor(material.emissiveFactor ?? [0, 0, 0], 3),
-    emissiveMap: resolveGltfTexture(doc, buffers, material.emissiveTexture, 'srgb', options),
+    emissiveMap: resolveGltfTexture(doc, imageResources, material.emissiveTexture, 'srgb'),
     metallic: pbr.metallicFactor ?? 1,
-    metallicRoughnessMap: resolveGltfTexture(doc, buffers, pbr.metallicRoughnessTexture, 'linear', options),
-    normalMap: resolveGltfTexture(doc, buffers, material.normalTexture, 'linear', options),
+    metallicRoughnessMap: resolveGltfTexture(doc, imageResources, pbr.metallicRoughnessTexture, 'linear'),
+    normalMap: resolveGltfTexture(doc, imageResources, material.normalTexture, 'linear'),
     normalScale: material.normalTexture?.scale ?? 1,
-    occlusionMap: resolveGltfTexture(doc, buffers, material.occlusionTexture, 'linear', options),
+    occlusionMap: resolveGltfTexture(doc, imageResources, material.occlusionTexture, 'linear'),
     occlusionStrength: material.occlusionTexture?.strength ?? 1,
     roughness: pbr.roughnessFactor ?? 1,
   });
@@ -531,18 +536,16 @@ function gltfMaterialToPbr(
 // image cannot be resolved.
 function resolveGltfTexture(
   doc: Readonly<GltfDocument>,
-  buffers: readonly Uint8Array[],
+  imageResources: readonly (ImageResourceReference | null)[],
   info: Readonly<GltfTextureInfo> | undefined,
   colorSpace: TextureColorSpace,
-  options: Readonly<GltfImportOptions> | undefined,
 ): Texture | null {
   if (info === undefined) return null;
   const texture = doc.textures?.[info.index];
   if (texture?.source === undefined) return null;
-  const image = doc.images?.[texture.source];
-  if (image === undefined) return null;
-  const result = gltfImageToTexture(doc, buffers, image, options);
-  if (result === null) return null;
+  const resource = imageResources[texture.source];
+  if (resource == null) return null;
+  const result = createTexture({ resource });
 
   result.colorSpace = colorSpace;
   applyGltfSampler(result, texture.sampler !== undefined ? doc.samplers?.[texture.sampler] : undefined);
@@ -580,16 +583,16 @@ function applyGltfTextureTransform(
   texture.uvScale.y = transform.scale?.[1] ?? 1;
 }
 
-// Builds a Texture from a glTF image: a `data:` URI decodes its base64 payload to an Embedded ref
+// Builds one shared resource reference from a glTF image: a `data:` URI decodes its base64 payload to an Embedded ref
 // (MIME from the URI header, the declared `mimeType`, or sniffed from the bytes); an external URI
 // becomes an External ref against `options.basePath`; a bufferView slices the encoded bytes out of its
 // buffer as an Embedded ref.
-function gltfImageToTexture(
+function buildGltfImageResourceReference(
   doc: Readonly<GltfDocument>,
   buffers: readonly Uint8Array[],
   image: Readonly<GltfImage>,
   options: Readonly<GltfImportOptions> | undefined,
-): Texture | null {
+): ImageResourceReference | null {
   if (image.uri !== undefined) {
     if (image.uri.startsWith('data:')) {
       const comma = image.uri.indexOf(',');
@@ -597,9 +600,9 @@ function gltfImageToTexture(
       const semicolon = image.uri.indexOf(';');
       const declared = semicolon > 5 ? image.uri.slice(5, semicolon) : (image.mimeType ?? null);
       const bytes = decodeBase64(image.uri.slice(comma + 1));
-      return createEmbeddedTextureRef(bytes, declared ?? detectImageMimeType(bytes));
+      return buildEmbeddedImageResourceReference(bytes, declared ?? detectImageMimeType(bytes));
     }
-    return createExternalTextureRef(image.uri, options?.basePath ?? null);
+    return buildExternalImageResourceReference(image.uri, options?.basePath ?? null);
   }
   if (image.bufferView !== undefined) {
     const bufferView = doc.bufferViews?.[image.bufferView];
@@ -607,7 +610,7 @@ function gltfImageToTexture(
     if (bufferView === undefined || buffer === undefined) return null;
     const start = bufferView.byteOffset ?? 0;
     const bytes = buffer.slice(start, start + bufferView.byteLength);
-    return createEmbeddedTextureRef(bytes, image.mimeType ?? detectImageMimeType(bytes));
+    return buildEmbeddedImageResourceReference(bytes, image.mimeType ?? detectImageMimeType(bytes));
   }
   return null;
 }
@@ -1177,9 +1180,9 @@ const GLB_CHUNK_HEADER_BYTES = 8;
 // The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share,
 // plus the skinned record's floats-per-vertex — the same constants every scene-formats importer emits.
 import {
+  buildEmbeddedImageResourceReference,
+  buildExternalImageResourceReference,
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
-  createEmbeddedTextureRef,
-  createExternalTextureRef,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';

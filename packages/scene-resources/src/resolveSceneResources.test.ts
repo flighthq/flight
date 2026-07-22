@@ -133,6 +133,72 @@ describe('resolveSceneResources', () => {
     disposeSceneResourceResolver(resolver);
   });
 
+  it('fetches and decodes one shared resource once, then binds every subscribed texture', async () => {
+    loadFromBytes.mockResolvedValue(fakeImage);
+    const ref = embeddedRef();
+    const a = createTexture({ resource: ref });
+    const b = createTexture({ resource: ref });
+    const scene = meshScene(a, b);
+    const resolver = createSceneResourceResolver();
+
+    resolveSceneResources(scene.root, resolver);
+    expect(resolver.inFlight.size).toBe(1);
+    expect(resolver.inFlight.get(ref)?.subscribers).toEqual(new Set([a, b]));
+    await settle(resolver);
+
+    expect(loadFromBytes).toHaveBeenCalledTimes(1);
+    expect(a.image).toBe(fakeImage);
+    expect(b.image).toBe(fakeImage);
+    expect(ref.state).toBe(ResourceResolutionState.Resolved);
+    disposeSceneResourceResolver(resolver);
+  });
+
+  it('keeps a shared load alive until its final subscriber leaves the working set', () => {
+    loadFromBytes.mockImplementation(
+      (_bytes, _mime, signal) =>
+        new Promise<ImageResource>((_resolve, reject) => {
+          signal?.addEventListener('abort', () => reject(signal.reason));
+        }),
+    );
+    const ref = embeddedRef();
+    const a = createTexture({ resource: ref });
+    const b = createTexture({ resource: ref });
+    const scene = meshScene(a, b);
+    const resolver = createSceneResourceResolver();
+
+    resolveSceneResources(scene.root, resolver);
+    const entry = resolver.inFlight.get(ref)!;
+    resolveSceneResources(scene.root, resolver, { select: (texture) => texture === b });
+    expect(entry.controller.signal.aborted).toBe(false);
+    expect(entry.subscribers).toEqual(new Set([b]));
+    expect(ref.state).toBe(ResourceResolutionState.Loading);
+
+    resolveSceneResources(scene.root, resolver, { select: () => false });
+    expect(entry.controller.signal.aborted).toBe(true);
+    expect(resolver.inFlight.has(ref)).toBe(false);
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+    disposeSceneResourceResolver(resolver);
+  });
+
+  it('binds a later subscriber from the resolved resource cache without decoding again', async () => {
+    loadFromBytes.mockResolvedValue(fakeImage);
+    const ref = embeddedRef();
+    const a = createTexture({ resource: ref });
+    const b = createTexture({ resource: ref });
+    const scene = meshScene(a, b);
+    const resolver = createSceneResourceResolver();
+
+    resolveSceneResources(scene.root, resolver, { select: (texture) => texture === a });
+    await settle(resolver);
+    expect(a.image).toBe(fakeImage);
+    expect(b.image).toBeNull();
+
+    resolveSceneResources(scene.root, resolver, { select: (texture) => texture === b });
+    expect(b.image).toBe(fakeImage);
+    expect(loadFromBytes).toHaveBeenCalledTimes(1);
+    disposeSceneResourceResolver(resolver);
+  });
+
   it('limits the working set to textures the select predicate accepts', async () => {
     loadFromBytes.mockResolvedValue(fakeImage);
     const wanted = pendingTexture();
@@ -189,18 +255,18 @@ describe('resolveSceneResources', () => {
 
     resolveSceneResources(scene.root, resolver, { select: () => true });
     expect(texture.resource?.state).toBe(ResourceResolutionState.Loading);
-    expect(resolver.inFlight.has(texture)).toBe(true);
+    expect(resolver.inFlight.has(texture.resource!)).toBe(true);
 
     // Drop it: not in the working set this pass → abort + revert.
     resolveSceneResources(scene.root, resolver, { select: () => false });
     expect(texture.resource?.state).toBe(ResourceResolutionState.Unresolved);
     expect(texture.image).toBeNull();
-    expect(resolver.inFlight.has(texture)).toBe(false);
+    expect(resolver.inFlight.has(texture.resource!)).toBe(false);
 
     // Re-entry re-requests from scratch.
     resolveSceneResources(scene.root, resolver, { select: () => true });
     expect(texture.resource?.state).toBe(ResourceResolutionState.Loading);
-    expect(resolver.inFlight.has(texture)).toBe(true);
+    expect(resolver.inFlight.has(texture.resource!)).toBe(true);
 
     disposeSceneResourceResolver(resolver);
   });
@@ -212,9 +278,9 @@ describe('resolveSceneResources', () => {
     const resolver = createSceneResourceResolver();
 
     resolveSceneResources(scene.root, resolver);
-    const first = resolver.inFlight.get(texture);
+    const first = resolver.inFlight.get(texture.resource!);
     resolveSceneResources(scene.root, resolver);
-    expect(resolver.inFlight.get(texture)).toBe(first);
+    expect(resolver.inFlight.get(texture.resource!)).toBe(first);
 
     disposeSceneResourceResolver(resolver);
   });

@@ -6,6 +6,8 @@ import type { EmbeddedImageResourceReference, ExternalImageResourceReference, Sc
 import { ResourceResolutionState } from '@flighthq/types';
 
 import {
+  buildEmbeddedImageResourceReference,
+  buildExternalImageResourceReference,
   CANONICAL_LAYOUT,
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
@@ -17,6 +19,25 @@ import {
   packSkinInfluences,
   reverseTriangleWinding,
 } from './shared';
+
+describe('buildEmbeddedImageResourceReference', () => {
+  it('builds an unresolved embedded image identity without a Texture wrapper', () => {
+    const bytes = new Uint8Array([1, 2, 3]);
+    const ref = buildEmbeddedImageResourceReference(bytes, 'image/png');
+    expect(ref.bytes).toBe(bytes);
+    expect(ref.mimeType).toBe('image/png');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+  });
+});
+
+describe('buildExternalImageResourceReference', () => {
+  it('builds an unresolved external image identity with its base path', () => {
+    const ref = buildExternalImageResourceReference('leaf.png', '/models');
+    expect(ref.basePath).toBe('/models');
+    expect(ref.uri).toBe('leaf.png');
+    expect(ref.state).toBe(ResourceResolutionState.Unresolved);
+  });
+});
 
 describe('convertPositionsZUpToYUp', () => {
   it('converts (x, y, z) to (x, z, -y) for packed vec3 data', () => {

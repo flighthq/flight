@@ -6,7 +6,7 @@ import type { SceneMaterialTextureRegistry } from './sceneMaterialTextureRegistr
 import { getSceneMaterialTextures } from './sceneMaterialTextureRegistry';
 
 // Clears `out`, then fills it with the unique Textures reachable through `scene` whose `resource` is
-// a still-pending ImageResourceReference (non-null). Walks the root node and every descendant; for each
+// non-null. Walks the root node and every descendant; for each
 // Mesh node it enumerates each non-null material's texture slots through the registry. Shared
 // Textures (a parser memoizes one Texture object across meshes) are deduped by identity, so a
 // resolver requests each pending image at most once.

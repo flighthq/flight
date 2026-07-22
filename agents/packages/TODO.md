@@ -920,7 +920,6 @@ These are observed maturity gaps, including intentionally deferred work. They re
 - Add recovery and diagnostics
 - Add residency rather than a larger resolver
 - Prove resource realization behaviorally
-- Resolve shared image identity once and fan out deterministically
 
 ### capture (solid 72)
 
